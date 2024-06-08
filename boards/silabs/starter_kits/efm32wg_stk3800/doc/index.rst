@@ -1,7 +1,7 @@
 .. _efm32wg_stk3800:
 
-EFM32WG-STK3800
-###############
+EFM32 Wonder Gecko (EFM32WG-STK3800)
+####################################
 
 Overview
 ********
@@ -60,7 +60,7 @@ The efm32wg_stk3800 board configuration supports the following hardware features
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efm32wg_stk3800/efm32wg_stk3800_defconfig`
+:zephyr_file:`boards/silabs/starter_kit/efm32wg_stk3800/efm32wg_stk3800_defconfig`
 
 Other hardware features are currently not supported by the port.
 
@@ -149,7 +149,7 @@ the following message:
 
 .. code-block:: console
 
-   Hello World! arm
+   Hello World! efm32wg_stk3800
 
 
 .. _EFM32WG-STK3800 Website:

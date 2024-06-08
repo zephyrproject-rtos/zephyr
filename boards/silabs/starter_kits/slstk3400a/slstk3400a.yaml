@@ -1,9 +1,9 @@
-identifier: efm32wg_stk3800
-name: EFM32 Wonder Gecko Starter Kit (EFM32WG-STK3800)
+identifier: slstk3400a
+name: EFM32 Happy Gecko Starter Kit (SLSTK3400A)
 type: mcu
 arch: arm
-ram: 32
-flash: 256
+ram: 8
+flash: 64
 toolchain:
   - zephyr
   - gnuarmemb
