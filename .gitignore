@@ -7,8 +7,10 @@
 *.swp
 *.swo
 *~
-.\#*
+
+# Emacs
 \#*\#
+
 build*/
 !doc/build/
 !scripts/build
