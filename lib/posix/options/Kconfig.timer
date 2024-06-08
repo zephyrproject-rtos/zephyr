@@ -5,6 +5,7 @@
 
 menuconfig POSIX_TIMERS
 	bool "POSIX timers, clocks, and sleep functions"
+	select SYS_REALTIME
 	help
 	  Select 'y' here and Zephyr will provide implementations of clock_getres(), clock_gettime(),
 	  clock_settime(), nanosleep(), timer_create(), timer_delete(), timer_getoverrun(),
