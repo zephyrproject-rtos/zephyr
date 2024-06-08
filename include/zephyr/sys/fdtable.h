@@ -166,6 +166,7 @@ enum {
 	ZFD_IOCTL_POLL_UPDATE,
 	ZFD_IOCTL_POLL_OFFLOAD,
 	ZFD_IOCTL_SET_LOCK,
+	ZFD_IOCTL_STAT,
 
 	/* Codes above 0x5400 and below 0x5500 are reserved for termios, FIO, etc */
 	ZFD_IOCTL_FIONREAD = 0x541B,
