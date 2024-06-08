@@ -16,12 +16,14 @@
 #include <errno.h>
 #include <string.h>
 
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/kernel.h>
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/speculation.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/atomic.h>
+
+struct stat;
 
 struct fd_entry {
 	void *obj;
@@ -347,6 +349,15 @@ int zvfs_close(int fd)
 	z_free_fd(fd);
 
 	return res;
+}
+
+int zvfs_fstat(int fd, struct stat *buf)
+{
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_STAT, buf);
 }
 
 int zvfs_fsync(int fd)
