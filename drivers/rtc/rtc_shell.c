@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/rtc.h>
+#include <zephyr/sys/realtime.h>
 #include <time.h>
 #include <stdlib.h>
 
@@ -227,6 +228,43 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = NULL;
 }
 
+#if CONFIG_SYS_REALTIME
+static int cmd_sync(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = device_get_binding(argv[1]);
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "device %s not %s", argv[1], "ready");
+		return -ENODEV;
+	}
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	struct rtc_time rtctime;
+
+	int res = rtc_get_time(dev, &rtctime);
+
+	if (res == -ENODATA) {
+		shell_error(sh, "device %s not %s", argv[1], "set");
+		return 0;
+	}
+	if (res < 0) {
+		return res;
+	}
+
+	struct sys_datetime *datetime = (struct sys_datetime *)(&rtctime);
+
+	res = sys_realtime_set_datetime(datetime);
+
+	if (res < 0) {
+		shell_error(sh, "failed to set system realtime from %s", argv[1]);
+	}
+
+	return res;
+}
+#endif /* CONFIG_SYS_REALTIME */
+
 #define RTC_GET_HELP                                                                               \
 	("Get current time (UTC)\n"                                                                \
 	 "Usage: rtc get <device>")
@@ -235,12 +273,22 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	("Set UTC time\n"                                                                          \
 	 "Usage: rtc set <device> <YYYY-MM-DDThh:mm:ss> | <YYYY-MM-DD> | <hh:mm:ss>")
 
+#if CONFIG_SYS_REALTIME
+#define RTC_SYNC_HELP                                                                              \
+	("Set system realtime from RTC time\n"                                                     \
+	 "Usage: rtc sync <device>")
+#endif /* CONFIG_SYS_REALTIME */
+
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_rtc,
-			       /* Alphabetically sorted */
-			       SHELL_CMD_ARG(set, &dsub_device_name, RTC_SET_HELP, cmd_set, 3, 0),
-			       SHELL_CMD_ARG(get, &dsub_device_name, RTC_GET_HELP, cmd_get, 2, 0),
-			       SHELL_SUBCMD_SET_END);
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_rtc,
+	SHELL_CMD_ARG(set, &dsub_device_name, RTC_SET_HELP, cmd_set, 3, 0),
+	SHELL_CMD_ARG(get, &dsub_device_name, RTC_GET_HELP, cmd_get, 2, 0),
+#if CONFIG_SYS_REALTIME
+	SHELL_CMD_ARG(sync, &dsub_device_name, RTC_SYNC_HELP, cmd_sync, 2, 0),
+#endif /* CONFIG_SYS_REALTIME */
+	SHELL_SUBCMD_SET_END
+);
 
 SHELL_CMD_REGISTER(rtc, &sub_rtc, "RTC commands", NULL);
