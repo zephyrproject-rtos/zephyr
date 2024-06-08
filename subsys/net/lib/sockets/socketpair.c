@@ -264,8 +264,8 @@ static struct spair *spair_new(void)
 		goto cleanup;
 	}
 
-	z_finalize_fd(spair->remote, spair,
-		      (const struct fd_op_vtable *)&spair_fd_op_vtable);
+	z_finalize_typed_fd(spair->remote, spair, (const struct fd_op_vtable *)&spair_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	goto out;
 
