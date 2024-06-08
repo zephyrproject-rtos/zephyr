@@ -368,7 +368,7 @@ POSIX_FILE_SYSTEM
     creat(),
     fchdir(),
     fpathconf(),
-    fstat(),
+    fstat(), yes
     fstatvfs(),
     getcwd(),
     link(),
