@@ -276,7 +276,7 @@ static void gpio_stm32_configure_raw(const struct device *dev, int pin,
 static int gpio_stm32_clock_request(const struct device *dev, bool on)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
-	int ret = 0;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -289,10 +289,6 @@ static int gpio_stm32_clock_request(const struct device *dev, bool on)
 	} else {
 		ret = clock_control_off(clk,
 					(clock_control_subsys_t)&cfg->pclken);
-	}
-
-	if (ret != 0) {
-		return ret;
 	}
 
 	return ret;
