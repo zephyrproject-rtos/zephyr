@@ -439,8 +439,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 }
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
-
-static int init_mailbox_obj_core_list(void)
+int init_mailbox_obj_core_list(void)
 {
 	/* Initialize mailbox object type */
 
@@ -455,7 +454,4 @@ static int init_mailbox_obj_core_list(void)
 
 	return 0;
 }
-
-SYS_INIT(init_mailbox_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_MAILBOX */

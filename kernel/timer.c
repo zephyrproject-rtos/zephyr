@@ -345,7 +345,7 @@ static inline void z_vrfy_k_timer_user_data_set(struct k_timer *timer,
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_TIMER
-static int init_timer_obj_core_list(void)
+int init_timer_obj_core_list(void)
 {
 	/* Initialize timer object type */
 
@@ -360,6 +360,4 @@ static int init_timer_obj_core_list(void)
 
 	return 0;
 }
-SYS_INIT(init_timer_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_TIMER */

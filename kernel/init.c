@@ -24,6 +24,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <ksched.h>
 #include <kthread.h>
+#include <obj_core_init.h>
 #include <string.h>
 #include <zephyr/sys/dlist.h>
 #include <kernel_internal.h>
@@ -553,6 +554,10 @@ FUNC_NORETURN void z_cstart(void)
 #endif /* CONFIG_MULTITHREADING */
 	/* do any necessary initialization of static devices */
 	z_device_state_init();
+
+#if defined(CONFIG_OBJ_CORE)
+	init_obj_core();
+#endif
 
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);

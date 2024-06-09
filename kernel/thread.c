@@ -49,7 +49,7 @@ static struct k_obj_core_stats_desc  thread_stats_desc = {
 };
 #endif /* CONFIG_OBJ_CORE_STATS_THREAD */
 
-static int init_thread_obj_core_list(void)
+int init_thread_obj_core_list(void)
 {
 	/* Initialize mem_slab object type */
 
@@ -65,8 +65,6 @@ static int init_thread_obj_core_list(void)
 	return 0;
 }
 
-SYS_INIT(init_thread_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_THREAD */
 
 

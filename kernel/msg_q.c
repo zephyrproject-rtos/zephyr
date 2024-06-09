@@ -420,7 +420,7 @@ static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *msgq)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_MSGQ
-static int init_msgq_obj_core_list(void)
+int init_msgq_obj_core_list(void)
 {
 	/* Initialize msgq object type */
 
@@ -435,8 +435,4 @@ static int init_msgq_obj_core_list(void)
 
 	return 0;
 };
-
-SYS_INIT(init_msgq_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
 #endif /* CONFIG_OBJ_CORE_MSGQ */

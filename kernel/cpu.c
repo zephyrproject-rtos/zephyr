@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/init.h>
+#include <obj_core_init.h>
 
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
@@ -82,7 +83,7 @@ void z_init_cpu(uint8_t cpu_id)
 }
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
-static int init_cpu_obj_core_list(void)
+int init_cpu_obj_core_list(void)
 {
 	/* Initialize CPU object type */
 
@@ -96,7 +97,7 @@ static int init_cpu_obj_core_list(void)
 	return 0;
 }
 
-static int init_kernel_obj_core_list(void)
+int init_kernel_obj_core_list(void)
 {
 	/* Initialize kernel object type */
 
@@ -115,10 +116,4 @@ static int init_kernel_obj_core_list(void)
 
 	return 0;
 }
-
-SYS_INIT(init_cpu_obj_core_list, PRE_KERNEL_1,
-        CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-SYS_INIT(init_kernel_obj_core_list, PRE_KERNEL_1,
-        CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_SYSTEM */
