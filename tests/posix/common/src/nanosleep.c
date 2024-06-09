@@ -32,10 +32,34 @@ static inline uint64_t cycle_get_64(void)
 	}
 }
 
+static uint32_t trace_idx;
+static uint32_t trace_cycle;
+
+static void trace_test_reset(void)
+{
+	trace_idx = 0;
+	trace_cycle = cycle_get_64();
+}
+
+static void trace_test(void)
+{
+	uint64_t cycle;
+	uint64_t delta_cycle;
+
+	cycle = cycle_get_64();
+	delta_cycle = cycle - trace_cycle;
+	trace_cycle = cycle;
+
+	TC_PRINT("idx: %u, cycle: %llu, delta: %llu\n", trace_idx, cycle, delta_cycle);
+	trace_idx++;
+}
+
 static void common_errors(int selection, clockid_t clock_id, int flags)
 {
 	struct timespec rem = {};
 	struct timespec req = {};
+
+	trace_test();
 
 	/*
 	 * invalid parameters
@@ -43,13 +67,20 @@ static void common_errors(int selection, clockid_t clock_id, int flags)
 	zassert_equal(select_nanosleep(selection, clock_id, flags, NULL, NULL), -1);
 	zassert_equal(errno, EFAULT);
 
+	trace_test();
+
 	/* NULL request */
 	errno = 0;
 	zassert_equal(select_nanosleep(selection, clock_id, flags, NULL, &rem), -1);
 	zassert_equal(errno, EFAULT);
+
+	trace_test();
+
 	/* Expect rem to be the same when function returns */
 	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
 	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+
+	trace_test();
 
 	/* negative times */
 	errno = 0;
@@ -57,21 +88,29 @@ static void common_errors(int selection, clockid_t clock_id, int flags)
 	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
 	zassert_equal(errno, EINVAL);
 
+	trace_test();
+
 	errno = 0;
 	req = (struct timespec){.tv_sec = 0, .tv_nsec = -1};
 	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
 	zassert_equal(errno, EINVAL);
+
+	trace_test();
 
 	errno = 0;
 	req = (struct timespec){.tv_sec = -1, .tv_nsec = -1};
 	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
 	zassert_equal(errno, EINVAL);
 
+	trace_test();
+
 	/* nanoseconds too high */
 	errno = 0;
 	req = (struct timespec){.tv_sec = 0, .tv_nsec = 1000000000};
 	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
 	zassert_equal(errno, EINVAL);
+
+	trace_test();
 
 	/*
 	 * Valid parameters
@@ -85,11 +124,15 @@ static void common_errors(int selection, clockid_t clock_id, int flags)
 	zassert_equal(req.tv_sec, 1);
 	zassert_equal(req.tv_nsec, 1);
 
+	trace_test();
+
 	/* Sleep for 0.0 s. Expect req & rem to be the same when function returns */
 	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, &rem), 0);
 	zassert_equal(errno, 0);
 	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
 	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+
+	trace_test();
 
 	/*
 	 * req and rem point to the same timespec
@@ -102,10 +145,13 @@ static void common_errors(int selection, clockid_t clock_id, int flags)
 	zassert_equal(errno, 0);
 	zassert_equal(req.tv_sec, 0, "actual: %d expected: %d", req.tv_sec, 0);
 	zassert_equal(req.tv_nsec, 0, "actual: %d expected: %d", req.tv_nsec, 0);
+
+	trace_test();
 }
 
 ZTEST(nanosleep, test_nanosleep_errors_errno)
 {
+	trace_test_reset();
 	common_errors(SELECT_NANOSLEEP, CLOCK_REALTIME, 0);
 }
 
@@ -114,7 +160,10 @@ ZTEST(nanosleep, test_clock_nanosleep_errors_errno)
 	struct timespec rem = {};
 	struct timespec req = {};
 
+	trace_test_reset();
 	common_errors(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME);
+
+	trace_test();
 
 	/* Absolute timeout in the past. */
 	clock_gettime(CLOCK_MONOTONIC, &req);
@@ -122,11 +171,15 @@ ZTEST(nanosleep, test_clock_nanosleep_errors_errno)
 	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
 	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
 
+	trace_test();
+
 	/* Absolute timeout in the past relative to the realtime clock. */
 	clock_gettime(CLOCK_REALTIME, &req);
 	zassert_equal(clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &req, &rem), 0);
 	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
 	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+
+	trace_test();
 }
 
 /**
