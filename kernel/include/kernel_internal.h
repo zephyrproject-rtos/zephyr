@@ -25,7 +25,9 @@ extern "C" {
 #endif
 
 /* Initialize per-CPU kernel data */
-void z_init_cpu(int id);
+void z_init_cpu(uint8_t cpu_id);
+
+void init_idle_thread(int cpu_id);
 
 /* Initialize a thread */
 void z_init_thread_base(struct _thread_base *thread_base, int priority,

@@ -11,12 +11,17 @@
 #include <zephyr/pm/pm.h>
 #include <stdbool.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
 /* private kernel APIs */
 #include <ksched.h>
 #include <kswap.h>
 #include <wait_q.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
+					  CONFIG_MP_MAX_NUM_CPUS,
+					  CONFIG_IDLE_STACK_SIZE);
 
 void idle(void *unused1, void *unused2, void *unused3)
 {
@@ -99,4 +104,36 @@ void __weak arch_spin_relax(void)
 		 "this is meant to be called with IRQs disabled");
 
 	arch_nop();
+}
+
+__boot_func
+void init_idle_thread(int i)
+{
+	struct k_thread *thread = &z_idle_threads[i];
+	k_thread_stack_t *stack = z_idle_stacks[i];
+	size_t stack_size = K_KERNEL_STACK_SIZEOF(z_idle_stacks[i]);
+
+#ifdef CONFIG_THREAD_NAME
+
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	char tname[8];
+
+	snprintk(tname, 8, "idle %02d", i);
+#else
+	char *tname = "idle";
+#endif /* CONFIG_MP_MAX_NUM_CPUS */
+
+#else
+	char *tname = NULL;
+#endif /* CONFIG_THREAD_NAME */
+
+	z_setup_new_thread(thread, stack,
+			  stack_size, idle, &_kernel.cpus[i],
+			  NULL, NULL, K_IDLE_PRIO, K_ESSENTIAL,
+			  tname);
+	z_mark_thread_as_started(thread);
+
+#ifdef CONFIG_SMP
+	thread->base.is_idle = 1U;
+#endif /* CONFIG_SMP */
 }

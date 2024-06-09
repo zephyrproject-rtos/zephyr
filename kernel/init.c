@@ -55,13 +55,6 @@ K_THREAD_PINNED_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
-__pinned_bss
-struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
-
-static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
-					  CONFIG_MP_MAX_NUM_CPUS,
-					  CONFIG_IDLE_STACK_SIZE);
-
 static void z_init_static_threads(void)
 {
 	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data) {
@@ -137,46 +130,7 @@ enum init_level {
 extern const struct init_entry __init_SMP_start[];
 #endif /* CONFIG_SMP */
 
-/*
- * storage space for the interrupt stack
- *
- * Note: This area is used as the system stack during kernel initialization,
- * since the kernel hasn't yet set up its own stack areas. The dual purposing
- * of this area is safe since interrupts are disabled until the kernel context
- * switches to the init thread.
- */
-K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
-				   CONFIG_MP_MAX_NUM_CPUS,
-				   CONFIG_ISR_STACK_SIZE);
-
 extern void idle(void *unused1, void *unused2, void *unused3);
-
-#ifdef CONFIG_OBJ_CORE_SYSTEM
-static struct k_obj_type obj_type_cpu;
-static struct k_obj_type obj_type_kernel;
-
-#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
-static struct k_obj_core_stats_desc  cpu_stats_desc = {
-	.raw_size = sizeof(struct k_cycle_stats),
-	.query_size = sizeof(struct k_thread_runtime_stats),
-	.raw   = z_cpu_stats_raw,
-	.query = z_cpu_stats_query,
-	.reset = NULL,
-	.disable = NULL,
-	.enable  = NULL,
-};
-
-static struct k_obj_core_stats_desc  kernel_stats_desc = {
-	.raw_size = sizeof(struct k_cycle_stats) * CONFIG_MP_MAX_NUM_CPUS,
-	.query_size = sizeof(struct k_thread_runtime_stats),
-	.raw   = z_kernel_stats_raw,
-	.query = z_kernel_stats_query,
-	.reset = NULL,
-	.disable = NULL,
-	.enable  = NULL,
-};
-#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
-#endif /* CONFIG_OBJ_CORE_SYSTEM */
 
 /* LCOV_EXCL_START
  *
@@ -472,69 +426,6 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 } /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 
 #if defined(CONFIG_MULTITHREADING)
-__boot_func
-static void init_idle_thread(int i)
-{
-	struct k_thread *thread = &z_idle_threads[i];
-	k_thread_stack_t *stack = z_idle_stacks[i];
-	size_t stack_size = K_KERNEL_STACK_SIZEOF(z_idle_stacks[i]);
-
-#ifdef CONFIG_THREAD_NAME
-
-#if CONFIG_MP_MAX_NUM_CPUS > 1
-	char tname[8];
-	snprintk(tname, 8, "idle %02d", i);
-#else
-	char *tname = "idle";
-#endif /* CONFIG_MP_MAX_NUM_CPUS */
-
-#else
-	char *tname = NULL;
-#endif /* CONFIG_THREAD_NAME */
-
-	z_setup_new_thread(thread, stack,
-			  stack_size, idle, &_kernel.cpus[i],
-			  NULL, NULL, K_IDLE_PRIO, K_ESSENTIAL,
-			  tname);
-	z_mark_thread_as_started(thread);
-
-#ifdef CONFIG_SMP
-	thread->base.is_idle = 1U;
-#endif /* CONFIG_SMP */
-}
-
-void z_init_cpu(int id)
-{
-	init_idle_thread(id);
-	_kernel.cpus[id].idle_thread = &z_idle_threads[id];
-	_kernel.cpus[id].id = id;
-	_kernel.cpus[id].irq_stack =
-		(K_KERNEL_STACK_BUFFER(z_interrupt_stacks[id]) +
-		 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[id]));
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	_kernel.cpus[id].usage = &_kernel.usage[id];
-	_kernel.cpus[id].usage->track_usage =
-		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
-#endif
-
-#ifdef CONFIG_PM
-	/*
-	 * Increment number of CPUs active. The pm subsystem
-	 * will keep track of this from here.
-	 */
-	atomic_inc(&_cpus_active);
-#endif
-
-#ifdef CONFIG_OBJ_CORE_SYSTEM
-	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel.cpus[id]), &obj_type_cpu);
-#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
-	k_obj_core_stats_register(K_OBJ_CORE(&_kernel.cpus[id]),
-				  _kernel.cpus[id].usage,
-				  sizeof(struct k_cycle_stats));
-#endif
-#endif
-}
-
 /**
  *
  * @brief Initializes kernel data structures
@@ -713,45 +604,3 @@ FUNC_NORETURN void z_cstart(void)
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
-
-#ifdef CONFIG_OBJ_CORE_SYSTEM
-static int init_cpu_obj_core_list(void)
-{
-	/* Initialize CPU object type */
-
-	z_obj_type_init(&obj_type_cpu, K_OBJ_TYPE_CPU_ID,
-			offsetof(struct _cpu, obj_core));
-
-#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
-	k_obj_type_stats_init(&obj_type_cpu, &cpu_stats_desc);
-#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
-
-	return 0;
-}
-
-static int init_kernel_obj_core_list(void)
-{
-	/* Initialize kernel object type */
-
-	z_obj_type_init(&obj_type_kernel, K_OBJ_TYPE_KERNEL_ID,
-			offsetof(struct z_kernel, obj_core));
-
-#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
-	k_obj_type_stats_init(&obj_type_kernel, &kernel_stats_desc);
-#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
-
-	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel), &obj_type_kernel);
-#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
-	k_obj_core_stats_register(K_OBJ_CORE(&_kernel), _kernel.usage,
-				  sizeof(_kernel.usage));
-#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
-
-	return 0;
-}
-
-SYS_INIT(init_cpu_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-SYS_INIT(init_kernel_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-#endif /* CONFIG_OBJ_CORE_SYSTEM */
