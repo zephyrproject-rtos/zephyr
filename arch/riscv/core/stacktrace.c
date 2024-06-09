@@ -88,15 +88,20 @@ static inline bool in_text_region(uintptr_t addr)
 #ifdef CONFIG_FRAME_POINTER
 void z_riscv_unwind_stack(const struct arch_esf *esf)
 {
-	uintptr_t fp = esf->s0;
+	uintptr_t fp;
 	uintptr_t ra;
 	struct stackframe *frame;
+
+	if (esf != NULL) {
+		fp = esf->s0;
+		ra = esf->mepc;
+	} else {
+		return;
+	}
 
 	LOG_ERR("call trace:");
 
 	for (int i = 0; (i < MAX_STACK_FRAMES) && (fp != 0U) && in_stack_bound(fp, esf);) {
-		frame = (struct stackframe *)fp - 1;
-		ra = frame->ra;
 		if (in_text_region(ra)) {
 #ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
 			uint32_t offset = 0;
@@ -109,6 +114,8 @@ void z_riscv_unwind_stack(const struct arch_esf *esf)
 			 */
 			i++;
 		}
+		frame = (struct stackframe *)fp - 1;
+		ra = frame->ra;
 		fp = frame->fp;
 	}
 
@@ -117,16 +124,23 @@ void z_riscv_unwind_stack(const struct arch_esf *esf)
 #else /* !CONFIG_FRAME_POINTER */
 void z_riscv_unwind_stack(const struct arch_esf *esf)
 {
-	uintptr_t sp = z_riscv_get_sp_before_exc(esf);
+	uintptr_t sp;
 	uintptr_t ra;
-	uintptr_t *ksp = (uintptr_t *)sp;
+	uintptr_t *ksp;
+
+	if (esf != NULL) {
+		sp = z_riscv_get_sp_before_exc(esf);
+		ksp = (uintptr_t *)sp;
+		ra = esf->mepc;
+	} else {
+		return;
+	}
 
 	LOG_ERR("call trace:");
 
 	for (int i = 0; (i < MAX_STACK_FRAMES) && ((uintptr_t)ksp != 0U) &&
 			in_stack_bound((uintptr_t)ksp, esf);
 	     ksp++) {
-		ra = *ksp;
 		if (in_text_region(ra)) {
 #ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
 			uint32_t offset = 0;
@@ -139,6 +153,7 @@ void z_riscv_unwind_stack(const struct arch_esf *esf)
 			 */
 			i++;
 		}
+		ra = *ksp;
 	}
 
 	LOG_ERR("");
