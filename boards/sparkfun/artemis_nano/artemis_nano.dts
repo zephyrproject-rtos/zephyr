@@ -1,10 +1,12 @@
 /dts-v1/;
-#include <ambiq/ambiq_artemis_nano.dtsi>
-#include "artemis_nano-pinctrl.dtsi"
+// ambiq_apollo3_blue.dtsi in dts/arm/ambiq
+#include <ambiq/ambiq_apollo3_blue.dtsi>
+// 
+#include <../boards/ambiq/apollo3_evb/apollo3_evb-pinctrl.dtsi>
 
 / {
 	model = "Sparkfun Artemis Nano";
-	compatible = "sparkfun,artemis_nano", "ambiq,apollo3_evb";
+	compatible = "ambiq,apollo3_evb";
 
 	chosen {
 		zephyr,itcm = &tcm;

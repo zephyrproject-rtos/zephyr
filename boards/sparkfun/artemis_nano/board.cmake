@@ -1,6 +1,8 @@
-# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
 # SPDX-License-Identifier: Apache-2.0
 
-board_runner_args(jlink "--device=AMA3B1KK-KBR" "--iface=swd" "--speed=1000")
+board_runner_args(pyocd "--target=cortex_m" "--frequency=4000000" "--probe=/dev/ttyUSB0")
 
-include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/bossac.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/blackmagicprobe.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/trace32.board.cmake)
