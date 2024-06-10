@@ -1,0 +1,18 @@
+# Copyright (c) 2024 CISPA Helmholtz Center for Information Security
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MDIO controllers
+
+include: mdio-controller.yaml
+
+compatible: xlnx,axi-ethernet-1.00.a-mdio
+
+description: MDIO interface of Xilinx AXI 1G/2.5G Ethernet Subsystem.
+
+properties:
+  reg:
+    type: array
+    description: |
+      Control registers of the MDIO device are also used for the Ethernet MAC controller.
+      Thus, both devices should have a parent node with compatible "xlnx,axi-ethernet-subsystem-7.2"
+      which defines the reg property, and MAC and MDIO should NOT have a reg property.
