@@ -2646,16 +2646,61 @@ void net_if_unregister_link_cb(struct net_if_link_cb *link);
 void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 			 int status);
 
+/** @cond INTERNAL_HIDDEN */
+
+/* used to ensure encoding of checksum support in net_if.h and
+ * ethernet.h is the same
+ */
+#define NET_IF_CHECKSUM_NONE_BIT			0
+#define NET_IF_CHECKSUM_IPV4_HEADER_BIT			BIT(0)
+#define NET_IF_CHECKSUM_IPV4_ICMP_BIT			BIT(1)
+/* Space for future protocols and restrictions for IPV4 */
+#define NET_IF_CHECKSUM_IPV6_HEADER_BIT			BIT(10)
+#define NET_IF_CHECKSUM_IPV6_ICMP_BIT			BIT(11)
+/* Space for future protocols and restrictions for IPV6 */
+#define NET_IF_CHECKSUM_TCP_BIT				BIT(21)
+#define NET_IF_CHECKSUM_UDP_BIT				BIT(22)
+
+/** @endcond */
+
+/**
+ * @brief Type of checksum for which support in the interface will be queried.
+ */
+enum net_if_checksum_type {
+	/** Interface supports IP version 4 header checksum calculation */
+	NET_IF_CHECKSUM_IPV4_HEADER = NET_IF_CHECKSUM_IPV4_HEADER_BIT,
+	/** Interface supports checksum calculation for TCP payload in IPv4 */
+	NET_IF_CHECKSUM_IPV4_TCP    = NET_IF_CHECKSUM_IPV4_HEADER_BIT |
+				      NET_IF_CHECKSUM_TCP_BIT,
+	/** Interface supports checksum calculation for UDP payload in IPv4 */
+	NET_IF_CHECKSUM_IPV4_UDP    = NET_IF_CHECKSUM_IPV4_HEADER_BIT |
+				      NET_IF_CHECKSUM_UDP_BIT,
+	/** Interface supports checksum calculation for ICMP4 payload in IPv4 */
+	NET_IF_CHECKSUM_IPV4_ICMP   = NET_IF_CHECKSUM_IPV4_ICMP_BIT,
+	/** Interface supports IP version 6 header checksum calculation */
+	NET_IF_CHECKSUM_IPV6_HEADER = NET_IF_CHECKSUM_IPV6_HEADER_BIT,
+	/** Interface supports checksum calculation for TCP payload in IPv6 */
+	NET_IF_CHECKSUM_IPV6_TCP    = NET_IF_CHECKSUM_IPV6_HEADER_BIT |
+				      NET_IF_CHECKSUM_TCP_BIT,
+	/** Interface supports checksum calculation for UDP payload in IPv6 */
+	NET_IF_CHECKSUM_IPV6_UDP    = NET_IF_CHECKSUM_IPV6_HEADER_BIT |
+				      NET_IF_CHECKSUM_UDP_BIT,
+	/** Interface supports checksum calculation for ICMP6 payload in IPv6 */
+	NET_IF_CHECKSUM_IPV6_ICMP   = NET_IF_CHECKSUM_IPV6_ICMP_BIT
+};
+
 /**
  * @brief Check if received network packet checksum calculation can be avoided
  * or not. For example many ethernet devices support network packet offloading
  * in which case the IP stack does not need to calculate the checksum.
  *
  * @param iface Network interface
+ * @param chksum_type L3 and/or L4 protocol for which to compute checksum
  *
  * @return True if checksum needs to be calculated, false otherwise.
  */
-bool net_if_need_calc_rx_checksum(struct net_if *iface);
+bool net_if_need_calc_rx_checksum(struct net_if *iface,
+				  enum net_if_checksum_type chksum_type);
 
 /**
  * @brief Check if network packet checksum calculation can be avoided or not
@@ -2664,10 +2709,12 @@ bool net_if_need_calc_rx_checksum(struct net_if *iface);
  * checksum.
  *
  * @param iface Network interface
+ * @param chksum_type L3 and/or L4 protocol for which to compute checksum
  *
  * @return True if checksum needs to be calculated, false otherwise.
  */
-bool net_if_need_calc_tx_checksum(struct net_if *iface);
+bool net_if_need_calc_tx_checksum(struct net_if *iface,
+				  enum net_if_checksum_type chksum_type);
 
 /**
  * @brief Get interface according to index
