@@ -98,7 +98,8 @@ const struct bt_conn_auth_cb *bt_auth;
 sys_slist_t bt_auth_info_cbs = SYS_SLIST_STATIC_INIT(&bt_auth_info_cbs);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
-static struct bt_conn_cb *callback_list;
+
+static sys_slist_t callback_list = SYS_SLIST_STATIC_INIT(&callback_list);
 
 static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
 
@@ -1572,9 +1573,11 @@ static void tx_complete_work(struct k_work *work)
 static void notify_recycled_conn_slot(void)
 {
 #if defined(CONFIG_BT_CONN)
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->recycled) {
-			cb->recycled();
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->recycled) {
+			callback->recycled();
 		}
 	}
 
@@ -1679,9 +1682,11 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 
 static void notify_connected(struct bt_conn *conn)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->connected) {
-			cb->connected(conn, conn->err);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->connected) {
+			callback->connected(conn, conn->err);
 		}
 	}
 
@@ -1694,9 +1699,11 @@ static void notify_connected(struct bt_conn *conn)
 
 static void notify_disconnected(struct bt_conn *conn)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->disconnected) {
-			cb->disconnected(conn, conn->err);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->disconnected) {
+			callback->disconnected(conn, conn->err);
 		}
 	}
 
@@ -1719,9 +1726,11 @@ void notify_remote_info(struct bt_conn *conn)
 		return;
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->remote_info_available) {
-			cb->remote_info_available(conn, &remote_info);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->remote_info_available) {
+			callback->remote_info_available(conn, &remote_info);
 		}
 	}
 
@@ -1746,11 +1755,13 @@ void notify_le_param_updated(struct bt_conn *conn)
 		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->le_param_updated) {
-			cb->le_param_updated(conn, conn->le.interval,
-					     conn->le.latency,
-					     conn->le.timeout);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->le_param_updated) {
+			callback->le_param_updated(conn, conn->le.interval,
+						   conn->le.latency,
+						   conn->le.timeout);
 		}
 	}
 
@@ -1766,9 +1777,11 @@ void notify_le_param_updated(struct bt_conn *conn)
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 void notify_le_data_len_updated(struct bt_conn *conn)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->le_data_len_updated) {
-			cb->le_data_len_updated(conn, &conn->le.data_len);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->le_data_len_updated) {
+			callback->le_data_len_updated(conn, &conn->le.data_len);
 		}
 	}
 
@@ -1783,9 +1796,11 @@ void notify_le_data_len_updated(struct bt_conn *conn)
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 void notify_le_phy_updated(struct bt_conn *conn)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->le_phy_updated) {
-			cb->le_phy_updated(conn, &conn->le.phy);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->le_phy_updated) {
+			callback->le_phy_updated(conn, &conn->le.phy);
 		}
 	}
 
@@ -1803,12 +1818,14 @@ bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 		return false;
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (!cb->le_param_req) {
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (!callback->le_param_req) {
 			continue;
 		}
 
-		if (!cb->le_param_req(conn, param)) {
+		if (!callback->le_param_req(conn, param)) {
 			return false;
 		}
 
@@ -2285,9 +2302,12 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 		rpa = &conn->le.init_addr;
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->identity_resolved) {
-			cb->identity_resolved(conn, rpa, &conn->le.dst);
+
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->identity_resolved) {
+			callback->identity_resolved(conn, rpa, &conn->le.dst);
 		}
 	}
 
@@ -2395,9 +2415,11 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 		bt_iso_security_changed(conn, hci_err);
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->security_changed) {
-			cb->security_changed(conn, conn->sec_level, err);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->security_changed) {
+			callback->security_changed(conn, conn->sec_level, err);
 		}
 	}
 
@@ -2487,40 +2509,20 @@ bt_security_t bt_conn_get_security(const struct bt_conn *conn)
 
 void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
-	cb->_next = callback_list;
-	callback_list = cb;
+	sys_slist_append(&callback_list, &cb->_node);
 }
 
 int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 {
-	struct bt_conn_cb *previous_callback;
-
 	CHECKIF(cb == NULL) {
 		return -EINVAL;
 	}
 
-	if (callback_list == NULL) {
-		/* No callsback registered */
+	if (!sys_slist_find_and_remove(&callback_list, &cb->_node)) {
 		return -ENOENT;
 	}
 
-	if (callback_list == cb) {
-		callback_list = callback_list->_next;
-		return 0;
-	}
-
-	previous_callback = callback_list;
-
-	while (previous_callback->_next) {
-		if (previous_callback->_next == cb) {
-			previous_callback->_next = previous_callback->_next->_next;
-			return 0;
-		}
-
-		previous_callback = previous_callback->_next;
-	}
-
-	return -ENOENT;
+	return 0;
 }
 
 bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
@@ -2811,9 +2813,11 @@ static int bt_conn_get_tx_power_level(struct bt_conn *conn, uint8_t type,
 void notify_tx_power_report(struct bt_conn *conn,
 			    struct bt_conn_le_tx_power_report report)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->tx_power_report) {
-			cb->tx_power_report(conn, &report);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->tx_power_report) {
+			callback->tx_power_report(conn, &report);
 		}
 	}
 
@@ -2934,9 +2938,11 @@ int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 void notify_path_loss_threshold_report(struct bt_conn *conn,
 				       struct bt_conn_le_path_loss_threshold_report report)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->path_loss_threshold_report) {
-			cb->path_loss_threshold_report(conn, &report);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->path_loss_threshold_report) {
+			callback->path_loss_threshold_report(conn, &report);
 		}
 	}
 
@@ -3670,9 +3676,11 @@ void bt_hci_le_df_connection_iq_report_common(uint8_t event, struct net_buf *buf
 		return;
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->cte_report_cb) {
-			cb->cte_report_cb(conn, &iq_report);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->cte_report_cb) {
+			callback->cte_report_cb(conn, &iq_report);
 		}
 	}
 
@@ -3712,9 +3720,11 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
 		return;
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->cte_report_cb) {
-			cb->cte_report_cb(conn, &iq_report);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->cte_report_cb) {
+			callback->cte_report_cb(conn, &iq_report);
 		}
 	}
 
