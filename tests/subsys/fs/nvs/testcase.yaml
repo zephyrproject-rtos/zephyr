@@ -2,7 +2,9 @@ common:
   tags: nvs
 tests:
   filesystem.nvs:
-    platform_allow: qemu_x86
+    platform_allow:
+      - qemu_x86
+      - mps2/an385
   filesystem.nvs.0x00:
     extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
     platform_allow: qemu_x86
