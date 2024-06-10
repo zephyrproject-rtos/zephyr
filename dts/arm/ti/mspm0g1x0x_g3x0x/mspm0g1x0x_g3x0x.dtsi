@@ -2,6 +2,9 @@
 
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -24,8 +27,40 @@
 
 	sysclk: system-clock {
 		compatible = "fixed-clock";
-		clock-frequency = <32000000>;
+		clock-frequency = <DT_FREQ_M(32)>;
 		#clock-cells = <0>;
+	};
+
+	clkmux: clock-controller {
+		compatible = "ti,mspm0-clock-mux";
+		mclk-div = <1>;
+		uclk-div = <1>;
+		#clock-cells = <1>;
+	};
+
+	clocks: clocks {
+		sysosc: sysosc {
+			compatible = "ti,mspm0-oscillator";
+			clock-frequency = <32000000>;
+			#clock-cells = <1>;
+		};
+
+		lfosc: lfosc {
+			compatible = "ti,mspm0-oscillator";
+			clock-frequency = <32678>;
+			#clock-cells = <1>;
+		};
+		
+		pll: pll {
+			compatible = "ti,mspm0-pll";
+			clocks = <&sysosc 0>;
+			p-div = <2>;
+			q-div = <5>; 
+			clk1-div = <2>;
+			clk2x-div = <2>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
 	};
 
 	soc {
@@ -61,7 +96,7 @@
 			reg = <0x40108000 0x2000>;
 			interrupts = <15 0>;
 			current-speed = <115200>;
-			clocks = <&sysclk>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 			status = "disabled";
 		};
 
@@ -70,7 +105,7 @@
 			reg = <0x40100000 0x2000>;
 			interrupts = <13 0>;
 			current-speed = <115200>;
-			clocks = <&sysclk>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 			status = "disabled";
 		};
 
@@ -79,7 +114,7 @@
 			reg = <0x40102000 0x2000>;
 			interrupts = <14 0>;
 			current-speed = <115200>;
-			clocks = <&sysclk>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 			status = "disabled";
 		};
 

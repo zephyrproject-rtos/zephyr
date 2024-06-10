@@ -1,14 +1,14 @@
-# TI MSPM0G3507 SoC
+# TI MSPM0G110X SoC
 
 # Copyright (c) 2024 Texas Instruments
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_MSPM0G3507
+if SOC_MSPM0G110X
 
 config SOC
-	default "mspm0g3507"
+	default "mspm0g110x"
 
 config NUM_IRQS
 	default 32
 
-endif # SOC_MSPM0G3507
+endif # SOC_MSPM0G110X
