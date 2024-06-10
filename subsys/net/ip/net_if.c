@@ -5067,14 +5067,33 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 	k_mutex_unlock(&lock);
 }
 
-static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps)
+static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps,
+			      enum net_if_checksum_type chksum_type)
 {
 #if defined(CONFIG_NET_L2_ETHERNET)
+	struct ethernet_config config;
+	enum ethernet_config_type config_type;
+
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return true;
 	}
 
-	return !(net_eth_get_hw_capabilities(iface) & caps);
+	if (!(net_eth_get_hw_capabilities(iface) & caps)) {
+		return true; /* No checksum offload*/
+	}
+
+	if (caps == ETHERNET_HW_RX_CHKSUM_OFFLOAD) {
+		config_type = ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT;
+	} else {
+		config_type = ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT;
+	}
+
+	if (net_eth_get_hw_config(iface, config_type, &config) != 0) {
+		return false; /* No extra info, assume all offloaded. */
+	}
+
+	/* bitmaps are encoded such that this works */
+	return !((config.chksum_support & chksum_type) == chksum_type);
 #else
 	ARG_UNUSED(iface);
 	ARG_UNUSED(caps);
@@ -5083,14 +5102,14 @@ static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps)
 #endif
 }
 
-bool net_if_need_calc_tx_checksum(struct net_if *iface)
+bool net_if_need_calc_tx_checksum(struct net_if *iface, enum net_if_checksum_type chksum_type)
 {
-	return need_calc_checksum(iface, ETHERNET_HW_TX_CHKSUM_OFFLOAD);
+	return need_calc_checksum(iface, ETHERNET_HW_TX_CHKSUM_OFFLOAD, chksum_type);
 }
 
-bool net_if_need_calc_rx_checksum(struct net_if *iface)
+bool net_if_need_calc_rx_checksum(struct net_if *iface, enum net_if_checksum_type chksum_type)
 {
-	return need_calc_checksum(iface, ETHERNET_HW_RX_CHKSUM_OFFLOAD);
+	return need_calc_checksum(iface, ETHERNET_HW_RX_CHKSUM_OFFLOAD, chksum_type);
 }
 
 int net_if_get_by_iface(struct net_if *iface)
