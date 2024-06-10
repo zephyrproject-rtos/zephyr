@@ -81,7 +81,15 @@ class Blobs(WestCommand):
     def get_blobs(self, args):
         blobs = []
         modules = args.modules
-        for module in zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest):
+        all_modules = zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest)
+        all_names = [m.meta.get('name', None) for m in all_modules]
+
+        unknown = set(modules) - set(all_names)
+
+        if len(unknown):
+            log.die(f'Unknown module(s): {unknown}')
+
+        for module in all_modules:
             # Filter by module
             module_name = module.meta.get('name', None)
             if len(modules) and module_name not in modules:
