@@ -133,6 +133,9 @@ extern const struct init_entry __init_SMP_start[];
 
 extern void idle(void *unused1, void *unused2, void *unused3);
 
+extern int init_mem_domain_module(void);
+extern int app_shmem_bss_zero(void);
+
 /* LCOV_EXCL_START
  *
  * This code is called so early in the boot process that code coverage
@@ -569,6 +572,7 @@ FUNC_NORETURN void z_cstart(void)
 #endif
 #if defined(CONFIG_USERSPACE)
 	app_shmem_bss_zero();
+	init_mem_domain_module();
 #endif
 
 	/* perform basic hardware initialization */

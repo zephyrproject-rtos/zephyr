@@ -338,7 +338,7 @@ int k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 	return ret;
 }
 
-static int init_mem_domain_module(void)
+int init_mem_domain_module(void)
 {
 	int ret;
 
@@ -363,6 +363,3 @@ static int init_mem_domain_module(void)
 
 	return 0;
 }
-
-SYS_INIT(init_mem_domain_module, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
