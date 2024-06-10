@@ -41,18 +41,17 @@ fi
 
 err=0
 i=0
+sh_filter="(/_|run_parallel|compile|generate_coverage_report.sh|/ci\.)"
 
 if [ -n "${TESTS_FILE}" ]; then
 	#remove comments and empty lines from file
 	search_pattern=$(sed 's/#.*$//;/^$/d' "${TESTS_FILE}") || exit 1
-	all_cases=`find ${search_pattern} -name "*.sh" | \
-	         grep -Ev "(/_|run_parallel|compile|generate_coverage_report.sh)"`
+	all_cases=`find ${search_pattern} -name "*.sh" | grep -Ev "${sh_filter}"`
 elif [ -n "${TESTS_LIST}" ]; then
 	all_cases=${TESTS_LIST}
 else
 	SEARCH_PATH="${SEARCH_PATH:-.}"
-	all_cases=`find ${SEARCH_PATH} -name "*.sh" | \
-	         grep -Ev "(/_|run_parallel|compile|generate_coverage_report.sh)"`
+	all_cases=`find ${SEARCH_PATH} -name "*.sh" | grep -Ev "${sh_filter}"`
 	#we dont run ourselves
 fi
 
