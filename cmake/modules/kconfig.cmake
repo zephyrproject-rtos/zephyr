@@ -30,9 +30,6 @@ if(HWMv1)
   list(REMOVE_ITEM kconfig_soc_root ${ZEPHYR_BASE})
   set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/soc/Kconfig.defconfig)
 
-  # This loads Zephyr base SoC root defconfigs
-  file(WRITE ${soc_defconfig_file} "osource \"soc/soc_legacy/$(ARCH)/*/Kconfig.defconfig\"\n")
-
   set(OPERATION WRITE)
   foreach(root ${kconfig_soc_root})
     file(APPEND ${soc_defconfig_file}
