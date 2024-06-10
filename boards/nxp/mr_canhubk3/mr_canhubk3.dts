@@ -40,6 +40,7 @@
 		watchdog0 = &fs26_wdt;
 		/* For pwm test suites */
 		pwm-0 = &emios0_pwm;
+		pwm-1 = &flexio0_pwm;
 		red-pwm-led = &user_led1_red_pwm;
 		green-pwm-led = &user_led1_green_pwm;
 		blue-pwm-led = &user_led1_blue_pwm;
@@ -614,6 +615,27 @@
 			polarity = "ACTIVE_LOW";
 		};
 	};
+};
+
+&flexio0 {
+	status = "okay";
+
+	flexio0_pwm: flexio0_pwm {
+		pinctrl-0 = <&flexio0_pwm_default>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pwm_0 {
+			pin-id = <19>;
+			prescaler = <1>;
+		};
+
+		pwm_1 {
+			pin-id = <11>;
+			prescaler = <1>;
+		};
+	};
+
 };
 
 &lcu1 {
