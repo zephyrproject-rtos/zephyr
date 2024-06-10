@@ -828,6 +828,20 @@
 			};
 		};
 
+		flexio0: flexio@40324000 {
+			compatible = "nxp,flexio";
+			reg = <0x40324000 0x4000>;
+			interrupts = <139 0>;
+			clocks = <&clock NXP_S32_FLEXIO0_CLK>;
+			status = "disabled";
+
+			flexio0_pwm {
+				compatible = "nxp,flexio-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		lcu0: lcu@40098000 {
 			compatible = "nxp,s32-lcu";
 			reg = <0x40098000 0x4000>;
