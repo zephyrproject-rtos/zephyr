@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+#define HAL_CNTR_GRTC_CC_IDX_TICKER 10
+#define HAL_CNTR_GRTC_INTENSET_COMPARE_TICKER_Msk \
+	_CONCAT(_CONCAT(GRTC_INTENSET1_COMPARE, HAL_CNTR_GRTC_CC_IDX_TICKER), _Msk)
+#define HAL_CNTR_GRTC_CC_IDX_RADIO  11
+#endif /* CONFIG_BT_CTLR_NRF_GRTC */
