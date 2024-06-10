@@ -737,6 +737,8 @@ static int stm32_xspi_mem_reset(const struct device *dev)
 	struct flash_stm32_xspi_data *dev_data = dev->data;
 
 #if STM32_XSPI_RESET_GPIO
+	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
+
 	/* Generate RESETn pulse for the flash memory */
 	gpio_pin_configure_dt(&dev_cfg->reset, GPIO_OUTPUT_ACTIVE);
 	k_msleep(DT_INST_PROP(0, reset_gpios_duration));
