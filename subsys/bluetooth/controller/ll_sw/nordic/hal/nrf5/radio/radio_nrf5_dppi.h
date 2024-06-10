@@ -100,7 +100,11 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
  */
 static inline void hal_event_timer_start_ppi_config(void)
 {
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_publish_set(NRF_RTC, NRF_RTC_EVENT_COMPARE_2, HAL_EVENT_TIMER_START_PPI);
+#endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
+
 	nrf_timer_subscribe_set(EVENT_TIMER, NRF_TIMER_TASK_START, HAL_EVENT_TIMER_START_PPI);
 }
 

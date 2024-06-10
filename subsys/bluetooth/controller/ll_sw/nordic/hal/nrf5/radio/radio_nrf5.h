@@ -49,7 +49,12 @@
 #error "Unsupported SoC."
 #endif
 
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+#include <hal/nrf_grtc.h>
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 #include <hal/nrf_rtc.h>
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
+
 #include <hal/nrf_timer.h>
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
