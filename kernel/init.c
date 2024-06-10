@@ -384,6 +384,13 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_sys_post_kernel = true;
 
 	k_sys_work_q_init();
+#if defined(CONFIG_USERSPACE) && \
+	defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+	/* When BSS sections are not present at boot, we need to wait for
+	 * paging mechanism to be initialized before we can zero out BSS.
+	 */
+	app_shmem_bss_zero();
+#endif
 	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	z_stack_adjust_initialized = 1;
@@ -559,6 +566,9 @@ FUNC_NORETURN void z_cstart(void)
 
 #if defined(CONFIG_OBJ_CORE)
 	init_obj_core();
+#endif
+#if defined(CONFIG_USERSPACE)
+	app_shmem_bss_zero();
 #endif
 
 	/* perform basic hardware initialization */
