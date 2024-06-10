@@ -377,7 +377,9 @@ void radio_df_cte_rx_4us_switching(bool cte_info_in_s1, uint8_t phy)
 
 void radio_df_ant_switch_pattern_clear(void)
 {
-	NRF_RADIO->CLEARPATTERN = RADIO_CLEARPATTERN_CLEARPATTERN_Clear;
+	NRF_RADIO->CLEARPATTERN = (HAL_RADIO_CLEARPATTERN_CLEARPATTERN_Clear <<
+				   RADIO_CLEARPATTERN_CLEARPATTERN_Pos) &
+				  RADIO_CLEARPATTERN_CLEARPATTERN_Msk;
 }
 
 void radio_df_reset(void)

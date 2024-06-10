@@ -9,15 +9,21 @@
 #define NRF_RTC NRF_RTC10
 #endif /* !CONFIG_BT_CTLR_NRF_GRTC */
 
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-#error "Single Timer feature not supported yet"
-#endif
-
 #undef EVENT_TIMER_ID
 #define EVENT_TIMER_ID 10
 
 #undef EVENT_TIMER
 #define EVENT_TIMER _CONCAT(NRF_TIMER, EVENT_TIMER_ID)
+
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#undef SW_SWITCH_TIMER
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#define SW_SWITCH_TIMER EVENT_TIMER
+#else  /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+/* TODO: Using NRF_TIMER from another domain needs DPPIC and PPIB setup */
+#error "SW tIFS switching using dedicated second timer not supported yet."
+#endif  /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 /* HAL abstraction of event timer prescaler value */
 #define HAL_EVENT_TIMER_PRESCALER_VALUE 5U
@@ -355,9 +361,10 @@
 #endif /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 
 /* HAL abstraction of Radio bitfields */
-#define HAL_RADIO_INTENSET_DISABLED_Msk         RADIO_INTENSET00_DISABLED_Msk
-#define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk    RADIO_SHORTS_PHYEND_DISABLE_Msk
-#define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define HAL_RADIO_INTENSET_DISABLED_Msk           RADIO_INTENSET00_DISABLED_Msk
+#define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk      RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk   RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define HAL_RADIO_CLEARPATTERN_CLEARPATTERN_Clear (1UL)
 
 /* HAL abstraction of Radio IRQ number */
 #define HAL_RADIO_IRQn                          RADIO_0_IRQn
