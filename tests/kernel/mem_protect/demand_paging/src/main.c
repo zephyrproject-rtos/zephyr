@@ -192,6 +192,21 @@ ZTEST(demand_paging, test_touch_anon_pages)
 	}
 }
 
+ZTEST(demand_paging, test_unmap_anon_pages)
+{
+	 k_mem_unmap(arena, arena_size);
+
+	 /* memory should no longer be accessible */
+	 expect_fault = true;
+	 compiler_barrier();
+
+	 TC_PRINT("Accessing unmapped memory should fault\n");
+	 arena[0] = 'x';
+
+	 /* and execution should not reach this point */
+	 ztest_test_fail();
+}
+
 static void test_k_mem_page_out(void)
 {
 	unsigned long faults;
@@ -407,6 +422,7 @@ ZTEST_USER(demand_paging_stat, test_user_get_hist)
 
 void *demand_paging_api_setup(void)
 {
+	arena = k_mem_map(arena_size, K_MEM_PERM_RW);
 	test_k_mem_page_out();
 
 	return NULL;
