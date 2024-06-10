@@ -1,0 +1,58 @@
+/ {
+	aliases {
+		dut-cache = &spi120;
+		dut-nocache = &spi130;
+	};
+};
+
+&pinctrl {
+	spi130_default_alt: spi130_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_MOSI, 2, 8)>,
+				<NRF_PSEL(SPIM_SCK, 1, 2)>;
+		};
+	};
+
+	spi130_sleep_alt: spi130_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_MOSI, 2, 8)>,
+				<NRF_PSEL(SPIM_SCK, 1, 2)>;
+			low-power-enable;
+		};
+	};
+
+	spi120_default_alt: spi120_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_MOSI, 7, 1)>,
+				<NRF_PSEL(SPIM_SCK, 7, 2)>;
+		};
+	};
+
+	spi120_sleep_alt: spi120_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_MOSI, 7, 1)>,
+				<NRF_PSEL(SPIM_SCK, 7, 2)>;
+			low-power-enable;
+		};
+	};
+};
+
+&spi130
+{
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi130_default_alt>;
+	pinctrl-1 = <&spi130_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&cpuapp_dma_region>;
+};
+
+&spi120
+{
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi120_default_alt>;
+	pinctrl-1 = <&spi120_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&dma_fast_region>;
+};
