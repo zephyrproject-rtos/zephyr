@@ -229,6 +229,17 @@ config USB_NATIVE_POSIX
 	help
 	  Native Posix USB Device Controller Driver.
 
+DT_ZEPHYR_UDC0 := $(dt_nodelabel_path,zephyr_udc0)
+DT_ZEPHYR_UDC0_HS_SPEED := $(dt_node_str_prop_equals,$(DT_ZEPHYR_UDC0),maximum-speed,high-speed)
+
+config USB_NATIVE_POSIX_HS
+	bool "High speed support"
+	select USB_DC_HAS_HS_SUPPORT
+	depends on USB_NATIVE_POSIX
+	default y if "$(DT_ZEPHYR_UDC0_HS_SPEED)"
+	help
+	  Enable high speed support in the Native Posix USB device controller driver.
+
 module = USB_DRIVER
 module-str = usb driver
 source "subsys/logging/Kconfig.template.log_config"
