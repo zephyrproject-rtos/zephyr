@@ -5,7 +5,9 @@
  */
 
 /* Use the NRF_RTC instance for coarse radio event scheduling */
+#if !defined(CONFIG_BT_CTLR_NRF_GRTC)
 #define NRF_RTC NRF_RTC10
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 #error "Single Timer feature not supported yet"
