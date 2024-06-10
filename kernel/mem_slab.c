@@ -204,7 +204,8 @@ out:
 	return rc;
 }
 
-static inline bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
+#if __ASSERT_ON
+static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 {
 	const char *p = ptr;
 	ptrdiff_t offset = p - slab->buffer;
@@ -213,6 +214,7 @@ static inline bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 	       (offset < (slab->info.block_size * slab->info.num_blocks)) &&
 	       ((offset % slab->info.block_size) == 0);
 }
+#endif
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 {
