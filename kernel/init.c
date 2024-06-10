@@ -357,6 +357,7 @@ static inline int z_vrfy_device_init(const struct device *dev)
 #endif
 
 extern void boot_banner(void);
+extern void k_sys_work_q_init(void);
 
 
 /**
@@ -382,6 +383,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_MMU */
 	z_sys_post_kernel = true;
 
+	k_sys_work_q_init();
 	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	z_stack_adjust_initialized = 1;
