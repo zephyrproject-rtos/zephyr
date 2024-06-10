@@ -13,7 +13,6 @@ endif()
 
 if(CONFIG_STM32_MEMMAP)
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-board_runner_args(stm32cubeprogrammer "--hex-file=${ZEPHYR_BASE}/build/zephyr/zephyr.hex")
 board_runner_args(stm32cubeprogrammer "--extload=MT25TL01G_STM32H747I-DISCO.stldr")
 else()
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
