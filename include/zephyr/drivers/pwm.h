@@ -217,6 +217,55 @@ struct pwm_dt_spec {
  * @brief Static initializer for a struct pwm_dt_spec
  *
  * This returns a static initializer for a struct pwm_dt_spec given a devicetree
+ * node identifier, property name and an index.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *    n: node {
+ *        pwms-foo = <&pwm1 1 1000 PWM_POLARITY_NORMAL>,
+ *               <&pwm2 3 2000 PWM_POLARITY_INVERTED>;
+ *    };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    const struct pwm_dt_spec spec =
+ *        PWM_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), pwms_foo, 1);
+ *
+ *    // Initializes 'spec' to:
+ *    // {
+ *    //         .dev = DEVICE_DT_GET(DT_NODELABEL(pwm2)),
+ *    //         .channel = 3,
+ *    //         .period = 2000,
+ *    //         .flags = PWM_POLARITY_INVERTED,
+ *    // }
+ * @endcode
+ *
+ * The device (dev) must still be checked for readiness, e.g. using
+ * device_is_ready(). It is an error to use this macro unless the node exists,
+ * has the 'prop' property, and that 'prop' property specifies a PWM controller,
+ * a channel, a period in nanoseconds and optionally flags.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param prop lowercase-and-underscores property name.
+ * @param idx Logical index into 'pwms' property.
+ *
+ * @return Static initializer for a struct pwm_dt_spec for the property.
+ */
+#define PWM_DT_SPEC_GET_BY_PROP_AND_IDX(node_id, prop, idx)				       \
+	{								       \
+		.dev = DEVICE_DT_GET(DT_PWMS_CTLR_BY_PROP_AND_IDX(node_id, prop, idx)),       \
+		.channel = DT_PWMS_CHANNEL_BY_IDX(node_id, idx),	       \
+		.period = DT_PWMS_PERIOD_BY_IDX(node_id, idx),		       \
+		.flags = DT_PWMS_FLAGS_BY_IDX(node_id, idx),		       \
+	}
+
+/**
+ * @brief Static initializer for a struct pwm_dt_spec
+ *
+ * This returns a static initializer for a struct pwm_dt_spec given a devicetree
  * node identifier and an index.
  *
  * Example devicetree fragment:
@@ -256,12 +305,7 @@ struct pwm_dt_spec {
  * @see PWM_DT_SPEC_INST_GET_BY_IDX
  */
 #define PWM_DT_SPEC_GET_BY_IDX(node_id, idx)				       \
-	{								       \
-		.dev = DEVICE_DT_GET(DT_PWMS_CTLR_BY_IDX(node_id, idx)),       \
-		.channel = DT_PWMS_CHANNEL_BY_IDX(node_id, idx),	       \
-		.period = DT_PWMS_PERIOD_BY_IDX(node_id, idx),		       \
-		.flags = DT_PWMS_FLAGS_BY_IDX(node_id, idx),		       \
-	}
+	PWM_DT_SPEC_GET_BY_PROP_AND_IDX(node_id, pwms, idx)
 
 /**
  * @brief Static initializer for a struct pwm_dt_spec from a DT_DRV_COMPAT
