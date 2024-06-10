@@ -42,6 +42,7 @@ endif
 
 config MODEM_PIPE
 	bool "Modem pipe module"
+	select EVENTS
 
 config MODEM_PIPELINK
 	bool "Modem pipelink module"
