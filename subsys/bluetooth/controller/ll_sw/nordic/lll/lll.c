@@ -18,6 +18,7 @@
 
 #include "hal/swi.h"
 #include "hal/ccm.h"
+#include "hal/cntr.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
 
@@ -119,8 +120,8 @@ static void rtc0_nrf5_isr(const void *arg)
 
 	/* On compare0 run ticker worker instance0 */
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
-	if (NRF_GRTC->EVENTS_COMPARE[10]) {
-		nrf_grtc_event_clear(NRF_GRTC, NRF_GRTC_EVENT_COMPARE_10);
+	if (NRF_GRTC->EVENTS_COMPARE[HAL_CNTR_GRTC_CC_IDX_TICKER]) {
+		NRF_GRTC->EVENTS_COMPARE[HAL_CNTR_GRTC_CC_IDX_TICKER] = 0U;
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	if (NRF_RTC->EVENTS_COMPARE[0]) {
 		nrf_rtc_event_clear(NRF_RTC, NRF_RTC_EVENT_COMPARE_0);
