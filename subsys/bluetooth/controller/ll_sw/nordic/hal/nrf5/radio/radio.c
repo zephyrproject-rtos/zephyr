@@ -243,8 +243,13 @@ void radio_reset(void)
 #endif
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-	NRF_RADIO->TIMING = (0U << RADIO_TIMING_RU_Pos) &
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->TIMING = (RADIO_TIMING_RU_Legacy << RADIO_TIMING_RU_Pos) &
 			    RADIO_TIMING_RU_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->TIMING = (RADIO_TIMING_RU_Fast << RADIO_TIMING_RU_Pos) &
+			    RADIO_TIMING_RU_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	NRF_POWER->TASKS_CONSTLAT = 1U;
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
@@ -949,13 +954,13 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 	 *       time-stamp.
 	 */
 	hal_radio_end_time_capture_ppi_config();
-#if !defined(CONFIG_SOC_COMPATIBLE_NRF53X)
+#if !defined(CONFIG_SOC_COMPATIBLE_NRF53X) && !defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 	/* The function is not called for nRF5340 single timer configuration because
 	 * HAL_SW_SWITCH_TIMER_CLEAR_PPI is equal to HAL_RADIO_END_TIME_CAPTURE_PPI,
 	 * so channel is already enabled.
 	 */
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X && !CONFIG_SOC_COMPATIBLE_NRF54LX */
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	sw_tifs_toggle += 1U;
@@ -1802,12 +1807,14 @@ void radio_tmr_end_capture(void)
 	 *       hal_sw_switch_timer_clear_ppi_config() and sw_switch(). There is no need to
 	 *       configure the channel again in this function.
 	 */
-#if !defined(CONFIG_SOC_COMPATIBLE_NRF53X) ||                                                      \
-	(defined(CONFIG_SOC_COMPATIBLE_NRF53X) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER))
+#if (!defined(CONFIG_SOC_COMPATIBLE_NRF53X) && !defined(CONFIG_SOC_COMPATIBLE_NRF54LX)) || \
+	((defined(CONFIG_SOC_COMPATIBLE_NRF53X) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)) && \
+	 !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER))
 	hal_radio_end_time_capture_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X ||
-	* (CONFIG_SOC_COMPATIBLE_NRF53X && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#endif /* (!CONFIG_SOC_COMPATIBLE_NRF53X && !CONFIG_SOC_COMPATIBLE_NRF54LX) ||
+	* ((CONFIG_SOC_COMPATIBLE_NRF53X || CONFIG_SOC_COMPATIBLE_NRF54LX) &&
+	*  !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	*/
 }
 
