@@ -22,7 +22,9 @@ static sys_slist_t cb_slist;
 
 void bt_test_cb_register(struct bt_test_cb *cb)
 {
-	sys_slist_append(&cb_slist, &cb->node);
+	if (!sys_slist_find(&cb_slist, &cb->node, NULL)) {
+		sys_slist_append(&cb_slist, &cb->node);
+	}
 }
 
 void bt_test_cb_unregister(struct bt_test_cb *cb)

@@ -2509,7 +2509,9 @@ bt_security_t bt_conn_get_security(const struct bt_conn *conn)
 
 void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
-	sys_slist_append(&callback_list, &cb->_node);
+	if (!sys_slist_find(&callback_list, &cb->_node, NULL)) {
+		sys_slist_append(&callback_list, &cb->_node);
+	}
 }
 
 int bt_conn_cb_unregister(struct bt_conn_cb *cb)
@@ -3496,6 +3498,10 @@ int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 {
 	CHECKIF(cb == NULL) {
 		return -EINVAL;
+	}
+
+	if (sys_slist_find(&bt_auth_info_cbs, &cb->node, NULL)) {
+		return -EALREADY;
 	}
 
 	sys_slist_append(&bt_auth_info_cbs, &cb->node);
