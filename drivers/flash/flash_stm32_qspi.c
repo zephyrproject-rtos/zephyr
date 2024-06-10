@@ -125,6 +125,11 @@ struct flash_stm32_qspi_data {
 	bool flag_access_32bit: 1;
 };
 
+static const QSPI_CommandTypeDef cmd_write_en = {
+	.Instruction = SPI_NOR_CMD_WREN,
+	.InstructionMode = QSPI_INSTRUCTION_1_LINE
+};
+
 static inline void qspi_lock_thread(const struct device *dev)
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
@@ -191,7 +196,7 @@ static inline int qspi_prepare_quad_program(const struct device *dev,
 /*
  * Send a command over QSPI bus.
  */
-static int qspi_send_cmd(const struct device *dev, QSPI_CommandTypeDef *cmd)
+static int qspi_send_cmd(const struct device *dev, const QSPI_CommandTypeDef *cmd)
 {
 	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
 	struct flash_stm32_qspi_data *dev_data = dev->data;
@@ -203,7 +208,7 @@ static int qspi_send_cmd(const struct device *dev, QSPI_CommandTypeDef *cmd)
 
 	dev_data->cmd_status = 0;
 
-	hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
+	hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, (QSPI_CommandTypeDef *)cmd);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
 		return -EIO;
@@ -546,11 +551,6 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-	QSPI_CommandTypeDef cmd_write_en = {
-		.Instruction = SPI_NOR_CMD_WREN,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-	};
-
 	QSPI_CommandTypeDef cmd_pp = {
 		.Instruction = SPI_NOR_CMD_PP,
 		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
@@ -639,11 +639,6 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 	if (size == 0) {
 		return 0;
 	}
-
-	QSPI_CommandTypeDef cmd_write_en = {
-		.Instruction = SPI_NOR_CMD_WREN,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-	};
 
 	QSPI_CommandTypeDef cmd_erase = {
 		.Instruction = 0,
@@ -919,10 +914,6 @@ static int qspi_program_addr_4b(const struct device *dev, bool write_enable)
 
 	/* Send write enable command, if required */
 	if (write_enable) {
-		QSPI_CommandTypeDef cmd_write_en = {
-			.Instruction = SPI_NOR_CMD_WREN,
-			.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-		};
 		ret = qspi_send_cmd(dev, &cmd_write_en);
 		if (ret != 0) {
 			return ret;
@@ -1029,11 +1020,6 @@ static int qspi_write_enable(const struct device *dev)
 {
 	uint8_t reg;
 	int ret;
-
-	QSPI_CommandTypeDef cmd_write_en = {
-		.Instruction = SPI_NOR_CMD_WREN,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-	};
 
 	ret = qspi_send_cmd(dev, &cmd_write_en);
 	if (ret) {
