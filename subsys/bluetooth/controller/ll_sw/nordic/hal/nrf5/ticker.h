@@ -44,11 +44,13 @@
 	)
 
 /* Macro to translate tick units to microseconds. */
-#define HAL_TICKER_TICKS_TO_US(x) \
+#define HAL_TICKER_TICKS_TO_US_64BIT(x) \
 	( \
-		((uint32_t)(((uint64_t)(x) * HAL_TICKER_CNTR_CLK_UNIT_FSEC) / \
-		 HAL_TICKER_FSEC_PER_USEC)) \
+		(((uint64_t)(x) * HAL_TICKER_CNTR_CLK_UNIT_FSEC) / \
+		 HAL_TICKER_FSEC_PER_USEC) \
 	)
+
+#define HAL_TICKER_TICKS_TO_US(x) ((uint32_t)HAL_TICKER_TICKS_TO_US_64BIT(x))
 
 /* Macro returning remainder in picoseconds (to fit in 32-bits) */
 #define HAL_TICKER_REMAINDER(x) \

@@ -775,7 +775,7 @@ static void isr_rx(void *param)
 						(cis_lll->rx.payload_count / cis_lll->rx.bn)) *
 					       cig_lll->iso_interval_us;
 			iso_meta->timestamp %=
-				HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
+				HAL_TICKER_TICKS_TO_US_64BIT(BIT64(HAL_TICKER_CNTR_MSBIT + 1U));
 			iso_meta->status = 0U;
 
 			ull_iso_pdu_rx_alloc();
