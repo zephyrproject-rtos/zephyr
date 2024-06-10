@@ -2555,6 +2555,19 @@ int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle)
 }
 #endif /* CONFIG_BT_EXT_ADV */
 
+#if defined(CONFIG_BT_PER_ADV_SYNC)
+int bt_hci_get_adv_sync_handle(const struct bt_le_per_adv_sync *sync, uint16_t *sync_handle)
+{
+	if (!atomic_test_bit(sync->flags, BT_PER_ADV_SYNC_CREATED)) {
+		return -EINVAL;
+	}
+
+	*sync_handle = sync->handle;
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)
 int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb)
 {

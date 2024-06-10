@@ -111,6 +111,15 @@ int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle);
  */
 int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle);
 
+/** @brief Get periodic advertising sync handle.
+ *
+ * @param sync Periodic advertising sync set.
+ * @param sync_handle Place to store the periodic advertising sync handle.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_hci_get_adv_sync_handle(const struct bt_le_per_adv_sync *sync, uint16_t *sync_handle);
+
 /** @brief Obtain the version string given a core version number.
  *
  * The core version of a controller can be obtained by issuing
