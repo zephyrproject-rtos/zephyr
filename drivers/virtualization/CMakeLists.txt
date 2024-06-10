@@ -5,6 +5,7 @@ zephyr_syscall_header(
 )
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 zephyr_library_sources_ifdef(CONFIG_IVSHMEM		virt_ivshmem.c)
 zephyr_library_sources_ifdef(CONFIG_IVSHMEM_SHELL	virt_ivshmem_shell.c)

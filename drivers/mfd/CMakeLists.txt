@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 zephyr_library_sources_ifdef(CONFIG_MFD_ADP5585 mfd_adp5585.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_MAX20335 mfd_max20335.c)

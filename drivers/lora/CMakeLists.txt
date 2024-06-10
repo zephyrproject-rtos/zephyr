@@ -8,6 +8,7 @@ if(TARGET loramac-node)
 else()
 	zephyr_library_named(loramac-node)
 endif()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 zephyr_library_sources_ifdef(CONFIG_LORA_SHELL shell.c)
 zephyr_library_sources_ifdef(CONFIG_HAS_SEMTECH_RADIO_DRIVERS hal_common.c)

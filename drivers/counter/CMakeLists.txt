@@ -8,6 +8,7 @@ zephyr_syscall_header_ifdef(
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/counter.h)
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 zephyr_library_sources_ifdef(CONFIG_TIMER_TMR_CMSDK_APB         timer_tmr_cmsdk_apb.c)
 zephyr_library_sources_ifdef(CONFIG_TIMER_DTMR_CMSDK_APB        timer_dtmr_cmsdk_apb.c)

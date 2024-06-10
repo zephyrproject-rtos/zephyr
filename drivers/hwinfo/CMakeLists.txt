@@ -3,6 +3,7 @@
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/hwinfo.h)
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE          hwinfo_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO             hwinfo_weak_impl.c)

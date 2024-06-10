@@ -3,6 +3,7 @@
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/peci.h)
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 zephyr_library_sources_ifdef(CONFIG_PECI_XEC	peci_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_PECI_ITE_IT8XXX2	peci_ite_it8xxx2.c)

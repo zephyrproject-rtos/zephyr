@@ -4,6 +4,7 @@
 if(CONFIG_DISK_DRIVERS)
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_FLASH flashdisk.c)
 zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_RAM ramdisk.c)
