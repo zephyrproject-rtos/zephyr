@@ -59,22 +59,27 @@
 			};
 		};
 
-		gpio0: gpio@0 {
+		gpio: gpio@4008c000 {
 			compatible = "nxp,lpc-gpio";
 			reg = <0x4008c000 0x2484>;
-			int-source = "pint";
-			gpio-controller;
-			#gpio-cells = <2>;
-			port = <0>;
-		};
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-		gpio1: gpio@1 {
-			compatible = "nxp,lpc-gpio";
-			reg = <0x4008C000 0x2484>;
-			int-source = "pint";
-			gpio-controller;
-			#gpio-cells = <2>;
-			port = <1>;
+			gpio0: gpio@0 {
+				compatible = "nxp,lpc-gpio-port";
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0>;
+			};
+
+			gpio1: gpio@1 {
+				compatible = "nxp,lpc-gpio-port";
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <1>;
+			};
 		};
 
 		pint: pint@40004000 {

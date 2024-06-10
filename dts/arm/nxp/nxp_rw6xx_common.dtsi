@@ -164,22 +164,27 @@
 		clk-divider = <1>;
 	};
 
-	hsgpio0: hsgpio@0 {
+	hsgpio: hsgpio@100000 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x4000>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <0>;
-		int-source = "pint";
-	};
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	hsgpio1: hsgpio@1 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x4000>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <1>;
-		int-source = "pint";
+		hsgpio0: gpio@0 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0>;
+			int-source = "pint";
+		};
+
+		hsgpio1: gpio@1 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <1>;
+			int-source = "pint";
+		};
 	};
 
 	usb_otg: usbotg@145000 {
