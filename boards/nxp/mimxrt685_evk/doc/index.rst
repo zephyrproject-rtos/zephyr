@@ -363,7 +363,7 @@ steps:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt600-crossover-mcu-with-arm-cortex-m33-and-dsp-cores:i.MX-RT600
 
 .. _i.MX RT685 Datasheet:
-   https://www.nxp.com/docs/en/data-sheet/DS-RT600.pdf
+   https://www.nxp.com/docs/en/data-sheet/RT600.pdf
 
 .. _i.MX RT685 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=UM11147
