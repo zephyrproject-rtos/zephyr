@@ -1,0 +1,33 @@
+# Copyright (c) 2019 NXP
+# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2024 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX32 I3C controller
+
+compatible: "adi,max32-i3c"
+
+include: [i3c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  i3c-od-scl-hz:
+    type: int
+    description: |
+      Open Drain Frequency for the I3C controller. When undefined, use
+      the controller default or as specified by the I3C specification.
+
+  disable-open-drain-high-pp:
+    type: boolean
+    description: |
+      If false, open drain high time is 1 PPBAUD count, which is short
+      high and long low.
+      If true, open drain high time is same as ODBAUD so that open drain
+      clock is 50% duty cycle.
+      Default is false.
