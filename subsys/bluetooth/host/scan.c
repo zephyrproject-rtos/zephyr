@@ -1588,7 +1588,9 @@ int bt_le_scan_stop(void)
 
 void bt_le_scan_cb_register(struct bt_le_scan_cb *cb)
 {
-	sys_slist_append(&scan_cbs, &cb->node);
+	if (!sys_slist_find(&scan_cbs, &cb->node, NULL)) {
+		sys_slist_append(&scan_cbs, &cb->node);
+	}
 }
 
 void bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb)
@@ -1833,7 +1835,9 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 
 void bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb)
 {
-	sys_slist_append(&pa_sync_cbs, &cb->node);
+	if (!sys_slist_find(&pa_sync_cbs, &cb->node, NULL)) {
+		sys_slist_append(&pa_sync_cbs, &cb->node);
+	}
 }
 
 static int bt_le_set_per_adv_recv_enable(
