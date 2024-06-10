@@ -61,8 +61,6 @@ void i2c_rtio_init(struct i2c_rtio *ctx, const struct device *dev)
 	ctx->dt_spec.bus = dev;
 	ctx->iodev.data = &ctx->dt_spec;
 	ctx->iodev.api = &i2c_iodev_api;
-	/* TODO drop the builtin submission queue? */
-	mpsc_init(&ctx->iodev.iodev_sq);
 }
 
 /**
