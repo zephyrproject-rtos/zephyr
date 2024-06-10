@@ -925,14 +925,18 @@ ZTEST(test_rx_unframed, test_rx_time_wrapping)
 
 	/* Maximum negative difference from 0 */
 	time_now = 0;
-	time_diff = (time_wrapping_point == UINT32_MAX ? INT32_MIN : -ISOAL_TIME_WRAPPING_POINT_US);
+	time_diff = (time_wrapping_point == UINT32_MAX) ?
+		    INT32_MIN :
+		    -((int64_t)ISOAL_TIME_WRAPPING_POINT_US);
 	expected_result = ISOAL_TIME_WRAPPING_POINT_US + time_diff + 1;
 	result = isoal_get_wrapped_time_test(time_now, time_diff);
 	zassert_equal(result, expected_result, "%lu != %lu", result, expected_result);
 
 	/* Maximum negative difference from maximum time */
 	time_now = ISOAL_TIME_WRAPPING_POINT_US;
-	time_diff = (time_wrapping_point == UINT32_MAX ? INT32_MIN : -ISOAL_TIME_WRAPPING_POINT_US);
+	time_diff = (time_wrapping_point == UINT32_MAX) ?
+		    INT32_MIN :
+		    -((int64_t)ISOAL_TIME_WRAPPING_POINT_US);
 	expected_result = ISOAL_TIME_WRAPPING_POINT_US + time_diff;
 	result = isoal_get_wrapped_time_test(time_now, time_diff);
 	zassert_equal(result, expected_result, "%lu != %lu", result, expected_result);
