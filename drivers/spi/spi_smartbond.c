@@ -71,7 +71,6 @@ struct spi_smartbond_data {
 	uint8_t dfs;
 
 #if defined(CONFIG_PM_DEVICE)
-	ATOMIC_DEFINE(pm_policy_state_flag, 1);
 	uint32_t spi_ctrl_reg;
 #endif
 
@@ -225,28 +224,26 @@ static inline int spi_smartbond_set_word_size(const struct spi_smartbond_cfg *cf
 	return 0;
 }
 
-static inline void spi_smartbond_pm_policy_state_lock_get(struct spi_smartbond_data *data)
+static inline void spi_smartbond_pm_policy_state_lock_get(const struct device *dev)
 {
 #if defined(CONFIG_PM_DEVICE)
-	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
-		/*
-		 * Prevent the SoC from entering the normal sleep state as PDC does not support
-		 * waking up the application core following SPI events.
-		 */
-		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+	/*
+	 * Prevent the SoC from entering the normal sleep state as PDC does not support
+	 * waking up the application core following SPI events.
+	 */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_device_runtime_get(dev);
 #endif
 }
 
-static inline void spi_smartbond_pm_policy_state_lock_put(struct spi_smartbond_data *data)
+static inline void spi_smartbond_pm_policy_state_lock_put(const struct device *dev)
 {
 #if defined(CONFIG_PM_DEVICE)
-	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0) == 1) {
-		/*
-		 * Allow the SoC to enter the normal sleep state once SPI transactions are done.
-		 */
-		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+	pm_device_runtime_put(dev);
+	/*
+	 * Allow the SoC to enter the normal sleep state once SPI transactions are done.
+	 */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 #endif
 }
 
@@ -604,10 +601,10 @@ static int spi_smartbond_transceive_async(const struct device *dev,
 	int rc;
 
 	spi_context_lock(ctx, true, cb, userdata, spi_cfg);
+	spi_smartbond_pm_policy_state_lock_get(dev);
 
 	rc = spi_smartbond_configure(cfg, data, spi_cfg);
 	if (rc == 0) {
-		spi_smartbond_pm_policy_state_lock_get(data);
 		spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs);
 		spi_context_cs_control(ctx, true);
 
@@ -1054,9 +1051,8 @@ static int spi_smartbond_transceive(const struct device *dev, const struct spi_c
 	struct spi_context *ctx = &data->ctx;
 	int rc;
 
-	spi_smartbond_pm_policy_state_lock_get(data);
-
 	spi_context_lock(&data->ctx, false, NULL, NULL, spi_cfg);
+	spi_smartbond_pm_policy_state_lock_get(dev);
 
 	rc = spi_smartbond_configure(cfg, data, spi_cfg);
 	if (rc == 0) {
@@ -1099,7 +1095,7 @@ static int spi_smartbond_transceive(const struct device *dev, const struct spi_c
 	}
 	spi_context_release(&data->ctx, rc);
 
-	spi_smartbond_pm_policy_state_lock_put(data);
+	spi_smartbond_pm_policy_state_lock_put(dev);
 
 	return rc;
 }
