@@ -1,0 +1,9 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_XILINX_AXI_ENET
+	bool "Xilinx AXI Ethernet MDIO driver"
+	default y
+	depends on DT_HAS_XLNX_AXI_ETHERNET_1_00_A_MDIO_ENABLED
+	help
+	  Enable Xilinx AXI Ethernet MDIO bus driver.
