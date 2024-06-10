@@ -35,9 +35,11 @@ static uint32_t pipe_test_events(struct modem_pipe *pipe, uint32_t events)
 	return k_event_test(&pipe->event, events);
 }
 
-static uint32_t pipe_await_events(struct modem_pipe *pipe, uint32_t events)
+static uint32_t pipe_await_events(struct modem_pipe *pipe,
+				  uint32_t events,
+				  k_timeout_t timeout)
 {
-	return k_event_wait(&pipe->event, events, false, K_MSEC(10000));
+	return k_event_wait(&pipe->event, events, false, timeout);
 }
 
 static void pipe_post_events(struct modem_pipe *pipe, uint32_t events)
@@ -88,7 +90,7 @@ void modem_pipe_init(struct modem_pipe *pipe, void *data, const struct modem_pip
 	k_event_init(&pipe->event);
 }
 
-int modem_pipe_open(struct modem_pipe *pipe)
+int modem_pipe_open(struct modem_pipe *pipe, k_timeout_t timeout)
 {
 	int ret;
 
@@ -101,7 +103,7 @@ int modem_pipe_open(struct modem_pipe *pipe)
 		return ret;
 	}
 
-	if (!pipe_await_events(pipe, PIPE_EVENT_OPENED_BIT)) {
+	if (!pipe_await_events(pipe, PIPE_EVENT_OPENED_BIT, timeout)) {
 		return -EAGAIN;
 	}
 
@@ -156,7 +158,7 @@ void modem_pipe_release(struct modem_pipe *pipe)
 	pipe_set_callback(pipe, NULL, NULL);
 }
 
-int modem_pipe_close(struct modem_pipe *pipe)
+int modem_pipe_close(struct modem_pipe *pipe, k_timeout_t timeout)
 {
 	int ret;
 
@@ -169,7 +171,7 @@ int modem_pipe_close(struct modem_pipe *pipe)
 		return ret;
 	}
 
-	if (!pipe_await_events(pipe, PIPE_EVENT_CLOSED_BIT)) {
+	if (!pipe_await_events(pipe, PIPE_EVENT_CLOSED_BIT, timeout)) {
 		return -EAGAIN;
 	}
 

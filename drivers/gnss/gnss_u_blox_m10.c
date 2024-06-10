@@ -92,14 +92,14 @@ static int ubx_m10_resume(const struct device *dev)
 	struct ubx_m10_data *data = dev->data;
 	int ret;
 
-	ret = modem_pipe_open(data->uart_pipe);
+	ret = modem_pipe_open(data->uart_pipe, K_SECONDS(10));
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = modem_chat_attach(&data->chat, data->uart_pipe);
 	if (ret < 0) {
-		(void)modem_pipe_close(data->uart_pipe);
+		(void)modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 		return ret;
 	}
 
@@ -110,7 +110,7 @@ static int ubx_m10_turn_off(const struct device *dev)
 {
 	struct ubx_m10_data *data = dev->data;
 
-	return modem_pipe_close(data->uart_pipe);
+	return modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 }
 
 static int ubx_m10_init_nmea0183_match(const struct device *dev)
@@ -203,7 +203,7 @@ static int ubx_m10_modem_module_change(const struct device *dev, bool change_fro
 	}
 
 	if (ret < 0) {
-		(void)modem_pipe_close(data->uart_pipe);
+		(void)modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 	}
 
 	return ret;
