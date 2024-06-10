@@ -196,7 +196,7 @@ ZTEST_USER(uart_async_single_read, test_single_read)
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
 		      "RX_RDY not expected at this point");
 
-	uart_tx(uart_dev, tx_buf, 5, 100 * USEC_PER_MSEC);
+	zassert_equal(uart_tx(uart_dev, tx_buf, 5, 100 * USEC_PER_MSEC), 0);
 	sent_bytes += 5;
 
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
