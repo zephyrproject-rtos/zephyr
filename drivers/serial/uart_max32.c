@@ -436,9 +436,9 @@ static const struct uart_driver_api uart_max32_driver_api = {
 		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                      \
 		.perclk.clk_src =                                                                  \
 			DT_INST_PROP_OR(_num, clock_source, ADI_MAX32_PRPH_CLK_SRC_PCLK),          \
-		.uart_conf.baudrate = DT_INST_PROP(_num, current_speed),                           \
+		.uart_conf.baudrate = DT_INST_PROP_OR(_num, current_speed, 115200),                \
 		.uart_conf.parity = DT_INST_ENUM_IDX_OR(_num, parity, UART_CFG_PARITY_NONE),       \
-		.uart_conf.data_bits = DT_INST_ENUM_IDX(_num, data_bits),                          \
+		.uart_conf.data_bits = DT_INST_ENUM_IDX_OR(_num, data_bits, UART_CFG_DATA_BITS_8), \
 		.uart_conf.stop_bits = DT_INST_ENUM_IDX_OR(_num, stop_bits, UART_CFG_STOP_BITS_1), \
 		.uart_conf.flow_ctrl =                                                             \
 			DT_INST_PROP_OR(_num, hw_flow_control, UART_CFG_FLOW_CTRL_NONE),           \
