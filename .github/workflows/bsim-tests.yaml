@@ -191,21 +191,27 @@ jobs:
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_uart_test_results_file} \
           SEARCH_PATH=tests/bsim/drivers/uart/ tests/bsim/run_parallel.sh
 
-      - name: Upload Test Results
+      - name: Merge Test Results
+        run: |
+          pip3 install junitparser junit2html
+          junitparser merge ./bsim_*/*bsim_results.*.xml ./twister-out/twister.xml junit.xml
+          junit2html junit.xml junit.html
+
+      - name: Upload Unit Test Results in HTML
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bsim-test-results
+          name: HTML Unit Test Results
+          if-no-files-found: ignore
           path: |
-            ./bsim_bt/52_bsim_results.xml
-            ./bsim_bt/53_bsim_results.xml
-            ./bsim_bt/53_bsim_split_results.xml
-            ./bsim_net/52_bsim_results.xml
-            ./bsim_uart/uart_bsim_results.xml
-            ./twister-out/twister.xml
-            ./twister-out/twister.json
-            ${{ github.event_path }}
-          if-no-files-found: warn
+            junit.html
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: Bsim Test Results
+          files: "junit.xml"
+          comment_mode: off
 
       - name: Upload Event Details
         if: always()
