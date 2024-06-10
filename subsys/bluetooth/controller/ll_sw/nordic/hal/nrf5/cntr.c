@@ -51,8 +51,9 @@ void cntr_init(void)
 			    GRTC_CLKCFG_CLKFASTDIV_Msk);
 #endif /* CONFIG_BT_CTLR_NRF_GRTC_START */
 
-	NRF_GRTC->EVENTS_COMPARE[10] = 0U;
-	NRF_GRTC->INTENSET1 = GRTC_INTENSET1_COMPARE10_Msk;
+	NRF_GRTC->EVENTS_COMPARE[HAL_CNTR_GRTC_CC_IDX_TICKER] = 0U;
+
+	NRF_GRTC->INTENSET1 = HAL_CNTR_GRTC_INTENSET_COMPARE_TICKER_Msk;
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC_START)
 	NRF_GRTC->MODE = ((GRTC_MODE_SYSCOUNTEREN_Enabled <<
@@ -115,7 +116,7 @@ uint32_t cntr_stop(void)
 uint32_t cntr_cnt_get(void)
 {
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
-	uint32_t l, h, ho;
+	uint32_t cntr_l, cntr_h, cntr_h_overflow;
 
 	/* NOTE: For a 32-bit implementation, L value is read after H
 	 *       to avoid another L value after SYSCOUNTER gets ready.
@@ -123,13 +124,13 @@ uint32_t cntr_cnt_get(void)
 	 *       ensure that L value does not change when H value is read.
 	 */
 	do {
-		h = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
-		l = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERL;
-		ho = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
-	} while ((h & GRTC_SYSCOUNTER_SYSCOUNTERH_BUSY_Msk) ||
-		 (ho & GRTC_SYSCOUNTER_SYSCOUNTERH_OVERFLOW_Msk));
+		cntr_h = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
+		cntr_l = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERL;
+		cntr_h_overflow = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
+	} while ((cntr_h & GRTC_SYSCOUNTER_SYSCOUNTERH_BUSY_Msk) ||
+		 (cntr_h_overflow & GRTC_SYSCOUNTER_SYSCOUNTERH_OVERFLOW_Msk));
 
-	return l;
+	return cntr_l;
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	return nrf_rtc_counter_get(NRF_RTC);
 #endif /* !CONFIG_BT_CTLR_NRF_GRTC */
@@ -138,7 +139,7 @@ uint32_t cntr_cnt_get(void)
 void cntr_cmp_set(uint8_t cmp, uint32_t value)
 {
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
-	uint32_t l, h, ho, stale;
+	uint32_t cntr_l, cntr_h, cntr_h_overflow, stale;
 
 	/* NOTE: We are going to use TASKS_CAPTURE to read current
 	 *       SYSCOUNTER H and L, so that COMPARE registers can be set
@@ -147,17 +148,17 @@ void cntr_cmp_set(uint8_t cmp, uint32_t value)
 
 	/* Read current syscounter value */
 	do {
-		h = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
-		l = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERL;
-		ho = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
-	} while ((h & GRTC_SYSCOUNTER_SYSCOUNTERH_BUSY_Msk) ||
-		 (ho & GRTC_SYSCOUNTER_SYSCOUNTERH_OVERFLOW_Msk));
+		cntr_h = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
+		cntr_l = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERL;
+		cntr_h_overflow = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
+	} while ((cntr_h & GRTC_SYSCOUNTER_SYSCOUNTERH_BUSY_Msk) ||
+		 (cntr_h_overflow & GRTC_SYSCOUNTER_SYSCOUNTERH_OVERFLOW_Msk));
 
 	/* Disable capture/compare */
 	NRF_GRTC->CC[cmp].CCEN = 0U;
 
 	/* Set a stale value in capture value */
-	stale = l - 1U;
+	stale = cntr_l - 1U;
 	NRF_GRTC->CC[cmp].CCL = stale;
 
 	/* Trigger a capture */
@@ -165,22 +166,22 @@ void cntr_cmp_set(uint8_t cmp, uint32_t value)
 
 	/* Wait to get a new L value */
 	do {
-		l = NRF_GRTC->CC[cmp].CCL;
-	} while (l == stale);
+		cntr_l = NRF_GRTC->CC[cmp].CCL;
+	} while (cntr_l == stale);
 
 	/* Read H value */
-	h = NRF_GRTC->CC[cmp].CCH;
+	cntr_h = NRF_GRTC->CC[cmp].CCH;
 
-	/* NOTE: HERE, we have h and l in sync. */
+	/* NOTE: HERE, we have cntr_h and cntr_l in sync. */
 
 	/* Handle rollover between current and expected value */
-	if (value < l) {
-		h++;
+	if (value < cntr_l) {
+		cntr_h++;
 	}
 
 	/* Set compare register values */
 	NRF_GRTC->CC[cmp].CCL = value;
-	NRF_GRTC->CC[cmp].CCH = h & GRTC_CC_CCH_CCH_Msk;
+	NRF_GRTC->CC[cmp].CCH = cntr_h & GRTC_CC_CCH_CCH_Msk;
 
 	/* Enable compare */
 	NRF_GRTC->CC[cmp].CCEN = 1U;

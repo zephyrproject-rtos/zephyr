@@ -101,6 +101,26 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 static inline void hal_event_timer_start_ppi_config(void)
 {
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	/* Publish GRTC compare */
+	NRF_GRTC->PUBLISH_COMPARE[HAL_CNTR_GRTC_CC_IDX_RADIO] =
+		((HAL_EVENT_TIMER_START_PPI <<
+		  GRTC_PUBLISH_COMPARE_CHIDX_Pos) &
+		 GRTC_PUBLISH_COMPARE_CHIDX_Msk) |
+		((GRTC_PUBLISH_COMPARE_EN_Enabled <<
+		  GRTC_PUBLISH_COMPARE_EN_Pos) &
+		 GRTC_PUBLISH_COMPARE_EN_Msk);
+
+	/* Enable same DPPI in Global domain */
+	NRF_DPPIC20->CHENSET = BIT(HAL_EVENT_TIMER_START_PPI);
+
+	/* Setup PPIB send subscribe */
+	NRF_PPIB21->SUBSCRIBE_SEND[HAL_EVENT_TIMER_START_PPI] =
+		BIT(HAL_EVENT_TIMER_START_PPI) | PPIB_SUBSCRIBE_SEND_EN_Msk;
+
+	/* Setup PPIB receive publish */
+	NRF_PPIB11->PUBLISH_RECEIVE[HAL_EVENT_TIMER_START_PPI] =
+		BIT(HAL_EVENT_TIMER_START_PPI) | PPIB_PUBLISH_RECEIVE_EN_Msk;
+
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_publish_set(NRF_RTC, NRF_RTC_EVENT_COMPARE_2, HAL_EVENT_TIMER_START_PPI);
 #endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
