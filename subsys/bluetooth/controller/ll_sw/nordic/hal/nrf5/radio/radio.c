@@ -1175,7 +1175,12 @@ uint32_t radio_bc_has_match(void)
 
 void radio_tmr_status_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+#define GRTC_CC_IDX_RADIO 11U
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCEN = 0U;
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_event_disable(NRF_RTC, RTC_EVTENCLR_COMPARE2_Msk);
+#endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 	hal_trigger_crypt_ppi_disable();
@@ -1214,7 +1219,11 @@ void radio_tmr_status_reset(void)
 
 void radio_tmr_tx_status_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCEN = 0U;
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_event_disable(NRF_RTC, RTC_EVTENCLR_COMPARE2_Msk);
+#endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 	hal_trigger_crypt_ppi_disable();
@@ -1257,7 +1266,11 @@ void radio_tmr_tx_status_reset(void)
 
 void radio_tmr_rx_status_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCEN = 0U;
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_event_disable(NRF_RTC, RTC_EVTENCLR_COMPARE2_Msk);
+#endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 	hal_trigger_crypt_ppi_disable();
@@ -1370,8 +1383,81 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 	nrf_timer_cc_set(EVENT_TIMER, 0, remainder);
 
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	uint32_t l, h, ho, stale;
+
+	/* Disable capture/compare */
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCEN = 0U;
+
+	/* Publish GRTC compare */
+	NRF_GRTC->PUBLISH_COMPARE[GRTC_CC_IDX_RADIO] =
+		((HAL_EVENT_TIMER_START_PPI <<
+		  GRTC_PUBLISH_COMPARE_CHIDX_Pos) &
+		 GRTC_PUBLISH_COMPARE_CHIDX_Msk) |
+		((GRTC_PUBLISH_COMPARE_EN_Enabled <<
+		  GRTC_PUBLISH_COMPARE_EN_Pos) &
+		 GRTC_PUBLISH_COMPARE_EN_Msk);
+
+	/* Enable same DPPI in Global domain */
+	NRF_DPPIC20->CHENSET = BIT(HAL_EVENT_TIMER_START_PPI);
+
+	/* Setup PPIB send subscribe */
+	NRF_PPIB21->SUBSCRIBE_SEND[HAL_EVENT_TIMER_START_PPI] =
+		BIT(HAL_EVENT_TIMER_START_PPI) | PPIB_SUBSCRIBE_SEND_EN_Msk;
+
+	/* Setup PPIB receive publish */
+	NRF_PPIB11->PUBLISH_RECEIVE[HAL_EVENT_TIMER_START_PPI] =
+		BIT(HAL_EVENT_TIMER_START_PPI) | PPIB_PUBLISH_RECEIVE_EN_Msk;
+
+	/* NOTE: We are going to use TASKS_CAPTURE to read current
+	 *       SYSCOUNTER H and L, so that COMPARE registers can be set
+	 *       considering that we need to set H compare value too.
+	 */
+
+	/* Read current syscounter value */
+	do {
+		h = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
+		l = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERL;
+		ho = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
+	} while ((h & GRTC_SYSCOUNTER_SYSCOUNTERH_BUSY_Msk) ||
+		 (ho & GRTC_SYSCOUNTER_SYSCOUNTERH_OVERFLOW_Msk));
+
+	/* Set a stale value in capture value */
+	stale = l - 1U;
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCL = stale;
+
+	/* Trigger a capture */
+	NRF_GRTC->TASKS_CAPTURE[GRTC_CC_IDX_RADIO] = 1U;
+
+	/* Wait to get a new L value */
+	do {
+		l = NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCL;
+	} while (l == stale);
+
+	/* Read H value */
+	h = NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCH;
+
+	/* NOTE: HERE, we have h and l in sync. */
+
+	/* Handle rollover between current and expected value */
+	if (ticks_start < l) {
+		h++;
+	}
+
+	/* Clear compare event, if any */
+	NRF_GRTC->EVENTS_COMPARE[GRTC_CC_IDX_RADIO] = 0U;
+
+	/* Set compare register values */
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCL = ticks_start;
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCH = h & GRTC_CC_CCH_CCH_Msk;
+
+	/* Enable compare */
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCEN = 1U;
+
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_cc_set(NRF_RTC, 2, ticks_start);
 	nrf_rtc_event_enable(NRF_RTC, RTC_EVTENSET_COMPARE2_Msk);
+#endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 	hal_event_timer_start_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_EVENT_TIMER_START_PPI));
@@ -1410,7 +1496,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	return remainder;
 }
 
-uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
+uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 {
 	uint32_t remainder_us;
 
@@ -1437,8 +1523,81 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
 
 	nrf_timer_cc_set(EVENT_TIMER, 0, remainder_us);
 
-	nrf_rtc_cc_set(NRF_RTC, 2, tick);
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	uint32_t l, h, ho, stale;
+
+	/* Disable capture/compare */
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCEN = 0U;
+
+	/* Publish GRTC compare */
+	NRF_GRTC->PUBLISH_COMPARE[GRTC_CC_IDX_RADIO] =
+		((HAL_EVENT_TIMER_START_PPI <<
+		  GRTC_PUBLISH_COMPARE_CHIDX_Pos) &
+		 GRTC_PUBLISH_COMPARE_CHIDX_Msk) |
+		((GRTC_PUBLISH_COMPARE_EN_Enabled <<
+		  GRTC_PUBLISH_COMPARE_EN_Pos) &
+		 GRTC_PUBLISH_COMPARE_EN_Msk);
+
+	/* Enable same DPPI in Global domain */
+	NRF_DPPIC20->CHENSET = BIT(HAL_EVENT_TIMER_START_PPI);
+
+	/* Setup PPIB send subscribe */
+	NRF_PPIB21->SUBSCRIBE_SEND[HAL_EVENT_TIMER_START_PPI] =
+		BIT(HAL_EVENT_TIMER_START_PPI) | PPIB_SUBSCRIBE_SEND_EN_Msk;
+
+	/* Setup PPIB receive publish */
+	NRF_PPIB11->PUBLISH_RECEIVE[HAL_EVENT_TIMER_START_PPI] =
+		BIT(HAL_EVENT_TIMER_START_PPI) | PPIB_PUBLISH_RECEIVE_EN_Msk;
+
+	/* NOTE: We are going to use TASKS_CAPTURE to read current
+	 *       SYSCOUNTER H and L, so that COMPARE registers can be set
+	 *       considering that we need to set H compare value too.
+	 */
+
+	/* Read current syscounter value */
+	do {
+		h = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
+		l = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERL;
+		ho = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
+	} while ((h & GRTC_SYSCOUNTER_SYSCOUNTERH_BUSY_Msk) ||
+		 (ho & GRTC_SYSCOUNTER_SYSCOUNTERH_OVERFLOW_Msk));
+
+	/* Set a stale value in capture value */
+	stale = l - 1U;
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCL = stale;
+
+	/* Trigger a capture */
+	NRF_GRTC->TASKS_CAPTURE[GRTC_CC_IDX_RADIO] = 1U;
+
+	/* Wait to get a new L value */
+	do {
+		l = NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCL;
+	} while (l == stale);
+
+	/* Read H value */
+	h = NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCH;
+
+	/* NOTE: HERE, we have h and l in sync. */
+
+	/* Handle rollover between current and expected value */
+	if (ticks_start < l) {
+		h++;
+	}
+
+	/* Clear compare event, if any */
+	NRF_GRTC->EVENTS_COMPARE[GRTC_CC_IDX_RADIO] = 0U;
+
+	/* Set compare register values */
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCL = ticks_start;
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCH = h & GRTC_CC_CCH_CCH_Msk;
+
+	/* Enable compare */
+	NRF_GRTC->CC[GRTC_CC_IDX_RADIO].CCEN = 1U;
+
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
+	nrf_rtc_cc_set(NRF_RTC, 2, ticks_start);
 	nrf_rtc_event_enable(NRF_RTC, RTC_EVTENSET_COMPARE2_Msk);
+#endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 	hal_event_timer_start_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_EVENT_TIMER_START_PPI));
@@ -1549,7 +1708,20 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 
 uint32_t radio_tmr_start_get(void)
 {
-	return nrf_rtc_cc_get(NRF_RTC, 2);
+	uint32_t start_ticks;
+
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	uint64_t cc;
+
+	cc = nrf_grtc_sys_counter_cc_get(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
+
+	start_ticks = cc & 0xffffffffUL;
+
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
+	start_ticks = nrf_rtc_cc_get(NRF_RTC, 2);
+#endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
+
+	return start_ticks;
 }
 
 void radio_tmr_stop(void)
