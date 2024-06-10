@@ -742,4 +742,6 @@ void sys_trace_k_event_init(struct k_event *event);
 #define sys_trace_sys_init_enter(...)
 #define sys_trace_sys_init_exit(...)
 
+#define sys_trace_named_event(name, arg0, arg1)
+
 #endif /* ZEPHYR_TRACE_TEST_H */
