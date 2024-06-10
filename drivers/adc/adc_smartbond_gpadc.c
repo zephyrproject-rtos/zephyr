@@ -41,10 +41,6 @@ struct adc_smartbond_data {
 	uint8_t sequence_channel_count;
 	/* Index in buffer to store current value to */
 	uint8_t result_index;
-#if defined(CONFIG_PM_DEVICE)
-	/* Flag to prevent sleep */
-	ATOMIC_DEFINE(pm_policy_state_flag, 1);
-#endif
 };
 
 #define SMARTBOND_ADC_CHANNEL_COUNT	8
@@ -115,19 +111,12 @@ static int adc_smartbond_channel_setup(const struct device *dev,
 static inline void gpadc_smartbond_pm_policy_state_lock_get(const struct device *dev,
 					      struct adc_smartbond_data *data)
 {
-
 #if defined(CONFIG_PM_DEVICE)
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	pm_device_runtime_get(dev);
-#endif
-
-	if (!atomic_test_and_set_bit(data->pm_policy_state_flag, 0)) {
-		/*
-		 * Prevent the SoC from entering the normal sleep state.
-		 */
-		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
-
+	/*
+	 * Prevent the SoC from entering the normal sleep state.
+	 */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 #endif
 }
 
@@ -135,16 +124,11 @@ static inline void gpadc_smartbond_pm_policy_state_lock_put(const struct device 
 					      struct adc_smartbond_data *data)
 {
 #if defined(CONFIG_PM_DEVICE)
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
+	/*
+	 * Allow the SoC to enter the normal sleep state once GPADC is done.
+	 */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	pm_device_runtime_put(dev);
-#endif
-
-	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0)) {
-		/*
-		 * Allow the SoC to enter the normal sleep state once GPADC is done.
-		 */
-		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
 #endif
 }
 
@@ -259,8 +243,8 @@ static void adc_smartbond_isr(const struct device *dev)
 	data->channel_read_mask ^= 1 << current_channel;
 
 	if (data->channel_read_mask == 0) {
-		adc_context_on_sampling_done(&data->ctx, dev);
 		gpadc_smartbond_pm_policy_state_lock_put(dev, data);
+		adc_context_on_sampling_done(&data->ctx, dev);
 	} else {
 		adc_context_start_sampling(&data->ctx);
 	}
@@ -275,8 +259,8 @@ static int adc_smartbond_read(const struct device *dev,
 	int error;
 	struct adc_smartbond_data *data = dev->data;
 
-	gpadc_smartbond_pm_policy_state_lock_get(dev, data);
 	adc_context_lock(&data->ctx, false, NULL);
+	gpadc_smartbond_pm_policy_state_lock_get(dev, data);
 	error = start_read(dev, sequence);
 	adc_context_release(&data->ctx, error);
 
@@ -292,8 +276,8 @@ static int adc_smartbond_read_async(const struct device *dev,
 	struct adc_smartbond_data *data = dev->data;
 	int error;
 
-	gpadc_smartbond_pm_policy_state_lock_get(dev, data);
 	adc_context_lock(&data->ctx, true, async);
+	gpadc_smartbond_pm_policy_state_lock_get(dev, data);
 	error = start_read(dev, sequence);
 	adc_context_release(&data->ctx, error);
 

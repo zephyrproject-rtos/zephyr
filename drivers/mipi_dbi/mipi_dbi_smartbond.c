@@ -13,7 +13,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
 #include <DA1469xAB.h>
 #include <zephyr/drivers/clock_control.h>
@@ -293,7 +292,7 @@ static int mipi_dbi_smartbond_command_write(const struct device *dev,
 				size_t len)
 {
 	struct mipi_dbi_smartbond_data *data = dev->data;
-	int ret;
+	int ret = 0;
 	lcdc_smartbond_mipi_dbi_cfg mipi_dbi_cfg;
 
 	k_sem_take(&data->device_sem, K_FOREVER);
@@ -307,8 +306,7 @@ static int mipi_dbi_smartbond_command_write(const struct device *dev,
 	lcdc_smartbond_mipi_dbi_translation(dbi_config, &mipi_dbi_cfg, PIXEL_FORMAT_RGB_565);
 	ret = da1469x_lcdc_mipi_dbi_interface_configure(&mipi_dbi_cfg);
 	if (ret < 0) {
-		k_sem_give(&data->device_sem);
-		return ret;
+		goto finish;
 	}
 
 	/* Command and accompanied data should be transmitted via the DBIB interface */
@@ -319,11 +317,12 @@ static int mipi_dbi_smartbond_command_write(const struct device *dev,
 		da1469x_lcdc_send_cmd_data(false, data_buf, len);
 	}
 
+finish:
 	mipi_dbi_smartbond_pm_policy_state_lock_put();
 
 	k_sem_give(&data->device_sem);
 
-	return 0;
+	return ret;
 }
 
 static int mipi_dbi_smartbond_write_display(const struct device *dev,
@@ -466,7 +465,7 @@ static int mipi_dbi_smartbond_resume(const struct device *dev)
 	return mipi_dbi_smartbond_configure(dev);
 }
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 static int mipi_dbi_smartbond_suspend(const struct device *dev)
 {
 	const struct mipi_dbi_smartbond_config *config = dev->config;
@@ -532,15 +531,7 @@ static int mipi_dbi_smartbond_init(const struct device *dev)
 	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_mipi_dbi_isr,
 						DEVICE_DT_INST_GET(0), 0);
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	/* Make sure device state is marked as suspended */
-	pm_device_init_suspended(dev);
-
-	ret = pm_device_runtime_enable(dev);
-#else
-	/* Resme if either PM is not used at all or if PM without runtime is used. */
 	ret = mipi_dbi_smartbond_resume(dev);
-#endif
 
 	return ret;
 }

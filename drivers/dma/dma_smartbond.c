@@ -15,7 +15,6 @@
 #include <da1469x_otp.h>
 #include <zephyr/drivers/dma/dma_smartbond.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/logging/log.h>
 
@@ -158,7 +157,7 @@ struct dma_smartbond_data {
 
 	ATOMIC_DEFINE(channels_atomic, DMA_CHANNELS_COUNT);
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 	ATOMIC_DEFINE(pm_policy_state_flag, 1);
 #endif
 
@@ -185,7 +184,7 @@ static bool dma_smartbond_is_dma_active(void)
 
 static inline void dma_smartbond_pm_policy_state_lock_get(const struct device *dev)
 {
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 	struct dma_smartbond_data *data = dev->data;
 
 	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
@@ -196,7 +195,7 @@ static inline void dma_smartbond_pm_policy_state_lock_get(const struct device *d
 
 static inline void dma_smartbond_pm_policy_state_lock_put(const struct device *dev)
 {
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 	struct dma_smartbond_data *data = dev->data;
 
 	/* Make PM lock put has a matched PM lock get invocation */
@@ -965,7 +964,7 @@ static void smartbond_dma_isr(const void *arg)
 	}
 }
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 static bool dma_smartbond_is_sleep_allowed(const struct device *dev)
 {
 	struct dma_smartbond_data *data = dev->data;
