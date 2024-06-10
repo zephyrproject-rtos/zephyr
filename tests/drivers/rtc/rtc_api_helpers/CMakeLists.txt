@@ -10,6 +10,5 @@ project(rtc_api)
 target_sources(app PRIVATE
 	src/main.c
 	src/test_rtc_time_to_tm.c
+	src/test_rtc_calibration_from_frequency.c
 )
-
-target_include_directories(app PRIVATE inc)
