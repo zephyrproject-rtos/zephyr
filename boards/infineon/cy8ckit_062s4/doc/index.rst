@@ -50,7 +50,7 @@ The board configuration supports the following hardware features:
 +-----------+------------+-----------------------+
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/cypress/cy8ckit_062s4/cy8ckit_062s4_defconfig`.
+:zephyr_file:`boards/infineon/cy8ckit_062s4/cy8ckit_062s4_defconfig`.
 
 Clock Configuration
 ===================
