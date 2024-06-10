@@ -14,6 +14,7 @@
  */
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <soc.h>
 
 #include "cy_syslib.h"
 #include "cy_sysclk.h"
@@ -345,6 +346,8 @@ static const struct uart_driver_api uart_psoc6_driver_api = {
 
 #define CY_PSOC6_UART_INIT(n)							\
 	PINCTRL_DT_INST_DEFINE(n);					        \
+	CY_PSOC6_UART_DECL_DATA(n)						\
+	CY_PSOC6_UART_IRQ_FUNC(n)						\
 	static const struct cypress_psoc6_config cy_psoc6_uart##n##_config = {	\
 		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),			\
 		.periph_id = DT_INST_PROP(n, peripheral_id),			\
