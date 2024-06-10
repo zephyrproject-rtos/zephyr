@@ -24,7 +24,7 @@ K_SEM_DEFINE(rx_buf_coherency, 0, 255);
 K_SEM_DEFINE(rx_buf_released, 0, 1);
 K_SEM_DEFINE(rx_disabled, 0, 1);
 
-ZTEST_BMEM volatile bool failed_in_isr;
+ZTEST_DMEM volatile bool failed_in_isr;
 static ZTEST_BMEM const struct device *const uart_dev =
 	DEVICE_DT_GET(UART_NODE);
 
@@ -100,7 +100,7 @@ struct test_data {
 #if NOCACHE_MEM
 static struct test_data tdata __used __NOCACHE;
 #else
-ZTEST_BMEM struct test_data tdata;
+ZTEST_DMEM struct test_data tdata;
 #endif /* NOCACHE_MEM */
 
 static void test_single_read_callback(const struct device *dev,
@@ -143,7 +143,7 @@ static void test_single_read_callback(const struct device *dev,
 	}
 }
 
-ZTEST_BMEM volatile uint32_t tx_aborted_count;
+ZTEST_DMEM volatile uint32_t tx_aborted_count;
 
 static void *single_read_setup(void)
 {
@@ -327,13 +327,13 @@ ZTEST_USER(uart_async_multi_rx, test_multiple_rx_enable)
 static __aligned(32) uint8_t chained_read_buf[2][8] __used __NOCACHE;
 static __aligned(32) uint8_t chained_cpy_buf[10] __used __NOCACHE;
 #else
-ZTEST_BMEM uint8_t chained_read_buf[2][8];
-ZTEST_BMEM uint8_t chained_cpy_buf[10];
+ZTEST_DMEM uint8_t chained_read_buf[2][8];
+ZTEST_DMEM uint8_t chained_cpy_buf[10];
 #endif /* NOCACHE_MEM */
-ZTEST_BMEM volatile uint8_t rx_data_idx;
-ZTEST_BMEM uint8_t rx_buf_idx;
+ZTEST_DMEM volatile uint8_t rx_data_idx;
+ZTEST_DMEM uint8_t rx_buf_idx;
 
-ZTEST_BMEM uint8_t *read_ptr;
+ZTEST_DMEM uint8_t *read_ptr;
 
 static void test_chained_read_callback(const struct device *dev,
 				struct uart_event *evt, void *user_data)
@@ -417,7 +417,7 @@ ZTEST_USER(uart_async_chain_read, test_chained_read)
 #if NOCACHE_MEM
 static __aligned(32) uint8_t double_buffer[2][12] __used __NOCACHE;
 #else
-ZTEST_BMEM uint8_t double_buffer[2][12];
+ZTEST_DMEM uint8_t double_buffer[2][12];
 #endif /* NOCACHE_MEM */
 ZTEST_DMEM uint8_t *next_buf = double_buffer[1];
 
@@ -492,10 +492,10 @@ ZTEST_USER(uart_async_double_buf, test_double_buffer)
 static __aligned(32) uint8_t test_read_abort_rx_buf[2][100] __used __NOCACHE;
 static __aligned(32) uint8_t test_read_abort_read_buf[100] __used __NOCACHE;
 #else
-ZTEST_BMEM uint8_t test_read_abort_rx_buf[2][100];
-ZTEST_BMEM uint8_t test_read_abort_read_buf[100];
+ZTEST_DMEM uint8_t test_read_abort_rx_buf[2][100];
+ZTEST_DMEM uint8_t test_read_abort_read_buf[100];
 #endif /* NOCACHE_MEM */
-ZTEST_BMEM int test_read_abort_rx_cnt;
+ZTEST_DMEM int test_read_abort_rx_cnt;
 
 static void test_read_abort_callback(const struct device *dev,
 			      struct uart_event *evt, void *user_data)
@@ -608,12 +608,12 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 
 }
 
-ZTEST_BMEM volatile size_t sent;
-ZTEST_BMEM volatile size_t received;
+ZTEST_DMEM volatile size_t sent;
+ZTEST_DMEM volatile size_t received;
 #if NOCACHE_MEM
 static __aligned(32) uint8_t test_rx_buf[2][100] __used __NOCACHE;
 #else
-ZTEST_BMEM uint8_t test_rx_buf[2][100];
+ZTEST_DMEM uint8_t test_rx_buf[2][100];
 #endif /* NOCACHE_MEM */
 
 static void test_write_abort_callback(const struct device *dev,
@@ -776,7 +776,7 @@ const uint8_t chained_write_tx_bufs[2][10] = {"Message 1", "Message 2"};
 ZTEST_DMEM uint8_t chained_write_tx_bufs[2][10] = {"Message 1", "Message 2"};
 #endif /* NOCACHE_MEM */
 ZTEST_DMEM bool chained_write_next_buf = true;
-ZTEST_BMEM volatile uint8_t tx_sent;
+ZTEST_DMEM volatile uint8_t tx_sent;
 
 static void test_chained_write_callback(const struct device *dev,
 				 struct uart_event *evt, void *user_data)
@@ -855,12 +855,12 @@ static __aligned(32) uint8_t long_rx_buf[1024] __used __NOCACHE;
 static __aligned(32) uint8_t long_rx_buf2[1024] __used __NOCACHE;
 static __aligned(32) uint8_t long_tx_buf[1000] __used __NOCACHE;
 #else
-ZTEST_BMEM uint8_t long_rx_buf[1024];
-ZTEST_BMEM uint8_t long_rx_buf2[1024];
-ZTEST_BMEM uint8_t long_tx_buf[1000];
+ZTEST_DMEM uint8_t long_rx_buf[1024];
+ZTEST_DMEM uint8_t long_rx_buf2[1024];
+ZTEST_DMEM uint8_t long_tx_buf[1000];
 #endif /* NOCACHE_MEM */
-ZTEST_BMEM volatile uint8_t evt_num;
-ZTEST_BMEM size_t long_received[2];
+ZTEST_DMEM volatile uint8_t evt_num;
+ZTEST_DMEM size_t long_received[2];
 
 static void test_long_buffers_callback(const struct device *dev,
 				struct uart_event *evt, void *user_data)
