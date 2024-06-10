@@ -60,7 +60,8 @@
 		group1 {
 			psels = <NRF_PSEL(PWM_OUT0, 0, 8)>,
 				<NRF_PSEL(PWM_OUT1, 1, 9)>,
-				<NRF_PSEL(PWM_OUT2, 0, 12)>;
+				<NRF_PSEL(PWM_OUT2, 0, 12)>,
+				<NRF_PSEL(PWM_OUT3, 0, 6)>;
 			nordic,invert;
 		};
 	};
@@ -69,7 +70,8 @@
 		group1 {
 			psels = <NRF_PSEL(PWM_OUT0, 0, 8)>,
 				<NRF_PSEL(PWM_OUT1, 1, 9)>,
-				<NRF_PSEL(PWM_OUT2, 0, 12)>;
+				<NRF_PSEL(PWM_OUT2, 0, 12)>,
+				<NRF_PSEL(PWM_OUT3, 0, 6)>;
 			low-power-enable;
 		};
 	};
