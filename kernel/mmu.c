@@ -689,8 +689,39 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 	if (is_anon) {
 		/* Unmapping anonymous memory */
 		VIRT_FOREACH(addr, size, pos) {
-			ret = arch_page_phys_get(pos, &phys);
+#ifdef CONFIG_DEMAND_PAGING
+			enum arch_page_location status;
+			uintptr_t location;
 
+			status = arch_page_location_get(pos, &location);
+			switch (status) {
+			case ARCH_PAGE_LOCATION_PAGED_OUT:
+				/*
+				 * No pf is associated with this mapping.
+				 * Simply get rid of the MMU entry and free
+				 * corresponding backing store.
+				 */
+				arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+				k_mem_paging_backing_store_location_free(location);
+				continue;
+			case ARCH_PAGE_LOCATION_PAGED_IN:
+				/*
+				 * The page is in memory but it may not be
+				 * accessible in order to manage tracking
+				 * of the ARCH_DATA_PAGE_ACCESSED flag
+				 * meaning arch_page_phys_get() could fail.
+				 * Still, we know the actual phys address.
+				 */
+				phys = location;
+				ret = 0;
+				break;
+			default:
+				ret = arch_page_phys_get(pos, &phys);
+				break;
+			}
+#else
+			ret = arch_page_phys_get(pos, &phys);
+#endif
 			__ASSERT(ret == 0,
 				 "%s: cannot unmap an unmapped address %p",
 				 __func__, pos);
