@@ -50,7 +50,8 @@ typedef struct pinctrl_soc_pin {
  */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)	   		\
 	{ .pin_num = DT_PHA_BY_IDX(node_id, prop, idx, pin_num)	  	\
-	  .pin_cfg = ((DT_PHA_BY_IDX(node_id, prop, idx, pin_mode) << PIN_MODE_OFFSET) & (PIN_MODE_MASK)) | 	\
+	  .pin_cfg = ((PIN_ENABLE << PIN_ENABLE_OFFSET) & PIN_ENABLE_MASK) | \
+	  			 ((DT_PHA_BY_IDX(node_id, prop, idx, pin_mode) << PIN_MODE_OFFSET) & (PIN_MODE_MASK)) | 	\
 	  			 ((DT_PHA_BY_IDX(node_id, prop, idx, pin_pull_state) << PIN_PULL_STATE_OFFSET) & (PIN_PULL_STATE_MASK)) | \
 				 ((DT_PHA_BY_IDX(node_id, prop, idx, pin_pull_dir) << PIN_PULL_DIR_OFFSET) & (PIN_PULL_DIR_MASK)) 	\
 	},

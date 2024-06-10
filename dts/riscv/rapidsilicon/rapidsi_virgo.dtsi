@@ -85,7 +85,7 @@
 			reg = <0xA0111000 0xFF>;
 			npins = <16>;
 			#pin-cells = <4>;
-			status = "okay";
+			status = "disabled";
 
 			ofe_default_pinmux: ofe_default_pinmux {
 				group1 { 

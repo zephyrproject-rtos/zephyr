@@ -3,9 +3,9 @@
 
 menuconfig DTI_PVT
     bool "DTI Process, Voltage and Thermal Sensor Configuration"
-    default n
-    depends on SENSOR
+    default y
     depends on DT_HAS_DTI_PVT_ENABLED
+    depends on SENSOR
 
     menu "PVT Timing Configuration Register Values"
         depends on DTI_PVT
