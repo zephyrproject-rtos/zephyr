@@ -452,10 +452,10 @@ Sheet (EDS) file
    https://github.com/CANopenNode/CANopenNode
 
 .. _EN 50325-4:
-   https://can-cia.org/groups/international-standardization/
+   https://can-cia.org/cia-groups/international-standardization/
 
 .. _CiA 301:
-   https://can-cia.org/groups/specifications/
+   https://can-cia.org/cia-groups/technical-documents/
 
 .. _CANopen for Python:
    https://github.com/christiansandberg/canopen
