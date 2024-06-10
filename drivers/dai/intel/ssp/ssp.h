@@ -142,6 +142,7 @@ struct dai_intel_ssp_pdata {
 struct dai_intel_ssp {
 	uint32_t dai_index;
 	uint32_t ssp_index;
+	uint32_t tdm_slot_group;
 	uint32_t state[2];
 	struct k_spinlock lock;	/**< locking mechanism */
 	int sref;		/**< simple ref counter, guarded by lock */
