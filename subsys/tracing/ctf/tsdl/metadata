@@ -777,3 +777,13 @@ event {
 		uint32_t duration_us;
 	};
 };
+
+event {
+	name = named_event;
+	id = 0x62;
+	fields := struct {
+		ctf_bounded_string_t name[20];
+		uint32_t arg0;
+		uint32_t arg1;
+	};
+};

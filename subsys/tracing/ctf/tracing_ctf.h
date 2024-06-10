@@ -592,6 +592,8 @@ void sys_trace_net_send_data_exit(struct net_pkt *pkt, int ret);
 void sys_trace_net_rx_time(struct net_pkt *pkt, uint32_t end_time);
 void sys_trace_net_tx_time(struct net_pkt *pkt, uint32_t end_time);
 
+void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1);
+
 #ifdef __cplusplus
 }
 #endif

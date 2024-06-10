@@ -390,6 +390,8 @@ void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int resu
 #define sys_port_trace_net_rx_time(pkt, end_time)
 #define sys_port_trace_net_tx_time(pkt, end_time)
 
+#define sys_trace_named_event(name, arg0, arg1)
+
 #ifdef __cplusplus
 }
 #endif

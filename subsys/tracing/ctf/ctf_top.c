@@ -746,3 +746,14 @@ void sys_trace_net_tx_time(struct net_pkt *pkt, uint32_t end_time)
 			    (uint32_t)tc,
 			    (uint32_t)duration_us);
 }
+
+void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1)
+{
+	ctf_bounded_string_t ctf_name = {""};
+
+	strncpy(ctf_name.buf, name, CTF_MAX_STRING_LEN);
+	/* Make sure buffer is NULL terminated */
+	ctf_name.buf[CTF_MAX_STRING_LEN - 1] = '\0';
+
+	ctf_named_event(ctf_name, arg0, arg1);
+}

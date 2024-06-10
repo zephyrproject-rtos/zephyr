@@ -639,6 +639,8 @@ void sys_trace_k_thread_ready(struct k_thread *thread);
 void sys_trace_k_thread_pend(struct k_thread *thread);
 void sys_trace_k_thread_info(struct k_thread *thread);
 
+void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1);
+
 #define sys_port_trace_pm_system_suspend_enter(ticks)			       \
 	SEGGER_SYSVIEW_RecordU32(TID_PM_SYSTEM_SUSPEND, (uint32_t)ticks)
 #define sys_port_trace_pm_system_suspend_exit(ticks, state)		       \
