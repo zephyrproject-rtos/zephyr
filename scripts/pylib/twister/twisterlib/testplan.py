@@ -425,7 +425,7 @@ class TestPlan:
                         os.path.basename(file).startswith(
                             re.split('[/@]', p)[0]
                         ) for p in self.options.platform
-                    ]):
+                    ]) or file.endswith('fw_config.yaml'):
                     continue
                 try:
                     platform = Platform()
