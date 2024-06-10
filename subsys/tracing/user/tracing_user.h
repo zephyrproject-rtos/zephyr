@@ -298,8 +298,8 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_heap_sys_k_free_exit(heap, heap_ref)
 #define sys_port_trace_k_heap_sys_k_calloc_enter(heap)
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)
-#define sys_port_trace_k_heap_sys_k_realloc_enter(heap)
-#define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ret)
+#define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)
+#define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)
 
 #define sys_port_trace_k_mem_slab_init(slab, rc)
 #define sys_port_trace_k_mem_slab_alloc_enter(slab, timeout)
