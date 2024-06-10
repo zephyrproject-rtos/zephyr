@@ -553,6 +553,13 @@ class ProjectBuilder(FilterBuilder):
             except Exception as e:
                 data = "Unable to read log data (%s)\n" % (str(e))
 
+            # Remove any coverage data from the dumped logs
+            data = re.sub(
+                r"GCOV_COVERAGE_DUMP_START.*GCOV_COVERAGE_DUMP_END",
+                "GCOV_COVERAGE_DUMP_START\n...\nGCOV_COVERAGE_DUMP_END",
+                data,
+                flags=re.DOTALL,
+            )
             logger.error(data)
 
             logger.info("{:-^100}".format(filename))
