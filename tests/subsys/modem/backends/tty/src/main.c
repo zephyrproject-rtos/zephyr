@@ -108,7 +108,7 @@ static void *test_modem_backend_tty_setup(void)
 
 	tty_pipe = modem_backend_tty_init(&tty_backend, &config);
 	modem_pipe_attach(tty_pipe, modem_pipe_callback_handler, NULL);
-	__ASSERT_NO_MSG(modem_pipe_open(tty_pipe) == 0);
+	__ASSERT_NO_MSG(modem_pipe_open(tty_pipe, K_SECONDS(10)) == 0);
 	return NULL;
 }
 
@@ -119,7 +119,7 @@ static void test_modem_backend_tty_before(void *f)
 
 static void test_modem_backend_tty_teardown(void *f)
 {
-	modem_pipe_close(tty_pipe);
+	modem_pipe_close(tty_pipe, K_SECONDS(10));
 }
 
 /*************************************************************************************************/
@@ -129,12 +129,12 @@ ZTEST(modem_backend_tty_suite, test_close_open)
 {
 	bool result;
 
-	zassert_ok(modem_pipe_close(tty_pipe), "Failed to close pipe");
-	zassert_ok(modem_pipe_close(tty_pipe), "Pipe should already be closed");
-	zassert_ok(modem_pipe_open(tty_pipe), "Failed to open pipe");
+	zassert_ok(modem_pipe_close(tty_pipe, K_SECONDS(10)), "Failed to close pipe");
+	zassert_ok(modem_pipe_close(tty_pipe, K_SECONDS(10)), "Pipe should already be closed");
+	zassert_ok(modem_pipe_open(tty_pipe, K_SECONDS(10)), "Failed to open pipe");
 	result = atomic_test_bit(&tty_pipe_events, TEST_MODEM_BACKEND_TTY_PIPE_EVENT_TIDLE_BIT);
 	zassert_true(result, "Transmit idle event should be set");
-	zassert_ok(modem_pipe_open(tty_pipe), "Pipe should already be open");
+	zassert_ok(modem_pipe_open(tty_pipe, K_SECONDS(10)), "Pipe should already be open");
 }
 
 ZTEST(modem_backend_tty_suite, test_receive_ready_event_not_raised)
