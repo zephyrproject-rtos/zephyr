@@ -342,7 +342,7 @@ static int gnttab_init(void)
 		gnttab.gref_list[gref] = gref + 1;
 	}
 
-	for (i = 0; i < CONFIG_NR_GRANT_FRAMES; i++) {
+	for (i = CONFIG_NR_GRANT_FRAMES - 1; i >= 0; i--) {
 		xatp.domid = DOMID_SELF;
 		xatp.size = 0;
 		xatp.space = XENMAPSPACE_grant_table;
