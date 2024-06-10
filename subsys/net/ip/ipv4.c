@@ -122,7 +122,7 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 	ipv4_hdr->len   = htons(net_pkt_get_len(pkt));
 	ipv4_hdr->proto = next_header_proto;
 
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
 		ipv4_hdr->chksum = net_calc_chksum_ipv4(pkt);
 	}
 
@@ -323,7 +323,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 		goto drop;
 	}
 
-	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER) &&
 	    net_calc_chksum_ipv4(pkt) != 0U) {
 		NET_DBG("DROP: invalid chksum");
 		goto drop;

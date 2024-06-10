@@ -218,6 +218,8 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_PORTS_NUM,
 	ETHERNET_CONFIG_TYPE_T1S_PARAM,
 	ETHERNET_CONFIG_TYPE_TXINJECTION_MODE,
+	ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT,
+	ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT
 };
 
 enum ethernet_qav_param_type {
@@ -465,6 +467,24 @@ struct ethernet_txtime_param {
 	bool enable_txtime;
 };
 
+/** Protocols that are supported by checksum offloading */
+enum ethernet_checksum_support {
+	/** Device does not support any L3/L4 checksum offloading */
+	ETHERNET_CHECKSUM_SUPPORT_NONE			= NET_IF_CHECKSUM_NONE_BIT,
+	/** Device supports checksum offloading for the IPv4 header */
+	ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER		= NET_IF_CHECKSUM_IPV4_HEADER_BIT,
+	/** Device supports checksum offloading for ICMPv4 payload (implies IPv4 header) */
+	ETHERNET_CHECKSUM_SUPPORT_IPV4_ICMP		= NET_IF_CHECKSUM_IPV4_ICMP_BIT,
+	/** Device supports checksum offloading for the IPv6 header */
+	ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER		= NET_IF_CHECKSUM_IPV6_HEADER_BIT,
+	/** Device supports checksum offloading for ICMPv6 payload (implies IPv6 header) */
+	ETHERNET_CHECKSUM_SUPPORT_IPV6_ICMP		= NET_IF_CHECKSUM_IPV6_ICMP_BIT,
+	/** Device supports TCP checksum offloading for all supported IP protocols */
+	ETHERNET_CHECKSUM_SUPPORT_TCP			= NET_IF_CHECKSUM_TCP_BIT,
+	/** Device supports UDP checksum offloading for all supported IP protocols */
+	ETHERNET_CHECKSUM_SUPPORT_UDP			= NET_IF_CHECKSUM_UDP_BIT,
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 struct ethernet_config {
@@ -490,6 +510,8 @@ struct ethernet_config {
 
 		int priority_queues_num;
 		int ports_num;
+
+		enum ethernet_checksum_support chksum_support;
 
 		struct ethernet_filter filter;
 	};
@@ -912,6 +934,30 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 
 	return eth->get_capabilities(net_if_get_device(iface));
 }
+
+/**
+ * @brief Return ethernet device hardware configuration information.
+ *
+ * @param iface Network interface
+ * @param type configuration type
+ * @param config Ethernet configuration
+ *
+ * @return 0 if ok, <0 if error
+ */
+static inline
+int net_eth_get_hw_config(struct net_if *iface, enum ethernet_config_type type,
+			 struct ethernet_config *config)
+{
+	const struct ethernet_api *eth =
+		(struct ethernet_api *)net_if_get_device(iface)->api;
+
+	if (!eth->get_config) {
+		return -ENOTSUP;
+	}
+
+	return eth->get_config(net_if_get_device(iface), type, config);
+}
+
 
 /**
  * @brief Add VLAN tag to the interface.
