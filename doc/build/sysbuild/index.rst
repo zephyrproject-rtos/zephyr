@@ -588,6 +588,8 @@ a Kconfig option, which would make ``my_sample`` conditionally build-only.
    ``west flash --domain my_sample``. As such, the ``BUILD_ONLY`` option only
    controls the default behavior of ``west flash``.
 
+.. _sysbuild_application_configuration:
+
 Zephyr application configuration
 ================================
 
