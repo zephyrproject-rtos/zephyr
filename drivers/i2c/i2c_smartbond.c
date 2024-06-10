@@ -35,14 +35,14 @@ struct i2c_smartbond_data {
 	uint32_t transmit_cnt, receive_cnt;
 	i2c_callback_t cb;
 	void *userdata;
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 	ATOMIC_DEFINE(pm_policy_state_flag, 1);
 #endif
 };
 
-static inline void i2c_smartbond_pm_policy_state_lock_get(struct i2c_smartbond_data *data)
+#if defined(CONFIG_PM_DEVICE)
+static inline void i2c_smartbond_pm_prevent_system_sleep(struct i2c_smartbond_data *data)
 {
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
 	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
 		/*
 		 * Prevent the SoC from etering the normal sleep state as PDC does not support
@@ -50,18 +50,38 @@ static inline void i2c_smartbond_pm_policy_state_lock_get(struct i2c_smartbond_d
 		 */
 		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	}
-#endif
 }
 
-static inline void i2c_smartbond_pm_policy_state_lock_put(struct i2c_smartbond_data *data)
+static inline void i2c_smartbond_pm_allow_system_sleep(struct i2c_smartbond_data *data)
 {
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
 	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0) == 1) {
 		/*
 		 * Allow the SoC to enter the nornmal sleep state once I2C transactions are done.
 		 */
 		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	}
+}
+#endif
+
+static inline void i2c_smartbond_pm_policy_state_lock_get(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_runtime_get(dev);
+#else
+	i2c_smartbond_pm_prevent_system_sleep(dev->data);
+#endif
+#endif
+}
+
+static inline void i2c_smartbond_pm_policy_state_lock_put(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_runtime_put(dev);
+#else
+	i2c_smartbond_pm_allow_system_sleep(dev->data);
+#endif
 #endif
 }
 
@@ -86,7 +106,7 @@ static void i2c_smartbond_disable_when_inactive(const struct device *dev)
 	}
 }
 
-static int i2c_smartbond_configure(const struct device *dev, uint32_t dev_config)
+static int i2c_smartbond_apply_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_smartbond_cfg *config = dev->config;
 	struct i2c_smartbond_data *data = dev->data;
@@ -141,6 +161,17 @@ static int i2c_smartbond_configure(const struct device *dev, uint32_t dev_config
 	return 0;
 }
 
+static int i2c_smartbond_configure(const struct device *dev, uint32_t dev_config)
+{
+	int ret = 0;
+
+	pm_device_runtime_get(dev);
+	ret = i2c_smartbond_apply_configure(dev, dev_config);
+	pm_device_runtime_put(dev);
+
+	return ret;
+}
+
 static int i2c_smartbond_get_config(const struct device *dev, uint32_t *dev_config)
 {
 	const struct i2c_smartbond_cfg *config = dev->config;
@@ -148,8 +179,10 @@ static int i2c_smartbond_get_config(const struct device *dev, uint32_t *dev_conf
 	uint32_t reg;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+	pm_device_runtime_get(dev);
 	/* Read the value of the control register */
 	reg = config->regs->I2C_CON_REG;
+	pm_device_runtime_put(dev);
 
 	k_spin_unlock(&data->lock, key);
 
@@ -288,9 +321,6 @@ static inline int i2c_smartbond_tx(const struct i2c_smartbond_cfg *const config,
 		}
 	}
 
-	while (!(config->regs->I2C_STATUS_REG & I2C_I2C_STATUS_REG_TFE_Msk)) {
-	};
-
 	if (config->regs->I2C_TX_ABRT_SOURCE_REG & 0x1FFFF) {
 		ret = -EIO;
 	}
@@ -336,15 +366,12 @@ static int i2c_smartbond_transfer(const struct device *dev, struct i2c_msg *msgs
 	struct i2c_smartbond_data *data = dev->data;
 	int ret = 0;
 
-	while (!i2c_smartbond_is_idle(dev)) {
-	};
+	i2c_smartbond_pm_policy_state_lock_get(dev);
 
 	ret = i2c_smartbond_prep_transfer(dev, msgs, num_msgs, addr);
 	if (ret != 0) {
-		return ret;
+		goto finish;
 	}
-
-	i2c_smartbond_pm_policy_state_lock_get(data);
 
 	for (; data->num_msgs > 0; data->num_msgs--, data->msgs++) {
 		data->transmit_cnt = 0;
@@ -375,7 +402,9 @@ static int i2c_smartbond_transfer(const struct device *dev, struct i2c_msg *msgs
 	}
 
 finish:
-	i2c_smartbond_pm_policy_state_lock_put(data);
+	while (!i2c_smartbond_is_idle(dev)) {
+	};
+	i2c_smartbond_pm_policy_state_lock_put(dev);
 
 	return ret;
 }
@@ -425,12 +454,13 @@ static int i2c_smartbond_transfer_cb(const struct device *dev, struct i2c_msg *m
 	data->cb = cb;
 	data->userdata = userdata;
 
+	i2c_smartbond_pm_policy_state_lock_get(dev);
+
 	ret = i2c_smartbond_prep_transfer(dev, msgs, num_msgs, addr);
 	if (ret != 0) {
+		i2c_smartbond_pm_policy_state_lock_put(dev);
 		return ret;
 	}
-
-	i2c_smartbond_pm_policy_state_lock_get(data);
 
 	i2c_smartbond_enable_msg_interrupts(config, data);
 
@@ -496,7 +526,7 @@ static inline void i2c_smartbond_async_msg_done(const struct device *dev)
 		data->cb = NULL;
 		LOG_INF("async transfer finished");
 		cb(dev, 0, data->userdata);
-		i2c_smartbond_pm_policy_state_lock_put(data);
+		i2c_smartbond_pm_policy_state_lock_put(dev);
 	}
 }
 
@@ -567,11 +597,11 @@ static int i2c_smartbond_resume(const struct device *dev)
 		return err;
 	}
 
-	return i2c_smartbond_configure(dev,
+	return i2c_smartbond_apply_configure(dev,
 				       I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 }
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 static int i2c_smartbond_suspend(const struct device *dev)
 {
 	int ret;
@@ -597,6 +627,9 @@ static int i2c_smartbond_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+		i2c_smartbond_pm_prevent_system_sleep(dev->data);
+#endif
 		/*
 		 * Although the GPIO driver should already be initialized, make sure PD_COM
 		 * is up and running before accessing the I2C block.
@@ -611,6 +644,9 @@ static int i2c_smartbond_pm_action(const struct device *dev,
 		 * be released, as well.
 		 */
 		da1469x_pd_release(MCU_PD_DOMAIN_COM);
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+		i2c_smartbond_pm_allow_system_sleep(dev->data);
+#endif
 		break;
 	default:
 		return -ENOTSUP;
