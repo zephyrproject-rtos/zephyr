@@ -750,9 +750,12 @@ int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
 		goto cleanup;
 	}
 
-	lwm2m_send_message_async(msg);
+	ret = zsock_send(client_ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
 
-	return 0;
+	if (ret < 0) {
+		LOG_ERR("Failed to send packet, err %d", errno);
+		ret = -errno;
+	}
 
 cleanup:
 	lwm2m_reset_message(msg, true);
