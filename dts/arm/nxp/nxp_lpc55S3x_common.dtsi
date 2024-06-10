@@ -117,30 +117,33 @@
 		};
 	};
 
-	gpio0: gpio@0 {
+	gpio: gpio@8c000 {
 		compatible = "nxp,lpc-gpio";
-		reg = <0x8c000 0x278c>;
-		int-source = "pint";
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <0>;
-	};
+		reg = <0x8c000 0x2488>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		gpio0: gpio@0 {
+			compatible = "nxp,lpc-gpio-port";
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0>;
+		};
 
-	gpio1: gpio@1 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x8c000 0x278c>;
-		int-source = "pint";
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <1>;
-	};
+		gpio1: gpio@1 {
+			compatible = "nxp,lpc-gpio-port";
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <1>;
+		};
 
-	gpio2: gpio@2 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x8c000 0x278c>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <2>;
+		gpio2: gpio@2 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <2>;
+		};
 	};
 
 	dma0: dma-controller@82000 {
