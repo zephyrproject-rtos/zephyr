@@ -26,3 +26,8 @@ zephyr_library_sources_ifdef(CONFIG_EEPROM_FAKE eeprom_fake.c)
 zephyr_library_sources_ifdef(CONFIG_EEPROM_AT2X_EMUL eeprom_at2x_emul.c)
 
 zephyr_library_sources_ifdef(CONFIG_EEPROM_MB85RCXX eeprom_mb85rcxx.c)
+
+if(CONFIG_EEPROM_RV3028)
+  zephyr_library_sources(eeprom_rv3028.c)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/rtc)
+endif()
