@@ -18,9 +18,12 @@
 #define SAMPLE_TEST_ENDPOINT_HOSTNAME		("test-endpoint.com")
 #define SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT	(7780)
 #define SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT	(7781)
+#define SAMPLE_TEST_ENDPOINT_UDP_TRANSMIT_PORT	(7782)
 #define SAMPLE_TEST_PACKET_SIZE			(1024)
 #define SAMPLE_TEST_ECHO_PACKETS		(16)
 #define SAMPLE_TEST_TRANSMIT_PACKETS		(128)
+#define SAMPLE_TEST_RECEIVE_PACKETS		(128)
+#define SAMPLE_TEST_RECEIVE_INTERVAL_CS		(10)
 
 const struct device *modem = DEVICE_DT_GET(DT_ALIAS(modem));
 
@@ -30,6 +33,26 @@ static bool sample_test_dns_in_progress;
 static struct dns_addrinfo sample_test_dns_addrinfo;
 
 K_SEM_DEFINE(dns_query_sem, 0, 1);
+
+struct udp_transmit_req {
+	/* Number of packets to receive */
+	uint8_t packets_to_transmit;
+	/* Interval between packets in centi seconds (1/100) */
+	uint8_t packet_interval_cs;
+	/* Packet size in big endian byte order */
+	uint8_t packet_size[2];
+};
+
+static void sample_init_udp_transmit_req(struct udp_transmit_req *req,
+					 uint8_t packets_to_transmit,
+					 uint8_t packet_interval_cs,
+					 uint16_t packet_size)
+{
+	req->packets_to_transmit = packets_to_transmit;
+	req->packet_interval_cs = packet_interval_cs;
+	req->packet_size[0] = (packet_size >> 8) & 0xFF;
+	req->packet_size[1] = packet_size & 0xFF;
+}
 
 static uint8_t sample_prng_random(void)
 {
@@ -127,7 +150,7 @@ static int sample_dns_request(void)
 	return 0;
 }
 
-int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t *port)
+static int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t *port)
 {
 	int ret;
 	int socket_fd;
@@ -211,8 +234,7 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 	return 0;
 }
 
-
-int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t *port)
+static int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t *port)
 {
 	int ret;
 	int socket_fd;
@@ -264,6 +286,88 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 	printk("Throughput %u bytes/s\n",
 	       ((SAMPLE_TEST_PACKET_SIZE * SAMPLE_TEST_TRANSMIT_PACKETS) * 1000) /
 	       (send_end_ms - send_start_ms));
+
+	printk("Close UDP socket\n");
+	ret = close(socket_fd);
+	if (ret < 0) {
+		printk("Failed to close socket\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+int sample_receive_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t *port)
+{
+	struct udp_transmit_req transmit_req;
+	int ret;
+	int socket_fd;
+	uint32_t packets_received = 0;
+	uint32_t packets_dropped = 0;
+	uint32_t received_last_ms;
+
+	printk("Opening UDP socket\n");
+
+	socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (socket_fd < 0) {
+		printk("Failed to open socket (%d)\n", errno);
+		return -1;
+	}
+
+	{
+		const struct timeval tv = { .tv_sec = 10 };
+
+		if (zsock_setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+			printk("Failed to set socket receive timeout (%d)\n", errno);
+			return -1;
+		}
+	}
+
+	printk("Socket opened\n");
+
+	*port = htons(SAMPLE_TEST_ENDPOINT_UDP_TRANSMIT_PORT);
+
+	sample_init_udp_transmit_req(&transmit_req,
+				     SAMPLE_TEST_RECEIVE_PACKETS,
+				     SAMPLE_TEST_RECEIVE_INTERVAL_CS,
+				     SAMPLE_TEST_PACKET_SIZE);
+
+	printk("Sending transmit request\n");
+	ret = sendto(socket_fd, &transmit_req, sizeof(transmit_req), 0, ai_addr, ai_addrlen);
+	if (ret != sizeof(transmit_req)) {
+		printk("Failed to send transmit request\n");
+		return -1;
+	}
+
+	received_last_ms = k_uptime_get_32();
+	for (size_t i = 0; i < SAMPLE_TEST_RECEIVE_PACKETS; i++) {
+		printk("Awaiting packet from server\n");
+		ret = recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
+		if (ret <= 0) {
+			printk("Failed to receive packet from server\n");
+			break;
+		}
+
+		if (ret != SAMPLE_TEST_PACKET_SIZE) {
+			printk("Received incorrect packet size (%u)\n", ret);
+			packets_dropped++;
+			continue;
+		}
+
+		if (memcmp(sample_test_packet, sample_recv_buffer,
+			   sizeof(sample_recv_buffer)) != 0) {
+			printk("Received invalid packet\n");
+			packets_dropped++;
+			continue;
+		}
+
+		printk("Received valid packet\n");
+		packets_received++;
+	}
+
+	printk("Expected %u packets\n", SAMPLE_TEST_RECEIVE_PACKETS);
+	printk("Received %u packets\n", packets_received);
+	printk("Dropped %u packets\n", packets_dropped);
 
 	printk("Close UDP socket\n");
 	ret = close(socket_fd);
@@ -354,6 +458,14 @@ int main(void)
 
 	if (ret < 0) {
 		printk("Failed to send packets\n");
+		return -1;
+	}
+
+	ret = sample_receive_packets(&sample_test_dns_addrinfo.ai_addr,
+				     sample_test_dns_addrinfo.ai_addrlen, port);
+
+	if (ret < 0) {
+		printk("Failed to receive packets\n");
 		return -1;
 	}
 
