@@ -3,6 +3,7 @@
  */
 
 #include <zephyr/devicetree.h>
+#include <zephyr/sys/libc-hooks.h>
 #include <string.h>
 #include <kernel_internal.h>
 
@@ -170,6 +171,9 @@ void c_boot(void)
 	__ASSERT_NO_MSG(XCHAL_NUM_TIMERS == 3);
 	val = 0xffffffff;
 	__asm__ volatile("wsr %0, INTCLEAR" :: "r"(val));
+
+	/* Default console, a driver can override this later */
+	__stdout_hook_install(arch_printk_char_out);
 
 	z_prep_c();
 }
