@@ -43,8 +43,12 @@ cpuflpr_vevif: &cpuflpr_vevif_remote {};
 };
 
 &grtc {
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+	interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>,
+#else
 	interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>,
-			<229 NRF_DEFAULT_IRQ_PRIORITY>; /* reserved for Zero Latency IRQs */
+#endif
+		<229 NRF_DEFAULT_IRQ_PRIORITY>; /* reserved for Zero Latency IRQs */
 };
 
 &gpiote20 {
