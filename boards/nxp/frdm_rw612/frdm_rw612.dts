@@ -20,6 +20,7 @@
 		zephyr,sram = &sram_data;
 		zephyr,flash = &w25q512jvfiq;
 		zephyr,console = &flexcomm3;
+		zephyr,shell-uart = &flexcomm3;
 	};
 
 	leds {
@@ -67,4 +68,27 @@
 &hci {
 	status = "okay";
 	wakeup-source;
+};
+
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_mdio>;
+	pinctrl-names = "default";
+	phy: phy@2 {
+		compatible = "microchip,ksz8081";
+		reg = <2>;
+		status = "okay";
+		reset-gpios = <&hsgpio1 23 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&hsgpio0 21 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
+	};
 };
