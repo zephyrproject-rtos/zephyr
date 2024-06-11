@@ -1342,6 +1342,15 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 	sys_write32(dxepctl, dxepctl_reg);
 	dwc2_set_epint(dev, cfg, false);
 
+	if (cfg->addr == USB_CONTROL_EP_OUT) {
+		struct net_buf *buf = udc_buf_get_all(dev, cfg->addr);
+
+		/* Release the buffer allocated in dwc2_ctrl_feed_dout() */
+		if (buf) {
+			net_buf_unref(buf);
+		}
+	}
+
 	return 0;
 }
 
