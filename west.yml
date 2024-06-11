@@ -332,7 +332,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-a
-      revision: 421dc050278287839f5c70019bd6aec617f2bbdb
+      revision: 713ffbf96c5bcbdeab757423f10f73eb304eff07
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
