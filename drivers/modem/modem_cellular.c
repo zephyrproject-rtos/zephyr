@@ -2109,6 +2109,37 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 #define MODEM_CELLULAR_GET_USER_PIPES(inst) \
 	MODEM_CELLULAR_INST_NAME(user_pipes, inst)
 
+/* Extract the first argument (pipe name) from a pair */
+#define MODEM_CELLULAR_GET_PIPE_NAME_ARG(arg1, ...) arg1
+
+/* Extract the second argument (DLCI address) from a pair */
+#define MODEM_CELLULAR_GET_DLCI_ADDRESS_ARG(arg1, arg2, ...) arg2
+
+/* Define user pipe data using instance and extracted pipe name */
+#define MODEM_CELLULAR_DEFINE_USER_PIPE_DATA_HELPER(_args, inst)                                   \
+	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(inst,                                                 \
+					     MODEM_CELLULAR_GET_PIPE_NAME_ARG _args,               \
+					     CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES)
+
+/* Initialize user pipe using instance, extracted pipe name, and DLCI address */
+#define MODEM_CELLULAR_INIT_USER_PIPE_HELPER(_args, inst)                                          \
+	MODEM_CELLULAR_INIT_USER_PIPE(inst,                                                        \
+				      MODEM_CELLULAR_GET_PIPE_NAME_ARG _args,                      \
+				      MODEM_CELLULAR_GET_DLCI_ADDRESS_ARG _args)
+
+/*
+ * Define and initialize user pipes dynamically
+ * Takes an instance and pairs of (pipe name, DLCI address)
+ */
+#define MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, ...)                                       \
+	FOR_EACH_FIXED_ARG(MODEM_CELLULAR_DEFINE_USER_PIPE_DATA_HELPER,                            \
+			   (;), inst, __VA_ARGS__);                                                \
+	MODEM_CELLULAR_DEFINE_USER_PIPES(                                                          \
+		inst,                                                                              \
+		FOR_EACH_FIXED_ARG(MODEM_CELLULAR_INIT_USER_PIPE_HELPER,                           \
+				   (,), inst, __VA_ARGS__)                                         \
+	);
+
 #define MODEM_CELLULAR_DEVICE_QUECTEL_BG95(inst)                                                   \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
@@ -2118,23 +2149,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_0,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_1,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPES(                                                          \
-		inst,                                                                              \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_0, 3),                               \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_1, 4),                               \
-	);                                                                                         \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (user_pipe_0, 3),                                \
+						  (user_pipe_1, 4))                                \
                                                                                                    \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
@@ -2167,23 +2184,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_0,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_1,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPES(                                                          \
-		inst,                                                                              \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_0, 3),                               \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_1, 4),                               \
-	);                                                                                         \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (user_pipe_0, 3),                                \
+						  (user_pipe_1, 4))                                \
                                                                                                    \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
@@ -2216,23 +2219,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_0,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_1,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPES(                                                          \
-		inst,                                                                              \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_0, 3),                               \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_1, 4),                               \
-	);                                                                                         \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (user_pipe_0, 3),                                \
+						  (user_pipe_1, 4))                                \
                                                                                                    \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
@@ -2265,23 +2254,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		gnss_pipe,                                                                         \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_0,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPES(                                                          \
-		inst,                                                                              \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, gnss_pipe, 3),                                 \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_0, 4),                               \
-	);                                                                                         \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (gnss_pipe, 3),                                  \
+						  (user_pipe_0, 4))                                \
                                                                                                    \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
@@ -2314,23 +2289,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		gnss_pipe,                                                                         \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_0,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPES(                                                          \
-		inst,                                                                              \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, gnss_pipe, 4),                                 \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_0, 3),                               \
-	);                                                                                         \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (gnss_pipe, 4),                                  \
+						  (user_pipe_0, 3))                                \
                                                                                                    \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
@@ -2364,23 +2325,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_0,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_1,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPES(                                                          \
-		inst,                                                                              \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_0, 3),                               \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_1, 4),                               \
-	);                                                                                         \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (user_pipe_0, 3),                                \
+						  (user_pipe_1, 4))                                \
                                                                                                    \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
@@ -2413,16 +2360,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_0,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPES(                                                          \
-		inst,                                                                              \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_0, 3),                               \
-	);                                                                                         \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (user_pipe_0, 3))                                \
                                                                                                    \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
@@ -2454,16 +2393,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		gnss_pipe,                                                                         \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPES(                                                          \
-		inst,                                                                              \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, gnss_pipe, 3),                                 \
-	);                                                                                         \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (gnss_pipe, 3))                                  \
                                                                                                    \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
@@ -2496,23 +2427,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_0,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(                                                      \
-		inst,                                                                              \
-		user_pipe_1,                                                                       \
-		CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES                                       \
-	);                                                                                         \
-                                                                                                   \
-	MODEM_CELLULAR_DEFINE_USER_PIPES(                                                          \
-		inst,                                                                              \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_0, 3),                               \
-		MODEM_CELLULAR_INIT_USER_PIPE(inst, user_pipe_1, 4),                               \
-	);                                                                                         \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (user_pipe_0, 3),                                \
+						  (user_pipe_1, 4))                                \
                                                                                                    \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
