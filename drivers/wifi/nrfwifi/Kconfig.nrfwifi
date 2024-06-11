@@ -667,4 +667,10 @@ config NRF_WIFI_COMBINED_BUCKEN_IOVDD_GPIO
 	  there will be a internal hardware switch to add delay between the two operations. This
 	  is typically 4ms delay for nRF70.
 
+config NRF_WIFI_FEAT_WMM
+	bool "WMM/QoS support"
+	default y
+	help
+	  This option controls disable/enable of the WMM(Wireless Multi-Media) feature.
+
 endif # WIFI_NRF70
