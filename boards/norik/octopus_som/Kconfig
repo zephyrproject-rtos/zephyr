@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Norik Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OCTOPUS_SOM
+	select BOARD_LATE_INIT_HOOK
+	select GPIO
+
+module = OCTOPUS_SOM_CONTROL
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
