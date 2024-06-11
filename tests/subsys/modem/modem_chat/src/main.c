@@ -521,11 +521,16 @@ ZTEST(modem_chat, test_script_with_partial_matches)
 					 MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_CALLED_BIT);
 		zassert_equal(called, true, "Match callback not called");
 		zassert_equal(argc_buffers, 5, "Incorrect number of args");
-		zassert_equal(strcmp(argv_buffers[0], "+CMGL: "), 0, "Incorrect argv received");
-		zassert_equal(strcmp(argv_buffers[1], "1"), 0, "Incorrect argv received");
-		zassert_equal(strcmp(argv_buffers[2], "1"), 0, "Incorrect argv received");
-		zassert_equal(strcmp(argv_buffers[3], ""), 0, "Incorrect argv received");
-		zassert_equal(strcmp(argv_buffers[4], "50"), 0, "Incorrect argv received");
+		zassert_str_equal(argv_buffers[0], "+CMGL: ",
+				  "Incorrect argv received");
+		zassert_str_equal(argv_buffers[1], "1",
+				  "Incorrect argv received");
+		zassert_str_equal(argv_buffers[2], "1",
+				  "Incorrect argv received");
+		zassert_str_equal(argv_buffers[3], "",
+				  "Incorrect argv received");
+		zassert_str_equal(argv_buffers[4], "50",
+				  "Incorrect argv received");
 
 		atomic_set(&callback_called, 0);
 		modem_backend_mock_put(&mock, cmgl_response_1, sizeof(cmgl_response_1) - 1);
@@ -535,9 +540,11 @@ ZTEST(modem_chat, test_script_with_partial_matches)
 					 MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_ANY_CALLED_BIT);
 		zassert_equal(called, true, "Match callback not called");
 		zassert_equal(argc_buffers, 2, "Incorrect number of args");
-		zassert_equal(strcmp(argv_buffers[0], ""), 0, "Incorrect argv received");
-		zassert_equal(strcmp(argv_buffers[1], "07911326060032F064A9542954"), 0,
-			      "Incorrect argv received");
+		zassert_str_equal(argv_buffers[0], "",
+				  "Incorrect argv received");
+		zassert_str_equal(argv_buffers[1],
+				  "07911326060032F064A9542954",
+				  "Incorrect argv received");
 	}
 
 	atomic_set(&callback_called, 0);
