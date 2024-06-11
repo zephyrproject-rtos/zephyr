@@ -1940,12 +1940,11 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 	if (dev_data->hxspi.Instance == XSPI1) {
 		xspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_1;
-		xspi_mgr_cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_NCS1;
 	} else if (dev_data->hxspi.Instance == XSPI2) {
-		ospi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_2;
-		ospi_mgr_cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_NCS2;
+		xspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_2;
 	}
-	ospi_mgr_cfg.Req2AckTime = 1;
+	xspi_mgr_cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
+	xspi_mgr_cfg.Req2AckTime = 1;
 
 	if (HAL_XSPIM_Config(&dev_data->hxspi, &xspi_mgr_cfg,
 		HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
@@ -2221,6 +2220,11 @@ static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
 			.ClockMode = HAL_XSPI_CLOCK_MODE_0,
 			.ChipSelectBoundary = 0,
 			.MemoryMode = HAL_XSPI_SINGLE_MEM,
+#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
+			.MemorySelect = ((DT_INST_PROP(0, ncs_line) == 1)
+					? HAL_XSPI_CSSEL_NCS1
+					: HAL_XSPI_CSSEL_NCS2),
+#endif
 			.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,
 #if defined(OCTOSPI_DCR4_REFRESH)
 			.Refresh = 0,
