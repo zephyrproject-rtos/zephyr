@@ -962,6 +962,8 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 	uint8_t length;
 	uint8_t type;
 	bool router_present = false;
+	bool renewal_present = false;
+	bool rebinding_present = false;
 	bool unhandled = true;
 
 	if (net_pkt_read(pkt, cookie, sizeof(cookie)) ||
@@ -1201,6 +1203,8 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			NET_DBG("options_renewal: %u",
 				iface->config.dhcpv4.renewal_time);
 
+			renewal_present = true;
+
 			break;
 		case DHCPV4_OPTIONS_REBINDING:
 			if (length != 4U) {
@@ -1218,6 +1222,8 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 			NET_DBG("options_rebinding: %u",
 				iface->config.dhcpv4.rebinding_time);
+
+			rebinding_present = true;
 
 			break;
 		case DHCPV4_OPTIONS_SERVER_ID:
@@ -1278,6 +1284,23 @@ end:
 		struct in_addr any = INADDR_ANY_INIT;
 
 		net_if_ipv4_set_gw(iface, &any);
+	}
+
+	if (*msg_type == NET_DHCPV4_MSG_TYPE_ACK) {
+		enum net_dhcpv4_state state = iface->config.dhcpv4.state;
+
+		/* Clear Renew/Rebind times if not provided. They need to be
+		 * recalculated accordingly.
+		 */
+		if (state == NET_DHCPV4_RENEWING || state == NET_DHCPV4_REBINDING) {
+			if (!renewal_present) {
+				iface->config.dhcpv4.renewal_time = 0U;
+			}
+
+			if (!rebinding_present) {
+				iface->config.dhcpv4.rebinding_time = 0U;
+			}
+		}
 	}
 
 	return true;
