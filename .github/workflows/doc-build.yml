@@ -17,7 +17,6 @@ env:
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
-  DOXYGEN_VERSION: 1.9.6
   # Job count is set to 2 less than the vCPU count of 16 because the total available RAM is 32GiB
   # and each sphinx-build process may use more than 2GiB of RAM.
   JOB_COUNT: 14
@@ -79,10 +78,7 @@ jobs:
     - name: install-pkgs
       run: |
         sudo apt-get update
-        sudo apt-get install -y wget python3-pip git ninja-build graphviz lcov
-        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
-        sudo tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz -C /opt
-        echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+        sudo apt-get install -y wget python3-pip git ninja-build doxygen graphviz lcov
         echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
     - name: checkout
