@@ -17,7 +17,6 @@ supported:
   - uart
   - i2c
   - spi
-  - can
 testing:
   ignore_tags:
     - net
