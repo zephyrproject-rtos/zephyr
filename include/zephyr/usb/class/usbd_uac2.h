@@ -19,6 +19,18 @@
 
 #include <zephyr/device.h>
 
+/**
+ * @brief USB Audio Class 2 device API
+ * @defgroup uac2_device USB Audio Class 2 device API
+ * @ingroup usb
+ * @{
+ */
+
+/**
+ * @brief Get entity ID
+ *
+ * @param node node identifier
+ */
 #define UAC2_ENTITY_ID(node)							\
 	({									\
 		BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_PARENT(node), zephyr_uac2));	\
@@ -138,5 +150,9 @@ void usbd_uac2_set_ops(const struct device *dev,
  */
 int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		   void *data, uint16_t size);
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_USBD_UAC2_H_ */
