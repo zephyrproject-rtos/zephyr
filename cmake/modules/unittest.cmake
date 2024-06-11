@@ -63,6 +63,7 @@ set(INCL_GENERATED_DIR ${APPLICATION_BINARY_DIR}/zephyr/include/generated/zephyr
 set(INCL_GENERATED_SYSCALL_DIR ${INCL_GENERATED_DIR}/syscalls)
 list(APPEND INCL_GENERATED_HEADERS
   ${INCL_GENERATED_DIR}/devicetree_generated.h
+  ${INCL_GENERATED_DIR}/zinit.h
   ${INCL_GENERATED_DIR}/offsets.h
   ${INCL_GENERATED_DIR}/syscall_list.h
   ${INCL_GENERATED_DIR}/syscall_macros.h
