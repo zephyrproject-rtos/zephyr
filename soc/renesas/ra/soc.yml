@@ -43,3 +43,6 @@ family:
       - name: ra4m3
         socs:
           - name: r7fa4m3af3cfb
+      - name: ra4w1
+        socs:
+          - name: r7fa4w1ad2cng
