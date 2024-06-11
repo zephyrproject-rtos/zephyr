@@ -171,5 +171,9 @@ void c_boot(void)
 	val = 0xffffffff;
 	__asm__ volatile("wsr %0, INTCLEAR" :: "r"(val));
 
+	/* Default console, a driver can override this later */
+	void __stdout_hook_install(int (*hook)(int));
+	__stdout_hook_install(arch_printk_char_out);
+
 	z_cstart();
 }
