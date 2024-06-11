@@ -4865,7 +4865,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
 struct k_pipe {
 	unsigned char *buffer;          /**< Pipe buffer: may be NULL */
 	size_t         size;            /**< Buffer size */
-	size_t         bytes_used;      /**< # bytes used in buffer */
+	size_t         bytes_used;      /**< Number of bytes used in buffer */
 	size_t         read_index;      /**< Where in buffer to read from */
 	size_t         write_index;     /**< Where in buffer to write */
 	struct k_spinlock lock;		/**< Synchronization lock */
