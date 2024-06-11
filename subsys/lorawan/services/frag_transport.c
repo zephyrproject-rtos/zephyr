@@ -13,7 +13,10 @@
 #include "lorawan_services.h"
 
 #include <LoRaMac.h>
+#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 #include <FragDecoder.h>
+#endif
+
 #include <zephyr/lorawan/lorawan.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
@@ -79,8 +82,10 @@ struct frag_transport_context {
 	/** Application-specific descriptor for the data block, e.g. firmware version */
 	uint32_t descriptor;
 
+#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 	/* variables required for FragDecoder.h */
 	FragDecoderCallbacks_t decoder_callbacks;
+#endif
 };
 
 /*
@@ -127,8 +132,11 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 
 			uint8_t missing_frag = CLAMP(ctx.nb_frag - ctx.nb_frag_received, 0, 255);
 
+			uint8_t memory_error = 0;
+#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 			FragDecoderStatus_t decoder_status = FragDecoderGetStatus();
-			uint8_t memory_error = decoder_status.MatrixError;
+			memory_error = decoder_status.MatrixError;
+#endif
 
 			if (participants == 1 || missing_frag > 0) {
 				tx_buf[tx_pos++] = FRAG_TRANSPORT_CMD_FRAG_STATUS;
@@ -183,15 +191,22 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 				status |= BIT(0);
 			}
 
-			if (ctx.nb_frag > FRAG_MAX_NB || ctx.frag_size > FRAG_MAX_SIZE ||
-			    ctx.nb_frag * ctx.frag_size > FragDecoderGetMaxFileSize()) {
+			if (ctx.nb_frag > FRAG_MAX_NB || ctx.frag_size > FRAG_MAX_SIZE) {
 				/* Not enough memory */
 				status |= BIT(1);
 			}
 
+#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
+			if (ctx.nb_frag * ctx.frag_size > FragDecoderGetMaxFileSize()) {
+				/* Not enough memory */
+				status |= BIT(1);
+			}
+#endif
+
 			/* Descriptor not used: Ignore Wrong Descriptor error */
 
 			if ((status & 0x1F) == 0) {
+#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 				/*
 				 * Assign callbacks after initialization to prevent the FragDecoder
 				 * from writing byte-wise 0xFF to the entire flash. Instead, erase
@@ -204,7 +219,7 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 
 				ctx.decoder_callbacks.FragDecoderWrite = frag_flash_write;
 				ctx.decoder_callbacks.FragDecoderRead = frag_flash_read;
-
+#endif
 				frag_flash_init(ctx.frag_size);
 				ctx.is_active = true;
 			}
@@ -251,8 +266,10 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 				frag_flash_use_cache();
 			}
 
+#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 			decoder_process_status = FragDecoderProcess(
 				frag_counter, (uint8_t *)&rx_buf[rx_pos]);
+#endif
 
 			LOG_INF("DataFragment %u of %u (%u lost), session: %u, decoder result: %d",
 				frag_counter, ctx.nb_frag, frag_counter - ctx.nb_frag_received,
