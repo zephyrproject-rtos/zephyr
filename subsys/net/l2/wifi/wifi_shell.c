@@ -596,6 +596,29 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		PR_ERROR("Channel not provided\n");
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	if (iface_mode == WIFI_MODE_AP) {
+		if (params->channel == 0 && params->band == WIFI_FREQ_BAND_UNKNOWN) {
+			PR_ERROR("Band not provided when channel is 0\n");
+			return -EINVAL;
+		}
+
+		if (params->channel > 0 && params->channel <= 14 &&
+		    (params->band != WIFI_FREQ_BAND_2_4_GHZ &&
+		     params->band != WIFI_FREQ_BAND_UNKNOWN)) {
+			PR_ERROR("Band and channel mismatch\n");
+			return -EINVAL;
+		}
+
+		if (params->channel >= 36 &&
+		    (params->band != WIFI_FREQ_BAND_5_GHZ &&
+		     params->band != WIFI_FREQ_BAND_UNKNOWN)) {
+			PR_ERROR("Band and channel mismatch\n");
+			return -EINVAL;
+		}
+	}
+#endif
 	return 0;
 }
 
