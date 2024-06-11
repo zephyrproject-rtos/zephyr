@@ -56,8 +56,7 @@ ZTEST(settings_config_fcb, test_config_save_2_fcb)
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb read error");
 	zassert_true(val8 == 42U, "bad value read");
-	zassert_true(!strcmp(val_string[0], test_ref_value[0]),
-		     "bad value read");
+	zassert_str_equal(val_string[0], test_ref_value[0], "bad value read");
 	test_export_block = 1;
 
 	/*
