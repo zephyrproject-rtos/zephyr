@@ -1064,19 +1064,32 @@ static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 
 static int hfp_ag_open_sco(struct bt_hfp_ag *ag)
 {
+	bool create_sco;
+
+	if (atomic_test_bit(ag->flags, BT_HFP_AG_CREATING_SCO)) {
+		LOG_WRN("SCO connection is creating!");
+		return 0;
+	}
+
 	hfp_ag_lock(ag);
-	if (ag->sco_chan.sco == NULL) {
+	create_sco = (ag->sco_chan.sco == NULL) ? true : false;
+	if (create_sco) {
+		atomic_set_bit(ag->flags, BT_HFP_AG_CREATING_SCO);
+	}
+	hfp_ag_unlock(ag);
+
+	if (create_sco) {
 		struct bt_conn *sco_conn = bt_hfp_ag_create_sco(ag);
+
+		atomic_clear_bit(ag->flags, BT_HFP_AG_CREATING_SCO);
 
 		if (sco_conn == NULL) {
 			LOG_ERR("Fail to create sco connection!");
-			hfp_ag_unlock(ag);
 			return -ENOTCONN;
 		}
 
 		LOG_DBG("SCO connection created (%p)", sco_conn);
 	}
-	hfp_ag_unlock(ag);
 
 	return 0;
 }
