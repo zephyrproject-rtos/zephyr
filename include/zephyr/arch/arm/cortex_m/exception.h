@@ -98,6 +98,9 @@ struct __extra_esf_info {
 };
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 
+/* ARM GPRs are often designated by two different names */
+#define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
+
 struct arch_esf {
 	struct __basic_sf {
 		sys_define_gpr_with_alias(a1, r0);
