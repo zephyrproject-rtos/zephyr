@@ -33,3 +33,11 @@ BOARD=nrf5340bsim/nrf5340/cpuapp \
 RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.53_cpuapp.xml \
 TESTS_FILE=tests/bsim/bluetooth/tests.nrf5340bsim_nrf5340_cpuapp.txt \
 tests/bsim/run_parallel.sh
+
+# nrf54l15bsim/nrf54l15/cpuapp set:
+nice tests/bsim/bluetooth/compile.nrf54l15bsim_nrf54l15_cpuapp.sh
+
+BOARD=nrf54l15bsim/nrf54l15/cpuapp \
+RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.54l15_cpuapp.xml \
+TESTS_FILE=tests/bsim/bluetooth/tests.nrf54l15bsim_nrf54l15_cpuapp.txt \
+tests/bsim/run_parallel.sh
