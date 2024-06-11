@@ -18,8 +18,24 @@ int number = 0x42;
 extern int ext_number;
 int ext_sum_fn(int arg);
 
+int run_id = 41;
+
 void test_entry(void)
 {
+	switch (run_id) {
+	case 41:
+		/* initial run: test variable initialization */
+		break;
+	case 42:
+		/* user-mode run: reinit number */
+		number = 0x42;
+		break;
+	default:
+		/* possible llext loader issue */
+		zassert_unreachable("unexpected run_id %d", run_id);
+		return;
+	}
+
 	printk("initial: local %d plus external %d equals %d\n",
 	       number, ext_number, ext_sum_fn(ext_number));
 	zassert_equal(number, 0x42);
@@ -31,5 +47,7 @@ void test_entry(void)
 	zassert_equal(ext_number, 0x42);
 	printk("updated: local %d plus external %d equals %d\n",
 	       number, ext_number, ext_sum_fn(ext_number));
+
+	run_id += 1;
 }
 LL_EXTENSION_SYMBOL(test_entry);
