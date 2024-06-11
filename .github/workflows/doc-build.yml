@@ -253,7 +253,7 @@ jobs:
         fi
 
         DOC_TAG=${DOC_TAG} \
-        SPHINXOPTS="-q -j ${JOB_COUNT}" \
+        SPHINXOPTS="-q -j ${JOB_COUNT} -W" \
         LATEXMKOPTS="-quiet -halt-on-error" \
         make -C doc pdf
 
