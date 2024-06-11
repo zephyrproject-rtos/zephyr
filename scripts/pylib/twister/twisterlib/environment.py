@@ -257,7 +257,7 @@ Artificially long but functional example:
         "-A", "--board-root", action="append", default=board_root_list,
         help="""Directory to search for board configuration files. All .yaml
 files in the directory will be processed. The directory should have the same
-structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
+structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument(
         "--allow-installed-plugin", action="store_true", default=None,
