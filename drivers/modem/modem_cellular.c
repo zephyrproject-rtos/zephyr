@@ -2140,6 +2140,34 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 				   (,), inst, __VA_ARGS__)                                         \
 	);
 
+/* Helper to define modem instance */
+#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,   \
+				       init_script,                                                \
+				       dial_script,                                                \
+				       periodic_script)                                            \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
+		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
+		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
+		.power_pulse_duration_ms = (power_ms),                                             \
+		.reset_pulse_duration_ms = (reset_ms),                                             \
+		.startup_time_ms  = (startup_ms),                                                  \
+		.shutdown_time_ms = (shutdown_ms),                                                 \
+		.autostarts       = (start),                                                       \
+		.init_chat_script = (init_script),                                                 \
+		.dial_chat_script = (dial_script),                                                 \
+		.periodic_chat_script = (periodic_script),                                         \
+		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
+		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
+			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
+			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
+			      &modem_cellular_api);
+
 #define MODEM_CELLULAR_DEVICE_QUECTEL_BG95(inst)                                                   \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
@@ -2153,27 +2181,10 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 						  (user_pipe_0, 3),                                \
 						  (user_pipe_1, 4))                                \
                                                                                                    \
-	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
-		.power_pulse_duration_ms = 1500,                                                   \
-		.reset_pulse_duration_ms = 100,                                                    \
-		.startup_time_ms = 10000,                                                          \
-		.shutdown_time_ms = 5000,                                                          \
-		.init_chat_script = &quectel_bg95_init_chat_script,                                \
-		.dial_chat_script = &quectel_bg95_dial_chat_script,                                \
-		.periodic_chat_script = &_CONCAT(DT_DRV_COMPAT, _periodic_chat_script),            \
-		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
-		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
-			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
+				       &quectel_bg95_init_chat_script,                             \
+				       &quectel_bg95_dial_chat_script,                             \
+				       &quectel_bg95_periodic_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG25_G(inst)                                                 \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
@@ -2188,27 +2199,10 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 						  (user_pipe_0, 3),                                \
 						  (user_pipe_1, 4))                                \
                                                                                                    \
-	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
-		.power_pulse_duration_ms = 1500,                                                   \
-		.reset_pulse_duration_ms = 500,                                                    \
-		.startup_time_ms = 15000,                                                          \
-		.shutdown_time_ms = 5000,                                                          \
-		.init_chat_script = &quectel_eg25_g_init_chat_script,                              \
-		.dial_chat_script = &quectel_eg25_g_dial_chat_script,                              \
-		.periodic_chat_script = &_CONCAT(DT_DRV_COMPAT, _periodic_chat_script),            \
-		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
-		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
-			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 500, 15000, 5000, false,                        \
+				       &quectel_eg25_g_init_chat_script,                           \
+				       &quectel_eg25_g_dial_chat_script,                           \
+				       &quectel_eg25_g_periodic_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_SIMCOM_SIM7080(inst)                                                 \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
@@ -2223,27 +2217,10 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 						  (user_pipe_0, 3),                                \
 						  (user_pipe_1, 4))                                \
                                                                                                    \
-	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
-		.power_pulse_duration_ms = 1500,                                                   \
-		.reset_pulse_duration_ms = 100,                                                    \
-		.startup_time_ms = 10000,                                                          \
-		.shutdown_time_ms = 5000,                                                          \
-		.init_chat_script = &simcom_sim7080_init_chat_script,                              \
-		.dial_chat_script = &simcom_sim7080_dial_chat_script,                              \
-		.periodic_chat_script = &simcom_sim7080_periodic_chat_script,                      \
-		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
-		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
-			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
+				       &simcom_sim7080_init_chat_script,                           \
+				       &simcom_sim7080_dial_chat_script,                           \
+				       &simcom_sim7080_periodic_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R4(inst)                                                 \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
@@ -2258,27 +2235,10 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 						  (gnss_pipe, 3),                                  \
 						  (user_pipe_0, 4))                                \
                                                                                                    \
-	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
-		.power_pulse_duration_ms = 1500,                                                   \
-		.reset_pulse_duration_ms = 100,                                                    \
-		.startup_time_ms = 10000,                                                          \
-		.shutdown_time_ms = 5000,                                                          \
-		.init_chat_script = &u_blox_sara_r4_init_chat_script,                              \
-		.dial_chat_script = &u_blox_sara_r4_dial_chat_script,                              \
-		.periodic_chat_script = &u_blox_sara_r4_periodic_chat_script,                      \
-		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
-		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
-			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
+				       &u_blox_sara_r4_init_chat_script,                           \
+				       &u_blox_sara_r4_dial_chat_script,                           \
+				       &u_blox_sara_r4_periodic_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R5(inst)                                                 \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
@@ -2293,28 +2253,10 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 						  (gnss_pipe, 4),                                  \
 						  (user_pipe_0, 3))                                \
                                                                                                    \
-	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
-		.autostarts = true,                                                                \
-		.power_pulse_duration_ms = 1500,                                                   \
-		.reset_pulse_duration_ms = 100,                                                    \
-		.startup_time_ms = 1500,                                                           \
-		.shutdown_time_ms = 13000,                                                         \
-		.init_chat_script = &u_blox_sara_r5_init_chat_script,                              \
-		.dial_chat_script = &u_blox_sara_r5_dial_chat_script,                              \
-		.periodic_chat_script = &u_blox_sara_r5_periodic_chat_script,                      \
-		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
-		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
-			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 1500, 13000, true,                         \
+				       &u_blox_sara_r5_init_chat_script,                           \
+				       &u_blox_sara_r5_dial_chat_script,                           \
+				       &u_blox_sara_r5_periodic_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_SWIR_HL7800(inst)                                                    \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
@@ -2329,27 +2271,10 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 						  (user_pipe_0, 3),                                \
 						  (user_pipe_1, 4))                                \
                                                                                                    \
-	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
-		.power_pulse_duration_ms = 1500,                                                   \
-		.reset_pulse_duration_ms = 100,                                                    \
-		.startup_time_ms = 10000,                                                          \
-		.shutdown_time_ms = 5000,                                                          \
-		.init_chat_script = &swir_hl7800_init_chat_script,                                 \
-		.dial_chat_script = &swir_hl7800_dial_chat_script,                                 \
-		.periodic_chat_script = &swir_hl7800_periodic_chat_script,                         \
-		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
-		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
-			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
+				       &swir_hl7800_init_chat_script,                              \
+				       &swir_hl7800_dial_chat_script,                              \
+				       &swir_hl7800_periodic_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_TELIT_ME910G1(inst)                                                  \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
@@ -2363,27 +2288,10 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
 						  (user_pipe_0, 3))                                \
                                                                                                    \
-	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
-		.power_pulse_duration_ms = 5050,                                                   \
-		.reset_pulse_duration_ms = 250,                                                    \
-		.startup_time_ms = 15000,                                                          \
-		.shutdown_time_ms = 5000,                                                          \
-		.init_chat_script = &telit_me910g1_init_chat_script,                               \
-		.dial_chat_script = &telit_me910g1_dial_chat_script,                               \
-		.periodic_chat_script = &telit_me910g1_periodic_chat_script,                       \
-		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
-		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
-			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 5050, 250, 15000, 5000, false,                        \
+				       &telit_me910g1_init_chat_script,                            \
+				       &telit_me910g1_dial_chat_script,                            \
+				       &telit_me910g1_periodic_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_NORDIC_NRF91_SLM(inst)						   \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 1500);               \
@@ -2396,27 +2304,10 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
 						  (gnss_pipe, 3))                                  \
                                                                                                    \
-	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
-		.power_pulse_duration_ms = 100,                                                    \
-		.reset_pulse_duration_ms = 100,                                                    \
-		.startup_time_ms = 2000,                                                           \
-		.shutdown_time_ms = 10000,                                                         \
-		.init_chat_script = &nordic_nrf91_slm_init_chat_script,                            \
-		.dial_chat_script = &nordic_nrf91_slm_dial_chat_script,                            \
-		.periodic_chat_script = &nordic_nrf91_slm_periodic_chat_script,                    \
-		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
-		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
-			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 100, 100, 2000, 10000, false,                         \
+				       &nordic_nrf91_slm_init_chat_script,                         \
+				       &nordic_nrf91_slm_dial_chat_script,                         \
+				       &nordic_nrf91_slm_periodic_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_SQN_GM02S(inst)                                                      \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
@@ -2431,28 +2322,10 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 						  (user_pipe_0, 3),                                \
 						  (user_pipe_1, 4))                                \
                                                                                                    \
-	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
-		.autostarts = true,                                                                \
-		.power_pulse_duration_ms = 1500,                                                   \
-		.reset_pulse_duration_ms = 100,                                                    \
-		.startup_time_ms = 2000,                                                           \
-		.shutdown_time_ms = 5000,                                                          \
-		.init_chat_script = &sqn_gm02s_init_chat_script,                                   \
-		.dial_chat_script = &sqn_gm02s_dial_chat_script,                                   \
-		.periodic_chat_script = &sqn_gm02s_periodic_chat_script,                           \
-		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
-		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
-			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 2000, 5000, true,                          \
+				       &sqn_gm02s_init_chat_script,                                \
+				       &sqn_gm02s_dial_chat_script,                                \
+				       &sqn_gm02s_periodic_chat_script)
 
 #define DT_DRV_COMPAT quectel_bg95
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_BG95)
