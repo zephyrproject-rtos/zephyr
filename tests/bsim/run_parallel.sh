@@ -69,7 +69,7 @@ echo "Attempting to run ${n_cases} cases (logging to \
  `realpath ${RESULTS_FILE}`)"
 
 export CLEAN_XML="sed -E -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
-                  -e 's/\"/&quot;/g'"
+                  -e 's/\"/&quot;/g' -e $'s/\x1b\[[0-9;]*[a-zA-Z]//g'"
 
 echo -n "" > $tmp_res_file
 
