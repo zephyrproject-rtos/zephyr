@@ -75,6 +75,11 @@ config LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 	help
 	  The default decoder implementation from LoRaMAC-node.
 
+config LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM
+	bool "Low Memory Footprint Algorithm"
+	help
+	  Alternate implementation with reduced RAM footprint.
+
 endchoice # LORAWAN_FRAG_TRANSPORT_DECODER
 
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition

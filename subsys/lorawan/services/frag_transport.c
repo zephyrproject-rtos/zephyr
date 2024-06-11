@@ -15,6 +15,8 @@
 #include <LoRaMac.h>
 #ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 #include <FragDecoder.h>
+#elif defined(CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM)
+#include "frag_decoder_lowmem.h"
 #endif
 
 #include <zephyr/lorawan/lorawan.h>
@@ -85,6 +87,8 @@ struct frag_transport_context {
 #ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 	/* variables required for FragDecoder.h */
 	FragDecoderCallbacks_t decoder_callbacks;
+#elif defined(CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM)
+	struct frag_decoder decoder;
 #endif
 };
 
@@ -219,6 +223,8 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 
 				ctx.decoder_callbacks.FragDecoderWrite = frag_flash_write;
 				ctx.decoder_callbacks.FragDecoderRead = frag_flash_read;
+#elif defined(CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM)
+				frag_dec_init(&ctx.decoder, ctx.nb_frag, ctx.frag_size);
 #endif
 				frag_flash_init(ctx.frag_size);
 				ctx.is_active = true;
@@ -269,6 +275,9 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 #ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 			decoder_process_status = FragDecoderProcess(
 				frag_counter, (uint8_t *)&rx_buf[rx_pos]);
+#elif defined(CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM)
+			decoder_process_status = frag_dec(
+				&ctx.decoder, frag_counter, &rx_buf[rx_pos], ctx.frag_size);
 #endif
 
 			LOG_INF("DataFragment %u of %u (%u lost), session: %u, decoder result: %d",
