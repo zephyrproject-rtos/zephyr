@@ -361,6 +361,7 @@ static inline int z_vrfy_device_init(const struct device *dev)
 
 extern void boot_banner(void);
 extern void k_sys_work_q_init(void);
+extern void init_kheap_statics(void);
 
 
 /**
@@ -387,13 +388,19 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_sys_post_kernel = true;
 
 	k_sys_work_q_init();
-#if defined(CONFIG_USERSPACE) && \
-	defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
 	/* When BSS sections are not present at boot, we need to wait for
 	 * paging mechanism to be initialized before we can zero out BSS.
 	 */
+#if defined(CONFIG_USERSPACE)
 	app_shmem_bss_zero();
 #endif
+	/* Need to wait for paging mechanism to be initialized before
+	 * heaps that are not in pinned sections can be initialized.
+	 */
+	init_kheap_statics();
+#endif
+	/* POST_KERNEL marker */
 	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	z_stack_adjust_initialized = 1;
@@ -574,6 +581,7 @@ FUNC_NORETURN void z_cstart(void)
 	app_shmem_bss_zero();
 	init_mem_domain_module();
 #endif
+	init_kheap_statics();
 
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
