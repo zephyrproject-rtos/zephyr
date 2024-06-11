@@ -758,7 +758,6 @@ Device Driver Model:
     - include/zephyr/init.h
     - tests/kernel/device/
     - doc/kernel/drivers/
-    - tests/misc/check_init_priorities/
   labels:
     - "area: Device Model"
   tests:

@@ -1898,37 +1898,6 @@ if (CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
 
 endif()
 
-if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
-  set(check_init_priorities_input
-      $<IF:$<TARGET_EXISTS:native_runner_executable>,${BYPRODUCT_KERNEL_EXE_NAME},${BYPRODUCT_KERNEL_ELF_NAME}>
-  )
-  set(check_init_priorities_command
-      ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
-      --elf-file=${check_init_priorities_input}
-  )
-  set(check_init_priorities_dependencies
-      ${logical_target_for_zephyr_elf}
-      $<$<TARGET_EXISTS:native_runner_executable>:native_runner_executable>
-  )
-
-  if(CONFIG_CHECK_INIT_PRIORITIES)
-    if(TARGET native_runner_executable)
-      add_custom_command(TARGET native_runner_executable POST_BUILD
-                         COMMAND ${check_init_priorities_command}
-      )
-    else()
-      list(APPEND post_build_commands COMMAND ${check_init_priorities_command})
-    endif()
-  endif()
-
-  add_custom_target(
-    initlevels
-    COMMAND ${check_init_priorities_command} --initlevels
-    DEPENDS ${check_init_priorities_dependencies}
-    USES_TERMINAL
-  )
-endif()
-
 # Generate signed (MCUboot or other) related artifacts as needed. Priority is:
 # * Sysbuild (if set)
 # * SIGNING_SCRIPT target property (if set)

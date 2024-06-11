@@ -409,12 +409,3 @@ The following is a detailed description of the scripts used during the build pro
 .. include:: ../../../scripts/build/gen_app_partitions.py
    :start-after: """
    :end-before: """
-
-.. _check_init_priorities.py:
-
-:zephyr_file:`scripts/build/check_init_priorities.py`
------------------------------------------------------
-
-.. include:: ../../../scripts/build/check_init_priorities.py
-   :start-after: """
-   :end-before: """
