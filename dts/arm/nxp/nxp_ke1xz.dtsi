@@ -187,7 +187,7 @@
 			gpioe: gpio@400ff100 {
 				compatible = "nxp,kinetis-gpio";
 				status = "disabled";
-				reg = <0x400ff100 0x40>;
+				reg = <0x100 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&porte>;
