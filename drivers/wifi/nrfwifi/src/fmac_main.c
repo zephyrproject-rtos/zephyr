@@ -73,7 +73,6 @@ BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE >= MAX_TX_FRAME_SIZE,
 	"TX buffer size must be at least as big as the MTU and headroom");
 
 static const unsigned char aggregation = 1;
-static const unsigned char wmm = 1;
 static const unsigned char max_num_tx_agg_sessions = 4;
 static const unsigned char max_num_rx_agg_sessions = 8;
 static const unsigned char reorder_buf_size = 16;
@@ -707,7 +706,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 
 #ifdef CONFIG_NRF70_DATA_TX
 	data_config.aggregation = aggregation;
-	data_config.wmm = wmm;
+	data_config.wmm = IS_ENABLED(CONFIG_NRF_WIFI_FEAT_WMM);
 	data_config.max_num_tx_agg_sessions = max_num_tx_agg_sessions;
 	data_config.max_num_rx_agg_sessions = max_num_rx_agg_sessions;
 	data_config.max_tx_aggregation = max_tx_aggregation;
