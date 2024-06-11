@@ -26,7 +26,7 @@ file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 if(HWMv1)
   # Support multiple SOC_ROOT
   file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR}/soc)
-  set(kconfig_soc_root ${BOARD_ROOT})
+  set(kconfig_soc_root ${SOC_ROOT})
   list(REMOVE_ITEM kconfig_soc_root ${ZEPHYR_BASE})
   set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/soc/Kconfig.defconfig)
 
