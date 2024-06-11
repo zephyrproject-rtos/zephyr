@@ -360,7 +360,7 @@ static inline int z_vrfy_device_init(const struct device *dev)
 #endif
 
 extern void boot_banner(void);
-extern void k_sys_work_q_init(void);
+extern void init_system_workqueue(void);
 extern void init_kheap_statics(void);
 
 
@@ -387,7 +387,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_MMU */
 	z_sys_post_kernel = true;
 
-	k_sys_work_q_init();
+	init_system_workqueue();
 #if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
 	/* When BSS sections are not present at boot, we need to wait for
 	 * paging mechanism to be initialized before we can zero out BSS.
