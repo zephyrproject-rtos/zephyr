@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/ztest_assert.h>
 
 static const uint32_t number = 42;
 
@@ -21,5 +22,6 @@ void test_entry(void)
 {
 	printk("hello world\n");
 	printk("A number is %u\n", number);
+	zassert_equal(number, 42);
 }
 LL_EXTENSION_SYMBOL(test_entry);
