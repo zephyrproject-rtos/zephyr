@@ -173,15 +173,16 @@ Release Milestones
      - Release Manager
    * - T-3W
      - Feature Freeze (RC1)
-     - No new features, ONLY stabilization and cosmetic changes, bug and doc fixes are allowed.
+     - No new features after RC1, ONLY stabilization and cosmetic changes, bug and doc
+       fixes are allowed. New tests for existing features are also allowed.
      - Release Engineering
    * - T-2W
      - 2nd Release Candidate
-     - No new features, ONLY stabilization and cosmetic changes, bug and doc fixes are allowed.
+     - No new features after RC2, ONLY stabilization and cosmetic changes, bug and doc fixes are allowed.
      - Release Manager
    * - T-1W
      - Hard Freeze (RC3)
-     - Only blocker bug fixes, documentation and changes to release notes are allowed.
+     - Only blocker bug fixes after RC3, documentation and changes to release notes are allowed.
        Release notes need to be complete by this checkpoint. Release Criteria is
        met.
      - Release Manager
