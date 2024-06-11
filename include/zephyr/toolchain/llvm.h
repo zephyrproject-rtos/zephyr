@@ -86,6 +86,8 @@
 #endif /* __int_least32_c_suffix__ */
 #endif /* __INT_LEAST32_TYPE__ */
 
+#endif /* !CONFIG_ENFORCE_ZEPHYR_STDINT */
+
 #ifdef __INT16_TYPE__
 #undef __int_least16_c_suffix__
 #undef __int_least8_c_suffix__
@@ -121,8 +123,6 @@
 #define __UINT8_C(x)	x ## U
 #endif /* __int_least8_c_suffix__ */
 #endif /* __INT_LEAST8_TYPE__ */
-
-#endif /* !CONFIG_ENFORCE_ZEPHYR_STDINT */
 
 #define __INTMAX_C(x)	int_c(x, __INTMAX_C_SUFFIX__)
 #define __UINTMAX_C(x)	int_c(x, __UINTMAX_C_SUFFIX__)
