@@ -22,3 +22,8 @@
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: .*struct in_addr.*'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: .*struct in6_addr.*'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: .*struct net_if.*'.*
+
+# As of Doxygen 1.9.7, anonymous unions/structs don't have an auto-generated
+# name anymore, causing issues with Breathe
+.*Invalid C declaration: Expected identifier in nested name.*\n.*\n.*\^.*
+.*Error in declarator or parameters\nInvalid C declaration: Expected identifier in nested name.*\n.*.*\n.*\^.*
