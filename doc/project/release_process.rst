@@ -72,14 +72,17 @@ code base has begun.
 Stabilization Phase
 *******************
 
-Over the next weeks, only patches which fix problems should be submitted to the
-mainline.  On occasion, a more significant change will be allowed, but such
-occasions are rare and require a TSC approval (Change Control Board). As a
-general rule, if you miss submitting your code during the development phase for
-a given feature, the best thing to do is to wait for the next development cycle.
-(An occasional exception is made for drivers for previously unsupported
-hardware; if they do not touch any other in-tree code, they cannot cause
-regressions and should be safe to add at any time).
+Over the next weeks and depending on the release milestone, only stabilization,
+cosmetic changes, tests, bug and doc fixes are allowed (See :ref:`table
+<release_milestones>` below).
+
+On occasion, more significant changes and new features will be allowed, but such
+occasions are rare and require a TSC approval and a justification. As a general
+rule, if you miss submitting your code during the development phase for a given
+feature, the best thing to do is to wait for the next development cycle. (An
+occasional exception is made for drivers for previously unsupported hardware; if
+they do not touch any other in-tree code, they cannot cause regressions and
+should be safe to add at any time).
 
 As fixes make their way into the mainline, the patch rate will slow over time.
 The mainline release owner releases new -rc drops once or twice a week; a normal
@@ -114,6 +117,7 @@ that can potentially compromise the functionality, security, or reliability of
 our software.  High-critical issues represent vulnerabilities that, if left
 unresolved, could have severe consequences.
 
+.. _release_milestones:
 
 Release Milestones
 *******************
