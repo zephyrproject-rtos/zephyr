@@ -543,6 +543,9 @@ void __weak z_early_rand_get(uint8_t *buf, size_t length)
 	}
 }
 
+
+extern void init_mbox_module(void);
+
 /**
  *
  * @brief Initialize kernel
@@ -582,12 +585,14 @@ FUNC_NORETURN void z_cstart(void)
 	init_mem_domain_module();
 #endif
 	init_kheap_statics();
+	init_mbox_module();
 
-	/* perform basic hardware initialization */
+	/* PRE_KERNEL_1 marker */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
 #if defined(CONFIG_SMP)
 	arch_smp_init();
 #endif
+	/* PRE_KERNEL_2 marker */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_STACK_CANARIES
