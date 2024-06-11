@@ -135,7 +135,7 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 	case WIFI_FREQ_BAND_2_4_GHZ:
 		idx = *chan_idx;
 
-		for (i = chan_start; i <= chan_end; i++) {
+		for (i = chan_start+1; i <= chan_end; i++) {
 			band_chan[idx].band = band_idx;
 			band_chan[idx].channel = i;
 			idx++;
@@ -173,7 +173,7 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 	case WIFI_FREQ_BAND_6_GHZ:
 		idx = *chan_idx;
 
-		i = chan_start;
+		i = chan_start+1;
 
 		while (i <= chan_end) {
 			band_chan[idx].band = band_idx;
