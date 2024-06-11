@@ -40,6 +40,7 @@
 #include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
+#include <sys/errno.h>
 
 LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTANT_LOG_LEVEL);
 
@@ -220,6 +221,13 @@ static int parse_recv_state(const void *data, uint16_t length,
 	}
 
 	recv_state->num_subgroups = net_buf_simple_pull_u8(&buf);
+	if (recv_state->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+		LOG_DBG("Cannot parse %u subgroups (max %d)", recv_state->num_subgroups,
+			CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
+
+		return -ENOMEM;
+	}
+
 	for (int i = 0; i < recv_state->num_subgroups; i++) {
 		struct bt_bap_bass_subgroup *subgroup = &recv_state->subgroups[i];
 		uint8_t *metadata;
