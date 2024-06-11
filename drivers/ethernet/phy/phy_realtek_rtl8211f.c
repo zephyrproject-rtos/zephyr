@@ -589,6 +589,8 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 		return ret;
 	}
 skip_int_gpio:
+#else
+	phy_rt_rtl8211f_monitor_work_handler(&data->phy_monitor_work.work);
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
 	return 0;
