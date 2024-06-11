@@ -4,9 +4,9 @@ common:
     - arm
     - xtensa
   platform_exclude:
-    - apollo4p_evb
-    - apollo4p_blue_kxr_evb
-    - numaker_pfm_m487 # See #63167
+    - apollo4p_evb            # See #73443
+    - apollo4p_blue_kxr_evb   # See #73443
+    - numaker_pfm_m487        # See #63167
 
 tests:
   # While there is in practice no value in compiling subsys/llext/*.c
@@ -36,50 +36,14 @@ tests:
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
-  llext.simple.modules_enabled_writable:
-    filter: not CONFIG_MPU and not CONFIG_MMU
-    platform_key:
-      - simulation
-      - arch
-    platform_exclude:
-      - qemu_cortex_a9 # MMU
-    extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - CONFIG_MODULES=y
-      - CONFIG_LLEXT_STORAGE_WRITABLE=y
-      - CONFIG_LLEXT_TEST_HELLO=m
-  llext.simple.modules_enabled_writable_relocatable:
+  llext.simple.writable_relocatable:
     arch_exclude: arm arm64
     filter: not CONFIG_MPU and not CONFIG_MMU
     integration_platforms:
       - qemu_xtensa
     extra_configs:
-      - CONFIG_MODULES=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
-      - CONFIG_LLEXT_TEST_HELLO=m
-  llext.simple.modules_enabled_readonly:
-    filter: not CONFIG_MPU and not CONFIG_MMU
-    arch_exclude: xtensa # for now
-    platform_key:
-      - simulation
-      - arch
-    platform_exclude:
-      - qemu_cortex_a9 # MMU
-    extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - CONFIG_MODULES=y
-      - CONFIG_LLEXT_TEST_HELLO=m
-  llext.simple.modules_enabled_readonly_mpu:
-    filter: CONFIG_ARCH_HAS_USERSPACE
-    arch_exclude: xtensa # for now
-    platform_key:
-      - simulation
-      - arch
-    extra_configs:
-      - CONFIG_USERSPACE=y
-      - CONFIG_MODULES=y
-      - CONFIG_LLEXT_TEST_HELLO=m
   llext.simple.readonly_slid_linking:
     arch_exclude: xtensa # for now
     filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
@@ -100,51 +64,12 @@ tests:
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
-  llext.simple.modules_enabled_writable_slid_linking:
-    filter: not CONFIG_MPU and not CONFIG_MMU
-    platform_key:
-      - simulation
-      - arch
-    platform_exclude:
-      - qemu_cortex_a9 # MMU
-    extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - CONFIG_MODULES=y
-      - CONFIG_LLEXT_STORAGE_WRITABLE=y
-      - CONFIG_LLEXT_TEST_HELLO=m
-      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
-  llext.simple.modules_enabled_writable_relocatable_slid_linking:
+  llext.simple.writable_relocatable_slid_linking:
     arch_exclude: arm arm64
     filter: not CONFIG_MPU and not CONFIG_MMU
     integration_platforms:
       - qemu_xtensa
     extra_configs:
-      - CONFIG_MODULES=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
-      - CONFIG_LLEXT_TEST_HELLO=m
-      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
-  llext.simple.modules_enabled_readonly_slid_linking:
-    filter: not CONFIG_MPU and not CONFIG_MMU
-    arch_exclude: xtensa # for now
-    platform_key:
-      - simulation
-      - arch
-    platform_exclude:
-      - qemu_cortex_a9 # MMU
-    extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - CONFIG_MODULES=y
-      - CONFIG_LLEXT_TEST_HELLO=m
-      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
-  llext.simple.modules_enabled_readonly_mpu_slid_linking:
-    filter: CONFIG_ARCH_HAS_USERSPACE
-    arch_exclude: xtensa # for now
-    platform_key:
-      - simulation
-      - arch
-    extra_configs:
-      - CONFIG_USERSPACE=y
-      - CONFIG_MODULES=y
-      - CONFIG_LLEXT_TEST_HELLO=m
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
