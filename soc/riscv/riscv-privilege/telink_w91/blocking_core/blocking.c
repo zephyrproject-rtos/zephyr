@@ -98,6 +98,11 @@ static void __GENERIC_SECTION(.ram_code) __attribute__((noinline)) blocking_w91_
 	uint64_t timeout_ticks = (uint64_t)CONFIG_BLOCKING_CORE_TELINK_W91_CORE_STOP_TIMEOUT_MS *
 			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / MSEC_PER_SEC;
 
+	if (atomic_get(&blocking_state) != BLOCKING_CORE_STOP_REQ_STATE) {
+		assert(0);
+		return;
+	}
+
 	key = irq_lock();
 
 	atomic_set(&blocking_state, BLOCKING_CORE_STOPPED_STATE);

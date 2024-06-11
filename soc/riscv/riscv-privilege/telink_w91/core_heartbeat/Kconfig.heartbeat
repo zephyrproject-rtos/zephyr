@@ -15,7 +15,7 @@ config TELINK_W91_CORE_HEARTBEAT_THREAD_STACK_SIZE
 
 config TELINK_W91_CORE_HEARTBEAT_THREAD_PRIORITY
 	int "Core heartbeat thread priority"
-	default 5
+	default 0
 	help
 	  Core heartbeat thread priority.
 

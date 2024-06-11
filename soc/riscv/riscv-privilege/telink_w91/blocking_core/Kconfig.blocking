@@ -18,7 +18,7 @@ config TELINK_W91_BLOCKING_CORE_THREAD_STACK_SIZE
 
 config TELINK_W91_BLOCKING_CORE_THREAD_PRIORITY
 	int "Blocking thread priority"
-	default 10
+	default 40
 	help
 	  Blocking thread priority.
 
