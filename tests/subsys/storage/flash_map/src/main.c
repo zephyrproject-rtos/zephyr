@@ -225,21 +225,28 @@ ZTEST(flash_map, test_flash_area_erase_and_flatten)
 	rc = flash_area_erase(fa, 0, fa->fa_size);
 	zassert_true(rc == 0, "flash area erase fail");
 
+	TC_PRINT("Flash area info:\n");
+	TC_PRINT("\tpointer:\t %p\n", &fa);
+	TC_PRINT("\toffset:\t %ld\n", (long)fa->fa_off);
+	TC_PRINT("\tsize:\t %ld\n", (long)fa->fa_size);
+
 	/* we work under assumption that flash_fill is working and tested */
-	for (i = 0; erased && i < fa->fa_size; ++i) {
+	i = 0;
+	while (erased && i < fa->fa_size) {
 		uint8_t buf[32];
 		int chunk = MIN(sizeof(buf), fa->fa_size - i);
 
-		rc = flash_read(flash_dev, i, buf, chunk);
-		zassert_equal(rc, 0, "Unexpected read fail");
+		rc = flash_read(flash_dev, fa->fa_off + i, buf, chunk);
+		zassert_equal(rc, 0, "Unexpected read fail with error %d", rc);
 		for (int ii = 0; ii < chunk; ++ii, ++i) {
-			if (buf[ii] != flash_area_erased_val(fa)) {
+			if ((uint8_t)buf[ii] != (uint8_t)flash_area_erased_val(fa)) {
 				erased = false;
 				break;
 			}
 		}
 	}
-	zassert_true(erased, "Erase failed at index %d", i);
+	zassert_true(erased, "Erase failed at dev abosolute offset index %d",
+		     i + fa->fa_off);
 
 	rc = flash_fill(flash_dev, 0xaa, fa->fa_off, fa->fa_size);
 	zassert_true(rc == 0, "flash device fill fail");
@@ -247,20 +254,22 @@ ZTEST(flash_map, test_flash_area_erase_and_flatten)
 	rc = flash_area_flatten(fa, 0, fa->fa_size);
 
 	erased = true;
-	for (i = 0; erased && i < fa->fa_size; ++i) {
+	i = 0;
+	while (erased && i < fa->fa_size) {
 		uint8_t buf[32];
 		int chunk = MIN(sizeof(buf), fa->fa_size - i);
 
-		rc = flash_read(flash_dev, i, buf, chunk);
-		zassert_equal(rc, 0, "Unexpected read fail");
+		rc = flash_read(flash_dev, fa->fa_off + i, buf, chunk);
+		zassert_equal(rc, 0, "Unexpected read fail with error %d", rc);
 		for (int ii = 0; ii < chunk; ++ii, ++i) {
-			if (buf[ii] != flash_area_erased_val(fa)) {
+			if ((uint8_t)buf[ii] != (uint8_t)flash_area_erased_val(fa)) {
 				erased = false;
 				break;
 			}
 		}
 	}
-	zassert_true(erased, "Flatten/Erase failed at index %d", i);
+	zassert_true(erased, "Flatten/Erase failed at dev absolute offset %d",
+		     i + fa->fa_off);
 }
 
 ZTEST_SUITE(flash_map, NULL, NULL, NULL, NULL, NULL);
