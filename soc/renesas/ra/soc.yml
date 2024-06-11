@@ -40,3 +40,6 @@ family:
       - name: ra4m2
         socs:
           - name: r7fa4m2ad3cfp
+      - name: ra4m3
+        socs:
+          - name: r7fa4m3af3cfb
