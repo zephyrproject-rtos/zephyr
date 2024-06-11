@@ -546,24 +546,26 @@ POSIX_TIMERS
 POSIX_FD_MGMT
 =============
 
-This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
+.. note::
+   When using Newlib, Picolibc, or other C libraries conforming to the ISO C Standard, the
+   C89 components of the ``POSIX_FD_MGMT`` Option Group are considered supported.
 
 .. csv-table:: POSIX_FD_MGMT
    :header: API, Supported
    :widths: 50,10
 
-    dup(),
-    dup2(),
-    fcntl(),
-    fgetpos(),
-    fseek(),
-    fseeko(),
-    fsetpos(),
-    ftell(),
-    ftello(),
-    ftruncate(),yes
-    lseek(),
-    rewind(),
+    dup(), yes
+    dup2(), yes
+    fcntl(), yes
+    fgetpos(), yes
+    fseek(), yes
+    fseeko(), yes
+    fsetpos(), yes
+    ftell(), yes
+    ftello(), yes
+    ftruncate(), yes
+    lseek(), yes
+    rewind(), yes
 
 .. _posix_option_group_file_locking:
 
