@@ -459,7 +459,7 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
 	uint32_t codec;
 	uint32_t codec_ids = 0U;
-	int err;
+	int err = 0;
 
 	if (!is_char(buf, '=')) {
 		return -ENOTSUP;
