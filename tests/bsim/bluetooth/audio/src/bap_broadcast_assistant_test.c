@@ -98,7 +98,7 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 
 static bool metadata_entry(struct bt_data *data, void *user_data)
 {
-	char metadata[512];
+	char metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
 
 	(void)bin2hex(data->data, data->data_len, metadata, sizeof(metadata));
 
@@ -113,7 +113,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 	const struct bt_bap_scan_delegator_recv_state *state)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char bad_code[33];
+	char bad_code[BT_AUDIO_BROADCAST_CODE_SIZE * 2 + 1];
 
 	if (err != 0) {
 		FAIL("BASS recv state read failed (%d)\n", err);
@@ -136,7 +136,12 @@ static void bap_broadcast_assistant_recv_state_cb(
 	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? ", bad code" : "",
 	       bad_code);
 
-	for (int i = 0; i < state->num_subgroups; i++) {
+	if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+		FAIL("Encryption state is BT_BAP_BIG_ENC_STATE_BAD_CODE");
+		return;
+	}
+
+	for (uint8_t i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
@@ -152,6 +157,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 		}
 	}
 
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 		err = bt_le_per_adv_sync_transfer(g_pa_sync, conn,
 						  BT_UUID_BASS_VAL);
@@ -160,6 +166,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 			return;
 		}
 	}
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 
 	if (state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
 		SET_FLAG(flag_state_synced);
