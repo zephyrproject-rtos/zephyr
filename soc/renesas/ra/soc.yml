@@ -4,6 +4,9 @@ family:
       - name: ra2a1
         socs:
           - name: r7fa2a1ab3cfm
+      - name: ra4e2
+        socs:
+          - name: r7fa4e2b93cfm
       - name: ra4m1
         socs:
           - name: r7fa4m1ab3cfm
