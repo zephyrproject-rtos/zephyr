@@ -81,7 +81,6 @@ struct frag_transport_context {
 
 	/* variables required for FragDecoder.h */
 	FragDecoderCallbacks_t decoder_callbacks;
-	int32_t decoder_process_status;
 };
 
 /*
@@ -100,6 +99,7 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 	uint8_t tx_pos = 0;
 	uint8_t rx_pos = 0;
 	int ans_delay = 0;
+	int decoder_process_status;
 
 	__ASSERT(port == LORAWAN_PORT_FRAG_TRANSPORT, "Wrong port %d", port);
 
@@ -207,7 +207,6 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 
 				frag_flash_init(ctx.frag_size);
 				ctx.is_active = true;
-				ctx.decoder_process_status = FRAG_SESSION_ONGOING;
 			}
 
 			tx_buf[tx_pos++] = FRAG_TRANSPORT_CMD_FRAG_SESSION_SETUP;
@@ -245,23 +244,21 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 				break;
 			}
 
-			if (ctx.decoder_process_status == FRAG_SESSION_ONGOING) {
-				if (frag_counter > ctx.nb_frag) {
-					/* Additional fragments have to be cached in RAM for
-					 * recovery algorithm.
-					 */
-					frag_flash_use_cache();
-				}
-
-				ctx.decoder_process_status = FragDecoderProcess(
-					frag_counter, (uint8_t *)&rx_buf[rx_pos]);
+			if (frag_counter > ctx.nb_frag) {
+				/* Additional fragments have to be cached in RAM for recovery
+				 * algorithm.
+				 */
+				frag_flash_use_cache();
 			}
+
+			decoder_process_status = FragDecoderProcess(
+				frag_counter, (uint8_t *)&rx_buf[rx_pos]);
 
 			LOG_INF("DataFragment %u of %u (%u lost), session: %u, decoder result: %d",
 				frag_counter, ctx.nb_frag, frag_counter - ctx.nb_frag_received,
-				index, ctx.decoder_process_status);
+				index, decoder_process_status);
 
-			if (ctx.decoder_process_status >= 0) {
+			if (decoder_process_status >= 0) {
 				/* Positive status corresponds to number of lost (but recovered)
 				 * fragments. Value >= 0 means the transport is done.
 				 */
@@ -273,9 +270,8 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 					finished_cb();
 				}
 
-				ctx.is_active = false;
 				/* avoid processing further fragments */
-				ctx.decoder_process_status = FRAG_SESSION_NOT_STARTED;
+				ctx.is_active = false;
 			}
 
 			rx_pos += ctx.frag_size;
@@ -300,9 +296,6 @@ static struct lorawan_downlink_cb downlink_cb = {
 int lorawan_frag_transport_run(void (*transport_finished_cb)(void))
 {
 	finished_cb = transport_finished_cb;
-
-	/* initialize non-zero static variables */
-	ctx.decoder_process_status = FRAG_SESSION_NOT_STARTED;
 
 	lorawan_register_downlink_callback(&downlink_cb);
 
