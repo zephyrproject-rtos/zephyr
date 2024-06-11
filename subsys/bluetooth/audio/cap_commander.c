@@ -108,6 +108,7 @@ copy_broadcast_reception_start_param(struct bt_bap_broadcast_assistant_add_src_p
 	bt_addr_le_copy(&add_src_param->addr, &start_param->addr);
 	add_src_param->adv_sid = start_param->adv_sid;
 	add_src_param->broadcast_id = start_param->broadcast_id;
+	add_src_param->pa_sync = true;
 	add_src_param->pa_interval = start_param->pa_interval;
 	add_src_param->num_subgroups = start_param->num_subgroups;
 	add_src_param->subgroups = start_param->subgroups;
@@ -266,6 +267,7 @@ static bool valid_broadcast_reception_start_param(
 			return false;
 		}
 
+		total_bis_sync = 0U;
 		for (size_t j = 0U; j < start_param->num_subgroups; j++) {
 			const struct bt_bap_bass_subgroup *param_subgroups =
 				&start_param->subgroups[j];
@@ -273,12 +275,16 @@ static bool valid_broadcast_reception_start_param(
 			CHECKIF(!valid_bis_syncs(param_subgroups->bis_sync)) {
 				LOG_DBG("param->param[%zu].subgroup[%zu].bis_sync is invalid %u", i,
 					j, param_subgroups->bis_sync);
+
+				return false;
 			}
 
 			CHECKIF((total_bis_sync & param_subgroups->bis_sync) != 0) {
 				LOG_DBG("param->param[%zu].subgroup[%zu].bis_sync 0x%08X has "
 					"duplicate bits (0x%08X) ",
 					i, j, param_subgroups->bis_sync, total_bis_sync);
+
+				return false;
 			}
 
 			total_bis_sync |= param_subgroups->bis_sync;
@@ -340,7 +346,7 @@ int bt_cap_commander_broadcast_reception_start(
 
 	broadcast_assistant_cb.add_src = cap_commander_ba_add_src_cb;
 	if (!ba_cb_registered && cap_commander_register_ba_cb() != 0) {
-		LOG_DBG("Failed to register VCP callbacks");
+		LOG_DBG("Failed to register broadcast assistant callbacks");
 
 		return -ENOEXEC;
 	}
