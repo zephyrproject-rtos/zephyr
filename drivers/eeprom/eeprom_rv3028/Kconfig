@@ -1,0 +1,8 @@
+# Copyright (c) 2024 ANITRA system s.r.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_RV3028
+	bool "Micro Crystal RV3028 User EEPROM support"
+	default y
+	depends on RTC_RV3028
+	depends on DT_HAS_MICROCRYSTAL_RV3028_EEPROM_ENABLED
