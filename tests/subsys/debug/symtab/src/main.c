@@ -37,21 +37,21 @@ ZTEST(test_symtab, test_symtab_find_symbol_name)
 	/* Find the name of functions with `symtab_find_symbol_name()` */
 	offset = -1;
 	symbol_name = symtab_find_symbol_name((uintptr_t)main, &offset);
-	zassert_equal(strcmp(symbol_name, "main"), 0);
+	zassert_str_equal(symbol_name, "main");
 	zassert_equal(offset, 0);
 
 	/* Do a few more just for fun */
 	symbol_name = symtab_find_symbol_name((uintptr_t)strcmp, NULL);
-	zassert_equal(strcmp(symbol_name, "strcmp"), 0);
+	zassert_str_equal(symbol_name, "strcmp");
 
 	symbol_name = symtab_find_symbol_name((uintptr_t)symtab_find_symbol_name, NULL);
-	zassert_equal(strcmp(symbol_name, "symtab_find_symbol_name"), 0);
+	zassert_str_equal(symbol_name, "symtab_find_symbol_name");
 
 	symbol_name = symtab_find_symbol_name((uintptr_t)test_main, NULL);
-	zassert_equal(strcmp(symbol_name, "test_main"), 0);
+	zassert_str_equal(symbol_name, "test_main");
 
 	symbol_name = symtab_find_symbol_name((uintptr_t)setup, NULL);
-	zassert_equal(strcmp(symbol_name, "setup"), 0);
+	zassert_str_equal(symbol_name, "setup");
 }
 
 /**
@@ -83,7 +83,7 @@ ZTEST(test_symtab, test_before_first)
 	if (first_addr > 0) {
 		offset = -1;
 		symbol_name = symtab_find_symbol_name(first_addr - 1, &offset);
-		zassert_equal(strcmp(symbol_name, "?"), 0);
+		zassert_str_equal(symbol_name, "?");
 		zassert_equal(offset, 0);
 	} else {
 		ztest_test_skip();
@@ -98,13 +98,13 @@ ZTEST(test_symtab, test_first)
 
 	offset = -1;
 	symbol_name = symtab_find_symbol_name(first_addr, &offset);
-	zassert_equal(strcmp(symbol_name, symtab->entries[0].name), 0);
+	zassert_str_equal(symbol_name, symtab->entries[0].name);
 	zassert_equal(offset, 0);
 
 	if ((symtab->entries[0].offset + 1) != symtab->entries[1].offset) {
 		offset = -1;
 		symbol_name = symtab_find_symbol_name(first_addr + 1, &offset);
-		zassert_equal(strcmp(symbol_name, symtab->entries[0].name), 0);
+		zassert_str_equal(symbol_name, symtab->entries[0].name);
 		zassert_equal(offset, 1);
 	}
 }
@@ -119,7 +119,7 @@ ZTEST(test_symtab, test_last)
 
 	offset = -1;
 	symbol_name = symtab_find_symbol_name(last_addr, &offset);
-	zassert_equal(strcmp(symbol_name, symtab->entries[last_idx].name), 0);
+	zassert_str_equal(symbol_name, symtab->entries[last_idx].name);
 	zassert_equal(offset, 0);
 }
 
@@ -135,7 +135,8 @@ ZTEST(test_symtab, test_after_last)
 	if (last_offset + 0x1 != symtab->entries[symtab->length].offset) {
 		offset = -1;
 		symbol_name = symtab_find_symbol_name(last_addr + 0x1, &offset);
-		zassert_equal(strcmp(symbol_name, symtab->entries[symtab->length - 1].name), 0);
+		zassert_str_equal(symbol_name,
+				  symtab->entries[symtab->length - 1].name);
 		zassert_equal(offset, 0x1);
 	} else {
 		ztest_test_skip();
@@ -153,6 +154,6 @@ ZTEST(test_symtab, test_after_dummy)
 	/* Test `offset` output with dummy symbol (after last dymbol) */
 	offset = -1;
 	symbol_name = symtab_find_symbol_name(last_dummy_addr + 0x42, &offset);
-	zassert_equal(strcmp(symbol_name, "?"), 0);
+	zassert_str_equal(symbol_name, "?");
 	zassert_equal(offset, 0);
 }

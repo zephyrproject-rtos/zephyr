@@ -700,8 +700,8 @@ void test_file_read(void)
 	read_buff[brw] = 0;
 	TC_PRINT("Data read:\"%s\"\n\n", read_buff);
 
-	zassert_true(strcmp(test_str, read_buff) == 0,
-		    "Error - Data read does not match data written");
+	zassert_str_equal(test_str, read_buff,
+			  "Error - Data read does not match data written");
 
 	TC_PRINT("Data read matches data written\n");
 }

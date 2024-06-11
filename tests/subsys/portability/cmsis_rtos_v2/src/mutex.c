@@ -66,8 +66,7 @@ ZTEST(cmsis_mutex, test_mutex)
 	zassert_true(mutex_id != NULL, "Mutex1 creation failed");
 
 	name = osMutexGetName(mutex_id);
-	zassert_true(strcmp(mutex_attr.name, name) == 0,
-		     "Error getting Mutex name");
+	zassert_str_equal(mutex_attr.name, name, "Error getting Mutex name");
 
 	/* Try to release mutex without obtaining it */
 	status = osMutexRelease(mutex_id);

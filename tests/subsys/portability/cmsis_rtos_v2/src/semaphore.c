@@ -78,8 +78,8 @@ ZTEST(cmsis_semaphore, test_semaphore)
 	zassert_true(semaphore_id != NULL, "semaphore creation failed");
 
 	name = osSemaphoreGetName(semaphore_id);
-	zassert_true(strcmp(sema_attr.name, name) == 0,
-		     "Error getting Semaphore name");
+	zassert_str_equal(sema_attr.name, name,
+			  "Error getting Semaphore name");
 
 	id = osThreadNew(thread_sema, semaphore_id, &thread_attr);
 	zassert_true(id != NULL, "Thread creation failed");

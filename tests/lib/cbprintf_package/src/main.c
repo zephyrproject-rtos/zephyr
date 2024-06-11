@@ -289,11 +289,11 @@ ZTEST(cbprintf_package, test_cbprintf_fsc_package)
 	/* Get pointer to the first string in the package. */
 	addr = (char *)&fsc_package[desc->desc.len * sizeof(int) + 1];
 
-	zassert_equal(strcmp(test_str, addr), 0);
+	zassert_str_equal(test_str, addr);
 
 	/* Get address of the second string. */
 	addr += strlen(addr) + 2;
-	zassert_equal(strcmp(test_str1, addr), 0);
+	zassert_str_equal(test_str1, addr);
 }
 
 static void check_package(void *package, size_t len, const char *exp_str)

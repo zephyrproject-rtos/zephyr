@@ -754,8 +754,8 @@ ZTEST(sprintf, test_sprintf_string)
 		     "Expected 'short string', got '%s'\n", buffer);
 
 	sprintf(buffer, "%s", REALLY_LONG_STRING);
-	zassert_true((strcmp(buffer, REALLY_LONG_STRING) == 0),
-		     "sprintf(%%s) of REALLY_LONG_STRING doesn't match!\n");
+	zassert_str_equal(buffer, REALLY_LONG_STRING,
+			  "sprintf(%%s) of REALLY_LONG_STRING doesn't match!\n");
 }
 
 

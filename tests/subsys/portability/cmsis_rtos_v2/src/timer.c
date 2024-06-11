@@ -55,8 +55,7 @@ ZTEST(cmsis_timer, test_timer)
 	zassert_true(id1 != NULL, "error creating one-shot timer");
 
 	name = osTimerGetName(id1);
-	zassert_true(strcmp(timer_attr.name, name) == 0,
-		     "Error getting Timer name");
+	zassert_str_equal(timer_attr.name, name, "Error getting Timer name");
 
 	/* Stop the timer before start */
 	status = osTimerStop(id1);

@@ -14,49 +14,44 @@ ZTEST(util, test_u8_to_dec) {
 
 	len = u8_to_dec(text, sizeof(text), 0);
 	zassert_equal(len, 1, "Length of 0 is not 1");
-	zassert_equal(strcmp(text, "0"), 0,
-		      "Value=0 is not converted to \"0\"");
+	zassert_str_equal(text, "0", "Value=0 is not converted to \"0\"");
 
 	len = u8_to_dec(text, sizeof(text), 1);
 	zassert_equal(len, 1, "Length of 1 is not 1");
-	zassert_equal(strcmp(text, "1"), 0,
-		      "Value=1 is not converted to \"1\"");
+	zassert_str_equal(text, "1", "Value=1 is not converted to \"1\"");
 
 	len = u8_to_dec(text, sizeof(text), 11);
 	zassert_equal(len, 2, "Length of 11 is not 2");
-	zassert_equal(strcmp(text, "11"), 0,
-		      "Value=10 is not converted to \"11\"");
+	zassert_str_equal(text, "11", "Value=10 is not converted to \"11\"");
 
 	len = u8_to_dec(text, sizeof(text), 100);
 	zassert_equal(len, 3, "Length of 100 is not 3");
-	zassert_equal(strcmp(text, "100"), 0,
-		      "Value=100 is not converted to \"100\"");
+	zassert_str_equal(text, "100",
+			  "Value=100 is not converted to \"100\"");
 
 	len = u8_to_dec(text, sizeof(text), 101);
 	zassert_equal(len, 3, "Length of 101 is not 3");
-	zassert_equal(strcmp(text, "101"), 0,
-		      "Value=101 is not converted to \"101\"");
+	zassert_str_equal(text, "101",
+			  "Value=101 is not converted to \"101\"");
 
 	len = u8_to_dec(text, sizeof(text), 255);
 	zassert_equal(len, 3, "Length of 255 is not 3");
-	zassert_equal(strcmp(text, "255"), 0,
-		      "Value=255 is not converted to \"255\"");
+	zassert_str_equal(text, "255",
+			  "Value=255 is not converted to \"255\"");
 
 	memset(text, 0, sizeof(text));
 	len = u8_to_dec(text, 2, 123);
 	zassert_equal(len, 2,
 		      "Length of converted value using 2 byte buffer isn't 2");
-	zassert_equal(
-		strcmp(text, "12"), 0,
-		"Value=123 is not converted to \"12\" using 2-byte buffer");
+	zassert_str_equal(text, "12",
+			  "Value=123 is not converted to \"12\" using 2-byte buffer");
 
 	memset(text, 0, sizeof(text));
 	len = u8_to_dec(text, 1, 123);
 	zassert_equal(len, 1,
 		      "Length of converted value using 1 byte buffer isn't 1");
-	zassert_equal(
-		strcmp(text, "1"), 0,
-		"Value=123 is not converted to \"1\" using 1-byte buffer");
+	zassert_str_equal(text, "1",
+			  "Value=123 is not converted to \"1\" using 1-byte buffer");
 
 	memset(text, 0, sizeof(text));
 	len = u8_to_dec(text, 0, 123);
@@ -419,9 +414,9 @@ ZTEST(util, test_LIST_DROP_EMPTY) {
 	};
 
 	zassert_equal(ARRAY_SIZE(arr), 3, "Failed to cleanup list");
-	zassert_equal(strcmp(arr[0], "Henry"), 0, "Failed at 0");
-	zassert_equal(strcmp(arr[1], "Dorsett"), 0, "Failed at 1");
-	zassert_equal(strcmp(arr[2], "Case"), 0, "Failed at 0");
+	zassert_str_equal(arr[0], "Henry", "Failed at 0");
+	zassert_str_equal(arr[1], "Dorsett", "Failed at 1");
+	zassert_str_equal(arr[2], "Case", "Failed at 0");
 }
 
 ZTEST(util, test_nested_FOR_EACH) {

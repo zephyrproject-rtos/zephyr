@@ -1306,14 +1306,14 @@ ZTEST(prf, test_cbprintf_fsc_package)
 	cbpprintf(fsc_package_cb, &pout, package);
 	*pout = '\0';
 
-	zassert_equal(strcmp(out_str, exp_str1), 0);
+	zassert_str_equal(out_str, exp_str1);
 	zassert_true(strcmp(exp_str0, exp_str1) != 0);
 
 	/* FSC package contains original content. */
 	pout = out_str;
 	cbpprintf(fsc_package_cb, &pout, fsc_package);
 	*pout = '\0';
-	zassert_equal(strcmp(out_str, exp_str0), 0);
+	zassert_str_equal(out_str, exp_str0);
 }
 
 ZTEST(prf, test_cbpprintf)
