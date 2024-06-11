@@ -1596,7 +1596,7 @@ int supplicant_dpp_dispatch(const struct device *dev,
 
 	switch (params->action) {
 	case WIFI_DPP_CONFIGURATOR_ADD:
-		strcpy(pos, "dpp_configurator_add");
+		strcpy(pos, "DPP_CONFIGURATOR_ADD");
 		STR_CUR_TO_END(pos);
 
 		if (params->configurator_add.curve) {
@@ -1612,7 +1612,7 @@ int supplicant_dpp_dispatch(const struct device *dev,
 		}
 		break;
 	case WIFI_DPP_AUTH_INIT:
-		strcpy(pos, "dpp_auth_init");
+		strcpy(pos, "DPP_AUTH_INIT");
 		STR_CUR_TO_END(pos);
 
 		if (params->auth_init.peer) {
@@ -1648,7 +1648,7 @@ int supplicant_dpp_dispatch(const struct device *dev,
 		}
 		break;
 	case WIFI_DPP_QR_CODE:
-		strcpy(pos, "dpp_qr_code");
+		strcpy(pos, "DPP_QR_CODE");
 		STR_CUR_TO_END(pos);
 
 		if (params->dpp_qr_code[0]) {
@@ -1656,7 +1656,7 @@ int supplicant_dpp_dispatch(const struct device *dev,
 		}
 		break;
 	case WIFI_DPP_CHIRP:
-		strcpy(pos, "dpp_chirp");
+		strcpy(pos, "DPP_CHIRP");
 		STR_CUR_TO_END(pos);
 
 		if (params->chirp.id) {
@@ -1669,7 +1669,7 @@ int supplicant_dpp_dispatch(const struct device *dev,
 		}
 		break;
 	case WIFI_DPP_LISTEN:
-		strcpy(pos, "dpp_listen");
+		strcpy(pos, "DPP_LISTEN");
 		STR_CUR_TO_END(pos);
 
 		if (params->listen.freq) {
@@ -1684,7 +1684,7 @@ int supplicant_dpp_dispatch(const struct device *dev,
 		}
 		break;
 	case WIFI_DPP_BOOTSTRAP_GEN:
-		strcpy(pos, "dpp_bootstrap_gen");
+		strcpy(pos, "DPP_BOOTSTRAP_GEN");
 		STR_CUR_TO_END(pos);
 
 		if (params->bootstrap_gen.type) {
@@ -1713,10 +1713,10 @@ int supplicant_dpp_dispatch(const struct device *dev,
 		}
 		break;
 	case WIFI_DPP_BOOTSTRAP_GET_URI:
-		snprintf(pos, end - pos, "dpp_bootstrap_get_uri %d", params->id);
+		snprintf(pos, end - pos, "DPP_BOOTSTRAP_GET_URI %d", params->id);
 		break;
 	case WIFI_DPP_SET_CONF_PARAM:
-		strcpy(pos, "set dpp_configurator_params");
+		strcpy(pos, "SET dpp_configurator_params");
 		STR_CUR_TO_END(pos);
 
 		if (params->configurator_set.peer) {
@@ -1765,7 +1765,7 @@ int supplicant_dpp_dispatch(const struct device *dev,
 		}
 		break;
 	case WIFI_DPP_SET_WAIT_RESP_TIME:
-		snprintf(pos, end - pos, "set dpp_resp_wait_time %d",
+		snprintf(pos, end - pos, "SET dpp_resp_wait_time %d",
 			 params->dpp_resp_wait_time);
 		break;
 	default:
@@ -1774,7 +1774,9 @@ int supplicant_dpp_dispatch(const struct device *dev,
 	}
 
 	wpa_printf(MSG_DEBUG, "%s", dpp_cmd_buf);
-	wpa_cli_cmd_v("%s interactive", dpp_cmd_buf);
+	if (zephyr_wpa_cli_cmd_resp(dpp_cmd_buf, params->resp)) {
+		return -1;
+	}
 	return 0;
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
