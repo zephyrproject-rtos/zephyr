@@ -397,6 +397,64 @@ static void dhcpv4_set_timeout(struct net_if_dhcpv4 *dhcpv4,
 	k_work_reschedule(&timeout_work, K_NO_WAIT);
 }
 
+/* Set a new timeout w/o updating base time. Used for RENEWING and REBINDING to
+ * keep track of T1/T2/lease timeouts.
+ */
+static void dhcpv4_set_timeout_inc(struct net_if_dhcpv4 *dhcpv4,
+				   int64_t now, uint32_t timeout)
+{
+	int64_t timeout_ms;
+
+	NET_DBG("sched timeout dhcvp4=%p timeout=%us", dhcpv4, timeout);
+
+	timeout_ms = (now - dhcpv4->timer_start) + MSEC_PER_SEC * timeout;
+	dhcpv4->request_time = (uint32_t)(timeout_ms / MSEC_PER_SEC);
+}
+
+static uint32_t dhcpv4_get_timeleft(int64_t start, uint32_t time, int64_t now)
+{
+	int64_t deadline = start + MSEC_PER_SEC * time;
+	uint32_t ret = 0U;
+
+	/* If we haven't reached the deadline, calculate the
+	 * rounded-up whole seconds until the deadline.
+	 */
+	if (deadline > now) {
+		ret = (uint32_t)DIV_ROUND_UP(deadline - now, MSEC_PER_SEC);
+	}
+
+	return ret;
+}
+
+static uint32_t dhcpv4_request_timeleft(struct net_if *iface, int64_t now)
+{
+	uint32_t request_time = iface->config.dhcpv4.request_time;
+
+	return dhcpv4_get_timeleft(iface->config.dhcpv4.timer_start,
+				   request_time, now);
+}
+
+static uint32_t dhcpv4_renewal_timeleft(struct net_if *iface, int64_t now)
+{
+	return dhcpv4_get_timeleft(iface->config.dhcpv4.timer_start,
+				   iface->config.dhcpv4.renewal_time,
+				   now);
+}
+
+static uint32_t dhcpv4_rebinding_timeleft(struct net_if *iface, int64_t now)
+{
+	return dhcpv4_get_timeleft(iface->config.dhcpv4.timer_start,
+				   iface->config.dhcpv4.rebinding_time,
+				   now);
+}
+
+static uint32_t dhcpv4_lease_timeleft(struct net_if *iface, int64_t now)
+{
+	return dhcpv4_get_timeleft(iface->config.dhcpv4.timer_start,
+				   iface->config.dhcpv4.lease_time,
+				   now);
+}
+
 /* Must be invoked with lock held */
 static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
 {
@@ -414,6 +472,59 @@ static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
 
 	dhcpv4->attempts++;
 	dhcpv4_set_timeout(dhcpv4, timeout);
+
+	return timeout;
+}
+
+static uint32_t dhcpv4_calculate_renew_rebind_timeout(uint32_t timeleft)
+{
+	uint32_t timeout;
+
+	/* RFC2131 4.4.5:
+	 * In both RENEWING and REBINDING states, if the client receives no
+	 * response to its DHCPREQUEST message, the client SHOULD wait one-half
+	 * of the remaining time until T2 (in RENEWING state) and one-half of
+	 * the remaining lease time (in REBINDING state), down to a minimum of
+	 * 60 seconds, before retransmitting the DHCPREQUEST message.
+	 */
+
+	if (timeleft < DHCPV4_RENEW_REBIND_TIMEOUT_MIN) {
+		timeout = timeleft;
+	} else if (timeleft / 2U < DHCPV4_RENEW_REBIND_TIMEOUT_MIN) {
+		timeout = DHCPV4_RENEW_REBIND_TIMEOUT_MIN;
+	} else {
+		timeout = timeleft / 2U;
+	}
+
+	return timeout;
+}
+
+static uint32_t dhcpv4_update_renew_timeout(struct net_if *iface)
+{
+	struct net_if_dhcpv4 *dhcpv4 = &iface->config.dhcpv4;
+	int64_t now = k_uptime_get();
+	uint32_t timeout;
+
+	timeout = dhcpv4_calculate_renew_rebind_timeout(
+			dhcpv4_rebinding_timeleft(iface, now));
+
+	dhcpv4->attempts++;
+	dhcpv4_set_timeout_inc(dhcpv4, now, timeout);
+
+	return timeout;
+}
+
+static uint32_t dhcpv4_update_rebind_timeout(struct net_if *iface)
+{
+	struct net_if_dhcpv4 *dhcpv4 = &iface->config.dhcpv4;
+	int64_t now = k_uptime_get();
+	uint32_t timeout;
+
+	timeout = dhcpv4_calculate_renew_rebind_timeout(
+			dhcpv4_lease_timeleft(iface, now));
+
+	dhcpv4->attempts++;
+	dhcpv4_set_timeout_inc(dhcpv4, now, timeout);
 
 	return timeout;
 }
@@ -451,6 +562,7 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 		with_requested_ip = true;
 		memcpy(&iface->config.dhcpv4.request_server_addr, &iface->config.dhcpv4.server_id,
 		       sizeof(struct in_addr));
+		timeout = dhcpv4_update_message_timeout(&iface->config.dhcpv4);
 		break;
 	case NET_DHCPV4_RENEWING:
 		/* Since we have an address populate the ciaddr field.
@@ -460,6 +572,7 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 		/* UNICAST the DHCPREQUEST */
 		src_addr = ciaddr;
 		server_addr = &iface->config.dhcpv4.server_id;
+		timeout = dhcpv4_update_renew_timeout(iface);
 
 		/* RFC2131 4.4.5 Client MUST NOT include server
 		 * identifier in the DHCPREQUEST.
@@ -470,11 +583,10 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 		 */
 		ciaddr = &iface->config.dhcpv4.requested_ip;
 		src_addr = ciaddr;
+		timeout = dhcpv4_update_rebind_timeout(iface);
 
 		break;
 	}
-
-	timeout = dhcpv4_update_message_timeout(&iface->config.dhcpv4);
 
 	pkt = dhcpv4_create_message(iface, NET_DHCPV4_MSG_TYPE_REQUEST,
 				    ciaddr, src_addr, server_addr,
@@ -590,60 +702,6 @@ static void dhcpv4_enter_selecting(struct net_if *iface)
 		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 }
 
-static uint32_t dhcpv4_get_timeleft(int64_t start, uint32_t time, int64_t now)
-{
-	int64_t deadline = start + MSEC_PER_SEC * time;
-	uint32_t ret = 0U;
-
-	/* If we haven't reached the deadline, calculate the
-	 * rounded-up whole seconds until the deadline.
-	 */
-	if (deadline > now) {
-		ret = (uint32_t)DIV_ROUND_UP(deadline - now, MSEC_PER_SEC);
-	}
-
-	return ret;
-}
-
-static uint32_t dhcpv4_request_timeleft(struct net_if *iface, int64_t now)
-{
-	uint32_t request_time = iface->config.dhcpv4.request_time;
-
-	return dhcpv4_get_timeleft(iface->config.dhcpv4.timer_start,
-				   request_time, now);
-}
-
-static uint32_t dhcpv4_renewal_timeleft(struct net_if *iface, int64_t now)
-{
-	uint32_t rem = dhcpv4_get_timeleft(iface->config.dhcpv4.timer_start,
-					   iface->config.dhcpv4.renewal_time,
-					   now);
-
-	if (rem == 0U) {
-		iface->config.dhcpv4.state = NET_DHCPV4_RENEWING;
-		NET_DBG("enter state=%s",
-			net_dhcpv4_state_name(iface->config.dhcpv4.state));
-		iface->config.dhcpv4.attempts = 0U;
-	}
-
-	return rem;
-}
-
-static uint32_t dhcpv4_rebinding_timeleft(struct net_if *iface, int64_t now)
-{
-	uint32_t rem = dhcpv4_get_timeleft(iface->config.dhcpv4.timer_start,
-					   iface->config.dhcpv4.rebinding_time,
-					   now);
-	if (rem == 0U) {
-		iface->config.dhcpv4.state = NET_DHCPV4_REBINDING;
-		NET_DBG("enter state=%s",
-			net_dhcpv4_state_name(iface->config.dhcpv4.state));
-		iface->config.dhcpv4.attempts = 0U;
-	}
-
-	return rem;
-}
-
 static void dhcpv4_enter_requesting(struct net_if *iface, struct dhcp_msg *msg)
 {
 	iface->config.dhcpv4.attempts = 0U;
@@ -660,34 +718,58 @@ static void dhcpv4_enter_requesting(struct net_if *iface, struct dhcp_msg *msg)
 /* Must be invoked with lock held */
 static void dhcpv4_enter_bound(struct net_if *iface)
 {
-	uint32_t renewal_time;
-	uint32_t rebinding_time;
+	struct net_if_dhcpv4 *dhcpv4 = &iface->config.dhcpv4;
 
-	renewal_time = iface->config.dhcpv4.renewal_time;
-	if (!renewal_time) {
+	/* Load defaults in case server did not provide T1/T2 values. */
+	if (dhcpv4->renewal_time == 0U) {
 		/* The default renewal time rfc2131 4.4.5 */
-		renewal_time = iface->config.dhcpv4.lease_time / 2U;
-		iface->config.dhcpv4.renewal_time = renewal_time;
+		dhcpv4->renewal_time = dhcpv4->lease_time / 2U;
 	}
 
-	rebinding_time = iface->config.dhcpv4.rebinding_time;
-	if (!rebinding_time) {
+	if (dhcpv4->rebinding_time == 0U) {
 		/* The default rebinding time rfc2131 4.4.5 */
-		rebinding_time = iface->config.dhcpv4.lease_time * 875U / 1000;
-		iface->config.dhcpv4.rebinding_time = rebinding_time;
+		dhcpv4->rebinding_time = dhcpv4->lease_time * 875U / 1000U;
 	}
 
-	iface->config.dhcpv4.state = NET_DHCPV4_BOUND;
-	NET_DBG("enter state=%s renewal=%us rebinding=%us",
-		net_dhcpv4_state_name(iface->config.dhcpv4.state),
-		renewal_time, rebinding_time);
+	/* RFC2131 4.4.5:
+	 * T1 MUST be earlier than T2, which, in turn, MUST be earlier than the
+	 * time at which the client's lease will expire.
+	 */
+	if ((dhcpv4->renewal_time >= dhcpv4->rebinding_time) ||
+	    (dhcpv4->rebinding_time >= dhcpv4->lease_time)) {
+		/* In case server did not provide valid values, fall back to
+		 * defaults.
+		 */
+		dhcpv4->renewal_time = dhcpv4->lease_time / 2U;
+		dhcpv4->rebinding_time = dhcpv4->lease_time * 875U / 1000U;
+	}
 
-	dhcpv4_set_timeout(&iface->config.dhcpv4,
-			   MIN(renewal_time, rebinding_time));
+	dhcpv4->state = NET_DHCPV4_BOUND;
+	NET_DBG("enter state=%s renewal=%us rebinding=%us",
+		net_dhcpv4_state_name(dhcpv4->state),
+		dhcpv4->renewal_time, dhcpv4->rebinding_time);
+
+	dhcpv4_set_timeout(dhcpv4, dhcpv4->renewal_time);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_DHCP_BOUND, iface,
 					&iface->config.dhcpv4,
 					sizeof(iface->config.dhcpv4));
+}
+
+static void dhcpv4_enter_renewing(struct net_if *iface)
+{
+	iface->config.dhcpv4.state = NET_DHCPV4_RENEWING;
+	iface->config.dhcpv4.attempts = 0U;
+	NET_DBG("enter state=%s",
+		net_dhcpv4_state_name(iface->config.dhcpv4.state));
+}
+
+static void dhcpv4_enter_rebinding(struct net_if *iface)
+{
+	iface->config.dhcpv4.state = NET_DHCPV4_REBINDING;
+	iface->config.dhcpv4.attempts = 0U;
+	NET_DBG("enter state=%s",
+		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 }
 
 static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
@@ -735,34 +817,34 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 		return dhcpv4_send_request(iface);
 	case NET_DHCPV4_BOUND:
 		timeleft = dhcpv4_renewal_timeleft(iface, now);
-		if (timeleft != 0U) {
-			timeleft = MIN(timeleft,
-				       dhcpv4_rebinding_timeleft(iface, now));
-		}
 		if (timeleft == 0U) {
+			dhcpv4_enter_renewing(iface);
 			return dhcpv4_send_request(iface);
 		}
 
 		return timeleft;
 	case NET_DHCPV4_RENEWING:
-	case NET_DHCPV4_REBINDING:
-		if (iface->config.dhcpv4.attempts >=
-					DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
-			NET_DBG("too many attempts, restart");
+		timeleft = dhcpv4_rebinding_timeleft(iface, now);
+		if (timeleft == 0U) {
+			dhcpv4_enter_rebinding(iface);
+		}
 
-			if (!net_if_ipv4_addr_rm(iface,
-					 &iface->config.dhcpv4.requested_ip)) {
+		return dhcpv4_send_request(iface);
+	case NET_DHCPV4_REBINDING:
+		timeleft = dhcpv4_lease_timeleft(iface, now);
+		if (timeleft == 0U) {
+			if (!net_if_ipv4_addr_rm(
+					iface,
+					&iface->config.dhcpv4.requested_ip)) {
 				NET_DBG("Failed to remove addr from iface");
 			}
 
-			/* Maximum number of renewal attempts failed, so start
-			 * from the beginning.
-			 */
+			/* Lease time expired, so start from the beginning. */
 			dhcpv4_enter_selecting(iface);
 			return dhcpv4_send_discover(iface);
-		} else {
-			return dhcpv4_send_request(iface);
 		}
+
+		return dhcpv4_send_request(iface);
 	}
 
 	return UINT32_MAX;
