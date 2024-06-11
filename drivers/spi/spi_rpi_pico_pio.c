@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(spi_pico_pio);
 
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -48,7 +49,6 @@ struct spi_pico_pio_data {
 	uint32_t pio_rx_offset;
 	uint32_t pio_rx_wrap_target;
 	uint32_t pio_rx_wrap;
-	uint32_t tx_period_ticks;
 	uint32_t bits;
 	uint32_t dfs;
 };
@@ -62,10 +62,10 @@ struct spi_pico_pio_data {
 #define SPI_MODE_0_0_CYCLES      4
 
 RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_0_0, SPI_MODE_0_0_WRAP_TARGET, SPI_MODE_0_0_WRAP,
-		/*     .wrap_target */
-	0x6101, /*  0: out    pins, 1         side 0 [1] */
-	0x5101, /*  1: in     pins, 1         side 1 [1] */
-		/*     .wrap */
+			    /*     .wrap_target */
+			    0x6101, /*  0: out    pins, 1         side 0 [1] */
+			    0x5101, /*  1: in     pins, 1         side 1 [1] */
+				    /*     .wrap */
 );
 
 /* ------------ */
@@ -77,11 +77,11 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_0_0, SPI_MODE_0_0_WRAP_TARGET, SPI_MODE_0_0
 #define SPI_MODE_1_1_CYCLES      4
 
 RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_1_1, SPI_MODE_1_1_WRAP_TARGET, SPI_MODE_1_1_WRAP,
-		/*     .wrap_target */
-	0x7021, /*  0: out    x, 1            side 1 */
-	0xa101, /*  1: mov    pins, x         side 0 [1] */
-	0x5001, /*  2: in     pins, 1         side 1 */
-		/*     .wrap */
+			    /*     .wrap_target */
+			    0x7021, /*  0: out    x, 1            side 1 */
+			    0xa101, /*  1: mov    pins, x         side 0 [1] */
+			    0x5001, /*  2: in     pins, 1         side 1 */
+				    /*     .wrap */
 );
 
 #if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
@@ -95,74 +95,29 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_1_1, SPI_MODE_1_1_WRAP_TARGET, SPI_MODE_1_1
 
 RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_tx, SPI_SIO_MODE_0_0_TX_WRAP_TARGET,
 			    SPI_SIO_MODE_0_0_TX_WRAP,
-		/*     .wrap_target */
-	0x80a0, /*  0: pull   block           side 0 */
-	0x6001, /*  1: out    pins, 1         side 0 */
-	0x10e1, /*  2: jmp    !osre, 1        side 1 */
-		/*     .wrap */
+			    /*     .wrap_target */
+			    0x80a0, /*  0: pull   block           side 0  */
+			    0x6001, /*  1: out    pins, 1         side 0  */
+			    0x10e1, /*  2: jmp    !osre, 1        side 1  */
+				    /*     .wrap */
 );
 
 /* ------------------------- */
-/* spi_sio_mode_0_0_8_bit_rx */
+/* spi_sio_mode_0_0_rx */
 /* ------------------------- */
 
-#define SPI_SIO_MODE_0_0_8_BIT_RX_WRAP_TARGET 0
-#define SPI_SIO_MODE_0_0_8_BIT_RX_WRAP        6
-#define SPI_SIO_MODE_0_0_8_BIT_RX_CYCLES      2
+#define SPI_SIO_MODE_0_0_RX_WRAP_TARGET 0
+#define SPI_SIO_MODE_0_0_RX_WRAP        3
+#define SPI_SIO_MODE_0_0_RX_CYCLES      2
 
-RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_8_bit_rx, SPI_SIO_MODE_0_0_8_BIT_RX_WRAP_TARGET,
-			    SPI_SIO_MODE_0_0_8_BIT_RX_WRAP,
-		/*     .wrap_target */
-	0x80a0, /*  0: pull   block           side 0 */
-	0x6020, /*  1: out    x, 32           side 0 */
-	0xe047, /*  2: set    y, 7            side 0 */
-	0x5001, /*  3: in     pins, 1         side 1 */
-	0x0083, /*  4: jmp    y--, 3          side 0 */
-	0x8020, /*  5: push   block           side 0 */
-	0x0042, /*  6: jmp    x--, 2          side 0 */
-		/*     .wrap */
-);
-
-/* -------------------------- */
-/* spi_sio_mode_0_0_16_bit_rx */
-/* -------------------------- */
-
-#define SPI_SIO_MODE_0_0_16_BIT_RX_WRAP_TARGET 0
-#define SPI_SIO_MODE_0_0_16_BIT_RX_WRAP        6
-#define SPI_SIO_MODE_0_0_16_BIT_RX_CYCLES      2
-
-RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_16_bit_rx, SPI_SIO_MODE_0_0_16_BIT_RX_WRAP_TARGET,
-			    SPI_SIO_MODE_0_0_16_BIT_RX_WRAP,
-		/*     .wrap_target */
-	0x80a0, /*  0: pull   block           side 0 */
-	0x6020, /*  1: out    x, 32           side 0 */
-	0xe04f, /*  2: set    y, 15           side 0 */
-	0x5001, /*  3: in     pins, 1         side 1 */
-	0x0083, /*  4: jmp    y--, 3          side 0 */
-	0x8020, /*  5: push   block           side 0 */
-	0x0042, /*  6: jmp    x--, 2          side 0 */
-		/*     .wrap */
-);
-
-/* -------------------------- */
-/* spi_sio_mode_0_0_32_bit_rx */
-/* -------------------------- */
-
-#define SPI_SIO_MODE_0_0_32_BIT_RX_WRAP_TARGET 0
-#define SPI_SIO_MODE_0_0_32_BIT_RX_WRAP        6
-#define SPI_SIO_MODE_0_0_32_BIT_RX_CYCLES      2
-
-RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_32_bit_rx, SPI_SIO_MODE_0_0_32_BIT_RX_WRAP_TARGET,
-			    SPI_SIO_MODE_0_0_32_BIT_RX_WRAP,
-		/*     .wrap_target */
-	0x80a0, /*  0: pull   block           side 0 */
-	0x6020, /*  1: out    x, 32           side 0 */
-	0xe05f, /*  2: set    y, 31           side 0 */
-	0x5001, /*  3: in     pins, 1         side 1 */
-	0x0083, /*  4: jmp    y--, 3          side 0 */
-	0x8020, /*  5: push   block           side 0 */
-	0x0042, /*  6: jmp    x--, 2          side 0 */
-		/*     .wrap */
+RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_rx, SPI_SIO_MODE_0_0_RX_WRAP_TARGET,
+			    SPI_SIO_MODE_0_0_RX_WRAP,
+			    /*     .wrap_target */
+			    0x80a0, /*  0: pull   block           side 0 */
+			    0x6020, /*  1: out    x, 32           side 0 */
+			    0x5001, /*  2: in     pins, 1         side 1 */
+			    0x0042, /*  3: jmp    x--, 2          side 0 */
+				    /*     .wrap */
 );
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 
@@ -237,7 +192,8 @@ static inline uint32_t spi_pico_pio_sm_get32(PIO pio, uint sm)
 
 static inline int spi_pico_pio_sm_complete(struct spi_pico_pio_data *data)
 {
-	return (data->pio->sm[data->pio_sm].addr == data->pio_tx_offset);
+	return ((data->pio->sm[data->pio_sm].addr == data->pio_tx_offset) &&
+		pio_sm_is_tx_fifo_empty(data->pio, data->pio_sm));
 }
 
 static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
@@ -349,53 +305,22 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 
 		float clock_div = spi_pico_pio_clock_divisor(clock_freq, SPI_SIO_MODE_0_0_TX_CYCLES,
 							     spi_cfg->frequency);
-		data->tx_period_ticks = DIV_ROUND_UP((data->bits * CONFIG_SYS_CLOCK_TICKS_PER_SEC),
-						     spi_cfg->frequency);
 
 		data->pio_tx_offset =
 			pio_add_program(data->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_tx));
 
-		switch (data->dfs) {
-		case 4:
-			data->pio_rx_offset = pio_add_program(
-				data->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_32_bit_rx));
-			data->pio_rx_wrap_target =
-				data->pio_rx_offset +
-				RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_32_bit_rx);
-			data->pio_rx_wrap = data->pio_rx_offset +
-					    RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_32_bit_rx);
-			break;
-
-		case 2:
-			data->pio_rx_offset = pio_add_program(
-				data->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_16_bit_rx));
-			data->pio_rx_wrap_target =
-				data->pio_rx_offset +
-				RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_16_bit_rx);
-			data->pio_rx_wrap = data->pio_rx_offset +
-					    RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_16_bit_rx);
-			break;
-
-		case 1:
-			data->pio_rx_offset = pio_add_program(
-				data->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_8_bit_rx));
-			data->pio_rx_wrap_target =
-				data->pio_rx_offset +
-				RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_8_bit_rx);
-			data->pio_rx_wrap = data->pio_rx_offset +
-					    RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_8_bit_rx);
-			break;
-
-		default:
-			LOG_ERR("Support for %d transfer size not enabled", (data->dfs * 8));
-			return -EINVAL;
-		}
+		data->pio_rx_offset =
+			pio_add_program(data->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_rx));
+		data->pio_rx_wrap_target =
+			data->pio_rx_offset + RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_rx);
+		data->pio_rx_wrap =
+			data->pio_rx_offset + RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_rx);
 
 		sm_config = pio_get_default_sm_config();
 
 		sm_config_set_clkdiv(&sm_config, clock_div);
 		sm_config_set_in_pins(&sm_config, sio->pin);
-		sm_config_set_in_shift(&sm_config, lsb, false, data->bits);
+		sm_config_set_in_shift(&sm_config, lsb, true, data->bits);
 		sm_config_set_out_pins(&sm_config, sio->pin, 1);
 		sm_config_set_out_shift(&sm_config, lsb, false, data->bits);
 		hw_set_bits(&data->pio->input_sync_bypass, 1u << sio->pin);
@@ -496,8 +421,8 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 {
 	struct spi_pico_pio_data *data = dev->data;
 	const size_t chunk_len = spi_context_max_continuous_chunk(&data->spi_ctx);
-	const void *txbuf = data->spi_ctx.tx_buf;
-	void *rxbuf = data->spi_ctx.rx_buf;
+	const uint8_t *txbuf = data->spi_ctx.tx_buf;
+	uint8_t *rxbuf = data->spi_ctx.rx_buf;
 	uint32_t txrx;
 	size_t fifo_cnt = 0;
 
@@ -516,18 +441,16 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 			switch (data->dfs) {
 			case 4: {
 				if (txbuf) {
-					txrx = ((uint32_t *)txbuf)[data->tx_count];
+					txrx = sys_get_be32(txbuf + (data->tx_count * 4));
 				}
 				spi_pico_pio_sm_put32(data->pio, data->pio_sm, txrx);
-				data->tx_count += 4;
 			} break;
 
 			case 2: {
 				if (txbuf) {
-					txrx = ((uint16_t *)txbuf)[data->tx_count];
+					txrx = sys_get_be16(txbuf + (data->tx_count * 2));
 				}
 				spi_pico_pio_sm_put16(data->pio, data->pio_sm, txrx);
-				data->tx_count += 2;
 			} break;
 
 			case 1: {
@@ -535,13 +458,13 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 					txrx = ((uint8_t *)txbuf)[data->tx_count];
 				}
 				spi_pico_pio_sm_put8(data->pio, data->pio_sm, txrx);
-				data->tx_count++;
 			} break;
 
 			default:
 				LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
 				break;
 			}
+			data->tx_count++;
 			fifo_cnt++;
 		}
 
@@ -553,9 +476,8 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 
 				/* Discard received data if rx buffer not assigned */
 				if (rxbuf) {
-					((uint32_t *)rxbuf)[data->rx_count] = (uint32_t)txrx;
+					sys_put_be32(txrx, rxbuf + (data->rx_count * 4));
 				}
-				data->rx_count += 4;
 			} break;
 
 			case 2: {
@@ -563,9 +485,8 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 
 				/* Discard received data if rx buffer not assigned */
 				if (rxbuf) {
-					((uint16_t *)rxbuf)[data->rx_count] = (uint16_t)txrx;
+					sys_put_be16(txrx, rxbuf + (data->rx_count * 2));
 				}
-				data->rx_count += 2;
 			} break;
 
 			case 1: {
@@ -575,13 +496,13 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 				if (rxbuf) {
 					((uint8_t *)rxbuf)[data->rx_count] = (uint8_t)txrx;
 				}
-				data->rx_count++;
 			} break;
 
 			default:
 				LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
 				break;
 			}
+			data->rx_count++;
 			fifo_cnt--;
 		}
 	}
@@ -592,8 +513,8 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 #if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
 	struct spi_pico_pio_data *data = dev->data;
 	const struct spi_pico_pio_config *dev_cfg = dev->config;
-	const void *txbuf = data->spi_ctx.tx_buf;
-	void *rxbuf = data->spi_ctx.rx_buf;
+	const uint8_t *txbuf = data->spi_ctx.tx_buf;
+	uint8_t *rxbuf = data->spi_ctx.rx_buf;
 	uint32_t txrx;
 	int sio_pin = dev_cfg->sio_gpio.pin;
 	uint32_t tx_size = data->spi_ctx.tx_len; /* Number of WORDS to send */
@@ -622,33 +543,32 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 
 				switch (data->dfs) {
 				case 4: {
-					txrx = ((uint32_t *)txbuf)[data->tx_count];
+					txrx = sys_get_be32(txbuf + (data->tx_count * 4));
 					spi_pico_pio_sm_put32(data->pio, data->pio_sm, txrx);
-					data->tx_count += 4;
 				} break;
 
 				case 2: {
-					txrx = ((uint16_t *)txbuf)[data->tx_count];
+					txrx = sys_get_be16(txbuf + (data->tx_count * 2));
 					spi_pico_pio_sm_put16(data->pio, data->pio_sm, txrx);
-					data->tx_count += 2;
 				} break;
 
 				case 1: {
 					txrx = ((uint8_t *)txbuf)[data->tx_count];
 					spi_pico_pio_sm_put8(data->pio, data->pio_sm, txrx);
-					data->tx_count++;
 				} break;
 
 				default:
 					LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
 					break;
 				}
+				data->tx_count++;
 			}
 		}
+		/* Wait for the state machine to complete the cycle */
+		/* before resetting the PIO for reading.            */
 		while ((!pio_sm_is_tx_fifo_empty(data->pio, data->pio_sm)) ||
-		       (!spi_pico_pio_sm_complete(data))) {
-			k_sleep(K_TICKS(data->tx_period_ticks));
-		}
+		       (!spi_pico_pio_sm_complete(data)))
+			;
 	}
 
 	if (rxbuf) {
@@ -659,8 +579,7 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 		pio_sm_set_pindirs_with_mask(data->pio, data->pio_sm, 0, BIT(sio_pin));
 		pio_sm_restart(data->pio, data->pio_sm);
 		pio_sm_clkdiv_restart(data->pio, data->pio_sm);
-		pio_sm_put(data->pio, data->pio_sm, rx_size - 1);
-		pio_sm_exec(data->pio, data->pio_sm, pio_encode_out(pio_x, 32));
+		pio_sm_put(data->pio, data->pio_sm, (rx_size * data->bits) - 1);
 		pio_sm_exec(data->pio, data->pio_sm, pio_encode_jmp(data->pio_rx_offset));
 		pio_sm_set_enabled(data->pio, data->pio_sm, true);
 
@@ -671,26 +590,24 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 				switch (data->dfs) {
 				case 4: {
 					txrx = spi_pico_pio_sm_get32(data->pio, data->pio_sm);
-					((uint32_t *)rxbuf)[data->rx_count] = (uint32_t)txrx;
-					data->rx_count += 4;
+					sys_put_be32(txrx, rxbuf + (data->rx_count * 4));
 				} break;
 
 				case 2: {
 					txrx = spi_pico_pio_sm_get16(data->pio, data->pio_sm);
-					((uint16_t *)rxbuf)[data->rx_count] = (uint16_t)txrx;
-					data->rx_count += 2;
+					sys_put_be16(txrx, rxbuf + (data->rx_count * 2));
 				} break;
 
 				case 1: {
 					txrx = spi_pico_pio_sm_get8(data->pio, data->pio_sm);
-					((uint8_t *)rxbuf)[data->rx_count] = (uint8_t)txrx;
-					data->rx_count++;
+					rxbuf[data->rx_count] = (uint8_t)txrx;
 				} break;
 
 				default:
 					LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
 					break;
 				}
+				data->rx_count++;
 			}
 		}
 	}
@@ -846,12 +763,12 @@ int spi_pico_pio_init(const struct device *dev)
 			      &spi_pico_pio_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,  \
 			      &spi_pico_pio_api);                                                  \
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, clk_gpios), "Missing clock GPIO");                \
-	BUILD_ASSERT(((DT_INST_NODE_HAS_PROP(inst, mosi_gpios)                                     \
-				|| DT_INST_NODE_HAS_PROP(inst, miso_gpios))                        \
-					&& (!DT_INST_NODE_HAS_PROP(inst, sio_gpios)))              \
-			|| (DT_INST_NODE_HAS_PROP(inst, sio_gpios)                                 \
-				&& !(DT_INST_NODE_HAS_PROP(inst, mosi_gpios)                       \
-					|| DT_INST_NODE_HAS_PROP(inst, miso_gpios))),              \
-			"Invalid GPIO Configuration");
+	BUILD_ASSERT(((DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                                  \
+		       DT_INST_NODE_HAS_PROP(inst, miso_gpios)) &&                                 \
+		      (!DT_INST_NODE_HAS_PROP(inst, sio_gpios))) ||                                \
+			     (DT_INST_NODE_HAS_PROP(inst, sio_gpios) &&                            \
+			      !(DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                         \
+				DT_INST_NODE_HAS_PROP(inst, miso_gpios))),                         \
+		     "Invalid GPIO Configuration");
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_PICO_PIO_INIT)
