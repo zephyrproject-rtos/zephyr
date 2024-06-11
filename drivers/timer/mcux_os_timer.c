@@ -255,7 +255,7 @@ void sys_clock_idle_exit(void)
 #endif
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 
 	/* Configure event timer's ISR */
@@ -284,6 +284,3 @@ static int sys_clock_driver_init(void)
 
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

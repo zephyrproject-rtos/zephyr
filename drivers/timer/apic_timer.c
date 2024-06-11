@@ -86,7 +86,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)sys_clock_cycle_get_64();
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 	uint32_t val;
 
@@ -112,6 +112,3 @@ static int sys_clock_driver_init(void)
 
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

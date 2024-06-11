@@ -461,7 +461,7 @@ uint32_t sys_clock_elapsed(void)
 	return (uint32_t)(counter_sub(counter(), last_count) / CYC_PER_TICK);
 }
 
-static int sys_clock_driver_init(void)
+int z_init_sys_clock_driver(void)
 {
 	nrfx_err_t err_code;
 
@@ -535,8 +535,15 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #if defined(CONFIG_NRF_GRTC_TIMER_APP_DEFINED_INIT)
 int nrf_grtc_timer_clock_driver_init(void)
 {
-	return sys_clock_driver_init();
+	return z_init_sys_clock_driver();
+}
+int init_sys_clock_driver(void)
+{
+	return 0;
 }
 #else
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+int init_sys_clock_driver(void)
+{
+	return z_init_sys_clock_driver();
+}
 #endif

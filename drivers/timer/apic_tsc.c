@@ -255,7 +255,7 @@ void smp_timer_init(void)
 	irq_enable(timer_irq());
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 #ifdef CONFIG_ASSERT
 	uint32_t eax, ebx, ecx, edx;
@@ -317,6 +317,3 @@ static int sys_clock_driver_init(void)
 
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -103,7 +103,7 @@ static void init_downcounter(volatile struct gptimer_timer_regs *tmr)
 	tmr->ctrl = GPTIMER_CTRL_LD | GPTIMER_CTRL_RS | GPTIMER_CTRL_EN;
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 	const int timer_interrupt = get_timer_irq();
 	volatile struct gptimer_regs *regs = get_regs();
@@ -128,6 +128,3 @@ static int sys_clock_driver_init(void)
 	irq_enable(timer_interrupt);
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -430,7 +430,7 @@ void sys_clock_disable(void)
 	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
@@ -443,6 +443,3 @@ static int sys_clock_driver_init(void)
 			  SysTick_CTRL_CLKSOURCE_Msk);
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

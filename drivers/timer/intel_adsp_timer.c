@@ -212,7 +212,7 @@ void smp_timer_init(void)
 {
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 	uint64_t curr = count();
 
@@ -226,8 +226,5 @@ static int sys_clock_driver_init(void)
 /* Runs on core 0 only */
 void intel_adsp_clock_soft_off_exit(void)
 {
-	(void)sys_clock_driver_init();
+	(void)init_sys_clock_driver();
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

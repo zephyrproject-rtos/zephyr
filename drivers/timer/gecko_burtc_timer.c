@@ -181,7 +181,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	}
 }
 
-static int burtc_init(void)
+int init_sys_clock_driver(void)
 {
 	uint32_t hw_clock_freq;
 	BURTC_Init_TypeDef init = BURTC_INIT_DEFAULT;
@@ -239,6 +239,3 @@ static int burtc_init(void)
 
 	return 0;
 }
-
-SYS_INIT(burtc_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

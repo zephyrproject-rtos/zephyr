@@ -191,7 +191,7 @@ uint32_t sys_clock_cycle_get_32(void)
  *
  * Enable the hw timer, setting its tick period, and setup its interrupt
  */
-int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 	gpt_config_t gpt_config;
 
@@ -245,6 +245,3 @@ int sys_clock_driver_init(void)
 
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

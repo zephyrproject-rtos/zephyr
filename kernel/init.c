@@ -37,6 +37,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/internal/syscall_handler.h>
+#include <zephyr/drivers/timer/system_timer.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
 BUILD_ASSERT(CONFIG_MP_NUM_CPUS == CONFIG_MP_MAX_NUM_CPUS,
@@ -667,6 +668,9 @@ FUNC_NORETURN void z_cstart(void)
 	arch_smp_init();
 #endif
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
+#if defined(CONFIG_SYS_CLOCK_EXISTS)
+	init_sys_clock_driver();
+#endif
 
 #ifdef CONFIG_STACK_CANARIES
 	uintptr_t stack_guard;

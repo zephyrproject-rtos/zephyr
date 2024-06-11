@@ -325,7 +325,7 @@ uint64_t npcx_clock_get_sleep_ticks(void)
 }
 #endif /* CONFIG_PM */
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 	int ret;
 	uint32_t sys_tmr_rate;
@@ -410,5 +410,3 @@ static int sys_clock_driver_init(void)
 
 	return 0;
 }
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
