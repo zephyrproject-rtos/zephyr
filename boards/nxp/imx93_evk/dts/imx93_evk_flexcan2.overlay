@@ -1,0 +1,23 @@
+/**
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	chosen{
+		zephyr,canbus = &flexcan2;
+	};
+};
+
+&gpiohog_exp_sel {
+	status = "okay";
+	output-low;
+};
+
+&can_phy0 {
+	status = "okay";
+};
+
+&flexcan2 {
+	status = "okay";
+};
