@@ -242,6 +242,8 @@ Build system and Infrastructure
     choice to select the C Standard version. Additionally subsystems can select a minimum
     required C Standard version, with for example :kconfig:option:`CONFIG_REQUIRES_STD_C11`.
 
+  * Fixed issue with passing UTF-8 configs to applications using sysbuild.
+
 Drivers and Sensors
 *******************
 
