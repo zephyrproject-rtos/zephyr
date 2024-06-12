@@ -14,6 +14,19 @@ config LORA_SX127X
 	help
 	  Enable LoRa driver for Semtech SX1272 and SX1276.
 
+if LORA_SX127X
+
+config LORA_SX127X_IRQS_ONLY_WHEN_ACTIVE
+	bool "Only enable IRQs when radio is active"
+	default y if SOC_SERIES_NRF51X
+	help
+	  If enabled, this option will enable IRQs for the LoRa radio when the stack enables the
+	  antenna and disables them when the stack disables the antenna. This is intended for use
+	  on devices where having IRQs enabled cause the device to consume a large amount of
+	  power, e.g. nRF51.
+
+endif # LORA_SX127X
+
 config LORA_SX126X
 	bool "Semtech SX126x driver"
 	default y

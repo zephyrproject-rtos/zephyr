@@ -203,6 +203,11 @@ static struct sx127x_data {
 	bool tcxo_power_enabled;
 #endif
 	struct k_work dio_work[SX127X_MAX_DIO];
+
+#ifdef CONFIG_LORA_SX127X_IRQS_ONLY_WHEN_ACTIVE
+	bool dio_irqs_enabled;
+	bool dio_irq_setup[SX127X_MAX_DIO];
+#endif
 } dev_data;
 
 static int8_t clamp_int8(int8_t x, int8_t min, int8_t max)
@@ -257,6 +262,22 @@ static inline void sx127x_pa_boost_enable(int val)
 
 void SX127xSetAntSwLowPower(bool low_power)
 {
+#ifdef CONFIG_LORA_SX127X_IRQS_ONLY_WHEN_ACTIVE
+	if (dev_data.dio_irqs_enabled != low_power) {
+		for (int i = 0; i < SX127X_MAX_DIO; i++) {
+			if (!dev_data.dio_irq_setup[i]) {
+				continue;
+			}
+
+			gpio_pin_interrupt_configure_dt(&sx127x_dios[i],
+							(low_power ? GPIO_INT_DISABLE :
+								     GPIO_INT_EDGE_TO_ACTIVE));
+		}
+
+		dev_data.dio_irqs_enabled = low_power;
+	}
+#endif
+
 	if (low_power) {
 		/* force inactive (low power) state of all antenna paths */
 		sx127x_rfi_enable(0);
@@ -380,10 +401,15 @@ void SX127xIoIrqInit(DioIrqHandler **irqHandlers)
 			LOG_ERR("Could not set gpio callback.");
 			return;
 		}
+
+#ifdef CONFIG_LORA_SX127X_IRQS_ONLY_WHEN_ACTIVE
+		dev_data.dio_irq_setup[i] = true;
+#else
 		gpio_pin_interrupt_configure_dt(&sx127x_dios[i],
 						GPIO_INT_EDGE_TO_ACTIVE);
-	}
+#endif
 
+	}
 }
 
 static int sx127x_transceive(uint8_t reg, bool write, void *data, size_t length)
