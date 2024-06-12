@@ -594,7 +594,7 @@ static int display_smartbond_pm_action(const struct device *dev, enum pm_device_
 }
 #endif
 
-static struct display_driver_api display_smartbond_driver_api = {
+static const struct display_driver_api display_smartbond_driver_api = {
 	.write =  display_smartbond_write,
 	.read = display_smartbond_read,
 	.get_framebuffer = display_smartbond_get_framebuffer,
