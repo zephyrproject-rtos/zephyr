@@ -232,7 +232,7 @@ If CH343 chip is disabled, You need use the following command to build:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32s3_luatos_core_usb/esp32s3/procpu
+   :board: esp32s3_luatos_core/esp32s3/procpu/usb
    :goals: build
 
 The usual ``flash`` target will work with the ``esp32s3_luatos_core`` board
