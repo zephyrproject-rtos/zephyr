@@ -130,6 +130,7 @@ struct uarte_async_cb {
 	uint8_t rx_flush_buffer[UARTE_HW_RX_FIFO_SIZE];
 	uint8_t rx_flush_cnt;
 	volatile bool rx_enabled;
+	volatile bool rxto_expected;
 	volatile bool discard_rx_fifo;
 	bool hw_rx_counting;
 	bool pending_tx;
@@ -996,7 +997,11 @@ static int uarte_nrfx_rx_disable(const struct device *dev)
 	data->async->rx_enabled = false;
 	data->async->discard_rx_fifo = true;
 
+	unsigned int key = irq_lock();
+
+	data->async->rxto_expected = true;
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+	irq_unlock(key);
 
 	return 0;
 }
@@ -1209,6 +1214,7 @@ static void endrx_isr(const struct device *dev)
 		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 	} else {
 		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+		data->async->rxto_expected = true;
 	}
 
 	irq_unlock(key);
@@ -1467,7 +1473,10 @@ static void uarte_nrfx_isr_async(const void *arg)
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO) &&
 	    !nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
-		rxto_isr(dev);
+		if (data->async->rxto_expected) {
+			data->async->rxto_expected = false;
+			rxto_isr(dev);
+		}
 	}
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX)
@@ -1980,6 +1989,11 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
+#ifdef UARTE_ANY_ASYNC
+			if (data->async) {
+				data->async->rxto_expected = false;
+			}
+#endif
 		}
 
 		wait_for_tx_stopped(dev);
