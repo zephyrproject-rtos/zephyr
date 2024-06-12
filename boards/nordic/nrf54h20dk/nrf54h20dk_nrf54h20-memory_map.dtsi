@@ -26,8 +26,18 @@
 				reg = <0x800 DT_SIZE_K(2)>;
 			};
 
-			cpuapp_data: memory@1000 {
-				reg = <0x1000 DT_SIZE_K(256)>;
+			/* todo: remove once cpuapp_ram0x_region can be used by cache helpers */
+			cpuapp_cpusec_misc_shm: memory@1000 {
+				compatible = "zephyr,memory-region";
+				reg = <0x1000 DT_SIZE_K(16)>;
+				status = "disabled";
+				#memory-region-cells = <0>;
+				zephyr,memory-region = "CPUAPP_CPUSEC_MISC_SHM";
+				zephyr,memory-attr = <( DT_MEM_CACHEABLE )>;
+			};
+
+			cpuapp_data: memory@5000 {
+				reg = <0x5000 DT_SIZE_K(240)>;
 			};
 		};
 
@@ -48,6 +58,16 @@
 
 			cpurad_cpusec_ipc_shm: memory@800 {
 				reg = <0x800 DT_SIZE_K(2)>;
+			};
+
+			/* todo: remove once cpurad_ram0x_region can be used by cache helpers */
+			cpurad_cpusec_misc_shm: memory@1000 {
+				compatible = "zephyr,memory-region";
+				reg = <0x1000 DT_SIZE_K(16)>;
+				status = "disabled";
+				#memory-region-cells = <0>;
+				zephyr,memory-region = "CPURAD_CPUSEC_MISC_SHM";
+				zephyr,memory-attr = <( DT_MEM_CACHEABLE )>;
 			};
 		};
 
