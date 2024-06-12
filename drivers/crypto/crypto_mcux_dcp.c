@@ -331,7 +331,7 @@ static int crypto_dcp_init(const struct device *dev)
 	return 0;
 }
 
-static struct crypto_driver_api crypto_dcp_api = {
+static const struct crypto_driver_api crypto_dcp_api = {
 	.query_hw_caps = crypto_dcp_query_hw_caps,
 	.cipher_begin_session = crypto_dcp_cipher_begin_session,
 	.cipher_free_session = crypto_dcp_cipher_free_session,
