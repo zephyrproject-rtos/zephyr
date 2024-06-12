@@ -312,6 +312,9 @@ struct bt_cap_unicast_audio_stop_param {
 
 	/** Array of streams to stop */
 	struct bt_cap_stream **streams;
+
+	/** Whether to release the streams after they have stopped */
+	bool release;
 };
 
 /**
@@ -379,7 +382,10 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
  *
  * @param param Stop parameters.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success
+ * @retval -EBUSY if a CAP procedure is already in progress
+ * @retval -EINVAL if any parameter is invalid
+ * @retval -EALREADY if no state changes will occur
  */
 int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param);
 

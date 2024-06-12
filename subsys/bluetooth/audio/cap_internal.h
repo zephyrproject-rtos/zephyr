@@ -30,6 +30,8 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_started(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream);
+void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream);
+void bt_cap_initiator_stopped(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_released(struct bt_cap_stream *cap_stream);
 void bt_cap_stream_ops_register_bap(struct bt_cap_stream *cap_stream);
 
@@ -61,6 +63,8 @@ enum bt_cap_common_subproc_type {
 	BT_CAP_COMMON_SUBPROC_TYPE_CONNECT,
 	BT_CAP_COMMON_SUBPROC_TYPE_START,
 	BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE,
+	BT_CAP_COMMON_SUBPROC_TYPE_DISABLE,
+	BT_CAP_COMMON_SUBPROC_TYPE_STOP,
 	BT_CAP_COMMON_SUBPROC_TYPE_RELEASE,
 };
 
@@ -79,6 +83,9 @@ struct bt_cap_initiator_proc_param {
 			/** Codec Specific Capabilities Metadata */
 			uint8_t meta[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
 		} meta_update;
+		struct {
+			bool release;
+		} stop;
 	};
 };
 
@@ -173,6 +180,7 @@ struct bt_cap_common_proc *bt_cap_common_get_active_proc(void);
 void bt_cap_common_clear_active_proc(void);
 void bt_cap_common_start_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt);
 void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type);
+bool bt_cap_common_proc_is_type(enum bt_cap_common_proc_type proc_type);
 bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type);
 struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
 					      const union bt_cap_set_member *member);
