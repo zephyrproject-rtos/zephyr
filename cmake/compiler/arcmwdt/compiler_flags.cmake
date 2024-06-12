@@ -180,7 +180,11 @@ set_compiler_property(PROPERTY security_fortify_compile_time)
 set_compiler_property(PROPERTY security_fortify_run_time)
 
 # Required C++ flags when using mwdt
-set_property(TARGET compiler-cpp PROPERTY required "-Hcplus" "-Hoff=Stackcheck_alloca")
+set_property(TARGET compiler-cpp PROPERTY required "-Hcplus" )
+
+if(CONFIG_ARC)
+  set_property(TARGET compiler-cpp PROPERTY required "-Hoff=Stackcheck_alloca")
+endif()
 
 # Compiler flag for turning off thread-safe initialization of local statics
 set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe-statics")

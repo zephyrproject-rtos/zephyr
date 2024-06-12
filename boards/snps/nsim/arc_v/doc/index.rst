@@ -39,7 +39,7 @@ either `DesignWare ARC nSIM`_ or `DesignWare ARC Free nSIM`_ is required.
 Building & Running Sample Applications
 ======================================
 
-Most board targets support building with GNU toolchains, however
+Most board targets support building with both GNU and ARC MWDT toolchains, however
 there might be exceptions from that, especially for newly added targets. You can check supported
 toolchains for the board targets in the corresponding ``.yaml`` file.
 
@@ -54,7 +54,12 @@ The supported toolchains are listed in ``toolchain:`` array in ``.yaml`` file, w
   ``zephyr`` toolchain support because corresponding target CPU support hasn't been added to Zephyr
   SDK yet. You can find more information about its usage here: :ref:`here <other_x_compilers>`.
 * **arcmwdt** - implies proprietary ARC MWDT toolchain. You can find more information about its
-  usage here: :ref:`here <toolchain_designware_arc_mwdt>`. Not yet supported: work in progress.
+  usage here: :ref:`here <toolchain_designware_arc_mwdt>`.
+
+.. note::
+   Note that even if both GNU and MWDT toolchain support is declared for the target some tests or
+   samples can be only built with either GNU or MWDT toolchain due to some features limited to a
+   particular toolchain.
 
 Use this configuration to run basic Zephyr applications and kernel tests in
 nSIM, for example, with the :zephyr:code-sample:`synchronization` sample:
@@ -134,7 +139,7 @@ new one it's required to maintain alignment between
 
 * Zephyr OS configuration
 * nSIM configuration
-* GNU toolchain compiler options
+* GNU & MWDT toolchain compiler options
 
 .. note::
    The ``.tcf`` configuration files are not supported by Zephyr directly. There are multiple
@@ -170,7 +175,7 @@ exceptions:
 * The UART model is added
 * CLINT model is added
 
-GNU toolchain compiler options
+GNU & MWDT toolchain compiler options
 =====================================
 
 The hardware-specific compiler options are set in corresponding SoC cmake file. For ``nsim_arc_v`` board
