@@ -26,7 +26,7 @@ static struct litex_clk_device *ldev;	/* global struct for whole driver */
 static struct litex_clk_clkout *clkouts;/* clkout array for whole driver */
 
 /* All DRP regs addresses and sizes */
-static struct litex_drp_reg drp[] = {
+static const struct litex_drp_reg drp[] = {
 	{DRP_ADDR_RESET,  1},
 	{DRP_ADDR_LOCKED, 1},
 	{DRP_ADDR_READ,   1},
