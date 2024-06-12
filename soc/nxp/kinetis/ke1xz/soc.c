@@ -118,6 +118,14 @@ static ALWAYS_INLINE void clk_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Lpuart2,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart2), ip_source));
 #endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c0), okay)
+	CLOCK_SetIpSrc(kCLOCK_Lpi2c0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpi2c0), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay)
+	CLOCK_SetIpSrc(kCLOCK_Lpi2c1,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpi2c1), ip_source));
+#endif
 }
 
 static int ke1xz_init(void)
