@@ -3142,6 +3142,17 @@ Broadcom Platforms:
     - soc/brcm/
     - boards/brcm/
 
+Canaan Platforms:
+  status: maintained
+  maintainers:
+    - judehahh
+  files:
+    - boards/canaan/canmv_k230/
+    - dts/riscv/canaan/
+    - soc/canaan/
+  labels:
+    - "platform: CANAAN"
+
 GD32 Platforms:
   status: maintained
   maintainers:

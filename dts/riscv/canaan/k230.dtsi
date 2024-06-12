@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2024 Junhui Liu <liujh2818@outlook.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	compatible = "canaan,kendryte-k230";
+	model = "canaan,k230";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "thead,c908", "riscv";
+			device_type = "cpu";
+			mmu-type = "riscv,sv39";
+			reg = <0>;
+			riscv,isa = "rv64imafdc_zicsr_zifencei";
+			status = "okay";
+
+			cpu0_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "canaan,k230-soc", "simple-bus";
+		interrupt-parent = <&plic>;
+		ranges;
+
+		plic: interrupt-controller@f00000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0xf 0x00000000 0x0 0x04000000>;
+			interrupt-controller;
+			interrupts-extended = <&cpu0_intc 11>, <&cpu0_intc 9>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			riscv,max-priority = <7>;
+			riscv,ndev = <208>;
+		};
+
+		clint: clint@f04000000 {
+			compatible = "thead,machine-timer";
+			reg = <0xf 0x04000000 0x0 0x00010000>;
+			interrupts-extended = <&cpu0_intc 7>;
+		};
+
+		uart0: serial@91400000 {
+			compatible = "ns16550";
+			reg = <0x0 0x91400000 0x0 0x1000>;
+			interrupts = <16 1>;
+			reg-shift = <2>;
+			clock-frequency = <50000000>;
+			status = "disabled";
+		};
+
+		uart1: serial@91401000 {
+			compatible = "ns16550";
+			reg = <0x0 0x91401000 0x0 0x1000>;
+			interrupts = <17 1>;
+			reg-shift = <2>;
+			clock-frequency = <50000000>;
+			status = "disabled";
+		};
+
+		uart2: serial@91402000 {
+			compatible = "ns16550";
+			reg = <0x0 0x91402000 0x0 0x1000>;
+			interrupts = <18 1>;
+			reg-shift = <2>;
+			clock-frequency = <50000000>;
+			status = "disabled";
+		};
+
+		uart3: serial@91403000 {
+			compatible = "ns16550";
+			reg = <0x0 0x91403000 0x0 0x1000>;
+			interrupts = <19 1>;
+			reg-shift = <2>;
+			clock-frequency = <50000000>;
+			status = "disabled";
+		};
+
+		uart4: serial@91404000 {
+			compatible = "ns16550";
+			reg = <0x0 0x91404000 0x0 0x1000>;
+			interrupts = <20 1>;
+			reg-shift = <2>;
+			clock-frequency = <50000000>;
+			status = "disabled";
+		};
+	};
+};
