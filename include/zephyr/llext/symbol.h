@@ -114,12 +114,16 @@ struct llext_symtable {
  *
  * @param x Extension symbol to export to the base image
  */
+#if defined(CONFIG_LLEXT) && defined(LL_EXTENSION_BUILD)
 #define LL_EXTENSION_SYMBOL(x)							\
 	static const struct llext_const_symbol					\
 			Z_GENERIC_SECTION(".exported_sym") __used		\
 			x ## _sym = {						\
 		.name = STRINGIFY(x), .addr = (const void *)&x,			\
 	}
+#else
+#define LL_EXTENSION_SYMBOL(x)
+#endif
 
 /**
  * @}
