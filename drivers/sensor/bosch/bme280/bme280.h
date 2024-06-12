@@ -211,7 +211,7 @@ struct bme280_encoded_data {
 
 int bme280_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
 
-int bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+void bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 
 int bme280_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan);
