@@ -54,7 +54,7 @@ choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_LPCIP3511
 endchoice
 
-if PM_DEVICE
+if PM_DEVICE_SYSTEM_MANAGED
 # Enable the MEMC FlexSPI driver when using device power
 # management so we can reconfigure the FlexSPI pins to
 # save power. The MEMC FlexSPI driver is enabled when we

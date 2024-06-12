@@ -27,10 +27,10 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 
 endif # DMA_MCUX_LPC
 
-# Turn on Device Level Power Management as we wish
+# Turn on system-managed device power management as we wish
 # to reconfigure the FlexSPI pins for power savings
 # when transitioning the SoC to Deep Low Power modes.
-config PM_DEVICE
+config CONFIG_PM_DEVICE_SYSTEM_MANAGED
 	default y if PM
 
 config REGULATOR
