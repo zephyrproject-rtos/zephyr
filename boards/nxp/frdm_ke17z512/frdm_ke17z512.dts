@@ -74,3 +74,15 @@
 &gpioe {
 	status = "okay";
 };
+
+&lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&lpi2c0_default>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&lpi2c1_default>;
+	pinctrl-names = "default";
+};
