@@ -96,9 +96,32 @@ struct wifi_w91_event_ap_sta_status {
 	uint8_t mac[WIFI_MAC_ADDR_LEN];
 };
 
+struct wifi_w91_event_sta_connect {
+	uint8_t id;
+	uint8_t ssid_len;
+	uint8_t ssid[WIFI_SSID_MAX_LEN];
+	uint8_t bssid[WIFI_MAC_ADDR_LEN];
+	uint8_t channel;
+	uint8_t authmode;
+	int8_t rssi;
+};
+
+struct wifi_w91_event_ap_start {
+	uint8_t id;
+	uint8_t ssid_len;
+	uint8_t ssid[WIFI_SSID_MAX_LEN];
+	uint8_t bssid[WIFI_MAC_ADDR_LEN];
+	uint8_t channel;
+	uint8_t authmode;
+	uint16_t beacon_interval;
+	uint8_t dtim_period;
+};
+
 union wifi_w91_event_param {
 	struct wifi_w91_event_scan_done scan_done;
 	struct wifi_w91_event_ap_sta_status ap_sta_info;
+	struct wifi_w91_event_sta_connect sta_connect_info;
+	struct wifi_w91_event_ap_start ap_start_info;
 };
 
 struct wifi_w91_event {
@@ -123,6 +146,43 @@ struct ip_v6_data {
 		} state;
 	} address[CONFIG_WIFI_TELINK_W91_IPV6_ADDR_CNT];
 };
+
+/* WiFi state utilities */
+static void wifi_w91_show_state(const struct wifi_iface_status *if_state)
+{
+	char ssid_str[sizeof(if_state->ssid) + 1];
+	char bssid_str[sizeof(if_state->bssid) * 2 + 1];
+
+	memcpy(ssid_str, if_state->ssid, sizeof(if_state->ssid));
+	ssid_str[if_state->ssid_len] = '\0';
+	(void) bin2hex(if_state->bssid, sizeof(if_state->bssid),
+		bssid_str, sizeof(bssid_str));
+
+	LOG_INF("State    : %s", wifi_state_txt(if_state->state));
+	LOG_INF("SSID     : %s", ssid_str);
+	LOG_INF("BSSID    : %s", bssid_str);
+	LOG_INF("Bands    : %s", wifi_band_txt(if_state->band));
+	LOG_INF("Channel  : %u", if_state->channel);
+	LOG_INF("WiFi Mode: %s", wifi_mode_txt(if_state->iface_mode));
+	LOG_INF("Link Mode: %s", wifi_link_mode_txt(if_state->link_mode));
+	LOG_INF("Security : %s", wifi_security_txt(if_state->security));
+	LOG_INF("MFP      : %s", wifi_mfp_txt(if_state->mfp));
+	LOG_INF("RSSI     : %d", if_state->rssi);
+	LOG_INF("DTim     : %u", if_state->dtim_period);
+	LOG_INF("BInt     : %u", if_state->beacon_interval);
+	LOG_INF("TWT      : %s", if_state->twt_capable ? "True" : "False");
+}
+
+static void wifi_w91_reset_state(struct wifi_iface_status *if_state)
+{
+	*if_state = (struct wifi_iface_status) {
+		.state = WIFI_STATE_INACTIVE,
+		.band = WIFI_FREQ_BAND_2_4_GHZ,
+		.iface_mode = WIFI_MODE_UNKNOWN,
+		.link_mode = WIFI_LINK_MODE_UNKNOWN,
+		.security = WIFI_SECURITY_TYPE_UNKNOWN,
+	};
+}
 
 #if CONFIG_NET_IPV4
 /* APIs implementation: set ipv4 */
@@ -319,7 +379,7 @@ static void wifi_w91_init_if(struct net_if *iface)
 {
 	LOG_INF("%s", __func__);
 
-	struct wifi_w91_init_resp init_resp;
+	struct wifi_w91_init_resp init_resp = { .err = -ETIMEDOUT };
 	const struct wifi_w91_config *cfg = iface->if_dev->dev->config;
 	struct wifi_w91_data *data = iface->if_dev->dev->data;
 
@@ -338,7 +398,11 @@ static void wifi_w91_init_if(struct net_if *iface)
 
 	memcpy(data->base.mac, init_resp.mac, sizeof(data->base.mac));
 
-	LOG_HEXDUMP_INF(data->base.mac, sizeof(data->base.mac), "MAC");
+	char mac_str[sizeof(data->base.mac) * 2 + 1];
+
+	(void) bin2hex(data->base.mac, sizeof(data->base.mac),
+		mac_str, sizeof(mac_str));
+	LOG_INF("MAC %s", mac_str);
 
 	/* Assign link local address. */
 	net_if_set_link_addr(data->base.iface, data->base.mac,
@@ -359,7 +423,7 @@ static int wifi_w91_scan(const struct device *dev, scan_result_cb_t cb)
 {
 	LOG_INF("%s", __func__);
 
-	int err;
+	int err = -ETIMEDOUT;
 	const struct wifi_w91_config *cfg = dev->config;
 	struct wifi_w91_data *data = dev->data;
 
@@ -373,6 +437,11 @@ static int wifi_w91_scan(const struct device *dev, scan_result_cb_t cb)
 	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
 		wifi_w91_scan, NULL, &err,
 		CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+	if (!err) {
+		wifi_w91_reset_state(&data->base.if_state);
+		data->base.if_state.state = WIFI_STATE_SCANNING;
+		data->base.if_state.iface_mode = WIFI_MODE_INFRA;
+	}
 
 	return err;
 }
@@ -409,7 +478,7 @@ static int wifi_w91_connect(const struct device *dev, struct wifi_connect_req_pa
 {
 	LOG_INF("%s", __func__);
 
-	int err;
+	int err = -ETIMEDOUT;
 	const struct wifi_w91_config *cfg = dev->config;
 	struct wifi_w91_data *data = dev->data;
 	struct wifi_w91_connect_req connect_req = {
@@ -447,6 +516,11 @@ static int wifi_w91_connect(const struct device *dev, struct wifi_connect_req_pa
 	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
 		wifi_w91_connect, &connect_req, &err,
 		CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+	if (!err) {
+		wifi_w91_reset_state(&data->base.if_state);
+		data->base.if_state.state = WIFI_STATE_AUTHENTICATING;
+		data->base.if_state.iface_mode = WIFI_MODE_INFRA;
+	}
 
 	return err;
 }
@@ -460,7 +534,7 @@ static int wifi_w91_disconnect(const struct device *dev)
 {
 	LOG_INF("%s", __func__);
 
-	int err;
+	int err = -ETIMEDOUT;
 	const struct wifi_w91_config *cfg = dev->config;
 	struct wifi_w91_data *data = dev->data;
 
@@ -503,7 +577,7 @@ static int wifi_w91_ap_enable(const struct device *dev, struct wifi_connect_req_
 {
 	LOG_INF("%s", __func__);
 
-	int err;
+	int err = -ETIMEDOUT;
 	const struct wifi_w91_config *cfg = dev->config;
 	struct wifi_w91_data *data = dev->data;
 	struct wifi_w91_connect_req connect_req = {
@@ -540,7 +614,7 @@ static int wifi_w91_ap_disable(const struct device *dev)
 {
 	LOG_INF("%s", __func__);
 
-	int err;
+	int err = -ETIMEDOUT;
 	const struct wifi_w91_config *cfg = dev->config;
 	struct wifi_w91_data *data = dev->data;
 
@@ -549,6 +623,15 @@ static int wifi_w91_ap_disable(const struct device *dev)
 		CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
 
 	return err;
+}
+
+/* APIs implementation: wifi interface status */
+int wifi_w91_iface_status(const struct device *dev, struct wifi_iface_status *status)
+{
+	struct wifi_w91_data *data = dev->data;
+
+	memcpy(status, &data->base.if_state, sizeof(struct wifi_iface_status));
+	return 0;
 }
 
 /* APIs implementation: event callback */
@@ -612,6 +695,68 @@ static bool unpack_wifi_w91_event_ap_sta_status_cb(void *unpack_data,
 	return true;
 }
 
+static bool unpack_wifi_w91_event_sta_connect_cb(void *unpack_data,
+	const uint8_t *pack_data, size_t pack_data_len)
+{
+	struct wifi_w91_event *p_evt = unpack_data;
+	size_t expect_len = sizeof(uint32_t) + sizeof(p_evt->id) +
+		sizeof(p_evt->param.sta_connect_info.ssid_len) +
+		sizeof(p_evt->param.sta_connect_info.ssid) +
+		sizeof(p_evt->param.sta_connect_info.bssid) +
+		sizeof(p_evt->param.sta_connect_info.channel) +
+		sizeof(p_evt->param.sta_connect_info.authmode) +
+		sizeof(p_evt->param.sta_connect_info.rssi);
+
+	if (expect_len != pack_data_len) {
+		return false;
+	}
+
+	pack_data += sizeof(uint32_t);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->id);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->param.sta_connect_info.ssid_len);
+	IPC_DISPATCHER_UNPACK_ARRAY(pack_data, p_evt->param.sta_connect_info.ssid,
+		sizeof(p_evt->param.sta_connect_info.ssid));
+	IPC_DISPATCHER_UNPACK_ARRAY(pack_data, p_evt->param.sta_connect_info.bssid,
+		sizeof(p_evt->param.sta_connect_info.bssid));
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->param.sta_connect_info.channel);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->param.sta_connect_info.authmode);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->param.sta_connect_info.rssi);
+
+	return true;
+}
+
+static bool unpack_wifi_w91_event_ap_start_cb(void *unpack_data,
+	const uint8_t *pack_data, size_t pack_data_len)
+{
+	struct wifi_w91_event *p_evt = unpack_data;
+	size_t expect_len = sizeof(uint32_t) + sizeof(p_evt->id) +
+		sizeof(p_evt->param.ap_start_info.ssid_len) +
+		sizeof(p_evt->param.ap_start_info.ssid) +
+		sizeof(p_evt->param.ap_start_info.bssid) +
+		sizeof(p_evt->param.ap_start_info.channel) +
+		sizeof(p_evt->param.ap_start_info.authmode) +
+		sizeof(p_evt->param.ap_start_info.beacon_interval) +
+		sizeof(p_evt->param.ap_start_info.dtim_period);
+
+	if (expect_len != pack_data_len) {
+		return false;
+	}
+
+	pack_data += sizeof(uint32_t);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->id);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->param.ap_start_info.ssid_len);
+	IPC_DISPATCHER_UNPACK_ARRAY(pack_data, p_evt->param.ap_start_info.ssid,
+		sizeof(p_evt->param.ap_start_info.ssid));
+	IPC_DISPATCHER_UNPACK_ARRAY(pack_data, p_evt->param.ap_start_info.bssid,
+		sizeof(p_evt->param.ap_start_info.bssid));
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->param.ap_start_info.channel);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->param.ap_start_info.authmode);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->param.ap_start_info.beacon_interval);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_evt->param.ap_start_info.dtim_period);
+
+	return true;
+}
+
 static bool unpack_wifi_w91_event_cb(void *unpack_data,
 	const uint8_t *pack_data, size_t pack_data_len)
 {
@@ -645,6 +790,16 @@ static void wifi_w91_event_cb(const void *data, size_t len, void *param)
 	case WIFI_W91_EVENT_AP_STACONNECTED:
 	case WIFI_W91_EVENT_AP_STADISCONNECTED:
 		if (!unpack_wifi_w91_event_ap_sta_status_cb(&event, data, len)) {
+			return;
+		}
+		break;
+	case WIFI_W91_EVENT_STA_CONNECTED:
+		if (!unpack_wifi_w91_event_sta_connect_cb(&event, data, len)) {
+			return;
+		}
+		break;
+	case WIFI_W91_EVENT_AP_START:
+		if (!unpack_wifi_w91_event_ap_start_cb(&event, data, len)) {
 			return;
 		}
 		break;
@@ -717,10 +872,14 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 		case WIFI_W91_EVENT_STA_START:
 			data->base.state = WIFI_W91_STA_STARTED;
 			net_if_carrier_on(data->base.iface);
+			wifi_w91_reset_state(&data->base.if_state);
+			data->base.if_state.state = WIFI_STATE_DISCONNECTED;
+			data->base.if_state.iface_mode = WIFI_MODE_INFRA;
 			break;
 		case WIFI_W91_EVENT_STA_STOP:
 			data->base.state = WIFI_W91_STA_STOPPED;
 			net_if_carrier_off(data->base.iface);
+			wifi_w91_reset_state(&data->base.if_state);
 			break;
 		case WIFI_W91_EVENT_STA_CONNECTED:
 			data->base.state = WIFI_W91_STA_CONNECTED;
@@ -735,6 +894,21 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 			(void) wifi_w91_set_ipv4(data->base.iface);
 #endif /* CONFIG_NET_DHCPV4 */
 #endif /* CONFIG_NET_IPV4 */
+			data->base.if_state = (struct wifi_iface_status) {
+				.state = WIFI_STATE_COMPLETED,
+				.ssid_len = event.param.sta_connect_info.ssid_len,
+				.band = WIFI_FREQ_BAND_2_4_GHZ,
+				.channel = event.param.sta_connect_info.channel,
+				.iface_mode = WIFI_MODE_INFRA,
+				.link_mode = WIFI_LINK_MODE_UNKNOWN,
+				.security = event.param.sta_connect_info.authmode,
+				.rssi = event.param.sta_connect_info.rssi,
+			};
+			memcpy(data->base.if_state.ssid, event.param.sta_connect_info.ssid,
+				sizeof(data->base.if_state.ssid));
+			memcpy(data->base.if_state.bssid, event.param.sta_connect_info.bssid,
+				sizeof(data->base.if_state.bssid));
+			wifi_w91_show_state(&data->base.if_state);
 			break;
 		case WIFI_W91_EVENT_STA_DISCONNECTED:
 			LOG_INF("The WiFi STA disconnected");
@@ -746,6 +920,9 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 			break;
 		case WIFI_W91_EVENT_SCAN_DONE:
 			wifi_w91_even_scan_done_handler(data, &event.param.scan_done);
+			wifi_w91_reset_state(&data->base.if_state);
+			data->base.if_state.state = WIFI_STATE_DISCONNECTED;
+			data->base.if_state.iface_mode = WIFI_MODE_INFRA;
 			break;
 		case WIFI_W91_EVENT_AP_START:
 			data->base.state = WIFI_W91_AP_STARTED;
@@ -753,9 +930,26 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 			(void) wifi_w91_set_ipv4(data->base.iface);
 #endif /* CONFIG_NET_IPV4 */
 			LOG_INF("The WiFi Access Point is started");
+			data->base.if_state = (struct wifi_iface_status) {
+				.state = WIFI_STATE_INACTIVE,
+				.ssid_len = event.param.ap_start_info.ssid_len,
+				.band = WIFI_FREQ_BAND_2_4_GHZ,
+				.channel = event.param.ap_start_info.channel,
+				.iface_mode = WIFI_MODE_AP,
+				.link_mode = WIFI_LINK_MODE_UNKNOWN,
+				.security = event.param.ap_start_info.authmode,
+				.dtim_period = event.param.ap_start_info.dtim_period,
+				.beacon_interval = event.param.ap_start_info.beacon_interval,
+			};
+			memcpy(data->base.if_state.ssid, event.param.ap_start_info.ssid,
+				sizeof(data->base.if_state.ssid));
+			memcpy(data->base.if_state.bssid, event.param.ap_start_info.bssid,
+				sizeof(data->base.if_state.bssid));
+			wifi_w91_show_state(&data->base.if_state);
 			break;
 		case WIFI_W91_EVENT_AP_STOP:
 			data->base.state = WIFI_W91_AP_STOPPED;
+			wifi_w91_reset_state(&data->base.if_state);
 			LOG_INF("The WiFi Access Point is stopped");
 			break;
 		case WIFI_W91_EVENT_AP_STACONNECTED:
@@ -797,6 +991,8 @@ static int wifi_w91_init(const struct device *dev)
 	ipc_dispatcher_add(IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_WIFI_EVENT, cfg->instance_id),
 		wifi_w91_event_cb, (void *)dev);
 
+	wifi_w91_reset_state(&data->base.if_state);
+
 	return 0;
 }
 
@@ -807,6 +1003,7 @@ static const struct net_wifi_mgmt_offload wifi_w91_driver_api = {
 	.disconnect                 = wifi_w91_disconnect,
 	.ap_enable                  = wifi_w91_ap_enable,
 	.ap_disable                 = wifi_w91_ap_disable,
+	.iface_status               = wifi_w91_iface_status,
 };
 
 #define NET_W91_DEFINE(n)                                       \

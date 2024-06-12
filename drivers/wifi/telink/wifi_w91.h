@@ -43,6 +43,7 @@ struct wifi_w91_data_base {
 #if CONFIG_NET_DHCPV4
 	struct net_mgmt_event_callback ev_dhcp;
 #endif /*CONFIG_NET_DHCPV4 */
+	struct wifi_iface_status if_state;
 };
 
 struct wifi_w91_data_l2 {
