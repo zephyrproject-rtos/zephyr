@@ -9,7 +9,7 @@
 
 LOG_MODULE_DECLARE(BME280, CONFIG_SENSOR_LOG_LEVEL);
 
-int bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+void bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	uint32_t min_buf_len = sizeof(struct bme280_encoded_data);
 	int rc;
@@ -31,7 +31,7 @@ int bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 		default:
 			LOG_ERR("Unsupported channel type %d", channels[i].chan_type);
 			rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
-			return -ENOTSUP;
+			return;
 		}
 	}
 
@@ -39,7 +39,7 @@ int bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	if (rc != 0) {
 		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return rc;
+		return;
 	}
 
 	struct bme280_encoded_data *edata;
@@ -52,10 +52,8 @@ int bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	if (rc != 0) {
 		LOG_ERR("Failed to fetch samples");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return rc;
+		return;
 	}
 
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
-
-	return 0;
 }
