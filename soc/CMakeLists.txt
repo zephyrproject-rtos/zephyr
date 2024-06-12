@@ -12,6 +12,16 @@ unset(_SOC_IS_IN_TREE)
 add_subdirectory(common)
 
 if(HWMv1)
+  message(DEPRECATION "
+          ---------------------------------------------------------------------
+          --- WARNING: Functionality to describe SoCs in HWMv1 is           ---
+          --- deprecated and should be replaced with HWMv2, including       ---
+          --- boards. HWMv1 SoCs support remains only to ease the migration ---
+          --- of out-of-tree SoCs and associated boards. It will not be     ---
+          --- possible to build using HWMv1 SoCs at all in future releases. ---
+          ---------------------------------------------------------------------"
+         )
+
   if(EXISTS ${SOC_DIR}/${ARCH}/CMakeLists.txt)
     add_subdirectory(${SOC_DIR}/${ARCH} soc/${ARCH})
   else()
