@@ -1092,6 +1092,8 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 
 	LPUART_Init(config->base, &uart_config, clock_freq);
 
+#if defined(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT) && \
+	FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) {
 		/* Set the LPUART into RS485 mode (tx driver enable using RTS) */
 		config->base->MODIR |= LPUART_MODIR_TXRTSE(true);
@@ -1099,6 +1101,8 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 			config->base->MODIR |= LPUART_MODIR_TXRTSPOL(1);
 		}
 	}
+#endif
+
 	/* Now can enable tx */
 	config->base->CTRL |= LPUART_CTRL_TE(true);
 
