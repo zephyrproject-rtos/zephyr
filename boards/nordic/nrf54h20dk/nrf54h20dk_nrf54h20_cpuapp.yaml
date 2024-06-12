@@ -12,6 +12,7 @@ toolchain:
 ram: 256
 flash: 296
 supported:
+  - adc
   - can
   - counter
   - gpio
