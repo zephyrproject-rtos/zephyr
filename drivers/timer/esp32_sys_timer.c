@@ -136,6 +136,13 @@ uint64_t sys_clock_cycle_get_64(void)
 	return get_systimer_alarm();
 }
 
+void sys_clock_disable(void)
+{
+	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, false);
+	systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, false);
+	systimer_hal_deinit(&systimer_hal);
+}
+
 static int sys_clock_driver_init(void)
 {
 
