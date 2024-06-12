@@ -2097,6 +2097,27 @@ Release Notes:
   labels:
     - "area: Wi-Fi"
 
+"Drivers: Wi-Fi as nRF Wi-Fi":
+  status: maintained
+  maintainers:
+    - krish2718
+    - jukkar
+  files:
+    - drivers/wifi/nrfwifi/
+    - dts/bindings/wifi/nordic,nrf70.yaml
+    - dts/bindings/wifi/nordic,nrf70-qspi.yaml
+    - dts/bindings/wifi/nordic,nrf70-spi.yaml
+    - dts/bindings/wifi/nordic,nrf70-coex.yaml
+    - dts/bindings/wifi/nordic,nrf7002-qspi.yaml
+    - dts/bindings/wifi/nordic,nrf7002-spi.yaml
+    - dts/bindings/wifi/nordic,nrf7000-qspi.yaml
+    - dts/bindings/wifi/nordic,nrf7000-spi.yaml
+    - dts/bindings/wifi/nordic,nrf7001-qspi.yaml
+    - dts/bindings/wifi/nordic,nrf7001-spi.yaml
+    - boards/shields/nrf7002ek/
+  labels:
+    - "area: Wi-Fi"
+
 "Drivers: Memory Management":
   status: maintained
   maintainers:
