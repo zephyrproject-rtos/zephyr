@@ -907,6 +907,7 @@ flagged.
         "MYFEATURE",
         "MY_DRIVER_0",
         "NORMAL_SLEEP",  # #defined by RV32M1 in ext/
+        "NRF_WIFI_FW_BIN", # Directly passed from CMakeLists.txt
         "OPT",
         "OPT_0",
         "PEDO_THS_MIN",
