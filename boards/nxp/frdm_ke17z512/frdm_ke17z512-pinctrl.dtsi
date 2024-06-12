@@ -18,4 +18,24 @@
 			slew-rate = "slow";
 		};
 	};
+
+	lpi2c0_default: lpi2c0_default {
+		group0 {
+			pinmux = <LPI2C0_SDA_PTA2>,
+				<LPI2C0_SCL_PTA3>;
+			bias-pull-up;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	lpi2c1_default: lpi2c1_default {
+		group0 {
+			pinmux = <LPI2C1_SDA_PTE0>,
+				<LPI2C1_SCL_PTE1>;
+			bias-pull-up;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 };
