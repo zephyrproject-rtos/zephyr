@@ -1020,7 +1020,7 @@ static int ssd16xx_init(const struct device *dev)
 	return ssd16xx_controller_init(dev);
 }
 
-static struct display_driver_api ssd16xx_driver_api = {
+static const struct display_driver_api ssd16xx_driver_api = {
 	.blanking_on = ssd16xx_blanking_on,
 	.blanking_off = ssd16xx_blanking_off,
 	.write = ssd16xx_write,

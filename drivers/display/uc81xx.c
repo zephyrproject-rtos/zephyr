@@ -754,7 +754,7 @@ static const struct uc81xx_quirks uc8179_quirks = {
 };
 #endif
 
-static struct display_driver_api uc81xx_driver_api = {
+static const struct display_driver_api uc81xx_driver_api = {
 	.blanking_on = uc81xx_blanking_on,
 	.blanking_off = uc81xx_blanking_off,
 	.write = uc81xx_write,
