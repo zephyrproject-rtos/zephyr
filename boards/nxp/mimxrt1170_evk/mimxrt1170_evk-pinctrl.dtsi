@@ -290,6 +290,17 @@
 		};
 	};
 
+	pinmux_lpuart2_flowcontrol: pinmux_lpuart2_flowcontrol {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_11_lpuart2_rx>,
+				<&iomuxc_gpio_disp_b2_10_lpuart2_tx>,
+				<&iomuxc_gpio_disp_b2_12_lpuart2_cts_b>,
+				<&iomuxc_gpio_disp_b2_13_lpuart2_rts_b>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_sai1: pinmux_sai1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_17_sai1_mclk>,
