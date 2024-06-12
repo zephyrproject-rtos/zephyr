@@ -16,6 +16,21 @@ config SOC_FAMILY_MAX32_M4
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 
+config SOC_MAX32655_M4
+	select MAX32_HAS_SECONDARY_RV32
+
+config SOC_MAX32680_M4
+	select MAX32_HAS_SECONDARY_RV32
+
+config SOC_MAX32690_M4
+	select MAX32_HAS_SECONDARY_RV32
+
+config SOC_MAX78000_M4
+	select MAX32_HAS_SECONDARY_RV32
+
+config SOC_MAX78002_M4
+	select MAX32_HAS_SECONDARY_RV32
+
 if SOC_FAMILY_MAX32
 
 config MAX32_ON_ENTER_CPU_IDLE_HOOK
@@ -27,5 +42,19 @@ config MAX32_ON_ENTER_CPU_IDLE_HOOK
 	  the CPU is made idle (by k_cpu_idle() or k_cpu_atomic_idle()).
 	  If needed, this hook can be used to prevent the CPU from actually
 	  entering sleep by skipping the WFE/WFI instruction.
+
+config MAX32_HAS_SECONDARY_RV32
+	bool
+
+config MAX32_SECONDARY_RV32
+	bool "Secondary RISC-V core enable"
+	depends on MAX32_HAS_SECONDARY_RV32
+
+DT_CHOSEN_Z_CODE_RV32_PARTITION := zephyr,code-rv32-partition
+
+config MAX32_SECONDARY_RV32_BOOT_ADDRESS
+	hex "Secondary RISC-V core boot address"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_RV32_PARTITION))
+	depends on MAX32_SECONDARY_RV32
 
 endif # SOC_FAMILY_MAX32
