@@ -877,6 +877,8 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 		return -EBUSY;
 	}
 
+	k_sem_reset(&chat->script_stopped_sem);
+
 	chat->pending_script = script;
 	k_work_submit(&chat->script_run_work);
 	return 0;
@@ -885,8 +887,6 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 int modem_chat_run_script(struct modem_chat *chat, const struct modem_chat_script *script)
 {
 	int ret;
-
-	k_sem_reset(&chat->script_stopped_sem);
 
 	ret = modem_chat_run_script_async(chat, script);
 	if (ret < 0) {
