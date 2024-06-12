@@ -398,7 +398,7 @@ if(CREATE_NEW_DOTCONFIG)
 endif()
 
 # Read out the list of 'Kconfig' sources that were used by the engine.
-file(STRINGS ${PARSED_KCONFIG_SOURCES_TXT} PARSED_KCONFIG_SOURCES_LIST)
+file(STRINGS ${PARSED_KCONFIG_SOURCES_TXT} PARSED_KCONFIG_SOURCES_LIST ENCODING UTF-8)
 
 # Force CMAKE configure when the Kconfig sources or configuration files changes.
 foreach(kconfig_input
