@@ -4,3 +4,6 @@
 	nsim_mem-dev=clint,base=0x2000000,size=4096
 	nsim_mem-dev=uart0,kind=16550,base=0x10000000,irq=24
 	nsim_mem-dev=plic,base=0xc000000,size=0x04000000,interrupts=128,priorities=16
+	mpu_version=64
+	mpu_regions=16
+	mpu_granule=0
