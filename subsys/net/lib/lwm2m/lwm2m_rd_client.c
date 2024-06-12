@@ -1073,7 +1073,7 @@ static void sm_do_registration(void)
 		ret = lwm2m_engine_start(client.ctx);
 		if (ret < 0) {
 			LOG_ERR("Cannot init LWM2M engine (%d)", ret);
-			goto bootstrap_or_retry;
+			goto retry;
 		}
 	}
 
@@ -1081,11 +1081,12 @@ static void sm_do_registration(void)
 	return;
 
 bootstrap_or_retry:
-	lwm2m_engine_stop(client.ctx);
 	if (!client.server_disabled && fallback_to_bootstrap()) {
+		lwm2m_engine_stop(client.ctx);
 		return;
 	}
-
+retry:
+	lwm2m_engine_stop(client.ctx);
 	set_sm_state(ENGINE_NETWORK_ERROR);
 }
 
