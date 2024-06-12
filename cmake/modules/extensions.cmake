@@ -5394,6 +5394,7 @@ function(add_llext_target target_name)
 
   target_compile_definitions(${llext_lib_target} PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
+    LL_EXTENSION_BUILD
   )
   target_compile_options(${llext_lib_target} PRIVATE
     ${zephyr_filtered_flags}
