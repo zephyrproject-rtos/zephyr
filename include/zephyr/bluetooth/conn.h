@@ -1256,8 +1256,11 @@ struct bt_conn_cb {
  *  Register callbacks to monitor the state of connections.
  *
  *  @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EEXIST if @p cb was already registered.
  */
-void bt_conn_cb_register(struct bt_conn_cb *cb);
+int bt_conn_cb_register(struct bt_conn_cb *cb);
 
 /**
  * @brief Unregister connection callbacks.
