@@ -41,7 +41,7 @@ Building and running
 
   .. zephyr-app-commands::
      :zephyr-app: samples/subsys/llext/modules
-     :board: qemu_xtensa
+     :board: qemu_xtensa/dc233c
      :goals: build run
      :compact:
 
@@ -50,7 +50,7 @@ Building and running
 
   .. zephyr-app-commands::
      :zephyr-app: samples/subsys/llext/modules
-     :board: qemu_xtensa
+     :board: qemu_xtensa/dc233c
      :goals: build run
      :west-args: -T sample.llext.modules.module_build
      :compact:
