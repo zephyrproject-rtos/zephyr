@@ -37,4 +37,4 @@ tests:
       - qemu_riscv64
   application_development.code_relocation.xtensa:
     extra_args: CONF_FILE="prj_xtensa.conf"
-    platform_allow: qemu_xtensa
+    platform_allow: qemu_xtensa/dc233c

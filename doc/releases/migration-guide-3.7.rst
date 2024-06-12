@@ -87,6 +87,8 @@ Boards
 
 * `lairdconnect` boards are now `ezurio` boards. Laird Connectivity has rebranded to `Ezurio <https://www.ezurio.com/laird-connectivity>`_.
 
+* Board `qemu_xtensa` is deprecated. Use `qemu_xtensa/dc233c` instead.
+
 Modules
 *******
 
