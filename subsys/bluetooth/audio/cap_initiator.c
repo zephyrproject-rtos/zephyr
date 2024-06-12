@@ -26,6 +26,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <sys/errno.h>
 
 #include "bap_endpoint.h"
 #include "cap_internal.h"
@@ -860,6 +861,8 @@ static int cap_initiator_unicast_audio_configure(
 
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
 {
+	bool all_streaming = true;
+
 	if (bt_cap_common_proc_is_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
@@ -868,6 +871,20 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 
 	if (!valid_unicast_audio_start_param(param)) {
 		return -EINVAL;
+	}
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const struct bt_bap_stream *bap_stream =
+			&param->stream_params[i].stream->bap_stream;
+
+		if (!stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING)) {
+			all_streaming = false;
+		}
+	}
+
+	if (all_streaming) {
+		LOG_DBG("All streams are already in the streaming state");
+		return -EALREADY;
 	}
 
 	return cap_initiator_unicast_audio_configure(param);

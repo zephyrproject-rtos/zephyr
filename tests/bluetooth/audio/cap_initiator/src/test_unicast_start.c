@@ -500,3 +500,40 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
 	}
 }
+
+static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_state_streaming)
+{
+	struct bt_cap_unicast_audio_start_stream_param
+		stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT] = {0};
+	const struct bt_cap_unicast_audio_start_param param = {
+		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.count = ARRAY_SIZE(stream_params),
+		.stream_params = stream_params,
+	};
+	int err;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
+		stream_params[i].stream = &fixture->cap_streams[i];
+		stream_params[i].codec_cfg = &fixture->preset.codec_cfg;
+		stream_params[i].member.member = &fixture->conns[i % ARRAY_SIZE(fixture->conns)];
+		stream_params[i].ep = &fixture->eps[i];
+
+		test_unicast_set_state(stream_params[i].stream, stream_params[i].member.member,
+				       stream_params[i].ep, &fixture->preset,
+				       BT_BAP_EP_STATE_STREAMING);
+	}
+
+	err = bt_cap_initiator_unicast_audio_start(&param);
+	zassert_equal(err, -EALREADY, "Unexpected return value %d", err);
+
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_complete_cb", 0,
+			   mock_cap_initiator_unicast_start_complete_cb_fake.call_count);
+
+	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
+		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
+		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+
+		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
+			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
+	}
+}
