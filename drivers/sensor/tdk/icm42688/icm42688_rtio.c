@@ -43,7 +43,7 @@ static int icm42688_rtio_sample_fetch(const struct device *dev, int16_t readings
 	return 0;
 }
 
-static int icm42688_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+static void icm42688_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	const struct sensor_chan_spec *const channels = cfg->channels;
@@ -59,7 +59,7 @@ static int icm42688_submit_one_shot(const struct device *dev, struct rtio_iodev_
 	if (rc != 0) {
 		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return rc;
+		return;
 	}
 
 	edata = (struct icm42688_encoded_data *)buf;
@@ -71,24 +71,22 @@ static int icm42688_submit_one_shot(const struct device *dev, struct rtio_iodev_
 	if (rc != 0) {
 		LOG_ERR("Failed to fetch samples");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return rc;
+		return;
 	}
 
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
-
-	return 0;
 }
 
-int icm42688_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+void icm42688_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 
 	if (!cfg->is_streaming) {
-		return icm42688_submit_one_shot(dev, iodev_sqe);
+		icm42688_submit_one_shot(dev, iodev_sqe);
 	} else if (IS_ENABLED(CONFIG_ICM42688_STREAM)) {
-		return icm42688_submit_stream(dev, iodev_sqe);
+		icm42688_submit_stream(dev, iodev_sqe);
 	} else {
-		return -ENOTSUP;
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }
 

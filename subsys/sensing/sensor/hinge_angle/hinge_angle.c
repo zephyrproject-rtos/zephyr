@@ -79,17 +79,16 @@ static int hinge_attr_set(const struct device *dev,
 	return ret;
 }
 
-static int hinge_submit(const struct device *dev,
+static void hinge_submit(const struct device *dev,
 		struct rtio_iodev_sqe *sqe)
 {
 	struct hinge_angle_context *data = dev->data;
 
 	if (data->sqe) {
-		return -EBUSY;
+		rtio_iodev_sqe_err(sqe, -EBUSY);
+	} else {
+		data->sqe = sqe;
 	}
-
-	data->sqe = sqe;
-	return 0;
 }
 
 static const struct sensor_driver_api hinge_api = {
@@ -146,7 +145,10 @@ static void hinge_reporter_on_data_event(sensing_sensor_handle_t handle,
 
 		sample->readings[0].v = calc_hinge_angle(data);
 
-		rtio_iodev_sqe_ok(data->sqe, 0);
+		struct rtio_iodev_sqe *sqe = data->sqe;
+
+		data->sqe = NULL;
+		rtio_iodev_sqe_ok(sqe, 0);
 	}
 }
 
