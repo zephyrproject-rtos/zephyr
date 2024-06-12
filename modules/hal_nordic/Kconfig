@@ -7,6 +7,10 @@ config ZEPHYR_HAL_NORDIC_MODULE
 config HAS_NORDIC_DRIVERS
 	bool
 
+config MPSL
+	bool
+	# Dummy kconfig to allow compiling outside of NCS
+
 menu "Nordic drivers"
 	depends on HAS_NORDIC_DRIVERS
 

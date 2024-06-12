@@ -381,7 +381,7 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 #define NRFX_PPI_GROUPS_USED_BY_802154_DRV     0
 #endif // CONFIG_NRF_802154_RADIO_DRIVER
 
-#if defined(CONFIG_NRF_802154_RADIO_DRIVER) && !defined(CONFIG_NRF_802154_SL_OPENSOURCE)
+#if defined(CONFIG_MPSL)
 #include <mpsl.h>
 #define NRFX_PPI_CHANNELS_USED_BY_MPSL   MPSL_RESERVED_PPI_CHANNELS
 #define NRFX_PPI_GROUPS_USED_BY_MPSL     0
