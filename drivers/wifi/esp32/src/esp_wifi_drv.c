@@ -182,6 +182,10 @@ static void scan_done_handler(void)
 			strncpy(res.ssid, ap_list_buffer[k].ssid, ssid_len);
 			res.rssi = ap_list_buffer[k].rssi;
 			res.channel = ap_list_buffer[k].primary;
+
+			memcpy(res.mac, ap_list_buffer[k].bssid, WIFI_MAC_ADDR_LEN);
+			res.mac_length = WIFI_MAC_ADDR_LEN;
+
 			switch (ap_list_buffer[k].authmode) {
 			case WIFI_AUTH_OPEN:
 				res.security = WIFI_SECURITY_TYPE_NONE;
