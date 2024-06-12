@@ -64,7 +64,7 @@ tests:
   llext.simple.writable:
     arch_allow: arm xtensa
     integration_platforms:
-      - qemu_xtensa             # Xtensa ISA
+      - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
@@ -73,7 +73,7 @@ tests:
   llext.simple.writable_relocatable:
     arch_allow: arm xtensa
     integration_platforms:
-      - qemu_xtensa             # Xtensa ISA
+      - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
@@ -86,7 +86,7 @@ tests:
   llext.simple.writable_slid_linking:
     arch_allow: arm xtensa
     integration_platforms:
-      - qemu_xtensa             # Xtensa ISA
+      - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
@@ -96,7 +96,7 @@ tests:
   llext.simple.writable_relocatable_slid_linking:
     arch_allow: arm xtensa
     integration_platforms:
-      - qemu_xtensa             # Xtensa ISA
+      - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
