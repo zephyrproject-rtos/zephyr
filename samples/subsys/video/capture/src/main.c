@@ -106,7 +106,7 @@ int main(void)
 			return 0;
 		}
 
-		printk("\rGot frame %u! size: %u; timestamp %u ms", frame++, vbuf->bytesused,
+		printk("Got frame %u! size: %u; timestamp %u ms\n", frame++, vbuf->bytesused,
 		       vbuf->timestamp);
 
 		err = video_enqueue(video, VIDEO_EP_OUT, vbuf);
