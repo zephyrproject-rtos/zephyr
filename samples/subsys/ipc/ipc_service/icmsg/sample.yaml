@@ -7,4 +7,14 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     tags: ipc
     sysbuild: true
-    harness: remote
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "host: IPC-service HOST demo started"
+        - "host: Ep bounded"
+        - "host: Perform sends for"
+        - "host: Sent"
+        - "host: Received"
+        - "host: IPC-service HOST demo ended"
