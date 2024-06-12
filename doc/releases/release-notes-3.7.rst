@@ -37,6 +37,8 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
 * CVE-2024-5754: Under embargo until 2024-09-04
 
+* CVE-2024-5931: Under embargo until 2024-09-10
+
 API Changes
 ***********
 
