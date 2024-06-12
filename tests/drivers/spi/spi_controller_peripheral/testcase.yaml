@@ -116,3 +116,14 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - ophelia4ev/nrf54l15/cpuapp
+
+  drivers.spi.direct_xfer:
+    extra_configs:
+      - CONFIG_SPI_NRFX_RAM_BUFFER_SIZE=0
+    filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+
+  drivers.spi.direct_xfer.no_prealloc:
+    extra_configs:
+      - CONFIG_SPI_NRFX_RAM_BUFFER_SIZE=0
+      - CONFIG_PREALLOC_BUFFERS=n
+    filter: CONFIG_SOC_FAMILY_NORDIC_NRF
