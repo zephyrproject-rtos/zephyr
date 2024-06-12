@@ -17,4 +17,5 @@ target_sources(testbinary
     src/main.c
     src/test_common.c
     src/test_unicast_start.c
+    src/test_unicast_stop.c
 )
