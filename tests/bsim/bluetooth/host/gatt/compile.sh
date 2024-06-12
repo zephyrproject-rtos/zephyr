@@ -12,6 +12,7 @@ source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app=tests/bsim/bluetooth/host/gatt/authorization compile
 app=tests/bsim/bluetooth/host/gatt/caching compile
+app=tests/bsim/bluetooth/host/gatt/caching conf_overlay=psa_overlay.conf compile
 app=tests/bsim/bluetooth/host/gatt/general compile
 app=tests/bsim/bluetooth/host/gatt/notify compile
 app=tests/bsim/bluetooth/host/gatt/notify_multiple compile
