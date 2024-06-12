@@ -1930,7 +1930,7 @@ TESTDATA_13 = [
         ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                                ERROR dummy reason (cmake)'],
-        None
+        None, 60.0
     ),
     (
         'failed', False, False, False,
@@ -1938,58 +1938,85 @@ TESTDATA_13 = [
          '            dummy.testsuite.name' \
          '                                FAILED : dummy reason'],
         'INFO    - Total complete:   20/  25  80%  skipped:    3,' \
-        ' failed:    3, error:    1'
+        ' failed:    3, error:    1',
+        60.0
     ),
     (
         'skipped', True, False, False,
         ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               SKIPPED (dummy reason)'],
-        None
+        None, 60.0
     ),
     (
         'filtered', False, False, False,
         [],
         'INFO    - Total complete:   20/  25  80%  skipped:    4,' \
-        ' failed:    2, error:    1'
+        ' failed:    2, error:    1',
+        60.0
     ),
     (
         'passed', True, False, True,
         ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               PASSED' \
-         ' (dummy handler type: dummy dut, 60.000s)'],
-        None
+         ' (dummy handler type: dummy dut, 1m 0.000s)'],
+        None, 60.0
     ),
     (
         'passed', True, False, False,
         ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               PASSED (build)'],
-        None
+        None, 60.0
     ),
     (
         'unknown status', False, False, False,
         ['Unknown status = unknown status'],
         'INFO    - Total complete:   20/  25  80%  skipped:    3,' \
-        ' failed:    2, error:    1\r'
+        ' failed:    2, error:    1\r',
+        60.0
     ),
     (
         'timeout', True, False, True,
         ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               UNKNOWN' \
-         ' (dummy handler type: dummy dut, 60.000s/seed: 123)'],
-        None
+         ' (dummy handler type: dummy dut, 1m 0.000s/seed: 123)'],
+        None, 60.0
+    ),
+    (
+        'passed', True, False, True,
+        ['INFO      20/25 dummy platform' \
+         '            dummy.testsuite.name' \
+         '                               PASSED' \
+         ' (dummy handler type: dummy dut, 25.123s)'],
+        None, 25.12345
+    ),
+    (
+        'passed', True, False, True,
+        ['INFO      20/25 dummy platform' \
+         '            dummy.testsuite.name' \
+         '                               PASSED' \
+         ' (dummy handler type: dummy dut, 27m 55.576s)'],
+        None, 1675.5761
+    ),
+    (
+        'passed', True, False, True,
+        ['INFO      20/25 dummy platform' \
+         '            dummy.testsuite.name' \
+         '                               PASSED' \
+         ' (dummy handler type: dummy dut, 4h 0m 32.334s)'],
+        None, 14432.3335
     ),
 ]
 
 @pytest.mark.parametrize(
-    'status, verbose, cmake_only, ready_run, expected_logs, expected_out',
+    'status, verbose, cmake_only, ready_run, expected_logs, expected_out, execute_time',
     TESTDATA_13,
     ids=['verbose error cmake only', 'failed', 'verbose skipped', 'filtered',
          'verbose passed ready run', 'verbose passed', 'unknown status',
-         'timeout']
+         'timeout', 'less seconds', 'minutes and seconds', 'hours + 0 minutes + some seconds']
 )
 def test_projectbuilder_report_out(
     capfd,
@@ -2000,7 +2027,8 @@ def test_projectbuilder_report_out(
     cmake_only,
     ready_run,
     expected_logs,
-    expected_out
+    expected_out,
+    execute_time
 ):
     instance_mock = mock.Mock()
     instance_mock.handler.type_str = 'dummy handler type'
@@ -2008,7 +2036,7 @@ def test_projectbuilder_report_out(
     instance_mock.handler.ready = ready_run
     instance_mock.run = ready_run
     instance_mock.dut = 'dummy dut'
-    instance_mock.execution_time = 60
+    instance_mock.execution_time = execute_time
     instance_mock.platform.name = 'dummy platform'
     instance_mock.status = status
     instance_mock.reason = 'dummy reason'

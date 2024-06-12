@@ -1011,7 +1011,14 @@ class ProjectBuilder(FilterBuilder):
                     if instance.dut:
                         more_info += f": {instance.dut},"
                     if htime:
-                        more_info += " {:.3f}s".format(htime)
+                        hours = int(htime // 3600)
+                        minutes = int((htime % 3600) // 60)
+                        seconds = htime % 60
+                        if hours > 0:
+                            more_info += " {}h".format(hours)
+                        if minutes > 0 or hours > 0:
+                            more_info += " {}m".format(minutes)
+                        more_info += " {:.3f}s".format(seconds)
                 else:
                     more_info = "build"
 
