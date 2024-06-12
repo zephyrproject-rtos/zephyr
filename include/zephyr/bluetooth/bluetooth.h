@@ -1822,8 +1822,11 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync);
  * such as synced, terminated and when data is received.
  *
  * @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EEXIST if @p cb was already registered.
  */
-void bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb);
+int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb);
 
 /**
  * @brief Enables receiving periodic advertising reports for a sync.
@@ -2309,8 +2312,11 @@ int bt_le_scan_stop(void);
  * API was used to start the scanner.
  *
  * @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EEXIST if @p cb was already registered.
  */
-void bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
+int bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
 
 /**
  * @brief Unregister scanner packet callbacks.

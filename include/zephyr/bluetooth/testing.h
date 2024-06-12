@@ -53,8 +53,11 @@ struct bt_test_cb {
 /** Register callbacks for Bluetooth testing purposes
  *
  *  @param cb bt_test_cb callback structure
+ *
+ * @retval 0 Success.
+ * @retval -EEXIST if @p cb was already registered.
  */
-void bt_test_cb_register(struct bt_test_cb *cb);
+int bt_test_cb_register(struct bt_test_cb *cb);
 
 /** Unregister callbacks for Bluetooth testing purposes
  *
