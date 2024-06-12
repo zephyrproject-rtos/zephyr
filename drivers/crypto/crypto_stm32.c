@@ -507,7 +507,7 @@ static struct crypto_stm32_data crypto_stm32_dev_data = {
 	}
 };
 
-static struct crypto_stm32_config crypto_stm32_dev_config = {
+static const struct crypto_stm32_config crypto_stm32_dev_config = {
 	.pclken = {
 		.enr = DT_INST_CLOCKS_CELL(0, bits),
 		.bus = DT_INST_CLOCKS_CELL(0, bus)
