@@ -559,13 +559,18 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	}
 	case JSON_TOK_OBJECT_START: {
 		ptrdiff_t total = 0;
+		uint32_t align_shift = 0;
 		size_t i;
 
 		for (i = 0; i < descr->object.sub_descr_len; i++) {
 			total += get_elem_size(&descr->object.sub_descr[i]);
+
+			if (descr->object.sub_descr[i].align_shift > align_shift) {
+				align_shift = descr->object.sub_descr[i].align_shift;
+			}
 		}
 
-		return ROUND_UP(total, 1 << descr->align_shift);
+		return ROUND_UP(total, 1 << align_shift);
 	}
 	default:
 		return -EINVAL;
