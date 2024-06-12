@@ -196,3 +196,6 @@ mdk_svd_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUAPP nrf54l15_enga_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUFLPR nrf54l15_enga_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF9120              nrf9120.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF9160              nrf9160.svd)
+
+include(reserve_ppi.cmake)
+register_function_finalize_ppi_reservations()
