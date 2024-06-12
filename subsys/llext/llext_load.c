@@ -107,6 +107,17 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 		return -EINVAL;
 	}
 
+	/*
+	 * Read all ELF section headers and initialize maps.  Buffers allocated
+	 * below are freed when leaving do_llext_load(), so don't count them in
+	 * alloc_size.
+	 */
+
+	if (ldr->hdr.e_shentsize != sizeof(elf_shdr_t)) {
+		LOG_ERR("Invalid section header size %d", ldr->hdr.e_shentsize);
+		return -EINVAL;
+	}
+
 	ldr->sect_cnt = ldr->hdr.e_shnum;
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
@@ -115,12 +126,36 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 
 	ldr->sect_map = llext_alloc(sect_map_sz);
 	if (!ldr->sect_map) {
-		LOG_ERR("Failed to allocate memory for section map, size %zu", sect_map_sz);
+		LOG_ERR("Failed to allocate section map, size %zu", sect_map_sz);
 		return -ENOMEM;
 	}
-
 	memset(ldr->sect_map, 0, sect_map_sz);
-	ext->alloc_size += sect_map_sz;
+
+	ldr->sect_hdrs = llext_peek(ldr, ldr->hdr.e_shoff);
+	if (ldr->sect_hdrs) {
+		ldr->sect_hdrs_on_heap = false;
+	} else {
+		size_t sect_hdrs_sz = ldr->sect_cnt * sizeof(ldr->sect_hdrs[0]);
+
+		ldr->sect_hdrs_on_heap = true;
+		ldr->sect_hdrs = llext_alloc(sect_hdrs_sz);
+		if (!ldr->sect_hdrs) {
+			LOG_ERR("Failed to allocate section headers, size %zu", sect_hdrs_sz);
+			return -ENOMEM;
+		}
+
+		ret = llext_seek(ldr, ldr->hdr.e_shoff);
+		if (ret != 0) {
+			LOG_ERR("Failed to seek for section headers");
+			return ret;
+		}
+
+		ret = llext_read(ldr, ldr->sect_hdrs, sect_hdrs_sz);
+		if (ret != 0) {
+			LOG_ERR("Failed to read section headers");
+			return ret;
+		}
+	}
 
 	return 0;
 }
@@ -659,6 +694,11 @@ out:
 
 	llext_free(ldr->sect_map);
 	ldr->sect_map = NULL;
+
+	if (ldr->sect_hdrs_on_heap) {
+		llext_free(ldr->sect_hdrs);
+	}
+	ldr->sect_hdrs = NULL;
 
 	/* Until proper inter-llext linking is implemented, the symbol table is
 	 * not useful outside of the loading process; keep it only if debugging
