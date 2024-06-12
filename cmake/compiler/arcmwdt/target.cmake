@@ -30,7 +30,11 @@ set(NOSTDINC ${TOOLCHAIN_HOME}/arc/inc)
 
 # common compile options, no copyright msg, little-endian, no small data,
 # no MWDT stack checking
-list(APPEND TOOLCHAIN_C_FLAGS -Hnocopyr -HL -Hnosdata -Hoff=Stackcheck_alloca)
+list(APPEND TOOLCHAIN_C_FLAGS -Hnocopyr -HL -Hnosdata)
+
+if(CONFIG_ARC)
+  list(APPEND TOOLCHAIN_C_FLAGS -Hoff=Stackcheck_alloca)
+endif()
 
 # The MWDT compiler can replace some code with call to builtin functions.
 # We can't rely on these functions presence if we don't use MWDT libc.
