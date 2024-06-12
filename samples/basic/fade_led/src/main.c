@@ -34,7 +34,11 @@ int main(void)
 		return 0;
 	}
 
+#ifndef CONFIG_COVERAGE
 	while (1) {
+#else
+	for (int i = 0; i < 10; i++) {
+#endif
 		ret = pwm_set_pulse_dt(&pwm_led0, pulse_width);
 		if (ret) {
 			printk("Error %d: failed to set pulse width\n", ret);
