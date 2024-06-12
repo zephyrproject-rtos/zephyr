@@ -721,6 +721,9 @@ set(qemu_x86_virt_DEPRECATED
 set(qemu_x86_xip_DEPRECATED
     qemu_x86/atom/xip
 )
+set(qemu_xtensa_DEPRECATED
+    qemu_xtensa/dc233c
+)
 set(qemu_xtensa_mmu_DEPRECATED
     qemu_xtensa/dc233c/mmu
 )

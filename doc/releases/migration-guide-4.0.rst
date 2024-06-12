@@ -35,6 +35,8 @@ Boards
 * STM32WBA: The command used for fetching blobs required to build ble applications is now
   ``west blobs fetch hal_stm32`` instead of ``west blobs fetch stm32``.
 
+* Board ``qemu_xtensa`` is deprecated. Use ``qemu_xtensa/dc233c`` instead.
+
 STM32
 =====
 

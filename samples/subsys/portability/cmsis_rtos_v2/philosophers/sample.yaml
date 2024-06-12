@@ -8,7 +8,7 @@ common:
   min_ram: 32
   min_flash: 34
   platform_exclude:
-    - qemu_xtensa
+    - qemu_xtensa/dc233c
     - qemu_x86_64
   harness: console
   harness_config:
