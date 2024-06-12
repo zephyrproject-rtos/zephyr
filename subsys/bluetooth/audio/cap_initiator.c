@@ -719,11 +719,6 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 
 		bap_stream = &cap_stream->bap_stream;
 
-		CHECKIF(bap_stream->ep != NULL) {
-			LOG_DBG("param->streams[%zu] is already started", i);
-			return false;
-		}
-
 		CHECKIF(bap_stream->group == NULL) {
 			LOG_DBG("param->streams[%zu] is not in a unicast group", i);
 			return false;
