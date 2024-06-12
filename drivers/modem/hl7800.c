@@ -6307,6 +6307,8 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 		goto err;
 	}
 
+	wakeup_hl7800();
+
 	/* turn on device service indications */
 	ret = send_at_cmd(NULL, "AT+WDSI=2", MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
