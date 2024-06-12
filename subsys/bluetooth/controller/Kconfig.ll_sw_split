@@ -1060,6 +1060,10 @@ config BT_MAYFLY_YIELD_AFTER_CALL
 	  If set to 'n', all pending mayflies for callee are executed before
 	  yielding
 
+config BT_TICKER_CNTR_FREE_RUNNING
+	# Hidden options to use free running counter in ticker implementation
+	bool
+
 config BT_TICKER_LOW_LAT
 	bool "Ticker low latency mode"
 	default y if SOC_SERIES_NRF51X
