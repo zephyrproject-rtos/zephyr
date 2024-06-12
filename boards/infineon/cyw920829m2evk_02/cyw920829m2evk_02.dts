@@ -99,15 +99,15 @@ uart2: &scb2 {
 			bootstrap_region: flash@60000050 {
 				compatible = "zephyr,memory-region", "soc-nv-flash";
 				zephyr,memory-region = "BOOTSTRAP_FLASH";
-				reg = <0x60000050 0x2550>;
+				reg = <0x60000050 DT_SIZE_K(12)>;
 			};
-			app_region: flash@60002600 {
+			app_region: flash@60003050 {
 				compatible = "soc-nv-flash";
-				reg = <0x60002600 0x5da00>;
+				reg = <0x60003050 0x6CFB0>; /* 435kb */
 			};
-			storage_partition: flash@60060000 {
+			storage_partition: flash@60070000 {
 				compatible = "soc-nv-flash";
-				reg = <0x60060000 0x20000>;
+				reg = <0x60070000 DT_SIZE_K(64)>;
 			};
 		};
 	};
