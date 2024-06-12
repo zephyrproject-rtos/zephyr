@@ -30,8 +30,6 @@
 #include "ztest_assert.h"
 #include "ztest_test.h"
 
-#define FFF_GLOBALS
-
 struct cap_initiator_test_unicast_start_fixture {
 	struct bt_cap_stream cap_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_bap_ep eps[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];

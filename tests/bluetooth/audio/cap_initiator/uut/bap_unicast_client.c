@@ -12,6 +12,7 @@
 
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/slist.h>
 #include <sys/errno.h>
@@ -149,7 +150,6 @@ int bt_bap_unicast_client_connect(struct bt_bap_stream *stream)
 	if (stream->ep != NULL && stream->ep->dir == BT_AUDIO_DIR_SINK) {
 		/* Mocking that the unicast server automatically starts the stream */
 		stream->ep->status.state = BT_BAP_EP_STATE_STREAMING;
-		printk("A %s %p\n", __func__, stream);
 
 		if (stream->ops != NULL && stream->ops->started != NULL) {
 			stream->ops->started(stream);
@@ -184,18 +184,105 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 {
-	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);
+	printk("%s %p %d\n", __func__, stream, stream->ep->dir);
+
+	if (stream == NULL || stream->ep == NULL) {
+		return -EINVAL;
+	}
+
+	switch (stream->ep->status.state) {
+	case BT_BAP_EP_STATE_ENABLING:
+	case BT_BAP_EP_STATE_STREAMING:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* Even though the ASCS spec does not have the disabling state for sink ASEs, the unicast
+	 * client implementation fakes the behavior of it and always calls the disabled callback
+	 * when leaving the streaming state in a non-release manner
+	 */
+
+	/* Disabled sink ASEs go directly to the QoS configured state */
+	if (stream->ep->dir == BT_AUDIO_DIR_SINK) {
+		stream->ep->status.state = BT_BAP_EP_STATE_QOS_CONFIGURED;
+
+		if (stream->ops != NULL && stream->ops->disabled != NULL) {
+			stream->ops->disabled(stream);
+		}
+
+		if (stream->ops != NULL && stream->ops->stopped != NULL) {
+			stream->ops->stopped(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+		}
+
+		if (stream->ops != NULL && stream->ops->qos_set != NULL) {
+			stream->ops->qos_set(stream);
+		}
+	} else if (stream->ep->dir == BT_AUDIO_DIR_SOURCE) {
+		stream->ep->status.state = BT_BAP_EP_STATE_DISABLING;
+
+		if (stream->ops != NULL && stream->ops->disabled != NULL) {
+			stream->ops->disabled(stream);
+		}
+	}
+
 	return 0;
 }
 
 int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 {
-	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);
+	printk("%s %p\n", __func__, stream);
+
+	/* As per the ASCS spec, only source streams can be stopped by the client */
+	if (stream == NULL || stream->ep == NULL || stream->ep->dir == BT_AUDIO_DIR_SINK) {
+		return -EINVAL;
+	}
+
+	switch (stream->ep->status.state) {
+	case BT_BAP_EP_STATE_DISABLING:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	stream->ep->status.state = BT_BAP_EP_STATE_QOS_CONFIGURED;
+
+	if (stream->ops != NULL && stream->ops->stopped != NULL) {
+		stream->ops->stopped(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+	}
+
+	if (stream->ops != NULL && stream->ops->qos_set != NULL) {
+		stream->ops->qos_set(stream);
+	}
+
 	return 0;
 }
 
 int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 {
-	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);
+	printk("%s %p\n", __func__, stream);
+
+	if (stream == NULL || stream->ep == NULL) {
+		return -EINVAL;
+	}
+
+	switch (stream->ep->status.state) {
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+	case BT_BAP_EP_STATE_ENABLING:
+	case BT_BAP_EP_STATE_STREAMING:
+	case BT_BAP_EP_STATE_DISABLING:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	stream->ep->status.state = BT_BAP_EP_STATE_IDLE;
+	bt_bap_stream_reset(stream);
+
+	if (stream->ops != NULL && stream->ops->released != NULL) {
+		stream->ops->released(stream);
+	}
+
 	return 0;
 }

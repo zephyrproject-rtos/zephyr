@@ -509,7 +509,7 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 {
 	const bool is_broadcast = bt_bap_stream_is_broadcast(stream);
 
-	LOG_DBG("stream %p", stream);
+	LOG_DBG("stream %p conn %p ep %p", stream, (void *)stream->conn, (void *)stream->ep);
 
 	if (stream->conn != NULL) {
 		bt_conn_unref(stream->conn);
@@ -587,7 +587,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	       codec_cfg, codec_cfg ? codec_cfg->id : 0, codec_cfg ? codec_cfg->cid : 0,
 	       codec_cfg ? codec_cfg->vid : 0);
 
-	CHECKIF(conn == NULL || stream == NULL || codec_cfg == NULL) {
+	CHECKIF(conn == NULL || stream == NULL || codec_cfg == NULL || ep == NULL) {
 		LOG_DBG("NULL value(s) supplied)");
 		return -EINVAL;
 	}

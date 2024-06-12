@@ -682,17 +682,6 @@ static void unicast_audio_update(void)
 	printk("READ LONG META\n");
 }
 
-static void unicast_audio_stop_inval(void)
-{
-	int err;
-
-	err = bt_cap_initiator_unicast_audio_stop(NULL);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_stop with NULL param did not fail\n");
-		return;
-	}
-}
-
 static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 {
 	struct bt_cap_unicast_audio_stop_param param;
@@ -701,8 +690,30 @@ static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
 	param.count = non_idle_streams_cnt;
 	param.streams = non_idle_streams;
+	param.release = false;
 
+	/* Stop without release first to verify that we enter the QoS Configured state */
 	UNSET_FLAG(flag_stopped);
+
+	err = bt_cap_initiator_unicast_audio_stop(&param);
+	if (err != 0) {
+		FAIL("Failed to stop unicast audio without release: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_stopped);
+
+	/* Verify that it cannot be stopped twice */
+	err = bt_cap_initiator_unicast_audio_stop(&param);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_unicast_audio_stop without release with already-stopped "
+		     "streams did not fail\n");
+		return;
+	}
+
+	/* Stop with release first to verify that we enter the idle state */
+	UNSET_FLAG(flag_stopped);
+	param.release = true;
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -820,7 +831,6 @@ static void test_main_cap_initiator_unicast_inval(void)
 	unicast_audio_update_inval();
 	unicast_audio_update();
 
-	unicast_audio_stop_inval();
 	unicast_audio_stop(unicast_group);
 
 	unicast_group_delete_inval();
