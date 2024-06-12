@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic TRACE and Debug Domain
+
+  Configuration for the Trace and Debug subsystem
+
+compatible: "nordic,nrf-tddconf"
+
+include: base.yaml
+
+properties:
+  stmsink:
+    type: string
+    description: indicates the sink for STM data
+    enum:
+      - "etr"
+      - "tpiu"
+      # - "etb" - Not supported yet
+  portconfig:
+    type: int
+    description: TPIU clock divider - TDD HSFLL / 2^(2 + portconfig)
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
