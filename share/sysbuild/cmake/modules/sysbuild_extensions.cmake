@@ -20,7 +20,7 @@ function(load_cache)
   if(NOT TARGET ${LOAD_CACHE_IMAGE}_cache)
     add_custom_target(${LOAD_CACHE_IMAGE}_cache)
   endif()
-  file(STRINGS "${LOAD_CACHE_BINARY_DIR}/CMakeCache.txt" cache_strings)
+  file(STRINGS "${LOAD_CACHE_BINARY_DIR}/CMakeCache.txt" cache_strings ENCODING UTF-8)
   foreach(str ${cache_strings})
     # Using a regex for matching whole 'VAR_NAME:TYPE=VALUE' will strip semi-colons
     # thus resulting in lists to become strings.
