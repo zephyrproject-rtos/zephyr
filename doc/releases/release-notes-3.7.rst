@@ -556,6 +556,10 @@ Libraries / Subsystems
 
 * LoRa/LoRaWAN
 
+  * Added :kconfig:option:`CONFIG_LORA_SX127X_IRQS_ONLY_WHEN_ACTIVE` which allows for IRQs to be
+    enabled when the radio begins transmission and disabled when the radio ends transmission. This
+    is useful for devices where having interrupts enabled causes a large power drain.
+
 * ZBus
 
 HALs
