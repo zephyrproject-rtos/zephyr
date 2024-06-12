@@ -154,6 +154,25 @@ ZTEST_F(bap_base_test_suite, test_base_get_base_from_ad_inval_param_uuid)
 	zassert_is_null(base);
 }
 
+ZTEST_F(bap_base_test_suite, test_base_get_size)
+{
+	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(&fixture->valid_base_ad);
+	int ret;
+
+	zassert_not_null(base);
+
+	ret = bt_bap_base_get_size(base);
+	zassert_equal(ret, 70, "Unexpected BASE size: %d", ret);
+}
+
+ZTEST_F(bap_base_test_suite, test_base_get_size_inval_param_null)
+{
+	int ret;
+
+	ret = bt_bap_base_get_size(NULL);
+	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
+}
+
 ZTEST_F(bap_base_test_suite, test_base_get_pres_delay)
 {
 	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(&fixture->valid_base_ad);
