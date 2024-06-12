@@ -3,7 +3,12 @@ sample:
 tests:
   sample.video.capture:
     build_only: true
-    tags: video
+    tags:
+      - video
+      - shield
+      - samples
+    extra_args:
+      - platform:mimxrt1064_evk:SHIELD=dvp_fpc24_mt9m114
     platform_allow:
       - mimxrt1064_evk
       - mm_swiftio

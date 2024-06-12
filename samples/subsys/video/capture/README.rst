@@ -14,7 +14,10 @@ discards the video frame data.
 Requirements
 ************
 
-This sample requires a video capture device (e.g. a camera).
+This sample needs a video capture device (e.g. a camera) but it is not mandatory.
+Supported camera modules on some i.MX RT boards can be found below.
+
+- `Camera iMXRT`_
 
 - :ref:`mimxrt1064_evk`
 - `MT9M114 camera module`_
@@ -22,10 +25,9 @@ This sample requires a video capture device (e.g. a camera).
 Wiring
 ******
 
-On :ref:`mimxrt1064_evk`, The MT9M114 camera module should be plugged in the
+On :ref:`mimxrt1064_evk`, the MT9M114 camera module should be plugged in the
 J35 camera connector. A USB cable should be connected from a host to the micro
-USB debug connector (J41) in order to get console output via the freelink
-interface.
+USB debug connector (J41) in order to get console output via the freelink interface.
 
 Building and Running
 ********************
@@ -35,30 +37,40 @@ For :ref:`mimxrt1064_evk`, build this sample application with the following comm
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/video/capture
    :board: mimxrt1064_evk
+   :shield: dvp_fpc24_mt9m114
    :goals: build
    :compact:
+
+For testing purpose without the need of any real video capture hardware, a video software
+pattern generator is supported by the above build command without specifying any shield.
 
 Sample Output
 =============
 
 .. code-block:: console
 
-    Found video device: CSI
-    width (640,640), height (480,480)
-    Supported pixelformats (fourcc):
-     - RGBP
-    Use default format (640x480)
+    - Device name: csi@402bc000
+    - Capabilities:
+      RGBP width [480; 480; 0] height [272; 272; 0]
+      YUYV width [480; 480; 0] height [272; 272; 0]
+      RGBP width [640; 640; 0] height [480; 480; 0]
+      YUYV width [640; 640; 0] height [480; 480; 0]
+      RGBP width [1280; 1280; 0] height [720; 720; 0]
+      YUYV width [1280; 1280; 0] height [720; 720; 0]
+    - Default format: RGBP 480x272
     Capture started
-    Got frame 743! size: 614400; timestamp 100740 ms
-    Got frame 744! size: 614400; timestamp 100875 ms
-    Got frame 745! size: 614400; timestamp 101010 ms
-    Got frame 746! size: 614400; timestamp 101146 ms
-    Got frame 747! size: 614400; timestamp 101281 ms
-    Got frame 748! size: 614400; timestamp 101416 ms
+    Got frame 0! size: 261120; timestamp 249 ms
+    Got frame 1! size: 261120; timestamp 282 ms
+    Got frame 2! size: 261120; timestamp 316 ms
+    Got frame 3! size: 261120; timestamp 350 ms
+    Got frame 4! size: 261120; timestamp 384 ms
+    Got frame 5! size: 261120; timestamp 418 ms
+    Got frame 6! size: 261120; timestamp 451 ms
 
    <repeats endlessly>
 
 References
 **********
 
+.. _Camera iMXRT: https://community.nxp.com/t5/i-MX-RT-Knowledge-Base/Connecting-camera-and-LCD-to-i-MX-RT-EVKs/ta-p/1122183
 .. _MT9M114 camera module: https://www.onsemi.com/PowerSolutions/product.do?id=MT9M114
