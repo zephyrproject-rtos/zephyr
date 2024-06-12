@@ -153,6 +153,28 @@ static const struct json_obj_descr test_json_tok_encoded_obj_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_json_tok_encoded_obj, ok, JSON_TOK_NUMBER),
 };
 
+struct test_element {
+	int int1;
+	int int2;
+	int int3;
+};
+
+struct test_outer {
+	struct test_element array[5];
+	size_t num_elements;
+};
+
+static const struct json_obj_descr element_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_element, int1, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct test_element, int2, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct test_element, int3, JSON_TOK_NUMBER),
+};
+
+static const struct json_obj_descr outer_descr[] = {
+	JSON_OBJ_DESCR_OBJ_ARRAY(struct test_outer, array, 5,
+				num_elements, element_descr, ARRAY_SIZE(element_descr))
+};
+
 ZTEST(lib_json_test, test_json_encoding)
 {
 	struct test_struct ts = {
@@ -1237,6 +1259,35 @@ ZTEST(lib_json_test, test_json_encoded_object_tok_encoding)
 
 	zassert_equal(ret, 0, "Encoding function failed");
 	zassert_mem_equal(buffer, encoded, sizeof(encoded), "Encoded contents not consistent");
+}
+
+ZTEST(lib_json_test, test_json_array_alignment)
+{
+	char encoded[] = "{"
+	"\"array\": [ "
+	"{ \"int1\": 1, "
+	"\"int2\": 2, "
+	"\"int3\":  3 }, "
+	"{ \"int1\": 4, "
+	"\"int2\": 5, "
+	"\"int3\": 6 } "
+	"] "
+	"}";
+
+	struct test_outer o;
+	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, outer_descr,
+				     ARRAY_SIZE(outer_descr), &o);
+
+	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_equal(o.num_elements, 2, "Number of elements not decoded correctly");
+
+	zassert_equal(o.array[0].int1, 1, "Element 0 int1 not decoded correctly");
+	zassert_equal(o.array[0].int2, 2, "Element 0 int2 not decoded correctly");
+	zassert_equal(o.array[0].int3, 3, "Element 0 int3 not decoded correctly");
+
+	zassert_equal(o.array[1].int1, 4, "Element 1 int1 not decoded correctly");
+	zassert_equal(o.array[1].int2, 5, "Element 1 int2 not decoded correctly");
+	zassert_equal(o.array[1].int3, 6, "Element 1 int3 not decoded correctly");
 }
 
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);
