@@ -3787,6 +3787,7 @@ RTIO:
     - teburd
   collaborators:
     - yperess
+    - ubieda
   files:
     - samples/subsys/rtio/
     - include/zephyr/rtio/
