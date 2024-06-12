@@ -1,0 +1,17 @@
+common:
+  filter: dt_chosen_enabled("zephyr,entropy") and
+          CONFIG_CSPRNG_ENABLED and
+          CONFIG_HARDWARE_DEVICE_CS_GENERATOR and
+          not CONFIG_BUILD_WITH_TFM and
+          not (CONFIG_MBEDTLS and CONFIG_TINYCRYPT)
+  tags:
+    - mbedtls
+    - tinycrypt
+    - p256-m
+tests:
+  crypto.secp256r1.mbedtls:
+    extra_args: OVERLAY_CONFIG=mbedtls.conf
+  crypto.secp256r1.p256-m_raw:
+    extra_args: OVERLAY_CONFIG=p256-m_raw.conf
+  crypto.secp256r1.tinycrypt:
+    extra_args: OVERLAY_CONFIG=tinycrypt.conf

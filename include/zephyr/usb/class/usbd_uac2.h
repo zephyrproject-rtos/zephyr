@@ -58,7 +58,7 @@ struct uac2_ops {
 	 * USB stack calls this function to obtain receive buffer address for
 	 * AudioStreaming interface. The buffer is owned by USB stack until
 	 * @ref data_recv_cb callback is called. The buffer must be sufficiently
-	 * aligned for use by UDC driver.
+	 * aligned and otherwise suitable for use by UDC driver.
 	 *
 	 * @param dev USB Audio 2 device
 	 * @param terminal Input Terminal ID linked to AudioStreaming interface
@@ -125,6 +125,9 @@ void usbd_uac2_set_ops(const struct device *dev,
 
 /**
  * @brief Send audio data to output terminal
+ *
+ * Data buffer must be sufficiently aligned and otherwise suitable for use by
+ * UDC driver.
  *
  * @param dev USB Audio 2 device
  * @param terminal Output Terminal ID linked to AudioStreaming interface
