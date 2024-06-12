@@ -17,7 +17,6 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,sram = &sram0;
-		zephyr,canbus = &flexcan2;
 	};
 
 	cpus {
@@ -71,7 +70,7 @@
 		max-bitrate = <8000000>;
 		standby-gpios = <&gpio_exp0 8 GPIO_ACTIVE_HIGH>;
 		#phy-cells = <0>;
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -106,11 +105,12 @@
 	pinctrl-names = "default";
 
 	mfd0:adp5585@34 {
+		status = "okay";
 		compatible = "adi,adp5585";
 		reg = <0x34>;
-		status = "okay";
 
 		gpio_exp0: adp5585_gpio {
+			status = "okay";
 			compatible = "adi,adp5585-gpio";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -128,7 +128,6 @@
 				line-name = "exp_sel";
 				output-low;
 			};
-			status = "disabled";
 		};
 	};
 };
@@ -160,5 +159,5 @@
 	pinctrl-0 = <&flexcan2_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy0>;
-	status = "okay";
+	status = "disabled";
 };
