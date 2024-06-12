@@ -9,6 +9,10 @@ menu "nrfx drivers"
 
 rsource "Kconfig.logging"
 
+config MPSL
+	bool
+	# Dummy kconfig to allow compiling outside of NCS
+
 config NRFX_ADC
 	bool "ADC driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_ADC))
