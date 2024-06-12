@@ -195,8 +195,7 @@ static struct usb_it82xx2_regs *it82xx2_get_usb_regs(void)
 
 static void it82xx2_enable_sof_int(bool enable)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 
 	usb_regs->dc_interrupt_status = DC_SOF_RECEIVED;
 	if (enable) {
@@ -259,7 +258,7 @@ static void it8xxx2_usb_dc_wuc_init(const struct device *dev)
 
 static int it82xx2_usb_fifo_ctrl(uint8_t ep)
 {
-	struct usb_it82xx2_regs *const usb_regs = (struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	volatile uint8_t *ep_fifo_ctrl = usb_regs->fifo_regs[EP_EXT_REGS_BX].fifo_ctrl.ep_fifo_ctrl;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t fifon_ctrl = (ep_fifo_res[ep_idx % FIFO_NUM] - 1) * 2;
@@ -296,8 +295,7 @@ static int it82xx2_usb_fifo_ctrl(uint8_t ep)
 static volatile void *it82xx2_get_ext_ctrl(int ep_idx, enum it82xx2_ep_ctrl ctrl)
 {
 	uint8_t idx;
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	union epn0n1_extend_ctrl_reg *epn0n1_ext_ctrl =
 		usb_regs->fifo_regs[EP_EXT_REGS_9X].ext_4_15.epn0n1_ext_ctrl;
 	struct epn_ext_ctrl_regs *ext_ctrl =
@@ -314,7 +312,7 @@ static volatile void *it82xx2_get_ext_ctrl(int ep_idx, enum it82xx2_ep_ctrl ctrl
 
 static int it82xx2_usb_extend_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, bool enable)
 {
-	struct usb_it82xx2_regs *const usb_regs = (struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct epn_ext_ctrl_regs *ext_ctrl =
 		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
 	union epn_extend_ctrl1_reg *epn_ext_ctrl1 = NULL;
@@ -423,8 +421,7 @@ static int it82xx2_usb_extend_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, boo
 
 static int it82xx2_usb_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, bool enable)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
@@ -485,8 +482,7 @@ static int it82xx2_usb_set_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, bool e
 
 static int it82xx2_usb_dc_ip_init(void)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 
 	/* Reset Device Controller */
 	usb_regs->host_device_control = RESET_CORE;
@@ -524,8 +520,7 @@ static int it82xx2_usb_dc_attach_init(void)
 /* Check the condition that SETUP_TOKEN following OUT_TOKEN and return it */
 static bool it82xx2_check_setup_following_out(void)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 
@@ -536,8 +531,7 @@ static bool it82xx2_check_setup_following_out(void)
 
 static inline void it82xx2_handler_setup(uint8_t fifo_idx, uint8_t ep_ctrl)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 	uint8_t ep_idx = fifo_idx;
@@ -585,8 +579,7 @@ static inline void it82xx2_handler_setup(uint8_t fifo_idx, uint8_t ep_ctrl)
 
 static inline void it82xx2_handler_in(uint8_t fifo_idx, uint8_t ep_ctrl)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	volatile struct epn_ext_ctrl_regs *epn_ext_ctrl =
 		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
@@ -655,8 +648,7 @@ static inline void it82xx2_handler_in(uint8_t fifo_idx, uint8_t ep_ctrl)
 
 static inline void it82xx2_handler_out(uint8_t fifo_idx)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	volatile struct epn_ext_ctrl_regs *epn_ext_ctrl =
 		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
@@ -714,8 +706,7 @@ static inline void it82xx2_handler_out(uint8_t fifo_idx)
 
 static void it82xx2_usb_dc_trans_done(void)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 
 	for (uint8_t fifo_idx = 0; fifo_idx < 4; fifo_idx++) {
@@ -744,8 +735,7 @@ static void it82xx2_usb_dc_trans_done(void)
 
 static void it82xx2_usb_dc_isr(void)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 
 	uint8_t status = usb_regs->dc_interrupt_status &
 		usb_regs->dc_interrupt_mask; /* mask non enable int */
@@ -782,8 +772,7 @@ static void suspended_check_handler(struct k_work *item)
 	struct usb_it82xx2_data *udata =
 		CONTAINER_OF(dwork, struct usb_it82xx2_data, check_suspended_work);
 
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 
 	if (usb_regs->dc_interrupt_status & DC_SOF_RECEIVED) {
 		usb_regs->dc_interrupt_status = DC_SOF_RECEIVED;
@@ -818,8 +807,7 @@ static void suspended_check_handler(struct k_work *item)
 int usb_dc_attach(void)
 {
 	int ret;
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 
 	if (udata0.attached) {
 		LOG_DBG("Already Attached");
@@ -867,8 +855,7 @@ int usb_dc_attach(void)
 
 int usb_dc_detach(void)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 
 	if (!udata0.attached) {
 		LOG_DBG("Already Detached");
@@ -887,8 +874,7 @@ int usb_dc_detach(void)
 
 int usb_dc_reset(void)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 
@@ -1093,8 +1079,7 @@ int usb_dc_ep_disable(uint8_t ep)
 
 int usb_dc_ep_set_stall(const uint8_t ep)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
@@ -1166,8 +1151,7 @@ int usb_dc_ep_halt(uint8_t ep)
 
 int usb_dc_ep_flush(uint8_t ep)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
@@ -1189,8 +1173,7 @@ int usb_dc_ep_flush(uint8_t ep)
 int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 				uint32_t data_len, uint32_t *ret_bytes)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 
@@ -1257,8 +1240,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 			uint32_t *read_bytes)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 
@@ -1358,8 +1340,7 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 int usb_dc_ep_read_wait(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 			uint32_t *read_bytes)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 
@@ -1400,8 +1381,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 
 int usb_dc_ep_read_continue(uint8_t ep)
 {
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
@@ -1447,8 +1427,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 int usb_dc_wakeup_request(void)
 {
 	int ret;
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 
 	if (udata0.suspended) {
 
