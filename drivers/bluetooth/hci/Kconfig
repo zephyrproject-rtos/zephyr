@@ -248,3 +248,48 @@ config BT_SILABS_HCI_BUFFER_MEMORY
 	help
 	  Select the size of allocated memory buffer for the Silicon Labs
 	  Bluetooth Library.
+
+config BT_H4_NXP_CTLR
+	bool "NXP Bluetooth Controller [EXPERIMENTAL]"
+	select GPIO
+	# select UART_USE_RUNTIME_CONFIGURE
+	select EXPERIMENTAL
+	depends on BT_H4
+	select CRC
+	default y
+	depends on DT_HAS_NXP_BT_HCI_UART_ENABLED
+	help
+	  Enables support for NXP Bluetooth Controller.
+	  Murata 2EL M.2 Moudle base on NXP IW612 Chipset which supports
+	  Wi-Fi® 802.11a/b/g/n/ac/ax + Bluetooth® 5.3 BR/EDR/LE + IEEE802.1.5.4
+	  up to 601 Mbps data rate on Wi-Fi® and 2Mbps data rate on Bluetooth®.
+	  4-wire UART@3M baud is supported. PCM for audio is also supported.
+	  Details of the module could be fond on
+	  https://www.embeddedartists.com/products/2el-m-2-module/
+
+	  The configuration depends on the firmware (named uart_nw61x_se.h)
+	  of Murata 2EL M.2 Moudle. It could be downloaded here
+	  https://github.com/NXP/wifi_nxp/blob/MCUX_2.15.000/wifi_bt_firmware/nw61x/uart_nw61x_se.h
+	  And it needs to be placed into the folder <zephyrproject>/zephyr/
+	  drivers/bluetooth/hci.
+
+	  More inforamtion about NXP Bluetooth profuct could be found on
+	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4:WIFI-BLUETOOTH
+
+if BT_H4_NXP_CTLR
+
+config BT_H4_NXP_CTLR_WAIT_HDR_SIG_TIMEOUT
+	int "Timeout for waiting HDR Signure"
+	range 1000 60000
+	default 2500
+	help
+	  Timeout for waiting HDR Signure. Unit is millisecond.
+
+config BT_H4_NXP_CTLR_WAIT_TIME_AFTER_UPLOAD
+	int "Waiting time after firmware is uploaded"
+	range 1000 5000
+	default 1000
+	help
+	  Waiting time after firmware is uploaded. Unit is millisecond.
+
+endif #BT_H4_NXP_CTLR
