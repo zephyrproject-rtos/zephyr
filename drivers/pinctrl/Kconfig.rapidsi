@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_RAPIDSI
+	bool "Rapid Silicon pin controller driver"
+	default y
+	depends on DT_HAS_RAPIDSI_PINCTRL_ENABLED
+	depends on PINCTRL
+	help
+	  Rapid Silicon pin controller driver
