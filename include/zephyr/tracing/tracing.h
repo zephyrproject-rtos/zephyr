@@ -2394,6 +2394,219 @@
 
 /** @} */ /* end of subsys_tracing_apis_named */
 
+/**
+ * @brief GPIO Tracing APIs
+ * @defgroup subsys_tracing_apis_gpio GPIO Tracing APIs
+ * @{
+ */
+
+/**
+ * @brief Trace GPIO pin interrupt configure enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param pin GPIO pin number
+ * @param flags Interrupt configuration flags as defined by GPIO_INT_*
+ */
+#define sys_port_trace_gpio_pin_interrupt_configure_enter(port, pin, flags)
+
+/**
+ * @brief Trace GPIO pin interrupt configure exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param pin GPIO pin number
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_pin_interrupt_configure_exit(port, pin, ret)
+
+/**
+ * @brief Trace GPIO single pin configure enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param pin GPIO pin number to configure
+ * @param flags GPIO pin configuration flags
+ */
+#define sys_port_trace_gpio_pin_configure_enter(port, pin, flags)
+
+/**
+ * @brief Trace GPIO single pin configure exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param pin GPIO pin number to configure
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_pin_configure_exit(port, pin, ret)
+
+/**
+ * @brief Trace GPIO port get direction enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param map Bitmap of pin directions to query
+ * @param inputs Pointer to a variable where input directions will be stored
+ * @param outputs Pointer to a variable where output directions will be stored
+ */
+#define sys_port_trace_gpio_port_get_direction_enter(port, map, inputs, outputs)
+
+/**
+ * @brief Trace GPIO port get direction exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_port_get_direction_exit(port, ret)
+
+/**
+ * @brief Trace GPIO pin gent config enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param pin GPIO pin number to configure
+ * @param flags GPIO pin configuration flags
+ */
+#define sys_port_trace_gpio_pin_get_config_enter(port, pin, flags)
+
+/**
+ * @brief Trace GPIO pin get config exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param pin GPIO pin number to configure
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_pin_get_config_exit(port, pin, ret)
+
+/**
+ * @brief Trace GPIO port get raw enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param value Pointer to a variable where the raw value will be stored
+ */
+#define sys_port_trace_gpio_port_get_raw_enter(port, value)
+
+/**
+ * @brief Trace GPIO port get raw exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_port_get_raw_exit(port, ret)
+
+/**
+ * @brief Trace GPIO port set masked raw enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param mask Mask indicating which pins will be modified
+ * @param value Value to be written to the output pins
+ */
+#define sys_port_trace_gpio_port_set_masked_raw_enter(port, mask, value)
+
+/**
+ * @brief Trace GPIO port set masked raw exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_port_set_masked_raw_exit(port, ret)
+
+/**
+ * @brief Trace GPIO port set bits raw enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param pins Value indicating which pins will be modified
+ */
+#define sys_port_trace_gpio_port_set_bits_raw_enter(port, pins)
+
+/**
+ * @brief Trace GPIO port set bits raw exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_port_set_bits_raw_exit(port, ret)
+
+/**
+ * @brief Trace GPIO port clear bits raw enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param pins Value indicating which pins will be modified
+ */
+#define sys_port_trace_gpio_port_clear_bits_raw_enter(port, pins)
+
+/**
+ * @brief Trace GPIO port clear bits raw exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_port_clear_bits_raw_exit(port, ret)
+
+/**
+ * @brief Trace GPIO port toggle bits enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param pins Value indicating which pins will be modified
+ */
+#define sys_port_trace_gpio_port_toggle_bits_enter(port, pins)
+
+/**
+ * @brief Trace GPIO port toggle bits exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_port_toggle_bits_exit(port, ret)
+
+/**
+ * @brief Trace GPIO init callback enter call
+ * @param callback A valid application's callback structure pointer
+ * @param handler A valid handler function pointer
+ * @param pin_mask A bit mask of relevant pins for the handler
+ */
+#define sys_port_trace_gpio_init_callback_enter(callback, handler, pin_mask)
+
+/**
+ * @brief Trace GPIO init callback exit call
+ * @param callback A valid application's callback structure pointer
+ */
+#define sys_port_trace_gpio_init_callback_exit(callback)
+
+/**
+ * @brief Trace GPIO add callback enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param callback A valid application's callback structure pointer
+ */
+#define sys_port_trace_gpio_add_callback_enter(port, callback)
+
+/**
+ * @brief Trace GPIO add callback exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_add_callback_exit(port, ret)
+
+/**
+ * @brief Trace GPIO remove callback enter call
+ * @param port Pointer to device structure for the driver instance
+ * @param callback A valid application's callback structure pointer
+ */
+#define sys_port_trace_gpio_remove_callback_enter(port, callback)
+
+/**
+ * @brief Trace GPIO remove callback exit call
+ * @param port Pointer to device structure for the driver instance
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_remove_callback_exit(port, ret)
+
+/**
+ * @brief Trace GPIO get pending interrupt enter call
+ * @param dev Pointer to the device structure for the device instance
+ */
+#define sys_port_trace_gpio_get_pending_int_enter(dev)
+
+/**
+ * @brief Trace GPIO get pending interrupt exit call
+ * @param dev Pointer to the device structure for the device instance
+ * @param ret Return value
+ */
+#define sys_port_trace_gpio_get_pending_int_exit(dev, ret)
+
+/**
+ * @brief
+ * @param list @ref sys_slist_t representing gpio_callback pointers
+ * @param port @ref device representing the GPIO port
+ * @param pins @ref gpio_pin_t representing the pins
+ */
+#define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins)
+
+/**
+ * @brief
+ * @param port @ref device representing the GPIO port
+ * @param callback @ref gpio_callback a valid Application's callback structure pointer
+ */
+#define sys_port_trace_gpio_fire_callback(port, callback)
+
+/** @} */ /* end of subsys_tracing_apis_gpio */
+
 #if defined(CONFIG_PERCEPIO_TRACERECORDER)
 #include "tracing_tracerecorder.h"
 #else
