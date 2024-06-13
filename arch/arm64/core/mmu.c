@@ -276,15 +276,13 @@ static uint64_t *expand_to_table(uint64_t *pte, unsigned int level)
 	return table;
 }
 
-static int set_mapping(struct arm_mmu_ptables *ptables,
-		       uintptr_t virt, size_t size,
+static int set_mapping(uint64_t *top_table, uintptr_t virt, size_t size,
 		       uint64_t desc, bool may_overwrite)
 {
-	uint64_t *pte, *ptes[XLAT_LAST_LEVEL + 1];
+	uint64_t *table = top_table;
+	uint64_t *pte;
 	uint64_t level_size;
-	uint64_t *table = ptables->base_xlat_table;
 	unsigned int level = BASE_XLAT_LEVEL;
-	int ret = 0;
 
 	while (size) {
 		__ASSERT(level <= XLAT_LAST_LEVEL,
@@ -292,7 +290,6 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 
 		/* Locate PTE for given virtual address and page table level */
 		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
-		ptes[level] = pte;
 
 		if (is_table_desc(*pte, level)) {
 			/* Move to the next translation table level */
@@ -306,8 +303,7 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 			LOG_ERR("entry already in use: "
 				"level %d pte %p *pte 0x%016llx",
 				level, pte, *pte);
-			ret = -EBUSY;
-			break;
+			return -EBUSY;
 		}
 
 		level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
@@ -326,8 +322,7 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 			/* Range doesn't fit, create subtable */
 			table = expand_to_table(pte, level);
 			if (!table) {
-				ret = -ENOMEM;
-				break;
+				return -ENOMEM;
 			}
 			level++;
 			continue;
@@ -337,32 +332,58 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 		if (is_free_desc(*pte)) {
 			table_usage(pte, 1);
 		}
-		if (!desc) {
-			table_usage(pte, -1);
-		}
-		/* Create (or erase) block/page descriptor */
+		/* Create block/page descriptor */
 		set_pte_block_desc(pte, desc, level);
-
-		/* recursively free unused tables if any */
-		while (level != BASE_XLAT_LEVEL &&
-		       is_table_unused(pte)) {
-			dec_table_ref(pte);
-			pte = ptes[--level];
-			set_pte_block_desc(pte, 0, level);
-			table_usage(pte, -1);
-		}
 
 move_on:
 		virt += level_size;
-		desc += desc ? level_size : 0;
+		desc += level_size;
 		size -= level_size;
 
 		/* Range is mapped, start again for next range */
-		table = ptables->base_xlat_table;
+		table = top_table;
 		level = BASE_XLAT_LEVEL;
 	}
 
-	return ret;
+	return 0;
+}
+
+static void del_mapping(uint64_t *table, uintptr_t virt, size_t size,
+			unsigned int level)
+{
+	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
+	uint64_t *pte, *subtable;
+
+	for ( ; size; virt += step, size -= step) {
+		step = level_size - (virt & (level_size - 1));
+		if (step > size) {
+			step = size;
+		}
+		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
+
+		if (is_free_desc(*pte)) {
+			continue;
+		}
+
+		if (is_table_desc(*pte, level)) {
+			subtable = pte_desc_table(*pte);
+			del_mapping(subtable, virt, step, level + 1);
+			if (!is_table_unused(subtable)) {
+				continue;
+			}
+			dec_table_ref(subtable);
+		} else {
+			/*
+			 * We assume that block mappings will be unmapped
+			 * as a whole and not partially.
+			 */
+			__ASSERT(step == level_size, "");
+		}
+
+		/* free this entry */
+		*pte = 0;
+		table_usage(pte, -1);
+	}
 }
 
 #ifdef CONFIG_USERSPACE
@@ -507,6 +528,20 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 
 		if (dst_table[i] == src_table[i]) {
 			/* already identical to global table */
+			continue;
+		}
+
+		if (is_free_desc(src_table[i]) &&
+		    is_table_desc(dst_table[i], level)) {
+			uint64_t *subtable = pte_desc_table(dst_table[i]);
+
+			del_mapping(subtable, virt, step, level + 1);
+			if (is_table_unused(subtable)) {
+				/* unreference the empty table */
+				dst_table[i] = 0;
+				table_usage(dst_table, -1);
+				dec_table_ref(subtable);
+			}
 			continue;
 		}
 
@@ -669,7 +704,7 @@ static int __add_map(struct arm_mmu_ptables *ptables, const char *name,
 	__ASSERT(((virt | phys | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
 		 "address/size are not page aligned\n");
 	desc |= phys;
-	return set_mapping(ptables, virt, size, desc, may_overwrite);
+	return set_mapping(ptables->base_xlat_table, virt, size, desc, may_overwrite);
 }
 
 static int add_map(struct arm_mmu_ptables *ptables, const char *name,
@@ -684,20 +719,18 @@ static int add_map(struct arm_mmu_ptables *ptables, const char *name,
 	return ret;
 }
 
-static int remove_map(struct arm_mmu_ptables *ptables, const char *name,
-		      uintptr_t virt, size_t size)
+static void remove_map(struct arm_mmu_ptables *ptables, const char *name,
+		       uintptr_t virt, size_t size)
 {
 	k_spinlock_key_t key;
-	int ret;
 
 	MMU_DEBUG("unmmap [%s]: virt %lx size %lx\n", name, virt, size);
 	__ASSERT(((virt | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
 		 "address/size are not page aligned\n");
 
 	key = k_spin_lock(&xlat_lock);
-	ret = set_mapping(ptables, virt, size, 0, true);
+	del_mapping(ptables->base_xlat_table, virt, size, BASE_XLAT_LEVEL);
 	k_spin_unlock(&xlat_lock, key);
-	return ret;
 }
 
 static void invalidate_tlb_all(void)
@@ -1049,14 +1082,9 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 
 void arch_mem_unmap(void *addr, size_t size)
 {
-	int ret = remove_map(&kernel_ptables, "generic", (uintptr_t)addr, size);
-
-	if (ret) {
-		LOG_ERR("remove_map() returned %d", ret);
-	} else {
-		sync_domains((uintptr_t)addr, size);
-		invalidate_tlb_all();
-	}
+	remove_map(&kernel_ptables, "generic", (uintptr_t)addr, size);
+	sync_domains((uintptr_t)addr, size);
+	invalidate_tlb_all();
 }
 
 int arch_page_phys_get(void *virt, uintptr_t *phys)
