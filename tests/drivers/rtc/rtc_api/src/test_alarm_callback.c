@@ -55,7 +55,12 @@ ZTEST(rtc_api, test_alarm_callback)
 	for (uint16_t i = 0; i < alarms_count; i++) {
 		ret = rtc_alarm_set_callback(rtc, i, NULL, NULL);
 
-		zassert_ok(ret, "Failed to clear and disable alarm %d", i);
+		if (ret == -ENOTSUP) {
+			TC_PRINT("Alarm callbacks not supported\n");
+			ztest_test_skip();
+		} else {
+			zassert_ok(ret, "Failed to clear and disable alarm %d", i);
+		}
 	}
 
 	/* Validate alarms supported fields */
