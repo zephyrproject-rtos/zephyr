@@ -4,7 +4,7 @@
 
 description: Intel SEDI DMA controller.
 
-compatible: "intel,sedi_dma"
+compatible: "intel,sedi-dma"
 
 include: dma-controller.yaml
 
