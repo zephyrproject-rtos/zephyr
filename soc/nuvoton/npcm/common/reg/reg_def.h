@@ -143,6 +143,14 @@ struct pmc_reg {
 #define NPCM_ENIDL_CTL_LP_WK_CTL              6
 #define NPCM_ENIDL_CTL_PECI_ENI               2
 
+/* Macro functions for Development and Debugger Interface (DDI) registers */
+#define NPCM_DBGCTRL(base)   (*(volatile uint8_t *)(base + 0x022))
+#define NPCM_DBGFRZEN1(base) (*(volatile uint8_t *)(base + 0x076))
+#define NPCM_DBGFRZEN2(base) (*(volatile uint8_t *)(base + 0x077))
+#define NPCM_DBGFRZEN3(base) (*(volatile uint8_t *)(base + 0x078))
+#define NPCM_DBGFRZEN4(base) (*(volatile uint8_t *)(base + 0x079))
+#define NPCM_DBGFRZEN5(base) (*(volatile uint8_t *)(base + 0x07A))
+
 /*
  * System Configuration (SCFG) device registers
  */

@@ -234,6 +234,12 @@
 			index = <0xF>;
 			#gpio-cells=<2>;
 		};
+
+		twd0: watchdog@400d8000 {
+			compatible = "nuvoton,npcm-watchdog";
+			reg = <0x400d8000 0x100>;
+			t0-out = <&wui_t0out>;
+		};
 	};
 
 	soc-id {

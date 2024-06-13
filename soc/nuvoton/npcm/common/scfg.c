@@ -70,6 +70,17 @@ static void npcm_pinctrl_alt_sel(const struct npcm_alt *alt, int alt_func)
 	}
 }
 
+void npcm_dbg_freeze_enable(bool enable)
+{
+	const uintptr_t scfg_base = npcm_scfg_cfg.base_scfg;
+
+	if (enable) {
+		NPCM_DBGFRZEN3(scfg_base) &= ~BIT(NPCM_DBGFRZEN3_GLBL_FRZ_DIS);
+	} else {
+		NPCM_DBGFRZEN3(scfg_base) |= BIT(NPCM_DBGFRZEN3_GLBL_FRZ_DIS);
+	}
+}
+
 /* Pin-control driver registration */
 static int npcm_scfg_init(void)
 {

@@ -1,0 +1,23 @@
+# NPCM WDT driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_NPCM
+	bool "Nuvoton NPCM enhanced Super I/O controller (eSIO) Watchdog Timer driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_WATCHDOG_ENABLED
+	help
+	  This option enables the Watchdog Timer driver for NPCM family of
+	  processors.
+	  Say y if you wish to use watchdog on NPCM MCU.
+
+config WDT_NPCM_DELAY_CYCLES
+	int "Number of delay cycles before generating watchdog event/signal"
+	depends on WDT_NPCM
+	range 1 255
+	default 20
+	help
+	  This option defines the window in which a watchdog event must be
+	  handled, in units of 62ms. After this time window, the watchdog reset
+	  triggers immediately.
