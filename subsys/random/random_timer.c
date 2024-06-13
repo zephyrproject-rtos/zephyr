@@ -63,7 +63,7 @@ void z_impl_sys_rand_get(void *dst, size_t outlen)
 	uint32_t blocksize;
 	uint32_t ret;
 
-	while (outlen) {
+	while (outlen > 0) {
 		ret = rand32_get();
 		blocksize = MIN(outlen, sizeof(ret));
 		(void)memcpy((void *)udst, &ret, blocksize);
