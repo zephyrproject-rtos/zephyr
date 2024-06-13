@@ -1,0 +1,38 @@
+# Copyright (c) 2024 Meta Platforms
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config POSIX_FILE_LOCKING
+	bool "POSIX file locking [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select FDTABLE
+	help
+	  Select 'y' here and Zephyr will provide implementations for the POSIX_FILE_LOCKING Option
+	  Group.
+	  This includes support for flockfile(), ftrylockfile(), funlockfile(), getc_unlocked(),
+	  getchar_unlocked(), putc_unlocked() and putchar_unlocked().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+if POSIX_FILE_LOCKING
+
+# These options are intended to be used for compatibility with external POSIX
+# implementations such as those in Newlib or Picolibc.
+
+config POSIX_FD_MGMT_ALIAS_FLOCKFILE
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for flockfile() as _flockfile().
+
+config POSIX_FD_MGMT_ALIAS_FTRYLOCKFILE
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for ftrylockfile() as _ftrylockfile().
+
+config POSIX_FD_MGMT_ALIAS_FUNLOCKFILE
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for funlockfile() as _funlockfile().
+
+endif # POSIX_FILE_LOCKING

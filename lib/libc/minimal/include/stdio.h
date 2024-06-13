@@ -63,6 +63,12 @@ size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
 #define putc(c, stream) fputc(c, stream)
 #define putchar(c) putc(c, stdout)
 
+#if defined(CONFIG_POSIX_FILE_LOCKING) || defined(__DOXYGEN__)
+void flockfile(FILE *file);
+int ftrylockfile(FILE *file);
+void funlockfile(FILE *file);
+#endif /* CONFIG_POSIX_FILE_LOCKING || __DOXYGEN__ */
+
 #ifdef __cplusplus
 }
 #endif

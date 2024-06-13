@@ -392,6 +392,35 @@ int zvfs_fsync(int fd)
 	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
 }
 
+#if defined(CONFIG_POSIX_FILE_LOCKING)
+void zvfs_flockfile(int fd)
+{
+	if (_check_fd(fd) < 0) {
+		return;
+	}
+
+	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
+}
+
+int zvfs_ftrylockfile(int fd)
+{
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	return k_mutex_lock(&fdtable[fd].lock, K_NO_WAIT);
+}
+
+void zvfs_funlockfile(int fd)
+{
+	if (_check_fd(fd) < 0) {
+		return;
+	}
+
+	(void)k_mutex_unlock(&fdtable[fd].lock);
+}
+#endif /* CONFIG_POSIX_FILE_LOCKING */
+
 static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
 {
 	off_t res;
