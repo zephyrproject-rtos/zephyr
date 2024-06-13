@@ -53,6 +53,13 @@ menuconfig BUILD_WITH_TFM
 
 if BUILD_WITH_TFM
 
+config TFM_DEVICETREE_LAYOUT
+	bool "Use the memory layout from devicetree instead of TFM_BOARD"
+	depends on SOC_COMPATIBLE_NRF
+	help
+		Use partition and memory layouts from the Zephyr devicetree
+		instead of the hardcoded values from {module}/platform/ext/target/{family}/partition.
+
 config TFM_PROFILE
 	string
 	default "profile_small" if TFM_PROFILE_TYPE_SMALL

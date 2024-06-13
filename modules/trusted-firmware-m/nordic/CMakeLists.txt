@@ -7,10 +7,17 @@
 cmake_policy(SET CMP0076 NEW)
 set(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
 
-set(partition_includes
-    ${Trusted\ Firmware\ M_SOURCE_DIR}/platform/ext/target/nordic_nrf/common/${NRF_SOC_VARIANT}/partition
-    ${CMAKE_BINARY_DIR}/../zephyr/include/generated
-)
+if(DEVICETREE_LAYOUT)
+    set(partition_includes
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/partition_dts
+        ${CMAKE_BINARY_DIR}/../zephyr/include/generated
+    )
+else()
+    set(partition_includes
+        ${Trusted\ Firmware\ M_SOURCE_DIR}/platform/ext/target/nordic_nrf/common/${NRF_SOC_VARIANT}/partition
+        ${CMAKE_BINARY_DIR}/../zephyr/include/generated
+    )
+endif()
 
 set(board_includes
     ${CMAKE_BINARY_DIR}/../zephyr/misc/generated/syscalls_links/include
