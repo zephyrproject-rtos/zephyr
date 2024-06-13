@@ -101,3 +101,5 @@ source "soc/riscv/riscv-privilege/telink_w91/blocking_core/Kconfig.blocking"
 source "soc/riscv/riscv-privilege/telink_w91/core_heartbeat/Kconfig.heartbeat"
 
 source "soc/riscv/riscv-privilege/telink_w91/bluetooth/Kconfig.bt"
+
+source "soc/riscv/riscv-privilege/telink_w91/crypto/Kconfig.crypto"

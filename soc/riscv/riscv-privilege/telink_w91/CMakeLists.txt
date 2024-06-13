@@ -61,3 +61,29 @@ zephyr_link_libraries(
 	-Wl,--wrap,sys_heap_aligned_alloc
 	-Wl,--wrap,sys_heap_aligned_realloc
 )
+
+if(CONFIG_TELINK_W91_ECC_HW_ACC)
+zephyr_compile_definitions(
+	MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
+)
+
+zephyr_include_directories(
+	${ZEPHYR_MBEDTLS_MODULE_DIR}/include
+	${ZEPHYR_BASE}/modules/mbedtls/configs
+)
+
+zephyr_sources(
+	crypto/mbedtls_wrapper.c
+	crypto/ecp_alt_backend.c
+	crypto/ecp_alt_test.c
+)
+
+zephyr_link_libraries(
+	-Wl,--wrap,mbedtls_ecp_check_pubkey
+	-Wl,--wrap,mbedtls_ecp_mul
+	-Wl,--wrap,mbedtls_ecp_mul_restartable
+	-Wl,--wrap,mbedtls_ecp_muladd
+	-Wl,--wrap,mbedtls_ecp_muladd_restartable
+	-Wl,--wrap,mbedtls_ecp_self_test
+)
+endif()

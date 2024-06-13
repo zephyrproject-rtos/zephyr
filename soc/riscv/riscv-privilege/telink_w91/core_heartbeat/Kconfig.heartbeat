@@ -3,7 +3,7 @@
 
 config TELINK_W91_CORE_HEARTBEAT
 	bool "Telink W91 intercore heartbeat"
-	default y
+	default n
 	help
 		This option enables Telink W91 heartbeat messages between cores.
 

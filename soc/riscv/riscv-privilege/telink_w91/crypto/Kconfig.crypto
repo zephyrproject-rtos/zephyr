@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if MBEDTLS
+
+config MBEDTLS_USER_CONFIG_FILE
+	default "crypto/telink_w91_mbedtls_user_config.h"
+	depends on SOC_SERIES_RISCV_TELINK_W91
+
+config TELINK_W91_ECC_HW_ACC
+	bool "Telink W91 EC cryptography HW acceleration"
+	default y
+	depends on MBEDTLS_ECP_C
+	help
+		This option enables Telink W91 EC cryptography HW acceleration.
+
+config TELINK_W91_ECC_HW_ACC_IPC_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher timeout while waiting from the endpoint response"
+	default 300
+	depends on TELINK_W91_ECC_HW_ACC
+	help
+		his option sets Telink IPC dispatcher response driver timeout in mS.
+
+endif # MBEDTLS
