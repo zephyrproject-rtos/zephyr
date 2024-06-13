@@ -1,0 +1,12 @@
+# SOF UAOL configuration options
+
+# Copyright (c) 2023-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_INTEL_UAOL
+	bool "Intel USB Audio Offload Link (UAOL) driver support for DAI interface"
+	default y
+	depends on DT_HAS_INTEL_UAOL_DAI_ENABLED
+	depends on PM_DEVICE_RUNTIME
+	help
+	  Enable Intel USB Audio Offload Link (UAOL) driver for DAI interface
