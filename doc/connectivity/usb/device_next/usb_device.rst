@@ -41,7 +41,7 @@ instance (`n`) and is used as an argument to the :c:func:`usbd_register_class`.
 +-----------------------------------+-------------------------+-------------------------+
 | USB CDC ECM class                 | Ethernet device         | :samp:`cdc_ecm_{n}`     |
 +-----------------------------------+-------------------------+-------------------------+
-| USB Mass Storage Class (MSC)      | :ref:`disk_access_api`  | :samp:`msc_{n}`         |
+| USB Mass Storage Class (MSC)      | :ref:`usbd_msc_device`  | :samp:`msc_{n}`         |
 +-----------------------------------+-------------------------+-------------------------+
 | USB Human Interface Devices (HID) | :ref:`usbd_hid_device`  | :samp:`hid_{n}`         |
 +-----------------------------------+-------------------------+-------------------------+
