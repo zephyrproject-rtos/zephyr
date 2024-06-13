@@ -913,9 +913,10 @@ static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
 	return pa_timeout;
 }
 
-static int pa_sync_create(void)
+static void pa_sync_create(void)
 {
 	struct bt_le_per_adv_sync_param create_params = {0};
+	int err;
 
 	bt_addr_le_copy(&create_params.addr, &broadcaster_addr);
 	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
@@ -923,16 +924,19 @@ static int pa_sync_create(void)
 	create_params.skip = PA_SYNC_SKIP;
 	create_params.timeout = interval_to_sync_timeout(broadcaster_info.interval);
 
-	return bt_le_per_adv_sync_create(&create_params, &pa_sync);
+	err = bt_le_per_adv_sync_create(&create_params, &pa_sync);
+	if (err != 0) {
+		FAIL("Could not create Broadcast PA sync: %d\n", err);
+		return;
+	}
+
+	printk("Broadcast source found, waiting for PA sync\n");
+	WAIT_FOR_FLAG(flag_pa_synced);
 }
 
-static void test_cap_acceptor_broadcast(void)
+static void pa_sync_to_broadcaster(void)
 {
-	static struct bt_bap_stream *bap_streams[ARRAY_SIZE(broadcast_sink_streams)];
-	size_t stream_count;
 	int err;
-
-	init();
 
 	printk("Scanning for broadcast sources\n");
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
@@ -952,14 +956,13 @@ static void test_cap_acceptor_broadcast(void)
 
 	printk("Scan stopped, attempting to PA sync to the broadcaster with id 0x%06X\n",
 	       broadcaster_broadcast_id);
-	err = pa_sync_create();
-	if (err != 0) {
-		FAIL("Could not create Broadcast PA sync: %d\n", err);
-		return;
-	}
 
-	printk("Broadcast source found, waiting for PA sync\n");
-	WAIT_FOR_FLAG(flag_pa_synced);
+	pa_sync_create();
+}
+
+static void create_and_sync_sink(struct bt_bap_stream *bap_streams[], size_t *stream_count)
+{
+	int err;
 
 	printk("Creating the broadcast sink\n");
 	err = bt_bap_broadcast_sink_create(pa_sync, broadcaster_broadcast_id, &g_broadcast_sink);
@@ -980,10 +983,10 @@ static void test_cap_acceptor_broadcast(void)
 	}
 
 	printk("Syncing the sink\n");
-	stream_count = 0;
+	*stream_count = 0;
 	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 		if ((bis_index_bitfield & BIT(i)) != 0) {
-			stream_count++;
+			*stream_count += 1;
 		}
 	}
 
@@ -994,15 +997,28 @@ static void test_cap_acceptor_broadcast(void)
 	}
 
 	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", stream_count);
-	for (size_t i = 0U; i < stream_count; i++) {
+	printk("Waiting for %zu streams to be started\n", *stream_count);
+	for (size_t i = 0U; i < *stream_count; i++) {
 		k_sem_take(&sem_broadcast_started, K_FOREVER);
 	}
+}
 
+static void sink_wait_for_data(void)
+{
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
+}
 
+static void base_wait_for_metadata_update(void)
+{
+	printk("Waiting for meta update\n");
+	WAIT_FOR_FLAG(flag_base_metadata_updated);
+	backchannel_sync_send_all(); /* let others know we have received a metadata update */
+}
+
+static void wait_for_streams_stop(int stream_count)
+{
 	/* The order of PA sync lost and BIG Sync lost is irrelevant
 	 * and depend on timeout parameters. We just wait for PA first, but
 	 * either way will work.
@@ -1014,6 +1030,22 @@ static void test_cap_acceptor_broadcast(void)
 	for (size_t i = 0U; i < stream_count; i++) {
 		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
 	}
+}
+
+static void test_cap_acceptor_broadcast(void)
+{
+	static struct bt_bap_stream *bap_streams[ARRAY_SIZE(broadcast_sink_streams)];
+	size_t stream_count;
+
+	init();
+
+	pa_sync_to_broadcaster();
+
+	create_and_sync_sink(bap_streams, &stream_count);
+
+	sink_wait_for_data();
+
+	wait_for_streams_stop(stream_count);
 
 	PASS("CAP acceptor broadcast passed\n");
 }
@@ -1022,85 +1054,26 @@ static void test_cap_acceptor_broadcast_reception(void)
 {
 	static struct bt_bap_stream *bap_streams[ARRAY_SIZE(broadcast_sink_streams)];
 	size_t stream_count;
-	int err;
 
 	init();
 
 	WAIT_FOR_FLAG(flag_pa_request);
 
-	err = pa_sync_create();
-	if (err != 0) {
-		FAIL("Could not create Broadcast PA sync: %d\n", err);
-		return;
-	}
+	pa_sync_create();
 
-	printk("Waiting for PA sync\n");
-	WAIT_FOR_FLAG(flag_pa_synced);
+	create_and_sync_sink(bap_streams, &stream_count);
 
-	err = bt_bap_broadcast_sink_create(pa_sync, broadcaster_broadcast_id, &g_broadcast_sink);
-	if (err != 0) {
-		FAIL("Unable to create the sink: %d\n", err);
-		return;
-	}
+	sink_wait_for_data();
 
-	if (req_recv_state->num_subgroups == 0) {
-		FAIL("Number of subgroups is 0");
-		return;
-	}
-
-	printk("Broadcast source PA synced, waiting for BASE\n");
-	WAIT_FOR_FLAG(flag_base_received);
-	printk("BASE received\n");
-
-	WAIT_FOR_FLAG(flag_syncable);
-
-	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sink_streams); i++) {
-		bap_streams[i] = bap_stream_from_audio_test_stream(&broadcast_sink_streams[i]);
-	}
-
-	printk("Syncing the sink\n");
-	stream_count = 0;
-	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
-		if ((bis_index_bitfield & BIT(i)) != 0) {
-			stream_count++;
-		}
-	}
-
-	err = bt_bap_broadcast_sink_sync(g_broadcast_sink, bis_index_bitfield, bap_streams, NULL);
-	if (err != 0) {
-		FAIL("Unable to sync the sink: %d\n", err);
-		return;
-	}
-
-	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", stream_count);
-	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_started, K_FOREVER);
-	}
-
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_received);
-
-	backchannel_sync_send_all(); /* let others know we have received some data */
-
-	printk("Waiting for meta update\n");
-	WAIT_FOR_FLAG(flag_base_metadata_updated);
-
-	backchannel_sync_send_all(); /* let others know we have received a metadata update */
+	/* Since we are re-using the BAP broadcast source test
+	 * we get a metadata udate, and we need to send an extra
+	 * backchannel sync
+	 */
+	base_wait_for_metadata_update();
 
 	backchannel_sync_send_all(); /* let broadcaster know we can stop the source */
 
-	/* The order of PA sync lost and BIG Sync lost is irrelevant
-	 * and depend on timeout parameters. We just wait for PA first, but
-	 * either way will work.
-	 */
-	printk("Waiting for PA disconnected\n");
-	WAIT_FOR_FLAG(flag_pa_sync_lost);
-
-	printk("Waiting for %zu streams to be stopped\n", stream_count);
-	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
-	}
+	wait_for_streams_stop(stream_count);
 
 	PASS("CAP acceptor broadcast reception passed\n");
 }
