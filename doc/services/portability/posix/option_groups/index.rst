@@ -408,9 +408,9 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_REALTIME_SIGNALS`.
    :header: API, Supported
    :widths: 50,10
 
-    sigqueue(),
-    sigtimedwait(),
-    sigwaitinfo(),
+    sigqueue(),yes
+    sigtimedwait(),yes
+    sigwaitinfo(),yes
 
 .. _posix_option_group_semaphores:
 
