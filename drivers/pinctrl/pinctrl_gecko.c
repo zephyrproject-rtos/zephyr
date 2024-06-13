@@ -324,7 +324,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		case GECKO_FUN_I2C_SCL_LOC:
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 			i2c_base->ROUTEPEN |= I2C_ROUTEPEN_SCLPEN;
-			i2c_base->ROUTELOC0 &= ~_I2C_ROUTEPEN_SCLPEN_MASK;
+			i2c_base->ROUTELOC0 &= ~_I2C_ROUTELOC0_SCLLOC_MASK;
 			i2c_base->ROUTELOC0 |= (loc << _I2C_ROUTELOC0_SCLLOC_SHIFT);
 #elif defined(I2C_ROUTE_SCLPEN)
 			i2c_base->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | (loc << 8);
