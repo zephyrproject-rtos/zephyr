@@ -48,7 +48,7 @@
 		compatible = "zephyr,ram-disk";
 		disk-name = "RAM";
 		sector-size = <512>;
-		sector-count = <192>;
+		sector-count = <1>;
 	};
 
 	cdc_ecm_eth0: cdc_ecm_eth0 {
