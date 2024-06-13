@@ -1239,20 +1239,6 @@ static int eth_initialize(const struct device *dev)
 }
 
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
-static uint32_t reverse(uint32_t val)
-{
-	uint32_t res = 0;
-	int i;
-
-	for (i = 0; i < 32; i++) {
-		if (val & BIT(i)) {
-			res |= BIT(31 - i);
-		}
-	}
-
-	return res;
-}
-
 static void eth_stm32_mcast_filter(const struct device *dev, const struct ethernet_filter *filter)
 {
 	struct eth_stm32_hal_dev_data *dev_data = (struct eth_stm32_hal_dev_data *)dev->data;
@@ -1263,7 +1249,7 @@ static void eth_stm32_mcast_filter(const struct device *dev, const struct ethern
 
 	heth = &dev_data->heth;
 
-	crc = reverse(crc32_ieee(filter->mac_address.addr, sizeof(struct net_eth_addr)));
+	crc = __RBIT(crc32_ieee(filter->mac_address.addr, sizeof(struct net_eth_addr)));
 	hash_index = (crc >> 26) & 0x3f;
 
 	__ASSERT_NO_MSG(hash_index < ARRAY_SIZE(dev_data->hash_index_cnt));
