@@ -122,6 +122,9 @@ choice BT_LL_CHOICE
 	prompt "Bluetooth Link Layer Selection"
 	help
 	  Select the Bluetooth Link Layer to compile.
+	  The link layer choice list can be extended out of tree.
+	  In the nRF Connect SDK, the SoftDevice Controller is selected
+	  and set as the default Bluetooth Controller.
 
 config BT_LL_SW_SPLIT
 	bool "Software-based BLE Link Layer [EXPERIMENTAL]"
