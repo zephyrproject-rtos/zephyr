@@ -56,7 +56,11 @@ int main(void)
 		}
 	}
 
+#ifndef CONFIG_COVERAGE
 	while (1) {
+#else
+	for (int k = 0; k < 10; k++) {
+#endif
 		printf("ADC sequence reading [%u]:\n", count++);
 		k_msleep(1000);
 
