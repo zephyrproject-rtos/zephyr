@@ -16,6 +16,10 @@ set(Sysbuild_DIR ${CMAKE_CURRENT_LIST_DIR}/../sysbuild-package/cmake)
 
 project(sysbuild_toplevel LANGUAGES)
 
+if(NOT DEFINED APPLICATION_BINARY_DIR)
+  set(APPLICATION_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "Application Binary Directory")
+endif()
+
 if(EXISTS ${APP_DIR}/sysbuild/CMakeLists.txt)
   add_subdirectory(${APP_DIR}/sysbuild sysbuild/application)
 else()
