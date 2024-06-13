@@ -2957,7 +2957,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	    conn->le.latency == param->latency &&
 	    conn->le.timeout == param->timeout) {
 		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
-		return -EALREADY;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
