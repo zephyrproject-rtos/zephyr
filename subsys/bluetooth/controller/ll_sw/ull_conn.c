@@ -2520,17 +2520,25 @@ void ull_dle_init(struct ll_conn *conn, uint8_t phy)
 	/* Check whether the controller should perform a data length update after
 	 * connection is established
 	 */
+	bool update_data_length = false;
 #if defined(CONFIG_BT_CTLR_PHY)
 	if ((conn->lll.dle.local.max_rx_time != max_time_min ||
 	     conn->lll.dle.local.max_tx_time != max_time_min)) {
-		conn->lll.dle.update = 1;
+		update_data_length = 1;
 	} else
 #endif
 	{
 		if (conn->lll.dle.local.max_tx_octets != PDU_DC_PAYLOAD_SIZE_MIN ||
 		    conn->lll.dle.local.max_rx_octets != PDU_DC_PAYLOAD_SIZE_MIN) {
-			conn->lll.dle.update = 1;
+			update_data_length = 1;
 		}
+	}
+
+	if (update_data_length) {
+		/* We intend to update the data length when the connection starts. */
+		(void)ull_cp_data_length_update(conn,
+						conn->lll.dle.local.max_tx_octets,
+						conn->lll.dle.local.max_tx_time);
 	}
 }
 
