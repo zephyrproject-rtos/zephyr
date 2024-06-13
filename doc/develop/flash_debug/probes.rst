@@ -24,9 +24,9 @@ and provides a variety of debug host tool options.
 
 Several hardware vendors have their own branded onboard debug probe
 implementations: NXP boards may use
-`OpenSDA <#opensda-daplink-onboard-debug-probe>`_,
-`LPC-Link2 <#lpclink2-jlink-onboard-debug-probe>`_, or
-`MCU-Link <#mcu-link-cmsis-onboard-debug-probe>`_, probes depending on
+`OpenSDA <#opensda-onboard-debug-probe>`_,
+`LPC-Link2 <#lpc-link2-onboard-debug-probe>`_, or
+`MCU-Link <#mcu-link-onboard-debug-probe>`_, probes depending on
 the microcontroller the debug probe firmware runs on.
 ST boards have the `ST-LINK probe <#stlink-v21-onboard-debug-probe>`_. Each
 onboard debug probe microcontroller can support one or more types of firmware
@@ -127,7 +127,10 @@ This debug probe is compatible with the following debug host tools:
 Once the MCU-Link host tools are installed, the following steps are
 required to program the CMSIS-DAP firmware:
 
-1. Put the MCU-Link microcontroller into DFU boot mode by attaching the DFU
+1. Make sure the MCU-Link utility is present on your host machine. This can
+   be done by installing :ref:`linkserver-debug-host-tools`.
+
+#. Put the MCU-Link microcontroller into DFU boot mode by attaching the DFU
    jumper then connecting to the USB debug port on the board.  This jumper may
    also be referred to as the ISP jumper, and will be connected to ``PIO0_5``
    on the LPC55S69.
@@ -152,7 +155,10 @@ These probes do not have JLink firmware installed by default, and must be
 updated. Once the MCU-Link host tools are installed, the following steps are
 required to program the JLink firmware:
 
-1. Put the MCU-Link microcontroller into DFU boot mode by attaching the DFU
+1. Make sure the MCU-Link utility is present on your host machine. This can
+   be done by installing :ref:`linkserver-debug-host-tools`.
+
+#. Put the MCU-Link microcontroller into DFU boot mode by attaching the DFU
    jumper then connecting to the USB debug port on the board.  This jumper may
    also be referred to as the ISP jumper, and will be connected to ``PIO0_5``
    on the LPC55S69.
@@ -198,10 +204,12 @@ This debug probe firmware is compatible with the following debug host tools:
 
 - :ref:`linkserver-debug-host-tools`
 
-After installing the LPCScrypt host tools, the firmware may be updated to
-use CMSIS-DAP firmware with the following steps:
+The probe may be updated to use CMSIS-DAP firmware with the following steps:
 
-1. Put the LPC-Link2 microcontroller into DFU boot mode by attaching the DFU
+1. Make sure the LPCScrypt utility is present on your host machine. This can
+   be done by installing :ref:`linkserver-debug-host-tools`.
+
+#. Put the LPC-Link2 microcontroller into DFU boot mode by attaching the DFU
    jumper, then then connecting to the USB debug port on the board. This
    jumper is connected to ``P2_6`` on the LPC4322 SOC.
 
@@ -225,12 +233,14 @@ tools:
 
 - :ref:`jlink-debug-host-tools`
 
-After installing the LPCScrypt host tools, the firmware may be updated to
-use CMSIS-DAP firmware with the following steps:
+The probe may be updated to use the J-Link firmware with the following steps:
 
 .. note:: Verify the firmware supports your board by visiting `Firmware for LPCXpresso`_
 
-1. Put the LPC-Link2 microcontroller into DFU boot mode by attaching the DFU
+1. Make sure the LPCScrypt utility is present on your host machine. This can
+   be done by installing :ref:`linkserver-debug-host-tools`.
+
+#. Put the LPC-Link2 microcontroller into DFU boot mode by attaching the DFU
    jumper, then then connecting to the USB debug port on the board. This
    jumper is connected to ``P2_6`` on the LPC4322 SOC.
 
