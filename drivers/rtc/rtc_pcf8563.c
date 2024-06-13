@@ -380,9 +380,19 @@ void gpio_callback_function(const struct device *dev, struct gpio_callback *cb,
 
 }
 
+#endif
+
 static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 				      rtc_alarm_callback callback, void *user_data)
 {
+#ifndef PCF8563_INT1_GPIOS_IN_USE
+	ARG_UNUSED(dev);
+	ARG_UNUSED(id);
+	ARG_UNUSED(callback);
+	ARG_UNUSED(user_data);
+
+	return -ENOTSUP;
+#else
 	const struct pcf8563_config *config = dev->config;
 	struct pcf8563_data *data = dev->data;
 	int ret;
@@ -416,8 +426,8 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 	gpio_add_callback(config->int1.port, &data->int1_callback);
 	LOG_DBG("Alarm set");
 	return 0;
-}
 #endif
+}
 
 static const struct rtc_driver_api pcf8563_driver_api = {
 	.set_time = pcf8563_set_time,
@@ -427,9 +437,7 @@ static const struct rtc_driver_api pcf8563_driver_api = {
 	.alarm_set_time = pcf8563_alarm_set_time,
 	.alarm_get_time = pcf8563_alarm_get_time,
 	.alarm_is_pending = pcf8563_alarm_is_pending,
-#ifdef PCF8563_INT1_GPIOS_IN_USE
 	.alarm_set_callback = pcf8563_alarm_set_callback,
-#endif
 #endif
 };
 
