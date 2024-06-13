@@ -150,14 +150,12 @@ void l4_handler(struct net_mgmt_event_callback *cb, uint32_t event, struct net_i
 {
 	if (event == NET_EVENT_L4_CONNECTED) {
 		k_mutex_lock(&stats_mutex, K_FOREVER);
-		printk("NET_EVENT_L4_CONNECTED\n");
 		global_stats.conn_count_gen += 1;
 		global_stats.event_count_gen += 1;
 		global_stats.conn_iface_gen = iface;
 		k_mutex_unlock(&stats_mutex);
 	} else if (event == NET_EVENT_L4_DISCONNECTED) {
 		k_mutex_lock(&stats_mutex, K_FOREVER);
-		printk("NET_EVENT_L4_DISCONNECTED\n");
 		global_stats.dconn_count_gen += 1;
 		global_stats.event_count_gen += 1;
 		global_stats.dconn_iface_gen = iface;
@@ -171,28 +169,24 @@ void conn_handler(struct net_mgmt_event_callback *cb, uint32_t event, struct net
 {
 	if (event == NET_EVENT_L4_IPV6_CONNECTED) {
 		k_mutex_lock(&stats_mutex, K_FOREVER);
-		printk("NET_EVENT_L4_IPV6_CONNECTED\n");
 		global_stats.conn_count_ipv6 += 1;
 		global_stats.event_count_ipv6 += 1;
 		global_stats.conn_iface_ipv6 = iface;
 		k_mutex_unlock(&stats_mutex);
 	} else if (event == NET_EVENT_L4_IPV6_DISCONNECTED) {
 		k_mutex_lock(&stats_mutex, K_FOREVER);
-		printk("NET_EVENT_L4_IPV6_DISCONNECTED\n");
 		global_stats.dconn_count_ipv6 += 1;
 		global_stats.event_count_ipv6 += 1;
 		global_stats.dconn_iface_ipv6 = iface;
 		k_mutex_unlock(&stats_mutex);
 	} else if (event == NET_EVENT_L4_IPV4_CONNECTED) {
 		k_mutex_lock(&stats_mutex, K_FOREVER);
-		printk("NET_EVENT_L4_IPV4_CONNECTED\n");
 		global_stats.conn_count_ipv4 += 1;
 		global_stats.event_count_ipv4 += 1;
 		global_stats.conn_iface_ipv4 = iface;
 		k_mutex_unlock(&stats_mutex);
 	} else if (event == NET_EVENT_L4_IPV4_DISCONNECTED) {
 		k_mutex_lock(&stats_mutex, K_FOREVER);
-		printk("NET_EVENT_L4_IPV4_DISCONNECTED\n");
 		global_stats.dconn_count_ipv4 += 1;
 		global_stats.event_count_ipv4 += 1;
 		global_stats.dconn_iface_ipv4 = iface;
