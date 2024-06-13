@@ -55,6 +55,7 @@
 #define SSCR0_EFRDC     BIT(27)
 #define SSCR0_EFRDC2    BIT(28)
 #define SSCR0_DLE		DAI_INTEL_SSP_SET_BITS(30, 29, 0)
+#define SSCR0_ACS		BIT(30)
 #define SSCR0_MOD		BIT(31)
 
 /* SSCR1 bits */
