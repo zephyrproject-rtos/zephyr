@@ -707,3 +707,68 @@ event {
 		int32_t result;
 	};
 };
+
+event {
+	name = gpio_active;
+	id = 0x5C;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+	};
+};
+
+event {
+	name = gpio_inactive;
+	id = 0x5D;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+	};
+};
+
+event {
+	name = gpio_configured_input;
+	id = 0x5E;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t flags;
+	};
+};
+
+event {
+	name = gpio_configured_output;
+	id = 0x5F;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t flags;
+	};
+};
+
+event {
+	name = gpio_event_attached;
+	id = 0x60;
+	fields := struct {
+		uint32_t port;
+		uint32_t callback;
+	};
+};
+
+event {
+	name = gpio_event_removed;
+	id = 0x61;
+	fields := struct {
+		uint32_t port;
+		uint32_t callback;
+	};
+};
+
+event {
+	name = gpio_event_executed;
+	id = 0x62;
+	fields := struct {
+		uint32_t port;
+		uint32_t callback;
+	};
+};
