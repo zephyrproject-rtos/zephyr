@@ -18,7 +18,6 @@ on:
 jobs:
   assignment:
     name: Pull Request Assignment
-    if: github.event.pull_request.draft == false
     runs-on: ubuntu-22.04
 
     steps:
@@ -34,7 +33,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.ZB_GITHUB_TOKEN }}
       run: |
-        FLAGS="-v"
+        FLAGS="-v --dry-run"
         FLAGS+=" -o ${{ github.event.repository.owner.login }}"
         FLAGS+=" -r ${{ github.event.repository.name }}"
         FLAGS+=" -M MAINTAINERS.yml"
