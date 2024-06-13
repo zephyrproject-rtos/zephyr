@@ -340,6 +340,15 @@
 			};
 		};
 
+		uaol0: uaol@70000 {
+			compatible = "intel,adsp-uaol";
+			reg = <0x00070000 0x180>;
+			shim-offset = <0x0>;
+			ip-offset = <0x80>;
+			link = <0>;
+			power-domain = <&hst_domain>;
+		};
+
 		mem_window0: mem_window@70200 {
 			compatible = "intel,adsp-mem-window";
 			reg = <0x70200 0x8>;
