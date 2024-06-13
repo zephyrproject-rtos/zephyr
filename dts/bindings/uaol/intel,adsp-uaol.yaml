@@ -1,0 +1,24 @@
+# Copyright (c) 2023-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel USB Audio Offload Link (UAOL) IP
+
+compatible: "intel,adsp-uaol"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  shim-offset:
+    type: int
+    required: true
+
+  ip-offset:
+    type: int
+    required: true
+
+  link:
+    type: int
+    required: true

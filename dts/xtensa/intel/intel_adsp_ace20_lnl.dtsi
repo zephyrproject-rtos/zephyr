@@ -173,6 +173,21 @@
 			status = "okay";
 		};
 
+		hdamluaol: hdamluaol@d40 {
+			compatible = "intel,adsp-hda-uaol-cap";
+			reg = <0xd40 0x40>;
+			status = "okay";
+		};
+
+		uaol0: uaol@f000 {
+			compatible = "intel,adsp-uaol";
+			reg = <0x0000f000 0x1000>;
+			shim-offset = <0x0>;
+			ip-offset = <0x100>;
+			link = <0>;
+			power-domains = <&hst_domain>;
+		};
+
 		dmic0: dai-dmic0@10100 {
 			compatible = "intel,dai-dmic";
 			reg = <0x10100 0x8000>;
