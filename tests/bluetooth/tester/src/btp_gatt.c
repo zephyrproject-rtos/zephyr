@@ -100,7 +100,7 @@ static struct ccc_value ccc_values[MAX_CCC_COUNT];
 static int ccc_find_by_attr(uint16_t handle)
 {
 	for (int i = 0; i < MAX_CCC_COUNT; i++) {
-		if (handle == ccc_values[i].attr->handle) {
+		if ((ccc_values[i].attr != NULL) && (handle == ccc_values[i].attr->handle)) {
 			return i;
 		}
 	}
