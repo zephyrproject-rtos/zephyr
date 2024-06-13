@@ -1,0 +1,16 @@
+# Copyright (c) 2023-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel USB Audio Offload Link (UAOL) DAI node
+
+compatible: "intel,uaol-dai"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  stream:
+    type: int
+    required: true
