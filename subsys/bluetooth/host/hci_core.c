@@ -3191,7 +3191,8 @@ static int common_init(void)
 	read_supported_commands_complete(rsp);
 	net_buf_unref(rsp);
 
-	if (IS_ENABLED(CONFIG_BT_HOST_CRYPTO_PRNG)) {
+	if (IS_ENABLED(CONFIG_BT_HOST_CRYPTO_PRNG) &&
+	    !IS_ENABLED(CONFIG_BT_CTLR_CRYPTO)) {
 		/* Initialize the PRNG so that it is safe to use it later
 		 * on in the initialization process.
 		 */

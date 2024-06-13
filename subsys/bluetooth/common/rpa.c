@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(bt_rpa);
 
 #if defined(CONFIG_BT_CTLR_CRYPTO) && defined(CONFIG_BT_HOST_CRYPTO)
 #include "../controller/util/util.h"
+#include "../controller/util/memq.h"
+#include "../controller/ll_sw/lll.h"
 #include "../controller/hal/ecb.h"
 #endif /* CONFIG_BT_CTLR_CRYPTO && CONFIG_BT_HOST_CRYPTO */
 
