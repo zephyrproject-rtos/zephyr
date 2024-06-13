@@ -1,0 +1,19 @@
+# Copyright 2024 Novatech LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_MCP48XX
+	bool "Microchip MCP48XX DAC driver"
+	select SPI
+	help
+	  Enable driver for the Microchip MCP48xx series DAC devices.
+
+if DAC_MCP48XX
+
+config DAC_MCP48XX_INIT_PRIORITY
+	int "Init Priority"
+	default 80
+	help
+	  Microchip MCP48xx DAC device driver initialization priority.
+
+endif

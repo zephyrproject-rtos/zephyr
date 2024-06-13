@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Novatech LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip 12-Bit 2-channel SPI DAC
+
+compatible: "microchip,mcp4822"
+
+include: microchip,mcp48xx-base.yaml
