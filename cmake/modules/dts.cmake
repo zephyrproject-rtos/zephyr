@@ -103,6 +103,8 @@ set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # The generated C header needed by <zephyr/devicetree.h>
 set(DEVICETREE_GENERATED_H      ${BINARY_DIR_INCLUDE_GENERATED}/devicetree_generated.h)
+# The generated C header needed by TFM <region_defs.h>
+set(DEVICETREE_TFM_GENERATED_H  ${BINARY_DIR_INCLUDE_GENERATED}/tfm_devicetree_generated.h)
 # Generated build system internals.
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/zephyr.dts.pre)
 set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
@@ -114,6 +116,8 @@ set(DTS_KCONFIG                 ${KCONFIG_BINARY_DIR}/Kconfig.dts)
 
 # This generates DT information needed by the CMake APIs.
 set(GEN_DTS_CMAKE_SCRIPT        ${DT_SCRIPTS}/gen_dts_cmake.py)
+# This generates DT information needed by the TF-M build system.
+set(GEN_TFM_DEFINES_SCRIPT      ${DT_SCRIPTS}/gen_tfm_defines.py)
 # The generated information itself, which we include() after
 # creating it.
 set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
@@ -269,6 +273,7 @@ set_property(DIRECTORY APPEND PROPERTY
   ${GEN_DEFINES_SCRIPT}
   ${GEN_DRIVER_KCONFIG_SCRIPT}
   ${GEN_DTS_CMAKE_SCRIPT}
+  ${GEN_TFM_DEFINES_SCRIPT}
   )
 
 #
@@ -333,6 +338,26 @@ if(NOT "${ret}" STREQUAL "0")
 else()
   message(STATUS "Including generated dts.cmake file: ${DTS_CMAKE}")
   include(${DTS_CMAKE})
+endif()
+
+#
+# Run GEN_TFM_DEFINES_SCRIPT if nonsecure board.
+#
+if(BOARD_QUALIFIERS MATCHES "/ns$")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${GEN_TFM_DEFINES_SCRIPT}
+    --edt-pickle ${EDT_PICKLE}
+    --header-out ${DEVICETREE_TFM_GENERATED_H}.new
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "${GEN_TFM_DEFINES_SCRIPT}.py failed with return code: ${ret}")
+  else()
+    zephyr_file_copy(${DEVICETREE_TFM_GENERATED_H}.new ${DEVICETREE_TFM_GENERATED_H} ONLY_IF_DIFFERENT)
+    file(REMOVE ${DEVICETREE_TFM_GENERATED_H}.new)
+    message(STATUS "Generated tfm_devicetree_generated.h: ${DEVICETREE_TFM_GENERATED_H}")
+  endif()
 endif()
 
 #
