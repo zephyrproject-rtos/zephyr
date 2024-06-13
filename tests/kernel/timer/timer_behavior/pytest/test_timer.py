@@ -11,7 +11,7 @@ from twister_harness import DeviceAdapter
 logger = logging.getLogger(__name__)
 
 
-def do_analysys(test, stats, stats_count, config, sys_clock_hw_cycles_per_sec):
+def do_analysis(test, stats, stats_count, config, sys_clock_hw_cycles_per_sec):
     logger.info('====================================================')
     logger.info(f'periodic timer behaviour using {test} mechanism:')
 
@@ -98,7 +98,7 @@ def test_flash(dut: DeviceAdapter, tool, tool_options, config,
         wait_sync_point(dut, test)
         stats, stats_count = tool.run(seconds, tool_options)
         assert stats_count
-        do_analysys(test, stats, stats_count, config, sys_clock_hw_cycles_per_sec)
+        do_analysis(test, stats, stats_count, config, sys_clock_hw_cycles_per_sec)
 
     # Let the running test's image output to be fully captured from device.
     dut.readlines()
