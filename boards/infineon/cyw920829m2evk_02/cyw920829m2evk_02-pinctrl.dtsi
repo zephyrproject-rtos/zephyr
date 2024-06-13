@@ -11,3 +11,11 @@
 &p3_2_scb2_uart_rx {
 	input-enable;
 };
+
+&p3_1_scb2_uart_rts {
+	drive-push-pull;
+};
+
+&p3_0_scb2_uart_cts {
+	input-enable;
+};
