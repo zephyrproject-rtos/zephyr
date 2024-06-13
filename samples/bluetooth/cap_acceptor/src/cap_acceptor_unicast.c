@@ -79,7 +79,8 @@ static void log_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 				bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret));
 		}
 
-		if (bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation) == 0) {
+		if (bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, true) ==
+		    0) {
 			LOG_INF("\tChannel allocation: 0x%08X", chan_allocation);
 		}
 
