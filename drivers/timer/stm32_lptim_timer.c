@@ -204,7 +204,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	next = pm_policy_next_state(CURRENT_CPU, ticks);
 
-	if ((next != NULL) && (next->state == PM_STATE_SUSPEND_TO_RAM)) {
+	if ((next != NULL) && idle && (next->state == PM_STATE_SUSPEND_TO_RAM)) {
 		uint64_t timeout_us =
 			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
@@ -229,6 +229,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		 */
 		counter_get_value(stdby_timer, &stdby_timer_pre_stdby);
 		lptim_cnt_pre_stdby = z_clock_lptim_getcounter();
+
+		/* Stop clocks for LPTIM, since RTC is used instead */
+		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
 
 		return;
 	}
