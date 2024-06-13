@@ -239,7 +239,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 			zassert_equal(bt_audio_codec_cfg_get_frame_dur(codec_cfg),
 				      BT_AUDIO_CODEC_CFG_DURATION_10);
 			/* verify bis specific codec data */
-			bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation);
+			bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
 			zassert_equal(chan_allocation,
 				      BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT);
 			/* Since BAP doesn't care about the `buf` we can just provide NULL */
