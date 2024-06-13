@@ -100,6 +100,9 @@
 				status = "disabled";
 			};
 
+			/* Note: In the nRF Connect SDK another Bluetooth controller
+			 * is added and set as the default.
+			 */
 			bt_hci_controller: bt_hci_controller {
 				compatible = "zephyr,bt-hci-ll-sw-split";
 				status = "okay";
