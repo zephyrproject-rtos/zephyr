@@ -68,6 +68,7 @@
 #include "ll_sw/ull_sync_internal.h"
 #include "ll_sw/ull_conn_internal.h"
 #include "ll_sw/ull_sync_iso_internal.h"
+#include "ll_sw/ull_iso_internal.h"
 #include "ll_sw/ull_df_internal.h"
 
 #include "ll.h"
@@ -7892,7 +7893,9 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	 *                             SDU_Interval
 	 */
 	iso_interval_us = lll->iso_interval * ISO_INT_UNIT_US;
-	big_sync_delay = ull_big_sync_delay(lll);
+	big_sync_delay = ull_iso_big_sync_delay(lll->num_bis, lll->bis_spacing, lll->nse,
+						lll->sub_interval, lll->phy, lll->max_pdu,
+						lll->enc);
 	if (lll->framing) {
 		/* Framed */
 		transport_latency_big = big_sync_delay +
