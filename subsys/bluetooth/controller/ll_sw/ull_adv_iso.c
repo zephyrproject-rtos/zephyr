@@ -349,7 +349,14 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		iso_interval_us = iso_interval * PERIODIC_INT_UNIT_US;
 
 	} else {
-		lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
+		if (framing) {
+			/* Try to allocate room for one SDU + header */
+			lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX,
+						   max_sdu + PDU_ISO_SEG_HDR_SIZE +
+						    PDU_ISO_SEG_TIMEOFFSET_SIZE);
+		} else {
+			lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
+		}
 
 		/* FIXME: SDU per max latency */
 		sdu_per_event = MAX((max_latency * USEC_PER_MSEC / sdu_interval), 2U) -
@@ -1504,10 +1511,18 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static struct lll_prepare_param p;
 	struct ll_adv_iso_set *adv_iso = param;
 	uint32_t remainder_us;
+	uint64_t event_count;
 	uint32_t ret;
 	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_A(1);
+
+	event_count = adv_iso->lll.payload_count / adv_iso->lll.bn;
+	for (int i = 0; i < adv_iso->lll.num_bis; i++)  {
+		uint16_t stream_handle = adv_iso->lll.stream_handle[i];
+
+		ull_iso_lll_event_prepare(LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle), event_count);
+	}
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&adv_iso->ull);
