@@ -117,9 +117,6 @@ static void dai_dmic_update_bits(const struct dai_intel_dmic *dmic,
 {
 	uint32_t dest = dmic->reg_base + reg;
 
-	LOG_INF("%s base %x, reg %x, mask %x, value %x", __func__,
-			dmic->reg_base, reg, mask, val);
-
 	sys_write32((sys_read32(dest) & (~mask)) | (val & mask), dest);
 }
 
