@@ -4,9 +4,10 @@
 
 config UART_NPCM
 	bool "NUVOTON NPCM serial driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	depends on SOC_FAMILY_NPCM
 	help
 	  This option enables the UART driver for Nuvoton NPCM
 	  family of processors.
