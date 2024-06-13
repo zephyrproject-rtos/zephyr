@@ -6,7 +6,7 @@
 config NPCM_MIWU
 	bool "Nuvoton NPCM embedded controller (EC) miwu driver"
 	default y
-	depends on SOC_FAMILY_NPCM
+	depends on DT_HAS_NUVOTON_NPCM_MIWU_ENABLED
 	help
 	  This option enables the Multi-Input Wake-Up Unit (MIWU) driver
 	  for NPCM family ofprocessors.
