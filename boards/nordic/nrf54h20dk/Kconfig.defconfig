@@ -15,3 +15,11 @@ config BT_CTLR
 	default y if BT
 
 endif # BOARD_NRF54H20DK_NRF54H20_CPURAD
+
+if BOARD_NRF54H20DK_NRF54H20_CPUPPR
+
+# As PPR has limited memory most of tests does not fit with asserts enabled.
+config ASSERT
+	default n if ZTEST
+
+endif # BOARD_NRF54H20DK_NRF54H20_CPUPPR
