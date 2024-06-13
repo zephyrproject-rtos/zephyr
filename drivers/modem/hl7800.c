@@ -476,6 +476,7 @@ struct hl7800_iface_ctx {
 	int file_pos;
 	struct k_work finish_fw_update_work;
 	bool fw_updated;
+	bool fw_updating;
 #endif
 
 	/* modem info */
@@ -815,6 +816,11 @@ static struct hl7800_socket *socket_from_id(int socket_id)
 
 static inline void set_busy(bool busy)
 {
+#ifdef CONFIG_MODEM_HL7800_FW_UPDATE
+	if (iface_ctx.fw_updating && !busy) {
+		return;
+	}
+#endif
 	iface_ctx.busy = busy;
 }
 
@@ -2636,6 +2642,7 @@ static bool on_cmd_startup_report(struct net_buf **buf, uint16_t len)
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
 	if (iface_ctx.fw_updated) {
 		iface_ctx.fw_updated = false;
+		iface_ctx.fw_updating = false;
 		set_fota_state(HL7800_FOTA_REBOOT_AND_RECONFIGURE);
 		/* issue reset after a firmware update to reconfigure modem state */
 		k_work_reschedule_for_queue(&hl7800_workq, &iface_ctx.mdm_reset_work,
@@ -6314,6 +6321,7 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 	if (ret < 0) {
 		goto err;
 	}
+	iface_ctx.fw_updating = true;
 
 	notify_all_tcp_sockets_closed();
 	hl7800_stop_rssi_work();
@@ -6407,6 +6415,7 @@ static int hl7800_init(const struct device *dev)
 	k_work_init(&iface_ctx.finish_fw_update_work,
 		    finish_fw_update_work_callback);
 	iface_ctx.fw_updated = false;
+	iface_ctx.fw_updating = false;
 #endif
 
 	/* setup port devices and pin directions */
