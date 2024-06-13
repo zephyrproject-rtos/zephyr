@@ -76,3 +76,13 @@ tests:
     extra_args: CONF_FILE="prj_percepio.conf"
     modules:
       - percepio
+  sample.tracing.gpio:
+    depends_on: gpio
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    extra_args:
+      - CONF_FILE="prj_gpio.conf"
+      - EXTRA_DTC_OVERLAY_FILE="gpio.overlay"
+    integration_platforms:
+      - native_sim
