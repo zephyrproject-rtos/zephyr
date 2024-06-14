@@ -359,11 +359,11 @@ class Pytest(Harness):
         if pytest_dut_scope:
             command.append(f'--dut-scope={pytest_dut_scope}')
 
-        if handler.options.verbose > 1:
-            command.extend([
-                '--log-cli-level=DEBUG',
-                '--log-cli-format=%(levelname)s: %(message)s'
-            ])
+        # Always pass output from the pytest test and the test image up to Twister log.
+        command.extend([
+            '--log-cli-level=DEBUG',
+            '--log-cli-format=%(levelname)s: %(message)s'
+        ])
 
         if handler.type_str == 'device':
             command.extend(
