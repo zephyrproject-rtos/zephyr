@@ -2408,6 +2408,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 {
 	/* Original command buffer. */
 	struct net_buf *buf = NULL;
+	struct k_sem *sync;
 
 	LOG_DBG("opcode 0x%04x status 0x%02x buf %p", opcode, status, evt_buf);
 
@@ -2451,10 +2452,12 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	}
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
-	if (cmd(buf)->sync) {
+	sync = cmd(buf)->sync;
+	if (sync) {
 		LOG_DBG("sync cmd released");
 		cmd(buf)->status = status;
-		k_sem_give(cmd(buf)->sync);
+		cmd(buf)->sync = NULL;
+		k_sem_give(sync);
 	}
 
 exit:
