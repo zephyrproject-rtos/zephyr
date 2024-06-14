@@ -363,12 +363,15 @@ static void z_sys_init_run_level(enum init_level level)
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		const struct device *dev = entry->dev;
+		int result;
 
+		sys_trace_sys_init_enter(entry, level);
 		if (dev != NULL) {
-			do_device_init(entry);
+			result = do_device_init(entry);
 		} else {
-			(void)entry->init_fn.sys();
+			result = entry->init_fn.sys();
 		}
+		sys_trace_sys_init_exit(entry, level, result);
 	}
 }
 

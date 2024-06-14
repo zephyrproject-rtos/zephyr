@@ -349,6 +349,9 @@ extern "C" {
 #define sys_port_trace_pm_device_runtime_disable_enter(dev)
 #define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
+#define sys_trace_sys_init_enter(...)
+#define sys_trace_sys_init_exit(...)
+
 void sys_trace_idle(void);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);

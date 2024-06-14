@@ -732,4 +732,7 @@ void sys_trace_k_event_init(struct k_event *event);
 #define sys_port_trace_socket_socketpair_enter(family, type, proto, sv)
 #define sys_port_trace_socket_socketpair_exit(sockA, sockB, ret)
 
+#define sys_trace_sys_init_enter(...)
+#define sys_trace_sys_init_exit(...)
+
 #endif /* ZEPHYR_TRACE_TEST_H */
