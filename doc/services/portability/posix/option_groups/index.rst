@@ -900,16 +900,16 @@ _POSIX_THREAD_SAFE_FUNCTIONS
     flockfile(),
     ftrylockfile(),
     funlockfile(),
-    getc_unlocked(), yes
-    getchar_unlocked(), yes
+    getc_unlocked(),
+    getchar_unlocked(),
     getgrgid_r(),
     getgrnam_r(),
     getpwnam_r(),
     getpwuid_r(),
     gmtime_r(), yes
     localtime_r(),
-    putc_unlocked(), yes
-    putchar_unlocked(), yes
+    putc_unlocked(),
+    putchar_unlocked(),
     rand_r(), yes
     readdir_r(),
     strerror_r(), yes
