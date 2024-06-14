@@ -37,7 +37,6 @@
 #include "keys.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
-#include "classic/l2cap_br_interface.h"
 #include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_SMP_LOG_LEVEL
@@ -5956,8 +5955,7 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept, NULL);
 #if defined(CONFIG_BT_CLASSIC)
-BT_L2CAP_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
-			bt_smp_br_accept, NULL);
+BT_L2CAP_BR_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP, bt_smp_br_accept);
 #endif /* CONFIG_BT_CLASSIC */
 
 int bt_smp_init(void)
