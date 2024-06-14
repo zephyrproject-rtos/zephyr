@@ -582,6 +582,14 @@ Libraries / Subsystems
 
 * SD
 
+  * SDMMC and SDIO frequency and timing selection logic have been reworked,
+    to resolve an issue where a timing mode would not be selected if the
+    SDHC device in use did not report support for the maximum frequency
+    possible in that mode. Now, if the host controller and card both report
+    support for a given timing mode but not the highest frequency that
+    mode supports, the timing mode will be selected and configured at
+    the reduced frequency (:github:`72705`).
+
 * State Machine Framework
 
   * The :c:macro:`SMF_CREATE_STATE` macro now always takes 5 arguments.
