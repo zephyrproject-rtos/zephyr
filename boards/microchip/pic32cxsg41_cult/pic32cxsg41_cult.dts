@@ -22,11 +22,9 @@
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-		led1 = &led1;
-/*		led2 = &led2;*/
-/*		
-		pwm-led0 = &pwm_led0;
-*/
+		userled1 = &led1;
+/*		userled2 = &led2; */
+		pwm-led1 = &pwm_led1;
 		sw1 = &button1;
 		sw2 = &button2;
 		i2c-0 = &sercom7;
@@ -38,10 +36,9 @@
 			gpios = <&portc 21 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED 1";
 		};
-
 /*
 		led2: led_2 {
-			gpios = <&porta 15 GPIO_ACTIVE_LOW>;
+			gpios = <&porta 16 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED 2";
 		};
 */
@@ -49,11 +46,9 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
-/*
-		pwm_led0: pwm_led_0 {
+		pwm_led1: pwm_led_1 {
 			pwms = <&tcc0 2 PWM_MSEC(20)>;
 		};
-*/
 	};
 
 	buttons {
