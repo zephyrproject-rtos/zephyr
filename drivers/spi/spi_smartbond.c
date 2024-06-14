@@ -796,11 +796,13 @@ static void spi_smartbond_dma_deconfig(const struct device *dev)
 {
 	const struct spi_smartbond_cfg *config = dev->config;
 
-	dma_stop(config->rx_dma_ctrl, config->rx_dma_chan);
-	dma_stop(config->tx_dma_ctrl, config->tx_dma_chan);
+	if (config->rx_dma_ctrl && config->tx_dma_ctrl) {
+		dma_stop(config->rx_dma_ctrl, config->rx_dma_chan);
+		dma_stop(config->tx_dma_ctrl, config->tx_dma_chan);
 
-	spi_smartbond_dma_rx_channel_release(dev);
-	spi_smartbond_dma_tx_channel_release(dev);
+		spi_smartbond_dma_rx_channel_release(dev);
+		spi_smartbond_dma_tx_channel_release(dev);
+	}
 }
 #endif
 
