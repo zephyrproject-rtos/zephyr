@@ -33,3 +33,14 @@ config XEN_INTERFACE_VERSION
 	help
 	  Xen interface version to use. This is the version of the
 	  interface that Zephyr will use to communicate with the hypervisor.
+
+config XEN_DOMCTL_INTERFACE_VERSION
+	hex "Xen Domctl interface version"
+	default 0x17
+	range 0x15 0x17
+	depends on XEN
+	help
+	  Xen Domctl interface version to use. This is the version of the
+	  domctl interface that Zephyr will use to communicate with
+	  the hypervisor. The default value is the latest version supported
+	  by the kernel.
