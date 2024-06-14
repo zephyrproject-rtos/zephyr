@@ -300,6 +300,18 @@ Drivers and Sensors
 
 * Crypto
 
+* Disk
+
+  * Support for eMMC devices was added to the STM32 SD driver. This can
+    be enabled with :kconfig:option:`CONFIG_SDMMC_STM32_EMMC`.
+  * Added a loopback disk driver, to expose a disk device backed by a file.
+    A file can be registered with the loopback disk driver using
+    :c:func:`loopback_disk_access_register`
+  * Added support for :c:macro:`DISK_IOCTL_CTRL_INIT` and
+    :c:macro:`DISK_IOCTL_CTRL_DEINIT` macros, which allow for initializing
+    and de-initializing a disk at runtime. This allows hotpluggable
+    disk devices (like SD cards) to be removed and reinserted at runtime.
+
 * Display
 
   * All in tree displays capable of supporting the :ref:`mipi_dbi_api` have
