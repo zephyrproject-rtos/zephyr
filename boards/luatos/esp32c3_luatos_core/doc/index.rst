@@ -54,7 +54,6 @@ Current Zephyr's ESP32C3_LUATOS_CORE board supports the following features:
 +------------+------------+-------------------------------------+
 | Interface  | Controller | Driver/Component                    |
 +============+============+=====================================+
-+------------+------------+-------------------------------------+
 | UART       | on-chip    | serial port                         |
 +------------+------------+-------------------------------------+
 | GPIO       | on-chip    | gpio                                |
