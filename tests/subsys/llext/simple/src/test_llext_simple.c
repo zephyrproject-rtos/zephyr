@@ -212,47 +212,55 @@ void load_call_unload(struct llext_test *test_case)
 		};								\
 		load_call_unload(&test_case);					\
 	}
-static LLEXT_CONST uint8_t hello_world_ext[] __aligned(4) = {
+
+/*
+ * ELF file should be aligned to at least sizeof(elf_word) to avoid issues. A
+ * larger value eases debugging, since it reduces the differences in addresses
+ * between similar runs.
+ */
+#define ELF_ALIGN __aligned(4096)
+
+static LLEXT_CONST uint8_t hello_world_ext[] ELF_ALIGN = {
 	#include "hello_world.inc"
 };
 LLEXT_LOAD_UNLOAD(hello_world, false, NULL)
 
-static LLEXT_CONST uint8_t logging_ext[] __aligned(4) = {
+static LLEXT_CONST uint8_t logging_ext[] ELF_ALIGN = {
 	#include "logging.inc"
 };
 LLEXT_LOAD_UNLOAD(logging, true, NULL)
 
-static LLEXT_CONST uint8_t relative_jump_ext[] __aligned(4) = {
+static LLEXT_CONST uint8_t relative_jump_ext[] ELF_ALIGN = {
 	#include "relative_jump.inc"
 };
 LLEXT_LOAD_UNLOAD(relative_jump, true, NULL)
 
-static LLEXT_CONST uint8_t object_ext[] __aligned(4) = {
+static LLEXT_CONST uint8_t object_ext[] ELF_ALIGN = {
 	#include "object.inc"
 };
 LLEXT_LOAD_UNLOAD(object, true, NULL)
 
 #ifndef CONFIG_LLEXT_TYPE_ELF_RELOCATABLE
-static LLEXT_CONST uint8_t syscalls_ext[] __aligned(4) = {
+static LLEXT_CONST uint8_t syscalls_ext[] ELF_ALIGN = {
 	#include "syscalls.inc"
 };
 LLEXT_LOAD_UNLOAD(syscalls, true, NULL)
 
-static LLEXT_CONST uint8_t threads_kernel_objects_ext[] __aligned(4) = {
+static LLEXT_CONST uint8_t threads_kernel_objects_ext[] ELF_ALIGN = {
 	#include "threads_kernel_objects.inc"
 };
 LLEXT_LOAD_UNLOAD(threads_kernel_objects, true, threads_objects_perm_setup)
 #endif
 
 #ifndef CONFIG_LLEXT_TYPE_ELF_OBJECT
-static LLEXT_CONST uint8_t multi_file_ext[] __aligned(4) = {
+static LLEXT_CONST uint8_t multi_file_ext[] ELF_ALIGN = {
 	#include "multi_file.inc"
 };
 LLEXT_LOAD_UNLOAD(multi_file, true, NULL)
 #endif
 
 #if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA)
-static LLEXT_CONST uint8_t pre_located_ext[] __aligned(4) = {
+static LLEXT_CONST uint8_t pre_located_ext[] ELF_ALIGN = {
 	#include "pre_located.inc"
 };
 
