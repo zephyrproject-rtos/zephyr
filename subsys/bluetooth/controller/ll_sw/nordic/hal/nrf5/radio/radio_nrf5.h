@@ -51,6 +51,7 @@
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 #include <hal/nrf_grtc.h>
+#include <hal/nrf_ppib.h>
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 #include <hal/nrf_rtc.h>
 #endif /* !CONFIG_BT_CTLR_NRF_GRTC */
