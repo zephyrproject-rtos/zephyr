@@ -699,12 +699,29 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 
 	uint16_t frag_len = MIN(conn_mtu(conn), len);
 
-	/* Check that buf->ref is 1 or 2. It would be 1 if this
-	 * was the only reference (e.g. buf was removed
-	 * from the conn tx_queue). It would be 2 if the
-	 * tx_data_pull kept it on the tx_queue for segmentation.
+	/* If ATT sent callback is delayed until data transmission
+	 * is done by BLE controller (CONFIG_BT_ATT_SENT_CB_AFTER_TX),
+	 * the `chan_send` function from `att.c` introduces an additional
+	 * reference. The reference is used to extend lifetime of the net
+	 * buffer until the data transmission is confirmed by ACK of the
+	 * remote (the reference is removed when the TX callback passed
+	 * to `bt_l2cap_send_pdu` is called).
+	 *
+	 * send_buf function can be called multiple times, if buffer
+	 * has to be fragmented over HCI. In that case, the callback
+	 * is provided as an argument only for the last transmitted
+	 * fragment. The `buf->ref == 1` (or 2) check is skipped
+	 * because it's impossible to properly validate number of
+	 * references for the sent fragments if buffers may have the
+	 * additional reference.
+	 *
+	 * Otherwise, check that buf->ref is 1 or 2. It would be 1
+	 * if this was the only reference (e.g. buf was removed from
+	 * the conn tx_queue). It would be 2 if the tx_data_pull
+	 * kept it on the tx_queue for segmentation.
 	 */
-	__ASSERT_NO_MSG((buf->ref == 1) || (buf->ref == 2));
+	__ASSERT_NO_MSG(IS_ENABLED(CONFIG_BT_ATT_SENT_CB_AFTER_TX) || (buf->ref == 1) ||
+			(buf->ref == 2));
 
 	/* The reference is always transferred to the frag, so when
 	 * the frag is destroyed, the parent reference is decremented.

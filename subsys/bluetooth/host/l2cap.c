@@ -778,13 +778,19 @@ int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 		return -ENOTCONN;
 	}
 
-	if (pdu->ref != 1) {
+	/* If ATT sent callback is delayed until data transmission is done by BLE controller
+	 * (CONFIG_BT_ATT_SENT_CB_AFTER_TX), the `chan_send` function from `att.c` introduces an
+	 * additional reference. The reference is used to extend lifetime of the net buffer until
+	 * the data transmission is confirmed by ACK of the remote (the reference is removed when
+	 * the TX callback passed to `bt_l2cap_send_pdu` is called).
+	 */
+	if (pdu->ref > 1 + (cb ? 1 : 0)) {
 		/* The host may alter the buf contents when fragmenting. Higher
 		 * layers cannot expect the buf contents to stay intact. Extra
 		 * refs suggests a silent data corruption would occur if not for
 		 * this error.
 		 */
-		LOG_ERR("Expecting 1 ref, got %d", pdu->ref);
+		LOG_ERR("Expecting up to %d refs, got %d", cb ? 2 : 1, pdu->ref);
 		return -EINVAL;
 	}
 
