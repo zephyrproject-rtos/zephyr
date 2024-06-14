@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # source sample's Kconfig, if any
-#   source "${ZEPHYR_BASE}/samples/bluetooth/central_hr/Kconfig"
+source "${ZEPHYR_BASE}/samples/bluetooth/central_hr/Kconfig"
 # OR
 # source Zephyr Kernel's Kconfig, as below (not both)
-menu "Zephyr Kernel"
-source "Kconfig.zephyr"
-endmenu
+# menu "Zephyr Kernel"
+# source "Kconfig.zephyr"
+# endmenu
