@@ -16,7 +16,7 @@
 
 static int do_domctl(xen_domctl_t *domctl)
 {
-	domctl->interface_version = XEN_DOMCTL_INTERFACE_VERSION;
+	domctl->interface_version = CONFIG_XEN_DOMCTL_INTERFACE_VERSION;
 	return HYPERVISOR_domctl(domctl);
 }
 
@@ -105,6 +105,7 @@ int xen_domctl_getdomaininfo(int domid, xen_domctl_getdomaininfo_t *dom_info)
 	return 0;
 }
 
+#if CONFIG_XEN_DOMCTL_INTERFACE_VERSION >= 0x00000016
 int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size)
 {
 	int rc;
@@ -133,6 +134,7 @@ int xen_domctl_set_paging_mempool_size(int domid, uint64_t size)
 
 	return do_domctl(&domctl);
 }
+#endif
 
 int xen_domctl_max_mem(int domid, uint64_t max_memkb)
 {
