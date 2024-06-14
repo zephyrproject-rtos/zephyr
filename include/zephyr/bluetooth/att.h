@@ -101,6 +101,22 @@ extern "C" {
 #define BT_ATT_LAST_ATTRIBUTE_HANDLE            0xffff
 #define BT_ATT_LAST_ATTTRIBUTE_HANDLE __DEPRECATED_MACRO BT_ATT_LAST_ATTRIBUTE_HANDLE
 
+/** Converts a ATT error to string.
+ *
+ * The error codes are described in the Bluetooth Core specification,
+ * Vol 3, Part F, Section 3.4.1.1 and in
+ * The Supplement to the Bluetooth Core Specification (CSS), v11,
+ * Part B, Section 1.2.
+ *
+ * The ATT and GATT documentation found in Vol 4, Part F and
+ * Part G describe when the different error codes are used.
+ *
+ * See also the defined BT_ATT_ERR_* macros.
+ *
+ * @return The string representation of the ATT error code.
+ */
+const char *bt_att_err_to_str(uint8_t att_err);
+
 #if defined(CONFIG_BT_EATT)
 #if defined(CONFIG_BT_TESTING)
 

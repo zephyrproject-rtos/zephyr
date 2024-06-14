@@ -185,6 +185,61 @@ static struct bt_att_tx_meta_data tx_meta_data_storage[CONFIG_BT_ATT_TX_COUNT];
 struct bt_att_tx_meta_data *bt_att_get_tx_meta_data(const struct net_buf *buf);
 static void att_on_sent_cb(struct bt_att_tx_meta_data *meta);
 
+
+const char *bt_att_err_to_str(uint8_t att_err)
+{
+	/* To mapping tables are used to avoid a big gap with NULL-entries. */
+	#define ATT_ERR(err) [err] = #err
+	#define ATT_ERR_SECOND(err) [err - BT_ATT_ERR_WRITE_REQ_REJECTED] = #err
+
+	const char * const first_mapping_table[] = {
+		ATT_ERR(BT_ATT_ERR_SUCCESS),
+		ATT_ERR(BT_ATT_ERR_INVALID_HANDLE),
+		ATT_ERR(BT_ATT_ERR_READ_NOT_PERMITTED),
+		ATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED),
+		ATT_ERR(BT_ATT_ERR_INVALID_PDU),
+		ATT_ERR(BT_ATT_ERR_AUTHENTICATION),
+		ATT_ERR(BT_ATT_ERR_NOT_SUPPORTED),
+		ATT_ERR(BT_ATT_ERR_INVALID_OFFSET),
+		ATT_ERR(BT_ATT_ERR_AUTHORIZATION),
+		ATT_ERR(BT_ATT_ERR_PREPARE_QUEUE_FULL),
+		ATT_ERR(BT_ATT_ERR_ATTRIBUTE_NOT_FOUND),
+		ATT_ERR(BT_ATT_ERR_ATTRIBUTE_NOT_LONG),
+		ATT_ERR(BT_ATT_ERR_ENCRYPTION_KEY_SIZE),
+		ATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN),
+		ATT_ERR(BT_ATT_ERR_UNLIKELY),
+		ATT_ERR(BT_ATT_ERR_INSUFFICIENT_ENCRYPTION),
+		ATT_ERR(BT_ATT_ERR_UNSUPPORTED_GROUP_TYPE),
+		ATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES),
+		ATT_ERR(BT_ATT_ERR_DB_OUT_OF_SYNC),
+		ATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED),
+	};
+
+	const char * const second_mapping_table[] = {
+		ATT_ERR_SECOND(BT_ATT_ERR_WRITE_REQ_REJECTED),
+		ATT_ERR_SECOND(BT_ATT_ERR_CCC_IMPROPER_CONF),
+		ATT_ERR_SECOND(BT_ATT_ERR_PROCEDURE_IN_PROGRESS),
+		ATT_ERR_SECOND(BT_ATT_ERR_OUT_OF_RANGE),
+	};
+
+
+	if (att_err < ARRAY_SIZE(first_mapping_table) && first_mapping_table[att_err]) {
+		return first_mapping_table[att_err];
+	} else if (att_err >= BT_ATT_ERR_WRITE_REQ_REJECTED) {
+		const uint8_t second_index = att_err - BT_ATT_ERR_WRITE_REQ_REJECTED;
+
+		if (second_index < ARRAY_SIZE(second_mapping_table) &&
+		    second_mapping_table[second_index]) {
+			return second_mapping_table[second_index];
+		}
+	}
+
+	return "(unknown)";
+
+	#undef ATT_ERR
+	#undef ATT_ERR_SECOND
+}
+
 static void att_tx_destroy(struct net_buf *buf)
 {
 	struct bt_att_tx_meta_data *p_meta = bt_att_get_tx_meta_data(buf);
