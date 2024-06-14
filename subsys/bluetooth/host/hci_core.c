@@ -116,6 +116,9 @@ struct cmd_data {
 
 	/** Used by bt_hci_cmd_send_sync. */
 	struct k_sem *sync;
+
+	/** Response buffer. */
+	struct net_buf *rsp;
 };
 
 static struct cmd_data cmd_data[CONFIG_BT_BUF_CMD_TX_COUNT];
@@ -302,6 +305,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	cmd(buf)->opcode = opcode;
 	cmd(buf)->sync = NULL;
 	cmd(buf)->state = NULL;
+	cmd(buf)->rsp = NULL;
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->opcode = sys_cpu_to_le16(opcode);
@@ -423,13 +427,15 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		}
 	}
 
-	LOG_DBG("rsp %p opcode 0x%04x len %u", buf, opcode, buf->len);
+	LOG_DBG("rsp %p opcode 0x%04x len %u", cmd(buf)->rsp, opcode, cmd(buf)->rsp->len);
 
 	if (rsp) {
-		*rsp = buf;
+		*rsp = cmd(buf)->rsp;
 	} else {
-		net_buf_unref(buf);
+		net_buf_unref(cmd(buf)->rsp);
 	}
+
+	net_buf_unref(buf);
 
 	return 0;
 }
@@ -2435,16 +2441,6 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 		goto exit;
 	}
 
-	/* Response data is to be delivered in the original command
-	 * buffer.
-	 */
-	if (evt_buf != buf) {
-		net_buf_reset(buf);
-		bt_buf_set_type(buf, BT_BUF_EVT);
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		net_buf_add_mem(buf, evt_buf->data, evt_buf->len);
-	}
-
 	if (cmd(buf)->state && !status) {
 		struct bt_hci_cmd_state_set *update = cmd(buf)->state;
 
@@ -2457,6 +2453,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 		LOG_DBG("sync cmd released");
 		cmd(buf)->status = status;
 		cmd(buf)->sync = NULL;
+		cmd(buf)->rsp = net_buf_ref(evt_buf);
 		k_sem_give(sync);
 	}
 
