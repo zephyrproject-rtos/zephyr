@@ -102,6 +102,49 @@ ZTEST(file_locking, test_file_locking)
 	z_free_fd(POINTER_TO_INT(file));
 }
 
+void put_thread(void *p1, void *p2, void *p3)
+{
+	FILE *file = p1;
+
+	/* Lock held in main thread */
+	zassert_not_ok(ftrylockfile(file));
+
+	/* Wait for the lock */
+	flockfile(file);
+	zassert_equal(putc_unlocked('S', file), 'S');
+	zassert_equal(putchar('T'), 'T');
+	funlockfile(file);
+}
+
+ZTEST(file_locking, test_stdio)
+{
+	FILE *file = INT_TO_POINTER(z_alloc_fd(NULL, NULL));
+	struct k_thread test_thread;
+	int priority = k_thread_priority_get(k_current_get());
+
+	/* Lock the file before creating the test thread */
+	flockfile(file);
+
+	k_thread_create(&test_thread, test_stack, K_THREAD_STACK_SIZEOF(test_stack),
+			put_thread, file, INT_TO_POINTER(true), NULL, priority, 0,
+			K_NO_WAIT);
+
+	/* Allow the test thread to run */
+	k_msleep(100);
+	/* The test thread should be waiting for the lock */
+	zassert_equal(k_thread_join(&test_thread, K_MSEC(10)), -EAGAIN);
+
+	/* Main thread has the lock, either version should work */
+	zassert_equal(putc('T', file), 'T');
+	zassert_equal(putchar_unlocked('E'), 'E');
+
+	/* We are done with the file here, unlock it so that test thread can run */
+	funlockfile(file);
+	zassert_equal(k_thread_join(&test_thread, K_MSEC(100)), 0);
+
+	z_free_fd(POINTER_TO_INT(file));
+}
+
 #else
 /**
  * PicoLIBC doesn't support these functions in its header

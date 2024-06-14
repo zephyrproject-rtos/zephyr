@@ -569,8 +569,8 @@ This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
     funlockfile(), yes
     getc_unlocked(),
     getchar_unlocked(),
-    putc_unlocked(),
-    putchar_unlocked(),
+    putc_unlocked(), yes
+    putchar_unlocked(), yes
 
 .. _posix_option_group_memory_protection:
 

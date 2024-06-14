@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 
+#include <zephyr/sys/libc-hooks.h>
 #include <zephyr/sys/util.h>
 
 void zvfs_flockfile(int fd);
