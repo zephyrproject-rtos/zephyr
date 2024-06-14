@@ -327,6 +327,13 @@ static void att_disconnect(struct bt_att_chan *chan)
 	}
 }
 
+static void chan_sent_cb(struct bt_conn *conn, void *user_data, int err)
+{
+	struct net_buf *nb = user_data;
+
+	net_buf_unref(nb);
+}
+
 /* In case of success the ownership of the buffer is transferred to the stack
  * which takes care of releasing it when it completes transmitting to the
  * controller.
@@ -420,7 +427,15 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 
 	data->att_chan = chan;
 
-	err = bt_l2cap_send_pdu(&chan->chan, buf, NULL, NULL);
+	if (IS_ENABLED(CONFIG_BT_ATT_SENT_CB_AFTER_TX)) {
+		err = bt_l2cap_send_pdu(&chan->chan, buf, chan_sent_cb, net_buf_ref(buf));
+		if (err) {
+			net_buf_unref(buf);
+		}
+	} else {
+		err = bt_l2cap_send_pdu(&chan->chan, buf, NULL, NULL);
+	}
+
 	if (err) {
 		if (err == -ENOBUFS) {
 			LOG_ERR("Ran out of TX buffers or contexts.");
