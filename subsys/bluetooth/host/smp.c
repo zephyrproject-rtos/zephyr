@@ -1258,8 +1258,8 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 	smp->local_dist &= rsp->init_key_dist;
 	smp->remote_dist &= rsp->resp_key_dist;
 
-	smp->local_dist &= SEND_KEYS_SC;
-	smp->remote_dist &= RECV_KEYS_SC;
+	smp->local_dist &= BR_SEND_KEYS_SC;
+	smp->remote_dist &= BR_RECV_KEYS_SC;
 
 	/* Peripheral distributes its keys first */
 
