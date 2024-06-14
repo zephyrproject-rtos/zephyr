@@ -23,13 +23,6 @@ typedef void (*mtk_adsp_mbox_handler_t)(const struct device *mbox, void *arg);
 void mtk_adsp_mbox_set_handler(const struct device *mbox, uint32_t chan,
 			       mtk_adsp_mbox_handler_t handler, void *arg);
 
-/* Mailbox hardware has an array of unstructured "message" data in
- * each direction.  Any value can be placed in the registers.
- */
-#define MTK_ADSP_MBOX_MSG_WORDS 5
-void mtk_adsp_mbox_set_msg(const struct device *mbox, uint32_t idx, uint32_t val);
-uint32_t mtk_adsp_mbox_get_msg(const struct device *mbox, uint32_t idx);
-
 /* Signal an interrupt on the specified channel for the other side */
 void mtk_adsp_mbox_signal(const struct device *mbox, uint32_t chan);
 

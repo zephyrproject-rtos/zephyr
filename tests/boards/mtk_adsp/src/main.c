@@ -69,10 +69,7 @@ static void mbox_fn(const struct device *mbox, void *arg)
 /* Test in/out interrupts from the host.  This relies on a SOF driver
  * on the host, which has the behavior of "replying" with an interrupt
  * on mbox1 after receiving a "command" on mbox0 (you can also see it
- * whine about the invalid IPC message in the kernel logs).  SOF
- * ignores the message bytes (it uses a DRAM area instead), so we just
- * write them blindly.  It's only a partial test of the hardware, but
- * easy to run and exercises the core functionality.
+ * whine about the invalid IPC message in the kernel logs).
  *
  * Note that there's a catch: SOF's "reply" comes after a timeout
  * (it's an invalid command, afterall) which is 165 seconds!  But the
@@ -81,10 +78,6 @@ static void mbox_fn(const struct device *mbox, void *arg)
 ZTEST(mtk_adsp, mbox)
 {
 	mtk_adsp_mbox_set_handler(MBOX1, 1, mbox_fn, NULL);
-
-	for (int i = 0; i < MTK_ADSP_MBOX_MSG_WORDS; i++) {
-		mtk_adsp_mbox_set_msg(MBOX0, i, 0x01010100 | i);
-	}
 
 	/* First signal the host with a reply on the second channel,
 	 * that effects a reply to anything it thinks it might have
