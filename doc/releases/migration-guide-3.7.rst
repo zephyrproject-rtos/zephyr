@@ -523,6 +523,11 @@ Display
         };
     };
 
+* The ``orientation-flipped`` property has been removed from the SSD16XX
+  display driver, as the driver now supports display rotation. Users should
+  drop this property from their devicetree, and set orientation at runtime
+  via :c:func:`display_set_orientation` (:github:`73360`)
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
