@@ -286,6 +286,13 @@ static int clock_control_ra_init(const struct device *dev)
 		}
 	}
 
+	SYSTEM_write8(OPCCR_OFFSET, 0);
+	while ((SYSTEM_read8(OPCCR_OFFSET) & BIT(OPCCR_OPCMTSF_POS)) != 0) {
+		;
+	}
+
+	SYSTEM_write8(MEMWAIT_OFFSET, 1);
+
 	SYSTEM_write32(SCKDIVCR_OFFSET, SCKDIVCR_INIT_VALUE);
 	SYSTEM_write8(SCKSCR_OFFSET, SCKSCR_INIT_VALUE);
 
@@ -293,12 +300,6 @@ static int clock_control_ra_init(const struct device *dev)
 	sysclk = SYSTEM_read8(SCKSCR_OFFSET);
 	z_clock_hw_cycles_per_sec = clock_freqs[sysclk];
 
-	SYSTEM_write8(OPCCR_OFFSET, 0);
-	while ((SYSTEM_read8(OPCCR_OFFSET) & BIT(OPCCR_OPCMTSF_POS)) != 0) {
-		;
-	}
-
-	SYSTEM_write8(MEMWAIT_OFFSET, 1);
 	SYSTEM_write16(PRCR_OFFSET, PRCR_KEY);
 
 	return 0;
