@@ -65,25 +65,6 @@ void mtk_adsp_mbox_set_handler(const struct device *mbox, uint32_t chan,
 	}
 }
 
-void mtk_adsp_mbox_set_msg(const struct device *mbox, uint32_t idx, uint32_t val)
-{
-	const struct mbox_cfg *cfg = ((struct device *)mbox)->config;
-
-	if (idx < MTK_ADSP_MBOX_MSG_WORDS) {
-		cfg->mbox->out_msg[idx] = val;
-	}
-}
-
-uint32_t mtk_adsp_mbox_get_msg(const struct device *mbox, uint32_t idx)
-{
-	const struct mbox_cfg *cfg = ((struct device *)mbox)->config;
-
-	if (idx < MTK_ADSP_MBOX_MSG_WORDS) {
-		return cfg->mbox->in_msg[idx];
-	}
-	return 0;
-}
-
 void mtk_adsp_mbox_signal(const struct device *mbox, uint32_t chan)
 {
 	const struct mbox_cfg *cfg = ((struct device *)mbox)->config;
