@@ -1065,7 +1065,7 @@
 #elif defined(NRF9230_ENGB_XXAA) && defined(NRF_PPR)
     #include <nrfx_config_nrf9230_engb_ppr.h>
 #else
-    #error "Unknown device."
+    #include <nrfx_config_ext.h>
 #endif
 
 #endif // NRFX_CONFIG_H__
