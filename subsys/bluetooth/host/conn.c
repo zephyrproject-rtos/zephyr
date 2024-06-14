@@ -706,7 +706,13 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 
 	uint16_t frag_len = MIN(conn_mtu(conn), len);
 
-	__ASSERT_NO_MSG(buf->ref == 1);
+	if (buf->ref > 1 + (cb ? 1 : 0)) {
+		/* Allow for an additional buffer reference if callback is provided.
+		 * This can be used to extend lifetime of the net buffer until the
+		 * data transmission is confirmed by ACK of the remote.
+		 */
+		__ASSERT_NO_MSG(false);
+	}
 
 	if (buf->len > frag_len) {
 		LOG_DBG("keep %p around", buf);
