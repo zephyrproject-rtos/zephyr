@@ -70,6 +70,9 @@
 /* This has to come before the ppi/dppi includes below. */
 #include "radio_nrf5_fem.h"
 
+/* Include RTC/GRTC Compare Index used to Trigger Radio TXEN/RXEN */
+#include "hal/cntr.h"
+
 #if defined(PPI_PRESENT)
 #include <hal/nrf_ppi.h>
 #include "radio_nrf5_ppi_resources.h"
