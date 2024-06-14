@@ -193,3 +193,31 @@ enumerating the device. The application can disable the USB device using
    :dedent:
    :start-after: doc device enable start
    :end-before: doc device enable end
+
+USB Message notifications
+=========================
+
+The application can register a callback using :c:func:`usbd_msg_register_cb` to
+receive message notification from the USB device support subsystem. The
+messages are mostly about the common device state changes, and a few specific
+types from the USB CDC ACM implementation.
+
+.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
+   :language: c
+   :dedent:
+   :start-after: doc device init-and-msg start
+   :end-before: doc device init-and-msg end
+
+The helper function :c:func:`usbd_msg_type_string()` can be used to convert
+:c:enumerator:`usbd_msg_type` to a human readable form for logging.
+
+If the controller supports VBUS state change detection, the battery-powered
+application may want to enable the USB device only when it is connected to a
+host. A generic application should use :c:func:`usbd_can_detect_vbus` to check
+for this capability.
+
+.. literalinclude:: ../../../../samples/subsys/usb/hid-keyboard/src/main.c
+   :language: c
+   :dedent:
+   :start-after: doc device msg-cb start
+   :end-before: doc device msg-cb end
