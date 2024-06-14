@@ -36,12 +36,19 @@ static inline bool in_irq_stack_bound(uintptr_t addr, uint8_t cpu_id)
 
 static inline bool in_kernel_thread_stack_bound(uintptr_t addr, const struct k_thread *const thread)
 {
+#ifdef CONFIG_THREAD_STACK_INFO
 	uintptr_t start, end;
 
 	start = thread->stack_info.start;
 	end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
 
 	return (addr >= start) && (addr < end);
+#else
+	ARG_UNUSED(addr);
+	ARG_UNUSED(thread);
+	/* Return false as we can't check if the addr is in the thread stack without stack info */
+	return false;
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
