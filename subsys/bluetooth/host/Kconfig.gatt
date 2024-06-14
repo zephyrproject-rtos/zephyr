@@ -32,6 +32,7 @@ config BT_ATT_RETRY_ON_SEC_ERR
 
 config BT_ATT_SENT_CB_AFTER_TX
 	bool "Delay ATT sent callback until data transmission is done by BLE controller"
+	default y
 	help
 	  By default, the BLE stack calls sent callback for ATT data when the
 	  data is passed to BLE controller for transmission. Enabling this
