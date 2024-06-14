@@ -118,7 +118,7 @@ struct cmd_data {
 	struct k_sem *sync;
 
 	/** Response buffer. */
-	struct net_buf *rsp;
+	struct net_buf **rsp;
 };
 
 static struct cmd_data cmd_data[CONFIG_BT_BUF_CMD_TX_COUNT];
@@ -369,6 +369,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	 */
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
+	cmd(buf)->rsp  = rsp;
 
 	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
 	bt_tx_irq_raise();
@@ -427,13 +428,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		}
 	}
 
-	LOG_DBG("rsp %p opcode 0x%04x len %u", cmd(buf)->rsp, opcode, cmd(buf)->rsp->len);
-
-	if (rsp) {
-		*rsp = cmd(buf)->rsp;
-	} else {
-		net_buf_unref(cmd(buf)->rsp);
-	}
+	LOG_DBG("opcode 0x%04x completed", opcode);
 
 	net_buf_unref(buf);
 
@@ -2410,13 +2405,13 @@ static void hci_reset_complete(struct net_buf *buf)
 	atomic_set(bt_dev.flags, flags);
 }
 
-static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_buf)
+static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 {
 	/* Original command buffer. */
-	struct net_buf *buf = NULL;
+	struct net_buf *sent_cmd = NULL;
 	struct k_sem *sync;
 
-	LOG_DBG("opcode 0x%04x status 0x%02x buf %p", opcode, status, evt_buf);
+	LOG_DBG("opcode 0x%04x status 0x%02x rsp %p", opcode, status, buf);
 
 	/* Unsolicited cmd complete. This does not complete a command.
 	 * The controller can send these for effect of the `ncmd` field.
@@ -2426,40 +2421,45 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	}
 
 	/* Take the original command buffer reference. */
-	buf = atomic_ptr_clear((atomic_ptr_t *)&bt_dev.sent_cmd);
+	sent_cmd = atomic_ptr_clear((atomic_ptr_t *)&bt_dev.sent_cmd);
 
-	if (!buf) {
+	if (!sent_cmd) {
 		LOG_ERR("No command sent for cmd complete 0x%04x", opcode);
 		goto exit;
 	}
 
-	if (cmd(buf)->opcode != opcode) {
+	if (cmd(sent_cmd)->opcode != opcode) {
 		LOG_ERR("OpCode 0x%04x completed instead of expected 0x%04x", opcode,
-			cmd(buf)->opcode);
-		buf = atomic_ptr_set((atomic_ptr_t *)&bt_dev.sent_cmd, buf);
-		__ASSERT_NO_MSG(!buf);
+			cmd(sent_cmd)->opcode);
+		sent_cmd = atomic_ptr_set((atomic_ptr_t *)&bt_dev.sent_cmd, sent_cmd);
+		__ASSERT_NO_MSG(!sent_cmd);
 		goto exit;
 	}
 
-	if (cmd(buf)->state && !status) {
-		struct bt_hci_cmd_state_set *update = cmd(buf)->state;
+	if (cmd(sent_cmd)->state && !status) {
+		struct bt_hci_cmd_state_set *update = cmd(sent_cmd)->state;
 
 		atomic_set_bit_to(update->target, update->bit, update->val);
 	}
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
-	sync = cmd(buf)->sync;
+	sync = cmd(sent_cmd)->sync;
 	if (sync) {
 		LOG_DBG("sync cmd released");
-		cmd(buf)->status = status;
-		cmd(buf)->sync = NULL;
-		cmd(buf)->rsp = net_buf_ref(evt_buf);
+		cmd(sent_cmd)->status = status;
+
+		/* If status is success and rsp not NULL */
+		if (!status && cmd(sent_cmd)->rsp) {
+			*(cmd(sent_cmd)->rsp) = net_buf_ref(buf);
+		}
+
+		cmd(sent_cmd)->sync = NULL;
 		k_sem_give(sync);
 	}
 
 exit:
-	if (buf) {
-		net_buf_unref(buf);
+	if (sent_cmd) {
+		net_buf_unref(sent_cmd);
 	}
 }
 
