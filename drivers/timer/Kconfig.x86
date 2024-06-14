@@ -54,7 +54,6 @@ config APIC_TSC_DEADLINE_TIMER
 config APIC_TIMER_TSC
 	bool "Local APIC timer using TSC time source"
 	depends on !SMP
-	depends on DYNAMIC_INTERRUPTS
 	select LOAPIC
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
