@@ -419,6 +419,9 @@ Drivers and Sensors
 
 * SDHC
 
+  * Added ESP32 SDHC driver (:dtcompatible:`espressif,esp32-sdhc`).
+  * Added SDHC driver for Renesas MMC controller (:dtcompatible:`renesas,rcar-mmc`).
+
 * Sensor
 
   * Added TMP114 driver
