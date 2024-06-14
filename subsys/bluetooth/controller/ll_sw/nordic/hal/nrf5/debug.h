@@ -7,9 +7,7 @@
 
 #if defined(CONFIG_BT_CTLR_DEBUG_PINS) || \
 	defined(CONFIG_BT_CTLR_DEBUG_PINS_CPUAPP)
-#if defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP) || \
-	defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP_NS) || \
-	defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUNET)
+#if defined(CONFIG_BOARD_NRF5340DK)
 #define DEBUG_PORT       NRF_P1
 #define DEBUG_PIN_IDX0   0
 #define DEBUG_PIN_IDX1   1
@@ -47,9 +45,9 @@
 		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX8, NRF_GPIO_PIN_SEL_NETWORK); \
 		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX9, NRF_GPIO_PIN_SEL_NETWORK); \
 	} while (0)
+#else
 #endif /* CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP */
-#elif defined(CONFIG_BOARD_NRF52840DK_NRF52840) || \
-	defined(CONFIG_BOARD_NRF52833DK_NRF52833)
+#elif defined(CONFIG_BOARD_NRF52840DK) || defined(CONFIG_BOARD_NRF52833DK)
 #define DEBUG_PORT       NRF_P1
 #define DEBUG_PIN0       BIT(1)
 #define DEBUG_PIN1       BIT(2)
@@ -61,8 +59,7 @@
 #define DEBUG_PIN7       BIT(8)
 #define DEBUG_PIN8       BIT(10)
 #define DEBUG_PIN9       BIT(11)
-#elif defined(CONFIG_BOARD_NRF52DK_NRF52832) || \
-	defined(CONFIG_BOARD_NRF52DK_NRF52810)
+#elif defined(CONFIG_BOARD_NRF52DK)
 #define DEBUG_PORT       NRF_GPIO
 #define DEBUG_PIN0       BIT(11)
 #define DEBUG_PIN1       BIT(12)
@@ -74,7 +71,7 @@
 #define DEBUG_PIN7       BIT(18)
 #define DEBUG_PIN8       BIT(19)
 #define DEBUG_PIN9       BIT(20)
-#elif defined(CONFIG_BOARD_NRF51DK_NRF51822)
+#elif defined(CONFIG_BOARD_NRF51DK)
 #define DEBUG_PORT       NRF_GPIO
 #define DEBUG_PIN0       BIT(12)
 #define DEBUG_PIN1       BIT(13)
