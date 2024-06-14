@@ -67,6 +67,12 @@
 	pinctrl-names = "default";
 };
 
+&lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&lpi2c0_default>;
+	pinctrl-names = "default";
+};
+
 &gpiod {
 	status = "okay";
 };
