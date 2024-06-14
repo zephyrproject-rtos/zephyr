@@ -783,10 +783,10 @@ DFU:
 
 Devicetree:
   status: maintained
-  maintainers:
-    - galak
+  maintainers: []
   collaborators:
     - decsny
+    - galak
   files:
     - scripts/dts/
     - dts/common/
@@ -804,10 +804,10 @@ Devicetree:
 
 Devicetree Bindings:
   status: maintained
-  maintainers:
-    - galak
+  maintainers: []
   collaborators:
     - decsny
+    - galak
   files:
     - dts/bindings/
     - include/zephyr/dt-bindings/
@@ -1594,9 +1594,9 @@ Release Notes:
 "Drivers: LED Strip":
   status: maintained
   maintainers:
-    - mbolivar-ampere
     - simonguinot
   collaborators:
+    - mbolivar-ampere
     - soburi
     - thedjnK
   files:
@@ -4092,9 +4092,9 @@ VFS:
 
 West:
   status: maintained
-  maintainers:
-    - mbolivar-ampere
+  maintainers: []
   collaborators:
+    - mbolivar-ampere
     - carlescufi
     - swinslow
   files:
