@@ -145,6 +145,24 @@ config SOC_NRF53_CPUNET_MGMT
 	help
 	  hidden option for including the nRF53 network CPU management
 
+config SOC_NRF53_CPUNET_ENABLE
+	bool "NRF53 Network MCU is enabled at boot time"
+	depends on !BT
+	default y if NRF_802154_SER_HOST
+	select SOC_NRF53_CPUNET_MGMT
+	select SOC_NRF_GPIO_FORWARDER_FOR_NRF5340 if \
+		$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIO_FORWARDER))
+	help
+	  This option enables releasing the Network 'force off' signal, which
+	  as a consequence will power up the Network MCU during system boot.
+	  Additionally, the option allocates GPIO pins that will be used by UARTE
+	  of the Network MCU.
+	  Note: GPIO pin allocation can only be configured by the secure Application
+	  MCU firmware, so when this option is used with the non-secure version of
+	  the board, the application needs to take into consideration, that the
+	  secure firmware image must already have configured GPIO allocation for the
+	  Network MCU.
+
 if !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
 
 config SOC_ENABLE_LFXO
