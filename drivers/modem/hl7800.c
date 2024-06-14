@@ -526,6 +526,9 @@ struct hl7800_iface_ctx {
 	void (*wake_up_callback)(int state);
 	void (*gpio6_callback)(int state);
 	void (*cts_callback)(int state);
+	bool user_at_cmd;
+	char *user_at_cmd_resp_buf;
+	uint16_t user_at_cmd_resp_buf_len;
 
 #ifdef CONFIG_MODEM_HL7800_GPS
 	struct k_work_delayable gps_work;
@@ -1082,7 +1085,8 @@ static int wakeup_hl7800(void)
 	return 0;
 }
 
-int32_t mdm_hl7800_send_at_cmd(const uint8_t *data)
+int32_t mdm_hl7800_send_at_cmd(const uint8_t *data, uint8_t resp_timeout, char *resp,
+			       uint16_t *resp_len)
 {
 	int ret;
 
@@ -1093,7 +1097,21 @@ int32_t mdm_hl7800_send_at_cmd(const uint8_t *data)
 	hl7800_lock();
 	wakeup_hl7800();
 	iface_ctx.last_socket_id = 0;
-	ret = send_at_cmd(NULL, data, MDM_CMD_SEND_TIMEOUT, 0, false);
+	iface_ctx.user_at_cmd = true;
+	iface_ctx.user_at_cmd_resp_buf = resp;
+	if (resp_len) {
+		iface_ctx.user_at_cmd_resp_buf_len = *resp_len;
+	} else {
+		iface_ctx.user_at_cmd_resp_buf_len = 0;
+	}
+	if (iface_ctx.user_at_cmd_resp_buf) {
+		iface_ctx.user_at_cmd_resp_buf[0] = '\0';
+	}
+	ret = send_at_cmd(NULL, data, K_SECONDS(resp_timeout), 0, false);
+	iface_ctx.user_at_cmd = false;
+	if (resp_len && iface_ctx.user_at_cmd_resp_buf) {
+		*resp_len = strlen(iface_ctx.user_at_cmd_resp_buf);
+	}
 	set_busy(false);
 	allow_sleep(true);
 	hl7800_unlock();
@@ -3862,9 +3880,9 @@ static bool on_cmd_sockerror(struct net_buf **buf, uint16_t len)
 		LOG_ERR("'%s'", string);
 	}
 
+	iface_ctx.last_error = -EIO;
 	sock = socket_from_id(iface_ctx.last_socket_id);
 	if (!sock) {
-		iface_ctx.last_error = -EIO;
 		k_sem_give(&iface_ctx.response_sem);
 	} else {
 		sock->error = -EIO;
@@ -3883,12 +3901,11 @@ static bool on_cmd_sock_error_code(struct net_buf **buf, uint16_t len)
 
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
 	value[out_len] = 0;
-
+	iface_ctx.last_error = strtol(value, NULL, 10);
 	LOG_ERR("Error code: %s", value);
 
 	sock = socket_from_id(iface_ctx.last_socket_id);
 	if (!sock) {
-		iface_ctx.last_error = -EIO;
 		k_sem_give(&iface_ctx.response_sem);
 	} else {
 		sock->error = -EIO;
@@ -4620,7 +4637,8 @@ static void hl7800_rx(void *p1, void *p2, void *p3)
 	struct net_buf *rx_buf = NULL;
 	struct net_buf *frag = NULL;
 	int i, cmp_res;
-	uint16_t len;
+	uint16_t len, resp_offset;
+	int16_t resp_max_len;
 	size_t out_len;
 	bool cmd_handled = false;
 	static char rx_msg[MDM_HANDLER_MATCH_MAX_LEN];
@@ -4806,6 +4824,30 @@ static void hl7800_rx(void *p1, void *p2, void *p3)
 					 */
 					len = net_buf_findcrlf(rx_buf, &frag);
 					break;
+				}
+			}
+
+			if (iface_ctx.user_at_cmd && iface_ctx.user_at_cmd_resp_buf &&
+			    iface_ctx.user_at_cmd_resp_buf_len > 0 && frag && len > 1) {
+				/* Get the current length of the response. Multi-line responses will
+				 * be appended.
+				 */
+				resp_offset = strlen(iface_ctx.user_at_cmd_resp_buf);
+				/* Make sure we have room for the new data and '\n\0' */
+				resp_max_len = iface_ctx.user_at_cmd_resp_buf_len - resp_offset - 2;
+				if (resp_max_len < 0) {
+					resp_max_len = 0;
+				}
+				if (resp_max_len > 0) {
+					out_len = net_buf_linearize(iface_ctx.user_at_cmd_resp_buf +
+									    resp_offset,
+								    resp_max_len, rx_buf, 0, len);
+					/* Add '\n\0' to terminate the response */
+					memcpy(iface_ctx.user_at_cmd_resp_buf + resp_offset +
+						       out_len,
+					       "\n\0", 2);
+				} else {
+					LOG_WRN("User AT cmd resp buf full");
 				}
 			}
 
