@@ -302,6 +302,27 @@ Drivers and Sensors
 
 * Display
 
+  * All in tree displays capable of supporting the :ref:`mipi_dbi_api` have
+    been converted to use it. GC9X01X, UC81XX, SSD16XX, ST7789V, ST7735R based
+    displays have been converted to this API. Boards using these displays will
+    need their devicetree updated, see the display section of
+    :ref:`migration_3.7` for examples of this process.
+  * Added driver for ST7796S display controller (:dtcompatible:`sitronix,st7796s`)
+  * Added support for :c:func:`display_read` API to ILI9XXX display driver,
+    which can be enabled with :kconfig:option:`CONFIG_ILI9XXX_READ`
+  * Added support for :c:func:`display_set_orientation` API to SSD16XXX
+    display driver
+  * Added driver for NT35510 MIPI-DSI display controller
+    (:dtcompatible:`frida,nt35510`)
+  * Added driver to abstract LED strip devices as displays
+    (:dtcompatible:`led-strip-matrix`)
+  * Added support for :c:func:`display_set_pixel_format` API to NXP eLCDIF
+    driver. ARGB8888, RGB888, and BGR565 formats are supported.
+  * Added support for inverting color at runtime to the SSD1306 driver, via
+    the :c:func:`display_set_pixel_format` API.
+  * Inversion mode can now be disabled in the ST7789V driver
+    (:dtcompatible:`sitronix,st7789v`) using the ``inversion-off`` property.
+
 * DMA
 
 * Entropy
