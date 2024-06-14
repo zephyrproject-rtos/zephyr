@@ -37,6 +37,10 @@
  * wire the RTC0 EVENTS_COMPARE[2] event to EVENT_TIMER  TASKS_START task.
  */
 #define HAL_EVENT_TIMER_START_PPI 7
+#define HAL_PPIB_SEND_EVENT_TIMER_START_PPI \
+	_CONCAT(NRF_PPIB_TASK_SEND_, HAL_EVENT_TIMER_START_PPI)
+#define HAL_PPIB_RECEIVE_EVENT_TIMER_START_PPI \
+	_CONCAT(NRF_PPIB_EVENT_RECEIVE_, HAL_EVENT_TIMER_START_PPI)
 
 /*******************************************************************************
  * Capture event timer on Radio ready:
