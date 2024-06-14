@@ -274,3 +274,24 @@ ZTEST(test_gatt, test_gatt_write)
 	zassert_mem_equal(value, test_value, ret,
 			  "Attribute write value don't match");
 }
+
+ZTEST(test_gatt, test_bt_att_err_to_str)
+{
+	/* Test a couple of entries */
+	zassert_str_equal(bt_att_err_to_str(BT_ATT_ERR_SUCCESS),
+			  "BT_ATT_ERR_SUCCESS");
+	zassert_str_equal(bt_att_err_to_str(BT_ATT_ERR_INSUFFICIENT_ENCRYPTION),
+			  "BT_ATT_ERR_INSUFFICIENT_ENCRYPTION");
+	zassert_str_equal(bt_att_err_to_str(BT_ATT_ERR_OUT_OF_RANGE),
+			  "BT_ATT_ERR_OUT_OF_RANGE");
+
+	/* Test a entries that is not used */
+	zassert_mem_equal(bt_att_err_to_str(0x14),
+			  "(unknown)", strlen("(unknown)"));
+	zassert_mem_equal(bt_att_err_to_str(0xFB),
+			  "(unknown)", strlen("(unknown)"));
+
+	for (uint16_t i = 0; i <= UINT8_MAX; i++) {
+		zassert_not_null(bt_att_err_to_str(i), ": %d", i);
+	}
+}
