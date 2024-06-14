@@ -14,8 +14,8 @@ void pm_resume_devices(void);
 
 #else
 
-bool pm_resume_devices(void) { return true; }
-void pm_suspend_devices(void) {}
+bool pm_suspend_devices(void) { return true; }
+void pm_resume_devices(void) {}
 
 #endif /* CONFIG_PM_DEVICE_SYSTEM_MANAGED */
 
