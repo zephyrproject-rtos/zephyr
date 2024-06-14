@@ -34,7 +34,6 @@ void cntr_init(void)
 			  GRTC_MODE_SYSCOUNTEREN_Pos) &
 			 GRTC_MODE_SYSCOUNTEREN_Msk;
 
-	NRF_GRTC->TASKS_CLEAR = 1U;
 	nrf_grtc_task_trigger(NRF_GRTC, NRF_GRTC_TASK_CLEAR);
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC_KEEPRUNNING)
@@ -55,7 +54,6 @@ void cntr_init(void)
 			    GRTC_CLKCFG_CLKFASTDIV_Msk);
 #endif /* CONFIG_BT_CTLR_NRF_GRTC_START */
 
-	NRF_GRTC->EVENTS_COMPARE[HAL_CNTR_GRTC_CC_IDX_TICKER] = 0U;
 	nrf_grtc_event_clear(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_TICKER);
 
 	/* FIXME: Replace with nrf_grtc_int_enable when is available,
@@ -85,7 +83,6 @@ void cntr_init(void)
 #endif /* CONFIG_BT_CTLR_NRF_GRTC_AUTOEN_DEFAULT */
 			 0U;
 
-	NRF_GRTC->TASKS_START = 1U;
 	nrf_grtc_task_trigger(NRF_GRTC, NRF_GRTC_TASK_START);
 #endif /* CONFIG_BT_CTLR_NRF_GRTC_START */
 
@@ -139,11 +136,8 @@ uint32_t cntr_cnt_get(void)
 	 *       ensure that L value does not change when H value is read.
 	 */
 	do {
-		cntr_h = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
 		cntr_h = nrf_grtc_sys_counter_high_get(NRF_GRTC);
-		cntr_l = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERL;
 		cntr_l = nrf_grtc_sys_counter_low_get(NRF_GRTC);
-		cntr_h_overflow = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
 		cntr_h_overflow = nrf_grtc_sys_counter_high_get(NRF_GRTC);
 	} while ((cntr_h & GRTC_SYSCOUNTER_SYSCOUNTERH_BUSY_Msk) ||
 		 (cntr_h_overflow & GRTC_SYSCOUNTER_SYSCOUNTERH_OVERFLOW_Msk));
@@ -166,17 +160,13 @@ void cntr_cmp_set(uint8_t cmp, uint32_t value)
 
 	/* Read current syscounter value */
 	do {
-		cntr_h = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
 		cntr_h = nrf_grtc_sys_counter_high_get(NRF_GRTC);
-		cntr_l = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERL;
 		cntr_l = nrf_grtc_sys_counter_low_get(NRF_GRTC);
-		cntr_h_overflow = NRF_GRTC->SYSCOUNTER[1].SYSCOUNTERH;
 		cntr_h_overflow = nrf_grtc_sys_counter_high_get(NRF_GRTC);
 	} while ((cntr_h & GRTC_SYSCOUNTER_SYSCOUNTERH_BUSY_Msk) ||
 		 (cntr_h_overflow & GRTC_SYSCOUNTER_SYSCOUNTERH_OVERFLOW_Msk));
 
 	/* Disable capture/compare */
-	NRF_GRTC->CC[cmp].CCEN = 0U;
 	nrf_grtc_sys_counter_compare_event_disable(NRF_GRTC, cmp);
 
 	/* Set a stale value in capture value */
@@ -184,7 +174,6 @@ void cntr_cmp_set(uint8_t cmp, uint32_t value)
 	NRF_GRTC->CC[cmp].CCL = stale;
 
 	/* Trigger a capture */
-	NRF_GRTC->TASKS_CAPTURE[cmp] = 1U;
 	nrf_grtc_task_trigger(NRF_GRTC, (NRF_GRTC_TASK_CAPTURE_0 + (cmp * sizeof(uint32_t))));
 
 	/* Wait to get a new L value */
@@ -203,13 +192,10 @@ void cntr_cmp_set(uint8_t cmp, uint32_t value)
 	}
 
 	/* Set compare register values */
-	NRF_GRTC->CC[cmp].CCL = value;
-	NRF_GRTC->CC[cmp].CCH = cntr_h & GRTC_CC_CCH_CCH_Msk;
 	nrf_grtc_sys_counter_cc_set(NRF_GRTC, cmp,
 				    ((((uint64_t)cntr_h & GRTC_CC_CCH_CCH_Msk) << 32) | value));
 
 	/* Enable compare */
-	NRF_GRTC->CC[cmp].CCEN = 1U;
 	nrf_grtc_sys_counter_compare_event_enable(NRF_GRTC, cmp);
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
