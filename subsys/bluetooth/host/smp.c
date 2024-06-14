@@ -652,6 +652,7 @@ static bool update_keys_check(struct bt_smp *smp, struct bt_keys *keys)
 	return true;
 }
 
+#ifndef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
 static bool update_debug_keys_check(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -671,6 +672,7 @@ static bool update_debug_keys_check(struct bt_smp *smp)
 
 	return false;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 #if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_SIGNING) || \
 	!defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
@@ -3172,7 +3174,6 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
-	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
 	struct bt_smp_pairing *rsp = (void *)buf->data;
 	struct bt_smp_pairing *req = (struct bt_smp_pairing *)&smp->preq[1];
 	uint8_t err;
@@ -3227,7 +3228,17 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return err;
 	}
 
-	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
+	/* the OR operation evaluated by "if" statement bellow seems redundant
+	 * when CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY is enabled, because in
+	 * that case the SMP_FLAG_SC will always be set to false. But it's
+	 * needed in order to inform the compiler that the inside of the "if"
+	 * is the return point for CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY enabled
+	 * builds. This avoids compiler warnings regarding the code after the
+	 * "if" statement, that would happen for builds with
+	 * CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY enabled
+	 */
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) ||
+	    !atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 #if defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 #else
@@ -3241,6 +3252,8 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return legacy_pairing_rsp(smp);
 #endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
 	}
+
+	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
 
 	smp->local_dist &= SEND_KEYS_SC;
 	smp->remote_dist &= RECV_KEYS_SC;
@@ -3596,6 +3609,7 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 	return 0;
 }
 
+#ifndef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
 static bool le_sc_oob_data_req_check(struct bt_smp *smp)
 {
 	struct bt_smp_pairing *req = (struct bt_smp_pairing *)&smp->preq[1];
@@ -3640,6 +3654,7 @@ static void le_sc_oob_config_set(struct bt_smp *smp,
 
 	info->lesc.oob_config = oob_config;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
@@ -4139,6 +4154,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 }
 #endif /* CONFIG_BT_CENTRAL */
 
+#ifndef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
 static uint8_t generate_dhkey(struct bt_smp *smp)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
@@ -4180,6 +4196,7 @@ static uint8_t display_passkey(struct bt_smp *smp)
 
 	return 0;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 static uint8_t smp_public_key_periph(struct bt_smp *smp)
@@ -4238,6 +4255,12 @@ static uint8_t smp_public_key_periph(struct bt_smp *smp)
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
+#ifdef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
+static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
+{
+	return BT_SMP_ERR_AUTH_REQUIREMENTS;
+}
+#else
 static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 {
 	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
@@ -4350,6 +4373,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 
 	return 0;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 {
