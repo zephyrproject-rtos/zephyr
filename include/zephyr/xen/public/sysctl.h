@@ -20,8 +20,6 @@
 #include "xen.h"
 #include "domctl.h"
 
-#define XEN_SYSCTL_INTERFACE_VERSION 0x00000015
-
 /*
  * Get physical information about the host machine
  */
