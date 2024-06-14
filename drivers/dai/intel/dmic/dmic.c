@@ -557,6 +557,12 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	/* enable port */
 	key = k_spin_lock(&dmic->lock);
 	LOG_DBG("dmic_start(), dai_index = %d", dmic->dai_config_params.dai_index);
+
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
+	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++)
+		dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL, CIC_CONTROL_SOFT_RESET, 0);
+#endif
+
 	dmic->startcount = 0;
 
 	/* Compute unmute ramp gain update coefficient. */
@@ -570,14 +576,6 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	dai_dmic_start_fifo_packers(dmic, dmic->dai_config_params.dai_index);
 
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
-#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
-		dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
-				     CIC_CONTROL_SOFT_RESET, 0);
-
-		LOG_INF("dmic_start(), cic 0x%08x",
-			dai_dmic_read(dmic, dmic_base[i] + CIC_CONTROL));
-#endif
-
 		mic_a = dmic->enable[i] & 1;
 		mic_b = (dmic->enable[i] & 2) >> 1;
 		start_fir = dmic->enable[i] > 0;
