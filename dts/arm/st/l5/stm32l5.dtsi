@@ -704,6 +704,13 @@
 			interrupts = <106 0>;
 			status = "disabled";
 		};
+
+		fmc: fmc@44020000 {
+			compatible = "st,stm32-fmc";
+			reg = <0x44020000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000001>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
