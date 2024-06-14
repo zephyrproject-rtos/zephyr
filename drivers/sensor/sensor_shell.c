@@ -18,7 +18,7 @@
 
 #include "sensor_shell.h"
 
-LOG_MODULE_REGISTER(sensor_shell);
+LOG_MODULE_REGISTER(sensor_shell, CONFIG_SENSOR_LOG_LEVEL);
 
 #define SENSOR_GET_HELP                                                                            \
 	"Get sensor data. Channel names are optional. All channels are read "                      \
@@ -373,6 +373,8 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 
 		rc = decoder->get_size_info(ch, &base_size, &frame_size);
 		if (rc != 0) {
+			LOG_DBG("skipping unsupported channel %s:%d",
+				 sensor_channel_name[ch.chan_type], ch.chan_idx);
 			/* Channel not supported, skipping */
 			continue;
 		}
@@ -387,6 +389,8 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 		}
 
 		while (decoder->get_frame_count(buf, ch, &frame_count) == 0) {
+			LOG_DBG("decoding %d frames from channel %s:%d",
+				frame_count, sensor_channel_name[ch.chan_type], ch.chan_idx);
 			fit = 0;
 			memset(&accumulator_buffer, 0, sizeof(accumulator_buffer));
 			while (decoder->decode(buf, ch, &fit, 1, decoded_buffer) > 0) {
@@ -518,10 +522,11 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 					   ch.chan_idx,
 					   data->shift, accumulator_buffer.count,
 					   PRIsensor_q31_data_arg(*data, 0));
-			}
+				}
 			}
 			++ch.chan_idx;
 		}
+		ch.chan_idx = 0;
 	}
 }
 
