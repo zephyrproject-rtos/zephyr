@@ -71,6 +71,7 @@ static inline int z_vrfy_counter_get_value(const struct device *dev,
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(ticks, sizeof(*ticks)));
 	return z_impl_counter_get_value((const struct device *)dev, ticks);
 }
+#include <zephyr/syscalls/counter_get_value_mrsh.c>
 
 static inline int z_vrfy_counter_get_value_64(const struct device *dev,
 					   uint64_t *ticks)
@@ -79,8 +80,7 @@ static inline int z_vrfy_counter_get_value_64(const struct device *dev,
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(ticks, sizeof(*ticks)));
 	return z_impl_counter_get_value_64((const struct device *)dev, ticks);
 }
-
-#include <zephyr/syscalls/counter_get_value_mrsh.c>
+#include <zephyr/syscalls/counter_get_value_64_mrsh.c>
 
 static inline int z_vrfy_counter_set_channel_alarm(const struct device *dev,
 						   uint8_t chan_id,
