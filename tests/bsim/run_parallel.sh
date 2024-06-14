@@ -74,27 +74,29 @@ export CLEAN_XML="sed -E -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
 echo -n "" > $tmp_res_file
 
 if [ `command -v parallel` ]; then
-  parallel '
-  echo "<testcase name=\"{}\" time=\"0\">"
-  start=$(date +%s%N)
-  {} $@ &> {#}.log ; result=$?
-  dur=$(($(date +%s%N) - $start))
-  dur_s=$(awk -vdur=$dur "BEGIN { printf(\"%0.3f\", dur/1000000000)}")
-  if [ $result -ne 0 ]; then
-    (>&2 echo -e "\e[91m{} FAILED\e[39m ($dur_s s)")
-    (>&2 cat {#}.log)
-    echo "<failure message=\"failed\" type=\"failure\">"
-    cat {#}.log | eval $CLEAN_XML
-    echo "</failure>"
-    rm {#}.log
-    echo "</testcase>"
-    exit 1
-  else
-    (>&2 echo -e "{} PASSED ($dur_s s)")
-    rm {#}.log
-    echo "</testcase>"
+  if [ ${n_cases} -gt 0 ]; then
+    parallel '
+    echo "<testcase name=\"{}\" time=\"0\">"
+    start=$(date +%s%N)
+    {} $@ &> {#}.log ; result=$?
+    dur=$(($(date +%s%N) - $start))
+    dur_s=$(awk -vdur=$dur "BEGIN { printf(\"%0.3f\", dur/1000000000)}")
+    if [ $result -ne 0 ]; then
+      (>&2 echo -e "\e[91m{} FAILED\e[39m ($dur_s s)")
+      (>&2 cat {#}.log)
+      echo "<failure message=\"failed\" type=\"failure\">"
+      cat {#}.log | eval $CLEAN_XML
+      echo "</failure>"
+      rm {#}.log
+      echo "</testcase>"
+      exit 1
+    else
+      (>&2 echo -e "{} PASSED ($dur_s s)")
+      rm {#}.log
+      echo "</testcase>"
+    fi
+    ' ::: $all_cases >> $tmp_res_file ; err=$?
   fi
-  ' ::: $all_cases >> $tmp_res_file ; err=$?
 else #fallback in case parallel is not installed
   for case in $all_cases; do
     echo "<testcase name=\"$case\" time=\"0\">" >> $tmp_res_file
