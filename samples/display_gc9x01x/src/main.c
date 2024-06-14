@@ -8,24 +8,31 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 // #include <zephyr/drivers/display/display_gc9x01x.h>
+#include <zephyr/display/cfb.h>
 
 void main(){
     static const struct device *dev2 = DEVICE_DT_GET(DT_NODELABEL(gc9x01_display));
+    static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 
+    int ret_old = 0;
     // static const struct display_driver_api api;
     struct spi_config config;
-    config.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(32);
-    uint16_t x_pos = 0;
-	uint16_t y_pos = 0;
+    config.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8);
+    uint16_t x_pos = 120;
+	uint16_t y_pos = 120;
     struct display_buffer_descriptor desc;
     char hello[] = "hello";
     desc.buf_size = sizeof(hello);
     desc.width = sizeof(hello) / sizeof(hello[0]);
     desc.pitch = desc.width;
-    desc.height = 1; 
+    desc.height = 1;
+    display_blanking_off(dev2);
+    // display_set_contrast(dev2,255);
+
+    // display_set_pixel_format(dev2,
+	// 			    PIXEL_FORMAT_RGB_565);
 
     int ret = display_write(dev2, x_pos, y_pos, &desc, hello);
-
     printf("GC9A01 DISPLAY\n");
 }
 

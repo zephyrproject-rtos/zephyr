@@ -29,3 +29,6 @@ properties:
   clock-frequency:
     type: int
     required: true
+  
+  cs-gpios:
+    required: true

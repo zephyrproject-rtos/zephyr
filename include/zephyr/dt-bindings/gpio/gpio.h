@@ -27,6 +27,12 @@
 /** GPIO pin is active (has logical value '1') in high state. */
 #define GPIO_ACTIVE_HIGH        (0 << 0)
 
+/** Enables pin as input. */
+#define GPIO_INPUT              (1U << 16)
+
+/** Enables pin as output, no change to the output state. */
+#define GPIO_OUTPUT             (1U << 17)
+
 /** @} */
 
 /**

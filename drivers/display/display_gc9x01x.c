@@ -224,7 +224,13 @@ static const struct gc9x01x_default_init_regs default_init_regs[] = {
 		.data = {0x3EU, 0x07U},
 	},
 };
-
+struct spi_shakti_cfg {
+    struct gpio_dt_spec ncs;
+	uint32_t base;
+	uint32_t f_sys;
+    const struct pinctrl_dev_config *pcfg;
+    struct k_mutex mutex;
+};
 static int gc9x01x_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 			    size_t tx_len)
 {
@@ -232,7 +238,7 @@ static int gc9x01x_transmit(const struct device *dev, uint8_t cmd, const void *t
 	int ret;
 	struct spi_buf tx_buf = {.buf = &cmd, .len = 1U};
 	struct spi_buf_set tx_bufs = {.buffers = &tx_buf, .count = 1U};
-
+	gpio_pin_set_dt(&((struct spi_shakti_cfg*)(((config->spi).bus)->config))->ncs, 1);
 	ret = gpio_pin_set_dt(&config->cmd_data, GC9X01X_GPIO_LEVEL_CMD);
 	if (ret < 0) {
 		return ret;
@@ -256,7 +262,7 @@ static int gc9x01x_transmit(const struct device *dev, uint8_t cmd, const void *t
 			return ret;
 		}
 	}
-
+	gpio_pin_set_dt(&((struct spi_shakti_cfg*)(((config->spi).bus)->config))->ncs, 0);
 	return 0;
 }
 
@@ -343,7 +349,7 @@ static int gc9x01x_exit_sleep(const struct device *dev)
 	 * any manufacturing defects.
 	 * This is to allow time for the supply voltages and clock circuits stabilize
 	 */
-	k_msleep(GC9X01X_SLEEP_IN_OUT_DURATION_MS + 30);
+	// k_msleep(GC9X01X_SLEEP_IN_OUT_DURATION_MS + 30);
 
 	return 0;
 }
@@ -377,9 +383,9 @@ static int gc9x01x_hw_reset(const struct device *dev)
 	}
 
 	gpio_pin_set_dt(&config->reset, 1U);
-	k_msleep(100);
+	// k_msleep(100);
 	gpio_pin_set_dt(&config->reset, 0U);
-	k_msleep(10);
+	// k_msleep(10);
 
 	return 0;
 }
@@ -489,21 +495,12 @@ static int gc9x01x_configure(const struct device *dev)
 
 	return 0;
 }
-struct spi_shakti_cfg {
-	uint32_t base;
-	uint32_t f_sys;
-    const struct pinctrl_dev_config *pcfg;
-    struct k_mutex mutex;
-};
+
 static int gc9x01x_init(const struct device *dev)
 {
 	const struct gc9x01x_config *config = dev->config;
 	int ret;
-	struct spi_dt_spec spi = config->spi;
-	struct device_state obj = *((struct device_state *)((struct device *)config->spi.bus)->state);
-	// printf("Spi struct :%#x",((struct spi_shakti_cfg*)(((struct device *)((config->spi).bus))->config))->base);
-	// printf("Spi struct :%#x",*((struct device_state *)((struct device *)config->spi.bus).state));
-	printf("dev state     %d     %d",obj.init_res,obj.initialized);
+
 	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI device is not ready");
 		printf("SPI not ready");

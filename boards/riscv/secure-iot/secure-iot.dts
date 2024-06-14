@@ -30,6 +30,8 @@ chosen {
 		sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
         comm_configure = <0x01 0x00 0x03 0x08>;
 		clock-frequency = <10000000>;
+        cs-gpios = <&gpio0 10 0>;
+
 };
 
 &spi1 {
@@ -37,8 +39,18 @@ chosen {
 		sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
         comm_configure = <0x01 0x00 0x03 0x08>;
 		clock-frequency = <10000000>;
+        cs-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 
-
+        gc9x01_display: gc9x01x@0 {
+          compatible = "galaxycore,gc9x01x";
+          reg = <0>;
+          spi-max-frequency = <2000000>;
+          cmd-data-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+          reset-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+          pixel-format = <16>;
+          width = <240>;
+          height = <240>;
+        };
 };
 &gpio0 {
 	status = "okay";

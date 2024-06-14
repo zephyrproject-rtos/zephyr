@@ -44,7 +44,7 @@ struct gpio_shakti_config{
     uintptr_t gpio_base_addr;
     uint32_t gpio_irq_base;
     gpio_shakti_cfg_func_t gpio_cfg_func;
-
+    uint32_t gpio_mode;
 };
 
 struct gpio_shakti_data {
@@ -70,6 +70,7 @@ int gpio_shakti_init(const struct device *dev){
 
     // gpio = GPIO_START;
     printk("Initialization Done\n");
+    return 0;
 }
 
 
@@ -79,8 +80,17 @@ static int gpio_shakti_pin_configure (const struct device *dev,
 
     volatile struct gpio_shakti_regs_t *gpio = DEV_GPIO(dev);
     const struct gpio_shakti_config *cfg = DEV_GPIO_CFG(dev);
+    printk("GPIO MODE: %d\n", cfg->gpio_mode);
+    
+    if(flags & GPIO_OUTPUT){
+        gpio->direction =-1;
+        printk("GPIO Output Mode.\n");
+    }
+    else{
+        gpio->direction |= (0 << pin);
+        printk("GPIO Input Mode.\n");
+    }
 
-    gpio->direction |= (flags << pin);
     printk("Configuration Done2\n");
 
     return 0;
@@ -99,8 +109,8 @@ static int gpio_shakti_pin_set_raw(const struct device *dev,
 {
     volatile struct gpio_shakti_regs_t *gpio = DEV_GPIO(dev);   
     const struct gpio_shakti_config *cfg = DEV_GPIO_CFG(dev);
-
-    gpio ->set = (1 << pin);
+    printf("GPIO Set Addr:%#x, Pin: %d",&(gpio ->set), pin);
+    gpio ->set = pin;
     printk("set has been done \n");
     printk("gpio addr: 0x%x", gpio);
 
@@ -112,7 +122,7 @@ static int gpio_shakti_pin_toggle(const struct device *dev,
 {
     printf("toggle pin\n");
     volatile struct gpio_shakti_regs_t *gpio = DEV_GPIO(dev);
-    gpio ->toggle = (1 << pin);
+    gpio ->toggle = pin;
 
     return 0;
 }
@@ -121,7 +131,9 @@ static int gpio_shakti_pin_clear_raw(const struct device *dev,
                     gpio_pin_t pin)
 {
     volatile struct gpio_shakti_regs_t *gpio = DEV_GPIO(dev);   
-    gpio ->clear = (1 << pin);
+    printf("GPIO Clear Addr:%#x, Pin: %d",&(gpio ->clear), pin);
+    gpio ->clear = pin;
+    // *((uint32_t*)(0x40218))=(1<<pin);
     printk("Cleared \n");
 
     return 0;
@@ -146,13 +158,17 @@ static const struct gpio_shakti_config gpio_shakti_config0 ={
     .gpio_base_addr     = GPIO_START,
     .gpio_irq_base      = GPIO_INTERRUPT_CONFIG_REG,
     .gpio_cfg_func      = gpio_shakti_cfg,
+    .gpio_mode          = DT_PROP(DT_NODELABEL(gpio0), config_gpio)
 };
 
 static struct gpio_shakti_data gpio_shakti_data0;
 
-DEVICE_DT_INST_DEFINE(0,
-                gpio_shakti_init,
-                NULL,
-                &gpio_shakti_data0, &gpio_shakti_config0,
-                PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-                &gpio_shakti_driver);
+#define GPIO_INIT(inst)	\
+DEVICE_DT_INST_DEFINE(inst, \
+                gpio_shakti_init,  \
+                NULL, \
+                &gpio_shakti_data0, &gpio_shakti_config0, \
+                PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
+                &gpio_shakti_driver); 
+
+DT_INST_FOREACH_STATUS_OKAY(GPIO_INIT)

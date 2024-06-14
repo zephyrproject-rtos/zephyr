@@ -1,4 +1,4 @@
-//#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
   #address-cells = <2>;
@@ -78,22 +78,13 @@
 			     #size-cells = <0>;
            compatible = "shakti,spi";
            reg = <0x0 0x20100 0x0 0x100>;
-            gc9x01_display: gc9x01x@0 {
-              compatible = "galaxycore,gc9x01x";
-              reg = <0>;
-              spi-max-frequency = <2000000>;
-              cmd-data-gpios = <&gpio0 1 0>;
-              reset-gpios = <&gpio0 2 0>;
-              pixel-format = <16>;
-              width = <240>;
-              height = <240>;
-            };
     };
 
     gpio0: gpio@40200 {
                 #gpio-cells = <0x2>;
                 compatible = "shakti,gpio";
                 reg = < 0x0 0x40200 0x0 0x08>;
+                config_gpio = <GPIO_OUTPUT>;
     };
     
     i2c0: i2c@44000 {

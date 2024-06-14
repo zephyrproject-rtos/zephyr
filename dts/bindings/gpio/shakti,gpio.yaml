@@ -20,6 +20,10 @@ properties:
     type: int
     const: 2
 
+  config_gpio:
+    type: int
+    required: true
+
 gpio-cells:
   - pin
   - flags
