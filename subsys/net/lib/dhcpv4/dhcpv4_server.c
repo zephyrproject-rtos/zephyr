@@ -737,7 +737,7 @@ static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 			      void *user_data)
 {
 	struct dhcpv4_server_ctx *ctx = user_data;
-	struct dhcpv4_server_probe_ctx *probe_ctx = &ctx->probe_ctx;
+	struct dhcpv4_server_probe_ctx *probe_ctx;
 	struct dhcpv4_addr_slot *new_slot = NULL;
 	struct in_addr peer_addr;
 
@@ -747,6 +747,12 @@ static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 	ARG_UNUSED(icmp_hdr);
 
 	k_mutex_lock(&server_lock, K_FOREVER);
+
+	if (ctx == NULL) {
+		goto out;
+	}
+
+	probe_ctx = &ctx->probe_ctx;
 
 	if (probe_ctx->slot == NULL) {
 		goto out;
