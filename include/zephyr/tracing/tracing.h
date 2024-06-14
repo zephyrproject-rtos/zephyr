@@ -2348,6 +2348,16 @@ void sys_trace_isr_exit_to_scheduler(void);
 void sys_trace_idle(void);
 #endif /* CONFIG_PERCEPIO_TRACERECORDER */
 
+/**
+ * @brief Called when entering an init function
+ */
+#define sys_trace_sys_init_enter(entry, level)
+
+/**
+ * @brief Called when exiting an init function
+ */
+#define sys_trace_sys_init_exit(entry, level, result)
+
 /** @} */ /* end of subsys_tracing_apis */
 
 /** @} */ /* end of subsys_tracing */
