@@ -346,7 +346,6 @@
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
 /drivers/serial/*intel_lw*                @shilinte
 /drivers/serial/*kb1200*                  @ene-steven
-/drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
 /drivers/ptp_clock/                       @tbursztyka @jukkar
 /drivers/spi/*b91*                        @andy-liu-telink
