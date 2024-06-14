@@ -699,13 +699,17 @@ static void cancel_data_ready(struct bt_l2cap_le_chan *le_chan)
 int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 		      bt_conn_tx_cb_t cb, void *user_data)
 {
-	if (pdu->ref != 1) {
+	/* Allow for an additional buffer reference if callback is provided. This can be used to
+	 * extend lifetime of the net buffer until the data transmission is confirmed by ACK of the
+	 * remote.
+	 */
+	if (pdu->ref > 1 + (cb ? 1 : 0)) {
 		/* The host may alter the buf contents when fragmenting. Higher
 		 * layers cannot expect the buf contents to stay intact. Extra
 		 * refs suggests a silent data corruption would occur if not for
 		 * this error.
 		 */
-		LOG_ERR("Expecting 1 ref, got %d", pdu->ref);
+		LOG_ERR("Expecting up to %d refs, got %d", cb ? 2 : 1, pdu->ref);
 		return -EINVAL;
 	}
 
