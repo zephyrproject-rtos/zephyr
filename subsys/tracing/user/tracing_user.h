@@ -8,6 +8,7 @@
 #ifndef _TRACE_USER_H
 #define _TRACE_USER_H
 #include <zephyr/kernel.h>
+#include <zephyr/init.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,8 @@ void sys_trace_thread_pend_user(struct k_thread *thread);
 void sys_trace_isr_enter_user(void);
 void sys_trace_isr_exit_user(void);
 void sys_trace_idle_user(void);
+void sys_trace_sys_init_enter_user(const struct init_entry *entry, int level);
+void sys_trace_sys_init_exit_user(const struct init_entry *entry, int level, int result);
 
 void sys_trace_thread_create(struct k_thread *thread);
 void sys_trace_thread_abort(struct k_thread *thread);
@@ -42,6 +45,8 @@ void sys_trace_thread_pend(struct k_thread *thread);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
 void sys_trace_idle(void);
+void sys_trace_sys_init_enter(const struct init_entry *entry, int level);
+void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result);
 
 #define sys_port_trace_k_thread_foreach_enter()
 #define sys_port_trace_k_thread_foreach_exit()
