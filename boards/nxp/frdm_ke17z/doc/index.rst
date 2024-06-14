@@ -59,6 +59,8 @@ features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | uart                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/frdm_ke17z/frdm_ke17z_defconfig`.
