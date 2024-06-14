@@ -11,7 +11,7 @@
 
 static int do_sysctl(xen_sysctl_t *sysctl)
 {
-	sysctl->interface_version = XEN_SYSCTL_INTERFACE_VERSION;
+	sysctl->interface_version = CONFIG_XEN_SYSCTL_INTERFACE_VERSION;
 	return HYPERVISOR_sysctl(sysctl);
 }
 
