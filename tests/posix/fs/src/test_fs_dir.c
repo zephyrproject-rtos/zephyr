@@ -51,7 +51,21 @@ static int test_mkdir(void)
 	return res;
 }
 
-static int test_lsdir(const char *path)
+static struct dirent *readdir_wrap(DIR *dirp, bool thread_safe)
+{
+	if (thread_safe) {
+		struct dirent *entry = NULL;
+		struct dirent *result = NULL;
+
+		zassert_ok(readdir_r(dirp, entry, &result));
+
+		return result;
+	} else {
+		return readdir(dirp);
+	}
+}
+
+static int test_lsdir(const char *path, bool thread_safe)
 {
 	DIR *dirp;
 	int res = 0;
@@ -69,7 +83,7 @@ static int test_lsdir(const char *path)
 	TC_PRINT("\nListing dir %s:\n", path);
 	/* Verify fs_readdir() */
 	errno = 0;
-	while ((entry = readdir(dirp)) != NULL) {
+	while ((entry = readdir_wrap(dirp, thread_safe)) != NULL) {
 		if (entry->d_name[0] == 0) {
 			res = -EIO;
 			break;
@@ -124,5 +138,15 @@ ZTEST(posix_fs_dir_test, test_fs_readdir)
 {
 	/* FIXME: restructure tests as per #46897 */
 	zassert_true(test_mkdir() == TC_PASS);
-	zassert_true(test_lsdir(TEST_DIR) == TC_PASS);
+	zassert_true(test_lsdir(TEST_DIR, false) == TC_PASS);
+}
+
+/**
+ * Same test as `test_fs_readdir`, but use thread-safe `readdir_r()` function
+ */
+ZTEST(posix_fs_dir_test, test_fs_readdir_threadsafe)
+{
+	/* FIXME: restructure tests as per #46897 */
+	zassert_true(test_mkdir() == TC_PASS);
+	zassert_true(test_lsdir(TEST_DIR, true) == TC_PASS);
 }
