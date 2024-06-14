@@ -81,7 +81,7 @@
 		};
 
 		id: device_id@8061fc {
-			compatible = "atmel,sam0-id";
+			compatible = "microchip,pic32cxsg-id";
 			reg =	<0x008061FC 0x4>,
 				<0x00806010 0x4>,
 				<0x00806014 0x4>,
@@ -123,7 +123,7 @@
 		};
 
 		eic: eic@40002800 {
-			compatible = "atmel,sam0-eic";
+			compatible = "microchip,pic32cxsg-eic";
 			reg = <0x40002800 0x38>;
 			interrupts = <12 0>, <13 0>, <14 0>, <15 0>,
 				     <16 0>, <17 0>, <18 0>, <19 0>,
@@ -132,22 +132,22 @@
 		};
 
 		pinmux_a: pinmux@41008000 {
-			compatible = "atmel,sam0-pinmux";
+			compatible = "microchip,pic32cxsg-pinmux";
 			reg = <0x41008000 0x80>;
 		};
 
 		pinmux_b: pinmux@41008080 {
-			compatible = "atmel,sam0-pinmux";
+			compatible = "microchip,pic32cxsg-pinmux";
 			reg = <0x41008080 0x80>;
 		};
 
 		pinmux_c: pinmux@41008100 {
-			compatible = "atmel,sam0-pinmux";
+			compatible = "microchip,pic32cxsg-pinmux";
 			reg = <0x41008100 0x80>;
 		};
 
 		pinmux_d: pinmux@41008180 {
-			compatible = "atmel,sam0-pinmux";
+			compatible = "microchip,pic32cxsg-pinmux";
 			reg = <0x41008180 0x80>;
 		};
 
@@ -230,13 +230,13 @@
 		};
 
 		pinctrl: pinctrl@41008000 {
-			compatible = "atmel,sam0-pinctrl";
+			compatible = "microchip,pic32cxsg-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x41008000 0x41008000 0x200>;
 
 			porta: gpio@41008000 {
-				compatible = "atmel,sam0-gpio";
+				compatible = "atmel,pic32cxsg-gpio";
 				reg = <0x41008000 0x80>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -244,7 +244,7 @@
 			};
 
 			portb: gpio@41008080 {
-				compatible = "atmel,sam0-gpio";
+				compatible = "microchip,pic32cxsg-gpio";
 				reg = <0x41008080 0x80>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -252,7 +252,7 @@
 			};
 
 			portc: gpio@41008100 {
-				compatible = "atmel,sam0-gpio";
+				compatible = "microchip,pic32cxsg-gpio";
 				reg = <0x41008100 0x80>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -260,7 +260,7 @@
 			};
 
 			portd: gpio@41008180 {
-				compatible = "atmel,sam0-gpio";
+				compatible = "microchip,pic32cxsg-gpio";
 				reg = <0x41008180 0x80>;
 				gpio-controller;
 				#gpio-cells = <2>;

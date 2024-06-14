@@ -56,7 +56,7 @@
 #error ADC 'ADC_CTRLA_PRESCALER' not supported...
 #endif
 
-#if 0		/* Microchip - This featured precated */
+#if 0		/* Microchip - This featured deprecated */
 #if defined(SYSCTRL_VREF_TSEN)
 #define ADC_TSEN (SYSCTRL->VREF.bit.TSEN)
 #elif defined(SUPC_VREF_TSEN)

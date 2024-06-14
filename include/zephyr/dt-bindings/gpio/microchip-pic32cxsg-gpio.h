@@ -10,7 +10,7 @@
  * @brief Enable GPIO pin debounce.
  *
  * The debounce flag is a Zephyr specific extension of the standard GPIO flags
- * specified by the Linux GPIO binding. Only applicable for Atmel SAM0 SoCs.
+ * specified by the Linux GPIO binding. Only applicable for Microchip PIC32CXSG SoCs.
  */
 #define PIC32CXSG_GPIO_DEBOUNCE (1U << 8)
 

@@ -23,7 +23,7 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led1 = &led1;
-		led2 = &led2;
+/*		led2 = &led2;*/
 /*		
 		pwm-led0 = &pwm_led0;
 */
@@ -38,10 +38,13 @@
 			gpios = <&portc 21 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED 1";
 		};
+
+/*
 		led2: led_2 {
 			gpios = <&porta 15 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED 2";
 		};
+*/
 	};
 
 	pwmleds {

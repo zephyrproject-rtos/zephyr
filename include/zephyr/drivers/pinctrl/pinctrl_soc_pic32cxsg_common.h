@@ -25,7 +25,7 @@ extern "C" {
 /** @brief Type for PIC32CXSG pin.
  *
  * Bits:
- * -  0-15: PIC32CX pinmux bit field (@ref SAM_PINMUX).
+ * -  0-15: PIC32CXSG pinmux bit field (@ref SAM_PINMUX).
  * - 16-21: Pin flags bit field (@ref PIC32CXSG_PINFLAGS).
  * - 22-31: Reserved.
  */
@@ -52,7 +52,7 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 | (DT_PROP(node_id, bias_pull_down)     << SAM_PINCTRL_PULLDOWN_POS)	  \
 	 | (DT_PROP(node_id, input_enable)       << SAM_PINCTRL_INPUTENABLE_POS)  \
 	 | (DT_PROP(node_id, output_enable)      << SAM_PINCTRL_OUTPUTENABLE_POS) \
-	 | (DT_ENUM_IDX(node_id, drive_strength) << PIC32CXV_PINCTRL_DRIVESTRENGTH_POS)\
+	 | (DT_ENUM_IDX(node_id, drive_strength) << SAM_PINCTRL_DRIVESTRENGTH_POS)\
 	),
 #endif
 

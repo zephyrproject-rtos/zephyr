@@ -6,7 +6,7 @@
  */
 
 /** @file
- * @brief Atmel SAM0 MCU family I/O Pin Controller (PORT)
+ * @brief Microchip PIC32CSXSG MCU family I/O Pin Controller (PORT)
  */
 
 #include <stdbool.h>
