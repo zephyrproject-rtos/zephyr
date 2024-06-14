@@ -400,6 +400,25 @@ struct bt_gatt_cpf {
  * @{
  */
 
+/** Converts a GATT error to string.
+ *
+ * The GATT errors are created with @ref BT_GATT_ERR.
+ *
+ * The error codes are described in the Bluetooth Core specification,
+ * Vol 3, Part F, Section 3.4.1.1.
+ *
+ * The ATT and GATT documentation found in Vol 4, Part F and
+ * Part G describe when the different error codes are used.
+ *
+ * See also the defined BT_ATT_ERR_* macros.
+ *
+ * @return The string representation of the GATT error code.
+ */
+static inline const char *bt_gatt_err_to_str(int gatt_err)
+{
+	return bt_att_err_to_str((gatt_err) < 0 ? -(gatt_err) : (gatt_err));
+}
+
 /** @brief Register GATT callbacks.
  *
  *  Register callbacks to monitor the state of GATT. The callback struct
