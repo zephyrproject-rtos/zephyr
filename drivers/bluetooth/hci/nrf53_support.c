@@ -7,11 +7,7 @@
 #include <soc.h>
 #include <zephyr/device.h>
 #include <nrf53_cpunet_mgmt.h>
-#if defined(CONFIG_BT_CTLR_DEBUG_PINS_CPUAPP)
 #include <../subsys/bluetooth/controller/ll_sw/nordic/hal/nrf5/debug.h>
-#else
-#define DEBUG_SETUP()
-#endif /* defined(CONFIG_BT_CTLR_DEBUG_PINS_CPUAPP) */
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -30,10 +26,9 @@ int bt_hci_transport_teardown(const struct device *dev)
 int bt_hci_transport_setup(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(CONFIG_BUILD_WITH_TFM)
+
 	/* Route Bluetooth Controller Debug Pins */
 	DEBUG_SETUP();
-#endif /* !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(CONFIG_BUILD_WITH_TFM) */
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* Retain nRF5340 Network MCU in Secure domain (bus
