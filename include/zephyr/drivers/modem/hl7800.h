@@ -286,12 +286,18 @@ void mdm_hl7800_wakeup(bool awake);
 
 /**
  * @brief Send an AT command to the HL7800.
- * @note this API should only be used for debug purposes.
+ * @note This API should only be used for debug purposes.
+ *   It is possible to break the driver using this API.
  *
  * @param data AT command string
+ * @param resp_timeout Timeout in seconds to wait for the response
+ * @param resp Pointer to the response buffer. This can be NULL to ignore the response.
+ * @param resp_len Input: length of the response buffer, Output: length of the response.
+ *   This can be NULL.
  * @return int32_t 0 for success
  */
-int32_t mdm_hl7800_send_at_cmd(const uint8_t *data);
+int32_t mdm_hl7800_send_at_cmd(const uint8_t *data, uint8_t resp_timeout, char *resp,
+			       uint16_t *resp_len);
 
 /**
  * @brief Get the signal quality of the HL7800.
