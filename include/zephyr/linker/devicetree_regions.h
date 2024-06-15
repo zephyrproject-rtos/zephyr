@@ -82,6 +82,66 @@
 #define LINKER_DT_NODE_REGION_NAME(node_id) \
 	STRINGIFY(LINKER_DT_NODE_REGION_NAME_TOKEN(node_id))
 
+#define _DT_MEMORY_REGION_FLAGS_TOKEN(n)    DT_STRING_TOKEN(n, zephyr_memory_region_flags)
+#define _DT_MEMORY_REGION_FLAGS_UNQUOTED(n) DT_STRING_UNQUOTED(n, zephyr_memory_region_flags)
+
+#define _LINKER_L_PAREN (
+#define _LINKER_R_PAREN )
+#define _LINKER_ENCLOSE_PAREN(x) _LINKER_L_PAREN x _LINKER_R_PAREN
+
+#define _LINKER_IS_EMPTY_TOKEN_          1
+#define _LINKER_IS_EMPTY_TOKEN_EXPAND(x) _LINKER_IS_EMPTY_TOKEN_##x
+#define _LINKER_IS_EMPTY_TOKEN(x)        _LINKER_IS_EMPTY_TOKEN_EXPAND(x)
+
+/**
+ * @brief Get the linker memory-region flags with parentheses.
+ *
+ * This attempts to return the zephyr,memory-region-flags property
+ * with parentheses.
+ * Return empty string if not set the property.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     / {
+ *             soc {
+ *                     rx: memory@2000000 {
+ *                             zephyr,memory-region = "READ_EXEC";
+ *                             zephyr,memory-region-flags = "rx";
+ *                     };
+ *                     rx_not_w: memory@2001000 {
+ *                             zephyr,memory-region = "READ_EXEC_NOT_WRITE";
+ *                             zephyr,memory-region-flags = "rx!w";
+ *                     };
+ *                     no_flags: memory@2001000 {
+ *                             zephyr,memory-region = "NO_FLAGS";
+ *                     };
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    LINKER_DT_NODE_REGION_FLAGS(DT_NODELABEL(rx))       // (rx)
+ *    LINKER_DT_NODE_REGION_FLAGS(DT_NODELABEL(rx_not_w)) // (rx!w)
+ *    LINKER_DT_NODE_REGION_FLAGS(DT_NODELABEL(no_flags)) // [flags will not be specified]
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return the value of the memory region flag specified in the device tree
+ *         enclosed in parentheses.
+ */
+
+#define LINKER_DT_NODE_REGION_FLAGS(node_id)                                                       \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_memory_region_flags),                         \
+		    (COND_CODE_1(_LINKER_IS_EMPTY_TOKEN(_DT_MEMORY_REGION_FLAGS_TOKEN(node_id)),   \
+				 (),                                                               \
+				 (_LINKER_ENCLOSE_PAREN(                                           \
+					_DT_MEMORY_REGION_FLAGS_UNQUOTED(node_id))                 \
+				 ))),                                                              \
+		    (_LINKER_ENCLOSE_PAREN(rw)))
+
 /** @cond INTERNAL_HIDDEN */
 
 #define _DT_COMPATIBLE	zephyr_memory_region
@@ -102,6 +162,7 @@
  *        compatible = "zephyr,memory-region", "mmio-sram";
  *        reg = < 0x20010000 0x1000 >;
  *        zephyr,memory-region = "FOOBAR";
+ *        zephyr,memory-region-flags = "rw";
  *    };
  * @endcode
  *
@@ -114,10 +175,11 @@
  * @param node_id devicetree node identifier
  * @param attr region attributes
  */
-#define _REGION_DECLARE(node_id)			\
-	LINKER_DT_NODE_REGION_NAME_TOKEN(node_id) :	\
-	ORIGIN = DT_REG_ADDR(node_id),			\
-	LENGTH = DT_REG_SIZE(node_id)
+#define _REGION_DECLARE(node_id)                                                                   \
+	LINKER_DT_NODE_REGION_NAME_TOKEN(node_id)                                                  \
+	LINKER_DT_NODE_REGION_FLAGS(node_id)                                                       \
+		: ORIGIN = DT_REG_ADDR(node_id),                                                   \
+		  LENGTH = DT_REG_SIZE(node_id)
 
 /**
  * @brief Declare a memory section from the device tree nodes with

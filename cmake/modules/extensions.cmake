@@ -4432,7 +4432,7 @@ function(zephyr_linker)
 endfunction()
 
 # Usage:
-#   zephyr_linker_memory(NAME <name> START <address> SIZE <size> FLAGS <flags>)
+#   zephyr_linker_memory(NAME <name> START <address> SIZE <size> [FLAGS <flags>])
 #
 # Zephyr linker memory.
 # This function specifies a memory region for the platform in use.
@@ -4449,14 +4449,18 @@ endfunction()
 #                  All the following are valid values:
 #                    1048576, 0x10000, 1024k, 1024K, 1m, and 1M.
 # FLAGS <flags>  : Flags describing properties of the memory region.
-#                  Currently supported:
 #                  r: Read-only region
 #                  w: Read-write region
 #                  x: Executable region
-#                  The flags r and x, or w and x may be combined like: rx, wx.
+#                  a: Allocatable region
+#                  i: Initialized region
+#                  l: Same as ‘i’
+#                  !: Invert the sense of any of the attributes that follow
+#                  The flags may be combined like: rx, rx!w.
 function(zephyr_linker_memory)
-  set(single_args "FLAGS;NAME;SIZE;START")
-  cmake_parse_arguments(MEMORY "" "${single_args}" "" ${ARGN})
+  set(req_single_args "NAME;SIZE;START")
+  set(single_args "FLAGS")
+  cmake_parse_arguments(MEMORY "" "${req_single_args};${single_args}" "" ${ARGN})
 
   if(MEMORY_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "zephyr_linker_memory(${ARGV0} ...) given unknown "
@@ -4464,7 +4468,7 @@ function(zephyr_linker_memory)
     )
   endif()
 
-  foreach(arg ${single_args})
+  foreach(arg ${req_single_args})
     if(NOT DEFINED MEMORY_${arg})
       message(FATAL_ERROR "zephyr_linker_memory(${ARGV0} ...) missing required "
                           "argument: ${arg}"
@@ -4473,6 +4477,7 @@ function(zephyr_linker_memory)
   endforeach()
 
   set(MEMORY)
+  zephyr_linker_arg_val_list(MEMORY "${req_single_args}")
   zephyr_linker_arg_val_list(MEMORY "${single_args}")
 
   string(REPLACE ";" "\;" MEMORY "${MEMORY}")
@@ -4482,7 +4487,7 @@ function(zephyr_linker_memory)
 endfunction()
 
 # Usage:
-#   zephyr_linker_memory_ifdef(<setting> NAME <name> START <address> SIZE <size> FLAGS <flags>)
+#   zephyr_linker_memory_ifdef(<setting> NAME <name> START <address> SIZE <size> [FLAGS <flags>])
 #
 # Will create memory region if <setting> is enabled.
 #
@@ -4545,9 +4550,9 @@ function(zephyr_linker_dts_section)
 endfunction()
 
 # Usage:
-#   zephyr_linker_dts_memory(PATH <path> FLAGS <flags>)
-#   zephyr_linker_dts_memory(NODELABEL <nodelabel> FLAGS <flags>)
-#   zephyr_linker_dts_memory(CHOSEN <prop> FLAGS <flags>)
+#   zephyr_linker_dts_memory(PATH <path>)
+#   zephyr_linker_dts_memory(NODELABEL <nodelabel>)
+#   zephyr_linker_dts_memory(CHOSEN <prop>)
 #
 # Zephyr linker devicetree memory.
 # This function specifies a memory region for the platform in use based on its
@@ -4562,15 +4567,9 @@ endfunction()
 # NODELABEL <label>: Node label
 # CHOSEN <prop>    : Chosen property, add memory section described by the
 #                    /chosen property if it exists.
-# FLAGS <flags>  : Flags describing properties of the memory region.
-#                  Currently supported:
-#                  r: Read-only region
-#                  w: Read-write region
-#                  x: Executable region
-#                  The flags r and x, or w and x may be combined like: rx, wx.
 #
 function(zephyr_linker_dts_memory)
-  set(single_args "CHOSEN;FLAGS;PATH;NODELABEL")
+  set(single_args "CHOSEN;PATH;NODELABEL")
   cmake_parse_arguments(DTS_MEMORY "" "${single_args}" "" ${ARGN})
 
   if(DTS_MEMORY_UNPARSED_ARGUMENTS)
@@ -4613,12 +4612,28 @@ function(zephyr_linker_dts_memory)
   endif()
   zephyr_string(SANITIZE name ${name})
 
-  zephyr_linker_memory(
-    NAME  ${name}
-    START ${addr}
-    SIZE  ${size}
-    FLAGS ${DTS_MEMORY_FLAGS}
-  )
+  dt_prop(flags PATH ${DTS_MEMORY_PATH} PROPERTY "zephyr,memory-region-flags")
+  if(NOT DEFINED flags)
+    zephyr_linker_memory(
+      NAME  ${name}
+      START ${addr}
+      SIZE  ${size}
+      FLAGS "rw"
+    )
+  elseif("${flags}" STREQUAL "")
+    zephyr_linker_memory(
+      NAME  ${name}
+      START ${addr}
+      SIZE  ${size}
+    )
+  else()
+    zephyr_linker_memory(
+      NAME  ${name}
+      START ${addr}
+      SIZE  ${size}
+      FLAGS ${flags}
+    )
+  endif()
 endfunction()
 
 # Usage:
