@@ -71,6 +71,12 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 	return zvfs_read(fd, buf, count, (size_t *)&off);
 }
 
+int pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+	    const struct timespec *timeout, const void *sigmask)
+{
+	return zvfs_select(nfds, readfds, writefds, exceptfds, timeout, sigmask);
+}
+
 ssize_t pwrite(int fd, void *buf, size_t count, off_t offset)
 {
 	size_t off = (size_t)offset;
@@ -93,7 +99,12 @@ FUNC_ALIAS(read, _read, ssize_t);
 
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)
 {
-	return zvfs_select(nfds, readfds, writefds, exceptfds, timeout);
+	struct timespec to = {
+		.tv_sec = (timeout == NULL) ? 0 : timeout->tv_sec,
+		.tv_nsec = (long)((timeout == NULL) ? 0 : timeout->tv_usec * NSEC_PER_USEC)};
+
+	return zvfs_select(nfds, readfds, writefds, exceptfds, (timeout == NULL) ? NULL : &to,
+			   NULL);
 }
 
 ssize_t write(int fd, const void *buf, size_t sz)
