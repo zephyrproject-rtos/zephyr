@@ -112,7 +112,7 @@ void pm_system_resume(void)
 		if (atomic_add(&_cpus_active, 1) == 0) {
 			if ((z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) &&
 					!z_cpus_pm_state[id].pm_device_disabled) {
-				pm_resume_devices();
+				pm_resume_devices(z_cpus_pm_state[id].pm_turn_on_off_action);
 			}
 		}
 #endif
@@ -182,8 +182,10 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	if (atomic_sub(&_cpus_active, 1) == 1) {
 		if ((z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) &&
 		    !z_cpus_pm_state[id].pm_device_disabled) {
-			if (!pm_suspend_devices()) {
-				pm_resume_devices();
+			bool turn_on_off_flag = z_cpus_pm_state[id].pm_turn_on_off_action;
+
+			if (!pm_suspend_devices(turn_on_off_flag)) {
+				pm_resume_devices(turn_on_off_flag);
 				z_cpus_pm_state[id].state = PM_STATE_ACTIVE;
 				(void)atomic_add(&_cpus_active, 1);
 				SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
