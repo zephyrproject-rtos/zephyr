@@ -18,6 +18,7 @@ set(TFM_VALID_PARTITIONS
 if (CONFIG_BUILD_WITH_TFM)
   # PSA API awareness for the Non-Secure application
   target_compile_definitions(app PRIVATE "TFM_PSA_API")
+  list(APPEND TFM_CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE)
   if (CONFIG_TFM_SFN)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
   else() # CONFIG_TFM_IPC
