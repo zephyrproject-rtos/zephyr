@@ -1093,19 +1093,6 @@ int lwm2m_get_resource(const struct lwm2m_obj_path *path, struct lwm2m_engine_re
 	return path_to_objs(path, NULL, NULL, res, NULL);
 }
 
-int lwm2m_engine_get_resource(const char *pathstr, struct lwm2m_engine_res **res)
-{
-	int ret;
-	struct lwm2m_obj_path path;
-
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return ret;
-	}
-
-	return lwm2m_get_resource(&path, res);
-}
-
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in, uint8_t *buf, size_t buflen,
 				    struct lwm2m_opaque_context *opaque, bool *last_block)
 {
