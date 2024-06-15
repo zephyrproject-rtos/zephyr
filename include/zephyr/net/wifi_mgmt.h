@@ -469,6 +469,8 @@ struct wifi_connect_req_params {
 	const uint8_t *key_passwd;
 	/** Private key passwd length */
 	uint8_t key_passwd_length; /* Max 128 */
+	/** suiteb or suiteb-192 */
+	uint8_t suiteb_type;
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status

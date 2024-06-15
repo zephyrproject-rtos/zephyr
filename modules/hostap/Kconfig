@@ -416,6 +416,9 @@ config SHA512
 config SUITEB192
 	bool
 
+config SUITEB
+	bool
+
 config WEP
 	bool
 	default y if WIFI_NM_WPA_SUPPLICANT_WEP
