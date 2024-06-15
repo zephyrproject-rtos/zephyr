@@ -229,32 +229,32 @@ as in the following example.
 
 Pahole will generate something similar to the output below in the console::
 
-    /* Used at: zephyr/isr_tables.c */
-    /* <80> ../include/sw_isr_table.h:30 */
-    struct _isr_table_entry {
-            void *                     arg;                  /*     0     4 */
-            void                       (*isr)(void *);       /*     4     4 */
+    /* Used at: [...]/build/zephyr/kobject_hash.c */
+    /* <375> [...]/zephyr/include/zephyr/sys/dlist.h:37 */
+    union {
+            struct _dnode *            head;               /*     0     4 */
+            struct _dnode *            next;               /*     0     4 */
+    };
+    /* Used at: [...]/build/zephyr/kobject_hash.c */
+    /* <397> [...]/zephyr/include/zephyr/sys/dlist.h:36 */
+    struct _dnode {
+            union {
+                    struct _dnode *    head;                 /*     0     4 */
+                    struct _dnode *    next;                 /*     0     4 */
+            };                                               /*     0     4 */
+            union {
+                    struct _dnode *    tail;                 /*     4     4 */
+                    struct _dnode *    prev;                 /*     4     4 */
+            };                                               /*     4     4 */
 
             /* size: 8, cachelines: 1, members: 2 */
             /* last cacheline: 8 bytes */
     };
-    /* Used at: zephyr/isr_tables.c */
-    /* <eb> ../include/arch/arm/aarch32/cortex_m/mpu/arm_mpu_v7m.h:134 */
-    struct arm_mpu_region_attr {
-            uint32_t                   rasr;                 /*     0     4 */
-
-            /* size: 4, cachelines: 1, members: 1 */
-            /* last cacheline: 4 bytes */
-    };
-    /* Used at: zephyr/isr_tables.c */
-    /* <112> ../include/arch/arm/aarch32/cortex_m/mpu/arm_mpu.h:24 */
-    struct arm_mpu_region {
-            uint32_t                   base;                 /*     0     4 */
-            const char  *              name;                 /*     4     4 */
-            arm_mpu_region_attr_t      attr;                 /*     8     4 */
-
-            /* size: 12, cachelines: 1, members: 3 */
-            /* last cacheline: 12 bytes */
+    /* Used at: [...]/build/zephyr/kobject_hash.c */
+    /* <3b7> [...]/zephyr/include/zephyr/sys/dlist.h:41 */
+    union {
+            struct _dnode *            tail;               /*     0     4 */
+            struct _dnode *            prev;               /*     0     4 */
     };
     ...
     ...

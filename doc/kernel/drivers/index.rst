@@ -203,7 +203,7 @@ A device-specific API definition typically looks like this:
    __syscall int specific_from_user(const struct device *dev, int bar);
 
    /* Only needed when extensions include syscalls */
-   #include <syscalls/specific.h>
+   #include <zephyr/syscalls/specific.h>
 
 A driver implementing extensions to the subsystem will define the real
 implementation of both the subsystem API and the specific APIs:
@@ -243,7 +243,7 @@ implementation of both the subsystem API and the specific APIs:
        return z_impl_specific_do_that(dev, bar)
    }
 
-   #include <syscalls/specific_from_user_mrsh.c>
+   #include <zephyr/syscalls/specific_from_user_mrsh.c>
 
    #endif /* CONFIG_USERSPACE */
 

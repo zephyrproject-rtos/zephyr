@@ -1,5 +1,10 @@
 sample:
   name: Shell Sample
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
 tests:
   sample.shell.shell_module:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")

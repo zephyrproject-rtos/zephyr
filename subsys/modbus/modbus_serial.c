@@ -339,6 +339,12 @@ static void cb_handler_rx(struct modbus_context *ctx)
 	} else {
 		int n;
 
+		if (cfg->uart_buf_ctr == CONFIG_MODBUS_BUFFER_SIZE) {
+			/* Buffer full. Disable interrupt until timeout. */
+			modbus_serial_rx_disable(ctx);
+			return;
+		}
+
 		/* Restart timer on a new character */
 		k_timer_start(&cfg->rtu_timer,
 			      K_USEC(cfg->rtu_timeout), K_NO_WAIT);

@@ -17,7 +17,7 @@ written to Stimulus Port registers maps directly to STP stream.
 This module can be used to perform on-chip decoding of the data stream. STP v2 is used.
 
 Usage
-#####
+*****
 
 Decoder is initialized with a callback. A callback is called on each decoded opcode.
 Decoder has internal state since there are dependency between opcodes (e.g. timestamp can be
@@ -27,7 +27,7 @@ Loss of synchronization can be indicated to the decoder by calling
 :c:func:`mipi_stp_decoder_sync_loss`. :c:func:`mipi_stp_decoder_decode` is used to decode the data.
 
 Limitations
-###########
+***********
 
 There are following limitations:
 

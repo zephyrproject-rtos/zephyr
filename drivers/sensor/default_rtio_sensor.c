@@ -304,6 +304,9 @@ static int get_frame_count(const uint8_t *buffer, struct sensor_chan_spec channe
 	case SENSOR_CHAN_MAGN_XYZ:
 		channel.chan_type = SENSOR_CHAN_MAGN_X;
 		break;
+	case SENSOR_CHAN_POS_DXYZ:
+		channel.chan_type = SENSOR_CHAN_POS_DX;
+		break;
 	default:
 		break;
 	}
@@ -343,6 +346,7 @@ int sensor_natively_supported_channel_size_info(struct sensor_chan_spec channel,
 	case SENSOR_CHAN_POS_DX:
 	case SENSOR_CHAN_POS_DY:
 	case SENSOR_CHAN_POS_DZ:
+	case SENSOR_CHAN_POS_DXYZ:
 		*base_size = sizeof(struct sensor_three_axis_data);
 		*frame_size = sizeof(struct sensor_three_axis_sample_data);
 		return 0;
@@ -481,6 +485,7 @@ static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 	case SENSOR_CHAN_POS_DX:
 	case SENSOR_CHAN_POS_DY:
 	case SENSOR_CHAN_POS_DZ:
+	case SENSOR_CHAN_POS_DXYZ:
 		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_POS_DX,
 					  SENSOR_CHAN_POS_DY, SENSOR_CHAN_POS_DZ,
 					  chan_spec.chan_idx);

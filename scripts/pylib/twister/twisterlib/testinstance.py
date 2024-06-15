@@ -67,6 +67,8 @@ class TestInstance:
             self.build_dir = os.path.join(outdir, platform.normalized_name, source_dir_rel, testsuite.name)
         self.run_id = self._get_run_id()
         self.domains = None
+        # Instance need to use sysbuild if a given suite or a platform requires it
+        self.sysbuild = testsuite.sysbuild or platform.sysbuild
 
         self.run = False
         self.testcases: list[TestCase] = []
@@ -180,7 +182,7 @@ class TestInstance:
             # command-line, then we need to run the test, not just build it.
             fixture = testsuite.harness_config.get('fixture')
             if fixture:
-                can_run = fixture in fixtures
+                can_run = fixture in map(lambda f: f.split(sep=':')[0], fixtures)
 
         return can_run
 
@@ -335,7 +337,7 @@ class TestInstance:
 
     def get_elf_file(self) -> str:
 
-        if self.testsuite.sysbuild:
+        if self.sysbuild:
             build_dir = self.domains.get_default_domain().build_dir
         else:
             build_dir = self.build_dir

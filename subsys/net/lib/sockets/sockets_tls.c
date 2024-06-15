@@ -2090,8 +2090,8 @@ static int ztls_socket(int family, int type, int proto)
 	ctx->type = (proto == IPPROTO_TCP) ? SOCK_STREAM : SOCK_DGRAM;
 	ctx->sock = sock;
 
-	z_finalize_fd(
-		fd, ctx, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);
+	z_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 
@@ -2218,8 +2218,8 @@ int ztls_accept_ctx(struct tls_context *parent, struct sockaddr *addr,
 		goto error;
 	}
 
-	z_finalize_fd(
-		fd, child, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);
+	z_finalize_typed_fd(fd, child, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	child->sock = sock;
 

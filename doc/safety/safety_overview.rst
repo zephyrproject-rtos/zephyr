@@ -99,7 +99,7 @@ which need to be reached to achieve an auditable code base:
 1. Basic software quality standards
 
    a. :ref:`coding_guidelines` (including: static code analysis, coding style, etc.)
-   b. Requirements and requirements tracing
+   b. :ref:`safety_requirements` and requirements tracing
    c. Test coverage
 
 2. Software architecture design principles

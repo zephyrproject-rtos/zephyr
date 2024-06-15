@@ -215,7 +215,7 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  *
  * @note
  * This routine must also serve as a memory barrier to ensure the uniprocessor
- * implementation of `k_spinlock_t` is correct.
+ * implementation of spinlocks is correct.
  *
  * This routine can be called recursively, as long as the caller keeps track
  * of each lock-out key that is generated. Interrupts are re-enabled by
@@ -263,7 +263,7 @@ unsigned int z_smp_global_lock(void);
  *
  * @note
  * This routine must also serve as a memory barrier to ensure the uniprocessor
- * implementation of `k_spinlock_t` is correct.
+ * implementation of spinlocks is correct.
  *
  * This routine can only be invoked from supervisor mode. Some architectures
  * (for example, ARM) will fail silently if invoked from user mode instead

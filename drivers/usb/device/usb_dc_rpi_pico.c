@@ -787,7 +787,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data,
 	}
 
 	LOG_DBG("ep 0x%02x, %u bytes, %u+%u, %p", ep, max_data_len, ep_state->read_offset,
-		read_count, data);
+		read_count, (void *)data);
 
 	if (data) {
 		read_count = MIN(read_count, max_data_len);

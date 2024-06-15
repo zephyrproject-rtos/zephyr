@@ -69,6 +69,16 @@
 #define XTENSA_MPU_ENTRY_REG_MEMORY_TYPE_MASK		\
 	(0x1FFU << XTENSA_MPU_ENTRY_REG_MEMORY_TYPE_SHIFT)
 
+/** Bit mask for foreground entry returned by probing. */
+#define XTENSA_MPU_PROBE_IS_FG_ENTRY_MASK		BIT(31)
+
+/** Bit mask for background entry returned by probing. */
+#define XTENSA_MPU_PROBE_IS_BG_ENTRY_MASK		BIT(30)
+
+/** Bit mask used to determine if entry is valid returned by probing. */
+#define XTENSA_MPU_PROBE_VALID_ENTRY_MASK		\
+	(XTENSA_MPU_PROBE_IS_FG_ENTRY_MASK | XTENSA_MPU_PROBE_IS_BG_ENTRY_MASK)
+
 /**
  * @}
  */

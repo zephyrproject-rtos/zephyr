@@ -4,20 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/check.h>
-#include <zephyr/bluetooth/gatt.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+
+#include "bap_endpoint.h"
 #include "bap_internal.h"
 #include "cap_internal.h"
-#include "ccid_internal.h"
 #include "csip_internal.h"
-#include "bap_endpoint.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_cap_commander, CONFIG_BT_CAP_COMMANDER_LOG_LEVEL);
 
@@ -94,6 +108,7 @@ copy_broadcast_reception_start_param(struct bt_bap_broadcast_assistant_add_src_p
 	bt_addr_le_copy(&add_src_param->addr, &start_param->addr);
 	add_src_param->adv_sid = start_param->adv_sid;
 	add_src_param->broadcast_id = start_param->broadcast_id;
+	add_src_param->pa_sync = true;
 	add_src_param->pa_interval = start_param->pa_interval;
 	add_src_param->num_subgroups = start_param->num_subgroups;
 	add_src_param->subgroups = start_param->subgroups;
@@ -200,15 +215,15 @@ static bool valid_broadcast_reception_start_param(
 		const struct bt_cap_commander_broadcast_reception_start_member_param *start_param =
 			&param->param[i];
 		const union bt_cap_set_member *member = &param->param[i].member;
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 
 		if (member == NULL) {
 			LOG_DBG("param->param[%zu].member is NULL", i);
 			return false;
 		}
 
-		if (client == NULL) {
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->param[%zu].member", i);
 			return false;
 		}
@@ -252,6 +267,7 @@ static bool valid_broadcast_reception_start_param(
 			return false;
 		}
 
+		total_bis_sync = 0U;
 		for (size_t j = 0U; j < start_param->num_subgroups; j++) {
 			const struct bt_bap_bass_subgroup *param_subgroups =
 				&start_param->subgroups[j];
@@ -259,12 +275,16 @@ static bool valid_broadcast_reception_start_param(
 			CHECKIF(!valid_bis_syncs(param_subgroups->bis_sync)) {
 				LOG_DBG("param->param[%zu].subgroup[%zu].bis_sync is invalid %u", i,
 					j, param_subgroups->bis_sync);
+
+				return false;
 			}
 
 			CHECKIF((total_bis_sync & param_subgroups->bis_sync) != 0) {
 				LOG_DBG("param->param[%zu].subgroup[%zu].bis_sync 0x%08X has "
 					"duplicate bits (0x%08X) ",
 					i, j, param_subgroups->bis_sync, total_bis_sync);
+
+				return false;
 			}
 
 			total_bis_sync |= param_subgroups->bis_sync;
@@ -326,7 +346,7 @@ int bt_cap_commander_broadcast_reception_start(
 
 	broadcast_assistant_cb.add_src = cap_commander_ba_add_src_cb;
 	if (!ba_cb_registered && cap_commander_register_ba_cb() != 0) {
-		LOG_DBG("Failed to register VCP callbacks");
+		LOG_DBG("Failed to register broadcast assistant callbacks");
 
 		return -ENOEXEC;
 	}
@@ -358,7 +378,7 @@ int bt_cap_commander_broadcast_reception_start(
 		stored_param->broadcast_reception_start.pa_interval = member_param->pa_interval;
 		stored_param->broadcast_reception_start.num_subgroups = member_param->num_subgroups;
 		memcpy(stored_param->broadcast_reception_start.subgroups, member_param->subgroups,
-		       sizeof(struct bt_bap_bass_subgroup) * add_src_param.num_subgroups);
+		       sizeof(struct bt_bap_bass_subgroup) * member_param->num_subgroups);
 	}
 
 	active_proc->proc_initiated_cnt++;
@@ -509,15 +529,20 @@ static bool valid_change_volume_param(const struct bt_cap_commander_change_volum
 
 	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->members[i];
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 
-		if (client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->members[%zu] is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->members[%zu]", i);
 			return false;
 		}
 
-		if (bt_vcp_vol_ctlr_get_by_conn(client->conn) == NULL) {
+		if (bt_vcp_vol_ctlr_get_by_conn(member_conn) == NULL) {
 			LOG_DBG("Volume control not available for param->members[%zu]", i);
 			return false;
 		}
@@ -678,15 +703,20 @@ static bool valid_change_volume_mute_state_param(
 
 	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->members[i];
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 
-		CHECKIF(client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->members[%zu] is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->members[%zu]", i);
 			return false;
 		}
 
-		CHECKIF(bt_vcp_vol_ctlr_get_by_conn(client->conn) == NULL) {
+		CHECKIF(bt_vcp_vol_ctlr_get_by_conn(member_conn) == NULL) {
 			LOG_DBG("Volume control not available for param->members[%zu]", i);
 			return false;
 		}
@@ -861,18 +891,23 @@ valid_change_offset_param(const struct bt_cap_commander_change_volume_offset_par
 		const struct bt_cap_commander_change_volume_offset_member_param *member_param =
 			&param->param[i];
 		const union bt_cap_set_member *member = &member_param->member;
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 		struct bt_vcp_vol_ctlr *vol_ctlr;
 		struct bt_vcp_included included;
 		int err;
 
-		if (client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->param[%zu].member is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->param[%zu].member", i);
 			return false;
 		}
 
-		vol_ctlr = bt_vcp_vol_ctlr_get_by_conn(client->conn);
+		vol_ctlr = bt_vcp_vol_ctlr_get_by_conn(member_conn);
 		if (vol_ctlr == NULL) {
 			LOG_DBG("Volume control not available for param->param[%zu].member", i);
 			return false;
@@ -1091,15 +1126,20 @@ static bool valid_change_microphone_mute_state_param(
 
 	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->members[i];
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 
-		CHECKIF(client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->members[%zu] is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->members[%zu]", i);
 			return false;
 		}
 
-		CHECKIF(bt_micp_mic_ctlr_get_by_conn(client->conn) == NULL) {
+		CHECKIF(bt_micp_mic_ctlr_get_by_conn(member_conn) == NULL) {
 			LOG_DBG("Microphone control not available for param->members[%zu]", i);
 			return false;
 		}
@@ -1272,18 +1312,23 @@ static bool valid_change_microphone_gain_param(
 
 	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->param[i].member;
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 		struct bt_micp_mic_ctlr *mic_ctlr;
 		struct bt_micp_included included;
 		int err;
 
-		if (client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->param[%zu].member is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->param[%zu].member", i);
 			return false;
 		}
 
-		mic_ctlr = bt_micp_mic_ctlr_get_by_conn(client->conn);
+		mic_ctlr = bt_micp_mic_ctlr_get_by_conn(member_conn);
 		if (mic_ctlr == NULL) {
 			LOG_DBG("Microphone control not available for param->param[%zu].member", i);
 			return false;

@@ -44,6 +44,12 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 	return 0;
 }
 
+int bt_bap_unicast_client_connect(struct bt_bap_stream *stream)
+{
+	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);
+	return 0;
+}
+
 int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 {
 	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);

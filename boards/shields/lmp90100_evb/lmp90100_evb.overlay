@@ -32,7 +32,7 @@
 	status = "okay";
 
 	eeprom0_lmp90100_evb: eeprom@57 {
-		compatible = "atmel,at24";
+		compatible = "atmel,at24c02", "atmel,at24";
 		reg = <0x57>;
 		size = <256>;
 		pagesize = <8>;

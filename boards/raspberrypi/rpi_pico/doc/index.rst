@@ -179,7 +179,7 @@ Here is an example of building and flashing the :zephyr:code-sample:`blinky` app
 Using OpenOCD
 -------------
 
-To use PicoProbe, You must configure **udev**.
+To use CMSIS-DAP, You must configure **udev**.
 
 Create a file in /etc/udev.rules.d with any name, and write the line below.
 
@@ -206,7 +206,7 @@ Here is an example of building and flashing the :zephyr:code-sample:`blinky` app
    :zephyr-app: samples/basic/blinky
    :board: rpi_pico
    :goals: build flash
-   :gen-args: -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts -DRPI_PICO_DEBUG_ADAPTER=picoprobe
+   :gen-args: -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts -DRPI_PICO_DEBUG_ADAPTER=cmsis-dap
 
 Set the environment variables **OPENOCD** to `/usr/local/bin/openocd`
 and **OPENOCD_DEFAULT_PATH** to `/usr/local/share/openocd/scripts`. This should work
@@ -215,9 +215,9 @@ This configuration also works with an environment that is set up by the `pico_se
 
 **RPI_PICO_DEBUG_ADAPTER** specifies what debug adapter is used for debugging.
 
-If **RPI_PICO_DEBUG_ADAPTER** was not assigned, `picoprobe` is used by default.
+If **RPI_PICO_DEBUG_ADAPTER** was not assigned, `cmsis-dap` is used by default.
 The other supported adapters are `raspberrypi-swd`, `jlink` and `blackmagicprobe`.
-How to connect `picoprobe` and `raspberrypi-swd` is described in `Getting Started with Raspberry Pi Pico`_.
+How to connect `cmsis-dap` and `raspberrypi-swd` is described in `Getting Started with Raspberry Pi Pico`_.
 Any other SWD debug adapter maybe also work with this configuration.
 
 The value of **RPI_PICO_DEBUG_ADAPTER** is cached, so it can be omitted from

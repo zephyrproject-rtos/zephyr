@@ -54,7 +54,6 @@
 		bootloader-led0 = &led0;
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
-		spi-flash0 = &p25q16h;
 	};
 };
 

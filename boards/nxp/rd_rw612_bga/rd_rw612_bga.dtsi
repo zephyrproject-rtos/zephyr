@@ -4,10 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <nxp/nxp_rw6xx.dtsi>
 #include "rd_rw612_bga-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
+	model = "nxp,rd_rw612_bga";
+	compatible = "nxp,rd_rw612_bga";
 
 	aliases {
 		usart-0 = &flexcomm3;
@@ -147,6 +150,16 @@ arduino_i2c: &flexcomm2 {
 				label = "image-0";
 				reg = <0x00020000 0x3e0000>;
 			};
+
+			/* This partition is reserved for connectivity firmwares storage
+			 * and shouldn't be moved.
+			 */
+			 fw_storage: partition@400000 {
+				label = "fw_storage";
+				reg = <0x400000 0x280000>;
+				read-only;
+			};
+
 			slot1_partition: partition@680000 {
 				label = "image-1";
 				reg = <0x680000 0x3e0000>;
@@ -263,4 +276,9 @@ zephyr_udc0: &usb_otg {
 
 &systick {
 	status = "disabled";
+};
+
+&hci {
+	status = "okay";
+	wakeup-source;
 };

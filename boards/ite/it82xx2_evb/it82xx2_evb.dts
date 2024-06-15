@@ -25,7 +25,7 @@
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
-		zephyr,bt-uart = &uart2;
+		zephyr,bt-hci = &bt_hci_uart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flashctrl;
@@ -115,6 +115,11 @@
 	status = "okay";
 	current-speed = <460800>;
 	clock-frequency = <1843200>;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+	};
 };
 
 &ite_uart1_wrapper {

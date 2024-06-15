@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+config IS31FL3194
+	bool "IS31FL3194 LED driver"
+	default y
+	depends on DT_HAS_ISSI_IS31FL3194_ENABLED
+	select I2C
+	help
+	  Enable LED driver for Lumissil Microsystems (a division of ISSI)
+	  IS31FL3194. This chip supports one RGB LED or 3 independent LEDs.

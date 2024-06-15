@@ -268,6 +268,8 @@ struct dai_config {
 	size_t block_size;
 	/** DAI specific link configuration. */
 	uint16_t link_config;
+	/**< tdm slot goup number*/
+	uint32_t  tdm_slot_group;
 };
 
 /**

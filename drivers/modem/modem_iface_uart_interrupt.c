@@ -125,18 +125,6 @@ static int modem_iface_uart_read(struct modem_iface *iface,
 	return 0;
 }
 
-static bool mux_is_active(struct modem_iface *iface)
-{
-	bool active = false;
-
-#if defined(CONFIG_UART_MUX_DEVICE_NAME)
-	active = strncmp(CONFIG_UART_MUX_DEVICE_NAME, iface->dev->name,
-			 sizeof(CONFIG_UART_MUX_DEVICE_NAME) - 1) == 0;
-#endif /* CONFIG_UART_MUX_DEVICE_NAME */
-
-	return active;
-}
-
 static int modem_iface_uart_write(struct modem_iface *iface,
 				  const uint8_t *buf, size_t size)
 {
@@ -148,18 +136,9 @@ static int modem_iface_uart_write(struct modem_iface *iface,
 		return 0;
 	}
 
-	/* If we're using gsm_mux, We don't want to use poll_out because sending
-	 * one byte at a time causes each byte to get wrapped in muxing headers.
-	 * But we can safely call uart_fifo_fill outside of ISR context when
-	 * muxing because uart_mux implements it in software.
-	 */
-	if (mux_is_active(iface)) {
-		uart_fifo_fill(iface->dev, buf, size);
-	} else {
-		do {
-			uart_poll_out(iface->dev, *buf++);
-		} while (--size);
-	}
+	do {
+		uart_poll_out(iface->dev, *buf++);
+	} while (--size);
 
 	return 0;
 }

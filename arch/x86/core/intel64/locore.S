@@ -44,7 +44,7 @@
 	/* Page tables created at build time by gen_mmu.py
 	 * NOTE: Presumes phys=virt
 	 */
-	movl $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
+	movl $K_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
 	movl %eax, %cr3
 
 	set_efer
@@ -66,7 +66,7 @@
 	clts
 
 	/* NOTE: Presumes phys=virt */
-	movq $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %rax
+	movq $K_MEM_PHYS_ADDR(z_x86_kernel_ptables), %rax
 	movq %rax, %cr3
 
 	set_efer

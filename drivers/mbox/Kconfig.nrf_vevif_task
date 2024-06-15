@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_NRF_VEVIF_TASK_RX
+	bool "nRF VEVIF task RX driver"
+	depends on DT_HAS_NORDIC_NRF_VEVIF_TASK_RX_ENABLED
+	default y
+	help
+	  Mailbox driver for receiving VEVIF tasks on VPR as CLIC interrupts
+
+config MBOX_NRF_VEVIF_TASK_TX
+	bool "nRF VEVIF task TX driver"
+	depends on DT_HAS_NORDIC_NRF_VEVIF_TASK_TX_ENABLED
+	default y
+	help
+	  Mailbox driver for transmitting VEVIF tasks to VPR as CLIC interrupts

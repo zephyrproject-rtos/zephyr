@@ -1,0 +1,18 @@
+common:
+  tags: drivers
+  harness: ztest
+
+tests:
+  boards.nrf.dmm:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+
+  boards.nrf.dmm.cache_disabled:
+    extra_configs:
+      - CONFIG_DCACHE=n
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp

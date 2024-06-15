@@ -910,6 +910,7 @@ flagged.
         "OPT",
         "OPT_0",
         "PEDO_THS_MIN",
+        "PSA_H", # This is used in config-psa.h as guard for the header file
         "REG1",
         "REG2",
         "RIMAGE_SIGNING_SCHEMA",  # Optional module
@@ -942,6 +943,9 @@ flagged.
         "ZEPHYR_TRY_MASS_ERASE", # MCUBoot setting described in sysbuild
                                  # documentation
         "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
+        "SUIT_MPI_GENERATE", # Used by nRF runners to program provisioning data, based on build configuration
+        "SUIT_MPI_APP_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
+        "SUIT_MPI_RAD_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
     }
 
 

@@ -1,0 +1,12 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_NXP_FLEXIO
+	bool "NXP Flexio PWM driver"
+	default y
+	depends on DT_HAS_NXP_FLEXIO_ENABLED
+	depends on CLOCK_CONTROL
+	depends on DT_HAS_NXP_FLEXIO_PWM_ENABLED
+	select MCUX_FLEXIO
+	help
+	  Enable flexio based pwm driver.

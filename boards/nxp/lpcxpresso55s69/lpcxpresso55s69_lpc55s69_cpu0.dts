@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, NXP
+ * Copyright 2019,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,8 +125,6 @@
 
 &hs_lspi {
 	status = "okay";
-	dmas = <&dma0 2>, <&dma0 3>;
-	dma-names = "rx", "tx";
 	cs-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 };
 
@@ -151,6 +149,14 @@
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <5>;
+	tx-cal-45-dp-ohms = <10>;
+	tx-cal-45-dm-ohms = <10>;
 };
 
 &ctimer0 {
@@ -179,8 +185,6 @@ i2s0: &flexcomm6 {
 	compatible = "nxp,lpc-i2s";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	dmas = <&dma0 16>;
-	dma-names = "rx";
 };
 
 /* I2S transmit channel */
@@ -189,8 +193,6 @@ i2s1: &flexcomm7 {
 	compatible = "nxp,lpc-i2s";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	dmas = <&dma0 19>;
-	dma-names = "tx";
 };
 
 &sc_timer {

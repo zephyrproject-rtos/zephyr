@@ -11,5 +11,6 @@ config UART_PSOC6
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select USE_INFINEON_UART
+	select PINCTRL
 	help
 	  This option enables the SCB[UART] driver for PSoC-6 SoC family.

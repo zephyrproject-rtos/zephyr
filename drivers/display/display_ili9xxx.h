@@ -22,8 +22,11 @@
 #define ILI9XXX_CASET 0x2a
 #define ILI9XXX_PASET 0x2b
 #define ILI9XXX_RAMWR 0x2c
+#define ILI9XXX_RGBSET 0x2d
+#define ILI9XXX_RAMRD 0x2e
 #define ILI9XXX_MADCTL 0x36
 #define ILI9XXX_PIXSET 0x3A
+#define ILI9XXX_RAMRD_CONT 0x3e
 
 /* MADCTL register fields. */
 #define ILI9XXX_MADCTL_MY BIT(7U)

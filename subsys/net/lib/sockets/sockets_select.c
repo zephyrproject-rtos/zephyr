@@ -284,5 +284,5 @@ out:
 
 	return ret;
 }
-#include <syscalls/zsock_select_mrsh.c>
+#include <zephyr/syscalls/zsock_select_mrsh.c>
 #endif

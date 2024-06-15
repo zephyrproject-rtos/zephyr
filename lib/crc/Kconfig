@@ -10,7 +10,7 @@ if CRC
 config CRC_SHELL
 	bool "CRC Shell"
 	depends on SHELL
-	select GETOPT
+	select POSIX_C_LIB_EXT
 	help
 	  Enable CRC checking for memory regions from the shell.
 endif # CRC

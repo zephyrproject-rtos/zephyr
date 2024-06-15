@@ -31,12 +31,12 @@ ZTEST(littlefs, test_util_path_init_base)
 	zassert_equal(testfs_path_init(&path, NULL, TESTFS_PATH_END),
 		      path.path,
 		      "bad root init return");
-	zassert_equal(strcmp(path.path, "/"), 0, "bad root init path");
+	zassert_str_equal(path.path, "/", "bad root init path");
 
 	zassert_equal(testfs_path_init(&path, &mnt, TESTFS_PATH_END),
 		      path.path,
 		      "bad mnt init return");
-	zassert_equal(strcmp(path.path, mnt.mnt_point), 0, "bad mnt init path");
+	zassert_str_equal(path.path, mnt.mnt_point, "bad mnt init path");
 
 	if (IS_ENABLED(CONFIG_DEBUG)) {
 		struct fs_mount_t invalid = {
@@ -76,71 +76,35 @@ ZTEST(littlefs, test_util_path_init_overrun)
 
 ZTEST(littlefs, test_util_path_init_extended)
 {
-	zassert_equal(strcmp(testfs_path_init(&path, &mnt,
-					      ELT1,
-					      TESTFS_PATH_END),
-			     MNT "/" ELT1),
-		      0,
-		      "bad mnt init elt1");
+	zassert_str_equal(testfs_path_init(&path, &mnt, ELT1, TESTFS_PATH_END),
+			  MNT "/" ELT1, "bad mnt init elt1");
 
-	zassert_equal(strcmp(testfs_path_init(&path, &mnt,
-					      ELT1,
-					      ELT2,
-					      TESTFS_PATH_END),
-			     MNT "/" ELT1 "/" ELT2),
-		      0,
-		      "bad mnt init elt1 elt2");
+	zassert_str_equal(testfs_path_init(&path, &mnt, ELT1, ELT2, TESTFS_PATH_END),
+			  MNT "/" ELT1 "/" ELT2, "bad mnt init elt1 elt2");
 }
 
 ZTEST(littlefs, test_util_path_extend)
 {
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
-						TESTFS_PATH_END),
-			     MNT),
-		      0,
-		      "empty extend failed");
+	zassert_str_equal(testfs_path_extend(reset_path(), TESTFS_PATH_END),
+			  MNT, "empty extend failed");
 
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
-						ELT2,
-						TESTFS_PATH_END),
-			     MNT "/" ELT2),
-		      0,
-		      "elt extend failed");
+	zassert_str_equal(testfs_path_extend(reset_path(), ELT2, TESTFS_PATH_END),
+			  MNT "/" ELT2, "elt extend failed");
 
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
-						ELT1,
-						ELT2,
-						TESTFS_PATH_END),
-			     MNT "/" ELT1 "/" ELT2),
-		      0,
-		      "elt1 elt2 extend failed");
+	zassert_str_equal(testfs_path_extend(reset_path(), ELT1, ELT2, TESTFS_PATH_END),
+			  MNT "/" ELT1 "/" ELT2, "elt1 elt2 extend failed");
 }
 
 ZTEST(littlefs, test_util_path_extend_up)
 {
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
-						ELT2,
-						"..",
-						ELT1,
-						TESTFS_PATH_END),
-			     MNT "/" ELT1),
-		      0,
-		      "elt elt2, up, elt1 failed");
+	zassert_str_equal(testfs_path_extend(reset_path(), ELT2, "..", ELT1, TESTFS_PATH_END),
+			  MNT "/" ELT1, "elt elt2, up, elt1 failed");
 
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
-						"..",
-						TESTFS_PATH_END),
-			     "/"),
-		      0,
-		      "up strip mnt failed");
+	zassert_str_equal(testfs_path_extend(reset_path(), "..", TESTFS_PATH_END),
+			  "/", "up strip mnt failed");
 
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
-						"..",
-						"..",
-						TESTFS_PATH_END),
-			     "/"),
-		      0,
-		      "up from root failed");
+	zassert_str_equal(testfs_path_extend(reset_path(), "..", "..", TESTFS_PATH_END),
+			  "/", "up from root failed");
 }
 
 ZTEST(littlefs, test_util_path_extend_overrun)
@@ -150,11 +114,6 @@ ZTEST(littlefs, test_util_path_extend_overrun)
 	memset(long_elt, 'a', sizeof(long_elt) - 1);
 	long_elt[sizeof(long_elt) - 1] = '\0';
 
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
-						long_elt,
-						ELT1,
-						TESTFS_PATH_END),
-			     MNT),
-		      0,
-		      "stop at overrun failed");
+	zassert_str_equal(testfs_path_extend(reset_path(), long_elt, ELT1, TESTFS_PATH_END),
+			  MNT, "stop at overrun failed");
 }

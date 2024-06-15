@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	spim3_loopback: spim3_loopback {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO19>;
+			output-enable; /* Enable internal loopback */
+		};
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO19>;
+			input-enable; /* Enable internal loopback */
+		};
+		group3 {
+			pinmux = <SPIM3_SCLK_GPIO18>,
+				<SPIM3_CSEL_GPIO5>;
+		};
+	};
+};
+
+&spi3 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dma-enabled;
+	pinctrl-0 = <&spim3_loopback>;
+	pinctrl-names = "default";
+	status = "okay";
+};

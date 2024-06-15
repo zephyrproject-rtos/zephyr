@@ -13,7 +13,7 @@
 #define ARCH_HDR_VER			1
 
 /* Structure to store the architecture registers passed arch_coredump_info_dump
- * As callee saved registers are not provided in z_arch_esf_t structure in Zephyr
+ * As callee saved registers are not provided in struct arch_esf structure in Zephyr
  * we just need 22 registers.
  */
 struct arm64_arch_block {
@@ -50,7 +50,7 @@ struct arm64_arch_block {
  */
 static struct arm64_arch_block arch_blk;
 
-void arch_coredump_info_dump(const z_arch_esf_t *esf)
+void arch_coredump_info_dump(const struct arch_esf *esf)
 {
 	/* Target architecture information header */
 	/* Information just relevant to the python parser */
@@ -69,7 +69,7 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf)
 
 	/*
 	 * Copies the thread registers to a memory block that will be printed out
-	 * The thread registers are already provided by structure z_arch_esf_t
+	 * The thread registers are already provided by structure struct arch_esf
 	 */
 	arch_blk.r.x0 = esf->x0;
 	arch_blk.r.x1 = esf->x1;

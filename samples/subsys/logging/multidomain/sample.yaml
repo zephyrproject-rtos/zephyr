@@ -4,28 +4,24 @@ common:
   sysbuild: true
   tags: ipc
 tests:
-  sample.logging.multidomain.ipc_static_vrings.hw:
+  sample.logging.multidomain.ipc_static_vrings:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
-    integration_platforms:
-      - nrf5340dk/nrf5340/cpuapp
-    build_only: true
-  sample.logging.multidomain.ipc_static_vrings.simu:
-    platform_allow:
       - nrf5340bsim/nrf5340/cpuapp
     integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp
     harness: console
     harness_config:
       type: multi_line
       ordered: false
       regex:
-        - "IPC-service REMOTE \\[INST 1\\] demo started"
+        - "Hello World!"
+        - "app: IPC-service HOST \\[INST 1\\] demo started"
         - "app: loop: 0"
         - "app: ipc open"
         - "app: wait for bound"
         - "app: bounded"
         - "app: REMOTE \\[1\\]: 0"
         - "app: HOST \\[1\\]: 1"
-        - "IPC-service REMOTE \\[INST 1\\] demo ended."
         - "app: IPC-service HOST \\[INST 1\\] demo ended."

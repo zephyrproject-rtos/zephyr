@@ -35,7 +35,7 @@ config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	  assumes responsibility for handling the NVIC.
 
 config ROMSTART_RELOCATION_ROM
-	bool
+	bool "Relocate rom_start region"
 	default n
 	help
 	  Relocates the rom_start region containing the boot-vector data and
@@ -66,7 +66,7 @@ config ROMSTART_RELOCATION_ROM
 if ROMSTART_RELOCATION_ROM
 
 	config ROMSTART_REGION_ADDRESS
-		hex
+		hex "Base address of the rom_start region"
 		default 0x00000000
 		help
 		  Start address of the rom_start region.
@@ -85,7 +85,7 @@ if ROMSTART_RELOCATION_ROM
 		  $(dt_nodelabel_reg_addr_hex,ocram_s_sys)
 
 	config ROMSTART_REGION_SIZE
-		hex
+		hex "Size of the rom_start region"
 		default 1
 		help
 		  Size of the rom_start region in KB.

@@ -76,7 +76,7 @@ static void set_fault(unsigned int reason)
 	compiler_barrier();
 }
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	INFO("Caught system error -- reason %d\n", reason);
 
@@ -1009,7 +1009,7 @@ static inline void z_vrfy_check_syscall_context(void)
 {
 	return z_impl_check_syscall_context();
 }
-#include <syscalls/check_syscall_context_mrsh.c>
+#include <zephyr/syscalls/check_syscall_context_mrsh.c>
 
 ZTEST_USER(userspace, test_syscall_context)
 {

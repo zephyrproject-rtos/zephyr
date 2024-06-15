@@ -333,11 +333,25 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER=n
+  bluetooth.audio_shell.only_cap_acceptor:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_CLIENT=n
+      - CONFIG_BT_CAP_INITIATOR=n
+      - CONFIG_BT_CAP_COMMANDER=n
   bluetooth.audio_shell.no_cap_initiator:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_CAP_INITIATOR=n
+  bluetooth.audio_shell.only_cap_initiator:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_SERVER=n
+      - CONFIG_BT_CAP_ACCEPTOR=n
+      - CONFIG_BT_CAP_COMMANDER=n
   bluetooth.audio_shell.no_gmap:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -350,6 +364,14 @@ tests:
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_CAP_COMMANDER=n
+  bluetooth.audio_shell.only_cap_commander:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_CLIENT=n
+      - CONFIG_BT_CAP_ACCEPTOR=n
+      - CONFIG_BT_CAP_INITIATOR=n
   bluetooth.audio_shell.no_lc3:
     extra_args: CONF_FILE="audio.conf"
     build_only: true

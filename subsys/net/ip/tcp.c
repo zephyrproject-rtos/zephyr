@@ -2922,11 +2922,16 @@ next_state:
 			verdict = NET_OK;
 		} else {
 			conn->send_options.mss_found = true;
-			tcp_out(conn, SYN);
-			conn->send_options.mss_found = false;
-			conn_seq(conn, + 1);
-			next = TCP_SYN_SENT;
-			tcp_conn_ref(conn);
+			ret = tcp_out_ext(conn, SYN, NULL /* no data */, conn->seq);
+			if (ret < 0) {
+				do_close = true;
+				close_status = ret;
+			} else {
+				conn->send_options.mss_found = false;
+				conn_seq(conn, + 1);
+				next = TCP_SYN_SENT;
+				tcp_conn_ref(conn);
+			}
 		}
 		break;
 	case TCP_SYN_RECEIVED:
@@ -3918,8 +3923,11 @@ int net_tcp_connect(struct net_context *context,
 	(void)tcp_in(conn, NULL);
 
 	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
-		if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
-		    conn->state != TCP_ESTABLISHED) {
+		if (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED) {
+			ret = -errno;
+			goto out;
+		} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
+			   conn->state != TCP_ESTABLISHED) {
 			ret = -EINPROGRESS;
 			goto out;
 		} else if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
@@ -4043,6 +4051,8 @@ int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 	struct net_tcp_hdr *tcp_hdr;
+	enum net_if_checksum_type type = net_pkt_family(pkt) == AF_INET6 ?
+		NET_IF_CHECKSUM_IPV6_TCP : NET_IF_CHECKSUM_IPV4_TCP;
 
 	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
 	if (!tcp_hdr) {
@@ -4051,7 +4061,7 @@ int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum)
 
 	tcp_hdr->chksum = 0U;
 
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) || force_chksum) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), type) || force_chksum) {
 		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
 		net_pkt_set_chksum_done(pkt, true);
 	}
@@ -4063,9 +4073,11 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 				  struct net_pkt_data_access *tcp_access)
 {
 	struct net_tcp_hdr *tcp_hdr;
+	enum net_if_checksum_type type = net_pkt_family(pkt) == AF_INET6 ?
+		NET_IF_CHECKSUM_IPV6_TCP : NET_IF_CHECKSUM_IPV4_TCP;
 
 	if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
-	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) ||
+	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), type) ||
 	     net_pkt_is_ip_reassembled(pkt)) &&
 	    net_calc_chksum_tcp(pkt) != 0U) {
 		NET_DBG("DROP: checksum mismatch");

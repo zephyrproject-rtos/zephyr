@@ -369,8 +369,8 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	}
 
 	ctx->sock = fd;
-	z_finalize_fd(fd, ctx,
-		      (const struct fd_op_vtable *)&websocket_fd_op_vtable);
+	z_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&websocket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	/* Call the user specified callback and if it accepts the connection
 	 * then continue.
@@ -1171,8 +1171,8 @@ int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)
 	}
 
 	ctx->sock = fd;
-	z_finalize_fd(fd, ctx,
-		      (const struct fd_op_vtable *)&websocket_fd_op_vtable);
+	z_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&websocket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	NET_DBG("[%p] WS connection to peer established (fd %d)", ctx, fd);
 

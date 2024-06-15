@@ -143,7 +143,7 @@ struct hid_device_ops kb_ops = {
 
 int main(void)
 {
-	struct usbd_contex *sample_usbd;
+	struct usbd_context *sample_usbd;
 	const struct device *hid_dev;
 	int ret;
 
@@ -184,11 +184,13 @@ int main(void)
 		return -ENODEV;
 	}
 
+	/* doc device enable start */
 	ret = usbd_enable(sample_usbd);
 	if (ret) {
 		LOG_ERR("Failed to enable device support");
 		return ret;
 	}
+	/* doc device enable end */
 
 	LOG_INF("HID keyboard sample is initialized");
 

@@ -6,16 +6,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/check.h>
 
 #include "media_proxy_internal.h"
 #include "mcs_internal.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(media_proxy, CONFIG_MCTL_LOG_LEVEL);
 

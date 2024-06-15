@@ -54,6 +54,11 @@
 				reset-gpios = <&test_gpio 0 0>;
 				powerdown-gpios = <&test_gpio 1 0>;
 			};
+
+			test_i2c_ov7670: ov7670@4 {
+				compatible = "ovti,ov7670";
+				reg = <0x4>;
+			};
 		};
 	};
 };

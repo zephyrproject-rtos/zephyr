@@ -1,0 +1,15 @@
+sample:
+  name: STM32 I2C V2 timing
+tests:
+  sample.boards.stm32.i2c_timing:
+    depends_on: i2c
+    tags:
+      - drivers
+      - i2c
+    filter: dt_compat_enabled("st,stm32-i2c-v2")
+    platform_allow: nucleo_l476rg nucleo_wb55rg
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "I2C freq. I2C_BITRATE_*"

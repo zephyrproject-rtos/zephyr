@@ -43,8 +43,8 @@
 			riscv,isa = "rv32emc";
 			nordic,bus-width = <32>;
 
-			cpuppr_vevif_local: mailbox {
-				compatible = "nordic,nrf-vevif-local";
+			cpuppr_vevif_rx: mailbox {
+				compatible = "nordic,nrf-vevif-task-rx";
 				status = "disabled";
 				interrupt-parent = <&cpuppr_clic>;
 				interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>,
@@ -74,6 +74,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		suit_storage_partition: memory@e1eb000 {
+			reg = <0xe1eb000 DT_SIZE_K(24)>;
+		};
+
 		cpurad_uicr_ext: memory@e1ff000 {
 			reg = <0xe1ff000 DT_SIZE_K(2)>;
 		};
@@ -84,6 +88,12 @@
 	};
 
 	clocks {
+		hfxo: hfxo {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+
 		fll16m: fll16m {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
@@ -179,6 +189,11 @@
 				interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+			cpuapp_resetinfo: resetinfo@1e000 {
+				compatible = "nordic,nrf-resetinfo";
+				reg = <0x1e000 0x1000>;
+			};
+
 			cpuapp_ieee802154: ieee802154 {
 				compatible = "nordic,nrf-ieee802154";
 				status = "disabled";
@@ -215,6 +230,11 @@
 				reg = <0x14000 0x1000>;
 				status = "disabled";
 				interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			cpurad_resetinfo: resetinfo@1e000 {
+				compatible = "nordic,nrf-resetinfo";
+				reg = <0x1e000 0x1000>;
 			};
 
 			dppic020: dppic@22000 {
@@ -376,8 +396,24 @@
 				#mbox-cells = <1>;
 			};
 
-			cpusys_vevif_remote: mailbox@8c8000 {
-				compatible = "nordic,nrf-vevif-remote";
+			canpll: clock-controller@8c2000{
+				compatible = "nordic,nrf-auxpll";
+				reg = <0x8c2000 0x1000>;
+				interrupts = <194 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hfxo>;
+				#clock-cells = <0>;
+				nordic,ficrs = <&ficr NRF_FICR_TRIM_GLOBAL_CANPLL_TRIM_CTUNE>;
+				nordic,frequency = <0>;
+				nordic,out-div = <2>;
+				nordic,out-drive = <0>;
+				nordic,current-tune = <6>;
+				nordic,sdm-disable;
+				nordic,range = "high";
+				status = "disabled";
+			};
+
+			cpusys_vevif_tx: mailbox@8c8000 {
+				compatible = "nordic,nrf-vevif-task-tx";
 				reg = <0x8c8000 0x1000>;
 				status = "disabled";
 				#mbox-cells = <1>;
@@ -391,6 +427,16 @@
 				status = "disabled";
 				channels = <8>;
 				global-domain-id = <12>;
+			};
+
+			can120: can@8d8000 {
+				compatible = "nordic,nrf-can";
+				reg = <0x8d8000 0x400>, <0x2fbef800 0x800>, <0x2fbe8000 0x7800>;
+				reg-names = "wrapper", "m_can", "message_ram";
+				interrupts = <216 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&canpll>;
+				bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
+				status = "disabled";
 			};
 
 			dppic120: dppic@8e1000 {
@@ -471,8 +517,8 @@
 				#size-cells = <1>;
 				ranges = <0x0 0x908000 0x4000>;
 
-				cpuppr_vevif_remote: mailbox@0 {
-					compatible = "nordic,nrf-vevif-remote";
+				cpuppr_vevif_tx: mailbox@0 {
+					compatible = "nordic,nrf-vevif-task-tx";
 					reg = <0x0 0x1000>;
 					status = "disabled";
 					#mbox-cells = <1>;
@@ -613,6 +659,14 @@
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x981000 0x1000>;
 				status = "disabled";
+			};
+
+			adc: adc@982000 {
+				compatible = "nordic,nrf-saadc";
+				reg = <0x982000 0x1000>;
+				interrupts = <386 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				#io-channel-cells = <1>;
 			};
 
 			comp: comparator@983000 {

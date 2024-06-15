@@ -14,6 +14,9 @@
 #include <stdint.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/ztest_assert.h>
+
+static int test_var;
 
 void test_relative_jump_1(void);
 void test_relative_jump_2(void);
@@ -24,6 +27,7 @@ void test_relative_jump_5(void);
 void test_relative_jump_5(void)
 {
 	printk("relative jump 5\n");
+	test_var = 1;
 }
 
 void test_relative_jump_4(void)
@@ -53,7 +57,9 @@ void test_relative_jump_3(void)
 void test_entry(void)
 {
 	printk("enter\n");
+	test_var = 0;
 	test_relative_jump_1();
 	printk("exit\n");
+	zassert_equal(test_var, 1, "relative jump test failed");
 }
 LL_EXTENSION_SYMBOL(test_entry);

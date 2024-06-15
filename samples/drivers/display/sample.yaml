@@ -88,12 +88,6 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
-  sample.display.mcux_elcdif:
-    platform_allow: mimxrt1050_evk
-    tags: display
-    harness: console
-    harness_config:
-      fixture: fixture_display
   sample.display.mcux_dcnano_lcdif:
     platform_allow: mimxrt595_evk/mimxrt595s/cm33
     tags: display
@@ -173,5 +167,27 @@ tests:
       - display
       - shield
     harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.rk043fn66hs_ctg:
+    platform_allow:
+      - mimxrt1064_evk
+      - mimxrt1060_evk
+      - mimxrt1050_evk
+      - mimxrt1040_evk
+    tags: display
+    harness: console
+    extra_args: SHIELD=rk043fn66hs_ctg
+    harness_config:
+      fixture: fixture_display
+  sample.display.rk043fn02h_ct:
+    platform_allow:
+      - mimxrt1064_evk
+      - mimxrt1060_evk
+      - mimxrt1050_evk
+      - mimxrt1040_evk
+    tags: display
+    harness: console
+    extra_args: SHIELD=rk043fn02h_ct
     harness_config:
       fixture: fixture_display

@@ -36,13 +36,14 @@
         group1 {
             pinmux = <SMARTBOND_PINMUX(GPIO, 0, 19)>,
                 <SMARTBOND_PINMUX(GPIO, 0, 18)>;
-            bias-pull-down;
+            bias-pull-up;
         };
     };
 };
 
 &i2c2 {
     clock-frequency = <400000>;
+    status = "okay";
 
     display_touch: ft6206@38 {
         compatible = "focaltech,ft5336";

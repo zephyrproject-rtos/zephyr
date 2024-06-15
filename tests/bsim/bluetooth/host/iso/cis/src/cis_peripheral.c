@@ -4,15 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+
 #include "common.h"
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/printk.h>
 
+#include <testlib/conn.h>
+
 extern enum bst_result_t bst_result;
 
-CREATE_FLAG(flag_iso_connected);
 CREATE_FLAG(flag_data_received);
 
 static const struct bt_data ad[] = {
@@ -70,15 +73,11 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
-
-	SET_FLAG(flag_iso_connected);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
-
-	UNSET_FLAG(flag_iso_connected);
 }
 
 static int iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_chan **chan)
@@ -144,7 +143,7 @@ static void adv_connect(void)
 {
 	int err;
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 
@@ -159,20 +158,22 @@ static void adv_connect(void)
 static void test_main(void)
 {
 	init();
-	adv_connect();
-	WAIT_FOR_FLAG_SET(flag_iso_connected);
-	WAIT_FOR_FLAG_SET(flag_data_received);
-	WAIT_FOR_FLAG_UNSET(flag_iso_connected);
-	WAIT_FOR_FLAG_UNSET(flag_connected);
 
-	PASS("Test passed\n");
+	while (true) {
+		adv_connect();
+		bt_testlib_conn_wait_free();
+
+		if (TEST_FLAG(flag_data_received)) {
+			PASS("Test passed\n");
+		}
+	}
 }
 
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},

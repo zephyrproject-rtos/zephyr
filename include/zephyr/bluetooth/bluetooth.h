@@ -231,6 +231,15 @@ int bt_enable(bt_ready_cb_t cb);
  *
  * Disable Bluetooth. Can't be called before bt_enable has completed.
  *
+ * This API will clear all configured identities and keys that are not persistently
+ * stored with @kconfig{CONFIG_BT_SETTINGS}. These can be restored
+ * with settings_load() before reenabling the stack.
+ *
+ * This API does _not_ clear previously registered callbacks
+ * like @ref bt_le_scan_cb_register and @ref bt_conn_cb_register.
+ * That is, the application shall not re-register them when
+ * the Bluetooth subsystem is re-enabled later.
+ *
  * Close and release HCI resources. Result is architecture dependent.
  *
  * @return Zero on success or (negative) error code otherwise.
@@ -1813,8 +1822,11 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync);
  * such as synced, terminated and when data is received.
  *
  * @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EEXIST if @p cb was already registered.
  */
-void bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb);
+int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb);
 
 /**
  * @brief Enables receiving periodic advertising reports for a sync.
@@ -2300,8 +2312,11 @@ int bt_le_scan_stop(void);
  * API was used to start the scanner.
  *
  * @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EEXIST if @p cb was already registered.
  */
-void bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
+int bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
 
 /**
  * @brief Unregister scanner packet callbacks.

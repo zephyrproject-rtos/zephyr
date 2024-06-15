@@ -705,9 +705,10 @@ endfunction()
 # This section provides glue between CMake and the Python code that
 # manages the runners.
 
+set(TYPES "FLASH" "DEBUG" "SIM" "ROBOT")
 function(_board_check_runner_type type) # private helper
-  if (NOT (("${type}" STREQUAL "FLASH") OR ("${type}" STREQUAL "DEBUG")))
-    message(FATAL_ERROR "invalid type ${type}; should be FLASH or DEBUG")
+  if (NOT "${type}" IN_LIST TYPES)
+    message(FATAL_ERROR "invalid type ${type}; should be one of: ${TYPES}")
   endif()
 endfunction()
 
@@ -723,8 +724,8 @@ endfunction()
 #
 # This would set the board's flash runner to "pyocd".
 #
-# In general, "type" is FLASH or DEBUG, and "runner" is the name of a
-# runner.
+# In general, "type" is FLASH, DEBUG, SIM or ROBOT and "runner" is
+# the name of a runner.
 function(board_set_runner type runner)
   _board_check_runner_type(${type})
   if (DEFINED BOARD_${type}_RUNNER)
@@ -763,6 +764,16 @@ endmacro()
 # A convenience macro for board_set_runner_ifnset(DEBUG ${runner}).
 macro(board_set_debugger_ifnset runner)
   board_set_runner_ifnset(DEBUG ${runner})
+endmacro()
+
+# A convenience macro for board_set_runner_ifnset(ROBOT ${runner}).
+macro(board_set_robot_runner_ifnset runner)
+  board_set_runner_ifnset(ROBOT ${runner})
+endmacro()
+
+# A convenience macro for board_set_runner_ifnset(SIM ${runner}).
+macro(board_set_sim_runner_ifnset runner)
+  board_set_runner_ifnset(SIM ${runner})
 endmacro()
 
 # This function is intended for board.cmake files and application
@@ -1760,9 +1771,11 @@ function(zephyr_blobs_verify)
 
       message(VERBOSE "Verifying blob \"${path}\"")
 
-      # Each path that has a correct sha256 is prefixed with an A
-      if(NOT "A ${path}" IN_LIST BLOBS_LIST)
-        message(${msg_lvl} "Blob for path \"${path}\" isn't valid.")
+      if(NOT EXISTS "${path}")
+        message(${msg_lvl} "Blob for path \"${path}\" missing. Update with: west blobs fetch")
+      elseif(NOT "A ${path}" IN_LIST BLOBS_LIST)
+        # Each path that has a correct sha256 is prefixed with an A
+        message(${msg_lvl} "Blob for path \"${path}\" isn't valid. Update with: west blobs fetch")
       endif()
     endforeach()
   else()
@@ -1773,7 +1786,9 @@ function(zephyr_blobs_verify)
 
       message(VERBOSE "Verifying blob \"${path}\"")
 
-      if(NOT "${status}" STREQUAL "A")
+      if(NOT EXISTS "${path}")
+        message(${msg_lvl} "Blob for path \"${path}\" missing. Update with: west blobs fetch ${BLOBS_VERIFY_MODULE}")
+      elseif(NOT "${status}" STREQUAL "A")
         message(${msg_lvl} "Blob for path \"${path}\" isn't valid. Update with: west blobs fetch ${BLOBS_VERIFY_MODULE}")
       endif()
     endforeach()
@@ -2534,6 +2549,8 @@ endfunction()
 #                          to absolute path, relative from `APPLICATION_SOURCE_DIR`
 #                          Issue an error for any relative path not specified
 #                          by user with `-D<path>`
+#                          BASE_DIR <base-dir>: convert paths relative to <base-dir>
+#                                               instead of `APPLICATION_SOURCE_DIR`
 #
 # returns an updated list of absolute paths
 #
@@ -2587,7 +2604,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   endif()
 
   if(${ARGV0} STREQUAL APPLICATION_ROOT)
-    set(single_args APPLICATION_ROOT)
+    set(single_args APPLICATION_ROOT BASE_DIR)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options QUALIFIERS REQUIRED)
     set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX)
@@ -2600,6 +2617,10 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   endif()
 
   if(ZFILE_APPLICATION_ROOT)
+    if(NOT DEFINED ZFILE_BASE_DIR)
+      set(ZFILE_BASE_DIR ${APPLICATION_SOURCE_DIR})
+    endif()
+
     # Note: user can do: `-D<var>=<relative-path>` and app can at same
     # time specify `list(APPEND <var> <abs-path>)`
     # Thus need to check and update only CACHED variables (-D<var>).
@@ -2609,11 +2630,11 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
       # `set(<var> CACHE)`, so let's update current scope variable to absolute
       # path from  `APPLICATION_SOURCE_DIR`.
       if(NOT IS_ABSOLUTE ${path})
-        set(abs_path ${APPLICATION_SOURCE_DIR}/${path})
         list(FIND ${ZFILE_APPLICATION_ROOT} ${path} index)
+        cmake_path(ABSOLUTE_PATH path BASE_DIRECTORY ${ZFILE_BASE_DIR} NORMALIZE)
         if(NOT ${index} LESS 0)
           list(REMOVE_AT ${ZFILE_APPLICATION_ROOT} ${index})
-          list(INSERT ${ZFILE_APPLICATION_ROOT} ${index} ${abs_path})
+          list(INSERT ${ZFILE_APPLICATION_ROOT} ${index} ${path})
         endif()
       endif()
     endforeach()
@@ -2630,6 +2651,7 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       endif()
     endforeach()
 
+    list(REMOVE_DUPLICATES ${ZFILE_APPLICATION_ROOT})
     # This updates the provided argument in parent scope (callers scope)
     set(${ZFILE_APPLICATION_ROOT} ${${ZFILE_APPLICATION_ROOT}} PARENT_SCOPE)
   endif()
@@ -5372,6 +5394,7 @@ function(add_llext_target target_name)
 
   target_compile_definitions(${llext_lib_target} PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
+    LL_EXTENSION_BUILD
   )
   target_compile_options(${llext_lib_target} PRIVATE
     ${zephyr_filtered_flags}
@@ -5409,6 +5432,23 @@ function(add_llext_target target_name)
     COMMAND_EXPAND_LISTS
   )
 
+  # LLEXT ELF processing for importing via SLID
+  #
+  # This command must be executed as last step of the packaging process,
+  # to ensure that the ELF processed for binary generation contains SLIDs.
+  # If executed too early, it is possible that some tools executed to modify
+  # the ELF file (e.g., strip) undo the work performed here.
+  if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+    set(slid_inject_cmd
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/build/llext_inject_slids.py
+      --elf-file ${llext_pkg_output}
+      -vvv
+    )
+  else()
+    set(slid_inject_cmd ${CMAKE_COMMAND} -E true)
+  endif()
+
   # Type-specific packaging of the built binary file into an .llext file
   if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
 
@@ -5416,6 +5456,7 @@ function(add_llext_target target_name)
     add_custom_command(
       OUTPUT ${llext_pkg_output}
       COMMAND ${CMAKE_COMMAND} -E copy ${llext_pkg_input} ${llext_pkg_output}
+      COMMAND ${slid_inject_cmd}
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
@@ -5431,6 +5472,7 @@ function(add_llext_target target_name)
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+      COMMAND ${slid_inject_cmd}
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
@@ -5445,6 +5487,7 @@ function(add_llext_target target_name)
               $<TARGET_PROPERTY:bintools,strip_flag_infile>${llext_pkg_input}
               $<TARGET_PROPERTY:bintools,strip_flag_outfile>${llext_pkg_output}
               $<TARGET_PROPERTY:bintools,strip_flag_final>
+      COMMAND ${slid_inject_cmd}
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 

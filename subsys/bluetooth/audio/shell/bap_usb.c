@@ -9,13 +9,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/class/usb_audio.h>
 
@@ -23,7 +35,6 @@
 #include <nrfx_clock.h>
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
-#include "shell/bt.h"
 #include "audio.h"
 
 LOG_MODULE_REGISTER(bap_usb, CONFIG_BT_BAP_STREAM_LOG_LEVEL);
@@ -214,7 +225,7 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 		return -EINVAL;
 	}
 
-	if (get_chan_cnt(chan_allocation) != 1) {
+	if (bt_audio_get_chan_count(chan_allocation) != 1) {
 		LOG_DBG("Invalid channel allocation %d", chan_allocation);
 
 		return -EINVAL;

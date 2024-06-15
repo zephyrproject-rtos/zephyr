@@ -1,0 +1,10 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Short P18.13 and P18.15 to loopback Flexcomm2 RX/TX for this test */
+dut: &flexcomm2 {
+	status = "okay";
+};

@@ -52,6 +52,7 @@ extern "C" {
 #define WIFI_MGMT_BAND_STR_SIZE_MAX 8
 #define WIFI_MGMT_SCAN_MAX_BSS_CNT 65535
 
+#define WIFI_MGMT_SKIP_INACTIVITY_POLL IS_ENABLED(CONFIG_WIFI_MGMT_AP_STA_SKIP_INACTIVITY_POLL)
 /** @endcond */
 
 /** @brief Wi-Fi management commands */
@@ -88,7 +89,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_VERSION,
 	/** Set RTS threshold */
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD,
-
+	/** Configure AP parameter */
+	NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -184,11 +186,17 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_STA_DISCONNECT);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION);
 
-/** Request a Wi-Fi RTS threashold */
+/** Request a Wi-Fi RTS threshold */
 #define NET_REQUEST_WIFI_RTS_THRESHOLD				\
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RTS_THRESHOLD)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD);
+
+/** Request a Wi-Fi AP parameters configuration */
+#define NET_REQUEST_WIFI_AP_CONFIG_PARAM         \
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -427,8 +435,10 @@ enum wifi_conn_status {
  * in the disconnect result event for detailed reason.
  */
 enum wifi_disconn_reason {
+	/** Success, overload status as reason */
+	WIFI_REASON_DISCONN_SUCCESS = 0,
 	/** Unspecified reason */
-	WIFI_REASON_DISCONN_UNSPECIFIED = WIFI_STATUS_DISCONN_FIRST_STATUS,
+	WIFI_REASON_DISCONN_UNSPECIFIED,
 	/** Disconnected due to user request */
 	WIFI_REASON_DISCONN_USER_REQUEST,
 	/** Disconnected due to AP leaving */
@@ -744,6 +754,20 @@ struct wifi_channel_info {
 	enum wifi_mgmt_op oper;
 };
 
+/** @cond INTERNAL_HIDDEN */
+#define WIFI_AP_STA_MAX_INACTIVITY (LONG_MAX - 1)
+/** @endcond */
+
+/** @brief Wi-Fi AP configuration parameter */
+struct wifi_ap_config_params {
+	/** Parameter used to identify the different AP parameters */
+	enum wifi_ap_config_param type;
+	/** Parameter used for setting maximum inactivity duration for stations */
+	uint32_t max_inactivity;
+	/** Parameter used for setting maximum number of stations */
+	uint32_t max_num_sta;
+};
+
 #include <zephyr/net/net_if.h>
 
 /** Scan result callback
@@ -917,7 +941,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*set_rts_threshold)(const struct device *dev, unsigned int rts_threshold);
-
+	/** Configure AP parameter
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params AP mode parameter configuration parameter info
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*ap_config_params)(const struct device *dev, struct wifi_ap_config_params *params);
 };
 
 /** Wi-Fi management offload API */

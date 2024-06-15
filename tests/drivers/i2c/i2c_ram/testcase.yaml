@@ -4,6 +4,9 @@ common:
     - drivers
     - i2c
   filter: dt_alias_exists("i2c-ram")
+  harness: ztest
+  harness_config:
+    fixture: i2c_ram
 tests:
   drivers.i2c.ram:
     depends_on: i2c

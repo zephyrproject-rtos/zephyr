@@ -60,6 +60,7 @@ EMAC          on-chip     ethernet
                           mdio
 eMIOS         on-chip     pwm
 EDMA          on-chip     dma
+FLEXIO PWM    on-chip     pwm
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file

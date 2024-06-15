@@ -351,6 +351,20 @@ efforts into the specific module in question. This will speed up testing since
 only the module will have to be compiled in, and the tested functions will be
 called directly.
 
+Examples of unit tests can be found in the :zephyr_file:`tests/unit/` folder.
+In order to declare the unit tests present in a source folder, you need to add
+the relevant source files to the ``testbinary`` target from the CMake
+:zephyr_file:`unittest <cmake/modules/unittest.cmake>` component. See a minimal
+example below:
+
+.. code-block:: cmake
+
+   cmake_minimum_required(VERSION 3.20.0)
+
+   project(app)
+   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+   target_sources(testbinary PRIVATE main.c)
+
 Since you won't be including basic kernel data structures that most code
 depends on, you have to provide function stubs in the test. Ztest provides
 some helpers for mocking functions, as demonstrated below.
@@ -361,7 +375,7 @@ interaction with an object occurred, and if required, to assert the order of
 that interaction.
 
 Best practices for declaring the test suite
-===========================================
+*******************************************
 
 *twister* and other validation tools need to obtain the list of
 subcases that a Zephyr *ztest* test image will expose.
@@ -443,9 +457,9 @@ Configuration
 
 Static configuration of Ztress contains:
 
- - :c:macro:`ZTRESS_MAX_THREADS` - number of supported threads.
- - :c:macro:`ZTRESS_STACK_SIZE` - Stack size of created threads.
- - :c:macro:`ZTRESS_REPORT_PROGRESS_MS` - Test progress report interval.
+ - :kconfig:option:`CONFIG_ZTRESS_MAX_THREADS` - number of supported threads.
+ - :kconfig:option:`CONFIG_ZTRESS_STACK_SIZE` - Stack size of created threads.
+ - :kconfig:option:`CONFIG_ZTRESS_REPORT_PROGRESS_MS` - Test progress report interval.
 
 API reference
 *************

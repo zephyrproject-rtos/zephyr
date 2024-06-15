@@ -34,7 +34,7 @@ config DEVICE_SHELL
 
 config DATE_SHELL
 	bool "Date shell"
-	depends on POSIX_CLOCK
+	depends on POSIX_TIMERS
 	default y if !SHELL_MINIMAL
 	help
 	  This shell provides access to date and time based on Unix time.
@@ -42,6 +42,6 @@ config DATE_SHELL
 config DEVMEM_SHELL
 	bool "Devmem shell"
 	default y if !SHELL_MINIMAL
-	select GETOPT
+	select POSIX_C_LIB_EXT
 	help
 	  This shell command provides read/write access to physical memory.

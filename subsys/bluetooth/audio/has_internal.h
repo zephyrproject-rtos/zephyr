@@ -8,8 +8,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util_macro.h>
 
 /* Control Point opcodes */
 #define BT_HAS_OP_READ_PRESET_REQ        0x01

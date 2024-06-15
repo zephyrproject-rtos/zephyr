@@ -42,14 +42,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral_lowres",
 		.test_descr = "Peripheral lowres",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_peripheral_main,
 	},
 	{
 		.test_id = "central_lowres",
 		.test_descr = "Central lowres",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_central_main,
 	},

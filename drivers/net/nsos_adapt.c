@@ -692,6 +692,22 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 
 			return 0;
 		}
+		case NSOS_MID_SO_SNDTIMEO: {
+			const struct nsos_mid_timeval *nsos_mid_tv = nsos_mid_optval;
+			struct timeval tv = {
+				.tv_sec = nsos_mid_tv->tv_sec,
+				.tv_usec = nsos_mid_tv->tv_usec,
+			};
+			int ret;
+
+			ret = setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
+					 &tv, sizeof(tv));
+			if (ret < 0) {
+				return -errno_to_nsos_mid(errno);
+			}
+
+			return 0;
+		}
 		case NSOS_MID_SO_RCVBUF:
 			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_RCVBUF,
 							 nsos_mid_optval, nsos_mid_optlen);
@@ -752,6 +768,7 @@ static int nsos_poll_to_epoll_events(int events_from)
 	MAP_POLL_EPOLL(POLLIN, EPOLLIN);
 	MAP_POLL_EPOLL(POLLOUT, EPOLLOUT);
 	MAP_POLL_EPOLL(POLLERR, EPOLLERR);
+	MAP_POLL_EPOLL(POLLHUP, EPOLLHUP);
 
 	return events_to;
 }
@@ -763,6 +780,7 @@ static int nsos_epoll_to_poll_events(int events_from)
 	MAP_POLL_EPOLL(EPOLLIN, POLLIN);
 	MAP_POLL_EPOLL(EPOLLOUT, POLLOUT);
 	MAP_POLL_EPOLL(EPOLLERR, POLLERR);
+	MAP_POLL_EPOLL(EPOLLHUP, POLLHUP);
 
 	return events_to;
 }
@@ -997,6 +1015,18 @@ int nsos_adapt_fionread(int fd, int *avail)
 	}
 
 	return 0;
+}
+
+int nsos_adapt_dup(int oldfd)
+{
+	int ret;
+
+	ret = dup(oldfd);
+	if (ret < 0) {
+		return -errno_to_nsos_mid(errno);
+	}
+
+	return ret;
 }
 
 static void nsos_adapt_init(void)

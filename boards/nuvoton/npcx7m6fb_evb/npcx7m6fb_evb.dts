@@ -28,8 +28,6 @@
 		i2c-0 = &i2c0_0;
 		watchdog0 = &twd0;
 		peci-0 = &peci0;
-		/* For samples/drivers/spi_flash */
-		spi-flash0 = &int_flash;
 		/* For kscan test suites */
 		kscan0 = &kscan_input;
 	};

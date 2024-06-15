@@ -23,6 +23,7 @@
 
 &i2c2 {
     clock-frequency = <400000>;
+    status = "okay";
 
     display_touch: ft6206@38 {
         compatible = "focaltech,ft5336";
@@ -30,6 +31,10 @@
         reg = <0x38>;
         int-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
     };
+};
+
+&spi2 {
+    status = "okay";
 };
 
 &lcdc {

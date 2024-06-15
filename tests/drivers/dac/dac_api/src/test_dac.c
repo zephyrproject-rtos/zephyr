@@ -89,7 +89,8 @@
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
-#elif defined(CONFIG_BOARD_RD_RW612_BGA)
+#elif defined(CONFIG_BOARD_RD_RW612_BGA) || \
+	defined(CONFIG_BOARD_FRDM_RW612)
 
 #define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		10
@@ -118,8 +119,7 @@ static const struct device *init_dac(void)
 	zassert_true(device_is_ready(dac_dev), "DAC device is not ready");
 
 	ret = dac_channel_setup(dac_dev, &dac_ch_cfg);
-	zassert_equal(ret, 0,
-		"Setting up of the first channel failed with code %d", ret);
+	zassert_ok(ret, "Setting up of the first channel failed with code %d", ret);
 
 	return dac_dev;
 }
@@ -136,7 +136,7 @@ ZTEST(dac, test_task_write_value)
 	/* write a value of half the full scale resolution */
 	ret = dac_write_value(dac_dev, DAC_CHANNEL_ID,
 						(1U << DAC_RESOLUTION) / 2);
-	zassert_equal(ret, 0, "dac_write_value() failed with code %d", ret);
+	zassert_ok(ret, "dac_write_value() failed with code %d", ret);
 }
 
 static void *dac_setup(void)

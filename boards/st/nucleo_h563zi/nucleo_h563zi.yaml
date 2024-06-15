@@ -11,12 +11,14 @@ supported:
   - gpio
   - arduino_serial
   - arduino_spi
+  - can
   - gpio
   - uart
   - entropy
   - adc
   - dac
   - pwm
+  - netif:eth
   - counter
   - spi
   - usb_device

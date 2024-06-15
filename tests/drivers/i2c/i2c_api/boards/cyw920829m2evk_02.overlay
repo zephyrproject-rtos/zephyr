@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2024 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		gy271 = &i2c0;
+		i2c-0 =&i2c0;
+	};
+};
+
+i2c0: &scb0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,cat1-i2c";
+	status = "okay";
+	pinctrl-0 = <&p0_2_scb0_i2c_scl &p0_3_scb0_i2c_sda>;
+	pinctrl-names = "default";
+};
+
+/* Configure pin control bias mode for i2c pins */
+&p0_2_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p0_3_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};

@@ -156,7 +156,7 @@ _vfp_not_enabled:
 	 * idle, this ensures that the calculation and programming of the
 	 * device for the next timer deadline is not interrupted.  For
 	 * non-tickless idle, this ensures that the clearing of the kernel idle
-	 * state is not interrupted.  In each case, z_pm_save_idle_exit
+	 * state is not interrupted.  In each case, pm_system_resume
 	 * is called with interrupts disabled.
 	 */
 
@@ -170,7 +170,7 @@ _vfp_not_enabled:
 	movs r1, #0
 	/* clear kernel idle state */
 	str r1, [r2, #_kernel_offset_to_idle]
-	bl z_pm_save_idle_exit
+	bl pm_system_resume
 _idle_state_cleared:
 
 #endif /* CONFIG_PM */
@@ -269,7 +269,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	 * idle, this ensures that the calculation and programming of the
 	 * device for the next timer deadline is not interrupted.  For
 	 * non-tickless idle, this ensures that the clearing of the kernel idle
-	 * state is not interrupted.  In each case, z_pm_save_idle_exit
+	 * state is not interrupted.  In each case, pm_system_resume
 	 * is called with interrupts disabled.
 	 */
 
@@ -283,7 +283,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	movs r1, #0
 	/* clear kernel idle state */
 	str r1, [r2, #_kernel_offset_to_idle]
-	bl z_pm_save_idle_exit
+	bl pm_system_resume
 _idle_state_cleared:
 #endif /* CONFIG_PM */
 

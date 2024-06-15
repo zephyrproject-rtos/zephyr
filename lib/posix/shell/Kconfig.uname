@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Meta
 # SPDX-License-Identifier: Apache-2.0
 
-if POSIX_UNAME
+if POSIX_SINGLE_PROCESS
 
 config POSIX_UNAME_SHELL
 	bool "Support for `uname` command"
@@ -10,4 +10,4 @@ config POSIX_UNAME_SHELL
 	help
 	  Support for `uname` command in the terminal.
 
-endif # POSIX_UNAME
+endif # POSIX_SINGLE_PROCESS

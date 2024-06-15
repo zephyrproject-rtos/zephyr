@@ -1,0 +1,36 @@
+# Copyright (c) 2020 Tobias Svehagen
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ZVFS
+	bool "Zephyr virtual filesystem (ZVFS) support [EXPERIMENTAL]"
+	select FDTABLE
+	select EXPERIMENTAL
+	help
+	  ZVFS is a central, Zephyr-native library that provides a common interoperable API for all
+	  types of file descriptors such as those from the non-virtual FS, sockets, eventfds, FILE *'s
+	  and more. It is designed to be used by all Zephyr subsystems that need to work with files.
+
+if ZVFS
+
+config ZVFS_EVENTFD
+	bool "ZVFS event file descriptor support"
+	select POLL
+	help
+	  Enable support for ZVFS event file descriptors. An eventfd can
+	  be used as an event wait/notify mechanism together with POSIX calls
+	  like read, write and poll.
+
+if ZVFS_EVENTFD
+
+config ZVFS_EVENTFD_MAX
+	int "Maximum number of ZVFS eventfd's"
+	default 1
+	range 1 4096
+	help
+	  The maximum number of supported event file descriptors.
+
+endif # ZVFS_EVENTFD
+
+endif # ZVFS

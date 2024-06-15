@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree.h>
+
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
@@ -24,6 +26,7 @@
 enum {
 	BT_EVENT_CMD_TX,
 	BT_EVENT_CONN_TX_QUEUE,
+	BT_EVENT_CONN_FREE_TX,
 };
 
 /* bt_dev flags: the flags defined here represent BT controller state */
@@ -306,6 +309,10 @@ struct bt_dev_le {
 	 */
 	uint8_t                    rl_entries;
 #endif /* CONFIG_BT_SMP */
+	/* List of `struct bt_conn` that have either pending data to send, or
+	 * something to process (e.g. a disconnection event).
+	 */
+	sys_slist_t		conn_ready;
 };
 
 #if defined(CONFIG_BT_CLASSIC)
@@ -403,8 +410,12 @@ struct bt_dev {
 	/* Queue for outgoing HCI commands */
 	struct k_fifo		cmd_tx_queue;
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	const struct device *hci;
+#else
 	/* Registered HCI driver */
 	const struct bt_hci_driver *drv;
+#endif
 
 #if defined(CONFIG_BT_PRIVACY)
 	/* Local Identity Resolving Key */
@@ -438,6 +449,10 @@ extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
+
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+int bt_hci_recv(const struct device *dev, struct net_buf *buf);
+#endif
 
 /* Data type to store state related with command to be updated
  * when command completes successfully.
@@ -579,3 +594,5 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf);
 
 void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf);
 void bt_hci_le_per_adv_response_report(struct net_buf *buf);
+
+void bt_tx_irq_raise(void);

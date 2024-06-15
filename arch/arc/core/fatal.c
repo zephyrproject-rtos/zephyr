@@ -23,7 +23,7 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_EXCEPTION_DEBUG
-static void dump_arc_esf(const z_arch_esf_t *esf)
+static void dump_arc_esf(const struct arch_esf *esf)
 {
 	ARC_EXCEPTION_DUMP(" r0: 0x%" PRIxPTR "  r1: 0x%" PRIxPTR "  r2: 0x%" PRIxPTR
 		"  r3: 0x%" PRIxPTR "", esf->r0, esf->r1, esf->r2, esf->r3);
@@ -42,7 +42,7 @@ static void dump_arc_esf(const z_arch_esf_t *esf)
 }
 #endif
 
-void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
+void z_arc_fatal_error(unsigned int reason, const struct arch_esf *esf)
 {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {

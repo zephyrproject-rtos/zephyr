@@ -45,15 +45,15 @@ class TestRunner:
             ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
             {
                 'selected_test_scenarios': 3,
-                'selected_test_instances': 9,
-                'skipped_configurations': 3,
-                'skipped_by_static_filter': 3,
+                'selected_test_instances': 6,
+                'skipped_configurations': 0,
+                'skipped_by_static_filter': 0,
                 'skipped_at_runtime': 0,
                 'passed_configurations': 4,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
                 'executed_test_cases': 8,
-                'skipped_test_cases': 5,
+                'skipped_test_cases': 0,
                 'platform_count': 0,
                 'executed_on_platform': 4,
                 'only_built': 2
@@ -622,7 +622,7 @@ class TestRunner:
 
 
         assert re.search(
-            r'one_fail_one_pass.agnostic.group1.subgroup2 on qemu_x86 failed \(Failed\)', err)
+            r'one_fail_one_pass.agnostic.group1.subgroup2 on qemu_x86 failed \(.*\)', err)
 
         pass_search = re.search(pass_regex, err, re.MULTILINE)
 

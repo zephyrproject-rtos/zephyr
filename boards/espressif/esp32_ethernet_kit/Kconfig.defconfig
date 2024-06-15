@@ -6,7 +6,7 @@
 if BOARD_ESP32_ETHERNET_KIT_ESP32_PROCPU
 
 config ESP_SPIRAM
-	default y
+	default y if !MCUBOOT
 
 choice SPIRAM_TYPE
 	default SPIRAM_TYPE_ESPPSRAM64
@@ -18,10 +18,6 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	default 51200 if WIFI
 	default 40960 if BT
 	default 4096
-
-choice BT_HCI_BUS_TYPE
-	default BT_ESP32 if BT
-endchoice
 
 endif # BOARD_ESP32_ETHERNET_KIT_ESP32_PROCPU
 

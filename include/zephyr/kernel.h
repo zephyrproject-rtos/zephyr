@@ -375,7 +375,7 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * @param ... list of kernel object pointers
  */
 #define k_thread_access_grant(thread, ...) \
-	FOR_EACH_FIXED_ARG(k_object_access_grant, (;), thread, __VA_ARGS__)
+	FOR_EACH_FIXED_ARG(k_object_access_grant, (;), (thread), __VA_ARGS__)
 
 /**
  * @brief Assign a resource memory pool to a thread
@@ -2089,7 +2089,7 @@ __syscall int k_queue_is_empty(struct k_queue *queue);
 
 static inline int z_impl_k_queue_is_empty(struct k_queue *queue)
 {
-	return (int)sys_sflist_is_empty(&queue->data_q);
+	return sys_sflist_is_empty(&queue->data_q) ? 1 : 0;
 }
 
 /**
@@ -2772,10 +2772,10 @@ struct k_stack {
 
 #define Z_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
 	{ \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
-	.base = stack_buffer, \
-	.next = stack_buffer, \
-	.top = stack_buffer + stack_num_entries, \
+	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q),	\
+	.base = (stack_buffer), \
+	.next = (stack_buffer), \
+	.top = (stack_buffer) + (stack_num_entries), \
 	}
 
 /**
@@ -2935,7 +2935,7 @@ struct k_mutex {
  */
 #define Z_MUTEX_INITIALIZER(obj) \
 	{ \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q), \
 	.owner = NULL, \
 	.lock_count = 0, \
 	.owner_orig_prio = K_LOWEST_APPLICATION_THREAD_PRIO, \
@@ -3124,9 +3124,9 @@ struct k_sem {
 
 #define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
 	{ \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	.count = initial_count, \
-	.limit = count_limit, \
+	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q), \
+	.count = (initial_count), \
+	.limit = (count_limit), \
 	Z_POLL_EVENT_OBJ_INIT(obj) \
 	}
 
@@ -3632,6 +3632,8 @@ static inline k_ticks_t k_work_delayable_remaining_get(
  *
  * @retval 0 if work was already scheduled or submitted.
  * @retval 1 if work has been scheduled.
+ * @retval 2 if @p delay is @c K_NO_WAIT and work
+ *         was running and has been queued to the queue that was running it.
  * @retval -EBUSY if @p delay is @c K_NO_WAIT and
  *         k_work_submit_to_queue() fails with this code.
  * @retval -EINVAL if @p delay is @c K_NO_WAIT and
@@ -3896,7 +3898,7 @@ struct k_work {
 };
 
 #define Z_WORK_INITIALIZER(work_handler) { \
-	.handler = work_handler, \
+	.handler = (work_handler), \
 }
 
 /** @brief A structure used to submit work after a delay. */
@@ -3913,7 +3915,7 @@ struct k_work_delayable {
 
 #define Z_WORK_DELAYABLE_INITIALIZER(work_handler) { \
 	.work = { \
-		.handler = work_handler, \
+		.handler = (work_handler), \
 		.flags = K_WORK_DELAYABLE, \
 	}, \
 }
@@ -4130,7 +4132,7 @@ struct k_work_user {
 #define Z_WORK_USER_INITIALIZER(work_handler) \
 	{ \
 	._reserved = NULL, \
-	.handler = work_handler, \
+	.handler = (work_handler), \
 	.flags = 0 \
 	}
 #endif
@@ -4865,7 +4867,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
 struct k_pipe {
 	unsigned char *buffer;          /**< Pipe buffer: may be NULL */
 	size_t         size;            /**< Buffer size */
-	size_t         bytes_used;      /**< # bytes used in buffer */
+	size_t         bytes_used;      /**< Number of bytes used in buffer */
 	size_t         read_index;      /**< Where in buffer to read from */
 	size_t         write_index;     /**< Where in buffer to write */
 	struct k_spinlock lock;		/**< Synchronization lock */
@@ -5382,6 +5384,32 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes,
 		k_timeout_t timeout) __attribute_nonnull(1);
 
 /**
+ * @brief Reallocate memory from a k_heap
+ *
+ * Reallocates and returns a memory buffer from the memory region owned
+ * by the heap.  If no memory is available immediately, the call will
+ * block for the specified timeout (constructed via the standard
+ * timeout API, or K_NO_WAIT or K_FOREVER) waiting for memory to be
+ * freed.  If the allocation cannot be performed by the expiration of
+ * the timeout, NULL will be returned.
+ * Reallocated memory is aligned on a multiple of pointer sizes.
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param h Heap from which to allocate
+ * @param ptr Original pointer returned from a previous allocation
+ * @param bytes Desired size of block to allocate
+ * @param timeout How long to wait, or K_NO_WAIT
+ *
+ * @return Pointer to memory the caller can now use, or NULL
+ */
+void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout)
+	__attribute_nonnull(1);
+
+/**
  * @brief Free memory allocated by k_heap_alloc()
  *
  * Returns the specified memory block, which must have been returned
@@ -5527,6 +5555,25 @@ void k_free(void *ptr);
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
 void *k_calloc(size_t nmemb, size_t size);
+
+/** @brief Expand the size of an existing allocation
+ *
+ * Returns a pointer to a new memory region with the same contents,
+ * but a different allocated size.  If the new allocation can be
+ * expanded in place, the pointer returned will be identical.
+ * Otherwise the data will be copies to a new block and the old one
+ * will be freed as per sys_heap_free().  If the specified size is
+ * smaller than the original, the block will be truncated in place and
+ * the remaining memory returned to the heap.  If the allocation of a
+ * new block fails, then NULL will be returned and the old block will
+ * not be freed or modified.
+ *
+ * @param ptr Original pointer returned from a previous allocation
+ * @param size Amount of memory requested (in bytes).
+ *
+ * @return Pointer to memory the caller can now use, or NULL.
+ */
+void *k_realloc(void *ptr, size_t size);
 
 /** @} */
 
@@ -5686,14 +5733,17 @@ struct k_poll_event {
 
 	/** per-type data */
 	union {
-		void *obj;
-		struct k_poll_signal *signal;
-		struct k_sem *sem;
-		struct k_fifo *fifo;
-		struct k_queue *queue;
-		struct k_msgq *msgq;
+		/* The typed_* fields below are used by K_POLL_EVENT_*INITIALIZER() macros to ensure
+		 * type safety of polled objects.
+		 */
+		void *obj, *typed_K_POLL_TYPE_IGNORE;
+		struct k_poll_signal *signal, *typed_K_POLL_TYPE_SIGNAL;
+		struct k_sem *sem, *typed_K_POLL_TYPE_SEM_AVAILABLE;
+		struct k_fifo *fifo, *typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		struct k_queue *queue, *typed_K_POLL_TYPE_DATA_AVAILABLE;
+		struct k_msgq *msgq, *typed_K_POLL_TYPE_MSGQ_DATA_AVAILABLE;
 #ifdef CONFIG_PIPES
-		struct k_pipe *pipe;
+		struct k_pipe *pipe, *typed_K_POLL_TYPE_PIPE_DATA_AVAILABLE;
 #endif
 	};
 };
@@ -5706,7 +5756,7 @@ struct k_poll_event {
 	.mode = _event_mode, \
 	.unused = 0, \
 	{ \
-		.obj = _event_obj, \
+		.typed_##_event_type = _event_obj, \
 	}, \
 	}
 
@@ -5719,7 +5769,7 @@ struct k_poll_event {
 	.mode = _event_mode, \
 	.unused = 0, \
 	{ \
-		.obj = _event_obj, \
+		.typed_##_event_type = _event_obj, \
 	}, \
 	}
 
@@ -6108,7 +6158,7 @@ void k_sys_runtime_stats_disable(void);
 #endif
 
 #include <zephyr/tracing/tracing.h>
-#include <syscalls/kernel.h>
+#include <zephyr/syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */
 

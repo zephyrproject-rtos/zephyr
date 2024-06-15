@@ -335,7 +335,7 @@ class CMake:
             gen_defines_args = ""
 
         warning_command = 'CONFIG_COMPILER_WARNINGS_AS_ERRORS'
-        if self.testsuite.sysbuild:
+        if self.instance.sysbuild:
             warning_command = 'SB_' + warning_command
 
         logger.debug("Running cmake on %s for %s" % (self.source_dir, self.platform.name))
@@ -357,7 +357,7 @@ class CMake:
                 f'-P{canonical_zephyr_base}/cmake/package_helper.cmake',
             ]
 
-        if self.testsuite.sysbuild and not filter_stages:
+        if self.instance.sysbuild and not filter_stages:
             logger.debug("Building %s using sysbuild" % (self.source_dir))
             source_args = [
                 f'-S{canonical_zephyr_base}/share/sysbuild',
@@ -445,7 +445,7 @@ class FilterBuilder(CMake):
         if self.platform.name == "unit_testing":
             return {}
 
-        if self.testsuite.sysbuild and not filter_stages:
+        if self.instance.sysbuild and not filter_stages:
             # Load domain yaml to get default domain build directory
             domain_path = os.path.join(self.build_dir, "domains.yaml")
             domains = Domains.from_file(domain_path)
@@ -498,7 +498,7 @@ class FilterBuilder(CMake):
             filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
-        if self.testsuite.sysbuild and self.env.options.device_testing:
+        if self.instance.sysbuild and self.env.options.device_testing:
             # Verify that twister's arguments support sysbuild.
             # Twister sysbuild flashing currently only works with west, so
             # --west-flash must be passed.
@@ -553,6 +553,13 @@ class ProjectBuilder(FilterBuilder):
             except Exception as e:
                 data = "Unable to read log data (%s)\n" % (str(e))
 
+            # Remove any coverage data from the dumped logs
+            data = re.sub(
+                r"GCOV_COVERAGE_DUMP_START.*GCOV_COVERAGE_DUMP_END",
+                "GCOV_COVERAGE_DUMP_START\n...\nGCOV_COVERAGE_DUMP_END",
+                data,
+                flags=re.DOTALL,
+            )
             logger.error(data)
 
             logger.info("{:-^100}".format(filename))
@@ -764,6 +771,8 @@ class ProjectBuilder(FilterBuilder):
             'build.log',
             'device.log',
             'recording.csv',
+            'rom.json',
+            'ram.json',
             # below ones are needed to make --test-only work as well
             'Makefile',
             'CMakeCache.txt',
@@ -797,7 +806,7 @@ class ProjectBuilder(FilterBuilder):
         files_to_keep = self._get_binaries()
         files_to_keep.append(os.path.join('zephyr', 'runners.yaml'))
 
-        if self.testsuite.sysbuild:
+        if self.instance.sysbuild:
             files_to_keep.append('domains.yaml')
             for domain in self.instance.domains.get_domains():
                 files_to_keep += self._get_artifact_allow_list_for_domain(domain.name)
@@ -837,7 +846,7 @@ class ProjectBuilder(FilterBuilder):
         # Get binaries for a single-domain build
         binaries += self._get_binaries_from_runners()
         # Get binaries in the case of a multiple-domain build
-        if self.testsuite.sysbuild:
+        if self.instance.sysbuild:
             for domain in self.instance.domains.get_domains():
                 binaries += self._get_binaries_from_runners(domain.name)
 
@@ -1315,8 +1324,22 @@ class TwisterRunner:
 
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
-        if sys.platform == 'linux':
-            with self.jobserver.get_job():
+        try:
+            if sys.platform == 'linux':
+                with self.jobserver.get_job():
+                    while True:
+                        try:
+                            task = pipeline.get_nowait()
+                        except queue.Empty:
+                            break
+                        else:
+                            instance = task['test']
+                            pb = ProjectBuilder(instance, self.env, self.jobserver)
+                            pb.duts = self.duts
+                            pb.process(pipeline, done_queue, task, lock, results)
+
+                    return True
+            else:
                 while True:
                     try:
                         task = pipeline.get_nowait()
@@ -1327,20 +1350,10 @@ class TwisterRunner:
                         pb = ProjectBuilder(instance, self.env, self.jobserver)
                         pb.duts = self.duts
                         pb.process(pipeline, done_queue, task, lock, results)
-
                 return True
-        else:
-            while True:
-                try:
-                    task = pipeline.get_nowait()
-                except queue.Empty:
-                    break
-                else:
-                    instance = task['test']
-                    pb = ProjectBuilder(instance, self.env, self.jobserver)
-                    pb.duts = self.duts
-                    pb.process(pipeline, done_queue, task, lock, results)
-            return True
+        except Exception as e:
+            logger.error(f"General exception: {e}")
+            sys.exit(1)
 
     def execute(self, pipeline, done):
         lock = Lock()
@@ -1360,6 +1373,11 @@ class TwisterRunner:
         try:
             for p in processes:
                 p.join()
+                if p.exitcode != 0:
+                    logger.error(f"Process {p.pid} failed, aborting execution")
+                    for proc in processes:
+                        proc.terminate()
+                    sys.exit(1)
         except KeyboardInterrupt:
             logger.info("Execution interrupted")
             for p in processes:

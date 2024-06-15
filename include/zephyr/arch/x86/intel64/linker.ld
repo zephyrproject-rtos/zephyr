@@ -236,4 +236,7 @@ SECTIONS
 	.shstrtab 0 : { *(.shstrtab) }
 #endif
 
+#ifdef CONFIG_LLEXT
+	#include <zephyr/linker/llext-sections.ld>
+#endif
 }

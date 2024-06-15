@@ -346,7 +346,7 @@ static void dump_exception_info(uint32_t vector, uint32_t cause, uint32_t parame
  * invokes the user provided routine k_sys_fatal_error_handler() which is
  * responsible for implementing the error handling policy.
  */
-void _Fault(z_arch_esf_t *esf, uint32_t old_sp)
+void _Fault(struct arch_esf *esf, uint32_t old_sp)
 {
 	uint32_t vector, cause, parameter;
 	uint32_t exc_addr = z_arc_v2_aux_reg_read(_ARC_V2_EFA);

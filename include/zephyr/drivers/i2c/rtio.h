@@ -22,7 +22,7 @@ struct i2c_rtio {
 	struct k_sem lock;
 	struct k_spinlock slock;
 	struct rtio *r;
-	struct rtio_mpsc io_q;
+	struct mpsc io_q;
 	struct rtio_iodev iodev;
 	struct rtio_iodev_sqe *txn_head;
 	struct rtio_iodev_sqe *txn_curr;

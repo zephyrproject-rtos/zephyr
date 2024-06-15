@@ -3,15 +3,34 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
-
-#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
-#include "common.h"
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+
 #include "bap_common.h"
+#include "bstests.h"
+#include "common.h"
+
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 
 extern enum bst_result_t bst_result;
 
@@ -490,7 +509,7 @@ static void init(void)
 					  &stream_ops);
 	}
 
-	/* Create a non-connectable non-scannable advertising set */
+	/* Create a connectable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
 	if (err != 0) {
 		FAIL("Failed to create advertising set (err %d)\n", err);
@@ -600,13 +619,13 @@ static void test_main_acl_disconnect(void)
 static const struct bst_test_instance test_unicast_server[] = {
 	{
 		.test_id = "unicast_server",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
 	{
 		.test_id = "unicast_server_acl_disconnect",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_acl_disconnect,
 	},

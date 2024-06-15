@@ -204,7 +204,22 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	next = pm_policy_next_state(CURRENT_CPU, ticks);
 
-	if ((next != NULL) && (next->state == PM_STATE_SUSPEND_TO_RAM)) {
+	/* Check if STANBY or STOP3 is requested */
+	timeout_stdby = false;
+	if ((next != NULL) && idle) {
+#ifdef CONFIG_PM_S2RAM
+		if (next->state == PM_STATE_SUSPEND_TO_RAM) {
+			timeout_stdby = true;
+		}
+#endif
+#ifdef CONFIG_STM32_STOP3_LP_MODE
+		if ((next->state == PM_STATE_SUSPEND_TO_IDLE) && (next->substate_id == 4)) {
+			timeout_stdby = true;
+		}
+#endif
+	}
+
+	if (timeout_stdby) {
 		uint64_t timeout_us =
 			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
@@ -214,8 +229,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			.user_data = NULL,
 			.flags = 0,
 		};
-
-		timeout_stdby = true;
 
 		/* Set the alarm using timer that runs the standby.
 		 * Needed rump-up/setting time, lower accurency etc. should be
@@ -229,6 +242,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		 */
 		counter_get_value(stdby_timer, &stdby_timer_pre_stdby);
 		lptim_cnt_pre_stdby = z_clock_lptim_getcounter();
+
+		/* Stop clocks for LPTIM, since RTC is used instead */
+		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
 
 		return;
 	}
@@ -550,14 +566,21 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-void sys_clock_idle_exit(void)
+void stm32_clock_control_standby_exit(void)
 {
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
 	if (clock_control_get_status(clk_ctrl,
 				     (clock_control_subsys_t) &lptim_clk[0])
 				     != CLOCK_CONTROL_STATUS_ON) {
 		sys_clock_driver_init();
-	} else if (timeout_stdby) {
+	}
+#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
+}
+
+void sys_clock_idle_exit(void)
+{
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+	if (timeout_stdby) {
 		cycle_t missed_lptim_cnt;
 		uint32_t stdby_timer_diff, stdby_timer_post, dticks;
 		uint64_t stdby_timer_us;

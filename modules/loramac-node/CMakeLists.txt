@@ -55,7 +55,7 @@ zephyr_library_sources_ifdef(CONFIG_HAS_SEMTECH_LORAMAC
   ${ZEPHYR_LORAMAC_NODE_MODULE_DIR}/src/mac/LoRaMacSerializer.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_LORAWAN_FRAG_TRANSPORT
+zephyr_library_sources_ifdef(CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
   ${ZEPHYR_LORAMAC_NODE_MODULE_DIR}/src/apps/LoRaMac/common/LmHandler/packages/FragDecoder.c
 )
 

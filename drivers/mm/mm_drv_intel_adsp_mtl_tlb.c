@@ -26,6 +26,7 @@
 #include <zephyr/drivers/mm/mm_drv_bank.h>
 #include <zephyr/debug/sparse.h>
 #include <zephyr/cache.h>
+#include <kernel_arch_interface.h>
 
 #define SRAM_BANK_PAGE_NUM   (SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE)
 
@@ -268,6 +269,9 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 
 	tlb_entries[entry_idx] = entry;
 
+#ifdef CONFIG_MMU
+	arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+#endif
 	/*
 	 * Invalid the cache of the newly mapped virtual page to
 	 * avoid stale data.
@@ -329,7 +333,7 @@ int sys_mm_drv_map_array(void *virt, uintptr_t *phys,
 	return sys_mm_drv_simple_map_array(va, phys, cnt, flags);
 }
 
-int sys_mm_drv_unmap_page(void *virt)
+static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 {
 	k_spinlock_key_t key;
 	uint32_t entry_idx, bank_idx;
@@ -358,8 +362,14 @@ int sys_mm_drv_unmap_page(void *virt)
 	/*
 	 * Flush the cache to make sure the backing physical page
 	 * has the latest data.
+	 * No flush when called from sys_mm_drv_mm_init().
 	 */
-	sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
+	if (flush_data) {
+		sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
+#ifdef CONFIG_MMU
+		arch_mem_unmap(virt, CONFIG_MM_DRV_PAGE_SIZE);
+#endif
+	}
 
 	entry_idx = get_tlb_entry_idx(va);
 	pa = tlb_entry_to_pa(tlb_entries[entry_idx]);
@@ -389,6 +399,11 @@ int sys_mm_drv_unmap_page(void *virt)
 
 out:
 	return ret;
+}
+
+int sys_mm_drv_unmap_page(void *virt)
+{
+	return sys_mm_drv_unmap_page_wflush(virt, true);
 }
 
 int sys_mm_drv_unmap_region(void *virt, size_t size)
@@ -440,6 +455,42 @@ out:
 	k_spin_unlock(&tlb_lock, key);
 	return ret;
 }
+
+#ifdef CONFIG_MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
+static int sys_mm_drv_unmap_region_initial(void *virt_in, size_t size)
+{
+	void *virt = (__sparse_force void *)sys_cache_cached_ptr_get(virt_in);
+
+	k_spinlock_key_t key;
+	int ret = 0;
+	size_t offset;
+
+	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt) ||
+		!sys_mm_drv_is_size_aligned(size)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	key = k_spin_lock(&sys_mm_drv_common_lock);
+
+	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
+		uint8_t *va = (uint8_t *)virt + offset;
+
+		int ret2 = sys_mm_drv_unmap_page_wflush(va, false);
+
+		if (ret2 != 0) {
+			__ASSERT(false, "cannot unmap %p\n", va);
+
+			ret = ret2;
+		}
+	}
+
+	k_spin_unlock(&sys_mm_drv_common_lock, key);
+
+out:
+	return ret;
+}
+#endif
 
 int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 {
@@ -721,8 +772,9 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	size_t unused_size = CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE -
 			     UNUSED_L2_START_ALIGNED;
 
-	ret = sys_mm_drv_unmap_region(UINT_TO_POINTER(UNUSED_L2_START_ALIGNED),
-				      unused_size);
+	ret = sys_mm_drv_unmap_region_initial(UINT_TO_POINTER(UNUSED_L2_START_ALIGNED),
+					      unused_size);
+
 
 	/* Need to reset max pages statistics after unmap */
 	for (int i = 0; i < L2_SRAM_BANK_NUM; i++) {

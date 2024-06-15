@@ -42,7 +42,7 @@ void _isr_wrapper(void)
 	 * idle, this ensures that the calculation and programming of the
 	 * device for the next timer deadline is not interrupted.  For
 	 * non-tickless idle, this ensures that the clearing of the kernel idle
-	 * state is not interrupted.  In each case, z_pm_save_idle_exit
+	 * state is not interrupted.  In each case, pm_system_resume
 	 * is called with interrupts disabled.
 	 */
 
@@ -59,7 +59,7 @@ void _isr_wrapper(void)
 	if (_kernel.idle != 0) {
 		/* clear kernel idle state */
 		_kernel.idle = 0;
-		z_pm_save_idle_exit();
+		pm_system_resume();
 	}
 	/* re-enable interrupts */
 	__enable_irq();

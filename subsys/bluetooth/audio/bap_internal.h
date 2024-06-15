@@ -9,10 +9,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <zephyr/bluetooth/conn.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
 
 #define BT_BAP_BASS_SCAN_STATE_NOT_SCANNING   0x00
 #define BT_BAP_BASS_SCAN_STATE_SCANNING       0x01

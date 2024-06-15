@@ -794,6 +794,7 @@ int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 		 * cache flush is not required here
 		 */
 		ret = sdmmc_wait_ready(card);
+		break;
 	default:
 		ret = -ENOTSUP;
 	}

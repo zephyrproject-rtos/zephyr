@@ -141,15 +141,15 @@ config NET_SOCKETS_SERVICE_STACK_SIZE
 	help
 	  Set the internal stack size for the thread that polls sockets.
 
-config NET_SOCKETS_SERVICE_INIT_PRIO
-	int "Startup priority for the network socket service"
-	default 90
-	depends on NET_SOCKETS_SERVICE
-
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "TCP TLS socket option support"
 	imply TLS_CREDENTIALS
 	select MBEDTLS if NET_NATIVE
+	imply MBEDTLS_TLS_VERSION_1_2 if !NET_L2_OPENTHREAD
+	imply MBEDTLS_KEY_EXCHANGE_RSA_ENABLED if !NET_L2_OPENTHREAD
+	imply MBEDTLS_CIPHER_AES_ENABLED if !NET_L2_OPENTHREAD
+	imply PSA_WANT_KEY_TYPE_AES if !NET_L2_OPENTHREAD && PSA_CRYPTO_CLIENT
+	imply PSA_WANT_ALG_CBC_NO_PADDING if !NET_L2_OPENTHREAD && PSA_CRYPTO_CLIENT
 	help
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.

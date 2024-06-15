@@ -9,7 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 
 #include <esp_bt.h>
 
@@ -17,7 +17,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_esp32);
 
+#define DT_DRV_COMPAT espressif_esp32_bt_hci
+
 #define HCI_BT_ESP32_TIMEOUT K_MSEC(2000)
+
+struct bt_esp32_data {
+	bt_hci_recv_t recv;
+};
 
 static K_SEM_DEFINE(hci_send_sem, 1, 1);
 
@@ -180,6 +186,8 @@ static struct net_buf *bt_esp_iso_recv(uint8_t *data, size_t remaining)
 
 static int hci_esp_host_rcv_pkt(uint8_t *data, uint16_t len)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_esp32_data *hci = dev->data;
 	uint8_t pkt_indicator;
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
@@ -210,7 +218,7 @@ static int hci_esp_host_rcv_pkt(uint8_t *data, uint16_t len)
 	if (buf) {
 		LOG_DBG("Calling bt_recv(%p)", buf);
 
-		bt_recv(buf);
+		hci->recv(dev, buf);
 	}
 
 	return 0;
@@ -226,7 +234,7 @@ static esp_vhci_host_callback_t vhci_host_cb = {
 	hci_esp_host_rcv_pkt
 };
 
-static int bt_esp32_send(struct net_buf *buf)
+static int bt_esp32_send(const struct device *dev, struct net_buf *buf)
 {
 	int err = 0;
 	uint8_t pkt_indicator;
@@ -316,8 +324,9 @@ static int bt_esp32_ble_deinit(void)
 	return 0;
 }
 
-static int bt_esp32_open(void)
+static int bt_esp32_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct bt_esp32_data *hci = dev->data;
 	int err;
 
 	err = bt_esp32_ble_init();
@@ -325,13 +334,16 @@ static int bt_esp32_open(void)
 		return err;
 	}
 
+	hci->recv = recv;
+
 	LOG_DBG("ESP32 BT started");
 
 	return 0;
 }
 
-static int bt_esp32_close(void)
+static int bt_esp32_close(const struct device *dev)
 {
+	struct bt_esp32_data *hci = dev->data;
 	int err;
 
 	err = bt_esp32_ble_deinit();
@@ -339,27 +351,24 @@ static int bt_esp32_close(void)
 		return err;
 	}
 
+	hci->recv = NULL;
+
 	LOG_DBG("ESP32 BT stopped");
 
 	return 0;
 }
 
-static const struct bt_hci_driver drv = {
-	.name           = "BT ESP32",
+static const struct bt_hci_driver_api drv = {
 	.open           = bt_esp32_open,
 	.send           = bt_esp32_send,
 	.close          = bt_esp32_close,
-	.bus            = BT_HCI_DRIVER_BUS_IPM,
-#if defined(CONFIG_BT_DRIVER_QUIRK_NO_AUTO_DLE)
-	.quirks         = BT_QUIRK_NO_AUTO_DLE,
-#endif
 };
 
-static int bt_esp32_init(void)
-{
-	bt_hci_driver_register(&drv);
+#define BT_ESP32_DEVICE_INIT(inst) \
+	static struct bt_esp32_data bt_esp32_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_esp32_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
-	return 0;
-}
-
-SYS_INIT(bt_esp32_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+/* Only one instance supported */
+BT_ESP32_DEVICE_INIT(0)

@@ -305,7 +305,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	LL_ASSERT(node_rx);
 
 	/* Encryption */
-	if (lll->enc) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    lll->enc) {
 		uint64_t payload_count;
 		uint8_t pkt_flags;
 
@@ -375,7 +376,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	uint32_t overhead;
 
 	overhead = lll_preempt_calc(ull, (TICKER_ID_SCAN_SYNC_ISO_BASE +
-					  ull_sync_iso_lll_handle_get(lll)), ticks_at_event);
+					  ull_sync_iso_lll_index_get(lll)), ticks_at_event);
 	/* check if preempt to start has changed */
 	if (overhead) {
 		LL_ASSERT_OVERHEAD(overhead);
@@ -619,7 +620,8 @@ static void isr_rx(void *param)
 		    !lll->payload[bis_idx][payload_index]) {
 			uint16_t handle;
 
-			if (lll->enc) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+			    lll->enc) {
 				uint32_t mic_failure;
 				uint32_t done;
 
@@ -922,7 +924,8 @@ isr_rx_next_subevent:
 	lll_chan_set(data_chan_use);
 
 	/* Encryption */
-	if (lll->enc) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    lll->enc) {
 		uint64_t payload_count;
 		struct pdu_bis *pdu;
 

@@ -3,24 +3,25 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifdef CONFIG_BT_TMAP
-
-#include <stdint.h>
 #include <stddef.h>
-#include <errno.h>
-#include <zephyr/types.h>
+#include <stdint.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/tmap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
-#include <zephyr/bluetooth/audio/tmap.h>
-
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_TMAP
 extern enum bst_result_t bst_result;
 
 static uint8_t tmap_addata[] = {
@@ -81,7 +82,7 @@ static void test_main(void)
 static const struct bst_test_instance test_tmas[] = {
 	{
 		.test_id = "tmap_server",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 

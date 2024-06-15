@@ -12,8 +12,8 @@ supported:
   - i2c
   - pwm
   - watchdog
-  - usb_cdc
   - usb_device
+  - usbd
   - netif:openthread
   - gpio
   - spi

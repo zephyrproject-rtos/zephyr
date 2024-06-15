@@ -10,8 +10,11 @@ toolchain:
 supported:
   - uart
   - watchdog
+  - counter
   - gpio
+  - spi
   - i2c
+  - mspi
 testing:
   ignore_tags:
     - net

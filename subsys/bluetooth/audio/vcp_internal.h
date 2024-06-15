@@ -11,6 +11,14 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+
 /* VCS opcodes */
 #define BT_VCP_OPCODE_REL_VOL_DOWN                      0x00
 #define BT_VCP_OPCODE_REL_VOL_UP                        0x01

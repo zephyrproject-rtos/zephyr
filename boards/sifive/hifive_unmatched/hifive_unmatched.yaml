@@ -11,6 +11,9 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+  renode:
+    uart: sysbus.uart0
+    resc: boards/sifive/hifive_unmatched/support/hifive_unmatched.resc
 supported:
   - spi
   - memc

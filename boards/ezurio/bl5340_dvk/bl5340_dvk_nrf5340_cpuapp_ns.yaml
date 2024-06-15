@@ -1,0 +1,20 @@
+identifier: bl5340_dvk/nrf5340/cpuapp/ns
+name: BL5340-DVK-application-MCU-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 192
+flash: 192
+supported:
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - usb_device
+  - watchdog
+vendor: ezurio

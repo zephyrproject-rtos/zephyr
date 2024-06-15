@@ -8,6 +8,7 @@ config SOC_FLASH_LPC
 		DT_HAS_NXP_IAP_FMC54_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enables the LPC IAP flash shim driver.
 	  WARNING: This driver will disable the system interrupts for

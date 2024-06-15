@@ -177,6 +177,15 @@
 				status = "disabled";
 			};
 		};
+
+		digi_die_temp: digi_dietemp@58006800 {
+			compatible = "st,stm32-digi-temp";
+			reg = <0x58006800 0x400>;
+			interrupts = <147 0>;
+			interrupt-names = "digi_temp";
+			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x04000000>;
+			status = "disabled";
+		};
 	};
 
 	/* D1 domain, AXI SRAM (128KB with shared ITCM 192KB as `TCM_AXI_SHARED` is `000`) */

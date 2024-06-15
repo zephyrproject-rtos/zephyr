@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_NRF
+	bool "nRF CAN driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_CAN_ENABLED
+	select CAN_MCAN
+	select CLOCK_CONTROL
+	help
+	  Driver for nRF CAN.

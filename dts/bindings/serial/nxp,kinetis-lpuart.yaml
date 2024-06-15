@@ -2,7 +2,7 @@ description: Kinetis LPUART
 
 compatible: "nxp,kinetis-lpuart"
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, uart-controller-pin-inversion.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -22,18 +22,6 @@ properties:
       Using this mode, TX and RX lines are internally connected and
       only TX pin is used afterwards and should be configured.
       RX/TX conflicts must be handled on user side.
-
-  tx-invert:
-    type: boolean
-    description: |
-      Invert the binary logic of tx pin. When enabled, physical logic levels are inverted and
-      we use 1=Low, 0=High instead of 1=High, 0=Low.
-
-  rx-invert:
-    type: boolean
-    description: |
-      Invert the binary logic of rx pin. When enabled, physical logic levels are inverted and
-      we use 1=Low, 0=High instead of 1=High, 0=Low.
 
   nxp,rs485-mode:
     type: boolean

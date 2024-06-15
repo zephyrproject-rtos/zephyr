@@ -46,6 +46,54 @@
 		pwm-led3 = &back_pwm_led;
 		watchdog0 = &wdt0;
 	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi1>;
+		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ssd16xx: ssd16xxfb@0 {
+			compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673";
+			mipi-max-frequency = <4000000>;
+			reg = <0>;
+			width = <250>;
+			height = <122>;
+			busy-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+
+			full {
+				gdv = [10 0a];
+				sdv = [19];
+				vcom = <0xa8>;
+				border-waveform = <0x71>;
+				dummy-line = <0x1a>;
+				gate-line-width = <0x08>;
+				lut = [
+					22 55 AA 55 AA 55 AA 11
+					00 00 00 00 00 00 00 00
+					1E 1E 1E 1E 1E 1E 1E 1E
+					01 00 00 00 00
+				];
+			};
+
+			partial {
+				gdv = [10 0a];
+				sdv = [19];
+				vcom = <0xa8>;
+				border-waveform = <0x71>;
+				dummy-line = <0x1a>;
+				gate-line-width = <0x08>;
+				lut = [
+					18 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00
+					0F 01 00 00 00 00 00 00
+					00 00 00 00 00
+				];
+			};
+		};
+	};
 };
 
 &spi1 {
@@ -56,44 +104,4 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
-	ssd16xx: ssd16xxfb@0 {
-		compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673";
-		spi-max-frequency = <4000000>;
-		reg = <0>;
-		width = <250>;
-		height = <122>;
-		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
-		dc-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
-		busy-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
-
-		full {
-			gdv = [10 0a];
-			sdv = [19];
-			vcom = <0xa8>;
-			border-waveform = <0x71>;
-			dummy-line = <0x1a>;
-			gate-line-width = <0x08>;
-			lut = [
-				22 55 AA 55 AA 55 AA 11
-				00 00 00 00 00 00 00 00
-				1E 1E 1E 1E 1E 1E 1E 1E
-				01 00 00 00 00
-			];
-		};
-
-		partial {
-			gdv = [10 0a];
-			sdv = [19];
-			vcom = <0xa8>;
-			border-waveform = <0x71>;
-			dummy-line = <0x1a>;
-			gate-line-width = <0x08>;
-			lut = [
-				18 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00
-				0F 01 00 00 00 00 00 00
-				00 00 00 00 00
-			];
-		};
-	};
 };

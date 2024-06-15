@@ -1,0 +1,35 @@
+common:
+  tags: llext
+  arch_allow:
+    - arm
+    - xtensa
+  platform_exclude:
+    - apollo4p_evb            # See #73443
+    - apollo4p_blue_kxr_evb   # See #73443
+    - numaker_pfm_m487        # See #63167
+  integration_platforms:
+    - qemu_xtensa
+    - qemu_cortex_r5
+    - mps2/an385
+  harness: console
+sample:
+  name: CONFIG_MODULES test
+  description: Call code directly and from extensions
+tests:
+  sample.llext.modules.module_build:
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    extra_configs:
+      - CONFIG_HELLO_WORLD_MODE=m
+      - arch:arm:CONFIG_ARM_MPU=n
+      - arch:xtensa:CONFIG_LLEXT_STORAGE_WRITABLE=y
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello, world, from an llext!"
+  sample.llext.modules.builtin_build:
+    extra_configs:
+      - CONFIG_HELLO_WORLD_MODE=y
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello, world, from the main binary!"

@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2021 Sateesh Kotapati
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	model = "Silicon Labs EFR32BG22 Thunderboard (SLTB010A) using BRD4184A";
+	compatible = "silabs,efr32bg22c224f512im40", "silabs,sltb010a",
+		"silabs,efr32bg22";
+};
+
+&sw_sensor_enable {
+	enable-gpios = <&gpioa GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+};
+
+&sw_mic_enable {
+	enable-gpios = <&gpioa GECKO_PIN(0) GPIO_ACTIVE_HIGH>;
+};

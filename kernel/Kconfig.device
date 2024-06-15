@@ -26,6 +26,13 @@ config DEVICE_MUTABLE
 	  Support mutable devices. Mutable devices are instantiated in SRAM
 	  instead of Flash and are runtime modifiable in kernel mode.
 
+config DEVICE_DT_METADATA
+	bool "Store additional devicetree metadata for each device"
+	help
+	  If enabled, additional data from the devicetree will be stored for
+	  each device. This allows you to use device_get_by_dt_nodelabel(),
+	  device_get_dt_metadata(), etc.
+
 endmenu
 
 menu "Initialization Priorities"

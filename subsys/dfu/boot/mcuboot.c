@@ -252,7 +252,7 @@ int boot_erase_img_bank(uint8_t area_id)
 		return rc;
 	}
 
-	rc = flash_area_erase(fa, 0, fa->fa_size);
+	rc = flash_area_flatten(fa, 0, fa->fa_size);
 
 	flash_area_close(fa);
 

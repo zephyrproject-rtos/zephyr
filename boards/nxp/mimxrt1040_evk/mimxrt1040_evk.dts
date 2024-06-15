@@ -37,6 +37,33 @@
 		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
+	/*
+	 * This node describes the GPIO pins of the parallel FPC interface,
+	 * This interface is standard to several NXP EVKs, and is used with
+	 * several parallel LCD displays (available as zephyr shields)
+	 */
+	nxp_parallel_lcd_connector: parallel-connector {
+		compatible = "nxp,parallel-lcd-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio2 31 0>;	/* Pin 1, BL+ */
+	};
+
+	/*
+	 * This node describes the GPIO pins of the I2C display FPC interface,
+	 * This interface is standard to several NXP EVKs, and is used with
+	 * several parallel LCD displays (available as zephyr shields)
+	 */
+	nxp_i2c_touch_fpc: i2c-touch-connector {
+		compatible = "nxp,i2c-tsc-fpc";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<1  0 &gpio1 19 0>,	/* Pin 2, LCD touch RST */
+				<2  0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
@@ -103,19 +130,22 @@
 			#size-cells = <1>;
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(64)>;
+				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			slot0_partition: partition@10000 {
+			/* The MCUBoot swap-move algorithm uses the last 2 sectors
+			 * of the primary slot0 for swap status and move.
+			 */
+			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00010000 DT_SIZE_M(3)>;
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(8))>;
 			};
-			slot1_partition: partition@310000 {
+			slot1_partition: partition@322000 {
 				label = "image-1";
-				reg = <0x00310000 DT_SIZE_M(3)>;
+				reg = <0x00322000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@610000 {
+			storage_partition: partition@622000 {
 				label = "storage";
-				reg = <0x00610000 DT_SIZE_K(1984)>;
+				reg = <0x00622000 (DT_SIZE_M(2) - DT_SIZE_K(136))>;
 			};
 		};
 	};
@@ -157,6 +187,13 @@
 &lpi2c1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+nxp_touch_i2c: &lpi2c1 {};
+
+zephyr_lcdif: &lcdif {
+	pinctrl-0 = <&pinmux_lcdif>;
 	pinctrl-names = "default";
 };
 

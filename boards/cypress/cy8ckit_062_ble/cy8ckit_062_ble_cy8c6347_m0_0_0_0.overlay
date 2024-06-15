@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "cy8ckit_062_ble_cy8c6347-pinctrl.dtsi"
 
 / {
 	aliases {
@@ -21,7 +22,8 @@
 
 	interrupt-parent = <&intmux_ch21>;
 
-	pinctrl-0 = <&p5_0_uart5_rx &p5_1_uart5_tx>;
+	pinctrl-0 = <&p5_0_scb5_uart_rx &p5_1_scb5_uart_tx>;
+	pinctrl-names = "default";
 };
 
 arduino_serial: &uart5 {};

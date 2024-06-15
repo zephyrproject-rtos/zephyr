@@ -219,43 +219,8 @@ Console
 
 There are two possible options for Zephyr console output:
 
-- through UART4 which is available on SWD connector (JP2). In this case a JTAG adapter
-  can be used to connect SensorTile.box PRO and have both SWD and console lines available.
-
-  To enable console and shell over UART
-
-  - switch the console lines from cdc_acm to uart4
-    (:file:`boards/st/sensortile_box_pro/sensortile_box_pro.dts`)
-
-  - comment out the USB configuration macros
-    (:file:`boards/st/sensortile_box_pro/sensortile_box_pro_defconfig`)
-
-.. code-block:: dts
-   :caption: boards/st/sensortile_box_pro/sensortile_box_pro.dts
-
-   / {
-       chosen {
-          zephyr,console = &uart4;
-          zephyr,shell-uart = &uart4;
-          //zephyr,console = &cdc_acm_uart0;
-          //zephyr,shell-uart = &cdc_acm_uart0;
-        };
-     };
-
-.. code-block:: Kconfig
-   :caption: boards/st/sensortile_box_pro/sensortile_box_pro_defconfig
-
-   # Comment out following USB config lines when
-   # switching console to UART
-   #CONFIG_USB_DEVICE_STACK=y
-   #CONFIG_USB_DEVICE_VID=0x0483
-   #CONFIG_USB_DEVICE_PID=0x1235
-   #CONFIG_USB_DEVICE_PRODUCT="Zephyr CDC SensorTile.box PRO"
-   #CONFIG_USB_CDC_ACM_LOG_LEVEL_OFF=y
-   #CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n
-
-
-- through USB as USB CDC/ACM class. This is the default case present in the board dts file.
+- through USB as USB CDC/ACM class. This is the default case present in the board dts file
+  and is enabled by :kconfig:option:`CONFIG_BOARD_SERIAL_BACKEND_CDC_ACM`.
 
 .. code-block:: dts
    :caption: boards/st/sensortile_box_pro/sensortile_box_pro.dts
@@ -272,6 +237,24 @@ There are two possible options for Zephyr console output:
         };
      };
 
+
+- through UART4 which is available on SWD connector (JP2). In this case a JTAG adapter
+  can be used to connect SensorTile.box PRO and have both SWD and console lines available.
+
+  To enable console and shell over UART:
+
+  - in your prj.conf, override the board's default configuration by setting :code:`CONFIG_BOARD_SERIAL_BACKEND_CDC_ACM=n`
+
+  - add an overlay file named ``<board>.overlay``:
+
+.. code-block:: dts
+
+   / {
+       chosen {
+          zephyr,console = &uart4;
+          zephyr,shell-uart = &uart4;
+        };
+     };
 
 
 Console default settings are 115200 8N1.

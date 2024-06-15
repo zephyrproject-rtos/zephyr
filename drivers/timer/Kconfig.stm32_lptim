@@ -59,16 +59,18 @@ config STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE
 	  This options allows to override this check
 
 config STM32_LPTIM_STDBY_TIMER
-	bool "Use an additional timer while entering Standby mode"
+	bool
 	default $(dt_chosen_enabled,$(DT_CHOSEN_STDBY_TIMER))
 	depends on COUNTER
 	depends on TICKLESS_KERNEL
 	select EXPERIMENTAL
 	help
+	  Use an additional timer while entering Standby mode.
 	  There are chips e.g. STM32WBAX family that use LPTIM as a system timer,
 	  but LPTIM is not clocked in standby mode. These chips usually have
 	  another timer that is not stopped, but it has lower frequency e.g.
 	  RTC, thus it can't be used as a main system timer.
+	  Same approach is used on STM32U5 and STOP3 mode.
 
 	  Use the Standby timer for timeout (wakeup) when the system is entering
 	  Standby state.

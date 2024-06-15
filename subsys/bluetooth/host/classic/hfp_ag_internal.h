@@ -22,6 +22,8 @@ enum {
 	BT_HFP_AG_INCOMING_CALL, /* Incoming call */
 	BT_HFP_AG_CODEC_CONN,    /* Codec connection is ongoing */
 	BT_HFP_AG_CODEC_CHANGED, /* Codec Id Changed */
+	BT_HFP_AG_TX_ONGOING,    /* TX is ongoing */
+	BT_HFP_AG_CREATING_SCO,  /* SCO is creating */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_AG_NUM_FLAGS,
@@ -115,6 +117,9 @@ struct bt_hfp_ag {
 
 	/* Critical locker */
 	struct k_sem lock;
+
+	/* TX work */
+	struct k_work_delayable tx_work;
 };
 
 /* Active */

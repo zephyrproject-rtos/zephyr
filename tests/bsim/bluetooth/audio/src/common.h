@@ -10,25 +10,27 @@
 #ifndef ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 #define ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 
-#include <zephyr/kernel.h>
-
-#include "bstests.h"
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-
-#include <zephyr/types.h>
+#include <stdbool.h>
 #include <stddef.h>
-#include <errno.h>
-#include <zephyr/sys_clock.h>
+#include <stdint.h>
 
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic_types.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/types.h>
+
+#include "bs_types.h"
+#include "bs_tracing.h"
 
 static const uint8_t mock_iso_data[] = {
 	0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,

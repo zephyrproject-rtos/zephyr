@@ -42,6 +42,8 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
  *    Pin voltage selection     [ 8 ]
  *    Pin input enable config   [ 12 ]
  *    Pin push-pull/open-drain  [ 16 ]
+ *    Pin drive current high/low[ 20 ]
+ *    Pin drive current default [ 21 ]
  */
 #define IT8XXX2_HIGH_IMPEDANCE     0x1U
 #define IT8XXX2_PULL_PIN_DEFAULT   0x0U
@@ -52,6 +54,8 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 #define IT8XXX2_INPUT_ENABLE       0x1U
 #define IT8XXX2_PUSH_PULL          0x0U
 #define IT8XXX2_OPEN_DRAIN         0x1U
+#define IT8XXX2_DRIVE_STRENGTH     0x1U
+#define IT8XXX2_DRIVE_DEFAULT      0x2U
 
 /* Pin tri-state mode. */
 #define IT8XXX2_IMPEDANCE_SHIFT    0U
@@ -69,6 +73,9 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 /* Pin push-pull/open-drain mode */
 #define IT8XXX2_PP_OD_SHIFT        16U
 #define IT8XXX2_PP_OD_MASK         BIT_MASK(1)
+/* Pin driving select control */
+#define IT8XXX2_PDSCX_SHIFT        20U
+#define IT8XXX2_PDSCX_MASK         BIT_MASK(2)
 
 /**
  * @brief Utility macro to obtain configuration of tri-state.
@@ -107,6 +114,12 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 	(((__mode) >> IT8XXX2_PP_OD_SHIFT) & IT8XXX2_PP_OD_MASK)
 
 /**
+ * @brief Utility macro to obtain configuration of driving current selection.
+ */
+#define IT8XXX2_DT_PINCFG_DRIVE_CURRENT(__mode) \
+	(((__mode) >> IT8XXX2_PDSCX_SHIFT) & IT8XXX2_PDSCX_MASK)
+
+/**
  * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t.
  *
  * @param node_id Node identifier.
@@ -125,7 +138,10 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 	 ((IT8XXX2_INPUT_ENABLE * DT_PROP(node_id, input_enable))              \
 	 << IT8XXX2_INPUT_SHIFT) |                                             \
 	 ((IT8XXX2_OPEN_DRAIN * DT_PROP(node_id, drive_open_drain))            \
-	 << IT8XXX2_PP_OD_SHIFT))
+	 << IT8XXX2_PP_OD_SHIFT) |                                             \
+	 ((IT8XXX2_DRIVE_STRENGTH *                                            \
+	 DT_ENUM_IDX_OR(node_id, drive_strength, IT8XXX2_DRIVE_DEFAULT))       \
+	 << IT8XXX2_PDSCX_SHIFT))
 
 /**
  * @brief Utility macro to initialize pinctrls of pinmuxs field in #pinctrl_pin_t.

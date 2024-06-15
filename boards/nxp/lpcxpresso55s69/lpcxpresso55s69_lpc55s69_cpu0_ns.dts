@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, NXP
+ * Copyright 2019,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,8 +85,6 @@
 
 &hs_lspi {
 	status = "okay";
-	dmas = <&dma0 2>, <&dma0 3>;
-	dma-names = "rx", "tx";
 };
 
 &wwdt0 {

@@ -134,16 +134,43 @@ DT_FOREACH_STATUS_OKAY_NODE(IS_GPIO_CTRL_PIN_GET)
 
 static const struct gpio_ctrl gpio_list[] = {DT_FOREACH_STATUS_OKAY_NODE(IS_GPIO_CTRL_LIST)};
 
-static const struct gpio_ctrl *get_gpio_ctrl(char *name)
+static const struct gpio_ctrl *get_gpio_ctrl_helper(const struct device *dev)
 {
-	const struct device *dev = device_get_binding(name);
 	size_t i;
+
+	if (dev == NULL) {
+		return NULL;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(gpio_list); i++) {
 		if (gpio_list[i].dev == dev) {
 			return &gpio_list[i];
 		}
 	}
+
+	return NULL;
+}
+
+/* Look up a device by some human-readable string identifier. We
+ * always search among device names. If the feature is available, we
+ * search by node label as well.
+ */
+static const struct gpio_ctrl *get_gpio_ctrl(char *id)
+{
+	const struct gpio_ctrl *ctrl;
+
+	ctrl = get_gpio_ctrl_helper(device_get_binding(id));
+	if (ctrl != NULL) {
+		return ctrl;
+	}
+
+#ifdef CONFIG_DEVICE_DT_METADATA
+	ctrl = get_gpio_ctrl_helper(device_get_by_dt_nodelabel(id));
+	if (ctrl != NULL) {
+		return ctrl;
+	}
+#endif	/* CONFIG_DEVICE_DT_METADATA */
+
 	return NULL;
 }
 
@@ -401,6 +428,35 @@ static int cmd_gpio_toggle(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_gpio_devices(const struct shell *sh, size_t argc, char **argv)
+{
+	size_t i;
+
+	shell_fprintf(sh, SHELL_NORMAL, "%-16s Other names\n", "Device");
+
+	for (i = 0; i < ARRAY_SIZE(gpio_list); i++) {
+		const struct device *dev = gpio_list[i].dev;
+
+		shell_fprintf(sh, SHELL_NORMAL, "%-16s", dev->name);
+
+#ifdef CONFIG_DEVICE_DT_METADATA
+		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
+
+		if (nl->num_nodelabels > 0) {
+			for (size_t j = 0; j < nl->num_nodelabels; j++) {
+				const char *nodelabel = nl->nodelabels[j];
+
+				shell_fprintf(sh, SHELL_NORMAL, " %s", nodelabel);
+			}
+		}
+#endif
+
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
+	}
+
+	return 0;
+}
+
 /* 500 msec = 1/2 sec */
 #define SLEEP_TIME_MS   500
 
@@ -618,6 +674,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
 	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_TOGGLE_CMD, toggle, &sub_gpio_dev,
 		"Toggle GPIO pin\n"
 		"Usage: gpio toggle <device> <pin>", cmd_gpio_toggle, 3, 0),
+	SHELL_CMD(devices, NULL,
+		"List all GPIO devices\n"
+		"Usage: gpio devices", cmd_gpio_devices),
 	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_BLINK_CMD, blink, &sub_gpio_dev,
 		"Blink GPIO pin\n"
 		"Usage: gpio blink <device> <pin>", cmd_gpio_blink, 3, 0),

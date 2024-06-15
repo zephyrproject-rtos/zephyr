@@ -237,7 +237,7 @@ static void test_queue_start(void)
 
 		zassert_true(tn != cfg.name);
 		zassert_true(tn != NULL);
-		zassert_equal(strcmp(tn, cfg.name), 0);
+		zassert_str_equal(tn, cfg.name);
 	}
 
 	cfg.name = NULL;
@@ -251,7 +251,7 @@ static void test_queue_start(void)
 
 		zassert_true(tn != cfg.name);
 		zassert_true(tn != NULL);
-		zassert_equal(strcmp(tn, ""), 0);
+		zassert_str_equal(tn, "");
 	}
 
 	cfg.name = "wq.coophi";

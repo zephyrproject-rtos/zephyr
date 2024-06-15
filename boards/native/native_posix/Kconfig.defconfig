@@ -22,11 +22,6 @@ config ETH_NATIVE_POSIX
 
 endif # NETWORKING
 
-choice BT_HCI_BUS_TYPE
-	default BT_USERCHAN
-	depends on BT_HCI
-endchoice
-
 if CONSOLE
 
 config POSIX_ARCH_CONSOLE
@@ -36,12 +31,5 @@ config UART_CONSOLE
 	default y if SERIAL
 
 endif # CONSOLE
-
-if I2C
-
-config EMUL
-	default y
-
-endif # I2C
 
 endif # BOARD_NATIVE_POSIX

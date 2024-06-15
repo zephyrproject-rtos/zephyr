@@ -11,6 +11,19 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+/*
+ * Define COREDUMP_*_STR as public to allow coredump_backend_other to re-use
+ * these strings if necessary
+ */
+#define COREDUMP_BEGIN_STR      "BEGIN#"
+#define COREDUMP_END_STR        "END#"
+#define COREDUMP_ERROR_STR      "ERROR CANNOT DUMP#"
+
+/*
+ * Need to prefix coredump strings to make it easier to parse
+ * as log module adds its own prefixes.
+ */
+#define COREDUMP_PREFIX_STR     "#CD:"
 
 /**
  * @file
@@ -219,7 +232,7 @@ struct coredump_backend_api {
 	coredump_backend_cmd_t			cmd;
 };
 
-void coredump(unsigned int reason, const z_arch_esf_t *esf,
+void coredump(unsigned int reason, const struct arch_esf *esf,
 	      struct k_thread *thread);
 void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr);
 void coredump_buffer_output(uint8_t *buf, size_t buflen);
@@ -229,34 +242,34 @@ int coredump_cmd(enum coredump_cmd_id cmd_id, void *arg);
 
 #else
 
-void coredump(unsigned int reason, const z_arch_esf_t *esf,
-	      struct k_thread *thread)
+static inline void coredump(unsigned int reason, const struct arch_esf *esf,
+			    struct k_thread *thread)
 {
 	ARG_UNUSED(reason);
 	ARG_UNUSED(esf);
 	ARG_UNUSED(thread);
 }
 
-void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
+static inline void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
 {
 	ARG_UNUSED(start_addr);
 	ARG_UNUSED(end_addr);
 }
 
-void coredump_buffer_output(uint8_t *buf, size_t buflen)
+static inline void coredump_buffer_output(uint8_t *buf, size_t buflen)
 {
 	ARG_UNUSED(buf);
 	ARG_UNUSED(buflen);
 }
 
-int coredump_query(enum coredump_query_id query_id, void *arg)
+static inline int coredump_query(enum coredump_query_id query_id, void *arg)
 {
 	ARG_UNUSED(query_id);
 	ARG_UNUSED(arg);
 	return -ENOTSUP;
 }
 
-int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
+static inline int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
 {
 	ARG_UNUSED(query_id);
 	ARG_UNUSED(arg);
@@ -266,7 +279,7 @@ int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
 #endif /* CONFIG_DEBUG_COREDUMP */
 
 /**
- * @fn void coredump(unsigned int reason, const z_arch_esf_t *esf, struct k_thread *thread);
+ * @fn void coredump(unsigned int reason, const struct arch_esf *esf, struct k_thread *thread);
  * @brief Perform coredump.
  *
  * Normally, this is called inside z_fatal_error() to generate coredump

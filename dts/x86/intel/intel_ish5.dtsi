@@ -189,7 +189,7 @@
 		};
 
 		dma0: dma@10100000 {
-			compatible = "intel,sedi_dma";
+			compatible = "intel,sedi-dma";
 			#dma-cells = <2>;
 			dma-channels = <8>;
 			peripheral-id = <0>;

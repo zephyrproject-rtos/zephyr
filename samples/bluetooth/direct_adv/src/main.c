@@ -128,7 +128,7 @@ static void bt_ready(void)
 		adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 		err = bt_le_adv_start(&adv_param, NULL, 0, NULL, 0);
 	} else {
-		err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+		err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	}
 
 	if (err) {

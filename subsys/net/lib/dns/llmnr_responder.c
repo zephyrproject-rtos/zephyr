@@ -470,7 +470,7 @@ static int dns_read(int sock,
 		}
 
 		NET_DBG("[%d] query %s/%s label %s (%d bytes)", queries,
-			qtype == DNS_RR_TYPE_A ? "A" : "AAAA", "IN",
+			dns_qtype_to_str(qtype), "IN",
 			result->data, ret);
 
 		/* If the query matches to our hostname, then send reply */

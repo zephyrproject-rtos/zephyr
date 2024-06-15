@@ -10,6 +10,7 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/toolchain.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,14 +28,27 @@ extern "C" {
  * Symbols may be named function or global objects that have been exported
  * for linking. These constant symbols are useful in the base image
  * as they may be placed in ROM.
+ *
+ * @note When updating this structure, make sure to also update the
+ * 'scripts/build/llext_prepare_exptab.py' build script.
  */
 struct llext_const_symbol {
-	/** Name of symbol */
-	const char *const name;
+	/** At build time, we always write to 'name'.
+	 *  At runtime, which field is used depends
+	 *  on CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID.
+	 */
+	union {
+		/** Name of symbol */
+		const char *const name;
+
+		/** Symbol Link Identifier */
+		const uintptr_t slid;
+	};
 
 	/** Address of symbol */
 	const void *const addr;
 };
+BUILD_ASSERT(sizeof(struct llext_const_symbol) == 2 * sizeof(uintptr_t));
 
 /**
  * @brief Symbols are named memory addresses
@@ -75,10 +89,21 @@ struct llext_symtable {
  *
  * @param x Symbol to export to extensions
  */
+#if defined(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+#define EXPORT_SYMBOL(x)							\
+	static const char Z_GENERIC_SECTION("llext_exports_strtab") __used	\
+		x ## _sym_name[] = STRINGIFY(x);				\
+	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
+		.name = x ## _sym_name, .addr = (const void *)&x,		\
+	}
+#elif defined(CONFIG_LLEXT)
 #define EXPORT_SYMBOL(x)							\
 	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
 		.name = STRINGIFY(x), .addr = (const void *)&x,			\
 	}
+#else
+#define EXPORT_SYMBOL(x)
+#endif
 
 /**
  * @brief Exports a symbol from an extension to the base image
@@ -89,12 +114,16 @@ struct llext_symtable {
  *
  * @param x Extension symbol to export to the base image
  */
+#if defined(CONFIG_LLEXT) && defined(LL_EXTENSION_BUILD)
 #define LL_EXTENSION_SYMBOL(x)							\
 	static const struct llext_const_symbol					\
 			Z_GENERIC_SECTION(".exported_sym") __used		\
 			x ## _sym = {						\
 		.name = STRINGIFY(x), .addr = (const void *)&x,			\
 	}
+#else
+#define LL_EXTENSION_SYMBOL(x)
+#endif
 
 /**
  * @}

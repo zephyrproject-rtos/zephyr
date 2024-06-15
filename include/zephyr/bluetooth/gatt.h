@@ -169,6 +169,7 @@ typedef ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
 struct bt_gatt_attr {
 	/** Attribute UUID */
 	const struct bt_uuid *uuid;
+	/** Attribute read callback */
 	bt_gatt_attr_read_func_t read;
 	/** Attribute write callback */
 	bt_gatt_attr_write_func_t write;

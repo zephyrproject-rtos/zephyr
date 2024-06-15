@@ -38,19 +38,9 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
-config RISCV_ENABLE_FRAME_POINTER
-	bool
-	default y
-	depends on OVERRIDE_FRAME_POINTER_DEFAULT && !OMIT_FRAME_POINTER
-	help
-	  Hidden option to simplify access to OVERRIDE_FRAME_POINTER_DEFAULT
-	  and OMIT_FRAME_POINTER. It is automatically enabled when the frame
-	  pointer unwinding is enabled.
-
 config RISCV_EXCEPTION_STACK_TRACE
 	bool
 	default y
-	depends on EXCEPTION_STACK_TRACE
 	imply THREAD_STACK_INFO
 	help
 	  Internal config to enable runtime stack traces on fatal exceptions.
@@ -98,7 +88,7 @@ config RISCV_SOC_HAS_ISR_STACKING
 	    guarded by !_ASMLANGUAGE. The ESF should be defined to account for
 	    the hardware stacked registers in the proper order as they are
 	    saved on the stack by the hardware, and the registers saved by the
-	    software macros. The structure must be called '__esf'.
+	    software macros. The structure must be called 'struct arch_esf'.
 
 config RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	bool
@@ -379,6 +369,7 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 
 config RISCV_TRAP_HANDLER_ALIGNMENT
 	int "Alignment of RISC-V trap handler in bytes"
+	default 64 if RISCV_HAS_CLIC
 	default 4
 	help
 	  This value configures the alignment of RISC-V trap handling

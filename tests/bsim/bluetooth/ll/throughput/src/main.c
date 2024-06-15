@@ -101,14 +101,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central GATT Write",
-		.test_post_init_f = test_gatt_write_init,
+		.test_pre_init_f = test_gatt_write_init,
 		.test_tick_f = test_gatt_write_tick,
 		.test_main_f = test_central_main
 	},
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral GATT Write",
-		.test_post_init_f = test_gatt_write_init,
+		.test_pre_init_f = test_gatt_write_init,
 		.test_tick_f = test_gatt_write_tick,
 		.test_main_f = test_peripheral_main
 	},

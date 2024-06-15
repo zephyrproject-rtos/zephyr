@@ -27,6 +27,26 @@
 	aliases {
 		rtc = &pcf8563_xiao_round_display;
 	};
+
+	xiao_round_display_mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&xiao_spi>;
+		dc-gpios = <&xiao_d 3 GPIO_ACTIVE_HIGH>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gc9a01_xiao_round_display: gc9a01@0 {
+			status = "okay";
+			compatible = "galaxycore,gc9x01x";
+			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(100)>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			width = <240>;
+			height = <240>;
+			display-inversion;
+		};
+	};
 };
 
 &xiao_adc {
@@ -61,18 +81,6 @@
 &xiao_spi {
 	status = "okay";
 	cs-gpios = <&xiao_d 1 GPIO_ACTIVE_LOW>, <&xiao_d 2 GPIO_ACTIVE_LOW>;
-
-	gc9a01_xiao_round_display: gc9a01@0 {
-		status = "okay";
-		compatible = "galaxycore,gc9x01x";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(100)>;
-		cmd-data-gpios = <&xiao_d 3 GPIO_ACTIVE_HIGH>;
-		pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
-		width = <240>;
-		height = <240>;
-		display-inversion;
-	};
 
 	sdhc_xiao_round_display: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";

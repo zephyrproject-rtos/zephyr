@@ -220,7 +220,7 @@ ZTEST(printk, test_printk)
 	pk_console[pos] = '\0';
 	__printk_hook_install(_old_char_out);
 	printk("expected '%s'\n", expected);
-	zassert_true((strcmp(pk_console, expected) == 0), "printk failed");
+	zassert_str_equal(pk_console, expected, "printk failed");
 
 	(void)memset(pk_console, 0, sizeof(pk_console));
 	count = 0;
@@ -251,7 +251,7 @@ ZTEST(printk, test_printk)
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "0x%x %p %-2p\n", hex, ptr, (char *)42);
 	pk_console[count] = '\0';
-	zassert_true((strcmp(pk_console, expected) == 0), "snprintk failed");
+	zassert_str_equal(pk_console, expected, "snprintk failed");
 }
 
 extern void *common_setup(void);

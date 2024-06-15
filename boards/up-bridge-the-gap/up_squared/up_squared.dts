@@ -25,7 +25,7 @@
 		zephyr,sram = &dram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,bt-uart = &uart1;
+		zephyr,bt-hci = &bt_hci_uart;
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
 	};
@@ -47,5 +47,12 @@
 			d-cache-line-size = <64>;
 			reg = <1>;
 		};
+	};
+};
+
+&uart1 {
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
 	};
 };

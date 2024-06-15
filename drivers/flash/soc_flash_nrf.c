@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2024 Nordic Semiconductor ASA
  * Copyright (c) 2016 Linaro Limited
  * Copyright (c) 2016 Intel Corporation
  *

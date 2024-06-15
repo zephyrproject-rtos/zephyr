@@ -5,6 +5,8 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/smartbond_clock_control.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
@@ -17,6 +19,10 @@
 #define TICK_TO_CYC(tick) k_ticks_to_cyc_ceil32(tick)
 #define CYC_TO_TICK(cyc) k_cyc_to_ticks_ceil32(cyc)
 #define MAX_TICKS (((COUNTER_SPAN / 2) - CYC_PER_TICK) / (CYC_PER_TICK))
+#define SMARTBOND_CLOCK_CONTROLLER DEVICE_DT_GET(DT_NODELABEL(osc))
+/* Margin values are based on DA1469x characterization data */
+#define RC32K_FREQ_POSITIVE_MARGIN_DUE_TO_VOLTAGE (675)
+#define RC32K_FREQ_MARGIN_DUE_TO_TEMPERATURE (450)
 
 static uint32_t last_timer_val_reg;
 static uint32_t timer_val_31_24;
@@ -24,6 +30,19 @@ static uint32_t timer_val_31_24;
 static uint32_t last_isr_val;
 static uint32_t last_isr_val_rounded;
 static uint32_t announced_ticks;
+
+static uint32_t get_rc32k_max_frequency(void)
+{
+	/* According to DA1469x datasheet */
+	uint32_t r32k_frequency = 37000;
+
+	clock_control_get_rate(SMARTBOND_CLOCK_CONTROLLER,
+				(clock_control_subsys_t)SMARTBOND_CLK_RC32K, &r32k_frequency);
+
+	r32k_frequency += RC32K_FREQ_POSITIVE_MARGIN_DUE_TO_VOLTAGE +
+			  RC32K_FREQ_MARGIN_DUE_TO_TEMPERATURE;
+	return r32k_frequency;
+}
 
 static void set_reload(uint32_t val)
 {
@@ -88,11 +107,20 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		uint32_t watchdog_expire_ticks;
 
 		if (CRG_TOP->CLK_RCX_REG & CRG_TOP_CLK_RCX_REG_RCX_ENABLE_Msk) {
-			watchdog_expire_ticks = SYS_WDOG->WATCHDOG_REG * 21 *
-				CONFIG_SYS_CLOCK_TICKS_PER_SEC / 1000;
+			/*
+			 * When LP clock is RCX, the watchdog is clocked by RCX clock
+			 * divided by 320.
+			 */
+			watchdog_expire_ticks = SYS_WDOG->WATCHDOG_REG * 320;
 		} else {
+			/*
+			 * When LP clock is not RCX, the watchdog is clocked by RC32K
+			 * divided by 320. In this case watchdog value to LP clock
+			 * ticks must be calculated according to XTAL32K frequency and
+			 * RC32K maximum frequency.
+			 */
 			watchdog_expire_ticks = SYS_WDOG->WATCHDOG_REG *
-				CONFIG_SYS_CLOCK_TICKS_PER_SEC / 100;
+				CONFIG_SYS_CLOCK_TICKS_PER_SEC / (get_rc32k_max_frequency() / 320);
 		}
 		if (watchdog_expire_ticks - 2 < ticks) {
 			ticks = watchdog_expire_ticks - 2;
@@ -108,6 +136,18 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	target_val = ((target_val + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
 
 	set_reload(target_val);
+
+	/*
+	 * If time was so small that it already fired or should fire
+	 * just now, mark interrupt as pending to avoid losing timer event.
+	 * Condition is true when target_val (point in time that should be
+	 * used for wakeup) is behind timer value or is equal to it.
+	 * In that case we don't know if reload value was set in time or
+	 * not but time expired anyway so make sure that interrupt is pending.
+	 */
+	if ((int32_t)(target_val - timer_val_32_noupdate() - 1) < 0) {
+		NVIC_SetPendingIRQ(TIMER2_IRQn);
+	}
 }
 
 uint32_t sys_clock_elapsed(void)

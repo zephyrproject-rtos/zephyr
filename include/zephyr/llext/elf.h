@@ -196,6 +196,7 @@ struct elf64_shdr {
 	elf64_xword sh_entsize;
 };
 
+#define SHT_NULL 0x0
 #define SHT_PROGBITS 0x1
 #define SHT_SYMTAB 0x2
 #define SHT_STRTAB 0x3
@@ -245,8 +246,10 @@ struct elf64_sym {
 };
 
 #define SHN_UNDEF 0
+#define SHN_LORESERVE 0xff00
 #define SHN_ABS 0xfff1
 #define SHN_COMMON 0xfff2
+#define SHN_HIRESERVE 0xffff
 
 #define STT_NOTYPE 0
 #define STT_OBJECT 1

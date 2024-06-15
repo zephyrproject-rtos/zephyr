@@ -1,0 +1,36 @@
+# Copyright (c) 2020 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPTMR
+
+compatible: "nxp,lptmr"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    required: true
+
+  prescaler:
+    required: true
+
+  clk-source:
+    type: int
+    required: true
+    description: Prescaler clock source (0 to 3)
+
+  input-pin:
+    type: int
+    description: Pulse counter input pin (0 to 3).
+
+  active-low:
+    type: boolean
+    description: Pulse counter input pin is active-low
+
+  resolution:
+    type: int
+    required: true
+    description: Represents the width of the timer in bits.

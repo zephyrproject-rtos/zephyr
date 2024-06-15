@@ -3,11 +3,21 @@
 
 add_subdirectory_ifdef(CONFIG_RISCV_CORE_NORDIC_VPR vpr)
 
-zephyr_linker_sources_ifdef(CONFIG_ARM SECTIONS arm_platform_init.ld)
+if(CONFIG_ARM)
+  # Let SystemInit() be called in place of z_arm_platform_init() by default.
+  zephyr_linker_symbol(SYMBOL z_arm_platform_init EXPR "@SystemInit@")
+
+  # This file is used when the CMake linker script generator is disabled.
+  zephyr_linker_sources(SECTIONS arm_platform_init.ld)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_include_directories(.)
+
+if(CONFIG_HAS_NORDIC_DMM)
+  zephyr_library_sources(dmm.c)
+endif()
 
 if(CONFIG_TFM_PARTITION_PLATFORM)
   zephyr_library_sources(soc_secure.c)

@@ -29,15 +29,15 @@ static const struct z_exc_handle exceptions[] = {
 #endif
 
 /* Stack trace function */
-void z_riscv_unwind_stack(const z_arch_esf_t *esf);
+void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf);
 
-uintptr_t z_riscv_get_sp_before_exc(const z_arch_esf_t *esf)
+uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf)
 {
 	/*
 	 * Kernel stack pointer prior this exception i.e. before
 	 * storing the exception stack frame.
 	 */
-	uintptr_t sp = (uintptr_t)esf + sizeof(z_arch_esf_t);
+	uintptr_t sp = (uintptr_t)esf + sizeof(struct arch_esf);
 
 #ifdef CONFIG_USERSPACE
 	if ((esf->mstatus & MSTATUS_MPP) == PRV_U) {
@@ -53,12 +53,12 @@ uintptr_t z_riscv_get_sp_before_exc(const z_arch_esf_t *esf)
 }
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
-				       const z_arch_esf_t *esf)
+				       const struct arch_esf *esf)
 {
 	z_riscv_fatal_error_csf(reason, esf, NULL);
 }
 
-FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf_t *esf,
+FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arch_esf *esf,
 					   const _callee_saved_t *csf)
 {
 #ifdef CONFIG_EXCEPTION_DEBUG
@@ -99,8 +99,8 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf
 		LOG_ERR("");
 	}
 
-	if (IS_ENABLED(CONFIG_RISCV_EXCEPTION_STACK_TRACE)) {
-		z_riscv_unwind_stack(esf);
+	if (IS_ENABLED(CONFIG_EXCEPTION_STACK_TRACE)) {
+		z_riscv_unwind_stack(esf, csf);
 	}
 
 #endif /* CONFIG_EXCEPTION_DEBUG */
@@ -144,14 +144,14 @@ static char *cause_str(unsigned long cause)
 	}
 }
 
-static bool bad_stack_pointer(z_arch_esf_t *esf)
+static bool bad_stack_pointer(struct arch_esf *esf)
 {
 #ifdef CONFIG_PMP_STACK_GUARD
 	/*
 	 * Check if the kernel stack pointer prior this exception (before
 	 * storing the exception stack frame) was in the stack guard area.
 	 */
-	uintptr_t sp = (uintptr_t)esf + sizeof(z_arch_esf_t);
+	uintptr_t sp = (uintptr_t)esf + sizeof(struct arch_esf);
 
 #ifdef CONFIG_USERSPACE
 	if (_current->arch.priv_stack_start != 0 &&
@@ -189,7 +189,7 @@ static bool bad_stack_pointer(z_arch_esf_t *esf)
 	return false;
 }
 
-void _Fault(z_arch_esf_t *esf)
+void _Fault(struct arch_esf *esf)
 {
 #ifdef CONFIG_USERSPACE
 	/*
@@ -241,7 +241,7 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 
 void z_impl_user_fault(unsigned int reason)
 {
-	z_arch_esf_t *oops_esf = _current->syscall_frame;
+	struct arch_esf *oops_esf = _current->syscall_frame;
 
 	if (((_current->base.user_options & K_USER) != 0) &&
 		reason != K_ERR_STACK_CHK_FAIL) {
@@ -255,6 +255,6 @@ static void z_vrfy_user_fault(unsigned int reason)
 	z_impl_user_fault(reason);
 }
 
-#include <syscalls/user_fault_mrsh.c>
+#include <zephyr/syscalls/user_fault_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */

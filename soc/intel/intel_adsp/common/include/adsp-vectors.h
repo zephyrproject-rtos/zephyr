@@ -45,7 +45,7 @@
 #define DOUBLEEXC_VECTOR_PADDR_SRAM \
 	(VECBASE_RESET_PADDR_SRAM + XCHAL_DOUBLEEXC_VECOFS)
 
-#define VECTOR_TBL_SIZE				0x0400
+#define VECTOR_TBL_SIZE				0x1000
 
 /* Vector and literal sizes */
 #define MEM_VECT_LIT_SIZE			0x8

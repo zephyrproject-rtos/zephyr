@@ -14,7 +14,9 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/irq_nextlevel.h>
+#include <zephyr/sw_isr_table.h>
 #include "intc_dw.h"
 #include <soc.h>
 #include <zephyr/irq.h>
@@ -156,3 +158,6 @@ static void dw_ictl_config_irq(const struct device *port)
 		    DEVICE_DT_INST_GET(0),
 		    DT_INST_IRQ(0, sense));
 }
+
+IRQ_PARENT_ENTRY_DEFINE(intc_dw, DEVICE_DT_INST_GET(0), DT_INST_IRQN(0),
+			INTC_INST_ISR_TBL_OFFSET(0), DT_INST_INTC_GET_AGGREGATOR_LEVEL(0));

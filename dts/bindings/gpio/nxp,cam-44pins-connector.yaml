@@ -1,0 +1,33 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on NXP 44-pin board-to-board camera connector.
+    The connector layout is depicted below:
+
+        42 GND                 GND              41
+        2  AF_GND              AGND             1
+        4  AF_VCC              STROBE           3
+        6  VCMSINK             SDA              5
+        8  AVDD                SCL              7
+        10 GPIO1               RESETB           9
+        12 GPIO0               PCLK             11
+        14 FREX                VSYNC            13
+        16 MIPI_CSI_DP1/D9     HREF             15
+        18 MIPI_CSI_DN1/D8     PWDN             17
+        20 DGND                MIPI_CSI_DP1/D9  19
+        22 MIPI_CSI_CLKP/D7    MIPI_CSI_DN1/D8  21
+        24 MIPI_CSI_CLKN/D6    MIPI_CSI_CLKP/D7 23
+        26 DGND                MIPI_CSI_CLKN/D6 25
+        28 MIPI_CSI_DP0/D5     MIPI_CSI_DP0/D5  27
+        30 MIPI_CSI_DN0/D4     MIPI_CSI_DN0/D4  29
+        32 DGND                D3               31
+        34 XCLK                D2               33
+        36 DVDD                D1               35
+        38 DOVDD               D0               37
+        40 DGND                DGND             39
+        44 AF_GND              GND              43
+
+compatible: "nxp,cam-44pins-connector"
+
+include: [gpio-nexus.yaml, base.yaml]

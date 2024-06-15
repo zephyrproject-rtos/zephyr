@@ -229,7 +229,7 @@ static chunkid_t alloc_chunk(struct z_heap *h, chunksz_t sz)
 	 * fragmentation waste of the order of the block allocated
 	 * only.
 	 */
-	if (b->next) {
+	if (b->next != 0U) {
 		chunkid_t first = b->next;
 		int i = CONFIG_SYS_HEAP_ALLOC_LOOPS;
 		do {
@@ -265,7 +265,7 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	struct z_heap *h = heap->heap;
 	void *mem;
 
-	if (bytes == 0U || size_too_big(h, bytes)) {
+	if ((bytes == 0U) || size_too_big(h, bytes)) {
 		return NULL;
 	}
 
@@ -323,7 +323,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	}
 	__ASSERT((align & (align - 1)) == 0, "align must be a power of 2");
 
-	if (bytes == 0 || size_too_big(h, bytes)) {
+	if ((bytes == 0) || size_too_big(h, bytes)) {
 		return NULL;
 	}
 

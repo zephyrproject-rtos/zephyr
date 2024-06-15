@@ -3,6 +3,8 @@
 # Copyright (c) 2021 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_STDBY_TIMER := st,lptim-stdby-timer
+
 config SOC_SERIES_STM32U5X
 	select ARM
 	select CPU_CORTEX_M33
@@ -15,3 +17,16 @@ config SOC_SERIES_STM32U5X
 	select HAS_STM32CUBE
 	select HAS_PM
 	select HAS_POWEROFF
+
+config STM32_STOP3_LP_MODE
+	bool
+	default $(dt_path_enabled,/cpus/power-states/state3) && $(dt_chosen_enabled,$(DT_CHOSEN_STDBY_TIMER))
+	help
+	  Enable support for STM32 STOP3 low-power mode.
+	  Based on the Cortex-M33 Deepsleep mode combined with peripheral clock gating.
+	  All clocks in the core domain are stopped.
+	  The PLL, MSIS, MSIK, HSI16, and HSE oscillators are disabled.
+	  All SRAMs and register contents are preserved.
+	  SRAMs can be totally or partially switched off to further reduce consumption.
+	  GPIOs are left floating and additional pull-up or pull-down can be applied
+	  via PWR registers.

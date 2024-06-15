@@ -27,7 +27,10 @@
  * autonomously read the change counter value when executing a write request.
  *
  */
+#include <stdint.h>
+#include <stdbool.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
 #ifdef __cplusplus

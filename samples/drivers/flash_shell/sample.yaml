@@ -9,6 +9,8 @@ tests:
     filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
     platform_exclude:
       - nucleo_h745zi_q/stm32h745xx/m4
+      - stm32h7s78_dk
+      - stm32h745i_disco/stm32h745xx/m4
       - stm32h747i_disco/stm32h747xx/m4
       - gd32f350r_eval
       - arduino_portenta_h7/stm32h747xx/m4

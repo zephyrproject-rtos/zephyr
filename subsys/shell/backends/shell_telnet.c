@@ -657,8 +657,8 @@ static int enable(const struct shell_transport *transport, bool blocking)
 	return 0;
 }
 
-static int write(const struct shell_transport *transport,
-		 const void *data, size_t length, size_t *cnt)
+static int telnet_write(const struct shell_transport *transport,
+			const void *data, size_t length, size_t *cnt)
 {
 	struct shell_telnet_line_buf *lb;
 	size_t copy_len;
@@ -725,8 +725,8 @@ static int write(const struct shell_transport *transport,
 	return 0;
 }
 
-static int read(const struct shell_transport *transport,
-		void *data, size_t length, size_t *cnt)
+static int telnet_read(const struct shell_transport *transport,
+		       void *data, size_t length, size_t *cnt)
 {
 	size_t read_len;
 
@@ -772,8 +772,8 @@ const struct shell_transport_api shell_telnet_transport_api = {
 	.init = init,
 	.uninit = uninit,
 	.enable = enable,
-	.write = write,
-	.read = read
+	.write = telnet_write,
+	.read = telnet_read
 };
 
 static int enable_shell_telnet(void)
@@ -786,10 +786,6 @@ static int enable_shell_telnet(void)
 
 	return shell_init(&shell_telnet, NULL, cfg_flags, log_backend, level);
 }
-
-BUILD_ASSERT(CONFIG_SHELL_TELNET_INIT_PRIORITY > CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO,
-	     "CONFIG_SHELL_TELNET_INIT_PRIORITY must be higher than "
-	     "CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO");
 
 SYS_INIT(enable_shell_telnet, APPLICATION, CONFIG_SHELL_TELNET_INIT_PRIORITY);
 

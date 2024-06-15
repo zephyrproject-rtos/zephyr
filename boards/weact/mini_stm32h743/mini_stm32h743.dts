@@ -8,6 +8,7 @@
 #include <st/h7/stm32h743Xi.dtsi>
 #include <st/h7/stm32h743vitx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
 	model = "WeAct Studio MiniSTM32H743 Core Board";
@@ -18,7 +19,7 @@
 		zephyr,shell-uart = &usb_cdc_acm_uart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,display = &st7735r_tft;
+		zephyr,display = &st7735r_160x80;
 	};
 
 	leds {
@@ -38,10 +39,47 @@
 		};
 	};
 
+	mipi_dbi_st7735r_160x80 {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi4>;
+		dc-gpios = <&gpioe 13 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7735r_160x80: st7735r@0 {
+			compatible = "sitronix,st7735r";
+			mipi-max-frequency = <20000000>;
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			reg = <0>;
+			width = <160>;
+			height = <80>;
+			inversion-on;
+			rgb-is-inverted;
+			x-offset = <1>;
+			y-offset = <26>;
+			pwctr1 = [A2 02 84];
+			pwctr2 = [C5];
+			pwctr3 = [0A 00];
+			pwctr4 = [8A 2A];
+			pwctr5 = [8A EE];
+			invctr = <7>;
+			frmctr1 = [01 2C 2D];
+			frmctr2 = [01 2C 2D];
+			frmctr3 = [01 2C 2D 01 2C 2D];
+			vmctr1 = <14>;
+			gamctrp1 = [02 1C 07 12 37 32 29 2D 29 25 2B 39 00 01 03 10];
+			gamctrn1 = [03 1D 07 06 2E 2C 29 2D 2E 2E 37 3F 00 00 02 10];
+			colmod = <5>;
+			/* Set D3 (RGB) bit to 1. LV_COLOR_16_SWAP is enabled by default */
+			madctl = <120>; /* Set to <184> to rotate the image 180 degrees. */
+			caset = [00 01 00 a0];
+			raset = [00 1a 00 69];
+		};
+	};
+
 	aliases {
 		led0 = &user_led;
 		sw0 = &user_button;
-		spi-flash0 = &w25q64_spi;
 		watchdog0 = &iwdg;
 		sdhc0 = &sdmmc1;
 	};
@@ -154,42 +192,21 @@ zephyr_udc0: &usbotg_fs {
 	};
 };
 
+&gpioe {
+	status = "okay";
+
+	lcd_led {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_LOW>;
+		output-high;
+	};
+};
+
 &spi4 {
 	pinctrl-0 = <&spi4_sck_pe12 &spi4_mosi_pe14>;
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
 	pinctrl-names = "default";
 	status = "okay";
-
-	st7735r_tft: st7735r@0 {
-		compatible = "sitronix,st7735r";
-		spi-max-frequency = <20000000>;
-		reg = <0>;
-		cmd-data-gpios = <&gpioe 13 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&gpioe 10 GPIO_ACTIVE_HIGH>;
-		width = <160>;
-		height = <80>;
-		inversion-on;
-		rgb-is-inverted;
-		x-offset = <1>;
-		y-offset = <26>;
-		pwctr1 = [A2 02 84];
-		pwctr2 = [C5];
-		pwctr3 = [0A 00];
-		pwctr4 = [8A 2A];
-		pwctr5 = [8A EE];
-		invctr = <7>;
-		frmctr1 = [01 2C 2D];
-		frmctr2 = [01 2C 2D];
-		frmctr3 = [01 2C 2D 01 2C 2D];
-		vmctr1 = <14>;
-		gamctrp1 = [02 1C 07 12 37 32 29 2D 29 25 2B 39 00 01 03 10];
-		gamctrn1 = [03 1D 07 06 2E 2C 29 2D 2E 2E 37 3F 00 00 02 10];
-		colmod = <5>;
-		/* Set D3 (RGB) bit to 1. LV_COLOR_16_SWAP is enabled by default in Kconfig */
-		madctl = <120>; /* Set to <184> to rotate the image 180 degrees. */
-		caset = [00 01 00 a0];
-		raset = [00 1a 00 69];
-	};
 };
 
 &rng {

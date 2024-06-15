@@ -10,6 +10,6 @@
 		interface-name = "HID0";
 		protocol-code = "keyboard";
 		in-report-size = <64>;
-		in-polling-rate = <1000>;
+		in-polling-period-us = <1000>;
 	};
 };

@@ -1,7 +1,0 @@
-# EFR32BG SLTB010A board
-
-# Copyright (c) 2021, Sateesh Kotapati
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_EFR32BG22_BRD4184A
-	select SOC_PART_NUMBER_EFR32BG22C224F512IM40

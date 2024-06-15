@@ -1,0 +1,174 @@
+/*
+ * Copyright (c) 2021 Yonatan Schachter
+ * Copyright (c) 2023 Seeed Studio inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <rpi_pico/rp2040.dtsi>
+#include "xiao_rp2040-pinctrl.dtsi"
+#include "seeed_xiao_connector.dtsi"
+#include <freq.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &ssi;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		led-strip = &ws2812;
+		pwm-led0 = &pwm_led0;
+		led0 = &blue_led;
+		led1 = &green_led;
+		led2 = &red_led;
+	};
+
+	pwm_leds {
+		compatible = "pwm-leds";
+		status = "disabled";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm 9 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM_LED";
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: blue_led {
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			label = "BLUE_LED";
+		};
+
+		green_led: green_led {
+			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			label = "GREEN_LED";
+		};
+
+		red_led: red_led {
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+			label = "RED_LED";
+		};
+	};
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_ch4b_default>;
+	pinctrl-names = "default";
+	divider-int-0 = <255>;
+};
+
+&flash0 {
+	/*
+	 * 2MB of flash minus the 0x100 used for the second stage bootloader
+	 */
+	reg = <0x10000000 DT_SIZE_M(2)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		code_partition: partition@100 {
+			label = "code";
+			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
+			read-only;
+		};
+	};
+};
+
+&clocks {
+	pinctrl-0 = <&clocks_default>;
+	pinctrl-names = "default";
+};
+
+&timer {
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(8)>;
+};
+
+&gpio0 {
+	status = "okay";
+
+	/*
+	 * The neopixel on this board has its positive side hooked up to a GPIO pin
+	 * rather than a positive voltage rail to save on power. This will enable
+	 * the LED on board initialization.
+	 */
+	neopixel-power-enable {
+		gpio-hog;
+		gpios = <11 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};
+
+&pio0 {
+	status = "okay";
+
+	pio-ws2812 {
+		compatible = "worldsemi,ws2812-rpi_pico-pio";
+		status = "okay";
+		pinctrl-0 = <&ws2812_pio0_default>;
+		pinctrl-names = "default";
+		bit-waveform = <3>, <3>, <4>;
+
+		ws2812: ws2812 {
+			status = "okay";
+			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+			chain-length = <1>;
+			color-mapping = <LED_COLOR_ID_GREEN
+					LED_COLOR_ID_RED
+					LED_COLOR_ID_BLUE>;
+			reset-delay = <280>;
+			frequency = <800000>;
+		};
+	};
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&vreg {
+	regulator-always-on;
+	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+};

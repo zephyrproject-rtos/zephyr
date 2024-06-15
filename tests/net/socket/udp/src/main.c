@@ -121,7 +121,7 @@ static void comm_sendto_recvfrom(int client_sock,
 	 * Test server -> client sending
 	 */
 
-	sent = zsock_sendto(server_sock, BUF_AND_SIZE(TEST_STR2),
+	sent = zsock_sendto(server_sock, TEST_STR2, sizeof(TEST_STR2) - 1,
 			    0, &addr, addrlen);
 	zassert_equal(sent, STRLEN(TEST_STR2), "sendto failed");
 
@@ -144,10 +144,10 @@ static void comm_sendto_recvfrom(int client_sock,
 	/* Test that unleft leftover data from datagram is discarded. */
 
 	/* Send 2 datagrams */
-	sent = zsock_sendto(server_sock, BUF_AND_SIZE(TEST_STR2),
+	sent = zsock_sendto(server_sock, TEST_STR2, sizeof(TEST_STR2) - 1,
 			    0, &addr, addrlen);
 	zassert_equal(sent, STRLEN(TEST_STR2), "sendto failed");
-	sent = zsock_sendto(server_sock, BUF_AND_SIZE(TEST_STR_SMALL),
+	sent = zsock_sendto(server_sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1,
 			    0, &addr, addrlen);
 	zassert_equal(sent, STRLEN(TEST_STR_SMALL), "sendto failed");
 
@@ -303,7 +303,7 @@ ZTEST(net_socket_udp, test_01_send_recv_2_sock)
 	rv = zsock_connect(sock2, (struct sockaddr *)&conn_addr, sizeof(conn_addr));
 	zassert_equal(rv, 0, "connect failed");
 
-	len = zsock_send(sock2, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	len = zsock_send(sock2, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0);
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
 
 	clear_buf(buf);
@@ -1129,7 +1129,7 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 
 	/* MSG_TRUNC */
 
-	rv = zsock_send(sock_c, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	rv = zsock_send(sock_c, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0);
 	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "send failed");
 
 	memset(str_buf, 0, sizeof(str_buf));
@@ -1145,7 +1145,7 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 
 	/* MSG_TRUNC & MSG_PEEK combo */
 
-	rv = zsock_send(sock_c, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	rv = zsock_send(sock_c, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0);
 	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "send failed");
 
 	memset(str_buf, 0, sizeof(str_buf));
@@ -1839,7 +1839,7 @@ static void run_ancillary_recvmsg_test(int client_sock,
 	}
 
 	/* Make sure that the recvmsg() fails if control area is too small */
-	rv = zsock_sendto(client_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0,
+	rv = zsock_sendto(client_sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0,
 			  server_addr, server_addr_len);
 	zassert_equal(rv, STRLEN(TEST_STR_SMALL), "sendto failed (%d)", -errno);
 
@@ -2155,7 +2155,7 @@ ZTEST(net_socket_udp, test_31_v4_ttl)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2204,7 +2204,7 @@ ZTEST(net_socket_udp, test_32_v4_mcast_ttl)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2254,7 +2254,7 @@ ZTEST(net_socket_udp, test_33_v6_mcast_hops)
 	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2320,7 +2320,7 @@ ZTEST(net_socket_udp, test_34_v6_hops)
 	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2532,7 +2532,7 @@ static void after(void *arg)
 {
 	ARG_UNUSED(arg);
 
-	for (int i = 0; i < CONFIG_POSIX_MAX_FDS; ++i) {
+	for (int i = 0; i < CONFIG_ZVFS_OPEN_MAX; ++i) {
 		(void)zsock_close(i);
 	}
 }

@@ -22,8 +22,47 @@ Build System
   out-of-tree SoCs and boards to be ported to the new model. See the
   :ref:`hw_model_v2` for more detailed information. (:github:`69607`)
 
+* The following build-time generated headers:
+
+  .. list-table::
+     :header-rows: 1
+
+     * - Affected header files
+     * - ``app_version.h``
+     * - ``autoconf.h``
+     * - ``cmake_intdef.h``
+     * - ``core-isa-dM.h``
+     * - ``devicetree_generated.h``
+     * - ``driver-validation.h``
+     * - ``kobj-types-enum.h``
+     * - ``linker-kobject-prebuilt-data.h``
+     * - ``linker-kobject-prebuilt-priv-stacks.h``
+     * - ``linker-kobject-prebuilt-rodata.h``
+     * - ``mcuboot_version.h``
+     * - ``offsets.h``
+     * - ``otype-to-size.h``
+     * - ``otype-to-str.h``
+     * - ``strerror_table.h``
+     * - ``strsignal_table.h``
+     * - ``syscall_list.h``
+     * - ``version.h``
+     * - ``zsr.h``
+
+  as well as syscall headers & sources are now namespaced into the ``zephyr/`` folder. The change is largely
+  automated, and the script can be found in :github:`63973`.
+  For the time being, the compatibility Kconfig (:kconfig:option:`CONFIG_LEGACY_GENERATED_INCLUDE_PATH`)
+  is enabled by default so that downstream applications will continue to compile, a warning message
+  will be generated during CMake configuration time.
+  This Kconfig will be deprecated and eventually removed in the future, developers are advised to
+  update the include paths of these affected headers as soon as possible.
+
 Kernel
 ******
+
+* All architectures are now required to define the new ``struct arch_esf``, which describes the members
+  of a stack frame. This new struct replaces the named struct ``z_arch_esf_t``. (:github:`73593`)
+
+* The named struct ``z_arch_esf_t`` is now deprecated. Use ``struct arch_esf`` instead. (:github:`73593`)
 
 Boards
 ******
@@ -35,18 +74,55 @@ Boards
   All symbols are renamed as follows: ``SOC_IT81202BX``, ``SOC_IT81202CX``, ``SOC_IT81302BX``,
   ``SOC_IT81302CX``, ``SOC_IT82002AW``, ``SOC_IT82202AX``, ``SOC_IT82302AX``.
   And, rename the ``SOC_SERIES_ITE_IT8XXX2`` to ``SOC_SERIES_IT8XXX2``. (:github:`71680`)
+* For native_sim/posix: :kconfig:option:`CONFIG_EMUL` is no longer enabled by default when
+  :kconfig:option:`CONFIG_I2C` is set. Users who need this setting enabled should set it in
+  their project config file. (:github:`73067`)
+
+* LiteX: Renamed the ``compatible`` of the LiteX VexRiscV interrupt controller node from
+  ``vexriscv-intc0`` to :dtcompatible:`litex,vexriscv-intc0`. (:github:`73211`)
+
+* `lairdconnect` boards are now `ezurio` boards. Laird Connectivity has rebranded to `Ezurio <https://www.ezurio.com/laird-connectivity>`_.
 
 Modules
 *******
 
-MbedTLS
-=======
+Mbed TLS
+========
 
-* The hash algorithms SHA-384, SHA-512, MD5 and SHA-1 are not enabled by default anymore.
+* TLS 1.2, RSA, AES, DES, and all the hash algorithms except SHA-256
+  (SHA-224, SHA-384, SHA-512, MD5 and SHA-1) are not enabled by default anymore.
   Their respective Kconfig options now need to be explicitly enabled to be able to use them.
+  (:github:`72078`)
+* The Kconfig options previously named ``CONFIG_MBEDTLS_MAC_*_ENABLED`` have been renamed.
+  The ``_MAC`` and ``_ENABLED`` parts have been removed from their names. (:github:`73267`)
+* The :kconfig:option:`CONFIG_MBEDTLS_HASH_ALL_ENABLED` Kconfig option has been fixed to actually
+  enable all the available hash algorithms. Previously, it used to only enable the SHA-2 ones.
+  (:github:`73267`)
+* The ``CONFIG_MBEDTLS_HASH_SHA*_ENABLED`` Kconfig options have been removed. They were duplicates
+  of other Kconfig options which are now named ``CONFIG_MBEDTLS_SHA*``. (:github:`73267`)
+* The ``CONFIG_MBEDTLS_MAC_ALL_ENABLED`` Kconfig option has been removed. Its equivalent is the
+  combination of :kconfig:option:`CONFIG_MBEDTLS_HASH_ALL_ENABLED` and :kconfig:option:`CONFIG_MBEDTLS_CMAC`.
+  (:github:`73267`)
+* The Kconfig options ``CONFIG_MBEDTLS_MAC_MD4_ENABLED``, ``CONFIG_MBEDTLS_CIPHER_ARC4_ENABLED``
+  and ``CONFIG_MBEDTLS_CIPHER_BLOWFISH_ENABLED`` were removed because they are no more supported
+  in Mbed TLS. (:github:`73222`)
+* When there is any PSA crypto provider available in the system
+  (i.e. :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT` is set), desired PSA crypto
+  features must be explicitly enabled using proper ``CONFIG_PSA_WANT_*``. (:github:`72243`)
+* TLS/X509/PK/MD modules will use PSA crypto APIs instead of legacy ones as soon
+  as there is any PSA crypto provider available in the system
+  (i.e. :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT` is set). (:github:`72243`)
 
 MCUboot
 =======
+
+Trusted Firmware-M
+==================
+
+* The default MCUboot signature type has been changed from RSA-3072 to EC-P256.
+  This affects builds that have MCUboot enabled in TF-M (:kconfig:option:`CONFIG_TFM_BL2`).
+  If you wish to keep using RSA-3072, you need to set :kconfig:option:`CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE`
+  to `"RSA-3072"`. Otherwise, make sure to have your own signing keys of the signature type in use.
 
 zcbor
 =====
@@ -112,6 +188,10 @@ Device Drivers and Devicetree
         };
     };
 
+* The :dtcompatible:`nxp,kinetis-lptmr` compatible string has been changed to
+  :dtcompatible:`nxp,lptmr`. The old string will be usable for a short time, but
+  should be replaced for it will be removed in the future.
+
 * Some of the driver API structs have been rename to have the required ``_driver_api`` suffix. (:github:`72182`)
   The following types have been renamed:
 
@@ -156,14 +236,29 @@ Analog-to-Digital Converter (ADC)
 Bluetooth HCI
 =============
 
- * The ``BT_HCI_VS_EXT`` Kconfig option was deleted and the feature is now included in the
-   :kconfig:option:`BT_HCI_VS` Kconfig option.
- * The ``BT_HCI_VS_EVT`` Kconfig option was removed, since vendor event support is implicit if
-   the :kconfig:option:`BT_HCI_VS` option is enabled.
- * The bt_read_static_addr() API was removed. This wasn't really a completely public API, but
-   since it was exposed by the public hci_driver.h header file the removal is mentioned here.
-   Enable the :kconfig:option:`BT_HCI_VS` Kconfig option instead, and use vendor specific HCI
-   commands API to get the Controller's Bluetooth static address when available.
+ * A new HCI driver API was introduced (:github:`72323`) and the old one deprecated. The new API
+   follows the normal Zephyr driver model, with devicetree nodes, etc. The host now
+   selects which driver instance to use as the controller by looking for a ``zephyr,bt-hci``
+   chosen property. The devicetree bindings for all HCI drivers derive from a common
+   ``bt-hci.yaml`` base binding.
+
+   * As part of the new HCI driver API, the ``zephyr,bt-uart`` chosen property is no longer used,
+      rather the UART HCI drivers select their UART by looking for the parent devicetree node of the
+      HCI driver instance node.
+   * As part of the new HCI driver API, the ``zephyr,bt-hci-ipc`` chosen property is only used for
+      the controller side, whereas the HCI driver now relies on nodes with the compatible string
+      ``zephyr,bt-hci-ipc``.
+   * The ``BT_NO_DRIVER`` Kconfig option was removed. HCI drivers are no-longer behind a Kconfig
+      choice, rather they can now be enabled and disabled independently, mostly based on their
+      respective devicetree node being enabled or not.
+   * The ``BT_HCI_VS_EXT`` Kconfig option was deleted and the feature is now included in the
+      :kconfig:option:`BT_HCI_VS` Kconfig option.
+   * The ``BT_HCI_VS_EVT`` Kconfig option was removed, since vendor event support is implicit if
+      the :kconfig:option:`BT_HCI_VS` option is enabled.
+   * The bt_read_static_addr() API was removed. This wasn't really a completely public API, but
+      since it was exposed by the public hci_driver.h header file the removal is mentioned here.
+      Enable the :kconfig:option:`BT_HCI_VS` Kconfig option instead, and use vendor specific HCI
+      commands API to get the Controller's Bluetooth static address when available.
 
 Charger
 =======
@@ -178,8 +273,9 @@ Controller Area Network (CAN)
 =============================
 
 * Removed the following deprecated CAN controller devicetree properties. Out-of-tree boards using
-  these properties need to switch to using the ``bus-speed``, ``sample-point``, ``bus-speed-data``,
-  and ``sample-point-data`` devicetree properties for specifying the initial CAN bitrate:
+  these properties can switch to using the ``bitrate``, ``sample-point``, ``bitrate-data``, and
+  ``sample-point-data`` devicetree properties (or rely on :kconfig:option:`CAN_DEFAULT_BITRATE` and
+  :kconfig:option:`CAN_DEFAULT_BITRATE_DATA`) for specifying the initial CAN bitrate:
 
   * ``sjw``
   * ``prop-seg``
@@ -189,6 +285,9 @@ Controller Area Network (CAN)
   * ``prop-seg-data``
   * ``phase-seg1-data``
   * ``phase-seg1-data``
+
+  The ``bus-speed`` and ``bus-speed-data`` CAN controller devicetree properties have been
+  deprecated.
 
   (:github:`68714`)
 
@@ -212,6 +311,50 @@ Controller Area Network (CAN)
 
 Display
 =======
+
+* GC9X01 based displays now use the MIPI DBI driver class. These displays
+  must now be declared within a MIPI DBI driver wrapper device, which will
+  manage interfacing with the display. (:github:`73686`)
+  For an example, see below:
+
+  .. code-block:: devicetree
+
+    /* Legacy GC9X01 display definition */
+    &spi0 {
+        gc9a01: gc9a01@0 {
+            status = "okay";
+            compatible = "galaxycore,gc9x01x";
+            reg = <0>;
+            spi-max-frequency = <100000000>;
+            cmd-data-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+            reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+            ...
+        };
+    };
+
+    /* New display definition with MIPI DBI device */
+
+    #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+    ...
+
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        dc-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+        spi-dev = <&spi0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        gc9a01: gc9a01@0 {
+            status = "okay";
+            compatible = "galaxycore,gc9x01x";
+            reg = <0>;
+            mipi-max-frequency = <100000000>;
+            ...
+        };
+    };
+
 
 * ST7735R based displays now use the MIPI DBI driver class. These displays
   must now be declared within a MIPI DBI driver wrapper device, which will
@@ -256,6 +399,130 @@ Display
         };
     };
 
+* UC81XX based displays now use the MIPI DBI driver class. These displays must
+  now be declared within a MIPI DBI driver wrapper device, which will manage
+  interfacing with the display. (:github:`73812`) Note that the ``dc-gpios``
+  pin has changed polarity with this update, for an example, see below:
+
+  .. code-block:: devicetree
+
+    /* Legacy UC81XX display definition */
+    &spi0 {
+        uc8179: uc8179@0 {
+            compatible = "ultrachip,uc8179";
+            reg = <0>;
+            spi-max-frequency = <4000000>;
+            reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+            dc-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+            ...
+        };
+    };
+
+    /* New display definition with MIPI DBI device */
+
+    #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+    ...
+
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+        dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+        spi-dev = <&spi0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        uc8179: uc8179@0 {
+            compatible = "ultrachip,uc8179";
+            reg = <0>;
+            mipi-max-frequency = <4000000>;
+            ...
+        };
+    };
+
+* ST7789V based displays now use the MIPI DBI driver class. These displays
+  must now be declared within a MIPI DBI driver wrapper device, which will
+  manage interfacing with the display. (:github:`73750`) Note that the
+  ``cmd-data-gpios`` pin has changed polarity with this update, to align better
+  with the new ``dc-gpios`` name. For an example, see below:
+
+  .. code-block:: devicetree
+
+    /* Legacy ST7789V display definition */
+    &spi0 {
+        st7789: st7789@0 {
+            compatible = "sitronix,st7789v";
+            reg = <0>;
+            spi-max-frequency = <32000000>;
+            reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+            cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+            ...
+        };
+    };
+
+    /* New display definition with MIPI DBI device */
+
+    #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+    ...
+
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+        dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+        spi-dev = <&spi0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        st7789: st7789@0 {
+            compatible = "sitronix,st7789v";
+            reg = <0>;
+            mipi-max-frequency = <32000000>;
+            mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+            ...
+        };
+    };
+
+* SSD16XX based displays now use the MIPI DBI driver class (:github:`73946`).
+  These displays must now be declared within a MIPI DBI driver wrapper device,
+  which will manage interfacing with the display. Note that the ``dc-gpios``
+  pin has changed polarity with this update. For an example, see below:
+
+  .. code-block:: devicetree
+
+    /* Legacy SSD16XX display definition */
+    &spi0 {
+        ssd1680: ssd1680@0 {
+            compatible = "solomon,ssd1680";
+            reg = <0>;
+            spi-max-frequency = <4000000>;
+            reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+            dc-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+            ...
+        };
+    };
+
+    /* New display definition with MIPI DBI device */
+
+    #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+    ...
+
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+        dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+        spi-dev = <&spi0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        ssd1680: ssd1680@0 {
+            compatible = "solomon,ssd1680";
+            reg = <0>;
+            mipi-max-frequency = <4000000>;
+            ...
+        };
+    };
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
@@ -267,6 +534,8 @@ Enhanced Serial Peripheral Interface (eSPI)
   ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS``, ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE`` and
   ``ESPI_VWIRE_SIGNAL_TARGET_GPIO_<NUMBER>`` respectively to reflect the new terminology
   in eSPI 1.5 specification. (:github:`68492`)
+  The KConfig ``CONFIG_ESPI_SLAVE`` was renamed to ``CONFIG_ESPI_TARGET``, similarly
+  ``CONFIG_ESPI_SAF`` was renamed as ``CONFIG_ESPI_TAF`` (:github:`73887`)
 
 Flash
 =====
@@ -298,6 +567,20 @@ Input
 Interrupt Controller
 ====================
 
+* The static auto-generation of the multilevel interrupt controller lookup table has been
+  deprecated, and will be compiled only when the new compatibility Kconfig:
+  :kconfig:option:`CONFIG_LEGACY_MULTI_LEVEL_TABLE_GENERATION` is enabled, which will eventually
+  be removed in the coming releases.
+
+  Multi-level interrupt controller drivers should be updated to use the newly created
+  ``IRQ_PARENT_ENTRY_DEFINE`` macro to register itself with the new multi-level interrupt
+  architecture. To make the macro easier to use, ``INTC_INST_ISR_TBL_OFFSET`` macro is made to
+  deduce the software ISR table offset for a given driver instance, for pseudo interrupt controller
+  child, use the ``INTC_CHILD_ISR_TBL_OFFSET`` macro instead. New devicetree macros
+  (``DT_INTC_GET_AGGREGATOR_LEVEL`` & ``DT_INST_INTC_GET_AGGREGATOR_LEVEL``) have been added
+  for an interrupt controller driver instance to pass its aggregator level into the
+  ``IRQ_PARENT_ENTRY_DEFINE`` macro.
+
 LED Strip
 =========
 
@@ -314,6 +597,23 @@ LED Strip
 
 Sensors
 =======
+
+* The ``chip`` devicetree property from the :dtcompatible:`sensirion,shtcx` sensor driver has been
+  removed. Chip variants are now selected using the matching compatible property (:github:`74033`).
+  For an example of the new shtc3 configuration, see below:
+
+  .. code-block:: devicetree
+
+    &i2c0 {
+        status = "okay";
+
+        shtc3: shtc3@70 {
+            compatible = "sensirion,shtc3", "sensirion,shtcx";
+            reg = <0x70>;
+            measure-mode = "normal";
+            clock-stretching;
+        };
+    };
 
 Serial
 ======
@@ -362,14 +662,57 @@ Bluetooth Audio
 ===============
 
 * :kconfig:option:`CONFIG_BT_ASCS`, :kconfig:option:`CONFIG_BT_PERIPHERAL` and
-  :kconfig:option:`CONFIG_BT_ISO_PERIPHERAL` are not longer `select`ed automatically when
+  :kconfig:option:`CONFIG_BT_ISO_PERIPHERAL` are no longer enabled automatically when
   enabling :kconfig:option:`CONFIG_BT_BAP_UNICAST_SERVER`, and these must now be set explicitly
   in the project configuration file. (:github:`71993`)
-* The discover callback functions :code:`bt_cap_initiator_cb.unicast_discovery_complete`` and
-  :code:`bt_cap_commander_cb.discovery_complete`` for CAP now contain an additional parameter for
+
+* The discover callback functions :code:`bt_cap_initiator_cb.unicast_discovery_complete` and
+  :code:`bt_cap_commander_cb.discovery_complete` for CAP now contain an additional parameter for
   the set member.
   This needs to be added to all instances of CAP discovery callback functions defined.
   (:github:`72797`)
+
+* :c:func:`bt_bap_stream_start` no longer connects the CIS. To connect the CIS,
+  the :c:func:`bt_bap_stream_connect` shall now be called before :c:func:`bt_bap_stream_start`.
+  (:github:`73032`)
+
+* Renamed ``stream_lang`` to just ``lang`` to better fit with the assigned numbers document.
+  This affects the ``BT_AUDIO_METADATA_TYPE_LANG`` macro and the following functions:
+
+  * :c:func:`bt_audio_codec_cap_meta_set_lang`
+  * :c:func:`bt_audio_codec_cap_meta_get_lang`
+  * :c:func:`bt_audio_codec_cfg_meta_set_lang`
+  * :c:func:`bt_audio_codec_cfg_meta_get_lang`
+
+  (:github:`72584`)
+
+* Changed ``lang`` from ``uint32_t`` to ``uint8_t [3]``. This modifies the following functions:
+
+  * :c:func:`bt_audio_codec_cap_meta_set_lang`
+  * :c:func:`bt_audio_codec_cap_meta_get_lang`
+  * :c:func:`bt_audio_codec_cfg_meta_set_lang`
+  * :c:func:`bt_audio_codec_cfg_meta_get_lang`
+
+  The result of this is that string values such as ``"eng"`` and ``"deu"`` can now be used to set
+  new values, and to prevent unnecessary copies of data when getting the values. (:github:`72584`)
+
+* All occurrences of ``set_sirk`` have been changed to just ``sirk`` as the ``s`` in ``sirk`` stands
+  for set. (:github:`73413`)
+
+* Added ``fallback_to_default`` parameter to :c:func:`bt_audio_codec_cfg_get_chan_allocation`.
+  To maintain existing behavior set the parameter to ``false``. (:github:`72090`)
+
+* Added ``fallback_to_default`` parameter to
+  :c:func:`bt_audio_codec_cap_get_supported_audio_chan_counts`.
+  To maintain existing behavior set the parameter to ``false``. (:github:`72090`)
+
+* Added ``fallback_to_default`` parameter to
+  :c:func:`bt_audio_codec_cap_get_max_codec_frames_per_sdu`.
+  To maintain existing behavior set the parameter to ``false``. (:github:`72090`)
+
+* Added ``fallback_to_default`` parameter to
+  :c:func:`bt_audio_codec_cfg_meta_get_pref_context`.
+  To maintain existing behavior set the parameter to ``false``. (:github:`72090`)
 
 Bluetooth Classic
 =================
@@ -396,6 +739,14 @@ Bluetooth Host
 * The field :code:`init_credits` in :c:type:`bt_l2cap_le_endpoint` has been removed as it was no
   longer used in Zephyr 3.4.0 and later. Any references to this field should be removed. No further
   action is needed.
+
+Bluetooth Crypto
+================
+
+* :kconfig:option:`CONFIG_BT_USE_PSA_API` was added to explicitly request use
+  of PSA APIs instead of TinyCrypt for crypto operations. Of course, this is
+  possible only a PSA crypto provider available in the system, i.e.
+  :kconfig:option:`CONFIG_PSA_CRYPTO_CLIENT` is set. (:github:`73378`)
 
 Networking
 **********
@@ -453,10 +804,37 @@ Networking
   during a Coap Block-wise transfer. Any post write, validate or some firmware callbacks
   should be updated to include this parameter. (:github:`72590`)
 
+* The DNS resolver and mDNS/LLMNR responders are converted to use socket service API.
+  This means that the number of pollable sockets in the system might need to be increased.
+  Please check that the values of :kconfig:option:`CONFIG_NET_SOCKETS_POLL_MAX` and
+  :kconfig:option:`CONFIG_POSIX_MAX_FDS` are high enough. Unfortunately no exact values
+  for these can be given as it depends on application needs and usage. (:github:`72834`)
 
+* The packet socket (type ``AF_PACKET``) protocol field in ``socket`` API call has changed.
+  The protocol field should be in network byte order so that we are compatible with Linux
+  socket calls. Linux expects the protocol field to be ``htons(ETH_P_ALL)`` if it is desired
+  to receive all the network packets. See details in
+  https://www.man7.org/linux/man-pages/man7/packet.7.html documentation. (:github:`73338`)
+
+* TCP now uses SHA-256 instead of MD5 for ISN generation. The crypto support for
+  this hash computation was also changed from Mbed TLS to PSA APIs. This was achieved
+  by making :kconfig:option:`CONFIG_NET_TCP_ISN_RFC6528` depend on
+  :kconfig:option:`PSA_WANT_ALG_SHA_256` instead of legacy ``CONFIG_MBEDTLS_*``
+  features. (:github:`71827`)
 
 Other Subsystems
 ****************
+
+Flash map
+=========
+
+* The crypto backend for the flash check functions (:kconfig:option:`CONFIG_FLASH_AREA_CHECK_INTEGRITY_BACKEND`),
+  previously provided through either TinyCrypt or Mbed TLS, is now provided through either PSA or Mbed TLS.
+  The updated Mbed TLS implementation has a slightly smaller footprint than the previous TinyCrypt one,
+  and the PSA implementation offers an even greater footprint reduction for devices built with TF-M.
+  PSA is the supported way forward, however as of now you may still use Mbed TLS if you cannot afford the
+  one-time cost of enabling the PSA API (:kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_C` for devices without TF-M).
+  :github:`73511`
 
 hawkBit
 =======
@@ -472,16 +850,29 @@ MCUmgr
 ======
 
 * The support for SHA-256 (when using checksum/hash functions), previously provided
-  by either TinyCrypt or MbedTLS, is now provided by either PSA or MbedTLS.
+  by either TinyCrypt or Mbed TLS, is now provided by either PSA or Mbed TLS.
   PSA is the recommended API going forward, however, if it is not already enabled
   (:kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT`) and you have tight code size
-  constraints, you may be able to save 1.3 KB by using MbedTLS instead.
+  constraints, you may be able to save 1.3 KB by using Mbed TLS instead.
 
 Modem
 =====
 
 * The ``CONFIG_MODEM_CHAT_LOG_BUFFER`` Kconfig option was
   renamed to :kconfig:option:`CONFIG_MODEM_CHAT_LOG_BUFFER_SIZE`. (:github:`70405`)
+
+.. _zephyr_3.7_posix_api_migration:
+
+POSIX API
+=========
+
+* The :ref:`POSIX API Kconfig deprecations <zephyr_3.7_posix_api_deprecations>` may require
+  changes to Kconfig files (``prj.conf``, etc), as outlined in the release notes. A more automated
+  approach is available via the provided migration script. Simply run the following:
+
+  .. code-block:: bash
+
+    $ python ${ZEPHYR_BASE}/scripts/utils/migrate_posix_kconfigs.py -r root_path
 
 Shell
 =====
@@ -493,6 +884,23 @@ State Machine Framework
   now independent of the values of :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` and
   :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION`. If the additional arguments are not used, they
   have to be set to ``NULL``. (:github:`71250`)
+* SMF now follows a more UML-like transition flow when the transition source is a parent of the
+  state called by :c:func:`smf_run_state`. Exit actions up to (but not including) the Least Common
+  Ancestor of the transition source and target state will be executed, as will entry actions from
+  (but not including) the LCA down to the target state. (:github:`71675`)
+* Previously, calling :c:func:`smf_set_state` with a ``new_state`` set to NULL would execute all
+  exit actions from the current state to the topmost parent, with the expectation the topmost exit
+  action would terminate the state machine. Passing ``NULL`` is now not allowed. Instead create a
+  'terminate' state at the top level, and call :c:func:`smf_set_terminate` from its entry action.
+
+UpdateHub
+=========
+
+* The SHA-256 implementation used to perform integrity checks is not chosen with
+  :kconfig:option:`CONFIG_FLASH_AREA_CHECK_INTEGRITY_BACKEND` anymore. Instead, the implementation
+  used (now either Mbed TLS or PSA) is chosen based on :kconfig:option:`CONFIG_PSA_CRYPTO_CLIENT`.
+  It still defaults to using Mbed TLS (with a smaller footprint than previously) unless the
+  board is built with TF-M or :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_C` is enabled. (:github:`73511`)
 
 ZBus
 ====
@@ -504,6 +912,9 @@ Architectures
 *************
 
 * Function :c:func:`arch_start_cpu` has been renamed to :c:func:`arch_cpu_start`. (:github:`64987`)
+
+* ``CONFIG_ARM64_ENABLE_FRAME_POINTER`` is deprecated. Use :kconfig:option:`CONFIG_FRAME_POINTER`
+  instead. (:github:`72646`)
 
 * x86
 

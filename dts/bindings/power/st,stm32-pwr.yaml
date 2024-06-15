@@ -1,0 +1,67 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 power controller
+
+compatible: "st,stm32-pwr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  wkup-pins-nb:
+    type: int
+    description: |
+      Max nbr of system wake-up pins.
+      For example wkup-pins-nb = <8>; on the stm32u5
+
+  wkup-pin-srcs:
+    type: int
+    description: |
+      Number of wake-up GPIO sources to select from for each wake-up pin.
+      If not specified, that means there is only 1 GPIO source for each
+      wake-up pin.
+
+      For example, each wake-up pin on STM32U5 is associated with
+      4 wake-up sources, 3 of them correspond to GPIOs.
+
+  wkup-pins-pol:
+    type: boolean
+    description: |
+      True if SoC has a wake-up pins polarity config register
+
+  wkup-pins-pupd:
+    type: boolean
+    description: |
+      True if SoC has pull-up/down config register(s) for GPIO ports
+      that are associated with wake-up pins.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: |
+    STM32 wake-up pin node.
+
+    All nodes using this binding must be named "wkup-pin@[index]"
+    index starts from 1
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: Wake-up pin identifier, same as "index" in node name
+
+    wkup-gpios:
+      type: phandle-array
+      description: |
+        Specifies the GPIOs, if any, that are associated with the wake-up pin.
+
+        For example, for GPIO B2 associated with wakeup source 1 on wake-up
+        pin 1 on STM32U5 SoCs:
+        wkup-gpios = <&gpiob 2 STM32_PWR_WKUP_PIN_SRC_1>, <...>;

@@ -26,7 +26,7 @@
 #ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
 #endif
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 #include "usb_phy.h"
 #include "usb.h"
 #endif
@@ -207,7 +207,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_EnableClock(kCLOCK_Mailbox);
 #endif
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbfs), nxp_lpcip3511, okay)
 	/*< Turn on USB Phy */
@@ -256,7 +256,9 @@ static ALWAYS_INLINE void clock_init(void)
 	/* enable USB IP clock */
 	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_UsbPhySrcExt, CLK_CLK_IN);
 	CLOCK_EnableUsbhs0DeviceClock(kCLOCK_UsbSrcUnused, 0U);
+#if CONFIG_USB_DC_NXP_LPCIP3511
 	USB_EhciPhyInit(kUSB_ControllerLpcIp3511Hs0, CLK_CLK_IN, NULL);
+#endif
 #if defined(FSL_FEATURE_USBHSD_USB_RAM) && (FSL_FEATURE_USBHSD_USB_RAM)
 	memset((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS, 0, FSL_FEATURE_USBHSD_USB_RAM);
 #endif

@@ -5,6 +5,8 @@
  */
 
 #include "_main.h"
+
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/posix/sys/ioctl.h>
 
 #define EFD_IN_USE_INTERNAL 0x1

@@ -31,14 +31,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
@@ -148,4 +140,8 @@
 			reg = <0x00250000 0x00006000>;
 		};
 	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
 };

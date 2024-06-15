@@ -386,8 +386,8 @@ device.
        :ref:`bluetooth-hci-uart-sample`
    * - zephyr,bt-mon-uart
      - Sets UART device used for the Bluetooth monitor logging
-   * - zephyr,bt-uart
-     - Sets UART device used by Bluetooth
+   * - zephyr,bt-hci
+     - Selects the HCI device used by the Bluetooth host stack
    * - zephyr,canbus
      - Sets the default CAN controller
    * - zephyr,ccm

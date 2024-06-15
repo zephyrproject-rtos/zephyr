@@ -1,0 +1,5 @@
+board:
+  name: xg24_dk2601b
+  vendor: silabs
+  socs:
+  - name: efr32mg24b310f1536im48

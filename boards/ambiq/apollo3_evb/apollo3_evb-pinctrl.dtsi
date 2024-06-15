@@ -148,4 +148,15 @@
 			ambiq,iom-num = <6>;
 		};
 	};
+
+	bleif_default: bleif_default{
+		group1 {
+			pinmux = <BLEIF_SCK_P30>,
+				 <BLEIF_MISO_P31>,
+				 <BLEIF_MOSI_P32>,
+				 <BLEIF_CSN_P33>,
+				 <BLEIF_STATUS_P35>,
+				 <BLEIF_IRQ_P41>;
+		};
+	};
 };

@@ -3,14 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#ifdef CONFIG_BT_MICP_MIC_CTLR
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/micp.h>
+#include <zephyr/sys/printk.h>
 
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_MICP_MIC_CTLR
 #define AICS_DESC_SIZE 64
 
 extern enum bst_result_t bst_result;
@@ -450,7 +457,7 @@ static void test_main(void)
 static const struct bst_test_instance test_micp[] = {
 	{
 		.test_id = "micp_mic_ctlr",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

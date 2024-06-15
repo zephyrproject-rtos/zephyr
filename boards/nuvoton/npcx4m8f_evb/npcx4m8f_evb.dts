@@ -26,7 +26,6 @@
 		i2c-0 = &i2c0_0;
 		watchdog0 = &twd0;
 		peci-0 = &peci0;
-		spi-flash0 = &int_flash;
 		kscan0 = &kscan_input;
 	};
 

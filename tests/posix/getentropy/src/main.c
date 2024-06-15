@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 
-#include <unistd.h>
+#include <zephyr/posix/unistd.h>
 
 ZTEST(getentropy_test_suite, test_getentropy_too_large)
 {

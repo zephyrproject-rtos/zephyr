@@ -435,6 +435,40 @@ static int wifi_ap_sta_disconnect(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_STA_DISCONNECT, wifi_ap_sta_disconnect);
 
+static int wifi_ap_config_params(uint32_t mgmt_request, struct net_if *iface,
+				 void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_ap_config_params *params = data;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (wifi_mgmt_api == NULL ||
+	    wifi_mgmt_api->ap_config_params == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
+		if (params->max_num_sta > CONFIG_WIFI_MGMT_AP_MAX_NUM_STA) {
+			LOG_INF("Maximum number of stations(%d) "
+				"exceeded default configured value = %d.",
+				params->max_num_sta, CONFIG_WIFI_MGMT_AP_MAX_NUM_STA);
+			return -EINVAL;
+		}
+	}
+
+	return wifi_mgmt_api->ap_config_params(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM, wifi_ap_config_params);
+
 static int wifi_iface_status(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
 {

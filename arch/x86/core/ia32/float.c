@@ -302,7 +302,7 @@ int z_float_disable(struct k_thread *thread)
  * instruction is executed while CR0[TS]=1. The handler then enables the
  * current thread to use all supported floating point registers.
  */
-void _FpNotAvailableExcHandler(z_arch_esf_t *pEsf)
+void _FpNotAvailableExcHandler(struct arch_esf *pEsf)
 {
 	ARG_UNUSED(pEsf);
 

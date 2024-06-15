@@ -87,7 +87,7 @@ Socket Options
   Maximum number of supported poll() entries. One needs to select proper value here depending
   on how many BSD sockets are polled in the system.
 
-:kconfig:option:`CONFIG_POSIX_MAX_FDS`
+:kconfig:option:`CONFIG_ZVFS_OPEN_MAX`
   Maximum number of open file descriptors, this includes files, sockets, special devices, etc.
   One needs to select proper value here depending on how many BSD sockets are created in
   the system.

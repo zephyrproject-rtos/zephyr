@@ -1,0 +1,14 @@
+identifier: mikroe_clicker_ra4m1
+name: Mikroe Clicker RA4M1
+vendor: mikroe
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 256
+supported:
+  - gpio
+  - uart

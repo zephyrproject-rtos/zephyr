@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2021 Laird Connectivity
+ * Copyright (c) 2024 Ezurio
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf51822_qfac.dtsi>
+#include "rm1xx_dvk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Ezurio RM1XX_DVK";
+	compatible = "ezurio,rm1xx_dvk";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button2: button_2 {
+			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2 (BUTTON2)";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sw0 = &button2;
+		lora0 = &lora0;
+		watchdog0 = &wdt0;
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+/* SPI0 cannot be used with I2C0 */
+&spi0 {
+	/* Disabled by default */
+	compatible = "nordic,nrf-spi";
+	cs-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	cs-gpios = <&gpio0 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+		   <&gpio0 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+	at25: at25df041b@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		jedec-id = [1f 44 02];
+		size = <0x400000>;
+		has-lock = <0xbc>;
+		has-dpd;
+		t-enter-dpd = <500>;
+		t-exit-dpd = <20>;
+	};
+
+	lora0: lora@1 {
+		compatible = "semtech,sx1272";
+		reg = <1>;
+		reset-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		dio-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 13 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 14 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 15 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 16 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		rfi-enable-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		rfo-enable-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 52K */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000C000>;
+		};
+		/* 188K */
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x00030000>;
+		};
+
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled. 16KB
+		 */
+		storage_partition: partition@3c000 {
+			label = "storage";
+			reg = <0x0003C000 0x00004000>;
+		};
+	};
+};
+
+&at25 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 188K reserved for slot1 */
+
+		/* 68K */
+		lfs_partition: partition@30000 {
+			label = "lfs_storage";
+			reg = <0x00030000 0x00010000>;
+		};
+	};
+};

@@ -118,7 +118,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
 		/* Check for message quantity and size in message queue */
 		if (attrs->mq_msgsize > CONFIG_MSG_SIZE_MAX &&
-		    attrs->mq_maxmsg > CONFIG_MSG_COUNT_MAX) {
+		    attrs->mq_maxmsg > CONFIG_POSIX_MQ_OPEN_MAX) {
 			goto free_mq_desc;
 		}
 

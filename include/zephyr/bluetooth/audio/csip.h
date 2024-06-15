@@ -19,7 +19,16 @@
  * @{
  */
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +53,7 @@ extern "C" {
 #define BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY      0x03
 
 /** Size of the Set Identification Resolving Key (SIRK) */
-#define BT_CSIP_SET_SIRK_SIZE                   16
+#define BT_CSIP_SIRK_SIZE 16
 
 /** Size of the Resolvable Set Identifier (RSI) */
 #define BT_CSIP_RSI_SIZE                        6
@@ -123,7 +132,7 @@ struct bt_csip_set_member_register_param {
 	 * This shall be unique between different sets, and shall be the same
 	 * for each set member for each set.
 	 */
-	uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE];
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 
 	/**
 	 * @brief Boolean to set whether the set is lockable by clients
@@ -204,8 +213,8 @@ int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst);
  * @param svc_inst  Pointer to the registered Coordinated Set Identification Service.
  * @param sirk      The new SIRK.
  */
-int bt_csip_set_member_set_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
-				const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE]);
+int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
+			    const uint8_t sirk[BT_CSIP_SIRK_SIZE]);
 
 /**
  * @brief Get the SIRK of a service instance
@@ -214,7 +223,7 @@ int bt_csip_set_member_set_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
  * @param[out] sirk      Array to store the SIRK in.
  */
 int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
-				uint8_t sirk[BT_CSIP_SET_SIRK_SIZE]);
+				uint8_t sirk[BT_CSIP_SIRK_SIZE]);
 
 /**
  * @brief Generate the Resolvable Set Identifier (RSI) value.
@@ -248,10 +257,10 @@ struct bt_csip_set_coordinator_set_info {
 	/**
 	 * @brief The 16 octet set Set Identity Resolving Key (SIRK)
 	 *
-	 * The Set SIRK may not be exposed by the server over Bluetooth, and
+	 * The SIRK may not be exposed by the server over Bluetooth, and
 	 * may require an out-of-band solution.
 	 */
-	uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE];
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 
 	/**
 	 * @brief The size of the set
@@ -313,6 +322,21 @@ typedef void (*bt_csip_set_coordinator_discover_cb)(
  * @return int Return 0 on success, or an errno value on error.
  */
 int bt_csip_set_coordinator_discover(struct bt_conn *conn);
+
+/**
+ * @brief Get the set member from a connection pointer
+ *
+ * Get the Coordinated Set Identification Profile Set Coordinator pointer from a connection pointer.
+ * Only Set Coordinators that have been initiated via bt_csip_set_coordinator_discover() can be
+ * retrieved.
+ *
+ * @param conn     Connection pointer.
+ *
+ * @retval Pointer to a Coordinated Set Identification Profile Set Coordinator instance
+ * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
+ */
+struct bt_csip_set_coordinator_set_member *
+bt_csip_set_coordinator_set_member_by_conn(const struct bt_conn *conn);
 
 /**
  * @typedef bt_csip_set_coordinator_lock_set_cb
@@ -382,12 +406,12 @@ struct bt_csip_set_coordinator_cb {
 /**
  * @brief Check if advertising data indicates a set member
  *
- * @param set_sirk The SIRK of the set to check against
- * @param data     The advertising data
+ * @param sirk The SIRK of the set to check against
+ * @param data The advertising data
  *
  * @return true if the advertising data indicates a set member, false otherwise
  */
-bool bt_csip_set_coordinator_is_set_member(const uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE],
+bool bt_csip_set_coordinator_is_set_member(const uint8_t sirk[BT_CSIP_SIRK_SIZE],
 					   struct bt_data *data);
 
 /**

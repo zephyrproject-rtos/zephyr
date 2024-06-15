@@ -73,15 +73,15 @@ below.
 .. code-block:: none
    :emphasize-lines: 1, 3, 9, 22, 24
 
-   +--------------+ <- Z_VIRT_RAM_START
+   +--------------+ <- K_MEM_VIRT_RAM_START
    | Undefined VM | <- architecture specific reserved area
-   +--------------+ <- Z_KERNEL_VIRT_START
+   +--------------+ <- K_MEM_KERNEL_VIRT_START
    | Mapping for  |
    | main kernel  |
    | image        |
    |              |
    |              |
-   +--------------+ <- Z_FREE_VM_START
+   +--------------+ <- K_MEM_VM_FREE_START
    |              |
    | Unused,      |
    | Available VM |
@@ -95,27 +95,27 @@ below.
    +--------------+
    | Mapping      |
    +--------------+ <- memory mappings start here
-   | Reserved     | <- special purpose virtual page(s) of size Z_VM_RESERVED
-   +--------------+ <- Z_VIRT_RAM_END
+   | Reserved     | <- special purpose virtual page(s) of size K_MEM_VM_RESERVED
+   +--------------+ <- K_MEM_VIRT_RAM_END
 
-* ``Z_VIRT_RAM_START`` is the beginning of the virtual memory address space.
+* ``K_MEM_VIRT_RAM_START`` is the beginning of the virtual memory address space.
   This needs to be page aligned. Currently, it is the same as
   :kconfig:option:`CONFIG_KERNEL_VM_BASE`.
 
-* ``Z_VIRT_RAM_SIZE`` is the size of the virtual memory address space.
+* ``K_MEM_VIRT_RAM_SIZE`` is the size of the virtual memory address space.
   This needs to be page aligned. Currently, it is the same as
   :kconfig:option:`CONFIG_KERNEL_VM_SIZE`.
 
-* ``Z_VIRT_RAM_END`` is simply (``Z_VIRT_RAM_START`` + ``Z_VIRT_RAM_SIZE``).
+* ``K_MEM_VIRT_RAM_END`` is simply (``K_MEM_VIRT_RAM_START`` + ``K_MEM_VIRT_RAM_SIZE``).
 
-* ``Z_KERNEL_VIRT_START`` is the same as ``z_mapped_start`` specified in the linker
+* ``K_MEM_KERNEL_VIRT_START`` is the same as ``z_mapped_start`` specified in the linker
   script. This is the virtual address of the beginning of the kernel image at
   boot time.
 
-* ``Z_KERNEL_VIRT_END`` is the same as ``z_mapped_end`` specified in the linker
+* ``K_MEM_KERNEL_VIRT_END`` is the same as ``z_mapped_end`` specified in the linker
   script. This is the virtual address of the end of the kernel image at boot time.
 
-* ``Z_FREE_VM_START`` is the beginning of the virtual address space where addresses
+* ``K_MEM_VM_FREE_START`` is the beginning of the virtual address space where addresses
   can be allocated for memory mapping. This depends on whether
   :kconfig:option:`CONFIG_ARCH_MAPS_ALL_RAM` is enabled.
 
@@ -123,10 +123,10 @@ below.
     memory address space, and it is the same as
     (:kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` + :kconfig:option:`CONFIG_SRAM_SIZE`).
 
-  * If it is disabled, ``Z_FREE_VM_START`` is the same ``Z_KERNEL_VIRT_END`` which
+  * If it is disabled, ``K_MEM_VM_FREE_START`` is the same ``K_MEM_KERNEL_VIRT_END`` which
     is the end of the kernel image.
 
-* ``Z_VM_RESERVED`` is an area reserved to support kernel functions. For example,
+* ``K_MEM_VM_RESERVED`` is an area reserved to support kernel functions. For example,
   some addresses are reserved to support demand paging.
 
 
@@ -176,7 +176,7 @@ mappings must be aligned on page size and have finer access control.
   * The requested size must be multiple of page size.
 
   * The address returned is inside the virtual address space between
-    ``Z_FREE_VM_START`` and ``Z_VIRT_RAM_END``.
+    ``K_MEM_VM_FREE_START`` and ``K_MEM_VIRT_RAM_END``.
 
   * The mapped region is not guaranteed to be physically contiguous in memory.
 

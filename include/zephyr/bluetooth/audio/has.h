@@ -22,10 +22,12 @@
  * to control hearing aid presets.
  */
 
-#include <sys/types.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,7 +65,7 @@ enum bt_has_properties {
 	BT_HAS_PROP_AVAILABLE = BIT(1),
 };
 
-/** Hearing Aid device capablilities */
+/** Hearing Aid device capabilities */
 enum bt_has_capabilities {
 	BT_HAS_PRESET_SUPPORT = BIT(0),
 };

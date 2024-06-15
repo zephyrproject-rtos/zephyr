@@ -6,3 +6,7 @@ description: STMicroelectronics SPI protocol V2 compatible with BlueNRG-1 and su
 compatible: "st,hci-spi-v2"
 
 include: zephyr,bt-hci-spi.yaml
+
+properties:
+  bt-hci-quirks:
+    default: ["BT_HCI_QUIRK_NO_RESET"]

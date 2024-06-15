@@ -207,7 +207,18 @@ ZTEST_F(nvs, test_nvs_corrupted_write)
 		   &flash_max_write_calls);
 	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &flash_write_stat);
 
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 	*flash_max_write_calls = *flash_write_stat - 1;
+#else
+	/* When there is no explicit erase, erase is done with write, which means
+	 * that there are more writes needed. The nvs_write here will cause erase
+	 * to be called, which in turn calls the flash_fill; flash_fill will
+	 * overwrite data using buffer of size CONFIG_FLASH_FILL_BUFFER_SIZE,
+	 * and then two additional real writes are allowed.
+	 */
+	*flash_max_write_calls = (fixture->fs.sector_size /
+				  CONFIG_FLASH_FILL_BUFFER_SIZE) + 2;
+#endif
 	*flash_write_stat = 0;
 
 	/* Flash simulator will lose part of the data at the end of this write.
@@ -560,7 +571,8 @@ ZTEST_F(nvs, test_nvs_full_sector)
 				     len);
 		} else {
 			zassert_true(len == sizeof(data_read),
-				     "nvs_read failed: %d", i, len);
+				     "nvs_read #%d failed: len is %zd instead of %zu",
+				     i, len, sizeof(data_read));
 			zassert_equal(data_read, i,
 				      "read unexpected data: %d instead of %d",
 				      data_read, i);
@@ -639,6 +651,9 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 	uint32_t data;
 	ssize_t len;
 	int err;
+#ifdef CONFIG_NVS_DATA_CRC
+	uint32_t data_crc;
+#endif
 
 	close_ate.id = 0xffff;
 	close_ate.offset = fixture->fs.sector_size - sizeof(struct nvs_ate) * 5;
@@ -648,6 +663,9 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 	ate.id = 0x1;
 	ate.offset = 0;
 	ate.len = sizeof(data);
+#ifdef CONFIG_NVS_DATA_CRC
+	ate.len += sizeof(data_crc);
+#endif
 	ate.crc8 = crc8_ccitt(0xff, &ate,
 			      offsetof(struct nvs_ate, crc8));
 
@@ -666,6 +684,12 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 	data = 0xaa55aa55;
 	err = flash_write(fixture->fs.flash_device, fixture->fs.offset, &data, sizeof(data));
 	zassert_true(err == 0,  "flash_write failed: %d", err);
+#ifdef CONFIG_NVS_DATA_CRC
+	data_crc = crc32_ieee((const uint8_t *) &data, sizeof(data));
+	err = flash_write(fixture->fs.flash_device, fixture->fs.offset + sizeof(data), &data_crc,
+			  sizeof(data_crc));
+	zassert_true(err == 0,  "flash_write for data CRC failed: %d", err);
+#endif
 
 	/* Mark sector 1 as closed */
 	err = flash_write(fixture->fs.flash_device,

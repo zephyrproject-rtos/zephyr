@@ -1,0 +1,12 @@
+sample:
+  name: GPIO As A Wake-up Pin Source
+tests:
+  sample.boards.stm32.power_mgmt.wkup_pins:
+    build_only: true
+    filter: dt_enabled_alias_with_parent_compat("wkup-src",
+      "gpio-keys") and dt_compat_enabled("st,stm32-pwr")
+    platform_allow:
+      - nucleo_l4r5zi
+      - nucleo_u575zi_q
+      - nucleo_u5a5zj_q
+      - nucleo_wl55jc

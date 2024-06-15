@@ -13,6 +13,8 @@ Major enhancements with this release include:
   the way both SoCs and boards are named, defined and constructed in Zephyr.
   Additional information can be found in the :ref:`board_porting_guide`.
 * Zephyr now requires Python 3.10 or higher
+* Trusted Firmware-M (TF-M) 2.1.0 and Mbed TLS 3.6.0 have been integrated into Zephyr.
+  Both of these versions are LTS releases.
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.6.0 to Zephyr v3.7.0 can be found in the separate :ref:`migration guide<migration_3.7>`.
@@ -29,7 +31,13 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 * CVE-2024-3077 `Zephyr project bug tracker GHSA-gmfv-4vfh-2mh8
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gmfv-4vfh-2mh8>`_
 
+* CVE-2024-3332  Under embargo until 2024-07-01
+
 * CVE-2024-4785: Under embargo until 2024-08-07
+
+* CVE-2024-5754: Under embargo until 2024-09-04
+
+* CVE-2024-5931: Under embargo until 2024-09-10
 
 API Changes
 ***********
@@ -60,9 +68,61 @@ Deprecated in this release
    Application developer will now need to set the advertised name themselves by updating the advertising data
    or the scan response data.
 
+.. _zephyr_3.7_posix_api_deprecations:
+
+ * POSIX API
+
+  * Deprecated :c:macro:`PTHREAD_BARRIER_DEFINE` has been removed.
+  * Deprecated :c:macro:`EFD_IN_USE` and :c:macro:`EFD_FLAGS_SET` have been removed.
+
+  * In efforts to use Kconfig options that map directly to the Options and Option Groups in
+    IEEE 1003.1-2017, the following Kconfig options have been deprecated (replaced by):
+
+    * :kconfig:option:`CONFIG_EVENTFD_MAX` (:kconfig:option:`CONFIG_ZVFS_EVENTFD_MAX`)
+    * :kconfig:option:`CONFIG_FNMATCH` (:kconfig:option:`CONFIG_POSIX_C_LIB_EXT`)
+    * :kconfig:option:`CONFIG_GETENTROPY` (:kconfig:option:`CONFIG_POSIX_C_LIB_EXT`)
+    * :kconfig:option:`CONFIG_GETOPT` (:kconfig:option:`CONFIG_POSIX_C_LIB_EXT`)
+    * :kconfig:option:`CONFIG_MAX_PTHREAD_COUNT` (:kconfig:option:`CONFIG_POSIX_THREAD_THREADS_MAX`)
+    * :kconfig:option:`CONFIG_MAX_PTHREAD_KEY_COUNT` (:kconfig:option:`CONFIG_POSIX_THREAD_KEYS_MAX`)
+    * :kconfig:option:`CONFIG_MAX_TIMER_COUNT` (:kconfig:option:`CONFIG_POSIX_TIMER_MAX`)
+    * :kconfig:option:`CONFIG_POSIX_LIMITS_RTSIG_MAX` (:kconfig:option:`CONFIG_POSIX_RTSIG_MAX`)
+    * :kconfig:option:`CONFIG_POSIX_CLOCK` (:kconfig:option:`CONFIG_POSIX_CLOCK_SELECTION`,
+      :kconfig:option:`CONFIG_POSIX_CPUTIME`, :kconfig:option:`CONFIG_POSIX_MONOTONIC_CLOCK`,
+      :kconfig:option:`CONFIG_POSIX_TIMERS`, and :kconfig:option:`CONFIG_POSIX_TIMEOUTS`)
+    * :kconfig:option:`CONFIG_POSIX_CONFSTR` (:kconfig:option:`CONFIG_POSIX_SINGLE_PROCESS`)
+    * :kconfig:option:`CONFIG_POSIX_ENV` (:kconfig:option:`CONFIG_POSIX_SINGLE_PROCESS`)
+    * :kconfig:option:`CONFIG_POSIX_FS` (:kconfig:option:`CONFIG_POSIX_FILE_SYSTEM`)
+    * :kconfig:option:`CONFIG_POSIX_MAX_FDS` (:kconfig:option:`CONFIG_POSIX_OPEN_MAX` and
+      :kconfig:option:`CONFIG_ZVFS_OPEN_MAX`)
+    * :kconfig:option:`CONFIG_POSIX_MAX_OPEN_FILES` (:kconfig:option:`CONFIG_POSIX_OPEN_MAX` and
+      :kconfig:option:`CONFIG_ZVFS_OPEN_MAX`)
+    * :kconfig:option:`CONFIG_POSIX_MQUEUE` (:kconfig:option:`CONFIG_POSIX_MESSAGE_PASSING`)
+    * :kconfig:option:`CONFIG_POSIX_PUTMSG` (:kconfig:option:`CONFIG_XOPEN_STREAMS`)
+    * :kconfig:option:`CONFIG_POSIX_SIGNAL` (:kconfig:option:`CONFIG_POSIX_SIGNALS`)
+    * :kconfig:option:`CONFIG_POSIX_SYSCONF` (:kconfig:option:`CONFIG_POSIX_SINGLE_PROCESS`)
+    * :kconfig:option:`CONFIG_POSIX_SYSLOG` (:kconfig:option:`CONFIG_XSI_SYSTEM_LOGGING`)
+    * :kconfig:option:`CONFIG_POSIX_UNAME` (:kconfig:option:`CONFIG_POSIX_SINGLE_PROCESS`)
+    * :kconfig:option:`CONFIG_PTHREAD` (:kconfig:option:`CONFIG_POSIX_THREADS`)
+    * :kconfig:option:`CONFIG_PTHREAD_BARRIER` (:kconfig:option:`CONFIG_POSIX_BARRIERS`)
+    * :kconfig:option:`CONFIG_PTHREAD_COND` (:kconfig:option:`CONFIG_POSIX_THREADS`)
+    * :kconfig:option:`CONFIG_PTHREAD_IPC` (:kconfig:option:`CONFIG_POSIX_THREADS`)
+    * :kconfig:option:`CONFIG_PTHREAD_KEY` (:kconfig:option:`CONFIG_POSIX_THREADS`)
+    * :kconfig:option:`CONFIG_PTHREAD_MUTEX` (:kconfig:option:`CONFIG_POSIX_THREADS`)
+    * :kconfig:option:`CONFIG_PTHREAD_RWLOCK` (:kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS`)
+    * :kconfig:option:`CONFIG_PTHREAD_SPINLOCK` (:kconfig:option:`CONFIG_POSIX_SPIN_LOCKS`)
+    * :kconfig:option:`CONFIG_SEM_NAMELEN_MAX` (:kconfig:option:`CONFIG_POSIX_SEM_NAMELEN_MAX`)
+    * :kconfig:option:`CONFIG_SEM_VALUE_MAX` (:kconfig:option:`CONFIG_POSIX_SEM_VALUE_MAX`)
+    * :kconfig:option:`CONFIG_TIMER` (:kconfig:option:`CONFIG_POSIX_TIMERS`)
+    * :kconfig:option:`CONFIG_TIMER_DELAYTIMER_MAX` (:kconfig:option:`CONFIG_POSIX_DELAYTIMER_MAX`)
+
+    Please see the :ref:`POSIX API migration guide <zephyr_3.7_posix_api_migration>`.
+
  * SPI
 
   * Deprecated :c:func:`spi_is_ready` API function has been removed.
+  * Deprecated :c:func:`spi_transceive_async` API function has been removed.
+  * Deprecated :c:func:`spi_read_async` API function has been removed.
+  * Deprecated :c:func:`spi_write_async` API function has been removed.
 
 Architectures
 *************
@@ -71,11 +131,20 @@ Architectures
 
 * ARM
 
+* ARM64
+
+  * Implemented symbol names in the backtraces, enable by selecting :kconfig:option:`CONFIG_SYMTAB`
+
 * RISC-V
 
-  * Implemented frame-pointer based stack unwinding.
-
   * The fatal error message triggered from a fault now contains the callee-saved-registers states.
+
+  * Implemented stack unwinding
+
+    * Frame-pointer can be selected to enable precise stack traces at the expense of slightly
+      increased size and decreased speed.
+
+    * Symbol names can be enabled by selecting :kconfig:option:`CONFIG_EXCEPTION_STACK_TRACE_SYMTAB`
 
 * Xtensa
 
@@ -84,12 +153,27 @@ Kernel
 
   * Added :c:func:`k_uptime_seconds` function to simplify `k_uptime_get() / 1000` usage.
 
+  * Added :c:func:`k_realloc`, that uses kernel heap to implement traditional :c:func:`realloc`
+    semantics.
+
 Bluetooth
 *********
 * Audio
 
   * Removed ``err`` from :c:struct:`bt_bap_broadcast_assistant_cb.recv_state_removed` as it was
     redundant.
+
+  * The broadcast_audio_assistant sample has been renamed to bap_broadcast_assistant.
+    The broadcast_audio_sink sample has been renamed to bap_broadcast_sink.
+    The broadcast_audio_source sample has been renamed to bap_broadcast_source.
+    The unicast_audio_client sample has been renamed to bap_unicast_client.
+    The unicast_audio_server sample has been renamed to bap_unicast_server.
+    The public_broadcast_sink sample has been renamed to pbp_public_broadcast_sink.
+    The public_broadcast_source sample has been renamed to pbp_public_broadcast_source.
+
+  * The CAP Commander and CAP Initiator now no longer require CAS to be discovered for
+    :code:`BT_CAP_SET_TYPE_AD_HOC` sets. This allows applications to use these APIs on e.g.
+    BAP Unicast Servers that do not implement the CAP Acceptor role.
 
 * Host
 
@@ -102,16 +186,32 @@ Bluetooth
     Gateway is cellular phone. It controls the device (Hands-free Unit), that is the remote
     audio input and output mechanism.
 
+  * Implemented Advanced Audio Distribution Profile (A2DP) and Audio/Video Distribution Transport
+    Protocol (AVDTP), A2DP is enabled by :kconfig:option:`CONFIG_BT_A2DP`, AVDTP is enabled
+    by :kconfig:option:`CONFIG_BT_AVDTP`. They implement the protocols and procedures that
+    realize distribution of audio content of high quality in mono, stereo, or multi-channel modes.
+    A typical use case is the streaming of music content from a stereo music player to headphones
+    or speakers. The audio data is compressed in a proper format for efficient use of the limited
+    bandwidth.
+
+* HCI Driver
+
+  * Added support for Ambiq Apollo3 Blue series.
+
 Boards & SoC Support
 ********************
 
 * Added support for these SoC series:
+
+  * Added support for Ambiq Apollo3 Blue and Apollo3 Blue Plus SoC series.
 
 * Made these changes in other SoC series:
 
   * ITE: Rename the Kconfig symbol for all ITE SoC variants.
 
 * Added support for these ARM boards:
+
+  * Added support for Ambiq Apollo3 boards: ``apollo3_evb``, ``apollo3p_evb``.
 
 * Added support for these Xtensa boards:
 
@@ -141,6 +241,8 @@ Build system and Infrastructure
   * Deprecated the global CSTD cmake property in favor of the :kconfig:option:`CONFIG_STD_C`
     choice to select the C Standard version. Additionally subsystems can select a minimum
     required C Standard version, with for example :kconfig:option:`CONFIG_REQUIRES_STD_C11`.
+
+  * Fixed issue with passing UTF-8 configs to applications using sysbuild.
 
 Drivers and Sensors
 *******************
@@ -180,6 +282,8 @@ Drivers and Sensors
   * Updated the CAN timing functions to take the minimum supported bitrate into consideration when
     validating the bitrate.
   * Made the ``sample-point`` and ``sample-point-data`` devicetree properties optional.
+  * Renamed the ``bus_speed`` and ``bus_speed_data`` fields of :c:struct:`can_driver_config` to
+    ``bitrate`` and ``bitrate_data``.
 
 * Charger
 
@@ -192,6 +296,8 @@ Drivers and Sensors
 
 * Counter
 
+  * Added support for Ambiq Apollo3 series.
+
 * Crypto
 
 * Display
@@ -202,8 +308,8 @@ Drivers and Sensors
 
 * eSPI
 
-  * Renamed eSPI virtual wire direction macros and enum values to match the new terminology in
-    eSPI 1.5 specification.
+  * Renamed eSPI virtual wire direction macros, enum values and KConfig to match the new
+    terminology in eSPI 1.5 specification.
 
 * Ethernet
 
@@ -214,11 +320,17 @@ Drivers and Sensors
 
 * Flash
 
+  * Added support for Ambiq Apollo3 series.
+
 * GNSS
 
 * GPIO
 
+  * Added support for Ambiq Apollo3 series.
+
 * I2C
+
+  * Added support for Ambiq Apollo3 series.
 
 * I2S
 
@@ -233,9 +345,26 @@ Drivers and Sensors
   * The ``chain-length`` and ``color-mapping`` properties have been added to all LED strip
     bindings.
 
+
+* LoRa
+
+  * Added driver for Reyax LoRa module
+
 * MDIO
 
 * MFD
+
+* Modem
+
+  * Removed deprecated ``GSM_PPP`` driver along with its dts compatible ``zephyr,gsm-ppp``.
+
+  * Removed deprecated ``UART_MUX`` and ``GSM_MUX`` previously used by ``GSM_PPP``.
+
+  * Removed support for dts compatible ``zephyr,gsm-ppp`` from ``MODEM_CELLULAR`` driver.
+
+  * Removed integration with ``UART_MUX`` from ``MODEM_IFACE_UART_INTERRUPT`` module.
+
+  * Removed integration with ``UART_MUX`` from ``MODEM_SHELL`` module.
 
 * PCIE
 
@@ -270,6 +399,9 @@ Drivers and Sensors
 
 * SPI
 
+  * Added support for Ambiq Apollo3 series general IOM based SPI.
+  * Added support for Ambiq Apollo3 BLEIF based SPI, which is specific for internal HCI.
+
 * USB
 
 * W1
@@ -278,11 +410,25 @@ Drivers and Sensors
 
   * Added :kconfig:option:`CONFIG_WDT_NPCX_WARNING_LEADING_TIME_MS` to set the leading warning time
     in milliseconds. Removed no longer used :kconfig:option:`CONFIG_WDT_NPCX_DELAY_CYCLES`.
+  * Added support for Ambiq Apollo3 series.
 
 * Wi-Fi
 
   * Added support for configuring RTS threshold. With this, users can set the RTS threshold value or
     disable the RTS mechanism.
+
+  * Added support for configuring AP parameters. With this, users can set AP parameters at
+    build and run time.
+
+  * Added support to configure "max_inactivity" BSS parameter. Users can set this both build and runtime
+    duration to control the maximum time duration after which AP may disconnect a STA due to inactivity
+    from STA.
+
+  * Added support to configure "inactivity_poll" BSS parameter. Users can set build only AP parameter
+    to control whether AP may poll the STA before throwing away STA due to inactivity.
+
+  * Added support to configure "max_num_sta" BSS parameter. Users can set this both build and run time
+    parameter to control the maximum numuber of STA entries.
 
 Networking
 **********
@@ -314,6 +460,11 @@ Networking
 
   * Removed IPSP support. ``CONFIG_NET_L2_BT`` does not exist anymore.
 
+* TCP:
+
+  * ISN generation now uses SHA-256 instead of MD5. Moreover it now relies on PSA APIs
+    instead of legacy Mbed TLS functions for hash computation.
+
 USB
 ***
 
@@ -322,6 +473,13 @@ Devicetree
 
 Libraries / Subsystems
 **********************
+
+* Debug
+
+  * symtab
+
+   * By enabling :kconfig:option:`CONFIG_SYMTAB`, the symbol table will be
+     generated with Zephyr link stage executable on supported architectures.
 
 * Management
 
@@ -346,6 +504,11 @@ Libraries / Subsystems
       registered to set the device attributes that are sent to the hawkBit server. Use the
       :c:func:`hawkbit_set_custom_data_cb` function to register the callback.
 
+  * MCUmgr
+
+    * Instructions for the deprecated mcumgr go tool have been removed, a list of alternative,
+      supported clients can be found on :ref:`mcumgr_tools_libraries`.
+
 * Logging
 
   * By enabling :kconfig:option:`CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION`, the IP address of the
@@ -359,8 +522,19 @@ Libraries / Subsystems
 
 * Crypto
 
-  * MbedTLS was updated to 3.6.0. Release notes can be found at:
+  * Mbed TLS was updated to 3.6.0. Release notes can be found at:
     https://github.com/Mbed-TLS/mbedtls/releases/tag/v3.6.0
+  * When any PSA crypto provider is available in the system
+    (:kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT` is enabled), desired PSA features
+    must now be explicitly selected through ``CONFIG_PSA_WANT_xxx`` symbols.
+  * Choice symbols :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_LEGACY_RNG` and
+    :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG` were added in order
+    to allow the user to specify how Mbed TLS PSA crypto core should generate random numbers.
+    The former option, which is the default, relies on legacy entropy and CTR_DRBG/HMAC_DRBG
+    modules, while the latter relies on CSPRNG drivers.
+  * :kconfig:option:`CONFIG_MBEDTLS_PSA_P256M_DRIVER_ENABLED` enables support
+    for the Mbed TLS's p256-m driver PSA crypto library. This is a Cortex-M SW
+    optimized implementation of secp256r1 curve.
 
 * Random
 
@@ -375,6 +549,9 @@ Libraries / Subsystems
 * State Machine Framework
 
   * The :c:macro:`SMF_CREATE_STATE` macro now always takes 5 arguments.
+  * Transition sources that are parents of the state that was run now choose the correct Least
+    Common Ancestor for executing Exit and Entry Actions.
+  * Passing ``NULL`` to :c:func:`smf_set_state` is now not allowed.
 
 * Storage
 
@@ -382,6 +559,9 @@ Libraries / Subsystems
     enabling automatic formatting on mount failure by setting the
     :kconfig:option:`CONFIG_FS_FATFS_MKFS` Kconfig option. This option is enabled by default if
     :kconfig:option:`CONFIG_FILE_SYSTEM_MKFS` is set.
+
+  * FS: It is now possible to truncate a file while opening using :c:func:`fs_open`
+    and by passing ``FS_O_TRUNC`` flag.
 
 * POSIX API
 
@@ -397,6 +577,16 @@ HALs
 MCUboot
 *******
 
+Trusted Firmware-M
+******************
+
+* TF-M was updated to 2.1.0. Release notes can be found at:
+  https://tf-m-user-guide.trustedfirmware.org/releases/2.1.0.html
+
+* Support for MCUboot signature types other than RSA-3072 has been added.
+  The type can be chosen with the :kconfig:option:`CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE` Kconfig option.
+  Using EC-P256, the new default, reduces flash usage by several KBs compared to RSA.
+
 zcbor
 *****
 
@@ -410,3 +600,12 @@ Tests and Samples
     ``west build``. This snippet sets the :kconfig:option:`CONFIG_BT_ZEPHYR_NUS_AUTO_START_BLUETOOTH`
     which allows non-Bluetooth samples that use the UART APIs to run without modifications
     (e.g: Console and Logging examples).
+
+  * Removed ``GSM_PPP`` specific configuration overlays from samples ``net/cloud/tagoio`` and
+    ``net/mgmt/updatehub``. The ``GSM_PPP`` device driver has been deprecated and removed. The new
+    ``MODEM_CELLULAR`` device driver which replaces it uses the native networking stack and ``PM``
+    subsystem, which like ethernet, requires no application specific actions to set up networking.
+
+  * Removed ``net/gsm_modem`` sample as the ``GSM_PPP`` device driver it depended on has been
+    deprecated and removed. The sample has been replaced by the sample ``net/cellular_modem``
+    based on the ``MODEM_CELLULAR`` device driver.

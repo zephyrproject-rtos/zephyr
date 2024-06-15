@@ -101,7 +101,7 @@ stopping the processing of CAN frames.
 .. note::
    The CAN controller mode and timing can only be changed while the CAN controller is stopped, which
    is the initial setting upon boot-up. The initial CAN controller mode is set to ``normal`` and the
-   initial timing is set according to the ``bus-speed``, ``sample-point``, ``bus-speed-data``, and
+   initial timing is set according to the ``bitrate``, ``sample-point``, ``bitrate-data``, and
    ``sample-point-data`` :ref:`devicetree` properties.
 
 Timing
@@ -186,15 +186,19 @@ Received CAN frames matching the added filter(s) are printed to the shell. A few
 
 .. code-block:: console
 
-   # Flags  ID   Size  Data bytes
-   --       010   [8]  01 02 03 04 05 06 07 08
-   B-       010  [08]  01 02 03 04 05 06 07 08
-   BP       010  [03]  01 aa bb
-   --  00000010   [0]
-   --       010   [1]  20
-   --       010   [8]  remote transmission request
+   # Dev Flags    ID   Size  Data bytes
+   can0  --       010   [8]  01 02 03 04 05 06 07 08
+   can0  B-       010  [08]  01 02 03 04 05 06 07 08
+   can0  BP       010  [03]  01 aa bb
+   can0  --  00000010   [0]
+   can0  --       010   [1]  20
+   can0  --       010   [8]  remote transmission request
 
 The columns have the following meaning:
+
+* Dev
+
+  * Name of the device receiving the frame.
 
 * Flags
 

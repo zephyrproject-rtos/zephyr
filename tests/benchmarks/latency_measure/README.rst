@@ -26,18 +26,38 @@ including:
 * Time it takes to push and pop to/from a k_stack
 * Measure average time to alloc memory from heap then free that memory
 
-When userspace is enabled using the prj_user.conf configuration file, this benchmark will
-where possible, also test the above capabilities using various configurations involving user
-threads:
+When userspace is enabled, this benchmark will where possible, also test the
+above capabilities using various configurations involving user threads:
 
 * Kernel thread to kernel thread
 * Kernel thread to user thread
 * User thread to kernel thread
 * User thread to user thread
 
+The default configuration builds only for the kernel. However, additional
+configurations can be enabled via the use of EXTRA_CONF_FILE.
+
+For example, the following will build this project with userspace support:
+
+    EXTRA_CONF_FILE="prj.userspace.conf" west build -p -b <board> <path to project>
+
+The following table summarizes the purposes of the different extra
+configuration files that are available to be used with this benchmark.
+A tester may mix and match them allowing them different scenarios to
+be easily compared the default.
+
++-----------------------------+------------------------------------+
+| prj.canaries.conf           | Enable stack canaries              |
++-----------------------------+------------------------------------+
+| prj.objcore.conf            | Enable object cores and statistics |
++-----------------------------+------------------------------------+
+| prj.timeslicing.conf        | Enable timeslicing                 |
++-----------------------------+------------------------------------+
+| prj.userspace.conf          | Enable userspace support           |
++-----------------------------+------------------------------------+
+
 Sample output of the benchmark (without userspace enabled)::
 
-        *** Booting Zephyr OS build zephyr-v3.5.0-4267-g6ccdc31233a3 ***
         thread.yield.preemptive.ctx.k_to_k       - Context switch via k_yield                         :     329 cycles ,     2741 ns :
         thread.yield.cooperative.ctx.k_to_k      - Context switch via k_yield                         :     329 cycles ,     2741 ns :
         isr.resume.interrupted.thread.kernel     - Return from ISR to interrupted thread              :     363 cycles ,     3033 ns :
@@ -91,7 +111,6 @@ Sample output of the benchmark (without userspace enabled)::
 
 Sample output of the benchmark (with userspace enabled)::
 
-        *** Booting Zephyr OS build zephyr-v3.5.0-4268-g6af7a1230a08 ***
         thread.yield.preemptive.ctx.k_to_k       - Context switch via k_yield                         :     970 cycles ,     8083 ns :
         thread.yield.preemptive.ctx.u_to_u       - Context switch via k_yield                         :    1260 cycles ,    10506 ns :
         thread.yield.preemptive.ctx.k_to_u       - Context switch via k_yield                         :    1155 cycles ,     9632 ns :

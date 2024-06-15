@@ -348,11 +348,11 @@ static void update_cache(int preempt_ok)
 #endif /* CONFIG_SMP */
 }
 
-static bool thread_active_elsewhere(struct k_thread *thread)
+static struct _cpu *thread_active_elsewhere(struct k_thread *thread)
 {
-	/* True if the thread is currently running on another CPU.
-	 * There are more scalable designs to answer this question in
-	 * constant time, but this is fine for now.
+	/* Returns pointer to _cpu if the thread is currently running on
+	 * another CPU. There are more scalable designs to answer this
+	 * question in constant time, but this is fine for now.
 	 */
 #ifdef CONFIG_SMP
 	int currcpu = _current_cpu->id;
@@ -362,12 +362,12 @@ static bool thread_active_elsewhere(struct k_thread *thread)
 	for (int i = 0; i < num_cpus; i++) {
 		if ((i != currcpu) &&
 		    (_kernel.cpus[i].current == thread)) {
-			return true;
+			return &_kernel.cpus[i];
 		}
 	}
 #endif /* CONFIG_SMP */
 	ARG_UNUSED(thread);
-	return false;
+	return NULL;
 }
 
 static void ready_thread(struct k_thread *thread)
@@ -384,13 +384,14 @@ static void ready_thread(struct k_thread *thread)
 
 		queue_thread(thread);
 		update_cache(0);
-		flag_ipi();
+
+		flag_ipi(ipi_mask_create(thread));
 	}
 }
 
 void z_ready_thread_locked(struct k_thread *thread)
 {
-	if (!thread_active_elsewhere(thread)) {
+	if (thread_active_elsewhere(thread) == NULL) {
 		ready_thread(thread);
 	}
 }
@@ -398,7 +399,7 @@ void z_ready_thread_locked(struct k_thread *thread)
 void z_ready_thread(struct k_thread *thread)
 {
 	K_SPINLOCK(&_sched_spinlock) {
-		if (!thread_active_elsewhere(thread)) {
+		if (thread_active_elsewhere(thread) == NULL) {
 			ready_thread(thread);
 		}
 	}
@@ -466,11 +467,18 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 	 * halt itself in the IPI.  Otherwise it's unscheduled, so we
 	 * can clean it up directly.
 	 */
-	if (thread_active_elsewhere(thread)) {
+
+	struct _cpu *cpu = thread_active_elsewhere(thread);
+
+	if (cpu != NULL) {
 		thread->base.thread_state |= (terminate ? _THREAD_ABORTING
 					      : _THREAD_SUSPENDING);
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-		arch_sched_ipi();
+#ifdef CONFIG_ARCH_HAS_DIRECTED_IPIS
+		arch_sched_directed_ipi(IPI_CPU_MASK(cpu->id));
+#else
+		arch_sched_broadcast_ipi();
+#endif
 #endif
 		if (arch_is_in_isr()) {
 			thread_halt_spin(thread, key);
@@ -521,7 +529,7 @@ static inline void z_vrfy_k_thread_suspend(struct k_thread *thread)
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_thread_suspend(thread);
 }
-#include <syscalls/k_thread_suspend_mrsh.c>
+#include <zephyr/syscalls/k_thread_suspend_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void z_impl_k_thread_resume(struct k_thread *thread)
@@ -550,7 +558,7 @@ static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_thread_resume(thread);
 }
-#include <syscalls/k_thread_resume_mrsh.c>
+#include <zephyr/syscalls/k_thread_resume_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static _wait_q_t *pended_on_thread(struct k_thread *thread)
@@ -731,19 +739,38 @@ void z_unpend_thread(struct k_thread *thread)
 bool z_thread_prio_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = 0;
+	int old_prio = thread->base.prio;
 
 	K_SPINLOCK(&_sched_spinlock) {
 		need_sched = z_is_thread_ready(thread);
 
 		if (need_sched) {
-			/* Don't requeue on SMP if it's the running thread */
 			if (!IS_ENABLED(CONFIG_SMP) || z_is_thread_queued(thread)) {
 				dequeue_thread(thread);
 				thread->base.prio = prio;
 				queue_thread(thread);
+
+				if (old_prio > prio) {
+					flag_ipi(ipi_mask_create(thread));
+				}
 			} else {
+				/*
+				 * This is a running thread on SMP. Update its
+				 * priority, but do not requeue it. An IPI is
+				 * needed if the priority is both being lowered
+				 * and it is running on another CPU.
+				 */
+
 				thread->base.prio = prio;
+
+				struct _cpu *cpu;
+
+				cpu = thread_active_elsewhere(thread);
+				if ((cpu != NULL) && (old_prio < prio)) {
+					flag_ipi(IPI_CPU_MASK(cpu->id));
+				}
 			}
+
 			update_cache(1);
 		} else {
 			thread->base.prio = prio;
@@ -958,7 +985,7 @@ int z_unpend_all(_wait_q_t *wait_q)
 	int need_sched = 0;
 	struct k_thread *thread;
 
-	while ((thread = z_waitq_head(wait_q)) != NULL) {
+	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
 		z_unpend_thread(thread);
 		z_ready_thread(thread);
 		need_sched = 1;
@@ -1006,8 +1033,8 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 
 	bool need_sched = z_thread_prio_set((struct k_thread *)thread, prio);
 
-	flag_ipi();
-	if (need_sched && (_current->base.sched_locked == 0U)) {
+	if ((need_sched) && (IS_ENABLED(CONFIG_SMP) ||
+			     (_current->base.sched_locked == 0U))) {
 		z_reschedule_unlocked();
 	}
 }
@@ -1025,12 +1052,15 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 #endif /* CONFIG_USERSPACE_THREAD_MAY_RAISE_PRIORITY */
 	z_impl_k_thread_priority_set(thread, prio);
 }
-#include <syscalls/k_thread_priority_set_mrsh.c>
+#include <zephyr/syscalls/k_thread_priority_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_SCHED_DEADLINE
 void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
+
+	deadline = CLAMP(deadline, 0, INT_MAX);
+
 	struct k_thread *thread = tid;
 	int32_t newdl = k_cycle_get_32() + deadline;
 
@@ -1063,7 +1093,7 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 
 	z_impl_k_thread_deadline_set((k_tid_t)thread, deadline);
 }
-#include <syscalls/k_thread_deadline_set_mrsh.c>
+#include <zephyr/syscalls/k_thread_deadline_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_SCHED_DEADLINE */
 
@@ -1095,7 +1125,7 @@ static inline void z_vrfy_k_yield(void)
 {
 	z_impl_k_yield();
 }
-#include <syscalls/k_yield_mrsh.c>
+#include <zephyr/syscalls/k_yield_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static int32_t z_tick_sleep(k_ticks_t ticks)
@@ -1173,7 +1203,7 @@ static inline int32_t z_vrfy_k_sleep(k_timeout_t timeout)
 {
 	return z_impl_k_sleep(timeout);
 }
-#include <syscalls/k_sleep_mrsh.c>
+#include <zephyr/syscalls/k_sleep_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int32_t z_impl_k_usleep(int us)
@@ -1197,7 +1227,7 @@ static inline int32_t z_vrfy_k_usleep(int us)
 {
 	return z_impl_k_usleep(us);
 }
-#include <syscalls/k_usleep_mrsh.c>
+#include <zephyr/syscalls/k_usleep_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void z_impl_k_wakeup(k_tid_t thread)
@@ -1219,7 +1249,7 @@ void z_impl_k_wakeup(k_tid_t thread)
 
 	z_mark_thread_as_not_suspended(thread);
 
-	if (!thread_active_elsewhere(thread)) {
+	if (thread_active_elsewhere(thread) == NULL) {
 		ready_thread(thread);
 	}
 
@@ -1236,7 +1266,7 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_wakeup(thread);
 }
-#include <syscalls/k_wakeup_mrsh.c>
+#include <zephyr/syscalls/k_wakeup_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 k_tid_t z_impl_k_sched_current_thread_query(void)
@@ -1262,14 +1292,14 @@ static inline k_tid_t z_vrfy_k_sched_current_thread_query(void)
 {
 	return z_impl_k_sched_current_thread_query();
 }
-#include <syscalls/k_sched_current_thread_query_mrsh.c>
+#include <zephyr/syscalls/k_sched_current_thread_query_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static inline void unpend_all(_wait_q_t *wait_q)
 {
 	struct k_thread *thread;
 
-	while ((thread = z_waitq_head(wait_q)) != NULL) {
+	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
 		unpend_thread_no_timeout(thread);
 		(void)z_abort_thread_timeout(thread);
 		arch_thread_return_value_set(thread, 0);
@@ -1485,7 +1515,7 @@ static inline int z_vrfy_k_thread_join(struct k_thread *thread,
 
 	return z_impl_k_thread_join(thread, timeout);
 }
-#include <syscalls/k_thread_join_mrsh.c>
+#include <zephyr/syscalls/k_thread_join_mrsh.c>
 
 static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 {
@@ -1498,7 +1528,7 @@ static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 
 	z_impl_k_thread_abort((struct k_thread *)thread);
 }
-#include <syscalls/k_thread_abort_mrsh.c>
+#include <zephyr/syscalls/k_thread_abort_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /*

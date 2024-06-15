@@ -224,7 +224,7 @@ typedef void (*net_route_mcast_cb_t)(struct net_route_entry_mcast *entry,
  * value in case of an error.
  */
 int net_route_mcast_forward_packet(struct net_pkt *pkt,
-				   const struct net_ipv6_hdr *hdr);
+				   struct net_ipv6_hdr *hdr);
 
 /**
  * @brief Go through all the multicast routing entries and call callback

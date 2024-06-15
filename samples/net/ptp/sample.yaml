@@ -1,0 +1,20 @@
+common:
+  harness: net
+  tags:
+    - net
+    - ptp
+sample:
+  description: Test PTP functionality
+  name: PTP sample app
+tests:
+  sample.net.ptp:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - nucleo_h563zi
+      - nucleo_h743zi
+      - nucleo_h745zi_q/stm32h745xx/m7
+      - qemu_x86
+    depends_on: eth
+    integration_platforms:
+      - nucleo_h563zi

@@ -10,7 +10,10 @@ set -ue
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_hci_uart.conf compile
+app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_hci_uart.conf \
+    cmake_extra_args=-DEXTRA_DTC_OVERLAY_FILE=hci-uart.overlay compile
+app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_hci_uart.conf conf_overlay=psa_overlay.conf \
+    cmake_extra_args=-DEXTRA_DTC_OVERLAY_FILE=hci-uart.overlay compile
 app=samples/bluetooth/hci_uart compile
 app=samples/bluetooth/hci_uart_async compile
 

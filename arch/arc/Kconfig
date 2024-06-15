@@ -18,6 +18,7 @@ config CPU_ARCEM
 config CPU_ARCHS
 	bool
 	select ATOMIC_OPERATIONS_BUILTIN
+	select BARRIER_OPERATIONS_BUILTIN
 	help
 	  This option signifies the use of an ARC HS CPU
 

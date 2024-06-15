@@ -20,7 +20,7 @@ supports :kconfig:option:`CONFIG_FLASH_JESD216_API`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/jesd216
-   :board: efr32mg_sltb004a
+   :board: sltb004a
    :goals: build flash
    :compact:
 

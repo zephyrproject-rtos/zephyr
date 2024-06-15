@@ -1,30 +1,13 @@
 # Copyright (c) 2022 Andreas Sandberg
 # Copyright (c) 2020, Phytec Messtechnik GmbH
+# Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: UltraChip UC81xx EPD display controller common properties
 
-include: [spi-device.yaml, display-controller.yaml]
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
 
 properties:
-  reset-gpios:
-    type: phandle-array
-    required: true
-    description: RESET pin.
-
-      The RESET pin of UC81xx is active low.
-      If connected directly the MCU pin should be configured
-      as active low.
-
-  dc-gpios:
-    type: phandle-array
-    required: true
-    description: DC pin.
-
-      The DC pin of UC81xx is active low (transmission command byte).
-      If connected directly the MCU pin should be configured
-      as active low.
-
   busy-gpios:
     type: phandle-array
     required: true

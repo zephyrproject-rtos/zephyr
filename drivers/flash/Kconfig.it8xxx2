@@ -10,6 +10,7 @@ config SOC_FLASH_ITE_IT8XXX2
 	select SOC_IT8XXX2_USE_ILM
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
 	select HAS_FLASH_LOAD_OFFSET
 	help
 	  The flash driver includes support for read, write and

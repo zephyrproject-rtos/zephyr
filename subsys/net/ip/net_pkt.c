@@ -263,7 +263,7 @@ void net_pkt_allocs_foreach(net_pkt_allocs_cb_t cb, void *user_data)
 			NET_ERR("**ERROR** frag %p not in use (%s:%s():%d)", \
 				frag, __FILE__, __func__, __LINE__);     \
 		}                                                       \
-	} while (0)
+	} while (false)
 
 const char *net_pkt_slab2str(struct k_mem_slab *slab)
 {
@@ -1872,6 +1872,8 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_captured(clone_pkt, net_pkt_is_captured(pkt));
 	net_pkt_set_eof(clone_pkt, net_pkt_eof(pkt));
 	net_pkt_set_ptp(clone_pkt, net_pkt_is_ptp(pkt));
+	net_pkt_set_tx_timestamping(clone_pkt, net_pkt_is_tx_timestamping(pkt));
+	net_pkt_set_rx_timestamping(clone_pkt, net_pkt_is_rx_timestamping(pkt));
 	net_pkt_set_forwarding(clone_pkt, net_pkt_forwarding(pkt));
 	net_pkt_set_chksum_done(clone_pkt, net_pkt_is_chksum_done(pkt));
 	net_pkt_set_ip_reassembled(pkt, net_pkt_is_ip_reassembled(pkt));

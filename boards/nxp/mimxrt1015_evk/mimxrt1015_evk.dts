@@ -102,19 +102,22 @@ arduino_serial: &lpuart4 {
 			#size-cells = <1>;
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(64)>;
+				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			slot0_partition: partition@10000 {
+			/* The MCUBoot swap-move algorithm uses the last 3 sectors
+			 * of the primary slot0 for swap status and move.
+			 */
+			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00010000 DT_SIZE_M(7)>;
+				reg = <0x00020000 (DT_SIZE_M(7) + DT_SIZE_K(12))>;
 			};
-			slot1_partition: partition@710000 {
+			slot1_partition: partition@723000 {
 				label = "image-1";
-				reg = <0x00710000 DT_SIZE_M(7)>;
+				reg = <0x00723000 DT_SIZE_M(7)>;
 			};
-			storage_partition: partition@E10000 {
+			storage_partition: partition@E23000 {
 				label = "storage";
-				reg = <0x00E10000 DT_SIZE_K(1984)>;
+				reg = <0x00E23000 (DT_SIZE_M(2) - DT_SIZE_K(140))>;
 			};
 		};
 	};

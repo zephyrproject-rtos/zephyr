@@ -59,7 +59,7 @@ typedef struct sys_bitarray sys_bitarray_t;
 		[DIV_ROUND_UP(DIV_ROUND_UP(total_bits, 8),		\
 			       sizeof(uint32_t))] = {0};		\
 	sba_mod sys_bitarray_t name = {					\
-		.num_bits = total_bits,					\
+		.num_bits = (total_bits),				\
 		.num_bundles = DIV_ROUND_UP(				\
 			DIV_ROUND_UP(total_bits, 8), sizeof(uint32_t)),	\
 		.bundles = _sys_bitarray_bundles_##name,		\
@@ -168,7 +168,7 @@ int sys_bitarray_test_and_clear_bit(sys_bitarray_t *bitarray, size_t bit, int *p
 int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 		       size_t *offset);
 
-/*
+/**
  * Calculates the bit-wise XOR of two bitarrays in a region.
  * The result is stored in the first bitarray passed in (@p dst).
  * Both bitarrays must be of the same size.

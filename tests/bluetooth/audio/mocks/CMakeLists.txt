@@ -11,6 +11,7 @@ add_library(mocks STATIC
   src/bap_unicast_client.c
   src/bap_unicast_server.c
   src/cap_commander.c
+  src/cap_initiator.c
   src/conn.c
   src/crypto.c
   src/fatal.c

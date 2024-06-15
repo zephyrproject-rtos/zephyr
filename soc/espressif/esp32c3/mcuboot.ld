@@ -87,6 +87,7 @@ SECTIONS
     /* Vectors go to IRAM */
     _iram_start = ABSOLUTE(.);
     _init_start = ABSOLUTE(.);
+    __text_region_start = ABSOLUTE(.);
 
     KEEP(*(.exception_vectors.text));
     . = ALIGN(256);
@@ -133,6 +134,7 @@ SECTIONS
     . += 16;
 
     _text_end = ABSOLUTE(.);
+    __text_region_end = ABSOLUTE(.);
     _etext = .;
 
     /* Similar to _iram_start, this symbol goes here so it is

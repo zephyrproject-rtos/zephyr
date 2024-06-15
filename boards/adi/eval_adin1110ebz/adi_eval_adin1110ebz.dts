@@ -54,7 +54,6 @@
 	aliases {
 		led0 = &green_led;
 		watchdog0 = &iwdg;
-		spi-flash0 = &mx25r6435f;
 		ambient-temp0 = &adt7420;
 	};
 

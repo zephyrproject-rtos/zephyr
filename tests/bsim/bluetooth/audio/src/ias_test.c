@@ -5,22 +5,22 @@
  */
 
 #include <stdint.h>
-#ifdef CONFIG_BT_IAS
-
 #include <stddef.h>
-#include <errno.h>
-#include <zephyr/types.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
-
 #include <zephyr/bluetooth/services/ias.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/types.h>
 
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_IAS
 extern enum bst_result_t bst_result;
 
 CREATE_FLAG(g_high_alert_received);
@@ -58,7 +58,7 @@ static void test_main(void)
 		return;
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, AD_SIZE, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
@@ -90,7 +90,7 @@ static void test_main(void)
 static const struct bst_test_instance test_ias[] = {
 	{
 		.test_id = "ias",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 

@@ -240,8 +240,8 @@ struct z_kernel {
 #endif
 
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	/* Need to signal an IPI at the next scheduling point */
-	bool pending_ipi;
+	/* Identify CPUs to send IPIs to at the next scheduling point */
+	atomic_t pending_ipi;
 #endif
 };
 

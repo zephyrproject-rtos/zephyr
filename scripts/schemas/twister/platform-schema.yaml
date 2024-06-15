@@ -66,6 +66,8 @@ mapping:
     type: seq
     seq:
       - type: str
+  "sysbuild":
+    type: bool
   "env":
     type: seq
     seq:
@@ -100,3 +102,10 @@ mapping:
         type: seq
         seq:
           - type: str
+      "renode":
+        type: map
+        mapping:
+          "uart":
+            type: str
+          "resc":
+            type: str

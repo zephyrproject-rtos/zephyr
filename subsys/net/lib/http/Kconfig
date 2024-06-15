@@ -115,6 +115,14 @@ config HTTP_SERVER_WEBSOCKET
 	  handler that is called after upgrading to handle the Websocket network
 	  traffic.
 
+config HTTP_SERVER_RESOURCE_WILDCARD
+	bool "Allow wildcard matching of resources"
+	select FNMATCH
+	help
+	  Allow user to specify wildcards when setting up resource strings.
+	  This means that instead of specifying multiple resources with exact
+	  string matches, one resource handler could handle multiple URLs.
+
 endif
 
 # Hidden option to avoid having multiple individual options that are ORed together

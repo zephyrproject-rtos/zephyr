@@ -96,9 +96,9 @@ static bool map_msix_table_entries(pcie_bdf_t bdf,
 		return false;
 	}
 
-	z_phys_map((uint8_t **)&mapped_table,
-		   bar.phys_addr + table_offset,
-		   n_vector * PCIE_MSIR_TABLE_ENTRY_SIZE, K_MEM_PERM_RW);
+	k_mem_map_phys_bare((uint8_t **)&mapped_table,
+			    bar.phys_addr + table_offset,
+			    n_vector * PCIE_MSIR_TABLE_ENTRY_SIZE, K_MEM_PERM_RW);
 
 	for (i = 0; i < n_vector; i++) {
 		vectors[i].msix_vector = (struct msix_vector *)

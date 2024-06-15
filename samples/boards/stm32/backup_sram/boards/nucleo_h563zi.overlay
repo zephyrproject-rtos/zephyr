@@ -1,0 +1,9 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Thorsten Spätling <thorsten.spaetling@vierling.de>
+ */
+
+&backup_sram{
+	status = "okay";
+};

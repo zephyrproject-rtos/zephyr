@@ -156,7 +156,7 @@ config SCHED_CPU_MASK_PIN_ONLY
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC)
+	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC || NIOS2)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
@@ -467,6 +467,12 @@ config BOOT_DELAY
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
 
+config BOOT_CLEAR_SCREEN
+	bool "Clear screen"
+	help
+	  Use this option to clear the screen before printing anything else.
+	  Using a VT100 enabled terminal on the client side is required for this to work.
+
 config THREAD_MONITOR
 	bool "Thread monitoring"
 	help
@@ -703,6 +709,9 @@ config PIPES
 	  This option enables kernel pipes. A pipe is a kernel object that
 	  allows a thread to send a byte stream to another thread. Pipes can
 	  be used to synchronously transfer chunks of data in whole or in part.
+
+	  Note that setting this option slightly increases the size of the
+	  thread structure.
 
 config KERNEL_MEM_POOL
 	bool "Use Kernel Memory Pool"

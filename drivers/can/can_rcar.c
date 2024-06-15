@@ -1075,7 +1075,7 @@ static int can_rcar_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = can_calc_timing(dev, &timing, config->common.bus_speed,
+	ret = can_calc_timing(dev, &timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (ret == -EINVAL) {
 		LOG_ERR("Can't find timing for given param");

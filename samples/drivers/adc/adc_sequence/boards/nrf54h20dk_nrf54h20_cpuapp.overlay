@@ -1,0 +1,51 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ */
+
+/ {
+	aliases {
+		adc0 = &adc;
+	};
+};
+
+/ {
+	zephyr,user {
+		io-channels = <&adc 0>, <&adc 1>, <&adc 7>;
+	};
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_2";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN1>; /* P1.01 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1_2";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN2>; /* P1.02 */
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+	};
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1_2";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN3>; /* P1.03 */
+		zephyr,input-negative = <NRF_SAADC_AIN7>; /* P1.07 */
+		zephyr,resolution = <12>;
+	};
+};

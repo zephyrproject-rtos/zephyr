@@ -58,7 +58,7 @@ static const struct clock_control_driver_api rv32m1_pcc_api = {
 };
 
 #define RV32M1_PCC_INIT(inst)						\
-	static struct rv32m1_pcc_config rv32m1_pcc##inst##_config = {	\
+	static const struct rv32m1_pcc_config rv32m1_pcc##inst##_config = {	\
 		.base_address = DT_INST_REG_ADDR(inst)			\
 	};								\
 									\

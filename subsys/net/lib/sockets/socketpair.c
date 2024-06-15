@@ -264,8 +264,8 @@ static struct spair *spair_new(void)
 		goto cleanup;
 	}
 
-	z_finalize_fd(spair->remote, spair,
-		      (const struct fd_op_vtable *)&spair_fd_op_vtable);
+	z_finalize_typed_fd(spair->remote, spair, (const struct fd_op_vtable *)&spair_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	goto out;
 
@@ -282,6 +282,8 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 	int res;
 	size_t i;
 	struct spair *obj[2] = {};
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, socketpair, family, type, proto, sv);
 
 	if (family != AF_UNIX) {
 		errno = EAFNOSUPPORT;
@@ -324,6 +326,8 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 		k_sem_give(&obj[0]->sem);
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, socketpair, sv[0], sv[1], 0);
+
 	return 0;
 
 cleanup:
@@ -332,6 +336,8 @@ cleanup:
 	}
 
 errout:
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, socketpair, -1, -1, -errno);
+
 	return res;
 }
 
@@ -357,7 +363,7 @@ out:
 	return ret;
 }
 
-#include <syscalls/zsock_socketpair_mrsh.c>
+#include <zephyr/syscalls/zsock_socketpair_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /**

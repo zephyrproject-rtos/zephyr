@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024 Ayush Singh <ayush@beagleboard.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 255 PWM_POLARITY_NORMAL>;
+			label = "PWM MB1";
+		};
+	};
+};
+
+&pinctrl {
+	pwm0_default: pwm0_default {
+		pinmux = <17 IOC_PORT_MCU_PORT_EVENT1>;
+		bias-disable;
+		drive-strength = <8>;
+	};
+};
+
+&gpt0 {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+};

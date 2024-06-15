@@ -237,10 +237,13 @@ static int shtcx_init(const struct device *dev)
 	return 0;
 }
 
+#define SHTCX_CHIP(inst) \
+	(DT_INST_NODE_HAS_COMPAT(inst, sensirion_shtc1) ? CHIP_SHTC1 : CHIP_SHTC3)
+
 #define SHTCX_CONFIG(inst)						       \
 	{								       \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),			       \
-		.chip = DT_INST_ENUM_IDX(inst, chip),			       \
+		.chip = SHTCX_CHIP(inst),				       \
 		.measure_mode = DT_INST_ENUM_IDX(inst, measure_mode),	       \
 		.clock_stretching = DT_INST_PROP(inst, clock_stretching)       \
 	}

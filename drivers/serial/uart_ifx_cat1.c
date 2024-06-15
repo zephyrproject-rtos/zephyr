@@ -227,6 +227,10 @@ static int ifx_cat1_uart_configure(const struct device *dev,
 		result = cyhal_uart_set_baud(&data->obj, cfg->baudrate, NULL);
 	}
 
+	/* Set RTS/CTS flow control pins as NC so cyhal will skip initialization */
+	data->obj.pin_cts = NC;
+	data->obj.pin_rts = NC;
+
 	/* Enable RTS/CTS flow control */
 	if ((result == CY_RSLT_SUCCESS) && cfg->flow_ctrl) {
 		result = cyhal_uart_enable_flow_control(&data->obj, true, true);

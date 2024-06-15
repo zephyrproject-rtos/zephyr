@@ -29,23 +29,9 @@ description: |
 
 compatible: "galaxycore,gc9x01x"
 
-include: [spi-device.yaml, display-controller.yaml, lcd-controller.yaml]
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml, lcd-controller.yaml]
 
 properties:
-  reset-gpios:
-    type: phandle-array
-    description: |
-      RESET pin of the GC9X01X.
-      If connected directly the MCU pin should be configured
-      as active low.
-
-  cmd-data-gpios:
-    type: phandle-array
-    required: true
-    description: |
-      Data/Command pin of the GC9X01X is to be configured
-      high(1) for data, low(0) for command.
-
   orientation:
     type: string
     default: "normal"

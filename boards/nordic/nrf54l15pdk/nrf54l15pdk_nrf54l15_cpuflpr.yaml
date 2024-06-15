@@ -7,6 +7,7 @@ type: mcu
 arch: riscv
 toolchain:
   - zephyr
+sysbuild: true
 ram: 96
 flash: 96
 supported:

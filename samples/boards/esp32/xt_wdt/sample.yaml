@@ -1,0 +1,10 @@
+sample:
+  description: Application to test XT WDT
+  name: xt_wdt_sample
+tests:
+  sample.board.esp32.xt_wdt:
+    platform_allow:
+      - esp32c3_devkitm
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
+    tags: esp32

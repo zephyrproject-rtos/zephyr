@@ -21,7 +21,7 @@ static inline int z_vrfy_charger_get_prop(const struct device *dev, const charge
 	return ret;
 }
 
-#include <syscalls/charger_get_prop_mrsh.c>
+#include <zephyr/syscalls/charger_get_prop_mrsh.c>
 
 static inline int z_vrfy_charger_set_prop(const struct device *dev, const charger_prop_t prop,
 					  const union charger_propval *val)
@@ -35,7 +35,7 @@ static inline int z_vrfy_charger_set_prop(const struct device *dev, const charge
 	return z_impl_charger_set_prop(dev, prop, &k_val);
 }
 
-#include <syscalls/charger_set_prop_mrsh.c>
+#include <zephyr/syscalls/charger_set_prop_mrsh.c>
 
 static inline int z_vrfy_charger_charge_enable(const struct device *dev, const bool enable)
 {
@@ -44,4 +44,4 @@ static inline int z_vrfy_charger_charge_enable(const struct device *dev, const b
 	return z_impl_charger_charge_enable(dev, enable);
 }
 
-#include <syscalls/charger_charge_enable_mrsh.c>
+#include <zephyr/syscalls/charger_charge_enable_mrsh.c>

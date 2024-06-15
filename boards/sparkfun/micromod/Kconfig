@@ -1,0 +1,19 @@
+# Sparkfun micromod board configuration
+
+# Copyright (c) 2024 Jerónimo Agulló <jeronimoagullo97@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MICROMOD_NRF52840
+
+config BOARD_ENABLE_DCDC
+	bool "DCDC mode"
+	select SOC_DCDC_NRF52X
+	default y
+
+config BOARD_ENABLE_DCDC_HV
+	bool "High Voltage DCDC converter"
+	select SOC_DCDC_NRF52X_HV
+	default y
+	depends on SOC_NRF52840_QIAA
+
+endif # BOARD_MICROMOD_NRF52840

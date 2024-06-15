@@ -4,11 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/audio/pacs.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+
+#include "bstests.h"
 #include "common.h"
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pacs_notify_server_test, LOG_LEVEL_DBG);
 
 extern enum bst_result_t bst_result;
@@ -176,7 +191,7 @@ static void test_main(void)
 	}
 
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)", err);
 		return;
@@ -210,7 +225,7 @@ static void test_main(void)
 	trigger_notifications();
 
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)", err);
 		return;
@@ -227,7 +242,7 @@ static void test_main(void)
 	}
 
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)", err);
 		return;
@@ -261,7 +276,7 @@ static void test_main(void)
 	}
 
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)", err);
 		return;
@@ -282,7 +297,7 @@ static void test_main(void)
 static const struct bst_test_instance test_pacs_notify_server[] = {
 	{
 		.test_id = "pacs_notify_server",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},

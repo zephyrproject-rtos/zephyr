@@ -61,7 +61,7 @@ static struct updatehub_context {
 	struct coap_block_context block;
 	struct k_sem semaphore;
 	struct updatehub_storage_context storage_ctx;
-	struct updatehub_crypto_context crypto_ctx;
+	updatehub_crypto_context_t crypto_ctx;
 	enum updatehub_response code_status;
 	uint8_t hash[SHA256_BIN_DIGEST_SIZE];
 	uint8_t uri_path[MAX_PATH_SIZE];
@@ -113,7 +113,7 @@ static void prepare_fds(void)
 
 static int metadata_hash_get(char *metadata)
 {
-	struct updatehub_crypto_context local_crypto_ctx;
+	updatehub_crypto_context_t local_crypto_ctx;
 
 	if (updatehub_integrity_init(&local_crypto_ctx)) {
 		return -1;

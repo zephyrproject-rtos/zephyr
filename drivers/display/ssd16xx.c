@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022 Andreas Sandberg
  * Copyright (c) 2018-2020 PHYTEC Messtechnik GmbH
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +15,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 #include <zephyr/drivers/display.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/display/ssd16xx.h>
@@ -66,6 +67,7 @@ struct ssd16xx_data {
 	uint8_t scan_mode;
 	bool blanking_on;
 	enum ssd16xx_profile_type profile;
+	enum display_orientation orientation;
 };
 
 struct ssd16xx_dt_array {
@@ -89,10 +91,9 @@ struct ssd16xx_profile {
 };
 
 struct ssd16xx_config {
-	struct spi_dt_spec bus;
-	struct gpio_dt_spec dc_gpio;
+	const struct device *mipi_dev;
+	const struct mipi_dbi_config dbi_config;
 	struct gpio_dt_spec busy_gpio;
-	struct gpio_dt_spec reset_gpio;
 
 	const struct ssd16xx_quirks *quirks;
 
@@ -100,7 +101,7 @@ struct ssd16xx_config {
 
 	const struct ssd16xx_profile *profiles[SSD16XX_NUM_PROFILES];
 
-	bool orientation;
+	uint16_t rotation;
 	uint16_t height;
 	uint16_t width;
 	uint8_t tssv;
@@ -125,39 +126,13 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 				    const uint8_t *data, size_t len)
 {
 	const struct ssd16xx_config *config = dev->config;
-	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
-	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
-	int err = 0;
+	int err;
 
 	ssd16xx_busy_wait(dev);
 
-	err = gpio_pin_set_dt(&config->dc_gpio, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	err = spi_write_dt(&config->bus, &buf_set);
-	if (err < 0) {
-		goto spi_out;
-	}
-
-	if (data != NULL) {
-		buf.buf = (void *)data;
-		buf.len = len;
-
-		err = gpio_pin_set_dt(&config->dc_gpio, 0);
-		if (err < 0) {
-			goto spi_out;
-		}
-
-		err = spi_write_dt(&config->bus, &buf_set);
-		if (err < 0) {
-			goto spi_out;
-		}
-	}
-
-spi_out:
-	spi_release_dt(&config->bus);
+	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
+				      cmd, data, len);
+	mipi_dbi_release(config->mipi_dev, &config->dbi_config);
 	return err;
 }
 
@@ -172,9 +147,6 @@ static inline int ssd16xx_read_cmd(const struct device *dev, uint8_t cmd,
 {
 	const struct ssd16xx_config *config = dev->config;
 	const struct ssd16xx_data *dev_data = dev->data;
-	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
-	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
-	int err = 0;
 
 	if (!dev_data->read_supported) {
 		return -ENOTSUP;
@@ -182,34 +154,8 @@ static inline int ssd16xx_read_cmd(const struct device *dev, uint8_t cmd,
 
 	ssd16xx_busy_wait(dev);
 
-	err = gpio_pin_set_dt(&config->dc_gpio, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	err = spi_write_dt(&config->bus, &buf_set);
-	if (err < 0) {
-		goto spi_out;
-	}
-
-	if (data != NULL) {
-		buf.buf = data;
-		buf.len = len;
-
-		err = gpio_pin_set_dt(&config->dc_gpio, 0);
-		if (err < 0) {
-			goto spi_out;
-		}
-
-		err = spi_read_dt(&config->bus, &buf_set);
-		if (err < 0) {
-			goto spi_out;
-		}
-	}
-
-spi_out:
-	spi_release_dt(&config->bus);
-	return err;
+	return mipi_dbi_command_read(config->mipi_dev, &config->dbi_config,
+				     &cmd, 1, data, len);
 }
 
 static inline size_t push_x_param(const struct device *dev,
@@ -380,51 +326,76 @@ static int ssd16xx_set_window(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if ((y + desc->height) > panel_h) {
-		LOG_ERR("Buffer out of bounds (height)");
-		return -EINVAL;
+	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    data->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		if ((y + desc->height) > panel_h) {
+			LOG_ERR("Buffer out of bounds (height)");
+			return -EINVAL;
+		}
+
+		if ((x + desc->width) > config->width) {
+			LOG_ERR("Buffer out of bounds (width)");
+			return -EINVAL;
+		}
+
+		if ((desc->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
+			LOG_ERR("Buffer height not multiple of %d", EPD_PANEL_NUMOF_ROWS_PER_PAGE);
+			return -EINVAL;
+		}
+
+		if ((y % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
+			LOG_ERR("Y coordinate not multiple of %d", EPD_PANEL_NUMOF_ROWS_PER_PAGE);
+			return -EINVAL;
+		}
+	} else {
+		if ((y + desc->height) > config->width) {
+			LOG_ERR("Buffer out of bounds (height)");
+			return -EINVAL;
+		}
+
+		if ((x + desc->width) > panel_h) {
+			LOG_ERR("Buffer out of bounds (width)");
+			return -EINVAL;
+		}
+
+		if ((desc->width % SSD16XX_PIXELS_PER_BYTE) != 0U) {
+			LOG_ERR("Buffer width not multiple of %d", SSD16XX_PIXELS_PER_BYTE);
+			return -EINVAL;
+		}
+
+		if ((x % SSD16XX_PIXELS_PER_BYTE) != 0U) {
+			LOG_ERR("X coordinate not multiple of %d", SSD16XX_PIXELS_PER_BYTE);
+			return -EINVAL;
+		}
 	}
 
-	if ((x + desc->width) > config->width) {
-		LOG_ERR("Buffer out of bounds (width)");
-		return -EINVAL;
-	}
-
-	if ((desc->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
-		LOG_ERR("Buffer height not multiple of %d",
-				EPD_PANEL_NUMOF_ROWS_PER_PAGE);
-		return -EINVAL;
-	}
-
-	if ((y % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
-		LOG_ERR("Y coordinate not multiple of %d",
-				EPD_PANEL_NUMOF_ROWS_PER_PAGE);
-		return -EINVAL;
-	}
-
-	switch (data->scan_mode) {
-	case SSD16XX_DATA_ENTRY_XIYDY:
+	switch (data->orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		x_start = (panel_h - 1 - y) / SSD16XX_PIXELS_PER_BYTE;
+		x_end = (panel_h - 1 - (y + desc->height - 1)) / SSD16XX_PIXELS_PER_BYTE;
+		y_start = x;
+		y_end = (x + desc->width - 1);
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		x_start = (panel_h - 1 - x) / SSD16XX_PIXELS_PER_BYTE;
+		x_end = (panel_h - 1 - (x + desc->width - 1)) / SSD16XX_PIXELS_PER_BYTE;
+		y_start = (config->width - 1 - y);
+		y_end = (config->width - 1 - (y + desc->height - 1));
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
 		x_start = y / SSD16XX_PIXELS_PER_BYTE;
 		x_end = (y + desc->height - 1) / SSD16XX_PIXELS_PER_BYTE;
 		y_start = (x + desc->width - 1);
 		y_end = x;
 		break;
-
-	case SSD16XX_DATA_ENTRY_XDYIY:
-		x_start = (panel_h - 1 - y) / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (panel_h - 1 - (y + desc->height - 1)) /
-			SSD16XX_PIXELS_PER_BYTE;
-		y_start = x;
-		y_end = (x + desc->width - 1);
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		x_start = x / SSD16XX_PIXELS_PER_BYTE;
+		x_end = (x + desc->width - 1) / SSD16XX_PIXELS_PER_BYTE;
+		y_start = y;
+		y_end = (y + desc->height - 1);
 		break;
 	default:
 		return -EINVAL;
-	}
-
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_ENTRY_MODE,
-				&data->scan_mode, sizeof(data->scan_mode));
-	if (err < 0) {
-		return err;
 	}
 
 	err = ssd16xx_set_ram_param(dev, x_start, x_end, y_start, y_end);
@@ -585,6 +556,7 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
 	const struct ssd16xx_config *config = dev->config;
+	struct ssd16xx_data *data = dev->data;
 
 	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
@@ -592,9 +564,14 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 			     config->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
-	caps->screen_info = SCREEN_INFO_MONO_VTILED |
-			    SCREEN_INFO_MONO_MSB_FIRST |
-			    SCREEN_INFO_EPD;
+	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
+
+	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    data->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		caps->screen_info |= SCREEN_INFO_MONO_VTILED;
+	}
+
+	caps->current_orientation = data->orientation;
 }
 
 static int ssd16xx_set_pixel_format(const struct device *dev,
@@ -606,6 +583,32 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 
 	LOG_ERR("not supported");
 	return -ENOTSUP;
+}
+
+static int ssd16xx_set_orientation(const struct device *dev,
+				   const enum display_orientation orientation)
+{
+	struct ssd16xx_data *data = dev->data;
+	int err;
+
+	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+		data->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
+		data->scan_mode = SSD16XX_DATA_ENTRY_XDYDX;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		data->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+		data->scan_mode = SSD16XX_DATA_ENTRY_XIYIX;
+	}
+
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE, data->scan_mode);
+	if (err < 0) {
+		return err;
+	}
+
+	data->orientation = orientation;
+
+	return 0;
 }
 
 static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd)
@@ -831,6 +834,11 @@ static int ssd16xx_set_profile(const struct device *dev,
 		}
 	}
 
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE, data->scan_mode);
+	if (err < 0) {
+		return err;
+	}
+
 	data->profile = type;
 
 	return 0;
@@ -840,6 +848,7 @@ static int ssd16xx_controller_init(const struct device *dev)
 {
 	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *data = dev->data;
+	enum display_orientation orientation;
 	int err;
 
 	LOG_DBG("");
@@ -847,24 +856,12 @@ static int ssd16xx_controller_init(const struct device *dev)
 	data->blanking_on = false;
 	data->profile = SSD16XX_PROFILE_INVALID;
 
-	err = gpio_pin_set_dt(&config->reset_gpio, 1);
+	err = mipi_dbi_reset(config->mipi_dev, SSD16XX_RESET_DELAY);
 	if (err < 0) {
 		return err;
 	}
 
 	k_msleep(SSD16XX_RESET_DELAY);
-	err = gpio_pin_set_dt(&config->reset_gpio, 0);
-	if (err < 0) {
-		return err;
-	}
-
-	k_msleep(SSD16XX_RESET_DELAY);
-
-	if (config->orientation == 1) {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
-	} else {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
-	}
 
 	err = ssd16xx_set_profile(dev, SSD16XX_PROFILE_FULL);
 	if (err < 0) {
@@ -877,6 +874,21 @@ static int ssd16xx_controller_init(const struct device *dev)
 	}
 
 	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RED_RAM);
+	if (err < 0) {
+		return err;
+	}
+
+	if (config->rotation == 0U) {
+		orientation = DISPLAY_ORIENTATION_NORMAL;
+	} else if (config->rotation == 90U) {
+		orientation = DISPLAY_ORIENTATION_ROTATED_90;
+	} else if (config->rotation == 180U) {
+		orientation = DISPLAY_ORIENTATION_ROTATED_180;
+	} else {
+		orientation = DISPLAY_ORIENTATION_ROTATED_270;
+	}
+
+	err = ssd16xx_set_orientation(dev, orientation);
 	if (err < 0) {
 		return err;
 	}
@@ -897,35 +909,13 @@ static int ssd16xx_init(const struct device *dev)
 
 	LOG_DBG("");
 
-	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+	if (!device_is_ready(config->mipi_dev)) {
+		LOG_ERR("MIPI Device not ready");
 		return -ENODEV;
 	}
 
 	data->read_supported =
-		(config->bus.config.operation & SPI_HALF_DUPLEX) != 0;
-
-	if (!gpio_is_ready_dt(&config->reset_gpio)) {
-		LOG_ERR("Reset GPIO device not ready");
-		return -ENODEV;
-	}
-
-	err = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
-	if (err < 0) {
-		LOG_ERR("Failed to configure reset GPIO");
-		return err;
-	}
-
-	if (!gpio_is_ready_dt(&config->dc_gpio)) {
-		LOG_ERR("DC GPIO device not ready");
-		return -ENODEV;
-	}
-
-	err = gpio_pin_configure_dt(&config->dc_gpio, GPIO_OUTPUT_INACTIVE);
-	if (err < 0) {
-		LOG_ERR("Failed to configure DC GPIO");
-		return err;
-	}
+		(config->dbi_config.config.operation & SPI_HALF_DUPLEX) != 0;
 
 	if (!gpio_is_ready_dt(&config->busy_gpio)) {
 		LOG_ERR("Busy GPIO device not ready");
@@ -947,13 +937,14 @@ static int ssd16xx_init(const struct device *dev)
 	return ssd16xx_controller_init(dev);
 }
 
-static struct display_driver_api ssd16xx_driver_api = {
+static const struct display_driver_api ssd16xx_driver_api = {
 	.blanking_on = ssd16xx_blanking_on,
 	.blanking_off = ssd16xx_blanking_off,
 	.write = ssd16xx_write,
 	.read = ssd16xx_read,
 	.get_capabilities = ssd16xx_get_capabilities,
 	.set_pixel_format = ssd16xx_set_pixel_format,
+	.set_orientation = ssd16xx_set_orientation,
 };
 
 #if DT_HAS_COMPAT_STATUS_OKAY(solomon_ssd1608)
@@ -1060,17 +1051,18 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 	DT_FOREACH_CHILD(n, SSD16XX_PROFILE);				\
 									\
 	static const struct ssd16xx_config ssd16xx_cfg_ ## n = {	\
-		.bus = SPI_DT_SPEC_GET(n,				\
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |		\
-			SPI_HOLD_ON_CS | SPI_LOCK_ON,			\
-			0),						\
-		.reset_gpio = GPIO_DT_SPEC_GET(n, reset_gpios),		\
-		.dc_gpio = GPIO_DT_SPEC_GET(n, dc_gpios),		\
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                \
+		.dbi_config = {                                         \
+			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
+			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
+				SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |  \
+				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),       \
+		},                                                      \
 		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\
 		.quirks = quirks_ptr,					\
 		.height = DT_PROP(n, height),				\
 		.width = DT_PROP(n, width),				\
-		.orientation = DT_PROP(n, orientation_flipped),		\
+		.rotation = DT_PROP(n, rotation),			\
 		.tssv = DT_PROP_OR(n, tssv, 0),				\
 		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),	\
 		.profiles = {						\

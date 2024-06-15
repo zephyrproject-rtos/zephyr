@@ -255,7 +255,7 @@ static struct usb_i2s_ctx main_ctx;
 int main(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(uac2_headphones));
-	struct usbd_contex *sample_usbd;
+	struct usbd_context *sample_usbd;
 	struct i2s_config config;
 	int ret;
 

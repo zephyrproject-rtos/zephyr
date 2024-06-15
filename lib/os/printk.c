@@ -178,7 +178,7 @@ static inline void z_vrfy_k_str_out(char *c, size_t n)
 	K_OOPS(K_SYSCALL_MEMORY_READ(c, n));
 	z_impl_k_str_out((char *)c, n);
 }
-#include <syscalls/k_str_out_mrsh.c>
+#include <zephyr/syscalls/k_str_out_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /**
@@ -225,12 +225,12 @@ struct str_context {
 
 static int str_out(int c, struct str_context *ctx)
 {
-	if (ctx->str == NULL || ctx->count >= ctx->max) {
+	if ((ctx->str == NULL) || (ctx->count >= ctx->max)) {
 		ctx->count++;
 		return c;
 	}
 
-	if (ctx->count == ctx->max - 1) {
+	if (ctx->count == (ctx->max - 1)) {
 		ctx->str[ctx->count++] = '\0';
 	} else {
 		ctx->str[ctx->count++] = c;

@@ -77,10 +77,10 @@
 };
 
 &pll {
-	div-m = <1>;
-	mul-n = <24>;
+	div-m = <2>;
+	mul-n = <240>;
 	div-p = <2>;
-	div-q = <4>;
+	div-q = <2>;
 	div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
@@ -88,13 +88,13 @@
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(96)>;
+	clock-frequency = <DT_FREQ_M(480)>;
 	d1cpre = <1>;
-	hpre = <1>;
-	d1ppre = <1>;
-	d2ppre1 = <1>;
-	d2ppre2 = <1>;
-	d3ppre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
 };
 
 &usart3 {

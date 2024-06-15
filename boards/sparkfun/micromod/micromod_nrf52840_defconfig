@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable RTT
+CONFIG_USE_SEGGER_RTT=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable console
+CONFIG_CONSOLE=y
+
+# Enable UART
+CONFIG_SERIAL=y

@@ -215,7 +215,7 @@ static const struct bst_test_instance ext_adv_scanner[] = {
 		.test_id = "ext_adv_scanner",
 		.test_descr = "Basic extended advertising scanning test. "
 			      "Will just scan an extended advertiser.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_ext_adv_scanner
 	},
@@ -224,7 +224,7 @@ static const struct bst_test_instance ext_adv_scanner[] = {
 		.test_descr = "Basic extended advertising scanning test. "
 			      "Will scan an extended advertiser, connect "
 			      "and verify it's detected after disconnection",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_ext_adv_conn_scanner
 	},
@@ -234,7 +234,7 @@ static const struct bst_test_instance ext_adv_scanner[] = {
 			      "Will scan an extended advertiser, connect "
 			      "and verify it's detected after disconnection,"
 			      "repeated over 5 times",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_ext_adv_conn_scanner_x5
 	},

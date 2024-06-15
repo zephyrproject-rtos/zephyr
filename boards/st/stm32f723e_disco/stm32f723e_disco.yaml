@@ -16,4 +16,5 @@ supported:
   - spi
   - arduino_spi
   - usb_device
+  - usbd
 vendor: st

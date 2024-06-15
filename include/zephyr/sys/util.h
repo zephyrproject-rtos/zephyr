@@ -272,6 +272,16 @@ extern "C" {
 	})
 
 /**
+ * @brief Report the size of a struct field in bytes.
+ *
+ * @param type The structure containing the field of interest.
+ * @param member The field to return the size of.
+ *
+ * @return The field size.
+ */
+#define SIZEOF_FIELD(type, member) sizeof((((type *)0)->member))
+
+/**
  * @brief Concatenate input arguments
  *
  * Concatenate provided tokens into a combined token during the preprocessor pass.
@@ -779,7 +789,7 @@ static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const ui
 /* This is used in linker scripts so need to avoid type casting there */
 #define KB(x) ((x) << 10)
 #else
-#define KB(x) (((size_t)x) << 10)
+#define KB(x) (((size_t)(x)) << 10)
 #endif
 /** @brief Number of bytes in @p x mebibytes */
 #define MB(x) (KB(x) << 10)

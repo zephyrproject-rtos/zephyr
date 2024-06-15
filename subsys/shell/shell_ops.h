@@ -48,7 +48,7 @@ static inline void z_shell_raw_fprintf(const struct shell_fprintf *const ctx,
 						   ~_internal_.value);		\
 		}								\
 		_ret_ = (_internal_.flags._flag_ != 0);				\
-	} while (0)
+	} while (false)
 
 static inline bool z_flag_insert_mode_get(const struct shell *sh)
 {

@@ -6,3 +6,7 @@ description: STMicroelectronics SPI protocol V1 compatible with BlueNRG-MS devic
 compatible: "st,hci-spi-v1"
 
 include: zephyr,bt-hci-spi.yaml
+
+properties:
+  bt-hci-quirks:
+    default: ["BT_HCI_QUIRK_NO_RESET"]

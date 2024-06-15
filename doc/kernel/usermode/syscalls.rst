@@ -87,7 +87,7 @@ bottom of ``include/sensor.h``:
 
 .. code-block:: c
 
-    #include <syscalls/sensor.h>
+    #include <zephyr/syscalls/sensor.h>
 
 C prototype functions must be declared in one of the directories
 listed in the CMake variable ``SYSCALL_INCLUDE_DIRS``. This list
@@ -143,11 +143,11 @@ C and header files by the :ref:`gen_syscalls.py` script, all of which can be fou
 the project out directory under ``include/generated/``:
 
 * The system call is added to the enumerated type of system call IDs,
-  which is expressed in ``include/generated/syscall_list.h``. It is the name
+  which is expressed in ``include/generated/zephyr/syscall_list.h``. It is the name
   of the API in uppercase, prefixed with ``K_SYSCALL_``.
 
 * An entry for the system call is created in the dispatch table
-  ``_k_syscall_table``, expressed in ``include/generated/syscall_dispatch.c``
+  ``_k_syscall_table``, expressed in ``include/generated/zephyr/syscall_dispatch.c``
 
   * This table only contains syscalls where their corresponding
     prototypes are declared in header files when
@@ -172,7 +172,7 @@ The body of the API is created in the generated system header. Using the
 example of :c:func:`k_sem_init()`, this API is declared in
 ``include/kernel.h``. At the bottom of ``include/kernel.h`` is::
 
-    #include <syscalls/kernel.h>
+    #include <zephyr/syscalls/kernel.h>
 
 Inside this header is the body of :c:func:`k_sem_init()`::
 
@@ -335,6 +335,8 @@ If any check fails, the macros will return a nonzero value. The macro
 calling thread. This is done instead of returning some error condition to
 keep the APIs the same when calling from supervisor mode.
 
+.. _syscall_verification:
+
 Verifier Definition
 ===================
 
@@ -360,7 +362,7 @@ For example:
         K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
         return z_impl_k_sem_take(sem, timeout);
     }
-    #include <syscalls/k_sem_take_mrsh.c>
+    #include <zephyr/syscalls/k_sem_take_mrsh.c>
 
 
 Verification Memory Access Policies

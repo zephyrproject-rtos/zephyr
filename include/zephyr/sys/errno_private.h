@@ -50,7 +50,7 @@ __syscall int *z_errno(void);
 #endif
 
 #if !defined(CONFIG_ERRNO_IN_TLS) && !defined(CONFIG_LIBC_ERRNO)
-#include <syscalls/errno_private.h>
+#include <zephyr/syscalls/errno_private.h>
 #endif /* CONFIG_ERRNO_IN_TLS */
 
 #endif /* ZEPHYR_INCLUDE_SYS_ERRNO_PRIVATE_H_ */

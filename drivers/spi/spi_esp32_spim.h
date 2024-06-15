@@ -53,7 +53,6 @@ struct spi_esp32_data {
 	spi_hal_dev_config_t dev_config;
 	spi_hal_trans_config_t trans_config;
 	uint8_t dfs;
-	int irq_line;
 	lldesc_t dma_desc_tx;
 	lldesc_t dma_desc_rx;
 	uint32_t clock_source_hz;

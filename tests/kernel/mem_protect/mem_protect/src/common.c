@@ -8,7 +8,7 @@
 
 ZTEST_BMEM volatile bool valid_fault;
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	printk("Caught system error -- reason %d %d\n", reason, valid_fault);
 	if (valid_fault) {

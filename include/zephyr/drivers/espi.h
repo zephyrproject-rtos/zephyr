@@ -112,13 +112,37 @@ enum espi_channel {
  * eSPI bus event to indicate events for which user can register callbacks
  */
 enum espi_bus_event {
+	/** Indicates the eSPI bus was reset either via eSPI reset pin.
+	 * eSPI drivers should convey the eSPI reset status to eSPI driver clients
+	 * following eSPI specification reset pin convention:
+	 * 0-eSPI bus in reset, 1-eSPI bus out-of-reset
+	 *
+	 * Note: There is no need to send this callback for in-band reset.
+	 */
 	ESPI_BUS_RESET                      = BIT(0),
+
+	/** Indicates the eSPI HW has received channel enable notification from eSPI host,
+	 * once the eSPI channel is signal as ready to the eSPI host,
+	 * eSPI drivers should convey the eSPI channel ready to eSPI driver client via this event.
+	 */
 	ESPI_BUS_EVENT_CHANNEL_READY        = BIT(1),
+
+	/** Indicates the eSPI HW has received a virtual wire message from eSPI host.
+	 * eSPI drivers should convey the eSPI virtual wire latest status.
+	 */
 	ESPI_BUS_EVENT_VWIRE_RECEIVED       = BIT(2),
+
+	/** Indicates the eSPI HW has received a Out-of-band package from eSPI host.
+	 */
 	ESPI_BUS_EVENT_OOB_RECEIVED         = BIT(3),
+
+	/** Indicates the eSPI HW has received a peripheral eSPI host event.
+	 * eSPI drivers should convey the peripheral type.
+	 */
 	ESPI_BUS_PERIPHERAL_NOTIFICATION    = BIT(4),
-	ESPI_BUS_SAF_NOTIFICATION           = BIT(5),
+	ESPI_BUS_TAF_NOTIFICATION           = BIT(5),
 };
+
 
 /**
  * @brief eSPI peripheral channel events.
@@ -354,6 +378,12 @@ struct espi_request_packet {
 
 /**
  * @brief eSPI out-of-band transaction packet format
+ *
+ * For Tx packet, eSPI driver client shall specify the OOB payload data and its length in bytes.
+ * For Rx packet, eSPI driver client shall indicate the maximum number of bytes that can receive,
+ * while the eSPI driver should update the length field with the actual data received/available.
+ *
+ * In all cases, the length does not include OOB header size 3 bytes.
  */
 struct espi_oob_packet {
 	uint8_t *buf;
@@ -895,12 +925,11 @@ static inline int z_impl_espi_flash_erase(const struct device *dev,
  *    |                              |             |  eSPI reset |  eSPI host
  *    |                              |    IRQ      +<------------+  resets the
  *    |                              | <-----------+             |  bus
- *    |                              |             |             |
- *    |                              | Processed   |             |
+ *    |<-----------------------------|             |             |
+ *    | Report eSPI bus reset        | Processed   |             |
  *    |                              | within the  |             |
  *    |                              | driver      |             |
  *    |                              |             |             |
-
  *    |                              |             |  VW CH ready|  eSPI host
  *    |                              |    IRQ      +<------------+  enables VW
  *    |                              | <-----------+             |  channel
@@ -1022,5 +1051,5 @@ static inline int espi_remove_callback(const struct device *dev,
 /**
  * @}
  */
-#include <syscalls/espi.h>
+#include <zephyr/syscalls/espi.h>
 #endif /* ZEPHYR_INCLUDE_ESPI_H_ */

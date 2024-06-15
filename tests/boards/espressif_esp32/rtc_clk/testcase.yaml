@@ -1,0 +1,19 @@
+tests:
+  boards.esp32.rtc_clk:
+    platform_allow:
+      - esp32_devkitc_wrover/esp32/procpu
+      - esp32c3_devkitm
+      - esp32c6_devkitc
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
+  boards.esp32.rtc_clk.xtal:
+    platform_allow:
+      - esp32_devkitc_wrover/esp32/procpu
+      - esp32c3_devkitm
+      - esp32c6_devkitc
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
+    harness_config:
+      fixture: external_xtal
+    extra_configs:
+      - CONFIG_FIXTURE_XTAL=y

@@ -108,8 +108,13 @@ static int mcux_ccm_on(const struct device *dev,
 #endif
 
 #if defined(CONFIG_ETH_NXP_ENET)
+#ifdef CONFIG_SOC_SERIES_IMX8M
+#define ENET_CLOCK	kCLOCK_Enet1
+#else
+#define ENET_CLOCK	kCLOCK_Enet
+#endif
 	case IMX_CCM_ENET_CLK:
-		CLOCK_EnableClock(kCLOCK_Enet);
+		CLOCK_EnableClock(ENET_CLOCK);
 		return 0;
 #endif
 	default:
@@ -239,9 +244,14 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_ETH_NXP_ENET
 	case IMX_CCM_ENET_CLK:
+#ifdef CONFIG_SOC_SERIES_IMX8M
+		*rate = CLOCK_GetFreq(kCLOCK_EnetIpgClk);
+#else
 		*rate = CLOCK_GetIpgFreq();
-		break;
 #endif
+#endif
+		break;
+
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 	case IMX_CCM_ENET_PLL:
 		*rate = CLOCK_GetPllFreq(kCLOCK_PllEnet);

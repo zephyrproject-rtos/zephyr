@@ -9,6 +9,7 @@ menuconfig WIFI_SIMPLELINK
 	select WIFI_OFFLOAD
 	select NET_L2_WIFI_MGMT
 	select FDTABLE
+	select POSIX_SEMAPHORES
 
 if WIFI_SIMPLELINK
 

@@ -204,7 +204,7 @@ int main(void)
 
 #if !defined(CONFIG_BT_EXT_ADV)
 	printk("Starting Legacy Advertising (connectable and scannable)\n");
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return 0;
@@ -281,7 +281,16 @@ int main(void)
 			blink_stop();
 #endif /* HAS_LED */
 		} else if (atomic_test_and_clear_bit(state, STATE_DISCONNECTED)) {
-#if defined(CONFIG_BT_EXT_ADV)
+#if !defined(CONFIG_BT_EXT_ADV)
+			printk("Starting Legacy Advertising (connectable and scannable)\n");
+			err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), sd,
+					      ARRAY_SIZE(sd));
+			if (err) {
+				printk("Advertising failed to start (err %d)\n", err);
+				return 0;
+			}
+
+#else /* CONFIG_BT_EXT_ADV */
 			printk("Starting Extended Advertising (connectable and non-scannable)\n");
 			err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 			if (err) {

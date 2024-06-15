@@ -18,7 +18,7 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_EXCEPTION_DEBUG
-static void esf_dump(const z_arch_esf_t *esf)
+static void esf_dump(const struct arch_esf *esf)
 {
 	LOG_ERR("r0/a1:  0x%08x  r1/a2:  0x%08x  r2/a3:  0x%08x",
 		esf->basic.a1, esf->basic.a2, esf->basic.a3);
@@ -66,7 +66,7 @@ static void esf_dump(const z_arch_esf_t *esf)
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
+void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf)
 {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
@@ -102,7 +102,7 @@ void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
  * @param esf exception frame
  * @param callee_regs Callee-saved registers (R4-R11)
  */
-void z_do_kernel_oops(const z_arch_esf_t *esf, _callee_saved_t *callee_regs)
+void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs)
 {
 #if !(defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE))
 	ARG_UNUSED(callee_regs);
@@ -130,9 +130,9 @@ void z_do_kernel_oops(const z_arch_esf_t *esf, _callee_saved_t *callee_regs)
 #if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	z_arm_fatal_error(reason, esf);
 #else
-	z_arch_esf_t esf_copy;
+	struct arch_esf esf_copy;
 
-	memcpy(&esf_copy, esf, offsetof(z_arch_esf_t, extra_info));
+	memcpy(&esf_copy, esf, offsetof(struct arch_esf, extra_info));
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* extra exception info is collected in callee_reg param
 	 * on CONFIG_ARMV7_M_ARMV8_M_MAINLINE
@@ -156,7 +156,7 @@ void z_do_kernel_oops(const z_arch_esf_t *esf, _callee_saved_t *callee_regs)
 FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 {
 	uint32_t *ssf_contents = ssf_ptr;
-	z_arch_esf_t oops_esf = { 0 };
+	struct arch_esf oops_esf = { 0 };
 
 	/* TODO: Copy the rest of the register set out of ssf_ptr */
 	oops_esf.basic.pc = ssf_contents[3];

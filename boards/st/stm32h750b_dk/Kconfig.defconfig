@@ -1,0 +1,17 @@
+# STM32H750B DISCOVERY board configuration
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32H750B_DK
+
+if DISPLAY
+
+# MEMC needs to be enabled in order to store
+# display buffer to external SDRAM connected to FMC
+config MEMC
+	default y
+
+endif # DISPLAY
+
+endif # BOARD_STM32H750B_DK

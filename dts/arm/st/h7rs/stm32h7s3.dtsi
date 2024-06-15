@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/h7rs/stm32h7r3.dtsi>
+
+/*
+ * STM32H7S3 line contains the same peripherals as STM32H7R3.
+ */
+/ {
+	soc {
+		compatible = "st,stm32h7s3", "st,stm32h7rs", "simple-bus";
+	};
+};

@@ -130,6 +130,11 @@ schema;scenario-schema:
             "regex":
               type: str
               required: true
+            "as_json":
+              type: seq
+              required: false
+              sequence:
+                - type: str
         "bsim_exe_name":
           type: str
           required: false

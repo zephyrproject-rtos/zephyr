@@ -4,24 +4,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/types.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/has.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "../bluetooth/host/hci_core.h"
 #include "../bluetooth/host/settings.h"
+
 #include "audio_internal.h"
-#include "has_internal.h"
-
 #include "common/bt_str.h"
-
-#include <zephyr/logging/log.h>
+#include "has_internal.h"
 
 LOG_MODULE_REGISTER(bt_has, CONFIG_BT_HAS_LOG_LEVEL);
 
@@ -184,7 +202,7 @@ static struct client_context {
 	uint8_t last_preset_index_known;
 } contexts[CONFIG_BT_MAX_PAIRED];
 
-/* Connected client clientance */
+/* Connected client instance */
 static struct has_client {
 	struct bt_conn *conn;
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
@@ -919,7 +937,7 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(has, "has", settings_set_cb, NULL);
+static BT_SETTINGS_DEFINE(has, "has", settings_set_cb, NULL);
 
 static void store_client_context(struct client_context *context)
 {

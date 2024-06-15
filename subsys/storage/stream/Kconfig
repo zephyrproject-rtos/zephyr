@@ -11,8 +11,10 @@ menuconfig STREAM_FLASH
 	  Enable support of stream to flash API
 
 if STREAM_FLASH
+
 config STREAM_FLASH_ERASE
 	bool "Perform erase operations"
+	depends on FLASH_HAS_EXPLICIT_ERASE
 	help
 	  If disabled an external actor must erase the flash area being written
 	  to.

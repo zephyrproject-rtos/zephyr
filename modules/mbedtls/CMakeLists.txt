@@ -29,6 +29,12 @@ zephyr_interface_library_named(mbedTLS)
         include
     )
 
+    if (CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
+      target_include_directories(mbedTLS INTERFACE
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m
+      )
+    endif()
+
     # Add base library with files required by all drivers/backends.
     zephyr_library_named(mbedTLSBase)
 
@@ -44,6 +50,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod_raw.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/block_cipher.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/camellia.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ccm.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/chacha20.c
@@ -88,6 +95,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha1.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha256.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha512.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha3.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/threading.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/timing.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/version_features.c
@@ -130,6 +138,14 @@ zephyr_interface_library_named(mbedTLS)
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_client.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_slot_management.c
       )
+    endif()
+
+    if(CONFIG_MBEDTLS_PSA_P256M_DRIVER_ENABLED)
+      list(APPEND crypto_source
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m_driver_entrypoints.c
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m/p256-m.c
+      )
+      zephyr_library_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/library)
     endif()
 
     list(APPEND crypto_source

@@ -10,7 +10,7 @@ config REGULATOR_DA1469X
 
 config REGULATOR_DA1469X_INIT_PRIORITY
 	int "Renesas DA1469x regulators driver init priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
+	default 20
 	depends on REGULATOR_DA1469X
 	help
 	  Init priority for the Renesas DA1469x regulators driver.

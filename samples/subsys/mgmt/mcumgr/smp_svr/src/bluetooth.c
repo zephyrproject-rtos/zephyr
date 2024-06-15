@@ -31,9 +31,7 @@ static void advertise(struct k_work *work)
 {
 	int rc;
 
-	bt_le_adv_stop();
-
-	rc = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	rc = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (rc) {
 		LOG_ERR("Advertising failed to start (rc %d)", rc);
 		return;
@@ -49,17 +47,24 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	} else {
 		LOG_INF("Connected");
 	}
+
+	k_work_submit(&advertise_work);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_INF("Disconnected (reason 0x%02x)", reason);
+}
+
+static void on_conn_recycled(void)
+{
 	k_work_submit(&advertise_work);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = on_conn_recycled,
 };
 
 static void bt_ready(int err)

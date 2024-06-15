@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+
 #include "bstests.h"
 
 extern struct bst_test_list *test_vcp_install(struct bst_test_list *tests);

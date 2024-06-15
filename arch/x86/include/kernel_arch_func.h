@@ -49,16 +49,16 @@ void z_x86_early_serial_init(void);
  * interesting info and call z_x86_fatal_error()
  */
 FUNC_NORETURN void z_x86_unhandled_cpu_exception(uintptr_t vector,
-						 const z_arch_esf_t *esf);
+						 const struct arch_esf *esf);
 
 /* Called upon unrecoverable error; dump registers and transfer control to
  * kernel via z_fatal_error()
  */
 FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
-				     const z_arch_esf_t *esf);
+				     const struct arch_esf *esf);
 
 /* Common handling for page fault exceptions */
-void z_x86_page_fault_handler(z_arch_esf_t *esf);
+void z_x86_page_fault_handler(struct arch_esf *esf);
 
 #ifdef CONFIG_THREAD_STACK_INFO
 /**
@@ -90,7 +90,7 @@ void *z_x86_userspace_prepare_thread(struct k_thread *thread);
 
 #endif /* CONFIG_USERSPACE */
 
-void z_x86_do_kernel_oops(const z_arch_esf_t *esf);
+void z_x86_do_kernel_oops(const struct arch_esf *esf);
 
 /*
  * Find a free IRQ vector at the specified priority, or return -1 if none left.

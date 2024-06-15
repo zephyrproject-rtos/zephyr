@@ -28,3 +28,8 @@ elseif("${BOARD_REVISION}" STREQUAL "B")
   board_runner_args(jlink "--tool-opt=-autoconnect 1")
   include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 endif()
+
+set_ifndef(BOARD_SIM_RUNNER renode)
+set_ifndef(BOARD_ROBOT_RUNNER renode-robot)
+include(${ZEPHYR_BASE}/boards/common/renode.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/renode_robot.board.cmake)

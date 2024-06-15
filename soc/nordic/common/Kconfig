@@ -1,4 +1,7 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config HAS_NORDIC_DMM
+	bool
+
 rsource "vpr/Kconfig"

@@ -16,3 +16,13 @@ ram: 960
 flash: 65536
 supported:
   - gpio
+  - dma
+  - spi
+  - i2c
+  - entropy
+  - usb_device
+  - watchdog
+  - counter
+  - hwinfo
+  - adc
+  - dac

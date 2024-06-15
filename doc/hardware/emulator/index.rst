@@ -89,6 +89,11 @@ Available Emulators
   * Main Kconfig option: :kconfig:option:`CONFIG_SPI_EMUL`
   * DT binding: :dtcompatible:`zephyr,spi-emul-controller`
 
+**MSPI emulator**
+  * Emulated MSPI bus. See :ref:`bus emulators <bus_emul>`.
+  * Main Kconfig option: :kconfig:option:`CONFIG_MSPI_EMUL`
+  * DT binding: :dtcompatible:`zephyr,mspi-emul-controller`
+
 **UART emulator**
   * Emulated UART bus. See :ref:`bus emulators <bus_emul>`.
   * Main Kconfig option: :kconfig:option:`CONFIG_UART_EMUL`

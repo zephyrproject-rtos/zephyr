@@ -82,10 +82,14 @@ source "drivers/clock_control/Kconfig.agilex5"
 
 source "drivers/clock_control/Kconfig.renesas_ra"
 
+source "drivers/clock_control/Kconfig.max32"
+
 source "drivers/clock_control/Kconfig.ambiq"
 
 source "drivers/clock_control/Kconfig.pwm"
 
 source "drivers/clock_control/Kconfig.rpi_pico"
+
+source "drivers/clock_control/Kconfig.nrf_auxpll"
 
 endif # CLOCK_CONTROL

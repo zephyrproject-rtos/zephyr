@@ -1,5 +1,0 @@
-board:
-  name: rm1xx_dvk
-  vendor: lairdconnect
-  socs:
-  - name: nrf51822

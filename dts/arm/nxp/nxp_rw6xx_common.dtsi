@@ -11,10 +11,12 @@
 #include <zephyr/dt-bindings/power/nxp_rw_pmu.h>
 #include <dt-bindings/adc/nxp,gau-adc.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	chosen {
 		zephyr,entropy = &trng;
+		zephyr,bt-hci = &hci;
 	};
 
 	cpus {
@@ -56,6 +58,15 @@
 			};
 		};
 	};
+
+	smu1: sram@41380000 {
+		ranges = <0x0 0x41380000 DT_SIZE_K(510)>;
+	};
+
+	smu2: sram@443C0000 {
+		ranges = <0x0 0x443C0000 DT_SIZE_K(140)>;
+	};
+
 };
 
 &sram {
@@ -70,6 +81,30 @@
 	sram_code: memory@0 {
 		compatible = "mmio-sram";
 		reg = <0x00000000 DT_SIZE_K(256)>;
+	};
+};
+
+&smu1 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	smu1_data: memory@0 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x0 DT_SIZE_K(510)>;
+		zephyr,memory-region = "SMU1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+};
+
+&smu2 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	smu2_data: memory@0 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x0 DT_SIZE_K(140)>;
+		zephyr,memory-region = "SMU2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 };
 
@@ -129,22 +164,27 @@
 		clk-divider = <1>;
 	};
 
-	hsgpio0: hsgpio@0 {
+	hsgpio: hsgpio@100000 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x4000>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <0>;
-		int-source = "pint";
-	};
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	hsgpio1: hsgpio@1 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x4000>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <1>;
-		int-source = "pint";
+		hsgpio0: gpio@0 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0>;
+			int-source = "pint";
+		};
+
+		hsgpio1: gpio@1 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <1>;
+			int-source = "pint";
+		};
 	};
 
 	usb_otg: usbotg@145000 {
@@ -442,6 +482,39 @@
 		reg = <0x13b000 0x1000>;
 		interrupts = <41 0>;
 		status = "disabled";
+	};
+
+	hci: hci_ble {
+		compatible = "nxp,hci-ble";
+		/* first index is the hci interrupt, the second is the wake up done interrupt */
+		interrupts = <90 2>, <82 2>;
+		interrupt-names = "hci_int", "wakeup_int";
+	};
+
+	enet: enet@138000 {
+		compatible = "nxp,enet";
+		reg = <0x138000 0x700>;
+		clocks = <&clkctl1 MCUX_ENET_CLK>;
+		enet_mac: ethernet {
+			compatible = "nxp,enet-mac";
+			interrupts = <115 0>;
+			interrupt-names = "COMMON";
+			nxp,mdio = <&enet_mdio>;
+			nxp,ptp-clock = <&enet_ptp_clock>;
+			status = "disabled";
+		};
+		enet_mdio: mdio {
+			compatible = "nxp,enet-mdio";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		enet_ptp_clock: ptp-clock {
+			compatible = "nxp,enet-ptp-clock";
+			interrupts = <116 0>;
+			status = "disabled";
+			clocks = <&clkctl1 MCUX_ENET_PLL>;
+		};
 	};
 };
 

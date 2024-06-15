@@ -112,7 +112,7 @@ static int lb_control_to_dev(struct usbd_class_data *c_data,
 static int lb_request_handler(struct usbd_class_data *c_data,
 			      struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct udc_buf_info *bi = NULL;
 
 	bi = (struct udc_buf_info *)net_buf_user_data(buf);

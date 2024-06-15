@@ -200,7 +200,7 @@ uint32_t z_loapic_irq_base(void)
  *
  * This associates an IRQ with the desired vector in the IDT.
  */
-__boot_func
+__pinned_func
 void z_loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 				  unsigned int vector /* vector to copy into the LVT */
 				  )

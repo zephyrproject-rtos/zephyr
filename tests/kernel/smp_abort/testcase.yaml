@@ -1,6 +1,5 @@
 tests:
   kernel.smp_abort:
-    arch_exclude: x86  # Buggy irq_offload(), see #71172
     tags:
       - kernel
       - smp

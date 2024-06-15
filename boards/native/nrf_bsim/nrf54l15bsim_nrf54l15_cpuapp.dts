@@ -15,6 +15,8 @@
 
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
 	};
 
 	/delete-node/ cpus;
@@ -22,8 +24,6 @@
 	/delete-node/ sw-pwm;
 
 	soc {
-		/delete-node/ uicr@ffd000;
-		/delete-node/ ficr@ffc000;
 		/delete-node/ memory@20000000;
 		/delete-node/ memory@2002f000;
 		peripheral@50000000 {
@@ -33,7 +33,6 @@
 			/delete-node/ mailbox@0;
 			/delete-node/ interrupt-controller@f0000000;
 			/delete-node/ gpio@50400;
-			/delete-node/ radio@8a000;
 			/delete-node/ i2c@c6000;
 			/delete-node/ spi@c6000;
 			/delete-node/ uart@c6000;
@@ -60,9 +59,7 @@
 			/delete-node/ watchdog@109000;
 			/delete-node/ gpio@10a000;
 			/delete-node/ gpiote@10c000;
-			/delete-node/ clock@10e000;
 		};
-		/delete-node/ rram-controller@5004b000;
 		/delete-node/ spu@50003000;
 		/delete-node/ gpiote@5000d000;
 		/delete-node/ crypto@50844000;
@@ -81,6 +78,28 @@
 	status = "okay";
 };
 
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x0 DT_SIZE_K(500)>;
+		};
+	};
+};
+
 &temp {
+	status = "okay";
+};
+
+&radio {
+	status = "okay";
+	/* This feature is not yet supported by the RADIO model */
+	/delete-property/ dfe-supported;
+};
+
+&clock {
 	status = "okay";
 };

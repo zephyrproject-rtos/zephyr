@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-typedef struct __esf _esf_t;
+typedef struct arch_esf _esf_t;
 typedef struct __basic_sf _basic_sf_t;
 
 #ifdef __cplusplus

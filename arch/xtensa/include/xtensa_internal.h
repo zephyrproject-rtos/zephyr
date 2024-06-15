@@ -25,7 +25,7 @@
  *
  * @param stack Pointer to stack frame.
  */
-void xtensa_dump_stack(const z_arch_esf_t *stack);
+void xtensa_dump_stack(const void *stack);
 
 /**
  * @brief Get string description from an exception code.
@@ -43,7 +43,7 @@ char *xtensa_exccause(unsigned int cause_code);
  * @param esf Exception context, with details and partial or full register
  *            state when the error occurred. May in some cases be NULL.
  */
-void xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+void xtensa_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 /**
  * @brief Perform a one-way transition from supervisor to user mode.
@@ -54,6 +54,25 @@ void xtensa_userspace_enter(k_thread_entry_t user_entry,
 			    void *p1, void *p2, void *p3,
 			    uintptr_t stack_end,
 			    uintptr_t stack_start);
+
+/**
+ * @brief Check if kernel threads have access to a memory region.
+ *
+ * Given a memory region, return whether the current memory management
+ * hardware configuration would allow kernel threads to read/write
+ * that region.
+ *
+ * This is mainly used to make sure kernel has access to avoid relying
+ * on page fault to detect invalid mappings.
+ *
+ * @param addr Start address of the buffer
+ * @param size Size of the buffer
+ * @param write If non-zero, additionally check if the area is writable.
+ *              Otherwise, just check if the memory can be read.
+ *
+ * @return False if the permissions don't match.
+ */
+bool xtensa_mem_kernel_has_access(void *addr, size_t size, int write);
 
 /**
  * @}

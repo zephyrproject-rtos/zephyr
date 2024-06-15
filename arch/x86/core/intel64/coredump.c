@@ -46,7 +46,7 @@ struct x86_64_arch_block {
  */
 static struct x86_64_arch_block arch_blk;
 
-void arch_coredump_info_dump(const z_arch_esf_t *esf)
+void arch_coredump_info_dump(const struct arch_esf *esf)
 {
 	struct coredump_arch_hdr_t hdr = {
 		.id = COREDUMP_ARCH_HDR_ID,

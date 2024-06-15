@@ -7,6 +7,6 @@
 	status = "okay";
 };
 
-&cpuflpr_vevif_remote {
+&cpuapp_vevif_tx {
 	status = "okay";
 };

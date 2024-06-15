@@ -151,10 +151,11 @@ static void send_hw_error(void)
 
 	struct net_buf *buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 
+	net_buf_add_u8(buf, BT_HCI_H4_EVT);
 	net_buf_add_mem(buf, hci_evt_hw_err, sizeof(hci_evt_hw_err));
 
 	/* Inject the message into the c2h queue. */
-	bt_recv(buf);
+	net_buf_put(&c2h_queue, buf);
 
 	/* The c2h thread will send the message at some point. The host
 	 * will receive it and reset the controller.

@@ -68,7 +68,6 @@
 		sw4 = &joy_left;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
-		spi-flash0 = &mx25r6435;
 	};
 
 };

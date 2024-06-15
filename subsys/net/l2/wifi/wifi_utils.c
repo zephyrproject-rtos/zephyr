@@ -150,6 +150,7 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 		for (i = 0; i < ARRAY_SIZE(valid_5g_chans_20mhz); i++) {
 			if (valid_5g_chans_20mhz[i] == chan_start) {
 				start = true;
+				continue;
 			}
 
 			if (valid_5g_chans_20mhz[i] == chan_end) {
@@ -368,10 +369,6 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
 			memset(chan_str, 0, sizeof(chan_str));
 
 			if (chan_start) {
-				if ((chan_idx + (chan_val - chan_start)) > max_channels) {
-					NET_ERR("Too many channels specified (%d)", max_channels);
-					return -EINVAL;
-				}
 				if (wifi_utils_get_all_chans_in_range(chan_start,
 								      chan_val,
 								      band_chan,
@@ -381,6 +378,10 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
 					return -EINVAL;
 				}
 
+				if (chan_idx > max_channels) {
+					NET_ERR("Too many channels specified (%d)", max_channels);
+					return -EINVAL;
+				}
 				chan_start = 0;
 			} else {
 				if (!wifi_utils_validate_chan(band,

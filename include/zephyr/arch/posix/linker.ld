@@ -21,6 +21,10 @@
 SECTIONS
  {
 
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
+
 SECTION_PROLOGUE(rom_start,,)
 {
 	/* Located in generated directory. This file is populated by the

@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rtc {
+	slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_XTAL32K>;
+};
+
+&xt_wdt {
+	status = "okay";
+};

@@ -77,27 +77,34 @@
 	/* We utilize the secure addresses, if you subtract 0x10000000
 	 * you'll get the non-secure alias
 	 */
-	itcm: itcm@10000000 {	/* alias @ 0x0 */
-		reg = <0x10000000 DT_SIZE_K(512)>;
+	itcm: itcm@0 {
+		compatible = "zephyr,memory-region";
+		reg = <0x0 DT_SIZE_K(512)>;
+		zephyr,memory-region = "ITCM";
 	};
 
-	sram: sram@1000000 {	/* alias @ 0x11000000 */
-		compatible = "mmio-sram";
+	sram: sram@1000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x1000000 DT_SIZE_M(2)>;
+		zephyr,memory-region = "SRAM";
 	};
 
-	dtcm: dtcm@20000000 {	/* alias @ 0x30000000 */
+	dtcm: dtcm@20000000 {
+		compatible = "zephyr,memory-region";
 		reg = <0x20000000 DT_SIZE_K(512)>;
+		zephyr,memory-region = "DTCM";
 	};
 
-	isram: sram@31000000 {/* alias @ 0x21000000 */
-		compatible = "mmio-sram";
-		reg = <0x31000000 DT_SIZE_M(4)>;
+	isram: sram@21000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x21000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "ISRAM";
 	};
 
 	/* DDR4 - 2G, alternates non-secure/secure every 256M */
 	ddr4: memory@60000000 {
 		device_type = "memory";
+		compatible = "zephyr,memory-region";
 		reg = <0x60000000 DT_SIZE_M(256)
 		       0x70000000 DT_SIZE_M(256)
 		       0x80000000 DT_SIZE_M(256)
@@ -106,6 +113,7 @@
 		       0xb0000000 DT_SIZE_M(256)
 		       0xc0000000 DT_SIZE_M(256)
 		       0xd0000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4";
 	};
 
 	reserved-memory {

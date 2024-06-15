@@ -1,0 +1,12 @@
+# Copyright (c) 2024, STMicroelectronics
+
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        STM32 controller
+        This compatible stands for the stm32H7RS interrupt-controller block
+        with two dedicated Rising and Falling interrupt pending registers
+
+compatible: "st,stm32h7rs-exti"
+
+include: st,stm32-exti.yaml

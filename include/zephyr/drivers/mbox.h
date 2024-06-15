@@ -486,6 +486,6 @@ static inline int mbox_max_channels_get_dt(const struct mbox_dt_spec *spec)
 }
 #endif
 
-#include <syscalls/mbox.h>
+#include <zephyr/syscalls/mbox.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MBOX_H_ */

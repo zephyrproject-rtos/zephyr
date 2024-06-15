@@ -28,6 +28,7 @@ properties:
       - 270
     description:
       Display rotation (CW) in degrees.
+      If not defined, rotation is off by default.
 
   display-inversion:
     type: boolean

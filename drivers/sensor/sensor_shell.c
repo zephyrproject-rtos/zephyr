@@ -78,6 +78,7 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_VOC] = "voc",
 	[SENSOR_CHAN_GAS_RES] = "gas_resistance",
 	[SENSOR_CHAN_VOLTAGE] = "voltage",
+	[SENSOR_CHAN_VSHUNT] = "vshunt",
 	[SENSOR_CHAN_CURRENT] = "current",
 	[SENSOR_CHAN_POWER] = "power",
 	[SENSOR_CHAN_RESISTANCE] = "resistance",
@@ -85,6 +86,7 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_POS_DX] = "pos_dx",
 	[SENSOR_CHAN_POS_DY] = "pos_dy",
 	[SENSOR_CHAN_POS_DZ] = "pos_dz",
+	[SENSOR_CHAN_POS_DXYZ] = "pos_dxyz",
 	[SENSOR_CHAN_RPM] = "rpm",
 	[SENSOR_CHAN_GAUGE_VOLTAGE] = "gauge_voltage",
 	[SENSOR_CHAN_GAUGE_AVG_CURRENT] = "gauge_avg_current",
@@ -142,6 +144,20 @@ struct sample_stats {
 static struct sample_stats sensor_stats[CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES][SENSOR_CHAN_ALL];
 
 static const struct device *sensor_trigger_devices[CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES];
+
+static bool device_is_sensor(const struct device *dev)
+{
+#ifdef CONFIG_SENSOR_INFO
+	STRUCT_SECTION_FOREACH(sensor_info, sensor) {
+		if (sensor->dev == dev) {
+			return true;
+		}
+	}
+	return false;
+#else
+	return true;
+#endif /* CONFIG_SENSOR_INFO */
+}
 
 static int find_sensor_trigger_device(const struct device *sensor)
 {
@@ -349,6 +365,7 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 		case SENSOR_CHAN_MAGN_X:
 		case SENSOR_CHAN_MAGN_Y:
 		case SENSOR_CHAN_MAGN_Z:
+		case SENSOR_CHAN_POS_DX:
 		case SENSOR_CHAN_POS_DY:
 		case SENSOR_CHAN_POS_DZ:
 			continue;
@@ -377,7 +394,7 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 				case SENSOR_CHAN_ACCEL_XYZ:
 				case SENSOR_CHAN_GYRO_XYZ:
 				case SENSOR_CHAN_MAGN_XYZ:
-				case SENSOR_CHAN_POS_DX: {
+				case SENSOR_CHAN_POS_DXYZ: {
 					struct sensor_three_axis_data *data =
 						(struct sensor_three_axis_data *)decoded_buffer;
 
@@ -431,7 +448,7 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 			case SENSOR_CHAN_ACCEL_XYZ:
 			case SENSOR_CHAN_GYRO_XYZ:
 			case SENSOR_CHAN_MAGN_XYZ:
-			case SENSOR_CHAN_POS_DX: {
+			case SENSOR_CHAN_POS_DXYZ: {
 				struct sensor_three_axis_data *data =
 					(struct sensor_three_axis_data *)decoded_buffer;
 
@@ -528,6 +545,12 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
+	if (!device_is_sensor(dev)) {
+		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
+		return -ENODEV;
+	}
+
 	if (argc == 2) {
 		/* read all channel types */
 		for (int i = 0; i < ARRAY_SIZE(iodev_sensor_shell_channels); ++i) {
@@ -561,7 +584,7 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 
 	ctx.dev = dev;
 	ctx.sh = sh;
-	err = sensor_read(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
+	err = sensor_read_async_mempool(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
 	if (err < 0) {
 		shell_error(sh, "Failed to read sensor: %d", err);
 	}
@@ -587,6 +610,12 @@ static int cmd_sensor_attr_set(const struct shell *shell_ptr, size_t argc, char 
 	dev = device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(shell_ptr, "Device unknown (%s)", argv[1]);
+		return -ENODEV;
+	}
+
+	if (!device_is_sensor(dev)) {
+		shell_error(shell_ptr, "Device is not a sensor (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
@@ -665,6 +694,12 @@ static int cmd_sensor_attr_get(const struct shell *shell_ptr, size_t argc, char 
 	dev = device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(shell_ptr, "Device unknown (%s)", argv[1]);
+		return -ENODEV;
+	}
+
+	if (!device_is_sensor(dev)) {
+		shell_error(shell_ptr, "Device is not a sensor (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
@@ -951,8 +986,7 @@ static void data_ready_trigger_handler(const struct device *sensor,
 			continue;
 		}
 		/* Skip 3 axis channels */
-		if (i == SENSOR_CHAN_ACCEL_XYZ || i == SENSOR_CHAN_GYRO_XYZ ||
-		    i == SENSOR_CHAN_MAGN_XYZ) {
+		if (SENSOR_CHANNEL_3_AXIS(i)) {
 			continue;
 		}
 

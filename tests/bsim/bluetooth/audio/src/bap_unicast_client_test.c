@@ -3,16 +3,37 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-
-#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/atomic_types.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
+#include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
+
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
 #define BAP_STREAM_RETRY_WAIT K_MSEC(100)
 
@@ -752,6 +773,64 @@ static void metadata_update_streams(size_t stream_cnt)
 	}
 }
 
+static int connect_stream(struct bt_bap_stream *stream)
+{
+	int err;
+
+	UNSET_FLAG(flag_stream_started);
+
+	do {
+		err = bt_bap_stream_connect(stream);
+		if (err == -EALREADY) {
+			SET_FLAG(flag_stream_started);
+		} else if (err != 0) {
+			FAIL("Could not start stream %p: %d\n", stream, err);
+			return err;
+		}
+	} while (err == -EBUSY);
+
+	WAIT_FOR_FLAG(flag_stream_started);
+
+	return 0;
+}
+
+static void connect_streams(void)
+{
+	struct bt_bap_stream *source_stream;
+	struct bt_bap_stream *sink_stream;
+
+	/* We only support a single CIS so far, so only start one. We can use the group pair
+	 * params to start both a sink and source stream that use the same CIS
+	 */
+
+	source_stream = pair_params[0].rx_param == NULL ? NULL : pair_params[0].rx_param->stream;
+	sink_stream = pair_params[0].tx_param == NULL ? NULL : pair_params[0].tx_param->stream;
+
+	UNSET_FLAG(flag_stream_connected);
+
+	if (sink_stream != NULL) {
+		const int err = connect_stream(sink_stream);
+
+		if (err != 0) {
+			FAIL("Unable to connect sink: %d", err);
+
+			return;
+		}
+	}
+
+	if (source_stream != NULL) {
+		const int err = connect_stream(source_stream);
+
+		if (err != 0) {
+			FAIL("Unable to connect source stream: %d", err);
+
+			return;
+		}
+	}
+
+	WAIT_FOR_FLAG(flag_stream_connected);
+}
+
 static int start_stream(struct bt_bap_stream *stream)
 {
 	int err;
@@ -776,26 +855,8 @@ static int start_stream(struct bt_bap_stream *stream)
 static void start_streams(void)
 {
 	struct bt_bap_stream *source_stream;
-	struct bt_bap_stream *sink_stream;
-
-	/* We only support a single CIS so far, so only start one. We can use the group pair
-	 * params to start both a sink and source stream that use the same CIS
-	 */
 
 	source_stream = pair_params[0].rx_param == NULL ? NULL : pair_params[0].rx_param->stream;
-	sink_stream = pair_params[0].tx_param == NULL ? NULL : pair_params[0].tx_param->stream;
-
-	UNSET_FLAG(flag_stream_connected);
-
-	if (sink_stream != NULL) {
-		const int err = start_stream(sink_stream);
-
-		if (err != 0) {
-			FAIL("Unable to start sink: %d", err);
-
-			return;
-		}
-	}
 
 	if (source_stream != NULL) {
 		const int err = start_stream(source_stream);
@@ -806,8 +867,6 @@ static void start_streams(void)
 			return;
 		}
 	}
-
-	WAIT_FOR_FLAG(flag_stream_connected);
 }
 
 static void transceive_streams(void)
@@ -1051,6 +1110,9 @@ static void test_main(void)
 		printk("Metadata update streams\n");
 		metadata_update_streams(stream_cnt);
 
+		printk("Connecting streams\n");
+		connect_streams();
+
 		printk("Starting streams\n");
 		start_streams();
 
@@ -1109,6 +1171,9 @@ static void test_main_acl_disconnect(void)
 	printk("Metadata update streams\n");
 	metadata_update_streams(stream_cnt);
 
+	printk("Connecting streams\n");
+	connect_streams();
+
 	printk("Starting streams\n");
 	start_streams();
 
@@ -1129,13 +1194,13 @@ static void test_main_acl_disconnect(void)
 static const struct bst_test_instance test_unicast_client[] = {
 	{
 		.test_id = "unicast_client",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
 	{
 		.test_id = "unicast_client_acl_disconnect",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_acl_disconnect,
 	},

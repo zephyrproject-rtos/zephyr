@@ -4,9 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/gatt.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/gmap.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/check.h>
 
 #include "audio_internal.h"

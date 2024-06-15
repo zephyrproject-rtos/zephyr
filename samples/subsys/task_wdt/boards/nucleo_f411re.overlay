@@ -1,0 +1,19 @@
+/*
+ * Copyright 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * stm32F4 has a WWDG clock by APB1 where the APB1 prescaler is 1..16
+ * this is too low to configure the WWDG clock for this sample.
+ * Thus, use the IWDG instead for running this sample.
+ */
+
+&wwdg {
+	status = "disabled";
+};
+
+&iwdg {
+	status = "okay";
+};

@@ -23,7 +23,7 @@
 #include <zephyr/toolchain/common.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/util.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 /* We need to dummy out DT_NODE_HAS_STATUS when building the unittests.
  * Including devicetree.h would require generating dummy header files
@@ -292,7 +292,7 @@ extern char lnkr_boot_noinit_size[];
 /* lnkr_pinned_start[] and lnkr_pinned_end[] must encapsulate
  * all the pinned sections as these are used by
  * the MMU code to mark the physical page frames with
- * Z_PAGE_FRAME_PINNED.
+ * K_MEM_PAGE_FRAME_PINNED.
  */
 extern char lnkr_pinned_start[];
 extern char lnkr_pinned_end[];

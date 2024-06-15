@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
+#include <freq.h>
 #include <xtensa/xtensa.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -32,9 +33,12 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx7";
+			compatible = "espressif,xtensa-lx7";
 			reg = <0>;
 			cpu-power-states = <&light_sleep &deep_sleep>;
+			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
+			clock-frequency = <DT_FREQ_M(240)>;
+			xtal-freq = <DT_FREQ_M(40)>;
 		};
 
 		power-states {
@@ -56,6 +60,11 @@
 
 	wifi: wifi {
 		compatible = "espressif,esp32-wifi";
+		status = "disabled";
+	};
+
+	esp32_bt_hci: esp32_bt_hci {
+		compatible = "espressif,esp32-bt-hci";
 		status = "disabled";
 	};
 
@@ -86,17 +95,28 @@
 		rtc: rtc@3f408000 {
 			compatible = "espressif,esp32-rtc";
 			reg = <0x3f408000 0x0D8>;
-			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			fast-clk-src = <ESP32_RTC_FAST_CLK_SRC_XTAL_D4>;
+			slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_SLOW>;
 			#clock-cells = <1>;
 			status = "okay";
+		};
 
-			rtc_timer: rtc_timer {
-				compatible = "espressif,esp32-rtc-timer";
-				slow-clk-freq = <ESP32_RTC_SLOW_CLK_FREQ_90K>;
-				interrupts = <RTC_CORE_INTR_SOURCE>;
-				interrupt-parent = <&intc>;
-				status = "okay";
-			};
+		xt_wdt: xt_wdt@3f408004 {
+			compatible = "espressif,esp32-xt-wdt";
+			reg = <0x3f408004 0x4>;
+			clocks = <&rtc ESP32_MODULE_MAX>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		rtc_timer: rtc_timer@3f408004 {
+			reg = <0x3f408004 0xC>;
+			compatible = "espressif,esp32-rtc-timer";
+			clocks = <&rtc ESP32_MODULE_MAX>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "okay";
 		};
 
 		flash: flash-controller@3f402000 {

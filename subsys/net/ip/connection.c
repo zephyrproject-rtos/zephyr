@@ -581,13 +581,23 @@ static bool conn_are_endpoints_valid(struct net_pkt *pkt, uint8_t family,
 static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 					struct net_conn *conn, uint8_t proto)
 {
-	if (proto == ETH_P_ALL) {
-		enum net_sock_type type = net_context_get_type(conn->context);
+	enum net_sock_type type = net_context_get_type(conn->context);
 
+	if (proto == ETH_P_ALL) {
 		if ((type == SOCK_DGRAM && !net_pkt_is_l2_processed(pkt)) ||
 		    (type == SOCK_RAW && net_pkt_is_l2_processed(pkt))) {
 			return NET_CONTINUE;
 		}
+	}
+
+	/*
+	 * After l2 processed only deliver protocol matched pkt,
+	 * unless the connetion protocol is all packets
+	 */
+	if (type == SOCK_DGRAM && net_pkt_is_l2_processed(pkt) &&
+	    conn->proto != ETH_P_ALL &&
+	    conn->proto != net_pkt_ll_proto_type(pkt)) {
+		return NET_CONTINUE;
 	}
 
 	if (!(conn->flags & NET_CONN_LOCAL_ADDR_SET)) {

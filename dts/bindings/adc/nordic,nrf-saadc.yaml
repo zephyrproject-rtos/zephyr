@@ -5,7 +5,7 @@ description: Nordic Semiconductor nRF family SAADC node
 
 compatible: "nordic,nrf-saadc"
 
-include: adc-controller.yaml
+include: ["adc-controller.yaml", "memory-region.yaml"]
 
 properties:
   reg:

@@ -158,3 +158,11 @@ void bt_iso_chan_set_state(struct bt_iso_chan *chan, enum bt_iso_state state);
 
 /* Process incoming data for a connection */
 void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags);
+
+/* Whether the HCI ISO data packet contains a timestamp or not.
+ * Per spec, the TS flag can only be set for the first fragment.
+ */
+enum bt_iso_timestamp {
+	BT_ISO_TS_ABSENT = 0,
+	BT_ISO_TS_PRESENT,
+};

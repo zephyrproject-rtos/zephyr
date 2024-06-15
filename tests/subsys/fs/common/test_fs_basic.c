@@ -43,8 +43,7 @@ static int create_write_hello(const struct fs_mount_t *mp)
 
 	zassert_equal(stat.type, FS_DIR_ENTRY_FILE,
 		      "stat new hello not file");
-	zassert_equal(strcmp(stat.name, HELLO), 0,
-		      "stat new hello not hello");
+	zassert_str_equal(stat.name, HELLO, "stat new hello not hello");
 	zassert_equal(stat.size, 0,
 		      "stat new hello not empty");
 
@@ -58,8 +57,7 @@ static int create_write_hello(const struct fs_mount_t *mp)
 
 	zassert_equal(stat.type, FS_DIR_ENTRY_FILE,
 		      "stat written hello not file");
-	zassert_equal(strcmp(stat.name, HELLO), 0,
-		      "stat written hello not hello");
+	zassert_str_equal(stat.name, HELLO, "stat written hello not hello");
 
 	/* Anomalous behavior requiring upstream response */
 	if (mp->type == FS_LITTLEFS) {
@@ -79,8 +77,7 @@ static int create_write_hello(const struct fs_mount_t *mp)
 
 	zassert_equal(stat.type, FS_DIR_ENTRY_FILE,
 		      "stat closed hello not file");
-	zassert_equal(strcmp(stat.name, HELLO), 0,
-		      "stat closed hello not hello");
+	zassert_str_equal(stat.name, HELLO, "stat closed hello not hello");
 	zassert_equal(stat.size, TESTFS_BUFFER_SIZE,
 		      "stat closed hello badsize");
 

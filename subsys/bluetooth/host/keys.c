@@ -80,6 +80,11 @@ static bool key_is_in_use(uint8_t id)
 }
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 
+void bt_keys_reset(void)
+{
+	memset(key_pool, 0, sizeof(key_pool));
+}
+
 struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
@@ -168,6 +173,10 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 			bt_addr_le_copy(&info.addr, &keys->addr);
 			func(&info, user_data);
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		bt_foreach_bond_br(func, user_data);
 	}
 }
 

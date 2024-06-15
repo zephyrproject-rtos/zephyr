@@ -3,7 +3,7 @@ common:
   tags:
     - arm
     - fpu
-    - tfm
+    - trusted-firmware-m
   arch_allow: arm
 tests:
   arch.arm.swap.tz:

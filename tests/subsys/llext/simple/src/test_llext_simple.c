@@ -24,6 +24,20 @@ LOG_MODULE_REGISTER(test_llext_simple);
 #define LLEXT_CONST const
 #endif
 
+#ifdef CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID
+#define LLEXT_FIND_BUILTIN_SYM(symbol_name) llext_find_sym(NULL, symbol_name ## _SLID)
+
+#ifdef CONFIG_64BIT
+#define printk_SLID ((const char *)0x87B3105268827052ull)
+#define z_impl_ext_syscall_fail_SLID ((const char *)0xD58BC0E7C64CD965ull)
+#else
+#define printk_SLID ((const char *)0x87B31052ull)
+#define z_impl_ext_syscall_fail_SLID ((const char *)0xD58BC0E7ull)
+#endif
+#else
+#define LLEXT_FIND_BUILTIN_SYM(symbol_name) llext_find_sym(NULL, # symbol_name)
+#endif
+
 struct llext_test {
 	const char *name;
 	bool try_userspace;
@@ -61,7 +75,7 @@ static inline int z_vrfy_ext_syscall_ok(int a)
 {
 	return z_impl_ext_syscall_ok(a);
 }
-#include <syscalls/ext_syscall_ok_mrsh.c>
+#include <zephyr/syscalls/ext_syscall_ok_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 
@@ -237,6 +251,33 @@ static LLEXT_CONST uint8_t multi_file_ext[] __aligned(4) = {
 LLEXT_LOAD_UNLOAD(multi_file, true, NULL)
 #endif
 
+#if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA)
+static LLEXT_CONST uint8_t pre_located_ext[] __aligned(4) = {
+	#include "pre_located.inc"
+};
+
+ZTEST(llext, test_pre_located)
+{
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(pre_located_ext, ARRAY_SIZE(pre_located_ext));
+	struct llext_loader *loader = &buf_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+	const void *test_entry_fn;
+	int res;
+
+	/* load the extension trying to respect the addresses in the ELF */
+	ldr_parm.pre_located = true;
+	res = llext_load(loader, "pre_located", &ext, &ldr_parm);
+	zassert_ok(res, "load should succeed");
+
+	/* check the function address is the expected one */
+	test_entry_fn = llext_find_sym(&ext->exp_tab, "test_entry");
+	zassert_equal(test_entry_fn, (void *)0xbada110c, "test_entry should be at 0xbada110c");
+
+	llext_unload(&ext);
+}
+#endif
 
 /*
  * Ensure that EXPORT_SYMBOL does indeed provide a symbol and a valid address
@@ -244,7 +285,7 @@ LLEXT_LOAD_UNLOAD(multi_file, true, NULL)
  */
 ZTEST(llext, test_printk_exported)
 {
-	const void * const printk_fn = llext_find_sym(NULL, "printk");
+	const void * const printk_fn = LLEXT_FIND_BUILTIN_SYM(printk);
 
 	zassert_equal(printk_fn, printk, "printk should be an exported symbol");
 }
@@ -255,8 +296,9 @@ ZTEST(llext, test_printk_exported)
  */
 ZTEST(llext, test_ext_syscall_fail)
 {
-	const void * const esf_fn = llext_find_sym(NULL,
-						   "z_impl_ext_syscall_fail");
+	const void * const esf_fn = LLEXT_FIND_BUILTIN_SYM(z_impl_ext_syscall_fail);
+
+	zassert_not_null(esf_fn, "est_fn should not be NULL");
 
 	zassert_is_null(*(uintptr_t **)esf_fn, NULL,
 			"ext_syscall_fail should be NULL");

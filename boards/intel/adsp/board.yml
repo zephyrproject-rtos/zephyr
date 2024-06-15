@@ -7,3 +7,4 @@ boards:
           - name: 'tgph'
       - name: ace15_mtpm
       - name: ace20_lnl
+      - name: ace30_ptl

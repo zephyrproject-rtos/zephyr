@@ -15,6 +15,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
 		zephyr,flash-controller = &flash;
+		zephyr,bt_hci = &bt_hci_apollo;
 	};
 
 	aliases {
@@ -84,6 +85,12 @@
 	};
 };
 
+&bleif {
+	pinctrl-0 = <&bleif_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &uart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
@@ -95,11 +102,51 @@
 	status = "okay";
 };
 
+&spi0 {
+	compatible = "ambiq,spi";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(1)>;
+	status = "okay";
+};
+
 &i2c3 {
 	compatible = "ambiq,i2c";
 	pinctrl-0 = <&i2c3_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};
+
+&counter0 {
+	status = "okay";
+};
+
+&counter1 {
+	status = "okay";
+};
+
+&counter2 {
+	status = "okay";
+};
+
+&counter3 {
+	status = "okay";
+};
+
+&counter4 {
+	status = "okay";
+};
+
+&counter5 {
+	status = "okay";
+};
+
+&counter6 {
+	status = "okay";
+};
+
+&counter7 {
 	status = "okay";
 };
 

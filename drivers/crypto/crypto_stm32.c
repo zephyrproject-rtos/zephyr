@@ -234,7 +234,7 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 {
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
-	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
+	int ivlen = BLOCK_LEN_BYTES - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
@@ -257,7 +257,7 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 {
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
-	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
+	int ivlen = BLOCK_LEN_BYTES - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
@@ -507,7 +507,7 @@ static struct crypto_stm32_data crypto_stm32_dev_data = {
 	}
 };
 
-static struct crypto_stm32_config crypto_stm32_dev_config = {
+static const struct crypto_stm32_config crypto_stm32_dev_config = {
 	.pclken = {
 		.enr = DT_INST_CLOCKS_CELL(0, bits),
 		.bus = DT_INST_CLOCKS_CELL(0, bus)

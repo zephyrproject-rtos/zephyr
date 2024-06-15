@@ -14,6 +14,7 @@ config SOC_SERIES_INTEL_ADSP_ACE
 	select HAS_PM
 	select XTENSA_CPU_HAS_HIFI3
 	select XTENSA_CPU_HAS_HIFI4
+	select ARCH_HAS_RESERVED_PAGE_FRAMES if MMU
 
 config SOC_INTEL_COMM_WIDGET
 	bool "Intel Communication Widget driver"

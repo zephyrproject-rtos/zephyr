@@ -158,9 +158,9 @@ static int eswifi_socket_accept(void *obj, struct sockaddr *addr,
 		return -1;
 	}
 
-	z_finalize_fd(fd, SD_TO_OBJ(sock),
-		      (const struct fd_op_vtable *)
-					&eswifi_socket_fd_op_vtable);
+	z_finalize_typed_fd(fd, SD_TO_OBJ(sock),
+			    (const struct fd_op_vtable *)&eswifi_socket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }
@@ -594,9 +594,9 @@ int eswifi_socket_create(int family, int type, int proto)
 		return -1;
 	}
 
-	z_finalize_fd(fd, SD_TO_OBJ(sock),
-		      (const struct fd_op_vtable *)
-					&eswifi_socket_fd_op_vtable);
+	z_finalize_typed_fd(fd, SD_TO_OBJ(sock),
+			    (const struct fd_op_vtable *)&eswifi_socket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }

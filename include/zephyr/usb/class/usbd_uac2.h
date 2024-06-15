@@ -19,6 +19,18 @@
 
 #include <zephyr/device.h>
 
+/**
+ * @brief USB Audio Class 2 device API
+ * @defgroup uac2_device USB Audio Class 2 device API
+ * @ingroup usb
+ * @{
+ */
+
+/**
+ * @brief Get entity ID
+ *
+ * @param node node identifier
+ */
 #define UAC2_ENTITY_ID(node)							\
 	({									\
 		BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_PARENT(node), zephyr_uac2));	\
@@ -58,7 +70,7 @@ struct uac2_ops {
 	 * USB stack calls this function to obtain receive buffer address for
 	 * AudioStreaming interface. The buffer is owned by USB stack until
 	 * @ref data_recv_cb callback is called. The buffer must be sufficiently
-	 * aligned for use by UDC driver.
+	 * aligned and otherwise suitable for use by UDC driver.
 	 *
 	 * @param dev USB Audio 2 device
 	 * @param terminal Input Terminal ID linked to AudioStreaming interface
@@ -126,6 +138,9 @@ void usbd_uac2_set_ops(const struct device *dev,
 /**
  * @brief Send audio data to output terminal
  *
+ * Data buffer must be sufficiently aligned and otherwise suitable for use by
+ * UDC driver.
+ *
  * @param dev USB Audio 2 device
  * @param terminal Output Terminal ID linked to AudioStreaming interface
  * @param data Buffer containing outgoing data
@@ -135,5 +150,9 @@ void usbd_uac2_set_ops(const struct device *dev,
  */
 int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		   void *data, uint16_t size);
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_USBD_UAC2_H_ */

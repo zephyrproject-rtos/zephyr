@@ -18,14 +18,21 @@
  * @{
  */
 
-#include <zephyr/sys/atomic.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/lc3.h>
-
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +47,14 @@ extern "C" {
 #define BT_AUDIO_PD_MAX                          0xFFFFFFU
 
 #define BT_AUDIO_BROADCAST_CODE_SIZE             16
+
+/** The minimum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
+#define BT_AUDIO_BROADCAST_NAME_LEN_MIN          4
+/** The maximum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
+#define BT_AUDIO_BROADCAST_NAME_LEN_MAX          128
+
+/** Size of the stream language value, e.g. "eng" */
+#define BT_AUDIO_LANG_SIZE 3
 
 /**
  * @brief Codec capability types
@@ -373,11 +388,12 @@ enum bt_audio_metadata_type {
 	/** UTF-8 encoded title or summary of stream content */
 	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO        = 0x03,
 
-	/** @brief Stream language
+	/** @brief Language
 	 *
 	 * 3 octet lower case language code defined by ISO 639-3
+	 * Possible values can be found at https://iso639-3.sil.org/code_tables/639/data
 	 */
-	BT_AUDIO_METADATA_TYPE_STREAM_LANG         = 0x04,
+	BT_AUDIO_METADATA_TYPE_LANG                = 0x04,
 
 	/** Array of 8-bit CCID values */
 	BT_AUDIO_METADATA_TYPE_CCID_LIST           = 0x05,
@@ -631,6 +647,15 @@ struct bt_audio_codec_cfg {
 int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 			bool (*func)(struct bt_data *data, void *user_data), void *user_data);
 
+/**
+ * @brief Function to get the number of channels from the channel allocation
+ *
+ * @param chan_allocation The channel allocation
+ *
+ * @return The number of channels
+ */
+uint8_t bt_audio_get_chan_count(enum bt_audio_location chan_allocation);
+
 /** @brief Audio Capability type */
 enum bt_audio_dir {
 	BT_AUDIO_DIR_SINK = 0x01,
@@ -702,60 +727,95 @@ enum {
 
 /** @brief Codec QoS structure. */
 struct bt_audio_codec_qos {
-	/** QoS PHY */
-	uint8_t  phy;
-
-	/** QoS Framing */
-	enum bt_audio_codec_qos_framing framing;
-
-	/** QoS Retransmission Number */
-	uint8_t rtn;
-
-	/** QoS SDU */
-	uint16_t sdu;
-
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
 	/**
-	 * @brief QoS Transport Latency
+	 * @brief Presentation Delay in microseconds
 	 *
-	 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
-	 */
-	uint16_t latency;
-#endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
-
-	/** QoS Frame Interval */
-	uint32_t interval;
-
-	/** @brief QoS Presentation Delay in microseconds
+	 * This value can be changed up and until bt_bap_stream_qos() has been called.
+	 * Once a stream has been QoS configured, modifying this field does not modify the value.
+	 * It is however possible to modify this field and call bt_bap_stream_qos() again to update
+	 * the value, assuming that the stream is in the correct state.
 	 *
-	 *  Value range 0 to @ref BT_AUDIO_PD_MAX.
+	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
 	 */
 	uint32_t pd;
 
+	/**
+	 * @brief Connected Isochronous Group (CIG) parameters
+	 *
+	 * The fields in this struct affect the value sent to the controller via HCI
+	 * when creating the CIG. Once the group has been created with
+	 * bt_bap_unicast_group_create(), modifying these fields will not affect the group.
+	 */
+	struct {
+		/** QoS Framing */
+		enum bt_audio_codec_qos_framing framing;
+
+		/**
+		 * @brief PHY
+		 *
+		 * Allowed values are @ref BT_AUDIO_CODEC_QOS_1M, @ref BT_AUDIO_CODEC_QOS_2M and
+		 * @ref BT_AUDIO_CODEC_QOS_CODED.
+		 */
+		uint8_t phy;
+
+		/**
+		 * @brief Retransmission Number
+		 *
+		 * This a recommendation to the controller, and the actual retransmission number
+		 * may be different than this.
+		 */
+		uint8_t rtn;
+
+		/**
+		 * @brief Maximum SDU size
+		 *
+		 * Value range @ref BT_ISO_MIN_SDU to @ref BT_ISO_MAX_SDU.
+		 */
+		uint16_t sdu;
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
+		/**
+		 * @brief Maximum Transport Latency
+		 *
+		 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
+		 */
+		uint16_t latency;
+#endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
+
+		/**
+		 * @brief SDU Interval
+		 *
+		 * Value range @ref BT_ISO_SDU_INTERVAL_MIN to @ref BT_ISO_SDU_INTERVAL_MAX
+		 */
+		uint32_t interval;
+
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	/** @brief Maximum PDU size
-	 *
-	 *  Maximum size, in octets, of the payload from link layer to link
-	 *  layer.
-	 *
-	 *  Value range @ref BT_ISO_PDU_MIN to @ref BT_ISO_PDU_MAX.
-	 */
-	uint16_t max_pdu;
+		/**
+		 * @brief Maximum PDU size
+		 *
+		 * Maximum size, in octets, of the payload from link layer to link layer.
+		 *
+		 * Value range @ref BT_ISO_PDU_MIN to @ref BT_ISO_PDU_MAX.
+		 */
+		uint16_t max_pdu;
 
-	/** @brief Burst number
-	 *
-	 *  Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
-	 */
-	uint8_t burst_number;
+		/**
+		 * @brief Burst number
+		 *
+		 * Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
+		 */
+		uint8_t burst_number;
 
-	/** @brief Number of subevents
-	 *
-	 *  Maximum number of subevents in each CIS or BIS event.
-	 *
-	 *  Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
-	 */
-	uint8_t num_subevents;
+		/**
+		 * @brief Number of subevents
+		 *
+		 * Maximum number of subevents in each CIS or BIS event.
+		 *
+		 * Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
+		 */
+		uint8_t num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
+	};
 };
 
 /**
@@ -931,24 +991,29 @@ int bt_audio_codec_cfg_get_frame_dur(const struct bt_audio_codec_cfg *codec_cfg)
 int bt_audio_codec_cfg_set_frame_dur(struct bt_audio_codec_cfg *codec_cfg,
 				     enum bt_audio_codec_cfg_frame_dur frame_dur);
 
-/** @brief Extract channel allocation from BT codec config
+/**
+ * @brief Extract channel allocation from BT codec config
  *
- *  The value returned is a bit field representing one or more audio locations as
- *  specified by @ref bt_audio_location
- *  Shall match one or more of the bits set in BT_PAC_SNK_LOC/BT_PAC_SRC_LOC.
+ * The value returned is a bit field representing one or more audio locations as
+ * specified by @ref bt_audio_location
+ * Shall match one or more of the bits set in BT_PAC_SNK_LOC/BT_PAC_SRC_LOC.
  *
- *  Up to the configured @ref BT_AUDIO_CODEC_CAP_TYPE_CHAN_COUNT number of channels can be present.
+ * Up to the configured @ref BT_AUDIO_CODEC_CAP_TYPE_CHAN_COUNT number of channels can be present.
  *
- *  @param codec_cfg The codec configuration to extract data from.
- *  @param chan_allocation Pointer to the variable to store the extracted value in.
+ * @param codec_cfg The codec configuration to extract data from.
+ * @param chan_allocation Pointer to the variable to store the extracted value in.
+ * @param fallback_to_default If true this function will provide the default value of
+ *        @ref BT_AUDIO_LOCATION_MONO_AUDIO if the type is not found when @p codec_cfg.id is @ref
+ *        BT_HCI_CODING_FORMAT_LC3.
  *
- *  @retval 0 if value is found and stored in the pointer provided
- *  @retval -EINVAL if arguments are invalid
- *  @retval -ENODATA if not found
- *  @retval -EBADMSG if found value has invalid size or value
+ * @retval 0 if value is found and stored in the pointer provided
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cfg_get_chan_allocation(const struct bt_audio_codec_cfg *codec_cfg,
-					   enum bt_audio_location *chan_allocation);
+					   enum bt_audio_location *chan_allocation,
+					   bool fallback_to_default);
 
 /**
  * @brief Set the channel allocation of a codec configuration.
@@ -967,7 +1032,7 @@ int bt_audio_codec_cfg_set_chan_allocation(struct bt_audio_codec_cfg *codec_cfg,
  *
  * The overall SDU size will be octets_per_frame * blocks_per_sdu.
  *
- *  The Bluetooth specificationa are not clear about this value - it does not state that
+ *  The Bluetooth specifications are not clear about this value - it does not state that
  *  the codec shall use this SDU size only. A codec like LC3 supports variable bit-rate
  *  (per SDU) hence it might be allowed for an encoder to reduce the frame size below this
  *  value.
@@ -996,26 +1061,25 @@ int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *cod
 int bt_audio_codec_cfg_set_octets_per_frame(struct bt_audio_codec_cfg *codec_cfg,
 					    uint16_t octets_per_frame);
 
-/** @brief Extract number of audio frame blockss in each SDU from BT codec config
+/**
+ * @brief Extract number of audio frame blocks in each SDU from BT codec config
  *
- *  The overall SDU size will be octets_per_frame * frame_blocks_per_sdu * number-of-channels.
+ * The overall SDU size will be octets_per_frame * frame_blocks_per_sdu * number-of-channels.
  *
- *  If this value is not present a default value of 1 shall be used.
+ * If this value is not present a default value of 1 shall be used.
  *
- *  A frame block is one or more frames that represents data for the same period of time but
- *  for different channels. If the stream have two audio channels and this value is two
- *  there will be four frames in the SDU.
+ * A frame block is one or more frames that represents data for the same period of time but
+ * for different channels. If the stream have two audio channels and this value is two
+ * there will be four frames in the SDU.
  *
- *  @param codec_cfg The codec configuration to extract data from.
- *  @param fallback_to_default If true this function will return the default value of 1
- *         if the type is not found. In this case the function will only fail if a NULL
- *         pointer is provided.
+ * @param codec_cfg The codec configuration to extract data from.
+ * @param fallback_to_default If true this function will return the default value of 1
+ *         if the type is not found when @p codec_cfg.id is @ref BT_HCI_CODING_FORMAT_LC3.
  *
- *  @retval The count of codec frames in each SDU if value is found else of @p fallback_to_default
- *          is true then the value 1 is returned if frames per sdu is not found.
- *  @retval -EINVAL if arguments are invalid
- *  @retval -ENODATA if not found
- *  @retval -EBADMSG if found value has invalid size or value
+ * @retval The count of codec frame blocks in each SDU.
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg *codec_cfg,
 						bool fallback_to_default);
@@ -1119,18 +1183,23 @@ int bt_audio_codec_cfg_meta_set_val(struct bt_audio_codec_cfg *codec_cfg,
  */
 int bt_audio_codec_cfg_meta_unset_val(struct bt_audio_codec_cfg *codec_cfg,
 				      enum bt_audio_metadata_type type);
-/** @brief Extract preferred contexts
+/**
+ * @brief Extract preferred contexts
  *
- *  See @ref BT_AUDIO_METADATA_TYPE_PREF_CONTEXT for more information about this value.
+ * See @ref BT_AUDIO_METADATA_TYPE_PREF_CONTEXT for more information about this value.
  *
- *  @param codec_cfg The codec data to search in.
+ * @param codec_cfg The codec data to search in.
+ * @param fallback_to_default If true this function will provide the default value of
+ *        @ref BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED if the type is not found when @p codec_cfg.id is
+ *        @ref BT_HCI_CODING_FORMAT_LC3.
  *
  *  @retval The preferred context type if positive or 0
  *  @retval -EINVAL if arguments are invalid
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size
  */
-int bt_audio_codec_cfg_meta_get_pref_context(const struct bt_audio_codec_cfg *codec_cfg);
+int bt_audio_codec_cfg_meta_get_pref_context(const struct bt_audio_codec_cfg *codec_cfg,
+					     bool fallback_to_default);
 
 /**
  * @brief Set the preferred context of a codec configuration metadata.
@@ -1199,31 +1268,33 @@ int bt_audio_codec_cfg_meta_get_program_info(const struct bt_audio_codec_cfg *co
 int bt_audio_codec_cfg_meta_set_program_info(struct bt_audio_codec_cfg *codec_cfg,
 					     const uint8_t *program_info, size_t program_info_len);
 
-/** @brief Extract stream language
+/** @brief Extract language
  *
- *  See @ref BT_AUDIO_METADATA_TYPE_STREAM_LANG for more information about this value.
+ *  See @ref BT_AUDIO_METADATA_TYPE_LANG for more information about this value.
  *
- *  @param codec_cfg The codec data to search in.
+ *  @param[in]  codec_cfg The codec data to search in.
+ *  @param[out] lang      Pointer to the language bytes (of length BT_AUDIO_LANG_SIZE)
  *
- *  @retval The stream language if positive or 0
+ *  @retval The language if positive or 0
  *  @retval -EINVAL if arguments are invalid
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size
  */
-int bt_audio_codec_cfg_meta_get_stream_lang(const struct bt_audio_codec_cfg *codec_cfg);
+int bt_audio_codec_cfg_meta_get_lang(const struct bt_audio_codec_cfg *codec_cfg,
+				     const uint8_t **lang);
 
 /**
- * @brief Set the stream language of a codec configuration metadata.
+ * @brief Set the language of a codec configuration metadata.
  *
  * @param codec_cfg   The codec configuration to set data for.
- * @param stream_lang The 24-bit stream language to set.
+ * @param lang        The 24-bit language to set.
  *
  * @retval The data_len of @p codec_cfg on success
  * @retval -EINVAL if arguments are invalid
  * @retval -ENOMEM if the new value could not set or added due to memory
  */
-int bt_audio_codec_cfg_meta_set_stream_lang(struct bt_audio_codec_cfg *codec_cfg,
-					    uint32_t stream_lang);
+int bt_audio_codec_cfg_meta_set_lang(struct bt_audio_codec_cfg *codec_cfg,
+				     const uint8_t lang[BT_AUDIO_LANG_SIZE]);
 
 /** @brief Extract CCID list
  *
@@ -1524,13 +1595,16 @@ int bt_audio_codec_cap_set_frame_dur(struct bt_audio_codec_cap *codec_cap,
  * @brief Extract the frequency from a codec capability.
  *
  * @param codec_cap The codec capabilities to extract data from.
+ * @param fallback_to_default If true this function will provide the default value of 1
+ *        if the type is not found when @p codec_cap.id is @ref BT_HCI_CODING_FORMAT_LC3.
  *
- * @retval Bitfield of supported channel counts if 0 or positive
+ * @retval Number of supported channel counts if 0 or positive
  * @retval -EINVAL if arguments are invalid
  * @retval -ENODATA if not found
  * @retval -EBADMSG if found value has invalid size or value
  */
-int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_codec_cap *codec_cap);
+int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_codec_cap *codec_cap,
+						       bool fallback_to_default);
 
 /**
  * @brief Set the channel count of a codec capability.
@@ -1578,13 +1652,16 @@ int bt_audio_codec_cap_set_octets_per_frame(
  * @brief Extract the maximum codec frames per SDU from a codec capability.
  *
  * @param codec_cap The codec capabilities to extract data from.
+ * @param fallback_to_default If true this function will provide the default value of 1
+ *        if the type is not found when @p codec_cap.id is @ref BT_HCI_CODING_FORMAT_LC3.
  *
  * @retval Maximum number of codec frames per SDU supported
  * @retval -EINVAL if arguments are invalid
  * @retval -ENODATA if not found
  * @retval -EBADMSG if found value has invalid size or value
  */
-int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_cap *codec_cap);
+int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_cap *codec_cap,
+						    bool fallback_to_default);
 
 /**
  * @brief Set the maximum codec frames per SDU of a codec capability.
@@ -1722,31 +1799,33 @@ int bt_audio_codec_cap_meta_get_program_info(const struct bt_audio_codec_cap *co
 int bt_audio_codec_cap_meta_set_program_info(struct bt_audio_codec_cap *codec_cap,
 					     const uint8_t *program_info, size_t program_info_len);
 
-/** @brief Extract stream language
+/** @brief Extract language
  *
- *  See @ref BT_AUDIO_METADATA_TYPE_STREAM_LANG for more information about this value.
+ *  See @ref BT_AUDIO_METADATA_TYPE_LANG for more information about this value.
  *
- *  @param codec_cap The codec data to search in.
+ *  @param[in]  codec_cap The codec data to search in.
+ *  @param[out] lang      Pointer to the language bytes (of length BT_AUDIO_LANG_SIZE)
  *
- *  @retval The stream language if positive or 0
+ *  @retval 0 On success
  *  @retval -EINVAL if arguments are invalid
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size
  */
-int bt_audio_codec_cap_meta_get_stream_lang(const struct bt_audio_codec_cap *codec_cap);
+int bt_audio_codec_cap_meta_get_lang(const struct bt_audio_codec_cap *codec_cap,
+				     const uint8_t **lang);
 
 /**
- * @brief Set the stream language of a codec capability metadata.
+ * @brief Set the language of a codec capability metadata.
  *
  * @param codec_cap   The codec capability to set data for.
- * @param stream_lang The 24-bit stream language to set.
+ * @param lang        The 24-bit language to set.
  *
  * @retval The data_len of @p codec_cap on success
  * @retval -EINVAL if arguments are invalid
  * @retval -ENOMEM if the new value could not set or added due to memory
  */
-int bt_audio_codec_cap_meta_set_stream_lang(struct bt_audio_codec_cap *codec_cap,
-					    uint32_t stream_lang);
+int bt_audio_codec_cap_meta_set_lang(struct bt_audio_codec_cap *codec_cap,
+				     const uint8_t lang[BT_AUDIO_LANG_SIZE]);
 
 /** @brief Extract CCID list
  *

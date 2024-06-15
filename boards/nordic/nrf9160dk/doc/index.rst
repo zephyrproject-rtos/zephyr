@@ -33,7 +33,7 @@ Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
      nRF9160 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
-`nRF9160 DK website`_. The `Nordic Semiconductor Infocenter`_
+`nRF9160 DK website`_. `nRF9160 Product Specification`_
 contains the processor's information and the datasheet.
 
 
@@ -108,7 +108,7 @@ Remember to also enable routing for this additional hardware in the firmware for
 :ref:`nrf9160dk_nrf52840` (see :ref:`nrf9160dk_board_controller_firmware`).
 
 Other hardware features have not been enabled yet for this board.
-See `nRF9160 DK website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF9160 DK website`_ and `nRF9160 Product Specification`_
 for a complete list of nRF9160 DK board hardware features.
 
 Connections and IOs
@@ -282,7 +282,7 @@ SiP.
 
 More information about the board can be found at
 the `Nordic Low power cellular IoT`_ website.
-The `Nordic Semiconductor Infocenter`_
+`nRF52840 Product Specification`_
 contains the processor's information and the datasheet.
 
 
@@ -526,6 +526,7 @@ References
 .. _nRF9160 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF9160-DK
 .. _Trusted Firmware M: https://www.trustedfirmware.org/projects/tf-m/
 .. _Nordic Low power cellular IoT: https://www.nordicsemi.com/Products/Low-power-cellular-IoT
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _nRF9160 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf9160/page/nRF9160_html5_keyfeatures.html
+.. _nRF52840 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf52840/page/keyfeatures_html5.html
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
-.. _nRF9160 DK board control section in the nRF9160 DK User Guide: https://infocenter.nordicsemi.com/topic/ug_nrf91_dk/UG/nrf91_DK/board_controller.html
+.. _nRF9160 DK board control section in the nRF9160 DK User Guide: https://docs.nordicsemi.com/bundle/ug_nrf9160_dk/page/UG/nrf91_DK/hw_description/nrf9160_board_controller.html

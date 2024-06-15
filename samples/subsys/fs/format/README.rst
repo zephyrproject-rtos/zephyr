@@ -10,6 +10,7 @@ Overview
 This sample shows how to format different storage
 devices for different file systems. There are 2 scenarios prepared for this
 sample:
+
 * littleFS on flash device
 * FAT file system on RAM disk
 

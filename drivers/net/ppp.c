@@ -30,7 +30,6 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/drivers/uart.h>
-#include <zephyr/drivers/console/uart_mux.h>
 #include <zephyr/random/random.h>
 #include <zephyr/posix/net/if_arp.h>
 #include <zephyr/net/ethernet.h>
@@ -326,7 +325,7 @@ static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 	 */
 	if (ppp->available == 1) {
 		ret = net_pkt_alloc_buffer(ppp->pkt,
-					   CONFIG_NET_BUF_DATA_SIZE,
+					   CONFIG_NET_BUF_DATA_SIZE + ppp->available,
 					   AF_UNSPEC, K_NO_WAIT);
 		if (ret < 0) {
 			LOG_ERR("[%p] cannot allocate new data buffer", ppp);
@@ -421,33 +420,24 @@ static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 				 NET_ETH_PTYPE_HDLC);
 	}
 
-	/* If we're using gsm_mux, We don't want to use poll_out because sending
-	 * one byte at a time causes each byte to get wrapped in muxing headers.
-	 * But we can safely call uart_fifo_fill outside of ISR context when
-	 * muxing because uart_mux implements it in software.
-	 */
-	if (IS_ENABLED(CONFIG_GSM_MUX)) {
-		(void)uart_fifo_fill(ppp->dev, buf, off);
-	} else if (IS_ENABLED(CONFIG_NET_PPP_ASYNC_UART)) {
 #if defined(CONFIG_NET_PPP_ASYNC_UART)
-		int ret;
-		const int32_t timeout = CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT
-					? CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT * USEC_PER_MSEC
-					: SYS_FOREVER_US;
+	int ret;
+	const int32_t timeout = CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT
+				? CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT * USEC_PER_MSEC
+				: SYS_FOREVER_US;
 
-		k_sem_take(&uarte_tx_finished, K_FOREVER);
+	k_sem_take(&uarte_tx_finished, K_FOREVER);
 
-		ret = uart_tx(ppp->dev, buf, off, timeout);
-		if (ret) {
-			LOG_ERR("uart_tx() failed, err %d", ret);
-			k_sem_give(&uarte_tx_finished);
-		}
-#endif
-	} else {
-		while (off--) {
-			uart_poll_out(ppp->dev, *buf++);
-		}
+	ret = uart_tx(ppp->dev, buf, off, timeout);
+	if (ret) {
+		LOG_ERR("uart_tx() failed, err %d", ret);
+		k_sem_give(&uarte_tx_finished);
 	}
+#else
+	while (off--) {
+		uart_poll_out(ppp->dev, *buf++);
+	}
+#endif
 
 	return 0;
 }
@@ -1052,14 +1042,13 @@ use_random_mac:
 
 	memset(ppp->buf, 0, sizeof(ppp->buf));
 
-	/* If we have a GSM modem with PPP support or interface autostart is disabled
-	 * from Kconfig, then do not start the interface automatically but only
-	 * after the modem is ready or when manually started.
+#if defined(CONFIG_PPP_NET_IF_NO_AUTO_START)
+	/*
+	 * If interface autostart is disabled from Kconfig, then do not start the
+	 * interface automatically but only when manually started.
 	 */
-	if (IS_ENABLED(CONFIG_MODEM_GSM_PPP) ||
-	    IS_ENABLED(CONFIG_PPP_NET_IF_NO_AUTO_START)) {
-		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
-	}
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+#endif
 }
 
 #if defined(CONFIG_NET_STATISTICS_PPP)
@@ -1110,34 +1099,11 @@ static int ppp_start(const struct device *dev)
 {
 	struct ppp_driver_context *context = dev->data;
 
-	/* Init the PPP UART only once. This should only be done after
-	 * the GSM muxing is setup and enabled. GSM modem will call this
-	 * after everything is ready to be connected.
-	 */
+	/* Init the PPP UART. This should only be called once. */
 #if !defined(CONFIG_NET_TEST)
 	if (atomic_cas(&context->modem_init_done, false, true)) {
-		/* Now try to figure out what device to open. If GSM muxing
-		 * is enabled, then use it. If not, then check if modem
-		 * configuration is enabled, and use that. If none are enabled,
-		 * then use our own config.
-		 */
-#if defined(CONFIG_GSM_MUX)
-		const struct device *mux;
-
-		mux = uart_mux_find(CONFIG_GSM_MUX_DLCI_PPP);
-		if (mux == NULL) {
-			LOG_ERR("Cannot find GSM mux dev for DLCI %d",
-				CONFIG_GSM_MUX_DLCI_PPP);
-			return -ENOENT;
-		}
-
-		context->dev = mux;
-#elif IS_ENABLED(CONFIG_MODEM_GSM_PPP)
-		context->dev = DEVICE_DT_GET(DT_BUS(DT_INST(0, zephyr_gsm_ppp)));
-#else
-		/* dts chosen zephyr,ppp-uart case */
 		context->dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ppp_uart));
-#endif
+
 		LOG_DBG("Initializing PPP to use %s", context->dev->name);
 
 		if (!device_is_ready(context->dev)) {

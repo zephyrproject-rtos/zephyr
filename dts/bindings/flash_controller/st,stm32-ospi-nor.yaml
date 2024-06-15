@@ -32,6 +32,9 @@ properties:
   reset-gpios:
     type: phandle-array
     description: RESETn pin
+  reset-gpios-duration:
+    type: int
+    description: The duration (in ms) for the flash memory reset pulse
   spi-bus-width:
     type: int
     required: true

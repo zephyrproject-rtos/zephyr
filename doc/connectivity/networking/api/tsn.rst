@@ -9,3 +9,4 @@ Time Sensitive Networking
    gptp.rst
    net_time.rst
    ptp_time.rst
+   ptp.rst

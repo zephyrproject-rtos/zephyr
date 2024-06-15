@@ -55,6 +55,10 @@ SECTIONS
 {
 #include <zephyr/linker/rel-sections.ld>
 
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
+
   _image_iram_start = LOADADDR(.iram0.vectors);
   _image_iram_size = LOADADDR(_TEXT_SECTION_NAME) + SIZEOF(_TEXT_SECTION_NAME) - _image_iram_start;
   _image_iram_vaddr = ADDR(.iram0.vectors);

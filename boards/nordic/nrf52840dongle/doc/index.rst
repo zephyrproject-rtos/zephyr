@@ -31,7 +31,7 @@ Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
      nRF52840 Dongle
 
 More information about the board can be found at the
-`nRF52840 Dongle website`_. The `Nordic Semiconductor Infocenter`_
+`nRF52840 Dongle website`_. The `nRF52840 Dongle guide`_
 contains the processor's information and the datasheet.
 
 
@@ -82,7 +82,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features have not been enabled yet for this board.
-See `nRF52840 Dongle website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF52840 Dongle website`_ and `nRF52840 Dongle Hardware description`_
 for a complete list of nRF52840 Dongle board hardware features.
 
 Connections and IOs
@@ -334,12 +334,12 @@ References
 
 .. _nRF52840 Dongle website:
    https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-Dongle
-.. _Nordic Semiconductor Infocenter:
-   https://infocenter.nordicsemi.com
+.. _nRF52840 Dongle guide: https://docs.nordicsemi.com/bundle/ug_nrf52840_dk/page/UG/dk/intro.html
+.. _nRF52840 Dongle Hardware description: https://docs.nordicsemi.com/bundle/ug_nrf52840_dongle/page/UG/nrf52840_Dongle/hw_description.html
 .. _J-Link Software and documentation pack:
    https://www.segger.com/jlink-software.html
 .. _Nordic Semiconductor USB DFU:
-   https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.2.0%2Fsdk_app_serial_dfu_bootloader.html
+   https://docs.nordicsemi.com/bundle/sdk_nrf5_v17.1.0/page/sdk_app_serial_dfu_bootloader.html
 .. _nrfutil:
    https://github.com/NordicSemiconductor/pc-nrfutil
 .. _MCUboot:

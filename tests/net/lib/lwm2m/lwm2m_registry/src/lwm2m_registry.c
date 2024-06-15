@@ -181,7 +181,7 @@ ZTEST(lwm2m_registry, test_get_set)
 
 	zassert_equal(b, true);
 	zassert_equal(memcmp(opaque, &(uint8_t[6]) {0xde, 0xad, 0xbe, 0xff, 0, 0}, l), 0);
-	zassert_equal(strcmp(string, "Hello"), 0);
+	zassert_str_equal(string, "Hello");
 	zassert_equal(u8, 8);
 	zassert_equal(s8, -8);
 	zassert_equal(u16, 16);
@@ -465,7 +465,7 @@ ZTEST(lwm2m_registry, test_deprecated_functions)
 
 	zassert_equal(b, true);
 	zassert_equal(memcmp(opaque, &(uint8_t[6]) {0xde, 0xad, 0xbe, 0xff, 0, 0}, l), 0);
-	zassert_equal(strcmp(string, "Hello"), 0);
+	zassert_str_equal(string, "Hello");
 	zassert_equal(u8, 8);
 	zassert_equal(s8, -8);
 	zassert_equal(u16, 16);
@@ -681,7 +681,7 @@ ZTEST(lwm2m_registry, test_set_bulk)
 	zassert_equal(b, true);
 	zassert_equal(memcmp(opaque, &(uint8_t[6]) {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff},
 		sizeof(opaque)), 0);
-	zassert_equal(strcmp(string, "Hello world"), 0);
+	zassert_str_equal(string, "Hello world");
 	zassert_equal(u8, 80);
 	zassert_equal(s8, -80);
 	zassert_equal(u16, 160);

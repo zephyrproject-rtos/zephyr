@@ -781,7 +781,7 @@ int can_sja1000_init(const struct device *dev)
 	can_sja1000_write_reg(dev, CAN_SJA1000_AMR2, 0xFF);
 	can_sja1000_write_reg(dev, CAN_SJA1000_AMR3, 0xFF);
 
-	err = can_calc_timing(dev, &timing, config->common.bus_speed,
+	err = can_calc_timing(dev, &timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (err == -EINVAL) {
 		LOG_ERR("bitrate/sample point cannot be met (err %d)", err);

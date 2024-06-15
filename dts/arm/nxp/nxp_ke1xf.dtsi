@@ -284,12 +284,13 @@
 		};
 
 		lptmr0: lptmr@40040000 {
-			compatible = "nxp,kinetis-lptmr";
+			compatible = "nxp,lptmr";
 			reg = <0x40040000 0x1000>;
 			interrupts = <58 0>;
 			clock-frequency = <128000>;
 			prescaler = <1>;
 			clk-source = <1>;
+			resolution = <16>;
 		};
 
 		wdog: watchdog@40052000 {

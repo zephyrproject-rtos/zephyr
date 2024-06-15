@@ -104,3 +104,12 @@ properties:
       - "2-dot"
     description: |
       Display inversion control mode.
+
+  rgb-is-inverted:
+    type: boolean
+    description: |
+      Inverting color format order (RGB->BGR or BGR->RGB)
+      In the case of enabling this option, API reports pixel-format in capabilities
+      as the inverted value of the RGB pixel-format specified in MADCTL.
+      This option is convenient for supporting displays with bugs
+      where the actual color is different from the pixel format of MADCTL.

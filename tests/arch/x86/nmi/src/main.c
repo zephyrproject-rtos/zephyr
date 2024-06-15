@@ -35,7 +35,7 @@ uint8_t *nmi_stacks[] = {
 #endif
 };
 
-bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
+bool z_x86_do_kernel_nmi(const struct arch_esf *esf)
 {
 	uint64_t stack;
 

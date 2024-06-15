@@ -98,34 +98,34 @@ as described below:
 
       .. code-block:: console
 
-         pip install -r ~/zephyrproject/zephyr/doc/requirements.txt
+         pip install -U -r ~/zephyrproject/zephyr/doc/requirements.txt
 
       On Ubuntu Linux:
 
       .. code-block:: console
 
          sudo apt-get install --no-install-recommends doxygen graphviz librsvg2-bin \
-         texlive-latex-base texlive-latex-extra latexmk texlive-fonts-recommended
+         texlive-latex-base texlive-latex-extra latexmk texlive-fonts-recommended imagemagick
 
       On Fedora Linux:
 
       .. code-block:: console
 
          sudo dnf install doxygen graphviz texlive-latex latexmk \
-         texlive-collection-fontsrecommended librsvg2-tools
+         texlive-collection-fontsrecommended librsvg2-tools ImageMagick
 
       On Clear Linux:
 
       .. code-block:: console
 
-         sudo swupd bundle-add texlive graphviz
+         sudo swupd bundle-add texlive graphviz ImageMagick
 
       On Arch Linux:
 
       .. code-block:: console
 
          sudo pacman -S graphviz doxygen librsvg texlive-core texlive-bin \
-         texlive-latexextra texlive-fontsextra
+         texlive-latexextra texlive-fontsextra imagemagick
 
    .. group-tab:: macOS
 
@@ -133,13 +133,13 @@ as described below:
 
       .. code-block:: console
 
-         pip install -r ~/zephyrproject/zephyr/doc/requirements.txt
+         pip install -U -r ~/zephyrproject/zephyr/doc/requirements.txt
 
       Use ``brew`` and ``tlmgr`` to install the tools:
 
       .. code-block:: console
 
-         brew install doxygen graphviz mactex librsvg
+         brew install doxygen graphviz mactex librsvg imagemagick
          tlmgr install latexmk
          tlmgr install collection-fontsrecommended
 
@@ -149,13 +149,13 @@ as described below:
 
       .. code-block:: console
 
-         pip install -r %HOMEPATH$\zephyrproject\zephyr\doc\requirements.txt
+         pip install -U -r %HOMEPATH$\zephyrproject\zephyr\doc\requirements.txt
 
       Open a ``cmd.exe`` window as **Administrator** and run the following command:
 
       .. code-block:: console
 
-         choco install doxygen.install graphviz strawberryperl miktex rsvg-convert
+         choco install doxygen.install graphviz strawberryperl miktex rsvg-convert imagemagick
 
       .. note::
          On Windows, the Sphinx executable ``sphinx-build.exe`` is placed in

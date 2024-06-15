@@ -124,6 +124,11 @@ int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg);
 struct llext_load_param {
 	/** Should local relocation be performed */
 	bool relocate_local;
+	/**
+	 * Use the virtual symbol addresses from the ELF, not addresses within
+	 * the memory buffer, where the object is loaded
+	 */
+	bool pre_located;
 };
 
 #define LLEXT_LOAD_PARAM_DEFAULT {.relocate_local = true,}

@@ -202,7 +202,7 @@ static int npcx_hash_init(const struct device *dev)
 	return 0;
 }
 
-static struct crypto_driver_api npcx_crypto_api = {
+static const struct crypto_driver_api npcx_crypto_api = {
 	.hash_begin_session = npcx_hash_session_setup,
 	.hash_free_session = npcx_hash_session_free,
 	.query_hw_caps = npcx_query_caps,

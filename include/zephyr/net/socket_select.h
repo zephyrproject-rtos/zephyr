@@ -26,13 +26,10 @@
 extern "C" {
 #endif
 
-/** @cond INTERNAL_HIDDEN */
-
+/** Socket file descriptor set. */
 typedef struct zsock_fd_set {
-	uint32_t bitset[(CONFIG_POSIX_MAX_FDS + 31) / 32];
+	uint32_t bitset[(CONFIG_ZVFS_OPEN_MAX + 31) / 32];
 } zsock_fd_set;
-
-/** @endcond */
 
 /**
  * @brief Legacy function to poll multiple sockets for events
@@ -156,7 +153,7 @@ static inline void FD_SET(int fd, zsock_fd_set *set)
 }
 #endif
 
-#include <syscalls/socket_select.h>
+#include <zephyr/syscalls/socket_select.h>
 
 /**
  * @}

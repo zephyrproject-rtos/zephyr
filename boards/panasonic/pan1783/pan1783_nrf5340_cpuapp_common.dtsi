@@ -14,7 +14,7 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
-		zephyr,bt-hci-ipc = &ipc0;
+		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,ieee802154 = &ieee802154;
 	};
@@ -156,7 +156,6 @@
 		mcuboot-button0 = &evb_sw1;
 		mcuboot-led0 = &evb_led1;
 		watchdog0 = &wdt0;
-		spi-flash0 = &mx25r64;
 	};
 };
 

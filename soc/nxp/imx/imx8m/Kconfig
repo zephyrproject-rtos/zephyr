@@ -9,6 +9,7 @@ config SOC_MIMX8MM6_A53
 	select HAS_MCUX_CCM if CLOCK_CONTROL
 	select HAS_MCUX_IOMUXC if PINCTRL
 	select HAS_MCUX_RDC
+	select HAS_MCUX_CACHE
 
 config SOC_MIMX8MM6_M4
 	select ARM
@@ -29,6 +30,7 @@ config SOC_MIMX8ML8_A53
 	select HAS_MCUX_CCM if CLOCK_CONTROL
 	select HAS_MCUX_IOMUXC if PINCTRL
 	select HAS_MCUX_RDC
+	select HAS_MCUX_CACHE
 
 config SOC_MIMX8MN6_A53
 	select ARM64
@@ -38,6 +40,7 @@ config SOC_MIMX8MN6_A53
 	select HAS_MCUX_CCM if CLOCK_CONTROL
 	select HAS_MCUX_IOMUXC if PINCTRL
 	select HAS_MCUX_RDC
+	select HAS_MCUX_CACHE
 
 config SOC_MIMX8ML8_ADSP
 	select XTENSA

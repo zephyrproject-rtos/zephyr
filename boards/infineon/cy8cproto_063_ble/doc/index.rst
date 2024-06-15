@@ -59,7 +59,7 @@ The board configuration supports the following hardware features:
 
 
 The default configurations can be found in
-:zephyr_file:`boards/cypress/cy8cproto_063_ble/cy8cproto_063_ble_defconfig`
+:zephyr_file:`boards/infineon/cy8cproto_063_ble/cy8cproto_063_ble_defconfig`
 
 System Clock
 ============

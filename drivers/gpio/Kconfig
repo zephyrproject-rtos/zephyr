@@ -17,6 +17,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config GPIO_SHELL
 	bool "GPIO Shell"
 	depends on SHELL
+	imply DEVICE_DT_METADATA
 	help
 	  Enable GPIO Shell for testing.
 
@@ -124,10 +125,12 @@ source "drivers/gpio/Kconfig.gecko"
 source "drivers/gpio/Kconfig.ifx_cat1"
 source "drivers/gpio/Kconfig.imx"
 source "drivers/gpio/Kconfig.intel"
+source "drivers/gpio/Kconfig.iproc"
 source "drivers/gpio/Kconfig.it8xxx2"
 source "drivers/gpio/Kconfig.litex"
 source "drivers/gpio/Kconfig.lmp90xxx"
 source "drivers/gpio/Kconfig.lpc11u6x"
+source "drivers/gpio/Kconfig.max32"
 source "drivers/gpio/Kconfig.mchp_mss"
 source "drivers/gpio/Kconfig.mcp23s17"
 source "drivers/gpio/Kconfig.mcp23xxx"

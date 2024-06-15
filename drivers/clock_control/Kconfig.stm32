@@ -9,7 +9,7 @@ menuconfig CLOCK_CONTROL_STM32_CUBE
 	depends on SOC_FAMILY_STM32
 	select USE_STM32_LL_UTILS
 	select USE_STM32_LL_RCC if (SOC_SERIES_STM32MP1X || SOC_SERIES_STM32H7X || \
-		SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X)
+		SOC_SERIES_STM32H7RSX || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X)
 	select RUNTIME_NMI if ($(dt_nodelabel_enabled,clk_hse) && \
 		$(dt_nodelabel_has_prop,clk_hse,css-enabled))
 	help
@@ -69,6 +69,7 @@ config CLOCK_STM32_MCO1_SRC_LSE
 	           SOC_SERIES_STM32F7X || \
 	           SOC_SERIES_STM32L4X || \
 	           SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use LSE as source of MCO1
@@ -80,6 +81,7 @@ config CLOCK_STM32_MCO1_SRC_HSE
 	           SOC_SERIES_STM32F7X || \
 	           SOC_SERIES_STM32L4X || \
 	           SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use HSE as source of MCO1
@@ -102,6 +104,7 @@ config CLOCK_STM32_MCO1_SRC_HSI
 	           SOC_SERIES_STM32F4X || \
 	           SOC_SERIES_STM32F7X || \
 	           SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use HSI as source of MCO1
@@ -116,6 +119,7 @@ config CLOCK_STM32_MCO1_SRC_HSI48
 	bool "HSI48"
 	depends on SOC_SERIES_STM32L4X || \
 	           SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use HSI48 as source of MCO1
@@ -129,6 +133,7 @@ config CLOCK_STM32_MCO1_SRC_PLLCLK
 config CLOCK_STM32_MCO1_SRC_PLLQCLK
 	bool "PLLQ"
 	depends on SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use PLLQ as source of MCO1
@@ -171,11 +176,12 @@ config CLOCK_STM32_MCO1_DIV
 	             SOC_SERIES_STM32F7X || \
 	             SOC_SERIES_STM32L4X || \
 	             SOC_SERIES_STM32H7X || \
+	             SOC_SERIES_STM32H7RSX || \
 	             SOC_SERIES_STM32H5X \
 	           )
 	default 1
 	range 1   5 if SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
-	range 1   15 if SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X
+	range 1   15 if SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX || SOC_SERIES_STM32H5X
 	range 1   16 if SOC_SERIES_STM32L4X
 	help
 	  Prescaler for MCO1 output clock
@@ -194,6 +200,7 @@ config CLOCK_STM32_MCO2_SRC_SYSCLK
 	depends on SOC_SERIES_STM32F4X || \
 	           SOC_SERIES_STM32F7X || \
 	           SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use SYSCLK as source of MCO2
@@ -209,6 +216,7 @@ config CLOCK_STM32_MCO2_SRC_HSE
 	depends on SOC_SERIES_STM32F4X || \
 	           SOC_SERIES_STM32F7X || \
 	           SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use HSE as source of MCO2
@@ -216,6 +224,7 @@ config CLOCK_STM32_MCO2_SRC_HSE
 config CLOCK_STM32_MCO2_SRC_LSI
 	bool "LSI"
 	depends on SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use LSI as source of MCO2
@@ -223,6 +232,7 @@ config CLOCK_STM32_MCO2_SRC_LSI
 config CLOCK_STM32_MCO2_SRC_CSI
 	bool "CSI"
 	depends on SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use CSI as source of MCO2
@@ -236,6 +246,7 @@ config CLOCK_STM32_MCO2_SRC_PLLCLK
 config CLOCK_STM32_MCO2_SRC_PLLPCLK
 	bool "PLLPCLK"
 	depends on SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use PLLPCLK as source of MC02
@@ -243,6 +254,7 @@ config CLOCK_STM32_MCO2_SRC_PLLPCLK
 config CLOCK_STM32_MCO2_SRC_PLL2PCLK
 	bool "PLL2PCLK"
 	depends on SOC_SERIES_STM32H7X || \
+	           SOC_SERIES_STM32H7RSX || \
 	           SOC_SERIES_STM32H5X
 	help
 	  Use PLL2PCLK as source of MC02
@@ -254,11 +266,12 @@ config CLOCK_STM32_MCO2_DIV
 	             SOC_SERIES_STM32F4X || \
 	             SOC_SERIES_STM32F7X || \
 	             SOC_SERIES_STM32H5X || \
-	             SOC_SERIES_STM32H7X \
+	             SOC_SERIES_STM32H7X || \
+	             SOC_SERIES_STM32H7RSX \
 	           )
 	default 1
 	range 1 5 if SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
-	range 1 15 if SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X
+	range 1 15 if SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX || SOC_SERIES_STM32H5X
 	help
 	  Prescaler for MCO2 output clock
 

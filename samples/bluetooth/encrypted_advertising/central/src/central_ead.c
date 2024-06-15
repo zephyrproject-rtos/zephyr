@@ -38,7 +38,6 @@ static struct bt_conn_cb central_cb;
 static struct bt_conn_auth_cb central_auth_cb;
 
 static struct k_poll_signal conn_signal;
-static struct k_poll_signal sec_update_signal;
 static struct k_poll_signal passkey_enter_signal;
 static struct k_poll_signal device_found_cb_completed;
 
@@ -348,7 +347,6 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 
 	if (!err) {
 		LOG_DBG("Security changed: %s level %u", addr, level);
-		k_poll_signal_raise(&sec_update_signal, 0);
 	} else {
 		LOG_DBG("Security failed: %s level %u err %d", addr, level, err);
 	}
@@ -411,7 +409,6 @@ static int init_bt(void)
 
 	k_poll_signal_init(&conn_signal);
 	k_poll_signal_init(&passkey_enter_signal);
-	k_poll_signal_init(&sec_update_signal);
 	k_poll_signal_init(&gatt_disc_signal);
 	k_poll_signal_init(&gatt_read_signal);
 	k_poll_signal_init(&device_found_cb_completed);

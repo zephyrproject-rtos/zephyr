@@ -22,6 +22,8 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -14,7 +14,7 @@
 
 static int enable_usb_device_next(void)
 {
-	struct usbd_contex *sample_usbd = sample_usbd_init_device(NULL);
+	struct usbd_context *sample_usbd = sample_usbd_init_device(NULL);
 
 	if (sample_usbd == NULL) {
 		printk("Failed to initialize USB device");

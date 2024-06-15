@@ -27,8 +27,6 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-
-		spi-flash0 = &w25q128jv;
 	};
 
 	leds {

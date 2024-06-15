@@ -1,9 +1,0 @@
-# Copyright (c) 2024, Meta
-#
-# SPDX-License-Identifier: Apache-2.0
-
-config POSIX_CONFSTR
-	bool "Retrieve string system configuration"
-	default y if POSIX_API
-	help
-	  This enables the POSIX confstr() function.

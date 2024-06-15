@@ -351,6 +351,8 @@
 #include <ace20_lnl/dmic_regs_ace2x.h>
 #elif CONFIG_SOC_INTEL_ACE15_MTPM
 #include <ace15_mtpm/dmic_regs_ace1x.h>
+#elif CONFIG_SOC_INTEL_ACE30_PTL
+#include <ace30_ptl/dmic_regs_ace3x.h>
 #else
 #error "Unknown SoC"
 #endif

@@ -38,8 +38,7 @@ static inline atomic_t bounded_inc(atomic_t *val, atomic_t minimum,
 			break;
 		}
 
-		new_value = old_value < minimum ?
-			    minimum + 1 : old_value + 1;
+		new_value = ((old_value < minimum) ? minimum : old_value) + 1;
 	} while (atomic_cas(val, old_value, new_value) == 0U);
 
 	return old_value;
@@ -48,8 +47,8 @@ static inline atomic_t bounded_inc(atomic_t *val, atomic_t minimum,
 int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,
 		 unsigned int limit)
 {
-	if (sem == NULL || limit == SYS_SEM_MINIMUM ||
-	    initial_count > limit || limit > INT_MAX) {
+	if ((sem == NULL) || (limit == SYS_SEM_MINIMUM) ||
+	    (initial_count > limit) || (limit > INT_MAX)) {
 		return -EINVAL;
 	}
 
@@ -103,7 +102,7 @@ unsigned int sys_sem_count_get(struct sys_sem *sem)
 {
 	int value = atomic_get(&sem->futex.val);
 
-	return value > SYS_SEM_MINIMUM ? value : SYS_SEM_MINIMUM;
+	return (value > SYS_SEM_MINIMUM) ? value : SYS_SEM_MINIMUM;
 }
 #else
 int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,
@@ -126,7 +125,7 @@ int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
 	int ret_value = 0;
 
 	ret_value = k_sem_take(&sem->kernel_sem, timeout);
-	if (ret_value == -EAGAIN || ret_value == -EBUSY) {
+	if ((ret_value == -EAGAIN) || (ret_value == -EBUSY)) {
 		ret_value = -ETIMEDOUT;
 	}
 

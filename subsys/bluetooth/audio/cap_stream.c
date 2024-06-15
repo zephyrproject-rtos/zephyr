@@ -1,17 +1,49 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "cap_internal.h"
 
-#include <zephyr/logging/log.h>
-
 LOG_MODULE_REGISTER(bt_cap_stream, CONFIG_BT_CAP_STREAM_LOG_LEVEL);
+
+static bool stream_is_central(struct bt_bap_stream *bap_stream)
+{
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		struct bt_conn_info info;
+		int err;
+
+		if (bap_stream->conn == NULL) {
+			return false;
+		}
+
+		err = bt_conn_get_info(bap_stream->conn, &info);
+		if (err == 0 && info.role == BT_HCI_ROLE_CENTRAL) {
+			return true;
+		}
+	}
+
+	return false;
+}
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 static void cap_stream_configured_cb(struct bt_bap_stream *bap_stream,
@@ -24,7 +56,8 @@ static void cap_stream_configured_cb(struct bt_bap_stream *bap_stream,
 
 	LOG_DBG("%p", cap_stream);
 
-	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+	    stream_is_central(bap_stream)) {
 		bt_cap_initiator_codec_configured(cap_stream);
 	}
 
@@ -42,7 +75,8 @@ static void cap_stream_qos_set_cb(struct bt_bap_stream *bap_stream)
 
 	LOG_DBG("%p", cap_stream);
 
-	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+	    stream_is_central(bap_stream)) {
 		bt_cap_initiator_qos_configured(cap_stream);
 	}
 
@@ -60,7 +94,8 @@ static void cap_stream_enabled_cb(struct bt_bap_stream *bap_stream)
 
 	LOG_DBG("%p", cap_stream);
 
-	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+	    stream_is_central(bap_stream)) {
 		bt_cap_initiator_enabled(cap_stream);
 	}
 
@@ -78,7 +113,8 @@ static void cap_stream_metadata_updated_cb(struct bt_bap_stream *bap_stream)
 
 	LOG_DBG("%p", cap_stream);
 
-	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+	    stream_is_central(bap_stream)) {
 		bt_cap_initiator_metadata_updated(cap_stream);
 	}
 
@@ -110,7 +146,10 @@ static void cap_stream_released_cb(struct bt_bap_stream *bap_stream)
 
 	LOG_DBG("%p", cap_stream);
 
-	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+	/* Here we cannot use stream_is_central as bap_stream->conn is NULL, so fall back to
+	 * a more generic, less accurate check
+	 */
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT)) {
 		bt_cap_initiator_released(cap_stream);
 	}
 
@@ -130,7 +169,8 @@ static void cap_stream_started_cb(struct bt_bap_stream *bap_stream)
 
 	LOG_DBG("%p", cap_stream);
 
-	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST)) {
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+	    stream_is_central(bap_stream)) {
 		bt_cap_initiator_started(cap_stream);
 	}
 
@@ -187,6 +227,11 @@ static void cap_stream_connected_cb(struct bt_bap_stream *bap_stream)
 	struct bt_cap_stream *cap_stream =
 		CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
 	struct bt_bap_stream_ops *ops = cap_stream->ops;
+
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+	    stream_is_central(bap_stream)) {
+		bt_cap_initiator_connected(cap_stream);
+	}
 
 	if (ops != NULL && ops->connected != NULL) {
 		ops->connected(bap_stream);

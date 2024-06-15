@@ -38,7 +38,7 @@ static ALWAYS_INLINE bool arch_is_in_isr(void)
 	return (arch_curr_cpu()->nested != 0U);
 }
 
-static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
+static ALWAYS_INLINE bool arch_is_in_nested_exception(const struct arch_esf *esf)
 {
 	return (arch_curr_cpu()->arch.exc_depth > 1U) ? (true) : (false);
 }
@@ -48,7 +48,7 @@ static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
  * This function is used by privileged code to determine if the thread
  * associated with the stack frame is in user mode.
  */
-static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const z_arch_esf_t *esf)
+static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const struct arch_esf *esf)
 {
 	return ((esf->basic.xpsr & CPSR_M_Msk) == CPSR_M_USR);
 }

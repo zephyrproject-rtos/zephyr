@@ -1,0 +1,21 @@
+identifier: xg24_dk2601b
+name: xG24 Dev Kit (xG24-DK2601B, BRD2601B)
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - counter
+  - gpio
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - pm
+    - hwinfo
+vendor: silabs

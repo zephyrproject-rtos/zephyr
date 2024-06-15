@@ -979,7 +979,7 @@ static char *encode_float(double value,
 			/* Round only if the bit that would round is
 			 * set.
 			 */
-			if (fract & mask) {
+			if ((fract & mask) != 0ULL) {
 				fract += mask;
 			}
 		}
@@ -1060,7 +1060,7 @@ static char *encode_float(double value,
 			/* Fraction is subnormal.  Normalize it and correct
 			 * the exponent.
 			 */
-			while (((fract <<= 1) & BIT_63) == 0) {
+			for (fract <<= 1; (fract & BIT_63) == 0; fract <<= 1) {
 				expo--;
 			}
 		}
@@ -1128,7 +1128,7 @@ static char *encode_float(double value,
 		 * representation and correct the precision and zero-pruning
 		 * in accordance with the ISO C rule.
 		 */
-		if (decexp < (-4 + 1) || decexp > precision) {
+		if ((decexp < (-4 + 1)) || (decexp > precision)) {
 			c += 'e' - 'g';  /* e or E */
 			if (precision > 0) {
 				precision--;
@@ -1160,7 +1160,7 @@ static char *encode_float(double value,
 
 	/* Round the value to the last digit being printed. */
 	uint64_t round = BIT64(59); /* 0.5 */
-	while (decimals--) {
+	while (decimals-- != 0) {
 		_ldiv10(&round);
 	}
 	fract += round;
@@ -1173,7 +1173,7 @@ static char *encode_float(double value,
 	if (c == 'f') {
 		if (decexp > 0) {
 			/* Emit the digits above the decimal point. */
-			while (decexp > 0 && digit_count > 0) {
+			while ((decexp > 0) && (digit_count > 0)) {
 				*buf++ = _get_digit(&fract, &digit_count);
 				decexp--;
 			}
@@ -1192,7 +1192,7 @@ static char *encode_float(double value,
 			*buf++ = '.';
 		}
 
-		if (decexp < 0 && precision > 0) {
+		if ((decexp < 0) && (precision > 0)) {
 			conv->pad0_value = -decexp;
 			if (conv->pad0_value > precision) {
 				conv->pad0_value = precision;
@@ -1218,7 +1218,7 @@ static char *encode_float(double value,
 		}
 	}
 
-	while (precision > 0 && digit_count > 0) {
+	while ((precision > 0) && (digit_count > 0)) {
 		*buf++ = _get_digit(&fract, &digit_count);
 		precision--;
 	}
@@ -1364,7 +1364,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
  */
 
 #define OUTS(_sp, _ep) do { \
-	int rc = outs(out, ctx, _sp, _ep); \
+	int rc = outs(out, ctx, (_sp), (_ep)); \
 	\
 	if (rc < 0) {	    \
 		return rc; \
@@ -1601,6 +1601,26 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 
 			break;
 		}
+		case 'p':
+			/* Implementation-defined: null is "(nil)", non-null
+			 * has 0x prefix followed by significant address hex
+			 * digits, no leading zeros.
+			 */
+			if (value->ptr != NULL) {
+				bps = encode_uint((uintptr_t)value->ptr, conv,
+						  buf, bpe);
+
+				/* Use 0x prefix */
+				conv->altform_0c = true;
+				conv->specifier = 'x';
+
+				goto prec_int_pad0;
+			}
+
+			bps = "(nil)";
+			bpe = bps + 5;
+
+			break;
 		case 'c':
 			bps = buf;
 			buf[0] = CHAR_IS_SIGNED ? value->sint : value->uint;
@@ -1652,26 +1672,6 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 					conv->pad0_value = precision - (int)len;
 				}
 			}
-
-			break;
-		case 'p':
-			/* Implementation-defined: null is "(nil)", non-null
-			 * has 0x prefix followed by significant address hex
-			 * digits, no leading zeros.
-			 */
-			if (value->ptr != NULL) {
-				bps = encode_uint((uintptr_t)value->ptr, conv,
-						  buf, bpe);
-
-				/* Use 0x prefix */
-				conv->altform_0c = true;
-				conv->specifier = 'x';
-
-				goto prec_int_pad0;
-			}
-
-			bps = "(nil)";
-			bpe = bps + 5;
 
 			break;
 		case 'n':
@@ -1817,7 +1817,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 
 			OUTS(cp, bpe);
 		} else {
-			if (conv->altform_0c | conv->altform_0) {
+			if ((conv->altform_0c | conv->altform_0) != 0) {
 				OUTC('0');
 			}
 

@@ -1576,7 +1576,7 @@ static int mcp251xfd_init(const struct device *dev)
 		goto done;
 	}
 
-	ret = can_calc_timing(dev, &timing, dev_cfg->common.bus_speed,
+	ret = can_calc_timing(dev, &timing, dev_cfg->common.bitrate,
 			      dev_cfg->common.sample_point);
 	if (ret < 0) {
 		LOG_ERR("Can't find timing for given param");
@@ -1588,7 +1588,7 @@ static int mcp251xfd_init(const struct device *dev)
 	LOG_DBG("Sample-point err : %d", ret);
 
 #if defined(CONFIG_CAN_FD_MODE)
-	ret = can_calc_timing_data(dev, &timing_data, dev_cfg->common.bus_speed_data,
+	ret = can_calc_timing_data(dev, &timing_data, dev_cfg->common.bitrate_data,
 				   dev_cfg->common.sample_point_data);
 	if (ret < 0) {
 		LOG_ERR("Can't find data timing for given param");

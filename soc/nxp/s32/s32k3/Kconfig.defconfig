@@ -15,13 +15,6 @@ config NUM_IRQS
 config FPU
 	default y
 
-if !XIP
-config FLASH_SIZE
-	default 0
-config FLASH_BASE_ADDRESS
-	default 0
-endif
-
 if NET_L2_ETHERNET
 
 config NET_TCP_CHECKSUM

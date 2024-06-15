@@ -490,7 +490,7 @@ static void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 			net_sprint_ipv6_addr(dst),		\
 			net_pkt_iface(pkt),				\
 			net_if_get_by_iface(net_pkt_iface(pkt)));	\
-	} while (0)
+	} while (false)
 
 #define dbg_addr_recv(pkt_str, src, dst, pkt)	\
 	dbg_addr("Received", pkt_str, src, dst, pkt)
@@ -508,7 +508,7 @@ static void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 			net_sprint_ipv6_addr(target),	\
 			net_pkt_iface(pkt),				\
 			net_if_get_by_iface(net_pkt_iface(pkt)));	\
-	} while (0)
+	} while (false)
 
 #define dbg_addr_recv_tgt(pkt_str, src, dst, tgt, pkt)		\
 	dbg_addr_with_tgt("Received", pkt_str, src, dst, tgt, pkt)

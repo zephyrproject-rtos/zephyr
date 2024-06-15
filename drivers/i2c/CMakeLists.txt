@@ -10,6 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_RTIO i2c_rtio.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SHELL		i2c_shell.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_BITBANG		i2c_bitbang.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_TELINK_B91		i2c_b91.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_IPROC i2c_bcm_iproc.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CC13XX_CC26XX		i2c_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CC32XX		i2c_cc32xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_ESP32		i2c_esp32.c)
@@ -78,6 +79,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_AMBIQ		i2c_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_ENE_KB1200	i2c_ene_kb1200.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_I2C_SWITCH	gpio_i2c_switch.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NUMAKER		i2c_numaker.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_MAX32		i2c_max32.c)
 
 zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1
 	i2c_ll_stm32_v1.c

@@ -7,6 +7,19 @@
 #ifndef ZEPHYR_DRIVERS_FLASH_XSPI_STM32_H_
 #define ZEPHYR_DRIVERS_FLASH_XSPI_STM32_H_
 
+/* Macro to check if any xspi device has a domain clock or more */
+#define STM32_XSPI_DOMAIN_CLOCK_INST_SUPPORT(inst) \
+	DT_CLOCKS_HAS_IDX(DT_INST_PARENT(inst), 1) ||
+#define STM32_XSPI_INST_DEV_DOMAIN_CLOCK_SUPPORT				\
+	(DT_INST_FOREACH_STATUS_OKAY(STM32_XSPI_DOMAIN_CLOCK_INST_SUPPORT) 0)
+
+/* This symbol takes the value 1 if device instance has a domain clock in its dts */
+#if STM32_XSPI_INST_DEV_DOMAIN_CLOCK_SUPPORT
+#define STM32_XSPI_DOMAIN_CLOCK_SUPPORT 1
+#else
+#define STM32_XSPI_DOMAIN_CLOCK_SUPPORT 0
+#endif
+
 #define STM32_XSPI_FIFO_THRESHOLD       4U
 
 /* Valid range is [0, 255] */
@@ -24,12 +37,38 @@
 /* used as default value for DTS writeoc */
 #define SPI_NOR_WRITEOC_NONE 0xFF
 
+#if STM32_XSPI_USE_DMA
+/* Lookup table to set dma priority from the DTS */
+static const uint32_t table_priority[] = {
+	DMA_LOW_PRIORITY_LOW_WEIGHT,
+	DMA_LOW_PRIORITY_MID_WEIGHT,
+	DMA_LOW_PRIORITY_HIGH_WEIGHT,
+	DMA_HIGH_PRIORITY,
+};
+
+/* Lookup table to set dma channel direction from the DTS */
+static const uint32_t table_direction[] = {
+	DMA_MEMORY_TO_MEMORY,
+	DMA_MEMORY_TO_PERIPH,
+	DMA_PERIPH_TO_MEMORY,
+};
+
+struct stream {
+	DMA_TypeDef *reg;
+	const struct device *dev;
+	uint32_t channel;
+	struct dma_config cfg;
+	uint8_t priority;
+	bool src_addr_increment;
+	bool dst_addr_increment;
+};
+#endif /* STM32_XSPI_USE_DMA */
+
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 struct flash_stm32_xspi_config {
-	const struct stm32_pclken pclken; /* clock subsystem */
-	const struct stm32_pclken pclken_ker; /* clock subsystem */
-	const struct stm32_pclken pclken_mgr; /* clock subsystem */
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
 	irq_config_func_t irq_config;
 	size_t flash_size;
 	uint32_t max_frequency;
@@ -65,6 +104,10 @@ struct flash_stm32_xspi_data {
 	uint8_t jedec_id[JESD216_READ_ID_LEN];
 #endif /* CONFIG_FLASH_JESD216_API */
 	int cmd_status;
+#if STM32_XSPI_USE_DMA
+	struct stream dma_tx;
+	struct stream dma_rx;
+#endif /* STM32_XSPI_USE_DMA */
 };
 
 #endif /* ZEPHYR_DRIVERS_FLASH_XSPI_STM32_H_ */

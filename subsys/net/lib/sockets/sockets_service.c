@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_sock_svc, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/net/socket_service.h>
-#include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/zvfs/eventfd.h>
 
 static int init_socket_service(void);
 static bool init_done;
@@ -83,7 +83,7 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 	}
 
 	/* Tell the thread to re-read the variables */
-	eventfd_write(ctx.events[0].fd, 1);
+	zvfs_eventfd_write(ctx.events[0].fd, 1);
 	ret = 0;
 
 out:
@@ -180,8 +180,7 @@ static int trigger_work(struct zsock_pollfd *pev)
 static void socket_service_thread(void)
 {
 	int ret, i, fd, count = 0;
-	int error_count = 0;
-	eventfd_t value;
+	zvfs_eventfd_t value;
 
 	STRUCT_SECTION_COUNT(net_socket_service_desc, &ret);
 	if (ret == 0) {
@@ -212,11 +211,11 @@ static void socket_service_thread(void)
 
 	ctx.count = count + 1;
 
-	/* Create an eventfd that can be used to trigger events during polling */
-	fd = eventfd(0, 0);
+	/* Create an zvfs_eventfd that can be used to trigger events during polling */
+	fd = zvfs_eventfd(0, 0);
 	if (fd < 0) {
 		fd = -errno;
-		NET_ERR("eventfd failed (%d)", fd);
+		NET_ERR("zvfs_eventfd failed (%d)", fd);
 		goto out;
 	}
 
@@ -254,24 +253,10 @@ restart:
 		}
 
 		if (ret > 0 && ctx.events[0].revents) {
-			if ((ctx.events[0].revents & ZSOCK_POLLNVAL) ||
-			    (ctx.events[0].revents & ZSOCK_POLLERR)) {
-				/* Ignore eventfd errors and turn eventfd
-				 * support off if we get too many errors
-				 */
-				if (++error_count > 2) {
-					ctx.events[0].fd = -1;
-				}
-
-				continue;
-			}
-
-			eventfd_read(ctx.events[0].fd, &value);
+			zvfs_eventfd_read(ctx.events[0].fd, &value);
 			NET_DBG("Received restart event.");
 			goto restart;
 		}
-
-		error_count = 0;
 
 		for (i = 1; i < (count + 1); i++) {
 			if (ctx.events[i].fd < 0) {
@@ -318,4 +303,7 @@ static int init_socket_service(void)
 	return 0;
 }
 
-SYS_INIT(init_socket_service, APPLICATION, CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO);
+void socket_service_init(void)
+{
+	(void)init_socket_service();
+}

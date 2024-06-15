@@ -324,7 +324,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 * Otherwise we must ensure we can store at least
 	 * the pointer to the format string itself.
 	 */
-	if (buf0 != NULL && BUF_OFFSET + sizeof(char *) > len) {
+	if ((buf0 != NULL) && (BUF_OFFSET + sizeof(char *)) > len) {
 		return -ENOSPC;
 	}
 
@@ -432,11 +432,11 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 				buf = (void *) ROUND_UP(buf, align);
 				if (buf0 != NULL) {
 					/* make sure it fits */
-					if (BUF_OFFSET + size > len) {
+					if ((BUF_OFFSET + size) > len) {
 						return -ENOSPC;
 					}
 					if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-						memcpy(buf, &v, size);
+						memcpy(buf, (uint8_t *)&v, size);
 					} else if (fmt[-1] == 'L') {
 						*(long double *)buf = v.ld;
 					} else {
@@ -583,7 +583,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 						return -ENOSPC;
 					}
 					if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-						memcpy(buf, &v, size);
+						memcpy(buf, (uint8_t *)&v, size);
 					} else if (fmt[-1] == 'L') {
 						*(long double *)buf = v.ld;
 					} else {
@@ -605,7 +605,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		buf = (void *) ROUND_UP(buf, align);
 
 		/* make sure the data fits */
-		if (buf0 != NULL && BUF_OFFSET + size > len) {
+		if ((buf0 != NULL) && (BUF_OFFSET + size) > len) {
 			return -ENOSPC;
 		}
 
@@ -699,7 +699,7 @@ process_string:
 
 			if (buf0 != NULL) {
 				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-					memcpy(buf, &v, sizeof(long long));
+					memcpy(buf, (uint8_t *)&v, sizeof(long long));
 				} else {
 					*(long long *)buf = v;
 				}
@@ -717,7 +717,7 @@ process_string:
 	 * worth of va_list, or about 127 arguments on a 64-bit system
 	 * (twice that on 32-bit systems). That ought to be good enough.
 	 */
-	if (BUF_OFFSET / sizeof(int) > 255) {
+	if ((BUF_OFFSET / sizeof(int)) > 255) {
 		__ASSERT(false, "too many format args");
 		return -EINVAL;
 	}
@@ -753,7 +753,7 @@ process_string:
 #endif
 
 	/* Store strings pointer locations of read only strings. */
-	if (s_ro_cnt) {
+	if (s_ro_cnt != 0U) {
 		for (i = 0; i < s_idx; i++) {
 			if (!(str_ptr_pos[i] & STR_POS_RO_FLAG)) {
 				continue;
@@ -762,7 +762,7 @@ process_string:
 			uint8_t pos = str_ptr_pos[i] & STR_POS_MASK;
 
 			/* make sure it fits */
-			if (BUF_OFFSET + 1 > len) {
+			if ((BUF_OFFSET + 1) > len) {
 				return -ENOSPC;
 			}
 			/* store the pointer position prefix */
@@ -790,13 +790,13 @@ process_string:
 		}
 
 		/* make sure it fits */
-		if (BUF_OFFSET + 1 + size > len) {
+		if ((BUF_OFFSET + 1 + size) > len) {
 			return -ENOSPC;
 		}
 		/* store the pointer position prefix */
 		*buf++ = str_ptr_pos[i];
 		/* copy the string with its terminating '\0' */
-		memcpy(buf, s, size);
+		memcpy(buf, (uint8_t *)s, size);
 		buf += size;
 	}
 

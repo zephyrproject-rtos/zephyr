@@ -8,6 +8,7 @@
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "arduino_nicla_sense_me-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 / {
 	model = "Arduino Nicla Sense ME";
@@ -37,7 +38,6 @@
 	aliases {
 		sw0 = &user_button;
 		watchdog0 = &wdt0;
-		spi-flash0 = &mx25r1635f;
 	};
 };
 
@@ -73,6 +73,18 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
+	is31fl3194@53 {
+		compatible = "issi,is31fl3194";
+		reg = <0x53>;
+		led_rgb {
+			label = "RGB LED";
+			color-mapping = <LED_COLOR_ID_BLUE>,
+					<LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_RED>;
+			current-limit = <10>;
+		};
+	};
 };
 
 /* I2C1 in datasheet */

@@ -51,3 +51,12 @@ properties:
     enum:
       - 1
       - 2
+
+  ncs-line:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which nCS line of the XSPI IO Manager is connected to the Flash.

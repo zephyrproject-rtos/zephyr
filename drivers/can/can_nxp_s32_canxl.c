@@ -43,6 +43,8 @@
 #define CAN_NXP_S32_MAX_BITRATE	8000000
 #define CAN_NXP_S32_DATA_LENGTH 64
 
+#define CAN_NXP_S32_TDCO_MAX FIELD_GET(CANXL_SIC_BTDCC_FTDCOFF_MASK, CANXL_SIC_BTDCC_FTDCOFF_MASK)
+
 #ifdef CONFIG_CAN_NXP_S32_RX_FIFO
 /* RX FIFO depth is fixed to the maximum value */
 #define CAN_NXP_S32_RX_FIFO_DEPTH 32
@@ -706,6 +708,9 @@ static int can_nxp_s32_set_timing_data(const struct device *dev,
 	/* Set timing for CAN FD instance*/
 	CanXL_SetFDBaudRate(config->base_sic, &can_fd_time_segment);
 
+	Canexcel_Ip_SetTDCOffsetFD(config->instance, true, false,
+				CAN_CALC_TDCO((timing_data), 0U, CAN_NXP_S32_TDCO_MAX));
+
 	return 0;
 }
 #endif
@@ -931,7 +936,7 @@ static int can_nxp_s32_init(const struct device *dev)
 	IP_MC_RGM->PRST_0[0].PRST_0 &=
 		~(MC_RGM_PRST_0_PERIPH_16_RST_MASK | MC_RGM_PRST_0_PERIPH_24_RST_MASK);
 
-	err = can_calc_timing(dev, &data->timing, config->common.bus_speed,
+	err = can_calc_timing(dev, &data->timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing for given param");
@@ -942,11 +947,11 @@ static int can_nxp_s32_init(const struct device *dev)
 		LOG_WRN("Sample-point error : %d", err);
 	}
 
-	LOG_DBG("Setting CAN bitrate %d:", config->common.bus_speed);
+	LOG_DBG("Setting CAN bitrate %d:", config->common.bitrate);
 	nxp_s32_zcan_timing_to_canxl_timing(&data->timing, &config->can_cfg->bitrate);
 
 #ifdef CAN_NXP_S32_FD_MODE
-	err = can_calc_timing_data(dev, &data->timing_data, config->common.bus_speed_data,
+	err = can_calc_timing_data(dev, &data->timing_data, config->common.bitrate_data,
 				   config->common.sample_point_data);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing data for given param");
@@ -957,12 +962,17 @@ static int can_nxp_s32_init(const struct device *dev)
 		LOG_WRN("Sample-point-data err : %d", err);
 	}
 
-	LOG_DBG("Setting CAN FD bitrate %d:", config->common.bus_speed_data);
+	LOG_DBG("Setting CAN FD bitrate %d:", config->common.bitrate_data);
 	nxp_s32_zcan_timing_to_canxl_timing(&data->timing_data, &config->can_cfg->Fd_bitrate);
 #endif
 
 	/* Initialize CAN structure */
 	Canexcel_Ip_Init(config->instance, config->can_cfg, data->can_state);
+
+#ifdef CAN_NXP_S32_FD_MODE
+	Canexcel_Ip_SetTDCOffsetFD(config->instance, true, false,
+				CAN_CALC_TDCO((&data->timing_data), 0U, CAN_NXP_S32_TDCO_MAX));
+#endif
 
 	/* Configure time stamp */
 #ifdef CONFIG_CAN_RX_TIMESTAMP

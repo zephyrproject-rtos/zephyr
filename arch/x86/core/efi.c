@@ -33,8 +33,8 @@ void efi_init(struct efi_boot_arg *efi_arg)
 		return;
 	}
 
-	z_phys_map((uint8_t **)&efi, (uintptr_t)efi_arg,
-		   sizeof(struct efi_boot_arg), 0);
+	k_mem_map_phys_bare((uint8_t **)&efi, (uintptr_t)efi_arg,
+			    sizeof(struct efi_boot_arg), 0);
 }
 
 /* EFI thunk.  Not a lot of code, but lots of context:

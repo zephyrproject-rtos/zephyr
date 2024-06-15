@@ -45,6 +45,17 @@ struct flash_stm32_priv {
 #define OPTR OPTCR
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
+/* Register mapping for the stm32H7RS serie (single bank)*/
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#define FLASH_NB_32BITWORD_IN_FLASHWORD 4 /* 128 bits */
+#define CR1 CR
+#define SR1 SR
+/* flash sectore Nb [0-7] */
+#define FLASH_CR_SNB FLASH_CR_SSN
+#define FLASH_CR_SNB_Pos FLASH_CR_SSN_Pos
+#define KEYR1 KEYR
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+
 /* Differentiate between arm trust-zone non-secure/secure, and others. */
 #if defined(FLASH_NSSR_NSBSY) || defined(FLASH_NSSR_BSY) /* For mcu w. TZ in non-secure mode */
 #define FLASH_SECURITY_NS

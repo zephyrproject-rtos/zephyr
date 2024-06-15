@@ -400,7 +400,7 @@ void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_cu
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */

@@ -52,7 +52,7 @@ void uart_emul_callback_tx_data_ready_set(const struct device *dev,
  *
  * @return Number of bytes appended
  */
-uint32_t uart_emul_put_rx_data(const struct device *dev, uint8_t *data, size_t size);
+uint32_t uart_emul_put_rx_data(const struct device *dev, const uint8_t *data, size_t size);
 
 /**
  * @brief Read data from TX buffer
@@ -90,6 +90,14 @@ uint32_t uart_emul_flush_tx_data(const struct device *dev);
  * @param errors The @ref uart_rx_stop_reason errors to set
  */
 void uart_emul_set_errors(const struct device *dev, int errors);
+
+/**
+ * @brief Configures if rx buffer should be released on timeout, even when only partially filled.
+ *
+ * @param dev The emulated UART device instance
+ * @param release_on_timeout When true, buffer will be released on timeout
+ */
+void uart_emul_set_release_buffer_on_timeout(const struct device *dev, bool release_on_timeout);
 
 #ifdef __cplusplus
 }

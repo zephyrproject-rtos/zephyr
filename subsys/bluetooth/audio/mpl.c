@@ -6,24 +6,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/types.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/mcs.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/time_units.h>
-
-#include <zephyr/bluetooth/services/ots.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
-
-#include "media_proxy_internal.h"
-#include "mpl_internal.h"
-
-#include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(bt_mpl, CONFIG_BT_MPL_LOG_LEVEL);
+#include <zephyr/sys/util_macro.h>
 
 #include "ccid_internal.h"
+#include "media_proxy_internal.h"
 #include "mcs_internal.h"
+#include "mpl_internal.h"
+
+LOG_MODULE_REGISTER(bt_mpl, CONFIG_BT_MPL_LOG_LEVEL);
 
 #define TRACK_STATUS_INVALID 0x00
 #define TRACK_STATUS_VALID 0x01
@@ -395,7 +405,7 @@ static uint32_t setup_parent_group_object(struct mpl_group *group)
 	/* The implementation has a fixed structure, with one parent group, */
 	/* and one level of groups containing tracks only. */
 	/* The track groups have a pointer to the parent, but there is no */
-	/* poinbter in the other direction, so it is not possible to go from */
+	/* pointer in the other direction, so it is not possible to go from */
 	/* the parent group to a group of tracks. */
 
 	uint8_t type = MEDIA_PROXY_GROUP_OBJECT_GROUP_TYPE;

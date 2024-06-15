@@ -9,7 +9,9 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_GMAP_LC3_PRESET_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_GMAP_LC3_PRESET_
 
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 
 /* GMAP LC3 unicast presets defined by table 3.16 in the GMAP v1.0 specification */
 

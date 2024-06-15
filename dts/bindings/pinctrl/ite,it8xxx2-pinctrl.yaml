@@ -96,3 +96,16 @@ child-binding:
       enum:
         - "3v3"
         - "1v8"
+
+    drive-strength:
+      type: string
+      description: |
+          We can configure this property to drive a high or low current selection.
+          If this property is not configured, it is the default setting.
+          According to the SPEC, the default drive current selection varies from
+          different pins.
+          Define the high level 0b: 8mA
+                     low  level 1b: 4mA or 2mA
+      enum:
+        - "high"
+        - "low"

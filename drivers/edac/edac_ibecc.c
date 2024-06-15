@@ -387,7 +387,7 @@ static bool handle_nmi(void)
 	return true;
 }
 
-bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
+bool z_x86_do_kernel_nmi(const struct arch_esf *esf)
 {
 	const struct device *const dev = DEVICE_DT_GET(DEVICE_NODE);
 	struct ibecc_data *data = dev->data;

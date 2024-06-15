@@ -1,6 +1,5 @@
 tests:
   usb.uac2:
-    depends_on: usb_device
     tags: usb
     platform_allow:
       - native_sim

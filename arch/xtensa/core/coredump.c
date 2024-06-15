@@ -7,7 +7,7 @@
 #include <string.h>
 #include <zephyr/debug/coredump.h>
 #include <xtensa_asm2_context.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 #define ARCH_HDR_VER			1
 #define XTENSA_BLOCK_HDR_VER		2
@@ -91,7 +91,7 @@ struct xtensa_arch_block {
  */
 static struct xtensa_arch_block arch_blk;
 
-void arch_coredump_info_dump(const z_arch_esf_t *esf)
+void arch_coredump_info_dump(const struct arch_esf *esf)
 {
 	struct coredump_arch_hdr_t hdr = {
 		.id = COREDUMP_ARCH_HDR_ID,

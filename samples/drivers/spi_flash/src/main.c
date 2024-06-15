@@ -32,6 +32,20 @@
 #define SPI_FLASH_MULTI_SECTOR_TEST
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(jedec_spi_nor)
+#define SPI_FLASH_COMPAT jedec_spi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
+#define SPI_FLASH_COMPAT st_stm32_qspi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_ospi_nor)
+#define SPI_FLASH_COMPAT st_stm32_ospi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_xspi_nor)
+#define SPI_FLASH_COMPAT st_stm32_xspi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_qspi_nor)
+#define SPI_FLASH_COMPAT nordic_qspi_nor
+#else
+#define SPI_FLASH_COMPAT invalid
+#endif
+
 const uint8_t erased[] = { 0xff, 0xff, 0xff, 0xff };
 
 void single_sector_test(const struct device *flash_dev)
@@ -192,7 +206,7 @@ void multi_sector_test(const struct device *flash_dev)
 
 int main(void)
 {
-	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(spi_flash0));
+	const struct device *flash_dev = DEVICE_DT_GET_ONE(SPI_FLASH_COMPAT);
 
 	if (!device_is_ready(flash_dev)) {
 		printk("%s: device not ready.\n", flash_dev->name);

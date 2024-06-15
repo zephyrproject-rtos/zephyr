@@ -23,7 +23,6 @@
 		mcuboot-button0 = &button0;
 		sensor0 = &light;
 		sensor1 = &humidity;
-		spi-flash0 = &spi_flash0;
 	};
 
 	chosen {

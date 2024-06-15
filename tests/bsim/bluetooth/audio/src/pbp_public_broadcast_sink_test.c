@@ -3,21 +3,34 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#if defined(CONFIG_BT_PBP)
-
-#include <zephyr/sys/byteorder.h>
-
-#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/pbp.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
+#include "bstests.h"
 #include "common.h"
 
+#if defined(CONFIG_BT_PBP)
 #define SEM_TIMEOUT K_SECONDS(30)
 
 extern enum bst_result_t bst_result;
@@ -414,7 +427,7 @@ static void test_main(void)
 static const struct bst_test_instance test_public_broadcast_sink[] = {
 	{
 		.test_id = "public_broadcast_sink",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

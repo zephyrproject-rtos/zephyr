@@ -6,11 +6,16 @@
 
 / {
 	chosen {
-		zephyr,bt-uart = &arduino_serial;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 };
 
 &arduino_serial {
 	status = "okay";
 	current-speed = <115200>;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+	};
 };

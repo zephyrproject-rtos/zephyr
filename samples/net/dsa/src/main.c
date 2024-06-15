@@ -71,7 +71,7 @@ int start_slave_port_packet_socket(struct net_if *iface,
 	struct sockaddr_ll dst;
 	int ret;
 
-	pd->sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	pd->sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (pd->sock < 0) {
 		LOG_ERR("Failed to create RAW socket : %d", errno);
 		return -errno;

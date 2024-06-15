@@ -23,3 +23,7 @@ if((DEFINED CONFIG_FLASH_MCUX_FLEXSPI_XIP) AND (DEFINED CONFIG_FLASH))
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_NXP_S32_QSPI memc_nxp_s32_qspi.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_SMARTBOND memc_smartbond_nor_psram.c)
+
+zephyr_library_sources_ifdef(CONFIG_MEMC_MSPI_APS6404L memc_mspi_aps6404l.c)
+zephyr_library_include_directories_ifdef(CONFIG_MEMC_MSPI_APS6404L ${ZEPHYR_BASE}/drivers/mspi)

@@ -39,6 +39,18 @@ to 0x90000000.
    :goals: build flash
    :compact:
 
+STM32 b_u585i_iot02a Discovery kit instructions
+***********************************************
+
+The b_u585i_iot02a has 64MB of external flash attached via OSPI. It is mapped
+to 0x70000000.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/application_development/code_relocation_nocopy
+   :board: b_u585i_iot02a
+   :goals: build flash
+   :compact:
+
 Execution output
 ****************
 

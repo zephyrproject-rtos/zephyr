@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import glob
 import re
+import tempfile
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -53,10 +54,11 @@ class CoverageTool:
             for line in fp.readlines():
                 if re.search("GCOV_COVERAGE_DUMP_START", line):
                     capture_data = True
+                    capture_complete = False
                     continue
                 if re.search("GCOV_COVERAGE_DUMP_END", line):
                     capture_complete = True
-                    break
+                    # Keep searching for additional dumps
                 # Loop until the coverage data is found.
                 if not capture_data:
                     continue
@@ -71,16 +73,43 @@ class CoverageTool:
                         continue
                 else:
                     continue
-                extracted_coverage_info.update({file_name: hex_dump})
+                if file_name in extracted_coverage_info:
+                    extracted_coverage_info[file_name].append(hex_dump)
+                else:
+                    extracted_coverage_info[file_name] = [hex_dump]
         if not capture_data:
             capture_complete = True
         return {'complete': capture_complete, 'data': extracted_coverage_info}
 
-    @staticmethod
-    def create_gcda_files(extracted_coverage_info):
+    def merge_hexdumps(self, hexdumps):
+        # Only one hexdump
+        if len(hexdumps) == 1:
+            return hexdumps[0]
+
+        with tempfile.TemporaryDirectory() as dir:
+            # Write each hexdump to a dedicated temporary folder
+            dirs = []
+            for idx, dump in enumerate(hexdumps):
+                subdir = dir + f'/{idx}'
+                os.mkdir(subdir)
+                dirs.append(subdir)
+                with open(f'{subdir}/tmp.gcda', 'wb') as fp:
+                    fp.write(bytes.fromhex(dump))
+
+            # Iteratively call gcov-tool (not gcov) to merge the files
+            merge_tool = self.gcov_tool + '-tool'
+            for d1, d2 in zip(dirs[:-1], dirs[1:]):
+                cmd = [merge_tool, 'merge', d1, d2, '--output', d2]
+                subprocess.call(cmd)
+
+            # Read back the final output file
+            with open(f'{dirs[-1]}/tmp.gcda', 'rb') as fp:
+                return fp.read(-1).hex()
+
+    def create_gcda_files(self, extracted_coverage_info):
         gcda_created = True
         logger.debug("Generating gcda files")
-        for filename, hexdump_val in extracted_coverage_info.items():
+        for filename, hexdumps in extracted_coverage_info.items():
             # if kobject_hash is given for coverage gcovr fails
             # hence skipping it problem only in gcovr v4.1
             if "kobject_hash" in filename:
@@ -92,6 +121,7 @@ class CoverageTool:
                 continue
 
             try:
+                hexdump_val = self.merge_hexdumps(hexdumps)
                 with open(filename, 'wb') as fp:
                     fp.write(bytes.fromhex(hexdump_val))
             except ValueError:
@@ -109,7 +139,7 @@ class CoverageTool:
             capture_complete = gcov_data['complete']
             extracted_coverage_info = gcov_data['data']
             if capture_complete:
-                gcda_created = self.__class__.create_gcda_files(extracted_coverage_info)
+                gcda_created = self.create_gcda_files(extracted_coverage_info)
                 if gcda_created:
                     logger.debug("Gcov data captured: {}".format(filename))
                 else:

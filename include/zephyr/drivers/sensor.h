@@ -150,6 +150,8 @@ enum sensor_channel {
 	SENSOR_CHAN_POS_DY,
 	/** Position change on the Z axis, in points. */
 	SENSOR_CHAN_POS_DZ,
+	/** Position change on the X, Y and Z axis, in points. */
+	SENSOR_CHAN_POS_DXYZ,
 
 	/** Revolutions per minute, in RPM. */
 	SENSOR_CHAN_RPM,
@@ -639,7 +641,7 @@ struct sensor_read_config {
  *     { SENSOR_CHAN_GYRO_XYZ, 0 });
  *
  * int main(void) {
- *   sensor_read(&icm42688_accelgyro, &rtio);
+ *   sensor_read_async_mempool(&icm42688_accelgyro, &rtio);
  * }
  * @endcode
  */
@@ -685,7 +687,7 @@ struct sensor_read_config {
 	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, &_CONCAT(__sensor_read_config_, name))
 
 /* Used to submit an RTIO sqe to the sensor's iodev */
-typedef int (*sensor_submit_t)(const struct device *sensor, struct rtio_iodev_sqe *sqe);
+typedef void (*sensor_submit_t)(const struct device *sensor, struct rtio_iodev_sqe *sqe);
 
 /* The default decoder API */
 extern const struct sensor_decoder_api __sensor_default_decoder;
@@ -929,12 +931,12 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
  *
  * @param[in] chan The channel to check
  * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_GYRO_XYZ, or
- *         @ref SENSOR_CHAN_MAGN_XYZ
+ *         @ref SENSOR_CHAN_MAGN_XYZ, or @ref SENSOR_CHAN_POS_DXYZ
  * @retval false otherwise
  */
 #define SENSOR_CHANNEL_3_AXIS(chan)                                                                \
 	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_GYRO_XYZ ||                      \
-	 (chan) == SENSOR_CHAN_MAGN_XYZ)
+	 (chan) == SENSOR_CHAN_MAGN_XYZ || (chan) == SENSOR_CHAN_POS_DXYZ)
 
 /**
  * @brief Get the sensor's decoder API
@@ -1025,7 +1027,50 @@ static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void
 }
 
 /**
- * @brief Read data from a sensor.
+ * @brief Blocking one shot read of samples from a sensor into a buffer
+ *
+ * Using @p cfg, read data from the device by using the provided RTIO context
+ * @p ctx. This call will generate a @ref rtio_sqe that will be given the provided buffer. The call
+ * will wait for the read to complete before returning to the caller.
+ *
+ * @param[in] iodev The iodev created by @ref SENSOR_DT_READ_IODEV
+ * @param[in] ctx The RTIO context to service the read
+ * @param[in] buf Pointer to memory to read sample data into
+ * @param[in] buf_len Size in bytes of the given memory that are valid to read into
+ * @return 0 on success
+ * @return < 0 on error
+ */
+static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_t *buf,
+			      size_t buf_len)
+{
+	if (IS_ENABLED(CONFIG_USERSPACE)) {
+		struct rtio_sqe sqe;
+
+		rtio_sqe_prep_read(&sqe, iodev, RTIO_PRIO_NORM, buf, buf_len, buf);
+		rtio_sqe_copy_in(ctx, &sqe, 1);
+	} else {
+		struct rtio_sqe *sqe = rtio_sqe_acquire(ctx);
+
+		if (sqe == NULL) {
+			return -ENOMEM;
+		}
+		rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM, buf, buf_len, buf);
+	}
+	rtio_submit(ctx, 1);
+
+	struct rtio_cqe *cqe = rtio_cqe_consume(ctx);
+	int res = cqe->result;
+
+	__ASSERT(cqe->userdata != buf,
+		 "consumed non-matching completion for sensor read into buffer %p\n", buf);
+
+	rtio_cqe_release(ctx, cqe);
+
+	return res;
+}
+
+/**
+ * @brief One shot non-blocking read with pool allocated buffer
  *
  * Using @p cfg, read one snapshot of data from the device by using the provided RTIO context
  * @p ctx. This call will generate a @ref rtio_sqe that will leverage the RTIO's internal
@@ -1037,7 +1082,8 @@ static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void
  * @return 0 on success
  * @return < 0 on error
  */
-static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, void *userdata)
+static inline int sensor_read_async_mempool(struct rtio_iodev *iodev, struct rtio *ctx,
+					    void *userdata)
 {
 	if (IS_ENABLED(CONFIG_USERSPACE)) {
 		struct rtio_sqe sqe;
@@ -1065,7 +1111,7 @@ static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, void *
  * @param[in] result The result code of the read (0 being success)
  * @param[in] buf The data buffer holding the sensor data
  * @param[in] buf_len The length (in bytes) of the @p buf
- * @param[in] userdata The optional userdata passed to sensor_read()
+ * @param[in] userdata The optional userdata passed to sensor_read_async_mempool()
  */
 typedef void (*sensor_processing_callback_t)(int result, uint8_t *buf, uint32_t buf_len,
 					     void *userdata);
@@ -1485,6 +1531,6 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_SENSOR_DECODER_DECLARE_INTERNAL)
 }
 #endif
 
-#include <syscalls/sensor.h>
+#include <zephyr/syscalls/sensor.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_ */

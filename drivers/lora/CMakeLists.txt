@@ -20,3 +20,4 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_LORA_SX126X sx126x_standalone.c)
 zephyr_library_sources_ifdef(CONFIG_LORA_STM32WL_SUBGHZ_RADIO sx126x_stm32wl.c)
+zephyr_library_sources_ifdef(CONFIG_LORA_RYLRXXX rylrxxx.c)

@@ -56,7 +56,6 @@ class SizeCalculator:
         "ccm_data",
         "usb_descriptor",
         "usb_data", "usb_bos_desc",
-        "uart_mux",
         'log_backends_sections',
         'log_dynamic_sections',
         'log_const_sections',

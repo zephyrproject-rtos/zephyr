@@ -39,10 +39,12 @@ LOG_MODULE_REGISTER(npcx_i3c, CONFIG_I3C_LOG_LEVEL);
 
 #define MCLKD_FREQ_45_MHZ MHZ(45)
 
-#define I3C_STATUS_CLR_MASK                                                 \
-	(BIT(NPCX_I3C_MSTATUS_TGTSTART) | BIT(NPCX_I3C_MSTATUS_MCTRLDONE) | \
-	 BIT(NPCX_I3C_MSTATUS_COMPLETE) | BIT(NPCX_I3C_MSTATUS_IBIWON) |    \
-	 BIT(NPCX_I3C_MSTATUS_NOWCNTLR))
+#define I3C_STATUS_CLR_MASK                                                                        \
+	(BIT(NPCX_I3C_MSTATUS_MCTRLDONE) | BIT(NPCX_I3C_MSTATUS_COMPLETE) |                        \
+	 BIT(NPCX_I3C_MSTATUS_IBIWON) | BIT(NPCX_I3C_MSTATUS_NOWCNTLR))
+
+#define HDR_DDR_CMD_AND_CRC_SZ_WORD 0x2 /* 2 words =  Command(1 word) + CRC(1 word) */
+#define HDR_RD_CMD                  0x80
 
 /* Supported I3C MCLKD frequency */
 enum npcx_i3c_speed {
@@ -217,7 +219,7 @@ static inline void npcx_i3c_interrupt_enable(struct i3c_reg *inst, uint32_t mask
 static bool npcx_i3c_has_error(struct i3c_reg *inst)
 {
 	if (IS_BIT_SET(inst->MSTATUS, NPCX_I3C_MSTATUS_ERRWARN)) {
-		LOG_WRN("ERROR: MSTATUS 0x%08x MERRWARN 0x%08x", inst->MSTATUS, inst->MERRWARN);
+		LOG_ERR("ERROR: MSTATUS 0x%08x MERRWARN 0x%08x", inst->MSTATUS, inst->MERRWARN);
 
 		return true;
 	}
@@ -314,7 +316,8 @@ static inline int npcx_i3c_request_auto_ibi(struct i3c_reg *inst)
  * param[in] addr     Dyamic address for xfer or 0x7E for CCC command.
  * param[in] op_type  Request type.
  * param[in] is_read  Read(true) or write(false) operation.
- * param[in] read_sz  Read size.
+ * param[in] read_sz  Read size in bytes.
+ *                    If op_tye is HDR-DDR, the read_sz must be the number of words.
  *
  * return  0, success
  *         else, error
@@ -354,7 +357,7 @@ static int npcx_i3c_request_emit_start(struct i3c_reg *inst, uint8_t addr,
 
 	/* Check NACK after MCTRLDONE is get */
 	if (IS_BIT_SET(inst->MERRWARN, NPCX_I3C_MERRWARN_NACK)) {
-		LOG_DBG("%s: nack", __func__);
+		LOG_DBG("Address nacked");
 		return -ENODEV;
 	}
 
@@ -380,8 +383,8 @@ static inline int npcx_i3c_request_emit_stop(struct i3c_reg *inst)
 	uint32_t i3c_state = npcx_i3c_state_get(inst);
 
 	/* Make sure we are in a state where we can emit STOP */
-	if ((i3c_state != MSTATUS_STATE_NORMACT) && (i3c_state != MSTATUS_STATE_DAA)) {
-		LOG_ERR("Request stop state error, state= %#x", i3c_state);
+	if (i3c_state == MSTATUS_STATE_IDLE) {
+		LOG_WRN("Request stop in idle state, state= %#x", i3c_state);
 		return -ECANCELED;
 	}
 
@@ -394,6 +397,56 @@ static inline int npcx_i3c_request_emit_stop(struct i3c_reg *inst)
 	}
 
 	return 0;
+}
+
+static inline int npcx_i3c_request_hdr_exit(struct i3c_reg *inst)
+{
+	uint32_t val = 0;
+	uint32_t state;
+	int ret;
+
+	/* Before sending the HDR exit command, check the HDR mode */
+	state = npcx_i3c_state_get(inst);
+	if (state != MSTATUS_STATE_MSGDDR) {
+		LOG_ERR("%s, state error: %#x", __func__, state);
+		return -EPERM;
+	}
+
+	SET_FIELD(val, NPCX_I3C_MCTRL_TYPE, MCTRL_TYPE_HDR_EXIT);
+	SET_FIELD(val, NPCX_I3C_MCTRL_REQUEST, MCTRL_REQUEST_FORCEEXIT);
+
+	ret = npcx_i3c_send_request(inst, val);
+	if (ret != 0) {
+		LOG_ERR("Request hdr exit error %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static inline int npcx_i3c_xfer_stop(struct i3c_reg *inst)
+{
+	uint32_t state;
+	int ret;
+
+	state = npcx_i3c_state_get(inst);
+	LOG_DBG("Current working state=%d", state);
+
+	switch (state) {
+	case MSTATUS_STATE_NORMACT: /* SDR */
+		ret = npcx_i3c_request_emit_stop(inst);
+		break;
+	case MSTATUS_STATE_MSGDDR:  /* HDR-DDR */
+		ret = npcx_i3c_request_hdr_exit(inst);
+		break;
+	default:
+		/* Not supported */
+		ret = -ENOTSUP;
+		LOG_WRN("xfer_stop state not supported, state:%d", state);
+		break;
+	}
+
+	return ret;
 }
 
 static inline int npcx_i3c_ibi_respond_nack(struct i3c_reg *inst)
@@ -535,7 +588,7 @@ static int npcx_i3c_xfer_write_fifo(struct i3c_reg *inst, uint8_t *buf, uint8_t 
 		/* Check tx fifo not full */
 		if (WAIT_FOR(!IS_BIT_SET(inst->MDATACTRL, NPCX_I3C_MDATACTRL_TXFULL),
 			     NPCX_I3C_CHK_TIMEOUT_US, NULL) == false) {
-			LOG_DBG("%s: Check tx fifo not full timed out", __func__);
+			LOG_DBG("Check tx fifo not full timed out");
 			return -ETIMEDOUT;
 		}
 
@@ -642,14 +695,13 @@ static int npcx_i3c_xfer_write_fifo_dma(const struct device *dev, uint8_t *buf, 
 	/* Wait I3C COMPLETE */
 	ret = i3c_ctrl_wait_completion(dev);
 	if (ret < 0) {
-		LOG_DBG("%s: Check complete time out, buf_size:%d", __func__, buf_sz);
+		LOG_DBG("Check complete time out, buf_size:%d", buf_sz);
 		goto out_wr_fifo_dma;
 	}
 
 	/* Check and clear DMA TC after complete */
 	if (!IS_BIT_SET(mdma_inst->MDMA_CTL1, NPCX_MDMA_CTL_TC)) {
-		LOG_DBG("%s: DMA busy, TC=%d", __func__,
-			IS_BIT_SET(mdma_inst->MDMA_CTL1, NPCX_MDMA_CTL_TC));
+		LOG_DBG("DMA busy, TC=%d", IS_BIT_SET(mdma_inst->MDMA_CTL1, NPCX_MDMA_CTL_TC));
 		ret = -EBUSY;
 		goto out_wr_fifo_dma;
 	}
@@ -668,6 +720,7 @@ out_wr_fifo_dma:
 
 /*
  * brief:  Perform DMA read transaction.
+ *         (Data width used for DMA transfers is "byte")
  *
  * For read end, use the MDMA end-of-transfer interrupt(SIEN bit)
  * instead of using the I3CI interrupt generated by COMPLETE bit in MSTATUS register.
@@ -700,7 +753,7 @@ static int npcx_i3c_xfer_read_fifo_dma(const struct device *dev, uint8_t *buf, u
 	/* Wait MDMA TC */
 	ret = i3c_ctrl_wait_completion(dev);
 	if (ret < 0) {
-		LOG_DBG("%s: Check DMA done time out", __func__);
+		LOG_DBG("Check DMA done time out");
 	} else {
 		ret = buf_sz - mdma_inst->MDMA_CTCNT0; /* Set transferred count */
 		LOG_DBG("Read cnt=%d", ret);
@@ -717,6 +770,7 @@ static int npcx_i3c_xfer_read_fifo_dma(const struct device *dev, uint8_t *buf, u
 
 /*
  * brief:  Perform one transfer transaction by DMA.
+ *         (Support SDR and HDR-DDR)
  *
  * param[in] inst        Pointer to controller registers.
  * param[in] addr        Target address.
@@ -731,18 +785,45 @@ static int npcx_i3c_xfer_read_fifo_dma(const struct device *dev, uint8_t *buf, u
  */
 static int npcx_i3c_do_one_xfer_dma(const struct device *dev, uint8_t addr,
 				    enum npcx_i3c_mctrl_type op_type, uint8_t *buf, size_t buf_sz,
-				    bool is_read, bool emit_start, bool emit_stop)
+				    bool is_read, bool emit_start, bool emit_stop, uint8_t hdr_cmd)
 {
 	const struct npcx_i3c_config *config = dev->config;
 	struct i3c_reg *inst = config->base;
 	int ret = 0;
+	bool is_hdr_ddr = (op_type == NPCX_I3C_MCTRL_TYPE_I3C_HDR_DDR) ? true : false;
+	size_t rd_len = buf_sz;
 
 	npcx_i3c_status_clear_all(inst);
 	npcx_i3c_errwarn_clear_all(inst);
 
+	/* Check HDR-DDR moves data by words */
+	if (is_hdr_ddr && (buf_sz % 2 != 0)) {
+		LOG_ERR("%s, HDR-DDR data length should be even, len=%#x", __func__, buf_sz);
+		return -EINVAL;
+	}
+
 	/* Emit START if needed */
 	if (emit_start) {
-		ret = npcx_i3c_request_emit_start(inst, addr, op_type, is_read, buf_sz);
+		/*
+		 * For HDR-DDR mode read, RDTERM also includes one word (16 bits) for CRC.
+		 * For example, to read 8 bytes, set RDTERM to 6.
+		 * (1 word HDR-DDR command + 4 words data + 1 word for CRC)
+		 */
+		if (is_hdr_ddr) {
+			if (is_read) {
+				/* The unit of rd_len is "word" in DDR mode */
+				rd_len /= sizeof(uint16_t);    /* byte to word */
+				rd_len += HDR_DDR_CMD_AND_CRC_SZ_WORD;
+				hdr_cmd |= HDR_RD_CMD;
+			} else {
+				hdr_cmd &= ~HDR_RD_CMD;
+			}
+
+			/* Write the command code for the HDR-DDR message */
+			inst->MWDATAB = hdr_cmd;
+		}
+
+		ret = npcx_i3c_request_emit_start(inst, addr, op_type, is_read, rd_len);
 		if (ret != 0) {
 			LOG_ERR("%s: emit start fail", __func__);
 			goto out_do_one_xfer_dma;
@@ -773,9 +854,9 @@ static int npcx_i3c_do_one_xfer_dma(const struct device *dev, uint8_t addr,
 	}
 
 out_do_one_xfer_dma:
-	/* Emit STOP if needed */
+	/* Emit STOP or exit DDR if needed */
 	if (emit_stop) {
-		npcx_i3c_request_emit_stop(inst);
+		npcx_i3c_xfer_stop(inst);
 	}
 
 	return ret;
@@ -784,6 +865,7 @@ out_do_one_xfer_dma:
 
 /*
  * brief:  Perform one transfer transaction.
+ *         (Support SDR only)
  *
  * param[in] inst        Pointer to controller registers.
  * param[in] addr        Target address.
@@ -839,7 +921,7 @@ static int npcx_i3c_do_one_xfer(struct i3c_reg *inst, uint8_t addr,
 		/* Wait message transfer complete */
 		if (WAIT_FOR(IS_BIT_SET(inst->MSTATUS, NPCX_I3C_MSTATUS_COMPLETE),
 			     NPCX_I3C_CHK_TIMEOUT_US, NULL) == false) {
-			LOG_DBG("%s: timed out addr 0x%02x, buf_sz %u", __func__, addr, buf_sz);
+			LOG_DBG("Wait COMPLETE timed out, addr 0x%02x, buf_sz %u", addr, buf_sz);
 
 			ret = -ETIMEDOUT;
 			emit_stop = true;
@@ -882,10 +964,12 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 {
 	const struct npcx_i3c_config *config = dev->config;
 	struct i3c_reg *inst = config->base;
+	struct npcx_i3c_data *data = dev->data;
 	uint32_t intmask;
 	int xfered_len, ret = 0;
 	bool send_broadcast = true;
 	bool is_xfer_done = true;
+	enum npcx_i3c_mctrl_type op_type;
 
 	if (msgs == NULL) {
 		return -EINVAL;
@@ -913,7 +997,6 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 
 	/* Iterate over all the messages */
 	for (int i = 0; i < num_msgs; i++) {
-
 		/*
 		 * Check message is read or write operaion.
 		 * For write operation, check the last data byte of a transmit message.
@@ -958,35 +1041,63 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 		}
 #endif
 
-		/*
-		 * Two ways to do read/write transfer .
-		 * 1. [S] + [0x7E]    + [address] + [data] + [Sr or P]
-		 * 2. [S] + [address] + [data]    + [Sr or P]
-		 *
-		 * Send broadcast header(0x7E) on first transfer or after a STOP,
-		 * unless flag is set not to.
-		 */
-		if (!(msgs[i].flags & I3C_MSG_NBCH) && (send_broadcast)) {
-			ret = npcx_i3c_request_emit_start(inst, I3C_BROADCAST_ADDR,
-							  NPCX_I3C_MCTRL_TYPE_I3C, false, 0);
-			if (ret < 0) {
-				LOG_ERR("%s: emit start of broadcast addr failed, error (%d)",
-					__func__, ret);
+		/* Check message SDR or HDR mode */
+		bool is_msg_hdr = (msgs[i].flags & I3C_MSG_HDR) == I3C_MSG_HDR;
+
+		/* Set emit start type SDR or HDR-DDR mode */
+		if (!is_msg_hdr || msgs[i].hdr_mode == 0) {
+			op_type = NPCX_I3C_MCTRL_TYPE_I3C; /* Set operation type SDR */
+
+			/*
+			 * SDR, send boradcast header(0x7E)
+			 *
+			 * Two ways to do read/write transfer (SDR mode).
+			 * 1. [S] + [0x7E]    + [address] + [data] + [Sr or P]
+			 * 2. [S] + [address] + [data]    + [Sr or P]
+			 *
+			 * Send broadcast header(0x7E) on first transfer or after a STOP,
+			 * unless flag is set not to.
+			 */
+			if (!(msgs[i].flags & I3C_MSG_NBCH) && send_broadcast) {
+				ret = npcx_i3c_request_emit_start(inst, I3C_BROADCAST_ADDR,
+								  NPCX_I3C_MCTRL_TYPE_I3C, false,
+								  0);
+				if (ret < 0) {
+					LOG_ERR("%s: emit start of broadcast addr failed, error "
+						"(%d)",
+						__func__, ret);
+					break;
+				}
+				send_broadcast = false;
+			}
+		} else if ((data->common.ctrl_config.supported_hdr & I3C_MSG_HDR_DDR) &&
+			   (msgs[i].hdr_mode == I3C_MSG_HDR_DDR) && is_msg_hdr) {
+
+			op_type = NPCX_I3C_MCTRL_TYPE_I3C_HDR_DDR; /* Set operation type DDR */
+
+			/* Check HDR-DDR moves data by words */
+			if ((msgs[i].len % 2) != 0x0) {
+				LOG_ERR("HDR-DDR data length should be number of words , xfer "
+					"len=%d", msgs[i].num_xfer);
+				ret = -EINVAL;
 				break;
 			}
-			send_broadcast = false;
+		} else {
+			LOG_ERR("%s: %s controller HDR Mode %#x\r\n"
+				"msg HDR mode %#x, msg flag %#x",
+				__func__, dev->name, data->common.ctrl_config.supported_hdr,
+				msgs[i].hdr_mode, msgs[i].flags);
+			ret = -ENOTSUP;
+			break;
 		}
 
 #ifdef CONFIG_I3C_NPCX_DMA
 		/* Do transfer with target device */
-		xfered_len = npcx_i3c_do_one_xfer_dma(dev, target->dynamic_addr,
-						      NPCX_I3C_MCTRL_TYPE_I3C, msgs[i].buf,
-						      msgs[i].len, is_read, emit_start, emit_stop);
-#else
-		xfered_len = npcx_i3c_do_one_xfer(inst, target->dynamic_addr,
-						  NPCX_I3C_MCTRL_TYPE_I3C, msgs[i].buf, msgs[i].len,
-						  is_read, emit_start, emit_stop, no_ending);
+		xfered_len = npcx_i3c_do_one_xfer_dma(dev, target->dynamic_addr, op_type,
+						      msgs[i].buf, msgs[i].len, is_read, emit_start,
+						      emit_stop, msgs[i].hdr_cmd_code);
 #endif
+
 		if (xfered_len < 0) {
 			LOG_ERR("%s: do xfer fail", __func__);
 			ret = xfered_len; /* Set error code to ret */
@@ -997,7 +1108,7 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 		msgs[i].num_xfer = xfered_len;
 
 		if (emit_stop) {
-			/* After a STOP, send broadcast header before next msg */
+			/* SDR. After a STOP, send broadcast header before next msg */
 			send_broadcast = true;
 		}
 
@@ -1009,7 +1120,7 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 
 	/* Emit stop if error occurs or stop flag not in the msg */
 	if ((ret != 0) || (is_xfer_done == false)) {
-		npcx_i3c_request_emit_stop(inst);
+		npcx_i3c_xfer_stop(inst);
 	}
 
 	npcx_i3c_errwarn_clear_all(inst);
@@ -1354,9 +1465,10 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 
 	if (npcx_i3c_state_get(inst) != MSTATUS_STATE_TGTREQ) {
 		LOG_DBG("IBI work %p running not because of IBI", work);
+		LOG_ERR("%s: IBI not in TGTREQ state, state : %#x", __func__,
+			npcx_i3c_state_get(inst));
 		LOG_ERR("%s: MSTATUS 0x%08x MERRWARN 0x%08x", __func__, inst->MSTATUS,
 			inst->MERRWARN);
-
 		npcx_i3c_request_emit_stop(inst);
 
 		goto out_ibi_work;
@@ -1369,6 +1481,9 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 	if (WAIT_FOR(IS_BIT_SET(inst->MSTATUS, NPCX_I3C_MSTATUS_IBIWON), NPCX_I3C_CHK_TIMEOUT_US,
 		     NULL) == false) {
 		LOG_ERR("IBI work, IBIWON timeout");
+		LOG_ERR("%s: MSTATUS 0x%08x MERRWARN 0x%08x", __func__, inst->MSTATUS,
+			inst->MERRWARN);
+		npcx_i3c_request_emit_stop(inst);
 
 		goto out_ibi_work;
 	}
@@ -1378,21 +1493,14 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 
 	switch (ibitype) {
 	case MSTATUS_IBITYPE_IBI:
-		target = i3c_dev_list_i3c_addr_find(dev_list, (uint8_t)ibiaddr);
-		if (target != NULL) {
-			ret = npcx_i3c_xfer_read_fifo(inst, &payload[0], sizeof(payload));
-			if (ret >= 0) {
-				payload_sz = (size_t)ret;
-			} else {
-				LOG_ERR("Error reading IBI payload");
-
-				npcx_i3c_request_emit_stop(inst);
-
-				goto out_ibi_work;
-			}
+		ret = npcx_i3c_xfer_read_fifo(inst, &payload[0], sizeof(payload));
+		if (ret >= 0) {
+			payload_sz = (size_t)ret;
 		} else {
-			/* NACK IBI coming from unknown device */
-			npcx_i3c_ibi_respond_nack(inst);
+			LOG_ERR("Error reading IBI payload");
+			npcx_i3c_request_emit_stop(inst);
+
+			goto out_ibi_work;
 		}
 		break;
 	case MSTATUS_IBITYPE_HJ:
@@ -1402,12 +1510,14 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 	case MSTATUS_IBITYPE_CR:
 		LOG_DBG("Controller role handoff not supported");
 		npcx_i3c_ibi_respond_nack(inst);
+		npcx_i3c_request_emit_stop(inst);
 		break;
 	default:
 		break;
 	}
 
 	if (npcx_i3c_has_error(inst)) {
+		LOG_ERR("%s: unexpected error, ibi type:%d", __func__, ibitype);
 		/*
 		 * If the controller detects any errors, simply
 		 * emit a STOP to abort the IBI. The target will
@@ -1420,10 +1530,13 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 
 	switch (ibitype) {
 	case MSTATUS_IBITYPE_IBI:
+		target = i3c_dev_list_i3c_addr_find(dev_list, (uint8_t)ibiaddr);
 		if (target != NULL) {
 			if (i3c_ibi_work_enqueue_target_irq(target, &payload[0], payload_sz) != 0) {
 				LOG_ERR("Error enqueue IBI IRQ work");
 			}
+		} else {
+			LOG_ERR("IBI (MDB) target not in the list");
 		}
 
 		/* Finishing the IBI transaction */
@@ -1435,7 +1548,7 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 		}
 		break;
 	case MSTATUS_IBITYPE_CR:
-		/* Not supported */
+		/* Not supported, for future use. */
 		break;
 	default:
 		break;
@@ -1679,13 +1792,23 @@ static void npcx_i3c_isr(const struct device *dev)
 #endif /* CONFIG_I3C_NPCX_DMA */
 
 #ifdef CONFIG_I3C_USE_IBI
+	int ret;
+
 	/* Target start detected */
 	if (IS_BIT_SET(inst->MSTATUS, NPCX_I3C_MSTATUS_TGTSTART)) {
+		LOG_DBG("ISR TGTSTART !");
+
 		/* Disable further target initiated IBI interrupt */
 		inst->MINTCLR = BIT(NPCX_I3C_MINTCLR_TGTSTART);
+		/* Clear TGTSTART interrupt */
+		inst->MSTATUS = BIT(NPCX_I3C_MSTATUS_TGTSTART);
 
 		/* Handle IBI in workqueue */
-		i3c_ibi_work_enqueue_cb(dev, npcx_i3c_ibi_work);
+		ret = i3c_ibi_work_enqueue_cb(dev, npcx_i3c_ibi_work);
+		if (ret < 0) {
+			LOG_ERR("Enqueuing ibi work fail, ret %d", ret);
+			inst->MINTSET = BIT(NPCX_I3C_MINTSET_TGTSTART);
+		}
 	}
 #endif /* CONFIG_I3C_USE_IBI */
 
@@ -1958,7 +2081,7 @@ static int npcx_i3c_init(const struct device *dev)
 	}
 
 	ctrl_config->is_secondary = false; /* Currently can only act as primary controller. */
-	ctrl_config->supported_hdr = 0U;   /* HDR mode not supported at the moment. */
+	ctrl_config->supported_hdr = I3C_MSG_HDR_DDR; /* HDR-DDR mode is supported. */
 	ctrl_config->scl.i3c = config->clocks.i3c_pp_scl_hz; /* Set I3C frequency */
 
 	ret = npcx_i3c_configure(dev, I3C_CONFIG_CONTROLLER, ctrl_config);

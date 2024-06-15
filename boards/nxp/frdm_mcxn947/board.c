@@ -106,6 +106,25 @@ static int frdm_mcxn947_init(void)
 
 	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay)
+	/* Set up PLL1 for 80 MHz FlexCAN clock */
+	const pll_setup_t pll1Setup = {
+		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_SELI(27U) |
+			   SCG_SPLLCTRL_SELP(13U),
+		.pllndiv = SCG_SPLLNDIV_NDIV(3U),
+		.pllpdiv = SCG_SPLLPDIV_PDIV(1U),
+		.pllmdiv = SCG_SPLLMDIV_MDIV(10U),
+		.pllRate = 80000000U
+	};
+
+	/* Configure PLL1 to the desired values */
+	CLOCK_SetPLL1Freq(&pll1Setup);
+	/* PLL1 Monitor is disabled */
+	CLOCK_SetPll1MonitorMode(kSCG_Pll1MonitorDisable);
+	/* Set PLL1 CLK0 divider to value 1 */
+	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 1U);
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm1), okay)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom1Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM1);
@@ -203,6 +222,11 @@ static int frdm_mcxn947_init(void)
 	CLOCK_AttachClk(kPLL0_to_CTIMER4);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcan0Clk, 1U);
+	CLOCK_AttachClk(kPLL1_CLK0_to_FLEXCAN0);
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay)
 	CLOCK_SetClkDiv(kCLOCK_DivUSdhcClk, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_USDHC);
@@ -266,6 +290,21 @@ static int frdm_mcxn947_init(void)
 	CLOCK_EnableUsbhsPhyPllClock(kCLOCK_Usbphy480M, BOARD_XTAL0_CLK_HZ);
 	CLOCK_EnableUsbhsClock();
 	USB_EhciPhyInit(kUSB_ControllerEhci0, BOARD_XTAL0_CLK_HZ, &usbPhyConfig);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpcmp0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCmp0FClk, 1U);
+	CLOCK_AttachClk(kFRO12M_to_CMP0F);
+	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lptmr0), okay)
+	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVsys);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1u);
+	CLOCK_AttachClk(kPLL0_to_FLEXIO);
 #endif
 
 	/* Set SystemCoreClock variable. */

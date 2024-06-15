@@ -14,6 +14,9 @@
 #elif defined(CONFIG_SOC_XTENSA_DC233C)
 #include "backtrace_helpers.h"
 #endif
+
+#include <xtensa_asm2_context.h>
+
 static int mask, cause;
 
 static inline uint32_t xtensa_cpu_process_stack_pc(uint32_t pc)
@@ -91,14 +94,18 @@ int xtensa_backtrace_print(int depth, int *interrupted_stack)
 		return -1;
 	}
 
+	_xtensa_irq_stack_frame_raw_t *frame = (void *)interrupted_stack;
+	_xtensa_irq_bsa_t *bsa;
+
+	bsa = frame->ptr_to_bsa;
+	cause = bsa->exccause;
+
 	/* Initialize stk_frame with first frame of stack */
 	struct xtensa_backtrace_frame_t stk_frame;
 
 	xtensa_backtrace_get_start(&(stk_frame.pc), &(stk_frame.sp),
 			&(stk_frame.next_pc), interrupted_stack);
-	__asm__ volatile("l32i a4, a3, 0");
-	__asm__ volatile("l32i a4, a4, 4");
-	__asm__ volatile("mov %0, a4" : "=r"(cause));
+
 	if (cause != EXCCAUSE_INSTR_PROHIBITED) {
 		mask = stk_frame.pc & 0xc0000000;
 	}

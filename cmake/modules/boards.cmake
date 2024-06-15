@@ -136,7 +136,7 @@ foreach(root ${BOARD_ROOT})
     message(WARNING "BOARD_ROOT element without a 'boards' subdirectory:
 ${root}
 Hints:
-  - if your board directory is '/foo/bar/boards/<ARCH>/my_board' then add '/foo/bar' to BOARD_ROOT, not the entire board directory
+  - if your board directory is '/foo/bar/boards/my_board' then add '/foo/bar' to BOARD_ROOT, not the entire board directory
   - if in doubt, use absolute paths")
   endif()
 endforeach()

@@ -7,6 +7,8 @@ description: |
 
 compatible: "ambiq,bt-hci-spi"
 
+include: bt-hci.yaml
+
 properties:
   reg:
     type: array
@@ -30,3 +32,9 @@ properties:
       controller. The host needs to enable XO32MHz when receiving low to high
       edge interrupts and disable XO32MHz when receiving high to low edge
       interrupts.
+
+  bt-hci-name:
+    default: "ambiq hci"
+
+  bt-hci-bus:
+    default: "BT_HCI_BUS_SPI"

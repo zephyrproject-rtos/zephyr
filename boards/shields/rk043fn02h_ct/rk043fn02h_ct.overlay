@@ -1,0 +1,50 @@
+/*
+ * Copyright 2024, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+/{
+	chosen {
+		zephyr,display = &zephyr_lcdif;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336_rk043fn02h_ct>;
+	};
+};
+
+&nxp_touch_i2c {
+	status = "okay";
+	ft5336_rk043fn02h_ct: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&nxp_i2c_touch_fpc 2 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&zephyr_lcdif {
+	status = "okay";
+	width = <480>;
+	height = <272>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <41>;
+		hfront-porch = <4>;
+		hback-porch = <8>;
+		vsync-len = <10>;
+		vfront-porch = <4>;
+		vback-porch = <2>;
+		de-active= <1>;
+		pixelclk-active = <1>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		clock-frequency = <9210240>;
+	};
+	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
+	data-bus-width = "16-bit";
+	backlight-gpios = <&nxp_parallel_lcd_connector 0 GPIO_ACTIVE_HIGH>;
+};

@@ -20,6 +20,26 @@
 #define FUNC_CODE()
 #define FUNC_INSTR(a)
 
+#ifdef __MW_ASM_RV_MACRO__
+.macro section_var_mwdt, section, symbol
+	.section \section().\symbol, "aw"
+	\symbol :
+.endm
+
+.macro section_func_mwdt, section, symbol
+	.section \section().\symbol, "ax"
+	FUNC_CODE()
+	PERFOPT_ALIGN
+	\symbol :
+	FUNC_INSTR(symbol)
+.endm
+
+.macro section_subsec_func_mwdt, section, subsection, symbol
+	.section \section().\subsection, "ax"
+	PERFOPT_ALIGN
+	\symbol :
+.endm
+#else
 .macro section_var_mwdt, section, symbol
 	.section .\&section\&.\&symbol, "aw"
 	symbol :
@@ -38,12 +58,34 @@
 	PERFOPT_ALIGN
 	symbol :
 .endm
+#endif /* __MW_ASM_RV_MACRO__ */
 
 #define SECTION_VAR(sect, sym) section_var_mwdt sect, sym
 #define SECTION_FUNC(sect, sym) section_func_mwdt sect, sym
 #define SECTION_SUBSEC_FUNC(sect, subsec, sym) \
 	section_subsec_func_mwdt sect, subsec, sym
 
+#ifdef __MW_ASM_RV_MACRO__
+.macro glbl_text_mwdt, symbol
+	.globl \symbol
+	.type \symbol, @function
+.endm
+
+.macro glbl_data_mwdt, symbol
+	.globl \symbol
+	.type \symbol, @object
+.endm
+
+.macro weak_data_mwdt, symbol
+	.weak \symbol
+	.type \symbol, @object
+.endm
+
+.macro weak_text_mwdt, symbol
+	.weak \symbol
+	.type \symbol, @function
+.endm
+#else
 .macro glbl_text_mwdt, symbol
 	.globl symbol
 	.type symbol, @function
@@ -59,9 +101,16 @@
 	.type symbol, @object
 .endm
 
+.macro weak_text_mwdt, symbol
+	.weak symbol
+	.type symbol, @function
+.endm
+#endif /* __MW_ASM_RV_MACRO__ */
+
 #define GTEXT(sym) glbl_text_mwdt sym
 #define GDATA(sym) glbl_data_mwdt sym
 #define WDATA(sym) weak_data_mwdt sym
+#define WTEXT(sym) weak_text_mwdt sym
 
 #else /* defined(_ASMLANGUAGE) */
 
@@ -99,7 +148,7 @@
 /* For cpp98 */
 #define BUILD_ASSERT(EXPR, MSG...)
 #else
-#define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
+#define BUILD_ASSERT(EXPR, MSG...) _Static_assert((EXPR), "" MSG)
 #endif
 
 #define __builtin_arc_nop()	_nop()

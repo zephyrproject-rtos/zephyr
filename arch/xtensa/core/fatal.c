@@ -84,7 +84,7 @@ char *xtensa_exccause(unsigned int cause_code)
 #endif
 }
 
-void xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
+void xtensa_fatal_error(unsigned int reason, const struct arch_esf *esf)
 {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf) {
@@ -154,6 +154,6 @@ static void z_vrfy_xtensa_user_fault(unsigned int reason)
 	z_impl_xtensa_user_fault(reason);
 }
 
-#include <syscalls/xtensa_user_fault_mrsh.c>
+#include <zephyr/syscalls/xtensa_user_fault_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */

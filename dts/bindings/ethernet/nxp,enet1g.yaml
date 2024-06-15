@@ -1,0 +1,19 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP ENET1G IP Module
+
+compatible: "nxp,enet1g"
+
+include: ["base.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  rdc:
+    type: int
+    description: Set the RDC(Resource Domain Controller) domain permission for this peripheral

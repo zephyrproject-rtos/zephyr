@@ -14,6 +14,9 @@ LOG_MODULE_REGISTER(wifi_supplicant, CONFIG_WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL);
 #if !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE) && !defined(CONFIG_MBEDTLS_ENABLE_HEAP)
 #include <mbedtls/platform.h>
 #endif /* !CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE && !CONFIG_MBEDTLS_ENABLE_HEAP */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
+#include "supp_psa_api.h"
+#endif
 
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_nm.h>
@@ -522,6 +525,10 @@ static void handler(void)
 	/* Needed for crypto operation as default is no-op and fails */
 	mbedtls_platform_set_calloc_free(calloc, free);
 #endif /* !CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE && !CONFIG_MBEDTLS_ENABLE_HEAP */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
+	supp_psa_crypto_init();
+#endif
 
 	ctx = get_default_context();
 

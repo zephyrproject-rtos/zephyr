@@ -27,9 +27,9 @@ register callbacks.
                     [rank <int>] [not-lockable] [sirk <data>]
      lock          :Lock the set
      release       :Release the set [force]
-     set_sirk      :Set the currently used SIRK <sirk>
+     sirk          :Set the currently used SIRK <sirk>
      get_sirk      :Get the currently used SIRK
-     set_sirk_rsp  :Set the response used in SIRK requests <accept, accept_enc,
+     sirk_rsp      :Set the response used in SIRK requests <accept, accept_enc,
                     reject, oob>
 
 Besides initializing the CAS and the CSIS, there are also commands to lock and release the CSIS
@@ -45,8 +45,8 @@ clients.
 
 .. code-block:: console
 
-   uart:~$ cap_acceptor set_sirk 00112233445566778899aabbccddeeff
-   Set SIRK updated
+   uart:~$ cap_acceptor sirk 00112233445566778899aabbccddeeff
+   SIRK updated
 
 Getting the current SIRK
 ------------------------
@@ -56,7 +56,7 @@ This command can get the currently used SIRK.
 .. code-block:: console
 
    uart:~$ cap_acceptor get_sirk
-   Set SIRK
+   SIRK
    36 04 9a dc 66 3a a1 a1 |6...f:..
    1d 9a 2f 41 01 73 3e 01 |../A.s>.
 
@@ -86,7 +86,7 @@ The CAP initiator also supports broadcast audio as a source.
                         <cnt> (default 1)] [conns (<cnt> | all) (default 1)]
      unicast_list      : Unicast list streams
      unicast_update    : Unicast Update <all | stream [stream [stream...]]>
-     unicast_stop      :Unicast stop streams [stream [stream [stream...]]] (all by default)
+     unicast_stop      : Unicast stop streams [stream [stream [stream...]]] (all by default)
      unicast_cancel    : Unicast cancel current procedure
      ac_1              : Unicast audio configuration 1
      ac_2              : Unicast audio configuration 2
@@ -436,3 +436,18 @@ and index 1 gets the second offset, etc.:
    AICS inst 0x20014188 state gain 15, mute 0, mode 0
    Gain set for inst 0x20014188
    Microphone gain change completed
+
+Starting a broadcast reception
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+   uart:~$ bt connect <device A>
+   Connected: <device A>
+   uart:~$ bap_init
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ bap_broadcast_assistant discover
+   BASS discover done with 1 recv states
+   uart:~$ cap_commander broadcast_reception_start <device B> 0 4
+   Starting broadcast reception on 1 connection(s)

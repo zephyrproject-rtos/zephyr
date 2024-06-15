@@ -42,8 +42,8 @@ static struct bt_le_ext_adv_start_param ext_adv_start_param = {
 };
 
 static struct bt_le_per_adv_param per_adv_param = {
-	.interval_min = BT_GAP_ADV_SLOW_INT_MIN,
-	.interval_max = BT_GAP_ADV_SLOW_INT_MAX,
+	.interval_min = BT_GAP_PER_ADV_SLOW_INT_MIN,
+	.interval_max = BT_GAP_PER_ADV_SLOW_INT_MAX,
 	.options = BT_LE_ADV_OPT_USE_TX_POWER,
 };
 

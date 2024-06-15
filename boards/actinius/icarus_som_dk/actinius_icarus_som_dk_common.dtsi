@@ -55,7 +55,6 @@
 		mcuboot-led0 = &blue_led;
 		watchdog0 = &wdt0;
 		accel0 = &lis2dh12_accel;
-		spi-flash0 = &w25q64;
 		led-strip = &neopixel_led;
 	};
 

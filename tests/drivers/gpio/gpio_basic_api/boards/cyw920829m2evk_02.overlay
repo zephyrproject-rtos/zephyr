@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2024 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio_prt1 4 0>;
+		in-gpios = <&gpio_prt1 5 0>;
+	};
+};

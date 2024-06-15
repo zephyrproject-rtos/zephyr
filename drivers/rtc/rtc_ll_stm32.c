@@ -187,7 +187,10 @@ static inline ErrorStatus rtc_stm32_init_alarm(RTC_TypeDef *rtc, uint32_t format
 					LL_RTC_AlarmTypeDef *ll_alarm_struct, uint16_t id)
 {
 	ll_alarm_struct->AlarmDateWeekDaySel = RTC_STM32_ALRM_DATEWEEKDAYSEL_DATE;
-	/* RTC write protection is disabled & enabled again inside LL_RTC_ALMx_Init functions */
+	/*
+	 * RTC write protection is disabled & enabled again inside LL_RTC_ALMx_Init functions
+	 * The LL_RTC_ALMx_Init does convert bin2bcd by itself
+	 */
 	if (id == RTC_STM32_ALRM_A) {
 		return LL_RTC_ALMA_Init(rtc, format, ll_alarm_struct);
 	}
@@ -392,6 +395,8 @@ static int rtc_stm32_init(const struct device *dev)
 static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
 	struct rtc_stm32_data *data = dev->data;
+	LL_RTC_TimeTypeDef rtc_time;
+	LL_RTC_DateTypeDef rtc_date;
 	uint32_t real_year = timeptr->tm_year + TM_YEAR_REF;
 	int err = 0;
 
@@ -416,41 +421,46 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	LL_PWR_EnableBkUpAccess();
 #endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
-	LL_RTC_DisableWriteProtection(RTC);
+	/* Enter Init mode inside the LL_RTC_Time and Date Init functions */
+	rtc_time.Hours = bin2bcd(timeptr->tm_hour);
+	rtc_time.Minutes = bin2bcd(timeptr->tm_min);
+	rtc_time.Seconds = bin2bcd(timeptr->tm_sec);
+	LL_RTC_TIME_Init(RTC, LL_RTC_FORMAT_BCD, &rtc_time);
 
-	ErrorStatus status = LL_RTC_EnterInitMode(RTC);
-
-	if (status != SUCCESS) {
-		err = -EIO;
-		goto protect_unlock_return;
-	}
-
-	LL_RTC_DATE_SetYear(RTC, bin2bcd(real_year - RTC_YEAR_REF));
-	LL_RTC_DATE_SetMonth(RTC, bin2bcd(timeptr->tm_mon + 1));
-	LL_RTC_DATE_SetDay(RTC, bin2bcd(timeptr->tm_mday));
-
-	if (timeptr->tm_wday == 0) {
-		/* sunday (tm_wday = 0) is not represented by the same value in hardware */
-		LL_RTC_DATE_SetWeekDay(RTC, LL_RTC_WEEKDAY_SUNDAY);
-	} else {
-		/* all the other values are consistent with what is expected by hardware */
-		LL_RTC_DATE_SetWeekDay(RTC, timeptr->tm_wday);
-	}
-
-	LL_RTC_TIME_SetHour(RTC, bin2bcd(timeptr->tm_hour));
-	LL_RTC_TIME_SetMinute(RTC, bin2bcd(timeptr->tm_min));
-	LL_RTC_TIME_SetSecond(RTC, bin2bcd(timeptr->tm_sec));
-
-	LL_RTC_DisableInitMode(RTC);
-
-protect_unlock_return:
-	LL_RTC_EnableWriteProtection(RTC);
+	/* Set Date after Time to be sure the DR is correctly updated on stm32F2 serie. */
+	rtc_date.Year = bin2bcd((real_year - RTC_YEAR_REF));
+	rtc_date.Month = bin2bcd((timeptr->tm_mon + 1));
+	rtc_date.Day = bin2bcd(timeptr->tm_mday);
+	rtc_date.WeekDay = ((timeptr->tm_wday == 0) ? (LL_RTC_WEEKDAY_SUNDAY) : (timeptr->tm_wday));
+	/* WeekDay sunday (tm_wday = 0) is not represented by the same value in hardware,
+	 * all the other values are consistent with what is expected by hardware.
+	 */
+	LL_RTC_DATE_Init(RTC, LL_RTC_FORMAT_BCD, &rtc_date);
 
 #if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
 	LL_PWR_DisableBkUpAccess();
 #endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
+#ifdef CONFIG_SOC_SERIES_STM32F2X
+	/*
+	 * Because stm32F2 serie has no shadow registers,
+	 * wait until TR and DR registers are synchronised : flag RS
+	 */
+	while (LL_RTC_IsActiveFlag_RS(RTC) != 1) {
+		;
+	}
+#endif /* CONFIG_SOC_SERIES_STM32F2X */
+
 	k_mutex_unlock(&data->lock);
+
+	LOG_DBG("Calendar set : %d/%d/%d - %dh%dm%ds",
+			LL_RTC_DATE_GetDay(RTC),
+			LL_RTC_DATE_GetMonth(RTC),
+			LL_RTC_DATE_GetYear(RTC),
+			LL_RTC_TIME_GetHour(RTC),
+			LL_RTC_TIME_GetMinute(RTC),
+			LL_RTC_TIME_GetSecond(RTC)
+	);
 
 	return err;
 }
@@ -504,7 +514,8 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 
 	k_mutex_unlock(&data->lock);
 
-	timeptr->tm_year = bcd2bin(__LL_RTC_GET_YEAR(rtc_date)) + RTC_YEAR_REF - TM_YEAR_REF;
+	/* tm_year is the value since 1900 and Rtc year is from 2000 */
+	timeptr->tm_year = bcd2bin(__LL_RTC_GET_YEAR(rtc_date)) + (RTC_YEAR_REF - TM_YEAR_REF);
 	/* tm_mon allowed values are 0-11 */
 	timeptr->tm_mon = bcd2bin(__LL_RTC_GET_MONTH(rtc_date)) - 1;
 	timeptr->tm_mday = bcd2bin(__LL_RTC_GET_DAY(rtc_date));
@@ -530,10 +541,18 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 #else
 	timeptr->tm_nsec = 0;
 #endif
-
 	/* unknown values */
 	timeptr->tm_yday  = -1;
 	timeptr->tm_isdst = -1;
+
+	/* __LL_RTC_GET_YEAR(rtc_date)is the real year (from 2000) */
+	LOG_DBG("Calendar get : %d/%d/%d - %dh%dm%ds",
+		timeptr->tm_mday,
+		timeptr->tm_mon,
+		__LL_RTC_GET_YEAR(rtc_date),
+		timeptr->tm_hour,
+		timeptr->tm_min,
+		timeptr->tm_sec);
 
 	return 0;
 }
@@ -760,6 +779,7 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 		if (rtc_stm32_is_active_alarm(RTC, id)) {
 			LL_RTC_DisableWriteProtection(RTC);
 			rtc_stm32_disable_alarm(RTC, id);
+			rtc_stm32_disable_interrupt_alarm(RTC, id);
 			LL_RTC_EnableWriteProtection(RTC);
 		}
 		LOG_DBG("Alarm %d has been disabled", id);
@@ -792,9 +812,9 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 
 	p_rtc_alrm->user_mask = mask;
 
-	LOG_DBG("set alarm: second = %d, min = %d, hour = %d,"
-			"wday = %d, mday = %d, mask = 0x%04x",
-			timeptr->tm_sec, timeptr->tm_min, timeptr->tm_hour,
+	LOG_DBG("set alarm %d : second = %d, min = %d, hour = %d,"
+			" wday = %d, mday = %d, mask = 0x%04x",
+			id, timeptr->tm_sec, timeptr->tm_min, timeptr->tm_hour,
 			timeptr->tm_wday, timeptr->tm_mday, mask);
 
 #if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
@@ -804,15 +824,14 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	/* Disable the write protection for RTC registers */
 	LL_RTC_DisableWriteProtection(RTC);
 
-	if (rtc_stm32_is_active_alarm(RTC, id)) {
-		/* Disable Alarm if already active */
-		rtc_stm32_disable_alarm(RTC, id);
-	}
+	/* Disable ALARM so that the RTC_ISR_ALRAWF/RTC_ISR_ALRBWF is 0 */
+	rtc_stm32_disable_alarm(RTC, id);
+	rtc_stm32_disable_interrupt_alarm(RTC, id);
 
 #ifdef RTC_ISR_ALRAWF
 	if (id == RTC_STM32_ALRM_A) {
 		/* Wait till RTC ALRAWF flag is set before writing to RTC registers */
-		while ((LL_RTC_ReadReg(RTC, ISR) & RTC_ISR_ALRAWF) == 0U) {
+		while (!LL_RTC_IsActiveFlag_ALRAW(RTC)) {
 			;
 		}
 	}
@@ -821,7 +840,7 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 #ifdef RTC_ISR_ALRBWF
 	if (id == RTC_STM32_ALRM_B) {
 		/* Wait till RTC ALRBWF flag is set before writing to RTC registers */
-		while ((LL_RTC_ReadReg(RTC, ISR) & RTC_ISR_ALRBWF) == 0U) {
+		while (!LL_RTC_IsActiveFlag_ALRBW(RTC)) {
 			;
 		}
 	}
@@ -858,6 +877,22 @@ disable_bkup_access:
 unlock:
 	k_mutex_unlock(&data->lock);
 
+	if (id == RTC_STM32_ALRM_A) {
+		LOG_DBG("Alarm A : %dh%dm%ds   mask = 0x%x",
+			LL_RTC_ALMA_GetHour(RTC),
+			LL_RTC_ALMA_GetMinute(RTC),
+			LL_RTC_ALMA_GetSecond(RTC),
+			LL_RTC_ALMA_GetMask(RTC));
+	}
+#ifdef RTC_ALARM_B
+	if (id == RTC_STM32_ALRM_B) {
+		LOG_DBG("Alarm B : %dh%dm%ds   mask = 0x%x",
+			LL_RTC_ALMB_GetHour(RTC),
+			LL_RTC_ALMB_GetMinute(RTC),
+			LL_RTC_ALMB_GetSecond(RTC),
+			LL_RTC_ALMB_GetMask(RTC));
+	}
+#endif /* #ifdef RTC_ALARM_B */
 	return err;
 }
 

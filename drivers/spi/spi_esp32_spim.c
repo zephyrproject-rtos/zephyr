@@ -17,10 +17,10 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include <soc.h>
 #include <esp_memory_utils.h>
 #include <zephyr/drivers/spi.h>
-#ifndef CONFIG_SOC_SERIES_ESP32C3
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#else
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#else
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif
 #ifdef SOC_GDMA_SUPPORTED
 #include <hal/gdma_hal.h>
@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
 
-#ifdef CONFIG_SOC_SERIES_ESP32C3
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t
@@ -216,17 +216,35 @@ static int spi_esp32_init(const struct device *dev)
 	int err;
 	const struct spi_esp32_config *cfg = dev->config;
 	struct spi_esp32_data *data = dev->data;
+	spi_hal_context_t *hal = &data->hal;
 
 	if (!cfg->clock_dev) {
 		return -EINVAL;
 	}
+
+	if (!device_is_ready(cfg->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	/* Enables SPI peripheral */
+	err = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+	if (err < 0) {
+		LOG_ERR("Error enabling SPI clock");
+		return err;
+	}
+
+	spi_ll_master_init(hal->hw);
 
 	if (cfg->dma_enabled) {
 		spi_esp32_init_dma(dev);
 	}
 
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
-	data->irq_line = esp_intr_alloc(cfg->irq_source,
+	spi_ll_disable_int(cfg->spi);
+	spi_ll_clear_int_stat(cfg->spi);
+
+	esp_intr_alloc(cfg->irq_source,
 			0,
 			(ISR_HANDLER)spi_esp32_isr,
 			(void *)dev,
@@ -284,19 +302,6 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	if (spi_context_configured(ctx, spi_cfg)) {
 		return 0;
 	}
-
-	if (!device_is_ready(cfg->clock_dev)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
-	/* enables SPI peripheral */
-	if (clock_control_on(cfg->clock_dev, cfg->clock_subsys)) {
-		LOG_ERR("Could not enable SPI clock");
-		return -EIO;
-	}
-
-	spi_ll_master_init(hal->hw);
 
 	ctx->config = spi_cfg;
 
@@ -372,10 +377,11 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 #endif
 
 	/*
-	 * Workaround for ESP32S3 and ESP32C3 SoC. This dummy transaction is needed to sync CLK and
+	 * Workaround for ESP32S3 and ESP32Cx SoC. This dummy transaction is needed to sync CLK and
 	 * software controlled CS when SPI is in mode 3
 	 */
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C3) ||	\
+	defined(CONFIG_SOC_SERIES_ESP32C6)
 	if (ctx->num_cs_gpios && (hal_dev->mode & (SPI_MODE_CPOL | SPI_MODE_CPHA))) {
 		spi_esp32_transfer(dev);
 	}

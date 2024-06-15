@@ -6,12 +6,6 @@
  * Build test for jedec,spi-nor compatible (drivers/flash/spi_nor.c) wp-gpios and hold-gpios
  */
 
-/ {
-	aliases {
-		spi-flash0 = &mx25v1635fzui;
-	};
-};
-
 /delete-node/ &mx25r64;
 
 &pinctrl {

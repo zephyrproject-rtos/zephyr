@@ -395,7 +395,7 @@ static inline int z_vrfy_device_init(const struct device *dev)
 
 	return z_impl_device_init(dev);
 }
-#include <syscalls/device_init_mrsh.c>
+#include <zephyr/syscalls/device_init_mrsh.c>
 #endif
 
 extern void boot_banner(void);
@@ -417,8 +417,8 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_MMU
 	/* Invoked here such that backing store or eviction algorithms may
 	 * initialize kernel objects, and that all POST_KERNEL and later tasks
-	 * may perform memory management tasks (except for z_phys_map() which
-	 * is allowed at any time)
+	 * may perform memory management tasks (except for
+	 * k_mem_map_phys_bare() which is allowed at any time)
 	 */
 	z_mem_manage_init();
 #endif /* CONFIG_MMU */
@@ -474,6 +474,7 @@ static void init_idle_thread(int i)
 {
 	struct k_thread *thread = &z_idle_threads[i];
 	k_thread_stack_t *stack = z_idle_stacks[i];
+	size_t stack_size = K_KERNEL_STACK_SIZEOF(z_idle_stacks[i]);
 
 #ifdef CONFIG_THREAD_NAME
 
@@ -489,7 +490,7 @@ static void init_idle_thread(int i)
 #endif /* CONFIG_THREAD_NAME */
 
 	z_setup_new_thread(thread, stack,
-			  CONFIG_IDLE_STACK_SIZE, idle, &_kernel.cpus[i],
+			  stack_size, idle, &_kernel.cpus[i],
 			  NULL, NULL, K_IDLE_PRIO, K_ESSENTIAL,
 			  tname);
 	z_mark_thread_as_started(thread);
@@ -564,7 +565,8 @@ static char *prepare_multithreading(void)
 	_kernel.ready_q.cache = &z_main_thread;
 #endif /* CONFIG_SMP */
 	stack_ptr = z_setup_new_thread(&z_main_thread, z_main_stack,
-				       CONFIG_MAIN_STACK_SIZE, bg_thread_main,
+				       K_THREAD_STACK_SIZEOF(z_main_stack),
+				       bg_thread_main,
 				       NULL, NULL, NULL,
 				       CONFIG_MAIN_THREAD_PRIORITY,
 				       K_ESSENTIAL, "main");
@@ -660,6 +662,9 @@ FUNC_NORETURN void z_cstart(void)
 
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
+#if defined(CONFIG_SMP)
+	arch_smp_init();
+#endif
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_STACK_CANARIES

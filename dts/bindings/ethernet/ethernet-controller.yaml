@@ -36,3 +36,4 @@ properties:
       - "mii"
       - "rmii"
       - "gmii"
+      - "rgmii"

@@ -2,33 +2,38 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig POSIX_MQUEUE
-	bool "Message queue support"
-	default y if POSIX_API
+menuconfig POSIX_MESSAGE_PASSING
+	bool "POSIX message queue support"
 	help
 	  This enabled POSIX message queue related APIs.
 
-if POSIX_MQUEUE
+if POSIX_MESSAGE_PASSING
 
-config MSG_COUNT_MAX
-	int "Maximum number of messages in message queue"
+config POSIX_MQ_OPEN_MAX
+	int "Maximum number of messages in a POSIX message queue"
 	default 16
 	help
 	  Mention maximum number of messages in message queue in POSIX compliant
 	  application.
 
+config POSIX_MQ_PRIO_MAX
+	int "Maximum number of POSIX message priorities"
+	default 32
+	help
+	  Maximum number of message priorities supported by the implementation.
+
 config MSG_SIZE_MAX
-	int "Maximum size of a message"
+	int "Maximum size of a POSIX message"
 	default 16
 	help
 	  Mention maximum size of message in bytes.
 
 config MQUEUE_NAMELEN_MAX
-	int "Maximum size of a name length"
+	int "Maximum POSIX message queue name size"
 	default 16
 	range 2 255
 	help
-	  Mention length of message queue name in number of characters.
+	  Mention size of message queue name in number of characters.
 
 config HEAP_MEM_POOL_ADD_SIZE_MQUEUE
 	def_int 1024

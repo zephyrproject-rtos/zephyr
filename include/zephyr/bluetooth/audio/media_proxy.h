@@ -40,6 +40,7 @@
 #include <stdbool.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/util_macro.h>
 
 /* TODO: Remove dependency on mcs.h */
 #include "mcs.h"
