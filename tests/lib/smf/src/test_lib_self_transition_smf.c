@@ -219,6 +219,12 @@ static void parent_ab_run(void *obj)
 
 	o->transition_bits |= BIT(PARENT_AB_RUN);
 
+	/*
+	 * You should not call smf_set_handled() in the same code path as smf_set_state().
+	 * There was a bug that did not reset the handled bit if both were called,
+	 * so check it's still fixed:
+	 */
+	smf_set_handled(SMF_CTX(obj));
 	smf_set_state(SMF_CTX(obj), &test_states[STATE_C]);
 }
 
