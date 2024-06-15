@@ -16,6 +16,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/kernel.h>
@@ -395,6 +396,17 @@ int zvfs_close(int fd)
 	zvfs_free_fd(fd);
 
 	return res;
+}
+
+FILE *zvfs_fdopen(int fd, const char *mode)
+{
+	ARG_UNUSED(mode);
+
+	if (_check_fd(fd) < 0) {
+		return NULL;
+	}
+
+	return (FILE *)&fdtable[fd];
 }
 
 int zvfs_fstat(int fd, struct stat *buf)
