@@ -157,89 +157,148 @@ static int mipi_dbi_spi_write_display(const struct device *dev,
 
 #if MIPI_DBI_SPI_READ_REQUIRED
 
-static int mipi_dbi_spi_command_read(const struct device *dev,
-				     const struct mipi_dbi_config *dbi_config,
-				     uint8_t *cmds, size_t num_cmds,
-				     uint8_t *response, size_t len)
+static inline int
+mipi_dbi_spi_read_helper_3wire(const struct device *dev,
+			       const struct mipi_dbi_config *dbi_config,
+			       uint8_t *cmds, size_t num_cmds,
+			       uint8_t *response, size_t len)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
 	struct mipi_dbi_spi_data *data = dev->data;
+	struct spi_config tmp_config;
 	struct spi_buf buffer;
 	struct spi_buf_set buf_set = {
 		.buffers = &buffer,
 		.count = 1,
 	};
 	int ret = 0;
+
+	/*
+	 * We have to emulate 3 wire mode by packing the data/command
+	 * bit into the upper bit of the SPI transfer, switch SPI to
+	 * 9 bit mode, and write the transfer.
+	 */
+
+	if ((dbi_config->config.operation & SPI_WORD_SIZE_MASK)
+	    != SPI_WORD_SET(9)) {
+		return -ENOTSUP;
+	}
+
+	memcpy(&tmp_config, &dbi_config->config, sizeof(tmp_config));
+	tmp_config.operation &= ~SPI_WORD_SIZE_MASK;
+	tmp_config.operation |= SPI_WORD_SET(9);
+
+	buffer.buf = &data->spi_byte;
+	buffer.len = 1;
+
+	/* Send each command */
+	for (size_t i = 0; i < num_cmds; i++) {
+		data->spi_byte = cmds[i];
+		ret = spi_write(config->spi_dev, &tmp_config, &buf_set);
+		if (ret < 0) {
+			goto out;
+		}
+	}
+
+	/* Now, we can switch to 8 bit mode, and read data */
+	buffer.buf = (void *)response;
+	buffer.len = len;
+	ret = spi_read(config->spi_dev, &dbi_config->config, &buf_set);
+
+out:
+	spi_release(config->spi_dev, &tmp_config); /* Really necessary here? */
+	return ret;
+}
+
+static inline int
+mipi_dbi_spi_read_helper_4wire(const struct device *dev,
+			       const struct mipi_dbi_config *dbi_config,
+			       uint8_t *cmds, size_t num_cmds,
+			       uint8_t *response, size_t len)
+{
+	const struct mipi_dbi_spi_config *config = dev->config;
 	struct spi_config tmp_config;
+	struct spi_buf buffer;
+	struct spi_buf_set buf_set = {
+		.buffers = &buffer,
+		.count = 1,
+	};
+	int ret = 0;
+
+	/*
+	 * 4 wire mode is much simpler. We just toggle the
+	 * command/data GPIO to indicate if we are sending
+	 * a command or data. Note that since some SPI displays
+	 * require CS to be held low for the entire read sequence,
+	 * we set SPI_HOLD_ON_CS
+	 */
+
+	memcpy(&tmp_config, &dbi_config->config, sizeof(tmp_config));
+	tmp_config.operation |= SPI_HOLD_ON_CS;
+
+	if (num_cmds > 0) {
+		buffer.buf = cmds;
+		buffer.len = num_cmds;
+
+		/* Set CD pin low for command */
+		gpio_pin_set_dt(&config->cmd_data, 0);
+
+		ret = spi_write(config->spi_dev, &tmp_config, &buf_set);
+		if (ret < 0) {
+			goto out;
+		}
+	}
+
+	if (len > 0) {
+		buffer.buf = (void *)response;
+		buffer.len = len;
+
+		/* Set CD pin high for data */
+		gpio_pin_set_dt(&config->cmd_data, 1);
+
+		ret = spi_read(config->spi_dev, &tmp_config, &buf_set);
+		if (ret < 0) {
+			goto out;
+		}
+	}
+
+out:
+	spi_release(config->spi_dev, &tmp_config);
+	return ret;
+}
+
+static int mipi_dbi_spi_command_read(const struct device *dev,
+				     const struct mipi_dbi_config *dbi_config,
+				     uint8_t *cmds, size_t num_cmds,
+				     uint8_t *response, size_t len)
+{
+	struct mipi_dbi_spi_data *data = dev->data;
+	int ret = 0;
 
 	ret = k_mutex_lock(&data->lock, K_FOREVER);
 	if (ret < 0) {
 		return ret;
 	}
-	memcpy(&tmp_config, &dbi_config->config, sizeof(tmp_config));
 	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
 	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
-		/* We have to emulate 3 wire mode by packing the data/command
-		 * bit into the upper bit of the SPI transfer.
-		 * switch SPI to 9 bit mode, and write the transfer
-		 */
-		tmp_config.operation &= ~SPI_WORD_SIZE_MASK;
-		tmp_config.operation |= SPI_WORD_SET(9);
-
-		buffer.buf = &data->spi_byte;
-		buffer.len = 1;
-		/* Send each command */
-		for (size_t i = 0; i < num_cmds; i++) {
-			data->spi_byte = cmds[i];
-			ret = spi_write(config->spi_dev, &tmp_config, &buf_set);
-			if (ret < 0) {
-				goto out;
-			}
+		ret = mipi_dbi_spi_read_helper_3wire(dev, dbi_config,
+						     cmds, num_cmds,
+						     response, len);
+		if (ret < 0) {
+			goto out;
 		}
-		/* Now, we can switch to 8 bit mode, and read data */
-		buffer.buf = (void *)response;
-		buffer.len = len;
-		ret = spi_read(config->spi_dev, &dbi_config->config, &buf_set);
 	} else if (dbi_config->mode == MIPI_DBI_MODE_SPI_4WIRE) {
-		/* 4 wire mode is much simpler. We just toggle the
-		 * command/data GPIO to indicate if we are sending
-		 * a command or data. Note that since some SPI displays
-		 * require CS to be held low for the entire read sequence,
-		 * we set SPI_HOLD_ON_CS
-		 */
-		tmp_config.operation |= SPI_HOLD_ON_CS;
-
-		if (num_cmds > 0) {
-			buffer.buf = cmds;
-			buffer.len = num_cmds;
-			/* Set CD pin low for command */
-			gpio_pin_set_dt(&config->cmd_data, 0);
-
-			ret = spi_write(config->spi_dev, &tmp_config,
-					&buf_set);
-			if (ret < 0) {
-				goto out;
-			}
-		}
-
-		if (len > 0) {
-			/* Set CD pin high for data */
-			gpio_pin_set_dt(&config->cmd_data, 1);
-
-			buffer.buf = (void *)response;
-			buffer.len = len;
-			ret = spi_read(config->spi_dev, &tmp_config,
-				       &buf_set);
-			if (ret < 0) {
-				goto out;
-			}
+		ret = mipi_dbi_spi_read_helper_4wire(dev, dbi_config,
+						     cmds, num_cmds,
+						     response, len);
+		if (ret < 0) {
+			goto out;
 		}
 	} else {
 		/* Otherwise, unsupported mode */
 		ret = -ENOTSUP;
 	}
 out:
-	spi_release(config->spi_dev, &tmp_config);
 	k_mutex_unlock(&data->lock);
 	return ret;
 }
