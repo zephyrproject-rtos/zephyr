@@ -9,13 +9,13 @@
 
 #ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
 
-bool pm_suspend_devices(void);
-void pm_resume_devices(void);
+bool pm_suspend_devices(bool turn_on_off_flag);
+void pm_resume_devices(bool turn_on_off_flag);
 
 #else
 
-bool pm_suspend_devices(void) { return true; }
-void pm_resume_devices(void) {}
+bool pm_suspend_devices(bool turn_on_off_flag) { return true; }
+void pm_resume_devices(bool turn_on_off_flag) {}
 
 #endif /* CONFIG_PM_DEVICE_SYSTEM_MANAGED */
 
