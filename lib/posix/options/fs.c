@@ -59,37 +59,22 @@ static inline void posix_fs_free_obj(struct posix_fs_desc *ptr)
 	ptr->used = false;
 }
 
-static int posix_mode_to_zephyr(int mf)
-{
-	int mode = (mf & O_CREAT) ? FS_O_CREATE : 0;
-
-	mode |= (mf & O_APPEND) ? FS_O_APPEND : 0;
-
-	switch (mf & O_ACCMODE) {
-	case O_RDONLY:
-		mode |= FS_O_READ;
-		break;
-	case O_WRONLY:
-		mode |= FS_O_WRITE;
-		break;
-	case O_RDWR:
-		mode |= FS_O_RDWR;
-		break;
-	default:
-		break;
-	}
-
-	return mode;
-}
-
-int zvfs_open(const char *name, int flags)
+int zvfs_open(const char *name, int flags, int mode)
 {
 	int rc, fd;
 	struct posix_fs_desc *ptr = NULL;
-	int zmode = posix_mode_to_zephyr(flags);
+	int zflags = 0;
 
-	if (zmode < 0) {
-		return zmode;
+	if ((flags & O_ACCMODE) == O_RDONLY) {
+		zflags |= FS_O_READ;
+	} else if ((flags & O_ACCMODE) == O_WRONLY) {
+		zflags |= FS_O_WRITE;
+	} else if ((flags & O_ACCMODE) == O_RDWR) {
+		zflags |= FS_O_RDWR;
+	}
+
+	if ((flags & O_APPEND) != 0) {
+		zflags |= FS_O_APPEND;
 	}
 
 	fd = zvfs_reserve_fd();
@@ -99,24 +84,44 @@ int zvfs_open(const char *name, int flags)
 
 	ptr = posix_fs_alloc_obj(false);
 	if (ptr == NULL) {
-		zvfs_free_fd(fd);
-		errno = EMFILE;
-		return -1;
+		rc = -EMFILE;
+		goto out_err;
 	}
 
 	fs_file_t_init(&ptr->file);
 
-	rc = fs_open(&ptr->file, name, zmode);
+	if (flags & O_CREAT) {
+		flags &= ~O_CREAT;
 
+		rc = fs_open(&ptr->file, name, FS_O_CREATE | (mode & O_ACCMODE));
+		if (rc < 0) {
+			goto out_err;
+		}
+		rc = fs_close(&ptr->file);
+		if (rc < 0) {
+			goto out_err;
+		}
+	}
+
+	rc = fs_open(&ptr->file, name, zflags);
 	if (rc < 0) {
-		posix_fs_free_obj(ptr);
-		zvfs_free_fd(fd);
-		errno = -rc;
-		return -1;
+		goto out_err;
 	}
 
 	zvfs_finalize_fd(fd, ptr, &fs_fd_op_vtable);
 
+	goto out;
+
+out_err:
+	if (ptr != NULL) {
+		posix_fs_free_obj(ptr);
+	}
+
+	zvfs_free_fd(fd);
+	errno = -rc;
+	return -1;
+
+out:
 	return fd;
 }
 
