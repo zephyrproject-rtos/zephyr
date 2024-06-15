@@ -50,6 +50,18 @@ if(BL2)
             ${partition_includes}
             ${board_includes}
     )
+    if(BL2_QSPI_DRIVERS)
+        set(LAIRD_FOLDER ${Trusted\ Firmware\ M_SOURCE_DIR}/platform/ext/target/lairdconnectivity)
+        target_sources(platform_bl2
+            PRIVATE
+                ${LAIRD_FOLDER}/common/core/cmsis_drivers/Driver_QSPI.c
+                ${HAL_NORDIC_PATH}/nrfx/drivers/src/nrfx_qspi.c
+        )
+        target_compile_definitions(platform_bl2
+            PRIVATE
+                "-DNRFX_QSPI_ENABLED=1"
+        )
+    endif()
 endif()
 
 target_sources(tfm_spm

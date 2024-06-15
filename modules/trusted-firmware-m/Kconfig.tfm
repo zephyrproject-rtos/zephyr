@@ -219,6 +219,11 @@ config TFM_BL2
 	  TFM is designed to run with MCUboot in a certain configuration.
 	  This config adds MCUboot to the build - built via TFM's build system.
 
+config TFM_BL2_QSPI_FLASH
+	bool "External QSPI flash drivers for BL2"
+	depends on TFM_BL2
+	depends on SOC_COMPATIBLE_NRF
+
 config TFM_USE_NS_APP
 	bool "Use the TF-M Non-Secure application"
 	help
