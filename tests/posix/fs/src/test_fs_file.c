@@ -16,7 +16,7 @@ static int test_file_open(void)
 {
 	int res;
 
-	res = open(TEST_FILE, O_CREAT | O_RDWR);
+	res = open(TEST_FILE, O_CREAT | O_RDWR, 0660);
 	if (res < 0) {
 		TC_ERROR("Failed opening file: %d, errno=%d\n", res, errno);
 		/* FIXME: restructure tests as per #46897 */
