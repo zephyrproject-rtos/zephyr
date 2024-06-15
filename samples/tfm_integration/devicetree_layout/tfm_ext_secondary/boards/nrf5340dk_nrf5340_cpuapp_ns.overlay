@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2024 Embeint Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &slot0_partition;
+/delete-node/ &slot0_ns_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &slot1_ns_partition;
+
+/{
+    tfm_config {
+        onboard_flash {
+            /delete-property/ img-secondary-secure;
+            /delete-property/ img-secondary-nonsecure;
+        };
+
+        qspi_flash {
+            driver = "Driver_FLASH1";
+            define-prefix = "QSPI_";
+            complete = <&mx25r64>;
+            erase-block-size = <4096>;
+            write-block-size = <1>;
+            img-secondary-secure = <&slot1_partition>;
+			img-secondary-nonsecure = <&slot1_ns_partition>;
+            /* Expected by Laird QSPI driver.
+             * Ideally driver would consume pinctrl values and
+             * these defines could be dropped.
+             */
+            extra-defines =
+                "RTE_QSPI0=1",
+                "RTE_QSPI0_IO0_PIN=13",
+                "RTE_QSPI0_IO1_PIN=14",
+                "RTE_QSPI0_IO2_PIN=15",
+                "RTE_QSPI0_IO3_PIN=16",
+                "RTE_QSPI0_SCL_PIN=17",
+                "RTE_QSPI0_CSN_PIN=18";
+        };
+    };
+};
+
+&flash0 {
+    partitions {
+        slot0_partition: partition@10000 {
+            label = "image-0";
+            reg = <0x00010000 0x60000>;
+        };
+        slot0_ns_partition: partition@70000 {
+            label = "image-0-nonsecure";
+            reg = <0x00070000 0x80000>;
+        };
+    };
+};
+
+&mx25r64 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = < 0x1 >;
+        #size-cells = < 0x1 >;
+        slot1_partition: partition@0 {
+            label = "image-1";
+            reg = <0x00000000 0x60000>;
+        };
+        slot1_ns_partition: partition@60000 {
+            label = "image-1-nonsecure";
+            reg = <0x00060000 0x80000>;
+        };
+    };
+};
