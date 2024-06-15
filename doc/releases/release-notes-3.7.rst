@@ -212,6 +212,8 @@ Boards & SoC Support
 * Added support for these ARM boards:
 
   * Added support for Ambiq Apollo3 boards: ``apollo3_evb``, ``apollo3p_evb``.
+  * Added support for RaspberryPi5 board: ``rpi5``.
+  * Added support for Seeed Studio XIAO RP2040 board: ``xiao_rp2040``.
 
 * Added support for these Xtensa boards:
 
@@ -360,6 +362,7 @@ Drivers and Sensors
 * GPIO
 
   * Added support for Ambiq Apollo3 series.
+  * Added Broadcom Set-top box(brcmstb) SoC GPIO driver.
 
 * I2C
 
@@ -414,6 +417,8 @@ Drivers and Sensors
 * Retained memory
 
 * RTC
+
+  * Added Raspberry Pi Pico RTC driver.
 
 * SMBUS:
 
