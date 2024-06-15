@@ -81,7 +81,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-arduino_i2c: &i2c0 {
+&i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
@@ -113,6 +113,13 @@ arduino_i2c: &i2c0 {
 		status = "okay";
 		reg = <0x18>;
 		irq-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+	};
+
+	lp5521: lp5521@32 {
+		status = "okay";
+		compatible = "ti,lp5521";
+		reg = <0x32>;
+		en-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 	};
 };
 
