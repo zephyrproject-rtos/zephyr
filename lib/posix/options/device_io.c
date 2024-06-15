@@ -5,6 +5,7 @@
  */
 
 #include <stddef.h>
+#include <stdio.h>
 #include <stdint.h>
 
 #include <zephyr/posix/poll.h>
@@ -13,6 +14,7 @@
 
 /* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
 int zvfs_close(int fd);
+FILE *zvfs_fdopen(int fd, const char *mode);
 int zvfs_open(const char *name, int flags);
 ssize_t zvfs_read(int fd, void *buf, size_t sz, size_t *from_offset);
 ssize_t zvfs_write(int fd, const void *buf, size_t sz, size_t *from_offset);
@@ -44,6 +46,11 @@ int close(int fd)
 #ifdef CONFIG_POSIX_DEVICE_IO_ALIAS_CLOSE
 FUNC_ALIAS(close, _close, int);
 #endif
+
+FILE *fdopen(int fd, const char *mode)
+{
+	return zvfs_fdopen(fd, mode);
+}
 
 int open(const char *name, int flags, ...)
 {
