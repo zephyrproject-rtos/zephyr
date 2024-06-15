@@ -5,7 +5,8 @@
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
-	select FDTABLE
+	select ZVFS
+	select ZVFS_POLL
 	help
 	  Provide BSD Sockets like API on top of native Zephyr networking API.
 
@@ -47,9 +48,7 @@ config NET_SOCKETS_POSIX_NAMES
 
 config NET_SOCKETS_POLL_MAX
 	int "Max number of supported poll() entries"
-	default 6 if WIFI_NM_WPA_SUPPLICANT
-	default 4 if SHELL_BACKEND_TELNET
-	default 3
+	default ZVFS_POLL_MAX
 	help
 	  Maximum number of entries supported for poll() call.
 
