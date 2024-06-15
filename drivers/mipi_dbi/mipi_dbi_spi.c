@@ -46,10 +46,11 @@ uint32_t var = MIPI_DBI_SPI_READ_REQUIRED;
  */
 #define MIPI_DBI_DC_BIT BIT(8)
 
-static int mipi_dbi_spi_write_helper(const struct device *dev,
-				     const struct mipi_dbi_config *dbi_config,
-				     bool cmd_present, uint8_t cmd,
-				     const uint8_t *data_buf, size_t len)
+static inline int
+mipi_dbi_spi_write_helper_3wire(const struct device *dev,
+				const struct mipi_dbi_config *dbi_config,
+				bool cmd_present, uint8_t cmd,
+				const uint8_t *data_buf, size_t len)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
 	struct mipi_dbi_spi_data *data = dev->data;
@@ -60,6 +61,93 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 	};
 	int ret = 0;
 
+	/*
+	 * 9 bit word mode must be used, as the command/data bit
+	 * is stored before the data word.
+	 */
+
+	if ((dbi_config->config.operation & SPI_WORD_SIZE_MASK)
+	    != SPI_WORD_SET(9)) {
+		return -ENOTSUP;
+	}
+	buffer.buf = &data->spi_byte;
+	buffer.len = 2;
+
+	/* Send command */
+	if (cmd_present) {
+		data->spi_byte = cmd;
+		ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
+		if (ret < 0) {
+			goto out;
+		}
+	}
+	/* Write data, byte by byte */
+	for (size_t i = 0; i < len; i++) {
+		data->spi_byte = MIPI_DBI_DC_BIT | data_buf[i];
+		ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
+		if (ret < 0) {
+			goto out;
+		}
+	}
+out:
+	return ret;
+}
+
+static inline int
+mipi_dbi_spi_write_helper_4wire(const struct device *dev,
+				const struct mipi_dbi_config *dbi_config,
+				bool cmd_present, uint8_t cmd,
+				const uint8_t *data_buf, size_t len)
+{
+	const struct mipi_dbi_spi_config *config = dev->config;
+	struct spi_buf buffer;
+	struct spi_buf_set buf_set = {
+		.buffers = &buffer,
+		.count = 1,
+	};
+	int ret = 0;
+
+	/*
+	 * 4 wire mode is much simpler. We just toggle the
+	 * command/data GPIO to indicate if we are sending
+	 * a command or data
+	 */
+
+	buffer.buf = &cmd;
+	buffer.len = sizeof(cmd);
+
+	if (cmd_present) {
+		/* Set CD pin low for command */
+		gpio_pin_set_dt(&config->cmd_data, 0);
+		ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
+		if (ret < 0) {
+			goto out;
+		}
+	}
+
+	if (len > 0) {
+		buffer.buf = (void *)data_buf;
+		buffer.len = len;
+
+		/* Set CD pin high for data */
+		gpio_pin_set_dt(&config->cmd_data, 1);
+		ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
+		if (ret < 0) {
+			goto out;
+		}
+	}
+out:
+	return ret;
+}
+
+static int mipi_dbi_spi_write_helper(const struct device *dev,
+				     const struct mipi_dbi_config *dbi_config,
+				     bool cmd_present, uint8_t cmd,
+				     const uint8_t *data_buf, size_t len)
+{
+	struct mipi_dbi_spi_data *data = dev->data;
+	int ret = 0;
+
 	ret = k_mutex_lock(&data->lock, K_FOREVER);
 	if (ret < 0) {
 		return ret;
@@ -67,63 +155,18 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 
 	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
 	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
-		/* 9 bit word mode must be used, as the command/data bit
-		 * is stored before the data word.
-		 */
-		if ((dbi_config->config.operation & SPI_WORD_SIZE_MASK)
-		    != SPI_WORD_SET(9)) {
-			return -ENOTSUP;
-		}
-		buffer.buf = &data->spi_byte;
-		buffer.len = 2;
-
-		/* Send command */
-		if (cmd_present) {
-			data->spi_byte = cmd;
-			ret = spi_write(config->spi_dev, &dbi_config->config,
-					&buf_set);
-			if (ret < 0) {
-				goto out;
-			}
-		}
-		/* Write data, byte by byte */
-		for (size_t i = 0; i < len; i++) {
-			data->spi_byte = MIPI_DBI_DC_BIT | data_buf[i];
-			ret = spi_write(config->spi_dev, &dbi_config->config,
-					&buf_set);
-			if (ret < 0) {
-				goto out;
-			}
+		ret = mipi_dbi_spi_write_helper_3wire(dev, dbi_config,
+						      cmd_present, cmd,
+						      data_buf, len);
+		if (ret < 0) {
+			goto out;
 		}
 	} else if (dbi_config->mode == MIPI_DBI_MODE_SPI_4WIRE) {
-		/* 4 wire mode is much simpler. We just toggle the
-		 * command/data GPIO to indicate if we are sending
-		 * a command or data
-		 */
-		buffer.buf = &cmd;
-		buffer.len = sizeof(cmd);
-
-		if (cmd_present) {
-			/* Set CD pin low for command */
-			gpio_pin_set_dt(&config->cmd_data, 0);
-			ret = spi_write(config->spi_dev, &dbi_config->config,
-					&buf_set);
-			if (ret < 0) {
-				goto out;
-			}
-		}
-
-		if (len > 0) {
-			buffer.buf = (void *)data_buf;
-			buffer.len = len;
-
-			/* Set CD pin high for data */
-			gpio_pin_set_dt(&config->cmd_data, 1);
-			ret = spi_write(config->spi_dev, &dbi_config->config,
-					&buf_set);
-			if (ret < 0) {
-				goto out;
-			}
+		ret = mipi_dbi_spi_write_helper_4wire(dev, dbi_config,
+						      cmd_present, cmd,
+						      data_buf, len);
+		if (ret < 0) {
+			goto out;
 		}
 	} else {
 		/* Otherwise, unsupported mode */
