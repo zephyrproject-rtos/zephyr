@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024, TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+ */
+
+/ {
+	test {
+		#address-cells = < 0x1 >;
+		#size-cells = < 0x1 >;
+
+		test_region_r: sram@20010000 {
+			compatible = "zephyr,memory-region";
+			reg = < 0x20010000 0x100 >;
+			zephyr,memory-region = "TEST_REGION_R";
+			zephyr,memory-region-flags = "r";
+		};
+
+		test_region_nrwxail: sram@20010100 {
+			compatible = "zephyr,memory-region";
+			reg = < 0x20010100 0x100 >;
+			zephyr,memory-region = "TEST_REGION_NRWXAIL";
+			zephyr,memory-region-flags = "!rwxail";
+		};
+
+		test_region_no_flags: sram@20010200 {
+			compatible = "zephyr,memory-region";
+			reg = < 0x20010200 0x100 >;
+			zephyr,memory-region = "TEST_REGION_NO_FLAGS";
+		};
+
+		test_region_none: sram@20010300 {
+			compatible = "zephyr,memory-region";
+			reg = < 0x20010300 0x100 >;
+			zephyr,memory-region = "TEST_REGION_NONE";
+			zephyr,memory-region-flags = "";
+		};
+	};
+};
