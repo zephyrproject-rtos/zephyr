@@ -204,7 +204,7 @@ static int shm_mmap(struct shm_obj *shm, void *addr, size_t len, int prot, int f
 
 static ssize_t shm_rw(struct shm_obj *shm, void *buf, size_t size, bool is_write, size_t offset)
 {
-	if (offset >= size) {
+	if (offset >= shm->size) {
 		size = 0;
 	} else {
 		size = MIN(size, shm->size - offset);
