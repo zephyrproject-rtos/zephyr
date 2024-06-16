@@ -28,7 +28,7 @@
 	cmdq-buffer-size = <256>;
 
 	atxp032: atxp032@0 {
-		compatible = "mspi-atxp032";
+		compatible = "ambiq,mspi-device", "mspi-atxp032";
 		size = <DT_SIZE_M(32)>;
 		reg = <0>;
 		status = "okay";
