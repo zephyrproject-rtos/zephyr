@@ -393,6 +393,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
   if (CONFIG_TFM_BL2)
     set(PREPROCESSED_FILE_S "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s.o")
+    set(PREPROCESSED_FILE_S_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s_ns.o")
     set(PREPROCESSED_FILE_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
     set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot")
   endif()
@@ -415,13 +416,19 @@ if (CONFIG_BUILD_WITH_TFM)
     if(PAD)
       set(pad_args --pad --pad-header)
     endif()
+    # Secure + Non-secure images are signed the same way as a secure only
+    # build, but with a different layout file.
+    set(layout_file ${PREPROCESSED_FILE_${SUFFIX}})
+    if(SUFFIX STREQUAL "S_NS")
+      set(SUFFIX "S")
+    endif()
     set (${OUT_ARG}
       # Add the MCUBoot script to the path so that if there is a version of imgtool in there then
       # it gets used over the system imgtool. Used so that imgtool from upstream
       # mcuboot is preferred over system imgtool
       ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts
       ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper/wrapper.py
-      --layout ${PREPROCESSED_FILE_${SUFFIX}}
+      --layout ${layout_file}
       -k ${CONFIG_TFM_KEY_FILE_${SUFFIX}}
       --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
       --align 1
@@ -465,7 +472,7 @@ if (CONFIG_BUILD_WITH_TFM)
     )
 
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
-    tfm_sign(sign_cmd NS TRUE ${S_NS_FILE} ${S_NS_SIGNED_FILE})
+    tfm_sign(sign_cmd S_NS TRUE ${S_NS_FILE} ${S_NS_SIGNED_FILE})
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
