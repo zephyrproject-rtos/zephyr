@@ -709,6 +709,11 @@ static void eth_xlnx_gem_reset_hw(const struct device *dev)
 		    dev_conf->base_addr + ETH_XLNX_GEM_RXQBASE_OFFSET);
 	sys_write32(0x00000000,
 		    dev_conf->base_addr + ETH_XLNX_GEM_TXQBASE_OFFSET);
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
+	/* UltraScale+ specific: clear transmit_q1_ptr */
+	sys_write32(0x00000000,
+		    dev_conf->base_addr + ETH_XLNX_GEM_TXQ1BASE_OFFSET);
+#endif
 }
 
 /**
@@ -1257,7 +1262,8 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	uint32_t buf_iter;
 
 	/* Initial configuration of the RX/TX BD rings */
-	DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_INIT_BD_RING)
+	DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_INIT_BD_RING);
+	DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_INIT_Q1_TX_BD);
 
 	/*
 	 * Set initial RX BD data -> comp. Zynq-7000 TRM, Chapter 16.3.5,
@@ -1313,6 +1319,35 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	bdptr->addr = (uint32_t)dev_data->first_tx_buffer +
 		      (buf_iter * (uint32_t)dev_conf->tx_buffer_size);
 
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
+	/*
+	 * UltraScale+ specific: configure the one dummy TX BD to be pointed
+	 * at by the TXQ1BASE register.
+	 *
+	 * If the alternate register is *NOT* used (on real UltraScale+ hardware),
+	 * the following will happen when trying to transmit a packet:
+	 * - TX buffer descriptors pointed to by the original TXQBASE register
+	 *   can be written to as usual (length/used bit)
+	 * - When triggering the corresponding transmission in the Network Control
+	 *   Register, the start bit will not self-clear, the TX Status Register
+	 *   will indicate that a transmission is in progress, but this bit is also
+	 *   never cleared. Neither will transmission completion or a transmission
+	 *   fault ever be indicated. No error information is provided in the TX
+	 *   status register or the respective TX BD, and the TXQBASE value will
+	 *   never increment, indicating that the hardware has not moved on to
+	 *   the next TX BD.
+	 * - The status of the 'used' bit in the TX BD will not change.
+	 * - The driver will log a "TX timeout" error message, as the TX done
+	 *   semaphore k_sem_take operation will time out.
+	 *
+	 * All in all, it appears like some transmission logic state machine stalls
+	 * when TXQ1BASE is not set?
+	 */
+	dev_data->q1_txbd->ctrl = (ETH_XLNX_GEM_TXBD_WRAP_BIT |
+				   ETH_XLNX_GEM_TXBD_USED_BIT);
+	dev_data->q1_txbd->addr = 0x00000000;
+#endif
+
 	/* Set free count/current index in the RX/TX BD ring data */
 	dev_data->rxbd_ring.next_to_process = 0;
 	dev_data->rxbd_ring.next_to_use     = 0;
@@ -1326,6 +1361,11 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 		    dev_conf->base_addr + ETH_XLNX_GEM_RXQBASE_OFFSET);
 	sys_write32((uint32_t)dev_data->txbd_ring.first_bd,
 		    dev_conf->base_addr + ETH_XLNX_GEM_TXQBASE_OFFSET);
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
+	/* UltraScale+ specific: use transmit_q1_ptr additionally */
+	sys_write32((uint32_t)dev_data->q1_txbd,
+		     dev_conf->base_addr + ETH_XLNX_GEM_TXQ1BASE_OFFSET);
+#endif
 }
 
 /**

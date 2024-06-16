@@ -170,6 +170,9 @@
  * LADDR3H  = gem.spec_addr3_top Specific address 3 top    register
  * LADDR4L  = gem.spec_addr4_bot Specific address 4 bottom register
  * LADDR4H  = gem.spec_addr4_top Specific address 4 top    register
+ *
+ * Register offsets required on the UltraScale+ only:
+ * TXQ1BASE = gem.transmit_q1_ptr (no equivalent in Zynq-7000)
  */
 #define ETH_XLNX_GEM_NWCTRL_OFFSET			0x00000000
 #define ETH_XLNX_GEM_NWCFG_OFFSET			0x00000004
@@ -192,6 +195,7 @@
 #define ETH_XLNX_GEM_LADDR3H_OFFSET			0x0000009C
 #define ETH_XLNX_GEM_LADDR4L_OFFSET			0x000000A0
 #define ETH_XLNX_GEM_LADDR4H_OFFSET			0x000000A4
+#define ETH_XLNX_GEM_TXQ1BASE_OFFSET			0x00000440
 
 /*
  * Masks for clearing registers during initialization:
@@ -487,7 +491,7 @@ static struct eth_xlnx_gem_dev_data eth_xlnx_gem##port##_dev_data = {\
 	.first_tx_buffer = NULL\
 };
 
-/* DMA memory area declaration macro */
+/* DMA memory area declaration macros */
 #define ETH_XLNX_GEM_DMA_AREA_DECL(port) \
 struct eth_xlnx_dma_area_gem##port {\
 	struct eth_xlnx_gem_bd rx_bd[DT_INST_PROP(port, rx_buffer_descriptors)];\
@@ -504,10 +508,27 @@ struct eth_xlnx_dma_area_gem##port {\
 		& ~(ETH_XLNX_BUFFER_ALIGNMENT - 1))];\
 };
 
-/* DMA memory area instantiation macro */
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
+#define ETH_XLNX_GEM_DMA_AREA_Q1_DECL(port) \
+struct eth_xlnx_dma_q1_area_gem##port {\
+	struct eth_xlnx_gem_bd tx_bd[1];\
+};
+#else
+#define ETH_XLNX_GEM_DMA_AREA_Q1_DECL(port);
+#endif
+
+/* DMA memory area instantiation macros */
 #define ETH_XLNX_GEM_DMA_AREA_INST(port) \
 static struct eth_xlnx_dma_area_gem##port eth_xlnx_gem##port##_dma_area\
 	__ocm_bss_section __aligned(4096);
+
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
+#define ETH_XLNX_GEM_DMA_AREA_Q1_INST(port) \
+static struct eth_xlnx_dma_q1_area_gem##port eth_xlnx_gem##port##_q1_dma_area\
+	__ocm_bss_section __aligned(8);
+#else
+#define ETH_XLNX_GEM_DMA_AREA_Q1_INST(port);
+#endif
 
 /* Interrupt configuration function macro */
 #define ETH_XLNX_GEM_CONFIG_IRQ_FUNC(port) \
@@ -519,7 +540,7 @@ static void eth_xlnx_gem##port##_irq_config(const struct device *dev)\
 	irq_enable(DT_INST_IRQN(port));\
 }
 
-/* RX/TX BD Ring initialization macro */
+/* RX/TX BD Ring initialization macros */
 #define ETH_XLNX_GEM_INIT_BD_RING(port) \
 if (dev_conf->base_addr == DT_REG_ADDR_BY_IDX(DT_INST(port, xlnx_gem), 0)) {\
 	dev_data->rxbd_ring.first_bd = &(eth_xlnx_gem##port##_dma_area.rx_bd[0]);\
@@ -528,13 +549,24 @@ if (dev_conf->base_addr == DT_REG_ADDR_BY_IDX(DT_INST(port, xlnx_gem), 0)) {\
 	dev_data->first_tx_buffer = (uint8_t *)eth_xlnx_gem##port##_dma_area.tx_buffer;\
 }
 
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
+#define ETH_XLNX_GEM_INIT_Q1_TX_BD(port) \
+if (dev_conf->base_addr == DT_REG_ADDR_BY_IDX(DT_INST(port, xlnx_gem), 0)) {\
+	dev_data->q1_txbd = &(eth_xlnx_gem##port##_q1_dma_area.tx_bd[0]);\
+}
+#else
+#define ETH_XLNX_GEM_INIT_Q1_TX_BD(port);
+#endif
+
 /* Top-level device initialization macro - bundles all of the above */
 #define ETH_XLNX_GEM_INITIALIZE(port) \
 ETH_XLNX_GEM_CONFIG_IRQ_FUNC(port);\
 ETH_XLNX_GEM_DEV_CONFIG(port);\
 ETH_XLNX_GEM_DEV_DATA(port);\
 ETH_XLNX_GEM_DMA_AREA_DECL(port);\
+ETH_XLNX_GEM_DMA_AREA_Q1_DECL(port);\
 ETH_XLNX_GEM_DMA_AREA_INST(port);\
+ETH_XLNX_GEM_DMA_AREA_Q1_INST(port);\
 ETH_XLNX_GEM_NET_DEV_INIT(port);\
 
 /* IRQ handler function type */
@@ -758,6 +790,9 @@ struct eth_xlnx_gem_dev_data {
 
 	struct eth_xlnx_gem_bdring	rxbd_ring;
 	struct eth_xlnx_gem_bdring	txbd_ring;
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
+	struct eth_xlnx_gem_bd		*q1_txbd;
+#endif
 
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 	struct net_stats_eth		stats;
