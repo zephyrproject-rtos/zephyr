@@ -216,6 +216,8 @@ Boards & SoC Support
   * Added support for Ambiq Apollo3 boards: ``apollo3_evb``, ``apollo3p_evb``.
   * Added support for RaspberryPi5 board: ``rpi5``.
   * Added support for Seeed Studio XIAO RP2040 board: ``xiao_rp2040``.
+  * Added support for Mikroe RA4M1 Clicker board: ``mikroe_clicker_ra4m1``.
+  * Added support for Arduino UNO R4 WiFi board: ``arduino_uno_r4_wifi``.
 
 * Added support for these Xtensa boards:
 
