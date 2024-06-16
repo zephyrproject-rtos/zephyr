@@ -403,7 +403,7 @@ static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
 	va_start(args, cmd);
 	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
 	va_end(args);
-	if (res > 0) {
+	if (res >= 0) {
 		switch (fdtable[fd].mode & ZVFS_MODE_IFMT) {
 		case ZVFS_MODE_IFDIR:
 		case ZVFS_MODE_IFBLK:
