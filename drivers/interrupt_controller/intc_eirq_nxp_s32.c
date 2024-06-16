@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,10 @@ int eirq_nxp_s32_set_callback(const struct device *dev, uint8_t line,
 	struct eirq_nxp_s32_data *data = dev->data;
 
 	__ASSERT(line < NXP_S32_NUM_CHANNELS, "Interrupt line is out of range");
+
+	if ((data->cb[line].cb == cb) && (data->cb[line].data == arg)) {
+		return 0;
+	}
 
 	if (data->cb[line].cb) {
 		return -EBUSY;
