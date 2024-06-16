@@ -1516,10 +1516,15 @@ Release Notes:
     - swift-tk
   files:
     - drivers/mspi/
+    - drivers/memc/*mspi*
+    - drivers/flash/*mspi*
     - include/zephyr/drivers/mspi.h
     - include/zephyr/drivers/mspi/
+    - samples/drivers/mspi/
     - tests/drivers/mspi/
     - doc/hardware/peripherals/mspi.rst
+    - dts/bindings/mspi/
+    - dts/bindings/mtd/mspi*
   labels:
     - "area: MSPI"
   tests:
