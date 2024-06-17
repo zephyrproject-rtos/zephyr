@@ -144,6 +144,38 @@ Zephyr includes the following emulators:
 * MSPI emulator driver, allowing drivers to be connected to an emulator so that
   tests can be performed without access to the real hardware.
 
+I2C Emulation features
+----------------------
+
+In the binding of the I2C emulated bus, there's a custom property for address
+based forwarding. Given the following devicetree node:
+
+.. code-block::
+
+   i2c0: i2c@100 {
+     status = "okay";
+     compatible = "zephyr,i2c-emul-controller";
+     clock-frequency = <I2C_BITRATE_STANDARD>;
+     #address-cells = <1>;
+     #size-cells = <0>;
+     #forward-cells = <1>;
+     reg = <0x100 4>;
+     forwards = <&i2c1 0x20>;
+   };
+
+The final property, ``forwards`` indicates that any read/write requests sent to
+address ``0x20`` should be sent to ``i2c1`` with the same address. This allows
+us to test both the controller and the target end of the communication on the
+same image.
+
+.. note::
+   The ``#forward-cells`` attribute should always be 1. Each entry in the
+   ``fowards`` attribute consists of the phandle followed by the address. In
+   the example above, ``<&i2c1 0x20>`` will forward all read/write operations
+   made to ``i2c0`` at port ``0x20`` to ``i2c1`` on the same port. Since no
+   additional cells are used by the emulated controller, the number of cells
+   should remain 1.
+
 Samples
 =======
 
@@ -166,6 +198,6 @@ Here are some examples present in Zephyr:
       :gen-args: -DDTC_OVERLAY_FILE=at2x_emul.overlay -DOVERLAY_CONFIG=at2x_emul.conf
 
 API Reference
-*************
+=============
 
 .. doxygengroup:: io_emulators

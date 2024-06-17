@@ -29,6 +29,15 @@ struct i2c_emul_data {
 	/* I2C host configuration */
 	uint32_t config;
 	uint32_t bitrate;
+#ifdef CONFIG_I2C_TARGET
+	struct i2c_target_config *target_cfg;
+#endif
+};
+
+struct i2c_emul_config {
+	struct emul_list_for_bus emul_list;
+	const struct i2c_dt_spec *forward_list;
+	uint16_t forward_list_size;
 };
 
 /**
@@ -74,12 +83,103 @@ static int i2c_emul_get_config(const struct device *dev, uint32_t *dev_config)
 	return 0;
 }
 
+#ifdef CONFIG_I2C_TARGET
+static int i2c_emul_send_to_target(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs)
+{
+	struct i2c_emul_data *data = dev->data;
+	const struct i2c_target_callbacks *callbacks = data->target_cfg->callbacks;
+
+	for (uint8_t i = 0; i < num_msgs; ++i) {
+		LOG_DBG("    msgs[%u].flags? 0x%02x", i, msgs[i].flags);
+		if (i2c_is_read_op(&msgs[i])) {
+			for (uint32_t j = 0; j < msgs[i].len; ++j) {
+				int rc = 0;
+
+				if (j == 0) {
+					LOG_DBG("    Calling read_requested with data %p",
+						(void *)&msgs[i].buf[j]);
+					rc = callbacks->read_requested(data->target_cfg,
+								       &msgs[i].buf[j]);
+				} else {
+					LOG_DBG("    Calling read_processed with data %p",
+						(void *)&msgs[i].buf[j]);
+					rc = callbacks->read_processed(data->target_cfg,
+								       &msgs[i].buf[j]);
+				}
+				if (rc != 0) {
+					return rc;
+				}
+			}
+		} else {
+			for (uint32_t j = 0; j < msgs[i].len; ++j) {
+				int rc = 0;
+
+				if (j == 0) {
+					LOG_DBG("    Calling write_requested");
+					rc = callbacks->write_requested(data->target_cfg);
+				}
+				if (rc != 0) {
+					return rc;
+				}
+				LOG_DBG("    Calling write_received with data 0x%02x",
+					msgs[i].buf[j]);
+				rc = callbacks->write_received(data->target_cfg, msgs[i].buf[j]);
+				if (rc != 0) {
+					return rc;
+				}
+			}
+		}
+		if (i2c_is_stop_op(&msgs[i])) {
+			int rc = callbacks->stop(data->target_cfg);
+
+			if (rc != 0) {
+				return rc;
+			}
+		}
+	}
+	return 0;
+}
+#endif /* CONFIG_I2C_TARGET*/
+
 static int i2c_emul_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			     uint16_t addr)
 {
+	const struct i2c_emul_config *conf = dev->config;
 	struct i2c_emul *emul;
 	const struct i2c_emul_api *api;
 	int ret;
+
+	LOG_DBG("%s(dev=%p, addr=0x%02x)", __func__, (void *)dev, addr);
+#ifdef CONFIG_I2C_TARGET
+	struct i2c_emul_data *data = dev->data;
+
+	/*
+	 * First check if the bus is configured as a target, targets either listen to the address or
+	 * ignore the messages. So if the address doesn't match, we're just going to bail.
+	 */
+	LOG_DBG("    has_target_cfg? %d", data->target_cfg != NULL);
+	if (data->target_cfg != NULL) {
+		LOG_DBG("    target_cfg->address? 0x%02x", data->target_cfg->address);
+		if (data->target_cfg->address != addr) {
+			return -EINVAL;
+		}
+		LOG_DBG("    forwarding to target");
+		return i2c_emul_send_to_target(dev, msgs, num_msgs);
+	}
+#endif /* CONFIG_I2C_TARGET */
+
+	/*
+	 * We're not a target, but lets check if we need to forward this request before we start
+	 * looking for a peripheral.
+	 */
+	for (uint16_t i = 0; i < conf->forward_list_size; ++i) {
+		LOG_DBG("    Checking forward list [%u].addr? 0x%02x", i,
+			conf->forward_list[i].addr);
+		if (conf->forward_list[i].addr == addr) {
+			/* We need to forward this request */
+			return i2c_transfer(conf->forward_list[i].bus, msgs, num_msgs, addr);
+		}
+	}
 
 	emul = i2c_emul_find(dev, addr);
 	if (!emul) {
@@ -132,12 +232,38 @@ int i2c_emul_register(const struct device *dev, struct i2c_emul *emul)
 	return 0;
 }
 
+#ifdef CONFIG_I2C_TARGET
+static int i2c_emul_target_register(const struct device *dev, struct i2c_target_config *cfg)
+{
+	struct i2c_emul_data *data = dev->data;
+
+	data->target_cfg = cfg;
+	return 0;
+}
+
+static int i2c_emul_target_unregister(const struct device *dev, struct i2c_target_config *cfg)
+{
+	struct i2c_emul_data *data = dev->data;
+
+	if (data->target_cfg != cfg) {
+		return -EINVAL;
+	}
+
+	data->target_cfg = NULL;
+	return 0;
+}
+#endif /* CONFIG_I2C_TARGET */
+
 /* Device instantiation */
 
 static const struct i2c_driver_api i2c_emul_api = {
 	.configure = i2c_emul_configure,
 	.get_config = i2c_emul_get_config,
 	.transfer = i2c_emul_transfer,
+#ifdef CONFIG_I2C_TARGET
+	.target_register = i2c_emul_target_register,
+	.target_unregister = i2c_emul_target_unregister,
+#endif
 };
 
 #define EMUL_LINK_AND_COMMA(node_id)                                                               \
@@ -145,12 +271,26 @@ static const struct i2c_driver_api i2c_emul_api = {
 		.dev = DEVICE_DT_GET(node_id),                                                     \
 	},
 
+#define EMUL_FORWARD_ITEM(node_id, prop, idx)                                                      \
+	{                                                                                          \
+		.bus = DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),                       \
+		.addr = DT_PHA_BY_IDX(node_id, prop, idx, addr),                                   \
+	},
+
 #define I2C_EMUL_INIT(n)                                                                           \
 	static const struct emul_link_for_bus emuls_##n[] = {                                      \
 		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};                \
-	static struct emul_list_for_bus i2c_emul_cfg_##n = {                                       \
-		.children = emuls_##n,                                                             \
-		.num_children = ARRAY_SIZE(emuls_##n),                                             \
+	static const struct i2c_dt_spec emul_forward_list_##n[] = {                                \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, forwards),                                    \
+			    (DT_INST_FOREACH_PROP_ELEM(n, forwards, EMUL_FORWARD_ITEM)), ())};     \
+	static struct i2c_emul_config i2c_emul_cfg_##n = {                                         \
+		.emul_list =                                                                       \
+			{                                                                          \
+				.children = emuls_##n,                                             \
+				.num_children = ARRAY_SIZE(emuls_##n),                             \
+			},                                                                         \
+		.forward_list = emul_forward_list_##n,                                             \
+		.forward_list_size = ARRAY_SIZE(emul_forward_list_##n),                            \
 	};                                                                                         \
 	static struct i2c_emul_data i2c_emul_data_##n = {                                          \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
