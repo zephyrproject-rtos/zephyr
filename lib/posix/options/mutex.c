@@ -315,6 +315,29 @@ int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
 	return 0;
 }
 
+/**
+ * @brief Set protocol attribute for mutex.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol)
+{
+	if (attr == NULL) {
+		return EINVAL;
+	}
+
+	switch (protocol) {
+	case PTHREAD_PRIO_NONE:
+		return 0;
+	case PTHREAD_PRIO_INHERIT:
+		return ENOTSUP;
+	case PTHREAD_PRIO_PROTECT:
+		return ENOTSUP;
+	default:
+		return EINVAL;
+	}
+}
+
 int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 {
 	struct pthread_mutexattr *const a = (struct pthread_mutexattr *)attr;
