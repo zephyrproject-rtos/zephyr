@@ -407,6 +407,42 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 	}
 }
 
+#ifdef CONFIG_POSIX_THREAD_PRIO_PROTECT
+int pthread_mutex_getprioceiling(const pthread_mutex_t *mutex, int *prioceiling)
+{
+	ARG_UNUSED(mutex);
+	ARG_UNUSED(prioceiling);
+
+	return ENOSYS;
+}
+
+int pthread_mutex_setprioceiling(pthread_mutex_t *mutex, int prioceiling, int *old_ceiling)
+{
+	ARG_UNUSED(mutex);
+	ARG_UNUSED(prioceiling);
+	ARG_UNUSED(old_ceiling);
+
+	return ENOSYS;
+}
+
+int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr, int *prioceiling)
+{
+	ARG_UNUSED(attr);
+	ARG_UNUSED(prioceiling);
+
+	return ENOSYS;
+}
+
+int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr, int prioceiling)
+{
+	ARG_UNUSED(attr);
+	ARG_UNUSED(prioceiling);
+
+	return ENOSYS;
+}
+
+#endif /* CONFIG_POSIX_THREAD_PRIO_PROTECT */
+
 static int pthread_mutex_pool_init(void)
 {
 	int err;

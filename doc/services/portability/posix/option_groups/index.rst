@@ -942,11 +942,11 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_THREAD_PRIO_PROTECT`.
    :header: API, Supported
    :widths: 50,10
 
-    pthread_mutex_getprioceiling(),
-    pthread_mutex_setprioceiling(),
-    pthread_mutexattr_getprioceiling(),
+    pthread_mutex_getprioceiling(),yes
+    pthread_mutex_setprioceiling(),yes
+    pthread_mutexattr_getprioceiling(),yes
     pthread_mutexattr_getprotocol(),yes
-    pthread_mutexattr_setprioceiling(),
+    pthread_mutexattr_setprioceiling(),yes
     pthread_mutexattr_setprotocol(),yes
 
 .. _posix_option_thread_priority_scheduling:
