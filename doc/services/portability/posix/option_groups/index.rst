@@ -871,7 +871,7 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_SYNCHRONIZED_IO`.
    :header: API, Supported
    :widths: 50,10
 
-    fdatasync(),
+    fdatasync(),yes
     fsync(),yes
     msync(),yes
 
