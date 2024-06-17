@@ -23,6 +23,9 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ethernet.h>
+#ifdef CONFIG_WIFI_NM
+#include <zephyr/net/wifi_nm.h>
+#endif
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/socket.h>
@@ -5675,6 +5678,40 @@ struct net_if *net_if_get_first_wifi(void)
 {
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (net_if_is_wifi(iface)) {
+			return iface;
+		}
+	}
+	return NULL;
+}
+
+struct net_if *net_if_get_wifi_sta(void)
+{
+	struct ethernet_context *eth_ctx = NULL;
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		eth_ctx = net_if_l2_data(iface);
+		if (net_if_is_wifi(iface)
+#ifdef CONFIG_WIFI_NM
+			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_STA))
+#endif
+			) {
+			return iface;
+		}
+	}
+	return NULL;
+}
+
+struct net_if *net_if_get_wifi_sap(void)
+{
+	struct ethernet_context *eth_ctx = NULL;
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		eth_ctx = net_if_l2_data(iface);
+		if (net_if_is_wifi(iface)
+#ifdef CONFIG_WIFI_NM
+			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_SAP))
+#endif
+			) {
 			return iface;
 		}
 	}

@@ -412,6 +412,10 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
+	if (wifi_nm_get_type_iface(iface) != (1 << WIFI_TYPE_STA)) {
+		return;
+	}
+
 	if (!net_if_is_up(iface)) {
 		return;
 	}
