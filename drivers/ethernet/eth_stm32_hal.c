@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "eth.h"
 #include "eth_stm32_hal_priv.h"
 
-#if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC) || DT_INST_PROP(0, zephyr_random_mac_address)
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 #define ETH_STM32_RANDOM_MAC
 #endif
 
@@ -1043,7 +1043,6 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 static void generate_mac(uint8_t *mac_addr)
 {
 #if defined(ETH_STM32_RANDOM_MAC)
-	/* Either CONFIG_ETH_STM32_HAL_RANDOM_MAC or device tree property */
 	/* "zephyr,random-mac-address" is set, generate a random mac address */
 	gen_random_mac(mac_addr, ST_OUI_B0, ST_OUI_B1, ST_OUI_B2);
 #else /* Use user defined mac address */
@@ -1054,10 +1053,6 @@ static void generate_mac(uint8_t *mac_addr)
 	mac_addr[3] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 3);
 	mac_addr[4] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 4);
 	mac_addr[5] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 5);
-#elif defined(CONFIG_ETH_STM32_HAL_USER_STATIC_MAC)
-	mac_addr[3] = CONFIG_ETH_STM32_HAL_MAC3;
-	mac_addr[4] = CONFIG_ETH_STM32_HAL_MAC4;
-	mac_addr[5] = CONFIG_ETH_STM32_HAL_MAC5;
 #else
 	uint8_t unique_device_ID_12_bytes[12];
 	uint32_t result_mac_32_bits;
