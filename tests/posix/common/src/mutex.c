@@ -85,6 +85,18 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 	zassert_ok(pthread_mutex_destroy(&mutex), "Destroying mutex is failed");
 }
 
+ZTEST(mutex, test_mutex_prioceiling_stubs)
+{
+#ifdef CONFIG_POSIX_THREAD_PRIO_PROTECT
+	zassert_equal(pthread_mutex_getprioceiling(NULL, NULL), ENOSYS);
+	zassert_equal(pthread_mutex_setprioceiling(NULL, 0, NULL), ENOSYS);
+	zassert_equal(pthread_mutexattr_getprioceiling(NULL, NULL), ENOSYS);
+	zassert_equal(pthread_mutexattr_setprioceiling(NULL, 0), ENOSYS);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_POSIX_THREAD_PRIO_PROTECT */
+}
+
 /**
  * @brief Test to demonstrate PTHREAD_MUTEX_NORMAL
  *
