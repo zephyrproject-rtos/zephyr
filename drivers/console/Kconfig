@@ -322,4 +322,11 @@ config WINSTREAM_CONSOLE_STATIC_SIZE
 
 endif # WINSTREAM_CONSOLE
 
+config WHISPER_CONSOLE
+	bool "Whisper console"
+	depends on WHISPER_TARGET
+	select CONSOLE_HAS_DRIVER
+	help
+	  Use the console provided by the RISC-V Whisper ISS.
+
 endif # CONSOLE
