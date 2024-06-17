@@ -182,6 +182,9 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		return rc;
 	}
 
+	/* Copy flags to zfp for use with other fs_ API calls */
+	zfp->flags = flags;
+
 	if (truncate_file) {
 		/* Truncate the opened file to 0 length */
 		rc = mp->fs->truncate(zfp, 0);
@@ -191,9 +194,6 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 			return rc;
 		}
 	}
-
-	/* Copy flags to zfp for use with other fs_ API calls */
-	zfp->flags = flags;
 
 	return rc;
 }
