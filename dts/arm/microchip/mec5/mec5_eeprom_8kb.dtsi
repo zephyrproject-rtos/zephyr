@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* MEC5 EEPROM controller with internal 8 kilobyte EEPROM */
+eeprom: eeprom@40002c00 {
+	reg = <0x40002c00 0x400>;
+	interrupts = <155 2>;
+	size = <8192>;
+	status = "disabled";
+};
