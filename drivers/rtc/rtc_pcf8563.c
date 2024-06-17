@@ -413,6 +413,10 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 	struct pcf8563_data *data = dev->data;
 	int ret;
 
+	if (config->int1.port == NULL) {
+		return -ENOTSUP;
+	}
+
 	if (id != 0) {
 		LOG_ERR("invalid ID %d", id);
 		return -EINVAL;
@@ -471,14 +475,14 @@ int pcf8563_init(const struct device *dev)
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("Failed to get pointer to %s device!", config->i2c.bus->name);
-		return -EINVAL;
+		return -ENODEV;
 	}
 
 	/* Check if it's alive. */
 	ret = i2c_reg_read_byte_dt(&config->i2c, PCF8563_CONTROL1_REGISTER, &reg);
 	if (ret) {
 		LOG_ERR("Failed to read from PCF85063! (err %i)", ret);
-		return -EIO;
+		return -ENODEV;
 	}
 
 	LOG_INF("%s is initialized!", dev->name);
