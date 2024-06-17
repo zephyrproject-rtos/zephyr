@@ -8,3 +8,14 @@ config SWERV_PIC
 	depends on DT_HAS_CDNS_SWERV_PIC_ENABLED || DT_HAS_SWERV_PIC_ENABLED
 	help
 	  Programmable Interrupt Controller for the Cadence SweRV RISC-V CPU.
+
+if SWERV_PIC
+
+config SWERV_PIC_MAX_GENERIC_IRQ
+	int "Cadence SweRV Maximum Number of Generic IRQs"
+	default 0
+	help
+	  Maximum number of generic IRQs after which the SweRV interrupt
+	  controller handles the interrupt settings.
+
+endif # SWERV_PIC
