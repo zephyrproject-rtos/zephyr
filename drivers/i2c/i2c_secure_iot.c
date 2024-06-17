@@ -301,6 +301,7 @@ static int i2c_seciot_init(const struct device *dev)
     const struct i2c_seciot_cfg *confg = dev->config;
     uint32_t dev_config = confg->scl_clk;
     i2c_seciot_configure(dev,dev_config);
+    return 0;
 
 }
 static int i2c_seciot_configure(const struct device *dev,uint32_t dev_config)

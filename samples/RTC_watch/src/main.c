@@ -674,6 +674,8 @@ void rtc_task_handler(void){
 		k_yield();
    }
 }
+
+
 #define MY_STACK_SIZE 2048
 #define MY_PRIORITY 1
 K_THREAD_DEFINE(display_task, MY_STACK_SIZE,
