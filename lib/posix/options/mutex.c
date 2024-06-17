@@ -307,6 +307,10 @@ int pthread_mutex_destroy(pthread_mutex_t *mu)
 int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
 				  int *protocol)
 {
+	if ((attr == NULL) || (protocol == NULL)) {
+		return EINVAL;
+	}
+
 	*protocol = PTHREAD_PRIO_NONE;
 	return 0;
 }
