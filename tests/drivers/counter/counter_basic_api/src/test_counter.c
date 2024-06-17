@@ -183,6 +183,8 @@ static void counter_tear_down_instance(const struct device *dev)
 static void test_all_instances(counter_test_func_t func,
 				counter_capability_func_t capability_check)
 {
+	int devices_skipped = 0;
+
 	zassert_true(ARRAY_SIZE(devices) > 0, "No device found");
 	for (int i = 0; i < ARRAY_SIZE(devices); i++) {
 		counter_setup_instance(devices[i]);
@@ -192,11 +194,14 @@ static void test_all_instances(counter_test_func_t func,
 			func(devices[i]);
 		} else {
 			TC_PRINT("Skipped for %s\n", devices[i]->name);
-			ztest_test_skip();
+			devices_skipped++;
 		}
 		counter_tear_down_instance(devices[i]);
 		/* Allow logs to be printed. */
 		k_sleep(K_MSEC(100));
+	}
+	if (devices_skipped == ARRAY_SIZE(devices)) {
+		ztest_test_skip();
 	}
 }
 
