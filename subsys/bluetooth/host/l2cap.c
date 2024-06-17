@@ -873,6 +873,7 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 
 	if (!lechan) {
 		LOG_DBG("no channel conn %p", conn);
+		bt_tx_irq_raise();
 		return NULL;
 	}
 
@@ -885,6 +886,7 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	struct net_buf *pdu = k_fifo_peek_head(&lechan->tx_queue);
 
 	if (!pdu) {
+		bt_tx_irq_raise();
 		return NULL;
 	}
 	/* __ASSERT(pdu, "signaled ready but no PDUs in the TX queue"); */
