@@ -3,7 +3,6 @@
 
 config FLASH_MSPI
 	bool "MSPI flash drivers"
-	default y
 	depends on FLASH
 	select FLASH_HAS_DRIVER_ENABLED
 	select MSPI
