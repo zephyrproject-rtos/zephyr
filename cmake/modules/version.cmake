@@ -11,18 +11,18 @@
 #
 # Outputs with examples::
 #
-#   PROJECT_VERSION                    1.14.99.07
+#   PROJECT_VERSION                    1.14.99.7
 #   KERNEL_VERSION_STRING             "1.14.99-extraver"
 #   KERNEL_VERSION_EXTENDED_STRING    "1.14.99-extraver+7"
 #   KERNEL_VERSION_TWEAK_STRING       "1.14.99+7"
 #
-#   KERNEL_VERSION_MAJOR      1
-#   KERNEL_VERSION_MINOR        14
-#   KERNEL_PATCHLEVEL              99
-#   KERNEL_VERSION_TWEAK              07
+#   KERNEL_VERSION_MAJOR     1
+#   KERNEL_VERSION_MINOR     14
+#   KERNEL_PATCHLEVEL        99
+#   KERNEL_VERSION_TWEAK     7
 #   KERNELVERSION            0x10E6307
 #   KERNEL_VERSION_NUMBER    0x10E63
-#   ZEPHYR_VERSION_CODE        69219
+#   ZEPHYR_VERSION_CODE      69219
 #
 # Most outputs are converted to C macros, see ``version.h.in``
 #
