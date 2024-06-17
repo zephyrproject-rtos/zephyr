@@ -606,7 +606,38 @@ void DS3231_setDateTime(const struct device *dev,uint8_t slave_address,char* dat
 
 lv_ui guider_ui;
 
-int main(void)
+// int main(void)
+// {
+// 	const struct device *display_dev;
+// 	uint8_t hr,min;
+// 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+//     const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+//     //   DS3231_setSeconds(dev,DS3231_ADDR,00);
+//     //   DS3231_setHours(dev,DS3231_ADDR,11);
+//     //   DS3231_setMinutes(dev,DS3231_ADDR,45);
+// 	//   DS3231_setHourMode(dev,DS3231_ADDR,CLOCK_H12);
+// 	if (!device_is_ready(display_dev)) {
+// 		LOG_ERR("Device not ready, aborting test");
+// 		return 0;
+// 	}
+
+// 	printk("Lvgl has started\n");
+// 	//setup_ui(&guider_ui,hr,min);
+//    	// events_init(&guider_ui);
+
+// 	// lv_task_handler();
+// 	display_blanking_off(display_dev);
+// 	while (1) {
+// 		hr=DS3231_getHours(dev,DS3231_ADDR);
+//      	min=DS3231_getMinutes(dev,DS3231_ADDR);
+// 		setup_ui(&guider_ui,hr,min);
+// 		lv_task_handler();
+// 		printk("Lvgl is running\n");
+// 		// k_sleep(K_MSEC(10));
+// 	}
+// }
+
+void main_task_handler(void)
 {
 	const struct device *display_dev;
 	uint8_t hr,min;
@@ -636,3 +667,8 @@ int main(void)
 		// k_sleep(K_MSEC(10));
 	}
 }
+#define MY_STACK_SIZE 4096
+#define MY_PRIORITY 1
+K_THREAD_DEFINE(main_task, MY_STACK_SIZE,
+                main_task_handler, NULL, NULL, NULL,
+                MY_PRIORITY, 0, 0);
