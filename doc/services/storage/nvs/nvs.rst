@@ -16,19 +16,27 @@ at least one id-data pair stored in flash at all time.
 NVS allows storage of binary blobs, strings, integers, longs, and any
 combination of these.
 
-Each element is stored in flash as metadata (8 byte) and data. The metadata is
-written in a table starting from the end of a nvs sector, the data is
-written one after the other from the start of the sector. The metadata consists
+Each element is stored in flash as metadata and data. The metadata is called ATE, standing for
+Allocation Table Entry. The metadata is written in a table starting from the end of a NVS sector,
+the data is written one after the other from the start of the sector. The metadata consists
 of: id, data offset in sector, data length, part (unused), and a CRC. This CRC is
 only calculated over the metadata and only ensures that a write has been
 completed. The actual data of the element can be protected by a different (and optional)
 CRC-32. Use the :kconfig:option:`CONFIG_NVS_DATA_CRC` configuration item to enable
 the data part CRC.
-**Note:** the data CRC is checked only when the whole data of the element is read.
+
+.. note:: The data CRC is checked only when the whole data of the element is read.
 The data CRC is not checked for a partial read, as it is stored at the end of the
 element data area.
-**Note 2:** enabling the data CRC feature on a previously existing NVS content without
+
+.. note:: Enabling the data CRC feature on a previously existing NVS content without
 data CRC will make all existing data invalid.
+
+The metadata CRC can be kept small (1 byte, CRC-8) to decrease the flash space required for each
+metadata part. This metadata CRC can also be larger (3 bytes, CRC-24) to increase the robustness
+to memory corruption, at the cost of 2 more bytes needed per metadata.
+Refer to the :kconfig:option:`CONFIG_NVS_ATE_CRC8` and :kconfig:option:`CONFIG_NVS_ATE_CRC24`
+configuration items to select the one to use.
 
 A write of data to nvs always starts with writing the data, followed by a write
 of the metadata. Data that is written in flash without metadata is ignored
