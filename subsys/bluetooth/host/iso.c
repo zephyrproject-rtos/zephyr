@@ -750,6 +750,9 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn,
 
 	if (!frag) {
 		LOG_DBG("signaled ready but no frag available");
+		/* Service other connections */
+		bt_tx_irq_raise();
+
 		return NULL;
 	}
 
@@ -758,6 +761,9 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn,
 
 		LOG_DBG("channel has been disconnected");
 		__ASSERT_NO_MSG(b == frag);
+
+		/* Service other connections */
+		bt_tx_irq_raise();
 
 		return NULL;
 	}
