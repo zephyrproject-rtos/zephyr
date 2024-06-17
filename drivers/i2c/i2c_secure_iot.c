@@ -192,6 +192,7 @@ static void i2c_start_bit_(const struct device *dev){
 static void i2c_end(const struct device *dev){
     struct i2c_seciot_cfg *confg = (struct i2c_seciot_cfg *)dev->config;
   WRITE_TO_REG(confg,I2C_CONTROL,I2C_STOP);
+  k_sched_unlock();
   //waitfor(1000);
 #ifdef I2C_DEBUG
   printf("\nStop bit is transmitted!!!");
@@ -240,6 +241,7 @@ static void i2c_target_address(const struct device *dev,uint8_t slave_address,ui
 {
   uint8_t dummy;
    struct i2c_seciot_cfg *confg = (struct i2c_seciot_cfg *)dev->config;
+   k_sched_lock();
   wait_till_I2c_bus_free_(dev);//wait till bus is free
   //printf("slave addr:%#x mode:%d ",slave_address,mode);
   WRITE_TO_REG(confg,I2C_DATA,(slave_address<<1)|(mode));//write data in data register

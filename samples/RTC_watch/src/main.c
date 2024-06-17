@@ -636,13 +636,13 @@ lv_ui guider_ui;
 // 		// k_sleep(K_MSEC(10));
 // 	}
 // }
-
+uint8_t hr,min;
 void main_task_handler(void)
 {
 	const struct device *display_dev;
-	uint8_t hr,min;
+
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-    const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+ 
     //   DS3231_setSeconds(dev,DS3231_ADDR,00);
     //   DS3231_setHours(dev,DS3231_ADDR,11);
     //   DS3231_setMinutes(dev,DS3231_ADDR,45);
@@ -659,16 +659,26 @@ void main_task_handler(void)
 	// lv_task_handler();
 	display_blanking_off(display_dev);
 	while (1) {
-		hr=DS3231_getHours(dev,DS3231_ADDR);
-     	min=DS3231_getMinutes(dev,DS3231_ADDR);
 		setup_ui(&guider_ui,hr,min);
 		lv_task_handler();
 		printk("Lvgl is running\n");
 		// k_sleep(K_MSEC(10));
+		k_yield();
 	}
 }
-#define MY_STACK_SIZE 4096
+void rtc_task_handler(void){
+   const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+   while(1){
+		hr=DS3231_getHours(dev,DS3231_ADDR);
+     	min=DS3231_getMinutes(dev,DS3231_ADDR);
+		k_yield();
+   }
+}
+#define MY_STACK_SIZE 2048
 #define MY_PRIORITY 1
-K_THREAD_DEFINE(main_task, MY_STACK_SIZE,
+K_THREAD_DEFINE(display_task, MY_STACK_SIZE,
                 main_task_handler, NULL, NULL, NULL,
+                MY_PRIORITY, 0, 0);
+K_THREAD_DEFINE(rtc_task, MY_STACK_SIZE,
+                rtc_task_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
