@@ -408,7 +408,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	remainder = p->remainder;
 	start_us = radio_tmr_start(1U, ticks_at_start, remainder);
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) || IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN)) {
 		/* setup capture of PDU end timestamp */
 		radio_tmr_end_capture();
 	}
@@ -417,7 +417,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	radio_gpio_pa_setup();
 
 	radio_gpio_pa_lna_enable(start_us +
-				 radio_tx_ready_delay_get(phy, PHY_FLAGS_S8) -
+				 radio_tx_ready_delay_get(lll->phy,
+							  lll->phy_flags) -
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 	ARG_UNUSED(start_us);
@@ -470,6 +471,10 @@ static void isr_tx_common(void *param,
 	uint16_t data_chan_id;
 	uint8_t crc_init[3];
 	uint8_t bis;
+
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	uint16_t pa_iss_us = 0U;
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -747,19 +752,47 @@ static void isr_tx_common(void *param,
 						 lll->phy, lll->phy_flags);
 
 		radio_isr_set(isr_tx, lll);
+
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+		/* local variable used later to store iss_us next subevent PA
+		 * setup.
+		 */
+		pa_iss_us = iss_us;
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		/* setup capture of PDU end timestamp */
-		radio_tmr_end_capture();
-	}
-
-	/* assert if radio packet ptr is not set and radio started rx */
+	/* assert if radio packet ptr is not set and radio started tx */
 	LL_ASSERT(!radio_is_ready());
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
 	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) || IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN)) {
+		/* setup capture of PDU end timestamp */
+		radio_tmr_end_capture();
+	}
+
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		/* PA/LNA enable is overwriting packet end used in ISR
+		 * profiling, hence back it up for later use.
+		 */
+		lll_prof_radio_end_backup();
+	}
+
+	radio_gpio_pa_setup();
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+				 lll->pa_iss_us -
+				 (EVENT_CLOCK_JITTER_US << 1U) -
+				 radio_tx_chain_delay_get(lll->phy,
+							  lll->phy_flags) -
+				 HAL_RADIO_GPIO_PA_OFFSET);
+
+	/* Remember to use it for the next subevent PA setup */
+	lll->pa_iss_us = pa_iss_us;
+
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	/* Calculate ahead the next subevent channel index */
 	const uint16_t event_counter = (lll->payload_count / lll->bn) - 1U;
