@@ -17,7 +17,7 @@
  *
  *            +---------------------+    +-----------------+
  *  LFCLK --->| T0 Prescale Counter |-+->| 16-Bit T0 Timer |--------> T0 Timer
- * (32kHz)    |     (TWCP 1:64)     | |  |     (TWDT0)     |           Event
+ * (32kHz)    |     (TWCP 1:32)     | |  |     (TWDT0)     |           Event
  *            +---------------------+ |  +-----------------+
  *  +---------------------------------+
  *  |
@@ -47,21 +47,21 @@ LOG_MODULE_REGISTER(wdt_npcm, CONFIG_WDT_LOG_LEVEL);
 
 /*
  * Maximum watchdog window time. Since the watchdog counter is 8-bits, maximum
- * time supported by npcm watchdog is 256 * (64 * 32) / 32768 = 16 sec.
+ * time supported by npcm watchdog is 256 * (32 * 32) / 32768 = 8 sec.
  */
-#define NPCM_WDT_MAX_WND_TIME 16000UL
+#define NPCM_WDT_MAX_WND_TIME 8000UL
 
 /*
  * Minimum watchdog window time. Ensure we have waited at least 3 watchdog
- * clocks since touching WD timer. 3 / (32768 / 2048) HZ = 187.5 ms
+ * clocks since touching WD timer. 3 / (32768 / 1024) HZ = 93.75 ms
  */
-#define NPCM_WDT_MIN_WND_TIME 200UL
+#define NPCM_WDT_MIN_WND_TIME 100UL
 
 /* Timeout for reloading and restarting Timer 0. (Unit:ms) */
-#define NPCM_T0CSR_RST_TIMEOUT 4
+#define NPCM_T0CSR_RST_TIMEOUT 2
 
 /* Timeout for stopping watchdog. (Unit:ms) */
-#define NPCM_WATCHDOG_STOP_TIMEOUT 2
+#define NPCM_WATCHDOG_STOP_TIMEOUT 1
 
 /* Device config */
 struct wdt_npcm_config {
@@ -188,12 +188,11 @@ static int wdt_npcm_install_timeout(const struct device *dev,
 
 	/*
 	 * Since the watchdog counter in npcm series is 8-bits, maximum time
-	 * supported by it is 256 * (64 * 32) / 32768 = 16 sec. This makes the
-	 * allowed range of 200-16000 in milliseconds. Check if the provided value
+	 * supported by it is 256 * (32 * 32) / 32768 = 8 sec. This makes the
+	 * allowed range of 1-8000 in milliseconds. Check if the provided value
 	 * is within this range.
 	 */
-	if (cfg->window.max > NPCM_WDT_MAX_WND_TIME || cfg->window.max == 0 ||
-			cfg->window.max < NPCM_WDT_MIN_WND_TIME) {
+	if (cfg->window.max > NPCM_WDT_MAX_WND_TIME || cfg->window.max == 0) {
 		data->timeout_installed = false;
 		return -EINVAL;
 	}
@@ -241,15 +240,15 @@ static int wdt_npcm_setup(const struct device *dev, uint8_t options)
 	}
 
 	/*
-	 * One clock period of T0 timer is 64/32.768 KHz = 1.95 ms.
-	 * Then the counter value is timeout/1.95 - 32.
+	 * One clock period of T0 timer is 32/32.768 KHz = 0.976 ms.
+	 * Then the counter value is timeout/0.976 - 1.
 	 */
 
 	inst->TWDT0 = MAX(DIV_ROUND_UP(data->timeout * NPCM_WDT_CLK,
-				64 * 1000) - 32, 1);
+				32 * 1000) - 1, 1);
 
 	/* Configure 8-bit watchdog counter */
-	inst->WDCNT = MIN(DIV_ROUND_UP(data->timeout, 64) +
+	inst->WDCNT = MIN(DIV_ROUND_UP(data->timeout, 32) +
 					CONFIG_WDT_NPCM_DELAY_CYCLES, 0xff);
 
 	LOG_DBG("WDT setup: TWDT0, WDCNT are %d, %d", inst->TWDT0, inst->WDCNT);
@@ -343,10 +342,10 @@ static int wdt_npcm_init(const struct device *dev)
 		      BIT(NPCM_T0CSR_TESDIS);
 	/*
 	 * Plan clock frequency of T0 timer and watchdog timer as below:
-	 * - T0 Timer freq is LFCLK/64 Hz
-	 * - Watchdog freq is T0CLK/32 Hz (ie. LFCLK/2048 Hz)
+	 * - T0 Timer freq is LFCLK/32 Hz
+	 * - Watchdog freq is T0CLK/32 Hz (ie. LFCLK/1024 Hz)
 	 */
-	inst->TWCP = 0x06; /* Prescaler is 64 in T0 Timer */
+	inst->TWCP = 0x05; /* Prescaler is 32 in T0 Timer */
 	inst->WDCP = 0x05; /* Prescaler is 32 in Watchdog Timer */
 
 	return 0;
