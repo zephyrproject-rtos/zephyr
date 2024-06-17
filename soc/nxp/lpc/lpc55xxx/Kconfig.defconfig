@@ -38,6 +38,10 @@ config LPC55XXX_SRAM_CLOCKS
 config LPC55XXX_USB_RAM
 	default y
 
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 512
+
 if SOC_LPC55S06
 
 config LPC55XXX_USB_RAM
