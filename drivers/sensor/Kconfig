@@ -24,6 +24,7 @@ config SENSOR_ASYNC_API
 	bool "Async Sensor API"
 	select RTIO
 	select RTIO_SYS_MEM_BLOCKS
+	select RTIO_CONSUME_SEM
 	help
 	  Enables the asynchronous sensor API by leveraging the RTIO subsystem.
 
