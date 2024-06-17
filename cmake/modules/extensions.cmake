@@ -1452,7 +1452,7 @@ endmacro()
 # - PHDR [program_header]: add program header. Used on Xtensa platforms.
 function(zephyr_code_relocate)
   set(options NOCOPY NOKEEP)
-  set(single_args LIBRARY LOCATION PHDR)
+  set(single_args LIBRARY LOCATION PHDR FILTER)
   set(multi_args FILES)
   cmake_parse_arguments(CODE_REL "${options}" "${single_args}"
     "${multi_args}" ${ARGN})
@@ -1529,7 +1529,7 @@ function(zephyr_code_relocate)
     PROPERTY INTERFACE_SOURCES)
   set_property(TARGET code_data_relocation_target
     PROPERTY INTERFACE_SOURCES
-    "${code_rel_str}\n${CODE_REL_LOCATION}:${flag_list}:${file_list}")
+    "${code_rel_str}\n${CODE_REL_LOCATION}:${flag_list}:${file_list},${CODE_REL_FILTER}")
 endfunction()
 
 # Usage:
