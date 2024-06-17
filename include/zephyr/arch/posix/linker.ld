@@ -19,7 +19,7 @@
 
 
 SECTIONS
- {
+{
 
 #ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
@@ -59,7 +59,6 @@ SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 #include <snippets-ram-sections.ld>
 
 #include <zephyr/arch/posix/native_tasks.ld>
-#include <zephyr/arch/posix/native_sim_interface.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -81,7 +80,12 @@ SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME,,)
  */
 #include <snippets-sections.ld>
 
- } INSERT AFTER .data;
+} INSERT AFTER .data;
+
+SECTIONS
+{
+#include <zephyr/arch/posix/native_sim_interface.ld>
+} INSERT AFTER .text;
 
 /*
  * Note that the INSERT command actually changes the meaning of the -T command
