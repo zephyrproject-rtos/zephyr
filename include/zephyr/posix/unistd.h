@@ -35,6 +35,10 @@ off_t lseek(int file, off_t offset, int whence);
 int fsync(int fd);
 int ftruncate(int fd, off_t length);
 
+#ifdef CONFIG_POSIX_SYNCHRONIZED_IO
+int fdatasync(int fd);
+#endif /* CONFIG_POSIX_SYNCHRONIZED_IO */
+
 /* File System related operations */
 int rename(const char *old, const char *newp);
 int unlink(const char *path);
