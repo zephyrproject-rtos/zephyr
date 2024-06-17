@@ -60,6 +60,9 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 
 	zassert_ok(pthread_mutexattr_gettype(&mut_attr, &actual_type),
 		   "reading mutex type is failed");
+	zassert_not_ok(pthread_mutexattr_getprotocol(NULL, &protocol));
+	zassert_not_ok(pthread_mutexattr_getprotocol(&mut_attr, NULL));
+	zassert_not_ok(pthread_mutexattr_getprotocol(NULL, NULL));
 	zassert_ok(pthread_mutexattr_getprotocol(&mut_attr, &protocol),
 		   "reading mutex protocol is failed");
 	zassert_ok(pthread_mutexattr_destroy(&mut_attr));
