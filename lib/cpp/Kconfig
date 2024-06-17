@@ -128,17 +128,6 @@ config EXTERNAL_MODULE_LIBCPP
 
 endchoice # LIBCPP_IMPLEMENTATION
 
-config CPP_MAIN
-	bool "[DEPRECATED] C++ main() function definition"
-	select DEPRECATED
-	help
-	  This option used to be necessary to instruct the Zephyr kernel to
-	  call 'int main(void)' instead of the old Zephyr default, 'void
-	  main(void)'.
-
-	  As the Zephyr type now matches the C++ required type, this option
-	  is no longer necessary.
-
 if !MINIMAL_LIBCPP
 
 config CPP_EXCEPTIONS
@@ -163,7 +152,5 @@ config CPP_STATIC_INIT_GNU
 	  GNU-compatible initialization of CPP static objects
 
 endif # CPP
-
-rsource "Kconfig.deprecated"
 
 endmenu

@@ -12,6 +12,6 @@ tests:
       - native_sim
   testing.ztest.expect_cpp:
     extra_configs:
-      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CPP=y
   testing.ztest.expect.unit:
     type: unit
