@@ -730,14 +730,14 @@ ZTEST(test_log_api, test_log_printk_vs_raw)
 
 	mock_log_frontend_record(0, LOG_LEVEL_INTERNAL_RAW_STRING, "test 100\n");
 	mock_log_backend_record(&backend1, 0,
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				0, LOG_LEVEL_INTERNAL_RAW_STRING,
 				exp_timestamp++, "test 100\n");
 	LOG_PRINTK("test %d\n", 100);
 
 
 	mock_log_frontend_record(1, LOG_LEVEL_INTERNAL_RAW_STRING, "test 100\n");
 	mock_log_backend_record(&backend1, 1,
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				0, LOG_LEVEL_INTERNAL_RAW_STRING,
 				exp_timestamp++, "test 100\n");
 	LOG_RAW("test %d\n", 100);
 
