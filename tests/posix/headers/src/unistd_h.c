@@ -230,7 +230,7 @@ ZTEST(posix_headers, test_unistd_h)
 	/* zassert_not_null(fchdir); */ /* not implemented */
 	/* zassert_not_null(fchown); */ /* not implemented */
 	/* zassert_not_null(fchownat); */ /* not implemented */
-	/* zassert_not_null(fdatasync); */ /* not implemented */
+	zassert_not_null(fdatasync);
 	/* zassert_not_null(fexecve); */ /* not implemented */
 	/* zassert_not_null(fork); */ /* not implemented */
 	/* zassert_not_null(fpathconf); */ /* not implemented */
