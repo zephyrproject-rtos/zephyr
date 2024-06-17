@@ -42,6 +42,9 @@ LOG_MODULE_REGISTER(MAX31865, CONFIG_SENSOR_LOG_LEVEL);
 #define REG_FAULT_STATUS       0x07
 #define WR(reg)		       ((reg) | 0x80)
 
+/* Bitmask to clear fault status bits D5, D3, and D2 */
+#define FAULT_BITS_CLEAR_MASK 0x2C
+
 /**
  * RTD data, RTD current, and measurement reference
  * voltage. The ITS-90 standard is used; other RTDs
