@@ -1072,3 +1072,13 @@ test_i2c_lsm9ds1: lsm9ds1@91 {
 	compatible = "st,lsm9ds1";
 	reg = <0x8e>;
 };
+
+test_i2c_icm42670: icm42670@92 {
+	compatible = "invensense,icm42670";
+	reg = <0x92>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-hz = <800>;
+	accel-fs = <16>;
+	gyro-hz = <800>;
+	gyro-fs = <2000>;
+};
