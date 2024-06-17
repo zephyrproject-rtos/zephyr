@@ -16,15 +16,16 @@ properties:
 
   clkout:
     type: int
-    default: 32768
+    default: 0
     enum:
       - 32768
       - 16384
       - 8192
       - 4096
+      - 2048
       - 1024
       - 1
       - 0
     description:
-      Enable CLKOUT at given frequency. When disabled, CLKOUT pin is LOW. Set to 0 to
-      disable the CLKOUT signal.
+      Enable CLKOUT at given frequency. When disabled, CLKOUT pin is LOW.
+      The default is 0 and corresponds to the disable the CLKOUT signal.
