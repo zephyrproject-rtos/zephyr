@@ -17,6 +17,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/mayfly.h"
 #include "util/dbuf.h"
 
 #include "pdu_df.h"
@@ -129,6 +130,35 @@ void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 		llcp_proc_ctx_release(ctx);
 	}
 }
+
+/*
+ * LLCP Remote Request Shared Data Locking
+ */
+
+static ALWAYS_INLINE uint32_t shared_data_access_lock(void)
+{
+	bool enabled;
+
+	if (mayfly_is_running()) {
+		/* We are in Mayfly context, nothing to be done */
+		return false;
+	}
+
+	/* We are in thread context and have to disable TICKER_USER_ID_ULL_HIGH */
+	enabled = mayfly_is_enabled(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH) != 0U;
+	mayfly_enable(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH, 0U);
+
+	return enabled;
+}
+
+static ALWAYS_INLINE void shared_data_access_unlock(bool key)
+{
+	if (key) {
+		/* We are in thread context and have to reenable TICKER_USER_ID_ULL_HIGH */
+		mayfly_enable(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH, 1U);
+	}
+}
+
 /*
  * LLCP Remote Request FSM
  */
@@ -176,14 +206,29 @@ bool llcp_rr_get_collision(struct ll_conn *conn)
 
 static void rr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
 {
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+	bool key = shared_data_access_lock();
+
 	sys_slist_append(&conn->llcp.remote.pend_proc_list, &ctx->node);
+
+	shared_data_access_unlock(key);
 }
 
 static struct proc_ctx *rr_dequeue(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+	bool key = shared_data_access_lock();
+
 	ctx = (struct proc_ctx *)sys_slist_get(&conn->llcp.remote.pend_proc_list);
+
+	shared_data_access_unlock(key);
+
 	return ctx;
 }
 
@@ -191,7 +236,15 @@ struct proc_ctx *llcp_rr_peek(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+	bool key = shared_data_access_lock();
+
 	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
+
+	shared_data_access_unlock(key);
+
 	return ctx;
 }
 
