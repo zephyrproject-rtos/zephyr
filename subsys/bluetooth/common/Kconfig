@@ -266,17 +266,6 @@ config BT_DEBUG_NONE
 	help
 	  Select this to disable all Bluetooth debug logs.
 
-config BT_DEBUG_LOG
-	bool "[DEPRECATED] Normal printf-style to console"
-	select DEPRECATED
-	select LOG
-	imply LOG_FUNC_NAME_PREFIX_INF
-	imply LOG_FUNC_NAME_PREFIX_WRN
-	imply LOG_FUNC_NAME_PREFIX_ERR
-	help
-	  This option enables Bluetooth debug going to standard
-	  serial console.
-
 config BT_DEBUG_MONITOR_UART
 	bool "Monitor protocol over UART"
 	select LOG
