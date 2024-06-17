@@ -805,7 +805,7 @@ _POSIX_SYNCHRONIZED_IO
 
     fdatasync(),
     fsync(),yes
-    msync(),
+    msync(),yes
 
 .. _posix_option_thread_attr_stackaddr:
 
