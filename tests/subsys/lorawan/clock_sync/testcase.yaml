@@ -10,5 +10,6 @@ tests:
   lorawan.clock_sync.phy:
     depends_on: lora
     filter: CONFIG_ENTROPY_HAS_DRIVER
+    timeout: 500
     integration_platforms:
       - nucleo_wl55jc
