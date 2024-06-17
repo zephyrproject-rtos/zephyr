@@ -479,6 +479,10 @@ static int start_read(const struct device *dev,
 				m_data.positive_inputs[channel_id]);
 			++active_channels;
 		} else {
+			nrf_saadc_burst_set(
+				NRF_SAADC,
+				channel_id,
+				NRF_SAADC_BURST_DISABLED);
 			nrf_saadc_channel_pos_input_set(
 				NRF_SAADC,
 				channel_id,
