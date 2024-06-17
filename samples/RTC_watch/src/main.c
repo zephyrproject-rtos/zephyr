@@ -1,13 +1,26 @@
 /*
- * Copyright (c) 2012-2014 Wind River Systems, Inc.
+ * Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/device.h>
+#include <zephyr/drivers/display.h>
+#include <lvgl.h>
 #include <stdio.h>
-#include<zephyr/device.h>
-#include<zephyr/devicetree.h>
+#include <string.h>
+#include <zephyr/kernel.h>
+
+#include "../generated/gui_guider.h"
+#include "../generated/events_init.h"
 #include <zephyr/drivers/i2c.h>
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(app);
+
+#define INCLUDE_RTC_LIB
+
+#ifdef INCLUDE_RTC_LIB
 #include"RTC.h"
 #define DELAY_FREQ_BASE 40000000
 uint8_t bitSet(uint8_t data,uint8_t shift){
@@ -583,25 +596,43 @@ void DS3231_setDateTime(const struct device *dev,uint8_t slave_address,char* dat
 	second = atoi(time + 6);
 	DS3231_setSeconds(dev,slave_address,second);
 }
+#endif
 
 
 
-void main(){
-  const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
-  uint8_t hr,min,secs;
-      DS3231_setSeconds(dev,DS3231_ADDR,56);
-      DS3231_setHours(dev,DS3231_ADDR,10);
-      DS3231_setMinutes(dev,DS3231_ADDR,54);
-	  DS3231_setHourMode(dev,DS3231_ADDR,CLOCK_H12);
-    while(1){
-        hr=DS3231_getHours(dev,DS3231_ADDR);
+
+
+
+
+lv_ui guider_ui;
+
+int main(void)
+{
+	const struct device *display_dev;
+	uint8_t hr,min;
+	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+    const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+    //   DS3231_setSeconds(dev,DS3231_ADDR,00);
+    //   DS3231_setHours(dev,DS3231_ADDR,11);
+    //   DS3231_setMinutes(dev,DS3231_ADDR,45);
+	//   DS3231_setHourMode(dev,DS3231_ADDR,CLOCK_H12);
+	if (!device_is_ready(display_dev)) {
+		LOG_ERR("Device not ready, aborting test");
+		return 0;
+	}
+
+	printk("Lvgl has started\n");
+	//setup_ui(&guider_ui,hr,min);
+   	// events_init(&guider_ui);
+
+	// lv_task_handler();
+	display_blanking_off(display_dev);
+	while (1) {
+		hr=DS3231_getHours(dev,DS3231_ADDR);
      	min=DS3231_getMinutes(dev,DS3231_ADDR);
-      	secs=DS3231_getSeconds(dev,DS3231_ADDR);
-       	printk("\n %d:%d:%d PM",hr,min,secs); 
-		delayms(1000);
- 	}
- }
-
-// K_THREAD_DEFINE(my_tid, 512,
-//                 rtc_run, NULL, NULL, NULL,
-//                 1, 0, 0);
+		setup_ui(&guider_ui,hr,min);
+		lv_task_handler();
+		printk("Lvgl is running\n");
+		// k_sleep(K_MSEC(10));
+	}
+}
