@@ -22,7 +22,7 @@
 #include <zephyr/arch/riscv/irq.h>
 
 #define SWERV_PIC_MAX_NUM	CONFIG_NUM_IRQS
-#define SWERV_PIC_MAX_ID	(SWERV_PIC_MAX_NUM + RISCV_MAX_GENERIC_IRQ)
+#define SWERV_PIC_MAX_ID	(SWERV_PIC_MAX_NUM + CONFIG_SWERV_PIC_MAX_GENERIC_IRQ)
 #define SWERV_PIC_MAX_PRIO		16
 
 #define SWERV_PIC_mpiccfg		0x3000
@@ -62,12 +62,12 @@ void swerv_pic_irq_enable(uint32_t irq)
 {
 	uint32_t key;
 
-	if ((irq >= SWERV_PIC_MAX_ID) || (irq < RISCV_MAX_GENERIC_IRQ)) {
+	if ((irq >= SWERV_PIC_MAX_ID) || (irq < CONFIG_SWERV_PIC_MAX_GENERIC_IRQ)) {
 		return;
 	}
 
 	key = irq_lock();
-	swerv_pic_write(SWERV_PIC_meie(irq - RISCV_MAX_GENERIC_IRQ), 1);
+	swerv_pic_write(SWERV_PIC_meie(irq - CONFIG_SWERV_PIC_MAX_GENERIC_IRQ), 1);
 	irq_unlock(key);
 }
 
@@ -75,22 +75,22 @@ void swerv_pic_irq_disable(uint32_t irq)
 {
 	uint32_t key;
 
-	if ((irq >= SWERV_PIC_MAX_ID) || (irq < RISCV_MAX_GENERIC_IRQ)) {
+	if ((irq >= SWERV_PIC_MAX_ID) || (irq < CONFIG_SWERV_PIC_MAX_GENERIC_IRQ)) {
 		return;
 	}
 
 	key = irq_lock();
-	swerv_pic_write(SWERV_PIC_meie(irq - RISCV_MAX_GENERIC_IRQ), 0);
+	swerv_pic_write(SWERV_PIC_meie(irq - CONFIG_SWERV_PIC_MAX_GENERIC_IRQ), 0);
 	irq_unlock(key);
 }
 
 int swerv_pic_irq_is_enabled(uint32_t irq)
 {
-	if ((irq >= SWERV_PIC_MAX_ID) || (irq < RISCV_MAX_GENERIC_IRQ)) {
+	if ((irq >= SWERV_PIC_MAX_ID) || (irq < CONFIG_SWERV_PIC_MAX_GENERIC_IRQ)) {
 		return -1;
 	}
 
-	return swerv_pic_read(SWERV_PIC_meie(irq - RISCV_MAX_GENERIC_IRQ))
+	return swerv_pic_read(SWERV_PIC_meie(irq - CONFIG_SWERV_PIC_MAX_GENERIC_IRQ))
 	  & 0x1;
 }
 
@@ -98,11 +98,11 @@ void swerv_pic_set_priority(uint32_t irq, uint32_t priority)
 {
 	uint32_t key;
 
-	if (irq <= RISCV_MAX_GENERIC_IRQ) {
+	if (irq <= CONFIG_SWERV_PIC_MAX_GENERIC_IRQ) {
 		return;
 	}
 
-	if ((irq >= SWERV_PIC_MAX_ID) || (irq < RISCV_MAX_GENERIC_IRQ)) {
+	if ((irq >= SWERV_PIC_MAX_ID) || (irq < CONFIG_SWERV_PIC_MAX_GENERIC_IRQ)) {
 		return;
 	}
 
@@ -111,7 +111,7 @@ void swerv_pic_set_priority(uint32_t irq, uint32_t priority)
 	}
 
 	key = irq_lock();
-	swerv_pic_write(SWERV_PIC_meipl(irq - RISCV_MAX_GENERIC_IRQ), priority);
+	swerv_pic_write(SWERV_PIC_meipl(irq - CONFIG_SWERV_PIC_MAX_GENERIC_IRQ), priority);
 	irq_unlock(key);
 }
 
@@ -137,7 +137,7 @@ static void swerv_pic_irq_handler(const void *arg)
 	if (irq == 0U || irq >= 64) {
 		z_irq_spurious(NULL);
 	}
-	irq += RISCV_MAX_GENERIC_IRQ;
+	irq += CONFIG_SWERV_PIC_MAX_GENERIC_IRQ;
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
 	ite = (const struct _isr_table_entry *)&_sw_isr_table[irq];
@@ -197,7 +197,7 @@ void arch_irq_enable(unsigned int irq)
 {
 	uint32_t mie;
 
-	if (irq > RISCV_MAX_GENERIC_IRQ) {
+	if (irq > CONFIG_SWERV_PIC_MAX_GENERIC_IRQ) {
 		swerv_pic_irq_enable(irq);
 		return;
 	}
@@ -215,7 +215,7 @@ void arch_irq_disable(unsigned int irq)
 {
 	uint32_t mie;
 
-	if (irq > RISCV_MAX_GENERIC_IRQ) {
+	if (irq > CONFIG_SWERV_PIC_MAX_GENERIC_IRQ) {
 		swerv_pic_irq_disable(irq);
 		return;
 	}
@@ -233,7 +233,7 @@ int arch_irq_is_enabled(unsigned int irq)
 {
 	uint32_t mie;
 
-	if (irq > RISCV_MAX_GENERIC_IRQ) {
+	if (irq > CONFIG_SWERV_PIC_MAX_GENERIC_IRQ) {
 		return swerv_pic_irq_is_enabled(irq);
 	}
 
