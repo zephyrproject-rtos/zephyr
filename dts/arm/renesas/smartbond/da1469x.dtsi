@@ -339,6 +339,7 @@
 			reg = <0x50020700 0x100>;
 			periph-clock-config = <0x0800>;
 			interrupts = <9 0>;
+			status = "disabled";
 		};
 
 		lcdc: lcdc@30030000 {
