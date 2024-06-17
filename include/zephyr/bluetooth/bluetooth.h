@@ -2342,11 +2342,6 @@ void bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb);
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_filter_accept_list_add(const bt_addr_le_t *addr);
-__deprecated
-static inline int bt_le_whitelist_add(const bt_addr_le_t *addr)
-{
-	return bt_le_filter_accept_list_add(addr);
-}
 
 /**
  * @brief Remove device (LE) from filter accept list.
@@ -2363,11 +2358,6 @@ static inline int bt_le_whitelist_add(const bt_addr_le_t *addr)
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_filter_accept_list_remove(const bt_addr_le_t *addr);
-__deprecated
-static inline int bt_le_whitelist_rem(const bt_addr_le_t *addr)
-{
-	return bt_le_filter_accept_list_remove(addr);
-}
 
 /**
  * @brief Clear filter accept list.
@@ -2382,11 +2372,6 @@ static inline int bt_le_whitelist_rem(const bt_addr_le_t *addr)
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_filter_accept_list_clear(void);
-__deprecated
-static inline int bt_le_whitelist_clear(void)
-{
-	return bt_le_filter_accept_list_clear();
-}
 
 /**
  * @brief Set (LE) channel map.
