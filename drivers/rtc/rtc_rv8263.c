@@ -98,9 +98,6 @@ struct rv8263c8_data {
 
 #if (CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE) && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	const struct device *dev;
-#endif
-
-#if (CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE) && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	struct gpio_callback gpio_cb;
 #endif
 
@@ -120,19 +117,19 @@ struct rv8263c8_data {
 static int rv8263c8_update_disable_timer(const struct device *dev)
 {
 	int err;
-	uint8_t reg;
+	uint8_t buf[2];
 	const struct rv8263c8_config *config = dev->config;
 
 	/* Value 0 disables the timer. */
-	reg = 0;
-	err = i2c_burst_write_dt(&config->i2c_bus, RV8263C8_REGISTER_TIMER_VALUE, &reg,
-				 sizeof(reg));
+	buf[0] = RV8263C8_REGISTER_TIMER_VALUE;
+	buf[1] = 0;
+	err = i2c_write_dt(&config->i2c_bus, buf, 2);
 	if (err < 0) {
 		return err;
 	}
 
-	return i2c_burst_write_dt(&config->i2c_bus, RV8263C8_REGISTER_TIMER_MODE, &reg,
-				  sizeof(reg));
+	buf[0] = RV8263C8_REGISTER_TIMER_MODE;
+	return i2c_write_dt(&config->i2c_bus, buf, 2);
 }
 
 #if (CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE) && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
@@ -144,11 +141,11 @@ static void rv8263c8_gpio_callback_handler(const struct device *p_port, struct g
 
 	struct rv8263c8_data *data = CONTAINER_OF(p_cb, struct rv8263c8_data, gpio_cb);
 
-#if CONFIG_RTC_ALARM && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+#if CONFIG_RTC_ALARM
 	k_work_submit(&data->alarm_work);
 #endif
 
-#if CONFIG_RTC_UPDATE && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+#if CONFIG_RTC_UPDATE
 	k_work_submit(&data->update_work);
 #endif
 }
@@ -183,21 +180,21 @@ static void rv8263c8_alarm_worker(struct k_work *p_work)
 static int rv8263c8_update_enable_timer(const struct device *dev)
 {
 	int err;
-	uint8_t reg;
 	const struct rv8263c8_config *config = dev->config;
+	uint8_t buf[2];
 
 	/* Set the timer preload value for 1 second. */
-	reg = 1;
-	err = i2c_burst_write_dt(&config->i2c_bus, RV8263C8_REGISTER_TIMER_VALUE, &reg,
-				 sizeof(reg));
+	buf[0] = RV8263C8_REGISTER_TIMER_VALUE;
+	buf[1] = 1;
+	err = i2c_write_dt(&config->i2c_bus, buf, 2);
 	if (err < 0) {
 		return err;
 	}
 
-	reg = RV8263_BM_TD_1HZ | RV8263_BM_TE_ENABLE | RV8263_BM_TIE_ENABLE | RV8263_BM_TI_TP_PULSE;
-
-	return i2c_burst_write_dt(&config->i2c_bus, RV8263C8_REGISTER_TIMER_MODE, &reg,
-				  sizeof(reg));
+	buf[0] = RV8263C8_REGISTER_TIMER_MODE;
+	buf[1] = RV8263_BM_TD_1HZ | RV8263_BM_TE_ENABLE | RV8263_BM_TIE_ENABLE |
+		 RV8263_BM_TI_TP_PULSE;
+	return i2c_write_dt(&config->i2c_bus, buf, 2);
 }
 
 static void rv8263c8_update_worker(struct k_work *p_work)
@@ -225,7 +222,7 @@ static void rv8263c8_update_worker(struct k_work *p_work)
 
 static int rv8263c8_time_set(const struct device *dev, const struct rtc_time *timeptr)
 {
-	uint8_t regs[7];
+	uint8_t regs[8];
 	const struct rv8263c8_config *config = dev->config;
 
 	if (timeptr == NULL || (timeptr->tm_year < RV8263_YEAR_OFFSET)) {
@@ -238,15 +235,16 @@ static int rv8263c8_time_set(const struct device *dev, const struct rtc_time *ti
 		timeptr->tm_year, timeptr->tm_mon, timeptr->tm_mday, timeptr->tm_wday,
 		timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
 
-	regs[0] = bin2bcd(timeptr->tm_sec) & SECONDS_BITS;
-	regs[1] = bin2bcd(timeptr->tm_min) & MINUTES_BITS;
-	regs[2] = bin2bcd(timeptr->tm_hour) & HOURS_BITS;
-	regs[3] = bin2bcd(timeptr->tm_mday) & DATE_BITS;
-	regs[4] = bin2bcd(timeptr->tm_wday) & WEEKDAY_BITS;
-	regs[5] = bin2bcd(timeptr->tm_mon) & MONTHS_BITS;
-	regs[6] = bin2bcd(timeptr->tm_year - RV8263_YEAR_OFFSET) & YEAR_BITS;
+	regs[0] = RV8263C8_REGISTER_SECONDS;
+	regs[1] = bin2bcd(timeptr->tm_sec) & SECONDS_BITS;
+	regs[2] = bin2bcd(timeptr->tm_min) & MINUTES_BITS;
+	regs[3] = bin2bcd(timeptr->tm_hour) & HOURS_BITS;
+	regs[4] = bin2bcd(timeptr->tm_mday) & DATE_BITS;
+	regs[5] = bin2bcd(timeptr->tm_wday) & WEEKDAY_BITS;
+	regs[6] = bin2bcd(timeptr->tm_mon) & MONTHS_BITS;
+	regs[7] = bin2bcd(timeptr->tm_year - RV8263_YEAR_OFFSET) & YEAR_BITS;
 
-	return i2c_burst_write_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS, regs, sizeof(regs));
+	return i2c_write_dt(&config->i2c_bus, regs, 8);
 }
 
 static int rv8263c8_time_get(const struct device *dev, struct rtc_time *timeptr)
@@ -328,38 +326,24 @@ static int rv8263c8_init(const struct device *dev)
 		return err;
 	}
 
-	temp = 0x00;
-	if (config->clkout == 0) {
-		temp = 0x07;
-	} else if (config->clkout == 1) {
-		temp = 0x06;
-	} else if (config->clkout == 1024) {
-		temp = 0x05;
-	} else if (config->clkout == 2048) {
-		temp = 0x04;
-	} else if (config->clkout == 4096) {
-		temp = 0x03;
-	} else if (config->clkout == 8192) {
-		temp = 0x02;
-	} else if (config->clkout == 16384) {
-		temp = 0x01;
-	}
-
+	temp = config->clkout;
 	LOG_DBG("Configure ClkOut: %u", temp);
 
 	err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2,
-				    RV8263C8_BM_MINUTE_INT_DISABLE |
-					    RV8263C8_BM_HALF_MINUTE_INT_DISABLE | temp);
+				    RV8263C8_BM_AF | temp);
 	if (err < 0) {
 		LOG_ERR("Error while writing CONTROL_2! Error: %i", err);
 		return err;
 	}
 
-#if CONFIG_RTC_UPDATE && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
-	uint8_t regs = 0;
+	LOG_DBG("Configure ClkOut: %u", temp);
 
-	err = i2c_burst_write_dt(&config->i2c_bus, RV8263C8_REGISTER_TIMER_MODE, &regs,
-				 sizeof(regs));
+#if CONFIG_RTC_UPDATE && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	uint8_t buf[2];
+
+	buf[0] = RV8263C8_REGISTER_TIMER_MODE;
+	buf[1] = 0;
+	err = i2c_write_dt(&config->i2c_bus, buf, 2);
 	if (err < 0) {
 		LOG_ERR("Error while writing CONTROL2! Error: %i", err);
 		return err;
@@ -777,7 +761,7 @@ static const struct rtc_driver_api rv8263c8_driver_api = {
 	static struct rv8263c8_data rv8263c8_data_##inst;                                          \
 	static const struct rv8263c8_config rv8263c8_config_##inst = {                             \
 		.i2c_bus = I2C_DT_SPEC_INST_GET(inst),                                             \
-		.clkout = DT_INST_PROP_OR(inst, clkout, 0),                                        \
+		.clkout = DT_INST_ENUM_IDX(inst, clkout),                                          \
 		IF_ENABLED(DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios),                            \
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0})))};         \
 	DEVICE_DT_INST_DEFINE(inst, &rv8263c8_init, NULL, &rv8263c8_data_##inst,                   \
