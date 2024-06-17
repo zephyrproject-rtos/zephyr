@@ -212,8 +212,9 @@ int eth_esp32_initialize(const struct device *dev)
 	clock_control_subsys_t clock_subsys =
 		(clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(eth), offset);
 
+	/* clock is shared, so do not bail out if already enabled */
 	res = clock_control_on(clock_dev, clock_subsys);
-	if (res != 0) {
+	if (res < 0 && res != -EALREADY) {
 		goto err;
 	}
 
