@@ -44,7 +44,7 @@ Hardware
 - Temperature and Humidity Sensor (HTS221)
 - Barometric Pressure sensor (LPS22H)
 - Hall Effect Switch (MLX90248)
-- RGB LED with Charge-Pump driver (LPS5521)
+- RGB LED with Charge-Pump driver (LP5521)
 - Digital Microphone
 - Beeper
 - QWIIC connector supporting expansion for I2C devices
