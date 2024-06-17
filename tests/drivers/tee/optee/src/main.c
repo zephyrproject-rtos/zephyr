@@ -67,6 +67,10 @@ void arm_smccc_smc(unsigned long a0, unsigned long a1, unsigned long a2, unsigne
 		res->a1 = OPTEE_SMC_SEC_CAP_DYNAMIC_SHM;
 		return;
 	}
+	if (a0 == OPTEE_SMC_GET_THREAD_COUNT) {
+		res->a1 = 5;
+		return;
+	}
 	if (t_call.pending && t_call.smc_cb) {
 		t_call.smc_cb(a0, a1, a2, a3, a4, a5, a6, a7, res);
 	}
