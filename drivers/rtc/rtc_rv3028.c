@@ -133,7 +133,8 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 /* RTC time fields supported by the RV3028 */
 #define RV3028_RTC_TIME_MASK                                                                       \
 	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
-	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_YEAR)
+	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_YEAR |     \
+	 RTC_ALARM_TIME_MASK_WEEKDAY)
 
 /* Helper macro to guard int-gpios related code */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) &&                                                 \
