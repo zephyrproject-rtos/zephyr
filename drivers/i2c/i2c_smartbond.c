@@ -400,12 +400,14 @@ finish:
 
 #ifdef CONFIG_I2C_CALLBACK
 
+#define TX_FIFO_DEPTH 32
+
 static int i2c_smartbond_enable_msg_interrupts(const struct i2c_smartbond_cfg *const config,
 					       struct i2c_smartbond_data *data)
 {
 	if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 		uint32_t remaining = data->msgs->len - data->receive_cnt;
-		uint32_t tx_space = 32 - config->regs->I2C_TXFLR_REG;
+		uint32_t tx_space = TX_FIFO_DEPTH - config->regs->I2C_TXFLR_REG;
 		uint32_t rx_tl = ((remaining < tx_space) ? remaining : tx_space) - 1;
 
 		config->regs->I2C_RX_TL_REG = rx_tl & I2C_I2C_RX_TL_REG_RX_TL_Msk;
