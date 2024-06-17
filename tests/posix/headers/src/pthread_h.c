@@ -128,7 +128,7 @@ ZTEST(posix_headers, test_pthread_h)
 	zassert_not_null(pthread_mutexattr_gettype);
 	zassert_not_null(pthread_mutexattr_init);
 	/* zassert_not_null(pthread_mutexattr_setprioceiling); */ /* not implemented */
-	/* zassert_not_null(pthread_mutexattr_setprotocol); */    /* not implemented */
+	zassert_not_null(pthread_mutexattr_setprotocol);
 	/* zassert_not_null(pthread_mutexattr_setpshared); */     /* not implemented */
 	/* zassert_not_null(pthread_mutexattr_setrobust); */      /* not implemented */
 	zassert_not_null(pthread_mutexattr_settype);
