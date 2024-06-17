@@ -86,6 +86,7 @@ struct optee_driver_data {
 	struct k_spinlock notif_lock;
 	struct optee_supp supp;
 	unsigned long sec_caps;
+	struct k_sem call_sem;
 };
 
 /* Wrapping functions so function pointer can be used */
@@ -683,6 +684,8 @@ static int optee_call(const struct device *dev, struct optee_msg_arg *arg)
 	void *pages = NULL;
 
 	u64_to_regs((uint64_t)k_mem_phys_addr(arg), &param.a1, &param.a2);
+
+	k_sem_take(&data->call_sem, K_FOREVER);
 	while (true) {
 		struct arm_smccc_res res;
 
@@ -697,6 +700,7 @@ static int optee_call(const struct device *dev, struct optee_msg_arg *arg)
 			handle_rpc_call(dev, &param, &pages);
 		} else {
 			free_shm_pages(&pages);
+			k_sem_give(&data->call_sem);
 			return res.a0 == OPTEE_SMC_RETURN_OK ? TEEC_SUCCESS :
 				TEEC_ERROR_BAD_PARAMETERS;
 		}
@@ -1197,9 +1201,26 @@ static bool optee_exchange_caps(const struct device *dev, unsigned long *sec_cap
 	return true;
 }
 
+static unsigned long optee_get_thread_count(const struct device *dev, unsigned long *thread_count)
+{
+	struct optee_driver_data *data = (struct optee_driver_data *)dev->data;
+	struct arm_smccc_res res = { 0 };
+	unsigned long a1 = 0;
+
+	data->smc_call(OPTEE_SMC_GET_THREAD_COUNT, a1, 0, 0, 0, 0, 0, 0, &res);
+
+	if (res.a0 != OPTEE_SMC_RETURN_OK) {
+		return false;
+	}
+
+	*thread_count = res.a1;
+	return true;
+}
+
 static int optee_init(const struct device *dev)
 {
 	struct optee_driver_data *data = dev->data;
+	unsigned long thread_count;
 
 	if (set_optee_method(dev)) {
 		return -ENOTSUP;
@@ -1226,6 +1247,13 @@ static int optee_init(const struct device *dev)
 		LOG_ERR("OPTEE does not support dynamic shared memory");
 		return -ENOTSUP;
 	}
+
+	if (!optee_get_thread_count(dev, &thread_count)) {
+		LOG_ERR("OPTEE unable to get maximum thread count");
+		return -ENOTSUP;
+	}
+
+	k_sem_init(&data->call_sem, thread_count, thread_count);
 
 	return 0;
 }
