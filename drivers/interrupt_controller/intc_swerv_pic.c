@@ -20,6 +20,7 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/irq.h>
 #include <zephyr/arch/riscv/irq.h>
+#include <zephyr/sys/sys_io.h>
 
 #define SWERV_PIC_MAX_NUM	CONFIG_NUM_IRQS
 #define SWERV_PIC_MAX_ID	(SWERV_PIC_MAX_NUM + CONFIG_SWERV_PIC_MAX_GENERIC_IRQ)
@@ -50,12 +51,12 @@ static int save_irq;
 
 static uint32_t swerv_pic_read(uint32_t reg)
 {
-	return *(volatile uint32_t *)(DT_INST_REG_ADDR(0) + reg);
+	return sys_read32(DT_INST_REG_ADDR(0) + reg);
 }
 
 static void swerv_pic_write(uint32_t reg, uint32_t val)
 {
-	*(volatile uint32_t *)(DT_INST_REG_ADDR(0) + reg) = val;
+	sys_write32(val, DT_INST_REG_ADDR(0) + reg);
 }
 
 void swerv_pic_irq_enable(uint32_t irq)
