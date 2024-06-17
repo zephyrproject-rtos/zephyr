@@ -17,6 +17,7 @@ struct ntc_thermistor_data {
 	struct k_mutex mutex;
 	int32_t raw;
 	int32_t sample_val;
+	int32_t sample_val_max;
 };
 
 struct ntc_thermistor_config {
@@ -29,7 +30,6 @@ static int ntc_thermistor_sample_fetch(const struct device *dev, enum sensor_cha
 	struct ntc_thermistor_data *data = dev->data;
 	const struct ntc_thermistor_config *cfg = dev->config;
 	enum pm_device_state pm_state;
-	int32_t val_mv;
 	int res;
 	struct adc_sequence sequence = {
 		.options = NULL,
@@ -48,9 +48,16 @@ static int ntc_thermistor_sample_fetch(const struct device *dev, enum sensor_cha
 	adc_sequence_init_dt(&cfg->adc_channel, &sequence);
 	res = adc_read(cfg->adc_channel.dev, &sequence);
 	if (!res) {
-		val_mv = data->raw;
-		res = adc_raw_to_millivolts_dt(&cfg->adc_channel, &val_mv);
-		data->sample_val = val_mv;
+		if (cfg->ntc_cfg.pullup_mv) {
+			int32_t val_mv = data->raw;
+
+			res = adc_raw_to_millivolts_dt(&cfg->adc_channel, &val_mv);
+			data->sample_val = val_mv;
+			data->sample_val_max = cfg->ntc_cfg.pullup_mv;
+		} else {
+			data->sample_val = data->raw;
+			data->sample_val_max = BIT(cfg->adc_channel.resolution) - 1;
+		}
 	}
 
 	k_mutex_unlock(&data->mutex);
@@ -68,7 +75,8 @@ static int ntc_thermistor_channel_get(const struct device *dev, enum sensor_chan
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		ohm = ntc_get_ohm_of_thermistor(&cfg->ntc_cfg, data->sample_val);
+		ohm = ntc_get_ohm_of_thermistor(&cfg->ntc_cfg, data->sample_val,
+						data->sample_val_max);
 		temp = ntc_get_temp_mc(&cfg->ntc_cfg.type, ohm);
 		val->val1 = temp / 1000;
 		val->val2 = (temp % 1000) * 1000;
@@ -135,7 +143,7 @@ static int ntc_thermistor_pm_action(const struct device *dev, enum pm_device_act
 		.adc_channel = ADC_DT_SPEC_INST_GET(inst),                                         \
 		.ntc_cfg =                                                                         \
 			{                                                                          \
-				.pullup_uv = DT_INST_PROP(inst, pullup_uv),                        \
+				.pullup_mv = DT_INST_PROP_OR(inst, pullup_uv, 0) / 1000,           \
 				.pullup_ohm = DT_INST_PROP(inst, pullup_ohm),                      \
 				.pulldown_ohm = DT_INST_PROP(inst, pulldown_ohm),                  \
 				.connected_positive = DT_INST_PROP(inst, connected_positive),      \
