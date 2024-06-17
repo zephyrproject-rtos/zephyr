@@ -183,6 +183,8 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
  *  FIXME: Only PRIO_NONE is supported. Implement other protocols.
  */
 #define PTHREAD_PRIO_NONE           0
+#define PTHREAD_PRIO_INHERIT        1
+#define PTHREAD_PRIO_PROTECT        2
 
 /**
  * @brief POSIX threading compatibility API
