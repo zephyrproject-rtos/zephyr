@@ -66,6 +66,20 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
   string(REGEX MATCH "EXTRAVERSION = ([a-z0-9]*)" _ ${ver})
   set(${type}_VERSION_EXTRA ${CMAKE_MATCH_1})
 
+  # Validate all version fields fit in a single byte
+  if(${type}_VERSION_MAJOR GREATER 255)
+    message(FATAL_ERROR "VERSION_MAJOR must be in the range 0-255 (Current ${${type}_VERSION_MAJOR})")
+  endif()
+  if(${type}_VERSION_MINOR GREATER 255)
+    message(FATAL_ERROR "VERSION_MINOR must be in the range 0-255 (Current ${${type}_VERSION_MINOR})")
+  endif()
+  if(${type}_PATCHLEVEL GREATER 255)
+    message(FATAL_ERROR "PATCHLEVEL must be in the range 0-255 (Current ${${type}_PATCHLEVEL})")
+  endif()
+  if(${type}_VERSION_TWEAK GREATER 255)
+    message(FATAL_ERROR "VERSION_TWEAK must be in the range 0-255 (Current ${${type}_VERSION_TWEAK})")
+  endif()
+
   # Temporary convenience variables
   set(${type}_VERSION_WITHOUT_TWEAK ${${type}_VERSION_MAJOR}.${${type}_VERSION_MINOR}.${${type}_PATCHLEVEL})
   set(${type}_VERSION_WITH_TWEAK ${${type}_VERSION_MAJOR}.${${type}_VERSION_MINOR}.${${type}_PATCHLEVEL}+${${type}_VERSION_TWEAK})
