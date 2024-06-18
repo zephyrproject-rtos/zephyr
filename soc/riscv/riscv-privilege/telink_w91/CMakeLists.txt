@@ -14,6 +14,12 @@ zephyr_sources(
 	cache.c
 )
 
+if (CONFIG_BT)
+zephyr_sources(
+	bluetooth/bt_mac.c
+)
+endif()
+
 if(CONFIG_TELINK_W91_IPC_DISPATCHER)
 zephyr_sources(
 	ipc/ipc_dispatcher.c

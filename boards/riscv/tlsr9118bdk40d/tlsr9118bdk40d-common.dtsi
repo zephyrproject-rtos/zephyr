@@ -106,7 +106,11 @@
 		};
 		storage_partition: partition@f4000 {
 			label = "storage";
-			reg = <0xf4000 0x0000a000>;
+			reg = <0xf4000 0xa000>;
+		};
+		vendor_partition: partition@fe000 {
+			label = "vendor-data";
+			reg = <0xfe000 0x2000>;
 		};
 	};
 };

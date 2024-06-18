@@ -16,12 +16,6 @@ config TELINK_W91_BLOCKING_CORE_THREAD_STACK_SIZE
 	help
 	  Blocking thread stack size.
 
-config TELINK_W91_BLOCKING_CORE_THREAD_PRIORITY
-	int "Blocking thread priority"
-	default 40
-	help
-	  Blocking thread priority.
-
 config BLOCKING_CORE_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS
 	int "Telink IPC dispatcher timeout while waiting from the endpoint response"
 	default 10

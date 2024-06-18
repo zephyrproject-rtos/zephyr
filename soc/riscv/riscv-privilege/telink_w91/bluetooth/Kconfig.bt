@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if BT
+
+menu "Telink W91 BLE"
+
+choice TELINK_W91_BLE_MAC_TYPE
+	prompt "MAC address type"
+	default TELINK_W91_BLE_MAC_TYPE_PUBLIC
+config TELINK_W91_BLE_MAC_TYPE_PUBLIC
+	bool "Public"
+config TELINK_W91_BLE_MAC_TYPE_RANDOM_STATIC
+	bool "Random static"
+endchoice
+
+config TELINK_W91_BLE_MAC_PUBLIC_DEBUG
+	bool "Public address debug"
+	default n
+	help
+	  Enable BLE public MAC address generation
+
+endmenu
+
+endif # BT

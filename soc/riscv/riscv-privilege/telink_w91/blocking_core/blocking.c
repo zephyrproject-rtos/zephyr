@@ -13,6 +13,7 @@
 LOG_MODULE_REGISTER(blocking_core_w91);
 
 #define MTIME_REG    DT_REG_ADDR(DT_INST(0, telink_machine_timer))
+#define BLOCKING_THREAD_PRIORITY (CONFIG_NUM_PREEMPT_PRIORITIES - 1)
 
 enum {
 	IPC_DISPATCHER_BLOCKING_SET_STATE_ADDR = IPC_DISPATCHER_BLOCKING,
@@ -150,7 +151,7 @@ static int blocking_w91_init(void)
 	k_thread_create(&blocking_thread_data,
 		blocking_thread_stack, K_THREAD_STACK_SIZEOF(blocking_thread_stack),
 		blocking_w91_thread, NULL, NULL, NULL,
-		CONFIG_TELINK_W91_BLOCKING_CORE_THREAD_PRIORITY, 0, K_NO_WAIT);
+		BLOCKING_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	ipc_dispatcher_add(IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_BLOCKING_STOP_CORE_REQ, 0),
 		blocking_w91_stop_core_req, NULL);

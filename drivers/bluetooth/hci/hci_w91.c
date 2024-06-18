@@ -8,6 +8,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 #include <ipc/ipc_based_driver.h>
+#include <bluetooth/bt_mac.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -39,7 +40,20 @@ static enum hci_w91_bt_ctrl_state bt_ctrl_state = W91_BT_CTRL_STATE_STOPPED;
 static struct ipc_based_driver ipc_data;    /* ipc driver data part */
 
 /* APIs implementation: open the ble controller */
-IPC_DISPATCHER_PACK_FUNC_WITHOUT_PARAM(hci_w91_open, IPC_DISPATCHER_BLE_CTRL_OPEN);
+static size_t pack_hci_w91_open(uint8_t inst, void *unpack_data, uint8_t *pack_data)
+{
+	uint8_t *p_mac = unpack_data;
+	size_t pack_data_len = sizeof(uint32_t) + BT_ADDR_SIZE;
+
+	if (pack_data != NULL) {
+		uint32_t id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_BLE_CTRL_OPEN, inst);
+
+		IPC_DISPATCHER_PACK_FIELD(pack_data, id);
+		IPC_DISPATCHER_PACK_ARRAY(pack_data, p_mac, BT_ADDR_SIZE);
+	}
+
+	return pack_data_len;
+}
 
 IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(hci_w91_open);
 
@@ -48,14 +62,17 @@ static int hci_w91_open(void)
 	LOG_DBG("%s", __func__);
 
 	int err;
+	uint8_t mac[BT_ADDR_SIZE];
 
 	if (bt_ctrl_state == W91_BT_CTRL_STATE_ACTIVATED) {
 		LOG_ERR("W91 BT has already started");
 		return -EPERM;
 	}
 
+	telink_bt_blc_mac_init(mac);
+
 	IPC_DISPATCHER_HOST_SEND_DATA(&ipc_data, 0,
-			hci_w91_open, NULL, &err,
+			hci_w91_open, mac, &err,
 			CONFIG_BLE_HCI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
 
 	if (err == 0) {

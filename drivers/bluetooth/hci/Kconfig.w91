@@ -15,4 +15,13 @@ config BLE_HCI_TELINK_W91_IPC_SEND_RESPONSE_TIMEOUT_MS
 	help
 	  This option sets Telink IPC send dispatcher response driver timeout for sending data in mS.
 
+config BT_ATT_ENFORCE_FLOW
+	default n
+
+config BT_HCI_TX_STACK_SIZE
+	default 2048
+
+config BT_RX_STACK_SIZE
+	default 2048
+
 endif # BT_W91

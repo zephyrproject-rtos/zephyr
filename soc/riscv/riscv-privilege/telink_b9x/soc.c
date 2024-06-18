@@ -419,6 +419,16 @@ static int soc_b9x_check_flash(void)
 	return 0;
 }
 
+#ifdef CONFIG_BT_B9X
+/**
+ * @brief bt mac initialization
+ */
+__attribute__((noinline)) void telink_bt_blc_mac_init(uint8_t *bt_mac)
+{
+	b9x_bt_blc_mac_init(bt_mac);
+}
+#endif
+
 SYS_INIT(soc_b9x_init, PRE_KERNEL_1, 0);
 
 SYS_INIT(soc_b9x_check_flash, POST_KERNEL, 0);
