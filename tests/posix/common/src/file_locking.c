@@ -145,6 +145,24 @@ ZTEST(file_locking, test_stdio)
 	z_free_fd(POINTER_TO_INT(file));
 }
 
+/**
+ * @brief Existence test for the stubs
+ */
+ZTEST(file_locking, test_stubs)
+{
+#ifndef CONFIG_NEWLIB_LIBC
+	errno = 0;
+	zassert_equal(getchar_unlocked(), EOF);
+	zassert_equal(errno, ENOSYS);
+
+	errno = 0;
+	zassert_equal(getc_unlocked(stdin), EOF);
+	zassert_equal(errno, ENOSYS);
+#else
+	ztest_test_skip();
+#endif /* !CONFIG_NEWLIB_LIBC */
+}
+
 #else
 /**
  * PicoLIBC doesn't support these functions in its header

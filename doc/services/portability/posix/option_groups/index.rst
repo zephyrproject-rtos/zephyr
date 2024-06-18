@@ -567,8 +567,8 @@ This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
     flockfile(), yes
     ftrylockfile(), yes
     funlockfile(), yes
-    getc_unlocked(),
-    getchar_unlocked(),
+    getc_unlocked(), yes :ref:`†<posix_undefined_behaviour>`
+    getchar_unlocked(), yes :ref:`†<posix_undefined_behaviour>`
     putc_unlocked(), yes
     putchar_unlocked(), yes
 
@@ -904,8 +904,8 @@ _POSIX_THREAD_SAFE_FUNCTIONS
     flockfile(), yes
     ftrylockfile(), yes
     funlockfile(), yes
-    getc_unlocked(),
-    getchar_unlocked(),
+    getc_unlocked(), yes :ref:`†<posix_undefined_behaviour>`
+    getchar_unlocked(), yes :ref:`†<posix_undefined_behaviour>`
     getgrgid_r(),
     getgrnam_r(),
     getpwnam_r(),

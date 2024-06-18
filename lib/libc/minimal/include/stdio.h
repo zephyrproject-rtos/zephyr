@@ -68,6 +68,11 @@ int putc_unlocked(int c, FILE *stream);
 int putchar_unlocked(int c);
 #endif /* CONFIG_COMMON_LIBC_PUTC_UNLOCKED || __DOXYGEN__ */
 
+#if defined(CONFIG_COMMON_LIBC_GETC_UNLOCKED) || defined(__DOXYGEN__)
+int getc_unlocked(FILE *stream);
+int getchar_unlocked(void);
+#endif /* CONFIG_COMMON_LIBC_GETC_UNLOCKED || __DOXYGEN__ */
+
 #if defined(CONFIG_POSIX_FILE_LOCKING) || defined(__DOXYGEN__)
 void flockfile(FILE *file);
 int ftrylockfile(FILE *file);
