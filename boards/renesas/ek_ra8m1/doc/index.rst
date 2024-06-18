@@ -102,6 +102,8 @@ The below features are currently supported on Zephyr OS for EK-RA8M1 board:
 +-----------+------------+----------------------+
 | ENTROPY   | on-chip    | entropy              |
 +-----------+------------+----------------------+
+| SPI       | on-chip    | spi                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 

@@ -48,3 +48,8 @@ config HAS_RENESAS_RA_RSIP_E51A
 	  Includes RSIP-E51A implementation for SCE driver
 
 endif
+
+config USE_RA_FSP_SPI_B
+	bool
+	help
+	  Enable RA FSP SPI-B driver

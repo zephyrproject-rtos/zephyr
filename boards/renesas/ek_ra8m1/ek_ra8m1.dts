@@ -163,3 +163,9 @@ mikrobus_serial: &uart3 {};
 &trng {
 	status = "okay";
 };
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
