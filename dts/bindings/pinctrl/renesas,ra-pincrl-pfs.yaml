@@ -3,8 +3,8 @@
 
 description: |
     The Renesas RA pin controller is a node responsible for controlling
-    pin function selection and pin properties, such as routing a SCI0 Rx
-    to P100 and enabling the pullup resistor on that pin.
+    pin function selection and pin properties, such as routing a SCI0 RXD
+    to P610.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
     so you can modify it like this:
@@ -21,22 +21,19 @@ description: |
        */
 
       /* include pre-defined combinations for the SoC variant used by the board */
-      #include <dt-bindings/pinctrl/ra-pinctrl.h>
+      #include <dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 
       &pinctrl {
-        /* configuration for the usart0 "default" state */
-        sci0_default: sci0_default {
-          /* group 1 */
+        /* configuration for the sci0 "default" state */
+          sci0_default: sci0_default {
           group1 {
-            /* configure P101 as SCI0 TX */
-            psels = <UART0_TX_P101>;
+            /* tx */
+            psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 9)>;
+            drive-strength = "medium";
           };
-          /* group 2 */
           group2 {
-            /* configure P100 as SCI0 RX */
-            psels = <UART0_RX_P100>;
-            /* enable input on pin 100 */
-            input-enable;
+            /* rx */
+            psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 10)>;
           };
         };
       };
@@ -57,20 +54,20 @@ description: |
     - bias-pull-up: Enable pull-up resistor.
     - input-enable: Enable input from the pin.
     - drive-strength: Set the drive strength of the pin. Possible
-      values are: low, median, highspeed-high, high.
+      values are: low, medium, highspeed-high, high.
 
     To link pin configurations with a device, use a pinctrl-N property for some
     number N, like this example you could place in your board's DTS file:
 
        #include "board-pinctrl.dtsi"
 
-       &uart0 {
+       &sci0 {
              pinctrl-0 = <&uart0_default>;
              pinctrl-1 = <&uart0_sleep>;
              pinctrl-names = "default", "sleep";
        };
 
-compatible: "renesas,ra6-pinctrl"
+compatible: "renesas,ra-pinctrl-pfs"
 
 include: base.yaml
 

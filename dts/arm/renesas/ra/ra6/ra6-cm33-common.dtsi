@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
-#include <zephyr/dt-bindings/pinctrl/renesas/ra-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <freq.h>
 
@@ -97,7 +97,7 @@
 		};
 
 		pinctrl: pin-contrller@40080800 {
-			compatible = "renesas,ra6-pinctrl";
+			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40080800 0x3c0>;
 			status = "okay";
 		};
