@@ -520,27 +520,23 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 
 			sym_tab->syms[j].name = name;
 
-			uintptr_t section_addr;
-			void *base;
+			elf_shdr_t *shdr = ldr->sect_hdrs + sect;
+			uintptr_t section_addr = shdr->sh_addr;
+			const void *base;
 
-			if (sect < LLEXT_MEM_BSS) {
-				/*
-				 * This is just a slight optimisation for cached
-				 * sections, we could use the generic path below
-				 * for all of them
+			base = llext_loaded_sect_ptr(ldr, ext, sect);
+			if (!base) {
+				/* If the section is not mapped, try to peek.
+				 * Be noisy about it, since this is addressing
+				 * data that was missed by llext_map_sections.
 				 */
-				base = ext->mem[ldr->sect_map[sect].mem_idx];
-				section_addr = ldr->sects[ldr->sect_map[sect].mem_idx].sh_addr;
-			} else {
-				elf_shdr_t *shdr = ldr->sect_hdrs + sect;
-
 				base = llext_peek(ldr, shdr->sh_offset);
-				if (!base) {
-					LOG_ERR("cannot handle arbitrary sections without .peek\n");
+				if (base) {
+					LOG_DBG("section %d peeked at %p", sect, base);
+				} else {
+					LOG_ERR("No data for section %d", sect);
 					return -EOPNOTSUPP;
 				}
-
-				section_addr = shdr->sh_addr;
 			}
 
 			if (pre_located) {
