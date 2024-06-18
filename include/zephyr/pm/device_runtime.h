@@ -22,6 +22,27 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Device runtime key.
+ *
+ * This key is supposed to be used in places where calls to device runtime
+ * are unbalanced.
+ *
+ * @see pm_device_runtime_get_key()
+ * @see pm_device_runtime_put_key()
+ * @see pm_device_runtime_put_async_key()
+ */
+struct pm_device_runtime_key {
+#if defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
+	/** Device instance */
+	const struct device *dev;
+	/** Lock to synchronize operation */
+	struct k_sem lock;
+	/** Whether or not device is active */
+	bool active;
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
+};
+
 #if defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
 /**
  * @brief Automatically enable device runtime based on devicetree properties
@@ -72,6 +93,20 @@ int pm_device_runtime_enable(const struct device *dev);
 int pm_device_runtime_disable(const struct device *dev);
 
 /**
+ * @brief Initialize a device runtime key.
+ *
+ * This routine initializes a device runtime key object, prior to its first use.
+ *
+ * @param key Device runtime key instance.
+ * @param dev Device instance.
+ *
+ * @retval 0 Device runtime key successfully initialized.
+ * @retval -EINVAL Invalid values.
+ */
+int pm_device_runtime_key_init(struct pm_device_runtime_key *key,
+			const struct device *dev);
+
+/**
  * @brief Resume a device based on usage count.
  *
  * This function will resume the device if the device is suspended (usage count
@@ -95,6 +130,44 @@ int pm_device_runtime_disable(const struct device *dev);
  * @retval -errno Other negative errno, result of the PM action callback.
  */
 int pm_device_runtime_get(const struct device *dev);
+
+/**
+ * @brief Resume a device based on key usage.
+ *
+ * This function works exactly like pm_device_runtime_get(), but it uses a key
+ * to track the usage. This means that multiple calls to pm_device_runtime_get_key()
+ * with the same key will not increse the usage counter and a single call
+ * to pm_device_runtime_put_key() will be enough to suspend the device.
+
+ * @funcprops \pre_kernel_ok
+ *
+ * @param dev Device instance.
+ * @param key [out] Device runtime key.
+ *
+ * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
+ * available this function will be a no-op and will also return 0.
+ * @retval -EWOUDBLOCK If call would block but it is not allowed (e.g. in ISR).
+ * @retval -errno Other negative errno, result of the PM action callback.
+ */
+int pm_device_runtime_get_key(struct pm_device_runtime_key *key);
+
+/**
+ * @brief Suspend a device based on key usage.
+ *
+ * This function will suspend the device if the device that the key is representing.
+ *
+ * @funcprops \pre_kernel_ok
+ *
+ * @param key Device key instance.
+ *
+ * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
+ * available this function will be a no-op and will also return 0.
+ * @retval -EALREADY If device is already suspended.
+ * @retval -errno Other negative errno, result of the action callback.
+ *
+ * @see pm_device_runtime_put_async_key()
+ */
+int pm_device_runtime_put_key(struct pm_device_runtime_key *key);
 
 /**
  * @brief Suspend a device based on usage count.
@@ -145,6 +218,29 @@ int pm_device_runtime_put(const struct device *dev);
 int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay);
 
 /**
+ * @brief Suspend a device based on key usage (asynchronously).
+ *
+ * This function will suspend the device if the device that the key is representing.
+ *
+ * @note Asynchronous operations are not supported when in pre-kernel mode. In
+ * this case, the function will be blocking (equivalent to
+ * pm_device_runtime_put()).
+ *
+ * @funcprops \pre_kernel_ok, \async, \isr_ok
+ *
+ * @param key Device key instance.
+ * @param delay Minimum amount of time before triggering the action.
+ *
+ * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
+ * available this function will be a no-op and will also return 0.
+ * @retval -EALREADY If device is already suspended.
+ * @retval -errno Other negative errno, result of the action callback.
+ *
+ * @see pm_device_runtime_put_async_key()
+ */
+int pm_device_runtime_put_async_key(struct pm_device_runtime_key *key, k_timeout_t delay);
+
+/**
  * @brief Check if device runtime is enabled for a given device.
  *
  * @funcprops \pre_kernel_ok
@@ -189,9 +285,23 @@ static inline int pm_device_runtime_disable(const struct device *dev)
 	return 0;
 }
 
+static inline int pm_device_runtime_key_init(struct pm_device_runtime_key *key,
+			const struct device *dev)
+{
+	ARG_UNUSED(key);
+	ARG_UNUSED(dev);
+	return 0;
+}
+
 static inline int pm_device_runtime_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+	return 0;
+}
+
+static inline int pm_device_runtime_get_key(struct pm_device_runtime_key *key)
+{
+	ARG_UNUSED(key);
 	return 0;
 }
 
@@ -201,10 +311,24 @@ static inline int pm_device_runtime_put(const struct device *dev)
 	return 0;
 }
 
+static inline int pm_device_runtime_put_key(struct pm_device_runtime_key *key)
+{
+	ARG_UNUSED(key);
+	return 0;
+}
+
 static inline int pm_device_runtime_put_async(const struct device *dev,
 		k_timeout_t delay)
 {
 	ARG_UNUSED(dev);
+	ARG_UNUSED(delay);
+	return 0;
+}
+
+static inline int pm_device_runtime_put_async_key(struct pm_device_runtime_key *key,
+						  k_timeout_t delay)
+{
+	ARG_UNUSED(key);
 	ARG_UNUSED(delay);
 	return 0;
 }
