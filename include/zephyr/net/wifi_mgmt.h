@@ -479,6 +479,10 @@ struct wifi_connect_req_params {
 	const uint8_t *key_passwd;
 	/** Private key passwd length */
 	uint8_t key_passwd_length; /* Max 128 */
+	/** private key2 passwd */
+	const uint8_t *key2_passwd;
+	/** key2 passwd length */
+	uint8_t key2_passwd_length; /* Max 128 */
 	/** suiteb or suiteb-192 */
 	uint8_t suiteb_type;
 	/** eap version */
@@ -749,6 +753,19 @@ struct wifi_enterprise_creds_params {
 	uint8_t *client_key;
 	/** Client key length */
 	uint32_t client_key_len;
+
+	uint8_t *ca_cert2;
+	uint32_t ca_cert2_len;
+	uint8_t *client_cert2;
+	uint32_t client_cert2_len;
+	uint8_t *client_key2;
+	uint32_t client_key2_len;
+	uint8_t *server_cert;
+	uint32_t server_cert_len;
+	uint8_t *server_key;
+	uint32_t server_key_len;
+	uint8_t *dh_param;
+	uint32_t dh_param_len;
 };
 
 /** @brief Wi-Fi power save configuration */

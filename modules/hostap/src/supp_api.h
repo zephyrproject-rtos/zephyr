@@ -20,6 +20,23 @@
 #define MAC_STR_LEN 18 /* for ':' or '-' separated MAC address string */
 #define CHAN_NUM_LEN 6 /* for space-separated channel numbers string */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+struct wpa_supp_enterprise_file {
+	uint8_t *ca_cert;
+	uint32_t ca_cert_len;
+	uint8_t *client_cert;
+	uint32_t client_cert_len;
+	uint8_t *client_key;
+	uint32_t client_key_len;
+	uint8_t *ca_cert2;
+	uint32_t ca_cert2_len;
+	uint8_t *client_cert2;
+	uint32_t client_cert2_len;
+	uint8_t *client_key2;
+	uint32_t client_key2_len;
+};
+#endif
+
 /**
  * @brief Get version
  *
