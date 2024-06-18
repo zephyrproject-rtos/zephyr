@@ -32,3 +32,19 @@ config USE_RA_FSP_ADC
 	bool
 	help
 	  Enable RA FSP ADC driver
+
+config USE_RA_FSP_SCE
+	bool
+	help
+	  Enable RA FSP SCE driver
+
+if USE_RA_FSP_SCE
+
+config HAS_RENESAS_RA_RSIP_E51A
+	bool
+	default y
+	depends on ENTROPY_RENESAS_RA_RSIP_E51A_TRNG
+	help
+	  Includes RSIP-E51A implementation for SCE driver
+
+endif
