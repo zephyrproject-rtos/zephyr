@@ -11,7 +11,6 @@ zephyr_library_sources(
     sram.c
     power.c
     power_down_cavs.S
-    boot_complete.c
     )
 
 if(CONFIG_SMP OR CONFIG_MP_MAX_NUM_CPUS GREATER 1)
