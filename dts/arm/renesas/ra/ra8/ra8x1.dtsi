@@ -299,6 +299,10 @@
 			status = "disabled";
 		};
 
+		trng: trng {
+			compatible = "renesas,ra-rsip-e51a-trng";
+		};
+
 		option_setting_ofs: option_setting_ofs@300a100 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0300a100 0x18>;

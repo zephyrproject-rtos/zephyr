@@ -19,6 +19,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart9;
 		zephyr,shell-uart = &uart9;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -157,4 +158,8 @@ mikrobus_serial: &uart3 {};
 	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+};
+
+&trng {
+	status = "okay";
 };
