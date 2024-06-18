@@ -233,11 +233,10 @@ static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 			}
 
 			(void)http_server_sendall(client, crlf, 2);
-
-			offset += copy_len;
-			remaining -= copy_len;
 		}
 
+		offset += copy_len;
+		remaining -= copy_len;
 		copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
 	}
 
