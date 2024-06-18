@@ -18,4 +18,8 @@ properties:
                  system clock frequency.
 
   "#clock-cells":
-    const: 0
+    const: 2
+
+clock-cells:
+  - mstp
+  - stop_bit
