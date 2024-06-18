@@ -76,7 +76,7 @@ Sample overlay file
 
 This is the overlay template for Azure IoT hub and other details:
 
-.. code-block:: console
+.. code-block:: cfg
 
 	CONFIG_SAMPLE_CLOUD_AZURE_USERNAME="<username>"
 	CONFIG_SAMPLE_CLOUD_AZURE_PASSWORD="<SAS token>"

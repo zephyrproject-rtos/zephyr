@@ -139,7 +139,7 @@ so:
 On the host application, some config options need to be used to select the H4
 driver instead of the built-in controller:
 
-.. code-block:: kconfig
+.. code-block:: cfg
 
    CONFIG_BT_HCI=y
    CONFIG_BT_CTLR=n

@@ -178,7 +178,7 @@ change it to
 In your prj.conf overwrite the configuration like this for the **DDR** memory
 region:
 
-.. code-block:: console
+.. code-block:: cfg
 
    CONFIG_CODE_DDR=y
    CONFIG_CODE_ITCM=n
