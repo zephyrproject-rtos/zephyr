@@ -653,28 +653,6 @@ static int init(void)
 	return 0;
 }
 
-static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
-{
-	uint16_t pa_timeout;
-
-	if (pa_interval == BT_BAP_PA_INTERVAL_UNKNOWN) {
-		/* Use maximum value to maximize chance of success */
-		pa_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
-	} else {
-		uint32_t interval_ms;
-		uint32_t timeout;
-
-		/* Add retries and convert to unit in 10's of ms */
-		interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(pa_interval);
-		timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
-
-		/* Enforce restraints */
-		pa_timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
-	}
-
-	return pa_timeout;
-}
-
 static int pa_sync_create(void)
 {
 	struct bt_le_per_adv_sync_param create_params = {0};
