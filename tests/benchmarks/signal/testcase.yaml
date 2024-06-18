@@ -1,0 +1,26 @@
+common:
+  tags:
+    - kernel
+    - benchmark
+  min_ram: 64
+  integration_platforms:
+    - qemu_riscv64/qemu_virt_riscv64/smp
+    - qemu_riscv32
+    - mps2/an385
+    - qemu_cortex_a53/qemu_cortex_a53/smp
+    - qemu_x86
+    - qemu_x86_64
+  harness: console
+  harness_config:
+    type: one_line
+    record:
+      regex:
+        - "(?P<time>.*), (?P<cores>.*), (?P<retries>.*), (?P<signals>.*), (?P<retry_rate>.*), (?P<signal_rate>.*)"
+    regex:
+      - "PROJECT EXECUTION SUCCESSFUL"
+tests:
+  benchmark.kernel.signal: {}
+  benchmark.kernel.signal.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_ARCH_SUPPORTS_USERSPACE_SIGNALS
+    extra_configs:
+      - CONFIG_USERSPACE=y

@@ -7321,6 +7321,219 @@ void k_sys_runtime_stats_enable(void);
  */
 void k_sys_runtime_stats_disable(void);
 
+#if defined(CONFIG_SIGNAL) || defined(__DOXYGEN__)
+
+/**
+ * @addtogroup k_sig_apis
+ * @{
+ */
+
+/**
+ * @brief Examine or change the signal action for the calling thread.
+ *
+ * @param sig the signal for which the action should be examined or changed.
+ * @param act the new action for the signal (may be NULL).
+ * @param oact the old action for the signal (may be NULL).
+ *
+ * @retval 0 on success.
+ * @return -EINVAL if @a sig is invalid.
+ */
+__syscall int k_sig_action(int sig, const struct k_sig_action *act, struct k_sig_action *oact);
+
+/**
+ * @brief Add the signal @a sig to the signal set @a set.
+ *
+ * @param set the set to which @a sig should be added.
+ * @param sig the signal which should be added to @a set.
+ *
+ * @retval 0 on success.
+ * @return -EINVAL if @a sig is invalid.
+ */
+int k_sig_addset(struct k_sig_set *set, int sig);
+
+/**
+ * @brief Remove the signal @a sig from signal set @a set.
+ *
+ * @param set the set from which @a sig should be removed.
+ * @param sig the signal which should be removed from @a set.
+ *
+ * @retval 0 on success.
+ * @return -EINVAL if @a sig is invalid.
+ */
+int k_sig_delset(struct k_sig_set *set, int sig);
+
+/**
+ * @brief Check if signal @a sig is part of signal set @a set.
+ *
+ * @param set the set to check.
+ * @param sig the signal which should be checked.
+ *
+ * @retval 0 if @a sig is not part of @a set.
+ * @retval 1 if @a sig is part of @a set.
+ * @return -EINVAL if @a sig is invalid.
+ */
+int k_sig_ismember(const struct k_sig_set *set, int sig);
+
+/**
+ * @brief Initialize a signal set with the set of all signals.
+ *
+ * @param set signal set to initialize.
+ *
+ * @retval 0 on success.
+ * @return -EINVAL if @a set is invalid.
+ */
+int k_sig_fillset(struct k_sig_set *set);
+
+/**
+ * @brief Initialize a signal set as empty.
+ *
+ * @param set signal set to initialize.
+ *
+ * @retval 0 on success.
+ * @return -EINVAL if @a set is invalid.
+ */
+int k_sig_emptyset(struct k_sig_set *set);
+
+/**
+ * @brief Test if a signal set is empty.
+ *
+ * @param set signal set to test.
+ *
+ * @return true when @p set is empty, otherwise false. on success.
+ */
+static inline bool k_sig_setisempty(const struct k_sig_set *set)
+{
+	ARRAY_FOR_EACH(set->sig, i) {
+		if (set->sig[i] == 0) {
+			continue;
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * @brief Manipulate the signal mask of the calling thread.
+ *
+ * The parameter @a how may be specified as @ref K_SIG_BLOCK, @ref K_SIG_UNBLOCK, or
+ * @ref K_SIG_SETMASK. If @a how is @ref K_SIG_BLOCK, then the signals in @a set are added to the
+ * signal mask of the calling thread. If @a how is @ref K_SIG_UNBLOCK, then the signals in @a set
+ * are removed from the signal mask of the calling thread. If @a how is @ref K_SIG_SETMASK, then
+ * the signals in @a set replace the current signal mask of the calling thread.
+ *
+ * @param how how to manipulate the set
+ * @param set the set to manipulate
+ * @param[out] oset the resulting set
+ * @retval 0 on success
+ * @retval -EINVAL for invalid values of @a how
+ */
+__syscall int k_sig_mask(int how, const struct k_sig_set *set, struct k_sig_set *oset);
+
+/**
+ * @brief Get the set of pending signals for the calling thread.
+ *
+ * @param[out] set the set of pending signals for the calling thread.
+ * @retval 0 on success
+ * @retval -EINVAL for invalid values of @a set
+ * @retval -EFAULT if called from ISR context
+ */
+__syscall int k_sig_pending(struct k_sig_set *set);
+
+/**
+ * @brief Get the number of signals delivered to the calling thread.
+ *
+ * The count includes every signal whose action was to invoke a handler in the calling thread,
+ * over the lifetime of the thread. Signals that were ignored or discarded are not counted.
+ *
+ * Sampling the count before and after a blocking operation reveals whether a signal handler ran
+ * in the interim, without any additional bookkeeping shared between the handler and the waiter.
+ *
+ * @return the number of signals delivered to the calling thread.
+ */
+__syscall unsigned long k_sig_delivered(void);
+
+/**
+ * @brief Arm or disarm the alarm signal.
+ *
+ * Arms a single system-wide alarm that queues @ref K_SIG_ALRM to the calling thread after
+ * @a timeout has elapsed. A previously armed alarm is cancelled, whether it targeted the
+ * calling thread or another. Passing @ref K_FOREVER disarms without re-arming.
+ *
+ * @param timeout time until the alarm signal is generated, or @ref K_FOREVER to disarm.
+ * @return the number of ticks that remained on the previously armed alarm, or 0 if none.
+ */
+__syscall k_ticks_t k_sig_alarm(k_timeout_t timeout);
+
+/**
+ * @brief Queue a signal for process ID @a pid.
+ *
+ * Queue the signal @a signo for process ID @a pid with value @a value.
+ *
+ * This function is safe to call in ISR context.
+ *
+ * @param pid the process ID for which to queue the signal.
+ * @param signo the signal number to queue.
+ * @param value the value associated with the signal.
+ *
+ * @retval 0 on success.
+ * @retval -EAGAIN if there were insufficient resources available.
+ * @retval -EINVAL if @a signo is invalid.
+ * @return -EPERM if the calling thread lacks permissions to signal the process with id @a pid.
+ * @return -ESRCH if a process with id @a pid does not exist.
+ * @return -EWOULDBLOCK if called from ISR context and the operation would block.
+ */
+__syscall int k_sig_queue(k_pid_t pid, int signo, union k_sig_val value);
+
+/**
+ * @brief Wait for any signal in @a set for a maximum duration specified by @a timeout.
+ *
+ * Wait for any signal in @a set to be delivered to the calling thread.
+ *
+ * If the @a timeout parameter is specified as @ref K_NO_WAIT, this call does not block. If it is
+ * specified as @ref K_FOREVER, this call blocks indefinitely. At this time, absolute
+ * timeouts are not supported and are treated as invalid.
+ *
+ * If a signal is received and the @a info parameter is non-NULL, then it will be populated with
+ * additional information about the received signal.
+ *
+ * @param set set of signals to wait for.
+ * @param[out] info pointer to a location in which to store signal-related information. May be
+ * `NULL`.
+ * @param timeout maximum time to wait for a signal in @a set to be delivered.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if an invalid argument was provided.
+ * @retval -EAGAIN if no signal in @a set was received within the specified @a timeout.
+ */
+__syscall int k_sig_timedwait(const struct k_sig_set *set, struct k_sig_info *info,
+			      k_timeout_t timeout);
+
+#if defined(CONFIG_USERSPACE)
+/** @cond INTERNAL_HIDDEN */
+/*
+ * This system call is used exclusively for returning from the signal handler trampoline,
+ * z_sig_trampoline(), when userspace is enabled and should never be called from regular
+ * application code.
+ */
+__syscall void k_sig_current(struct k_sig_info *info, struct k_sig_action *action, void **context);
+
+/*
+ * This system call is used exclusively for returning from the signal handler trampoline,
+ * z_sig_trampoline(), when userspace is enabled and should never be called from regular
+ * application code.
+ */
+__syscall void k_sig_return(void);
+/** @endcond */
+#endif
+
+/**
+ * @}
+ */
+
+#endif /* CONFIG_SIGNAL */
+
 #ifdef __cplusplus
 }
 #endif

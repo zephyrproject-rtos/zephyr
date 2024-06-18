@@ -955,6 +955,30 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	init_thread_halt_queue(new_thread);
 	init_thread_usage(new_thread);
 
+#ifdef CONFIG_SIGNAL
+#ifdef CONFIG_USERSPACE
+	if ((options & K_USER) == 0U) {
+		/*
+		 * Kernel threads mask all signals, whoever creates them: a worker
+		 * started on a user thread's behalf, inside its system call, must
+		 * not become a delivery target for the process's signals.
+		 */
+		k_sig_fillset(&new_thread->base.sig.mask);
+	} else if (k_is_in_user_syscall()) {
+		/* Child user threads inherit the parent signal mask when the parent is
+			* also a user thread. */
+		new_thread->base.sig.mask = _current->base.sig.mask;
+	} else {
+		/* User threads created by the kernel have an empty signal mask by
+			* default. */
+		k_sig_emptyset(&new_thread->base.sig.mask);
+	}
+#else
+	/* Kernel threads mask all signals by default. */
+	k_sig_fillset(&new_thread->base.sig.mask);
+#endif
+#endif
+
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, create, new_thread);
 
 	return stack_ptr;
@@ -1150,6 +1174,12 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 {
 	SYS_PORT_TRACING_FUNC(k_thread, user_mode_enter);
 
+#ifdef CONFIG_SIGNAL
+	/* a kernel thread dropping to user mode takes the user default: unmasked */
+	if ((_current->base.user_options & K_USER) == 0U) {
+		k_sig_emptyset(&_current->base.sig.mask);
+	}
+#endif /* CONFIG_SIGNAL */
 	_current->base.user_options |= K_USER;
 	z_thread_essential_clear(_current);
 #ifdef CONFIG_THREAD_MONITOR

@@ -29,6 +29,63 @@ import os
 import re
 import sys
 
+# Syscall lists for signal and cancellation handling in generated wrappers.
+#
+# These lists are subject to change until the API has stabilized.
+#
+# Deferred cancellation is checked at cancellation-point entry (before the syscall
+# may block) via z_syscall_cancel_check(). Other pending signals are drained after
+# the syscall completes via z_syscall_sig_check() (kernel direct path) or arch
+# z_sig_handle() on userspace return. Zephyr does not yet support interrupted or
+# restarted system calls, which would be required for delivery mid-syscall.
+#
+# See also
+# https://pubs.opengroup.org/onlinepubs/9799919799/functions/V2_chap02.html#tag_16_09_05_02
+
+# Syscalls that must never run z_syscall_sig_check() post-return (signal delivery
+# internals + console output that must not be interrupted).
+signal_exclude_list = {
+    "k_mem_slab_free",      # used by z_sig_handle()
+    "k_poll_signal_raise",  # used by k_sig_queue()
+    "k_sig_action",         # used by z_sig_trampoline(); skipped in arch userspace.S
+    "k_sig_current",        # used by z_sig_trampoline()
+    "k_sig_return",         # used by z_sig_trampoline()
+    "k_uptime_ticks",       # reading the clock is async-signal-safe, like clock_gettime()
+    "k_str_out",            # avoid interference with uart output
+    "uart_poll_out",        # avoid interference with uart output
+}
+
+# POSIX non-cancellation points (deferred cancel must not act at entry).
+not_cancellation_points = {
+    "k_futex_wait",         # primitive; callers that are cancellation points test first
+    "k_futex_wake",         # like sem_post(), pthread_cond_signal(), pthread_mutex_unlock()
+    "k_mutex_lock",         # like pthread_mutex_lock()
+    "k_mutex_unlock",       # like pthread_mutex_unlock()
+    "k_sem_give",           # like sem_post()
+    "k_sig_action",         # like sigaction(); in both lists
+    "k_sig_mask",           # like pthread_sigmask(), sigprocmask()
+    "k_sig_alarm",          # like alarm()
+    "k_sig_delivered",      # like sigpending(); a query, not a wait
+    "k_sig_pending",        # like pthread_sigpending(), sigpending()
+    "k_sig_queue",          # like pthread_kill(), kill(), and sigqueue()
+    "k_thread_cancel",      # like pthread_cancel()
+    "k_thread_priority_set", # like pthread_setschedparam()
+    "k_timer_start",        # like timer_settime()
+    "k_timer_status_get",   # like timer_gettime()
+    "k_uptime_ticks",       # like clock_gettime()
+    "k_wakeup",             # like pthread_kill()
+    "k_yield",              # like sched_yield() (or pthread_yield() which is non-standard)
+}
+
+def is_excluded_from_signal_check(func: str) -> bool:
+    return func in signal_exclude_list
+
+def is_cancellation_point(func: str) -> bool:
+    return func not in not_cancellation_points and func not in signal_exclude_list
+
+def needs_pre_cancel_check(func: str) -> bool:
+    return is_cancellation_point(func) and func != "k_thread_testcancel"
+
 # Some kernel headers cannot include automated tracing without causing unintended recursion or
 # other serious issues.
 # These headers typically already have very specific tracing hooks for all relevant things
@@ -245,7 +302,9 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
         wrap += f"extern {func_type} z_impl_{func_name}({decl_arglist});\n"
         wrap += "\n"
 
-    wrap += f"static inline {func_type} {func_name}({decl_arglist})\n"
+    # Variadic wrappers cannot be inlined; the rest follow Z_SYSCALL_INLINE.
+    inline_kw = "inline" if any(argtype == "va_list" for argtype, _ in args) else "Z_SYSCALL_INLINE"
+    wrap += f"static {inline_kw} {func_type} {func_name}({decl_arglist})\n"
     wrap += "{\n"
     if not userspace_only:
         wrap += "#ifdef CONFIG_USERSPACE\n"
@@ -280,6 +339,23 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
         wrap += "\t\t" + "};\n"
         mrsh_args[5:] = ["(uintptr_t) &more"]
 
+    # Deferred cancellation is actuated at cancellation-point entry, before the
+    # syscall may block. For user threads the actuation comes from invoking the
+    # K_THREAD_TESTCANCEL syscall here (the in-kernel z_syscall_cancel_check() on
+    # the direct path below is never reached from the userspace trap branch).
+    # Save the marshalled arguments first: on x86_64 the invoke0 path does not
+    # preserve argument registers.
+    if needs_pre_cancel_check(func_name):
+        saved_args = []
+        for i, arg in enumerate(mrsh_args):
+            wrap += "\t\t" + f"volatile uintptr_t syscall_arg{i} = {arg};\n"
+            saved_args.append(f"syscall_arg{i}")
+        mrsh_args = saved_args
+        wrap += "\t\t" + "#ifdef CONFIG_THREAD_CANCEL\n"
+        wrap += "\t\t" + "(void) arch_syscall_invoke0(K_SYSCALL_K_THREAD_TESTCANCEL);\n"
+        wrap += "\t\t" + "compiler_barrier();\n"
+        wrap += "\t\t" + "#endif\n"
+
     invoke_args = ", ".join(mrsh_args + [syscall_id])
     invoke = f"arch_syscall_invoke{len(mrsh_args)}({invoke_args})"
 
@@ -310,9 +386,19 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
         # context.
         impl_arglist = ", ".join([argrec[1] for argrec in args])
         impl_call = f"z_impl_{func_name}({impl_arglist})"
+        if needs_pre_cancel_check(func_name):
+            wrap += "\t" + "z_syscall_cancel_check();\n"
         wrap += "\t" + "compiler_barrier();\n"
-        ret = "return " if func_type != "void" else ""
-        wrap += "\t" + f"{ret}{impl_call};\n"
+        if func_type == "void":
+            wrap += "\t" + f"{impl_call};\n"
+            if not is_excluded_from_signal_check(func_name):
+                wrap += "\t" + "z_syscall_sig_check();\n"
+            wrap += "\t" + "return;\n"
+        else:
+            wrap += "\t" + f"{func_type} ret = {impl_call};\n"
+            if not is_excluded_from_signal_check(func_name):
+                wrap += "\t" + "z_syscall_sig_check();\n"
+            wrap += "\t" + "return ret;\n"
 
     wrap += "}\n"
 

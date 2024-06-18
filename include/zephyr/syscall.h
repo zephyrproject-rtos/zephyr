@@ -15,6 +15,8 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/sys/atomic_types.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,6 +127,56 @@ static inline bool k_is_user_context(void)
 	return false;
 #endif
 }
+
+/*
+ * Kernel-only builds inline every non-variadic wrapper, so the inline pending-signal test
+ * below does not turn a direct kernel call into two calls. With userspace the wrapper also
+ * carries the trap path and its inlining is left to the compiler.
+ */
+#if defined(CONFIG_USERSPACE)
+#define Z_SYSCALL_INLINE inline
+#else
+#define Z_SYSCALL_INLINE ALWAYS_INLINE
+#endif
+
+#ifdef CONFIG_SIGNAL
+/*
+ * Signals queued but not yet delivered, plus cancellation requests not yet acted on, system
+ * wide. Zero is the common case: the generated system call wrappers test it inline with a
+ * plain load and only take the out-of-line path when there is work somewhere. A stale read
+ * costs one system call of delivery latency, which is the granularity of delivery anyway.
+ */
+extern atomic_t z_sig_work_pending;
+
+void z_syscall_sig_check_slow(void);
+
+static ALWAYS_INLINE bool z_sig_work_is_pending(void)
+{
+	return unlikely(*(volatile atomic_t *)&z_sig_work_pending != 0);
+}
+
+static ALWAYS_INLINE void z_syscall_sig_check(void)
+{
+	if (z_sig_work_is_pending()) {
+		z_syscall_sig_check_slow();
+	}
+}
+#else
+#define z_syscall_sig_check()
+#endif
+
+#if defined(CONFIG_THREAD_CANCEL)
+void z_syscall_cancel_check_slow(void);
+
+static ALWAYS_INLINE void z_syscall_cancel_check(void)
+{
+	if (z_sig_work_is_pending()) {
+		z_syscall_cancel_check_slow();
+	}
+}
+#else
+#define z_syscall_cancel_check()
+#endif
 
 #ifdef __cplusplus
 }

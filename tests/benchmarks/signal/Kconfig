@@ -1,0 +1,21 @@
+# Copyright (c) 2026, Friedt Professional Engineering Services, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Signal Benchmark"
+
+source "Kconfig.zephyr"
+
+config TEST_DURATION_S
+	int "Number of seconds to run the test"
+	default 5
+	help
+	   Duration for the test, in seconds.
+
+config TEST_STACK_SIZE
+	int "Size of each thread stack in this test"
+	default 1024 if 64BIT
+	default 1024 if SPARC
+	default 512
+	help
+	  The minimal stack size required to run a minimal thread.

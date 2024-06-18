@@ -1,5 +1,86 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Import all custom SIGNAL_SET_SIZE_MIN_ requirements
+import_kconfig(CONFIG_SIGNAL_SET_SIZE_MIN_ ${DOTCONFIG} sigset_min_keys)
+
+set(sigset_min_size 0)
+foreach(min_size ${sigset_min_keys})
+  if(${min_size} GREATER ${sigset_min_size})
+    set(sigset_min_size ${${min_size}})
+  endif()
+endforeach()
+
+if(CONFIG_SIGNAL_SET_SIZE LESS "${sigset_min_size}")
+  # Only warn if default value 0 has been modified
+  if(NOT CONFIG_SIGNAL_SET_SIZE EQUAL 0)
+    message(WARNING "
+      CONFIG_SIGNAL_SET_SIZE is less than requested minimum:
+        ${CONFIG_SIGNAL_SET_SIZE} < ${sigset_min_size}
+      Setting the signal set size to ${sigset_min_size}")
+  endif()
+else()
+  # CONFIG_SIGNAL_SET_SIZE was greater than the max of the requirements
+  set(sigset_min_size ${CONFIG_SIGNAL_SET_SIZE})
+endif()
+
+message(STATUS "Defining SIGNAL_SET_SIZE to ${sigset_min_size}")
+zephyr_compile_definitions(SIGNAL_SET_SIZE=${sigset_min_size})
+
+# Import all custom SIGNAL_QUEUE_SIZE_ADD_ requirements
+import_kconfig(CONFIG_SIGNAL_QUEUE_SIZE_ADD_ ${DOTCONFIG} sigqueue_add_keys)
+
+set(sigqueue_add_size 0)
+foreach(add_size ${sigqueue_add_keys})
+  if(${add_size} GREATER ${sigqueue_add_size})
+    set(sigqueue_add_size ${${add_size}})
+  endif()
+endforeach()
+
+if(CONFIG_SIGNAL_QUEUE_SIZE LESS "${sigqueue_add_size}")
+  # Only warn if default value 0 has been modified
+  if(NOT CONFIG_SIGNAL_QUEUE_SIZE EQUAL 0)
+    message(WARNING "
+      CONFIG_SIGNAL_QUEUE_SIZE is less than requested minimum:
+        ${CONFIG_SIGNAL_QUEUE_SIZE} < ${sigqueue_add_size}
+      Setting the signal queue size to ${sigqueue_add_size}")
+  endif()
+else()
+  # CONFIG_SIGNAL_QUEUE_SIZE was greater than the max of the requirements
+  set(sigqueue_add_size ${CONFIG_SIGNAL_QUEUE_SIZE})
+endif()
+
+message(STATUS "Defining SIGNAL_QUEUE_SIZE to ${sigqueue_add_size}")
+zephyr_compile_definitions(SIGNAL_QUEUE_SIZE=${sigqueue_add_size})
+
+# Import all custom SIGNAL_ACTION_DB_SIZE_MIN_ requirements
+import_kconfig(CONFIG_SIGNAL_ACTION_DB_SIZE_MIN_ ${DOTCONFIG} sigaction_min_keys)
+
+set(sigaction_min_size 0)
+foreach(min_size ${sigaction_min_keys})
+  if(${min_size} GREATER ${sigaction_min_size})
+    set(sigaction_min_size ${${min_size}})
+  endif()
+endforeach()
+
+if(CONFIG_SIGNAL_ACTION_DB_SIZE LESS "${sigaction_min_size}")
+  # Only warn if default value 0 has been modified
+  if(NOT CONFIG_SIGNAL_ACTION_DB_SIZE EQUAL 0)
+    message(WARNING "
+      CONFIG_SIGNAL_ACTION_DB_SIZE is less than requested minimum:
+        ${CONFIG_SIGNAL_ACTION_DB_SIZE} < ${sigaction_min_size}
+      Setting the signal action database size to ${sigaction_min_size}")
+  endif()
+else()
+  # CONFIG_SIGNAL_ACTION_DB_SIZE was greater than the max of the requirements
+  set(sigaction_min_size ${CONFIG_SIGNAL_ACTION_DB_SIZE})
+endif()
+
+message(STATUS "Defining SIGNAL_ACTION_DB_SIZE to ${sigaction_min_size}")
+zephyr_compile_definitions(SIGNAL_ACTION_DB_SIZE=${sigaction_min_size})
+
+# This file cannot be compiled with __ZEPHYR_SUPERVISOR__ when userspace is enabled
+zephyr_sources_ifdef(CONFIG_SIGNAL signal.c)
+
 # kernel is a normal CMake library and not a zephyr_library because it
 # should usually not be --whole-archive'd
 

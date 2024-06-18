@@ -1070,6 +1070,11 @@ config ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET
 config ARCH_HAS_HW_SHADOW_STACK
 	bool
 
+config ARCH_SUPPORTS_USERSPACE_SIGNALS
+	bool
+	help
+	  Enabled when the architecture supports userspace signal handling.
+
 #
 # Other architecture related options
 #

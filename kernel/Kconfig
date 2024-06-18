@@ -640,6 +640,60 @@ config MEM_SLAB_POINTER_VALIDATE
 	  This enables additional runtime checks to validate the memory slab
 	  pointer during when allocating or freeing a memory slab.
 
+config SIGNAL
+	bool "Signal support"
+	depends on !USERSPACE || (USERSPACE && ARCH_SUPPORTS_USERSPACE_SIGNALS)
+	select EXPERIMENTAL
+	select POLL
+	help
+	  Select 'y' here to support signals.
+
+if SIGNAL
+config SIGNAL_SET_SIZE_MIN_ISOC
+	def_int 6
+	help
+	  This option represents the number of signals required by ISO C. Those signals are,
+	  specifically, SIGABRT, SIGFPE, SIGILL, SIGINT, SIGSEGV, and SIGTERM.
+
+	  When enabled, this option ensures the value of SIGNAL_SET_SIZE is at least 6.
+
+config SIGNAL_ACTION_DB_SIZE
+	int "Signal action database size"
+	range 0 256
+	default MP_MAX_NUM_CPUS if SMP
+	default 0
+	help
+	  This is the maximum number of custom signal handlers that can be installed by all
+	  threads combined.
+	  If subsystems specify SIGNAL_ACTION_DB_SIZE_MIN_* options, the maximum of all individual
+	  options will be evaluated and compared to the SIGNAL_ACTION_DB_SIZE option. If the value is
+	  greater than the SIGNAL_ACTION_DB_SIZE option, then the signal action database size will be
+	  assigned the new value.
+
+config SIGNAL_QUEUE_SIZE
+	int "Signal queue size"
+	range 1 256
+	default MP_MAX_NUM_CPUS if SMP
+	default 1
+	help
+	  Size of kernel signal queue.
+
+module := SIGNAL
+module-str = k_sig
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SIGNAL
+
+# defined outside of the SIGNAL block to ensure struct k_sig_set is always well-defined
+config SIGNAL_SET_SIZE
+	int "Maximum number of signals"
+	default 0
+	help
+	  Maximum number of signals that can be represented in a struct k_sigset.
+	  If subsystems specify SIGNAL_SET_SIZE_MIN_* options, the maximum of all individual options
+	  will be evaluated and compared to the SIGNAL_SET_SIZE option. If the value is greater than
+	  the SIGNAL_SET_SIZE option, then the signal set size will be assigned the new value.
+
 config MEM_SLAB_TRACE_MAX_UTILIZATION
 	bool "Getting maximum slab utilization"
 	help
@@ -724,6 +778,12 @@ config ARCH_HAS_THREAD_NAME_HOOK
 	help
 	  The architecture provides a hook to handle thread name changes beyond
 	  just storing it in the kernel structure.
+
+config ARCH_HAS_SIGNAL_TRAMPOLINE
+	bool
+	help
+	  The architecture provides its own signal trampoline implementation
+	  via arch_sig_trampoline().
 
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"

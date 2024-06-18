@@ -11,6 +11,10 @@
 #include <zephyr/kernel/mm/demand_paging.h>
 #endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
 
+#ifdef CONFIG_SIGNAL
+#include <zephyr/kernel/signal.h>
+#endif /* CONFIG_SIGNAL */
+
 #include <zephyr/kernel/stats.h>
 #include <zephyr/arch/arch_interface.h>
 
@@ -131,6 +135,10 @@ struct _thread_base {
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	struct k_cycle_stats  usage;   /* Track thread usage statistics */
 #endif /* CONFIG_SCHED_THREAD_USAGE */
+
+#ifdef CONFIG_SIGNAL
+	struct k_sig_ctx sig;
+#endif
 };
 
 typedef struct _thread_base _thread_base_t;
@@ -412,5 +420,6 @@ struct k_thread {
 
 typedef struct k_thread _thread_t;
 typedef struct k_thread *k_tid_t;
+typedef k_tid_t k_pid_t;
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_THREAD_H_ */

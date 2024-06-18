@@ -1556,6 +1556,47 @@ void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 
 /** @} */
 
+#if (defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)) || defined(__DOXYGEN__)
+/**
+ * @brief Arch specific Signal handling APIs
+ * @defgroup sig_api_arch Arch specific Signal Handling APIs
+ * @ingroup sig_api
+ *
+ * Some architecture-specific components are necessary to signals for userspace threads
+ * since doing so involves a context switch.
+ *
+ * @{
+ */
+
+/**
+ * @brief Architecture-specific hook to prepare for a userspace thread signal handler
+ *
+ * @param thread The thread about to run the signal handler
+ * @param arg Pointer to architecture-specific details.
+ */
+void arch_sig_pre(struct k_thread *thread, void *arg);
+
+/**
+ * @brief Architecture-specific signal trampoline entry point
+ */
+void arch_sig_trampoline(void);
+
+/**
+ * @brief Architecture-specific hook to return from a userspace thread signal handler
+ *
+ * @param thread The thread about to run the signal handler
+ * @param arg Pointer to architecture-specific details
+ */
+void arch_sig_post(struct k_thread *thread, void *arg);
+
+/**
+ * sig_api_arch
+ * @}
+ */
+
+#endif /* (defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)) || defined(__DOXYGEN__) */
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
