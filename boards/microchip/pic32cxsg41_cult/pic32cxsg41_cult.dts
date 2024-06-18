@@ -11,7 +11,7 @@
 
 / {
 	model = "PIC32CX SG41 Curiosity Ultra";
-	compatible = "pic32cxsg,cult", "microchip,pic32cx1025sg41128", "microchip,pic32cxsg";
+	compatible = "pic32cx1025sg41,cult", "microchip,pic32cx1025sg41128", "microchip,pic32cx1025sg41";
 
 	chosen {
 		zephyr,console = &sercom4;
