@@ -37,7 +37,6 @@ static int renesas_ra8m1_init(void)
 {
 	SystemCoreClock = BSP_MOCO_HZ;
 	g_protect_pfswe_counter = 0;
-	bsp_clock_init();
 
 	return 0;
 }
