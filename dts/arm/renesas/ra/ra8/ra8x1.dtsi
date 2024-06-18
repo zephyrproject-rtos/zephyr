@@ -473,6 +473,24 @@
 			status = "disabled";
 		};
 
+		ulpt0: timers@40220000 {
+			compatible = "renesas,ra8-ulpt-timer";
+			reg = <0x40220000 0x100>;
+			channel = <0>;
+			interrupt-names = "ulpti";
+			interrupts = <36 0>;
+			status = "disabled";
+		};
+
+		ulpt1: timers@40220100 {
+			compatible = "renesas,ra8-ulpt-timer";
+			reg = <0x40220100 0x100>;
+			channel = <1>;
+			interrupt-names = "ulpti";
+			interrupts = <37 0>;
+			status = "disabled";
+		};
+
 		option_setting_ofs: option_setting_ofs@300a100 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0300a100 0x18>;
