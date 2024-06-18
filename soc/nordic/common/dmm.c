@@ -295,5 +295,3 @@ int dmm_init(void)
 
 	return 0;
 }
-
-SYS_INIT(dmm_init, POST_KERNEL, 0);
