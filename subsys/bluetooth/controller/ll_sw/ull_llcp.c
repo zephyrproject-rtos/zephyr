@@ -53,10 +53,10 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-#define LLCTRL_PDU_SIZE (offsetof(struct pdu_data, llctrl) + sizeof(struct pdu_data_llctrl))
 #define PROC_CTX_BUF_SIZE WB_UP(sizeof(struct proc_ctx))
-#define TX_CTRL_BUF_SIZE WB_UP(offsetof(struct node_tx, pdu) + LLCTRL_PDU_SIZE)
-#define NTF_BUF_SIZE WB_UP(offsetof(struct node_rx_pdu, pdu) + LLCTRL_PDU_SIZE)
+#define TX_CTRL_BUF_SIZE WB_UP(offsetof(struct node_tx, pdu) + \
+				offsetof(struct pdu_data, llctrl) + \
+				PDU_DC_CTRL_TX_SIZE_MAX)
 
 /* LLCP Allocations */
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
