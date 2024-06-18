@@ -19,6 +19,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart9;
 		zephyr,shell-uart = &uart9;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -144,3 +145,7 @@
 };
 
 mikrobus_serial: &uart3 {};
+
+&trng {
+	status = "okay";
+};

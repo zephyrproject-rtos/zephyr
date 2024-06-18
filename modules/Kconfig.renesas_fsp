@@ -17,3 +17,19 @@ config USE_RA_FSP_DTC
 	bool
 	help
 	  Enable RA FSP DTC driver
+
+config USE_RA_FSP_SCE
+	bool
+	help
+	  Enable RA FSP SCE driver
+
+if USE_RA_FSP_SCE
+
+config HAS_RENESAS_RA_RSIP_E51A
+	bool
+	default y
+	depends on ENTROPY_RENESAS_RA_RSIP_E51A_TRNG
+	help
+	  Includes RSIP7 implementation for SCE driver
+
+endif
