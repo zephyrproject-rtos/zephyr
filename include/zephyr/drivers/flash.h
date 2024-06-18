@@ -320,6 +320,21 @@ static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
 	return rc;
 }
 
+/**
+ * @brief Fill selected range of device with specified value
+ *
+ * Utility function that allows to fill specified range on a device with
+ * provided value. The @p offset and @p size of range need to be aligned to
+ * a write block size of a device.
+ *
+ * @param  dev             : flash device
+ * @param  val             : value to use for filling the range
+ * @param  offset          : offset of the range to fill
+ * @param  size            : size of the range
+ *
+ * @return  0 on success, negative errno code on fail.
+ *
+ */
 __syscall int flash_fill(const struct device *dev, uint8_t val, off_t offset, size_t size);
 
 /**
