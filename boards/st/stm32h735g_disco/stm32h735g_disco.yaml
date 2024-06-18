@@ -16,4 +16,5 @@ supported:
   - adc
   - counter
   - can
+  - usb_device
 vendor: st
