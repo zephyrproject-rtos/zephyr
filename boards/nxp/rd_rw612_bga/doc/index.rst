@@ -177,6 +177,7 @@ To use ethernet on the RD_RW612_BGA board, you first need to make the following
 modifications to the board hardware:
 
 Add resistors:
+
 - R485
 - R486
 - R487
@@ -184,7 +185,9 @@ Add resistors:
 - R489
 - R491
 - R490
+
 Remove resistors:
+
 - R522
 - R521
 - R520
