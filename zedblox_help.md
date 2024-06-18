@@ -47,6 +47,11 @@ export ZEPHYR_SDK_INSTALL_DIR=/home/sviraaj
 west build -b zb_tv_h743zi bootloader/mcuboot/boot/zephyr -d build-mcuboot
 west flash -d build-mcuboot
 
+
+# If new setup, please use below or else skip
+west build -p -c -b zb_tv_h743zi zephyr/zbacrux_setup -d build-zb_setup -- -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/zb-ed25519.pem\" -DCONFIG_DEVICE_ID=\"{YOUR DEVICE ID HERE}\"
+west flash -d build-zb_setup
+
 ### BUILD AND FLASH APP
 #### For 15L
 export VERSION=D15_$(date +%d-%m-%y_%H-%M-%S)
@@ -74,9 +79,13 @@ west flash -d build-mcuboot; sleep 10; west flash -d build-zb_setup; sleep 180; 
 
 west build -p -c -b zb_tv_h743zi zephyr/zbacrux_setup -d build-zb_setup -- -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/zb-ed25519.pem\" -DCONFIG_DEVICE_ID=\"ZB_AX__00\"
 
+### For minicom log in file
+# 1) Path to run minicom
+all_repositories/zephyr_new/zephyrproject
+# 2) Define file to save log of minicom
+sudo minicom -D /dev/ttyUSB0 -C zephyr/logs/jun10_24_ota_debug
 
 
 # BASE VARIANT
-export BOARD_NAME=zb_bv_l151c8;west flash --build-dir
-build/$BOARD_NAME/zb_ap_bv_l151c8 --hex-file
-zb_images/zb_ap_bv_l151c8_v1.0_no_offset/zb_ap_bv_l151c8/zephyr/zephyr.hex
+export BOARD_NAME=zb_bv_l151c8;west flash --build-dir build/$BOARD_NAME/zb_ap_bv_l151c8 --hex-file zb_image/zb_ap_bv_l151c8_v1.0_no_offset/zb_ap_bv_l151c8/zephyr/zephyr.hex
+export BOARD_NAME=zb_bv_l151c8;west flash --build-dir build/$BOARD_NAME/zb_ap_bv_l151c8 --hex-file zb_image/zb_ap_bv_l151c8_v1.1_offset/zb_ap_bv_l151c8/zephyr/zephyr.hex

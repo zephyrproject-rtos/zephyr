@@ -5,8 +5,12 @@
  */
 
 /dts-v1/;
-#include <st/h7/stm32h743Xg.dtsi>
-#include <st/h7/stm32h743zgtx-pinctrl.dtsi>
+//#include <st/h7/stm32h743Xg.dtsi>
+//#include <st/h7/stm32h743zgtx-pinctrl.dtsi>
+
+#include <st/h7/stm32h723Xg.dtsi>
+#include <st/h7/stm32h723zgtx-pinctrl.dtsi>
+
 //#include "arduino_r3_connector.dtsi"
 
 / {
@@ -423,22 +427,22 @@ zephyr_udc0: &usbotg_hs {
 			read-only;
 		};
 
-		/* application image slot: 256KB */
+		/* application image slot: 384KB */
 		slot0_partition: partition@20000 {
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(384)>;
 		};
 
-		/* backup slot: 256KB */
+		/* backup slot: 384KB */
 		slot1_partition: partition@100000 {
 			label = "image-1";
-			reg = <0x00100000 DT_SIZE_K(384)>;
+			reg = <0x00080000 DT_SIZE_K(384)>;
 		};
 
 		/* swap slot: 128KB */
 		scratch_partition: partition@160000 {
 			label = "image-scratch";
-			reg = <0x00160000 DT_SIZE_K(128)>;
+			reg = <0x000E0000 DT_SIZE_K(128)>;
 		};
 
 		/* storage: 128KB for settings
@@ -556,7 +560,7 @@ zephyr_udc0: &usbotg_hs {
 		/* Storage partition will be used by filesystem if enabled. */
 		fs_partition: partition@400000 {
 			label = "fs_storage";
-			reg = <0x00400000 0x003C0000>;
+			reg = <0x00400000 0x003E0000>;
 		};
 
 		settings_partition: partition@7e0000 {
