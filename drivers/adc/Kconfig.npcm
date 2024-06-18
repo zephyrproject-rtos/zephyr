@@ -1,0 +1,13 @@
+# NPCM ADC driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_NPCM
+	bool "Nuvoton NPCM ADC driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_ADC_ENABLED
+	help
+	  This option enables the ADC driver for NPCM family of
+	  processors.
+	  Say y if you wish to use ADC channels on NPCM MCU.

@@ -120,6 +120,10 @@
 			wui-maps = <&wui_iof0 &wui_iof1 &wui_iof2 &wui_iof3
 				    &wui_none &wui_none &wui_none &wui_none>;
 		};
+
+		adc0: adc@400d1100 {
+			channel-count = <24>;
+		};
 	};
 
 	soc-if {

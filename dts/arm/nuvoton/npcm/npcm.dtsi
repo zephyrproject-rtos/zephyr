@@ -240,6 +240,16 @@
 			reg = <0x400d8000 0x100>;
 			t0-out = <&wui_t0out>;
 		};
+
+		adc0: adc@400d1100 {
+			compatible = "nuvoton,npcm-adc";
+			#io-channel-cells = <1>;
+			reg = <0x400d1100 0xf00>;
+			interrupts = <21 3>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB1 NPCM_PWDWN_CTL4 4>;
+			vref-mv = <2048>;
+			status = "disabled";
+		};
 	};
 
 	soc-id {

@@ -22,6 +22,19 @@
 	aliases {
 		watchdog0 = &twd0;
 	};
+
+	zephyr,user {
+		/* adjust channel number according to enum adc_channel_en in adc_npcm.c */
+		/* Because VIN16, THR16, TD2P is the same pin, it must only select one type.
+		 * Because VIN15, THR15, TD0P is the same pin, it must only select one type.
+		 * Because VIN14, THR14, TD1P is the same pin, it must only select one type.
+		 * Because VIN1, THR1, TD3P is the same pin, it must only select one type.
+		 * Because VIN2, THR2, TD4P is the same pin, it must only select one type.
+		 * Exsample : if you select channel 6(VIN16),
+		 *            and you can't select channel 7(THR16) and channel 19(TD2P).
+		 */
+		io-channels = <&adc0 17>, <&adc0 18>;
+	};
 };
 
 &uart0 {
@@ -35,5 +48,24 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&cr_uart2_sin_gp30 &cr_uart2_sout_gp31>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	/* Pin D7 is shared by thermal signal VIN16, THR16, TD2P.
+	 * Pin C7 is shared by thermal signal VIN15, THR15, TD1P.
+	 * Pin A6 is shared by thermal signal VIN14, THR14, TD0P.
+	 * Pin B6 is shared by thermal signal VIN1, THR1, TD3P.
+	 * Pin C6 is shared by thermal signal VIN2, THR2, TD4P.
+	 */
+	pinctrl-0 = <&adc_vin7_gp86   /* VIN7 - C8 */
+		     &adc_vin5_gp87   /* VIN5 - F7 */
+		     &adc_vin16_gp91  /* VIN16/THR16/TD2P - D7 */
+		     &adc_vin15_gp91  /* VIN15/THR15/TD1P - C7 */
+		     &adc_vin14_gp92  /* VIN14/THR14/TD0P - A6 */
+		     &adc_vin1_gp93   /* VIN1/THR1/TD3P - B6 */
+		     &adc_vin2_gp94   /* VIN2/THR2/TD4P - C6 */
+		     &adc_vin3_gp95>; /* VIN3 - D6 */
 	pinctrl-names = "default";
 };
