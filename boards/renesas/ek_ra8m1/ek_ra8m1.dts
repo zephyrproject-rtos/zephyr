@@ -93,3 +93,7 @@
 		status = "okay";
 	};
 };
+
+&ulpt0 {
+	status = "okay";
+};
