@@ -121,7 +121,10 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 		LOG_ERR("Failed to allocate section map, size %zu", sect_map_sz);
 		return -ENOMEM;
 	}
-	memset(ldr->sect_map, 0, sect_map_sz);
+	for (int i = 0; i < ldr->sect_cnt; i++) {
+		ldr->sect_map[i].mem_idx = LLEXT_MEM_COUNT;
+		ldr->sect_map[i].offset = 0;
+	}
 
 	ldr->sect_hdrs = llext_peek(ldr, ldr->hdr.e_shoff);
 	if (ldr->sect_hdrs) {
@@ -182,18 +185,18 @@ static int llext_find_tables(struct llext_loader *ldr)
 		case SHT_DYNSYM:
 			LOG_DBG("symtab at %d", i);
 			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
-			ldr->sect_map[i] = LLEXT_MEM_SYMTAB;
+			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
 			sect_cnt++;
 			break;
 		case SHT_STRTAB:
 			if (ldr->hdr.e_shstrndx == i) {
 				LOG_DBG("shstrtab at %d", i);
 				ldr->sects[LLEXT_MEM_SHSTRTAB] = *shdr;
-				ldr->sect_map[i] = LLEXT_MEM_SHSTRTAB;
+				ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
 			} else {
 				LOG_DBG("strtab at %d", i);
 				ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
-				ldr->sect_map[i] = LLEXT_MEM_STRTAB;
+				ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
 			}
 			sect_cnt++;
 			break;
@@ -260,7 +263,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 
 		LOG_DBG("section %d name %s maps to idx %d", i, name, mem_idx);
 
-		ldr->sect_map[i] = mem_idx;
+		ldr->sect_map[i].mem_idx = mem_idx;
 		elf_shdr_t *sect = ldr->sects + mem_idx;
 
 		if (sect->sh_type == SHT_NULL) {
@@ -362,6 +365,19 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 					j, (size_t)y->sh_offset, (size_t)y->sh_size);
 				return -ENOEXEC;
 			}
+		}
+	}
+
+	/*
+	 * Calculate each ELF section's offset inside its memory area. This is
+	 * done as a separate pass so the final groups are already defined.
+	 */
+	for (i = 0; i < ldr->sect_cnt; ++i) {
+		elf_shdr_t *shdr = ldr->sect_hdrs + i;
+		enum llext_mem mem_idx = ldr->sect_map[i].mem_idx;
+
+		if (mem_idx != LLEXT_MEM_COUNT) {
+			ldr->sect_map[i].offset = shdr->sh_offset - ldr->sects[mem_idx].sh_offset;
 		}
 	}
 
@@ -513,8 +529,8 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 				 * sections, we could use the generic path below
 				 * for all of them
 				 */
-				base = ext->mem[ldr->sect_map[sect]];
-				section_addr = ldr->sects[ldr->sect_map[sect]].sh_addr;
+				base = ext->mem[ldr->sect_map[sect].mem_idx];
+				section_addr = ldr->sects[ldr->sect_map[sect].mem_idx].sh_addr;
 			} else {
 				elf_shdr_t *shdr = ldr->sect_hdrs + sect;
 
