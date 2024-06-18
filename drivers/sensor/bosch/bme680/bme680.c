@@ -187,8 +187,8 @@ static uint8_t bme680_calc_res_heat(struct bme680_data *data, uint16_t heatr_tem
 					   * heatr_temp * 5) / 100)
 					 + 3276800) / 10);
 	var3 = var1 + (var2 / 2);
-	var4 = (var3 / (data->res_heat_range + 4));
-	var5 = (131 * data->res_heat_val) + 65536;
+	var4 = (var3 / (((uint8_t)data->res_heat_range) + 4));
+	var5 = (131 * ((int8_t)data->res_heat_val)) + 65536;
 	heatr_res_x100 = ((var4 / var5) - 250) * 34;
 	heatr_res = (heatr_res_x100 + 50) / 100;
 
