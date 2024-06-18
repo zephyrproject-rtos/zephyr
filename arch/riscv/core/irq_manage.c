@@ -27,7 +27,6 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 
-	LOG_ERR("Spurious interrupt detected! IRQ: %ld", mcause);
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	if (mcause == RISCV_IRQ_MEXT) {
 		unsigned int save_irq = riscv_plic_get_irq();
@@ -36,6 +35,8 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 		LOG_ERR("PLIC interrupt line causing the IRQ: %d (%p)", save_irq, save_dev);
 	}
 #endif
+
+	LOG_ERR("Spurious interrupt detected! IRQ: %ld", mcause);
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
