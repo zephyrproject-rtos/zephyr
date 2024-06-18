@@ -106,6 +106,8 @@ The below features are currently supported on Zephyr OS for EK-RA8D1 board:
 +--------------+------------+------------------+
 | LPM          | on-chip    | SOC PM           |
 +--------------+------------+------------------+
+| FLASH        | on-chip    | flash            |
++--------------+------------+------------------+
 
 Other hardware features are currently not supported by the port.
 

@@ -50,3 +50,8 @@ config USE_RA_FSP_LPM
 	depends on PM
 	help
 	  Enable RA FSP LPM driver
+
+config USE_RA_FSP_FLASH_HP
+	bool
+	help
+	  Enable RA FSP FLASH HP driver
