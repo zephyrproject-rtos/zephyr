@@ -10,3 +10,6 @@ family:
       - name: ra8d1
         socs:
           - name: r7fa8d1bhecbd
+      - name: ra8t1
+        socs:
+          - name: r7fa8t1ahecbd
