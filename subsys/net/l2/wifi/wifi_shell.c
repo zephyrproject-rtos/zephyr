@@ -502,6 +502,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"anon-id", required_argument, 0, 'a'},
 		{"key-passwd", required_argument, 0, 'K'},
 		{"suiteb-type", required_argument, 0, 'S'},
+		{"eap-version", required_argument, 0, 'V'},
+		{"eap-identity", required_argument, 0, 'I'},
+		{"eap-password", required_argument, 0, 'P'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
@@ -523,8 +526,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->channel = WIFI_CHANNEL_ANY;
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
+	params->eap_ver = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:S:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:V:I:P:h",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -647,7 +651,27 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'S':
 			params->suiteb_type = atoi(optarg);
-			printk("params->suiteb_type: %d\r\n", params->suiteb_type);
+			break;
+		case 'V':
+			params->eap_ver = atoi(optarg);
+			break;
+		case 'I':
+			params->eap_identity = optarg;
+			params->eap_id_length = strlen(params->eap_identity);
+			if (params->eap_id_length > WIFI_IDENTITY_MAX_LEN) {
+				PR_WARNING("eap identity too long (max %d characters)\n",
+					    WIFI_IDENTITY_MAX_LEN);
+				return -EINVAL;
+			}
+			break;
+		case 'P':
+			params->eap_password = optarg;
+			params->eap_passwd_length = strlen(params->eap_password);
+			if (params->eap_passwd_length > WIFI_IDENTITY_MAX_LEN) {
+				PR_WARNING("eap password length too long (max %d characters)\n",
+					    WIFI_IDENTITY_MAX_LEN);
+				return -EINVAL;
+			}
 			break;
 		case 'h':
 			return -ENOEXEC;
@@ -2942,7 +2966,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
-		  " 7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
+		  "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
+		  "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2, 15: EAP-PEAP-TLS\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
@@ -2950,9 +2975,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-a, --anon-id]: Anonymous identity for enterprise mode.\n"
 		  "[-K, --key-passwd]: Private key passwd for enterprise mode.\n"
 		  "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192.\n"
+		  "[-V, --eap-version]: 0 or 1.\n"
+		  "[-I, --eap-identity]: Client Identity.\n"
+		  "[-P, --eap-password]: Client Password.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
-		  2, 14),
+		  2, 20),
 	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP.\n",
 		  cmd_wifi_disconnect,
 		  1, 0),
