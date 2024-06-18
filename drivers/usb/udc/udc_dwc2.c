@@ -64,11 +64,12 @@ struct udc_dwc2_data {
 	uint32_t ghwcfg1;
 	uint32_t enumspd;
 	uint32_t txf_set;
-	uint32_t grxfsiz;
-	uint32_t dfifodepth;
 	uint32_t max_xfersize;
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
+	uint16_t dfifodepth;
+	uint16_t rxfifo_depth;
+	uint16_t max_txfifo_depth[16];
 	unsigned int dynfifosizing : 1;
 	unsigned int bufferdma : 1;
 	/* Number of endpoints including control endpoint */
@@ -1155,11 +1156,17 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 			txfaddr = dwc2_get_txfdep(dev, ep_idx - 2) +
 				  dwc2_get_txfaddr(dev, ep_idx - 2);
 		} else {
-			txfaddr = UDC_DWC2_FIFO0_DEPTH + priv->grxfsiz;
+			txfaddr = priv->rxfifo_depth +
+				MAX(UDC_DWC2_FIFO0_DEPTH, priv->max_txfifo_depth[0]);
+		}
+
+		/* Make sure to not set TxFIFO greater than hardware allows */
+		txfdep = DIV_ROUND_UP(cfg->mps, 4U);
+		if (txfdep > priv->max_txfifo_depth[ep_idx]) {
+			return -ENOMEM;
 		}
 
 		/* Set FIFO depth (32-bit words) and address */
-		txfdep = cfg->mps / 4U;
 		dwc2_set_txf(dev, ep_idx - 1, txfdep, txfaddr);
 	} else {
 		txfdep = dwc2_get_txfdep(dev, ep_idx - 1);
@@ -1186,8 +1193,6 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 static int dwc2_ep_control_enable(const struct device *dev,
 				  struct udc_ep_config *const cfg)
 {
-	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
-	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	mem_addr_t dxepctl0_reg;
 	uint32_t dxepctl0;
 
@@ -1213,21 +1218,6 @@ static int dwc2_ep_control_enable(const struct device *dev,
 	}
 
 	dxepctl0 |= USB_DWC2_DEPCTL_USBACTEP;
-
-	/*
-	 * The following applies to the Control IN endpoint only.
-	 *
-	 * Set endpoint 0 TxFIFO depth when dynfifosizing is enabled.
-	 * Note that only dedicated mode is supported at this time.
-	 */
-	if (cfg->addr == USB_CONTROL_EP_IN && priv->dynfifosizing) {
-		uint32_t gnptxfsiz;
-
-		gnptxfsiz = usb_dwc2_set_gnptxfsiz_nptxfdep(UDC_DWC2_FIFO0_DEPTH) |
-			    usb_dwc2_set_gnptxfsiz_nptxfstaddr(priv->grxfsiz);
-
-		sys_write32(gnptxfsiz, (mem_addr_t)&base->gnptxfsiz);
-	}
 
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
 		int ret;
@@ -1740,6 +1730,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	const struct udc_dwc2_config *const config = dev->config;
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = config->base;
+	mem_addr_t grxfsiz_reg = (mem_addr_t)&base->grxfsiz;
 	mem_addr_t gahbcfg_reg = (mem_addr_t)&base->gahbcfg;
 	mem_addr_t gusbcfg_reg = (mem_addr_t)&base->gusbcfg;
 	mem_addr_t dcfg_reg = (mem_addr_t)&base->dcfg;
@@ -1749,6 +1740,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	uint32_t ghwcfg2;
 	uint32_t ghwcfg3;
 	uint32_t ghwcfg4;
+	uint32_t val;
 	int ret;
 
 	ret = dwc2_core_soft_reset(dev);
@@ -1892,15 +1884,40 @@ static int udc_dwc2_init_controller(const struct device *dev)
 
 	LOG_DBG("Number of OUT endpoints %u", priv->outeps);
 
-	if (priv->dynfifosizing) {
-		priv->grxfsiz = UDC_DWC2_GRXFSIZ_DEFAULT + priv->outeps * 2U;
-		sys_write32(usb_dwc2_set_grxfsiz(priv->grxfsiz), (mem_addr_t)&base->grxfsiz);
+	/* Read and store all TxFIFO depths because Programmed FIFO Depths must
+	 * not exceed the power-on values.
+	 */
+	val = sys_read32((mem_addr_t)&base->gnptxfsiz);
+	priv->max_txfifo_depth[0] = usb_dwc2_get_gnptxfsiz_nptxfdep(val);
+	for (uint8_t i = 1; i < priv->ineps; i++) {
+		priv->max_txfifo_depth[i] = dwc2_get_txfdep(dev, i - 1);
 	}
 
-	LOG_DBG("RX FIFO size %u bytes", priv->grxfsiz * 4);
+	priv->rxfifo_depth = usb_dwc2_get_grxfsiz(sys_read32(grxfsiz_reg));
+
+	if (priv->dynfifosizing) {
+		uint32_t gnptxfsiz;
+
+		/* Driver does not dynamically resize RxFIFO so there is no need
+		 * to store reset value. Read the reset value and make sure that
+		 * the programmed value is not greater than what driver sets.
+		 */
+		priv->rxfifo_depth = MIN(priv->rxfifo_depth,
+			UDC_DWC2_GRXFSIZ_DEFAULT + priv->outeps * 2U);
+		sys_write32(usb_dwc2_set_grxfsiz(priv->rxfifo_depth), grxfsiz_reg);
+
+		/* Set TxFIFO 0 depth */
+		val = MAX(UDC_DWC2_FIFO0_DEPTH, priv->max_txfifo_depth[0]);
+		gnptxfsiz = usb_dwc2_set_gnptxfsiz_nptxfdep(val) |
+			    usb_dwc2_set_gnptxfsiz_nptxfstaddr(priv->rxfifo_depth);
+
+		sys_write32(gnptxfsiz, (mem_addr_t)&base->gnptxfsiz);
+	}
+
+	LOG_DBG("RX FIFO size %u bytes", priv->rxfifo_depth * 4);
 	for (uint8_t i = 1U; i < priv->ineps; i++) {
 		LOG_DBG("TX FIFO%u depth %u addr %u",
-			i, dwc2_get_txfdep(dev, i), dwc2_get_txfaddr(dev, i));
+			i, priv->max_txfifo_depth[i], dwc2_get_txfaddr(dev, i));
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
