@@ -69,10 +69,12 @@ The current Zephyr stm32h735g_disco board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | FDCAN2    | on-chip    | CAN-FD Controller                   |
 +-----------+------------+-------------------------------------+
-| FDCAN2    | on-chip    | CAN-FD Controller (disabled by      |
+| FDCAN3    | on-chip    | CAN-FD Controller (disabled by      |
 |           |            | default. Solder bridges SB29 and    |
 |           |            | SB30 need to be closed for FDCAN3   |
 |           |            | to work)                            |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb_device                          |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
