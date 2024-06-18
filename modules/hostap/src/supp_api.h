@@ -27,6 +27,12 @@ struct wpa_supp_enterprise_file {
     uint32_t client_cert_len;
     uint8_t *client_key;
     uint32_t client_key_len;
+    uint8_t *ca_cert2;
+    uint32_t ca_cert2_len;
+    uint8_t *client_cert2;
+    uint32_t client_cert2_len;
+    uint8_t *client_key2;
+    uint32_t client_key2_len;
 };
 #endif
 /**
