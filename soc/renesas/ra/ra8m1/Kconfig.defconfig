@@ -9,4 +9,8 @@ config NUM_IRQS
 config PINCTRL
 	default y
 
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 128
+
 endif # SOC_SERIES_RA8M1
