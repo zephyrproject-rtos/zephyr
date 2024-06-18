@@ -639,7 +639,7 @@ Application configuration options are usually set in :file:`prj.conf` in the
 application directory. For example, C++ support could be enabled with this
 assignment:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_CPP=y
 
@@ -666,7 +666,7 @@ marked ``[EXPERIMENTAL]`` in their Kconfig title.
 The :kconfig:option:`CONFIG_WARN_EXPERIMENTAL` setting can be used to enable warnings
 at CMake configure time if any experimental feature is enabled.
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_WARN_EXPERIMENTAL=y
 

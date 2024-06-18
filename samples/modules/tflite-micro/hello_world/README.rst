@@ -98,7 +98,7 @@ It is recommended that you copy and modify one of the two TensorFlow
 samples when creating your own TensorFlow project. To build with
 TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
 
-.. code-block:: kconfig
+.. code-block:: cfg
 
     CONFIG_CPP=y
     CONFIG_REQUIRES_FULL_LIBC=y
@@ -108,7 +108,7 @@ Note that the CMSIS-NN kernel sample demonstrates how to use CMSIS-NN optimized 
 TensorFlow Lite Micro, in that is sets below Kconfig option. Note also that this
 Kconfig option is only set for Arm Cortex-M cores, i.e. option CPU_CORTEX_M is set.
 
-.. code-block:: kconfig
+.. code-block:: cfg
 
     CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y
 
