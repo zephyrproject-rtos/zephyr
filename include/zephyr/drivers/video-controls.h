@@ -47,9 +47,21 @@ extern "C" {
  * @{
  */
 /** Mirror the picture horizontally */
-#define VIDEO_CID_HFLIP (VIDEO_CTRL_CLASS_GENERIC + 0)
+#define VIDEO_CID_HFLIP                (VIDEO_CTRL_CLASS_GENERIC + 0)
 /** Mirror the picture vertically */
-#define VIDEO_CID_VFLIP (VIDEO_CTRL_CLASS_GENERIC + 1)
+#define VIDEO_CID_VFLIP                (VIDEO_CTRL_CLASS_GENERIC + 1)
+/** Power line frequency (enum) filter to avoid flicker */
+#define VIDEO_CID_POWER_LINE_FREQUENCY (VIDEO_CTRL_CLASS_GENERIC + 2)
+/** Pixel rate (pixels/second) in the device's pixel array. This control is read-only. */
+#define VIDEO_CID_PIXEL_RATE           (VIDEO_CTRL_CLASS_GENERIC + 3)
+
+enum video_power_line_frequency {
+	VIDEO_CID_POWER_LINE_FREQUENCY_DISABLED = 0,
+	VIDEO_CID_POWER_LINE_FREQUENCY_50HZ = 1,
+	VIDEO_CID_POWER_LINE_FREQUENCY_60HZ = 2,
+	VIDEO_CID_POWER_LINE_FREQUENCY_AUTO = 3,
+};
+
 /**
  * @}
  */
@@ -67,6 +79,7 @@ extern "C" {
 #define VIDEO_CID_CAMERA_CONTRAST   (VIDEO_CTRL_CLASS_CAMERA + 6)
 #define VIDEO_CID_CAMERA_COLORBAR   (VIDEO_CTRL_CLASS_CAMERA + 7)
 #define VIDEO_CID_CAMERA_QUALITY    (VIDEO_CTRL_CLASS_CAMERA + 8)
+#define VIDEO_CID_CAMERA_HUE        (VIDEO_CTRL_CLASS_CAMERA + 9)
 /**
  * @}
  */
