@@ -262,7 +262,9 @@ Debugging using STM32CubeIDE
 ----------------------------
 
 You can debug an application using a STM32WBA compatible version of STM32CubeIDE.
+
 For that:
+
 - Create an empty STM32WBA project by going to File > New > STM32 project
 - Select your MCU, click Next, and select an Empty project.
 - Right click on your project name, select Debug as > Debug configurations
