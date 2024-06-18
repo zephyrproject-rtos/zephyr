@@ -113,7 +113,7 @@ static int bmm150_set_odr(const struct device *dev, uint8_t val)
 	return -ENOTSUP;
 }
 
-#if defined(BMM150_SET_ATTR)
+#if defined(BMM150_SET_ATTR_REP)
 static int bmm150_read_rep_xy(const struct device *dev)
 {
 	struct bmm150_data *data = dev->driver->data;
@@ -448,7 +448,7 @@ static inline int bmm150_attr_set_rep(const struct device *dev,
 }
 #endif
 
-#if defined(BMM150_SET_ATTR)
+#if defined(BMM150_SET_ATTR_REP)
 static int bmm150_attr_set(const struct device *dev,
 			   enum sensor_channel chan,
 			   enum sensor_attribute attr,
@@ -490,7 +490,7 @@ static int bmm150_attr_set(const struct device *dev,
 #endif
 
 static const struct sensor_driver_api bmm150_api_funcs = {
-#if defined(BMM150_SET_ATTR)
+#if defined(BMM150_SET_ATTR_REP)
 	.attr_set = bmm150_attr_set,
 #endif
 	.sample_fetch = bmm150_sample_fetch,
