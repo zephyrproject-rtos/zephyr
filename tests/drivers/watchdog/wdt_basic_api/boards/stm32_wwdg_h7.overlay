@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* stm32h7 has no apb1 prescaler */
+/* stm32h7 has no apb1 prescaler; wwdg is clocked by APB3 (d1ppre) */
+
+&rcc {
+	/delete-property/ d1ppre;
+	d1ppre = <16>;
+};
 
 &wwdg {
 	status = "okay";
