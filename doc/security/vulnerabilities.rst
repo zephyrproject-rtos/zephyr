@@ -1736,3 +1736,8 @@ CVE-2024-5931
 -------------
 
 Under embargo until 2024-09-10
+
+CVE-2024-6135
+-------------
+
+Under embargo until 2024-09-11
