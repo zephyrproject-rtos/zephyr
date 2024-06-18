@@ -271,10 +271,13 @@
 			};
 		};
 
-		flash-controller@407fe000 {
-			reg = <0x407fe000 0x1000>;
+		flash: flash-controller@40100000 {
+			compatible = "renesas,ra-flash-hp-controller";
+			reg = <0x40100000 0x20000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			interrupts = <38 2>, <39 2>;
+			interrupt-names = "frdyi", "fiferr";
 		};
 
 		adc0: adc@40332000 {
