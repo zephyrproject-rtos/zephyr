@@ -26,7 +26,7 @@ Building and Running
 For configuring the remote IPv6 syslog server, set the following
 variables in prj.conf file:
 
-.. code-block:: console
+.. code-block:: cfg
 
 	CONFIG_LOG_BACKEND_NET=y
 	CONFIG_LOG_BACKEND_NET_SERVER="[2001:db8::2]:514"
