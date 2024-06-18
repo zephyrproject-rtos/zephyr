@@ -394,6 +394,13 @@ Drivers and Sensors
 
 * Input
 
+  * New drivers: :dtcompatible:`adc-keys`, :dtcompatible:`chipsemi,chsc6x`,
+    :dtcompatible:`cirque,pinnacle`, :dtcompatible:`futaba,sbus`,
+    :dtcompatible:`pixart,pat912x`, :dtcompatible:`pixart,paw32xx`,
+    :dtcompatible:`pixart,pmw3610` and :dtcompatible:`sitronix,cf1133`.
+  * Migrated :dtcompatible:`holtek,ht16k33` and
+    :dtcompatible:`microchip,xec-kbd` from kscan to input subsystem.
+
 * LED Strip
 
   * The ``chain-length`` and ``color-mapping`` properties have been added to all LED strip
