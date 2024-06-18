@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 #define TIMING_TC_REG21_REG  0x3821
 #define HZ5060_CTRL01_REG    0x3c01
 #define ISP_CTRL01_REG       0x5001
+#define PRE_ISP_TEST_SET1    0x503d
 
 #define SC_PLL_CTRL0_REG 0x3034
 #define SC_PLL_CTRL1_REG 0x3035
@@ -569,12 +570,43 @@ static int ov5640_stream_stop(const struct device *dev)
 	return ov5640_write_reg(&cfg->i2c, SYS_CTRL0_REG, SYS_CTRL0_SW_PWDN);
 }
 
+#define TEST_PATTERN_ENABLE  BIT(7)
+#define TEST_PATTERN_ROLLING BIT(6)
+#define TEST_PATTERN_BAR     (0 << 0)
+#define TEST_PATTERN_SQUARE  (2 << 0)
+
+static const uint8_t test_pattern_val[] = {
+	0,
+	TEST_PATTERN_ENABLE | TEST_PATTERN_BAR | (1 << 2),
+	TEST_PATTERN_ENABLE | TEST_PATTERN_BAR | (1 << 2) | TEST_PATTERN_ROLLING,
+	TEST_PATTERN_ENABLE | TEST_PATTERN_SQUARE,
+	TEST_PATTERN_ENABLE | TEST_PATTERN_SQUARE | TEST_PATTERN_ROLLING,
+};
+
+static int ov5640_set_ctrl_test_pattern(const struct device *dev, int value)
+{
+	const struct ov5640_config *cfg = dev->config;
+
+	return ov5640_write_reg(&cfg->i2c, PRE_ISP_TEST_SET1, test_pattern_val[value]);
+}
+
+static int ov5640_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+{
+	switch (cid) {
+	case VIDEO_CID_CAMERA_TEST_PATTERN:
+		return ov5640_set_ctrl_test_pattern(dev, (int)value);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static const struct video_driver_api ov5640_driver_api = {
 	.set_format = ov5640_set_fmt,
 	.get_format = ov5640_get_fmt,
 	.get_caps = ov5640_get_caps,
 	.stream_start = ov5640_stream_start,
 	.stream_stop = ov5640_stream_stop,
+	.set_ctrl = ov5640_set_ctrl,
 };
 
 static int ov5640_init(const struct device *dev)
