@@ -24,7 +24,12 @@ chosen {
 	clock_frequency = <40000000>;
 	scl_frequency = <100000>;
 };
-
+&i2c1 {
+	status = "ok";
+	base = <0x44100>;
+	clock_frequency = <40000000>;
+	scl_frequency = <100000>;
+};
 &spi0 {
 		status = "okay";
 		sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
