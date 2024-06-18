@@ -1253,7 +1253,7 @@ An example of loading ``stm31l0`` specific Kconfig files in this structure:
 
 can be done with the following content in ``st/stm32/Kconfig.soc``:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    rsource "*/Kconfig.soc"
 
