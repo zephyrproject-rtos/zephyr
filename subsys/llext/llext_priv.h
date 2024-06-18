@@ -10,6 +10,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/llext/llext.h>
 
+struct llext_elf_sect_map {
+	enum llext_mem mem_idx;
+	size_t offset;
+};
+
 /*
  * Memory management (llext_mem.c)
  */
