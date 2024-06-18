@@ -288,8 +288,9 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 				 * adding st_value to the start address of the section
 				 * in which the target symbol resides.
 				 */
-				link_addr = (uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
-					+ sym.st_value;
+				enum llext_mem mem_idx = ldr->sect_map[sym.st_shndx].mem_idx;
+
+				link_addr = (uintptr_t)ext->mem[mem_idx] + sym.st_value;
 			} else {
 				LOG_ERR("rela section %d, entry %d: cannot apply relocation: "
 					"target symbol has unexpected section index %d (0x%X)",
