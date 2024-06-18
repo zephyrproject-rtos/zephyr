@@ -914,7 +914,7 @@ test_i2c_vishay_vcnl36825t: vcnl36825t@81 {
 	compatible = "vishay,vcnl36825t";
 	reg = <0x81>;
 
-	proximity-it = "3.5";
+	proximity-it = "1";
 	multi-pulse = <8>;
 
 	low-power;
