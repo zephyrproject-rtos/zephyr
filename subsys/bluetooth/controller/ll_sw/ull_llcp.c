@@ -221,6 +221,9 @@ struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ARG_UNUSED(conn);
 	tx = (struct node_tx *)mem_acquire(&mem_tx.free);
+	if (!tx) {
+		return NULL;
+	}
 
 	pdu = (struct pdu_data *)tx->pdu;
 	ull_pdu_data_init(pdu);
