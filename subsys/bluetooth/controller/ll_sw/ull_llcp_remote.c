@@ -909,6 +909,9 @@ void llcp_rr_new(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx
 
 	ctx = llcp_create_remote_procedure(proc);
 	if (!ctx) {
+		/* It is ok to return here, maybe peer violated having only one
+		 * active control procedure?
+		 */
 		return;
 	}
 
