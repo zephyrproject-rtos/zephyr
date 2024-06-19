@@ -6,7 +6,7 @@
 
 if(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 
-zephyr_library()
+zephyr_interface_library_named(hostap)
 
 set(HOSTAP_BASE ${ZEPHYR_HOSTAP_MODULE_DIR})
 set(WIFI_NM_WPA_SUPPLICANT_BASE ${HOSTAP_BASE}/wpa_supplicant)
@@ -21,7 +21,6 @@ zephyr_include_directories(
 	${HOSTAP_BASE}/
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/
 	${HOSTAP_SRC_BASE}/
-	${HOSTAP_SRC_BASE}/utils/
 	${HOSTAP_SRC_BASE}/common/
 	${HOSTAP_SRC_BASE}/eap_common
 	${HOSTAP_SRC_BASE}/eap_server
@@ -30,6 +29,10 @@ zephyr_include_directories(
 	${HOSTAP_SRC_BASE}/ap/
 	${HOSTAP_SRC_BASE}/drivers/
 	${HOSTAP_SRC_BASE}/rsn_supp
+)
+
+target_include_directories(hostap INTERFACE
+	${HOSTAP_SRC_BASE}/utils/
 )
 
 zephyr_library_compile_definitions(
