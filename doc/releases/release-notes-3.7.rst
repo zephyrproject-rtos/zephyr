@@ -196,6 +196,10 @@ Bluetooth
     or speakers. The audio data is compressed in a proper format for efficient use of the limited
     bandwidth.
 
+  * Reworked the transmission path for data and commands. The "BT TX" thread has been removed, along
+    with the buffer pools for HCI fragments and L2CAP segments. All communication with the
+    Controller is now exclusively done in the system workqueue context.
+
 * HCI Driver
 
   * Added support for Ambiq Apollo3 Blue series.
