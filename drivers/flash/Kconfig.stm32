@@ -16,6 +16,14 @@ config STM32_MEMMAP
 	  This option enables the XIP mode for the external NOR flash
 	  mounted on STM32 boards.
 
+config USE_MICROCHIP_QSPI_FLASH_WITH_STM32
+	bool "Include patch for Microchip qspi flash when running with stm32"
+	depends on DT_HAS_ST_STM32_QSPI_NOR_ENABLED
+	help
+	  Set to use Microchip qspi flash memories which supports
+	  the Global Block Protection Unlock instruction (ULBPR - 98H),
+	  and write with SPI_NOR_CMD_PP_1_1_4 on 4 lines
+
 config SOC_FLASH_STM32
 	bool "STM32 flash driver"
 	depends on DT_HAS_ST_STM32_FLASH_CONTROLLER_ENABLED
