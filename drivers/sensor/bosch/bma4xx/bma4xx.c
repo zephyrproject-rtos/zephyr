@@ -1,6 +1,7 @@
 /* Bosch BMA4xx 3-axis accelerometer driver
  *
  * Copyright (c) 2023 Google LLC
+ * Copyright (c) 2024 Croxel Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/rtio/work.h>
 
 LOG_MODULE_REGISTER(bma4xx, CONFIG_SENSOR_LOG_LEVEL);
 #include "bma4xx.h"
@@ -425,9 +427,10 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 
-static void bma4xx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+static void bma4xx_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = cfg->sensor;
 
 	/* TODO: Add streaming support */
 	if (!cfg->is_streaming) {
@@ -435,6 +438,15 @@ static void bma4xx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev
 	} else {
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
+}
+
+static void bma4xx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_work_req *req = rtio_work_req_alloc();
+
+	__ASSERT_NO_MSG(req);
+
+	rtio_work_req_submit(req, iodev_sqe, bma4xx_submit_sync);
 }
 
 /*
