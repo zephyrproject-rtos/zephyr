@@ -287,6 +287,42 @@ ZTEST(llext, test_pre_located)
 }
 #endif
 
+#if defined(CONFIG_LLEXT_STORAGE_WRITABLE)
+static LLEXT_CONST uint8_t find_section_ext[] ELF_ALIGN = {
+	#include "find_section.inc"
+};
+
+ZTEST(llext, test_find_section)
+{
+	/* This test exploits the fact that in the STORAGE_WRITABLE cases, the
+	 * symbol addresses calculated by llext will be directly inside the ELF
+	 * file buffer, so the two methods can be easily compared.
+	 */
+
+	int res;
+	ssize_t section_ofs;
+
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(find_section_ext, ARRAY_SIZE(find_section_ext));
+	struct llext_loader *loader = &buf_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+
+	res = llext_load(loader, "find_section", &ext, &ldr_parm);
+	zassert_ok(res, "load should succeed");
+
+	section_ofs = llext_find_section(loader, ".data");
+	zassert_true(section_ofs > 0, "find_section returned %zd", section_ofs);
+
+	uintptr_t symbol_ptr = (uintptr_t)llext_find_sym(&ext->exp_tab, "number");
+	uintptr_t section_ptr = (uintptr_t)find_section_ext + section_ofs;
+
+	zassert_equal(symbol_ptr, section_ptr,
+		      "symbol at %p != .data section at %p (%zd bytes in the ELF)",
+		      symbol_ptr, section_ptr, section_ofs);
+}
+#endif
+
 /*
  * Ensure that EXPORT_SYMBOL does indeed provide a symbol and a valid address
  * to it.
