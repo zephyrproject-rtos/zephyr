@@ -1286,6 +1286,12 @@ int bt_conn_cb_unregister(struct bt_conn_cb *cb);
 						_CONCAT(bt_conn_cb_,	\
 							_name))
 
+/** Converts a security error to string.
+ *
+ * @return The string representation of the security error code.
+ */
+const char *bt_security_err_to_str(enum bt_security_err err);
+
 /** @brief Enable/disable bonding.
  *
  *  Set/clear the Bonding flag in the Authentication Requirements of
