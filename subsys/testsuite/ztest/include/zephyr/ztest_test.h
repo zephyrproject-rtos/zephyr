@@ -391,6 +391,27 @@ void ztest_test_skip(void);
 
 void ztest_skip_failed_assumption(void);
 
+#define Z_TEST_PARAM(suite, fn, t_options, param) \
+	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn; \
+	static void _##suite##_##fn##_wrapper(void *data); \
+	static void suite##_##fn(void *params); \
+	static STRUCT_SECTION_ITERABLE(ztest_unit_test, z_ztest_unit_test__##suite##__##fn) = { \
+		.test_suite_name = STRINGIFY(suite), \
+		.name = STRINGIFY(fn), \
+		.test = (_##suite##_##fn##_wrapper), \
+		.thread_options = t_options, \
+		.stats = &z_ztest_unit_test_stats_##suite##_##fn \
+	}; \
+	static void _##suite##_##fn##_wrapper(void *wrapper_data) \
+	{ \
+		ARG_UNUSED(wrapper_data); suite##_##fn(param); \
+	} \
+	static inline void suite##_##fn(void *params)
+
+
+#define ZTEST_PARAM(suite, fn, params) Z_TEST_PARAM(suite, fn, 0, params)
+#define Z_ZTEST_PARAM(suite, fn, t_options) Z_TEST_PARAM(suite, fn, t_options, params)
+
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
 	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn;                       \
 	static void _##suite##_##fn##_wrapper(void *data);                                         \

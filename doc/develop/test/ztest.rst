@@ -46,8 +46,10 @@ Below is an example of a test suite using a predicate:
 Adding tests to a suite
 ***********************
 
-There are 4 macros used to add a test to a suite, they are:
+There are 5 macros used to add a test to a suite, they are:
 
+* :c:macro:`ZTEST_PARAM` ``(suite_name, test_name, params)`` - Which can be used to add a test
+  by ``test_name`` to a given suite by ``suite_name`` with an additional parameters by ``params``.
 * :c:macro:`ZTEST` ``(suite_name, test_name)`` - Which can be used to add a test by ``test_name`` to a
   given suite by ``suite_name``.
 * :c:macro:`ZTEST_USER` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
