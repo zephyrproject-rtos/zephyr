@@ -62,6 +62,7 @@ config LLEXT_SHELL_MAX_SIZE
 
 config LLEXT_STORAGE_WRITABLE
 	bool "llext storage is writable"
+	default y if XTENSA
 	help
 	  Select if LLEXT storage is writable, i.e. if extensions are stored in
 	  RAM and can be modified in place
