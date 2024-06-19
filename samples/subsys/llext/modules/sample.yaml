@@ -21,7 +21,6 @@ tests:
     extra_configs:
       - CONFIG_HELLO_WORLD_MODE=m
       - arch:arm:CONFIG_ARM_MPU=n
-      - arch:xtensa:CONFIG_LLEXT_STORAGE_WRITABLE=y
     harness_config:
       type: one_line
       regex:
