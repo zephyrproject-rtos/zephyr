@@ -1,9 +1,9 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA8 GPIO
+description: Renesas RA GPIO IO port
 
-compatible: "renesas,ra8-gpio"
+compatible: "renesas,ra-gpio-ioport"
 
 include: [gpio-controller.yaml, base.yaml]
 

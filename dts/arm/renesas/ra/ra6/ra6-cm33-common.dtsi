@@ -37,7 +37,7 @@
 		};
 
 		ioport0: gpio@40080000 {
-			compatible = "renesas,ra6-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40080000 0x20>;
 			port = <0>;
 			gpio-controller;
@@ -47,7 +47,7 @@
 		};
 
 		ioport1: gpio@40080020 {
-			compatible = "renesas,ra6-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40080020 0x20>;
 			port = <1>;
 			gpio-controller;
@@ -57,7 +57,7 @@
 		};
 
 		ioport2: gpio@40080040 {
-			compatible = "renesas,ra6-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40080040 0x20>;
 			port = <2>;
 			gpio-controller;
@@ -67,7 +67,7 @@
 		};
 
 		ioport3: gpio@40080060 {
-			compatible = "renesas,ra6-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40080060 0x20>;
 			port = <3>;
 			gpio-controller;
@@ -77,7 +77,7 @@
 		};
 
 		ioport4: gpio@40080080 {
-			compatible = "renesas,ra6-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40080080 0x20>;
 			port = <4>;
 			gpio-controller;
@@ -87,7 +87,7 @@
 		};
 
 		ioport5: gpio@400800a0 {
-			compatible = "renesas,ra6-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x400800a0 0x20>;
 			port = <5>;
 			gpio-controller;
