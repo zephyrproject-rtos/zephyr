@@ -10,6 +10,7 @@ menuconfig BT
 	# will need some refactoring to work on SMP systems.
 	depends on !SMP
 	select NET_BUF
+	imply ASSERT
 	help
 	  This option enables Bluetooth support.
 
