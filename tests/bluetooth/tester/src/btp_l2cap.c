@@ -407,20 +407,43 @@ static uint8_t connect_with_sec_level(const void *cmd, uint16_t cmd_len,
 					level);
 }
 
+static struct bt_l2cap_chan *get_l2cap_chan_from_chan_id(uint8_t chan_id)
+{
+	struct channel *le_chan;
+#if defined(CONFIG_BT_CLASSIC)
+	struct br_channel *br_chan;
+#endif /* defined(CONFIG_BT_CLASSIC) */
+
+	if (chan_id < CHANNELS) {
+		le_chan = &channels[chan_id];
+		if (le_chan->in_use) {
+			return &le_chan->le.chan;
+		}
+
+#if defined(CONFIG_BT_CLASSIC)
+		br_chan = &br_channels[chan_id];
+		if (br_chan->in_use) {
+			return &br_chan->br.chan;
+		}
+#endif /* defined(CONFIG_BT_CLASSIC) */
+	}
+
+	return NULL;
+}
+
 static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 			  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_disconnect_cmd *cp = cmd;
-	struct channel *chan;
+	struct bt_l2cap_chan *chan;
 	int err;
 
-	if (cp->chan_id >= CHANNELS) {
+	chan = get_l2cap_chan_from_chan_id(cp->chan_id);
+	if (chan == NULL) {
 		return BTP_STATUS_FAILED;
 	}
 
-	chan = &channels[cp->chan_id];
-
-	err = bt_l2cap_chan_disconnect(&chan->le.chan);
+	err = bt_l2cap_chan_disconnect(chan);
 	if (err) {
 		return BTP_STATUS_FAILED;
 	}
