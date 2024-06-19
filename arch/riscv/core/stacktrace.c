@@ -128,7 +128,6 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 		/* Unwind current thread (default case when nothing is provided ) */
 		fp = (uintptr_t)__builtin_frame_address(0);
 		ra = (uintptr_t)walk_stackframe;
-		thread = _current;
 	} else {
 		/* Unwind the provided thread */
 		fp = csf->s0;
@@ -171,7 +170,6 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 		/* Unwind current thread (default case when nothing is provided ) */
 		sp = current_stack_pointer;
 		ra = (uintptr_t)walk_stackframe;
-		thread = _current;
 	} else {
 		/* Unwind the provided thread */
 		sp = csf->sp;
@@ -202,8 +200,12 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		     const struct k_thread *thread, const struct arch_esf *esf)
 {
-	walk_stackframe(callback_fn, cookie, thread, esf, in_stack_bound,
-			thread != NULL ? &thread->callee_saved : NULL);
+	if (thread == NULL) {
+		/* In case `thread` is NULL, default that to `_current` and try to unwind */
+		thread = _current;
+	}
+
+	walk_stackframe(callback_fn, cookie, thread, esf, in_stack_bound, &thread->callee_saved);
 }
 
 #if __riscv_xlen == 32
