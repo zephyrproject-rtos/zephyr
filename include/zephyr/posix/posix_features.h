@@ -259,13 +259,14 @@
 #define _POSIX_PATH_MAX                     (256)
 #define _POSIX_PIPE_BUF                     (512)
 #define _POSIX_RE_DUP_MAX                   (255)
-#define _POSIX_RTSIG_MAX \
-	COND_CODE_1(CONFIG_POSIX_REALTIME_SIGNALS, (CONFIG_POSIX_RTSIG_MAX), (0))
+#define _POSIX_RTSIG_MAX                                                                           \
+	(((CONFIG_SIGNAL_SET_SIZE - K_SIG_RTMIN) > 0) ? (CONFIG_SIGNAL_SET_SIZE - K_SIG_RTMIN) : 0)
 #define _POSIX_SEM_NSEMS_MAX \
 	COND_CODE_1(CONFIG_POSIX_SEMAPHORES, (CONFIG_POSIX_SEM_NSEMS_MAX), (0))
 #define _POSIX_SEM_VALUE_MAX \
 	COND_CODE_1(CONFIG_POSIX_SEMAPHORES, (CONFIG_POSIX_SEM_VALUE_MAX), (0))
-#define _POSIX_SIGQUEUE_MAX                 (32)
+#define _POSIX_SIGQUEUE_MAX \
+	COND_CODE_1(CONFIG_POSIX_REALTIME_SIGNALS, (CONFIG_POSIX_SIGQUEUE_MAX), (0))
 #define _POSIX_SSIZE_MAX                    (32767)
 #define _POSIX_SS_REPL_MAX                  (4)
 #define _POSIX_STREAM_MAX                   (8)

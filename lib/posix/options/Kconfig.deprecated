@@ -93,12 +93,11 @@ config POSIX_FS
 
 config POSIX_LIMITS_RTSIG_MAX
 	int "_POSIX_RTSIG_MAX value in limits.h [DEPRECATED]"
-	default POSIX_RTSIG_MAX if POSIX_REALTIME_SIGNALS
-	default 0
+	default 8
 	help
 	  This option is deprecated.
 
-	  Please use CONFIG_POSIX_RTSIG_MAX instead.
+	  Please use _POSIX_RTSIG_MAX instead.
 
 config POSIX_MAX_FDS
 	int "Maximum number of open file descriptors [DEPRECATED]"

@@ -61,7 +61,7 @@ tests:
       - CONFIG_POSIX_SIGNAL_STRING_DESC=n
   portability.posix.common.signal.big_nsig:
     extra_configs:
-      - CONFIG_POSIX_RTSIG_MAX=1024
+      - CONFIG_SIGNAL_SET_SIZE=1024
   portability.posix.common.dynamic_stack:
     extra_configs:
       - CONFIG_DYNAMIC_THREAD=y

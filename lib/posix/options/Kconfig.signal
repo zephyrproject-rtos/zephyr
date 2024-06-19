@@ -7,23 +7,31 @@ menu "POSIX signals"
 config POSIX_REALTIME_SIGNALS
 	bool "POSIX realtime signals [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select POLL
+	select RING_BUFFER
+	select SIGNAL
+	select SIGNAL_QUEUE_SIZE_32
+	select SIGNAL_RT_NEEDED
 	help
 	  Enable support for POSIX realtime signals.
 
 if POSIX_REALTIME_SIGNALS
 
-config POSIX_RTSIG_MAX
-	int "Maximum number of realtime signals"
-	default 8
+config POSIX_SIGQUEUE_MAX
+	int
+	default SIGNAL_QUEUE_SIZE
 	help
-	  Define the maximum number of realtime signals (RTSIG_MAX).
-	  The range of realtime signals is [SIGRTMIN .. (SIGRTMIN+RTSIG_MAX)]
+	  The maximum number of queued signals
 
 endif # POSIX_REALTIME_SIGNALS
 
 config POSIX_SIGNALS
 	bool "POSIX signals [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select POLL
+	select RING_BUFFER
+	select SIGNAL
+	select SIGNAL_POSIX_NEEDED
 	help
 	  Enable support for POSIX signals.
 

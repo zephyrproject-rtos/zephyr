@@ -14,11 +14,9 @@
 #define SIGNO_WORD_IDX(_signo) (_signo / BITS_PER_LONG)
 #define SIGNO_WORD_BIT(_signo) (_signo & BIT_MASK(LOG2(BITS_PER_LONG)))
 
-BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0);
-
 static inline bool signo_valid(int signo)
 {
-	return ((signo > 0) && (signo < _NSIG));
+	return ((signo > 0) && (signo <= SIGRTMAX));
 }
 
 static inline bool signo_is_rt(int signo)
@@ -28,14 +26,25 @@ static inline bool signo_is_rt(int signo)
 
 int sigemptyset(sigset_t *set)
 {
-	*set = (sigset_t){0};
+	int ret;
+
+	ret = k_sig_emptyset(set);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
 	return 0;
 }
 
 int sigfillset(sigset_t *set)
 {
-	for (int i = 0; i < ARRAY_SIZE(set->sig); i++) {
-		set->sig[i] = -1;
+	int ret;
+
+	ret = k_sig_fillset(set);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
 	}
 
 	return 0;
@@ -43,36 +52,41 @@ int sigfillset(sigset_t *set)
 
 int sigaddset(sigset_t *set, int signo)
 {
-	if (!signo_valid(signo)) {
-		errno = EINVAL;
+	int ret;
+
+	ret = k_sig_addset(set, signo);
+	if (ret < 0) {
+		errno = -ret;
 		return -1;
 	}
-
-	WRITE_BIT(set->sig[SIGNO_WORD_IDX(signo)], SIGNO_WORD_BIT(signo), 1);
 
 	return 0;
 }
 
 int sigdelset(sigset_t *set, int signo)
 {
-	if (!signo_valid(signo)) {
-		errno = EINVAL;
+	int ret;
+
+	ret = k_sig_delset(set, signo);
+	if (ret < 0) {
+		errno = -ret;
 		return -1;
 	}
-
-	WRITE_BIT(set->sig[SIGNO_WORD_IDX(signo)], SIGNO_WORD_BIT(signo), 0);
 
 	return 0;
 }
 
 int sigismember(const sigset_t *set, int signo)
 {
-	if (!signo_valid(signo)) {
-		errno = EINVAL;
+	int ret;
+
+	ret = k_sig_ismember(set, signo);
+	if (ret < 0) {
+		errno = -ret;
 		return -1;
 	}
 
-	return 1 & (set->sig[SIGNO_WORD_IDX(signo)] >> SIGNO_WORD_BIT(signo));
+	return ret;
 }
 
 char *strsignal(int signum)
@@ -99,6 +113,11 @@ char *strsignal(int signum)
 	snprintf(buf, sizeof(buf), "Signal %d", signum);
 
 	return buf;
+}
+
+int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset)
+{
+	return -k_sig_mask(how, set, oset);
 }
 
 int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset)
