@@ -75,4 +75,4 @@ tests:
   sample.shell.shell_module.robot:
     harness: robot
     harness_config:
-      robot_test_path: shell_module.robot
+      robot_testsuite: shell_module.robot

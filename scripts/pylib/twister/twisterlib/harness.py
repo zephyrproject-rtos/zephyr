@@ -160,7 +160,8 @@ class Robot(Harness):
 
         config = instance.testsuite.harness_config
         if config:
-            self.path = config.get('robot_test_path', None)
+            self.path = config.get('robot_testsuite', None)
+            self.option = config.get('robot_option', None)
 
     def handle(self, line):
         ''' Test cases that make use of this harness care about results given
@@ -176,7 +177,24 @@ class Robot(Harness):
         start_time = time.time()
         env = os.environ.copy()
 
-        command.append(os.path.join(handler.sourcedir, self.path))
+        if self.option:
+            if isinstance(self.option, list):
+                for option in self.option:
+                    for v in str(option).split():
+                        command.append(f'{v}')
+            else:
+                for v in str(self.option).split():
+                    command.append(f'{v}')
+
+        if self.path is None:
+            raise PytestHarnessException(f'The parameter robot_testsuite is mandatory')
+
+        if isinstance(self.path, list):
+            for suite in self.path:
+                command.append(os.path.join(handler.sourcedir, suite))
+        else:
+            command.append(os.path.join(handler.sourcedir, self.path))
+
         with subprocess.Popen(command, stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env) as renode_test_proc:
             out, _ = renode_test_proc.communicate()
