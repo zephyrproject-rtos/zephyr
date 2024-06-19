@@ -36,3 +36,22 @@ ZTEST(test_smp, test_bt_smp_err_to_str)
 		zassert_not_null(bt_smp_err_to_str(i), ": %d", i);
 	}
 }
+
+ZTEST(test_smp, test_bt_security_err_to_str)
+{
+	/* Test a couple of entries */
+	zassert_str_equal(bt_security_err_to_str(BT_SECURITY_ERR_AUTH_FAIL),
+			  "BT_SECURITY_ERR_AUTH_FAIL");
+	zassert_str_equal(bt_security_err_to_str(BT_SECURITY_ERR_KEY_REJECTED),
+			  "BT_SECURITY_ERR_KEY_REJECTED");
+	zassert_str_equal(bt_security_err_to_str(BT_SECURITY_ERR_UNSPECIFIED),
+			  "BT_SECURITY_ERR_UNSPECIFIED");
+
+	/* Test outside range */
+	zassert_str_equal(bt_security_err_to_str(BT_SECURITY_ERR_UNSPECIFIED + 1),
+			  "(unknown)");
+
+	for (uint16_t i = 0; i <= UINT8_MAX; i++) {
+		zassert_not_null(bt_security_err_to_str(i), ": %d", i);
+	}
+}

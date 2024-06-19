@@ -475,6 +475,33 @@ static enum bt_security_err security_err_get(uint8_t smp_err)
 	}
 }
 
+const char *bt_security_err_to_str(enum bt_security_err err)
+{
+	#define SEC_ERR(err) [err] = #err
+
+	const char * const mapping_table[] = {
+		SEC_ERR(BT_SECURITY_ERR_SUCCESS),
+		SEC_ERR(BT_SECURITY_ERR_AUTH_FAIL),
+		SEC_ERR(BT_SECURITY_ERR_PIN_OR_KEY_MISSING),
+		SEC_ERR(BT_SECURITY_ERR_OOB_NOT_AVAILABLE),
+		SEC_ERR(BT_SECURITY_ERR_AUTH_REQUIREMENT),
+		SEC_ERR(BT_SECURITY_ERR_PAIR_NOT_SUPPORTED),
+		SEC_ERR(BT_SECURITY_ERR_PAIR_NOT_ALLOWED),
+		SEC_ERR(BT_SECURITY_ERR_INVALID_PARAM),
+		SEC_ERR(BT_SECURITY_ERR_KEY_REJECTED),
+		SEC_ERR(BT_SECURITY_ERR_UNSPECIFIED),
+	};
+
+	if (err < ARRAY_SIZE(mapping_table) && mapping_table[err]) {
+		return mapping_table[err];
+	} else {
+		return "(unknown)";
+	}
+
+	#undef SEC_ERR
+}
+
+
 static uint8_t smp_err_get(enum bt_security_err auth_err)
 {
 	switch (auth_err) {
