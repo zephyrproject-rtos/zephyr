@@ -1,15 +1,18 @@
 /*
  * Copyright (c) 2024 Intel Corporation
+ * Copyright (c) 2024 Croxel Inc.
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/rtio/work.h>
 #include <zephyr/logging/log.h>
 
 #include "bme280.h"
 
 LOG_MODULE_DECLARE(BME280, CONFIG_SENSOR_LOG_LEVEL);
 
-void bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+void bme280_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 {
 	uint32_t min_buf_len = sizeof(struct bme280_encoded_data);
 	int rc;
@@ -17,6 +20,7 @@ void bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	uint32_t buf_len;
 
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = cfg->sensor;
 	const struct sensor_chan_spec *const channels = cfg->channels;
 	const size_t num_channels = cfg->count;
 
@@ -66,4 +70,13 @@ void bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	}
 
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
+}
+
+void bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_work_req *req = rtio_work_req_alloc();
+
+	__ASSERT_NO_MSG(req);
+
+	rtio_work_req_submit(req, iodev_sqe, bme280_submit_sync);
 }
