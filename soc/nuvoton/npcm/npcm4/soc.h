@@ -20,6 +20,7 @@
 #include <soc_dt.h>
 #include <soc_clock.h>
 #include <soc_pins.h>
+#include "gdma.h"
 
 #define NPCM_PUPD_EN_OFFSET(n)		(0x028 + n)
 
