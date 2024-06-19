@@ -124,7 +124,9 @@ static const struct device *const period_devs[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif
+#ifdef CONFIG_COUNTER_RTC_STM32
 	DEVS_FOR_DT_COMPAT(st_stm32_rtc)
+#endif
 };
 
 typedef void (*counter_test_func_t)(const struct device *dev);
