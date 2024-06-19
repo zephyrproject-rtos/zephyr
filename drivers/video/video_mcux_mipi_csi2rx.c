@@ -14,11 +14,6 @@
 
 LOG_MODULE_REGISTER(video_mipi_csi2rx, CONFIG_VIDEO_LOG_LEVEL);
 
-/*
- * Two data lanes are set by default as 2-lanes camera sensors are
- * more common and more performant but single lane is also supported.
- */
-#define DEFAULT_MIPI_CSI_NUM_LANES 2
 #define DEFAULT_CAMERA_FRAME_RATE  30
 
 struct mipi_csi2rx_config {
@@ -101,8 +96,6 @@ static int mipi_csi2rx_set_fmt(const struct device *dev, enum video_endpoint_id 
 			0x24,
 		},
 	};
-
-	csi2rxConfig.laneNum = DEFAULT_MIPI_CSI_NUM_LANES;
 
 	for (i = 0; i < ARRAY_SIZE(csi2rxHsSettle); i++) {
 		if ((fmt->width == csi2rxHsSettle[i][0]) && (fmt->height == csi2rxHsSettle[i][1]) &&
@@ -203,7 +196,11 @@ static int mipi_csi2rx_init(const struct device *dev)
 }
 
 #define MIPI_CSI2RX_INIT(n)                                                                        \
-	static struct mipi_csi2rx_data mipi_csi2rx_data_##n;                                       \
+	static struct mipi_csi2rx_data mipi_csi2rx_data_##n = {                                    \
+		.csi2rxConfig.laneNum =                                                            \
+			DT_PROP_LEN(DT_CHILD(DT_CHILD(DT_INST_CHILD(n, ports), port_1), endpoint), \
+				    data_lanes),                                                   \
+	};                                                                                         \
                                                                                                    \
 	static const struct mipi_csi2rx_config mipi_csi2rx_config_##n = {                          \
 		.base = (MIPI_CSI2RX_Type *)DT_INST_REG_ADDR(n),                                   \
