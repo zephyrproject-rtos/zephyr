@@ -15,11 +15,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mipi_csi);
 
-/*
- * Two data lanes are set by default as 2-lanes camera sensors are
- * more common and more performant but single lane is also supported.
- */
-#define DEFAULT_MIPI_CSI_NUM_LANES 2
 #define DEFAULT_CAMERA_FRAME_RATE  30
 
 struct mipi_csi2rx_config {
@@ -102,8 +97,6 @@ static int mipi_csi2rx_set_fmt(const struct device *dev, enum video_endpoint_id 
 			0x24,
 		},
 	};
-
-	csi2rxConfig.laneNum = DEFAULT_MIPI_CSI_NUM_LANES;
 
 	for (i = 0; i < ARRAY_SIZE(csi2rxHsSettle); i++) {
 		if ((fmt->width == csi2rxHsSettle[i][0]) && (fmt->height == csi2rxHsSettle[i][1]) &&
@@ -216,7 +209,9 @@ static int mipi_csi2rx_init(const struct device *dev)
 }
 
 #define MIPI_CSI2RX_INIT(n)                                                                        \
-	static struct mipi_csi2rx_data mipi_csi2rx_data_##n;                                       \
+	static struct mipi_csi2rx_data mipi_csi2rx_data_##n = {                                    \
+		.csi2rxConfig.laneNum = DT_INST_PROP_LEN_OR(n, data_lanes, 2),                     \
+	};                                                                                         \
                                                                                                    \
 	static const struct mipi_csi2rx_config mipi_csi2rx_config_##n = {                          \
 		.base = (MIPI_CSI2RX_Type *)DT_INST_REG_ADDR(n),                                   \
