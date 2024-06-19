@@ -1087,3 +1087,12 @@ test_i2c_tmp1075: tmp1075@98 {
 	consecutive-fault-measurements = <4>;
 	interrupt-mode;
 };
+
+apds_9306: apds9306@92 {
+	compatible = "avago,apds9306";
+	reg = <0x92>;
+	status = "okay";
+	gain = <1>;
+	resolution = <13>;
+	frequency = <2000>;
+};
