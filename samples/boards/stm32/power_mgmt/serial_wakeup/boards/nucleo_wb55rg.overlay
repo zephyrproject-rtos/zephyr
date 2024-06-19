@@ -21,6 +21,9 @@
 	/* Configure device as wakeup source */
 	wakeup-source;
 
+	/* Enable FIFO to avoid losing chars on device wakeup */
+	fifo-enable;
+
 	/* Configure sleep pinctrl configuration which will be used when
 	 * device is not configured as wakeup source by the application.
 	 * This use case is only applicable in PM_DEVICE mode.
