@@ -187,9 +187,16 @@ static inline int qspi_prepare_quad_program(const struct device *dev,
 			dev_data->qspi_write_cmd == SPI_NOR_CMD_PP_1_4_4);
 
 	cmd->Instruction = dev_data->qspi_write_cmd;
+#if defined(CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32)
+	/* Microchip qspi-NOR flash, does not follow the standard rules */
+	if (cmd->Instruction == SPI_NOR_CMD_PP_1_1_4) {
+		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+	}
+#else
 	cmd->AddressMode = ((cmd->Instruction == SPI_NOR_CMD_PP_1_1_4)
 				? QSPI_ADDRESS_1_LINE
 				: QSPI_ADDRESS_4_LINES);
+#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
 	cmd->DataMode = QSPI_DATA_4_LINES;
 	cmd->DummyCycles = 0;
 
