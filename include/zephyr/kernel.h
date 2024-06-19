@@ -6242,6 +6242,137 @@ void k_sys_runtime_stats_enable(void);
  */
 void k_sys_runtime_stats_disable(void);
 
+/**
+ * @addtogroup k_sig_apis
+ * @{
+ */
+
+/**
+ * @brief Add the signal @a sig to the signal set @a set.
+ *
+ * @param set the set to which @a sig should be added.
+ * @param sig the signal which should be added to @a set.
+ *
+ * @retval 0 on success.
+ * @return -EINVAL if @a sig is invalid.
+ */
+int k_sig_addset(struct k_sig_set *set, int sig);
+
+/**
+ * @brief Remove the signal @a sig from signal set @a set.
+ *
+ * @param set the set from which @a sig should be removed.
+ * @param sig the signal which should be removed from @a set.
+ *
+ * @retval 0 on success.
+ * @return -EINVAL if @a sig is invalid.
+ */
+int k_sig_delset(struct k_sig_set *set, int sig);
+
+/**
+ * @brief Check if signal @a sig is part of signal set @a set.
+ *
+ * @param set the set to check.
+ * @param sig the signal which should be checked.
+ *
+ * @retval 0 if @a sig is not part of @a set.
+ * @retval 1 if @a sig is part of @a set.
+ * @return -EINVAL if @a sig is invalid.
+ */
+int k_sig_ismember(const struct k_sig_set *set, int sig);
+
+/**
+ * @brief Initialize a signal set with the set of all signals.
+ *
+ * @param set signal set to initialize.
+ *
+ * @retval 0 on success.
+ * @return -EINVAL if @a sig is invalid.
+ */
+int k_sig_fillset(struct k_sig_set *set);
+
+/**
+ * @brief Initialize a signal set as empty.
+ *
+ * @param set signal set to initialize.
+ *
+ * @retval 0 on success.
+ * @return -EINVAL if @a sig is invalid.
+ */
+int k_sig_emptyset(struct k_sig_set *set);
+
+/**
+ * @brief Manipulate the signal mask of the calling thread.
+ *
+ * The parameter @a how may be specified as @ref K_SIG_BLOCK,
+ * @ref K_SIG_UNBLOCK, or @ref K_SIG_SETMASK. If @a how is @ref K_SIG_BLOCK,
+ * then the signals in @a set are added to the signal mask of the calling
+ * thread. If @a how is @ref K_SIG_UNBLOCK, then the signals in @a set
+ * are removed from the
+ *
+ * @param how how to manipulate the set
+ * @param set the set to manipulate
+ * @param[out] oset the resulting set
+ * @retval 0 on success
+ * @retval -EINVAL for invalid values of @a how
+ */
+__syscall int k_sig_mask(int how, const struct k_sig_set *set, struct k_sig_set *oset);
+
+/**
+ * @brief Get the set of pending signals for the calling thread.
+ *
+ * @param[out] set the set of pending signals for the calling thread.
+ * @retval 0 on success
+ * @retval -EINVAL for invalid values of @a set
+ */
+__syscall int k_sig_pending(struct k_sig_set *set);
+
+/**
+ * @brief Queue a signal for process ID @a pid.
+ *
+ * Queue the signal @a signo for process ID @a pid with value @a value.
+ *
+ * This function is safe to call in ISR context.
+ *
+ * @param pid the process ID for which to queue the signal.
+ * @param signo the signal number to queue.
+ * @param value the value associated with the signal.
+ *
+ * @retval 0 on success.
+ * @retval -EAGAIN if there were insufficient resources available.
+ * @retval -EINVAL if @a signo is invalid.
+ * @return -EPERM if the calling thread lacks permissions to signal the process with id @a pid.
+ * @return -ESRCH if a process with id @a pid does not exist.
+ */
+__syscall int k_sig_queue(k_pid_t pid, int signo, union k_sig_val value);
+
+/**
+ * @brief Wait for any signal in @a set for a maximum duration specified by @a timeout.
+ *
+ * Wait for any signal in @a set to be delivered to the calling thread.
+ *
+ * This call does not block if @ref K_NO_WAIT is specified in the @a timeout parameter.
+ * This call blocks indefinitely if @ref K_FOREVER is specified in the @a timeout parameter.
+ *
+ * @param set set of signals to wait for.
+ * @param[out] info pointer to a location in which to store signal-related information.
+ * @param timeout upper bound time to wait for a signal in @a set to be delivered.
+ *
+ * @retval 0 on success.
+ * @retval -EAGAIN if no signal in @a set was received within the specified @a timeout.
+ * @retval -EINTR if the operation was interrupted by a signal.
+ * @retval -ENOSYS if dynamic thread stack allocation is disabled
+ * @retval -EWOULDBLOCK if the operation would block and was called in ISR context.
+ *
+ * @see CONFIG_DYNAMIC_THREAD
+ */
+__syscall int k_sig_timedwait(const struct k_sig_set *set, struct k_sig_info *info,
+			      k_timeout_t timeout);
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif

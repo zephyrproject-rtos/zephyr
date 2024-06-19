@@ -676,6 +676,63 @@ config POLL
 	  concurrently, which can be either directly triggered or triggered by
 	  the availability of some kernel objects (semaphores and FIFOs).
 
+config SIGNAL
+	bool "Signal support"
+	depends on POLL
+	depends on RING_BUFFER
+	help
+	  Select 'y' here to support signals.
+
+if SIGNAL
+
+config SIGNAL_QUEUE_SIZE_32
+	bool
+	help
+	  This is a hidden symbol used by subsystems (like POSIX) to indirectly
+	  affect a default size reflective of the standard, since we may not refer
+	  to POSIX Kconfig options here.
+
+config SIGNAL_QUEUE_SIZE
+	int "Signal queue size"
+	range 1 256
+	default 32 if SIGNAL_QUEUE_SIZE_32
+	default 1
+	help
+	  Size of kernel signal queue.
+
+config SIGNAL_POSIX_NEEDED
+	bool
+	help
+	  This is a hidden symbol used to indirectly affect the default signal set
+	  size.
+
+config SIGNAL_RT_NEEDED
+	bool
+	help
+	  This is a hidden symbol used to indirectly affect the default signal set
+	  size.
+
+module := SIGNAL
+module-str = k_sig
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SIGNAL
+
+# defined outside of the SIGNAL block to ensure struct k_sig_set is always well-defined
+config SIGNAL_SET_SIZE
+	int "Maximum number of signals"
+	default 0 if !SIGNAL
+	# 6 ISO C signals
+	default 6 if !SIGNAL_POSIX_NEEDED && !SIGNAL_RT_NEEDED
+	# 6 ISO C signals, 26 unused POSIX signals, and at least 8 Realtime signals
+	default 40 if !SIGNAL_POSIX_NEEDED && SIGNAL_RT_NEEDED
+	# 6 ISO C signals, and 26 POSIX signals
+	default 32 if SIGNAL_POSIX_NEEDED && !SIGNAL_RT_NEEDED
+	# 6 ISO C signals, 26 POSIX signals, and at least 8 Realtime signals
+	default 40 if SIGNAL_POSIX_NEEDED && SIGNAL_RT_NEEDED
+	help
+	  Maximum number of signals that can be represented in a struct k_sigset.
+
 config MEM_SLAB_TRACE_MAX_UTILIZATION
 	bool "Getting maximum slab utilization"
 	help
