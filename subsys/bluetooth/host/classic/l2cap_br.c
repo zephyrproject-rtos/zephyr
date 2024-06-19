@@ -1833,31 +1833,15 @@ int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 }
 
-static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static void l2cap_br_sig_handle(struct bt_l2cap_br *l2cap, struct bt_l2cap_sig_hdr *hdr,
+				      struct net_buf *buf)
 {
-	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
-	struct bt_l2cap_sig_hdr *hdr;
 	uint16_t len;
+	struct net_buf_simple_state state;
 
-	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small L2CAP signaling PDU");
-		return 0;
-	}
-
-	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	len = sys_le16_to_cpu(hdr->len);
 
-	LOG_DBG("Signaling code 0x%02x ident %u len %u", hdr->code, hdr->ident, len);
-
-	if (buf->len != len) {
-		LOG_ERR("L2CAP length mismatch (%u != %u)", buf->len, len);
-		return 0;
-	}
-
-	if (!hdr->ident) {
-		LOG_ERR("Invalid ident value in L2CAP PDU");
-		return 0;
-	}
+	net_buf_simple_save(&buf->b, &state);
 
 	switch (hdr->code) {
 	case BT_L2CAP_INFO_RSP:
@@ -1886,9 +1870,44 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		break;
 	default:
 		LOG_WRN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
-		l2cap_br_send_reject(chan->conn, hdr->ident,
-				     BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
+		l2cap_br_send_reject(l2cap->chan.chan.conn, hdr->ident,
+					BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
 		break;
+	}
+
+	net_buf_simple_restore(&buf->b, &state);
+	(void)net_buf_pull_mem(buf, len);
+}
+
+static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
+	struct bt_l2cap_sig_hdr *hdr;
+	uint16_t len;
+
+	while (buf->len > 0) {
+		if (buf->len < sizeof(*hdr)) {
+			LOG_ERR("Too small L2CAP signaling PDU");
+			return 0;
+		}
+
+		hdr = net_buf_pull_mem(buf, sizeof(*hdr));
+		len = sys_le16_to_cpu(hdr->len);
+
+		LOG_DBG("Signaling code 0x%02x ident %u len %u", hdr->code, hdr->ident, len);
+
+		if (buf->len < len) {
+			LOG_ERR("L2CAP length is short (%u < %u)", buf->len, len);
+			return 0;
+		}
+
+		if (!hdr->ident) {
+			LOG_ERR("Invalid ident value in L2CAP PDU");
+			(void)net_buf_pull_mem(buf, len);
+			continue;
+		}
+
+		l2cap_br_sig_handle(l2cap, hdr, buf);
 	}
 
 	return 0;
