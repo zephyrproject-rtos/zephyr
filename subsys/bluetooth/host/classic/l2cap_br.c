@@ -1648,57 +1648,66 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
 	struct bt_l2cap_sig_hdr *hdr;
 	uint16_t len;
+	struct net_buf_simple_state state;
 
-	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small L2CAP signaling PDU");
-		return 0;
-	}
+	while (buf->len > 0) {
+		if (buf->len < sizeof(*hdr)) {
+			LOG_ERR("Too small L2CAP signaling PDU");
+			return 0;
+		}
 
-	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
-	len = sys_le16_to_cpu(hdr->len);
+		hdr = net_buf_pull_mem(buf, sizeof(*hdr));
+		len = sys_le16_to_cpu(hdr->len);
 
-	LOG_DBG("Signaling code 0x%02x ident %u len %u", hdr->code, hdr->ident, len);
+		LOG_DBG("Signaling code 0x%02x ident %u len %u", hdr->code, hdr->ident, len);
 
-	if (buf->len != len) {
-		LOG_ERR("L2CAP length mismatch (%u != %u)", buf->len, len);
-		return 0;
-	}
+		if (buf->len < len) {
+			LOG_ERR("L2CAP length is short (%u < %u)", buf->len, len);
+			return 0;
+		}
 
-	if (!hdr->ident) {
-		LOG_ERR("Invalid ident value in L2CAP PDU");
-		return 0;
-	}
+		if (!hdr->ident) {
+			LOG_ERR("Invalid ident value in L2CAP PDU");
+			(void)net_buf_pull_mem(buf, len);
+			continue;
+		}
 
-	switch (hdr->code) {
-	case BT_L2CAP_INFO_RSP:
-		l2cap_br_info_rsp(l2cap, hdr->ident, buf);
-		break;
-	case BT_L2CAP_INFO_REQ:
-		l2cap_br_info_req(l2cap, hdr->ident, buf);
-		break;
-	case BT_L2CAP_DISCONN_REQ:
-		l2cap_br_disconn_req(l2cap, hdr->ident, buf);
-		break;
-	case BT_L2CAP_CONN_REQ:
-		l2cap_br_conn_req(l2cap, hdr->ident, buf);
-		break;
-	case BT_L2CAP_CONF_RSP:
-		l2cap_br_conf_rsp(l2cap, hdr->ident, len, buf);
-		break;
-	case BT_L2CAP_CONF_REQ:
-		l2cap_br_conf_req(l2cap, hdr->ident, len, buf);
-		break;
-	case BT_L2CAP_DISCONN_RSP:
-		l2cap_br_disconn_rsp(l2cap, hdr->ident, buf);
-		break;
-	case BT_L2CAP_CONN_RSP:
-		l2cap_br_conn_rsp(l2cap, hdr->ident, buf);
-		break;
-	default:
-		LOG_WRN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
-		l2cap_br_send_reject(chan->conn, hdr->ident,
-				     BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
-		break;
+		net_buf_simple_save(&buf->b, &state);
+
+		switch (hdr->code) {
+		case BT_L2CAP_INFO_RSP:
+			l2cap_br_info_rsp(l2cap, hdr->ident, buf);
+			break;
+		case BT_L2CAP_INFO_REQ:
+			l2cap_br_info_req(l2cap, hdr->ident, buf);
+			break;
+		case BT_L2CAP_DISCONN_REQ:
+			l2cap_br_disconn_req(l2cap, hdr->ident, buf);
+			break;
+		case BT_L2CAP_CONN_REQ:
+			l2cap_br_conn_req(l2cap, hdr->ident, buf);
+			break;
+		case BT_L2CAP_CONF_RSP:
+			l2cap_br_conf_rsp(l2cap, hdr->ident, len, buf);
+			break;
+		case BT_L2CAP_CONF_REQ:
+			l2cap_br_conf_req(l2cap, hdr->ident, len, buf);
+			break;
+		case BT_L2CAP_DISCONN_RSP:
+			l2cap_br_disconn_rsp(l2cap, hdr->ident, buf);
+			break;
+		case BT_L2CAP_CONN_RSP:
+			l2cap_br_conn_rsp(l2cap, hdr->ident, buf);
+			break;
+		default:
+			LOG_WRN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
+			l2cap_br_send_reject(chan->conn, hdr->ident,
+						BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
+			break;
+		}
+
+		net_buf_simple_restore(&buf->b, &state);
+		(void)net_buf_pull_mem(buf, len);
 	}
 
 	return 0;
