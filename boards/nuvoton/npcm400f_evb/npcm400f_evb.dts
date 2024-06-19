@@ -69,3 +69,108 @@
 		     &adc_vin3_gp95>; /* VIN3 - D6 */
 	pinctrl-names = "default";
 };
+
+&i2c1a {
+	status = "okay";
+	pinctrl-0 = <&i2c1a_scl_sda_gp60_61>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c2a {
+	status = "okay";
+	pinctrl-0 = <&i2c2a_scl_sda_gp11_13>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c3a {
+	status = "okay";
+	pinctrl-0 = <&i2c3a_scl_sda_gpa7_a2>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c4a {
+	status = "okay";
+	pinctrl-0 = <&i2c4a_scl_sda_gp36_37>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c5a {
+	status = "okay";
+	pinctrl-0 = <&i2c5a_scl_sda_gp34_35>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c6a {
+	status = "disabled";
+	pinctrl-0 = <&i2c6a_scl_gp96 &i2c6a_sda_gp97>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c7a {
+	status = "okay";
+	pinctrl-0 = <&i2c7a_scl_sda_gpc2_c3>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c8a {
+	status = "okay";
+	pinctrl-0 = <&i2c8a_scl_sda_gpc6_c7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c9a {
+	status = "okay";
+	pinctrl-0 = <&i2c9a_scl_sda_gp32_33>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c10a {
+	status = "okay";
+	pinctrl-0 = <&i2c10a_scl_sda_gpd2_d3>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c11a {
+	status = "okay";
+	pinctrl-0 = <&i2c11a_scl_sda_gpd4_d5>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c12a {
+	status = "okay";
+	pinctrl-0 = <&i2c12a_scl_sda_gpd6_d7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c1b {
+	status = "disabled";
+	pinctrl-0 = <&i2c1b_scl_sda_gp26_25>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c4b {
+	status = "disabled";
+	pinctrl-0 = <&i2c4b_scl_sda_gpf0_f1>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c6b {
+	status = "disabled";
+	pinctrl-0 = <&i2c6b_scl_sda_gp16_17>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
