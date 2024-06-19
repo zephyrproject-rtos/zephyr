@@ -55,3 +55,7 @@ config USE_RA_FSP_FLASH_HP
 	bool
 	help
 	  Enable RA FSP FLASH HP driver
+config USE_RA_FSP_I2C_IIC
+	bool
+	help
+	  Enable Renesas RA I2C IIC Master driver

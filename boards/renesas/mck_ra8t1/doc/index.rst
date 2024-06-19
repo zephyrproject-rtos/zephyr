@@ -106,6 +106,8 @@ The below features are currently supported on Zephyr OS for MCB-RA8T1 board:
 +--------------+------------+----------------------+
 | FLASH        | on-chip    | flash                |
 +--------------+------------+----------------------+
+| I2C          | on-chip    | i2c                  |
++--------------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 

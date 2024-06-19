@@ -28,6 +28,16 @@
 
 uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
 
+#define HMC_ADDR (0x1E)
+#define QMC_ADDR (0x0D)
+
+/* Renesas is using GY271 QMC for testing */
+#if DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_iic)
+#define GY271_ADDR QMC_ADDR
+#else
+#define GY271_ADDR HMC_ADDR
+#endif
+
 static int test_gy271(void)
 {
 	unsigned char datas[6];
@@ -55,26 +65,38 @@ static int test_gy271(void)
 		return TC_FAIL;
 	}
 
+#ifdef QMC_ADDR
+	if (i2c_reg_write_byte(i2c_dev, GY271_ADDR, 0x09, 0x01)) {
+		TC_PRINT("Fail to configure sensor GY271 QMC\n");
+	}
+#else /* HMC_ADDR */
 	datas[0] = 0x01;
 	datas[1] = 0x20;
 
 	/* 3. verify i2c_write() */
-	if (i2c_write(i2c_dev, datas, 2, 0x1E)) {
+	if (i2c_write(i2c_dev, datas, 2, GY271_ADDR)) {
 		TC_PRINT("Fail to configure sensor GY271\n");
 		return TC_FAIL;
 	}
 
 	datas[0] = 0x02;
 	datas[1] = 0x00;
-	if (i2c_write(i2c_dev, datas, 2, 0x1E)) {
+	if (i2c_write(i2c_dev, datas, 2, GY271_ADDR)) {
 		TC_PRINT("Fail to configure sensor GY271\n");
 		return TC_FAIL;
 	}
+#endif
 
 	k_sleep(K_MSEC(1));
 
+#ifdef QMC_ADDR
+	/* Sensor data bits start from 0x00 to 0x05 */
+	datas[0] = 0x00;
+#else /* HMC_ADDR */
 	datas[0] = 0x03;
-	if (i2c_write(i2c_dev, datas, 1, 0x1E)) {
+#endif
+
+	if (i2c_write(i2c_dev, datas, 1, GY271_ADDR)) {
 		TC_PRINT("Fail to write to sensor GY271\n");
 		return TC_FAIL;
 	}
@@ -82,7 +104,7 @@ static int test_gy271(void)
 	(void)memset(datas, 0, sizeof(datas));
 
 	/* 4. verify i2c_read() */
-	if (i2c_read(i2c_dev, datas, 6, 0x1E)) {
+	if (i2c_read(i2c_dev, datas, 6, GY271_ADDR)) {
 		TC_PRINT("Fail to fetch sample from sensor GY271\n");
 		return TC_FAIL;
 	}
@@ -121,13 +143,19 @@ static int test_burst_gy271(void)
 		return TC_FAIL;
 	}
 
+#ifdef QMC_ADDR
+	if (i2c_reg_write_byte(i2c_dev, GY271_ADDR, 0x09, 0x01)) {
+		TC_PRINT("Fail to configure sensor GY271 QMC\n");
+	}
+#endif
+
 	datas[0] = 0x01;
 	datas[1] = 0x20;
 	datas[2] = 0x02;
 	datas[3] = 0x00;
 
 	/* 3. verify i2c_burst_write() */
-	if (i2c_burst_write(i2c_dev, 0x1E, 0x00, datas, 4)) {
+	if (i2c_burst_write(i2c_dev, GY271_ADDR, 0x00, datas, 4)) {
 		TC_PRINT("Fail to write to sensor GY271\n");
 		return TC_FAIL;
 	}
@@ -136,8 +164,14 @@ static int test_burst_gy271(void)
 
 	(void)memset(datas, 0, sizeof(datas));
 
+#ifdef QMC_ADDR
+	/* Sensor data bits start from 0x00 to 0x05 */
+	int start_bit = 0x00;
+#else /* HMC_ADDR */
+	int start_bit = 0x03;
+#endif
 	/* 4. verify i2c_burst_read() */
-	if (i2c_burst_read(i2c_dev, 0x1E, 0x03, datas, 6)) {
+	if (i2c_burst_read(i2c_dev, GY271_ADDR, start_bit, datas, 6)) {
 		TC_PRINT("Fail to fetch sample from sensor GY271\n");
 		return TC_FAIL;
 	}
