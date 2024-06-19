@@ -275,10 +275,6 @@ quit:
 	release_query(&ctx->queries[i]);
 
 free_buf:
-	if (dns_data) {
-		net_buf_unref(dns_data);
-	}
-
 	if (dns_cname) {
 		net_buf_unref(dns_cname);
 	}
