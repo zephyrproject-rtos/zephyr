@@ -560,6 +560,15 @@ test_i2c_vcnl4040: vcnl4040@51 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
+apds_9306: apds9306@52 {
+	compatible = "avago,apds9306";
+	reg = <0x52>;
+	status = "okay";
+	gain = <1>;
+	resolution = <13>;
+	frequency = <2000>;
+};
+
 test_i2c_bmi160: bmi160@52 {
 	compatible = "bosch,bmi160";
 	reg = <0x52>;
