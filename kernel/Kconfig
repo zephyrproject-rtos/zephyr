@@ -9,6 +9,12 @@ module = KERNEL
 module-str = kernel
 source "subsys/logging/Kconfig.template.log_config"
 
+config KERNEL_WARN_LONG_TIME_PENDING
+	bool "Generate warn for long time pending wait for event"
+	help
+	  Generate warning for long-time pending wait for event,
+	  this might indicate buffer leaks or deadlock is happening.
+
 config MULTITHREADING
 	bool "Multi-threading" if ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y

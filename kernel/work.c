@@ -671,6 +671,13 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		}
 
 		if (work == NULL) {
+			/* Disable */
+#if defined(CONFIG_KERNEL_WARN_LONG_TIME_PENDING)
+			int backup = _current->long_time_warns;
+
+			_current->long_time_warns = -1;
+#endif /* CONFIG_KERNEL_WARN_LONG_TIME_PENDING */
+
 			/* Nothing's had a chance to add work since we took
 			 * the lock, and we didn't find work nor got asked to
 			 * stop.  Just go to sleep: when something happens the
@@ -679,6 +686,11 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 
 			(void)z_sched_wait(&lock, key, &queue->notifyq,
 					   K_FOREVER, NULL);
+
+			/* Restore */
+#if defined(CONFIG_KERNEL_WARN_LONG_TIME_PENDING)
+			_current->long_time_warns = backup;
+#endif /* CONFIG_KERNEL_WARN_LONG_TIME_PENDING */
 			continue;
 		}
 

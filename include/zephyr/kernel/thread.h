@@ -372,6 +372,10 @@ struct k_thread {
 	_wait_q_t  halt_queue;
 #endif /* CONFIG_SMP */
 
+#ifdef CONFIG_KERNEL_WARN_LONG_TIME_PENDING
+	int long_time_warns;
+#endif /* CONFIG_KERNEL_WARN_LONG_TIME_PENDING */
+
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
 };

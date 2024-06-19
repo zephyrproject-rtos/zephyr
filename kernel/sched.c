@@ -691,6 +691,42 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	 * held.
 	 */
 	(void) k_spin_lock(&_sched_spinlock);
+
+#if defined(CONFIG_KERNEL_WARN_LONG_TIME_PENDING)
+	int seconds = (_current)->long_time_warns;
+
+	if (seconds >= 0 &&
+	    (K_TIMEOUT_EQ(timeout, K_FOREVER) ||
+	     (timeout.ticks > K_SECONDS(seconds).ticks))) {
+		uint32_t ref = k_uptime_get_32(), end;
+		k_ticks_t elipsed;
+		int ret;
+
+		pend_locked(_current, wait_q, K_SECONDS(seconds));
+		k_spin_release(lock);
+
+		ret = z_swap(&_sched_spinlock, key);
+		if (ret != -EAGAIN) {
+			return ret;
+		}
+
+		end = k_uptime_get_32();
+
+		LOG_WRN("%s blocked for %u secs",
+			k_thread_name_get(_current), (end - ref) / MSEC_PER_SEC);
+
+		/* Continue with left timeout if not K_FOREVER */
+		if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+			elipsed = k_ms_to_ticks_ceil32(end - ref);
+			timeout.ticks -= MIN(timeout.ticks, elipsed);
+		}
+
+		/* Lock again */
+		(void) k_spin_lock(&_sched_spinlock);
+		(void) k_spin_lock(lock);
+	}
+#endif /* CONFIG_KERNEL_WARN_LONG_TIME_PENDING */
+
 	pend_locked(_current, wait_q, timeout);
 	k_spin_release(lock);
 	return z_swap(&_sched_spinlock, key);

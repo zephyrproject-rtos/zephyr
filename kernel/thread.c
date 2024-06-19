@@ -648,6 +648,11 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 
+#ifdef CONFIG_KERNEL_WARN_LONG_TIME_PENDING
+	/* Disable by default */
+	new_thread->long_time_warns = -1;
+#endif /* CONFIG_KERNEL_WARN_LONG_TIME_PENDING */
+
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, create, new_thread);
 
 	return stack_ptr;
