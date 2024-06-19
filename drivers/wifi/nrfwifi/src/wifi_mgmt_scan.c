@@ -192,7 +192,7 @@ int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *pa
 			}
 
 			scan_info->scan_params.center_frequency[k++] = nrf_wifi_utils_chan_to_freq(
-				fmac_dev_ctx->fpriv->opriv, band, params->band_chan[i].channel);
+				band, params->band_chan[i].channel);
 
 			if (scan_info->scan_params.center_frequency[k - 1] == -1) {
 				LOG_ERR("%s: Invalid channel %d", __func__,
@@ -414,23 +414,16 @@ void nrf_wifi_rx_bcn_prb_resp_frm(void *vif_ctx,
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 
-	frame_length = nrf_wifi_osal_nbuf_data_size(fmac_dev_ctx->fpriv->opriv,
-						    nwb);
+	frame_length = nrf_wifi_osal_nbuf_data_size(nwb);
 
 	if (frame_length > CONFIG_WIFI_MGMT_RAW_SCAN_RESULT_LENGTH) {
-		nrf_wifi_osal_mem_cpy(fmac_dev_ctx->fpriv->opriv,
-				      &bcn_prb_resp_info.data,
-				      nrf_wifi_osal_nbuf_data_get(
-						fmac_dev_ctx->fpriv->opriv,
-						nwb),
+		nrf_wifi_osal_mem_cpy(&bcn_prb_resp_info.data,
+				      nrf_wifi_osal_nbuf_data_get(nwb),
 				      CONFIG_WIFI_MGMT_RAW_SCAN_RESULT_LENGTH);
 
 	} else {
-		nrf_wifi_osal_mem_cpy(fmac_dev_ctx->fpriv->opriv,
-				      &bcn_prb_resp_info.data,
-				      nrf_wifi_osal_nbuf_data_get(
-					      fmac_dev_ctx->fpriv->opriv,
-					      nwb),
+		nrf_wifi_osal_mem_cpy(&bcn_prb_resp_info.data,
+				      nrf_wifi_osal_nbuf_data_get(nwb),
 				      frame_length);
 	}
 
