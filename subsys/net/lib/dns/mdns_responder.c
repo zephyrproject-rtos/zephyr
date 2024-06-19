@@ -659,8 +659,6 @@ static int dispatcher_cb(void *my_ctx, int sock,
 		NET_DBG("%s read failed (%d)", "mDNS", ret);
 	}
 
-	net_buf_unref(dns_data);
-
 	return ret;
 }
 
