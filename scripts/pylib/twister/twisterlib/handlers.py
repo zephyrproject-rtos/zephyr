@@ -18,6 +18,7 @@ import sys
 import threading
 import time
 
+from pathlib import Path
 from queue import Queue, Empty
 from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
 from twisterlib.error import TwisterException
@@ -241,7 +242,11 @@ class BinaryHandler(Handler):
             # os.path.join cannot be used on a Mock object, so we are
             # explicitly checking the type
             if isinstance(self.instance.platform, Platform):
-                resc = os.path.join(self.options.coverage_basedir, self.instance.platform.resc)
+                for board_dir in self.options.board_root:
+                    path = os.path.join(Path(board_dir).parent, self.instance.platform.resc)
+                    if os.path.exists(path):
+                        resc = path
+                        break
                 uart = self.instance.platform.uart
                 command = ["renode-test",
                             "--variable", "KEYWORDS:" + keywords,

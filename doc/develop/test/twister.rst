@@ -615,8 +615,11 @@ harness_config: <harness configuration options>
         If the scope is set to ``function``, DUT is launched for every test case
         in python script. For ``session`` scope, DUT is launched only once.
 
-    robot_test_path: <robot file path> (default empty)
-        Specify a path to a file containing a Robot Framework test suite to be run.
+    robot_testsuite: <robot file path> (default empty)
+        Specify one or more paths to a file containing a Robot Framework test suite to be run.
+
+    robot_option: <robot option> (default empty)
+        One or more options to be send to robotframework.
 
     bsim_exe_name: <string>
         If provided, the executable filename when copying to BabbleSim's bin
@@ -673,7 +676,33 @@ harness_config: <harness configuration options>
           robot.example:
             harness: robot
             harness_config:
-              robot_test_path: [robot file path]
+              robot_testsuite: [robot file path]
+
+    It can be more than one test suite using a list.
+
+    .. code-block:: yaml
+
+        tests:
+          robot.example:
+            harness: robot
+            harness_config:
+              robot_testsuite:
+                - [robot file path 1]
+                - [robot file path 2]
+                - [robot file path n]
+
+    One or more options can be passed to robotframework.
+
+    .. code-block:: yaml
+
+        tests:
+          robot.example:
+            harness: robot
+            harness_config:
+              robot_testsuite: [robot file path]
+              robot_option:
+                - --exclude tag
+                - --stop-on-error
 
 filter: <expression>
     Filter whether the test scenario should be run by evaluating an expression
