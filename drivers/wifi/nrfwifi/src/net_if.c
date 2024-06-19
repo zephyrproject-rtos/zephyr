@@ -487,8 +487,7 @@ enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_
 	}
 #endif
 
-	if (!nrf_wifi_utils_is_mac_addr_valid(fmac_dev_ctx->fpriv->opriv,
-	    vif_ctx_zep->mac_addr.addr)) {
+	if (!nrf_wifi_utils_is_mac_addr_valid(vif_ctx_zep->mac_addr.addr)) {
 		LOG_ERR("%s: Invalid MAC address: %s",
 			__func__,
 			net_sprint_ll_addr(vif_ctx_zep->mac_addr.addr,
@@ -682,8 +681,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	mac_addr = net_if_get_link_addr(vif_ctx_zep->zep_net_if_ctx)->addr;
 	mac_addr_len = net_if_get_link_addr(vif_ctx_zep->zep_net_if_ctx)->len;
 
-	if (!nrf_wifi_utils_is_mac_addr_valid(fmac_dev_ctx->fpriv->opriv,
-					      mac_addr)) {
+	if (!nrf_wifi_utils_is_mac_addr_valid(mac_addr)) {
 		status = nrf_wifi_get_mac_addr(vif_ctx_zep);
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: Failed to get MAC address",

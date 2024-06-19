@@ -203,15 +203,13 @@ int nrf_wifi_get_power_save_config(const struct device *dev,
 	}
 
 	do {
-		nrf_wifi_osal_sleep_ms(fmac_dev_ctx->fpriv->opriv,
-					1);
+		nrf_wifi_osal_sleep_ms(1);
 		 count++;
 	} while ((vif_ctx_zep->ps_config_info_evnt == false) &&
 		 (count < NRF_WIFI_FMAC_PS_CONF_EVNT_RECV_TIMEOUT));
 
 	if (count == NRF_WIFI_FMAC_PS_CONF_EVNT_RECV_TIMEOUT) {
-		nrf_wifi_osal_log_err(fmac_dev_ctx->fpriv->opriv,
-				      "%s: Timed out",
+		nrf_wifi_osal_log_err("%s: Timed out",
 				      __func__);
 		goto out;
 	}
@@ -697,19 +695,16 @@ void nrf_wifi_event_proc_twt_sleep_zep(void *vif_ctx,
 
 	switch (sleep_evnt->info.type) {
 	case TWT_BLOCK_TX:
-		nrf_wifi_osal_spinlock_take(fmac_dev_ctx->fpriv->opriv,
-					    def_dev_ctx->tx_config.tx_lock);
+		nrf_wifi_osal_spinlock_take(def_dev_ctx->tx_config.tx_lock);
 
 		def_dev_ctx->twt_sleep_status = NRF_WIFI_FMAC_TWT_STATE_SLEEP;
 
 		wifi_mgmt_raise_twt_sleep_state(vif_ctx_zep->zep_net_if_ctx,
 						WIFI_TWT_STATE_SLEEP);
-		nrf_wifi_osal_spinlock_rel(fmac_dev_ctx->fpriv->opriv,
-					    def_dev_ctx->tx_config.tx_lock);
+		nrf_wifi_osal_spinlock_rel(def_dev_ctx->tx_config.tx_lock);
 	break;
 	case TWT_UNBLOCK_TX:
-		nrf_wifi_osal_spinlock_take(fmac_dev_ctx->fpriv->opriv,
-					    def_dev_ctx->tx_config.tx_lock);
+		nrf_wifi_osal_spinlock_take(def_dev_ctx->tx_config.tx_lock);
 		def_dev_ctx->twt_sleep_status = NRF_WIFI_FMAC_TWT_STATE_AWAKE;
 		wifi_mgmt_raise_twt_sleep_state(vif_ctx_zep->zep_net_if_ctx,
 						WIFI_TWT_STATE_AWAKE);
@@ -722,8 +717,7 @@ void nrf_wifi_event_proc_twt_sleep_zep(void *vif_ctx,
 			}
 		}
 #endif
-		nrf_wifi_osal_spinlock_rel(fmac_dev_ctx->fpriv->opriv,
-				def_dev_ctx->tx_config.tx_lock);
+		nrf_wifi_osal_spinlock_rel(def_dev_ctx->tx_config.tx_lock);
 	break;
 	default:
 	break;

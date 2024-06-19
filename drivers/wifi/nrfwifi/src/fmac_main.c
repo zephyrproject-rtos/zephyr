@@ -45,6 +45,7 @@
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
+extern const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops;
 
 /* 3 bytes for addreess, 3 bytes for length */
 #define MAX_PKT_RAM_TX_ALIGN_OVERHEAD 6
@@ -260,7 +261,7 @@ static void nrf_wifi_process_rssi_from_rx(void *vif_ctx,
 
 	vif_ctx_zep->rssi = MBM_TO_DBM(signal);
 	vif_ctx_zep->rssi_record_timestamp_us =
-		nrf_wifi_osal_time_get_curr_us(fmac_dev_ctx->fpriv->opriv);
+		nrf_wifi_osal_time_get_curr_us();
 }
 #endif /* CONFIG_NRF70_STA_MODE */
 
@@ -763,11 +764,21 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	callbk_fns.get_conn_info_callbk_fn = nrf_wifi_supp_event_proc_get_conn_info;
 #endif /* CONFIG_NRF70_STA_MODE */
 
+	/* The OSAL layer needs to be initialized before any other initialization
+	 * so that other layers (like FW IF,HW IF etc) have access to OS ops
+	 */
+	nrf_wifi_osal_init(&nrf_wifi_os_zep_ops);
+
 	rpu_drv_priv_zep.fmac_priv = nrf_wifi_fmac_init(&data_config,
 							rx_buf_pools,
 							&callbk_fns);
 #else /* !CONFIG_NRF70_RADIO_TEST */
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+
+	/* The OSAL layer needs to be initialized before any other initialization
+	 * so that other layers (like FW IF,HW IF etc) have access to OS ops
+	 */
+	nrf_wifi_osal_init(&nrf_wifi_os_zep_ops);
 
 	rpu_drv_priv_zep.fmac_priv = nrf_wifi_fmac_init_rt();
 #endif /* CONFIG_NRF70_RADIO_TEST */
@@ -809,6 +820,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 #ifdef CONFIG_NRF70_RADIO_TEST
 fmac_deinit:
 	nrf_wifi_fmac_deinit_rt(rpu_drv_priv_zep.fmac_priv);
+	nrf_wifi_osal_deinit();
 #endif /* CONFIG_NRF70_RADIO_TEST */
 err:
 	return -1;
