@@ -506,6 +506,11 @@ Networking
   * ISN generation now uses SHA-256 instead of MD5. Moreover it now relies on PSA APIs
     instead of legacy Mbed TLS functions for hash computation.
 
+* mDNS:
+
+  * Fixed an issue where the mDNS Responder did not work when the mDNS Resolver was also enabled.
+    The mDNS Resolver and mDNS Responder can now be used simultaneously.
+
 USB
 ***
 
