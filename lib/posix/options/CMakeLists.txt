@@ -133,6 +133,10 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_READER_WRITER_LOCKS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_READER_WRITER_LOCKS rwlock.c)
 endif()
 
+if (NOT CONFIG_TC_PROVIDES_POSIX_REALTIME_SIGNALS)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_REALTIME_SIGNALS rtsig.c)
+endif()
+
 if (NOT CONFIG_TC_PROVIDES_POSIX_SEMAPHORES)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SEMAPHORES semaphore.c)
 endif()
