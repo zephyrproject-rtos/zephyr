@@ -1,6 +1,7 @@
 # BMA4XX 3-axis accelerometer config options
 #
 # Copyright (c) 2023 Google LLC
+# Copyright (c) 2024 Croxel Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,6 +11,7 @@ config BMA4XX
 	depends on DT_HAS_BOSCH_BMA4XX_ENABLED
 	depends on SENSOR_ASYNC_API
 	select I2C
+	select RTIO_WORKQ
 	help
 	  Enable driver for Bosch BMA4XX (I2C-based)
 
