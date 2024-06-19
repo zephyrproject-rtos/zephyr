@@ -251,7 +251,8 @@ int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
 
 	if (flags & USB_TRANS_WRITE) {
 		/* start writing first chunk */
-		k_work_submit_to_queue(&USB_WORK_Q, &trans->work);
+		ret = k_work_submit_to_queue(&USB_WORK_Q, &trans->work);
+		ret = (ret < 0) ? ret : 0;
 	} else {
 		/* ready to read, clear NAK */
 		ret = usb_dc_ep_read_continue(ep);
