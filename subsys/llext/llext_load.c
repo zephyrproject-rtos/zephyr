@@ -38,27 +38,6 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
 
-elf_shdr_t *llext_section_by_name(struct llext_loader *ldr, const char *search_name)
-{
-	int i;
-
-	for (i = 0; i < ldr->sect_cnt; ++i) {
-		elf_shdr_t *shdr = ldr->sect_hdrs + i;
-		const char *name = llext_peek(ldr,
-					      ldr->sects[LLEXT_MEM_SHSTRTAB].sh_offset +
-					      shdr->sh_name);
-		if (!name) {
-			/* The peek() method isn't supported */
-			return NULL;
-		}
-		if (!strcmp(name, search_name)) {
-			return shdr;
-		}
-	}
-
-	return NULL;
-}
-
 /*
  * Load basic ELF file data
  */
