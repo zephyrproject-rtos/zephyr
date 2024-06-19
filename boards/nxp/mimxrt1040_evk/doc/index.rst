@@ -122,6 +122,8 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 |           |            | :ref:`rk043fn02h_ct`, and           |
 |           |            | :ref:`rk043fn66hs_ctg` shields      |
 +-----------+------------+-------------------------------------+
+| UART      | NXP NW61x  | M.2 WIFI/BT module                  |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in
 :zephyr_file:`boards/nxp/mimxrt1040_evk/mimxrt1040_evk_defconfig`
@@ -162,6 +164,14 @@ The MIMXRT1040 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_01 | LPI2C1_SDA      | I2C Data                  |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_06 | LPUART3_TX      | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_07 | LPUART3_RX      | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_04 | LPUART3_CTS_b   | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_05 | LPUART3_RTS_b   | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
 
 .. note::
         In order to use the SPI peripheral on this board, resistors R350, R346,
@@ -182,7 +192,20 @@ Serial Port
 ===========
 
 The MIMXRT1040 SoC has eight UARTs. ``LPUART1`` is configured for the console,
+``LPUART3`` for the Bluetooth Host Controller Interface (BT HCI),
 and the remaining UARTs are not used.
+
+Fetch Binary Blobs
+==================
+
+The board Bluetooth/WiFi module requires fetching some binary blob files, to do
+that run the command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
+.. note:: Only Bluetooth functionality is currently supported.
 
 Programming and Debugging
 *************************
@@ -303,6 +326,16 @@ steps:
 
 #. Reset by pressing SW1
 
+Bluetooth Module
+----------------
+
+For Murate 2EL M.2 Mdoule, the following hardware rework needs to be applied,
+Solder 0 ohm resistors for R96, and R93.
+Remove resistors from R497, R498, R456 and R457.
+
+And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
+
+For the debugger fails to connect with the following error, please refer to section `WiFi Module`.
 
 WiFi Module
 -----------
