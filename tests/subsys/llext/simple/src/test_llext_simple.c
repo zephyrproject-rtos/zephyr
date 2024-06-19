@@ -287,6 +287,37 @@ ZTEST(llext, test_pre_located)
 }
 #endif
 
+#if defined(CONFIG_LLEXT_STORAGE_WRITABLE)
+static LLEXT_CONST uint8_t find_section_ext[] ELF_ALIGN = {
+	#include "hello_world.inc"
+};
+
+ZTEST(llext, test_find_section)
+{
+	/* Reuses the hello_world extension. This exploits the fact that in the
+	 * STORAGE_WRITABLE cases, the symbol addresses will be inside the ELF
+	 * file buffer.
+	 */
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(find_section_ext, ARRAY_SIZE(find_section_ext));
+	struct llext_loader *loader = &buf_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+
+	int res = llext_load(loader, "find_section", &ext, &ldr_parm);
+
+	zassert_ok(res, "load should succeed");
+
+	uintptr_t symbol_ptr = (uintptr_t)llext_find_sym(&ext->exp_tab, "number");
+	uintptr_t section_ptr = (uintptr_t)find_section_ext
+				+ llext_find_section(loader, ".data");
+
+	zassert_equal(symbol_ptr, section_ptr,
+		      "number (%p) is not at .data section start (%p)",
+		      symbol_ptr, section_ptr);
+}
+#endif
+
 /*
  * Ensure that EXPORT_SYMBOL does indeed provide a symbol and a valid address
  * to it.
