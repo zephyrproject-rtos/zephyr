@@ -1,5 +1,6 @@
 identifier: max32672evkit
 name: max32672evkit
+vendor: adi
 type: mcu
 arch: arm
 toolchain:
