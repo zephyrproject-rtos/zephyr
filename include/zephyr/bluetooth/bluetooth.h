@@ -236,7 +236,8 @@ int bt_enable(bt_ready_cb_t cb);
  * with settings_load() before reenabling the stack.
  *
  * This API does _not_ clear previously registered callbacks
- * like @ref bt_le_scan_cb_register and @ref bt_conn_cb_register.
+ * like @ref bt_le_scan_cb_register, @ref bt_conn_cb_register
+ * AND @ref bt_br_discovery_cb_register.
  * That is, the application shall not re-register them when
  * the Bluetooth subsystem is re-enabled later.
  *
@@ -2578,6 +2579,8 @@ struct bt_br_discovery_param {
  * @param results Storage for discovery results.
  * @param count Number of results in storage. Valid range: 1-255.
  * @param cb Callback to notify discovery results.
+ *           May be NULL if callback registration through
+ *           @ref bt_br_discovery_cb_register is preferred.
  *
  * @return Zero on success or error code otherwise, positive in case
  * of protocol error or negative (POSIX) in case of stack internal error
@@ -2596,6 +2599,48 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_br_discovery_stop(void);
+
+struct bt_br_discovery_cb {
+
+	/**
+	 * @brief Advertisement packet and scan response received callback.
+	 *
+	 * @param result Storage used for discovery results
+	 */
+	void (*recv)(const struct bt_br_discovery_result *result);
+
+	/** @brief The inquiry has stopped after discovery timeout.
+	 *
+	 * @param results Storage used for discovery results
+	 * @param count Number of valid discovery results.
+	 */
+	void (*timeout)(const struct bt_br_discovery_result *results,
+				  size_t count);
+
+	sys_snode_t node;
+};
+
+/**
+ * @brief Register discovery packet callbacks.
+ *
+ * Adds the callback structure to the list of callback structures that monitors
+ * inquiry activity.
+ *
+ * This callback will be called for all inquiry activity, regardless of what
+ * API was used to start the discovery.
+ *
+ * @param cb Callback struct. Must point to memory that remains valid.
+ */
+void bt_br_discovery_cb_register(struct bt_br_discovery_cb *cb);
+
+/**
+ * @brief Unregister discovery packet callbacks.
+ *
+ * Remove the callback structure from the list of discovery callbacks.
+ *
+ * @param cb Callback struct. Must point to memory that remains valid.
+ */
+void bt_br_discovery_cb_unregister(struct bt_br_discovery_cb *cb);
 
 struct bt_br_oob {
 	/** BR/EDR address. */
