@@ -75,6 +75,7 @@ config MINIMAL_LIBC
 	imply COMMON_LIBC_MALLOC
 	imply COMMON_LIBC_CALLOC
 	imply COMMON_LIBC_REALLOCARRAY
+	select POSIX_DEVICE_IO
 	help
 	  Build with minimal C library.
 

@@ -235,6 +235,15 @@ void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 	return entry->obj;
 }
 
+struct k_mutex *z_get_fd_lock(int fd)
+{
+	if (_check_fd(fd) < 0) {
+		return NULL;
+	}
+
+	return &fdtable[fd].lock;
+}
+
 int z_reserve_fd(void)
 {
 	int fd;

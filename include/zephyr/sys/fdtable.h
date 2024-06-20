@@ -149,6 +149,15 @@ void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 			      struct k_mutex **lock);
 
 /**
+ * @brief Get lock from file descriptor.
+ *
+ * @param fd File descriptor previously returned by z_reserve_fd()
+ *
+ * @return Mutex lock or NULL
+ */
+struct k_mutex *z_get_fd_lock(int fd);
+
+/**
  * @brief Get the mutex and condition variable associated with the given object and vtable.
  *
  * @param obj Object previously returned by a call to e.g. @ref z_get_fd_obj.

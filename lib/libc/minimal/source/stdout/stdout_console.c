@@ -7,6 +7,7 @@
  */
 
 #include <stdio.h>
+#include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <string.h>
@@ -40,7 +41,22 @@ static inline int z_vrfy_zephyr_fputc(int c, FILE *stream)
 
 int fputc(int c, FILE *stream)
 {
-	return zephyr_fputc(c, stream);
+	int rc;
+#ifndef CONFIG_USERSPACE
+	struct k_mutex *lock = z_get_fd_lock(POINTER_TO_INT(stream) - 1);
+
+	if ((lock == NULL) || k_mutex_lock(lock, K_FOREVER)) {
+		return EOF;
+	}
+#endif
+
+	rc = zephyr_fputc(c, stream);
+
+#ifndef CONFIG_USERSPACE
+	k_mutex_unlock(lock);
+#endif
+
+	return rc;
 }
 
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
@@ -56,13 +72,13 @@ int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
 #undef putc
 int putc(int c, FILE *stream)
 {
-	return zephyr_fputc(c, stream);
+	return fputc(c, stream);
 }
 
 #undef putchar
 int putchar(int c)
 {
-	return zephyr_fputc(c, stdout);
+	return putc(c, stdout);
 }
 
 size_t z_impl_zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
@@ -111,7 +127,22 @@ static inline size_t z_vrfy_zephyr_fwrite(const void *ZRESTRICT ptr,
 size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
 			  FILE *ZRESTRICT stream)
 {
-	return zephyr_fwrite(ptr, size, nitems, stream);
+	size_t sz;
+#ifndef CONFIG_USERSPACE
+	struct k_mutex *lock = z_get_fd_lock(POINTER_TO_INT(stream) - 1);
+
+	if ((lock == NULL) || k_mutex_lock(lock, K_FOREVER)) {
+		return EOF;
+	}
+#endif
+
+	sz = zephyr_fwrite(ptr, size, nitems, stream);
+
+#ifndef CONFIG_USERSPACE
+	k_mutex_unlock(lock);
+#endif
+
+	return sz;
 }
 
 
