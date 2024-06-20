@@ -236,7 +236,7 @@
 			ranges = <0x41008000 0x41008000 0x200>;
 
 			porta: gpio@41008000 {
-				compatible = "atmel,pic32cxsg-gpio";
+				compatible = "atmel,sam0-gpio";
 				reg = <0x41008000 0x80>;
 				gpio-controller;
 				#gpio-cells = <2>;

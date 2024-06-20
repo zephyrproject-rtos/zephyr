@@ -11,7 +11,7 @@
 
 / {
 	model = "PIC32CX SG41 Curiosity Ultra";
-	compatible = "pic32cx1025sg41,cult", "microchip,pic32cx1025sg41128", "microchip,pic32cx1025sg41";
+	compatible = "pic32cxsg41,cult", "microchip,pic32cx1025sg41128", "microchip,pic32cxsg";
 
 	chosen {
 		zephyr,console = &sercom4;
@@ -23,7 +23,7 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		userled1 = &led1;
-/*		userled2 = &led2; */
+		userled2 = &led2; 
 		pwm-led1 = &pwm_led1;
 		sw1 = &button1;
 		sw2 = &button2;
@@ -36,12 +36,10 @@
 			gpios = <&portc 21 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED 1";
 		};
-/*
 		led2: led_2 {
 			gpios = <&porta 16 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED 2";
 		};
-*/
 	};
 
 	pwmleds {
