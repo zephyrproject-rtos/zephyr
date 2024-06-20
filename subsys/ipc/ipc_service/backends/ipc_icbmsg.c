@@ -139,6 +139,14 @@ enum ept_bounding_state {
 	EPT_READY,		/* Bounding is done. Bound callback was called. */
 };
 
+enum ept_rebound_state {
+	EPT_NORMAL = 0,		/* No endpoint rebounding is needed. */
+	EPT_DEREGISTERED,	/* Endpoint was deregistered. */
+	EPT_REBOUNDING,		/* Rebounding was requested, waiting for work queue to
+				 * start rebounding process.
+				 */
+};
+
 struct channel_config {
 	uint8_t *blocks_ptr;	/* Address where the blocks start. */
 	size_t block_size;	/* Size of one block. */
@@ -159,6 +167,7 @@ struct icbmsg_config {
 struct ept_data {
 	const struct ipc_ept_cfg *cfg;	/* Endpoint configuration. */
 	atomic_t state;			/* Bounding state. */
+	atomic_t rebound_state;		/* Rebounding state. */
 	uint8_t addr;			/* Endpoint address. */
 };
 
@@ -735,6 +744,18 @@ static void ept_bound_process(struct k_work *item)
 		}
 		k_mutex_unlock(&dev_data->mutex);
 	}
+
+	/* Check if any endpoint is ready to rebound and call the callback if it is. */
+	for (i = 0; i < NUM_EPT; i++) {
+		ept = &dev_data->ept[i];
+		matching_state = atomic_cas(&ept->rebound_state, EPT_REBOUNDING,
+						EPT_NORMAL);
+		if (matching_state) {
+			if (ept->cfg->cb.bound != NULL) {
+				ept->cfg->cb.bound(ept->cfg->priv);
+			}
+		}
+	}
 }
 
 /**
@@ -758,7 +779,10 @@ static struct ept_data *get_ept_and_rx_validate(struct backend_data *dev_data,
 	state = atomic_get(&ept->state);
 
 	if (state == EPT_READY) {
-		/* Valid state - nothing to do. */
+		/* Ready state, ensure that it is not deregistered nor rebounding. */
+		if (atomic_get(&ept->rebound_state) != EPT_NORMAL) {
+			return NULL;
+		}
 	} else if (state == EPT_BOUNDING) {
 		/* Endpoint bound callback was not called yet - call it. */
 		atomic_set(&ept->state, EPT_READY);
@@ -1008,8 +1032,23 @@ static int register_ept(const struct device *instance, void **token,
 {
 	struct backend_data *dev_data = instance->data;
 	struct ept_data *ept = NULL;
+	bool matching_state;
 	int ept_index;
 	int r = 0;
+
+	/* Try to find endpoint to rebound */
+	for (ept_index = 0; ept_index < NUM_EPT; ept_index++) {
+		ept = &dev_data->ept[ept_index];
+		if (ept->cfg == cfg) {
+			matching_state = atomic_cas(&ept->rebound_state, EPT_DEREGISTERED,
+						   EPT_REBOUNDING);
+			if (!matching_state) {
+				return -EINVAL;
+			}
+			schedule_ept_bound_process(dev_data);
+			return 0;
+		}
+	}
 
 	/* Reserve new endpoint index. */
 	ept_index = atomic_inc(&dev_data->flags) & FLAG_EPT_COUNT_MASK;
@@ -1035,6 +1074,23 @@ static int register_ept(const struct device *instance, void **token,
 	schedule_ept_bound_process(dev_data);
 
 	return r;
+}
+
+/**
+ * Backend endpoint deregistration callback.
+ */
+static int deregister_ept(const struct device *instance, void *token)
+{
+	struct ept_data *ept = token;
+	bool matching_state;
+
+	matching_state = atomic_cas(&ept->rebound_state, EPT_NORMAL, EPT_DEREGISTERED);
+
+	if (!matching_state) {
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 /**
@@ -1161,7 +1217,7 @@ const static struct ipc_service_backend backend_ops = {
 	.close_instance = NULL, /* not implemented */
 	.send = send,
 	.register_endpoint = register_ept,
-	.deregister_endpoint = NULL, /* not implemented */
+	.deregister_endpoint = deregister_ept,
 	.get_tx_buffer_size = get_tx_buffer_size,
 	.get_tx_buffer = get_tx_buffer,
 	.drop_tx_buffer = drop_tx_buffer,
