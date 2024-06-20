@@ -4634,7 +4634,7 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 static bool process_pending_cmd(k_timeout_t timeout)
 {
 	if (!k_fifo_is_empty(&bt_dev.cmd_tx_queue)) {
-		if (k_sem_take(&bt_dev.ncmd_sem, K_NO_WAIT) == 0) {
+		if (k_sem_take(&bt_dev.ncmd_sem, timeout) == 0) {
 			hci_core_send_cmd();
 			return true;
 		}
