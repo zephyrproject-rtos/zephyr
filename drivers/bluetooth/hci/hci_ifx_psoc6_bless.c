@@ -198,6 +198,10 @@ static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
 
 	net_buf_unref(buf);
 
+	/* Unblock psoc6 bless rx thread to process controller events
+	 * (by calling Cy_BLE_ProcessEvents function)
+	 */
+	k_sem_give(&psoc6_bless_rx_sem);
 	return 0;
 }
 
