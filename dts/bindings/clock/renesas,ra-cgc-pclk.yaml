@@ -1,9 +1,9 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA8 Clock Control Peripheral Clock
+description: Renesas RA Clock Control Peripheral Clock
 
-compatible: "renesas,ra8-cgc-pclk"
+compatible: "renesas,ra-cgc-pclk"
 
 include: [clock-controller.yaml, base.yaml]
 
