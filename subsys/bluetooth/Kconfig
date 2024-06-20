@@ -191,6 +191,7 @@ rsource "shell/Kconfig"
 rsource "crypto/Kconfig"
 rsource "lib/Kconfig"
 rsource "Kconfig.logging"
+rsource "Kconfig.debug"
 
 config BT_USE_PSA_API
 	bool "Use PSA APIs instead of TinyCrypt for crypto operations"
