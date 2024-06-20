@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		flash0 = &mx25lm51245;
+	};
+};
+
+&mx25lm51245 {
+	/* First step : only SPI/STR supported */
+
+	/delete-property/ address-length;
+	address-length = "ADDR_3_BYTE";
+};
+
+&mspi1 {
+	/* request 57 for xSPI1 */
+	dmas = <&gpdma1 4 57 STM32_DMA_PERIPH_TX
+		&gpdma1 5 57 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+};
+
+&gpdma1 {
+	status = "disabled";
+};
