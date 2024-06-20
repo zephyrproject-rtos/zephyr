@@ -57,7 +57,11 @@ int main(void)
 	       max_period, MIN_PERIOD);
 
 	period = max_period;
+#ifndef CONFIG_COVERAGE
 	while (1) {
+#else
+	for (int i = 0; i < 4; i++) {
+#endif
 		ret = pwm_set_dt(&pwm_led0, period, period / 2U);
 		if (ret) {
 			printk("Error %d: failed to set pulse width\n", ret);
