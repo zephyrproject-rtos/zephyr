@@ -149,15 +149,15 @@ static inline bool is_block_desc(uint64_t desc)
 
 static inline uint64_t *pte_desc_table(uint64_t desc)
 {
-	uint64_t address = desc & GENMASK(47, PAGE_SIZE_SHIFT);
+	uint64_t address = desc & PTE_PHYSADDR_MASK;
 
+	/* tables use a 1:1 physical:virtual mapping */
 	return (uint64_t *)address;
 }
 
 static inline bool is_desc_block_aligned(uint64_t desc, unsigned int level_size)
 {
-	uint64_t mask = GENMASK(47, PAGE_SIZE_SHIFT);
-	bool aligned = !((desc & mask) & (level_size - 1));
+	bool aligned = (desc & PTE_PHYSADDR_MASK & (level_size - 1)) == 0;
 
 	if (!aligned) {
 		MMU_DEBUG("misaligned desc 0x%016llx for block size 0x%x\n",
@@ -170,7 +170,7 @@ static inline bool is_desc_block_aligned(uint64_t desc, unsigned int level_size)
 static inline bool is_desc_superset(uint64_t desc1, uint64_t desc2,
 				    unsigned int level)
 {
-	uint64_t mask = DESC_ATTRS_MASK | GENMASK(47, LEVEL_TO_VA_SIZE_SHIFT(level));
+	uint64_t mask = DESC_ATTRS_MASK | GENMASK64(47, LEVEL_TO_VA_SIZE_SHIFT(level));
 
 	return (desc1 & mask) == (desc2 & mask);
 }
@@ -1103,7 +1103,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 	}
 
 	if (phys) {
-		*phys = par & GENMASK(47, 12);
+		*phys = par & GENMASK64(47, 12);
 	}
 	return 0;
 }
