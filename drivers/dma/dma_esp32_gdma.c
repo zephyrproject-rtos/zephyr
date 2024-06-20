@@ -122,40 +122,6 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 	}
 }
 
-#if defined(CONFIG_SOC_SERIES_ESP32C3)
-static int dma_esp32_enable_interrupt(const struct device *dev,
-				      struct dma_esp32_channel *dma_channel)
-{
-	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-
-	return esp_intr_enable(config->irq_src[dma_channel->channel_id]);
-}
-
-static int dma_esp32_disable_interrupt(const struct device *dev,
-				       struct dma_esp32_channel *dma_channel)
-{
-	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-
-	return esp_intr_disable(config->irq_src[dma_channel->channel_id]);
-}
-#else
-static int dma_esp32_enable_interrupt(const struct device *dev,
-				      struct dma_esp32_channel *dma_channel)
-{
-	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-
-	return esp_intr_enable(dma_channel->intr_handle);
-}
-
-static int dma_esp32_disable_interrupt(const struct device *dev,
-				       struct dma_esp32_channel *dma_channel)
-{
-	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-
-	return esp_intr_disable(dma_channel->intr_handle);
-}
-
-#endif
 static int dma_esp32_config_rx_descriptor(struct dma_esp32_channel *dma_channel,
 					   struct dma_block_config *block)
 {
@@ -338,15 +304,16 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	if (dma_esp32_enable_interrupt(dev, dma_channel)) {
-		return -EINVAL;
-	}
-
 	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
 		struct dma_esp32_channel *dma_channel_rx =
 			&config->dma_channel[dma_channel->channel_id * 2];
 		struct dma_esp32_channel *dma_channel_tx =
 			&config->dma_channel[(dma_channel->channel_id * 2) + 1];
+
+		gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
+					UINT32_MAX, true);
+		gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
+					GDMA_LL_EVENT_TX_EOF, true);
 
 		gdma_ll_rx_set_desc_addr(data->hal.dev, dma_channel->channel_id,
 					 (int32_t)&dma_channel_rx->desc);
@@ -357,10 +324,14 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 		gdma_ll_tx_start(data->hal.dev, dma_channel->channel_id);
 	} else {
 		if (dma_channel->dir == DMA_RX) {
+			gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
+					UINT32_MAX, true);
 			gdma_ll_rx_set_desc_addr(data->hal.dev, dma_channel->channel_id,
 						 (int32_t)&dma_channel->desc);
 			gdma_ll_rx_start(data->hal.dev, dma_channel->channel_id);
 		} else if (dma_channel->dir == DMA_TX) {
+			gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
+					GDMA_LL_EVENT_TX_EOF, true);
 			gdma_ll_tx_set_desc_addr(data->hal.dev, dma_channel->channel_id,
 						 (int32_t)&dma_channel->desc);
 			gdma_ll_tx_start(data->hal.dev, dma_channel->channel_id);
@@ -384,18 +355,22 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	if (dma_esp32_disable_interrupt(dev, dma_channel)) {
-		return -EINVAL;
-	}
-
 	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
+		gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
+				UINT32_MAX, false);
+		gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
+				GDMA_LL_EVENT_TX_EOF, false);
 		gdma_ll_rx_stop(data->hal.dev, dma_channel->channel_id);
 		gdma_ll_tx_stop(data->hal.dev, dma_channel->channel_id);
 	}
 
 	if (dma_channel->dir == DMA_RX) {
+		gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
+				UINT32_MAX, false);
 		gdma_ll_rx_stop(data->hal.dev, dma_channel->channel_id);
 	} else if (dma_channel->dir == DMA_TX) {
+		gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
+				GDMA_LL_EVENT_TX_EOF, false);
 		gdma_ll_tx_stop(data->hal.dev, dma_channel->channel_id);
 	}
 
