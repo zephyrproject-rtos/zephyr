@@ -1,0 +1,4 @@
+tests:
+  testing.ztest.ztest_params.ztest_params:
+    tags:
+      - test_framework
