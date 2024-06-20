@@ -5324,10 +5324,6 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 
 	if (params->subscribe) {
 		params->subscribe(conn, att_err, params);
-	} else if (params->write) {
-		/* TODO: Remove after deprecation */
-		LOG_WRN("write callback is deprecated, use subscribe cb instead");
-		params->write(conn, att_err, NULL);
 	}
 }
 
