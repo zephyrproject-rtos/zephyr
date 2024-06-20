@@ -1,0 +1,29 @@
+# EFR32 radio board
+
+# Copyright (c) 2024 Capgemini
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SLWRB4180B
+
+config CMU_HFXO_FREQ
+	default 38400000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+config FLASH_BASE_ADDRESS
+	hex
+	default 0x0
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+if SOC_GECKO_USE_RAIL
+
+config FPU
+	default y
+
+endif # SOC_GECKO_USE_RAIL
+
+endif # BOARD_SLWRB4180B
