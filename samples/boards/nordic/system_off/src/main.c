@@ -17,6 +17,9 @@
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/sys/util.h>
 #include <hal/nrf_gpio.h>
+#if CONFIG_SOC_NRF54H20_CPUAPP
+#include <hal/nrf_memconf.h>
+#endif
 
 #if defined(CONFIG_GRTC_WAKEUP_ENABLE)
 #include <zephyr/drivers/timer/nrf_grtc_timer.h>
@@ -125,6 +128,11 @@ int main(void)
 	}
 
 	if (do_poweroff) {
+#if CONFIG_SOC_NRF54H20_CPUAPP
+		/* Local RAM0 (TCM) is currently not used so retention can be disabled. */
+		nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET_MASK, false);
+		nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET_MASK, false);
+#endif
 		sys_poweroff();
 	} else {
 		k_sleep(K_FOREVER);
