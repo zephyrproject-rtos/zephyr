@@ -11,6 +11,10 @@
 #ifndef ZEPHYR_MODEM_PIPELINK_
 #define ZEPHYR_MODEM_PIPELINK_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Modem pipelink
  * @defgroup modem_pipelink Modem pipelink
@@ -156,5 +160,9 @@ void modem_pipelink_notify_disconnected(struct modem_pipelink *link);
 /** @} */
 
 /** @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_MODEM_PIPELINK_ */
