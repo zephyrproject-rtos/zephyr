@@ -66,12 +66,14 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WPA_PSK,
 	/** WPA/WPA2/WPA3 PSK security. */
 	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
+	/** DPP security */
+	WIFI_SECURITY_TYPE_DPP,
 
-/** @cond INTERNAL_HIDDEN */
+	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
 	WIFI_SECURITY_TYPE_MAX = __WIFI_SECURITY_TYPE_AFTER_LAST - 1,
 	WIFI_SECURITY_TYPE_UNKNOWN
-/** @endcond */
+	/** @endcond */
 };
 
 /** Helper function to get user-friendly security type name. */
