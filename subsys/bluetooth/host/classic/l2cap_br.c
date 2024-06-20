@@ -677,6 +677,13 @@ static void l2cap_br_conf_add_mtu(struct net_buf *buf, const uint16_t mtu)
 	net_buf_add_le16(buf, mtu);
 }
 
+static void l2cap_br_conf_add_opt(struct net_buf *buf, const struct bt_l2cap_conf_opt *opt)
+{
+	net_buf_add_u8(buf, opt->type & BT_L2CAP_CONF_MASK);
+	net_buf_add_u8(buf, opt->len);
+	net_buf_add_mem(buf, opt->data, opt->len);
+}
+
 static void l2cap_br_conf(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_sig_hdr *hdr;
@@ -1198,7 +1205,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	struct bt_l2cap_conf_req *req;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_conf_rsp *rsp;
-	struct bt_l2cap_conf_opt *opt;
+	struct bt_l2cap_conf_opt *opt = NULL;
 	uint16_t flags, dcid, opt_len, hint, result = BT_L2CAP_CONF_SUCCESS;
 
 	if (buf->len < sizeof(*req)) {
@@ -1257,6 +1264,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		default:
 			if (!hint) {
 				LOG_DBG("option %u not handled", opt->type);
+				result = BT_L2CAP_CONF_UNKNOWN_OPT;
 				goto send_rsp;
 			}
 
@@ -1285,6 +1293,10 @@ send_rsp:
 	 */
 	if (result == BT_L2CAP_CONF_UNACCEPT) {
 		l2cap_br_conf_add_mtu(buf, BR_CHAN(chan)->tx.mtu);
+	} else if (result == BT_L2CAP_CONF_UNKNOWN_OPT) {
+		if (opt) {
+			l2cap_br_conf_add_opt(buf, opt);
+		}
 	}
 
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
