@@ -2153,7 +2153,8 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
 	conn_handle = sys_le16_to_cpu(evt->conn_handle);
 
-	LOG_DBG("status 0x%02x adv_handle %u conn_handle 0x%02x num %u", evt->status,
+	LOG_DBG("status 0x%02x %s adv_handle %u conn_handle 0x%02x num %u",
+		evt->status, bt_hci_err_to_str(evt->status),
 		evt->adv_handle, conn_handle, evt->num_completed_ext_adv_evts);
 
 	if (!adv) {

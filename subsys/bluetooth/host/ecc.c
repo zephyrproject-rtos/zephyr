@@ -207,7 +207,7 @@ void bt_hci_evt_le_pkey_complete(struct net_buf *buf)
 	struct bt_hci_evt_le_p256_public_key_complete *evt = (void *)buf->data;
 	struct bt_pub_key_cb *cb;
 
-	LOG_DBG("status: 0x%02x", evt->status);
+	LOG_DBG("status: 0x%02x %s", evt->status, bt_hci_err_to_str(evt->status));
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
 
@@ -229,7 +229,7 @@ void bt_hci_evt_le_dhkey_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_generate_dhkey_complete *evt = (void *)buf->data;
 
-	LOG_DBG("status: 0x%02x", evt->status);
+	LOG_DBG("status: 0x%02x %s", evt->status, bt_hci_err_to_str(evt->status));
 
 	if (dh_key_cb) {
 		bt_dh_key_cb_t cb = dh_key_cb;

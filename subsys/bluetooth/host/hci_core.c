@@ -432,7 +432,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	status = cmd(buf)->status;
 	if (status) {
-		LOG_WRN("opcode 0x%04x status 0x%02x", opcode, status);
+		LOG_WRN("opcode 0x%04x status 0x%02x %s", opcode,
+			status, bt_hci_err_to_str(status));
 		net_buf_unref(buf);
 
 		switch (status) {
@@ -944,7 +945,8 @@ static void hci_disconn_complete_prio(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	LOG_DBG("status 0x%02x handle %u reason 0x%02x", evt->status, handle, evt->reason);
+	LOG_DBG("status 0x%02x %s handle %u reason 0x%02x",
+		evt->status, bt_hci_err_to_str(evt->status), handle, evt->reason);
 
 	if (evt->status) {
 		return;
@@ -971,7 +973,8 @@ static void hci_disconn_complete(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	LOG_DBG("status 0x%02x handle %u reason 0x%02x", evt->status, handle, evt->reason);
+	LOG_DBG("status 0x%02x %s handle %u reason 0x%02x",
+		evt->status, bt_hci_err_to_str(evt->status), handle, evt->reason);
 
 	if (evt->status) {
 		return;
@@ -1404,7 +1407,8 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	struct bt_conn *conn;
 	uint8_t id;
 
-	LOG_DBG("status 0x%02x handle %u role %u peer %s peer RPA %s", evt->status, handle,
+	LOG_DBG("status 0x%02x %s handle %u role %u peer %s peer RPA %s",
+		evt->status, bt_hci_err_to_str(evt->status), handle,
 		evt->role, bt_addr_le_str(&evt->peer_addr), bt_addr_str(&evt->peer_rpa));
 	LOG_DBG("local RPA %s", bt_addr_str(&evt->local_rpa));
 
@@ -1587,7 +1591,8 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 		return;
 	}
 
-	LOG_DBG("status 0x%02x handle %u role %u peer %s peer RPA %s", evt->status, handle,
+	LOG_DBG("status 0x%02x %s handle %u role %u peer %s peer RPA %s",
+		evt->status, bt_hci_err_to_str(evt->status), handle,
 		evt->role, bt_addr_le_str(&evt->peer_addr), bt_addr_str(&evt->peer_rpa));
 	LOG_DBG("local RPA %s", bt_addr_str(&evt->local_rpa));
 
@@ -1665,7 +1670,7 @@ static void enh_conn_complete_error_handle(uint8_t status)
 		return;
 	}
 
-	LOG_WRN("Unexpected status 0x%02x", status);
+	LOG_WRN("Unexpected status 0x%02x %s", status, bt_hci_err_to_str(status));
 }
 
 static void le_enh_conn_complete(struct net_buf *buf)
@@ -1736,7 +1741,8 @@ static void le_legacy_conn_complete(struct net_buf *buf)
 		return;
 	}
 
-	LOG_DBG("status 0x%02x role %u %s", evt->status, evt->role,
+	LOG_DBG("status 0x%02x %s role %u %s",
+		evt->status, bt_hci_err_to_str(evt->status), evt->role,
 		bt_addr_le_str(&evt->peer_addr));
 
 	enh.status         = evt->status;
@@ -1846,7 +1852,8 @@ static void le_phy_update_complete(struct net_buf *buf)
 		return;
 	}
 
-	LOG_DBG("PHY updated: status: 0x%02x, tx: %u, rx: %u", evt->status, evt->tx_phy,
+	LOG_DBG("PHY updated: status: 0x%02x %s, tx: %u, rx: %u",
+		evt->status, bt_hci_err_to_str(evt->status), evt->tx_phy,
 		evt->rx_phy);
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
@@ -1964,7 +1971,8 @@ static void le_conn_update_complete(struct net_buf *buf)
 
 	handle = sys_le16_to_cpu(evt->handle);
 
-	LOG_DBG("status 0x%02x, handle %u", evt->status, handle);
+	LOG_DBG("status 0x%02x %s, handle %u",
+		evt->status, bt_hci_err_to_str(evt->status), handle);
 
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
 	if (!conn) {
@@ -2184,7 +2192,8 @@ static void hci_encrypt_change(struct net_buf *buf)
 	uint8_t status = evt->status;
 	struct bt_conn *conn;
 
-	LOG_DBG("status 0x%02x handle %u encrypt 0x%02x", evt->status, handle, evt->encrypt);
+	LOG_DBG("status 0x%02x %s handle %u encrypt 0x%02x",
+		evt->status, bt_hci_err_to_str(evt->status), handle, evt->encrypt);
 
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
@@ -2265,7 +2274,8 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 
 	handle = sys_le16_to_cpu(evt->handle);
 
-	LOG_DBG("status 0x%02x handle %u", evt->status, handle);
+	LOG_DBG("status 0x%02x %s handle %u",
+		evt->status, bt_hci_err_to_str(evt->status), handle);
 
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
@@ -2425,7 +2435,7 @@ static void hci_reset_complete(struct net_buf *buf)
 	uint8_t status = buf->data[0];
 	atomic_t flags;
 
-	LOG_DBG("status 0x%02x", status);
+	LOG_DBG("status 0x%02x %s", status, bt_hci_err_to_str(status));
 
 	if (status) {
 		return;
@@ -2448,7 +2458,8 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	/* Original command buffer. */
 	struct net_buf *buf = NULL;
 
-	LOG_DBG("opcode 0x%04x status 0x%02x buf %p", opcode, status, evt_buf);
+	LOG_DBG("opcode 0x%04x status 0x%02x %s buf %p", opcode,
+		status, bt_hci_err_to_str(status), evt_buf);
 
 	/* Unsolicited cmd complete. This does not complete a command.
 	 * The controller can send these for effect of the `ncmd` field.
@@ -2523,7 +2534,8 @@ static void hci_cmd_complete(struct net_buf *buf)
 	 * The generation of this command ignores `ncmd_sem`, so should not be given here.
 	 */
 	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
-		LOG_WRN("Unexpected HOST_NUM_COMPLETED_PACKETS (status 0x%02x)", status);
+		LOG_WRN("Unexpected HOST_NUM_COMPLETED_PACKETS, status 0x%02x %s",
+			status, bt_hci_err_to_str(status));
 		return;
 	}
 
@@ -3033,7 +3045,7 @@ static void read_local_ver_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_local_version_info *rp = (void *)buf->data;
 
-	LOG_DBG("status 0x%02x", rp->status);
+	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
 	bt_dev.hci_version = rp->hci_version;
 	bt_dev.hci_revision = sys_le16_to_cpu(rp->hci_revision);
@@ -3046,7 +3058,7 @@ static void read_le_features_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_le_read_local_features *rp = (void *)buf->data;
 
-	LOG_DBG("status 0x%02x", rp->status);
+	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
 	memcpy(bt_dev.le.features, rp->features, sizeof(bt_dev.le.features));
 }
@@ -3058,7 +3070,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
 	uint16_t pkts;
 
-	LOG_DBG("status 0x%02x", rp->status);
+	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
 	/* If LE-side has buffers we can ignore the BR/EDR values */
 	if (bt_dev.le.acl_mtu) {
@@ -3079,7 +3091,7 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_le_read_buffer_size *rp = (void *)buf->data;
 
-	LOG_DBG("status 0x%02x", rp->status);
+	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
 #if defined(CONFIG_BT_CONN)
 	uint16_t acl_mtu = sys_le16_to_cpu(rp->le_max_len);
@@ -3101,7 +3113,7 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 #if defined(CONFIG_BT_ISO)
 	struct bt_hci_rp_le_read_buffer_size_v2 *rp = (void *)buf->data;
 
-	LOG_DBG("status %u", rp->status);
+	LOG_DBG("status %u %s", rp->status, bt_hci_err_to_str(rp->status));
 
 #if defined(CONFIG_BT_CONN)
 	uint16_t acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
@@ -3151,7 +3163,7 @@ static void read_supported_commands_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_supported_commands *rp = (void *)buf->data;
 
-	LOG_DBG("status 0x%02x", rp->status);
+	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
 	memcpy(bt_dev.supported_commands, rp->commands,
 	       sizeof(bt_dev.supported_commands));
@@ -3168,7 +3180,7 @@ static void read_local_features_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_local_features *rp = (void *)buf->data;
 
-	LOG_DBG("status 0x%02x", rp->status);
+	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
 	memcpy(bt_dev.features[0], rp->features, sizeof(bt_dev.features[0]));
 }
@@ -3177,7 +3189,7 @@ static void le_read_supp_states_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_le_read_supp_states *rp = (void *)buf->data;
 
-	LOG_DBG("status 0x%02x", rp->status);
+	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
 	bt_dev.le.states = sys_get_le64(rp->le_states);
 }
@@ -3187,7 +3199,7 @@ static void le_read_maximum_adv_data_len_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_le_read_max_adv_data_len *rp = (void *)buf->data;
 
-	LOG_DBG("status 0x%02x", rp->status);
+	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
 	bt_dev.le.max_adv_data_len = sys_le16_to_cpu(rp->max_adv_data_len);
 }
