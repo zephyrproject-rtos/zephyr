@@ -4668,10 +4668,10 @@ static void tx_processor(struct k_work *item)
 	}
 }
 
-K_WORK_DELAYABLE_DEFINE(tx_work, tx_processor);
+static K_WORK_DEFINE(tx_work, tx_processor);
 
 void bt_tx_irq_raise(void)
 {
 	LOG_DBG("kick TX");
-	k_work_reschedule(&tx_work, K_NO_WAIT);
+	k_work_submit(&tx_work);
 }
