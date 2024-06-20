@@ -1,9 +1,9 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA8 Sub-Clock
+description: Renesas RA Sub-Clock
 
-compatible: "renesas,ra8-cgc-subclk"
+compatible: "renesas,ra-cgc-subclk"
 
 include: fixed-clock.yaml
 
