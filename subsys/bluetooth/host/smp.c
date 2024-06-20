@@ -4702,8 +4702,8 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 	struct bt_conn *conn = chan->conn;
 
-	LOG_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x", chan, conn,
-		conn->handle, conn->encrypt, hci_status);
+	LOG_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x %s", chan, conn,
+		conn->handle, conn->encrypt, hci_status, bt_hci_err_to_str(hci_status));
 
 	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
 		/* We where not waiting for encryption procedure.
