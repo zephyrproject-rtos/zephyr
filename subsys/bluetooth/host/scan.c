@@ -1263,7 +1263,8 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 
 	if (evt->status) {
 		/* No sync created, don't notify app */
-		LOG_DBG("PAST receive failed with status 0x%02X", evt->status);
+		LOG_DBG("PAST receive failed with status 0x%02X %s",
+			evt->status, bt_hci_err_to_str(evt->status));
 		return;
 	}
 
