@@ -8,7 +8,10 @@ Overview
 ********
 
 This sample can be used for basic power measurement and as an example of
-deep sleep on Nordic platforms.
+deep sleep on Nordic platforms. After pin reset application goes to system off.
+Pressing Button 0 wakes up the system and after printing messages goes again to
+system off. Pressing Button 1 wakes up the system but after printing messages
+system goes to sleep instead of system off.
 
 RAM Retention
 =============

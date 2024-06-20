@@ -16,6 +16,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/sys/util.h>
+#include <hal/nrf_gpio.h>
 
 #if defined(CONFIG_GRTC_WAKEUP_ENABLE)
 #include <zephyr/drivers/timer/nrf_grtc_timer.h>
@@ -23,6 +24,8 @@
 #endif
 #if defined(CONFIG_GPIO_WAKEUP_ENABLE)
 static const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
+static const struct gpio_dt_spec sw1 = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
+static const uint32_t port_sw1 = DT_PROP(DT_GPIO_CTLR_BY_IDX(DT_ALIAS(sw1), gpios, 0), port);
 #endif
 #if defined(CONFIG_LPCOMP_WAKEUP_ENABLE)
 static const struct device *comp_dev = DEVICE_DT_GET(DT_NODELABEL(comp));
@@ -32,10 +35,17 @@ int main(void)
 {
 	int rc;
 	const struct device *const cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	uint32_t nrf_pin_sw1 = 32 * port_sw1 + sw1.pin;
+	bool do_poweroff = true;
 
 	if (!device_is_ready(cons)) {
 		printf("%s: device not ready.\n", cons->name);
 		return 0;
+	}
+
+	if (nrf_gpio_pin_latch_get(nrf_pin_sw1)) {
+		nrf_gpio_pin_latch_clear(nrf_pin_sw1);
+		do_poweroff = false;
 	}
 
 	printf("\n%s system off demo\n", CONFIG_BOARD);
@@ -72,13 +82,29 @@ int main(void)
 		return 0;
 	}
 
+	rc = gpio_pin_configure_dt(&sw1, GPIO_INPUT);
+	if (rc < 0) {
+		printf("Could not configure sw1 GPIO (%d)\n", rc);
+		return 0;
+	}
+
 	rc = gpio_pin_interrupt_configure_dt(&sw0, GPIO_INT_LEVEL_ACTIVE);
 	if (rc < 0) {
 		printf("Could not configure sw0 GPIO interrupt (%d)\n", rc);
 		return 0;
 	}
 
-	printf("Entering system off; press sw0 to restart\n");
+	rc = gpio_pin_interrupt_configure_dt(&sw1, GPIO_INT_LEVEL_ACTIVE);
+	if (rc < 0) {
+		printf("Could not configure sw0 GPIO interrupt (%d)\n", rc);
+		return 0;
+	}
+
+	if (do_poweroff) {
+		printf("Entering system off; press sw0 or sw1 to restart\n");
+	} else {
+		printf("Button sw1 pressed, not entering system off\n");
+	}
 #endif
 #if defined(CONFIG_LPCOMP_WAKEUP_ENABLE)
 	comparator_set_trigger(comp_dev, COMPARATOR_TRIGGER_BOTH_EDGES);
@@ -98,7 +124,11 @@ int main(void)
 		retained_update();
 	}
 
-	sys_poweroff();
+	if (do_poweroff) {
+		sys_poweroff();
+	} else {
+		k_sleep(K_FOREVER);
+	}
 
 	return 0;
 }
