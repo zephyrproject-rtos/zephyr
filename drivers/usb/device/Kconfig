@@ -78,6 +78,7 @@ config USB_DC_SMARTBOND
 	default y
 	select CLOCK_CONTROL_SMARTBOND
 	select CLOCK_CONTROL
+	select DMA
 	depends on DT_HAS_RENESAS_SMARTBOND_USBD_ENABLED
 	help
 	  SmartBond family USB device controller Driver.
