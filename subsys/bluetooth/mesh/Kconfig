@@ -1152,6 +1152,7 @@ endif # BT_MESH_OP_AGG_CLI
 
 config BT_MESH_LARGE_COMP_DATA_SRV
 	bool "Support for Large Composition Data Server Model"
+	depends on BT_MESH_MODEL_EXTENSIONS
 	help
 	  Enable support for the Large Composition Data Server model.
 
