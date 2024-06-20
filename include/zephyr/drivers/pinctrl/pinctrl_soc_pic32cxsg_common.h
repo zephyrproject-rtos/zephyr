@@ -38,14 +38,7 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param prop Property name.
  * @param idx Property entry index.
  */
-#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CXSG)
-#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)				\
-	((DT_PROP_BY_IDX(node_id, prop, idx)   << SAM_PINCTRL_PINMUX_POS)	\
-	 | (DT_PROP(node_id, bias_pull_up)     << SAM_PINCTRL_PULLUP_POS)	\
-	 | (DT_PROP(node_id, bias_pull_down)   << SAM_PINCTRL_PULLDOWN_POS)	\
-	 | (DT_PROP(node_id, drive_open_drain) << SAM_PINCTRL_OPENDRAIN_POS)	\
-	),
-#else /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CXSG */
+/* (CONFIG_SOC_FAMILY_MICROCHIP_PIC32CXSG) */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)				  \
 	((DT_PROP_BY_IDX(node_id, prop, idx)     << SAM_PINCTRL_PINMUX_POS)	  \
 	 | (DT_PROP(node_id, bias_pull_up)       << SAM_PINCTRL_PULLUP_POS)	  \
@@ -54,7 +47,6 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 | (DT_PROP(node_id, output_enable)      << SAM_PINCTRL_OUTPUTENABLE_POS) \
 	 | (DT_ENUM_IDX(node_id, drive_strength) << SAM_PINCTRL_DRIVESTRENGTH_POS)\
 	),
-#endif
 
 /**
  * @brief Utility macro to initialize state pins contained in a given property.
