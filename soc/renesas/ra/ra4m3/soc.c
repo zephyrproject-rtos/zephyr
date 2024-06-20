@@ -37,6 +37,7 @@ volatile uint32_t g_protect_pfswe_counter BSP_SECTION_EARLY_INIT;
 static int renesas_ra4m3_init(void)
 {
 	extern volatile uint16_t g_protect_counters[];
+
 	for (uint32_t i = 0; i < 4; i++) {
 		g_protect_counters[i] = 0;
 	}
@@ -61,7 +62,6 @@ static int renesas_ra4m3_init(void)
 
 	SystemCoreClock = BSP_MOCO_HZ;
 	g_protect_pfswe_counter = 0;
-	bsp_clock_init();
 
 	return 0;
 }
