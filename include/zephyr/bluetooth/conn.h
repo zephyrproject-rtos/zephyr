@@ -384,10 +384,6 @@ struct bt_security_info {
 	enum bt_security_flag flags;
 };
 
-/** Connection role (central or peripheral) */
-#define BT_CONN_ROLE_MASTER __DEPRECATED_MACRO BT_CONN_ROLE_CENTRAL
-#define BT_CONN_ROLE_SLAVE __DEPRECATED_MACRO BT_CONN_ROLE_PERIPHERAL
-
 /** Connection Info Structure */
 struct bt_conn_info {
 	/** Connection Type. */
