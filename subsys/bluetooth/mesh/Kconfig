@@ -1175,6 +1175,7 @@ if BT_MESH_PRIV_BEACONS
 
 config BT_MESH_PRIV_BEACON_SRV
 	bool "Support for Private Beacon Server Model"
+	depends on BT_MESH_MODEL_EXTENSIONS
 	help
 	  Enable support for the Private Beacon Server model.
 
