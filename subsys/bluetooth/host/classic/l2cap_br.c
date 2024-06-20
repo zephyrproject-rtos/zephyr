@@ -1467,6 +1467,16 @@ send_rsp:
 	rsp->scid = sys_cpu_to_le16(BR_CHAN(chan)->tx.cid);
 
 	/*
+	 * Core 5.4, Vol 3, Part A, section 4.5.
+	 * When used in the L2CAP_CONFIGURATION_RSP packet,
+	 * the continuation flag shall be set to one if the
+	 * flag is set to one in the Request, except for
+	 * those error conditions more appropriate for an
+	 * L2CAP_COMMAND_REJECT_RSP packet.
+	 */
+	rsp->flags = sys_cpu_to_le16(flags & BT_L2CAP_CONF_FLAGS_MASK);
+
+	/*
 	 * TODO: If options other than MTU became meaningful then processing
 	 * the options chain need to be modified and taken into account when
 	 * sending back to peer.
