@@ -111,6 +111,15 @@ elseif (CONFIG_NATIVE_LIBRARY)
     )
   endif()
 
+  if (CONFIG_PICOLIBC)
+    # In some distributions (Arch Linux) gcc builds by default with stack protection
+    # When building with picolibc, this results in the picolibc stack_protector code being built
+    # into the final binary. This causes trouble in some configurations. Let's prevent this
+    # combination
+    check_set_compiler_property(APPEND PROPERTY no_stack_protector "-fno-stack-protector")
+    zephyr_compile_options($<TARGET_PROPERTY:compiler,no_stack_protector>)
+  endif()
+
   if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
     target_compile_options(native_simulator INTERFACE $<TARGET_PROPERTY:compiler,warnings_as_errors>)
   endif()
