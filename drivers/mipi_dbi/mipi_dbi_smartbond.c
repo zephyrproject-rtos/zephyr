@@ -509,7 +509,7 @@ static int mipi_dbi_smartbond_pm_action(const struct device *dev, enum pm_device
 
 static int mipi_dbi_smartbond_init(const struct device *dev)
 {
-	const struct mipi_dbi_smartbond_config *config = dev->config;
+	__unused const struct mipi_dbi_smartbond_config *config = dev->config;
 	struct mipi_dbi_smartbond_data *data = dev->data;
 	int ret;
 
