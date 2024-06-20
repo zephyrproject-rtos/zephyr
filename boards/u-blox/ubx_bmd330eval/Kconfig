@@ -3,12 +3,6 @@
 # Copyright (c) 2021 u-blox AG
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_ENABLE_DCDC
-	bool "DCDC mode"
-	select SOC_DCDC_NRF52X
-	default y
-	depends on BOARD_UBX_BMD330EVAL
-
 # BT_CTLR depends on BT. When BT is enabled we should default to also
 # enabling the controller.
 config BT_CTLR
