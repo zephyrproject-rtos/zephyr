@@ -1,9 +1,9 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA8 Clock Generation Circuit external clock configuration
+description: Renesas RA Clock Generation Circuit external clock configuration
 
-compatible: "renesas,ra8-cgc-external-clock"
+compatible: "renesas,ra-cgc-external-clock"
 
 include: [fixed-clock.yaml, base.yaml]
 
