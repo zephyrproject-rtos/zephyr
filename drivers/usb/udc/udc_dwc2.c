@@ -2029,7 +2029,6 @@ static int dwc2_driver_preinit(const struct device *dev)
 
 	k_mutex_init(&data->mutex);
 
-	data->caps.rwup = true;
 	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
 
