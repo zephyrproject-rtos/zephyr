@@ -38,6 +38,7 @@ static int renesas_ra6e1_init(void)
 	uint32_t key;
 
 	extern volatile uint16_t g_protect_counters[];
+
 	for (uint32_t i = 0; i < 4; i++) {
 		g_protect_counters[i] = 0;
 	}
@@ -64,7 +65,6 @@ static int renesas_ra6e1_init(void)
 
 	SystemCoreClock = BSP_MOCO_HZ;
 	g_protect_pfswe_counter = 0;
-	bsp_clock_init();
 
 	irq_unlock(key);
 
