@@ -5,4 +5,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "../cyw20829/cyw20829.40-qfn.dtsi"
+#include "../cyw20829/cyw20829.56-qfn.dtsi"
