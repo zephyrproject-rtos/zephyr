@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <zephyr/net/buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
@@ -354,6 +355,12 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		buf = bt_hci_cmd_create(opcode, 0);
 		if (!buf) {
 			return -ENOBUFS;
+		}
+	} else {
+		/* `cmd(buf)` depends on this  */
+		if (net_buf_pool_get(buf->pool_id) != &hci_cmd_pool) {
+			__ASSERT_NO_MSG(false);
+			return -EINVAL;
 		}
 	}
 
