@@ -90,8 +90,32 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
   *
   * @return 0 on success or negative error value on failure.
   */
+__deprecated
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);
+
+/** Send a HCI command synchronously v2.
+  *
+  * This function is used for sending a HCI command synchronously. It can
+  * either be called for a buffer created using bt_hci_cmd_create(), or
+  * if the command has no parameters a NULL can be passed instead.
+  *
+  * The function will block until a Command Status or a Command Complete
+  * event is returned. If either of these have a non-zero status the function
+  * will return a negative error code and the response reference will not
+  * be set.
+  *
+  * @param opcode Command OpCode.
+  * @param buf    Command buffer or NULL (if no parameters).
+  * @param rsp    Place to store a reference to the command response. May
+  *               be NULL if the caller is not interested in the response
+  *               parameters
+  * @param rsp_len Length of the response buffer.
+  *
+  * @return 0 on success or negative error value on failure.
+  */
+int bt_hci_cmd_send_sync_v2(uint16_t opcode, struct net_buf *buf,
+			    void *rsp, uint16_t rsp_len);
 
 /** @brief Get connection handle for a connection.
  *
