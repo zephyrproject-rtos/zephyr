@@ -19,10 +19,6 @@
     };
 };
 
-&dma {
-    status = "okay";
-};
-
 &pinctrl {
     i2c2_default: i2c2_default {
         group1 {
