@@ -1,4 +1,4 @@
-.. _sensing_api:
+.. _sensing:
 
 Sensing Subsystem
 ########################
