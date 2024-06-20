@@ -33,15 +33,10 @@
     };
 };
 
-&spi2 {
-    status = "okay";
-};
-
 &lcdc {
     compatible = "renesas,smartbond-mipi-dbi";
     status = "okay";
     reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-    spi-dev = <&spi2>;
     pinctrl-0 = <&mipi_dbi_default>;
     pinctrl-1 = <&mipi_dbi_read>;
     pinctrl-2 = <&mipi_dbi_sleep>;
