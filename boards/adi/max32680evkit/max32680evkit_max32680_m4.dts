@@ -9,6 +9,7 @@
  #include <adi/max32/max32680.dtsi>
  #include <adi/max32/max32680-pinctrl.dtsi>
  #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	 model = "Analog Devices MAX32680EVKIT";
@@ -38,10 +39,12 @@
 		 pb1: pb1 {
 			 gpios = <&gpio0 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			 label = "SW1";
+			 zephyr,code = <INPUT_KEY_0>;
 		 };
 		 pb2: pb2 {
 			 gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			 label = "SW2";
+			 zephyr,code = <INPUT_KEY_1>;
 		 };
 	 };
 
