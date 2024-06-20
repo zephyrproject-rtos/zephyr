@@ -8,7 +8,7 @@ if(CONFIG_STM32_MEMMAP)
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
 board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32H7B3I-DISCO.stldr")
 else()
-board_runner_args(stm32cubeprogrammer "--erase" "--port=swd" "--reset-mode=hw" )
+board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw" )
 endif()
 
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
