@@ -959,3 +959,159 @@ ZTEST_F(nvs, test_nvs_cache_hash_quality)
 
 #endif
 }
+
+#if defined(CONFIG_NVS_DATA_CRC) && !defined(CONFIG_NVS_LOOKUP_CACHE)
+struct bad_ate_item_t {
+	const char *data;
+	size_t size;
+};
+
+typedef void (*bad_ate_item_callback_t)(struct nvs_ate *ate, struct bad_ate_item_t *items);
+
+/* The length of the data is wrong and overflows on nearby items data */
+static void test_nvs_undetected_bad_ate_length_callback(struct nvs_ate *ate,
+							struct bad_ate_item_t *items)
+{
+	/* Take data CRCs into account */
+	ate->offset = items[0].size + sizeof(uint32_t);
+	ate->len = items[1].size + sizeof(uint32_t) + /* This item data */
+		   items[2].size + sizeof(uint32_t) + /* The following item data */
+		   (items[3].size / 2); /* Half of the next item data */
+}
+
+static void test_nvs_undetected_bad_ate_main(struct nvs_fixture *fixture,
+					     bad_ate_item_callback_t callback_corrupt_ate)
+{
+	/* Make the first 2 items data size multiple of 4 bytes, so there is no need
+	 * to manually handle aligned writes to the flash area
+	 */
+	static const char item0_data[] = "Item 0.";
+	static const char item1_data[] = "Item 1 DEAD";
+	static const char item2_data[] = "This is item number 2!";
+	static const char item3_data[] = "Last item (#3).";
+	struct bad_ate_item_t items[4] = {
+		{ item0_data, sizeof(item0_data) },
+		{ item1_data, sizeof(item1_data) },
+		{ item2_data, sizeof(item2_data) },
+		{ item3_data, sizeof(item3_data) }
+	};
+	uint8_t buf[128];
+	int ret, i, count, data_bytes_per_sector, total_free_data_bytes;
+	struct nvs_ate ate;
+	uint32_t data_crc;
+
+	fixture->fs.sector_count = 3;
+	ret = nvs_mount(&fixture->fs);
+	zassert_true(ret == 0, "nvs_mount() failed: %d", ret);
+
+	/* Write a good item */
+	ret = nvs_write(&fixture->fs, 0, item0_data, sizeof(item0_data));
+	zassert_equal(ret, sizeof(item0_data), "nvs_write() failed: %d", ret);
+
+	/*
+	 * Write an item of which ATE has a valid CRC but contains corrupted data (to simulate a
+	 * 8-bit CRC issue)
+	 */
+	ate.id = 1;
+	callback_corrupt_ate(&ate, items); /* Corrupt the ATE offset and/or length */
+	ate.crc8 = crc8_ccitt(0xff, &ate, offsetof(struct nvs_ate, crc8));
+
+	/* Write the data part */
+	data_crc = crc32_ieee((const uint8_t *) item1_data, sizeof(item1_data));
+	memcpy(buf, item1_data, sizeof(item1_data));
+	memcpy(buf + sizeof(item1_data), &data_crc, sizeof(data_crc));
+	ret = flash_write(fixture->fs.flash_device, fixture->fs.offset + sizeof(item0_data) +
+			  sizeof(uint32_t), buf, sizeof(item1_data) + sizeof(data_crc));
+	zassert_true(ret == 0,  "flash_write() failed: %d", ret);
+
+	/* Write the ATE part */
+	ret = flash_write(fixture->fs.flash_device, fixture->fs.offset + fixture->fs.sector_size -
+			  sizeof(struct nvs_ate) * 4, &ate, sizeof(ate));
+	zassert_true(ret == 0,  "flash_write() failed: %d", ret);
+
+	/* Update the NVS */
+	fixture->fs.data_wra += sizeof(item1_data) + sizeof(data_crc);
+	fixture->fs.ate_wra -= sizeof(struct nvs_ate);
+
+	/* Write two more good items */
+	ret = nvs_write(&fixture->fs, 2, item2_data, sizeof(item2_data));
+	zassert_equal(ret, sizeof(item2_data), "nvs_write() failed: %d", ret);
+	ret = nvs_write(&fixture->fs, 3, item3_data, sizeof(item3_data));
+	zassert_equal(ret, sizeof(item3_data), "nvs_write() failed: %d", ret);
+
+	for (i = 0; i < ARRAY_SIZE(items); i++) {
+		memset(buf, 0, sizeof(buf));
+		ret = nvs_read(&fixture->fs, i, buf, sizeof(buf));
+		if (i == 1) {
+			zassert_equal(ret, -EIO,
+				      "nvs_read() failed with %d for bad item %d", ret, i);
+		} else {
+			zassert_true(ret >= 0,
+				     "nvs_read() failed with %d for good item %d", ret, i);
+			zassert_true(memcmp(items[i].data, buf, items[i].size) == 0,
+				     "item %d data is corrupted", i);
+		}
+	}
+
+	/* Mount does not detect the issue */
+	ret = nvs_mount(&fixture->fs);
+	zassert_true(ret == 0, "nvs_mount() failed: %d", ret);
+
+	/* Fill what remains of the sector (the GC is called as soon as a sector is closed because
+	 * there is no more room in it to write an item). Take into account the test data and the
+	 * mandatory reserved ATEs.
+	 * It is not possible to fill the sectors by just calling nvs_write() and expecting it to
+	 * return ENOSPC, because the GC does not terminate due to the corrupted length
+	 */
+	zassert_true(fixture->fs.ate_wra >> ADDR_SECT_SHIFT == 0, "bad current sector %d",
+		     fixture->fs.ate_wra >> ADDR_SECT_SHIFT);
+	data_bytes_per_sector = fixture->fs.sector_size - (4 * sizeof(struct nvs_ate));
+	total_free_data_bytes = data_bytes_per_sector * (fixture->fs.sector_count - 1) -
+				(sizeof(item0_data) + sizeof(item1_data) + sizeof(item2_data) +
+				sizeof(item3_data) + (4 * sizeof(struct nvs_ate)));
+	count = total_free_data_bytes / (sizeof(i) + sizeof(struct nvs_ate));
+	for (i = 0; i < count; i++) {
+		ret = nvs_write(&fixture->fs, 5, &i, sizeof(i));
+		zassert_equal(ret, sizeof(i), "nvs_write() failed with %d for item %d",
+			      ret, i);
+	}
+	ret = nvs_delete(&fixture->fs, 5);
+	zassert_true(ret == 0, "nvs_delete() failed: %d", ret);
+
+	/* Trigger the garbage collector by trying to write a big chunk of data */
+	memset(buf, 0xCC, sizeof(buf));
+	ret = nvs_write(&fixture->fs, 6, buf, sizeof(buf));
+	zassert_equal(ret, sizeof(buf), "nvs_write() failed : %d", ret);
+	zassert_true(fixture->fs.ate_wra >> ADDR_SECT_SHIFT == 2, "bad current sector %d",
+		     fixture->fs.ate_wra >> ADDR_SECT_SHIFT);
+
+	for (i = 0; i < ARRAY_SIZE(items); i++) {
+		memset(buf, 0, sizeof(buf));
+		ret = nvs_read(&fixture->fs, i, buf, sizeof(buf));
+		if (i == 1) {
+			zassert_equal(ret, -EIO,
+				      "nvs_read() failed with %d for bad item %d", ret, i);
+		} else {
+			zassert_true(ret >= 0,
+				     "nvs_read() failed with %d for good item %d", ret, i);
+			zassert_true(memcmp(items[i].data, buf, items[i].size) == 0,
+				     "item %d data is corrupted", i);
+		}
+	}
+}
+#endif
+
+/*
+ * Tamper an ATE length field value to simulate an ATE CRC-8 undetected error.
+ * Write 4 items of various data size, with the item #1 simulating a CRC-8 undetected error
+ * on the item data size. The data size is increased to overflow on item 2 and part of item 3.
+ * Thanks to the data CRC-32, reading such item returns an error.
+ * After running the garbage collector, the faulty item 1 has been copied with parts of the
+ * following items data. The other items are healthy and the NVS is still working.
+ */
+ZTEST_F(nvs, test_nvs_undetected_bad_ate_length)
+{
+#if defined(CONFIG_NVS_DATA_CRC) && !defined(CONFIG_NVS_LOOKUP_CACHE)
+	test_nvs_undetected_bad_ate_main(fixture, test_nvs_undetected_bad_ate_length_callback);
+#endif
+}
