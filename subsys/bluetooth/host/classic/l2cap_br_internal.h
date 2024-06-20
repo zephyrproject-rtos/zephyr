@@ -73,6 +73,9 @@ struct bt_l2cap_conn_rsp {
 #define BT_L2CAP_CONF_UNACCEPT          0x0001
 #define BT_L2CAP_CONF_REJECT            0x0002
 
+#define BT_L2CAP_CONF_FLAGS_C           BIT(0)
+#define BT_L2CAP_CONF_FLAGS_MASK        BT_L2CAP_CONF_FLAGS_C
+
 #define BT_L2CAP_CONF_REQ               0x04
 struct bt_l2cap_conf_req {
 	uint16_t dcid;
