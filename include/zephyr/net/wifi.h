@@ -54,6 +54,8 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WPA_PSK,
 	/** WPA/WPA2/WPA3 PSK security. */
 	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
+	/** DPP security */
+	WIFI_SECURITY_TYPE_DPP,
 	/** EAP TLS security - Enterprise. */
 	WIFI_SECURITY_TYPE_EAP_TLS,
 	/** EAP PEAP MSCHAPV2 security - Enterprise. */
