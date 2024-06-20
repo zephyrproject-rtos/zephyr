@@ -98,20 +98,6 @@ static inline int get_comparator(uint32_t chan, uint64_t *cc)
 }
 
 /*
- * Program a new callback <value> microseconds in the future
- */
-static void system_timeout_set_relative(uint64_t value)
-{
-	if (value <= NRF_GRTC_SYSCOUNTER_CCADD_MASK) {
-		nrfx_grtc_syscounter_cc_relative_set(&system_clock_channel_data, value, true,
-						     NRFX_GRTC_CC_RELATIVE_SYSCOUNTER);
-	} else {
-		nrfx_grtc_syscounter_cc_absolute_set(&system_clock_channel_data, value + counter(),
-						     true);
-	}
-}
-
-/*
  * Program a new callback in the absolute time given by <value>
  */
 static void system_timeout_set_abs(uint64_t value)
@@ -470,7 +456,7 @@ static int sys_clock_driver_init(void)
 	/* Use System LFCLK as the low-frequency clock source. */
 	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFCLK);
 #endif
-
+	k_busy_wait(1000);
 	IRQ_CONNECT(DT_IRQN(GRTC_NODE), DT_IRQ(GRTC_NODE, priority), nrfx_isr,
 		    nrfx_grtc_irq_handler, 0);
 
@@ -493,7 +479,7 @@ static int sys_clock_driver_init(void)
 
 	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		system_timeout_set_relative(CYC_PER_TICK);
+		system_timeout_set_abs(counter() + CYC_PER_TICK);
 	}
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
