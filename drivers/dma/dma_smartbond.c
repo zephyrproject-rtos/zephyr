@@ -840,7 +840,7 @@ static int dma_smartbond_get_status(const struct device *dev, uint32_t channel,
 
 	/* Convert transfers to bytes. */
 	stat->total_copied = dma_idx_reg * bus_width;
-	stat->pending_length = ((dma_len_reg + 1) - dma_idx_reg) * bus_width;
+	stat->pending_length = (dma_len_reg - dma_idx_reg) * bus_width;
 	stat->busy = DMA_CTRL_REG_GET_FIELD(DMA_ON, dma_ctrl_reg);
 	stat->dir = data->channel_data[channel].dir;
 
