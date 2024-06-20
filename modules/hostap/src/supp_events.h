@@ -63,6 +63,9 @@ int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
 					   enum net_event_wifi_cmd event,
 					   void *data);
 #endif /* CONFIG_AP */
+#if defined(CONFIG_WIFI_NM_HOSTAPD_AP) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP)
+void hostapd_handle_dpp_event(void *ctx, char *buf, size_t len);
+#endif
 
 #define REASON_CODE_LEN 18
 #define NM_WIFI_EVENT_STR_LEN 64
