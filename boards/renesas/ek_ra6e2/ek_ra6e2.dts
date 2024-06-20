@@ -97,6 +97,5 @@
 	source = <RA_PLL_SOURCE_MAIN_OSC>;
 	div = <RA_PLL_DIV_1>;
 	mul = <10 0>;
-	freq = <DT_FREQ_M(200)>;
 	status = "okay";
 };
