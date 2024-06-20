@@ -39,3 +39,4 @@ tests:
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1040_evk
       - mimxrt1060_evk
+      - frdm_ke17z512
