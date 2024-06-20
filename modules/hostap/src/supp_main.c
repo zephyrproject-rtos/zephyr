@@ -85,8 +85,20 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
+
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-DEFINE_WIFI_NM_INSTANCE(hostapd, &mgmt_ops);
+static const struct wifi_mgmt_ops mgmt_ap_ops = {
+	.set_btwt = supplicant_set_btwt,
+	.ap_enable = supplicant_ap_enable,
+	.ap_disable = supplicant_ap_disable,
+	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
+	.ap_bandwidth = supplicant_ap_bandwidth,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
+	.dpp_dispatch = hapd_dpp_dispatch,
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+};
+
+DEFINE_WIFI_NM_INSTANCE(hostapd, &mgmt_ap_ops);
 #endif
 
 #define WRITE_TIMEOUT 100 /* ms */
