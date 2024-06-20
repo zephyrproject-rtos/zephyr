@@ -13,6 +13,10 @@ menuconfig TASK_WDT
 	  per thread, even if the hardware supports only a single watchdog.
 
 if TASK_WDT
+config TASK_WDT_AUTO_INIT
+	bool "Automatically initialize task watchdog on SYS_INIT"
+	select EXPERIMENTAL
+
 config TASK_WDT_CHANNELS
 	int "Maximum number of task watchdog channels"
 	default 5
@@ -63,5 +67,23 @@ config TASK_WDT_SHELL
 	depends on SHELL
 	help
 	  Activate shell module that provides Task watchdog commands.
+
+config TASK_WDT_SYSWQ_STALL
+	bool "Monitor system work queue"
+	select EXPERIMENTAL
+	imply TASK_WDT_AUTO_INIT
+	help
+	  This option enables monitoring of the system work queue. If the
+	  system work queue is stalled, the task watchdog will trigger a
+	  system panic.
+
+config TASK_WDT_SYSWQ_STALL_TIMEOUT_MS
+	int "System work queue stall timeout (ms)"
+	depends on TASK_WDT_SYSWQ_STALL
+	default 1000
+	help
+	  The system work queue stall timeout specifies the maximum time in
+	  milliseconds that the system work queue is allowed to be stalled
+	  before the task watchdog triggers a system panic.
 
 endif
