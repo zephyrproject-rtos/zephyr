@@ -100,11 +100,11 @@
  * PTE descriptor can be Block descriptor or Table descriptor
  * or Page descriptor.
  */
-#define PTE_DESC_TYPE_MASK	3U
-#define PTE_BLOCK_DESC		1U
-#define PTE_TABLE_DESC		3U
-#define PTE_PAGE_DESC		3U
-#define PTE_INVALID_DESC	0U
+#define PTE_DESC_TYPE_MASK	3ULL
+#define PTE_BLOCK_DESC		1ULL
+#define PTE_TABLE_DESC		3ULL
+#define PTE_PAGE_DESC		3ULL
+#define PTE_INVALID_DESC	0ULL
 
 /*
  * Block and Page descriptor attributes fields
@@ -122,6 +122,11 @@
 #define PTE_BLOCK_DESC_NG		(1ULL << 11)
 #define PTE_BLOCK_DESC_PXN		(1ULL << 53)
 #define PTE_BLOCK_DESC_UXN		(1ULL << 54)
+
+/*
+ * Descriptor physical address field bits
+ */
+#define PTE_PHYSADDR_MASK		GENMASK64(47, PAGE_SIZE_SHIFT)
 
 /*
  * TCR definitions.
