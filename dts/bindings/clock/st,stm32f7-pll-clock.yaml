@@ -56,3 +56,9 @@ properties:
     description: |
         PLL division factor for PLL48CK
         Valid range: 2 - 15
+
+  div-r:
+    type: int
+    description: |
+        PLL division factor for PLLDSICLK
+        Valid range: 2 - 7
