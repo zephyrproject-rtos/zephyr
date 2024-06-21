@@ -66,4 +66,9 @@ config USE_RA_FSP_GPT
 	help
 	  Enable RA FSP GPT driver
 
+config USE_RA_FSP_AGT
+	bool
+	help
+	  Enable RA FSP AGT driver
+
 endif # HAS_RENESAS_RA_FSP

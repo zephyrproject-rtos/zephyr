@@ -493,6 +493,40 @@
 			zephyr,memory-region = "OPTION_SETTING_S";
 			status = "okay";
 		};
+
+		agt0: agt0@40221000 {
+			compatible = "renesas,ra-agt";
+			channel = <0>;
+			reg = <0x40221000 0x100>;
+			interrupts = <83 1>, <84 1>;
+			interrupt-names = "agti", "agtcmai";
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt1: agt0@40221100 {
+			compatible = "renesas,ra-agt";
+			channel = <1>;
+			reg = <0x40221100 0x100>;
+			interrupts = <85 1>, <86 1>;
+			interrupt-names = "agti", "agtcmai";
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
 	};
 };
 
