@@ -128,9 +128,9 @@ static int cmd_exchange_mtu(const struct shell *sh,
 	if (err == -EALREADY) {
 		shell_print(sh, "Already exchanged");
 	} else if (err) {
-		shell_print(sh, "Exchange failed (err %d)", err);
+		shell_print(sh, "%s failed (err %d)", "Exchange", err);
 	} else {
-		shell_print(sh, "Exchange pending");
+		shell_print(sh, "%s pending", "Exchange");
 	}
 
 	return err;
@@ -144,35 +144,35 @@ static void print_chrc_props(const struct shell *sh, uint8_t properties)
 	shell_print(sh, "Properties: ");
 
 	if (properties & BT_GATT_CHRC_BROADCAST) {
-		shell_print(sh, "[bcast]");
+		shell_print(sh, "[%s]", "bcast");
 	}
 
 	if (properties & BT_GATT_CHRC_READ) {
-		shell_print(sh, "[read]");
+		shell_print(sh, "[%s]", "read");
 	}
 
 	if (properties & BT_GATT_CHRC_WRITE) {
-		shell_print(sh, "[write]");
+		shell_print(sh, "[%s]", "write");
 	}
 
 	if (properties & BT_GATT_CHRC_WRITE_WITHOUT_RESP) {
-		shell_print(sh, "[write w/w rsp]");
+		shell_print(sh, "[%s]", "write w/w rsp");
 	}
 
 	if (properties & BT_GATT_CHRC_NOTIFY) {
-		shell_print(sh, "[notify]");
+		shell_print(sh, "[%s]", "notify");
 	}
 
 	if (properties & BT_GATT_CHRC_INDICATE) {
-		shell_print(sh, "[indicate]");
+		shell_print(sh, "[%s]", "indicate");
 	}
 
 	if (properties & BT_GATT_CHRC_AUTH) {
-		shell_print(sh, "[auth]");
+		shell_print(sh, "[%s]", "auth");
 	}
 
 	if (properties & BT_GATT_CHRC_EXT_PROP) {
-		shell_print(sh, "[ext prop]");
+		shell_print(sh, "[%s]", "ext prop");
 	}
 
 	shell_print(sh, "");
@@ -205,8 +205,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		gatt_chrc = attr->user_data;
 		bt_uuid_to_str(gatt_chrc->uuid, str, sizeof(str));
-		shell_print(ctx_shell, "Characteristic %s found: handle %x",
-			    str, attr->handle);
+		shell_print(ctx_shell, "%s %s found: handle %x",
+			    "Characteristic", str, attr->handle);
 		print_chrc_props(ctx_shell, gatt_chrc->properties);
 		break;
 	case BT_GATT_DISCOVER_INCLUDE:
@@ -219,8 +219,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 		break;
 	default:
 		bt_uuid_to_str(attr->uuid, str, sizeof(str));
-		shell_print(ctx_shell, "Descriptor %s found: handle %x", str,
-			    attr->handle);
+		shell_print(ctx_shell, "%s %s found: handle %x",
+			    "Descriptor", str, attr->handle);
 		break;
 	}
 
@@ -277,9 +277,9 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_gatt_discover(default_conn, &discover_params);
 	if (err) {
-		shell_error(sh, "Discover failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Discover", err);
 	} else {
-		shell_print(sh, "Discover pending");
+		shell_print(sh, "%s pending", "Discover");
 	}
 
 	return err;
@@ -329,9 +329,9 @@ static int cmd_read(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_gatt_read(default_conn, &read_params);
 	if (err) {
-		shell_error(sh, "Read failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Read", err);
 	} else {
-		shell_print(sh, "Read pending");
+		shell_print(sh, "%s pending", "Read");
 	}
 
 	return err;
@@ -371,8 +371,8 @@ static int cmd_mread(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_gatt_read(default_conn, &read_params);
 	if (err) {
-		shell_error(sh, "GATT multiple read request failed (err %d)",
-			    err);
+		shell_error(sh, "%s failed (err %d)",
+			    "GATT multiple read request", err);
 	}
 
 	return err;
@@ -415,9 +415,9 @@ static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_gatt_read(default_conn, &read_params);
 	if (err) {
-		shell_error(sh, "Read failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Read", err);
 	} else {
-		shell_print(sh, "Read pending");
+		shell_print(sh, "%s pending", "Read");
 	}
 
 	return err;
@@ -468,9 +468,9 @@ static int cmd_write(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_gatt_write(default_conn, &write_params);
 	if (err) {
 		write_params.func = NULL;
-		shell_error(sh, "Write failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Write", err);
 	} else {
-		shell_print(sh, "Write pending");
+		shell_print(sh, "%s pending", "Write");
 	}
 
 	return err;
@@ -607,9 +607,9 @@ static int cmd_subscribe(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_gatt_subscribe(default_conn, &subscribe_params);
 	if (err) {
 		subscribe_params.value_handle = 0U;
-		shell_error(sh, "Subscribe failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Subscribe", err);
 	} else {
-		shell_print(sh, "Subscribed");
+		shell_print(sh, "%s success", "Subscribe");
 	}
 
 	return err;
@@ -646,9 +646,9 @@ static int cmd_resubscribe(const struct shell *sh, size_t argc,
 	err = bt_gatt_resubscribe(selected_id, &addr, &subscribe_params);
 	if (err) {
 		subscribe_params.value_handle = 0U;
-		shell_error(sh, "Resubscribe failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Resubscribe", err);
 	} else {
-		shell_print(sh, "Resubscribed");
+		shell_print(sh, "%s success", "Resubscribe");
 	}
 
 	return err;
@@ -671,9 +671,9 @@ static int cmd_unsubscribe(const struct shell *sh,
 
 	err = bt_gatt_unsubscribe(default_conn, &subscribe_params);
 	if (err) {
-		shell_error(sh, "Unsubscribe failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Unsubscribe", err);
 	} else {
-		shell_print(sh, "Unsubscribe success");
+		shell_print(sh, "%s success", "Unsubscribe");
 	}
 
 	return err;
@@ -908,17 +908,17 @@ static int cmd_register_test_svc(const struct shell *sh,
 	bt_uuid_to_str(&vnd_uuid.uuid, str, sizeof(str));
 	err = bt_gatt_service_register(&vnd_svc);
 	if (!err) {
-		shell_print(sh, "Registered test vendor service %s", str);
+		shell_print(sh, "%s test vendor service %s", "Registered", str);
 	} else {
-		shell_error(sh, "Failed to register test vendor service %s (%d)", str, err);
+		shell_error(sh, "Failed to %s test vendor service %s (%d)", "register", str, err);
 	}
 
 	bt_uuid_to_str(&vnd1_uuid.uuid, str, sizeof(str));
 	err = bt_gatt_service_register(&vnd1_svc);
 	if (!err) {
-		shell_print(sh, "Registered test vendor service %s", str);
+		shell_print(sh, "%s test vendor service %s", "Registered", str);
 	} else {
-		shell_error(sh, "Failed to register test vendor service %s (%d)", str, err);
+		shell_error(sh, "Failed to %s test vendor service %s (%d)", "register", str, err);
 	}
 
 	return 0;
@@ -933,17 +933,17 @@ static int cmd_unregister_test_svc(const struct shell *sh,
 	bt_uuid_to_str(&vnd_uuid.uuid, str, sizeof(str));
 	err = bt_gatt_service_unregister(&vnd_svc);
 	if (!err) {
-		shell_print(sh, "Unregistered test vendor service %s", str);
+		shell_print(sh, "%s test vendor service %s", "Unregistered", str);
 	} else {
-		shell_error(sh, "Failed to unregister test vendor service %s (%d)", str, err);
+		shell_error(sh, "Failed to %s test vendor service %s (%d)", "unregister", str, err);
 	}
 
 	bt_uuid_to_str(&vnd1_uuid.uuid, str, sizeof(str));
 	err = bt_gatt_service_unregister(&vnd1_svc);
 	if (!err) {
-		shell_print(sh, "Unregistered test vendor service %s", str);
+		shell_print(sh, "%s test vendor service %s", "Unregistered", str);
 	} else {
-		shell_error(sh, "Failed to unregister test vendor service %s (%d)", str, err);
+		shell_error(sh, "Failed to %s test vendor service %s (%d)", "unregister", str, err);
 	}
 
 	return 0;
@@ -1084,7 +1084,7 @@ static int cmd_notify_mult(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_gatt_notify_multiple(default_conn, cnt_u16, params);
 	if (err != 0) {
-		shell_error(sh, "bt_gatt_notify_multiple failed: %d", err);
+		shell_error(sh, "%s failed (err %d)", "bt_gatt_notify_multiple", err);
 	} else {
 		shell_print(sh, "Send %u notifications", cnt_u16);
 	}
@@ -1188,7 +1188,7 @@ static uint8_t get_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	ret = attr->read(NULL, attr, (void *)buf, sizeof(buf), 0);
 	if (ret < 0) {
-		shell_print(sh, "Failed to read: %zd", ret);
+		shell_print(sh, "Failed to %s: %zd", "read", ret);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1241,7 +1241,7 @@ static uint8_t set_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	ret = attr->write(NULL, attr, (void *)buf, i, 0, 0);
 	if (ret < 0) {
 		data->err = ret;
-		shell_error(data->sh, "Failed to write: %zd", ret);
+		shell_error(data->sh, "Failed to %s: %zd", "write", ret);
 		return BT_GATT_ITER_STOP;
 	}
 
