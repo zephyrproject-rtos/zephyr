@@ -53,8 +53,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_TIMER_RPI_PICO)
 #define TIMER DT_NODELABEL(timer)
-#else
-#error Unable to find a counter device node in devicetree
+#elif defined(CONFIG_COUNTER_RA_AGT)
+#define TIMER DT_NODELABEL(counter0)
 #endif
 
 static void test_counter_interrupt_fn(const struct device *counter_dev,
@@ -68,6 +68,10 @@ static void test_counter_interrupt_fn(const struct device *counter_dev,
 	int err;
 
 	err = counter_get_value(counter_dev, &now_ticks);
+	if (!counter_is_counting_up(counter_dev)) {
+		now_ticks = counter_get_top_value(counter_dev) - now_ticks;
+	}
+
 	if (err) {
 		printk("Failed to read counter value (err %d)", err);
 		return;
