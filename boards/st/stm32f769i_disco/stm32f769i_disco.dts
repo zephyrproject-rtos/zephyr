@@ -80,6 +80,23 @@
 		zephyr,memory-region = "QSPI_AVAIL";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
+
+	dsi_lcd_qsh_030: connector_dsi_lcd {
+		compatible = "st,dsi-lcd-qsh-030";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <4 0 &gpioi 13 0>,	/* TOUCH_INT */
+			   <35 0 &gpiod 12 0>,	/* SCLK/MCLK */
+			   <39 0 &gpiod 11 0>,	/* I2S */
+			   <40 0 &gpiob 9 0>,	/* I2C4_SDA */
+			   <44 0 &gpiob 8 0>,	/* I2C4_SCL */
+			   <45 0 &gpioa 8 0>,	/* CEC_CLK */
+			   <47 0 &gpioa 15 0>,	/* CEC */
+			   <49 0 &gpioj 2 0>,	/* DSI_TE */
+			   <53 0 &gpioi 14 0>,	/* LCD_BL_CTRL */
+			   <57 0 &gpioj 15 0>;	/* DSI_RESET */
+	};
 };
 
 qsh_030_i2c: &i2c4 {
