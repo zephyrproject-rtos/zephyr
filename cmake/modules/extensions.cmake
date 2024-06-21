@@ -505,7 +505,7 @@ function(zephyr_library_compile_options item)
   # library and link with it to obtain the flags.
   #
   # Linking with a dummy interface library will place flags later on
-  # the command line than the the flags from zephyr_interface because
+  # the command line than the flags from zephyr_interface because
   # zephyr_interface will be the first interface library that flags
   # are taken from.
 

@@ -473,7 +473,7 @@ static inline int hash_compute(struct hash_ctx *ctx, struct hash_pkt *pkt)
 /**
  * @brief Perform  a cryptographic multipart hash operation.
  *
- * This function can be called zero or more times, passing a slice of the
+ * This function can be called zero or more times, passing a slice of
  * the data. The hash is calculated using all the given pieces.
  * To calculate the hash call @c hash_compute().
  *

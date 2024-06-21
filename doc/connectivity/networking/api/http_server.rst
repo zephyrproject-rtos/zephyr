@@ -277,7 +277,7 @@ in the reply.
 Websocket resources
 ===================
 
-Websocket resources register an application callback, which is is called when a
+Websocket resources register an application callback, which is called when a
 Websocket connection upgrade takes place. The callback is provided with a socket
 descriptor corresponding to the underlying TCP/TLS connection. Once called,
 the application takes full control over the socket, i. e. is responsible to

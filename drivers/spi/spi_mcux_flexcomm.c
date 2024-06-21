@@ -638,7 +638,7 @@ static int transceive_dma(const struct device *dev,
 		/* at this point, last just means whether or not
 		 * this transfer will completely cover
 		 * the current tx/rx buffer in data->ctx
-		 * or require additional transfers because the
+		 * or require additional transfers because
 		 * the two buffers are not the same size.
 		 *
 		 * if it covers the current ctx tx/rx buffers, then

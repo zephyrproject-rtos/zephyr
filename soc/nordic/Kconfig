@@ -19,7 +19,7 @@ config NRF_SOC_SECURE_SUPPORTED
 	def_bool !TRUSTED_EXECUTION_NONSECURE || (BUILD_WITH_TFM && TFM_PARTITION_PLATFORM)
 	depends on !SOC_SERIES_NRF54HX
 	help
-	  Hidden function to indicate that that the soc_secure functions are
+	  Hidden function to indicate that the soc_secure functions are
 	  available.
 	  The functions are always available when not in non-secure.
 	  For non-secure the functions must redirect to secure services exposed

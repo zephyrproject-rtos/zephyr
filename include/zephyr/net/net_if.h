@@ -2596,7 +2596,7 @@ struct net_if *net_if_select_src_iface(const struct sockaddr *dst);
  * @typedef net_if_link_callback_t
  * @brief Define callback that is called after a network packet
  *        has been sent.
- * @param iface A pointer to a struct net_if to which the the net_pkt was sent to.
+ * @param iface A pointer to a struct net_if to which the net_pkt was sent to.
  * @param dst Link layer address of the destination where the network packet was sent.
  * @param status Send status, 0 is ok, < 0 error.
  */
@@ -2765,7 +2765,7 @@ void net_if_foreach(net_if_cb_t cb, void *user_data);
 int net_if_up(struct net_if *iface);
 
 /**
- * @brief Check if interface is is up and running.
+ * @brief Check if interface is up and running.
  *
  * @param iface Pointer to network interface
  *

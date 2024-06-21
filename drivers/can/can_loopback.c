@@ -352,7 +352,7 @@ static int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	ARG_UNUSED(dev);
 
-	/* Recommended CAN clock from from CiA 601-3 */
+	/* Recommended CAN clock from CiA 601-3 */
 	*rate = MHZ(80);
 
 	return 0;

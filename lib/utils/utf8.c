@@ -34,7 +34,7 @@ char *utf8_trunc(char *utf8_str)
 	}
 	bytes_truncated++; /* include the starting byte */
 
-	/* Verify if the the last character actually need to be truncated
+	/* Verify if the last character actually need to be truncated
 	 * Handles the case where the number of bytes in the last UTF8-char
 	 * matches the number of bytes we searched for the starting byte
 	 */

@@ -2095,7 +2095,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 	}
 
 	if (net_if_ipv6_maddr_lookup(addr, &iface)) {
-		NET_WARN("Multicast address %s is is already registered.",
+		NET_WARN("Multicast address %s is already registered.",
 			net_sprint_ipv6_addr(addr));
 		goto out;
 	}
