@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+&zephyr_lcd_controller {
+	status = "okay";
+	ext-sdram = <&sdram1>;
+};
+
+&zephyr_mipi_dsi {
+	status = "okay";
+
+	pll-ndiv = <100>;
+	pll-idf = <5>;
+	pll-odf = <0>;
+
+	vs-active-high;
+	hs-active-high;
+	de-active-high;
+};
