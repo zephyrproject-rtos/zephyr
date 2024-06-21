@@ -91,6 +91,18 @@
 			status = "disabled";
 		};
 
+		mipi_dsi: dsihost@40016C00 {
+			compatible = "st,stm32-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40016C00 0x800>;
+			clock-names = "dsiclk", "refclk", "pixelclk";
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x08000000>,
+				 <&rcc STM32_SRC_HSI NO_SEL>,
+				 <&rcc STM32_SRC_PLL_R DSI_SEL(1)>;
+			resets = <&rctl STM32_RESET(APB2, 27U)>;
+			status = "disabled";
+		};
 	};
 
 	smbus4: smbus4 {
