@@ -2012,8 +2012,11 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 
 /** Parameters for bt_bap_scan_delegator_add_src() */
 struct bt_bap_scan_delegator_add_src_param {
-	/** The periodic adverting sync */
-	struct bt_le_per_adv_sync *pa_sync;
+	/** Periodic Advertiser Address */
+	bt_addr_le_t addr;
+
+	/** Advertiser SID */
+	uint8_t sid;
 
 	/** The broadcast isochronous group encryption state */
 	enum bt_bap_big_enc_state encrypt_state;
