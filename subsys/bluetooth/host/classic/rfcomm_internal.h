@@ -49,6 +49,11 @@ struct bt_rfcomm_hdr {
 	uint8_t length;
 } __packed;
 
+struct bt_rfcomm_hdr_ext {
+	struct bt_rfcomm_hdr hdr;
+	uint8_t second_length;
+} __packed;
+
 #define BT_RFCOMM_SABM  0x2f
 #define BT_RFCOMM_UA    0x63
 #define BT_RFCOMM_UIH   0xef
@@ -137,13 +142,14 @@ struct bt_rfcomm_rpn {
 				 sizeof(struct bt_rfcomm_hdr) + 1 + (mtu) + \
 				 BT_RFCOMM_FCS_SIZE)
 
-#define BT_RFCOMM_GET_DLCI(addr)           (((addr) & 0xfc) >> 2)
-#define BT_RFCOMM_GET_FRAME_TYPE(ctrl)     ((ctrl) & 0xef)
-#define BT_RFCOMM_GET_MSG_TYPE(type)       (((type) & 0xfc) >> 2)
-#define BT_RFCOMM_GET_MSG_CR(type)         (((type) & 0x02) >> 1)
-#define BT_RFCOMM_GET_LEN(len)             (((len) & 0xfe) >> 1)
-#define BT_RFCOMM_GET_CHANNEL(dlci)        ((dlci) >> 1)
-#define BT_RFCOMM_GET_PF(ctrl)             (((ctrl) & 0x10) >> 4)
+#define BT_RFCOMM_GET_DLCI(addr)                  (((addr) & 0xfc) >> 2)
+#define BT_RFCOMM_GET_FRAME_TYPE(ctrl)            ((ctrl) & 0xef)
+#define BT_RFCOMM_GET_MSG_TYPE(type)              (((type) & 0xfc) >> 2)
+#define BT_RFCOMM_GET_MSG_CR(type)                (((type) & 0x02) >> 1)
+#define BT_RFCOMM_GET_LEN(len)                    (((len) & 0xfe) >> 1)
+#define BT_RFCOMM_GET_LEN_EXTENDED(first, second) ((((first) & 0xfe) >> 1) | ((second) << 7))
+#define BT_RFCOMM_GET_CHANNEL(dlci)               ((dlci) >> 1)
+#define BT_RFCOMM_GET_PF(ctrl)                    (((ctrl) & 0x10) >> 4)
 
 #define BT_RFCOMM_SET_ADDR(dlci, cr)       ((((dlci) & 0x3f) << 2) | \
 					    ((cr) << 1) | 0x01)
