@@ -22,7 +22,6 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &mx25l51245g;
-		zephyr,touch = &ft6202;
 	};
 
 	sdram1: sdram@c0000000 {
@@ -63,11 +62,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft6202>;
-	};
-
 	aliases {
 		led0 = &red_led_1;
 		led1 = &green_led_2;
@@ -81,6 +75,13 @@
 		zephyr,memory-region = "QSPI_AVAIL";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
+};
+
+qsh_030_i2c: &i2c4 {
+	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &clk_hse {
@@ -129,19 +130,6 @@ arduino_serial: &usart6 {};
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-};
-
-&i2c4 {
-	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pb7>;
-	pinctrl-names = "default";
-	status = "okay";
-	clock-frequency = <I2C_BITRATE_FAST>;
-
-	ft6202: ft6202@2a {
-		compatible = "focaltech,ft5336";
-		reg = <0x2a>;
-		int-gpios = <&gpioi 13 GPIO_ACTIVE_LOW>;
-	};
 };
 
 &spi2 {
