@@ -12,6 +12,7 @@
 #define CRYPTO_STM32_AES_MAX_KEY_LEN (256 / 8)
 
 struct crypto_stm32_config {
+	const struct reset_dt_spec reset;
 	struct stm32_pclken pclken;
 };
 
