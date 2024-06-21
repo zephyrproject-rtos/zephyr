@@ -1286,13 +1286,41 @@ int supplicant_reg_domain(const struct device *dev,
 			  struct wifi_reg_domain *reg_domain)
 {
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+	struct wpa_supplicant *wpa_s;
+	int ret = -1;
 
 	if (!wifi_mgmt_api || !wifi_mgmt_api->reg_domain) {
 		wpa_printf(MSG_ERROR, "Regulatory domain not supported");
 		return -ENOTSUP;
 	}
 
-	return wifi_mgmt_api->reg_domain(dev, reg_domain);
+	if(reg_domain->oper == WIFI_MGMT_GET) {
+		return wifi_mgmt_api->reg_domain(dev, reg_domain);
+	} else {
+		k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+		wpa_s = get_wpa_s_handle(dev);
+		if (!wpa_s) {
+			ret = -1;
+			wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+			goto out;
+		}
+
+		if (!wpa_cli_cmd_v("set country %s", reg_domain->country_code))
+			goto out;
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+		if (!hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code))
+			goto out;
+#endif
+	}
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
 }
 
 int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode)
@@ -1566,6 +1594,8 @@ int supplicant_ap_enable(const struct device *dev,
 		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		goto out;
 	}
+
+	iface->owner = iface;
 
 	if (iface->state == HAPD_IFACE_ENABLED) {
 		ret = -EBUSY;
