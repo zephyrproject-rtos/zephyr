@@ -28,7 +28,7 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			cpu-power-states = <&idle &suspend>;
+			cpu-power-states = <&idle &suspend &standby>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
@@ -55,6 +55,21 @@
 							<0x4>,
 							<0x100>,
 							<0x0>;
+			};
+			/* This is the setting for Sleep Mode */
+			standby: standby {
+				compatible = "nxp,pdcfg-power", "zephyr,power-state";
+				power-state-name = "standby";
+				/* TODO: Revisit latency numbers */
+				min-residency-us = <5000>;
+				exit-latency-us = <1000>;
+				deep-sleep-config = <0x180000>,
+							<0x0>,
+							<0x4>,
+							<0x100>,
+							<0x0>;
+				zephyr,pm-turn-on-off-action;
+				status = "disabled";
 			};
 		};
 	};
@@ -303,6 +318,17 @@
 		#size-cells = <0>;
 		clocks = <&clkctl1 MCUX_LCDIC_CLK>;
 		dmas = <&dma0 0>;
+	};
+
+	rtc: rtc@30000 {
+		compatible = "nxp,lpc-rtc";
+		reg = <0x30000 0x1000>;
+		interrupts = <32 0>;
+		status = "disabled";
+		rtc_highres: rtc_highres {
+			compatible = "nxp,lpc-rtc-highres";
+			status = "disabled";
+		};
 	};
 
 	ctimer0: ctimer@28000 {
