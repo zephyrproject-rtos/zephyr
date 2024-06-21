@@ -236,7 +236,7 @@ static int process_tcp(struct data *data)
 			&client_addr_len);
 	if (client < 0) {
 		LOG_ERR("%s accept error (%d)", data->proto, -errno);
-		return 0;
+		return -errno;
 	}
 
 	slot = get_free_slot(data);
