@@ -1122,7 +1122,7 @@ static struct bt_le_per_adv_sync_cb per_adv_sync_cb = {
 static void bt_ready(int err)
 {
 	if (err) {
-		shell_error(ctx_shell, "Bluetooth init failed (err %d)", err);
+		shell_error(ctx_shell, "%s failed (err %d)", "Bluetooth init", err);
 		return;
 	}
 
@@ -1184,8 +1184,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	} else {
 		err = bt_enable(bt_ready);
 		if (err) {
-			shell_error(sh, "Bluetooth init failed (err %d)",
-				    err);
+			shell_error(sh, "%s failed (err %d)", "Bluetooth init", err);
 		}
 	}
 
@@ -1205,7 +1204,7 @@ static int cmd_settings_load(const struct shell *sh, size_t argc,
 
 	err = settings_load();
 	if (err) {
-		shell_error(sh, "Settings load failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Settings load", err);
 		return err;
 	}
 
@@ -1249,7 +1248,7 @@ static int cmd_hci_cmd(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_hci_cmd_send_sync(BT_OP(ogf, ocf), buf, &rsp);
 	if (err) {
-		shell_error(sh, "HCI command failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "HCI command", err);
 		return err;
 	} else {
 		shell_hexdump(sh, rsp->data, rsp->len);
@@ -1331,7 +1330,7 @@ static int cmd_id_create(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_id_create(&addr, NULL);
 	if (err < 0) {
-		shell_error(sh, "Creating new ID failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Creating new ID", err);
 		return err;
 	}
 
@@ -1367,7 +1366,7 @@ static int cmd_id_reset(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_id_reset(id, &addr, NULL);
 	if (err < 0) {
-		shell_print(sh, "Resetting ID %u failed (err %d)", id, err);
+		shell_print(sh, "%s ID %u failed (err %d)", "Resetting", id, err);
 		return err;
 	}
 
@@ -1391,7 +1390,7 @@ static int cmd_id_delete(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_id_delete(id);
 	if (err < 0) {
-		shell_error(sh, "Deleting ID %u failed (err %d)", id, err);
+		shell_error(sh, "%s ID %u failed (err %d)", "Deleting", id, err);
 		return err;
 	}
 
@@ -1456,8 +1455,7 @@ static int cmd_active_scan_on(const struct shell *sh, uint32_t options,
 
 	err = bt_le_scan_start(&param, NULL);
 	if (err) {
-		shell_error(sh, "Bluetooth set active scan failed "
-		      "(err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Bluetooth set active scan", err);
 		return err;
 	} else {
 		shell_print(sh, "Bluetooth active scan enabled");
@@ -1497,7 +1495,7 @@ static int cmd_scan_off(const struct shell *sh)
 
 	err = bt_le_scan_stop();
 	if (err) {
-		shell_error(sh, "Stopping scanning failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Stopping scanning", err);
 		return err;
 	} else {
 		shell_print(sh, "Scan successfully stopped");
@@ -3131,7 +3129,7 @@ static int cmd_connect_le_name(const struct shell *sh, size_t argc, char *argv[]
 
 	err = bt_le_scan_start(&param, NULL);
 	if (err) {
-		shell_error(sh, "Bluetooth scan failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Bluetooth scan", err);
 		return err;
 	}
 
@@ -3176,7 +3174,7 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
-		shell_error(sh, "Disconnection failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Disconnection", err);
 		return err;
 	}
 
@@ -3348,9 +3346,9 @@ static int cmd_conn_update(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_conn_le_param_update(default_conn, &param);
 	if (err) {
-		shell_error(sh, "conn update failed (err %d).", err);
+		shell_error(sh, "%s failed (err %d)", "conn update", err);
 	} else {
-		shell_print(sh, "conn update initiated.");
+		shell_print(sh, "%s initiated.", "conn update");
 	}
 
 	return err;
@@ -3414,9 +3412,9 @@ static int cmd_conn_data_len_update(const struct shell *sh, size_t argc,
 
 	err = bt_conn_le_data_len_update(default_conn, &param);
 	if (err) {
-		shell_error(sh, "data len update failed (err %d).", err);
+		shell_error(sh, "%s failed (err %d)", "data len update", err);
 	} else {
-		shell_print(sh, "data len update initiated.");
+		shell_print(sh, "%s initiated.", "data len update");
 	}
 
 	return err;
@@ -3455,9 +3453,9 @@ static int cmd_conn_phy_update(const struct shell *sh, size_t argc,
 
 	err = bt_conn_le_phy_update(default_conn, &param);
 	if (err) {
-		shell_error(sh, "PHY update failed (err %d).", err);
+		shell_error(sh, "%s failed (err %d)", "PHY update", err);
 	} else {
-		shell_print(sh, "PHY update initiated.");
+		shell_print(sh, "%s initiated.", "PHY update");
 	}
 
 	return err;
@@ -3628,7 +3626,7 @@ static int cmd_security(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_conn_set_security(default_conn, sec);
 	if (err) {
-		shell_error(sh, "Setting security failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Setting security", err);
 	}
 
 	return err;
@@ -4146,7 +4144,7 @@ static int cmd_fal_add(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_filter_accept_list_add(&addr);
 	if (err) {
-		shell_error(sh, "Add to fa list failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Add to fa list", err);
 		return err;
 	}
 
@@ -4166,8 +4164,7 @@ static int cmd_fal_rem(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_filter_accept_list_remove(&addr);
 	if (err) {
-		shell_error(sh, "Remove from fa list failed (err %d)",
-			    err);
+		shell_error(sh, "%s failed (err %d)", "Remove from fa list", err);
 		return err;
 	}
 	return 0;
@@ -4179,7 +4176,7 @@ static int cmd_fal_clear(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_filter_accept_list_clear();
 	if (err) {
-		shell_error(sh, "Clearing fa list failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Clearing fa list", err);
 		return err;
 	}
 
@@ -4216,14 +4213,13 @@ static int cmd_fal_connect(const struct shell *sh, size_t argc, char *argv[])
 		err = bt_conn_le_create_auto(create_params,
 					     BT_LE_CONN_PARAM_DEFAULT);
 		if (err) {
-			shell_error(sh, "Auto connect failed (err %d)", err);
+			shell_error(sh, "%s failed (err %d)", "Auto connect", err);
 			return err;
 		}
 	} else if (!strcmp(action, "off")) {
 		err = bt_conn_create_auto_stop();
 		if (err) {
-			shell_error(sh, "Auto connect stop failed (err %d)",
-				    err);
+			shell_error(sh, "%s failed (err %d)", "Auto connect stop", err);
 		}
 		return err;
 	}
@@ -4254,8 +4250,7 @@ static int cmd_fixed_passkey(const struct shell *sh,
 
 	err = bt_passkey_set(passkey);
 	if (err) {
-		shell_print(sh, "Setting fixed passkey failed (err %d)",
-			    err);
+		shell_print(sh, "%s failed (err %d)", "Setting fixed passkey", err);
 	}
 
 	return err;
