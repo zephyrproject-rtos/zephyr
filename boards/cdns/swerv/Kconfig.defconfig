@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CDNS_SWERV
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 100 if WHISPER_TARGET
+
+endif
+
+if BOARD_CDNS_SWERV_S400_WHISPER
+
+# 32 in core RISC-V by MIE CSR
+# 256 in SweRV PIC for external interrupts
+config NUM_IRQS
+	default 288
+
+config SWERV_PIC_MAX_GENERIC_IRQ
+	default 31
+
+config WHISPER_TARGET
+	default y
+
+config HAVE_CUSTOM_LINKER_SCRIPT
+	default y
+
+config CUSTOM_LINKER_SCRIPT
+	default "${ZEPHYR_BASE}/boards/cdns/swerv/cdns_swerv_s400_whisper.ld"
+
+endif # BOARD_CDNS_SWERV_S400_WHISPER
