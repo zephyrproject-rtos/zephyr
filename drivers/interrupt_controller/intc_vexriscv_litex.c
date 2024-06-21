@@ -84,6 +84,10 @@ static void vexriscv_litex_irq_handler(const void *device)
 #ifdef CONFIG_GPIO_LITEX
 	DT_FOREACH_STATUS_OKAY(litex_gpio, LITEX_IRQ_ADD);
 #endif
+
+#ifdef CONFIG_WDT_LITEX
+	DT_FOREACH_STATUS_OKAY(litex_watchdog, LITEX_IRQ_ADD);
+#endif
 }
 
 void arch_irq_enable(unsigned int irq)
