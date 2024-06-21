@@ -113,6 +113,7 @@ config RISCV
 	select ARCH_IS_SET
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
+	select ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
@@ -608,6 +609,14 @@ config SIMPLIFIED_EXCEPTION_CODES
 	  down to the generic K_ERR_CPU_EXCEPTION, which makes testing code
 	  much more portable.
 
+config EMPTY_IRQ_SPURIOUS
+	bool "Create empty spurious interrupt handler"
+	depends on ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
+	help
+	  This option changes body of spurious interrupt handler. When enabled,
+	  handler contains only an infinite while loop, when disabled, handler
+	  contains the whole Zephyr fault handling procedure.
+
 endmenu # Interrupt configuration
 
 config INIT_ARCH_HW_AT_BOOT
@@ -671,6 +680,9 @@ config ARCH_SUPPORTS_ARCH_HW_INIT
 	bool
 
 config ARCH_SUPPORTS_ROM_START
+	bool
+
+config ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	bool
 
 config ARCH_HAS_EXTRA_EXCEPTION_INFO
