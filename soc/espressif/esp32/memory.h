@@ -48,9 +48,9 @@
 	(SRAM1_SIZE - ((addr_dram) - SRAM1_DRAM_START) + SRAM1_IRAM_START)
 
 /* For safety margin between bootloader data section and startup stacks */
-#define BOOTLOADER_DRAM_SEG_LEN        0x6400
+#define BOOTLOADER_DRAM_SEG_LEN        0x7a00
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x4000
-#define BOOTLOADER_IRAM_SEG_LEN        0x9500
+#define BOOTLOADER_IRAM_SEG_LEN        0xa000
 
 /* Start of the lower region is determined by region size and the end of the higher region */
 #define BOOTLOADER_DRAM_SEG_START  0x3fff0000
