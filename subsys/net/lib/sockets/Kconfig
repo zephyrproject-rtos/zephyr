@@ -397,6 +397,10 @@ config NET_SOCKETS_NET_MGMT
 	help
 	  Select this if you want to use socket API to get network
 	  managements events to your application.
+	  Note, that the thread using net_mgmt sockets should have at least
+	  the same priority as the thread processing network events (see
+	  CONFIG_NET_MGMT_EVENT_WORKER), otherwise in case of event bursts some
+	  events may be lost.
 
 config NET_SOCKETS_NET_MGMT_MAX_LISTENERS
 	int "Max number of sockets to listen"
