@@ -151,7 +151,7 @@ static long parse_interval(const struct shell *sh, const char *interval_str)
 	err = 0;
 	interval = shell_strtoul(interval_str, 0, &err);
 	if (err != 0) {
-		shell_error(sh, "Could not parse interval: %d", err);
+		shell_error(sh, "Could not parse %s: %d", "interval", err);
 
 		return -ENOEXEC;
 	}
@@ -159,7 +159,7 @@ static long parse_interval(const struct shell *sh, const char *interval_str)
 	if (!IN_RANGE(interval,
 		      BT_ISO_SDU_INTERVAL_MIN,
 		      BT_ISO_SDU_INTERVAL_MAX)) {
-		shell_error(sh, "Invalid interval %lu", interval);
+		shell_error(sh, "Invalid %s %lu", "interval", interval);
 
 		return -ENOEXEC;
 	}
@@ -175,7 +175,7 @@ static long parse_latency(const struct shell *sh, const char *latency_str)
 	err = 0;
 	latency = shell_strtoul(latency_str, 0, &err);
 	if (err != 0) {
-		shell_error(sh, "Could not parse latency: %d", err);
+		shell_error(sh, "Could not parse %s: %d", "latency", err);
 
 		return -ENOEXEC;
 	}
@@ -183,7 +183,7 @@ static long parse_latency(const struct shell *sh, const char *latency_str)
 	if (!IN_RANGE(latency,
 		      BT_ISO_LATENCY_MIN,
 		      BT_ISO_LATENCY_MAX)) {
-		shell_error(sh, "Invalid latency %lu", latency);
+		shell_error(sh, "Invalid %s %lu", "latency", latency);
 
 		return -ENOEXEC;
 	}
@@ -260,13 +260,13 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 
 		packing = shell_strtoul(argv[4], 0, &err);
 		if (err != 0) {
-			shell_error(sh, "Could not parse packing: %d", err);
+			shell_error(sh, "Could not parse %s: %d", "packing", err);
 
 			return -ENOEXEC;
 		}
 
 		if (packing != BT_ISO_PACKING_SEQUENTIAL && packing != BT_ISO_PACKING_INTERLEAVED) {
-			shell_error(sh, "Invalid packing %lu", packing);
+			shell_error(sh, "Invalid %s %lu", "packing", packing);
 
 			return -ENOEXEC;
 		}
@@ -281,13 +281,13 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 
 		framing = shell_strtoul(argv[5], 0, &err);
 		if (err != 0) {
-			shell_error(sh, "Could not parse framing: %d", err);
+			shell_error(sh, "Could not parse %s: %d", "framing", err);
 
 			return -ENOEXEC;
 		}
 
 		if (framing != BT_ISO_FRAMING_UNFRAMED && framing != BT_ISO_FRAMING_FRAMED) {
-			shell_error(sh, "Invalid framing %lu", framing);
+			shell_error(sh, "Invalid %s %lu", "framing", framing);
 
 			return -ENOEXEC;
 		}
@@ -330,13 +330,13 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 
 		sdu = shell_strtoul(argv[7], 0, &err);
 		if (err != 0) {
-			shell_error(sh, "Could not parse sdu: %d", err);
+			shell_error(sh, "Could not parse %s: %d", "sdu", err);
 
 			return -ENOEXEC;
 		}
 
 		if (sdu > BT_ISO_MAX_SDU) {
-			shell_error(sh, "Invalid sdu %lu", sdu);
+			shell_error(sh, "Invalid %s %lu", "sdu", sdu);
 
 			return -ENOEXEC;
 		}
@@ -355,7 +355,7 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 
 		phy = shell_strtoul(argv[8], 0, &err);
 		if (err != 0) {
-			shell_error(sh, "Could not parse phy: %d", err);
+			shell_error(sh, "Could not parse %s: %d", "phy", err);
 
 			return -ENOEXEC;
 		}
@@ -363,7 +363,7 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		if (phy != BT_GAP_LE_PHY_1M &&
 		    phy != BT_GAP_LE_PHY_2M &&
 		    phy != BT_GAP_LE_PHY_CODED) {
-			shell_error(sh, "Invalid phy %lu", phy);
+			shell_error(sh, "Invalid %s %lu", "phy", phy);
 
 			return -ENOEXEC;
 		}
@@ -382,13 +382,13 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 
 		rtn = shell_strtoul(argv[9], 0, &err);
 		if (err != 0) {
-			shell_error(sh, "Could not parse rtn: %d", err);
+			shell_error(sh, "Could not parse %s: %d", "rtn", err);
 
 			return -ENOEXEC;
 		}
 
 		if (rtn > BT_ISO_CONNECTED_RTN_MAX) {
-			shell_error(sh, "Invalid rtn %lu", rtn);
+			shell_error(sh, "Invalid %s %lu", "rtn", rtn);
 
 			return -ENOEXEC;
 		}
@@ -408,7 +408,7 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_iso_cig_create(&param, &cig);
 	if (err) {
-		shell_error(sh, "Unable to create CIG (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "create CIG", err);
 		return 0;
 	}
 
@@ -428,7 +428,7 @@ static int cmd_cig_term(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_iso_cig_terminate(cig);
 	if (err) {
-		shell_error(sh, "Unable to terminate CIG (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "terminate CIG", err);
 		return 0;
 	}
 
@@ -459,7 +459,7 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_iso_chan_connect(&connect_param, 1);
 	if (err) {
-		shell_error(sh, "Unable to connect (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "connect", err);
 		return 0;
 	}
 
@@ -531,8 +531,7 @@ static int cmd_listen(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
-		shell_error(sh, "Unable to register ISO cap (err %d)",
-			    err);
+		shell_error(sh, "Unable to %s (err %d)", "register ISO cap", err);
 		return err;
 	}
 
@@ -556,7 +555,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	if (argc > 1) {
 		count = shell_strtoul(argv[1], 0, &ret);
 		if (ret != 0) {
-			shell_error(sh, "Could not parse count: %d", ret);
+			shell_error(sh, "Could not parse %s: %d", "count", ret);
 
 			return -ENOEXEC;
 		}
@@ -589,7 +588,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 		shell_info(sh, "send: %d bytes of data with PSN %u", len, cis_sn_last);
 		ret = bt_iso_chan_send(&iso_chan, buf, cis_sn_last);
 		if (ret < 0) {
-			shell_print(sh, "Unable to send: %d", -ret);
+			shell_print(sh, "Unable to %s (err %d)", "send", -ret);
 			net_buf_unref(buf);
 			return -ENOEXEC;
 		}
@@ -607,7 +606,7 @@ static int cmd_disconnect(const struct shell *sh, size_t argc,
 
 	err = bt_iso_chan_disconnect(&iso_chan);
 	if (err) {
-		shell_error(sh, "Unable to disconnect (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "disconnect", err);
 		return 0;
 	}
 
@@ -628,7 +627,7 @@ static int cmd_tx_sync_read_cis(const struct shell *sh, size_t argc, char *argv[
 
 	err = bt_iso_chan_get_tx_sync(&iso_chan, &tx_info);
 	if (err) {
-		shell_error(sh, "Unable to read sync info (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "read sync info", err);
 		return 0;
 	}
 
@@ -672,7 +671,7 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	if (argc > 1) {
 		count = shell_strtoul(argv[1], 0, &ret);
 		if (ret != 0) {
-			shell_error(sh, "Could not parse count: %d", ret);
+			shell_error(sh, "Could not parse %s: %d", "count", ret);
 
 			return -ENOEXEC;
 		}
@@ -705,7 +704,7 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		shell_info(sh, "send: %d bytes of data with PSN %u", len, bis_sn_last);
 		ret = bt_iso_chan_send(&bis_iso_chan, buf, bis_sn_last);
 		if (ret < 0) {
-			shell_print(sh, "Unable to broadcast: %d", -ret);
+			shell_print(sh, "Unable to %s (err %d)", "broadcast", -ret);
 			net_buf_unref(buf);
 			return -ENOEXEC;
 		}
@@ -760,7 +759,7 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_iso_big_create(adv, &param, &big);
 	if (err) {
-		shell_error(sh, "Unable to create BIG (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "create BIG", err);
 		return 0;
 	}
 
@@ -781,7 +780,7 @@ static int cmd_tx_sync_read_bis(const struct shell *sh, size_t argc, char *argv[
 
 	err = bt_iso_chan_get_tx_sync(&bis_iso_chan, &tx_info);
 	if (err) {
-		shell_error(sh, "Unable to read sync info (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "read sync info", err);
 		return 0;
 	}
 
@@ -808,13 +807,13 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 
 	bis_bitfield = shell_strtoul(argv[1], 0, &err);
 	if (err != 0) {
-		shell_error(sh, "Could not parse bis_bitfield: %d", err);
+		shell_error(sh, "Could not parse %s: %d", "bis_bitfield", err);
 
 		return -ENOEXEC;
 	}
 
 	if (bis_bitfield > BIT_MASK(BT_ISO_BIS_INDEX_MAX)) {
-		shell_error(sh, "Invalid bis_bitfield: %lu", bis_bitfield);
+		shell_error(sh, "Invalid %s %lu", "bis_bitfield", bis_bitfield);
 
 		return -ENOEXEC;
 	}
@@ -840,7 +839,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 
 			mse = shell_strtoul(argv[i], 0, &err);
 			if (err != 0) {
-				shell_error(sh, "Could not parse mse: %d", err);
+				shell_error(sh, "Could not parse %s: %d", "mse", err);
 
 				return -ENOEXEC;
 			}
@@ -848,7 +847,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 			if (!IN_RANGE(mse,
 				      BT_ISO_SYNC_MSE_MIN,
 				      BT_ISO_SYNC_MSE_MAX)) {
-				shell_error(sh, "Invalid mse %lu", mse);
+				shell_error(sh, "Invalid %s %lu", "mse", mse);
 
 				return -ENOEXEC;
 			}
@@ -866,8 +865,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 			sync_timeout = shell_strtoul(argv[i], 0, &err);
 			if (err != 0) {
 				shell_error(sh,
-					    "Could not parse sync_timeout: %d",
-					    err);
+					    "Could not parse %s: %d", "sync_timeout", err);
 
 				return -ENOEXEC;
 			}
@@ -875,8 +873,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 			if (!IN_RANGE(sync_timeout,
 				      BT_ISO_SYNC_MSE_MIN,
 				      BT_ISO_SYNC_MSE_MAX)) {
-				shell_error(sh, "Invalid sync_timeout %lu",
-					    sync_timeout);
+				shell_error(sh, "Invalid %s %lu", "sync_timeout", sync_timeout);
 
 				return -ENOEXEC;
 			}
@@ -910,7 +907,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_iso_big_sync(pa_sync, &param, &big);
 	if (err) {
-		shell_error(sh, "Unable to sync to BIG (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "sync to BIG", err);
 		return 0;
 	}
 
@@ -926,7 +923,7 @@ static int cmd_big_term(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_iso_big_terminate(big);
 	if (err) {
-		shell_error(sh, "Unable to terminate BIG (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "terminate BIG", err);
 		return 0;
 	}
 
