@@ -433,10 +433,8 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 	boot_banner();
 
-#if defined(CONFIG_CPP)
-	void z_cpp_init_static(void);
-	z_cpp_init_static();
-#endif /* CONFIG_CPP */
+	void z_init_static(void);
+	z_init_static();
 
 	/* Final init level before app starts */
 	z_sys_init_run_level(INIT_LEVEL_APPLICATION);

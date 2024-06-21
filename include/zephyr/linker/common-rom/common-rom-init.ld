@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#ifdef CONFIG_CPP_STATIC_INIT_GNU
+#ifdef CONFIG_STATIC_INIT_GNU
 	SECTION_PROLOGUE(_CTOR_SECTION_NAME,,)
 	{
 		/*
@@ -59,4 +59,18 @@
 		KEEP(*(SORT_BY_NAME(".init_array*")))
 		__zephyr_init_array_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#elif defined(CONFIG_TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU)
+	/*
+	 * If the code to invoke constructors is not enabled,
+	 * make sure there aren't any in the application
+	 */
+	SECTION_PROLOGUE(init_array,,)
+	{
+		KEEP(*(SORT_BY_NAME(".ctors*")))
+		KEEP(*(SORT_BY_NAME(".init_array*")))
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	ASSERT (SIZEOF(init_array) == 0,
+		"GNU-style constructors required but STATIC_INIT_GNU not enabled")
 #endif
