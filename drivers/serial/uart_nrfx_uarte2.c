@@ -248,7 +248,7 @@ static void on_rx_done(const struct device *dev, const nrfx_uarte_event_t *event
 		evt.data.rx_stop.data.buf = event->data.rx.p_buffer;
 		evt.data.rx_stop.data.len = event->data.rx.length;
 		/* Keep error code for uart_err_check(). */
-		if (!IS_INT_DRIVEN_API(dev)) {
+		if (!IS_INT_DRIVEN_API(dev) || !uart_async_to_irq_err_enabled(dev)) {
 			data->async->err = 0;
 		}
 		data->async->user_callback(dev, &evt, data->async->user_data);
