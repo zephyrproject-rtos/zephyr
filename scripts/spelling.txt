@@ -710,6 +710,7 @@ framwork||framework
 frequence||frequency
 frequncy||frequency
 frequancy||frequency
+from from||from
 frome||from
 fronend||frontend
 fucntion||function
@@ -773,6 +774,7 @@ hypervior||hypervisor
 hypter||hyper
 idel||idle
 identidier||identifier
+if if||if
 iff||if and only if
 iligal||illegal
 illigal||illegal
@@ -904,6 +906,7 @@ invokation||invocation
 invokations||invocations
 ireelevant||irrelevant
 irrelevent||irrelevant
+is is||is
 isnt||isn't
 isssue||issue
 issus||issues
@@ -1084,6 +1087,7 @@ ommiting||omitting
 ommitted||omitted
 onself||oneself
 onthe||on the
+on on||on
 ony||only
 openning||opening
 operatione||operation
@@ -1545,6 +1549,7 @@ temeprature||temperature
 temorary||temporary
 temproarily||temporarily
 temperture||temperature
+that that||that
 the the||the
 theads||threads
 therfore||therefore
@@ -1565,6 +1570,7 @@ tipically||typically
 timeing||timing
 timout||timeout
 tmis||this
+to to||to
 toogle||toggle
 torerable||tolerable
 torlence||tolerance
