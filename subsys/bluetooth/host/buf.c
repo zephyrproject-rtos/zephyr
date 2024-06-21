@@ -49,6 +49,11 @@ NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT,
 			  BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE),
 			  sizeof(struct bt_buf_data), NULL);
 
+NET_BUF_POOL_FIXED_DEFINE(cmd_complete_status_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
+			  BT_BUF_EVT_SIZE(CONFIG_BT_BUF_CMD_COMPLETE_EVT_SIZE),
+			  sizeof(struct bt_buf_data),
+			  NULL);
+
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BT_BUF_ACL_RX_COUNT,
 		    BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE),
@@ -103,6 +108,28 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 		buf = net_buf_alloc(&sync_evt_pool, timeout);
 		break;
 #endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
+	case BT_HCI_EVT_CMD_COMPLETE:
+		__fallthrough;
+	case BT_HCI_EVT_CMD_STATUS:
+		/**
+		 * Use K_NO_WAIT here, to avoiding dead-lock.
+		 * Normally there is always free event buffer corresponding to command.
+		 * When there is no corresponding buf, it usually means that some error
+		 * has occurred.
+		 *
+		 * For example: the Controller spontaneously sends an event.
+		 */
+		buf = net_buf_alloc(&cmd_complete_status_pool, K_NO_WAIT);
+		if (buf) {
+			break;
+		}
+
+		LOG_WRN("Insufficient cmd complete status pool for cmd %s event,"
+			"try to allocate from normal event pool",
+			 evt == BT_HCI_EVT_CMD_COMPLETE ? "complete" : "status");
+
+		/* This usually doesn't happen */
+		__fallthrough;
 	default:
 		if (discardable) {
 			buf = net_buf_alloc(&discardable_pool, timeout);

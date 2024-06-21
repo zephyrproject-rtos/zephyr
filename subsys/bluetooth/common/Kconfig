@@ -94,20 +94,37 @@ config BT_BUF_ACL_RX_COUNT
 	  When Controller to Host flow control is not enabled the Controller
 	  can assume that the Host has infinite amount of buffers.
 
+config BT_BUF_CMD_COMPLETE_EVT_SIZE
+	  int "Maximum supported HCI Command Complete Event buffer length"
+	  # LE Read Supported Commands command complete event.
+	  default 68
+	  range 68 255
+	  help
+	    Maximum supported HCI Command Complete event buffer size.
+	    This value does not include the HCI Event header. This value is
+	    used by both the Host and the Controller for buffer sizes that
+	    include HCI Command Complete events. It should be set according
+	    to the expected HCI Command Complete events that can be generated
+	    from the configuration.
+
+	    If the subset of possible HCI Command Complete events is unknown,
+	    this should be set to the maximum of 255.
+
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
 	default 255 if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX || BT_CLASSIC
-	# LE Read Supported Commands command complete event.
-	default 68
-	range 68 255
+	default BT_BUF_CMD_COMPLETE_EVT_SIZE
+	range BT_BUF_CMD_COMPLETE_EVT_SIZE 255
 	help
 	  Maximum supported HCI event buffer size. This value does not include
 	  the HCI Event header.
-	  This value is used by both the Host and the Controller for buffer
-	  sizes that include HCI events. It should be set according to the
-	  expected HCI events that can be generated from the configuration.
-	  If the subset of possible HCI events is unknown, this should be set to
-	  the maximum of 255.
+	  This value is used by both the Host and the Controller for buffer sizes
+	  that include HCI events also include HCI Command Complete event. It should
+	  be set according to the expected HCI events that can be generated from the
+	  configuration.
+
+	  If the subset of possible HCI events is unknown, this should be set to the
+	  maximum of 255.
 
 config BT_BUF_EVT_RX_COUNT
 	int "Number of HCI Event buffers"
