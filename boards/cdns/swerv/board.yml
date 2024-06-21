@@ -1,0 +1,8 @@
+board:
+  name: cdns_swerv
+  full_name: Cadence SweRV based boards
+  vendor: cdns
+  socs:
+    - name: s400
+      variants:
+        - name: whisper
