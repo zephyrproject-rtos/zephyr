@@ -4,7 +4,7 @@
 
 #include <zephyr/linker/common-rom/common-rom-ztest.ld>
 
-#include <zephyr/linker/common-rom/common-rom-cpp.ld>
+#include <zephyr/linker/common-rom/common-rom-init.ld>
 
 #include <zephyr/linker/common-rom/common-rom-net.ld>
 
