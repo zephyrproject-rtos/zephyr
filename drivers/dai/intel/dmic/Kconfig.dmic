@@ -36,7 +36,7 @@ config DAI_INTEL_DMIC_TPLG_PARAMS
 	  All registers configuration is computed on the fly
 	  based on use case and microphone datasheet parameters
 	  and topology defined PCM format. The parameters are
-	  easy to to customize in the topology.
+	  easy to customize in the topology.
 	  WORK IN PROGRESS, not enabled in the driver yet
 
 endchoice

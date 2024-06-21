@@ -191,7 +191,7 @@ class Lcov(CoverageTool):
             logger.error(f"Unable to determine lcov version: {e}")
             sys.exit(1)
         except FileNotFoundError as e:
-            logger.error(f"Unable to to find lcov tool: {e}")
+            logger.error(f"Unable to find lcov tool: {e}")
             sys.exit(1)
 
     def add_ignore_file(self, pattern):
@@ -304,7 +304,7 @@ class Gcovr(CoverageTool):
             logger.error(f"Unable to determine gcovr version: {e}")
             sys.exit(1)
         except FileNotFoundError as e:
-            logger.error(f"Unable to to find gcovr tool: {e}")
+            logger.error(f"Unable to find gcovr tool: {e}")
             sys.exit(1)
 
     def add_ignore_file(self, pattern):

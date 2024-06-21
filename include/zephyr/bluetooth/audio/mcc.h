@@ -726,7 +726,7 @@ int bt_mcc_read_current_track_obj_id(struct bt_conn *conn);
 /**
  * @brief Set Current Track Object ID
  *
- * Set the Current Track to the the track given by the @p id parameter
+ * Set the Current Track to the track given by the @p id parameter
  *
  * @param conn  Connection to the peer device
  * @param id    Object Transfer Service ID (UINT48) of the track to set as the current track
@@ -747,7 +747,7 @@ int bt_mcc_read_next_track_obj_id(struct bt_conn *conn);
 /**
  * @brief Set Next Track Object ID
  *
- * Set the Next Track to the the track given by the @p id parameter
+ * Set the Next Track to the track given by the @p id parameter
  *
  * @param conn  Connection to the peer device
  * @param id   Object Transfer Service ID (UINT48) of the track to set as the next track
@@ -768,7 +768,7 @@ int bt_mcc_read_current_group_obj_id(struct bt_conn *conn);
 /**
  * @brief Set Current Group Object ID
  *
- * Set the Current Group to the the group given by the @p id parameter
+ * Set the Current Group to the group given by the @p id parameter
  *
  * @param conn  Connection to the peer device
  * @param id   Object Transfer Service ID (UINT48) of the group to set as the current group

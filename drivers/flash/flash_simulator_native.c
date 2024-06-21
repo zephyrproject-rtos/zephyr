@@ -30,7 +30,7 @@
 
 /*
  * Initialize the flash buffer.
- * And, if the content is to be kept on disk map it to the the buffer to the file.
+ * And, if the content is to be kept on disk map it to the buffer to the file.
  *
  * Returns -1 on failure
  *	    0 on success

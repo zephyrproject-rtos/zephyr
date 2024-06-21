@@ -205,7 +205,7 @@ static int beetle_pll_enable(uint32_t mainclk)
 	/* Set PLLCTRL Register */
 	__BEETLE_SYSCON->pllctrl = BEETLE_PLL_CONFIGURATION;
 
-	/* Switch the the Main clock to PLL and set prescaler */
+	/* Switch the Main clock to PLL and set prescaler */
 	__BEETLE_SYSCON->mainclk = pre_mainclk;
 
 	while (!__BEETLE_SYSCON->pllstatus) {

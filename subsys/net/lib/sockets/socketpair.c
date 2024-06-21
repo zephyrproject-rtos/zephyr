@@ -597,7 +597,7 @@ out:
  * -# @ref SPAIR_SIG_DATA - data has been written to the @em local
  *    @ref spair.pipe. Thus, allowing more data to be read.
  *
- * -# @ref SPAIR_SIG_CANCEL - read of the the @em local @spair.pipe
+ * -# @ref SPAIR_SIG_CANCEL - read of the @em local @spair.pipe
  *    must be cancelled for some reason (e.g. the file descriptor will be
  *    closed imminently). In this case, the function will return -1 and set
  *    @ref errno to @ref EINTR.

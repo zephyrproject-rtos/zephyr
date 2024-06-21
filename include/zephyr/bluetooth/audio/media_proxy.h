@@ -1066,7 +1066,7 @@ int media_proxy_ctrl_get_commands_supported(struct media_player *player);
  * May result in up to three callbacks
  * - one for the actual sending of the search to the player
  * - one for the result code for the search from the player
- * - if the search is successful, one for the the search results object ID in the OTs
+ * - if the search is successful, one for the search results object ID in the OTs
  *
  * Requires Object Transfer Service
  *

@@ -213,7 +213,7 @@ static bool ht16k33_process_keyscan_data(const struct device *dev)
 
 	err = i2c_burst_read_dt(&config->i2c, HT16K33_CMD_KEY_DATA_ADDR, keys, sizeof(keys));
 	if (err) {
-		LOG_WRN("Failed to to read HT16K33 key data (err %d)", err);
+		LOG_WRN("Failed to read HT16K33 key data (err %d)", err);
 		/* Reprocess */
 		return true;
 	}
@@ -380,7 +380,7 @@ static int ht16k33_init(const struct device *dev)
 		err = i2c_burst_read_dt(&config->i2c, HT16K33_CMD_KEY_DATA_ADDR, keys,
 					sizeof(keys));
 		if (err) {
-			LOG_ERR("Failed to to read HT16K33 key data");
+			LOG_ERR("Failed to read HT16K33 key data");
 			return -EIO;
 		}
 

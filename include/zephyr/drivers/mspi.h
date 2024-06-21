@@ -663,7 +663,7 @@ static inline int z_impl_mspi_transceive(const struct device *controller,
 /**
  * @brief Configure a MSPI XIP settings.
  *
- * This routine provides a generic interface to to configure the XIP feature.
+ * This routine provides a generic interface to configure the XIP feature.
  *
  * @param controller Pointer to the device structure for the driver instance.
  * @param dev_id Pointer to the device ID structure from a device.
@@ -694,7 +694,7 @@ static inline int z_impl_mspi_xip_config(const struct device *controller,
 /**
  * @brief Configure a MSPI scrambling settings.
  *
- * This routine provides a generic interface to to configure the scrambling
+ * This routine provides a generic interface to configure the scrambling
  * feature.
  *
  * @param controller Pointer to the device structure for the driver instance.

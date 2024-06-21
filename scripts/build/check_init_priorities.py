@@ -322,7 +322,7 @@ def _parse_args(argv):
     parser.add_argument("-i", "--initlevels", action="store_true",
                         help="print the initlevel functions instead of checking the device dependencies")
     parser.add_argument("--edt-pickle", default=pathlib.Path("edt.pickle"),
-                        help="name of the the pickled edtlib.EDT file",
+                        help="name of the pickled edtlib.EDT file",
                         type=pathlib.Path)
 
     return parser.parse_args(argv)

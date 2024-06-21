@@ -189,7 +189,7 @@ _idle_state_cleared:
 	 *
 	 * Note that interrupts are disabled up to this point on the ARM
 	 * architecture variants other than the Cortex-M. It is also important
-	 * to note that that most interrupt controllers require that the nested
+	 * to note that most interrupt controllers require that the nested
 	 * interrupts are handled after the active interrupt is acknowledged;
 	 * this is be done through the `get_active` interrupt controller
 	 * interface function.

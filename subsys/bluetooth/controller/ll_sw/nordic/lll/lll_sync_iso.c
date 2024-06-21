@@ -1170,13 +1170,13 @@ static void isr_rx_done(void *param)
 		 *
 		 * When a Synchronized Receiver receives such a PDU where
 		 * (instant - bigEventCounter) mod 65536 is greater than or
-		 * equal to 32767 (because the instant is in the past), the
+		 * equal to 32767 (because the instant is in the past),
 		 * the Link Layer may stop synchronization with the BIG.
 		 */
 
 		/* Note: We are not validating whether the control PDU was
 		 * received after the instant but apply the new channel map.
-		 * If the channel map was new at or after the instant and the
+		 * If the channel map was new at or after the instant and
 		 * the channel at the event counter did not match then the
 		 * control PDU would not have been received.
 		 */

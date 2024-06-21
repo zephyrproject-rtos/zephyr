@@ -504,8 +504,8 @@ static inline void bytecpy(void *dst, const void *src, size_t size)
  * Swap @a size bytes between memory regions @a a and @a b. This is
  * guaranteed to be done byte by byte.
  *
- * @param a Pointer to the the first memory region.
- * @param b Pointer to the the second memory region.
+ * @param a Pointer to the first memory region.
+ * @param b Pointer to the second memory region.
  * @param size The number of bytes to swap.
  */
 static inline void byteswp(void *a, void *b, size_t size)

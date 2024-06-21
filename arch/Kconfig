@@ -215,7 +215,7 @@ config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
-	  The SRAM base address. The default value comes from from
+	  The SRAM base address. The default value comes from
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
