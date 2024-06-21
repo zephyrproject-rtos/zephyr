@@ -411,6 +411,16 @@ Drivers and Sensors
 
   * Removed integration with ``UART_MUX`` from ``MODEM_SHELL`` module.
 
+  * Implemented modem pipelinks in ``MODEM_CELLULAR`` driver for additional DLCI channels
+    available by the different modems. This includes generic AT mode DLCI channels, named
+    ``user_pipe_<index>`` and DLCI channels reserved for GNSS tunneling named
+    ``gnss_pipe``.
+
+  * Added new set of shell commands for sending AT commands directly to a modem using the
+    newly implemented modem pipelinks. The implementation of the new shell commands is
+    both functional and together with the ``MODEM_CELLULAR`` driver will provide an
+    example of how implement and use the modem pipelink module.
+
 * PCIE
 
 * MEMC
