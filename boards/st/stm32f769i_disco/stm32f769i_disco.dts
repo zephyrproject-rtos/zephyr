@@ -97,6 +97,7 @@
 	mul-n = <432>;
 	div-p = <2>;
 	div-q = <9>;
+	div-r = <7>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
