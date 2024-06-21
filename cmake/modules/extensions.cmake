@@ -2352,6 +2352,10 @@ function(toolchain_parse_make_rule input_file include_files)
   # the element separator, so let's get the pure `;` back.
   string(REPLACE "\;" ";" input_as_list ${input})
 
+  # The file might also contain multiple files on one line if one or both of
+  # the file paths are short, split these up into multiple elements using regex
+  string(REGEX REPLACE "([^ ])[ ]([^ ])" "\\1;\\2" input_as_list "${input_as_list}")
+
   # Pop the first line and treat it specially
   list(POP_FRONT input_as_list first_input_line)
   string(FIND ${first_input_line} ": " index)
