@@ -439,21 +439,9 @@
 				compatible = "intel,adsp-power-domain";
 				bit-position = <15>;
 			};
-			ml1_domain: ml1_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <13>;
-			};
 			ml0_domain: ml0_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <12>;
-			};
-			io3_domain: io3_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <11>;
-			};
-			io2_domain: io2_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <10>;
 			};
 			io1_domain: io1_domain {
 				compatible = "intel,adsp-power-domain";
