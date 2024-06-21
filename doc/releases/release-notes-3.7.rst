@@ -571,6 +571,15 @@ Libraries / Subsystems
 
 * Modem modules
 
+  * Added modem pipelink module which shares modem pipes globally, allowing device drivers to
+    create and set up pipes for the application to use.
+
+  * Simplified the modem pipe module's synchronization mechanism to only protect the callback
+    and user data. This matches the actual in-tree usage of the modem pipes.
+
+  * Added ``modem_stats`` module which tracks the usage of buffers throughout the modem
+    subsystem.
+
 * Picolibc
 
 * Power management
