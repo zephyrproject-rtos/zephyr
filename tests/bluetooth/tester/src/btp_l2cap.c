@@ -431,6 +431,30 @@ static struct bt_l2cap_chan *get_l2cap_chan_from_chan_id(uint8_t chan_id)
 	return NULL;
 }
 
+static uint16_t get_l2cap_mtu_from_chan_id(uint8_t chan_id)
+{
+	struct channel *le_chan;
+#if defined(CONFIG_BT_CLASSIC)
+	struct br_channel *br_chan;
+#endif /* defined(CONFIG_BT_CLASSIC) */
+
+	if (chan_id < CHANNELS) {
+		le_chan = &channels[chan_id];
+		if (le_chan->in_use) {
+			return le_chan->le.tx.mtu;
+		}
+
+#if defined(CONFIG_BT_CLASSIC)
+		br_chan = &br_channels[chan_id];
+		if (br_chan->in_use) {
+			return br_chan->br.tx.mtu;
+		}
+#endif /* defined(CONFIG_BT_CLASSIC) */
+	}
+
+	return 0;
+}
+
 static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 			  void *rsp, uint16_t *rsp_len)
 {
@@ -532,7 +556,8 @@ static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 			 void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_send_data_cmd *cp = cmd;
-	struct channel *chan;
+	struct bt_l2cap_chan *chan;
+	uint16_t mtu;
 	struct net_buf *buf;
 	uint16_t data_len;
 	int ret;
@@ -546,9 +571,17 @@ static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	chan = &channels[cp->chan_id];
-	data_len = sys_le16_to_cpu(cp->data_len);
+	chan = get_l2cap_chan_from_chan_id(cp->chan_id);
+	if (chan == NULL) {
+		return BTP_STATUS_FAILED;
+	}
 
+	mtu = get_l2cap_mtu_from_chan_id(cp->chan_id);
+	if (mtu == 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	data_len = sys_le16_to_cpu(cp->data_len);
 
 	/* FIXME: For now, fail if data length exceeds buffer length */
 	if (data_len > DATA_MTU) {
@@ -556,7 +589,7 @@ static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 	}
 
 	/* FIXME: For now, fail if data length exceeds remote's L2CAP SDU */
-	if (data_len > chan->le.tx.mtu) {
+	if (data_len > mtu) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -564,7 +597,7 @@ static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 
 	net_buf_add_mem(buf, cp->data, data_len);
-	ret = bt_l2cap_chan_send(&chan->le.chan, buf);
+	ret = bt_l2cap_chan_send(chan, buf);
 	if (ret < 0) {
 		LOG_ERR("Unable to send data: %d", -ret);
 		net_buf_unref(buf);
