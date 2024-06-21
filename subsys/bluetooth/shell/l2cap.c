@@ -141,19 +141,19 @@ static void l2cap_connected(struct bt_l2cap_chan *chan)
 
 	k_work_init_delayable(&c->recv_work, l2cap_recv_cb);
 
-	shell_print(ctx_shell, "Channel %p connected", chan);
+	shell_print(ctx_shell, "Channel %p %s", chan, "connected");
 }
 
 static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
-	shell_print(ctx_shell, "Channel %p disconnected", chan);
+	shell_print(ctx_shell, "Channel %p %s", chan, "disconnected");
 }
 
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	/* print if metrics is disabled */
 	if (!metrics) {
-		shell_print(ctx_shell, "Channel %p requires buffer", chan);
+		shell_print(ctx_shell, "Channel %p %s", chan, "requires buffer");
 	}
 
 	return net_buf_alloc(&data_rx_pool, K_FOREVER);
@@ -266,7 +266,7 @@ static int cmd_register(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (bt_l2cap_server_register(&server) < 0) {
-		shell_error(sh, "Unable to register psm");
+		shell_error(sh, "Unable to %s", "register psm");
 		server.psm = 0U;
 		return -ENOEXEC;
 	} else {
@@ -296,14 +296,14 @@ static int cmd_ecred_reconfigure(const struct shell *sh, size_t argc, char *argv
 
 	mtu = shell_strtoul(argv[1], 10, &err);
 	if (err) {
-		shell_error(sh, "Unable to parse MTU (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "parse MTU", err);
 
 		return -ENOEXEC;
 	}
 
 	err = bt_l2cap_ecred_chan_reconfigure(l2cap_ecred_chans, mtu);
 	if (err < 0) {
-		shell_error(sh, "Unable to reconfigure channel (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "reconfigure channel", err);
 	} else {
 		shell_print(sh, "L2CAP reconfiguration pending");
 	}
@@ -331,7 +331,7 @@ static int cmd_ecred_connect(const struct shell *sh, size_t argc, char *argv[])
 
 	psm = shell_strtoul(argv[1], 16, &err);
 	if (err) {
-		shell_error(sh, "Unable to parse PSM (err %d)", err);
+		shell_error(sh, "Unable to %s (err %d)", "parse PSM", err);
 
 		return err;
 	}
@@ -341,7 +341,7 @@ static int cmd_ecred_connect(const struct shell *sh, size_t argc, char *argv[])
 
 		sec = shell_strtoul(argv[2], 10, &err);
 		if (err) {
-			shell_error(sh, "Unable to parse security level (err %d)", err);
+			shell_error(sh, "Unable to %s (err %d)", "parse security level", err);
 
 			return err;
 		}
@@ -404,7 +404,7 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_l2cap_chan_disconnect(&l2ch_chan.ch.chan);
 	if (err) {
-		shell_print(sh, "Unable to disconnect: %u", -err);
+		shell_print(sh, "Unable to %s (err %d)", "disconnect", -err);
 	}
 
 	return err;
@@ -436,11 +436,11 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 		buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
 		if (!buf) {
 			if (l2ch_chan.ch.state != BT_L2CAP_CONNECTED) {
-				shell_print(sh, "Channel disconnected, stopping TX");
+				shell_print(sh, "%s, stopping TX", "Channel disconnected");
 
 				return -EAGAIN;
 			}
-			shell_print(sh, "Allocation timeout, stopping TX");
+			shell_print(sh, "%s, stopping TX", "Allocation timeout");
 
 			return -EAGAIN;
 		}
@@ -449,7 +449,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 		net_buf_add_mem(buf, buf_data, len);
 		ret = bt_l2cap_chan_send(&l2ch_chan.ch.chan, buf);
 		if (ret < 0) {
-			shell_print(sh, "Unable to send: %d", -ret);
+			shell_print(sh, "Unable to %s (err %d)", "send", -ret);
 			net_buf_unref(buf);
 			return -ENOEXEC;
 		}
