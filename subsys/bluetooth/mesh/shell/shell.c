@@ -275,7 +275,7 @@ static int cmd_lpn(const struct shell *sh, size_t argc, char *argv[])
 
 		err = bt_mesh_lpn_set(true);
 		if (err) {
-			shell_error(sh, "Enabling LPN failed (err %d)", err);
+			shell_error(sh, "%s failed (err %d)", "Enabling LPN", err);
 		} else {
 			enabled = true;
 		}
@@ -287,7 +287,7 @@ static int cmd_lpn(const struct shell *sh, size_t argc, char *argv[])
 
 		err = bt_mesh_lpn_set(false);
 		if (err) {
-			shell_error(sh, "Enabling LPN failed (err %d)", err);
+			shell_error(sh, "%s failed (err %d)", "Enabling LPN", err);
 		} else {
 			enabled = false;
 		}
@@ -302,7 +302,7 @@ static int cmd_poll(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_lpn_poll();
 	if (err) {
-		shell_error(sh, "Friend Poll failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Friend Poll", err);
 	}
 
 	return 0;
@@ -359,7 +359,7 @@ static int cmd_proxy_connect(const struct shell *sh, size_t argc,
 
 	err = bt_mesh_proxy_connect(net_idx);
 	if (err) {
-		shell_error(sh, "Proxy connect failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Proxy connect", err);
 	}
 
 	return 0;
@@ -379,7 +379,7 @@ static int cmd_proxy_disconnect(const struct shell *sh, size_t argc,
 
 	err = bt_mesh_proxy_disconnect(net_idx);
 	if (err) {
-		shell_error(sh, "Proxy disconnect failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Proxy disconnect", err);
 	}
 
 	return 0;
@@ -424,7 +424,7 @@ static int cmd_input_num(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_input_number(val);
 	if (err) {
-		shell_error(sh, "Numeric input failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Numeric input", err);
 	}
 
 	return 0;
@@ -435,7 +435,7 @@ static int cmd_input_str(const struct shell *sh, size_t argc, char *argv[])
 	int err = bt_mesh_input_string(argv[1]);
 
 	if (err) {
-		shell_error(sh, "String input failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "String input", err);
 	}
 
 	return 0;
@@ -542,16 +542,16 @@ static int output_number(bt_mesh_output_action_t action, uint32_t number)
 {
 	switch (action) {
 	case BT_MESH_BLINK:
-		shell_print_ctx("OOB blink Number: %u", number);
+		shell_print_ctx("OOB %s Number: %u", "blink", number);
 		break;
 	case BT_MESH_BEEP:
-		shell_print_ctx("OOB beep Number: %u", number);
+		shell_print_ctx("OOB %s Number: %u", "beep", number);
 		break;
 	case BT_MESH_VIBRATE:
-		shell_print_ctx("OOB vibrate Number: %u", number);
+		shell_print_ctx("OOB %s Number: %u", "vibrate", number);
 		break;
 	case BT_MESH_DISPLAY_NUMBER:
-		shell_print_ctx("OOB display Number: %u", number);
+		shell_print_ctx("OOB %s Number: %u", "display", number);
 		break;
 	default:
 		if (bt_mesh_shell_ctx_shell != NULL) {
@@ -576,16 +576,20 @@ static int input(bt_mesh_input_action_t act, uint8_t size)
 
 	switch (act) {
 	case BT_MESH_ENTER_NUMBER:
-		shell_print_ctx("Enter a number (max %u digits) with: Input-num <num>", size);
+		shell_print_ctx("%s a number (max %u digits) with: Input-num <num>",
+				"Enter", size);
 		break;
 	case BT_MESH_ENTER_STRING:
-		shell_print_ctx("Enter a string (max %u chars) with: Input-str <str>", size);
+		shell_print_ctx("%s a string (max %u chars) with: Input-str <str>",
+				"Enter", size);
 		break;
 	case BT_MESH_TWIST:
-		shell_print_ctx("\"Twist\" a number (max %u digits) with: Input-num <num>", size);
+		shell_print_ctx("%s a number (max %u digits) with: Input-num <num>",
+				"\"Twist\"", size);
 		break;
 	case BT_MESH_PUSH:
-		shell_print_ctx("\"Push\" a number (max %u digits) with: Input-num <num>", size);
+		shell_print_ctx("%s a number (max %u digits) with: Input-num <num>",
+				"\"Push\"", size);
 		break;
 	default:
 		if (bt_mesh_shell_ctx_shell != NULL) {
@@ -600,12 +604,12 @@ static int input(bt_mesh_input_action_t act, uint8_t size)
 
 static void link_open(bt_mesh_prov_bearer_t bearer)
 {
-	shell_print_ctx("Provisioning link opened on %s", bearer2str(bearer));
+	shell_print_ctx("Provisioning link %s on %s", "opened", bearer2str(bearer));
 }
 
 static void link_close(bt_mesh_prov_bearer_t bearer)
 {
-	shell_print_ctx("Provisioning link closed on %s", bearer2str(bearer));
+	shell_print_ctx("Provisioning link %s on %s", "closed", bearer2str(bearer));
 }
 
 static uint8_t static_val[32];
@@ -766,7 +770,7 @@ static int cmd_provision_gatt(const struct shell *sh, size_t argc,
 
 	err = bt_mesh_provision_gatt(uuid, net_idx, addr, attention_duration);
 	if (err) {
-		shell_error(sh, "Provisioning failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Provisioning", err);
 	}
 
 	return 0;
@@ -842,7 +846,7 @@ static int cmd_remote_pub_key_set(const struct shell *sh, size_t argc, char *arg
 	err = bt_mesh_prov_remote_pub_key_set(pub_key);
 
 	if (err) {
-		shell_error(sh, "Setting remote pub key failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Setting remote pub key", err);
 	}
 
 	return 0;
@@ -861,7 +865,8 @@ static int cmd_auth_method_set_input(const struct shell *sh, size_t argc, char *
 
 	err = bt_mesh_auth_method_set_input(action, size);
 	if (err) {
-		shell_error(sh, "Setting input OOB authentication action failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)",
+				"Setting input OOB authentication action", err);
 	}
 
 	return 0;
@@ -880,7 +885,8 @@ static int cmd_auth_method_set_output(const struct shell *sh, size_t argc, char 
 
 	err = bt_mesh_auth_method_set_output(action, size);
 	if (err) {
-		shell_error(sh, "Setting output OOB authentication action failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)",
+				"Setting output OOB authentication action", err);
 	}
 	return 0;
 }
@@ -899,7 +905,8 @@ static int cmd_auth_method_set_static(const struct shell *sh, size_t argc, char 
 
 	err = bt_mesh_auth_method_set_static(static_oob_auth, len);
 	if (err) {
-		shell_error(sh, "Setting static OOB authentication failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)",
+				"Setting static OOB authentication", err);
 	}
 	return 0;
 }
@@ -909,7 +916,7 @@ static int cmd_auth_method_set_none(const struct shell *sh, size_t argc, char *a
 	int err = bt_mesh_auth_method_set_none();
 
 	if (err) {
-		shell_error(sh, "Disabling authentication failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Disabling authentication", err);
 	}
 	return 0;
 }
@@ -937,7 +944,7 @@ static int cmd_provision_adv(const struct shell *sh, size_t argc,
 
 	err = bt_mesh_provision_adv(uuid, net_idx, addr, attention_duration);
 	if (err) {
-		shell_error(sh, "Provisioning failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Provisioning", err);
 	}
 
 	return 0;
@@ -984,7 +991,7 @@ static int cmd_provision_local(const struct shell *sh, size_t argc, char *argv[]
 
 	err = bt_mesh_provision(net_key, net_idx, 0, iv_index, addr, bt_mesh_shell_default_key);
 	if (err) {
-		shell_error(sh, "Provisioning failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Provisioning", err);
 	}
 
 	return 0;
@@ -1294,7 +1301,7 @@ static void cdb_print_app_keys(const struct shell *sh)
 		}
 
 		if (bt_mesh_cdb_app_key_export(key, 0, app_key)) {
-			shell_error(sh, "Unable to export app key 0x%03x", key->app_idx);
+			shell_error(sh, "Unable to %s app key 0x%03x", "export", key->app_idx);
 			continue;
 		}
 
@@ -1502,7 +1509,7 @@ static int cmd_cdb_app_key_add(const struct shell *sh, size_t argc,
 	}
 
 	if (bt_mesh_cdb_app_key_import(key, 0, app_key)) {
-		shell_error(sh, "Unable to import app key 0x%03x", app_idx);
+		shell_error(sh, "Unable to %s app key 0x%03x", "import", app_idx);
 		return 0;
 	}
 
@@ -1510,7 +1517,7 @@ static int cmd_cdb_app_key_add(const struct shell *sh, size_t argc,
 		bt_mesh_cdb_app_key_store(key);
 	}
 
-	shell_print(sh, "Added AppKey 0x%03x", app_idx);
+	shell_print(sh, "%s AppKey 0x%03x", "Added", app_idx);
 
 	return 0;
 }
@@ -1530,13 +1537,13 @@ static int cmd_cdb_app_key_del(const struct shell *sh, size_t argc,
 
 	key = bt_mesh_cdb_app_key_get(app_idx);
 	if (key == NULL) {
-		shell_print(sh, "No AppKey 0x%03x", app_idx);
+		shell_print(sh, "%s AppKey 0x%03x", "No", app_idx);
 		return 0;
 	}
 
 	bt_mesh_cdb_app_key_del(key, true);
 
-	shell_print(sh, "Deleted AppKey 0x%03x", app_idx);
+	shell_print(sh, "%s AppKey 0x%03x", "Deleted", app_idx);
 
 	return 0;
 }

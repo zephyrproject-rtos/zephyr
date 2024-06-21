@@ -41,7 +41,8 @@ static int cmd_seq_send(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_op_agg_cli_seq_send();
 	if (err) {
-		shell_error(sh, "Failed to send Opcodes Aggregator Sequence message (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)",
+				"Opcodes Aggregator Sequence message", err);
 	}
 
 	return 0;

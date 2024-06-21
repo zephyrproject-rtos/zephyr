@@ -251,7 +251,7 @@ static int cmd_flash_stream_set(const struct shell *sh, size_t argc, char *argv[
 
 	err = bt_mesh_blob_io_flash_init(&blob_flash_stream, area_id, offset);
 	if (err) {
-		shell_error(sh, "Failed to init BLOB IO Flash module: %d\n", err);
+		shell_error(sh, "%s failed (err %d)", "bt_mesh_blob_io_flash_init", err);
 	}
 
 	bt_mesh_shell_blob_io = &blob_flash_stream.io;
@@ -355,7 +355,7 @@ static int cmd_tx(const struct shell *sh, size_t argc, char *argv[])
 				    &blob_cli_xfer.inputs,
 				    &blob_cli_xfer.xfer, bt_mesh_shell_blob_io);
 	if (err) {
-		shell_print(sh, "BLOB transfer TX failed (err: %d)", err);
+		shell_print(sh, "%s failed (err %d)", "BLOB transfer TX", err);
 	}
 
 	return 0;
@@ -424,7 +424,7 @@ static int cmd_caps(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_blob_cli_caps_get((struct bt_mesh_blob_cli *)mod_cli->rt->user_data,
 					&blob_cli_xfer.inputs);
 	if (err) {
-		shell_print(sh, "Boundary check start failed (err: %d)", err);
+		shell_print(sh, "%s failed (err %d)", "Boundary check start", err);
 	}
 
 	return 0;
@@ -533,7 +533,7 @@ static int cmd_rx(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_blob_srv_recv((struct bt_mesh_blob_srv *)mod_srv->rt->user_data,
 				    id, bt_mesh_shell_blob_io, BT_MESH_TTL_MAX, timeout_base);
 	if (err) {
-		shell_print(sh, "BLOB RX setup failed (%d)", err);
+		shell_print(sh, "%s failed (%d)", "BLOB RX setup", err);
 	}
 
 	return 0;
@@ -550,7 +550,7 @@ static int cmd_rx_cancel(const struct shell *sh, size_t argc, char *argv[])
 	shell_print(sh, "Cancelling BLOB rx");
 	err = bt_mesh_blob_srv_cancel((struct bt_mesh_blob_srv *)mod_srv->rt->user_data);
 	if (err) {
-		shell_print(sh, "BLOB cancel failed (%d)", err);
+		shell_print(sh, "%s failed (%d)", "BLOB cancel", err);
 	}
 
 	return 0;

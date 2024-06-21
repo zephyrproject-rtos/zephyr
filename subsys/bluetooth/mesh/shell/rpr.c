@@ -112,7 +112,7 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 				     &srv, argc > 2 ? uuid : NULL, timeout,
 				     BT_MESH_RPR_SCAN_MAX_DEVS_ANY, &rsp);
 	if (err) {
-		shell_print(sh, "Scan start failed: %d", err);
+		shell_print(sh, "%s failed (err %d)", "Scan start", err);
 		return err;
 	}
 
@@ -157,7 +157,7 @@ static int cmd_scan_ext(const struct shell *sh, size_t argc, char *argv[])
 					 &srv, uuid, timeout, ad_types,
 					 (argc - 3));
 	if (err) {
-		shell_print(sh, "Scan start failed: %d", err);
+		shell_print(sh, "%s failed (err %d)", "Scan start", err);
 		return err;
 	}
 
@@ -192,7 +192,7 @@ static int cmd_scan_srv(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_rpr_scan_start_ext((struct bt_mesh_rpr_cli *)mod->rt->user_data,
 					 &srv, NULL, 0, ad_types, (argc - 1));
 	if (err) {
-		shell_print(sh, "Scan start failed: %d", err);
+		shell_print(sh, "%s failed (err %d)", "Scan start", err);
 		return err;
 	}
 
@@ -215,7 +215,7 @@ static int cmd_scan_caps(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_rpr_scan_caps_get((struct bt_mesh_rpr_cli *)mod->rt->user_data, &srv, &caps);
 	if (err) {
-		shell_print(sh, "Scan capabilities get failed: %d", err);
+		shell_print(sh, "%s failed (err %d)", "Scan capabilities get", err);
 		return err;
 	}
 
@@ -243,7 +243,7 @@ static int cmd_scan_get(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_rpr_scan_get((struct bt_mesh_rpr_cli *)mod->rt->user_data, &srv, &rsp);
 	if (err) {
-		shell_print(sh, "Scan get failed: %d", err);
+		shell_print(sh, "%s failed (err %d)", "Scan get", err);
 		return err;
 	}
 
@@ -271,7 +271,7 @@ static int cmd_scan_stop(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_rpr_scan_stop((struct bt_mesh_rpr_cli *)mod->rt->user_data, &srv, &rsp);
 	if (err || rsp.status) {
-		shell_print(sh, "Scan stop failed: %d %u", err, rsp.status);
+		shell_print(sh, "%s failed: %d %u", "Scan stop", err, rsp.status);
 		return err;
 	}
 
@@ -296,7 +296,7 @@ static int cmd_link_get(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_rpr_link_get((struct bt_mesh_rpr_cli *)mod->rt->user_data, &srv, &rsp);
 	if (err) {
-		shell_print(sh, "Link get failed: %d %u", err, rsp.status);
+		shell_print(sh, "%s failed: %d %u", "Link get", err, rsp.status);
 		return err;
 	}
 
@@ -318,7 +318,7 @@ static int cmd_link_close(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_rpr_link_close((struct bt_mesh_rpr_cli *)mod->rt->user_data, &srv, &rsp);
 	if (err) {
-		shell_print(sh, "Link close failed: %d %u", err, rsp.status);
+		shell_print(sh, "%s failed: %d %u", "Link close", err, rsp.status);
 		return err;
 	}
 
@@ -358,7 +358,7 @@ static int cmd_provision_remote(const struct shell *sh, size_t argc, char *argv[
 	err = bt_mesh_provision_remote((struct bt_mesh_rpr_cli *)mod->rt->user_data,
 				       &srv, uuid, net_idx, addr);
 	if (err) {
-		shell_print(sh, "Prov remote start failed: %d", err);
+		shell_print(sh, "%s failed (err %d)", "Prov remote start", err);
 	}
 
 	return err;
@@ -399,7 +399,7 @@ static int cmd_reprovision_remote(const struct shell *sh, size_t argc, char *arg
 	err = bt_mesh_reprovision_remote((struct bt_mesh_rpr_cli *)mod->rt->user_data,
 					 &srv, addr, composition_changed);
 	if (err) {
-		shell_print(sh, "Reprovisioning failed: %d", err);
+		shell_print(sh, "%s failed (err %d)", "Reprovisioning", err);
 	}
 
 	return 0;

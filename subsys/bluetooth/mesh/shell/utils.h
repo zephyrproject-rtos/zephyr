@@ -20,7 +20,7 @@
 		uint8_t elem_idx = shell_strtoul(argv[1], 0, &err); \
 	\
 		if (err) { \
-			shell_warn(sh, "Unable to parse input string arg"); \
+			shell_warn(sh, "Unable to parse input string argument"); \
 			return err; \
 		} \
 	\

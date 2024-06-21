@@ -21,7 +21,7 @@ static int cmd_tx_get(const struct shell *sh, size_t argc, char *argv[])
 						  bt_mesh_shell_target_ctx.dst, &rsp);
 	if (err) {
 		shell_error(sh,
-			    "Failed to send SAR Transmitter Get (err %d)", err);
+			    "Failed to send %s (err %d)", "SAR Transmitter Get", err);
 		return 0;
 	}
 
@@ -55,7 +55,7 @@ static int cmd_tx_set(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_sar_cfg_cli_transmitter_set(bt_mesh_shell_target_ctx.net_idx,
 						  bt_mesh_shell_target_ctx.dst, &set, &rsp);
 	if (err) {
-		shell_error(sh, "Failed to send SAR Transmitter Set (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "SAR Transmitter Set", err);
 		return 0;
 	}
 
@@ -76,7 +76,7 @@ static int cmd_rx_get(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_sar_cfg_cli_receiver_get(bt_mesh_shell_target_ctx.net_idx,
 					       bt_mesh_shell_target_ctx.dst, &rsp);
 	if (err) {
-		shell_error(sh, "Failed to send SAR Receiver Get (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "SAR Receiver Get", err);
 		return 0;
 	}
 
@@ -106,7 +106,7 @@ static int cmd_rx_set(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_sar_cfg_cli_receiver_set(bt_mesh_shell_target_ctx.net_idx,
 					       bt_mesh_shell_target_ctx.dst, &set, &rsp);
 	if (err) {
-		shell_error(sh, "Failed to send SAR Receiver Set (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "SAR Receiver Set", err);
 		return 0;
 	}
 

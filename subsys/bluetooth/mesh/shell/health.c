@@ -60,7 +60,7 @@ static int cmd_fault_get(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_health_cli_fault_get(cli, ctx.addr ? &ctx : NULL, cid, &test_id, faults,
 					   &fault_count);
 	if (err) {
-		shell_error(sh, "Failed to send Health Fault Get (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Health Fault Get", err);
 	} else {
 		show_faults(sh, test_id, cid, faults, fault_count);
 	}
@@ -94,7 +94,7 @@ static int fault_clear(const struct shell *sh, size_t argc, char *argv[], bool a
 		err = bt_mesh_health_cli_fault_clear(cli, ctx.addr ? &ctx : NULL, cid, &test_id,
 						     faults, &fault_count);
 		if (err) {
-			shell_error(sh, "Failed to send Health Fault Clear (err %d)", err);
+			shell_error(sh, "Failed to send %s (err %d)", "Health Fault Clear", err);
 		} else {
 			show_faults(sh, test_id, cid, faults, fault_count);
 		}
@@ -104,7 +104,7 @@ static int fault_clear(const struct shell *sh, size_t argc, char *argv[], bool a
 
 	err = bt_mesh_health_cli_fault_clear_unack(cli, ctx.addr ? &ctx : NULL, cid);
 	if (err) {
-		shell_error(sh, "Health Fault Clear Unacknowledged failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Health Fault Clear Unacknowledged", err);
 	}
 
 	return err;
@@ -147,7 +147,7 @@ static int fault_test(const struct shell *sh, size_t argc, char *argv[], bool ac
 		err = bt_mesh_health_cli_fault_test(cli, ctx.addr ? &ctx : NULL, cid, test_id,
 						    faults, &fault_count);
 		if (err) {
-			shell_error(sh, "Failed to send Health Fault Test (err %d)", err);
+			shell_error(sh, "Failed to send %s (err %d)", "Health Fault Test", err);
 		} else {
 			show_faults(sh, test_id, cid, faults, fault_count);
 		}
@@ -157,7 +157,7 @@ static int fault_test(const struct shell *sh, size_t argc, char *argv[], bool ac
 
 	err = bt_mesh_health_cli_fault_test_unack(cli, ctx.addr ? &ctx : NULL, cid, test_id);
 	if (err) {
-		shell_error(sh, "Health Fault Test Unacknowledged failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Health Fault Test Unacknowledged", err);
 	}
 
 	return err;
@@ -187,9 +187,9 @@ static int cmd_period_get(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_health_cli_period_get(cli, ctx.addr ? &ctx : NULL, &divisor);
 	if (err) {
-		shell_error(sh, "Failed to send Health Period Get (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Health Period Get", err);
 	} else {
-		shell_print(sh, "Health FastPeriodDivisor: %u", divisor);
+		shell_print(sh, "Health %s: %u", "FastPeriodDivisor", divisor);
 	}
 
 	return 0;
@@ -219,9 +219,9 @@ static int period_set(const struct shell *sh, size_t argc, char *argv[], bool ac
 		err = bt_mesh_health_cli_period_set(cli, ctx.addr ? &ctx : NULL, divisor,
 						    &updated_divisor);
 		if (err) {
-			shell_error(sh, "Failed to send Health Period Set (err %d)", err);
+			shell_error(sh, "Failed to send %s (err %d)", "Health Period Set", err);
 		} else {
-			shell_print(sh, "Health FastPeriodDivisor: %u", updated_divisor);
+			shell_print(sh, "Health %s: %u", "FastPeriodDivisor", updated_divisor);
 		}
 
 		return err;
@@ -229,7 +229,7 @@ static int period_set(const struct shell *sh, size_t argc, char *argv[], bool ac
 
 	err = bt_mesh_health_cli_period_set_unack(cli, ctx.addr ? &ctx : NULL, divisor);
 	if (err) {
-		shell_print(sh, "Failed to send Health Period Set (err %d)", err);
+		shell_print(sh, "Failed to send %s (err %d)", "Health Period Set", err);
 	}
 
 	return err;
@@ -259,9 +259,9 @@ static int cmd_attention_get(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_health_cli_attention_get(cli, ctx.addr ? &ctx : NULL, &attention);
 	if (err) {
-		shell_error(sh, "Failed to send Health Attention Get (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Health Attention Get", err);
 	} else {
-		shell_print(sh, "Health Attention Timer: %u", attention);
+		shell_print(sh, "Health %s: %u", "Attention Timer", attention);
 	}
 
 	return 0;
@@ -291,9 +291,9 @@ static int attention_set(const struct shell *sh, size_t argc, char *argv[], bool
 		err = bt_mesh_health_cli_attention_set(cli, ctx.addr ? &ctx : NULL, attention,
 						       &updated_attention);
 		if (err) {
-			shell_error(sh, "Failed to send Health Attention Set (err %d)", err);
+			shell_error(sh, "Failed to send %s (err %d)", "Health Attention Set", err);
 		} else {
-			shell_print(sh, "Health Attention Timer: %u", updated_attention);
+			shell_print(sh, "Health %s: %u", "Attention Timer", updated_attention);
 		}
 
 		return err;
@@ -301,7 +301,7 @@ static int attention_set(const struct shell *sh, size_t argc, char *argv[], bool
 
 	err = bt_mesh_health_cli_attention_set_unack(cli, ctx.addr ? &ctx : NULL, attention);
 	if (err) {
-		shell_error(sh, "Failed to send Health Attention Set (err % d) ", err);
+		shell_error(sh, "Failed to send %s (err % d)", "Health Attention Set", err);
 	}
 
 	return err;

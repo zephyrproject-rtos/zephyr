@@ -33,8 +33,8 @@ static int cmd_od_priv_gatt_proxy_set(const struct shell *sh, size_t argc,
 	}
 
 	if (err) {
-		shell_print(sh, "Unable to send On-Demand Private GATT Proxy Get/Set (err %d)",
-			    err);
+		shell_print(sh, "Failed to send %s (err %d)",
+				"On-Demand Private GATT Proxy Get/Set", err);
 		return 0;
 	}
 

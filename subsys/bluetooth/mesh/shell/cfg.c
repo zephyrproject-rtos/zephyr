@@ -26,7 +26,7 @@ static int cmd_reset(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_cfg_cli_node_reset(bt_mesh_shell_target_ctx.net_idx,
 					 bt_mesh_shell_target_ctx.dst, &reset);
 	if (err) {
-		shell_error(sh, "Unable to send Remote Node Reset (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Remote Node Reset", err);
 		return 0;
 	}
 
@@ -94,7 +94,7 @@ static int cmd_get_comp(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_cfg_cli_comp_data_get(bt_mesh_shell_target_ctx.net_idx,
 					bt_mesh_shell_target_ctx.dst, page, &page, &buf);
 	if (err) {
-		shell_error(sh, "Getting composition failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Getting composition", err);
 		return 0;
 	}
 
@@ -318,7 +318,7 @@ static int cmd_beacon(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Beacon Get/Set message (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Beacon Get/Set message", err);
 		return 0;
 	}
 
@@ -348,7 +348,7 @@ static int cmd_ttl(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Default TTL Get/Set (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Default TTL Get/Set", err);
 		return 0;
 	}
 
@@ -378,7 +378,7 @@ static int cmd_friend(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Friend Get/Set (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Friend Get/Set", err);
 		return 0;
 	}
 
@@ -408,7 +408,7 @@ static int cmd_gatt_proxy(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_print(sh, "Unable to send GATT Proxy Get/Set (err %d)", err);
+		shell_print(sh, "Failed to send %s (err %d)", "GATT Proxy Get/Set", err);
 		return 0;
 	}
 
@@ -432,7 +432,7 @@ static int cmd_polltimeout_get(const struct shell *sh, size_t argc, char *argv[]
 	err = bt_mesh_cfg_cli_lpn_timeout_get(bt_mesh_shell_target_ctx.net_idx,
 					  bt_mesh_shell_target_ctx.dst, lpn_address, &poll_timeout);
 	if (err) {
-		shell_error(sh, "Unable to send LPN PollTimeout Get (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "LPN PollTimeout Get", err);
 		return 0;
 	}
 
@@ -473,7 +473,7 @@ static int cmd_net_transmit(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send network transmit Get/Set (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "network transmit Get/Set", err);
 		return 0;
 	}
 
@@ -524,7 +524,7 @@ static int cmd_relay(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Relay Get/Set (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Relay Get/Set", err);
 		return 0;
 	}
 
@@ -591,12 +591,12 @@ static int cmd_net_key_add(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_cfg_cli_net_key_add(bt_mesh_shell_target_ctx.net_idx,
 				      bt_mesh_shell_target_ctx.dst, key_net_idx, key_val, &status);
 	if (err) {
-		shell_print(sh, "Unable to send NetKey Add (err %d)", err);
+		shell_print(sh, "Failed to send %s (err %d)", "NetKey Add", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "NetKeyAdd failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "NetKeyAdd", status);
 	} else {
 		shell_print(sh, "NetKey added with NetKey Index 0x%03x", key_net_idx);
 	}
@@ -631,12 +631,12 @@ static int cmd_net_key_update(const struct shell *sh, size_t argc, char *argv[])
 					 bt_mesh_shell_target_ctx.dst, key_net_idx, key_val,
 					 &status);
 	if (err) {
-		shell_print(sh, "Unable to send NetKey Update (err %d)", err);
+		shell_print(sh, "Failed to send %s (err %d)", "NetKey Update", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "NetKeyUpdate failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "NetKeyUpdate", status);
 	} else {
 		shell_print(sh, "NetKey updated with NetKey Index 0x%03x", key_net_idx);
 	}
@@ -655,7 +655,7 @@ static int cmd_net_key_get(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_cfg_cli_net_key_get(bt_mesh_shell_target_ctx.net_idx,
 				      bt_mesh_shell_target_ctx.dst, keys, &cnt);
 	if (err) {
-		shell_print(sh, "Unable to send NetKeyGet (err %d)", err);
+		shell_print(sh, "Failed to send %s (err %d)", "NetKeyGet", err);
 		return 0;
 	}
 
@@ -682,12 +682,12 @@ static int cmd_net_key_del(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_cfg_cli_net_key_del(bt_mesh_shell_target_ctx.net_idx,
 				      bt_mesh_shell_target_ctx.dst, key_net_idx, &status);
 	if (err) {
-		shell_print(sh, "Unable to send NetKeyDel (err %d)", err);
+		shell_print(sh, "Failed to send %s (err %d)", "NetKeyDel", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "NetKeyDel failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "NetKeyDel", status);
 	} else {
 		shell_print(sh, "NetKey 0x%03x deleted", key_net_idx);
 	}
@@ -754,12 +754,12 @@ static int cmd_app_key_add(const struct shell *sh, size_t argc, char *argv[])
 				      bt_mesh_shell_target_ctx.dst, key_net_idx, key_app_idx,
 				      key_val, &status);
 	if (err) {
-		shell_error(sh, "Unable to send App Key Add (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "App Key Add", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "AppKeyAdd failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "AppKeyAdd", status);
 	} else {
 		shell_print(sh, "AppKey added, NetKeyIndex 0x%04x AppKeyIndex 0x%04x", key_net_idx,
 			    key_app_idx);
@@ -796,12 +796,12 @@ static int cmd_app_key_upd(const struct shell *sh, size_t argc, char *argv[])
 					 bt_mesh_shell_target_ctx.dst, key_net_idx, key_app_idx,
 					 key_val, &status);
 	if (err) {
-		shell_error(sh, "Unable to send App Key Update (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "App Key Update", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "AppKey update failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "AppKey update", status);
 	} else {
 		shell_print(sh, "AppKey updated, NetKeyIndex 0x%04x AppKeyIndex 0x%04x",
 			    key_net_idx, key_app_idx);
@@ -829,12 +829,12 @@ static int cmd_app_key_get(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_cfg_cli_app_key_get(bt_mesh_shell_target_ctx.net_idx,
 				      bt_mesh_shell_target_ctx.dst, net_idx, &status, keys, &cnt);
 	if (err) {
-		shell_print(sh, "Unable to send AppKeyGet (err %d)", err);
+		shell_print(sh, "Failed to send %s (err %d)", "AppKeyGet", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "AppKeyGet failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "AppKeyGet", status);
 		return 0;
 	}
 
@@ -864,7 +864,7 @@ static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
 						    bt_mesh_shell_target_ctx.dst, net_idx, &status,
 						    &identify);
 		if (err) {
-			shell_print(sh, "Unable to send Node Identify Get (err %d)", err);
+			shell_print(sh, "Failed to send %s (err %d)", "Node Identify Get", err);
 			return 0;
 		}
 	} else {
@@ -879,13 +879,13 @@ static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
 						    bt_mesh_shell_target_ctx.dst, net_idx,
 						    new_identify, &status, &identify);
 		if (err) {
-			shell_print(sh, "Unable to send Node Identify Set (err %d)", err);
+			shell_print(sh, "Failed to send %s (err %d)", "Node Identify Set", err);
 			return 0;
 		}
 	}
 
 	if (status) {
-		shell_print(sh, "Node Identify Get/Set failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "Node Identify Get/Set", status);
 	} else {
 		shell_print(sh, "Node Identify Get/Set successful with identify 0x%02x", identify);
 	}
@@ -910,12 +910,12 @@ static int cmd_app_key_del(const struct shell *sh, size_t argc, char *argv[])
 				      bt_mesh_shell_target_ctx.dst, key_net_idx, key_app_idx,
 				      &status);
 	if (err) {
-		shell_error(sh, "Unable to send App Key del(err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "App Key del", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "AppKeyDel failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "AppKeyDel", status);
 	} else {
 		shell_print(sh, "AppKey deleted, NetKeyIndex 0x%04x AppKeyIndex 0x%04x",
 			    key_net_idx, key_app_idx);
@@ -955,12 +955,12 @@ static int cmd_mod_app_bind(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Model App Bind (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Model App Bind", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model App Bind failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "Model App Bind", status);
 	} else {
 		shell_print(sh, "AppKey successfully bound");
 	}
@@ -999,12 +999,12 @@ static int cmd_mod_app_unbind(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Model App Unbind (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Model App Unbind", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model App Unbind failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "Model App Unbind", status);
 	} else {
 		shell_print(sh, "AppKey successfully unbound");
 	}
@@ -1046,12 +1046,12 @@ static int cmd_mod_app_get(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Model App Get (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Model App Get", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model App Get failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "Model App Get", status);
 	} else {
 		shell_print(sh, "Apps bound to Element 0x%04x, Model 0x%04x %s:", elem_addr, mod_id,
 			    argc > 3 ? argv[3] : "(SIG)");
@@ -1099,12 +1099,12 @@ static int cmd_mod_sub_add(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Model Subscription Add (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Model Subscription Add", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model Subscription Add failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "Model Subscription Add", status);
 	} else {
 		shell_print(sh, "Model subscription was successful");
 	}
@@ -1143,12 +1143,13 @@ static int cmd_mod_sub_del(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Model Subscription Delete (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Model Subscription Delete", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model Subscription Delete failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x",
+				"Model Subscription Delete", status);
 	} else {
 		shell_print(sh, "Model subscription deltion was successful");
 	}
@@ -1192,12 +1193,12 @@ static int cmd_mod_sub_add_va(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Mod Sub VA Add (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Mod Sub VA Add", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Mod Sub VA Add failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x", "Mod Sub VA Add", status);
 	} else {
 		shell_print(sh, "0x%04x subscribed to Label UUID %s (va 0x%04x)", elem_addr,
 			    argv[2], sub_addr);
@@ -1242,12 +1243,13 @@ static int cmd_mod_sub_del_va(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Model Subscription Delete (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Model Subscription Delete", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model Subscription Delete failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x",
+				"Model Subscription Delete", status);
 	} else {
 		shell_print(sh, "0x%04x unsubscribed from Label UUID %s (va 0x%04x)", elem_addr,
 			    argv[2], sub_addr);
@@ -1287,12 +1289,13 @@ static int cmd_mod_sub_ow(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Model Subscription Overwrite (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Model Subscription Overwrite", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model Subscription Overwrite failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x",
+				"Model Subscription Overwrite", status);
 	} else {
 		shell_print(sh, "Model subscription overwrite was successful");
 	}
@@ -1336,12 +1339,13 @@ static int cmd_mod_sub_ow_va(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Mod Sub VA Overwrite (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Mod Sub VA Overwrite", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Mod Sub VA Overwrite failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x",
+				"Mod Sub VA Overwrite", status);
 	} else {
 		shell_print(sh, "0x%04x overwrite to Label UUID %s (va 0x%04x)", elem_addr, argv[2],
 			    sub_addr);
@@ -1380,12 +1384,13 @@ static int cmd_mod_sub_del_all(const struct shell *sh, size_t argc, char *argv[]
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Model Subscription Delete All (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Model Subscription Delete All", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model Subscription Delete All failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x",
+				"Model Subscription Delete All", status);
 	} else {
 		shell_print(sh, "Model subscription deltion all was successful");
 	}
@@ -1427,12 +1432,13 @@ static int cmd_mod_sub_get(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send Model Subscription Get (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "Model Subscription Get", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model Subscription Get failed with status 0x%02x", status);
+		shell_print(sh, "%s failed with status 0x%02x",
+				"Model Subscription Get", status);
 	} else {
 		shell_print(sh,
 			    "Model Subscriptions for Element 0x%04x, Model 0x%04x %s:", elem_addr,
@@ -1480,7 +1486,7 @@ static int cmd_krp(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		shell_error(sh, "Unable to send key refresh phase Get/Set (err %d)", err);
+		shell_error(sh, "Failed to send %s (err %d)", "key refresh phase Get/Set", err);
 		return 0;
 	}
 
@@ -1507,12 +1513,12 @@ static int mod_pub_get(const struct shell *sh, uint16_t addr, uint16_t mod_id, u
 	}
 
 	if (err) {
-		shell_error(sh, "Model Publication Get failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Model Publication Get", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model Publication Get failed (status 0x%02x)", status);
+		shell_print(sh, "%s failed with status 0x%02x", "Model Publication Get", status);
 		return 0;
 	}
 
@@ -1592,12 +1598,12 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va, uint16
 	}
 
 	if (err) {
-		shell_error(sh, "Model Publication Set failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Model Publication Set", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Model Publication Set failed (status 0x%02x)", status);
+		shell_print(sh, "%s failed with status 0x%02x", "Model Publication Set", status);
 	} else {
 		shell_print(sh, "Model Publication successfully set");
 	}
@@ -1685,12 +1691,13 @@ static int hb_sub_get(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_cfg_cli_hb_sub_get(bt_mesh_shell_target_ctx.net_idx,
 					 bt_mesh_shell_target_ctx.dst, &sub, &status);
 	if (err) {
-		shell_error(sh, "Heartbeat Subscription Get failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Heartbeat Subscription Get", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Heartbeat Subscription Get failed (status 0x%02x)", status);
+		shell_print(sh, "%s failed with status 0x%02x",
+				"Heartbeat Subscription Get", status);
 	} else {
 		hb_sub_print(sh, &sub);
 	}
@@ -1715,12 +1722,13 @@ static int hb_sub_set(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_cfg_cli_hb_sub_set(bt_mesh_shell_target_ctx.net_idx,
 					 bt_mesh_shell_target_ctx.dst, &sub, &status);
 	if (err) {
-		shell_error(sh, "Heartbeat Subscription Set failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Heartbeat Subscription Set", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Heartbeat Subscription Set failed (status 0x%02x)", status);
+		shell_print(sh, "%s failed with status 0x%02x",
+				"Heartbeat Subscription Set", status);
 	} else {
 		hb_sub_print(sh, &sub);
 	}
@@ -1751,12 +1759,13 @@ static int hb_pub_get(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_cfg_cli_hb_pub_get(bt_mesh_shell_target_ctx.net_idx,
 					 bt_mesh_shell_target_ctx.dst, &pub, &status);
 	if (err) {
-		shell_error(sh, "Heartbeat Publication Get failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Heartbeat Publication Get", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Heartbeat Publication Get failed (status 0x%02x)", status);
+		shell_print(sh, "%s failed with status 0x%02x",
+				"Heartbeat Publication Get", status);
 		return 0;
 	}
 
@@ -1787,12 +1796,13 @@ static int hb_pub_set(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_cfg_cli_hb_pub_set(bt_mesh_shell_target_ctx.net_idx,
 					 bt_mesh_shell_target_ctx.dst, &pub, &status);
 	if (err) {
-		shell_error(sh, "Heartbeat Publication Set failed (err %d)", err);
+		shell_error(sh, "%s failed (err %d)", "Heartbeat Publication Set", err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(sh, "Heartbeat Publication Set failed (status 0x%02x)", status);
+		shell_print(sh, "%s failed with status 0x%02x",
+				"Heartbeat Publication Set", status);
 	} else {
 		shell_print(sh, "Heartbeat publication successfully set");
 	}

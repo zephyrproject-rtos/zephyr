@@ -293,7 +293,7 @@ static int cmd_dfu_comp_hash_get(const struct shell *sh, size_t argc, char *argv
 
 	err = bt_mesh_dfu_metadata_comp_hash_get(&dfu_comp_data, key, &hash);
 	if (err) {
-		shell_print(sh, "Failed to compute composition data hash: %d\n", err);
+		shell_print(sh, "Failed to compute composition data hash: %d", err);
 		return err;
 	}
 
@@ -440,7 +440,7 @@ static int cmd_dfu_slot_del(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_dfu_slot_del(slot);
 	if (err) {
-		shell_print(sh, "Failed deleting slot %u (err: %d)", idx,
+		shell_print(sh, "Failed deleting slot %u (err %d)", idx,
 			    err);
 		return 0;
 	}
@@ -590,8 +590,7 @@ static int cmd_dfu_target_state(const struct shell *sh, size_t argc, char *argv[
 	err = bt_mesh_dfu_cli_status_get((struct bt_mesh_dfu_cli *)mod_cli->rt->user_data,
 					 &ctx, &rsp);
 	if (err) {
-		shell_print(sh, "Failed getting target status (err: %d)",
-			    err);
+		shell_print(sh, "%s failed (err %d)", "target status get", err);
 		return 0;
 	}
 
@@ -657,7 +656,7 @@ static int cmd_dfu_target_imgs(const struct shell *sh, size_t argc, char *argv[]
 	err = bt_mesh_dfu_cli_imgs_get((struct bt_mesh_dfu_cli *)mod_cli->rt->user_data,
 				       &ctx, dfu_img_cb, NULL, img_cnt);
 	if (err) {
-		shell_print(sh, "Request failed (err: %d)", err);
+		shell_print(sh, "Failed (err %d)", err);
 	}
 
 	return 0;
@@ -768,7 +767,7 @@ static int cmd_dfu_send(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_dfu_cli_send((struct bt_mesh_dfu_cli *)mod_cli->rt->user_data,
 				   &dfu_tx.inputs, bt_mesh_shell_blob_io, &xfer);
 	if (err) {
-		shell_print(sh, "Failed (err: %d)", err);
+		shell_print(sh, "Failed (err %d)", err);
 		return 0;
 	}
 	return 0;
@@ -803,7 +802,7 @@ static int cmd_dfu_tx_cancel(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_mesh_dfu_cli_cancel((struct bt_mesh_dfu_cli *)mod_cli->rt->user_data,
 				     (argc == 2) ? &ctx : NULL);
 	if (err) {
-		shell_print(sh, "Failed (err: %d)", err);
+		shell_print(sh, "Failed (err %d)", err);
 	}
 
 	return 0;
@@ -821,7 +820,7 @@ static int cmd_dfu_apply(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_dfu_cli_apply((struct bt_mesh_dfu_cli *)mod_cli->rt->user_data);
 	if (err) {
-		shell_print(sh, "Failed (err: %d)", err);
+		shell_print(sh, "Failed (err %d)", err);
 	}
 
 	return 0;
@@ -839,7 +838,7 @@ static int cmd_dfu_confirm(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_dfu_cli_confirm((struct bt_mesh_dfu_cli *)mod_cli->rt->user_data);
 	if (err) {
-		shell_print(sh, "Failed (err: %d)", err);
+		shell_print(sh, "Failed (err %d)", err);
 	}
 
 	return 0;
@@ -857,7 +856,7 @@ static int cmd_dfu_suspend(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_dfu_cli_suspend((struct bt_mesh_dfu_cli *)mod_cli->rt->user_data);
 	if (err) {
-		shell_print(sh, "Failed (err: %d)", err);
+		shell_print(sh, "Failed (err %d)", err);
 	}
 
 	return 0;
@@ -875,7 +874,7 @@ static int cmd_dfu_resume(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_mesh_dfu_cli_resume((struct bt_mesh_dfu_cli *)mod_cli->rt->user_data);
 	if (err) {
-		shell_print(sh, "Failed (err: %d)", err);
+		shell_print(sh, "Failed (err %d)", err);
 	}
 
 	return 0;
