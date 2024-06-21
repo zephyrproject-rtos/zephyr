@@ -1,0 +1,7 @@
+sample:
+  name: Tap Count Sample
+tests:
+  sample.sensor.tap_count:
+    harness: sensor
+    tags: sensors
+    filter: dt_alias_exists("accel0")
