@@ -2898,7 +2898,7 @@ static int cmd_read_local_tx_power(const struct shell *sh, size_t argc, char *ar
 		}
 		err = bt_conn_le_get_tx_power_level(default_conn, &tx_power_level);
 		if (err) {
-			shell_print(sh, "Commad returned error error %d", err);
+			shell_print(sh, "%s returned error %d", "Command", err);
 			return err;
 		}
 		if (tx_power_level.current_level == unachievable_current_level) {
@@ -2981,7 +2981,7 @@ static int cmd_set_path_loss_reporting_parameters(const struct shell *sh, size_t
 
 	err = bt_conn_le_set_path_loss_mon_param(default_conn, &params);
 	if (err) {
-		shell_error(sh, "bt_conn_le_set_path_loss_mon_param returned error %d", err);
+		shell_error(sh, "%s returned error %d", "bt_conn_le_set_path_loss_mon_param", err);
 		return -ENOEXEC;
 	}
 
@@ -3007,7 +3007,7 @@ static int cmd_set_path_loss_reporting_enable(const struct shell *sh, size_t arg
 	err = bt_conn_le_set_path_loss_mon_enable(default_conn, enable);
 
 	if (err) {
-		shell_error(sh, "bt_conn_le_set_path_loss_mon_enable returned error %d", err);
+		shell_error(sh, "%s returned error %d", "bt_conn_le_set_path_loss_mon_enable", err);
 		return -ENOEXEC;
 	}
 
