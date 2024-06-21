@@ -70,7 +70,7 @@
 			pinmux = <M0SCK_P5>, <M0MISO_P6>, <M0MOSI_P7>;
 		};
 		group2 {
-			pinmux = <NCE11_P11>;
+			pinmux = <NCE1_P1>;
 			drive-push-pull;
 			ambiq,iom-nce-module = <0>;
 			ambiq,iom-num = <0>;
@@ -81,7 +81,7 @@
 			pinmux = <M1SCK_P8>, <M1MISO_P9>, <M1MOSI_P10>;
 		};
 		group2 {
-			pinmux = <NCE14_P14>;
+			pinmux = <NCE11_P11>;
 			drive-push-pull;
 			ambiq,iom-nce-module = <1>;
 			ambiq,iom-num = <1>;
