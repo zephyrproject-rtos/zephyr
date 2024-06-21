@@ -96,9 +96,6 @@ void dut_procedure(void)
 	LOG_DBG("start adv with RPA");
 	start_advertising(BT_LE_ADV_OPT_CONNECTABLE);
 
-	/* signal tester it can start scanning again, expecting an RPA this time */
-	backchannel_sync_send();
-
 	/* Test pass verdict is decided by the tester */
 	PASS("DUT done\n");
 }
