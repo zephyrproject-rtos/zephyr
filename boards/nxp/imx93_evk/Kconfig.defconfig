@@ -1,0 +1,44 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_IMX93_EVK
+
+if BOARD_IMX93_EVK_MIMX9352_A55
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config NET_TX_STACK_SIZE
+	default 8192
+
+config NET_RX_STACK_SIZE
+	default 8192
+
+if NET_TCP
+
+config NET_TCP_WORKQ_STACK_SIZE
+	default 8192
+
+endif # NET_TCP
+
+if NET_MGMT_EVENT
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 8192
+
+endif # NET_MGMT_EVENT
+
+if NET_SOCKETS_SERVICE
+
+config NET_SOCKETS_SERVICE_STACK_SIZE
+	default 8192
+
+endif # NET_SOCKETS_SERVICE
+
+endif # NETWORKING
+
+endif # BOARD_IMX93_EVK_MIMX9352_A55
+
+endif # BOARD_IMX93_EVK
