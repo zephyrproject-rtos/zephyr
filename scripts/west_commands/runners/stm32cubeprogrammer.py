@@ -85,6 +85,10 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             )
 
         if platform.system() == "Windows":
+            cmd = shutil.which("STM32_Programmer_CLI")
+            if cmd is not None:
+                return Path(cmd)
+
             cli = (
                 Path("STMicroelectronics")
                 / "STM32Cube"
