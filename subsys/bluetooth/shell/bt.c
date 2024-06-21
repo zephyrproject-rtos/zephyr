@@ -2634,9 +2634,9 @@ static int cmd_per_adv_sync_create(const struct shell *sh, size_t argc,
 
 	err = bt_le_per_adv_sync_create(&create_params, &per_adv_syncs[selected_per_adv_sync]);
 	if (err) {
-		shell_error(sh, "Per adv sync failed (%d)", err);
+		shell_error(sh, "Per adv sync %s failed (%d)", "create", err);
 	} else {
-		shell_print(sh, "Per adv sync pending");
+		shell_print(sh, "Per adv sync %s", "pending");
 	}
 
 	return 0;
@@ -2656,9 +2656,9 @@ static int cmd_per_adv_sync_delete(const struct shell *sh, size_t argc,
 	err = bt_le_per_adv_sync_delete(per_adv_sync);
 
 	if (err) {
-		shell_error(sh, "Per adv sync delete failed (%d)", err);
+		shell_error(sh, "Per adv sync %s failed (%d)", "delete", err);
 	} else {
-		shell_print(sh, "Per adv sync deleted");
+		shell_print(sh, "Per adv sync %s", "deleted");
 		per_adv_syncs[selected_per_adv_sync] = NULL;
 	}
 
