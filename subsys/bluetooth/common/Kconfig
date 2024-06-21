@@ -97,6 +97,7 @@ config BT_BUF_ACL_RX_COUNT
 config BT_BUF_CMD_COMPLETE_EVT_SIZE
 	  int "Maximum supported HCI Command Complete Event buffer length"
 	  # LE Read Supported Commands command complete event.
+	  default 255 if !BT_CTLR
 	  default 68
 	  range 68 255
 	  help
@@ -107,8 +108,8 @@ config BT_BUF_CMD_COMPLETE_EVT_SIZE
 	    to the expected HCI Command Complete events that can be generated
 	    from the configuration.
 
-	    If the subset of possible HCI Command Complete events is unknown,
-	    this should be set to the maximum of 255.
+	    If the subset of possible HCI Command Complete events is unknown or
+	    if you use a split build (ie hci on another chip), then you better use 255,
 
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
