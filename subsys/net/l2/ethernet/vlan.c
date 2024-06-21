@@ -191,7 +191,7 @@ static struct vlan_context *get_vlan(struct net_if *iface,
 	}
 
 	/* If the interface is virtual, then it should be be the VLAN one.
-	 * Just get the Ethernet interface it points to to get the context.
+	 * Just get the Ethernet interface it points to get the context.
 	 */
 	ctx = get_vlan_ctx(net_virtual_get_iface(iface), vlan_tag, false);
 

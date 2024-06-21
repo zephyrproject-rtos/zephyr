@@ -316,7 +316,7 @@
  *     DT_PROP(DT_INST(1, vnd_soc_serial), current_speed)
  *
  *     // 9600, because there is only one disabled node, and
- *     // disabled nodes are "at the the end" of the instance
+ *     // disabled nodes are "at the end" of the instance
  *     // number "list".
  *     DT_PROP(DT_INST(2, vnd_soc_serial), current_speed)
  * @endcode
@@ -788,7 +788,7 @@
  * - for type phandle, idx must be 0 and the expansion is a node
  *   identifier (this treats phandle like a phandles of length 1)
  *
- * - for type string, idx must be 0 and the expansion is the the
+ * - for type string, idx must be 0 and the expansion is the
  *   entire string (this treats string like string-array of length 1)
  *
  * These properties are handled as special cases:

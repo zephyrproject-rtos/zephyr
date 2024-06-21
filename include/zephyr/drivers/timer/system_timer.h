@@ -33,7 +33,7 @@ extern "C" {
  *
  * Informs the system clock driver that the next needed call to
  * sys_clock_announce() will not be until the specified number of ticks
- * from the the current time have elapsed.  Note that spurious calls
+ * from the current time have elapsed.  Note that spurious calls
  * to sys_clock_announce() are allowed (i.e. it's legal to announce
  * every tick and implement this function as a noop), the requirement
  * is that one tick announcement should occur within one tick BEFORE

@@ -155,7 +155,7 @@ config LIS2DH_MEASURE_TEMPERATURE
 	  relative temperature. For example, it is X degrees C
 	  cooler or warmer.
 	  Each chip has an offset.  This offset must be applied
-	  to the result. The offset can be obtained by comparing the
+	  to the result. The offset can be obtained by comparing
 	  the reported temperature to a reference.
 	  This option does not apply to the LSM330DLHC.
 

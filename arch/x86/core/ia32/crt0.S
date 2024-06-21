@@ -273,7 +273,7 @@ __csSet:
 	/* Don't clear BSS if the section is not present
 	 * in memory at boot. Or else it would cause page
 	 * faults. Zeroing BSS will be done later once the
-	 * the paging mechanism has been initialized.
+	 * paging mechanism has been initialized.
 	 */
 	call	z_bss_zero
 #endif

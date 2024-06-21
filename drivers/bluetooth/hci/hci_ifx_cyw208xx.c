@@ -10,7 +10,7 @@
   *
   *  This driver uses btstack-integration asset as hosts platform adaptation layer
   *  (porting layer) for CYW20829. btstack-integration layer implements/
-  *  invokes the interfaces defined by BTSTACK to to enable communication
+  *  invokes the interfaces defined by BTSTACK to enable communication
   *  with the BT controller by using IPC_BTSS (IPC Bluetooth sub-system interface).
   *  Zephyr CYW20829 driver implements wiced_bt_**** functions requreds for
   *  btstack-integration asset and Zephyr Bluetooth driver interface

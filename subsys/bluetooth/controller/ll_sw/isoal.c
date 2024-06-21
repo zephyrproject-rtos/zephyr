@@ -2453,7 +2453,7 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 			       actual_grp_ref_point);
 
 		/* If the event selected is the last event segmented for, then
-		 * it is possible that that some payloads have already been
+		 * it is possible that some payloads have already been
 		 * released for this event. Segmentation should continue from
 		 * that payload.
 		 */
