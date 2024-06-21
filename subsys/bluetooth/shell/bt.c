@@ -617,8 +617,8 @@ static void adv_scanned(struct bt_le_ext_adv *adv,
 
 	bt_addr_le_to_str(info->addr, str, sizeof(str));
 
-	shell_print(ctx_shell, "Advertiser[%d] %p scanned by %s",
-		    bt_le_ext_adv_get_index(adv), adv, str);
+	shell_print(ctx_shell, "Advertiser[%d] %p %s %s",
+		    bt_le_ext_adv_get_index(adv), adv, "scanned by", str);
 }
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -630,8 +630,8 @@ static void adv_connected(struct bt_le_ext_adv *adv,
 
 	bt_addr_le_to_str(bt_conn_get_dst(info->conn), str, sizeof(str));
 
-	shell_print(ctx_shell, "Advertiser[%d] %p connected by %s",
-		    bt_le_ext_adv_get_index(adv), adv, str);
+	shell_print(ctx_shell, "Advertiser[%d] %p %s %s",
+		    bt_le_ext_adv_get_index(adv), adv, "connected by", str);
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -642,8 +642,8 @@ static bool adv_rpa_expired(struct bt_le_ext_adv *adv)
 
 	bool keep_rpa = atomic_test_bit(adv_set_opt[adv_index],
 					  SHELL_ADV_OPT_KEEP_RPA);
-	shell_print(ctx_shell, "Advertiser[%d] %p RPA %s",
-		    adv_index, adv,
+	shell_print(ctx_shell, "Advertiser[%d] %p %s %s",
+		    adv_index, adv, "RPA",
 		    keep_rpa ? "not expired" : "expired");
 
 #if defined(CONFIG_BT_EAD)
@@ -2131,7 +2131,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 		if (name && !dev_name && name_value == NULL) {
 			if (*data_len == ARRAY_SIZE(ad)) {
 				/* Maximum entries limit reached. */
-				shell_print(sh, "Failed to set advertising data: "
+				shell_print(sh, "Failed to set advertising data: %s",
 						"Maximum entries limit reached");
 
 				return -ENOEXEC;
@@ -2151,7 +2151,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 
 		if (strcmp(arg, "scan-response") && *data_len == ARRAY_SIZE(ad)) {
 			/* Maximum entries limit reached. */
-			shell_print(sh, "Failed to set advertising data: "
+			shell_print(sh, "Failed to set advertising data: %s",
 					"Maximum entries limit reached");
 
 			return -ENOEXEC;
@@ -2165,7 +2165,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 			appearance = true;
 		} else if (!strcmp(arg, "scan-response")) {
 			if (data == sd) {
-				shell_print(sh, "Failed to set advertising data: "
+				shell_print(sh, "Failed to set advertising data: %s",
 						"duplicate scan-response option");
 				return -ENOEXEC;
 			}
@@ -2182,7 +2182,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 				      sizeof(hex_data) - hex_data_len);
 
 			if (!len || (len - 1) != (hex_data[hex_data_len])) {
-				shell_print(sh, "Failed to set advertising data: "
+				shell_print(sh, "Failed to set advertising data: %s",
 						"malformed hex data");
 				return -ENOEXEC;
 			}
@@ -2196,14 +2196,15 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (name && !dev_name && name_value == NULL) {
-		shell_error(sh, "Failed to set advertising data: Expected a value for 'name'");
+		shell_error(sh, "Failed to set advertising data: %s",
+				"Expected a value for 'name'");
 		return -ENOEXEC;
 	}
 
 	if (name && dev_name && name_value == NULL) {
 		if (*data_len == ARRAY_SIZE(ad)) {
 			/* Maximum entries limit reached. */
-			shell_print(sh, "Failed to set advertising data: "
+			shell_print(sh, "Failed to set advertising data: %s",
 					"Maximum entries limit reached");
 
 			return -ENOEXEC;
@@ -2280,7 +2281,7 @@ static int cmd_adv_start(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_ext_adv_start(adv, &param);
 	if (err) {
-		shell_print(sh, "Failed to start advertising set (%d)", err);
+		shell_print(sh, "Failed to %s advertising set (%d)", "start", err);
 		return -ENOEXEC;
 	}
 
@@ -2304,7 +2305,7 @@ static int cmd_adv_stop(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_ext_adv_stop(adv);
 	if (err) {
-		shell_print(sh, "Failed to stop advertising set (%d)", err);
+		shell_print(sh, "Failed to %s advertising set (%d)", "stop", err);
 		return -ENOEXEC;
 	}
 
@@ -2324,7 +2325,7 @@ static int cmd_adv_delete(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_ext_adv_delete(adv);
 	if (err) {
-		shell_error(ctx_shell, "Failed to delete advertiser set");
+		shell_error(ctx_shell, "Failed to %s advertising set (%d)", "delete", err);
 		return err;
 	}
 
@@ -2430,16 +2431,16 @@ static int cmd_per_adv(const struct shell *sh, size_t argc, char *argv[])
 	if (!strcmp(argv[1], "off")) {
 		if (bt_le_per_adv_stop(adv) < 0) {
 			shell_error(sh,
-				    "Failed to stop periodic advertising");
+				    "Failed to %s periodic advertising", "stop");
 		} else {
-			shell_print(sh, "Periodic advertising stopped");
+			shell_print(sh, "Periodic advertising %s", "stopped");
 		}
 	} else if (!strcmp(argv[1], "on")) {
 		if (bt_le_per_adv_start(adv) < 0) {
 			shell_error(sh,
-				    "Failed to start periodic advertising");
+				    "Failed to %s periodic advertising", "start");
 		} else {
-			shell_print(sh, "Periodic advertising started");
+			shell_print(sh, "Periodic advertising %s", "started");
 		}
 	} else {
 		shell_error(sh, "Invalid argument: %s", argv[1]);
@@ -2488,8 +2489,8 @@ static int cmd_per_adv_param(const struct shell *sh, size_t argc,
 
 	err = bt_le_per_adv_set_param(adv, &param);
 	if (err) {
-		shell_error(sh, "Failed to set periodic advertising "
-			    "parameters (%d)", err);
+		shell_error(sh, "Failed to set periodic advertising %s (%d)",
+				"parameters", err);
 		return -ENOEXEC;
 	}
 
