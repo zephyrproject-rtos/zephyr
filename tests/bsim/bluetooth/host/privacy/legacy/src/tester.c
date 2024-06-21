@@ -108,18 +108,10 @@ static void cb_expect_id(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 void start_scanning(bool expect_rpa)
 {
 	int err;
-	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
-		.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
-		.interval   = 0x0040,
-		.window     = 0x0020,
-	};
+	bt_le_scan_cb_t *cb;
 
-	if (expect_rpa) {
-		err = bt_le_scan_start(&scan_param, cb_expect_rpa);
-	} else {
-		err = bt_le_scan_start(&scan_param, cb_expect_id);
-	}
+	cb = expect_rpa ? cb_expect_rpa : cb_expect_id;
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_CONTINUOUS, cb);
 
 	if (err) {
 		FAIL("Failed to start scanning\n");
