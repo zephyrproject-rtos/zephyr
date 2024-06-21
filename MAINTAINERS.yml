@@ -3978,6 +3978,7 @@ TF-M Integration:
   files:
     - cmake/*/arcmwdt/
     - include/zephyr/toolchain/mwdt.h
+    - include/zephyr/linker/linker-tool-mwdt.h
     - lib/libc/arcmwdt/*
   labels:
     - "area: Toolchains"
