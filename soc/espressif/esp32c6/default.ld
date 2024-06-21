@@ -661,6 +661,7 @@ SECTIONS
     _text_start = ABSOLUTE(.);
     _instruction_reserved_start = ABSOLUTE(.);
     __text_region_start = ABSOLUTE(.);
+    __rom_region_start = ABSOLUTE(.);
 
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
@@ -692,6 +693,7 @@ SECTIONS
     _text_end = ABSOLUTE(.);
     _instruction_reserved_end = ABSOLUTE(.);
     __text_region_end = ABSOLUTE(.);
+    __rom_region_end = ABSOLUTE(.);
     _etext = .;
 
   } GROUP_DATA_LINK_IN(CACHED_REGION, ROMABLE_REGION)
