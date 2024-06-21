@@ -403,6 +403,20 @@ static inline int z_vrfy_device_init(const struct device *dev)
 
 extern void boot_banner(void);
 
+#ifdef CONFIG_STATIC_INIT_GNU
+
+extern void (*__zephyr_init_array_start[])();
+extern void (*__zephyr_init_array_end[])();
+
+static void z_static_init_gnu(void)
+{
+	void	(**fn)();
+
+	for (fn = __zephyr_init_array_start; fn != __zephyr_init_array_end; fn++)
+		(**fn)();
+}
+
+#endif
 
 /**
  * @brief Mainline for kernel's background thread
@@ -433,8 +447,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 	boot_banner();
 
-	void z_init_static(void);
-	z_init_static();
+#ifdef CONFIG_STATIC_INIT_GNU
+	z_static_init_gnu();
+#endif /* CONFIG_STATIC_INIT_GNU */
 
 	/* Final init level before app starts */
 	z_sys_init_run_level(INIT_LEVEL_APPLICATION);
