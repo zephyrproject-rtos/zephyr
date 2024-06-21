@@ -7,5 +7,5 @@
 
 &spi130 {
 	status = "okay";
-	memory-regions = <&cpuapp_dma_region>;
+	memory-regions = <&cpurad_dma_region>;
 };
