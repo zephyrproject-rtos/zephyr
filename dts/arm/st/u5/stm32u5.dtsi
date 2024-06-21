@@ -719,6 +719,7 @@
 			compatible = "st,stm32-aes";
 			reg = <0x420c0000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
+			resets = <&rctl STM32_RESET(AHB2L, 16U)>;
 			interrupts = <93 0>;
 			status = "disabled";
 		};
