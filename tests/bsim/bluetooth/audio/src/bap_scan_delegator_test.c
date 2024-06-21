@@ -488,11 +488,19 @@ static struct bt_le_scan_cb scan_cb = {
 static int add_source(struct sync_state *state)
 {
 	struct bt_bap_scan_delegator_add_src_param param;
+	struct bt_le_per_adv_sync_info sync_info;
 	int res;
 
 	UNSET_FLAG(flag_recv_state_updated);
 
-	param.pa_sync = state->pa_sync;
+	res = bt_le_per_adv_sync_get_info(state->pa_sync, &sync_info);
+	if (res != 0) {
+		FAIL("Failed to get PA sync info: %d)\n", res);
+		return true;
+	}
+
+	bt_addr_le_copy(&param.addr, &sync_info.addr);
+	param.sid = sync_info.sid;
 	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
 	param.broadcast_id = g_broadcast_id;
 	param.num_subgroups = 1U;
