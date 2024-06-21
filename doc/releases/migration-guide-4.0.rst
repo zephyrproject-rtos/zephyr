@@ -26,6 +26,8 @@ Boards
 
 * :ref:`native_posix<native_posix>` has been deprecated in favour of
   :ref:`native_sim<native_sim>` (:github:`76898`).
+* Nordic nRF53 and nRF91 based boards can use the common devicetree overlays in ``dts/common/nordic``
+  to define default flash and ram partitioning based on TF-M.
 
 * STM32WBA: The command used for fetching blobs required to build ble applications is now
   `west blobs fetch hal_stm32` instead of `west blobs fetch stm32`.
