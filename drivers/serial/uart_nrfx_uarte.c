@@ -39,9 +39,13 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #error "No PPI or DPPI"
 #endif
 
+#define UARTE(idx)                DT_NODELABEL(uart##idx)
+#define UARTE_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(UARTE(idx), prop)
+#define UARTE_PROP(idx, prop)     DT_PROP(UARTE(idx), prop)
+
 /* Execute macro f(x) for all instances. */
-#define UARTE_FOR_EACH_INSTANCE(f, sep, off_code) \
-	NRFX_FOREACH_PRESENT(UARTE, f, sep, off_code, _)
+#define UARTE_FOR_EACH_INSTANCE(f, sep, off_code, ...)                                             \
+	NRFX_FOREACH_PRESENT(UARTE, f, sep, off_code, __VA_ARGS__)
 
 /* Determine if any instance is using interrupt driven API. */
 #define IS_INT_DRIVEN(unused, prefix, i, _) \
@@ -83,6 +87,15 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
 #if UARTE_FOR_EACH_INSTANCE(IS_ENHANCED_POLL_OUT, (||), (0))
 #define UARTE_ENHANCED_POLL_OUT 1
+#endif
+
+#define INSTANCE_PROP(unused, prefix, i, prop) UARTE_PROP(prefix##i, prop)
+#define INSTANCE_PRESENT(unused, prefix, i, prop) 1
+
+/* Driver supports case when all or none instances support that HW feature. */
+#if	(UARTE_FOR_EACH_INSTANCE(INSTANCE_PROP, (+), (0), endtx_stoptx_supported)) == \
+	(UARTE_FOR_EACH_INSTANCE(INSTANCE_PRESENT, (+), (0), endtx_stoptx_supported))
+#define UARTE_HAS_ENDTX_STOPTX_SHORT 1
 #endif
 
 /*
@@ -269,7 +282,8 @@ static void uarte_nrfx_isr_int(const void *arg)
 	/* If interrupt driven and asynchronous APIs are disabled then UART
 	 * interrupt is still called to stop TX. Unless it is done using PPI.
 	 */
-	if (nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_ENDTX_MASK) &&
+	if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT) &&
+	    nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_ENDTX_MASK) &&
 		nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX)) {
 		endtx_isr(dev);
 	}
@@ -455,7 +469,8 @@ static bool is_tx_ready(const struct device *dev)
 {
 	const struct uarte_nrfx_config *config = dev->config;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-	bool ppi_endtx = config->flags & UARTE_CFG_FLAG_PPI_ENDTX;
+	bool ppi_endtx = config->flags & UARTE_CFG_FLAG_PPI_ENDTX ||
+			 IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT);
 
 	return nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED) ||
 		(!ppi_endtx ?
@@ -1450,14 +1465,14 @@ static void uarte_nrfx_isr_async(const void *arg)
 		rxto_isr(dev);
 	}
 
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX)
-	    && nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_ENDTX_MASK)) {
+	if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT) &&
+	    (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX) &&
+	     nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_ENDTX_MASK))) {
 		endtx_isr(dev);
 	}
 
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)
-	    && nrf_uarte_int_enable_check(uarte,
-					  NRF_UARTE_INT_TXSTOPPED_MASK)) {
+	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED) &&
+	    nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_TXSTOPPED_MASK)) {
 		txstopped_isr(dev);
 	}
 }
@@ -1739,6 +1754,7 @@ static const struct uart_driver_api uart_nrfx_uarte_driver_api = {
 #endif /* UARTE_INTERRUPT_DRIVEN */
 };
 
+#ifdef UARTE_ENHANCED_POLL_OUT
 static int endtx_stoptx_ppi_init(NRF_UARTE_Type *uarte,
 				 struct uarte_nrfx_data *data)
 {
@@ -1757,6 +1773,7 @@ static int endtx_stoptx_ppi_init(NRF_UARTE_Type *uarte,
 
 	return 0;
 }
+#endif /* UARTE_ENHANCED_POLL_OUT */
 
 static int uarte_instance_init(const struct device *dev,
 			       uint8_t interrupts_active)
@@ -1790,14 +1807,16 @@ static int uarte_instance_init(const struct device *dev,
 	nrf_uarte_configure(uarte, &cfg->hw_config);
 #endif
 
-	if (IS_ENABLED(UARTE_ENHANCED_POLL_OUT) &&
-	    cfg->flags & UARTE_CFG_FLAG_PPI_ENDTX) {
+#ifdef UARTE_HAS_ENDTX_STOPTX_SHORT
+	nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_ENDTX_STOPTX);
+#elif defined(UARTE_ENHANCED_POLL_OUT)
+	if (cfg->flags & UARTE_CFG_FLAG_PPI_ENDTX) {
 		err = endtx_stoptx_ppi_init(uarte, data);
 		if (err < 0) {
 			return err;
 		}
 	}
-
+#endif
 
 #ifdef UARTE_ANY_ASYNC
 	if (data->async) {
@@ -1819,7 +1838,7 @@ static int uarte_instance_init(const struct device *dev,
 		}
 	}
 
-	if (!(cfg->flags & UARTE_CFG_FLAG_PPI_ENDTX)) {
+	if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT) && !(cfg->flags & UARTE_CFG_FLAG_PPI_ENDTX)) {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
 	}
 
@@ -1850,7 +1869,8 @@ static int uarte_instance_init(const struct device *dev,
 static void wait_for_tx_stopped(const struct device *dev)
 {
 	const struct uarte_nrfx_config *config = dev->config;
-	bool ppi_endtx = config->flags & UARTE_CFG_FLAG_PPI_ENDTX;
+	bool ppi_endtx = (config->flags & UARTE_CFG_FLAG_PPI_ENDTX) ||
+			 IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT);
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	bool res;
 
@@ -1981,10 +2001,6 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 	return 0;
 }
 #endif /* CONFIG_PM_DEVICE */
-
-#define UARTE(idx)			DT_NODELABEL(uart##idx)
-#define UARTE_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(UARTE(idx), prop)
-#define UARTE_PROP(idx, prop)		DT_PROP(UARTE(idx), prop)
 
 #define UARTE_IRQ_CONFIGURE(idx, isr_handler)				       \
 	do {								       \
