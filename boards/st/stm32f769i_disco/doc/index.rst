@@ -120,6 +120,9 @@ The Zephyr stm32f769i_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | TOUCH     | off-chip   | ft5336(FT6202)                      |
 +-----------+------------+-------------------------------------+
+| DISPLAY   | off-chip   | MIPI DSI Host with shield (MP1166)  |
+|           |            | st_b_lcd40_dsi1_mb1166              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -161,6 +164,29 @@ Serial Port
 The STM32F769I Discovery kit has up to 8 UARTs. The Zephyr console output is assigned to UART1
 which connected to the onboard ST-LINK/V2 Virtual COM port interface. Default communication
 settings are 115200 8N1.
+
+Display
+=======
+
+The STM32F769I Discovery kit has a dedicated DSI LCD connector **CN1**, where
+the MB1166 (B-LCD40-DSI1) display extension board can be mounted. Enable display
+support in Zephyr by adding the shield ``st_b_lcd40_dsi1_mb1166`` or
+``st_b_lcd40_dsi1_mb1166_a09`` to your build command, for example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/display
+   :board: stm32f769i_disco
+   :shield: st_b_lcd40_dsi1_mb1166
+   :goals: build flash
+
+.. note::
+   The shield comes in different hardware revisions, the MB1166-A09
+   is utilizing a NT35510 panel controller and shall specifically
+   use ``st_b_lcd40_dsi1_mb1166_a09`` as SHIELD when building.
+   Prior versions are utilizing an OTM8009a controller and shall
+   use shield name without postfix, that is: ``st_b_lcd40_dsi1_mb1166``.
+   Shield version is printed on a sticker placed below the two bottom
+   mounting holes and has the format: MB1166-Axx.
 
 Programming and Debugging
 *************************
