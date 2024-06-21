@@ -119,11 +119,28 @@ static int nordicsemi_nrf54l_init(void)
 	 * where CAPACITANCE is the desired total load capacitance value in pF,
 	 * holding any value between 4.0 pF and 17.0 pF in 0.25 pF steps.
 	 */
-	uint32_t capvalue =
-		(((((DT_PROP(HFXO_NODE, load_capacitance_femtofarad) * 4UL) / 1000UL) - 22UL) *
-		  (uint32_t)(slope_m + 791) / 4UL) + (offset_m << 2UL)) >> 8UL;
 
-	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, true, capvalue);
+	/* NOTE 1: Requested HFXO internal capacitance in femto Faradas is used directly in formula
+	 *         to calculate INTCAP code. That is different than in case of LFXO.
+	 *
+	 * NOTE 2: PS formula uses piko Farads, the implementation of the formula uses femto Farads
+	 *         to avoid use of floating point data type.
+	 */
+	uint32_t cap_val_femto_f = DT_PROP(HFXO_NODE, load_capacitance_femtofarad);
+
+	uint32_t mid_val_intcap = (((cap_val_femto_f - 5500UL) * (uint32_t)(slope_m + 791UL))
+		 + (offset_m << 2UL) * 1000UL) >> 8UL;
+
+	/* Convert the calculated value to piko Farads */
+	uint32_t hfxo_intcap = mid_val_intcap / 1000;
+
+	/* Round based on fractional part */
+	if (mid_val_intcap % 1000 >= 500) {
+		hfxo_intcap++;
+	}
+
+	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, true, hfxo_intcap);
+
 #elif DT_ENUM_HAS_VALUE(HFXO_NODE, load_capacitors, external)
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
 #endif
