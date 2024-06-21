@@ -267,13 +267,13 @@ src/main.c (see :ref:`best practices <main_c_bp>`)
 
 
 
-A test application may consist of multiple sub-tests or smaller tests that
-either can be testing functionality or APIs. Functions implementing a test
+A test application may consist of multiple test suites that
+either can be testing functionality or APIs. Functions implementing a test case
 should follow the guidelines below:
 
-* Test cases function names should be prefix with **test_**
+* Test cases function names should be prefixed with **test_**
 * Test cases should be documented using doxygen
-* Test function names should be unique within the section or component being
+* Test case function names should be unique within the section or component being
   tested
 
 For example:
@@ -283,7 +283,7 @@ For example:
    /**
     * @brief Test Asserts
     *
-    * This test verifies the zassert_true macro.
+    * This test case verifies the zassert_true macro.
     */
    ZTEST(my_suite, test_assert)
    {
@@ -295,7 +295,7 @@ Listing Tests
 
 Tests (test applications) in the Zephyr tree consist of many test scenarios that run as
 part of a project and test similar functionality, for example an API or a
-feature. The ``twister`` script can parse the test cases in all
+feature. The ``twister`` script can parse the test scenarios, suites and cases in all
 test applications or a subset of them, and can generate reports on a granular
 level, i.e. if test cases have passed or failed or if they were blocked or skipped.
 
