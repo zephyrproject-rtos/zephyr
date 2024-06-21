@@ -370,6 +370,9 @@ static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 {
 #if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
 	pkt->orig_iface = iface;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(iface);
 #endif
 }
 
@@ -398,6 +401,8 @@ static inline bool net_pkt_is_tx_timestamping(struct net_pkt *pkt)
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	return !!(pkt->tx_timestamping);
 #else
+	ARG_UNUSED(pkt);
+
 	return false;
 #endif
 }
@@ -406,6 +411,9 @@ static inline void net_pkt_set_tx_timestamping(struct net_pkt *pkt, bool is_time
 {
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	pkt->tx_timestamping = is_timestamping;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(is_timestamping);
 #endif
 }
 
@@ -414,6 +422,8 @@ static inline bool net_pkt_is_rx_timestamping(struct net_pkt *pkt)
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	return !!(pkt->rx_timestamping);
 #else
+	ARG_UNUSED(pkt);
+
 	return false;
 #endif
 }
@@ -422,6 +432,9 @@ static inline void net_pkt_set_rx_timestamping(struct net_pkt *pkt, bool is_time
 {
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	pkt->rx_timestamping = is_timestamping;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(is_timestamping);
 #endif
 }
 
@@ -474,6 +487,8 @@ static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
 #if defined(CONFIG_NET_IP)
 	return pkt->ip_hdr_len;
 #else
+	ARG_UNUSED(pkt);
+
 	return 0;
 #endif
 }
@@ -482,6 +497,9 @@ static inline void net_pkt_set_ip_hdr_len(struct net_pkt *pkt, uint8_t len)
 {
 #if defined(CONFIG_NET_IP)
 	pkt->ip_hdr_len = len;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(len);
 #endif
 }
 
@@ -490,6 +508,8 @@ static inline uint8_t net_pkt_ip_dscp(struct net_pkt *pkt)
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	return pkt->ip_dscp;
 #else
+	ARG_UNUSED(pkt);
+
 	return 0;
 #endif
 }
@@ -498,6 +518,9 @@ static inline void net_pkt_set_ip_dscp(struct net_pkt *pkt, uint8_t dscp)
 {
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	pkt->ip_dscp = dscp;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(dscp);
 #endif
 }
 
@@ -506,6 +529,8 @@ static inline uint8_t net_pkt_ip_ecn(struct net_pkt *pkt)
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	return pkt->ip_ecn;
 #else
+	ARG_UNUSED(pkt);
+
 	return 0;
 #endif
 }
@@ -514,6 +539,9 @@ static inline void net_pkt_set_ip_ecn(struct net_pkt *pkt, uint8_t ecn)
 {
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	pkt->ip_ecn = ecn;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(ecn);
 #endif
 }
 
@@ -981,6 +1009,8 @@ static inline uint16_t net_pkt_vlan_tci(struct net_pkt *pkt)
 #else
 static inline uint16_t net_pkt_vlan_tag(struct net_pkt *pkt)
 {
+	ARG_UNUSED(pkt);
+
 	return NET_VLAN_TAG_UNSPEC;
 }
 
@@ -993,11 +1023,14 @@ static inline void net_pkt_set_vlan_tag(struct net_pkt *pkt, uint16_t tag)
 static inline uint8_t net_pkt_vlan_priority(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
+
 	return 0;
 }
 
 static inline bool net_pkt_vlan_dei(struct net_pkt *pkt)
 {
+	ARG_UNUSED(pkt);
+
 	return false;
 }
 
@@ -1009,6 +1042,8 @@ static inline void net_pkt_set_vlan_dei(struct net_pkt *pkt, bool dei)
 
 static inline uint16_t net_pkt_vlan_tci(struct net_pkt *pkt)
 {
+	ARG_UNUSED(pkt);
+
 	return NET_VLAN_TAG_UNSPEC; /* assumes priority is 0 */
 }
 
