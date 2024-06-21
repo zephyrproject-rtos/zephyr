@@ -351,8 +351,8 @@ static bool data_verbose_cb(struct bt_data *data, void *user_data)
 		 */
 		if (data->data_len < BT_UUID_SIZE_16) {
 			shell_fprintf(ctx_shell, SHELL_WARNING,
-				      "BT_DATA_SVC_DATA16 data length too short (%u)",
-				      data->data_len);
+				      "%s data length too short (%u)",
+				      "BT_DATA_SVC_DATA16", data->data_len);
 			break;
 		}
 		print_data_set(BT_UUID_SIZE_16, data->data, BT_UUID_SIZE_16);
@@ -372,8 +372,8 @@ static bool data_verbose_cb(struct bt_data *data, void *user_data)
 		 */
 		if (data->data_len < BT_UUID_SIZE_32) {
 			shell_fprintf(ctx_shell, SHELL_WARNING,
-				      "BT_DATA_SVC_DATA32 data length too short (%u)",
-				      data->data_len);
+				      "%s data length too short (%u)",
+				      "BT_DATA_SVC_DATA32", data->data_len);
 			break;
 		}
 		print_data_set(BT_UUID_SIZE_32, data->data, BT_UUID_SIZE_32);
@@ -394,8 +394,8 @@ static bool data_verbose_cb(struct bt_data *data, void *user_data)
 		 */
 		if (data->data_len < BT_UUID_SIZE_128) {
 			shell_fprintf(ctx_shell, SHELL_WARNING,
-				      "BT_DATA_SVC_DATA128 data length too short (%u)",
-				      data->data_len);
+				      "%s data length too short (%u)",
+				      "BT_DATA_SVC_DATA128", data->data_len);
 			break;
 		}
 		print_data_set(BT_UUID_SIZE_128, data->data, BT_UUID_SIZE_128);
