@@ -1295,9 +1295,13 @@ static bool valid_bt_bap_scan_delegator_add_src_param(
 		return false;
 	}
 
-	if (param->pa_sync == NULL) {
-		LOG_DBG("NULL pa_sync");
+	CHECKIF(param->addr.type > BT_ADDR_LE_RANDOM) {
+		LOG_DBG("param->addr.type %u is invalid", param->addr.type);
+		return false;
+	}
 
+	CHECKIF(param->sid > BT_GAP_SID_MAX) {
+		LOG_DBG("param->sid %d is invalid", param->sid);
 		return false;
 	}
 
@@ -1334,19 +1338,22 @@ int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_par
 {
 	struct bass_recv_state_internal *internal_state = NULL;
 	struct bt_bap_scan_delegator_recv_state *state;
-	struct bt_le_per_adv_sync_info sync_info;
-	int err;
+	struct bt_le_per_adv_sync *pa_sync;
 
 	CHECKIF(!valid_bt_bap_scan_delegator_add_src_param(param)) {
 		return -EINVAL;
 	}
 
-	internal_state = bass_lookup_pa_sync(param->pa_sync);
-	if (internal_state != NULL) {
-		LOG_DBG("PA Sync already in a receive state with src_id %u",
-			internal_state->state.src_id);
+	pa_sync = bt_le_per_adv_sync_lookup_addr(&param->addr, param->sid);
 
-		return -EALREADY;
+	if (pa_sync != NULL) {
+		internal_state = bass_lookup_pa_sync(pa_sync);
+		if (internal_state != NULL) {
+			LOG_DBG("PA Sync already in a receive state with src_id %u",
+				internal_state->state.src_id);
+
+			return -EALREADY;
+		}
 	}
 
 	internal_state = get_free_recv_state();
@@ -1356,20 +1363,14 @@ int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_par
 		return -ENOMEM;
 	}
 
-	err = bt_le_per_adv_sync_get_info(param->pa_sync, &sync_info);
-	if (err != 0) {
-		LOG_DBG("Failed to get sync info: %d", err);
-
-		return err;
-	}
-
 	state = &internal_state->state;
 
 	state->src_id = next_src_id();
-	bt_addr_le_copy(&state->addr, &sync_info.addr);
-	state->adv_sid = sync_info.sid;
+	bt_addr_le_copy(&state->addr, &param->addr);
+	state->adv_sid = param->sid;
 	state->broadcast_id = param->broadcast_id;
-	state->pa_sync_state = BT_BAP_PA_STATE_SYNCED;
+	state->pa_sync_state =
+		pa_sync == NULL ? BT_BAP_PA_STATE_NOT_SYNCED : BT_BAP_PA_STATE_SYNCED;
 	state->num_subgroups = param->num_subgroups;
 	if (state->num_subgroups > 0U) {
 		(void)memcpy(state->subgroups, param->subgroups,
@@ -1379,7 +1380,7 @@ int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_par
 	}
 
 	internal_state->active = true;
-	internal_state->pa_sync = param->pa_sync;
+	internal_state->pa_sync = pa_sync;
 
 	/* Set all requested_bis_sync to BT_BAP_BIS_SYNC_NO_PREF, as no
 	 * Broadcast Assistant has set any requests yet

@@ -457,9 +457,14 @@ static struct bt_bap_broadcast_sink *broadcast_sink_get_by_pa(struct bt_le_per_a
 static void broadcast_sink_add_src(struct bt_bap_broadcast_sink *sink)
 {
 	struct bt_bap_scan_delegator_add_src_param add_src_param;
+	struct bt_le_per_adv_sync_info sync_info;
 	int err;
 
-	add_src_param.pa_sync = sink->pa_sync;
+	err = bt_le_per_adv_sync_get_info(sink->pa_sync, &sync_info);
+	__ASSERT_NO_MSG(err == 0);
+
+	bt_addr_le_copy(&add_src_param.addr, &sync_info.addr);
+	add_src_param.sid = sync_info.sid;
 	add_src_param.broadcast_id = sink->broadcast_id;
 	/* Will be updated when we receive the BASE */
 	add_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
