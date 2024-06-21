@@ -2356,16 +2356,8 @@ function(toolchain_parse_make_rule input_file include_files)
   # the file paths are short, split these up into multiple elements using regex
   string(REGEX REPLACE "([^ ])[ ]([^ ])" "\\1;\\2" input_as_list "${input_as_list}")
 
-  # Pop the first line and treat it specially
+  # Pop the first item containing "empty_file.o:"
   list(POP_FRONT input_as_list first_input_line)
-  string(FIND ${first_input_line} ": " index)
-  math(EXPR j "${index} + 2")
-  string(SUBSTRING ${first_input_line} ${j} -1 first_include_file)
-
-  # Remove whitespace before and after filename and convert to CMake path.
-  string(STRIP "${first_include_file}" first_include_file)
-  file(TO_CMAKE_PATH "${first_include_file}" first_include_file)
-  set(result "${first_include_file}")
 
   # Remove whitespace before and after filename and convert to CMake path.
   foreach(file ${input_as_list})
