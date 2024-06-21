@@ -48,8 +48,8 @@ Cortex®-M33 core. Zephyr OS is ported to run on one of the Cortex®-A55 core.
 Supported Features
 ==================
 
-The Zephyr mimx93_evk board configuration supports the following hardware
-features:
+The Zephyr mimx93_evk board Cortex-A Core configuration supports the following
+hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -58,7 +58,17 @@ features:
 +-----------+------------+-------------------------------------+
 | ARM TIMER | on-chip    | system clock                        |
 +-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | GPIO                                |
++-----------+------------+-------------------------------------+
+| TPM       | on-chip    | TPM Counter                         |
++-----------+------------+-------------------------------------+
+| ENET      | on-chip    | ethernet port                       |
 +-----------+------------+-------------------------------------+
 
 Devices
