@@ -1184,25 +1184,136 @@ static uint16_t l2cap_br_conf_opt_mtu(struct bt_l2cap_chan *chan,
 				   struct net_buf *buf, size_t len)
 {
 	uint16_t mtu, result = BT_L2CAP_CONF_SUCCESS;
+	struct bt_l2cap_conf_opt_mtu *opt_mtu;
 
 	/* Core 4.2 [Vol 3, Part A, 5.1] MTU payload length */
-	if (len != 2) {
+	if (len != sizeof(*opt_mtu)) {
 		LOG_ERR("tx MTU length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
 
-	/* pulling MTU value moves buf data to next option item */
-	mtu = net_buf_pull_le16(buf);
+	opt_mtu = (struct bt_l2cap_conf_opt_mtu *)buf->data;
+
+	mtu = UNALIGNED_GET(&opt_mtu->mtu);
 	if (mtu < L2CAP_BR_MIN_MTU) {
 		result = BT_L2CAP_CONF_UNACCEPT;
 		BR_CHAN(chan)->tx.mtu = L2CAP_BR_MIN_MTU;
+		UNALIGNED_PUT(L2CAP_BR_MIN_MTU, &opt_mtu->mtu);
 		LOG_DBG("tx MTU %u invalid", mtu);
 		goto done;
 	}
 
 	BR_CHAN(chan)->tx.mtu = mtu;
 	LOG_DBG("tx MTU %u", mtu);
+done:
+	return result;
+}
+
+static uint16_t l2cap_br_conf_opt_flush_timeout(struct bt_l2cap_chan *chan,
+				   struct net_buf *buf, size_t len)
+{
+	uint16_t result = BT_L2CAP_CONF_SUCCESS;
+	struct bt_l2cap_conf_opt_flush_timeout *opt_to;
+
+	if (len != sizeof(*opt_to)) {
+		LOG_ERR("qos frame length %zu invalid", len);
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	opt_to = (struct bt_l2cap_conf_opt_flush_timeout *)buf->data;
+
+	LOG_DBG("Flash timeout %u", opt_to->timeout);
+
+	UNALIGNED_PUT(sys_cpu_to_le32(0xFFFF), &opt_to->timeout);
+	result = BT_L2CAP_CONF_UNACCEPT;
+done:
+	return result;
+}
+
+static uint16_t l2cap_br_conf_opt_qos(struct bt_l2cap_chan *chan,
+				   struct net_buf *buf, size_t len)
+{
+	uint16_t result = BT_L2CAP_CONF_SUCCESS;
+	struct bt_l2cap_conf_opt_qos *opt_qos;
+
+	if (len != sizeof(*opt_qos)) {
+		LOG_ERR("qos frame length %zu invalid", len);
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	opt_qos = (struct bt_l2cap_conf_opt_qos *)buf->data;
+
+	LOG_DBG("QOS Type %u", opt_qos->service_type);
+
+	if (opt_qos->service_type == BT_L2CAP_QOS_TYPE_GUARANTEED) {
+		/* Set to default value */
+		result = BT_L2CAP_CONF_UNACCEPT;
+		opt_qos->flags = 0x00;
+		UNALIGNED_PUT(sys_cpu_to_le32(0x00000000), &opt_qos->token_rate); /* do not care */
+		UNALIGNED_PUT(sys_cpu_to_le32(0x00000000),
+			      &opt_qos->token_bucket_size); /* no token bucket is needed */
+		UNALIGNED_PUT(sys_cpu_to_le32(0x00000000),
+			      &opt_qos->peak_bandwidth);                       /* do not care */
+		UNALIGNED_PUT(sys_cpu_to_le32(0xFFFFFFFF), &opt_qos->latency); /* do not care */
+		UNALIGNED_PUT(sys_cpu_to_le32(0xFFFFFFFF),
+			      &opt_qos->delay_variation); /* do not care */
+	}
+
+done:
+	return result;
+}
+
+static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan,
+				   struct net_buf *buf, size_t len)
+{
+	uint16_t result = BT_L2CAP_CONF_SUCCESS;
+	struct bt_l2cap_conf_opt_ret_fc *opt_ret_fc;
+
+	if (len != sizeof(*opt_ret_fc)) {
+		LOG_ERR("ret_fc frame length %zu invalid", len);
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	opt_ret_fc = (struct bt_l2cap_conf_opt_ret_fc *)buf->data;
+
+	LOG_DBG("ret_fc mode %u", opt_ret_fc->mode);
+
+	if (opt_ret_fc->mode != BT_L2CAP_RET_FC_MODE_BASIC) {
+		/* Set to default value */
+		result = BT_L2CAP_CONF_UNACCEPT;
+		opt_ret_fc->mode = BT_L2CAP_RET_FC_MODE_BASIC;
+	}
+
+done:
+	return result;
+}
+
+static uint16_t l2cap_br_conf_opt_fcs(struct bt_l2cap_chan *chan,
+				   struct net_buf *buf, size_t len)
+{
+	uint16_t result = BT_L2CAP_CONF_SUCCESS;
+	struct bt_l2cap_conf_opt_fcs *opt_fcs;
+
+	if (len != sizeof(*opt_fcs)) {
+		LOG_ERR("fcs frame length %zu invalid", len);
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	opt_fcs = (struct bt_l2cap_conf_opt_fcs *)buf->data;
+
+	LOG_DBG("FCS type %u", opt_fcs->type);
+
+	if (opt_fcs->type != BT_L2CAP_FCS_TYPE_NO) {
+		/* Set to default value */
+		result = BT_L2CAP_CONF_UNACCEPT;
+		opt_fcs->type = BT_L2CAP_FCS_TYPE_NO;
+	}
+
 done:
 	return result;
 }
@@ -1233,9 +1344,10 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	chan = bt_l2cap_br_lookup_rx_cid(conn, dcid);
 	if (!chan) {
 		LOG_ERR("rx channel mismatch!");
-		struct bt_l2cap_cmd_reject_cid_data data = {.scid = req->dcid,
-							    .dcid = 0,
-							   };
+		struct bt_l2cap_cmd_reject_cid_data data = {
+			.scid = req->dcid,
+			.dcid = 0,
+		};
 
 		l2cap_br_send_reject(conn, ident, BT_L2CAP_REJ_INVALID_CID,
 				     &data, sizeof(data));
@@ -1271,17 +1383,46 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 			 * way out here.
 			 */
 			goto send_rsp;
+		case BT_L2CAP_CONF_OPT_FLUSH_TIMEOUT:
+			result = l2cap_br_conf_opt_flush_timeout(chan, buf, opt->len);
+			if (result != BT_L2CAP_CONF_SUCCESS) {
+				goto send_rsp;
+			}
+			break;
+		case BT_L2CAP_CONF_OPT_QOS:
+			result = l2cap_br_conf_opt_qos(chan, buf, opt->len);
+			if (result != BT_L2CAP_CONF_SUCCESS) {
+				goto send_rsp;
+			}
+			break;
+		case BT_L2CAP_CONF_OPT_RET_FC:
+			result = l2cap_br_conf_opt_ret_fc(chan, buf, opt->len);
+			if (result != BT_L2CAP_CONF_SUCCESS) {
+				goto send_rsp;
+			}
+			break;
+		case BT_L2CAP_CONF_OPT_FCS:
+			result = l2cap_br_conf_opt_fcs(chan, buf, opt->len);
+			if (result != BT_L2CAP_CONF_SUCCESS) {
+				goto send_rsp;
+			}
+			break;
+		case BT_L2CAP_CONF_OPT_EXT_FLOW_SPEC:
+			__fallthrough;
+		case BT_L2CAP_CONF_OPT_EXT_WIN_SIZE:
+			result = BT_L2CAP_CONF_REJECT;
+			goto send_rsp;
 		default:
 			if (!hint) {
 				LOG_DBG("option %u not handled", opt->type);
 				result = BT_L2CAP_CONF_UNKNOWN_OPT;
 				goto send_rsp;
 			}
-
-			/* Update buffer to point at next option */
-			net_buf_pull(buf, opt->len);
 			break;
 		}
+
+		/* Update buffer to point at next option */
+		net_buf_pull(buf, opt->len);
 	}
 
 send_rsp:
@@ -1311,9 +1452,7 @@ send_rsp:
 	 * the options chain need to be modified and taken into account when
 	 * sending back to peer.
 	 */
-	if (result == BT_L2CAP_CONF_UNACCEPT) {
-		l2cap_br_conf_add_mtu(buf, BR_CHAN(chan)->tx.mtu);
-	} else if (result == BT_L2CAP_CONF_UNKNOWN_OPT) {
+	if ((result == BT_L2CAP_CONF_UNKNOWN_OPT) || (result == BT_L2CAP_CONF_UNACCEPT)) {
 		if (opt) {
 			l2cap_br_conf_add_opt(buf, opt);
 		}
