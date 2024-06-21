@@ -14,7 +14,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
 #include <fsl_usart.h>
 #include <soc.h>
 #include <fsl_device_registers.h>
@@ -86,7 +88,30 @@ struct mcux_flexcomm_data {
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	struct uart_config uart_config;
 #endif
+	bool pm_policy_state_on;
 };
+
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+static void mcux_flexcomm_pm_policy_state_lock_get(const struct device *dev)
+{
+	struct mcux_flexcomm_data *data = dev->data;
+
+	if (!data->pm_policy_state_on) {
+		data->pm_policy_state_on = true;
+		pm_policy_device_power_lock_get(dev);
+	}
+}
+
+static void mcux_flexcomm_pm_policy_state_lock_put(const struct device *dev)
+{
+	struct mcux_flexcomm_data *data = dev->data;
+
+	if (data->pm_policy_state_on) {
+		data->pm_policy_state_on = false;
+		pm_policy_device_power_lock_put(dev);
+	}
+}
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 
 static int mcux_flexcomm_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -179,6 +204,14 @@ static void mcux_flexcomm_irq_tx_enable(const struct device *dev)
 	const struct mcux_flexcomm_config *config = dev->config;
 	uint32_t mask = kUSART_TxLevelInterruptEnable;
 
+	/* Indicates that this device started a transaction that should
+	 * not be interrupted by putting the SoC in states that would
+	 * interfere with this transfer.
+	 */
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	mcux_flexcomm_pm_policy_state_lock_get(dev);
+#endif
+
 	USART_EnableInterrupts(config->base, mask);
 }
 
@@ -186,6 +219,10 @@ static void mcux_flexcomm_irq_tx_disable(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	uint32_t mask = kUSART_TxLevelInterruptEnable;
+
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	mcux_flexcomm_pm_policy_state_lock_put(dev);
+#endif
 
 	USART_DisableInterrupts(config->base, mask);
 }
@@ -467,10 +504,18 @@ static int mcux_flexcomm_uart_tx(const struct device *dev, const uint8_t *buf,
 	/* Enable TX DMA requests */
 	USART_EnableTxDMA(config->base, true);
 
+	/* Do not allow the system to suspend until the transmission has completed */
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	mcux_flexcomm_pm_policy_state_lock_get(dev);
+#endif
+
 	/* Trigger the DMA to start transfer */
 	ret = dma_start(config->tx_dma.dev, config->tx_dma.channel);
 	if (ret) {
 		irq_unlock(key);
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+		mcux_flexcomm_pm_policy_state_lock_put(dev);
+#endif
 		return ret;
 	}
 
@@ -993,6 +1038,10 @@ static void mcux_flexcomm_isr(const struct device *dev)
 			data->tx_data.xfer_buf = NULL;
 
 			async_user_callback(dev, &tx_done_event);
+
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+			mcux_flexcomm_pm_policy_state_lock_put(dev);
+#endif
 		}
 
 	}
@@ -1066,6 +1115,31 @@ static int mcux_flexcomm_init(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static uint32_t usart_intenset;
+static int mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct mcux_flexcomm_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		usart_intenset = USART_GetEnabledInterrupts(config->base);
+		return 0;
+	case PM_DEVICE_ACTION_TURN_ON:
+		mcux_flexcomm_init(dev);
+		USART_EnableInterrupts(config->base, usart_intenset);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+#endif /*CONFIG_PM_DEVICE*/
 
 static DEVICE_API(uart, mcux_flexcomm_driver_api) = {
 	.poll_in = mcux_flexcomm_poll_in,
@@ -1202,9 +1276,11 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
 										\
 	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;	\
 										\
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_flexcomm_pm_action);			\
+										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			    mcux_flexcomm_init,					\
-			    NULL,						\
+			    PM_DEVICE_DT_INST_GET(n),				\
 			    &mcux_flexcomm_##n##_data,				\
 			    &mcux_flexcomm_##n##_config,			\
 			    PRE_KERNEL_1,					\
