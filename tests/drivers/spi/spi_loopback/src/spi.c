@@ -58,13 +58,7 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define BUF_SIZE 18
 #define BUF2_SIZE 36
-
-#ifdef CONFIG_DSPI_MCUX_EDMA
-/*DSPI DMA need aligned buffer for internal*/
-#define BUF3_SIZE 1440
-#else
-#define BUF3_SIZE 8192
-#endif
+#define BUF3_SIZE CONFIG_SPI_LARGE_BUFFER_SIZE
 
 
 #if CONFIG_NOCACHE_MEMORY
