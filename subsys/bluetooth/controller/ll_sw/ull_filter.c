@@ -1198,6 +1198,7 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 			struct pdu_adv_ext_hdr sec_hdr_flags;
 			struct pdu_adv_ext_hdr *sec_hdr;
 			struct pdu_adv *sec_pdu;
+			sec_idx = 0;
 
 			lll_aux = lll->aux;
 			sec_pdu = lll_adv_aux_data_peek(lll_aux);
