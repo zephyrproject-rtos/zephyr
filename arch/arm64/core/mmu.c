@@ -102,6 +102,11 @@ static inline bool is_table_unused(uint64_t *table)
 	return (table_usage(table, 0) & XLAT_PTE_COUNT_MASK) == 0;
 }
 
+static inline bool is_table_single_referenced(uint64_t *table)
+{
+	return table_usage(table, 0) < (2 * XLAT_REF_COUNT_UNIT);
+}
+
 #ifdef CONFIG_TEST
 /* Hooks to let test code peek at table states */
 
@@ -502,8 +507,12 @@ static void discard_table(uint64_t *table, unsigned int level)
 
 	for (i = 0U; i < Ln_XLAT_NUM_ENTRIES; i++) {
 		if (is_table_desc(table[i], level)) {
-			discard_table(pte_desc_table(table[i]), level + 1);
-			dec_table_ref(pte_desc_table(table[i]));
+			uint64_t *subtable = pte_desc_table(table[i]);
+
+			if (is_table_single_referenced(subtable)) {
+				discard_table(subtable, level + 1);
+			}
+			dec_table_ref(subtable);
 		}
 		if (!is_free_desc(table[i])) {
 			table[i] = 0U;
