@@ -784,6 +784,24 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		is_report_complete = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
 		more_to_come = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 
+		if (evt->length > buf->len) {
+			LOG_WRN("Adv report corrupted (wants %u out of %u)", evt->length, buf->len);
+
+			net_buf_reset(buf);
+
+			if (evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) {
+				return;
+			}
+
+			/* Start discarding irrespective of the `more_to_come` flag. We
+			 * assume we may have lost a partial adv report in the truncated
+			 * data.
+			 */
+			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
+
+			return;
+		}
+
 		if (evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) {
 			/* Legacy advertising reports are complete.
 			 * Create event immediately.
@@ -843,19 +861,6 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			 * Discard this and future reports from the advertiser.
 			 */
 			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
-		}
-
-		if (evt->length > buf->len) {
-			LOG_WRN("Adv report corrupted (wants %u out of %u)", evt->length, buf->len);
-
-			/* Start discarding irrespective of the `more_to_come` flag. We
-			 * assume we may have lost a partial adv report in the truncated
-			 * data.
-			 */
-			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
-			net_buf_reset(buf);
-
-			return;
 		}
 
 		if (reassembling_advertiser.state == FRAG_ADV_DISCARDING) {
