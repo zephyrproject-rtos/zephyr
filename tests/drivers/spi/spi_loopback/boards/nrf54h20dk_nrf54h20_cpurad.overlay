@@ -6,6 +6,5 @@
 #include "nrf54h20dk_nrf54h20_common.dtsi"
 
 &spi130 {
-	status = "okay";
 	memory-regions = <&cpurad_dma_region>;
 };
