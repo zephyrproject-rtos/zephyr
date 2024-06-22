@@ -103,7 +103,7 @@ macro:
 
     HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10, NULL);
 
-Alternatively, an HTTPS service can be defined with with
+Alternatively, an HTTPS service can be defined with
 :c:macro:`HTTPS_SERVICE_DEFINE`:
 
 .. code-block:: c

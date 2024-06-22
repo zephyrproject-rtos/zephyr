@@ -116,7 +116,7 @@ ZTEST(common_1cpu, test_nested_irq_offload)
 	/* Do this in a thread to exercise a regression case: the
 	 * offload handler will suspend the thread it interrupted,
 	 * ensuring that the interrupt returns back to this thread and
-	 * effects a context switch of of the nested interrupt (see
+	 * effects a context switch of the nested interrupt (see
 	 * #45779).  Requires that this be a 1cpu test case,
 	 * obviously.
 	 */

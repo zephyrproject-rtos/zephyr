@@ -210,7 +210,7 @@ The probe may be updated to use CMSIS-DAP firmware with the following steps:
    be done by installing :ref:`linkserver-debug-host-tools`.
 
 #. Put the LPC-Link2 microcontroller into DFU boot mode by attaching the DFU
-   jumper, then then connecting to the USB debug port on the board. This
+   jumper, then connecting to the USB debug port on the board. This
    jumper is connected to ``P2_6`` on the LPC4322 SOC.
 
 #. Run the ``program_CMSIS`` script, found in the installed LPCScrypt ``scripts``
@@ -241,7 +241,7 @@ The probe may be updated to use the J-Link firmware with the following steps:
    be done by installing :ref:`linkserver-debug-host-tools`.
 
 #. Put the LPC-Link2 microcontroller into DFU boot mode by attaching the DFU
-   jumper, then then connecting to the USB debug port on the board. This
+   jumper, then connecting to the USB debug port on the board. This
    jumper is connected to ``P2_6`` on the LPC4322 SOC.
 
 #. Run the ``program_JLINK`` script, found in the installed LPCScrypt ``scripts``

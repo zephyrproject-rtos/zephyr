@@ -160,7 +160,7 @@ config BT_SPI_INIT_PRIORITY
 	default 75
 
 config BT_BLUENRG_ACI
-	bool "ACI message with with BlueNRG-based devices"
+	bool "ACI message with BlueNRG-based devices"
 	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  Enable support for devices compatible with the BlueNRG Bluetooth
