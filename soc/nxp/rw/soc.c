@@ -202,6 +202,10 @@ __weak __ramfunc void clock_init(void)
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm14), nxp_lpc_i2c, okay)) && CONFIG_I2C
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM14);
 #endif
+#if CONFIG_XTAL32K
+	CLOCK_EnableXtal32K(true);
+	CLOCK_AttachClk(kXTAL32K_to_CLK32K);
+#endif
 
 /* Clock flexcomms when used as SPI */
 #ifdef CONFIG_SPI
