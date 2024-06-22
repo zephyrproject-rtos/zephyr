@@ -82,7 +82,7 @@ static void clear_perms_cb(struct k_object *ko, void *ctx_ptr);
 const char *otype_to_str(enum k_objects otype)
 {
 	const char *ret;
-	/* -fdata-sections doesn't work right except in very very recent
+	/* -fdata-sections doesn't work right except in very recent
 	 * GCC and these literal strings would appear in the binary even if
 	 * otype_to_str was omitted by the linker
 	 */

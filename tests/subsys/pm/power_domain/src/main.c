@@ -294,7 +294,7 @@ ZTEST(power_domain_1cpu, test_on_power_domain)
 	pm_device_power_domain_add(devc, domain);
 	zassert_true(pm_device_on_power_domain(devc), "devc is not in the power domain.");
 	pm_device_power_domain_remove(devc, domain);
-	zassert_false(pm_device_on_power_domain(devc), "devc in in the power domain.");
+	zassert_false(pm_device_on_power_domain(devc), "devc in the power domain.");
 }
 
 ZTEST_SUITE(power_domain_1cpu, NULL, NULL, ztest_simple_1cpu_before,

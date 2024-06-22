@@ -174,7 +174,7 @@ TCP Options
 :kconfig:option:`CONFIG_NET_TCP_RETRY_COUNT`
   Maximum number of TCP segment retransmissions.
   The following formula can be used to determine the time (in ms)
-  that a segment will be be buffered awaiting retransmission:
+  that a segment will be buffered awaiting retransmission:
 
   .. math::
 

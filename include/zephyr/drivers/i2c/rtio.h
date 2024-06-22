@@ -43,7 +43,7 @@ struct i2c_rtio {
 	};
 
 /**
- * @brief Copy an an array of i2c_msgs to rtio submissions and a transaction
+ * @brief Copy an array of i2c_msgs to rtio submissions and a transaction
  *
  * @retval sqe Last sqe setup in the copy
  * @retval NULL Not enough memory to copy the transaction

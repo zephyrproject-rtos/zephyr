@@ -787,7 +787,7 @@ int media_proxy_ctrl_get_track_position(struct media_player *player);
  * @brief Set Track Position
  *
  * Set the playing position of the media player in the current
- * track. The position is given in in hundredths of a second,
+ * track. The position is given in hundredths of a second,
  * from the beginning of the track of the track for positive
  * values, and (backwards) from the end of the track for
  * negative values.
@@ -1178,7 +1178,7 @@ struct media_proxy_pl_calls {
 	 * @brief Set Track Position
 	 *
 	 * Set the playing position of the media player in the current
-	 * track. The position is given in in hundredths of a second,
+	 * track. The position is given in hundredths of a second,
 	 * from the beginning of the track of the track for positive
 	 * values, and (backwards) from the end of the track for
 	 * negative values.

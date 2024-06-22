@@ -30,7 +30,7 @@ def parse_args():
                         help='File to write containing a list of all \
                               directories found')
     parser.add_argument('-t', '--trigger-file', required=False,
-                        help='Trigger file to be be touched to re-run CMake')
+                        help='Trigger file to be touched to re-run CMake')
 
     args = parser.parse_args()
 
