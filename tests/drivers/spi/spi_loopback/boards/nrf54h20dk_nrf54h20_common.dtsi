@@ -28,6 +28,7 @@
 	pinctrl-1 = <&spi130_sleep>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
+	status = "okay";
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
