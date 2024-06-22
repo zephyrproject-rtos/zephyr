@@ -70,7 +70,8 @@ static int table_usage(uint64_t *table, int adjustment)
 	int prev_count = xlat_use_count[i];
 	int new_count = prev_count + adjustment;
 
-	if (IS_ENABLED(DUMP_PTE) || new_count == 0) {
+	/* be reasonable not to always create a debug flood */
+	if ((IS_ENABLED(DUMP_PTE) && adjustment != 0) || new_count == 0) {
 		MMU_DEBUG("table [%d]%p: usage %#x -> %#x\n", i, table, prev_count, new_count);
 	}
 
@@ -190,6 +191,8 @@ static void debug_show_pte(uint64_t *pte, unsigned int level)
 		MMU_DEBUG("---\n");
 		return;
 	}
+
+	MMU_DEBUG("0x%016llx ", *pte);
 
 	if (is_table_desc(*pte, level)) {
 		uint64_t *table = pte_desc_table(*pte);
@@ -396,7 +399,7 @@ static void del_mapping(uint64_t *table, uintptr_t virt, size_t size,
 static uint64_t *dup_table(uint64_t *src_table, unsigned int level)
 {
 	uint64_t *dst_table = new_table();
-	int i;
+	int i, usage_count = 0;
 
 	if (!dst_table) {
 		return NULL;
@@ -423,9 +426,10 @@ static uint64_t *dup_table(uint64_t *src_table, unsigned int level)
 			inc_table_ref(pte_desc_table(dst_table[i]));
 		}
 		if (!is_free_desc(dst_table[i])) {
-			table_usage(dst_table, 1);
+			usage_count++;
 		}
 	}
+	table_usage(dst_table, usage_count);
 
 	return dst_table;
 }
@@ -504,6 +508,7 @@ static int privatize_page_range(struct arm_mmu_ptables *dst_pt,
 static void discard_table(uint64_t *table, unsigned int level)
 {
 	unsigned int i;
+	int free_count = 0;
 
 	for (i = 0U; i < Ln_XLAT_NUM_ENTRIES; i++) {
 		if (is_table_desc(table[i], level)) {
@@ -516,9 +521,10 @@ static void discard_table(uint64_t *table, unsigned int level)
 		}
 		if (!is_free_desc(table[i])) {
 			table[i] = 0U;
-			table_usage(table, -1);
+			free_count++;
 		}
 	}
+	table_usage(table, -free_count);
 }
 
 static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
@@ -978,7 +984,7 @@ void z_arm64_mm_init(bool is_primary_core)
 	enable_mmu_el1(&kernel_ptables, flags);
 }
 
-static void sync_domains(uintptr_t virt, size_t size)
+static void sync_domains(uintptr_t virt, size_t size, const char *name)
 {
 #ifdef CONFIG_USERSPACE
 	sys_snode_t *node;
@@ -992,7 +998,7 @@ static void sync_domains(uintptr_t virt, size_t size)
 		domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 		domain_ptables = &domain->ptables;
 		ret = globalize_page_range(domain_ptables, &kernel_ptables,
-					   virt, size, "generic");
+					   virt, size, name);
 		if (ret) {
 			LOG_ERR("globalize_page_range() returned %d", ret);
 		}
@@ -1074,7 +1080,7 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	} else {
 		uint32_t mem_flags = flags & K_MEM_CACHE_MASK;
 
-		sync_domains((uintptr_t)virt, size);
+		sync_domains((uintptr_t)virt, size, "mem_map");
 		invalidate_tlb_all();
 
 		switch (mem_flags) {
@@ -1092,7 +1098,7 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 void arch_mem_unmap(void *addr, size_t size)
 {
 	remove_map(&kernel_ptables, "generic", (uintptr_t)addr, size);
-	sync_domains((uintptr_t)addr, size);
+	sync_domains((uintptr_t)addr, size, "mem_unmap");
 	invalidate_tlb_all();
 }
 
@@ -1311,6 +1317,7 @@ static void z_arm64_swap_ptables(struct k_thread *incoming)
 		return; /* Already the right tables */
 	}
 
+	MMU_DEBUG("TTBR0 switch from %#llx to %#llx\n", curr_ttbr0, new_ttbr0);
 	z_arm64_set_ttbr0(new_ttbr0);
 
 	if (get_asid(curr_ttbr0) == get_asid(new_ttbr0)) {
