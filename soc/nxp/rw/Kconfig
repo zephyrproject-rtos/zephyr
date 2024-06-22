@@ -90,4 +90,9 @@ config FLASH_MCUX_FLEXSPI_XIP_MEM
 	default "RAM"
 	depends on MEMC_MCUX_FLEXSPI
 
+config XTAL32K
+	bool "Use the External 32K clock"
+	help
+	  This clock is used by certain peripherals such as RTC.
+
 endif # SOC_SERIES_RW6XX
