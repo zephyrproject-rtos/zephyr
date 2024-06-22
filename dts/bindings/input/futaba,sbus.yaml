@@ -9,7 +9,7 @@ description: |
   the rx-invert feature of your serial driver or use an external signal inverter.
   The driver binds this to the Zephyr input system using INPUT_EV_CODES.
 
-  The following examples defines a a binding of 2 joysticks and a button using 5 channels.
+  The following examples defines a binding of 2 joysticks and a button using 5 channels.
 
   &lpuart6 {
     status = "okay";

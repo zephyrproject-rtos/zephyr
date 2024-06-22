@@ -42,7 +42,7 @@ extern "C" {
  * are constant time (though there is a search of the smallest bucket
  * that has a compile-time-configurable upper bound, setting this to
  * extreme values results in an effectively linear search of the
- * list), objectively fast (~hundred instructions) and and amenable to
+ * list), objectively fast (~hundred instructions) and amenable to
  * locked operation.
  */
 

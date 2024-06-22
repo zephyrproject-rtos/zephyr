@@ -186,7 +186,7 @@ img_mgmt_flash_area_id(int slot)
  * find any unused and non-active available (auto-select); any other positive
  * value is direct (slot + 1) to be used; if checks are positive, then area
  * ID is returned, -1 is returned otherwise.
- * Note that auto-selection is performed only between two two first slots.
+ * Note that auto-selection is performed only between the two first slots.
  */
 static int img_mgmt_get_unused_slot_area_id(int slot)
 {

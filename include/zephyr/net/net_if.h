@@ -2985,7 +2985,7 @@ static inline void net_if_unset_promisc(struct net_if *iface)
  * @param iface Pointer to network interface
  *
  * @return True if interface is in promisc mode,
- *         False if interface is not in in promiscuous mode.
+ *         False if interface is not in promiscuous mode.
  */
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 bool net_if_is_promisc(struct net_if *iface);
