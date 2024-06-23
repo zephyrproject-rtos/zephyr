@@ -1157,7 +1157,7 @@ When running ``twister`` with ``--device-testing``, the configured fixture
 in the hardware map file will be matched to test scenarios requesting the same fixtures
 and these tests will be executed on the boards that provide this fixture.
 
-.. figure:: fixtures.svg
+.. figure:: figures/fixtures.svg
    :figclass: align-center
 
 Fixtures can also be provided via twister command option ``--fixture``, this option
