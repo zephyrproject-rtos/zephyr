@@ -11,7 +11,7 @@
  * (and be extended to test) real hardware.
  */
 
- / {
+/ {
 	test {
 		#address-cells = < 0x1 >;
 		#size-cells = < 0x1 >;

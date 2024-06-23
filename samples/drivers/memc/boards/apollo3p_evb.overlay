@@ -57,7 +57,7 @@
 
 &pinctrl {
 
-    mspi1_sleep: mspi1_sleep{
+	mspi1_sleep: mspi1_sleep{
 
 		group1 {
 			pinmux = <GPIO_P51>,

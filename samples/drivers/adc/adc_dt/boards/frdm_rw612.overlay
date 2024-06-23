@@ -6,10 +6,10 @@
 #include <zephyr/dt-bindings/adc/nxp,gau-adc.h>
 
 / {
-        zephyr,user {
+	zephyr,user {
 		/* adjust channel number according to pinmux in board.dts */
 		io-channels = <&adc0 0 &adc0 1>;
-        };
+	};
 };
 
 &adc0 {

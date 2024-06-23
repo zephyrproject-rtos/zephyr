@@ -12,9 +12,9 @@
 };
 
 &i2s0 {
-    status = "okay";
+	status = "okay";
 };
 
 &i2s1 {
-    status = "okay";
+	status = "okay";
 };
