@@ -5,7 +5,7 @@
  */
 
 &sdmmc1 {
-        sdmmc {
+	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 	};
 };

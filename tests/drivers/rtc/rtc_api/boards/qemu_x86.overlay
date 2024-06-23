@@ -10,9 +10,9 @@
  * operation and the update callback.
  */
 &hpet {
-        no-legacy-irq;
+	no-legacy-irq;
 };
 
 &rtc {
-        status = "okay";
+	status = "okay";
 };

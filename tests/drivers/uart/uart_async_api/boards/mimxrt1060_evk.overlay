@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 / {
-       chosen {
-               zephyr,sram = &dtcm;
-       };
+	chosen {
+		zephyr,sram = &dtcm;
+	};
 };
 
 dut: &lpuart3 {

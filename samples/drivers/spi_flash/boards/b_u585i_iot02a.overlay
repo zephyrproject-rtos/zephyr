@@ -5,7 +5,7 @@
  */
 
 &octospi2 {
-            /* channel 12-15 are for transfers to/from external memories */
-            dmas = <&gpdma1 12 41 0x10480>; /* request 41 for OCTOSPI2 */
-            dma-names = "tx_rx";
+	/* channel 12-15 are for transfers to/from external memories */
+	dmas = <&gpdma1 12 41 0x10480>; /* request 41 for OCTOSPI2 */
+	dma-names = "tx_rx";
 };
