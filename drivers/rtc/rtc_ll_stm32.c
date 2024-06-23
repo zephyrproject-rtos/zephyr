@@ -537,7 +537,7 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 #if HW_SUBSECOND_SUPPORT
 	uint64_t temp = ((uint64_t)(cfg->sync_prescaler - rtc_subsecond)) * 1000000000L;
 
-	timeptr->tm_nsec = DIV_ROUND_CLOSEST(temp, cfg->sync_prescaler + 1);
+	timeptr->tm_nsec = temp / (cfg->sync_prescaler + 1);
 #else
 	timeptr->tm_nsec = 0;
 #endif
