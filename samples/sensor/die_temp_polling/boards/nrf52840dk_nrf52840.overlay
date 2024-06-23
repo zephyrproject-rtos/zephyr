@@ -5,7 +5,7 @@
  */
 
 / {
-        aliases {
-                die-temp0 = &temp;
-        };
+	aliases {
+		die-temp0 = &temp;
+	};
 };

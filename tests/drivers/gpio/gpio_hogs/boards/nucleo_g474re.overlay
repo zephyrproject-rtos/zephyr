@@ -7,11 +7,11 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-     zephyr,user {
-             output-high-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
-             output-low-gpios = <&gpiof 1 GPIO_ACTIVE_HIGH>;
-             input-gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
-     };
+	zephyr,user {
+		output-high-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
+		output-low-gpios = <&gpiof 1 GPIO_ACTIVE_HIGH>;
+		input-gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &gpioc {
