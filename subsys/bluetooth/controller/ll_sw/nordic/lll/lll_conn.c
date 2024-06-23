@@ -695,18 +695,6 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 {
 	uint8_t phy, flags, pkt_flags;
-	uint16_t max_tx_octets;
-
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	max_tx_octets = lll->dle.eff.max_tx_octets;
-#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
-	max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
-#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
-
-	if ((PDU_DC_CTRL_TX_SIZE_MAX > PDU_DC_PAYLOAD_SIZE_MIN) &&
-	    (max_tx_octets < PDU_DC_CTRL_TX_SIZE_MAX)) {
-		max_tx_octets = PDU_DC_CTRL_TX_SIZE_MAX;
-	}
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	phy = lll->phy_tx;
@@ -731,14 +719,14 @@ void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-	} else if (lll->enc_tx) {
-		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, (max_tx_octets + PDU_MIC_SIZE),
+	} else if (pdu_data_tx->len && lll->enc_tx) {
+		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, (pdu_data_tx->len + PDU_MIC_SIZE),
 				    pkt_flags);
 
 		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&lll->ccm_tx, pdu_data_tx));
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 	} else {
-		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, max_tx_octets, pkt_flags);
+		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, pdu_data_tx->len, pkt_flags);
 
 		radio_pkt_tx_set(pdu_data_tx);
 	}
