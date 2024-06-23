@@ -104,7 +104,7 @@ PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
 #ifdef CONFIG_BT
-_heap_sentry = SRAM1_DRAM_USABLE_START;
+_heap_sentry = SRAM1_DRAM_USER_START;
 #else
 _heap_sentry = DRAM1_BT_SHM_BUFFERS_START; /* was 0x3ffe3f20; */
 #endif
