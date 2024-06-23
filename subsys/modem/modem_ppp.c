@@ -122,7 +122,7 @@ static uint8_t modem_ppp_wrap_net_pkt_byte(struct modem_ppp *ppp)
 
 	/* Writing data */
 	case MODEM_PPP_TRANSMIT_STATE_DATA:
-		net_pkt_read_u8(ppp->tx_pkt, &byte);
+		(void)net_pkt_read_u8(ppp->tx_pkt, &byte);
 		ppp->tx_pkt_fcs = modem_ppp_fcs_update(ppp->tx_pkt_fcs, byte);
 
 		if ((byte == MODEM_PPP_CODE_DELIMITER) || (byte == MODEM_PPP_CODE_ESCAPE) ||
