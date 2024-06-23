@@ -218,6 +218,15 @@ files in the application's project directory. This test application
 configuration file may contain one or more entries in the tests section each
 identifying a test scenario.
 
+.. _twister_test_project_diagram:
+
+.. figure:: figures/twister_test_project.svg
+   :alt: Twister and a Test applications' project.
+   :figclass: align-center
+
+   Twister and a Test applications' project.
+
+
 Test application configurations are written using the YAML syntax and share the
 same structure as samples.
 
