@@ -58,6 +58,8 @@ static void dump_header(unsigned int reason)
 	backend_api->buffer_output((uint8_t *)&hdr, sizeof(hdr));
 }
 
+#if defined(CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN) || \
+	defined(CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS)
 static void dump_thread(struct k_thread *thread)
 {
 	uintptr_t end_addr;
@@ -80,6 +82,7 @@ static void dump_thread(struct k_thread *thread)
 
 	coredump_memory_dump(thread->stack_info.start, end_addr);
 }
+#endif
 
 #if defined(CONFIG_COREDUMP_DEVICE)
 static void process_coredump_dev_memory(const struct device *dev)
