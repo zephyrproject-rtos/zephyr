@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: usb-mass
    :name: USB Mass Storage
-   :relevant-api: usbd_api _usb_device_core_api file_system_api
+   :relevant-api: usbd_api usbd_msc_device _usb_device_core_api file_system_api
 
    Expose board's RAM or FLASH as a USB disk using USB Mass Storage driver.
 
