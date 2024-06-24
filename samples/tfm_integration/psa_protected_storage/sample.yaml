@@ -9,6 +9,7 @@ common:
     - nrf5340dk/nrf5340/cpuapp/ns
     - nrf9160dk/nrf9160/ns
     - bl5340_dvk/nrf5340/cpuapp/ns
+    - rd_rw612_bga/rw612/ns
     - lpcxpresso55s69/lpc55s69/cpu0/ns
     - max32657evkit/max32657/ns
     - stm32h573i_dk/stm32h573xx/ns
