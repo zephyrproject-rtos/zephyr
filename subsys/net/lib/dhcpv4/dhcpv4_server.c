@@ -691,9 +691,8 @@ static int dhcpv4_get_client_id(struct dhcp_msg *msg, uint8_t *options,
 	}
 
 	client_id->buf[0] = msg->htype;
-	client_id->buf[1] = msg->hlen;
-	memcpy(client_id->buf + 2, msg->chaddr, msg->hlen);
-	client_id->len = msg->hlen + 2;
+	memcpy(client_id->buf + 1, msg->chaddr, msg->hlen);
+	client_id->len = msg->hlen + 1;
 
 	return 0;
 }
