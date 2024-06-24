@@ -3,17 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "../../../boards/nrf54h20dk_nrf54h20_common.dtsi"
 
 &spi130 {
 	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
 };
 
-&spi131 {
+&dut_spis {
 	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
-};
-
-&gpio0 {
-	status = "reserved";
 };
