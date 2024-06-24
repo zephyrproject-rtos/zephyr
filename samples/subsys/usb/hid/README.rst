@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: usb-hid
    :name: USB HID (Human Interface Device)
-   :relevant-api: usbd_api usb_hid_device_api
+   :relevant-api: _usb_device_core_api usb_hid_device_api
 
    Use USB HID driver to enumerate as a raw HID device.
 
