@@ -407,6 +407,48 @@ static uint8_t connect_with_sec_level(const void *cmd, uint16_t cmd_len,
 					level);
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static uint8_t echo(const void *cmd, uint16_t cmd_len,
+		       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_echo_cmd *cp = cmd;
+	struct bt_conn *conn = NULL;
+	struct net_buf *buf;
+	int err;
+
+	if (cp->address.type == BT_ADDR_LE_PUBLIC) {
+		conn = bt_conn_lookup_addr_br(&cp->address.a);
+	}
+
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	bt_conn_unref(conn);
+
+	buf = net_buf_alloc(&data_pool, K_MSEC(0));
+	if (!buf) {
+		return BTP_STATUS_FAILED;
+	}
+
+	net_buf_reserve(buf, BT_L2CAP_ECHO_RESERVE);
+	if (net_buf_tailroom(buf) < cp->data_len) {
+		net_buf_unref(buf);
+		return BTP_STATUS_FAILED;
+	}
+
+	net_buf_add_mem(buf, cp->data, cp->data_len);
+
+	err = bt_l2cap_br_echo(conn, buf);
+	if (err) {
+		net_buf_unref(buf);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_CLASSIC) */
+
 static struct bt_l2cap_chan *get_l2cap_chan_from_chan_id(uint8_t chan_id)
 {
 	struct channel *le_chan;
@@ -912,6 +954,9 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_EATT)
 	tester_set_bit(rp->data, BTP_L2CAP_DISCONNECT_EATT_CHANS);
 #endif
+#if defined(CONFIG_BT_CLASSIC)
+	tester_set_bit(rp->data, BTP_L2CAP_ECHO);
+#endif /* defined(CONFIG_BT_CLASSIC) */
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -965,6 +1010,13 @@ static const struct btp_handler handlers[] = {
 		.expect_len = sizeof(struct btp_l2cap_connect_with_sec_level_cmd),
 		.func = connect_with_sec_level,
 	},
+#if defined(CONFIG_BT_CLASSIC)
+	{
+		.opcode = BTP_L2CAP_ECHO,
+		.expect_len = sizeof(struct btp_l2cap_echo_cmd),
+		.func = echo,
+	},
+#endif /* defined(CONFIG_BT_CLASSIC) */
 };
 
 uint8_t tester_init_l2cap(void)

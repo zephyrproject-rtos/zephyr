@@ -99,6 +99,13 @@ struct btp_l2cap_connect_with_sec_level_cmd {
 	uint8_t sec_level;
 } __packed;
 
+#define BTP_L2CAP_ECHO					0x0b
+struct btp_l2cap_echo_cmd {
+	bt_addr_le_t address;
+	uint16_t data_len;
+	uint8_t data[];
+} __packed;
+
 /* events */
 #define BTP_L2CAP_EV_CONNECTION_REQ			0x80
 struct btp_l2cap_connection_req_ev {
