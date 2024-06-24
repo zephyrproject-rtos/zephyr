@@ -787,10 +787,12 @@ SECTIONS
   {
     . = ALIGN(4);
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
      /* create explicit symbol for __tdata_start so that it is loaded
       * into proper DROM region atributted by AT keyword below
       */
     __tdata_start = ADDR(tdata);
+#endif
 
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
