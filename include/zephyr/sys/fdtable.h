@@ -11,7 +11,7 @@
 
 /* FIXME: For native_posix ssize_t, off_t. */
 #include <zephyr/fs/fs.h>
-#include <zephyr/sys/mutex.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
 /* File mode bits */
