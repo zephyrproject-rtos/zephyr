@@ -2457,7 +2457,7 @@ static ssize_t dtls_sendmsg_merge_and_send(struct tls_context *ctx,
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		struct iovec *vec = msg->msg_iov + i;
 
-		if (vec->iov_len >= 0) {
+		if (vec->iov_len > 0) {
 			if (len + vec->iov_len > sizeof(sendmsg_buf)) {
 				k_mutex_unlock(&sendmsg_lock);
 				errno = EMSGSIZE;
