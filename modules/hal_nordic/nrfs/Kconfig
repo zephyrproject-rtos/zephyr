@@ -38,6 +38,8 @@ config NRFS
 	bool "nRF Services Support"
 	select NRFS_LOCAL_DOMAIN if (SOC_NRF54H20_CPUAPP || SOC_NRF54H20_CPURAD)
 	depends on HAS_NRFS
+	depends on !MISRA_SANE
+	default y if !ZTEST
 	help
 	  This option enables the nRF Services library.
 
@@ -72,6 +74,7 @@ config NRFS_RESET_SERVICE_ENABLED
 config NRFS_MRAM_SERVICE_ENABLED
 	bool "MRAM latency service"
 	depends on NRFS_HAS_MRAM_SERVICE
+	default y
 
 config NRFS_TEMP_SERVICE_ENABLED
 	bool "Temperature service"
