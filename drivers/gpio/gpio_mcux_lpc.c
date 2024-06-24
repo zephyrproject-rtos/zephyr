@@ -399,6 +399,13 @@ static int gpio_mcux_lpc_pin_interrupt_configure(const struct device *dev,
 #endif
 }
 
+void gpio_mcux_lpc_trigger_cb(const struct device *dev, uint32_t pins)
+{
+        struct gpio_mcux_lpc_data *data = dev->data;
+
+        gpio_fire_callbacks(&data->callbacks, dev, pins);
+}
+
 static int gpio_mcux_lpc_manage_cb(const struct device *port,
 				   struct gpio_callback *callback, bool set)
 {
