@@ -1250,7 +1250,7 @@ int pthread_attr_setstacksize(pthread_attr_t *_attr, size_t stacksize)
 			__get_attr_stacksize(attr) + attr->guardsize);
 		return ENOMEM;
 	}
-	LOG_DBG("Allocated thread stack %zu@%p", stacksize + attr->guardsize, attr->stack);
+	LOG_DBG("Allocated thread stack %zu@%p", stacksize + attr->guardsize, new_stack);
 
 	if (attr->stack != NULL) {
 		ret = k_thread_stack_free(attr->stack);
