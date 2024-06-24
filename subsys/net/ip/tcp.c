@@ -278,7 +278,7 @@ int net_tcp_endpoint_copy(struct net_context *ctx,
 	}
 
 	if (peer != NULL) {
-		memcpy(local, &conn->dst.sa, newlen);
+		memcpy(peer, &conn->dst.sa, newlen);
 	}
 
 	return 0;
