@@ -69,6 +69,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 #endif /* CONFIG_AP */
 	.dpp_dispatch = supplicant_dpp_dispatch,
 	.pmksa_flush = supplicant_pmksa_flush,
+	.enterprise_creds = supplicant_add_enterprise_creds,
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
