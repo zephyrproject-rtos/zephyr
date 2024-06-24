@@ -797,6 +797,22 @@ static int wifi_btm_query(uint32_t mgmt_request, struct net_if *iface, void *dat
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY, wifi_btm_query);
 #endif
 
+static int wifi_get_connection_params(uint32_t mgmt_request, struct net_if *iface,
+			void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_connect_req_params *conn_params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->get_conn_params == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->get_conn_params(dev, conn_params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONN_PARAMS, wifi_get_connection_params);
+
 static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 				  void *data, size_t len)
 {
