@@ -649,6 +649,13 @@ Libraries / Subsystems
 
 * LoRa/LoRaWAN
 
+  * Added the Fragmented Data Block Transport service, which can be enabled via
+    :kconfig:option:`CONFIG_LORAWAN_FRAG_TRANSPORT`. In addition to the default fragment decoder
+    implementation from Semtech, an in-tree implementation with reduced memory footprint is
+    available.
+
+  * Added a sample to demonstrate LoRaWAN firmware-upgrade over the air (FUOTA).
+
 * ZBus
 
 HALs
