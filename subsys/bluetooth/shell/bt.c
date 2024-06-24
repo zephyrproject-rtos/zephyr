@@ -1244,6 +1244,11 @@ static int cmd_hci_cmd(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		buf = bt_hci_cmd_create(BT_OP(ogf, ocf), len);
+		if (buf == NULL) {
+			shell_error(sh, "Unable to allocate HCI buffer");
+			return -ENOMEM;
+		}
+
 		net_buf_add_mem(buf, hex_data, len);
 	}
 
