@@ -17,6 +17,7 @@ tests:
       - v2m_musca_s1/musca_s1/ns
       - bl5340_dvk/nrf5340/cpuapp/ns
       - b_u585i_iot02a/stm32u585xx/ns
+      - rd_rw612_bga/rw612/ns
     integration_platforms:
       - mps2/an521/cpu0/ns
     harness: console
@@ -33,6 +34,7 @@ tests:
       - trusted-firmware-m
     platform_allow:
       - mps2/an521/cpu0/ns
+      - rd_rw612_bga/rw612/ns
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp/ns
