@@ -102,6 +102,8 @@ enum net_request_wifi_cmd {
 #endif
 	/** Flush PMKSA cache entries */
 	NET_REQUEST_WIFI_CMD_PMKSA_FLUSH,
+	/** Set enterprise mode credential */
+	NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS,
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -233,6 +235,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_FLUSH)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH);
+
+/** Set Wi-Fi enterprise mode CA/client Cert and key */
+#define NET_REQUEST_WIFI_ENTERPRISE_CREDS                               \
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_ENTERPRISE_CREDS);
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -438,6 +446,14 @@ struct wifi_connect_req_params {
 	uint8_t bssid[WIFI_MAC_ADDR_LEN];
 	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
 	int timeout;
+	/** anonymous identity */
+	const uint8_t *anon_id;
+	/** anon_id length */
+	uint8_t aid_length; /* Max 64 */
+	/** Private key passwd for enterprise mode */
+	const uint8_t *key_passwd;
+	/** Private key passwd length */
+	uint8_t key_passwd_length; /* Max 128 */
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
@@ -659,6 +675,22 @@ struct wifi_twt_flow_info {
 	uint32_t twt_wake_interval;
 	/** Wake ahead duration */
 	uint32_t twt_wake_ahead_duration;
+};
+
+/** Wi-Fi enterprise mode credentials */
+struct wifi_enterprise_creds_params {
+	/** CA certification */
+	uint8_t *ca_cert;
+	/** CA certification length */
+	uint32_t ca_cert_len;
+	/** Client certification */
+	uint8_t *client_cert;
+	/** Client certification length */
+	uint32_t client_cert_len;
+	/** Client key */
+	uint8_t *client_key;
+	/** Client key length */
+	uint32_t client_key_len;
 };
 
 /** @brief Wi-Fi power save configuration */
@@ -1199,6 +1231,17 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*pmksa_flush)(const struct device *dev);
+	/** Set Wi-Fi enterprise mode CA/client Cert and key
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param creds Pointer to the CA/client Cert and key.
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	int (*enterprise_creds)(const struct device *dev,
+			struct wifi_enterprise_creds_params *creds);
+#endif
 };
 
 /** Wi-Fi management offload API */
