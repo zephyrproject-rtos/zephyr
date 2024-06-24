@@ -111,10 +111,10 @@ static const struct {
 	uint8_t page;
 } comp_data_pages[] = {
 	{ "bt/mesh/cmp/0", 0, },
-#if IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)
+#if defined(CONFIG_BT_MESH_COMP_PAGE_1)
 	{ "bt/mesh/cmp/1", 1, },
 #endif
-#if IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_2)
+#if defined(CONFIG_BT_MESH_COMP_PAGE_2)
 	{ "bt/mesh/cmp/2", 2, },
 #endif
 };
@@ -2617,7 +2617,7 @@ void bt_mesh_comp_data_clear(void)
 
 int bt_mesh_models_metadata_change_prepare(void)
 {
-#if IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
 	return bt_mesh_models_metadata_store();
 #else
 	return -ENOTSUP;

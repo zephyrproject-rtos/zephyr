@@ -103,7 +103,7 @@ mgmt_get_handler(const struct mgmt_group *group, uint16_t command_id)
 	return &group->mg_handlers[command_id];
 }
 
-#if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+#if defined(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
 smp_translate_error_fn mgmt_find_error_translation_function(uint16_t group_id)
 {
 	struct mgmt_group *group = NULL;

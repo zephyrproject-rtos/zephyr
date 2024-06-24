@@ -1532,7 +1532,7 @@ static void test_tx_priv_beacon_cache(void)
 	PASS();
 }
 
-#if IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)
+#if defined(CONFIG_BT_MESH_GATT_PROXY)
 
 static uint8_t test_net_key_3[16] = {0x12, 0x54, 0xab, 0x1e};
 

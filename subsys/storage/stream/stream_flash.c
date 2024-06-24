@@ -76,10 +76,10 @@ static int settings_direct_loader(const char *key, size_t len,
 
 int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 {
-#if IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	int rc;
 	struct flash_pages_info page;
-#if IS_ENABLED(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
 	/* There are both types of devices */
 	const struct flash_parameters *fparams = flash_get_parameters(ctx->fdev);
 
