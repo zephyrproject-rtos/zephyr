@@ -666,6 +666,42 @@ HALs
 MCUboot
 *******
 
+  * Fixed memory leak in bootutil HKDF implementation
+
+  * Fixed enforcing TLV entries to be protected
+
+  * Fixed disabling instruction/data caches
+
+  * Fixed estimated image overhead size calculation
+
+  * Fixed issue with swap-move algorithm failing to validate multiple-images
+
+  * Fixed align script error in imgtool
+
+  * Fixed img verify for hex file format in imgtool
+
+  * Fixed issue with reading the flash image reset vector
+
+  * Fixed too-early ``check_config.h`` include in mbedtls
+
+  * Refactored image dependency functions to reduce code size
+
+  * Added MCUboot support for ``ESP32-C6``
+
+  * Added optional MCUboot boot banner
+
+  * Added TLV querying for protected region
+
+  * Added using builtin keys for verification in bootutil
+
+  * Added builtin ECDSA key support for PSA Crypto backend
+
+  * Added ``OVERWRITE_ONLY_KEEP_BACKUP`` option for secondary images
+
+  * Added defines for ``SOC_FLASH_0_ID`` and ``SPI_FLASH_0_ID``
+
+  * The MCUboot version in this release is version ``2.1.0+0-dev``.
+
 Trusted Firmware-M
 ******************
 
