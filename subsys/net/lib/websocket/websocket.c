@@ -1184,10 +1184,6 @@ int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)
 	return fd;
 
 out:
-	if (fd >= 0) {
-		(void)zsock_close(fd);
-	}
-
 	websocket_context_unref(ctx);
 
 	return ret;
