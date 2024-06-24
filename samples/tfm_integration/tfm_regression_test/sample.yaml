@@ -11,6 +11,7 @@ common:
     - v2m_musca_s1/musca_s1/ns
     - stm32h573i_dk/stm32h573xx/ns
     - frdm_mcxn947/mcxn947/cpu0/ns
+    - rd_rw612_bga/rw612/ns
   integration_platforms:
     - nrf5340dk/nrf5340/cpuapp/ns
   harness: console
@@ -35,6 +36,8 @@ tests:
     timeout: 200
 
   sample.tfm.regression_sfn:
+    platform_exclude:
+      - rd_rw612_bga/rw612/ns
     platform_allow:
       - max32657evkit/max32657/ns
     extra_args:
