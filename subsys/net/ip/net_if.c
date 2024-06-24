@@ -5856,6 +5856,16 @@ static void set_default_name(struct net_if *iface)
 #endif /* CONFIG_NET_L2_PPP */
 	}
 
+	if (IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD)) {
+			static int count;
+
+			snprintk(name, sizeof(name) - 1, "thread%d", count++);
+		}
+#endif /* CONFIG_NET_L2_OPENTHREAD */
+	}
+
 	if (name[0] == '\0') {
 		static int count;
 
