@@ -1804,6 +1804,70 @@ int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 }
 
+int bt_l2cap_br_echo(struct bt_conn *conn, struct net_buf *buf)
+{
+	struct bt_l2cap_sig_hdr *hdr;
+	uint16_t len;
+
+	if (!conn) {
+		return -EINVAL;
+	}
+
+	if (conn->type != BT_CONN_TYPE_BR) {
+		return -EINVAL;
+	}
+
+	len = (uint16_t)buf->len;
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_ECHO_REQ;
+	hdr->ident = l2cap_br_get_ident();
+	hdr->len = sys_cpu_to_le16(len);
+
+	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+
+	return 0;
+}
+
+static void l2cap_br_echo_req(struct bt_l2cap_br *l2cap, uint8_t ident,
+			      struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_echo_req *req = (void *)buf->data;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_echo_rsp *rsp;
+
+	if (buf->len < sizeof(*req)) {
+		LOG_ERR("Too small L2CAP conn rsp packet size");
+		return;
+	}
+
+	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_ECHO_RSP;
+	hdr->ident = ident;
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	(void)memset(rsp, 0, sizeof(*rsp));
+
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+
+	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+}
+
+static void l2cap_br_echo_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
+			      struct net_buf *buf)
+{
+	struct bt_l2cap_echo_rsp *rsp = (void *)buf->data;
+
+	if (buf->len < sizeof(*rsp)) {
+		LOG_ERR("Too small L2CAP conn rsp packet size");
+		return;
+	}
+
+	LOG_DBG("Echo RSP (ident 0x%02x) with len %u", ident, buf->len);
+}
+
 static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
@@ -1859,6 +1923,12 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			break;
 		case BT_L2CAP_CONN_RSP:
 			l2cap_br_conn_rsp(l2cap, hdr->ident, buf);
+			break;
+		case BT_L2CAP_ECHO_REQ:
+			l2cap_br_echo_req(l2cap, hdr->ident, buf);
+			break;
+		case BT_L2CAP_ECHO_RSP:
+			l2cap_br_echo_rsp(l2cap, hdr->ident, buf);
 			break;
 		default:
 			LOG_WRN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);

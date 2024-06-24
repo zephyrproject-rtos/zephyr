@@ -673,6 +673,26 @@ int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_c
 int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan,
 				struct net_buf *buf);
 
+/** L2CAP echo header size, used for buffer size calculations */
+#define BT_L2CAP_ECHO_HDR_SIZE           4
+
+/**
+ *  @brief Headroom needed for outgoing L2CAP ECHO request.
+ */
+#define BT_L2CAP_ECHO_RESERVE BT_L2CAP_BUF_SIZE(BT_L2CAP_ECHO_HDR_SIZE)
+
+/** @brief Send ECHO request on BR transport
+ *
+ *  Send ECHO request on BR transport only.
+ *  The echo data is optional.
+ *
+ *  @param conn Connection object.
+ *  @param buf Echo data.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_br_echo(struct bt_conn *conn, struct net_buf *buf);
+
 #ifdef __cplusplus
 }
 #endif
