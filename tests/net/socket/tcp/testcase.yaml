@@ -19,3 +19,13 @@ tests:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
       - CONFIG_NET_TCP_RANDOMIZED_RTO=n
+  net.socket.tcp.tracing:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_CTF=y
+      - CONFIG_TRACING_BACKEND_POSIX=y
+      - CONFIG_TRACING_PACKET_MAX_SIZE=256
+      - CONFIG_TRACING_SYNC=y
