@@ -1,0 +1,34 @@
+# Copyright Meta Platforms, Inc. and its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - coredump
+  ignore_faults: true
+  ignore_qemu_crash: true
+  integration_platforms:
+    - qemu_cortex_m3
+tests:
+  debug.coredump.threads:
+    filter: CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS
+    harness: console
+    harness_config:
+      type: multi_line
+      # Verify core dump contains threads metadata section and several
+      # memory sections, two for each thread
+      regex:
+        - "E: #CD:BEGIN#"
+        - "E: #CD:5([aA])45([0-9a-fA-F]+)"
+        - "E: #CD:41([0-9a-fA-F]+)"
+        - "E: #CD:54([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:END#"
