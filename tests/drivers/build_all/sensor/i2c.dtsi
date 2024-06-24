@@ -1076,3 +1076,14 @@ test_i2c_mmc56x3: mmc56x3@92 {
 	magn-odr = <0>;
 	auto-self-reset;
 };
+
+test_i2c_tmp1075: tmp1075@91 {
+	compatible = "ti,tmp1075";
+	reg = <0x91>;
+	alert-gpios =  <&test_gpio 0 0>;
+	conversion-rate = <220000>;
+	lower-threshold = <27>;
+	upper-threshold = <28>;
+	consecutive-fault-measurements = <4>;
+	interrupt-mode;
+};
