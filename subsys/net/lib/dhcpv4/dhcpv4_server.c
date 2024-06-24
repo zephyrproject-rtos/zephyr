@@ -70,6 +70,8 @@ struct dhcpv4_server_ctx {
 #endif
 };
 
+static void *address_provider_callback_user_data;
+static net_dhcpv4_server_provider_cb_t address_provider_callback;
 static struct dhcpv4_server_ctx server_ctx[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static struct zsock_pollfd fds[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static K_MUTEX_DEFINE(server_lock);
@@ -944,6 +946,18 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 			selected = slot;
 			break;
 		}
+		struct in_addr addr = { 0 };
+
+		if (slot->state == DHCPV4_SERVER_ADDR_FREE &&
+		    address_provider_callback) {
+			ret = address_provider_callback(ctx->iface, &client_id, &addr,
+							address_provider_callback_user_data);
+			if (ret == 0) {
+				selected = slot;
+				slot->addr = addr;
+			}
+			break;
+		}
 	}
 
 	/* 2. Skipped, for now expired/released entries are forgotten. */
@@ -1743,8 +1757,17 @@ out:
 	return ret;
 }
 
+void net_dhcpv4_server_set_provider_cb(net_dhcpv4_server_provider_cb_t cb, void *user_data)
+{
+	address_provider_callback_user_data = user_data;
+	address_provider_callback = cb;
+}
+
 void net_dhcpv4_server_init(void)
 {
+	address_provider_callback = NULL;
+	address_provider_callback_user_data = NULL;
+
 	for (int i = 0; i < ARRAY_SIZE(fds); i++) {
 		fds[i].fd = -1;
 	}
