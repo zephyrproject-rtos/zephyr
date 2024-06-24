@@ -238,6 +238,9 @@ Device Drivers and Devicetree
         };
     };
 
+* `st,lis2mdl` property `spi-full-duplex` changed to `duplex =
+  SPI_FULL_DUPLEX`. Full duplex is now the default.
+
 Analog-to-Digital Converter (ADC)
 =================================
 
