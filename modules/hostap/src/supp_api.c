@@ -36,7 +36,8 @@ static struct wpa_supp_enterprise_file enterprise_file;
 #endif
 enum requested_ops {
 	CONNECT = 0,
-	DISCONNECT
+	DISCONNECT,
+	WPS_PBC,
 };
 
 enum status_thread_state {
@@ -1383,6 +1384,35 @@ out:
     k_mutex_unlock(&wpa_supplicant_mutex);
 
     return ret;
+}
+
+int supplicant_wps_pbc(const struct device *dev)
+{
+	struct wpa_supplicant *wpa_s;
+	int ret = -1;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	if (!wpa_cli_cmd_v("wps_pbc")) {
+		goto out;
+	}
+
+	wpas_api_ctrl.dev = dev;
+	wpas_api_ctrl.requested_op = WPS_PBC;
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
 }
 
 int supplicant_pmksa_flush(const struct device *dev)
