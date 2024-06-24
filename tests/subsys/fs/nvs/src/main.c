@@ -988,6 +988,20 @@ static void test_nvs_undetected_bad_ate_offset_callback(struct nvs_ate *ate,
 	ate->len = items[1].size + sizeof(uint32_t);
 }
 
+/*
+ * The length of the data is wrong and overflows on the next items data,
+ * and the offset is also wrong and overflows on the previous item data
+ */
+static void test_nvs_undetected_bad_ate_length_and_offset_callback(struct nvs_ate *ate,
+								   struct bad_ate_item_t *items)
+{
+	/* Take data CRCs into account */
+	ate->offset = (items[0].size + sizeof(uint32_t)) / 2;
+	ate->len = items[1].size + sizeof(uint32_t) + /* This item data */
+		   items[2].size + sizeof(uint32_t) + /* The following item data */
+		  (items[3].size / 2); /* Half of the next item data */
+}
+
 static void test_nvs_undetected_bad_ate_main(struct nvs_fixture *fixture,
 					     bad_ate_item_callback_t callback_corrupt_ate)
 {
@@ -1137,5 +1151,21 @@ ZTEST_F(nvs, test_nvs_undetected_bad_ate_offset)
 {
 #if defined(CONFIG_NVS_DATA_CRC) && !defined(CONFIG_NVS_LOOKUP_CACHE)
 	test_nvs_undetected_bad_ate_main(fixture, test_nvs_undetected_bad_ate_offset_callback);
+#endif
+}
+
+/*
+ * Tamper an ATE length and offset fields value to simulate an ATE CRC-8 undetected error.
+ * Write 4 items of various data size, with the item #1 simulating a CRC-8 undetected error
+ * on the item data size. The data offset is decreased to overflow on item 0.
+ * Thanks to the data CRC-32, reading such item returns an error.
+ * After running the garbage collector, the faulty item 1 has been copied with parts of the
+ * preceding item data. The other items are healthy and the NVS is still working.
+ */
+ZTEST_F(nvs, test_nvs_undetected_bad_ate_length_and_offset)
+{
+#if defined(CONFIG_NVS_DATA_CRC) && !defined(CONFIG_NVS_LOOKUP_CACHE)
+	test_nvs_undetected_bad_ate_main(fixture,
+					 test_nvs_undetected_bad_ate_length_and_offset_callback);
 #endif
 }
