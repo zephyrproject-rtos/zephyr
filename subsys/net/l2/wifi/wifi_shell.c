@@ -2397,6 +2397,20 @@ static int cmd_wifi_dpp_resp_timeout_set(const struct shell *sh, size_t argc, ch
 	return 0;
 }
 
+static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_wifi_sta();
+
+	context.sh = sh;
+
+	if (net_mgmt(NET_REQUEST_WIFI_PMKSA_FLUSH, iface, NULL, 0)) {
+		PR_WARNING("Flush PMKSA cache entries failed\n");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD_ARG(disable, NULL,
 		  "Disable Access Point mode.\n",
@@ -2646,6 +2660,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      cmd_wifi_set_rts_threshold,
 		      2, 0),
 	SHELL_CMD(dpp, &wifi_cmd_dpp, "DPP actions\n", NULL),
+	SHELL_CMD_ARG(pmksa_flush, NULL,
+		     "Flush PMKSA cache entries.\n",
+		     cmd_wifi_pmksa_flush, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
