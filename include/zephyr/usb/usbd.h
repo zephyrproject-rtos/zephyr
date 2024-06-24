@@ -388,6 +388,26 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	return c_data->priv;
 }
 
+/**
+ * @brief Define USB device context structure
+ *
+ * Macro defines a USB device structure needed by the stack to manage its
+ * properties and runtime data. The @p vid and @p pid  parameters can also be
+ * changed using usbd_device_set_vid() and usbd_device_set_pid().
+ *
+ * Example of use:
+ *
+ * @code{.c}
+ * USBD_DEVICE_DEFINE(sample_usbd,
+ *                    DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
+ *                    YOUR_VID, YOUR_PID);
+ * @endcode
+ *
+ * @param device_name USB device context name
+ * @param udc_dev     Pointer to UDC device structure
+ * @param vid         Vendor ID
+ * @param pid         Product ID
+ */
 #define USBD_DEVICE_DEFINE(device_name, udc_dev, vid, pid)		\
 	static struct usb_device_descriptor				\
 	fs_desc_##device_name = {					\
@@ -430,6 +450,20 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.hs_desc = &hs_desc_##device_name,			\
 	}
 
+/**
+ * @brief Define USB device configuration
+ *
+ * USB device requires at least one configuration instance per supported speed.
+ * @p attrib is a combination of `USB_SCD_SELF_POWERED` or `USB_SCD_REMOTE_WAKEUP`,
+ * depending on which characteristic the USB device should have in this
+ * configuration.
+ *
+ * @param name   Configuration name
+ * @param attrib Configuration characteristics. Attributes can also be updated
+ *               with usbd_config_attrib_rwup() and usbd_config_attrib_self()
+ * @param power  bMaxPower value in 2 mA units. This value can also be set with
+ *               usbd_config_maxpower()
+ */
 #define USBD_CONFIGURATION_DEFINE(name, attrib, power)			\
 	static struct usb_cfg_descriptor				\
 	cfg_desc_##name = {						\
@@ -563,6 +597,17 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.bDescriptorType = USB_DESC_BOS,				\
 	}
 
+/**
+ * @brief Define USB device support class data
+ *
+ * Macro defines class (function) data, as well as corresponding node
+ * structures used internally by the stack.
+ *
+ * @param class_name   Class name
+ * @param class_api    Pointer to struct usbd_class_api
+ * @param class_priv   Class private data
+ * @param class_v_reqs Pointer to struct usbd_cctx_vendor_req
+ */
 #define USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)	\
 	static struct usbd_class_data class_name = {				\
 		.name = STRINGIFY(class_name),					\
