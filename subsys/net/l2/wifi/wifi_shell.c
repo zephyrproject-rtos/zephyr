@@ -29,6 +29,19 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/sys/slist.h>
 
 #include "net_shell_private.h"
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+static const char ca_cert_test[] = {
+	#include <wifi_enterprise_test_certs/ca.pem.inc>
+};
+
+static const char client_cert_test[] = {
+	#include <wifi_enterprise_test_certs/client.pem.inc>
+};
+
+static const char client_key_test[] = {
+	#include <wifi_enterprise_test_certs/client-key.pem.inc>
+};
+#endif
 
 #define WIFI_SHELL_MODULE "wifi"
 
@@ -74,6 +87,28 @@ struct wifi_ap_sta_node {
 	struct wifi_ap_sta_info sta_info;
 };
 static struct wifi_ap_sta_node sta_list[CONFIG_WIFI_SHELL_MAX_AP_STA];
+
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+static int cmd_wifi_set_enterprise_creds(const struct shell *sh, struct net_if *iface)
+{
+	struct wifi_enterprise_creds_params params = {0};
+
+	params.ca_cert = (uint8_t *)ca_cert_test;
+	params.ca_cert_len = ARRAY_SIZE(ca_cert_test);
+	params.client_cert = (uint8_t *)client_cert_test;
+	params.client_cert_len = ARRAY_SIZE(client_cert_test);
+	params.client_key = (uint8_t *)client_key_test;
+	params.client_key_len = ARRAY_SIZE(client_key_test);
+
+	if (net_mgmt(NET_REQUEST_WIFI_ENTERPRISE_CREDS, iface, &params, sizeof(params))) {
+		PR_WARNING("Set enterprise credentials failed\n");
+		return -1;
+	}
+
+	return 0;
+}
+#endif
 
 static bool parse_number(const struct shell *sh, long *param, char *str,
 			 char *pname, long min, long max)
@@ -464,6 +499,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"band", required_argument, 0, 'b'},
 		{"channel", required_argument, 0, 'c'},
 		{"timeout", required_argument, 0, 't'},
+		{"anon-id", required_argument, 0, 'a'},
+		{"key-passwd", required_argument, 0, 'K'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
@@ -486,7 +523,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:h",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -583,6 +620,24 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				}
 			}
 			break;
+		case 'a':
+			params->anon_id = optarg;
+			params->aid_length = strlen(params->anon_id);
+			if (params->aid_length > WIFI_ENT_IDENTITY_MAX_LEN) {
+				PR_WARNING("anon_id too long (max %d characters)\n",
+					    WIFI_ENT_IDENTITY_MAX_LEN);
+				return -EINVAL;
+			}
+			break;
+		case 'K':
+			params->key_passwd = optarg;
+			params->key_passwd_length = strlen(params->key_passwd);
+			if (params->key_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
+				PR_WARNING("key_passwd too long (max %d characters)\n",
+					    WIFI_ENT_PSWD_MAX_LEN);
+				return -EINVAL;
+			}
+			break;
 		case 'h':
 			return -ENOEXEC;
 		default:
@@ -618,6 +673,13 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 		shell_help(sh);
 		return -ENOEXEC;
 	}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	/* Load the enterprise credentials if needed */
+	if (cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS) {
+		cmd_wifi_set_enterprise_creds(sh, iface);
+	}
+#endif
 
 	context.connecting = true;
 	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
@@ -2421,7 +2483,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "-c --channel=<channel number>\n"
 		  "-p --passphrase=<PSK> (valid only for secure SSIDs)\n"
 		  "-k --key-mgmt=<Security type> (valid only for secure SSIDs)\n"
-		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
+		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP-TLS, 6:WEP\n"
+		  "7: WPA-PSK\n"
 		  "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
 		  "0:Disable, 1:Optional, 2:Required\n"
 		  "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
@@ -2539,11 +2602,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
-		  " 7:EAP, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal\n"
+		  " 7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
 		  "[-t, --timeout]: Timeout for the connection attempt (in seconds).\n"
+		  "[-a, --anon-id]: Anonymous identity for enterprise mode.\n"
+		  "[-K, --key-passwd]: Private key passwd for enterprise mode.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
 		  2, 7),
