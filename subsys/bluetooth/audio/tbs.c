@@ -84,7 +84,7 @@ struct gtbs_service_inst {
 #else
 #define READ_BUF_SIZE   (CONFIG_BT_TBS_MAX_CALLS * \
 			 sizeof(struct bt_tbs_current_call_item))
-#endif /* IS_ENABLED(CONFIG_BT_GTBS) */
+#endif /* defined(CONFIG_BT_GTBS) */
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, READ_BUF_SIZE);
 
 static struct tbs_service_inst svc_insts[CONFIG_BT_TBS_BEARER_COUNT];

@@ -63,7 +63,7 @@ struct bt_tbs_server_inst {
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 #if defined(CONFIG_BT_TBS_CLIENT_GTBS)
 	struct bt_tbs_instance gtbs_inst;
-#endif /* IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) */
+#endif /* defined(CONFIG_BT_TBS_CLIENT_GTBS) */
 	struct bt_gatt_discover_params discover_params;
 	struct bt_tbs_instance *current_inst;
 };
@@ -1748,7 +1748,7 @@ static int primary_discover_gtbs(struct bt_conn *conn)
 
 	return bt_gatt_discover(conn, params);
 }
-#endif /* IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) */
+#endif /* defined(CONFIG_BT_TBS_CLIENT_GTBS) */
 
 /****************************** PUBLIC API ******************************/
 

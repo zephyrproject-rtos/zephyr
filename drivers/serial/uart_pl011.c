@@ -21,10 +21,10 @@
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
-#if IS_ENABLED(CONFIG_RESET)
+#if defined(CONFIG_RESET)
 #include <zephyr/drivers/reset.h>
 #endif
-#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
+#if defined(CONFIG_CLOCK_CONTROL)
 #include <zephyr/drivers/clock_control.h>
 #endif
 
@@ -41,10 +41,10 @@ struct pl011_config {
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
-#if IS_ENABLED(CONFIG_RESET)
+#if defined(CONFIG_RESET)
 	const struct reset_dt_spec reset;
 #endif
-#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
+#if defined(CONFIG_CLOCK_CONTROL)
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_id;
 #endif
@@ -445,7 +445,7 @@ static int pl011_init(const struct device *dev)
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
-#if IS_ENABLED(CONFIG_RESET)
+#if defined(CONFIG_RESET)
 	if (config->reset.dev) {
 		ret = reset_line_toggle_dt(&config->reset);
 		if (ret) {
@@ -454,7 +454,7 @@ static int pl011_init(const struct device *dev)
 	}
 #endif
 
-#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
+#if defined(CONFIG_CLOCK_CONTROL)
 	if (config->clock_dev) {
 		clock_control_on(config->clock_dev, config->clock_id);
 		clock_control_get_rate(config->clock_dev, config->clock_id, &data->clk_freq);
@@ -560,7 +560,7 @@ static int pl011_init(const struct device *dev)
 #define PINCTRL_INIT(n)
 #endif /* CONFIG_PINCTRL */
 
-#if IS_ENABLED(CONFIG_RESET)
+#if defined(CONFIG_RESET)
 #define RESET_INIT(n)                                                                              \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets), (.reset = RESET_DT_SPEC_INST_GET(n),))
 #else

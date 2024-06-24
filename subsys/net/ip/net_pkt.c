@@ -1246,7 +1246,7 @@ int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
 
 	net_pkt_append_buffer(pkt, buf);
 
-#if IS_ENABLED(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 	/* net_buf allocators shrink the buffer size to the requested size.
 	 * We don't want this behavior here, so restore the real size of the
 	 * last fragment.

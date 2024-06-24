@@ -106,7 +106,7 @@ void lwm2m_register_obj(struct lwm2m_engine_obj *obj)
 	k_mutex_lock(&registry_lock, K_FOREVER);
 #if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
 	/* If bootstrap, then bootstrap server should create the ac obj instances */
-#if !IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+#if !defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	int server_obj_inst_id = lwm2m_server_short_id_to_inst(CONFIG_LWM2M_SERVER_DEFAULT_SSID);
 
 	access_control_add_obj(obj->obj_id, server_obj_inst_id);
@@ -169,7 +169,7 @@ static void engine_register_obj_inst(struct lwm2m_engine_obj_inst *obj_inst)
 {
 #if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
 	/* If bootstrap, then bootstrap server should create the ac obj instances */
-#if !IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+#if !defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	int server_obj_inst_id = lwm2m_server_short_id_to_inst(CONFIG_LWM2M_SERVER_DEFAULT_SSID);
 
 	access_control_add(obj_inst->obj->obj_id, obj_inst->obj_inst_id, server_obj_inst_id);
