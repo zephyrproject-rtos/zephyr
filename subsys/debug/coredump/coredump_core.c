@@ -60,7 +60,6 @@ static void dump_header(unsigned int reason)
 
 static void dump_thread(struct k_thread *thread)
 {
-#ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN
 	uintptr_t end_addr;
 
 	/*
@@ -80,7 +79,6 @@ static void dump_thread(struct k_thread *thread)
 	end_addr = thread->stack_info.start + thread->stack_info.size;
 
 	coredump_memory_dump(thread->stack_info.start, end_addr);
-#endif
 }
 
 #if defined(CONFIG_COREDUMP_DEVICE)
@@ -111,11 +109,45 @@ void process_memory_region_list(void)
 	}
 #endif
 
+#ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS
+	/*
+	 * Content of _kernel.threads not being modified during dump
+	 * capture so no need to lock z_thread_monitor_lock.
+	 */
+	struct k_thread *current;
+
+	for (current = _kernel.threads; current; current = current->next_thread) {
+		dump_thread(current);
+	}
+
+	/* Also add interrupt stack, in case error occurred in an interrupt */
+	char *irq_stack = _kernel.cpus[0].irq_stack;
+	uintptr_t start_addr = POINTER_TO_UINT(irq_stack) - CONFIG_ISR_STACK_SIZE;
+
+	coredump_memory_dump(start_addr, POINTER_TO_UINT(irq_stack));
+#endif /* CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS */
+
 #if defined(CONFIG_COREDUMP_DEVICE)
 #define MY_FN(inst) process_coredump_dev_memory(DEVICE_DT_INST_GET(inst));
 	DT_INST_FOREACH_STATUS_OKAY(MY_FN)
 #endif
 }
+
+#ifdef CONFIG_DEBUG_COREDUMP_THREADS_METADATA
+static void dump_threads_metadata(void)
+{
+	struct coredump_threads_meta_hdr_t hdr = {
+		.id = THREADS_META_HDR_ID,
+		.hdr_version = THREADS_META_HDR_VER,
+		.num_bytes = 0,
+	};
+
+	hdr.num_bytes += sizeof(_kernel);
+
+	coredump_buffer_output((uint8_t *)&hdr, sizeof(hdr));
+	coredump_buffer_output((uint8_t *)&_kernel, sizeof(_kernel));
+}
+#endif /* CONFIG_DEBUG_COREDUMP_THREADS_METADATA */
 
 void coredump(unsigned int reason, const struct arch_esf *esf,
 	      struct k_thread *thread)
@@ -128,8 +160,14 @@ void coredump(unsigned int reason, const struct arch_esf *esf,
 		arch_coredump_info_dump(esf);
 	}
 
+#ifdef CONFIG_DEBUG_COREDUMP_THREADS_METADATA
+	dump_threads_metadata();
+#endif
+
 	if (thread != NULL) {
+#ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN
 		dump_thread(thread);
+#endif
 	}
 
 	process_memory_region_list();
