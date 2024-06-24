@@ -915,18 +915,4 @@ typedef union {
 } Usb;
 #endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif /* _MICROCHIP_PIC32CXSG_USB_COMPONENT_FIXUP_H_ */

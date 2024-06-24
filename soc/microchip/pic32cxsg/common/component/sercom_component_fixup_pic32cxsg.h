@@ -1095,150 +1095,6 @@ typedef union {
 #define SERCOM_SPI_ADDR_ADDRMASK(value) (SERCOM_SPI_ADDR_ADDRMASK_Msk & ((value) << SERCOM_SPI_ADDR_ADDRMASK_Pos))
 #define SERCOM_SPI_ADDR_MASK        _U_(0x00FF00FF) /**< \brief (SERCOM_SPI_ADDR) MASK Register */
 
-/* -------- SERCOM_SPI_ADDR : (SERCOM Offset: 0x24) (R/W 32) SPI SPI Address -------- */
-#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
-typedef union {
-  struct {
-    uint32_t ADDR:8;           /*!< bit:  0.. 7  Address Value                      */
-    uint32_t :8;               /*!< bit:  8..15  Reserved                           */
-    uint32_t ADDRMASK:8;       /*!< bit: 16..23  Address Mask                       */
-    uint32_t :8;               /*!< bit: 24..31  Reserved                           */
-  } bit;                       /*!< Structure used for bit  access                  */
-  uint32_t reg;                /*!< Type      used for register access              */
-} SERCOM_SPI_ADDR_Type;
-#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-#define SERCOM_SPI_ADDR_OFFSET      0x24         /**< \brief (SERCOM_SPI_ADDR offset) SPI Address */
-#define SERCOM_SPI_ADDR_RESETVALUE  _U_(0x00000000) /**< \brief (SERCOM_SPI_ADDR reset_value) SPI Address */
-
-#define SERCOM_SPI_ADDR_ADDR_Pos    0            /**< \brief (SERCOM_SPI_ADDR) Address Value */
-#define SERCOM_SPI_ADDR_ADDR_Msk    (_U_(0xFF) << SERCOM_SPI_ADDR_ADDR_Pos)
-#define SERCOM_SPI_ADDR_ADDR(value) (SERCOM_SPI_ADDR_ADDR_Msk & ((value) << SERCOM_SPI_ADDR_ADDR_Pos))
-#define SERCOM_SPI_ADDR_ADDRMASK_Pos 16           /**< \brief (SERCOM_SPI_ADDR) Address Mask */
-#define SERCOM_SPI_ADDR_ADDRMASK_Msk (_U_(0xFF) << SERCOM_SPI_ADDR_ADDRMASK_Pos)
-#define SERCOM_SPI_ADDR_ADDRMASK(value) (SERCOM_SPI_ADDR_ADDRMASK_Msk & ((value) << SERCOM_SPI_ADDR_ADDRMASK_Pos))
-#define SERCOM_SPI_ADDR_MASK        _U_(0x00FF00FF) /**< \brief (SERCOM_SPI_ADDR) MASK Register */
-
-/* -------- SERCOM_SPI_ADDR : (SERCOM Offset: 0x24) (R/W 32) SPI SPI Address -------- */
-#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
-typedef union {
-  struct {
-    uint32_t ADDR:8;           /*!< bit:  0.. 7  Address Value                      */
-    uint32_t :8;               /*!< bit:  8..15  Reserved                           */
-    uint32_t ADDRMASK:8;       /*!< bit: 16..23  Address Mask                       */
-    uint32_t :8;               /*!< bit: 24..31  Reserved                           */
-  } bit;                       /*!< Structure used for bit  access                  */
-  uint32_t reg;                /*!< Type      used for register access              */
-} SERCOM_SPI_ADDR_Type;
-#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-#define SERCOM_SPI_ADDR_OFFSET      0x24         /**< \brief (SERCOM_SPI_ADDR offset) SPI Address */
-#define SERCOM_SPI_ADDR_RESETVALUE  _U_(0x00000000) /**< \brief (SERCOM_SPI_ADDR reset_value) SPI Address */
-
-#define SERCOM_SPI_ADDR_ADDR_Pos    0            /**< \brief (SERCOM_SPI_ADDR) Address Value */
-#define SERCOM_SPI_ADDR_ADDR_Msk    (_U_(0xFF) << SERCOM_SPI_ADDR_ADDR_Pos)
-#define SERCOM_SPI_ADDR_ADDR(value) (SERCOM_SPI_ADDR_ADDR_Msk & ((value) << SERCOM_SPI_ADDR_ADDR_Pos))
-#define SERCOM_SPI_ADDR_ADDRMASK_Pos 16           /**< \brief (SERCOM_SPI_ADDR) Address Mask */
-#define SERCOM_SPI_ADDR_ADDRMASK_Msk (_U_(0xFF) << SERCOM_SPI_ADDR_ADDRMASK_Pos)
-#define SERCOM_SPI_ADDR_ADDRMASK(value) (SERCOM_SPI_ADDR_ADDRMASK_Msk & ((value) << SERCOM_SPI_ADDR_ADDRMASK_Pos))
-#define SERCOM_SPI_ADDR_MASK        _U_(0x00FF00FF) /**< \brief (SERCOM_SPI_ADDR) MASK Register */
-
-/* -------- SERCOM_SPI_ADDR : (SERCOM Offset: 0x24) (R/W 32) SPI SPI Address -------- */
-#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
-typedef union {
-  struct {
-    uint32_t ADDR:8;           /*!< bit:  0.. 7  Address Value                      */
-    uint32_t :8;               /*!< bit:  8..15  Reserved                           */
-    uint32_t ADDRMASK:8;       /*!< bit: 16..23  Address Mask                       */
-    uint32_t :8;               /*!< bit: 24..31  Reserved                           */
-  } bit;                       /*!< Structure used for bit  access                  */
-  uint32_t reg;                /*!< Type      used for register access              */
-} SERCOM_SPI_ADDR_Type;
-#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-#define SERCOM_SPI_ADDR_OFFSET      0x24         /**< \brief (SERCOM_SPI_ADDR offset) SPI Address */
-#define SERCOM_SPI_ADDR_RESETVALUE  _U_(0x00000000) /**< \brief (SERCOM_SPI_ADDR reset_value) SPI Address */
-
-#define SERCOM_SPI_ADDR_ADDR_Pos    0            /**< \brief (SERCOM_SPI_ADDR) Address Value */
-#define SERCOM_SPI_ADDR_ADDR_Msk    (_U_(0xFF) << SERCOM_SPI_ADDR_ADDR_Pos)
-#define SERCOM_SPI_ADDR_ADDR(value) (SERCOM_SPI_ADDR_ADDR_Msk & ((value) << SERCOM_SPI_ADDR_ADDR_Pos))
-#define SERCOM_SPI_ADDR_ADDRMASK_Pos 16           /**< \brief (SERCOM_SPI_ADDR) Address Mask */
-#define SERCOM_SPI_ADDR_ADDRMASK_Msk (_U_(0xFF) << SERCOM_SPI_ADDR_ADDRMASK_Pos)
-#define SERCOM_SPI_ADDR_ADDRMASK(value) (SERCOM_SPI_ADDR_ADDRMASK_Msk & ((value) << SERCOM_SPI_ADDR_ADDRMASK_Pos))
-#define SERCOM_SPI_ADDR_MASK        _U_(0x00FF00FF) /**< \brief (SERCOM_SPI_ADDR) MASK Register */
-
-/* -------- SERCOM_SPI_ADDR : (SERCOM Offset: 0x24) (R/W 32) SPI SPI Address -------- */
-#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
-typedef union {
-  struct {
-    uint32_t ADDR:8;           /*!< bit:  0.. 7  Address Value                      */
-    uint32_t :8;               /*!< bit:  8..15  Reserved                           */
-    uint32_t ADDRMASK:8;       /*!< bit: 16..23  Address Mask                       */
-    uint32_t :8;               /*!< bit: 24..31  Reserved                           */
-  } bit;                       /*!< Structure used for bit  access                  */
-  uint32_t reg;                /*!< Type      used for register access              */
-} SERCOM_SPI_ADDR_Type;
-#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-#define SERCOM_SPI_ADDR_OFFSET      0x24         /**< \brief (SERCOM_SPI_ADDR offset) SPI Address */
-#define SERCOM_SPI_ADDR_RESETVALUE  _U_(0x00000000) /**< \brief (SERCOM_SPI_ADDR reset_value) SPI Address */
-
-#define SERCOM_SPI_ADDR_ADDR_Pos    0            /**< \brief (SERCOM_SPI_ADDR) Address Value */
-#define SERCOM_SPI_ADDR_ADDR_Msk    (_U_(0xFF) << SERCOM_SPI_ADDR_ADDR_Pos)
-#define SERCOM_SPI_ADDR_ADDR(value) (SERCOM_SPI_ADDR_ADDR_Msk & ((value) << SERCOM_SPI_ADDR_ADDR_Pos))
-#define SERCOM_SPI_ADDR_ADDRMASK_Pos 16           /**< \brief (SERCOM_SPI_ADDR) Address Mask */
-#define SERCOM_SPI_ADDR_ADDRMASK_Msk (_U_(0xFF) << SERCOM_SPI_ADDR_ADDRMASK_Pos)
-#define SERCOM_SPI_ADDR_ADDRMASK(value) (SERCOM_SPI_ADDR_ADDRMASK_Msk & ((value) << SERCOM_SPI_ADDR_ADDRMASK_Pos))
-#define SERCOM_SPI_ADDR_MASK        _U_(0x00FF00FF) /**< \brief (SERCOM_SPI_ADDR) MASK Register */
-
-/* -------- SERCOM_SPI_ADDR : (SERCOM Offset: 0x24) (R/W 32) SPI SPI Address -------- */
-#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
-typedef union {
-  struct {
-    uint32_t ADDR:8;           /*!< bit:  0.. 7  Address Value                      */
-    uint32_t :8;               /*!< bit:  8..15  Reserved                           */
-    uint32_t ADDRMASK:8;       /*!< bit: 16..23  Address Mask                       */
-    uint32_t :8;               /*!< bit: 24..31  Reserved                           */
-  } bit;                       /*!< Structure used for bit  access                  */
-  uint32_t reg;                /*!< Type      used for register access              */
-} SERCOM_SPI_ADDR_Type;
-#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-#define SERCOM_SPI_ADDR_OFFSET      0x24         /**< \brief (SERCOM_SPI_ADDR offset) SPI Address */
-#define SERCOM_SPI_ADDR_RESETVALUE  _U_(0x00000000) /**< \brief (SERCOM_SPI_ADDR reset_value) SPI Address */
-
-#define SERCOM_SPI_ADDR_ADDR_Pos    0            /**< \brief (SERCOM_SPI_ADDR) Address Value */
-#define SERCOM_SPI_ADDR_ADDR_Msk    (_U_(0xFF) << SERCOM_SPI_ADDR_ADDR_Pos)
-#define SERCOM_SPI_ADDR_ADDR(value) (SERCOM_SPI_ADDR_ADDR_Msk & ((value) << SERCOM_SPI_ADDR_ADDR_Pos))
-#define SERCOM_SPI_ADDR_ADDRMASK_Pos 16           /**< \brief (SERCOM_SPI_ADDR) Address Mask */
-#define SERCOM_SPI_ADDR_ADDRMASK_Msk (_U_(0xFF) << SERCOM_SPI_ADDR_ADDRMASK_Pos)
-#define SERCOM_SPI_ADDR_ADDRMASK(value) (SERCOM_SPI_ADDR_ADDRMASK_Msk & ((value) << SERCOM_SPI_ADDR_ADDRMASK_Pos))
-#define SERCOM_SPI_ADDR_MASK        _U_(0x00FF00FF) /**< \brief (SERCOM_SPI_ADDR) MASK Register */
-
-/* -------- SERCOM_SPI_ADDR : (SERCOM Offset: 0x24) (R/W 32) SPI SPI Address -------- */
-#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
-typedef union {
-  struct {
-    uint32_t ADDR:8;           /*!< bit:  0.. 7  Address Value                      */
-    uint32_t :8;               /*!< bit:  8..15  Reserved                           */
-    uint32_t ADDRMASK:8;       /*!< bit: 16..23  Address Mask                       */
-    uint32_t :8;               /*!< bit: 24..31  Reserved                           */
-  } bit;                       /*!< Structure used for bit  access                  */
-  uint32_t reg;                /*!< Type      used for register access              */
-} SERCOM_SPI_ADDR_Type;
-#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-#define SERCOM_SPI_ADDR_OFFSET      0x24         /**< \brief (SERCOM_SPI_ADDR offset) SPI Address */
-#define SERCOM_SPI_ADDR_RESETVALUE  _U_(0x00000000) /**< \brief (SERCOM_SPI_ADDR reset_value) SPI Address */
-
-#define SERCOM_SPI_ADDR_ADDR_Pos    0            /**< \brief (SERCOM_SPI_ADDR) Address Value */
-#define SERCOM_SPI_ADDR_ADDR_Msk    (_U_(0xFF) << SERCOM_SPI_ADDR_ADDR_Pos)
-#define SERCOM_SPI_ADDR_ADDR(value) (SERCOM_SPI_ADDR_ADDR_Msk & ((value) << SERCOM_SPI_ADDR_ADDR_Pos))
-#define SERCOM_SPI_ADDR_ADDRMASK_Pos 16           /**< \brief (SERCOM_SPI_ADDR) Address Mask */
-#define SERCOM_SPI_ADDR_ADDRMASK_Msk (_U_(0xFF) << SERCOM_SPI_ADDR_ADDRMASK_Pos)
-#define SERCOM_SPI_ADDR_ADDRMASK(value) (SERCOM_SPI_ADDR_ADDRMASK_Msk & ((value) << SERCOM_SPI_ADDR_ADDRMASK_Pos))
-#define SERCOM_SPI_ADDR_MASK        _U_(0x00FF00FF) /**< \brief (SERCOM_SPI_ADDR) MASK Register */
-
 /* -------- SERCOM_I2CM_DATA : (SERCOM Offset: 0x28) (R/W 32) I2CM Data -------- */
 #if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union {
@@ -1248,6 +1104,7 @@ typedef union {
   uint32_t reg;                /*!< Type      used for register access              */
 } SERCOM_I2CM_DATA_Type;
 #endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* -------- SERCOM_I2CS_DATA : (SERCOM Offset: 0x28) (R/W 32) I2CS Data -------- */
 #if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union {
@@ -1275,42 +1132,6 @@ typedef union {
 #define SERCOM_SPI_DATA_DATA_Msk    (_U_(0xFFFFFFFF) << SERCOM_SPI_DATA_DATA_Pos)
 #define SERCOM_SPI_DATA_DATA(value) (SERCOM_SPI_DATA_DATA_Msk & ((value) << SERCOM_SPI_DATA_DATA_Pos))
 #define SERCOM_SPI_DATA_MASK        _U_(0xFFFFFFFF) /**< \brief (SERCOM_SPI_DATA) MASK Register */
-
-/* -------- SERCOM_USART_DATA : (SERCOM Offset: 0x28) (R/W 32) USART USART Data -------- */
-#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
-typedef union {
-  struct {
-    uint32_t DATA:32;          /*!< bit:  0..31  Data Value                         */
-  } bit;                       /*!< Structure used for bit  access                  */
-  uint32_t reg;                /*!< Type      used for register access              */
-} SERCOM_USART_DATA_Type;
-#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-#define SERCOM_USART_DATA_OFFSET    0x28         /**< \brief (SERCOM_USART_DATA offset) USART Data */
-#define SERCOM_USART_DATA_RESETVALUE _U_(0x00000000) /**< \brief (SERCOM_USART_DATA reset_value) USART Data */
-
-#define SERCOM_USART_DATA_DATA_Pos  0            /**< \brief (SERCOM_USART_DATA) Data Value */
-#define SERCOM_USART_DATA_DATA_Msk  (_U_(0xFFFFFFFF) << SERCOM_USART_DATA_DATA_Pos)
-#define SERCOM_USART_DATA_DATA(value) (SERCOM_USART_DATA_DATA_Msk & ((value) << SERCOM_USART_DATA_DATA_Pos))
-#define SERCOM_USART_DATA_MASK      _U_(0xFFFFFFFF) /**< \brief (SERCOM_USART_DATA) MASK Register */
-
-/* -------- SERCOM_USART_DATA : (SERCOM Offset: 0x28) (R/W 32) USART USART Data -------- */
-#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
-typedef union {
-  struct {
-    uint32_t DATA:32;          /*!< bit:  0..31  Data Value                         */
-  } bit;                       /*!< Structure used for bit  access                  */
-  uint32_t reg;                /*!< Type      used for register access              */
-} SERCOM_USART_DATA_Type;
-#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-#define SERCOM_USART_DATA_OFFSET    0x28         /**< \brief (SERCOM_USART_DATA offset) USART Data */
-#define SERCOM_USART_DATA_RESETVALUE _U_(0x00000000) /**< \brief (SERCOM_USART_DATA reset_value) USART Data */
-
-#define SERCOM_USART_DATA_DATA_Pos  0            /**< \brief (SERCOM_USART_DATA) Data Value */
-#define SERCOM_USART_DATA_DATA_Msk  (_U_(0xFFFFFFFF) << SERCOM_USART_DATA_DATA_Pos)
-#define SERCOM_USART_DATA_DATA(value) (SERCOM_USART_DATA_DATA_Msk & ((value) << SERCOM_USART_DATA_DATA_Pos))
-#define SERCOM_USART_DATA_MASK      _U_(0xFFFFFFFF) /**< \brief (SERCOM_USART_DATA) MASK Register */
 
 /* -------- SERCOM_USART_DATA : (SERCOM Offset: 0x28) (R/W 32) USART USART Data -------- */
 #if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))

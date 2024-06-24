@@ -77,16 +77,6 @@ typedef union {
 } PORT_OUTSET_Type;
 #endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-/* -------- PORT_OUTSET : (PORT Offset: 0x18) (R/W 32) Data Output Value Set -------- */
-#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
-typedef union {
-  struct {
-    uint32_t OUTSET:32;        /*!< bit:  0..31  PORT Data Output Value Set         */
-  } bit;                       /*!< Structure used for bit  access                  */
-  uint32_t reg;                /*!< Type      used for register access              */
-} PORT_OUTSET_Type;
-#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
-
 /* -------- PORT_OUTTGL : (PORT Offset: 0x1C) (R/W 32) Data Output Value Toggle -------- */
 #if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union {

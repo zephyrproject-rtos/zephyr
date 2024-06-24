@@ -16,7 +16,7 @@ typedef union {
     uint8_t  BODVDD:1;         /*!< bit:      2  Brown Out VDD Detector Reset       */
     uint8_t  NVM:1;            /*!< bit:      3  NVM Reset                          */
     uint8_t  EXT:1;            /*!< bit:      4  External Reset                     */
-    uint8_t  WDT:1;            /*!< bit:      5  Watchdog Reset                     */
+    uint8_t  WDT_RST:1;        /*!< bit:      5  Watchdog Reset                     */
     uint8_t  SYST:1;           /*!< bit:      6  System Reset Request               */
     uint8_t  BACKUP:1;         /*!< bit:      7  Backup Reset                       */
   } bit;                       /*!< Structure used for bit  access                  */
@@ -29,7 +29,7 @@ typedef union {
 typedef union {
   struct {
     uint8_t  :1;               /*!< bit:      0  Reserved                           */
-    uint8_t  RTC:1;            /*!< bit:      1  Real Timer Counter Interrupt       */
+    uint8_t  RTC_INT:1;        /*!< bit:      1  Real Timer Counter Interrupt       */
     uint8_t  BBPS:1;           /*!< bit:      2  Battery Backup Power Switch        */
     uint8_t  :4;               /*!< bit:  3.. 6  Reserved                           */
     uint8_t  HIB:1;            /*!< bit:      7  Hibernate                          */
