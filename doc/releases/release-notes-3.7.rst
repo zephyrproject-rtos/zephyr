@@ -255,6 +255,15 @@ Build system and Infrastructure
 
   * Fixed issue with passing UTF-8 configs to applications using sysbuild.
 
+  * Fixed issue whereby domain file in sysbuild projects would be loaded and used with outdated
+    information if sysbuild configuration was changed, and ``west flash`` was ran directly after.
+
+  * Fixed issue with Zephyr modules not being listed in sysbuild if they did not have a Kconfig
+    file set.
+
+  * Add sysbuild ``SB_CONFIG_COMPILER_WARNINGS_AS_ERRORS`` Kconfig option to turn on
+    "warning as error" toolchain flags for all images, if set.
+
 Drivers and Sensors
 *******************
 
