@@ -100,6 +100,8 @@ enum net_request_wifi_cmd {
 	/** BSS transition management query */
 	NET_REQUEST_WIFI_CMD_BTM_QUERY,
 #endif
+	/** Flush PMKSA cache entries */
+	NET_REQUEST_WIFI_CMD_PMKSA_FLUSH,
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -225,6 +227,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
 #endif
+
+/** Request a Wi-Fi PMKSA cache entries flush */
+#define NET_REQUEST_WIFI_PMKSA_FLUSH                           \
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_FLUSH)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH);
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -1184,6 +1192,13 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*dpp_dispatch)(const struct device *dev, struct wifi_dpp_params *params);
+	/** Flush PMKSA cache entries
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*pmksa_flush)(const struct device *dev);
 };
 
 /** Wi-Fi management offload API */

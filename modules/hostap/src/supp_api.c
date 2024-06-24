@@ -848,6 +848,31 @@ int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats)
 }
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 
+int supplicant_pmksa_flush(const struct device *dev)
+{
+	struct wpa_supplicant *wpa_s;
+	int ret = 0;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
+		goto out;
+	}
+
+	if (!wpa_cli_cmd_v("pmksa_flush")) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "pmksa_flush failed");
+		goto out;
+	}
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return ret;
+}
+
 int supplicant_set_power_save(const struct device *dev, struct wifi_ps_params *params)
 {
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
