@@ -23,8 +23,3 @@ properties:
     description: |
       Set to enable the offset cancellation. Otherwise it would be
       disabled as default.
-
-  spi-full-duplex:
-    type: boolean
-    description: |
-      Enable SPI 4wires mode with separated MISO and MOSI lines
