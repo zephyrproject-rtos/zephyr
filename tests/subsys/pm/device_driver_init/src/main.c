@@ -29,7 +29,7 @@
 
 ZTEST(device_driver_init, test_device_driver_init)
 {
-#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	enum pm_device_state state;
 	int rc;
 	state = -1;

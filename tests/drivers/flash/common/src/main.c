@@ -44,8 +44,8 @@
 
 #define EXPECTED_SIZE	512
 
-#if !IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) &&		\
-	!IS_ENABLED(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+#if !defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE) &&		\
+	!defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
 #error There is no flash device enabled or it is missing Kconfig options
 #endif
 

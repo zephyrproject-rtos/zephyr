@@ -106,7 +106,7 @@ static int enable_usb_device_next(void)
 
 	return 0;
 }
-#endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT) */
+#endif /* defined(CONFIG_USB_DEVICE_STACK_NEXT) */
 
 static void interrupt_handler(const struct device *dev, void *user_data)
 {
