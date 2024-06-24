@@ -413,7 +413,21 @@ struct bt_a2dp_cb {
 	int (*config_req)(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
 			struct bt_a2dp_codec_cfg *codec_cfg, struct bt_a2dp_stream **stream,
 			uint8_t *rsp_err_code);
-	/** @brief Callback function for bt_a2dp_stream_config()
+	/**
+	 * @brief Endpoint config request callback
+	 *
+	 * The callback is called whenever an endpoint is requested to be
+	 * reconfigured.
+	 *
+	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[out] rsp_err_code  give the error code if response error.
+	 *                          bt_a2dp_err_code or bt_avdtp_err_code
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
+	int (*reconfig_req)(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *codec_cfg,
+				uint8_t *rsp_err_code);
+	/** @brief Callback function for bt_a2dp_stream_config() and bt_a2dp_stream_reconfig()
 	 *
 	 *  Called when the codec configure operation is completed.
 	 *
@@ -423,7 +437,7 @@ struct bt_a2dp_cb {
 	 */
 	void (*config_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 	/**
-	 * @brief stream establishment request callback
+	 * @brief Stream establishment request callback
 	 *
 	 * The callback is called whenever an stream is requested to be
 	 * established (open cmd and create the stream l2cap channel).
@@ -446,7 +460,7 @@ struct bt_a2dp_cb {
 	 */
 	void (*establish_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 	/**
-	 * @brief stream release request callback
+	 * @brief Stream release request callback
 	 *
 	 * The callback is called whenever an stream is requested to be
 	 * released (release cmd and release the l2cap channel)
@@ -469,7 +483,7 @@ struct bt_a2dp_cb {
 	 */
 	void (*release_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 	/**
-	 * @brief stream start request callback
+	 * @brief Stream start request callback
 	 *
 	 * The callback is called whenever an stream is requested to be
 	 * started.
@@ -491,7 +505,7 @@ struct bt_a2dp_cb {
 	 */
 	void (*start_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 	/**
-	 * @brief Endpoint suspend request callback
+	 * @brief Stream suspend request callback
 	 *
 	 * The callback is called whenever an stream is requested to be
 	 * suspended.
@@ -513,10 +527,10 @@ struct bt_a2dp_cb {
 	 */
 	void (*suspend_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 	/**
-	 * @brief Endpoint config request callback
+	 * @brief Stream abort request callback
 	 *
-	 * The callback is called whenever an endpoint is requested to be
-	 * reconfigured.
+	 * The callback is called whenever an stream is requested to be
+	 * aborted.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
 	 *  @param[out] rsp_err_code  give the error code if response error.
@@ -524,16 +538,16 @@ struct bt_a2dp_cb {
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	int (*reconfig_req)(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code);
-	/** @brief Callback function for bt_a2dp_stream_reconfig()
+	int (*abort_req)(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code);
+	/** @brief Callback function for bt_a2dp_stream_abort()
 	 *
-	 *  Called when the reconfig operation is completed.
+	 *  Called when the abort operation is completed.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
 	 *  @param[in] rsp_err_code the remote responded error code
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
-	void (*reconfig_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
+	void (*abort_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 };
 
 /** @brief A2DP Connect.
@@ -613,7 +627,7 @@ struct bt_a2dp_stream_ops {
 	/**
 	 * @brief Stream configured callback
 	 *
-	 * The callback is called whenever an Audio Stream has been configured.
+	 * The callback is called whenever an Audio Stream has been configured or reconfigured.
 	 *
 	 * @param stream Stream object that has been configured.
 	 */
@@ -630,6 +644,7 @@ struct bt_a2dp_stream_ops {
 	 * @brief Stream release callback
 	 *
 	 * The callback is called whenever an Audio Stream has been released.
+	 * After released, the stream becomes invalid.
 	 *
 	 * @param stream Stream object that has been released.
 	 */
@@ -651,13 +666,14 @@ struct bt_a2dp_stream_ops {
 	 */
 	void (*suspended)(struct bt_a2dp_stream *stream);
 	/**
-	 * @brief Stream reconfigured callback
+	 * @brief Stream abort callback
 	 *
-	 * The callback is called whenever an Audio Stream has been reconfigured.
+	 * The callback is called whenever an Audio Stream has been aborted.
+	 * After aborted, the stream becomes invalid.
 	 *
-	 * @param stream Stream object that has been reconfigured.
+	 * @param stream Stream object that has been aborted.
 	 */
-	void (*reconfigured)(struct bt_a2dp_stream *stream);
+	void (*aborted)(struct bt_a2dp_stream *stream);
 #if defined(CONFIG_BT_A2DP_SINK)
 	/** @brief the media streaming data, only for sink
 	 *
@@ -727,6 +743,7 @@ int bt_a2dp_stream_establish(struct bt_a2dp_stream *stream);
 /** @brief release a2dp streamer.
  *
  * This function sends the AVDTP_CLOSE command and release the l2cap channel.
+ * After release, the stream becomes invalid.
  *
  *  @param stream The stream object.
  *
@@ -764,6 +781,17 @@ int bt_a2dp_stream_suspend(struct bt_a2dp_stream *stream);
  *  @return 0 in case of success and error code in case of error.
  */
 int bt_a2dp_stream_reconfig(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *config);
+
+/** @brief abort a2dp streamer.
+ *
+ * This function sends the AVDTP_ABORT command.
+ * After abort, the stream becomes invalid.
+ *
+ *  @param stream The stream object.
+ *
+ *  @return 0 in case of success and error code in case of error.
+ */
+int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream);
 
 /** @brief get the stream l2cap mtu
  *

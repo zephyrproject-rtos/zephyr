@@ -114,6 +114,7 @@ typedef int (*bt_avdtp_func_t)(struct bt_avdtp_req *req);
 struct bt_avdtp_req {
 	uint8_t sig;
 	uint8_t tid;
+	uint8_t status;
 	bt_avdtp_func_t func;
 };
 
@@ -145,13 +146,11 @@ struct bt_avdtp_media_hdr {
 
 struct bt_avdtp_discover_params {
 	struct bt_avdtp_req req;
-	uint8_t status;
 	struct net_buf *buf;
 };
 
 struct bt_avdtp_get_capabilities_params {
 	struct bt_avdtp_req req;
-	uint8_t status;
 	uint8_t stream_endpoint_id;
 	struct net_buf *buf;
 };
@@ -159,7 +158,6 @@ struct bt_avdtp_get_capabilities_params {
 struct bt_avdtp_set_configuration_params {
 	struct bt_avdtp_req req;
 	struct bt_avdtp_sep *sep;
-	uint8_t status;
 	uint8_t acp_stream_ep_id;
 	uint8_t int_stream_endpoint_id;
 	uint8_t media_type;
@@ -168,17 +166,10 @@ struct bt_avdtp_set_configuration_params {
 	uint8_t *codec_specific_ie;
 };
 
-struct bt_avdtp_open_params {
+/* avdtp_open, avdtp_close, avdtp_start, avdtp_suspend */
+struct bt_avdtp_ctrl_params {
 	struct bt_avdtp_req req;
 	struct bt_avdtp_sep *sep;
-	uint8_t status;
-	uint8_t acp_stream_ep_id;
-};
-
-struct bt_avdtp_start_params {
-	struct bt_avdtp_req req;
-	struct bt_avdtp_sep *sep;
-	uint8_t status;
 	uint8_t acp_stream_ep_id;
 };
 
@@ -197,6 +188,9 @@ struct bt_avdtp_ops_cb {
 	int (*set_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 		uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
 
+	int (*re_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
+		uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
+
 	int (*open_ind)(struct bt_avdtp *session,
 		struct bt_avdtp_sep *sep, uint8_t *errcode);
 
@@ -211,6 +205,10 @@ struct bt_avdtp_ops_cb {
 
 	int (*abort_ind)(struct bt_avdtp *session,
 		struct bt_avdtp_sep *sep, uint8_t *errcode);
+
+	/* stream l2cap is closed */
+	int (*stream_l2cap_disconnected)(struct bt_avdtp *session,
+		struct bt_avdtp_sep *sep);
 };
 
 /** @brief Global AVDTP session structure. */
@@ -268,11 +266,23 @@ int bt_avdtp_reconfigure(struct bt_avdtp *session,
 
 /* AVDTP OPEN */
 int bt_avdtp_open(struct bt_avdtp *session,
-		      struct bt_avdtp_open_params *param);
+		      struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP CLOSE */
+int bt_avdtp_close(struct bt_avdtp *session,
+			  struct bt_avdtp_ctrl_params *param);
 
 /* AVDTP START */
 int bt_avdtp_start(struct bt_avdtp *session,
-		      struct bt_avdtp_start_params *param);
+		      struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP SUSPEND */
+int bt_avdtp_suspend(struct bt_avdtp *session,
+		      struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP ABORT */
+int bt_avdtp_abort(struct bt_avdtp *session,
+		      struct bt_avdtp_ctrl_params *param);
 
 /* AVDTP send data */
 int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf);
