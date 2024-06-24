@@ -171,7 +171,7 @@ The following example shows the point 3:
 .. code-block:: c
 
    // This memory is allocated from `mem_non_cacheable`
-   block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_CACHE, 0x100);
+   block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_NON_CACHE, 0x100);
 
    // This memory is allocated from `mem_cacheable_big`
    block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_CACHE, 0x5000);
