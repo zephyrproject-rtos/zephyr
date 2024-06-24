@@ -58,6 +58,15 @@ config DEBUG_COREDUMP_MEMORY_DUMP_MIN
 	  Don't use this unless you want absolutely
 	  minimum core dump.
 
+config DEBUG_COREDUMP_MEMORY_DUMP_THREADS
+	bool "Threads"
+	select THREAD_STACK_INFO
+	select DEBUG_THREAD_INFO
+	select DEBUG_COREDUMP_THREADS_METADATA
+	help
+	  Dumps the thread struct and stack of all
+	  threads and all data required to debug threads.
+
 config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 	bool "RAM defined by linker section"
 	help
@@ -74,5 +83,12 @@ config DEBUG_COREDUMP_SHELL
 	depends on SHELL
 	help
 	  This shell provides access to coredump and its backends.
+
+config DEBUG_COREDUMP_THREADS_METADATA
+	bool "Threads metadata"
+	select DEBUG_THREAD_INFO
+	help
+	  Core dump will contain the threads metadata section containing
+	  any necessary data to enable debugging threads
 
 endif # DEBUG_COREDUMP
