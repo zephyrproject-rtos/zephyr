@@ -881,6 +881,21 @@ static int wifi_btm_query(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY, wifi_btm_query);
 
+static int wifi_wps_pbc(uint32_t mgmt_request, struct net_if *iface,
+			   void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->btm_query == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->wps_pbc(dev);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_PBC, wifi_wps_pbc);
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 static int wifi_dpp(uint32_t mgmt_request, struct net_if *iface,
 			   void *data, size_t len)
