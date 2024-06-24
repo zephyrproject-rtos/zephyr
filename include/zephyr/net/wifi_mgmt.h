@@ -88,6 +88,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_STA_DISCONNECT,
 	/** Get Wi-Fi driver and Firmware versions */
 	NET_REQUEST_WIFI_CMD_VERSION,
+	/** Get Wi-Fi latest connection parameters */
+	NET_REQUEST_WIFI_CMD_CONN_PARAMS,
 	/** Set RTS threshold */
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD,
 	/** Configure AP parameter */
@@ -192,6 +194,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_STA_DISCONNECT);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_VERSION)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION);
+
+/** Request a Wi-Fi connection parameters */
+#define NET_REQUEST_WIFI_CONN_PARAMS                           \
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONN_PARAMS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONN_PARAMS);
 
 /** Request a Wi-Fi RTS threshold */
 #define NET_REQUEST_WIFI_RTS_THRESHOLD				\
@@ -1144,6 +1152,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*get_version)(const struct device *dev, struct wifi_version *params);
+	/** Get Wi-Fi connection parameters recently used
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 * @param params the Wi-Fi connection parameters recently used
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*get_conn_params)(const struct device *dev, struct wifi_connect_req_params *params);
 	/** Set RTS threshold value
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
