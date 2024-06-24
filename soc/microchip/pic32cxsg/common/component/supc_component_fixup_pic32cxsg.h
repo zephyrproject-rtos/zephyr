@@ -120,9 +120,9 @@ typedef union {
 typedef union {
   struct {
     uint32_t :1;               /*!< bit:      0  Reserved                           */
-    uint32_t TSEN:1;           /*!< bit:      1  Temperature Sensor Output Enable   */
+    uint32_t :1;               /*!< bit:      1  Reserved   						*/
     uint32_t VREFOE:1;         /*!< bit:      2  Voltage Reference Output Enable    */
-    uint32_t TSSEL:1;          /*!< bit:      3  Temperature Sensor Selection       */
+    uint32_t :1;          	   /*!< bit:      3  Reserved   						*/
     uint32_t :2;               /*!< bit:  4.. 5  Reserved                           */
     uint32_t RUNSTDBY:1;       /*!< bit:      6  Run during Standby                 */
     uint32_t ONDEMAND:1;       /*!< bit:      7  On Demand Contrl                   */

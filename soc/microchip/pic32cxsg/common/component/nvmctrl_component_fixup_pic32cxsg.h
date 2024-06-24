@@ -126,7 +126,9 @@ typedef union {
     uint16_t BPDIS:1;          /*!< bit:      5  Boot Loader Protection Disable     */
     uint16_t :2;               /*!< bit:  6.. 7  Reserved                           */
     uint16_t BOOTPROT:4;       /*!< bit:  8..11  Boot Loader Protection Size        */
-    uint16_t :4;               /*!< bit: 12..15  Reserved                           */
+    uint16_t DPBE:1;           /*!< bit:     12  Dual Boot Protection Enable        */
+    uint16_t BPHL:1;           /*!< bit:     13  Boot Protect Hard Lock             */
+    uint16_t :2;               /*!< bit: 14..15  Reserved                           */
   } bit;                       /*!< Structure used for bit  access                  */
   uint16_t reg;                /*!< Type      used for register access              */
 } NVMCTRL_STATUS_Type;

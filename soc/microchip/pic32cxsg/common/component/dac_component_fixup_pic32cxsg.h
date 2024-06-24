@@ -41,14 +41,14 @@ typedef union {
     uint8_t  EMPTYEO1:1;       /*!< bit:      3  Data Buffer Empty Event Output DAC 1 */
     uint8_t  INVEI0:1;         /*!< bit:      4  Enable Invertion of DAC 0 input event */
     uint8_t  INVEI1:1;         /*!< bit:      5  Enable Invertion of DAC 1 input event */
-    uint8_t  Reserved1:1;      /*!< bit:      6  Result Ready Event Output 0        */
-    uint8_t  Reserved2:1;      /*!< bit:      7  Result Ready Event Output 1        */
+    uint8_t  :1;    		   /*!< bit:      6  Deprecated        */
+    uint8_t  :1;    		   /*!< bit:      7  Deprecated        */
   } bit;                       /*!< Structure used for bit  access                  */
   struct {
     uint8_t  STARTEI:2;        /*!< bit:  0.. 1  Start Conversion Event Input DAC x */
     uint8_t  EMPTYEO:2;        /*!< bit:  2.. 3  Data Buffer Empty Event Output DAC x */
     uint8_t  INVEI:2;          /*!< bit:  4.. 5  Enable Invertion of DAC x input event */
-    uint8_t  Reserved3:2;      /*!< bit:  6.. 7  Result Ready Event Output x        */
+    uint8_t  :2;    		   /*!< bit:  6.. 7  Deprecated        */
   } vec;                       /*!< Structure used for vec  access                  */
   uint8_t reg;                 /*!< Type      used for register access              */
 } DAC_EVCTRL_Type;
@@ -62,16 +62,16 @@ typedef union {
     uint8_t  UNDERRUN1:1;      /*!< bit:      1  Underrun 1 Interrupt Enable        */
     uint8_t  EMPTY0:1;         /*!< bit:      2  Data Buffer 0 Empty Interrupt Enable */
     uint8_t  EMPTY1:1;         /*!< bit:      3  Data Buffer 1 Empty Interrupt Enable */
-    uint8_t  Reserved1:1;        /*!< bit:      4  Result 0 Ready Interrupt Enable    */
-    uint8_t  Reserved2:1;        /*!< bit:      5  Result 1 Ready Interrupt Enable    */
-    uint8_t  Reserved3:1;       /*!< bit:      6  Overrun 0 Interrupt Enable         */
-    uint8_t  Reserved4:1;       /*!< bit:      7  Overrun 1 Interrupt Enable         */
+    uint8_t  :1;    		   /*!< bit:      4  Deprecated    */
+    uint8_t  :1;    		   /*!< bit:      5  Deprecated    */
+    uint8_t  :1;  			   /*!< bit:      6  Deprecated         */
+    uint8_t  :1;  			   /*!< bit:      7  Deprecated         */
   } bit;                       /*!< Structure used for bit  access                  */
   struct {
     uint8_t  UNDERRUN:2;       /*!< bit:  0.. 1  Underrun x Interrupt Enable        */
     uint8_t  EMPTY:2;          /*!< bit:  2.. 3  Data Buffer x Empty Interrupt Enable */
-    uint8_t  Reserved5:2;         /*!< bit:  4.. 5  Result x Ready Interrupt Enable    */
-    uint8_t  Reserved6:2;        /*!< bit:  6.. 7  Overrun x Interrupt Enable         */
+    uint8_t  :2;    		   /*!< bit:  4.. 5  Deprecated    */
+    uint8_t  :2;    		   /*!< bit:  6.. 7  Deprecated        */
   } vec;                       /*!< Structure used for vec  access                  */
   uint8_t reg;                 /*!< Type      used for register access              */
 } DAC_INTENCLR_Type;
@@ -85,20 +85,21 @@ typedef union {
     uint8_t  UNDERRUN1:1;      /*!< bit:      1  Underrun 1 Interrupt Enable        */
     uint8_t  EMPTY0:1;         /*!< bit:      2  Data Buffer 0 Empty Interrupt Enable */
     uint8_t  EMPTY1:1;         /*!< bit:      3  Data Buffer 1 Empty Interrupt Enable */
-    uint8_t  Reserved1:1;      /*!< bit:      4  Result 0 Ready Interrupt Enable    */
-    uint8_t  Reserved2:1;      /*!< bit:      5  Result 1 Ready Interrupt Enable    */
-    uint8_t  Reserved3:1;      /*!< bit:      6  Overrun 0 Interrupt Enable         */
-    uint8_t  Reserved4:1;      /*!< bit:      7  Overrun 1 Interrupt Enable         */
+    uint8_t  :1;    		   /*!< bit:      4  Deprecated    */
+    uint8_t  :1;    		   /*!< bit:      5  Deprecated    */
+    uint8_t  :1;    		   /*!< bit:      6  Deprecated         */
+    uint8_t  :1;    		   /*!< bit:      7  Deprecated         */
   } bit;                       /*!< Structure used for bit  access                  */
   struct {
     uint8_t  UNDERRUN:2;       /*!< bit:  0.. 1  Underrun x Interrupt Enable        */
     uint8_t  EMPTY:2;          /*!< bit:  2.. 3  Data Buffer x Empty Interrupt Enable */
-    uint8_t  Reserved5:2;      /*!< bit:  4.. 5  Result x Ready Interrupt Enable    */
-    uint8_t  Reserved6:2;      /*!< bit:  6.. 7  Overrun x Interrupt Enable         */
+    uint8_t  :2;    		   /*!< bit:  4.. 5  Deprecated    */
+    uint8_t  :2;   			   /*!< bit:  6.. 7  Deprecated         */
   } vec;                       /*!< Structure used for vec  access                  */
   uint8_t reg;                 /*!< Type      used for register access              */
 } DAC_INTENSET_Type;
 #endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* -------- DAC_INTFLAG : (DAC Offset: 0x06) (R/W 8) Interrupt Flag Status and Clear -------- */
 #if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union { // __I to avoid read-modify-write on write-to-clear register
@@ -107,16 +108,16 @@ typedef union { // __I to avoid read-modify-write on write-to-clear register
     __I uint8_t  UNDERRUN1:1;      /*!< bit:      1  Result 1 Underrun                  */
     __I uint8_t  EMPTY0:1;         /*!< bit:      2  Data Buffer 0 Empty                */
     __I uint8_t  EMPTY1:1;         /*!< bit:      3  Data Buffer 1 Empty                */
-    __I uint8_t  Reserved1:1;      /*!< bit:      4  Result 0 Ready                     */
-    __I uint8_t  Reserved2:1;      /*!< bit:      5  Result 1 Ready                     */
-    __I uint8_t  Reserved3:1;      /*!< bit:      6  Result 0 Overrun                   */
-    __I uint8_t  Reserved4:1;      /*!< bit:      7  Result 1 Overrun                   */
+    __I uint8_t  :1;    		   /*!< bit:      4  Deprecated                    */
+    __I uint8_t  :1;    		   /*!< bit:      5  Deprecated                     */
+    __I uint8_t  :1;   			   /*!< bit:      6  Deprecated                   */
+    __I uint8_t  :1;   			   /*!< bit:      7  Deprecated                   */
   } bit;                       /*!< Structure used for bit  access                  */
   struct {
     __I uint8_t  UNDERRUN:2;       /*!< bit:  0.. 1  Result x Underrun                  */
     __I uint8_t  EMPTY:2;          /*!< bit:  2.. 3  Data Buffer x Empty                */
-    __I uint8_t  Reserved5:2;      /*!< bit:  4.. 5  Result x Ready                     */
-    __I uint8_t  Reserved6:2;      /*!< bit:  6.. 7  Result x Overrun                   */
+    __I uint8_t  :2;    		   /*!< bit:  4.. 5  Deprecated                     */
+    __I uint8_t  :2;    		   /*!< bit:  6.. 7  Deprecated                   */
   } vec;                       /*!< Structure used for vec  access                  */
   uint8_t reg;                 /*!< Type      used for register access              */
 } DAC_INTFLAG_Type;
@@ -229,8 +230,8 @@ typedef struct {
   __O  DAC_DATA_Type             DATA[2];     /**< \brief Offset: 0x10 ( /W 16) DAC n Data */
   __O  DAC_DATABUF_Type          DATABUF[2];  /**< \brief Offset: 0x14 ( /W 16) DAC n Data Buffer */
   __IO DAC_DBGCTRL_Type          DBGCTRL;     /**< \brief Offset: 0x18 (R/W  8) Debug Control */
-  /*     RoReg8                    Reserved2[0x3]; - Reserved */
-  /*__I  DAC_RESULT_Type           RESULT[2]; - Reserved */  /**< \brief Offset: 0x1C (R/  16) Filter Result */
+  /*     RoReg8                    Reserved2[0x3]; - Deprecated */
+  /*__I  DAC_RESULT_Type           RESULT[2]; - Deprecated */  /**< \brief Offset: 0x1C (R/  16) Filter Result */
 } Dac;
 #endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
