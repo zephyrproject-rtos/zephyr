@@ -2262,6 +2262,8 @@ in:
 	return verdict;
 }
 
+#if defined(CONFIG_NET_TCP_ISN_RFC6528)
+
 static uint32_t seq_scale(uint32_t seq)
 {
 	return seq + (k_ticks_to_ns_floor32(k_uptime_ticks()) >> 6);
@@ -2288,6 +2290,7 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 	};
 
 	uint8_t hash[16];
+	size_t hash_len;
 	static bool once;
 
 	if (!once) {
@@ -2297,12 +2300,8 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
-#if defined(CONFIG_NET_TCP_ISN_RFC6528)
-	size_t hash_len;
-
 	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
 			 hash, sizeof(hash), &hash_len);
-#endif
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
 }
@@ -2326,6 +2325,7 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 	};
 
 	uint8_t hash[16];
+	size_t hash_len;
 	static bool once;
 
 	if (!once) {
@@ -2335,15 +2335,19 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 
 	memcpy(buf.key, unique_key, sizeof(unique_key));
 
-#if defined(CONFIG_NET_TCP_ISN_RFC6528)
-	size_t hash_len;
 
 	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
 			 hash, sizeof(hash), &hash_len);
-#endif
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
 }
+
+#else
+
+#define tcpv6_init_isn(...) (0UL)
+#define tcpv4_init_isn(...) (0UL)
+
+#endif /* CONFIG_NET_TCP_ISN_RFC6528 */
 
 static uint32_t tcp_init_isn(struct sockaddr *saddr, struct sockaddr *daddr)
 {
