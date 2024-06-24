@@ -1067,3 +1067,10 @@ test_i2c_sht21@90 {
 	compatible = "sensirion,sht21";
 	reg = <0x90>;
 };
+
+
+test_i2c_tmp1075: tmp1075@91 {
+	compatible = "ti,tmp1075";
+	reg = <0x91>;
+	alert-gpios =  <&test_gpio 0 0>;
+};

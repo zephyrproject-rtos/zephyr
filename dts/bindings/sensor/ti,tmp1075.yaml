@@ -1,0 +1,55 @@
+# Copyright (c) 2024 Arrow Electronics.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TMP1075 Digital Temperature Sensor.  See more info at
+  https://www.ti.com/product/TMP1075
+
+compatible: "ti,tmp1075"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  conversion-rate:
+    description: Conversion rate in ms.
+    type: int
+    default: 220
+    enum:
+      - 275 # 27.5ms
+      - 55 # 55ms
+      - 110 # 110ms
+      - 220 # 220ms
+  alert-gpios:
+    type: phandle-array
+    description: |
+      Identifies the ALERT signal, which is active-low open drain when
+      produced by the sensor.
+  one-shot-conversion:
+    description: One-shot conversion mode.
+    type: boolean
+  consecutive-fault-measurements:
+    description: Number of consecutive measured faults that will trigger the alert.
+    type: int
+    default: 4
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+  alert-pin-active-high:
+    description: Polarity of the alert pin.
+    type: boolean
+  interrupt-mode:
+    description: Selects the function of the ALERT pin.
+    type: boolean
+  shutdown-mode:
+    description: Sets the device in shutdown mode to conserve power.
+    type: boolean
+  lower-threshold:
+    description: Lower threshold for alert interrupt. Expressed in degrees C.
+    type: int
+    default: 28
+  upper-threshold:
+    description: Upper threshold for alert interrupt. Expressed in degrees C.
+    type: int
+    default: 29
