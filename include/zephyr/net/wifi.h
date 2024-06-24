@@ -128,6 +128,10 @@ const char *wifi_band_txt(enum wifi_frequency_bands band);
 #define WIFI_SAE_PSWD_MAX_LEN 128
 /** MAC address length */
 #define WIFI_MAC_ADDR_LEN 6
+/** Max enterprise identity length */
+#define WIFI_ENT_IDENTITY_MAX_LEN 64
+/** Max enterprise password length */
+#define WIFI_ENT_PSWD_MAX_LEN 128
 
 /** Minimum channel number */
 #define WIFI_CHANNEL_MIN 1
