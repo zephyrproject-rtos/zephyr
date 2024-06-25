@@ -1292,6 +1292,11 @@ static void isr_rx(void *param)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+		lll_prof_send();
+	}
+
 isr_rx_do_close:
 	radio_isr_set(isr_done, param);
 	radio_disable();
