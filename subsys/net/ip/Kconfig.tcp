@@ -93,7 +93,7 @@ config NET_TCP_RANDOMIZED_RTO
 	  due to a packet collision. If the transmission timeout is the same
 	  both stacks will retry at the same moment resulting in another
 	  collision. By introducing a randomized retry timeout, the chance of
-	  a second collision is reduced and it reduces furter the more
+	  a second collision is reduced and it reduces further the more
 	  retransmissions occur.
 
 config NET_TCP_RETRY_COUNT
