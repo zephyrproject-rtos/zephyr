@@ -46,7 +46,7 @@ int pol;
 int pha;
 int prescale = 0x01;
 int setup_time = 0x0;
-int hold_time = 0x0;..
+int hold_time = 0x0;
 int master_mode;
 int lsb_first;
 int comm_mode;
