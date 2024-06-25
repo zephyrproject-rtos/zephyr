@@ -1,0 +1,29 @@
+/ {
+	zephyr,user {
+		dac = <&max22017_dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <16>;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pa7>;
+	cs-gpios = <&gpioa 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+	max22018_mfd0: max22017_mfd@0 {
+		compatible = "adi,max22017";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+		rst-gpios = <&gpiog 11 GPIO_ACTIVE_HIGH>;
+		crc-mode;
+		status = "okay";
+
+		max22017_dac0: max22017-dac {
+			compatible = "adi,max22017-dac";
+			#io-channel-cells = <2>;
+			status = "okay";
+		};
+	};
+};

@@ -44,6 +44,7 @@ tests:
       - twr_ke18f
       - lpcxpresso55s36
       - rd_rw612_bga
+      - adi_sdp_k1
     depends_on: dac
     integration_platforms:
       - nucleo_l152re
