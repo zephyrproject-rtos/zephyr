@@ -651,12 +651,22 @@ void lll_conn_isr_tx(void *param)
 
 void lll_conn_rx_pkt_set(struct lll_conn *lll)
 {
+	struct pdu_data *pdu_data_rx;
 	struct node_rx_pdu *node_rx;
 	uint16_t max_rx_octets;
 	uint8_t phy;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
+
+	/* In case of ISR latencies, if packet pointer has not been set on time
+	 * then we do not want to check uninitialized length in rx buffer that
+	 * did not get used by Radio DMA. This would help us in detecting radio
+	 * ready event being set? We can not detect radio ready if it happens
+	 * twice before Radio ISR executes after latency.
+	 */
+	pdu_data_rx = (void *)node_rx->pdu;
+	pdu_data_rx->len = 0U;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	max_rx_octets = lll->dle.eff.max_rx_octets;
@@ -694,7 +704,7 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 #error "Undefined HAL_RADIO_PDU_LEN_MAX."
 #else
 		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, phy,
-						      node_rx->pdu));
+						      pdu_data_rx));
 #endif
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 	} else {
@@ -702,7 +712,7 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 				    RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC, phy,
 							 RADIO_PKT_CONF_CTE_DISABLED));
 
-		radio_pkt_rx_set(node_rx->pdu);
+		radio_pkt_rx_set(pdu_data_rx);
 	}
 }
 
