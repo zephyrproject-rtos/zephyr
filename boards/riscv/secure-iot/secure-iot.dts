@@ -60,3 +60,8 @@ chosen {
 &gpio0 {
 	status = "okay";
 };
+
+&plic {
+
+	status = "okay";
+};
