@@ -52,50 +52,50 @@ struct fd_op_vtable {
  *
  * This function allows to reserve a space for file descriptor entry in
  * the underlying table, and thus allows caller to fail fast if no free
- * descriptor is available. If this function succeeds, z_finalize_fd()
- * or z_free_fd() must be called mandatorily.
+ * descriptor is available. If this function succeeds, zvfs_finalize_fd()
+ * or zvfs_free_fd() must be called mandatorily.
  *
  * @return Allocated file descriptor, or -1 in case of error (errno is set)
  */
-int z_reserve_fd(void);
+int zvfs_reserve_fd(void);
 
 /**
  * @brief Finalize creation of file descriptor, with type.
  *
- * This function should be called exactly once after z_reserve_fd(), and
+ * This function should be called exactly once after zvfs_reserve_fd(), and
  * should not be called in any other case.
  *
- * The difference between this function and @ref z_finalize_fd is that the
+ * The difference between this function and @ref zvfs_finalize_fd is that the
  * latter does not relay type information of the created file descriptor.
  *
  * Values permitted for @a mode are one of `ZVFS_MODE_..`.
  *
- * @param fd File descriptor previously returned by z_reserve_fd()
+ * @param fd File descriptor previously returned by zvfs_reserve_fd()
  * @param obj pointer to I/O object structure
  * @param vtable pointer to I/O operation implementations for the object
  * @param mode File type as specified above.
  */
-void z_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable, uint32_t mode);
+void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable, uint32_t mode);
 
 /**
  * @brief Finalize creation of file descriptor.
  *
- * This function should be called exactly once after z_reserve_fd(), and
+ * This function should be called exactly once after zvfs_reserve_fd(), and
  * should not be called in any other case.
  *
- * @param fd File descriptor previously returned by z_reserve_fd()
+ * @param fd File descriptor previously returned by zvfs_reserve_fd()
  * @param obj pointer to I/O object structure
  * @param vtable pointer to I/O operation implementations for the object
  */
-static inline void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
+static inline void zvfs_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
 {
-	z_finalize_typed_fd(fd, obj, vtable, ZVFS_MODE_UNSPEC);
+	zvfs_finalize_typed_fd(fd, obj, vtable, ZVFS_MODE_UNSPEC);
 }
 
 /**
  * @brief Allocate file descriptor for underlying I/O object.
  *
- * This function combines operations of z_reserve_fd() and z_finalize_fd()
+ * This function combines operations of zvfs_reserve_fd() and zvfs_finalize_fd()
  * in one step, and provided for convenience.
  *
  * @param obj pointer to I/O object structure
@@ -103,17 +103,17 @@ static inline void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *v
  *
  * @return Allocated file descriptor, or -1 in case of error (errno is set)
  */
-int z_alloc_fd(void *obj, const struct fd_op_vtable *vtable);
+int zvfs_alloc_fd(void *obj, const struct fd_op_vtable *vtable);
 
 /**
  * @brief Release reserved file descriptor.
  *
- * This function may be called once after z_reserve_fd(), and should
+ * This function may be called once after zvfs_reserve_fd(), and should
  * not be called in any other case.
  *
- * @param fd File descriptor previously returned by z_reserve_fd()
+ * @param fd File descriptor previously returned by zvfs_reserve_fd()
  */
-void z_free_fd(int fd);
+void zvfs_free_fd(int fd);
 
 /**
  * @brief Get underlying object pointer from file descriptor.
@@ -125,18 +125,18 @@ void z_free_fd(int fd);
  * but vtable param is not NULL and doesn't match object's vtable,
  * NULL is returned and errno set to err param.
  *
- * @param fd File descriptor previously returned by z_reserve_fd()
+ * @param fd File descriptor previously returned by zvfs_reserve_fd()
  * @param vtable Expected object vtable or NULL
  * @param err errno value to set if object vtable doesn't match
  *
  * @return Object pointer or NULL, with errno set
  */
-void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err);
+void *zvfs_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err);
 
 /**
  * @brief Get underlying object pointer and vtable pointer from file descriptor.
  *
- * @param fd File descriptor previously returned by z_reserve_fd()
+ * @param fd File descriptor previously returned by zvfs_reserve_fd()
  * @param vtable A pointer to a pointer variable to store the vtable
  * @param lock An optional pointer to a pointer variable to store the mutex
  *        preventing concurrent descriptor access. The lock is not taken,
@@ -145,13 +145,13 @@ void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err);
  *
  * @return Object pointer or NULL, with errno set
  */
-void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
+void *zvfs_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 			      struct k_mutex **lock);
 
 /**
  * @brief Get the mutex and condition variable associated with the given object and vtable.
  *
- * @param obj Object previously returned by a call to e.g. @ref z_get_fd_obj.
+ * @param obj Object previously returned by a call to e.g. @ref zvfs_get_fd_obj.
  * @param vtable A pointer the vtable associated with @p obj.
  * @param lock An optional pointer to a pointer variable to store the mutex
  *        preventing concurrent descriptor access. The lock is not taken,
@@ -163,7 +163,7 @@ void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
  *
  * @return `true` on success, `false` otherwise.
  */
-bool z_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, struct k_mutex **lock,
+bool zvfs_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, struct k_mutex **lock,
 			     struct k_condvar **cond);
 
 /**
@@ -178,7 +178,7 @@ bool z_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, struc
  * @param request ioctl request number
  * @param ... Variadic arguments to ioctl
  */
-static inline int z_fdtable_call_ioctl(const struct fd_op_vtable *vtable, void *obj,
+static inline int zvfs_fdtable_call_ioctl(const struct fd_op_vtable *vtable, void *obj,
 				       unsigned long request, ...)
 {
 	va_list args;

@@ -160,7 +160,7 @@ bool fdtable_fd_is_initialized(int fd)
 }
 #endif /* CONFIG_ZTEST */
 
-void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
+void *zvfs_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 {
 	struct fd_entry *entry;
 
@@ -192,7 +192,7 @@ static int z_get_fd_by_obj_and_vtable(void *obj, const struct fd_op_vtable *vtab
 	return -1;
 }
 
-bool z_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, struct k_mutex **lock,
+bool zvfs_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, struct k_mutex **lock,
 			     struct k_condvar **cond)
 {
 	int fd;
@@ -216,7 +216,7 @@ bool z_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, struc
 	return true;
 }
 
-void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
+void *zvfs_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 			      struct k_mutex **lock)
 {
 	struct fd_entry *entry;
@@ -235,7 +235,7 @@ void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 	return entry->obj;
 }
 
-int z_reserve_fd(void)
+int zvfs_reserve_fd(void)
 {
 	int fd;
 
@@ -243,7 +243,7 @@ int z_reserve_fd(void)
 
 	fd = _find_fd_entry();
 	if (fd >= 0) {
-		/* Mark entry as used, z_finalize_fd() will fill it in. */
+		/* Mark entry as used, zvfs_finalize_fd() will fill it in. */
 		(void)z_fd_ref(fd);
 		fdtable[fd].obj = NULL;
 		fdtable[fd].vtable = NULL;
@@ -256,7 +256,7 @@ int z_reserve_fd(void)
 	return fd;
 }
 
-void z_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable, uint32_t mode)
+void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable, uint32_t mode)
 {
 	/* Assumes fd was already bounds-checked. */
 #ifdef CONFIG_USERSPACE
@@ -278,24 +278,24 @@ void z_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable, u
 	 * variables to avoid keeping the lock for a long period of time.
 	 */
 	if (vtable && vtable->ioctl) {
-		(void)z_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK,
+		(void)zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK,
 					   &fdtable[fd].lock);
 	}
 }
 
-void z_free_fd(int fd)
+void zvfs_free_fd(int fd)
 {
 	/* Assumes fd was already bounds-checked. */
 	(void)z_fd_unref(fd);
 }
 
-int z_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
+int zvfs_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
 {
 	int fd;
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd >= 0) {
-		z_finalize_fd(fd, obj, vtable);
+		zvfs_finalize_fd(fd, obj, vtable);
 	}
 
 	return fd;
@@ -369,7 +369,7 @@ int zvfs_close(int fd)
 
 	k_mutex_unlock(&fdtable[fd].lock);
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 
 	return res;
 }
@@ -380,7 +380,7 @@ int zvfs_fstat(int fd, struct stat *buf)
 		return -1;
 	}
 
-	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_STAT, buf);
+	return zvfs_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_STAT, buf);
 }
 
 int zvfs_fsync(int fd)
@@ -389,7 +389,7 @@ int zvfs_fsync(int fd)
 		return -1;
 	}
 
-	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
+	return zvfs_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
 }
 
 static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
