@@ -37,9 +37,14 @@ config SOC_NRF5340_CPUNET
 
 if SOC_SERIES_NRF53X
 
+VREGMAIN_PATH := $(dt_nodelabel_path,vregmain)
+VREGRADIO_PATH := $(dt_nodelabel_path,vregradio)
+
 config SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	bool "Workaround for nRF5340 anomaly 160"
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND
+	default y if "$(dt_node_int_prop_int,$(VREGMAIN_PATH),regulator-initial-mode)" = 1
+	default y if "$(dt_node_int_prop_int,$(VREGRADIO_PATH),regulator-initial-mode)" = 1
 	help
 	  Indicates that the workaround for the anomaly 160 that affects
 	  the nRF5340 SoC should be applied.
