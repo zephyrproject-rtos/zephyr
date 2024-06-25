@@ -2241,7 +2241,7 @@ int bt_hfp_ag_remote_terminate(struct bt_hfp_ag *ag)
 		return -ENOTCONN;
 	}
 
-	if ((ag->call_state != BT_HFP_CALL_ACTIVE) || (ag->call_state != BT_HFP_CALL_HOLD)) {
+	if ((ag->call_state != BT_HFP_CALL_ACTIVE) && (ag->call_state != BT_HFP_CALL_HOLD)) {
 		hfp_ag_unlock(ag);
 		return -EINVAL;
 	}
