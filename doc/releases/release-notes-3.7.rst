@@ -734,6 +734,26 @@ zcbor
 LVGL
 ****
 
+LVGL was updated to 8.4.0. Release notes can be found at:
+https://docs.lvgl.io/8.4/CHANGELOG.html#v8-4-0-19-march-2024
+
+Additionally, the following changes in Zephyr were done:
+
+  * Added support to place memory pool buffers in ``.lvgl_heap`` section by enabling
+    :kconfig:option:`CONFIG_LV_Z_MEMORY_POOL_CUSTOM_SECTION`
+
+  * Removed kscan-based pointer input wrapper code.
+
+  * Corrected encoder button behavior to emit ``LV_KEY_ENTER`` events correctly.
+
+  * Improved handling for :samp:`invert-{x,y}` and ``swap-xy`` configurations.
+
+  * Added ``LV_MEM_CUSTOM_FREE`` call on file closure.
+
+  * Added missing Kconfig stubs for DMA2D symbols.
+
+  * Integrated support for LVGL rounder callback function.
+
 Tests and Samples
 *****************
 
