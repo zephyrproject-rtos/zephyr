@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/misc/nxp_rtxxx_adsp_ctl/nxp_rtxxx_adsp_ctl.h)
