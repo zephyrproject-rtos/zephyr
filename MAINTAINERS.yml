@@ -750,8 +750,8 @@ Device Driver Model:
   status: maintained
   maintainers:
     - gmarull
-  collaborators:
     - tbursztyka
+  collaborators:
     - dcpleung
     - nashif
   files:
