@@ -6,21 +6,6 @@
 
 if BOARD_BL5340_DVK_NRF5340_CPUAPP || BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
 
-config BOARD_ENABLE_DCDC_APP
-	bool "Application MCU DCDC converter"
-	select SOC_DCDC_NRF53X_APP
-	default y
-
-config BOARD_ENABLE_DCDC_NET
-	bool "Network MCU DCDC converter"
-	select SOC_DCDC_NRF53X_NET
-	default y
-
-config BOARD_ENABLE_DCDC_HV
-	bool "High Voltage DCDC converter"
-	select SOC_DCDC_NRF53X_HV
-	default y
-
 config DOMAIN_CPUNET_BOARD
 	string
 	default "bl5340_dvk/nrf5340/cpunet"
