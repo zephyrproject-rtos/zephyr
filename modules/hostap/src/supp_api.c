@@ -1829,6 +1829,9 @@ static int dpp_params_to_cmd(struct wifi_dpp_params *params, char *cmd, size_t m
 		snprintf(pos, end - pos, "SET dpp_resp_wait_time %d",
 			 params->dpp_resp_wait_time);
 		break;
+	case WIFI_DPP_RECONFIG:
+		snprintf(pos, end - pos, "DPP_RECONFIG %d", params->network_id);
+		break;
 	default:
 		wpa_printf(MSG_ERROR, "Unknown DPP action");
 		return -EINVAL;

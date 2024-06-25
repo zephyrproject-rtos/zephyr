@@ -899,7 +899,9 @@ enum wifi_dpp_op {
 	/** Set configurator parameters */
 	WIFI_DPP_SET_CONF_PARAM,
 	/** Set DPP rx response wait timeout */
-	WIFI_DPP_SET_WAIT_RESP_TIME
+	WIFI_DPP_SET_WAIT_RESP_TIME,
+	/** Reconfigure DPP network */
+	WIFI_DPP_RECONFIG
 };
 
 /** Wi-Fi DPP crypto Elliptic Curves */
@@ -1036,6 +1038,8 @@ struct wifi_dpp_params {
 		int id;
 		/** Timeout for DPP frame response rx */
 		int dpp_resp_wait_time;
+		/** network id for reconfig */
+		int network_id;
 		/** DPP QR-CODE, max for SHA512 */
 		uint8_t dpp_qr_code[WIFI_DPP_QRCODE_MAX_LEN + 1];
 		/** Request response reusing request buffer.

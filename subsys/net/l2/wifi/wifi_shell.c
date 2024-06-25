@@ -2679,6 +2679,30 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 	return 0;
 }
 
+static int cmd_wifi_dpp_reconfig(const struct shell *sh, size_t argc, char *argv[])
+{
+	int ret = 0;
+	struct net_if *iface = net_if_get_wifi_sta();
+	struct wifi_dpp_params params = {0};
+
+	params.action = WIFI_DPP_RECONFIG;
+
+	if (argc >= 2) {
+		params.network_id = shell_strtol(argv[1], 10, &ret);
+	}
+
+	if (ret) {
+		PR_ERROR("parse DPP args fail\n");
+		return -EINVAL;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_DPP, iface, &params, sizeof(params))) {
+		PR_WARNING("Failed to request DPP action\n");
+		return -ENOEXEC;
+	}
+	return 0;
+}
+
 static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_wifi_sta();
@@ -2835,6 +2859,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "AP DPP start auth request as enrollee:\n"
 		      "-p --peer <peer_bootstrap_id>\n",
 		      cmd_wifi_dpp_ap_auth_init, 3, 0),
+	SHELL_CMD_ARG(reconfig, NULL,
+		      " reconfig network by id:\n"
+		      "<network_id>\n",
+		      cmd_wifi_dpp_reconfig, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
