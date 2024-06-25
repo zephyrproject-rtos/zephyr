@@ -556,8 +556,18 @@ static int openthread_init(struct net_if *iface)
 
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
 
-		otNat64SetReceiveIp4Callback(ot_context->instance,
-					     ot_receive_handler, ot_context);
+		otIp4Cidr nat64_cidr;
+
+		if (otIp4CidrFromString(CONFIG_OPENTHREAD_NAT64_CIDR, &nat64_cidr) ==
+		    OT_ERROR_NONE) {
+			if (otNat64SetIp4Cidr(openthread_get_default_instance(), &nat64_cidr) !=
+			    OT_ERROR_NONE) {
+				NET_ERR("Incorrect NAT64 CIDR");
+			}
+		} else {
+			NET_ERR("Failed to parse NAT64 CIDR");
+		}
+		otNat64SetReceiveIp4Callback(ot_context->instance, ot_receive_handler, ot_context);
 
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
