@@ -664,7 +664,19 @@ uint32_t radio_crc_is_valid(void)
 	return (NRF_RADIO->CRCSTATUS != 0);
 }
 
-static uint8_t MALIGN(4) _pkt_empty[PDU_EM_LL_SIZE_MAX];
+/* Note: Only 3 bytes (PDU_EM_LL_SIZE_MAX) is required for empty PDU
+ *       transmission, but in case of Radio ISR latency if rx packet pointer
+ *       is not setup then Radio DMA will use previously assigned buffer which
+ *       can be this empty PDU buffer. Radio DMA will overrun this buffer and
+ *       cause memory corruption. Any detection of ISR latency will not happen
+ *       if the ISR function pointer in RAM is corrupted by this overrun.
+ *       Increasing ISR latencies in OS and CPU usage in the ULL_HIGH priority
+ *       if it is same as LLL priority in Controller implementation then it is
+ *       making it tight to execute Controller code in the tIFS between Tx-Rx
+ *       PDU's Radio ISRs.
+ */
+static uint8_t MALIGN(4) _pkt_empty[MAX(HAL_RADIO_PDU_LEN_MAX,
+					PDU_EM_LL_SIZE_MAX)];
 static uint8_t MALIGN(4) _pkt_scratch[MAX((HAL_RADIO_PDU_LEN_MAX + 3),
 				       PDU_AC_LL_SIZE_MAX)];
 
