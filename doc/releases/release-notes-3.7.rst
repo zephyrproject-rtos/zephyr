@@ -662,13 +662,83 @@ Drivers and Sensors
 
 * Ethernet
 
-  * Deprecated eth_mcux driver in favor of the reworked nxp_enet driver.
-  * Driver nxp_enet is no longer experimental.
-  * All boards and SOCs with :dtcompatible:`nxp,kinetis-ethernet` compatible nodes
-    reworked to use the new :dtcompatible:`nxp,enet` binding.
-  * Added support for PTP on compatible STM32 series (STM32F7, STM32H5 and STM32H7).
-  * Added ethernet QOS driver to NXP MCXN947
-  * Added 1 GigE to NXP mimxrt1170
+  * Introduced :kconfig:option:`CONFIG_ETH_DRIVER_RAW_MODE`. This option allows building
+    ethernet drivers without the zephyr L2 ethernet layer.
+  * Removed the ethernet-fixed-link DT binding.
+  * Removed VLAN handling from ethernet drivers since it is now handled by the
+    generic ethernet L2 code.
+  * Implemented/reworked HW MAC Address filtering in the eth_mcux, eth_nxp_enet,
+    and eth_nxp_s32_gmac, eth_stm32, and eth_nxp_s32_netc drivers.
+  * New Drivers
+
+    * Added new eth_nxp_enet_qos driver for the ethernet controller present on NXP MCXN SOCs.
+    * Added support for adin1100 phy.
+    * Added support for the Realtek RTL8211F phy.
+  * NXP ENET driver changes
+
+    * eth_nxp_enet driver is no longer experimental.
+    * Deprecated eth_mcux driver.
+    * All boards and SOCs with :dtcompatible:`nxp,kinetis-ethernet` compatible nodes
+      reworked to use the new :dtcompatible:`nxp,enet` binding.
+    * Added support for network device power management with nxp_enet driver on Kinetis platforms.
+    * Converted eth_nxp_enet driver to use a dedicated workqueue for RX
+      managed by the kernel rather than a manual infinite loop.
+    * Disabled hardware checksum acceleration when IPV6 is enabled with eth_nxp_enet, since
+      the hardware does not support accelerating ICMPv6 checksums.
+    * Added support for :dtcompatible:`nxp,enet1g`.
+    * Added support to use a fused MAC address for nxp_enet MAC on some platforms.
+    * Fixed issue with LAA bit not being set and a confusing description of the nxp,unique-mac
+      property used with the nxp_enet driver.
+    * Fixed cache maintain being enabled when using a noncache DMA buffer in nxp_enet driver.
+    * Added MMIO mappings to nxp_enet driver.
+    * Clarified DSA supported with eth_nxp_enet.
+  * NXP S32 ethernet changes
+
+    * The eth_nxp_s32_gmac driver now implies :kconfig:option:`CONFIG_MDIO`.
+    * eth_nxp_s32_netc driver updated to use new MBOX API.
+  * Adin2111 driver changes
+
+    * Corrected the bitfield position of IAMSK1 TX_READY_MASK in adin2111 driver.
+    * Changed adin2111 driver to always append crc32 to the end of the frame.
+    * Adjusted eth_adin2111 driver to have the appropriate multicaster filter mask.
+    * Fixed the "generic SPI without crc8" mode of adin2111 driver.
+    * Added Open Alliance SPI protocol support to the adin2111 driver.
+    * Added custom driver extension APIs for adin2111 driver.
+    * Enabled support for promiscuous mode in the adin2111 driver.
+    * Moved OA buffers out of device data of the adin2111 driver to save ~32KB of space
+      when using the generic SPI protocol.
+    * Fixed a build warning in eth_adin2111 driver on 64-bit platforms.
+    * Various small changes to adin2111 driver.
+  * STM32 ethernet driver changes
+
+    * Added support for PTP on compatible STM32 series (STM32F7, STM32H5 and STM32H7).
+    * Changed eth_stm32 to use phy APIs to access the phy to avoid collisions when multitasking.
+    * Removed legacy STM32Cube HAL API support for STM32 F4, F7, and H7 series.
+    * Added support for RX/TX timestamping to eth_stm32_hal driver.
+  * ESP32 ethernet driver changes
+
+    * Added support to esp32 ethernet driver to set the MAC address during runtime.
+    * Updated esp32 ethernet driver to work with the version 5.1 of hal_espressif.
+    * Fixed build of esp32 ethernet driver when :kconfig:option:`CONFIG_NET_STATISTICS` is enabled.
+  * Other ethernet driver changes
+
+    * Added link status detection to the w5500 ethernet driver, configurable via kconfig.
+    * Added ability to set MAC address at runtime with eth_liteeth driver.
+    * Fixed issue in the eth_stellaris driver where it was previously not taken into account
+      that the number of interrupts received by the driver may be less than the number of
+      data packets received by the ethernet controller.
+    * Added a devicetree property for the enc28j60 to set the RX filter.
+    * Fixed ESTAT TXABRT bit not being cleared on error in the enc28j60 driver.
+    * Added conditions to enable ptp_clock driver implementation for the native_posix
+      ethernet driver when PTP subsystem is enabled.
+    * Fixed DSA driver for KSZ8xxx to correctly initialize LAN devices.
+    * Fixed the wrong register address being used for tail tag enable in ksz8863.
+  * Phy driver changes
+
+    * Fixed various control issues with the KSZ8081 phy driver regarding
+      resets, autonegotiation, link detection, and missing/spamming logging messages.
+    * Changed property names of the reset and interrupt gpios in the KSZ8081 DT binding.
+    * Fixed bus fault in phy_mii driver when using fixed-link mode.
 
 * Flash
 
@@ -1740,6 +1810,9 @@ Tests and Samples
     based on the ``MODEM_CELLULAR`` device driver.
 
   * BT LE Coded PHY is now runtime tested in CI with the nrf5x bsim targets.
+
+  * External ethernet network interfaces have been disabled in the ``tests/net`` tests, since these
+    tests are meant to use simulated network interfaces.
 
 Issue Related Items
 *******************
