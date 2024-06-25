@@ -545,6 +545,7 @@ void __weak z_early_rand_get(uint8_t *buf, size_t length)
 
 
 extern void init_mbox_module(void);
+extern void init_mem_slab_module(void);
 
 /**
  *
@@ -586,6 +587,7 @@ FUNC_NORETURN void z_cstart(void)
 #endif
 	init_kheap_statics();
 	init_mbox_module();
+	init_mem_slab_module();
 
 	/* PRE_KERNEL_1 marker */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);

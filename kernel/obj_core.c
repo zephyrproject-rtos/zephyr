@@ -361,12 +361,6 @@ void init_obj_core(void)
 #ifdef CONFIG_OBJ_CORE_PIPE
 	init_pipe_obj_core_list();
 #endif
-#ifdef CONFIG_OBJ_CORE_MEM_SLAB
-	init_mem_slab_obj_core_list();
-#endif
-#ifdef CONFIG_OBJ_CORE_MEM_POOL
-	init_mem_pool_obj_core_list();
-#endif
 #ifdef CONFIG_OBJ_CORE_THREAD
 	init_thread_obj_core_list();
 #endif

@@ -129,7 +129,7 @@ static int create_free_list(struct k_mem_slab *slab)
  *
  * @return 0 on success, fails otherwise.
  */
-int init_mem_slab_obj_core_list(void)
+int init_mem_slab_module(void)
 {
 	int rc = 0;
 
