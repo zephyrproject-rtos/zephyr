@@ -166,24 +166,6 @@ struct pm_state_info {
 	uint32_t exit_latency_us;
 };
 
-/**
- * Power state information needed to lock a power state.
- */
-struct pm_state_constraint {
-	 /**
-	  * Power management state
-	  *
-	  * @see pm_state
-	  **/
-	enum pm_state state;
-	 /**
-	  * Power management sub-state
-	  *
-	  * @see pm_state
-	  **/
-	uint8_t substate_id;
-};
-
 /** @cond INTERNAL_HIDDEN */
 
 /**
