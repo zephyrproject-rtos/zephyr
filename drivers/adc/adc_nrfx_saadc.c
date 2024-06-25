@@ -193,17 +193,22 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		config.gain = NRF_SAADC_GAIN1_5;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_4)
+#if defined(SAADC_CH_CONFIG_GAIN_Gain1_4) || defined(SAADC_CH_CONFIG_GAIN_Gain2_8)
 	case ADC_GAIN_1_4:
 		config.gain = NRF_SAADC_GAIN1_4;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_3)
+#if defined(SAADC_CH_CONFIG_GAIN_Gain1_3) || defined(SAADC_CH_CONFIG_GAIN_Gain2_6)
 	case ADC_GAIN_1_3:
 		config.gain = NRF_SAADC_GAIN1_3;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_2)
+#if defined(SAADC_CH_CONFIG_GAIN_Gain2_5)
+	case ADC_GAIN_2_5:
+		config.gain = NRF_SAADC_GAIN2_5;
+		break;
+#endif
+#if defined(SAADC_CH_CONFIG_GAIN_Gain1_2) || defined(SAADC_CH_CONFIG_GAIN_Gain2_4)
 	case ADC_GAIN_1_2:
 		config.gain = NRF_SAADC_GAIN1_2;
 		break;
