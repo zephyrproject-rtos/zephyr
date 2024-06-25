@@ -115,7 +115,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV sol_pdu_rpl_srv.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_BRG_CFG_CLI brg_cfg_cli.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_BRG_CFG_SRV brg_cfg_srv.c)
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_BRG_CFG_SRV brg_cfg_srv.c brg_cfg.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOLICITATION solicitation.c)
 
