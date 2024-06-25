@@ -9,3 +9,8 @@ properties:
     type: boolean
     description: |
       UARTE has ENDTX_STOPTX HW short.
+
+  frame-timeout-supported:
+    type: boolean
+    description: |
+      UARTE has RX frame timeout HW feature.
