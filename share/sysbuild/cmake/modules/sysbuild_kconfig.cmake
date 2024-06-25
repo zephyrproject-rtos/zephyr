@@ -73,6 +73,13 @@ if(NOT DEFINED SB_CONF_FILE)
   set(SB_CONF_FILE ${CMAKE_CURRENT_BINARY_DIR}/empty.conf)
 endif()
 
+if(NOT EXISTS "${APPLICATION_CONFIG_DIR}")
+  message(FATAL_ERROR "${APPLICATION_CONFIG_DIR} (APPLICATION_CONFIG_DIR) doesn't exist. "
+          "Unable to lookup sysbuild.conf or other related sysbuild configuration files. "
+	  "Please ensure APPLICATION_CONFIG_DIR points to a valid location."
+  )
+endif()
+
 # Empty files to make kconfig.py happy.
 file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/empty.conf)
 set(APPLICATION_SOURCE_DIR ${sysbuild_toplevel_SOURCE_DIR})
