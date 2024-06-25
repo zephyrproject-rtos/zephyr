@@ -29,5 +29,9 @@ int main(void)
 #ifdef CONFIG_NET_LOOPBACK_SIMULATE_PACKET_DROP
 	loopback_set_packet_drop_ratio(1);
 #endif
+
+#if defined(CONFIG_NET_DHCPV4) && !defined(CONFIG_NET_CONFIG_SETTINGS)
+	net_dhcpv4_start(net_if_get_default());
+#endif
 	return 0;
 }
