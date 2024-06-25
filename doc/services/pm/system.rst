@@ -122,8 +122,6 @@ remaining time until the next scheduled timeout.
 An example of an application that defines its own policy can be found in
 :zephyr_file:`tests/subsys/pm/power_mgmt/`.
 
-.. _pm-policy-power-states:
-
 Policy and Power States
 ------------------------
 
