@@ -206,6 +206,14 @@ struct bme280_decoder_header {
 
 struct bme280_encoded_data {
 	struct bme280_decoder_header header;
+	struct {
+		/** Set if `temp` has data */
+		uint8_t has_temp: 1;
+		/** Set if `press` has data */
+		uint8_t has_press: 1;
+		/** Set if `humidity` has data */
+		uint8_t has_humidity: 1;
+	} __attribute__((__packed__));
 	struct bme280_reading reading;
 };
 
