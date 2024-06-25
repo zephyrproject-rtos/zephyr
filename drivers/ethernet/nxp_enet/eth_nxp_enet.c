@@ -1010,8 +1010,13 @@ struct nxp_enet_mod_data {
 static int nxp_enet_mod_init(const struct device *dev)
 {
 	const struct nxp_enet_mod_config *config = dev->config;
+	int ret;
 
-	clock_control_on(config->clock_dev, config->clock_subsys);
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret) {
+		LOG_ERR("ENET module clock error");
+		return ret;
+	}
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
