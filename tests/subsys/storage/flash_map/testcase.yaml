@@ -14,6 +14,7 @@ tests:
       - native_sim
   storage.flash_map.mpu:
     extra_args: OVERLAY_CONFIG=overlay-mpu.conf
+    timeout: 120
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
