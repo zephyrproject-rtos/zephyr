@@ -272,6 +272,10 @@ Device Drivers and Devicetree
   property to specify the reference voltage and reference voltage value to be used by
   the lpadc. (:github:`75005`)
 
+ * The DT properties ``mc,interface-type``, ``mc,reset-gpio``, and ``mc,interrupt-gpio`` of
+   the :dtcompatible:`microchip,ksz8081` phy binding have changed to
+   ``microchip,interface-type``, ``reset-gpios``, and ``int-gpios``, respectively (:github:`73725`)
+
 Analog-to-Digital Converter (ADC)
 =================================
 
