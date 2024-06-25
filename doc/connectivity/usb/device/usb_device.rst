@@ -25,11 +25,11 @@ over time. It provides the following functionalities:
   customer applications. The APIs is described in
   :zephyr_file:`include/zephyr/usb/usb_device.h`
 
-The device stack and :ref:`usb_dc_api` have some limitations, such as not being
-able to support more than one controller instance at runtime and only supporting
-one USB device configuration. We are actively working on new USB support, which
-means we will continue to maintain the device stack described here until all
-supported USB classes are ported, but do not expect any new features or enhancements.
+.. note::
+   It is planned to deprecate all APIs listed in :ref:`usb_api` and the
+   functions that depend on them between Zephyr v3.7.0 and v4.0.0, and remove
+   them in v4.2.0. The new USB device support, represented by the APIs in
+   :ref:`usb_device_next_api`, will become the default in Zephyr v4.0.0.
 
 Supported USB classes
 *********************
