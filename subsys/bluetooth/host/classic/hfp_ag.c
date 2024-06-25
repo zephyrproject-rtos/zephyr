@@ -473,7 +473,7 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	}
 	hfp_ag_unlock(ag);
 
-	while (err == 0) {
+	while (buf->len > 0) {
 		err = get_number(buf, &codec);
 		if (err != 0) {
 			return -ENOTSUP;
