@@ -30,7 +30,7 @@ static void websocket_context_cb(struct websocket_context *context,
 	char addr_local[ADDR_LEN + 7];
 	char addr_remote[ADDR_LEN + 7] = "";
 
-	net_ctx = z_get_fd_obj(context->real_sock, NULL, 0);
+	net_ctx = zvfs_get_fd_obj(context->real_sock, NULL, 0);
 	if (net_ctx == NULL) {
 		PR_ERROR("Invalid fd %d", context->real_sock);
 		return;
