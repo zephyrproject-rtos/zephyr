@@ -1019,7 +1019,7 @@ device_get_dt_nodelabels(const struct device *dev)
 		.state = (state_),							\
 		.data = (data_),							\
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/			\
-		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),})) /**/		\
+		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),},)) /**/		\
 		IF_ENABLED(CONFIG_DEVICE_DT_METADATA,					\
 			   (.dt_meta = &Z_DEVICE_DT_METADATA_NAME_GET(dev_id_),))	\
 	}
