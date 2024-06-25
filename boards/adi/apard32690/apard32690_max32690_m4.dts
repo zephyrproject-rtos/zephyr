@@ -93,6 +93,10 @@
 	status = "okay";
 };
 
+&trng {
+	status = "okay";
+};
+
 arduino_serial: &uart1 {
 	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 	pinctrl-0 = <&uart1a_tx_p2_16 &uart1a_rx_p2_14>;
