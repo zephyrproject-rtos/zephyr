@@ -112,18 +112,42 @@ if SOC_NRF5340_CPUAPP
 config SOC_DCDC_NRF53X_APP
 	bool
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &vregmain {
+	    regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	  };
+
 	  Enable nRF53 series System on Chip Application MCU DC/DC converter.
 
 config SOC_DCDC_NRF53X_NET
 	bool
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &vregradio {
+	    regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	  };
+
 	  Enable nRF53 series System on Chip Network MCU DC/DC converter.
 
 config SOC_DCDC_NRF53X_HV
 	bool
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &vregh {
+	    status = "okay";
+	  };
+
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
 config NRF_SPU_FLASH_REGION_SIZE
