@@ -17,7 +17,7 @@ oscillators: oscillator@4000 {
 };
 
 regulators: regulator@4000 {
-	compatible = "nordic,nrf-regulators";
+	compatible = "nordic,nrf53x-regulators";
 	reg = <0x4000 0x1000>;
 	status = "okay";
 };
