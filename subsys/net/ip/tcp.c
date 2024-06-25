@@ -2437,7 +2437,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	 * address, remote port) to be properly identified. Remote address and port
 	 * are already copied above from conn->dst. The call to net_context_bind
 	 * with the prepared local_addr further copies the local address. However,
-	 * this call wont copy the local port, as the bind would then fail due to
+	 * this call won't copy the local port, as the bind would then fail due to
 	 * an address/port reuse without the REUSEPORT option enables for both
 	 * connections. Therefore, we copy the port after the bind call.
 	 * It is safe to bind to this address/port combination, as the new TCP
@@ -3263,7 +3263,7 @@ next_state:
 				 * RISK:
 				 * There is a tiny risk of creating a ACK loop this way when
 				 * both ends of the connection are out of order due to packet
-				 * loss is a simulatanious bidirectional data flow.
+				 * loss is a simultaneous bidirectional data flow.
 				 */
 				tcp_out(conn, ACK); /* peer has resent */
 
@@ -4304,7 +4304,8 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 		conn = (void *)sys_slist_peek_head(&tcp_conns);
 		tcp_to_json(conn, buf, &json_len);
 		break;
-	case TP_DEBUG_STOP: case TP_DEBUG_CONTINUE:
+	case TP_DEBUG_STOP:
+	case TP_DEBUG_CONTINUE:
 		tp_state = tp->type;
 		break;
 	default:
@@ -4535,7 +4536,7 @@ void net_tcp_init(void)
 		tcp_max_timeout_ms += rto;
 		rto += rto >> 1;
 	}
-	/* At the last timeout cicle */
+	/* At the last timeout cycle */
 	tcp_max_timeout_ms += tcp_rto;
 
 	/* When CONFIG_NET_TCP_RANDOMIZED_RTO is active in can be worse case 1.5 times larger */

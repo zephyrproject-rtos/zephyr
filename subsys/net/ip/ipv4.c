@@ -196,7 +196,7 @@ int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
 			break;
 
 		case NET_IPV4_OPTS_EO:
-			/* Options length should be zero, when cursor reachs to
+			/* Options length should be zero, when cursor reaches to
 			 * End of options.
 			 */
 			if (total_opts_len) {
