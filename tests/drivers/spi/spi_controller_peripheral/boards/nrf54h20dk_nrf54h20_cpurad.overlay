@@ -5,6 +5,11 @@
  */
 #include "nrf54h20dk_nrf54h20_common.dtsi"
 
+/* Increase dma region to fit dmm heap. */
+&cpurad_dma_region {
+	reg = <0x1e80 0x100>;
+};
+
 &spi130 {
 	memory-regions = <&cpurad_dma_region>;
 };
