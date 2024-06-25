@@ -1,0 +1,164 @@
+/*
+ * Copyright (c) 2024 Kenneth Lu <kuohsianglu@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/wl/stm32wle5Xc.dtsi>
+#include <st/wl/stm32wle5ccux-pinctrl.dtsi>
+
+/ {
+	model = "RAKWireless RAK3172 WisDuo LPWAN Module with a STM32WLE5CC SoC";
+	compatible = "stm32,rak3172_stm32wl";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_2 {
+			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		lora0 = &lora;
+		watchdog0 = &iwdg;
+	};
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <6>;
+	div-r = <2>;
+	div-q = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	cpu1-prescaler = <1>;
+	ahb3-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa12 &i2c2_sda_pa11>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&aes {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&clk_lse {
+	clock-frequency = <32768>;
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&subghzspi {
+	status = "okay";
+
+	lora: radio@0 {
+		status = "okay";
+		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>; /* FE_CTRL1 */
+		rx-enable-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;  /* FE_CTRL2 */
+		power-amplifier-output = "rfo-lp";
+		rfo-lp-max-power = <14>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(32)>;
+			read-only;
+		};
+
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 DT_SIZE_K(108)>;
+		};
+
+		slot1_partition: partition@23000 {
+			label = "image-1";
+			reg = <0x00023000 DT_SIZE_K(108)>;
+		};
+
+		storage_partition: partition@3e000 {
+			label = "storage";
+			reg = <0x0003e000 DT_SIZE_K(8)>;
+		};
+	};
+};
