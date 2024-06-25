@@ -1411,6 +1411,15 @@ int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(vo
 	return ENOSYS;
 }
 
+int pthread_kill(pthread_t thread, int sig)
+{
+	if (!IS_ENABLED(CONFIG_POSIX_REALTIME_SIGNALS)) {
+		return ENOTSUP;
+	}
+
+	return sigqueue((pid_t)thread, sig, (union sigval){0});
+}
+
 static int posix_thread_pool_init(void)
 {
 	ARRAY_FOR_EACH_PTR(posix_thread_pool, th) {
