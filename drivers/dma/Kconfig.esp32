@@ -7,3 +7,9 @@ config DMA_ESP32
 	default y
 	help
 	  General Purpose DMA for ESP32 series.
+
+config DMA_ESP32_DESCRIPTOR_NUM
+	int "Number of DMA descriptors to allocate"
+	default 16
+	help
+	  Number of DMA descriptors to allocate.
