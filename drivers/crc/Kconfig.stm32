@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Brill Power Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config CRC_STM32
+	bool
+	default y
+	depends on DT_HAS_ST_STM32_CRC_ENABLED
+	help
+	  Enable the driver implementation for STM32 microcontrollers
