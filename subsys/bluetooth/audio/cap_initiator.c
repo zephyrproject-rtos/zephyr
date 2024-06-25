@@ -1475,6 +1475,8 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE);
 
 	proc_param = get_next_proc_param(active_proc);
+	__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+
 	bap_stream = &proc_param->stream->bap_stream;
 	meta_len = proc_param->meta_update.meta_len;
 	meta = proc_param->meta_update.meta;
@@ -1690,6 +1692,8 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 	 * procedure should be used.
 	 */
 	proc_param = get_next_proc_param(active_proc);
+	__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+
 	bap_stream = &proc_param->stream->bap_stream;
 	active_proc->proc_initiated_cnt++;
 
