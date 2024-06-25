@@ -106,6 +106,11 @@ struct btp_l2cap_echo_cmd {
 	uint8_t data[];
 } __packed;
 
+#define BTP_L2CAP_CLS_LISTEN					0x0c
+struct btp_l2cap_cls_listen_cmd {
+	uint16_t psm;
+} __packed;
+
 /* events */
 #define BTP_L2CAP_EV_CONNECTION_REQ			0x80
 struct btp_l2cap_connection_req_ev {

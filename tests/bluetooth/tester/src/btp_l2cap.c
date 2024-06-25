@@ -448,6 +448,32 @@ static uint8_t echo(const void *cmd, uint16_t cmd_len,
 }
 #endif /* defined(CONFIG_BT_CLASSIC) */
 
+#if defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS)
+static struct bt_l2cap_cls cls;
+
+static void cls_recv(struct bt_conn *conn, struct net_buf *buf)
+{
+}
+
+static uint8_t cls_listen(const void *cmd, uint16_t cmd_len,
+		       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_cls_listen_cmd *cp = cmd;
+	int err;
+
+	cls.psm = cp->psm;
+	cls.recv = cls_recv;
+	cls.sec_level = BT_SECURITY_L1;
+
+	err = bt_l2cap_cls_register(&cls);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS) */
+
 static struct bt_l2cap_chan *get_l2cap_chan_from_chan_id(uint8_t chan_id)
 {
 	struct channel *le_chan;
@@ -956,6 +982,9 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_CLASSIC)
 	tester_set_bit(rp->data, BTP_L2CAP_ECHO);
 #endif /* defined(CONFIG_BT_CLASSIC) */
+#if defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS)
+	tester_set_bit(rp->data, BTP_L2CAP_CLS_LISTEN);
+#endif /* defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS) */
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -1016,6 +1045,13 @@ static const struct btp_handler handlers[] = {
 		.func = echo,
 	},
 #endif /* defined(CONFIG_BT_CLASSIC) */
+#if defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS)
+	{
+		.opcode = BTP_L2CAP_CLS_LISTEN,
+		.expect_len = sizeof(struct btp_l2cap_cls_listen_cmd),
+		.func = cls_listen,
+	},
+#endif /* defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS) */
 };
 
 uint8_t tester_init_l2cap(void)
