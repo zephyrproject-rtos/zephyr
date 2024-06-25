@@ -395,7 +395,8 @@ static void lan865x_read_chunks(const struct device *dev)
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_rx_alloc(K_MSEC(cfg->timeout));
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, CONFIG_ETH_LAN865X_HEADER_BUFFER_SIZE,
+					   AF_UNSPEC, 0, K_MSEC(cfg->timeout));
 	if (!pkt) {
 		LOG_ERR("OA RX: Could not allocate packet!");
 		return;
@@ -409,6 +410,9 @@ static void lan865x_read_chunks(const struct device *dev)
 		k_sem_give(&ctx->tx_rx_sem);
 		return;
 	}
+
+	/* Try to keep headers compact */
+	net_pkt_compact(pkt);
 
 	/* Feed buffer frame to IP stack */
 	ret = net_recv_data(ctx->iface, pkt);

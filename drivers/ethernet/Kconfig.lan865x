@@ -18,6 +18,13 @@ menuconfig ETH_LAN865X
 
 if ETH_LAN865X
 
+config ETH_LAN865X_HEADER_BUFFER_SIZE
+	int "LAN865X driver header buffer size"
+	default 64
+	help
+	  The size of the first buffer for the LAN865X Controller to make sure
+	  headers can be set in a contiguous block.
+
 config ETH_LAN865X_INIT_PRIORITY
 	int "LAN865X driver init priority"
 	default 72
