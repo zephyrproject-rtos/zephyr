@@ -83,6 +83,47 @@ Serial
 Regulator
 =========
 
+* Internal regulators present in nRF52/53 series can now be configured using
+  devicetree. The Kconfig options :kconfig:option:`CONFIG_SOC_DCDC_NRF52X`,
+  :kconfig:option:`CONFIG_SOC_DCDC_NRF52X_HV`,
+  :kconfig:option:`CONFIG_SOC_DCDC_NRF53X_APP`,
+  :kconfig:option:`CONFIG_SOC_DCDC_NRF53X_NET` and
+  :kconfig:option:`CONFIG_SOC_DCDC_NRF53X_HV` selected by board-level Kconfig
+  options have been deprecated.
+
+  Example for nRF52 series:
+
+  .. code-block:: devicetree
+
+      /* configure REG/REG1 in DC/DC mode */
+      &reg/reg1 {
+          regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+      };
+
+      /* enable REG0 (HV mode) */
+      &reg0 {
+          status = "okay";
+      };
+
+  Example for nRF53 series:
+
+  .. code-block:: devicetree
+
+      /* configure VREGMAIN in DC/DC mode */
+      &vregmain {
+          regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+      };
+
+      /* configure VREGRADIO in DC/DC mode */
+      &vregradio {
+          regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+      };
+
+      /* enable VREGH (HV mode) */
+      &vregh {
+          status = "okay";
+      };
+
 Bluetooth
 *********
 
