@@ -673,6 +673,94 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan,
  */
 int bt_l2cap_br_echo(struct bt_conn *conn, struct net_buf *buf);
 
+struct bt_l2cap_cls {
+	/** @brief PSM of L2CAP connectionless data channel.
+	 *
+	 *  The PSM field of L2CAP connectionless data channel.
+	 */
+	uint16_t psm;
+
+	/** Required minimum security level */
+	bt_security_t		sec_level;
+
+	/** @brief receive callback of registered PSM
+	 *
+	 *  If incoming data of PSM is received from l2cap connectionless
+	 *  data channel, the registered `recv` cb will be notified.
+	 *
+	 *  @param conn The ACL connection object.
+	 *  @param buf Buffer containing incoming data.
+	 */
+	void (*recv)(struct bt_conn *conn, struct net_buf *buf);
+
+	sys_snode_t node;
+};
+
+/** @brief Register L2CAP connectionless data channel.
+ *
+ *  Register L2CAP connectionless data channel for a PSM to received
+ *  data of L2CAP connectionless data channel.
+ *
+ *  @param cls cls structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_cls_register(struct bt_l2cap_cls *cls);
+
+/** @brief Unregister L2CAP connectionless data channel.
+ *
+ *  Unregister L2CAP connectionless data channel for a PSM to received
+ *  data of L2CAP connectionless data channel.
+ *
+ *  @param psm PSM of L2CAP connectionless data channel.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_cls_unregister(uint16_t psm);
+
+#define BT_L2CAP_CLS_HDR_SIZE 2
+
+/** @brief Maximum Transmission Unit for an unsegmented incoming L2CAP SDU.
+ *
+ *  The Maximum Transmission Unit for an incoming L2CAP SDU when sent without
+ *  segmentation, i.e. a single L2CAP SDU will fit inside a single L2CAP PDU.
+ *
+ *  The MTU for incoming L2CAP SDUs with segmentation is defined by the
+ *  size of the application buffer pool. The application will have to define
+ *  an alloc_buf callback for the channel in order to support receiving
+ *  segmented L2CAP SDUs.
+ */
+#define BT_L2CAP_CLS_RX_MTU (BT_L2CAP_RX_MTU - BT_L2CAP_CLS_HDR_SIZE)
+
+/** @brief Helper to calculate needed buffer size for L2CAP connectionless
+ *         data channel.
+ *         Useful for creating buffer pools.
+ *
+ *  @param mtu Needed L2CAP PDU MTU.
+ *
+ *  @return Needed buffer size to match the requested L2CAP PDU MTU.
+ */
+#define BT_L2CAP_CLS_BUF_SIZE(mtu)                                     \
+	BT_BUF_ACL_SIZE(BT_L2CAP_HDR_SIZE + BT_L2CAP_CLS_HDR_SIZE + (mtu))
+
+/**
+ * @brief Headroom needed for outgoing L2CAP connectionless data channel.
+ */
+#define BT_L2CAP_CLS_SEND_RESERVE (BT_L2CAP_CLS_BUF_SIZE(0))
+
+/** @brief Send l2cap connectionless data
+ *
+ *  Send l2cap connectionless data. The headroom of the buffer should
+ *  not be less than BT_L2CAP_CLS_SEND_RESERVE.
+ *
+ *  @param conn Connection object.
+ *  @param psm PSM of L2CAP connectionless data channel.
+ *  @param buf Buffer containing the data.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_cls_send(struct bt_conn *conn, uint16_t psm, struct net_buf *buf);
+
 #ifdef __cplusplus
 }
 #endif

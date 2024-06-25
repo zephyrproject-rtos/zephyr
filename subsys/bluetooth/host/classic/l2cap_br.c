@@ -52,11 +52,22 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_BR_DISCONN_TIMEOUT	K_SECONDS(1)
 #define L2CAP_BR_CONN_TIMEOUT		K_SECONDS(40)
 
+#define L2CAP_FEAT_FIXED_CHAN_MASK	BIT(7)
+#define L2CAP_FEAT_CLS_MASK			BIT(9)
+
+#if defined(CONFIG_BT_L2CAP_CLS)
+#define L2CAP_FEAT_CLS_ENABLE_MASK  L2CAP_FEAT_CLS_MASK
+#else
+#define L2CAP_FEAT_CLS_ENABLE_MASK  0
+#endif /* CONFIG_BT_L2CAP_CLS */
+
 /*
  * L2CAP extended feature mask:
  * BR/EDR fixed channel support enabled
+ * Unicast Connectionless Data Reception depends on `config BT_L2CAP_CLS`
  */
-#define L2CAP_FEAT_FIXED_CHAN_MASK	0x00000080
+#define L2CAP_EXTENDED_FEAT_MASK	(L2CAP_FEAT_FIXED_CHAN_MASK \
+									|L2CAP_FEAT_CLS_ENABLE_MASK)
 
 enum {
 	/* Connection oriented channels flags */
@@ -75,10 +86,20 @@ enum {
 
 static sys_slist_t br_servers;
 
-
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
 NET_BUF_POOL_FIXED_DEFINE(br_sig_pool, CONFIG_BT_MAX_CONN,
 			  BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), 8, NULL);
+
+#if defined(CONFIG_BT_L2CAP_CLS)
+static sys_slist_t br_clses;
+
+struct bt_l2cap_cls_chan {
+	/* The channel this context is associated with */
+	struct bt_l2cap_br_chan	chan;
+};
+
+static struct bt_l2cap_cls_chan bt_l2cap_cls_pool[CONFIG_BT_MAX_CONN];
+#endif /* CONFIG_BT_L2CAP_CLS */
 
 /* BR/EDR L2CAP signalling channel specific context */
 struct bt_l2cap_br {
@@ -415,6 +436,10 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 	switch (info_type) {
 	case BT_L2CAP_INFO_FEAT_MASK:
 	case BT_L2CAP_INFO_FIXED_CHAN:
+#if defined(CONFIG_BT_L2CAP_CLS)
+		__fallthrough;
+	case BT_L2CAP_INFO_CLS_MTU_MASK:
+#endif /* CONFIG_BT_L2CAP_CLS */
 		break;
 	default:
 		LOG_WRN("Unsupported info type %u", info_type);
@@ -466,6 +491,10 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 			     struct net_buf *buf)
 {
 	struct bt_l2cap_info_rsp *rsp;
+#if defined(CONFIG_BT_L2CAP_CLS)
+	struct bt_l2cap_chan *cls;
+	struct bt_l2cap_br_chan *br_cls;
+#endif /* CONFIG_BT_L2CAP_CLS */
 	uint16_t type, result;
 	int err = 0;
 
@@ -512,16 +541,32 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		if (!(l2cap->info_feat_mask & L2CAP_FEAT_FIXED_CHAN_MASK)) {
 			break;
 		}
-
 		l2cap_br_get_info(l2cap, BT_L2CAP_INFO_FIXED_CHAN);
 		return 0;
 	case BT_L2CAP_INFO_FIXED_CHAN:
 		l2cap->info_fixed_chan = net_buf_pull_u8(buf);
 		LOG_DBG("remote fixed channel mask 0x%02x", l2cap->info_fixed_chan);
-
 		connect_optional_fixed_channels(l2cap);
-
+#if defined(CONFIG_BT_L2CAP_CLS)
+		if ((l2cap->info_feat_mask & L2CAP_FEAT_CLS_MASK) &&
+			(l2cap->info_fixed_chan & BIT(BT_L2CAP_CID_CLS))) {
+			l2cap_br_get_info(l2cap, BT_L2CAP_INFO_CLS_MTU_MASK);
+			return 0;
+		}
+#endif /* CONFIG_BT_L2CAP_CLS */
 		break;
+#if defined(CONFIG_BT_L2CAP_CLS)
+	case BT_L2CAP_INFO_CLS_MTU_MASK:
+		cls = bt_l2cap_br_lookup_rx_cid(l2cap->chan.chan.conn, BT_L2CAP_CID_CLS);
+		if (cls) {
+			br_cls = CONTAINER_OF(cls, struct bt_l2cap_br_chan, chan);
+			br_cls->tx.mtu = sys_le16_to_cpu(net_buf_pull_le16(buf));
+			if (br_cls->tx.mtu < L2CAP_BR_MIN_MTU) {
+				br_cls->tx.mtu = L2CAP_BR_MIN_MTU;
+			}
+		}
+		break;
+#endif /* CONFIG_BT_L2CAP_CLS */
 	default:
 		LOG_WRN("type 0x%04x unsupported", type);
 		err = -EINVAL;
@@ -554,6 +599,10 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	struct net_buf *rsp_buf;
 	struct bt_l2cap_sig_hdr *hdr_info;
 	uint16_t type;
+#if defined(CONFIG_BT_L2CAP_CLS)
+	struct bt_l2cap_chan *cls;
+	struct bt_l2cap_br_chan *br_cls;
+#endif /* CONFIG_BT_L2CAP_CLS */
 
 	if (buf->len < sizeof(*req)) {
 		LOG_ERR("Too small info req packet size");
@@ -575,7 +624,7 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	case BT_L2CAP_INFO_FEAT_MASK:
 		rsp->type = sys_cpu_to_le16(BT_L2CAP_INFO_FEAT_MASK);
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_SUCCESS);
-		net_buf_add_le32(rsp_buf, L2CAP_FEAT_FIXED_CHAN_MASK);
+		net_buf_add_le32(rsp_buf, L2CAP_EXTENDED_FEAT_MASK);
 		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + sizeof(uint32_t));
 		break;
 	case BT_L2CAP_INFO_FIXED_CHAN:
@@ -587,6 +636,21 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + 8);
 		break;
+#if defined(CONFIG_BT_L2CAP_CLS)
+	case BT_L2CAP_INFO_CLS_MTU_MASK:
+		rsp->type = sys_cpu_to_le16(BT_L2CAP_INFO_CLS_MTU_MASK);
+		cls = bt_l2cap_br_lookup_rx_cid(l2cap->chan.chan.conn, BT_L2CAP_CID_CLS);
+		if (cls) {
+			br_cls = CONTAINER_OF(cls, struct bt_l2cap_br_chan, chan);
+			rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_SUCCESS);
+			net_buf_add_le16(rsp_buf, br_cls->rx.mtu);
+			hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + sizeof(br_cls->rx.mtu));
+		} else {
+			rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_NOTSUPP);
+			hdr_info->len = sys_cpu_to_le16(sizeof(*rsp));
+		}
+		break;
+#endif /* CONFIG_BT_L2CAP_CLS */
 	default:
 		rsp->type = req->type;
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_NOTSUPP);
@@ -2079,6 +2143,186 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 }
 
 BT_L2CAP_BR_CHANNEL_DEFINE(br_fixed_chan, BT_L2CAP_CID_BR_SIG, l2cap_br_accept);
+
+#if defined(CONFIG_BT_L2CAP_CLS)
+static struct bt_l2cap_cls *l2cap_br_cls_lookup_psm(uint16_t psm)
+{
+	struct bt_l2cap_cls *cls, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_clses, cls, next, node) {
+		if (cls->psm == psm) {
+			return cls;
+		}
+	}
+
+	return NULL;
+}
+
+int bt_l2cap_cls_register(struct bt_l2cap_cls *cls)
+{
+	if ((!cls) || (!cls->psm) || (!cls->recv)) {
+		return -EINVAL;
+	}
+
+	if (cls->sec_level > BT_SECURITY_L4) {
+		return -EINVAL;
+	} else if (cls->sec_level == BT_SECURITY_L0) {
+		cls->sec_level = BT_SECURITY_L1;
+	}
+
+	/* Check if given PSM is already in use */
+	if (l2cap_br_cls_lookup_psm(cls->psm)) {
+		LOG_DBG("PSM already registered");
+		return -EADDRINUSE;
+	}
+
+	LOG_DBG("PSM 0x%04x", cls->psm);
+
+	sys_slist_append(&br_clses, &cls->node);
+
+	return 0;
+}
+
+int bt_l2cap_cls_unregister(uint16_t psm)
+{
+	struct bt_l2cap_cls *cls;
+
+	LOG_DBG("PSM 0x%04x", psm);
+
+	cls = l2cap_br_cls_lookup_psm(psm);
+	if (!cls) {
+		LOG_DBG("PSM not found");
+		return -EINVAL;
+	}
+
+	sys_slist_find_and_remove(&br_clses, &cls->node);
+
+	return 0;
+}
+
+int bt_l2cap_cls_send(struct bt_conn *conn, uint16_t psm, struct net_buf *buf)
+{
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_chan *chan_sig;
+	struct bt_l2cap_br *l2cap;
+	struct bt_l2cap_cls_hdr *hdr;
+
+	if ((!conn) || (!psm) || (!buf)) {
+		return -EINVAL;
+	}
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_CLS);
+	if (!chan) {
+		LOG_WRN("Ignoring data for unknown channel ID 0x%04x", BT_L2CAP_CID_CLS);
+		return -EINVAL;
+	}
+
+	chan_sig = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (!chan_sig) {
+		LOG_WRN("Ignoring data for unknown channel ID 0x%04x", BT_L2CAP_CID_BR_SIG);
+		return -EINVAL;
+	}
+
+	l2cap = CONTAINER_OF(chan_sig, struct bt_l2cap_br, chan.chan);
+	if (!(l2cap->info_feat_mask & L2CAP_FEAT_CLS_MASK)) {
+		return -ENOTSUP;
+	}
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->psm = sys_cpu_to_le16(psm);
+
+	return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
+}
+
+static void l2cap_cls_connected(struct bt_l2cap_chan *chan)
+{
+	/* Unsupported. Ignore the callback */
+}
+
+static void l2cap_cls_disconnected(struct bt_l2cap_chan *chan)
+{
+	/* Unsupported. Ignore the callback */
+}
+
+static int l2cap_cls_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct bt_l2cap_cls_hdr *hdr;
+	struct bt_l2cap_cls *cls;
+	int err;
+
+	if (!chan->conn) {
+		/* Not valid connection */
+		LOG_WRN("Not valid connection of chan %p", chan);
+		return 0;
+	}
+
+	if (buf->len < sizeof(*hdr)) {
+		LOG_ERR("Too small L2CAP connectionless PDU");
+		return 0;
+	}
+
+	hdr = net_buf_pull(buf, sizeof(*hdr));
+
+	cls = l2cap_br_cls_lookup_psm(hdr->psm);
+	if (!cls) {
+		/* Not valid connection */
+		LOG_WRN("Not valid connectionless channel found %p", chan);
+		return 0;
+	}
+
+	if (cls->sec_level > chan->conn->sec_level) {
+		err = bt_conn_set_security(chan->conn, cls->sec_level);
+		if (err == -EBUSY) {
+			LOG_WRN("Security (level %u) is in progress", cls->sec_level);
+		} else if (err) {
+			LOG_WRN("Fail to set security level %u", cls->sec_level);
+		} else {
+			LOG_DBG("Set security level %u", cls->sec_level);
+		}
+		return 0;
+	}
+
+	if (cls->recv) {
+		cls->recv(chan->conn, buf);
+	}
+
+	return 0;
+}
+
+static int l2cap_cls_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+{
+	int i;
+	static const struct bt_l2cap_chan_ops ops = {
+		.connected = l2cap_cls_connected,
+		.disconnected = l2cap_cls_disconnected,
+		.recv = l2cap_cls_recv,
+	};
+
+	LOG_DBG("conn %p handle %u", conn, conn->handle);
+
+	for (i = 0; i < ARRAY_SIZE(bt_l2cap_cls_pool); i++) {
+		struct bt_l2cap_cls_chan *l2cap = &bt_l2cap_cls_pool[i];
+
+		if (l2cap->chan.chan.conn) {
+			continue;
+		}
+
+		l2cap->chan.chan.ops = &ops;
+		l2cap->chan.rx.mtu = BT_L2CAP_CLS_RX_MTU;
+		l2cap->chan.tx.mtu = L2CAP_BR_MIN_MTU;
+		*chan = &l2cap->chan.chan;
+
+		return 0;
+	}
+
+	LOG_ERR("No available L2CAP context for conn %p", conn);
+
+	return -ENOMEM;
+}
+
+BT_L2CAP_BR_CHANNEL_DEFINE(cls_fixed_chan, BT_L2CAP_CID_CLS, l2cap_cls_accept);
+
+#endif /* CONFIG_BT_L2CAP_CLS */
 
 void bt_l2cap_br_init(void)
 {

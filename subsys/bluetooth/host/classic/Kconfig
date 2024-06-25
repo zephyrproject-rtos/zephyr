@@ -26,6 +26,12 @@ config BT_MAX_SCO_CONN
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
 
+config BT_L2CAP_CLS
+	bool "Bluetooth L2CAP connectionless data channel [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP connectionless data channel
+
 config BT_RFCOMM
 	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
 	select EXPERIMENTAL
