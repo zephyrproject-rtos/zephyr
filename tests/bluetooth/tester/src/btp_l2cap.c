@@ -474,6 +474,49 @@ static uint8_t cls_listen(const void *cmd, uint16_t cmd_len,
 }
 #endif /* defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS) */
 
+#if defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS)
+static uint8_t cls_send(const void *cmd, uint16_t cmd_len,
+		       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_cls_send_cmd *cp = cmd;
+	struct net_buf *buf;
+	struct bt_conn *conn = NULL;
+	int err;
+
+	if (cp->address.type == BT_ADDR_LE_PUBLIC) {
+		conn = bt_conn_lookup_addr_br(&cp->address.a);
+	}
+
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	bt_conn_unref(conn);
+
+	buf = net_buf_alloc(&data_pool, K_MSEC(0));
+	if (!buf) {
+		return BTP_STATUS_FAILED;
+	}
+
+	net_buf_reserve(buf, BT_L2CAP_CLS_SEND_RESERVE);
+
+	if (net_buf_tailroom(buf) < cp->data_len) {
+		net_buf_unref(buf);
+		return BTP_STATUS_FAILED;
+	}
+
+	net_buf_add_mem(buf, cp->data, cp->data_len);
+
+	err = bt_l2cap_cls_send(conn, cp->psm, buf);
+	if (err) {
+		net_buf_unref(buf);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS) */
+
 static struct bt_l2cap_chan *get_l2cap_chan_from_chan_id(uint8_t chan_id)
 {
 	struct channel *le_chan;
@@ -985,6 +1028,9 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS)
 	tester_set_bit(rp->data, BTP_L2CAP_CLS_LISTEN);
 #endif /* defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS) */
+#if defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS)
+	tester_set_bit(rp->data, BTP_L2CAP_CLS_SEND);
+#endif /* defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS) */
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -1050,6 +1096,13 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_L2CAP_CLS_LISTEN,
 		.expect_len = sizeof(struct btp_l2cap_cls_listen_cmd),
 		.func = cls_listen,
+	},
+#endif /* defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS) */
+#if defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS)
+	{
+		.opcode = BTP_L2CAP_CLS_SEND,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = cls_send,
 	},
 #endif /* defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS) */
 };

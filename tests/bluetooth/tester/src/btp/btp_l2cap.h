@@ -111,6 +111,14 @@ struct btp_l2cap_cls_listen_cmd {
 	uint16_t psm;
 } __packed;
 
+#define BTP_L2CAP_CLS_SEND						0x0d
+struct btp_l2cap_cls_send_cmd {
+	bt_addr_le_t address;
+	uint16_t psm;
+	uint16_t data_len;
+	uint8_t data[];
+} __packed;
+
 /* events */
 #define BTP_L2CAP_EV_CONNECTION_REQ			0x80
 struct btp_l2cap_connection_req_ev {
