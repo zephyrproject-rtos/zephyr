@@ -16,7 +16,14 @@
 
 char *utf8_trunc(char *utf8_str)
 {
-	char *last_byte_p = utf8_str + strlen(utf8_str) - 1;
+	const size_t len = strlen(utf8_str);
+
+	if (len == 0U) {
+		/* no-op */
+		return utf8_str;
+	}
+
+	char *last_byte_p = utf8_str + len - 1U;
 	uint8_t bytes_truncated;
 	char seq_start_byte;
 
