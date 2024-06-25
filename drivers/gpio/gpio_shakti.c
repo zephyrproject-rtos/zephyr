@@ -139,12 +139,75 @@ static int gpio_shakti_pin_clear_raw(const struct device *dev,
     return 0;
 }
 
+//-------Function WIP----------
+
+static inline unsigned int gpio_shakti_pin_irq(unsigned int base_irq, int pin)
+{
+    unsigned int level = irq_get_level(base_irq);
+    unsigned int pin_irq = 0;
+
+    if (level == 1)
+    {
+        pin_irq = base_irq + pin;
+    }
+
+    return pin_irq;
+}
+
+
+
+static int gpio_shakti_pin_interrupt_configure(const struct device *dev, 
+                                                gpio_pin_t pin, 
+                                                enum gpio_int_mode mode,
+                                                enum gpio_int_trig trig)
+{
+    volatile struct gpio_shakti_regs_t *gpio_reg = DEV_GPIO(dev);
+    const struct gpio_shakti_config *cfg = DEV_GPIO_CFG(dev);
+
+    // Initially disable interrupt for all 32 GPIOs
+    gpio_reg->intr_config &= ~(0xFFFFFFFF); 
+
+    switch (mode) {
+	case GPIO_INT_MODE_DISABLED:
+		irq_disable(gpio_shakti_pin_irq(cfg->gpio_irq_base, pin));
+		break;
+	case GPIO_INT_MODE_LEVEL:
+		/* Board supports both levels, but Zephyr does not. */
+		if (trig == GPIO_INT_TRIG_HIGH) {
+			gpio_reg->intr_config |= (1 << pin);
+		} else {
+			__ASSERT_NO_MSG(trig == GPIO_INT_TRIG_LOW);
+			gpio_reg->intr_config &= ~(1 << pin);
+		}
+		irq_enable(gpio_shakti_pin_irq(cfg->gpio_irq_base, pin));
+		break;
+	// case GPIO_INT_MODE_EDGE:
+	// 	__ASSERT_NO_MSG(GPIO_INT_TRIG_BOTH ==
+	// 			(GPIO_INT_LOW_0 | GPIO_INT_HIGH_1));
+
+	// 	if ((trig & GPIO_INT_HIGH_1) != 0) {
+	// 		gpio->rise_ip = BIT(pin);
+	// 		gpio->rise_ie |= BIT(pin);
+	// 	}
+	// 	if ((trig & GPIO_INT_LOW_0) != 0) {
+	// 		gpio->fall_ip = BIT(pin);
+	// 		gpio->fall_ie |= BIT(pin);
+	// 	}
+	// 	irq_enable(gpio_sifive_pin_irq(cfg->gpio_irq_base, pin));
+	// 	break;
+	default:
+		__ASSERT(false, "Invalid MODE %d passed to driver", mode);
+		return -ENOTSUP;
+	}
+}
+
 static const struct gpio_driver_api gpio_shakti_driver = {
     .pin_configure              = gpio_shakti_pin_configure,
     .port_get_raw               = gpio_shakti_pin_get_raw,   
     .port_set_bits_raw          = gpio_shakti_pin_set_raw,    
     .port_clear_bits_raw        = gpio_shakti_pin_clear_raw,
-    .port_toggle_bits           = gpio_shakti_pin_toggle,   
+    .port_toggle_bits           = gpio_shakti_pin_toggle, 
+    .pin_interrupt_configure    = gpio_shakti_pin_interrupt_configure,  
 };
 
 static void gpio_shakti_cfg(uint32_t gpio_pin){
@@ -156,7 +219,7 @@ static const struct gpio_shakti_config gpio_shakti_config0 ={
     //     .port_pin_mask  = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
     // },
     .gpio_base_addr     = GPIO_START,
-    .gpio_irq_base      = GPIO_INTERRUPT_CONFIG_REG,
+    .gpio_irq_base      = DT_INST_IRQ(0),
     .gpio_cfg_func      = gpio_shakti_cfg,
     .gpio_mode          = DT_PROP(DT_NODELABEL(gpio0), config_gpio)
 };
