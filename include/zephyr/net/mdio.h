@@ -99,6 +99,10 @@ enum mdio_opcode {
 #define MDIO_PKGID1			0x000EU
 /** Package identifier (2) */
 #define MDIO_PKGID2			0x000FU
+/* PCS Register: EEE capability Register */
+#define MDIO_PCS_EEE_CAP		0x0014U
+/* Auto-negotiation Register: EEE advertisement Register */
+#define MDIO_AN_EEE_ADV			0x003CU
 
 
 /* BASE-T1 registers */
@@ -229,6 +233,12 @@ enum mdio_opcode {
 /* 10BASE-T1L PCS status */
 /** 10BASE-T1L PCS Descrambler Status */
 #define MDIO_PCS_B10L_STAT_DSCR_STAT_OK_LL		BIT(2)
+
+/* Auto-negotiation Register: EEE advertisement Register */
+/** Advertise 1000T capability */
+#define MDIO_AN_EEE_ADV_1000T				BIT(2)
+/** Advertise 100TX capability */
+#define MDIO_AN_EEE_ADV_100TX				BIT(1)
 
 #ifdef __cplusplus
 }
