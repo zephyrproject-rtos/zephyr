@@ -92,14 +92,14 @@ int zvfs_open(const char *name, int flags)
 		return zmode;
 	}
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
 
 	ptr = posix_fs_alloc_obj(false);
 	if (ptr == NULL) {
-		z_free_fd(fd);
+		zvfs_free_fd(fd);
 		errno = EMFILE;
 		return -1;
 	}
@@ -110,12 +110,12 @@ int zvfs_open(const char *name, int flags)
 
 	if (rc < 0) {
 		posix_fs_free_obj(ptr);
-		z_free_fd(fd);
+		zvfs_free_fd(fd);
 		errno = -rc;
 		return -1;
 	}
 
-	z_finalize_fd(fd, ptr, &fs_fd_op_vtable);
+	zvfs_finalize_fd(fd, ptr, &fs_fd_op_vtable);
 
 	return fd;
 }

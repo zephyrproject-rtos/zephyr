@@ -184,8 +184,8 @@ static int zvfs_eventfd_close_op(void *obj)
 		return -1;
 	}
 
-	err = (int)z_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &lock, &cond);
-	__ASSERT((bool)err, "z_get_obj_lock_and_cond() failed");
+	err = (int)zvfs_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &lock, &cond);
+	__ASSERT((bool)err, "zvfs_get_obj_lock_and_cond() failed");
 	__ASSERT_NO_MSG(lock != NULL);
 	__ASSERT_NO_MSG(cond != NULL);
 
@@ -346,8 +346,8 @@ static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
 		goto unlock_spin;
 	}
 
-	err = (int)z_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &lock, &cond);
-	__ASSERT((bool)err, "z_get_obj_lock_and_cond() failed");
+	err = (int)zvfs_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &lock, &cond);
+	__ASSERT((bool)err, "zvfs_get_obj_lock_and_cond() failed");
 	__ASSERT_NO_MSG(lock != NULL);
 	__ASSERT_NO_MSG(cond != NULL);
 
@@ -423,7 +423,7 @@ int zvfs_eventfd(unsigned int initval, int flags)
 
 	efd = &efds[offset];
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		sys_bitarray_free(&efds_bitarray, 1, offset);
 		return -1;
@@ -441,7 +441,7 @@ int zvfs_eventfd(unsigned int initval, int flags)
 
 	k_poll_signal_raise(&efd->write_sig, 0);
 
-	z_finalize_fd(fd, efd, &zvfs_eventfd_fd_vtable);
+	zvfs_finalize_fd(fd, efd, &zvfs_eventfd_fd_vtable);
 
 	return fd;
 }
@@ -451,7 +451,7 @@ int zvfs_eventfd_read(int fd, zvfs_eventfd_t *value)
 	int ret;
 	void *obj;
 
-	obj = z_get_fd_obj(fd, &zvfs_eventfd_fd_vtable, EBADF);
+	obj = zvfs_get_fd_obj(fd, &zvfs_eventfd_fd_vtable, EBADF);
 	if (obj == NULL) {
 		return -1;
 	}
@@ -470,7 +470,7 @@ int zvfs_eventfd_write(int fd, zvfs_eventfd_t value)
 	int ret;
 	void *obj;
 
-	obj = z_get_fd_obj(fd, &zvfs_eventfd_fd_vtable, EBADF);
+	obj = zvfs_get_fd_obj(fd, &zvfs_eventfd_fd_vtable, EBADF);
 	if (obj == NULL) {
 		return -1;
 	}
