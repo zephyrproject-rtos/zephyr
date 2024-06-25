@@ -177,11 +177,11 @@ static struct usb_dc_state dev_state;
  */
 #define GET_BIT(val, field) (val & field ## _Msk) >> field ## _Pos
 #define REG_GET_BIT(reg, field) (USB->reg & USB_ ## reg ## _ ## field ## _Msk)
-#define REG_SET_BIT(reg, field) USB->reg |= USB_ ## reg ## _ ## field ## _Msk
-#define REG_CLR_BIT(reg, field) USB->reg &= ~USB_ ## reg ## _ ## field ## _Msk
-#define REG_SET_VAL(reg, field, val)                                   \
-	USB->reg = (USB->reg & ~USB_##reg##_##field##_Msk) |               \
-		   (val << USB_##reg##_##field##_Pos)
+#define REG_SET_BIT(reg, field) (USB->reg |= USB_ ## reg ## _ ## field ## _Msk)
+#define REG_CLR_BIT(reg, field) (USB->reg &= ~USB_ ## reg ## _ ## field ## _Msk)
+#define REG_SET_VAL(reg, field, val)						\
+	(USB->reg = (USB->reg & ~USB_##reg##_##field##_Msk) |	\
+		   (val << USB_##reg##_##field##_Pos))
 
 static int usb_smartbond_dma_validate(void)
 {
@@ -1093,6 +1093,16 @@ static void usb_change_state(bool attached, bool vbus_present)
 		 */
 		dev_state.attached = attached;
 		dev_state.vbus_present = vbus_present;
+		/*
+		 * It's imperative that USB_NAT bit-field is updated with the
+		 * USBEN bit-field being set. As such, zeroing the control
+		 * register at once will result in leaving the USB tranceivers
+		 * in a floating state. Such an action, will induce incorect
+		 * behavior for subsequent charger detection operations and given
+		 * that the device does not enter the sleep state (thus powering off
+		 * PD_SYS and resetting the controller along with its tranceivers).
+		 */
+		REG_CLR_BIT(USB_MCTRL_REG, USB_NAT);
 		USB->USB_MCTRL_REG = 0;
 		usb_clock_off();
 		dev_state.status_cb(USB_DC_DISCONNECTED, NULL);
