@@ -2565,6 +2565,15 @@ bool net_if_ipv4_set_netmask_by_addr(struct net_if *iface,
 				     const struct in_addr *netmask);
 
 /**
+ * @brief Get IPv4 gateway of an interface.
+ *
+ * @param iface Interface to use.
+ *
+ * @return The gateway set on the interface, unspecified address if not found.
+ */
+struct in_addr net_if_ipv4_get_gw(struct net_if *iface);
+
+/**
  * @brief Set IPv4 gateway for an interface.
  *
  * @param iface Interface to use.
