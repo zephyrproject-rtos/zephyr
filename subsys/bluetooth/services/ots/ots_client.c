@@ -297,6 +297,11 @@ static void olcp_ind_handler(struct bt_conn *conn,
 	enum bt_gatt_ots_olcp_proc_type op_code;
 	struct net_buf_simple net_buf;
 
+	if (length < sizeof(op_code)) {
+		LOG_DBG("Invalid indication length: %u", length);
+		return;
+	}
+
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
 	op_code = net_buf_simple_pull_u8(&net_buf);
@@ -304,6 +309,12 @@ static void olcp_ind_handler(struct bt_conn *conn,
 	LOG_DBG("OLCP indication");
 
 	if (op_code == BT_GATT_OTS_OLCP_PROC_RESP) {
+		if (net_buf.len < (sizeof(uint8_t) + sizeof(uint8_t))) {
+			LOG_DBG("Invalid indication length for op_code %u: %u", op_code,
+				net_buf.len);
+			return;
+		}
+
 		enum bt_gatt_ots_olcp_proc_type req_opcode =
 			net_buf_simple_pull_u8(&net_buf);
 		enum bt_gatt_ots_olcp_res_code result_code =
@@ -365,6 +376,11 @@ static void oacp_ind_handler(struct bt_conn *conn,
 	enum bt_gatt_ots_oacp_res_code result_code;
 	uint32_t checksum;
 	struct net_buf_simple net_buf;
+
+	if (length < sizeof(op_code)) {
+		LOG_DBG("Invalid indication length: %u", length);
+		return;
+	}
 
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
