@@ -217,6 +217,15 @@ int supplicant_btm_query(const struct device *dev, uint8_t reason);
  */
 int supplicant_wps_pbc(const struct device *dev);
 
+/** Set or get wps pin
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param params wps pin operarion and pin number
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_wps_pin(const struct device *dev, struct wifi_wps_pin_params *params);
+
 /** Flush PMKSA cache entries
  *
  * @param dev Pointer to the device structure for the driver instance.
