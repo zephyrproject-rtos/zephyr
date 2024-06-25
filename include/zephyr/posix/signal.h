@@ -103,6 +103,7 @@ int sigdelset(sigset_t *set, int signo);
 int sigismember(const sigset_t *set, int signo);
 int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 
+int pthread_kill(pthread_t thread, int sig);
 int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 
 int sigqueue(pid_t pid, int signo, union sigval value);
