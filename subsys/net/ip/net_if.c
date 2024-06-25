@@ -4042,6 +4042,27 @@ bool z_vrfy_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 #include <zephyr/syscalls/net_if_ipv4_set_netmask_by_addr_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+struct in_addr net_if_ipv4_get_gw(struct net_if *iface)
+{
+	struct in_addr gw = { 0 };
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	gw = iface->config.ip.ipv4->gw;
+out:
+	net_if_unlock(iface);
+
+	return gw;
+}
+
 void net_if_ipv4_set_gw(struct net_if *iface, const struct in_addr *gw)
 {
 	net_if_lock(iface);
