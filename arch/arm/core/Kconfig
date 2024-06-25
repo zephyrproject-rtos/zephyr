@@ -60,7 +60,7 @@ config CPU_AARCH32_CORTEX_A
 	select USE_SWITCH_SUPPORTED
 	# GDBSTUB has not yet been tested on Cortex M or R SoCs
 	select ARCH_HAS_GDBSTUB
-	# GDB on ARM needs the etxra registers
+	# GDB on ARM needs the extra registers
 	select EXTRA_EXCEPTION_INFO if GDBSTUB
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
