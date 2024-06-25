@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/bluetooth/mesh.h>
+#include "brg_cfg.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -30,6 +31,12 @@ static int brg_cfg_srv_init(const struct bt_mesh_model *model)
 	return 0;
 }
 
+void brg_cfg_srv_reset(const struct bt_mesh_model *model)
+{
+	bt_mesh_brg_cfg_tbl_reset();
+}
+
 const struct bt_mesh_model_cb _bt_mesh_brg_cfg_srv_cb = {
 	.init = brg_cfg_srv_init,
+	.reset = brg_cfg_srv_reset,
 };
