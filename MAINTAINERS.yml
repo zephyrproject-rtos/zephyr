@@ -1341,7 +1341,7 @@ Release Notes:
 "Drivers: GNSS":
   status: maintained
   maintainers:
-    - bjarki-trackunit
+    - bjarki-andreasen
   collaborators:
     - tomi-font
     - fabiobaltieri
@@ -1697,7 +1697,7 @@ Release Notes:
 "Drivers: RTC":
   status: maintained
   maintainers:
-    - bjarki-trackunit
+    - bjarki-andreasen
   files:
     - drivers/rtc/
     - include/zephyr/drivers/rtc/
@@ -2501,7 +2501,7 @@ Modbus:
 Modem:
   status: maintained
   maintainers:
-    - bjarki-trackunit
+    - bjarki-andreasen
   collaborators:
     - tomi-font
   files:
