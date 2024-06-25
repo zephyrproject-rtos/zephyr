@@ -22,7 +22,7 @@ if SOC_SERIES_RW6XX
 
 menuconfig NXP_RW6XX_BOOT_HEADER
 	bool "Create boot header"
-	default y if !BOOTLOADER_MCUBOOT
+	default y if !BOOTLOADER_MCUBOOT && !BUILD_WITH_TFM
 	help
 	  Create data structures required by the boot ROM to boot the
 	  application from an external flash device.
