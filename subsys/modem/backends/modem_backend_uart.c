@@ -37,7 +37,7 @@ struct modem_pipe *modem_backend_uart_init(struct modem_backend_uart *backend,
 	__ASSERT_NO_MSG(config->transmit_buf != NULL);
 	__ASSERT_NO_MSG(config->transmit_buf_size > 0);
 
-	memset(backend, 0x00, sizeof(*backend));
+	memset(backend, 0x00, sizeof(struct modem_backend_uart));
 	backend->uart = config->uart;
 	k_work_init_delayable(&backend->receive_ready_work,
 			      modem_backend_uart_receive_ready_handler);

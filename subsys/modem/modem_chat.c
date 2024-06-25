@@ -805,7 +805,7 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 	__ASSERT_NO_MSG(!((config->filter == NULL) && (config->filter_size > 0)));
 	__ASSERT_NO_MSG(!((config->unsol_matches == NULL) && (config->unsol_matches_size > 0)));
 
-	memset(chat, 0x00, sizeof(*chat));
+	memset(chat, 0x00, sizeof(struct modem_chat));
 	chat->pipe = NULL;
 	chat->user_data = config->user_data;
 	chat->receive_buf = config->receive_buf;

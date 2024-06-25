@@ -1205,7 +1205,7 @@ void modem_cmux_init(struct modem_cmux *cmux, const struct modem_cmux_config *co
 	__ASSERT_NO_MSG(config->transmit_buf != NULL);
 	__ASSERT_NO_MSG(config->transmit_buf_size >= 148);
 
-	memset(cmux, 0x00, sizeof(*cmux));
+	memset(cmux, 0x00, sizeof(struct modem_cmux));
 	cmux->callback = config->callback;
 	cmux->user_data = config->user_data;
 	cmux->receive_buf = config->receive_buf;
@@ -1237,7 +1237,7 @@ struct modem_pipe *modem_cmux_dlci_init(struct modem_cmux *cmux, struct modem_cm
 	__ASSERT_NO_MSG(config->receive_buf != NULL);
 	__ASSERT_NO_MSG(config->receive_buf_size >= 126);
 
-	memset(dlci, 0x00, sizeof(*dlci));
+	memset(dlci, 0x00, sizeof(struct modem_cmux_dlci));
 	dlci->cmux = cmux;
 	dlci->dlci_address = config->dlci_address;
 	ring_buf_init(&dlci->receive_rb, config->receive_buf_size, config->receive_buf);

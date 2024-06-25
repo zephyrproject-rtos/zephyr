@@ -319,7 +319,7 @@ int modem_ubx_init(struct modem_ubx *ubx, const struct modem_ubx_config *config)
 	__ASSERT_NO_MSG(config->work_buf != NULL);
 	__ASSERT_NO_MSG(config->work_buf_size > 0);
 
-	memset(ubx, 0x00, sizeof(*ubx));
+	memset(ubx, 0x00, sizeof(struct modem_ubx));
 	ubx->user_data = config->user_data;
 
 	ubx->receive_buf = config->receive_buf;

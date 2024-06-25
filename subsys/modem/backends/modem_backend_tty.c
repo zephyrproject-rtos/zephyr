@@ -117,7 +117,7 @@ struct modem_pipe *modem_backend_tty_init(struct modem_backend_tty *backend,
 	__ASSERT_NO_MSG(config != NULL);
 	__ASSERT_NO_MSG(config->tty_path != NULL);
 
-	memset(backend, 0x00, sizeof(*backend));
+	memset(backend, 0x00, sizeof(struct modem_backend_tty));
 	backend->tty_path = config->tty_path;
 	backend->stack = config->stack;
 	backend->stack_size = config->stack_size;
