@@ -1234,6 +1234,18 @@ config BT_MESH_BRG_CFG_SRV
 	  The Bridge Configuration Server model is used to support the configuration
 	  of the subnet bridge functionality of a node.
 
+menu "Subnet Bridge configuration"
+	visible if BT_MESH_BRG_CFG_SRV
+
+config BT_MESH_BRG_TABLE_ITEMS_MAX
+	int "Maximum number of entries in the bridging table"
+	default 16
+	range 16 255
+	help
+	  The maximum number of entries in the bridging table.
+
+endmenu
+
 config BT_MESH_BRG_CFG_CLI
 	bool "Support for Bridge Configuration Client model"
 	help
