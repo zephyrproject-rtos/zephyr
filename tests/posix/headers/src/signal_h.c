@@ -168,6 +168,10 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_null(pthread_sigmask);
 #endif /* CONFIG_POSIX_SIGNALS */
 
+#ifdef CONFIG_POSIX_THREADS
+	zassert_not_null(pthread_kill);
+#endif
+
 #ifdef CONFIG_POSIX_REALTIME_SIGNALS
 	zassert_not_null(sigqueue);
 	zassert_not_null(sigtimedwait);
@@ -179,7 +183,6 @@ ZTEST(posix_headers, test_signal_h)
 		/* zassert_not_null(killpg); */ /* not implemented */
 		/* zassert_not_null(psiginfo); */ /* not implemented */
 		/* zassert_not_null(psignal); */ /* not implemented */
-		/* zassert_not_null(pthread_kill); */ /* not implemented */
 		/* zassert_not_null(raise); */ /* not implemented */
 		/* zassert_not_null(sigaction); */ /* not implemented */
 		/* zassert_not_null(sigaltstack); */ /* not implemented */
