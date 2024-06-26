@@ -1358,3 +1358,40 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 	}
 	return free_space;
 }
+
+size_t nvs_sector_max_data_size(struct nvs_fs *fs)
+{
+	size_t ate_size;
+
+	if (!fs->ready) {
+		LOG_ERR("NVS not initialized");
+		return -EACCES;
+	}
+
+	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	return fs->ate_wra - fs->data_wra - ate_size - NVS_DATA_CRC_SIZE;
+}
+
+int nvs_sector_use_next(struct nvs_fs *fs)
+{
+	int ret;
+
+	if (!fs->ready) {
+		LOG_ERR("NVS not initialized");
+		return -EACCES;
+	}
+
+	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
+
+	ret = nvs_sector_close(fs);
+	if (ret != 0) {
+		goto end;
+	}
+
+	ret = nvs_gc(fs);
+
+end:
+	k_mutex_unlock(&fs->nvs_lock);
+	return ret;
+}
