@@ -6,7 +6,7 @@
 if SOC_MCIMX7D_M4
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 200000000
+	default 240000000
 
 config GPIO
 	default y

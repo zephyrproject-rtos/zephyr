@@ -7,6 +7,7 @@
 #ifndef __SOC_CLOCK_FREQ_H__
 #define __SOC_CLOCK_FREQ_H__
 
+#include <soc.h>
 #include "device_imx.h"
 #include <zephyr/types.h>
 
@@ -23,6 +24,16 @@ extern "C" {
  */
 uint32_t get_pwm_clock_freq(PWM_Type *base);
 #endif /* CONFIG_PWM_IMX */
+
+#ifdef CONFIG_GPT_IMX
+/*!
+ * @brief Get clock frequency applies to the GPT module
+ *
+ * @param base GPT base pointer.
+ * @return clock frequency (in HZ) applies to the GPT module
+ */
+uint32_t get_gpt_clock_freq_soc(GPT_Type *base);
+#endif /* CONFIG_GPT_IMX */
 
 #if defined(__cplusplus)
 }

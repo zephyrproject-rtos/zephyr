@@ -365,6 +365,55 @@
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
+
+		gpt1: gpt@302d0000 {
+			compatible = "nxp,imx7d-gpt";
+			reg = <0x302d0000 0x10000>;
+			interrupts = <55 0>;
+			gptfreq = <12000000>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+						RDC_DOMAIN_PERM_RW)|\
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		gpt2: gpt@302e0000 {
+			compatible = "nxp,imx7d-gpt";
+			reg = <0x302e0000 0x10000>;
+			interrupts = <54 0>;
+			gptfreq = <12000000>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+						RDC_DOMAIN_PERM_RW)|\
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		gpt3: gpt@302f0000 {
+			compatible = "nxp,imx7d-gpt";
+			reg = <0x302f0000 0x10000>;
+			interrupts = <53 0>;
+			gptfreq = <12000000>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+						RDC_DOMAIN_PERM_RW)|\
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		gpt4: gpt@30300000 {
+			compatible = "nxp,imx7d-gpt";
+			reg = <0x30300000 0x10000>;
+			interrupts = <52 0>;
+			gptfreq = <12000000>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+						RDC_DOMAIN_PERM_RW)|\
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
 	};
 };
 

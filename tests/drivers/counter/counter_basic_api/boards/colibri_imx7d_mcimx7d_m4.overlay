@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 MAKEEN Energy A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Test software is too big to fit on TCM, use OCRAM to build */
+/ {
+	chosen {
+		zephyr,flash = &ocram_code;
+	};
+};
+
+&gpt2 {
+	status = "okay";
+};
