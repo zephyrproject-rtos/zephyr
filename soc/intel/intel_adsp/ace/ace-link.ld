@@ -461,6 +461,9 @@ SECTIONS {
     *(.tm_clone_table)
   } >ram
 
+#include <snippets-sections.ld>
+#include <snippets-ram-sections.ld>
+
   /* This section is cached.  By default it contains only declared
   * thread stacks, but applications can put symbols here too.
   */

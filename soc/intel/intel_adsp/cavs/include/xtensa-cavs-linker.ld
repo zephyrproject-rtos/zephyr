@@ -380,6 +380,9 @@ SECTIONS {
 #define RAMABLE_REGION ucram
 #define ROMABLE_REGION ucram
 
+#include <snippets-sections.ld>
+#include <snippets-ram-sections.ld>
+
 #include <zephyr/linker/common-ram.ld>
 
   .tm_clone_table : {
@@ -471,8 +474,6 @@ SECTIONS {
     . = ALIGN(16);
   } >noload
 
-
-#include <snippets-sections.ld>
 
 #include <zephyr/linker/debug-sections.ld>
 

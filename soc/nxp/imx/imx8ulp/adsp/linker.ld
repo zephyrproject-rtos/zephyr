@@ -17,6 +17,7 @@ OUTPUT_ARCH(xtensa)
 #include <xtensa/config/core-isa.h>
 #include <memory.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/linker/iterable_sections.h>
 
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
@@ -340,6 +341,8 @@ SECTIONS
     __rodata_region_end = ABSOLUTE(.);
   } >sdram0 :sdram0_phdr
 
+#include <snippets-sections.ld>
+
   .module_init : ALIGN(4)
   {
    _module_init_start = ABSOLUTE(.);
@@ -405,6 +408,8 @@ SECTIONS
     __data_end = ABSOLUTE(.);
     . = ALIGN(4096);
   } >sdram0 :sdram0_phdr
+
+#include <snippets-ram-sections.ld>
 
   .lit4 : ALIGN(4)
   {
