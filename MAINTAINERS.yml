@@ -783,8 +783,7 @@ DFU:
     - dfu
 
 Devicetree:
-  status: maintained
-  maintainers: []
+  status: odd fixes
   collaborators:
     - decsny
     - galak
@@ -804,8 +803,7 @@ Devicetree:
     - libraries.devicetree
 
 Devicetree Bindings:
-  status: maintained
-  maintainers: []
+  status: odd fixes
   collaborators:
     - decsny
     - galak
@@ -4132,8 +4130,7 @@ VFS:
     - filesystem
 
 West:
-  status: maintained
-  maintainers: []
+  status: odd fixes
   collaborators:
     - mbolivar-ampere
     - carlescufi
@@ -5030,7 +5027,7 @@ Random:
 
 # This area is to be converted to a subarea
 Testing with Renode:
-  status: maintained
+  status: odd fixes
   collaborators:
     - mateusz-holenko
     - fkokosinski
