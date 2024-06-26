@@ -238,6 +238,10 @@ Device Drivers and Devicetree
         };
     };
 
+ * The DT properties ``mc,interface-type``, ``mc,reset-gpio``, and ``mc,interrupt-gpio`` of
+   the :dtcompatible:`microchip,ksz8081` phy binding have changed to
+   ``microchip,interface-type``, ``reset-gpios``, and ``int-gpios``, respectively.
+
 Analog-to-Digital Converter (ADC)
 =================================
 
