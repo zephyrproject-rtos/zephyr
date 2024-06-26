@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
@@ -976,7 +977,9 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
 			struct bt_uuid *uuid =
 				&inst->otc_inst->cur_object.type.uuid;
 
-			bt_uuid_create(uuid, data, length);
+			if (!bt_uuid_create(uuid, data, length)) {
+				return BT_GATT_ITER_STOP;
+			}
 
 			bt_uuid_to_str(uuid, uuid_str, sizeof(uuid_str));
 			LOG_DBG("UUID type read: %s", uuid_str);
@@ -1672,8 +1675,10 @@ static int decode_record(struct net_buf_simple *buf,
 		}
 
 		uuid = net_buf_simple_pull_mem(buf, BT_UUID_SIZE_128);
-		bt_uuid_create(&rec->metadata.type.uuid,
-			       uuid, BT_UUID_SIZE_128);
+		if (!bt_uuid_create(&rec->metadata.type.uuid, uuid, BT_UUID_SIZE_128)) {
+			LOG_DBG("Failed to create UUID");
+			return -EINVAL;
+		}
 	} else {
 		if ((start_len - buf->len) + BT_UUID_SIZE_16 > rec->len) {
 			LOG_WRN("incorrect DirListing record, reclen %u "
