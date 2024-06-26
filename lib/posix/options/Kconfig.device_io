@@ -27,22 +27,22 @@ if POSIX_DEVICE_IO
 config POSIX_DEVICE_IO_ALIAS_CLOSE
 	bool
 	help
-	  Select 'y' here and Zephyr will provide an alias for close() as _close().
+	  When selected via Kconfig, Zephyr will provide an alias for close() as _close().
 
 config POSIX_DEVICE_IO_ALIAS_OPEN
 	bool
 	help
-	  Select 'y' here and Zephyr will provide an alias for open() as _open().
+	  When selected via Kconfig, Zephyr will provide an alias for open() as _open().
 
 config POSIX_DEVICE_IO_ALIAS_READ
 	bool
 	help
-	  Select 'y' here and Zephyr will provide an alias for read() as _read().
+	  When selected via Kconfig, Zephyr will provide an alias for read() as _read().
 
 config POSIX_DEVICE_IO_ALIAS_WRITE
 	bool
 	help
-	  Select 'y' here and Zephyr will provide an alias for write() as _write().
+	  When selected via Kconfig, Zephyr will provide an alias for write() as _write().
 
 endif # POSIX_DEVICE_IO
 
