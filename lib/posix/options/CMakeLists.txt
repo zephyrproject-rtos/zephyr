@@ -81,9 +81,11 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_READER_WRITER_LOCKS rwlock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SEMAPHORES semaphore.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_THREADS
   cond.c
+  grp.c
   key.c
   mutex.c
   pthread.c
+  pwd.c
 )
 zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
 zephyr_library_sources_ifdef(CONFIG_XSI_SYSTEM_LOGGING syslog.c)

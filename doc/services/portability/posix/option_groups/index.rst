@@ -906,16 +906,16 @@ _POSIX_THREAD_SAFE_FUNCTIONS
     funlockfile(),
     getc_unlocked(),
     getchar_unlocked(),
-    getgrgid_r(),
-    getgrnam_r(),
-    getpwnam_r(),
-    getpwuid_r(),
+    getgrgid_r(),yes :ref:`†<posix_undefined_behaviour>`
+    getgrnam_r(),yes :ref:`†<posix_undefined_behaviour>`
+    getpwnam_r(),yes :ref:`†<posix_undefined_behaviour>`
+    getpwuid_r(),yes :ref:`†<posix_undefined_behaviour>`
     gmtime_r(), yes
     localtime_r(),
     putc_unlocked(),
     putchar_unlocked(),
     rand_r(), yes
-    readdir_r(),
+    readdir_r(), yes
     strerror_r(), yes
     strtok_r(), yes
 
