@@ -86,81 +86,40 @@
 		group1 {
 			pinmux = <M0SCK_P5>, <M0MISO_P7>, <M0MOSI_P6>;
 		};
-		group2 {
-			pinmux = <NCE72_P72>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <0>;
-		};
 	};
 	spi1_default: spi1_default {
 		group1 {
 			pinmux = <M1SCK_P8>, <M1MISO_P10>, <M1MOSI_P9>;
-		};
-		group2 {
-			pinmux = <NCE11_P11>;
-			drive-strength = "0.5";
-			drive-push-pull;
-			ambiq,iom-nce-module = <4>;
 		};
 	};
 	spi2_default: spi2_default {
 		group1 {
 			pinmux = <M2SCK_P25>, <M2MISO_P27>, <M2MOSI_P26>;
 		};
-		group2 {
-			pinmux = <NCE37_P37>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <8>;
-		};
 	};
 	spi3_default: spi3_default {
 		group1 {
 			pinmux = <M3SCK_P31>, <M3MISO_P33>, <M3MOSI_P32>;
-		};
-		group2 {
-			pinmux = <NCE85_P85>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <12>;
 		};
 	};
 	spi4_default: spi4_default {
 		group1 {
 			pinmux = <M4SCK_P34>, <M4MISO_P36>, <M4MOSI_P35>;
 		};
-		group2 {
-			pinmux = <NCE79_P79>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <16>;
-		};
 	};
 	spi5_default: spi5_default {
 		group1 {
 			pinmux = <M5SCK_P47>, <M5MISO_P49>, <M5MOSI_P48>;
-		};
-		group2 {
-			pinmux = <NCE60_P60>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <20>;
 		};
 	};
 	spi6_default: spi6_default {
 		group1 {
 			pinmux = <M6SCK_P61>, <M6MISO_P63>, <M6MOSI_P62>;
 		};
-		group2 {
-			pinmux = <NCE30_P30>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <24>;
-		};
 	};
 	spi7_default: spi7_default {
 		group1 {
 			pinmux = <M7SCK_P22>, <M7MISO_P24>, <M7MOSI_P23>;
-		};
-		group2 {
-			pinmux = <NCE88_P88>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <28>;
 		};
 	};
 	mspi0_default: mspi0_default{
