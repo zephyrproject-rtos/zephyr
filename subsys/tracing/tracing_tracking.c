@@ -125,6 +125,16 @@ void sys_track_k_event_init(struct k_event *event)
 }
 #endif
 
+#ifdef CONFIG_NETWORKING
+void sys_track_socket_init(int sock, int family, int type, int proto)
+{
+	ARG_UNUSED(sock);
+	ARG_UNUSED(family);
+	ARG_UNUSED(type);
+	ARG_UNUSED(proto);
+}
+#endif
+
 static int sys_track_static_init(void)
 {
 

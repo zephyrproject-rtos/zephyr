@@ -1,0 +1,19 @@
+identifier: xg27_dk2602a
+name: xG27 Dev Kit (xG27-DK2602A, BRD2602A)
+type: mcu
+arch: arm
+ram: 64
+flash: 768
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

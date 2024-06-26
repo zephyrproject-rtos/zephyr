@@ -148,6 +148,7 @@
 			input-enable;
 		};
 	};
+
 	pinmux_lpadc0: pinmux_lpadc0 {
 		group0 {
 			pinmux = <ADC0_A2_PIO4_23>,
@@ -174,6 +175,47 @@
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
+		};
+	};
+
+	pinmux_flexio_lcd: pinmux_flexio_lcd {
+		group0 {
+			pinmux = <FLEXIO0_D16_PIO2_8>,
+				<FLEXIO0_D17_PIO2_9>,
+				<FLEXIO0_D18_PIO2_10>,
+				<FLEXIO0_D19_PIO2_11>,
+				<FLEXIO0_D20_PIO4_12>,
+				<FLEXIO0_D21_PIO4_13>,
+				<FLEXIO0_D22_PIO4_14>,
+				<FLEXIO0_D23_PIO4_15>,
+				<FLEXIO0_D24_PIO4_16>,
+				<FLEXIO0_D25_PIO4_17>,
+				<FLEXIO0_D26_PIO4_18>,
+				<FLEXIO0_D27_PIO4_19>,
+				<FLEXIO0_D28_PIO4_20>,
+				<FLEXIO0_D29_PIO4_21>,
+				<FLEXIO0_D30_PIO4_22>,
+				<FLEXIO0_D31_PIO4_23>,
+				<PIO0_7>,
+				<PIO0_12>,
+				<PIO4_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+		group1 {
+			pinmux = <FLEXIO0_D0_PIO0_8>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <FLEXIO0_D1_PIO0_9>;
+			slew-rate = "slow";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
 		};
 	};
 };

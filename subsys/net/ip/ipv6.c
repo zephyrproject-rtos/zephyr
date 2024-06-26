@@ -411,12 +411,15 @@ static enum net_verdict ipv6_forward_mcast_packet(struct net_pkt *pkt,
 #if defined(CONFIG_NET_ROUTE_MCAST)
 	int routed;
 
-	/* check if routing loop could be created or if the destination is of
-	 * interface local scope or if from link local source
+	/* Continue processing without forwarding if:
+	 *   1. routing loop could be created
+	 *   2. the destination is of interface local scope
+	 *   3. is from link local source
+	 *   4. hop limit is or would become zero
 	 */
-	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->src)  ||
-	      net_ipv6_is_addr_mcast_iface((struct in6_addr *)hdr->dst) ||
-	       net_ipv6_is_ll_addr((struct in6_addr *)hdr->src)) {
+	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->src) ||
+	    net_ipv6_is_addr_mcast_iface((struct in6_addr *)hdr->dst) ||
+	    net_ipv6_is_ll_addr((struct in6_addr *)hdr->src) || hdr->hop_limit <= 1) {
 		return NET_CONTINUE;
 	}
 

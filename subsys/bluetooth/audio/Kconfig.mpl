@@ -59,7 +59,7 @@ config BT_MPL_SEGMENT_NAME_MAX
 	default 25
 	range 1 255
 	help
-	  Sets the the maximum number of bytes (including the null termination)
+	  Sets the maximum number of bytes (including the null termination)
 	  of the name of any track segment in the media player.
 
 config BT_MPL_GROUP_TITLE_MAX

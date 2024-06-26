@@ -16,18 +16,19 @@
 / {
 	chosen {
 		zephyr,entropy = &trng;
+		zephyr,bt-hci = &hci;
 	};
 
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		cpu-power-states = <&idle &suspend>;
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&idle &suspend>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
@@ -163,22 +164,27 @@
 		clk-divider = <1>;
 	};
 
-	hsgpio0: hsgpio@0 {
+	hsgpio: hsgpio@100000 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x4000>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <0>;
-		int-source = "pint";
-	};
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	hsgpio1: hsgpio@1 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x4000>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <1>;
-		int-source = "pint";
+		hsgpio0: gpio@0 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0>;
+			int-source = "pint";
+		};
+
+		hsgpio1: gpio@1 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <1>;
+			int-source = "pint";
+		};
 	};
 
 	usb_otg: usbotg@145000 {
@@ -483,6 +489,32 @@
 		/* first index is the hci interrupt, the second is the wake up done interrupt */
 		interrupts = <90 2>, <82 2>;
 		interrupt-names = "hci_int", "wakeup_int";
+	};
+
+	enet: enet@138000 {
+		compatible = "nxp,enet";
+		reg = <0x138000 0x700>;
+		clocks = <&clkctl1 MCUX_ENET_CLK>;
+		enet_mac: ethernet {
+			compatible = "nxp,enet-mac";
+			interrupts = <115 0>;
+			interrupt-names = "COMMON";
+			nxp,mdio = <&enet_mdio>;
+			nxp,ptp-clock = <&enet_ptp_clock>;
+			status = "disabled";
+		};
+		enet_mdio: mdio {
+			compatible = "nxp,enet-mdio";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		enet_ptp_clock: ptp-clock {
+			compatible = "nxp,enet-ptp-clock";
+			interrupts = <116 0>;
+			status = "disabled";
+			clocks = <&clkctl1 MCUX_ENET_PLL>;
+		};
 	};
 };
 

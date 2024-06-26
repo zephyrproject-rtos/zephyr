@@ -49,13 +49,6 @@ config PICOLIBC_SUPPORTED
 	help
 	  Selected when the target has support for picolibc.
 
-config SUPPORT_MINIMAL_LIBC
-	bool
-	select MINIMAL_LIBC_SUPPORTED
-	select DEPRECATED
-	help
-	  Legacy symbol that selects MINIMAL_LIBC_SUPPORTED
-
 config NATIVE_LIBC_INCOMPATIBLE
 	bool
 	help
@@ -79,6 +72,9 @@ config MINIMAL_LIBC
 	imply COMPILER_FREESTANDING
 	select COMMON_LIBC_ABORT
 	select COMMON_LIBC_STRNLEN
+	imply COMMON_LIBC_MALLOC
+	imply COMMON_LIBC_CALLOC
+	imply COMMON_LIBC_REALLOCARRAY
 	help
 	  Build with minimal C library.
 

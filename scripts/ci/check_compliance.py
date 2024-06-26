@@ -801,7 +801,8 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             for sym_name in re.findall(regex, line):
                 sym_name = sym_name[7:]  # Strip CONFIG_
                 if sym_name not in defined_syms and \
-                   sym_name not in self.UNDEF_KCONFIG_ALLOWLIST:
+                   sym_name not in self.UNDEF_KCONFIG_ALLOWLIST and \
+                   not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms):
 
                     undef_to_locs[sym_name].append(f"{path}:{lineno}")
 
@@ -872,7 +873,6 @@ flagged.
         "COMPILER_RT_RTLIB",
         "BT_6LOWPAN",  # Defined in Linux, mentioned in docs
         "CMD_CACHE",  # Defined in U-Boot, mentioned in docs
-        "COUNTER_RTC_STM32_CLOCK_SRC",
         "CRC",  # Used in TI CC13x2 / CC26x2 SDK comment
         "DEEP_SLEEP",  # #defined by RV32M1 in ext/
         "DESCRIPTION",
@@ -943,6 +943,9 @@ flagged.
         "ZEPHYR_TRY_MASS_ERASE", # MCUBoot setting described in sysbuild
                                  # documentation
         "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
+        "SUIT_MPI_GENERATE", # Used by nRF runners to program provisioning data, based on build configuration
+        "SUIT_MPI_APP_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
+        "SUIT_MPI_RAD_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
     }
 
 

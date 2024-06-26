@@ -38,8 +38,6 @@
 		zephyr,flash = &flash0;
 		/* UART used by the BT controller UART HCI driver by default: */
 		zephyr,bt-c2h-uart = &uart1;
-		/* UART used by the BT host UART HCI driver by default: */
-		zephyr,bt-uart = &uart1;
 	};
 
 	soc {
@@ -117,4 +115,9 @@
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+	};
 };

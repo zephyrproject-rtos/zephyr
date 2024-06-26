@@ -46,7 +46,8 @@ void k_free(void *ptr)
 
 	if (ptr != NULL) {
 		heap_ref = ptr;
-		ptr = --heap_ref;
+		--heap_ref;
+		ptr = heap_ref;
 
 		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_free, *heap_ref, heap_ref);
 

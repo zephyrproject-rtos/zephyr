@@ -429,8 +429,9 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	 * stack. If CONFIG_INIT_STACKS is enabled, the stack will be
 	 * cleared below.
 	 */
-	void *stack_mapped = k_mem_phys_map((uintptr_t)stack, stack_obj_size,
-					    K_MEM_PERM_RW | K_MEM_CACHE_WB | K_MEM_MAP_UNINIT);
+	void *stack_mapped = k_mem_map_phys_guard((uintptr_t)stack, stack_obj_size,
+				K_MEM_PERM_RW | K_MEM_CACHE_WB | K_MEM_MAP_UNINIT,
+				false);
 
 	__ASSERT_NO_MSG((uintptr_t)stack_mapped != 0);
 
@@ -1051,8 +1052,8 @@ void do_thread_cleanup(struct k_thread *thread)
 
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
 	if (thread_cleanup_stack_addr != NULL) {
-		k_mem_phys_unmap(thread_cleanup_stack_addr,
-				 thread_cleanup_stack_sz);
+		k_mem_unmap_phys_guard(thread_cleanup_stack_addr,
+				       thread_cleanup_stack_sz, false);
 
 		thread_cleanup_stack_addr = NULL;
 	}

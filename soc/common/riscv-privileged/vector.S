@@ -12,7 +12,9 @@ GTEXT(__start)
 
 /* imports */
 GTEXT(__initialize)
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 GTEXT(_isr_wrapper)
+#endif
 
 SECTION_FUNC(vectors, __start)
 #if defined(CONFIG_RISCV_GP)
@@ -35,7 +37,11 @@ SECTION_FUNC(vectors, __start)
 	 * mtvec.base must be aligned to 64 bytes (this is done using
 	 * CONFIG_RISCV_TRAP_HANDLER_ALIGNMENT)
 	 */
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 	la t0, _isr_wrapper
+#else
+	add t0, zero, zero
+#endif
 	addi t0, t0, 0x03 /* Enable CLIC vectored mode by setting LSB */
 	csrw mtvec, t0
 

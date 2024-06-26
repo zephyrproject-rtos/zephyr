@@ -23,6 +23,8 @@ zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1A ${pdl_dev_cat1
 zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1A ${pdl_dev_cat1a_dir}/include/ip)
 zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1A ${pdl_dev_cat1a_dir}/source/cy_device.c)
 
+
+zephyr_include_directories(${pdl_drv_dir}/include)
 zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1B ${pdl_dev_cat1b_dir}/include)
 zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1B ${pdl_dev_cat1b_dir}/include/ip)
 zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1B ${pdl_dev_cat1b_dir}/source/cy_device.c)
@@ -70,6 +72,7 @@ zephyr_library_sources(${pdl_drv_dir}/source/cy_sysclk.c)
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_sysclk_v2.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_systick_v2.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_v2.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_btss.c)
 endif()
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syslib.c)
@@ -77,3 +80,7 @@ zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_systick.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_trigmux.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_wdt.c)
+
+# add IPC_BT driver for CYW208XX devices
+zephyr_library_sources_ifdef(CONFIG_BT_CYW208XX  ${pdl_drv_dir}/source/cy_ipc_bt.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CYW208XX  ${pdl_drv_dir}/source/cy_syspm_pdcm.c)

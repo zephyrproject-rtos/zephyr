@@ -8,6 +8,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <adsp_shim.h>
@@ -164,14 +165,22 @@ static inline int intel_adsp_hda_set_buffer(uint32_t base,
 	uint32_t aligned_size = buf_size & HDA_BUFFER_SIZE_MASK;
 
 	__ASSERT(aligned_addr == addr, "Buffer must be 128 byte aligned");
-	__ASSERT(aligned_addr >= L2_SRAM_BASE
-		 && aligned_addr < L2_SRAM_BASE + L2_SRAM_SIZE,
-		 "Buffer must be in L2 address space");
 	__ASSERT(aligned_size == buf_size,
 		 "Buffer must be 16 byte aligned in size");
 
-	__ASSERT(aligned_addr + aligned_size < L2_SRAM_BASE + L2_SRAM_SIZE,
-		 "Buffer must end in L2 address space");
+#if defined(CONFIG_KERNEL_VM_SUPPORT)
+#  define _INTEL_ADSP_BASE  CONFIG_KERNEL_VM_BASE
+#  define _INTEL_ADSP_SIZE  CONFIG_KERNEL_VM_SIZE
+#else
+#  define _INTEL_ADSP_BASE  CONFIG_SRAM_BASE_ADDRESS
+#  define _INTEL_ADSP_SIZE  KB(CONFIG_SRAM_SIZE)
+#endif
+
+	__ASSERT(aligned_addr >= _INTEL_ADSP_BASE
+		 && aligned_addr < _INTEL_ADSP_BASE + _INTEL_ADSP_SIZE,
+		 "Buffer must be in kernel address space");
+	__ASSERT(aligned_addr + aligned_size < _INTEL_ADSP_BASE + _INTEL_ADSP_SIZE,
+		 "Buffer must end in kernel address space");
 
 	if (*DGCS(base, regblock_size, sid) & DGCS_GEN) {
 		return -EBUSY;

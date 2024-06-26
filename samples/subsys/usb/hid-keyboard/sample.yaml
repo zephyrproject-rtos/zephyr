@@ -4,7 +4,7 @@ common:
   harness: button
   filter: dt_alias_exists("sw0") and dt_alias_exists("led0")
   depends_on:
-    - usb_device
+    - usbd
     - gpio
   platform_allow:
     - nrf52840dk/nrf52840

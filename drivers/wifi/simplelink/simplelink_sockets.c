@@ -588,7 +588,7 @@ static int simplelink_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		if (fds[i].fd < 0) {
 			continue;
 		} else {
-			obj = z_get_fd_obj(fds[i].fd,
+			obj = zvfs_get_fd_obj(fds[i].fd,
 					   (const struct fd_op_vtable *)
 						&simplelink_socket_fd_op_vtable,
 					   ENOTSUP);
@@ -617,7 +617,7 @@ static int simplelink_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 	if (retval > 0) {
 		for (i = 0; i < nfds; i++) {
 			if (fds[i].fd >= 0) {
-				obj = z_get_fd_obj(
+				obj = zvfs_get_fd_obj(
 					fds[i].fd,
 					(const struct fd_op_vtable *)
 						&simplelink_socket_fd_op_vtable,
@@ -1260,7 +1260,7 @@ static bool simplelink_is_supported(int family, int type, int proto)
 
 int simplelink_socket_create(int family, int type, int proto)
 {
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 	int sock;
 
 	if (fd < 0) {
@@ -1269,13 +1269,13 @@ int simplelink_socket_create(int family, int type, int proto)
 
 	sock = simplelink_socket(family, type, proto);
 	if (sock < 0) {
-		z_free_fd(fd);
+		zvfs_free_fd(fd);
 		return -1;
 	}
 
-	z_finalize_fd(fd, SD_TO_OBJ(sock),
-		      (const struct fd_op_vtable *)
-					&simplelink_socket_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, SD_TO_OBJ(sock),
+			    (const struct fd_op_vtable *)&simplelink_socket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }
@@ -1283,7 +1283,7 @@ int simplelink_socket_create(int family, int type, int proto)
 static int simplelink_socket_accept(void *obj, struct sockaddr *addr,
 			     socklen_t *addrlen)
 {
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 	int sock;
 
 	if (fd < 0) {
@@ -1292,13 +1292,13 @@ static int simplelink_socket_accept(void *obj, struct sockaddr *addr,
 
 	sock = simplelink_accept(obj, addr, addrlen);
 	if (sock < 0) {
-		z_free_fd(fd);
+		zvfs_free_fd(fd);
 		return -1;
 	}
 
-	z_finalize_fd(fd, SD_TO_OBJ(sock),
-		      (const struct fd_op_vtable *)
-					&simplelink_socket_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, SD_TO_OBJ(sock),
+			    (const struct fd_op_vtable *)&simplelink_socket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }

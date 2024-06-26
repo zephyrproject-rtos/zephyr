@@ -449,9 +449,6 @@ struct rtio_iodev {
 	/* Function pointer table */
 	const struct rtio_iodev_api *api;
 
-	/* Queue of RTIO contexts with requests */
-	struct mpsc iodev_sq;
-
 	/* Data associated with this iodev */
 	void *data;
 };
@@ -732,7 +729,6 @@ static inline void rtio_block_pool_free(struct rtio *r, void *buf, uint32_t buf_
 #define RTIO_IODEV_DEFINE(name, iodev_api, iodev_data)		\
 	STRUCT_SECTION_ITERABLE(rtio_iodev, name) = {		\
 		.api = (iodev_api),				\
-		.iodev_sq = MPSC_INIT((name.iodev_sq)),	\
 		.data = (iodev_data),				\
 	}
 
@@ -1126,24 +1122,6 @@ static inline void rtio_iodev_sqe_ok(struct rtio_iodev_sqe *iodev_sqe, int resul
 static inline void rtio_iodev_sqe_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 {
 	rtio_executor_err(iodev_sqe, result);
-}
-
-/**
- * @brief Cancel all requests that are pending for the iodev
- *
- * @param iodev IODev to cancel all requests for
- */
-static inline void rtio_iodev_cancel_all(struct rtio_iodev *iodev)
-{
-	/* Clear pending requests as -ENODATA */
-	struct mpsc_node *node = mpsc_pop(&iodev->iodev_sq);
-
-	while (node != NULL) {
-		struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
-
-		rtio_iodev_sqe_err(iodev_sqe, -ECANCELED);
-		node = mpsc_pop(&iodev->iodev_sq);
-	}
 }
 
 /**

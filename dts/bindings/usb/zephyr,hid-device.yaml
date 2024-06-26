@@ -36,11 +36,11 @@ properties:
       The size of the longest input report that the HID device can generate.
       This property is used to determine the buffer length used for transfers.
 
-  in-polling-rate:
+  in-polling-period-us:
     type: int
     required: true
     description: |
-      Input or output type reports polling rate in microseconds. For USB full
+      Input or output type reports polling period in microseconds. For USB full
       speed this could be clamped to 1ms or 255ms depending on the value.
 
   out-report-size:
@@ -50,9 +50,9 @@ properties:
       When this property is present, a USB device will use out pipe for output
       reports, otherwise control pipe will be used for output reports.
 
-  out-polling-rate:
+  out-polling-period-us:
     type: int
     description: |
-      Output type reports polling rate in microseconds. For USB full
+      Output type reports polling period in microseconds. For USB full
       speed this could be clamped to 1ms or 255ms depending on the value.
       This option is only effective if the out-report-size property is defined.

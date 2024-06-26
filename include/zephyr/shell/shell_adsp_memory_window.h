@@ -42,7 +42,7 @@ struct shell_adsp_memory_window {
 	static struct shell_adsp_memory_window _name##_shell_adsp_memory_window;\
 	struct shell_transport _name = {					\
 		.api = &shell_adsp_memory_window_transport_api,		\
-		.ctx = (struct shell_memwindow *)&_name##_shell_adsp_memory_window,	\
+		.ctx = &_name##_shell_adsp_memory_window,	\
 	}
 
 /**

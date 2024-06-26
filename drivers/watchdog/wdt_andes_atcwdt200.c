@@ -332,14 +332,14 @@ static int wdt_atcwdt200_init(const struct device *dev)
 
 	ret = syscon_write_reg(syscon_dev, SMU_RESET_REGLO,
 				((uint32_t)((unsigned long)
-					Z_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY))));
+					K_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY))));
 	if (ret < 0) {
 		return -EINVAL;
 	}
 
 	ret = syscon_write_reg(syscon_dev, SMU_RESET_REGHI,
 				((uint32_t)((uint64_t)((unsigned long)
-						Z_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY)) >> 32)));
+						K_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY)) >> 32)));
 	if (ret < 0) {
 		return -EINVAL;
 	}

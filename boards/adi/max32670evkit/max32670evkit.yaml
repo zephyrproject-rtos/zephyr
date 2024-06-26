@@ -1,0 +1,14 @@
+identifier: max32670evkit
+name: max32670evkit
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - serial
+ram: 160
+flash: 384

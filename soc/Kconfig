@@ -9,9 +9,6 @@ menu "Hardware Configuration"
 
 rsource "Kconfig.$(HWM_SCHEME)"
 
-# This loads Zephyr base SoC Kconfigs for both hw model v1 and v2
-osource "soc/soc_legacy/$(ARCH)/Kconfig"
-
 # Source Zephyr Kconfig specifics from SoC roots.
 osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig"
 

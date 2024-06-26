@@ -60,7 +60,8 @@ __no_optimization static void trigger_fault_illegal_instruction(void)
  */
 __no_optimization static void trigger_fault_access(void)
 {
-#if defined(CONFIG_SOC_ARC_IOT) || defined(CONFIG_SOC_NSIM) || defined(CONFIG_SOC_EMSK)
+#if defined(CONFIG_SOC_ARC_IOT) || defined(CONFIG_SOC_FAMILY_NSIM_ARC_CLASSIC) || \
+	defined(CONFIG_SOC_FAMILY_NSIM_ARC_V) || defined(CONFIG_SOC_EMSK)
 	/* For iotdk, em_starterkit and ARC/nSIM, nSIM simulates full address space of
 	 * memory, iotdk has eflash at 0x0 address, em_starterkit has ICCM at 0x0 address,
 	 * access to 0x0 address doesn't generate any exception. So we access to 0XFFFFFFFF

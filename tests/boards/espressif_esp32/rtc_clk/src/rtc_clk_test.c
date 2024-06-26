@@ -15,7 +15,7 @@
 #define DT_CPU_COMPAT espressif_xtensa_lx6
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
 #define DT_CPU_COMPAT espressif_xtensa_lx7
-#elif CONFIG_SOC_SERIES_ESP32C3
+#elif defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #define DT_CPU_COMPAT espressif_riscv
 #endif
 
@@ -75,7 +75,7 @@ ZTEST(rtc_clk, test_cpu_xtal_src)
 uint32_t rtc_pll_src_freq_mhz[] = {
 	ESP32_CLK_CPU_PLL_80M,
 	ESP32_CLK_CPU_PLL_160M,
-#if !defined(CONFIG_SOC_SERIES_ESP32C3)
+#if !defined(CONFIG_SOC_SERIES_ESP32C3) && !defined(CONFIG_SOC_SERIES_ESP32C6)
 	ESP32_CLK_CPU_PLL_240M,
 #endif
 };
@@ -154,7 +154,11 @@ ZTEST(rtc_clk, test_rtc_fast_src)
 
 uint32_t rtc_rtc_slow_clk_src[] = {
 	ESP32_RTC_SLOW_CLK_SRC_RC_SLOW,
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	ESP32_RTC_SLOW_CLK_SRC_RC32K,
+#else
 	ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256,
+#endif
 #if CONFIG_FIXTURE_XTAL
 	ESP32_RTC_SLOW_CLK_SRC_XTAL32K,
 #endif
@@ -162,7 +166,11 @@ uint32_t rtc_rtc_slow_clk_src[] = {
 
 uint32_t rtc_rtc_slow_clk_src_freq[] = {
 	ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ,
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	ESP32_RTC_SLOW_CLK_SRC_RC32K_FREQ,
+#else
 	ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256_FREQ,
+#endif
 #if CONFIG_FIXTURE_XTAL
 	ESP32_RTC_SLOW_CLK_SRC_XTAL32K_FREQ,
 #endif

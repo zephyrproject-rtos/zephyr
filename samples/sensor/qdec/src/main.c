@@ -90,6 +90,9 @@ int main(void)
 #else
 	for (int i = 0; i < 3; i++) {
 #endif
+		/* sleep first to gather position from first period */
+		k_msleep(1000);
+
 		rc = sensor_sample_fetch(dev);
 		if (rc != 0) {
 			printk("Failed to fetch sample (%d)\n", rc);
@@ -103,8 +106,6 @@ int main(void)
 		}
 
 		printk("Position = %d degrees\n", val.val1);
-
-		k_msleep(1000);
 	}
 	return 0;
 }

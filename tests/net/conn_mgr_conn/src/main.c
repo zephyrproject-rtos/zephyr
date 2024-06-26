@@ -639,7 +639,8 @@ ZTEST(conn_mgr_conn, test_conn_opt)
 		       0, "conn_mgr_if_get_opt should succeed for valid parameters");
 	printk("%d, %d", buf_len, strlen(buf) + 1);
 	zassert_equal(buf_len, strlen(buf) + 1, "conn_mgr_if_get_opt should return valid optlen");
-	zassert_equal(strcmp(buf, "A"), 0, "conn_mgr_if_get_opt should retrieve \"A\"");
+	zassert_str_equal(buf, "A",
+			  "conn_mgr_if_get_opt should retrieve \"A\"");
 
 	/* Verify that ifa1->Y was not affected */
 	memset(buf, 0, sizeof(buf));
@@ -668,7 +669,8 @@ ZTEST(conn_mgr_conn, test_conn_opt)
 	zassert_equal(conn_mgr_if_get_opt(ifa1, TEST_CONN_OPT_Y, &buf, &buf_len),
 		       0, "conn_mgr_if_get_opt should succeed for valid parameters");
 	zassert_equal(buf_len, strlen(buf) + 1, "conn_mgr_if_get_opt should return valid optlen");
-	zassert_equal(strcmp(buf, "ABC"), 0, "conn_mgr_if_get_opt should retrieve \"ABC\"");
+	zassert_str_equal(buf, "ABC",
+			  "conn_mgr_if_get_opt should retrieve \"ABC\"");
 
 	/* Verify that ifa1->X was not affected */
 	memset(buf, 0, sizeof(buf));
@@ -676,7 +678,8 @@ ZTEST(conn_mgr_conn, test_conn_opt)
 	zassert_equal(conn_mgr_if_get_opt(ifa1, TEST_CONN_OPT_X, &buf, &buf_len),
 		       0, "conn_mgr_if_get_opt should succeed for valid parameters");
 	zassert_equal(buf_len, strlen(buf) + 1, "conn_mgr_if_get_opt should return valid optlen");
-	zassert_equal(strcmp(buf, "A"), 0, "conn_mgr_if_get_opt should retrieve \"A\"");
+	zassert_str_equal(buf, "A",
+			  "conn_mgr_if_get_opt should retrieve \"A\"");
 
 	/* Next, we pass some buffers that are too large or too small.
 	 * This is an indirect way of verifying that buf_len is passed correctly.

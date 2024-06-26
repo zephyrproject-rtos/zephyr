@@ -417,7 +417,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	if (!piggy_back) {
-		/* Enqueue notification towards LL, unless we re-use RX node,
+		/* Enqueue notification towards LL, unless we reuse RX node,
 		 * in which case it is handled on the ull_cp_rx return path
 		 */
 		ll_rx_put_sched(ntf->hdr.link, ntf);

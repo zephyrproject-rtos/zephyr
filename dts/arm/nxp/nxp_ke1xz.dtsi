@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/clock/kinetis_pcc.h>
 #include <zephyr/dt-bindings/clock/kinetis_scg.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
@@ -167,17 +168,18 @@
 			clocks = <&pcc 0x134 KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
-		gpios0: gpios0 {
+		gpios0: gpios0@400ff000 {
 			compatible = "nxp,gpio-cluster";
 			interrupts = <7 2>;
-
+			reg = <0x400ff000 0x200>;
+			ranges = <0x0 0x400ff000 0x200>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			gpioa: gpio@400ff000 {
 				compatible = "nxp,kinetis-gpio";
 				status = "disabled";
-				reg = <0x400ff000 0x40>;
+				reg = <0x0 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&porta>;
@@ -186,24 +188,25 @@
 			gpioe: gpio@400ff100 {
 				compatible = "nxp,kinetis-gpio";
 				status = "disabled";
-				reg = <0x400ff100 0x40>;
+				reg = <0x100 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&porte>;
 			};
 		};
 
-		gpios1: gpios1 {
+		gpios1: gpios1@400ff040 {
 			compatible = "nxp,gpio-cluster";
 			interrupts = <26 2>;
-
+			reg = <0x400ff040 0x200>;
+			ranges = <0x40 0x400ff040 0x200>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			gpiob: gpio@400ff040 {
 				compatible = "nxp,kinetis-gpio";
 				status = "disabled";
-				reg = <0x400ff040 0x40>;
+				reg = <0x40 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portb>;
@@ -212,7 +215,7 @@
 			gpioc: gpio@400ff080 {
 				compatible = "nxp,kinetis-gpio";
 				status = "disabled";
-				reg = <0x400ff080 0x40>;
+				reg = <0x80 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portc>;
@@ -221,11 +224,33 @@
 			gpiod: gpio@400ff0c0 {
 				compatible = "nxp,kinetis-gpio";
 				status = "disabled";
-				reg = <0x400ff0c0 0x40>;
+				reg = <0xc0 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portd>;
 			};
+		};
+
+		lpi2c0: i2c@40066000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40066000 0x1000>;
+			interrupts = <8 0>;
+			clocks = <&pcc 0x198 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			status = "disabled";
+		};
+
+		lpi2c1: i2c@40067000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40067000 0x1000>;
+			interrupts = <9 0>;
+			clocks = <&pcc 0x19c KINETIS_PCC_SRC_FIRC_ASYNC>;
+			status = "disabled";
 		};
 	};
 };

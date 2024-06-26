@@ -167,8 +167,8 @@ struct net_pkt {
 
 	/* bitfield byte alignment boundary */
 
-#if defined(CONFIG_NET_IPV4_AUTO)
-	uint8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP
+#if defined(CONFIG_NET_IPV4_ACD)
+	uint8_t ipv4_acd_arp_msg : 1;  /* Is this pkt IPv4 conflict detection ARP
 					* message.
 					* Note: family needs to be
 					* AF_INET.
@@ -197,6 +197,10 @@ struct net_pkt {
 				  */
 #if defined(CONFIG_NET_IP_FRAGMENT)
 	uint8_t ip_reassembled : 1; /* Packet is a reassembled IP packet. */
+#endif
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	uint8_t tx_timestamping : 1; /** Timestamp transmitted packet */
+	uint8_t rx_timestamping : 1; /** Timestamp received packet */
 #endif
 	/* bitfield byte alignment boundary */
 
@@ -366,6 +370,9 @@ static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 {
 #if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
 	pkt->orig_iface = iface;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(iface);
 #endif
 }
 
@@ -387,6 +394,48 @@ static inline bool net_pkt_is_ptp(struct net_pkt *pkt)
 static inline void net_pkt_set_ptp(struct net_pkt *pkt, bool is_ptp)
 {
 	pkt->ptp_pkt = is_ptp;
+}
+
+static inline bool net_pkt_is_tx_timestamping(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	return !!(pkt->tx_timestamping);
+#else
+	ARG_UNUSED(pkt);
+
+	return false;
+#endif
+}
+
+static inline void net_pkt_set_tx_timestamping(struct net_pkt *pkt, bool is_timestamping)
+{
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	pkt->tx_timestamping = is_timestamping;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(is_timestamping);
+#endif
+}
+
+static inline bool net_pkt_is_rx_timestamping(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	return !!(pkt->rx_timestamping);
+#else
+	ARG_UNUSED(pkt);
+
+	return false;
+#endif
+}
+
+static inline void net_pkt_set_rx_timestamping(struct net_pkt *pkt, bool is_timestamping)
+{
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	pkt->rx_timestamping = is_timestamping;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(is_timestamping);
+#endif
 }
 
 static inline bool net_pkt_is_captured(struct net_pkt *pkt)
@@ -438,6 +487,8 @@ static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
 #if defined(CONFIG_NET_IP)
 	return pkt->ip_hdr_len;
 #else
+	ARG_UNUSED(pkt);
+
 	return 0;
 #endif
 }
@@ -446,6 +497,9 @@ static inline void net_pkt_set_ip_hdr_len(struct net_pkt *pkt, uint8_t len)
 {
 #if defined(CONFIG_NET_IP)
 	pkt->ip_hdr_len = len;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(len);
 #endif
 }
 
@@ -454,6 +508,8 @@ static inline uint8_t net_pkt_ip_dscp(struct net_pkt *pkt)
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	return pkt->ip_dscp;
 #else
+	ARG_UNUSED(pkt);
+
 	return 0;
 #endif
 }
@@ -462,6 +518,9 @@ static inline void net_pkt_set_ip_dscp(struct net_pkt *pkt, uint8_t dscp)
 {
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	pkt->ip_dscp = dscp;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(dscp);
 #endif
 }
 
@@ -470,6 +529,8 @@ static inline uint8_t net_pkt_ip_ecn(struct net_pkt *pkt)
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	return pkt->ip_ecn;
 #else
+	ARG_UNUSED(pkt);
+
 	return 0;
 #endif
 }
@@ -478,6 +539,9 @@ static inline void net_pkt_set_ip_ecn(struct net_pkt *pkt, uint8_t ecn)
 {
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	pkt->ip_ecn = ecn;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(ecn);
 #endif
 }
 
@@ -945,6 +1009,8 @@ static inline uint16_t net_pkt_vlan_tci(struct net_pkt *pkt)
 #else
 static inline uint16_t net_pkt_vlan_tag(struct net_pkt *pkt)
 {
+	ARG_UNUSED(pkt);
+
 	return NET_VLAN_TAG_UNSPEC;
 }
 
@@ -957,11 +1023,14 @@ static inline void net_pkt_set_vlan_tag(struct net_pkt *pkt, uint16_t tag)
 static inline uint8_t net_pkt_vlan_priority(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
+
 	return 0;
 }
 
 static inline bool net_pkt_vlan_dei(struct net_pkt *pkt)
 {
+	ARG_UNUSED(pkt);
+
 	return false;
 }
 
@@ -973,6 +1042,8 @@ static inline void net_pkt_set_vlan_dei(struct net_pkt *pkt, bool dei)
 
 static inline uint16_t net_pkt_vlan_tci(struct net_pkt *pkt)
 {
+	ARG_UNUSED(pkt);
+
 	return NET_VLAN_TAG_UNSPEC; /* assumes priority is 0 */
 }
 
@@ -1206,32 +1277,32 @@ static inline void net_pkt_set_ll_proto_type(struct net_pkt *pkt, uint16_t type)
 	pkt->ll_proto_type = type;
 }
 
-#if defined(CONFIG_NET_IPV4_AUTO)
-static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
+#if defined(CONFIG_NET_IPV4_ACD)
+static inline bool net_pkt_ipv4_acd(struct net_pkt *pkt)
 {
-	return !!(pkt->ipv4_auto_arp_msg);
+	return !!(pkt->ipv4_acd_arp_msg);
 }
 
-static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
-					 bool is_auto_arp_msg)
+static inline void net_pkt_set_ipv4_acd(struct net_pkt *pkt,
+					bool is_acd_arp_msg)
 {
-	pkt->ipv4_auto_arp_msg = is_auto_arp_msg;
+	pkt->ipv4_acd_arp_msg = is_acd_arp_msg;
 }
-#else /* CONFIG_NET_IPV4_AUTO */
-static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
+#else /* CONFIG_NET_IPV4_ACD */
+static inline bool net_pkt_ipv4_acd(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
 
 	return false;
 }
 
-static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
-					 bool is_auto_arp_msg)
+static inline void net_pkt_set_ipv4_acd(struct net_pkt *pkt,
+					bool is_acd_arp_msg)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_auto_arp_msg);
+	ARG_UNUSED(is_acd_arp_msg);
 }
-#endif /* CONFIG_NET_IPV4_AUTO */
+#endif /* CONFIG_NET_IPV4_ACD */
 
 #if defined(CONFIG_NET_LLDP)
 static inline bool net_pkt_is_lldp(struct net_pkt *pkt)

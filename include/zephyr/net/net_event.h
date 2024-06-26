@@ -96,6 +96,9 @@ enum net_event_ipv4_cmd {
 	NET_EVENT_IPV4_CMD_DHCP_STOP,
 	NET_EVENT_IPV4_CMD_MCAST_JOIN,
 	NET_EVENT_IPV4_CMD_MCAST_LEAVE,
+	NET_EVENT_IPV4_CMD_ACD_SUCCEED,
+	NET_EVENT_IPV4_CMD_ACD_FAILED,
+	NET_EVENT_IPV4_CMD_ACD_CONFLICT,
 };
 
 /* L4 network events */
@@ -109,6 +112,10 @@ enum net_event_ipv4_cmd {
 enum net_event_l4_cmd {
 	NET_EVENT_L4_CMD_CONNECTED = 1,
 	NET_EVENT_L4_CMD_DISCONNECTED,
+	NET_EVENT_L4_CMD_IPV4_CONNECTED,
+	NET_EVENT_L4_CMD_IPV4_DISCONNECTED,
+	NET_EVENT_L4_CMD_IPV6_CONNECTED,
+	NET_EVENT_L4_CMD_IPV6_DISCONNECTED,
 	NET_EVENT_L4_CMD_DNS_SERVER_ADD,
 	NET_EVENT_L4_CMD_DNS_SERVER_DEL,
 	NET_EVENT_L4_CMD_HOSTNAME_CHANGED,
@@ -274,6 +281,21 @@ enum net_event_l4_cmd {
 #define NET_EVENT_IPV4_MCAST_LEAVE				\
 	(_NET_EVENT_IPV4_BASE |	NET_EVENT_IPV4_CMD_MCAST_LEAVE)
 
+/** Event emitted when an IPv4 address conflict detection succeeds. */
+#define NET_EVENT_IPV4_ACD_SUCCEED				\
+	(_NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ACD_SUCCEED)
+
+/** Event emitted when an IPv4 address conflict detection fails. */
+#define NET_EVENT_IPV4_ACD_FAILED				\
+	(_NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ACD_FAILED)
+
+/** Event emitted when an IPv4 address conflict was detected after the address
+ *  was confirmed as safe to use. It's up to the application to determine on
+ *  how to act in such case.
+ */
+#define NET_EVENT_IPV4_ACD_CONFLICT				\
+	(_NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ACD_CONFLICT)
+
 /** Event emitted when the system is considered to be connected.
  * The connected in this context means that the network interface is up,
  * and the interface has either IPv4 or IPv6 address assigned to it.
@@ -288,6 +310,23 @@ enum net_event_l4_cmd {
  */
 #define NET_EVENT_L4_DISCONNECTED			\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_DISCONNECTED)
+
+
+/** Event raised when IPv4 network connectivity is available. */
+#define NET_EVENT_L4_IPV4_CONNECTED			\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV4_CONNECTED)
+
+/** Event emitted when IPv4 network connectivity is lost. */
+#define NET_EVENT_L4_IPV4_DISCONNECTED			\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV4_DISCONNECTED)
+
+/** Event emitted when IPv6 network connectivity is available. */
+#define NET_EVENT_L4_IPV6_CONNECTED			\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV6_CONNECTED)
+
+/** Event emitted when IPv6 network connectivity is lost. */
+#define NET_EVENT_L4_IPV6_DISCONNECTED			\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV6_DISCONNECTED)
 
 /** Event emitted when a DNS server is added to the system. */
 #define NET_EVENT_DNS_SERVER_ADD			\

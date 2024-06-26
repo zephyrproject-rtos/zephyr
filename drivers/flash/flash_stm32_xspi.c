@@ -44,6 +44,14 @@ LOG_MODULE_REGISTER(flash_stm32_xspi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_XSPI_DLYB_BYPASSED DT_PROP(STM32_XSPI_NODE, dlyb_bypass)
 
+#define STM32_XSPI_USE_DMA DT_NODE_HAS_PROP(STM32_XSPI_NODE, dmas)
+
+#if STM32_XSPI_USE_DMA
+#include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/drivers/dma.h>
+#include <stm32_ll_dma.h>
+#endif /* STM32_XSPI_USE_DMA */
+
 #include "flash_stm32_xspi.h"
 
 static inline void xspi_lock_thread(const struct device *dev)
@@ -97,7 +105,11 @@ static int xspi_read_access(const struct device *dev, XSPI_RegularCmdTypeDef *cm
 		return -EIO;
 	}
 
+#if STM32_XSPI_USE_DMA
+	hal_ret = HAL_XSPI_Receive_DMA(&dev_data->hxspi, data);
+#else
 	hal_ret = HAL_XSPI_Receive_IT(&dev_data->hxspi, data);
+#endif
 
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to read data", hal_ret);
@@ -135,7 +147,11 @@ static int xspi_write_access(const struct device *dev, XSPI_RegularCmdTypeDef *c
 		return -EIO;
 	}
 
+#if STM32_XSPI_USE_DMA
+	hal_ret = HAL_XSPI_Transmit_DMA(&dev_data->hxspi, (uint8_t *)data);
+#else
 	hal_ret = HAL_XSPI_Transmit_IT(&dev_data->hxspi, (uint8_t *)data);
+#endif
 
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to write data", hal_ret);
@@ -737,6 +753,8 @@ static int stm32_xspi_mem_reset(const struct device *dev)
 	struct flash_stm32_xspi_data *dev_data = dev->data;
 
 #if STM32_XSPI_RESET_GPIO
+	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
+
 	/* Generate RESETn pulse for the flash memory */
 	gpio_pin_configure_dt(&dev_cfg->reset, GPIO_OUTPUT_ACTIVE);
 	k_msleep(DT_INST_PROP(0, reset_gpios_duration));
@@ -816,6 +834,140 @@ static int stm32_xspi_mem_reset(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_STM32_MEMMAP
+/* Function to configure the octoflash in MemoryMapped mode */
+static int stm32_xspi_set_memorymap(const struct device *dev)
+{
+	HAL_StatusTypeDef ret;
+	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
+	struct flash_stm32_xspi_data *dev_data = dev->data;
+	XSPI_RegularCmdTypeDef s_command = {0}; /* Non-zero values disturb the command */
+	XSPI_MemoryMappedTypeDef s_MemMappedCfg;
+
+	/* Configure octoflash in MemoryMapped mode */
+	if ((dev_cfg->data_mode == XSPI_SPI_MODE) &&
+		(stm32_xspi_hal_address_size(dev) == HAL_XSPI_ADDRESS_24_BITS)) {
+		/* OPI mode and 3-bytes address size not supported by memory */
+		LOG_ERR("XSPI_SPI_MODE in 3Bytes addressing is not supported");
+		return -EIO;
+	}
+
+	/* Initialize the read command */
+	s_command.OperationType = HAL_XSPI_OPTYPE_READ_CFG;
+	s_command.InstructionMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
+					? HAL_XSPI_INSTRUCTION_1_LINE
+					: HAL_XSPI_INSTRUCTION_8_LINES)
+				: HAL_XSPI_INSTRUCTION_8_LINES;
+	s_command.InstructionDTRMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? HAL_XSPI_INSTRUCTION_DTR_DISABLE
+				: HAL_XSPI_INSTRUCTION_DTR_ENABLE;
+	s_command.InstructionWidth = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
+					? HAL_XSPI_INSTRUCTION_8_BITS
+					: HAL_XSPI_INSTRUCTION_16_BITS)
+				: HAL_XSPI_INSTRUCTION_16_BITS;
+	s_command.Instruction = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
+					? ((stm32_xspi_hal_address_size(dev) ==
+					HAL_XSPI_ADDRESS_24_BITS)
+						? SPI_NOR_CMD_READ_FAST
+						: SPI_NOR_CMD_READ_FAST_4B)
+					: dev_data->read_opcode)
+				: SPI_NOR_OCMD_DTR_RD;
+	s_command.AddressMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
+					? HAL_XSPI_ADDRESS_1_LINE
+					: HAL_XSPI_ADDRESS_8_LINES)
+				: HAL_XSPI_ADDRESS_8_LINES;
+	s_command.AddressDTRMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? HAL_XSPI_ADDRESS_DTR_DISABLE
+				: HAL_XSPI_ADDRESS_DTR_ENABLE;
+	s_command.AddressWidth = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? stm32_xspi_hal_address_size(dev)
+				: HAL_XSPI_ADDRESS_32_BITS;
+	s_command.DataMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
+					? HAL_XSPI_DATA_1_LINE
+					: HAL_XSPI_DATA_8_LINES)
+				: HAL_XSPI_DATA_8_LINES;
+	s_command.DataDTRMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? HAL_XSPI_DATA_DTR_DISABLE
+				: HAL_XSPI_DATA_DTR_ENABLE;
+	s_command.DummyCycles = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
+					? SPI_NOR_DUMMY_RD
+					: SPI_NOR_DUMMY_RD_OCTAL)
+				: SPI_NOR_DUMMY_RD_OCTAL_DTR;
+	s_command.DQSMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
+				? HAL_XSPI_DQS_DISABLE
+				: HAL_XSPI_DQS_ENABLE;
+#ifdef XSPI_CCR_SIOO
+	s_command.SIOOMode = HAL_XSPI_SIOO_INST_EVERY_CMD;
+#endif /* XSPI_CCR_SIOO */
+
+	ret = HAL_XSPI_Command(&dev_data->hxspi, &s_command, HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+	if (ret != HAL_OK) {
+		LOG_ERR("%d: Failed to set memory map", ret);
+		return -EIO;
+	}
+
+	/* Initialize the program command */
+	s_command.OperationType = HAL_XSPI_OPTYPE_WRITE_CFG;
+	if (dev_cfg->data_rate == XSPI_STR_TRANSFER) {
+		s_command.Instruction = (dev_cfg->data_mode == XSPI_SPI_MODE)
+					? ((stm32_xspi_hal_address_size(dev) ==
+					HAL_XSPI_ADDRESS_24_BITS)
+						? SPI_NOR_CMD_PP
+						: SPI_NOR_CMD_PP_4B)
+					: SPI_NOR_OCMD_PAGE_PRG;
+	} else {
+		s_command.Instruction = SPI_NOR_OCMD_PAGE_PRG;
+	}
+	s_command.DQSMode = HAL_XSPI_DQS_DISABLE;
+
+	ret = HAL_XSPI_Command(&dev_data->hxspi, &s_command, HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+	if (ret != HAL_OK) {
+		LOG_ERR("%d: Failed to set memory mapped", ret);
+		return -EIO;
+	}
+
+	/* Enable the memory-mapping */
+	s_MemMappedCfg.TimeOutActivation = HAL_XSPI_TIMEOUT_COUNTER_DISABLE;
+
+	ret = HAL_XSPI_MemoryMapped(&dev_data->hxspi, &s_MemMappedCfg);
+	if (ret != HAL_OK) {
+		LOG_ERR("%d: Failed to enable memory mapped", ret);
+		return -EIO;
+	}
+
+	LOG_DBG("MemoryMap mode enabled");
+	return 0;
+}
+
+/* Function to return true if the octoflash is in MemoryMapped else false */
+static bool stm32_xspi_is_memorymap(const struct device *dev)
+{
+	struct flash_stm32_xspi_data *dev_data = dev->data;
+
+	return ((READ_BIT(dev_data->hxspi.Instance->CR,
+			  XSPI_CR_FMODE) == XSPI_CR_FMODE) ?
+			  true : false);
+}
+
+static int stm32_xspi_abort(const struct device *dev)
+{
+	struct flash_stm32_xspi_data *dev_data = dev->data;
+
+	if (HAL_XSPI_Abort(&dev_data->hxspi) != HAL_OK) {
+		LOG_ERR("XSPI abort failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_STM32_MEMMAP */
+
 /*
  * Function to erase the flash : chip or sector with possible OCTO/SPI and STR/DTR
  * to erase the complete chip (using dedicated command) :
@@ -850,6 +1002,19 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 		return -ENOTSUP;
 	}
 
+	xspi_lock_thread(dev);
+
+#ifdef CONFIG_STM32_MEMMAP
+	if (stm32_xspi_is_memorymap(dev)) {
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_xspi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before erase");
+			goto erase_end;
+		}
+	}
+#endif
+
 	XSPI_RegularCmdTypeDef cmd_erase = {
 		.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG,
 		.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE,
@@ -859,13 +1024,10 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 		.SIOOMode = HAL_XSPI_SIOO_INST_EVERY_CMD,
 	};
 
-	xspi_lock_thread(dev);
-
 	if (stm32_xspi_mem_ready(dev,
 		dev_cfg->data_mode, dev_cfg->data_rate) != 0) {
-		xspi_unlock_thread(dev);
 		LOG_ERR("Erase failed : flash busy");
-		return -EBUSY;
+		goto erase_end;
 	}
 
 	cmd_erase.InstructionMode    = (dev_cfg->data_mode == XSPI_OCTO_MODE)
@@ -973,7 +1135,9 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 		}
 
 	}
+	/* Ends the erase operation */
 
+erase_end:
 	xspi_unlock_thread(dev);
 
 	return ret;
@@ -998,6 +1162,30 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
+#ifdef CONFIG_STM32_MEMMAP
+	ARG_UNUSED(dev_cfg);
+	ARG_UNUSED(dev_data);
+
+	xspi_lock_thread(dev);
+
+	/* Do reads through memory-mapping instead of indirect */
+	if (!stm32_xspi_is_memorymap(dev)) {
+		ret = stm32_xspi_set_memorymap(dev);
+		if (ret != 0) {
+			LOG_ERR("READ: failed to set memory mapped");
+			goto read_end;
+		}
+	}
+
+	__ASSERT_NO_MSG(stm32_xspi_is_memorymap(dev));
+
+	uintptr_t mmap_addr = STM32_XSPI_BASE_ADDRESS + addr;
+
+	LOG_DBG("Memory-mapped read from 0x%08lx, len %zu", mmap_addr, size);
+	memcpy(data, (void *)mmap_addr, size);
+	ret = 0;
+	goto read_end;
+#else
 	XSPI_RegularCmdTypeDef cmd = xspi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
 	if (dev_cfg->data_mode != XSPI_OCTO_MODE) {
@@ -1056,11 +1244,16 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 		}
 	}
 
-	LOG_DBG("XSPI: read %zu data", size);
+	LOG_DBG("XSPI: read %zu data at 0x%lx",
+		size,
+		(long)(STM32_XSPI_BASE_ADDRESS + addr));
 	xspi_lock_thread(dev);
 
 	ret = xspi_read_access(dev, &cmd, data, size);
+	goto read_end;
+#endif
 
+read_end:
 	xspi_unlock_thread(dev);
 
 	return ret;
@@ -1086,6 +1279,20 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 		return 0;
 	}
 
+	xspi_lock_thread(dev);
+
+#ifdef CONFIG_STM32_MEMMAP
+	ARG_UNUSED(dev_data);
+
+	if (stm32_xspi_is_memorymap(dev)) {
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_xspi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before write");
+			goto write_end;
+		}
+	}
+#endif
 	/* page program for STR or DTR mode */
 	XSPI_RegularCmdTypeDef cmd_pp = xspi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
@@ -1128,15 +1335,15 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 	cmd_pp.AddressWidth = stm32_xspi_hal_address_size(dev);
 	cmd_pp.DummyCycles = 0U;
 
-	LOG_DBG("XSPI: write %zu data", size);
-	xspi_lock_thread(dev);
+	LOG_DBG("XSPI: write %zu data at 0x%lx",
+		size,
+		(long)(STM32_XSPI_BASE_ADDRESS + addr));
 
 	ret = stm32_xspi_mem_ready(dev,
 				   dev_cfg->data_mode, dev_cfg->data_rate);
 	if (ret != 0) {
-		xspi_unlock_thread(dev);
 		LOG_ERR("XSPI: write not ready");
-		return -EIO;
+		goto write_end;
 	}
 
 	while ((size > 0) && (ret == 0)) {
@@ -1178,7 +1385,9 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 			break;
 		}
 	}
+	/* Ends the write operation */
 
+write_end:
 	xspi_unlock_thread(dev);
 
 	return ret;
@@ -1217,6 +1426,24 @@ __weak HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef *hdma)
 	return HAL_OK;
 }
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
+
+/* This function is executed in the interrupt context */
+#if STM32_XSPI_USE_DMA
+static void xspi_dma_callback(const struct device *dev, void *arg,
+			 uint32_t channel, int status)
+{
+	DMA_HandleTypeDef *hdma = arg;
+
+	ARG_UNUSED(dev);
+
+	if (status < 0) {
+		LOG_ERR("DMA callback error with channel %d.", channel);
+	}
+
+	HAL_DMA_IRQHandler(hdma);
+}
+#endif
+
 
 /*
  * Transfer Error callback.
@@ -1705,6 +1932,85 @@ static int spi_nor_process_bfp(const struct device *dev,
 	return 0;
 }
 
+#if STM32_XSPI_USE_DMA
+static int flash_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma_stream)
+{
+	int ret;
+	/*
+	 * DMA configuration
+	 * Due to use of XSPI HAL API in current driver,
+	 * both HAL and Zephyr DMA drivers should be configured.
+	 * The required configuration for Zephyr DMA driver should only provide
+	 * the minimum information to inform the DMA slot will be in used and
+	 * how to route callbacks.
+	 */
+
+	if (!device_is_ready(dma_stream->dev)) {
+		LOG_ERR("DMA %s device not ready", dma_stream->dev->name);
+		return -ENODEV;
+	}
+	/* Proceed to the minimum Zephyr DMA driver init of the channel */
+	dma_stream->cfg.user_data = hdma;
+	/* HACK: This field is used to inform driver that it is overridden */
+	dma_stream->cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
+	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
+	ret = dma_config(dma_stream->dev,
+			 (dma_stream->channel + STM32_DMA_STREAM_OFFSET), &dma_stream->cfg);
+	if (ret != 0) {
+		LOG_ERR("Failed to configure DMA channel %d",
+			dma_stream->channel + STM32_DMA_STREAM_OFFSET);
+		return ret;
+	}
+
+	/* Proceed to the HAL DMA driver init */
+	if (dma_stream->cfg.source_data_size != dma_stream->cfg.dest_data_size) {
+		LOG_ERR("DMA Source and destination data sizes not aligned");
+		return -EINVAL;
+	}
+
+	hdma->Init.SrcDataWidth = DMA_SRC_DATAWIDTH_WORD; /* Fixed value */
+	hdma->Init.DestDataWidth = DMA_DEST_DATAWIDTH_WORD; /* Fixed value */
+	hdma->Init.SrcInc = (dma_stream->src_addr_increment)
+		? DMA_SINC_INCREMENTED
+		: DMA_SINC_FIXED;
+	hdma->Init.DestInc = (dma_stream->dst_addr_increment)
+		? DMA_DINC_INCREMENTED
+		: DMA_DINC_FIXED;
+	hdma->Init.SrcBurstLength = 4;
+	hdma->Init.DestBurstLength = 4;
+	hdma->Init.Priority = table_priority[dma_stream->cfg.channel_priority];
+	hdma->Init.Direction = table_direction[dma_stream->cfg.channel_direction];
+	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_SRC_ALLOCATED_PORT1;
+	hdma->Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+	hdma->Init.Mode = DMA_NORMAL;
+	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+	hdma->Init.Request = dma_stream->cfg.dma_slot;
+
+	/*
+	 * HAL expects a valid DMA channel (not DMAMUX).
+	 * The channel is from 0 to 7 because of the STM32_DMA_STREAM_OFFSET
+	 * in the dma_stm32 driver
+	 */
+	hdma->Instance = LL_DMA_GET_CHANNEL_INSTANCE(dma_stream->reg,
+						    dma_stream->channel);
+
+	/* Initialize DMA HAL */
+	if (HAL_DMA_Init(hdma) != HAL_OK) {
+		LOG_ERR("XSPI DMA Init failed");
+		return -EIO;
+	}
+
+	if (HAL_DMA_ConfigChannelAttributes(hdma, DMA_CHANNEL_NPRIV) != HAL_OK) {
+		LOG_ERR("XSPI DMA Init failed");
+		return -EIO;
+	}
+
+	LOG_DBG("XSPI with DMA transfer");
+	return 0;
+}
+#endif /* STM32_XSPI_USE_DMA */
+
+
 static int flash_stm32_xspi_init(const struct device *dev)
 {
 	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
@@ -1733,41 +2039,63 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_STM32_MEMMAP
+	/* If MemoryMapped then configure skip init */
+	if (stm32_xspi_is_memorymap(dev)) {
+		LOG_DBG("NOR init'd in MemMapped mode\n");
+		/* Force HAL instance in correct state */
+		dev_data->hxspi.State = HAL_XSPI_STATE_BUSY_MEM_MAPPED;
+		return 0;
+	}
+#endif /* CONFIG_STM32_MEMMAP */
+
+	if (dev_cfg->pclk_len > 3) {
+		/* Max 3 domain clock are expected */
+		LOG_ERR("Could not select %d XSPI domain clock", dev_cfg->pclk_len);
+		return -EIO;
+	}
+
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
+			     (clock_control_subsys_t) &dev_cfg->pclken[0]) != 0) {
 		LOG_ERR("Could not enable XSPI clock");
 		return -EIO;
 	}
-	/* Alternate clock config for peripheral if any */
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
-	if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &dev_cfg->pclken_ker,
-				NULL) != 0) {
-		LOG_ERR("Could not select XSPI domain clock");
-		return -EIO;
-	}
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken_ker,
-					&ahb_clock_freq) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken_ker)");
-		return -EIO;
-	}
-#else
-	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken,
+					(clock_control_subsys_t) &dev_cfg->pclken[0],
 					&ahb_clock_freq) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate(pclken)");
 		return -EIO;
 	}
-#endif
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
-	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
-		LOG_ERR("Could not enable XSPI Manager clock");
-		return -EIO;
+	/* Alternate clock config for peripheral if any */
+	if (IS_ENABLED(STM32_XSPI_DOMAIN_CLOCK_SUPPORT) && (dev_cfg->pclk_len > 1)) {
+		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &dev_cfg->pclken[1],
+				NULL) != 0) {
+			LOG_ERR("Could not select XSPI domain clock");
+			return -EIO;
+		}
+		/*
+		 * Get the clock rate from this one (update ahb_clock_freq)
+		 * TODO: retrieve index in the clocks property where clocks has "xspi-ker"
+		 * Assuming index is 1
+		 */
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &dev_cfg->pclken[1],
+				&ahb_clock_freq) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken)");
+			return -EIO;
+		}
 	}
-#endif
+	/* Clock domain corresponding to the IO-Mgr (XSPIM) */
+	if (IS_ENABLED(STM32_XSPI_DOMAIN_CLOCK_SUPPORT) && (dev_cfg->pclk_len > 2)) {
+		if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &dev_cfg->pclken[2]) != 0) {
+			LOG_ERR("Could not enable XSPI Manager clock");
+			return -EIO;
+		}
+		/* Do NOT Get the clock rate from this one */
+	}
 
 	for (; prescaler <= STM32_XSPI_CLOCK_PRESCALER_MAX; prescaler++) {
 		uint32_t clk = STM32_XSPI_CLOCK_COMPUTE(ahb_clock_freq, prescaler);
@@ -1813,12 +2141,11 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 	if (dev_data->hxspi.Instance == XSPI1) {
 		xspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_1;
-		xspi_mgr_cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_NCS1;
 	} else if (dev_data->hxspi.Instance == XSPI2) {
-		ospi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_2;
-		ospi_mgr_cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_NCS2;
+		xspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_2;
 	}
-	ospi_mgr_cfg.Req2AckTime = 1;
+	xspi_mgr_cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
+	xspi_mgr_cfg.Req2AckTime = 1;
 
 	if (HAL_XSPIM_Config(&dev_data->hxspi, &xspi_mgr_cfg,
 		HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
@@ -1842,9 +2169,30 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	}
 
 	LOG_DBG("Delay Block Init");
-
 #endif /* DLYB_ */
 
+#if STM32_XSPI_USE_DMA
+	/* Configure and enable the DMA channels after XSPI config */
+	static DMA_HandleTypeDef hdma_tx;
+	static DMA_HandleTypeDef hdma_rx;
+
+	if (flash_stm32_xspi_dma_init(&hdma_tx, &dev_data->dma_tx) != 0) {
+		LOG_ERR("XSPI DMA Tx init failed");
+		return -EIO;
+	}
+
+	/* The dma_tx handle is hold by the dma_stream.cfg.user_data */
+	__HAL_LINKDMA(&dev_data->hxspi, hdmatx, hdma_tx);
+
+	if (flash_stm32_xspi_dma_init(&hdma_rx, &dev_data->dma_rx) != 0) {
+		LOG_ERR("XSPI DMA Rx init failed");
+		return -EIO;
+	}
+
+	/* The dma_rx handle is hold by the dma_stream.cfg.user_data */
+	__HAL_LINKDMA(&dev_data->hxspi, hdmarx, hdma_rx);
+
+#endif /* CONFIG_USE_STM32_HAL_DMA */
 	/* Initialize semaphores */
 	k_sem_init(&dev_data->sem, 1, 1);
 	k_sem_init(&dev_data->sync, 0, 1);
@@ -1983,12 +2331,55 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+#ifdef CONFIG_STM32_MEMMAP
+	ret = stm32_xspi_set_memorymap(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable memory-mapped mode: %d", ret);
+		return ret;
+	}
+	LOG_INF("Memory-mapped NOR-flash at 0x%lx (0x%x bytes)",
+		(long)(STM32_XSPI_BASE_ADDRESS),
+		dev_cfg->flash_size);
+#else
 	LOG_INF("NOR external-flash at 0x%lx (0x%x bytes)",
 		(long)(STM32_XSPI_BASE_ADDRESS),
 		dev_cfg->flash_size);
-
+#endif /* CONFIG_STM32_MEMMAP*/
 	return 0;
 }
+
+
+#if STM32_XSPI_USE_DMA
+#define DMA_CHANNEL_CONFIG(node, dir)						\
+		DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
+
+#define XSPI_DMA_CHANNEL_INIT(node, dir, dir_cap, src_dev, dest_dev)		\
+	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),				\
+	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),			\
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(					\
+				   DT_PHANDLE_BY_NAME(node, dmas, dir)),	\
+	.cfg = {								\
+		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),		\
+		.channel_direction = STM32_DMA_CONFIG_DIRECTION(		\
+					DMA_CHANNEL_CONFIG(node, dir)),	\
+		.channel_priority = STM32_DMA_CONFIG_PRIORITY(			\
+					DMA_CHANNEL_CONFIG(node, dir)),		\
+		.dma_callback = xspi_dma_callback,				\
+	},									\
+	.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(		\
+				DMA_CHANNEL_CONFIG(node, dir)),			\
+	.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(		\
+				DMA_CHANNEL_CONFIG(node, dir)),
+
+#define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)				\
+	.dma_##dir = {								\
+		COND_CODE_1(DT_DMAS_HAS_NAME(node, dir),			\
+			(XSPI_DMA_CHANNEL_INIT(node, dir, DIR, src, dest)),	\
+			(NULL))							\
+		},
+#else
+#define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)
+#endif /* CONFIG_USE_STM32_HAL_DMA */
 
 #define XSPI_FLASH_MODULE(drv_id, flash_id)				\
 		(DT_DRV_INST(drv_id), xspi_nor_flash_##flash_id)
@@ -2006,19 +2397,13 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 static void flash_stm32_xspi_irq_config_func(const struct device *dev);
 
+static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(STM32_XSPI_NODE);
+
 PINCTRL_DT_DEFINE(STM32_XSPI_NODE);
 
 static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg = {
-	.pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspix, bus),
-		   .enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspix, bits)},
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
-	.pclken_ker = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_ker, bus),
-		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_ker, bits)},
-#endif
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
-	.pclken_mgr = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_mgr, bus),
-		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_mgr, bits)},
-#endif
+	.pclken = pclken,
+	.pclk_len = DT_NUM_CLOCKS(STM32_XSPI_NODE),
 	.irq_config = flash_stm32_xspi_irq_config_func,
 	.flash_size = DT_INST_REG_ADDR_BY_IDX(0, 1),
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
@@ -2045,6 +2430,11 @@ static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
 			.ClockMode = HAL_XSPI_CLOCK_MODE_0,
 			.ChipSelectBoundary = 0,
 			.MemoryMode = HAL_XSPI_SINGLE_MEM,
+#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
+			.MemorySelect = ((DT_INST_PROP(0, ncs_line) == 1)
+					? HAL_XSPI_CSSEL_NCS1
+					: HAL_XSPI_CSSEL_NCS2),
+#endif
 			.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,
 #if defined(OCTOSPI_DCR4_REFRESH)
 			.Refresh = 0,
@@ -2057,12 +2447,9 @@ static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), jedec_id)
 	.jedec_id = DT_INST_PROP(0, jedec_id),
 #endif /* jedec_id */
+	XSPI_DMA_CHANNEL(STM32_XSPI_NODE, tx, TX, MEMORY, PERIPHERAL)
+	XSPI_DMA_CHANNEL(STM32_XSPI_NODE, rx, RX, PERIPHERAL, MEMORY)
 };
-
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_xspi_init, NULL,
-		      &flash_stm32_xspi_dev_data, &flash_stm32_xspi_cfg,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &flash_stm32_xspi_driver_api);
 
 static void flash_stm32_xspi_irq_config_func(const struct device *dev)
 {
@@ -2070,3 +2457,8 @@ static void flash_stm32_xspi_irq_config_func(const struct device *dev)
 		    flash_stm32_xspi_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_IRQN(STM32_XSPI_NODE));
 }
+
+DEVICE_DT_INST_DEFINE(0, &flash_stm32_xspi_init, NULL,
+		      &flash_stm32_xspi_dev_data, &flash_stm32_xspi_cfg,
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		      &flash_stm32_xspi_driver_api);

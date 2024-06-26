@@ -26,15 +26,15 @@ ZTEST(mem_attr, test_mem_attr)
 			zassert_equal(region[idx].dt_attr, DT_MEM_ARM_MPU_FLASH |
 							   DT_MEM_NON_VOLATILE,
 							   "Wrong region address");
-			zassert_true((strcmp(region[idx].dt_name, "memory@10000000") == 0),
-				     "Wrong name");
+			zassert_str_equal(region[idx].dt_name,
+					  "memory@10000000", "Wrong name");
 		} else {
 			zassert_equal(region[idx].dt_addr, 0x20000000, "Wrong region address");
 			zassert_equal(region[idx].dt_size, 0x2000, "Wrong region size");
 			zassert_equal(region[idx].dt_attr, DT_MEM_ARM_MPU_RAM_NOCACHE,
 							   "Wrong region address");
-			zassert_true((strcmp(region[idx].dt_name, "memory@20000000") == 0),
-				      "Wrong name");
+			zassert_str_equal(region[idx].dt_name,
+					  "memory@20000000", "Wrong name");
 		}
 	}
 

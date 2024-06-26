@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- / {
+/ {
 	pinctrl {
 		compatible = "vnd,pinctrl-test";
 

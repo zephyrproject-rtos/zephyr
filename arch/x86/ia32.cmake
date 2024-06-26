@@ -126,7 +126,7 @@ add_bin_file_to_the_next_link(gen_idt_output irq_int_vector_map)
 add_bin_file_to_the_next_link(gen_idt_output irq_vectors_alloc)
 
 if(CONFIG_GDT_DYNAMIC)
-  # Use gen_gdt.py and objcopy to generate gdt.o from from the elf
+  # Use gen_gdt.py and objcopy to generate gdt.o from the elf
   # file ${ZEPHYR_PREBUILT_EXECUTABLE}, creating the temp file gdt.bin along the
   # way.
   #

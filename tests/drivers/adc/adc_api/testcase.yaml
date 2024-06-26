@@ -51,3 +51,11 @@ tests:
       - frdm_k82f
     integration_platforms:
       - frdm_k82f
+  drivers.adc.dma_espressif:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-dma-esp32.conf"
+    depends_on:
+      - adc
+      - dma
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu

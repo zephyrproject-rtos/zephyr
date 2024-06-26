@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "MSPI flash device driver"
+
+config FLASH_MSPI
+	bool
+	select FLASH_HAS_DRIVER_ENABLED
+	select MSPI
+	help
+	  MSPI flash drivers are enabled.
+
+config FLASH_MSPI_EMUL_DEVICE
+	bool "MSPI flash device emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_MSPI_EMUL_FLASH_ENABLED
+	select FLASH_MSPI
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+
+config FLASH_MSPI_ATXP032
+	bool "MSPI ATXP032 driver"
+	default y
+	depends on DT_HAS_MSPI_ATXP032_ENABLED
+	select FLASH_MSPI
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_JESD216
+	select MSPI_AMBIQ_AP3 if SOC_SERIES_APOLLO3X
+
+endmenu

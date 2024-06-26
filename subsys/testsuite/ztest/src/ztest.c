@@ -38,6 +38,10 @@ static bool failed_expectation;
 #define NUM_ITER_PER_TEST  1
 #endif
 
+#ifdef CONFIG_ZTEST_COVERAGE_RESET_BEFORE_TESTS
+#include <coverage.h>
+#endif
+
 /* ZTEST_DMEM and ZTEST_BMEM are used for the application shared memory test  */
 
 /**
@@ -1081,6 +1085,10 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 	if (test_status == ZTEST_STATUS_CRITICAL_ERROR) {
 		return count;
 	}
+
+#ifdef CONFIG_ZTEST_COVERAGE_RESET_BEFORE_TESTS
+	gcov_reset_all_counts();
+#endif
 
 #ifdef CONFIG_ZTEST_SHUFFLE
 	struct ztest_suite_node *suites_to_run[ZTEST_SUITE_COUNT];

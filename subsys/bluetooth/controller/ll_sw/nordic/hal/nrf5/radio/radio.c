@@ -904,7 +904,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 	if (delay < SW_SWITCH_TIMER->CC[cc]) {
 		nrf_timer_cc_set(SW_SWITCH_TIMER,
 				 cc,
-				 (SW_SWITCH_TIMER->CC[cc] - delay - HAL_RADIO_TMR_START_DELAY_US));
+				 (SW_SWITCH_TIMER->CC[cc] - delay));
 	} else {
 		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1);
 	}

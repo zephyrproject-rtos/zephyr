@@ -27,7 +27,7 @@
 #define FAULTY_ADDRESS 0xBFFFFFFF
 #elif CONFIG_MMU
 /* Just past the zephyr image mapping should be a non-present page */
-#define FAULTY_ADDRESS Z_FREE_VM_START
+#define FAULTY_ADDRESS K_MEM_VM_FREE_START
 #else
 #define FAULTY_ADDRESS 0xFFFFFFF0
 #endif

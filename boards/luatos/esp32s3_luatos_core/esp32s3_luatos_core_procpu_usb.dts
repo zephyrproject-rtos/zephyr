@@ -25,6 +25,7 @@
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
+		zephyr,bt_hci = &esp32_bt_hci;
 	};
 };
 

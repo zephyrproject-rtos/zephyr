@@ -38,23 +38,23 @@ copied from `<https://github.com/Azure/azure-iot-sdk-c/blob/master/certs/certs.c
 Configure the following Kconfig options based on your Azure Cloud IoT Hub
 in your own overlay config file:
 
-- SAMPLE_CLOUD_AZURE_USERNAME - Username field use::
+- ``SAMPLE_CLOUD_AZURE_USERNAME`` - Username field use::
 
     {iothubhostname}/{device_id}/?api-version=2018-06-30,
 
   where ``{iothubhostname}`` is the full CName of the IoT hub.
 
-- SAMPLE_CLOUD_AZURE_PASSWORD    - Password field, use an SAS token.
-- SAMPLE_CLOUD_AZURE_CLIENT_ID   - ClientId field, use the deviceId.
-- SAMPLE_CLOUD_AZURE_HOSTNAME    - IoT hub hostname
-- SAMPLE_CLOUD_AZURE_SERVER_ADDR - IP address of the Azure MQTT broker
-- SAMPLE_CLOUD_AZURE_SERVER_PORT - Port number of the Azure MQTT broker
+- ``SAMPLE_CLOUD_AZURE_PASSWORD``    - Password field, use an SAS token.
+- ``SAMPLE_CLOUD_AZURE_CLIENT_ID``   - ClientId field, use the deviceId.
+- ``SAMPLE_CLOUD_AZURE_HOSTNAME``    - IoT hub hostname
+- ``SAMPLE_CLOUD_AZURE_SERVER_ADDR`` - IP address of the Azure MQTT broker
+- ``SAMPLE_CLOUD_AZURE_SERVER_PORT`` - Port number of the Azure MQTT broker
 
 You'll also need to set these Kconfig options if you're running
 the sample behind a proxy:
 
-- SAMPLE_SOCKS_ADDR - IP address of SOCKS5 Proxy server
-- SAMPLE_SOCKS_PORT - Port number of SOCKS5 Proxy server
+- ``SAMPLE_SOCKS_ADDR`` - IP address of SOCKS5 Proxy server
+- ``SAMPLE_SOCKS_PORT`` - Port number of SOCKS5 Proxy server
 
 On your Linux host computer, open a terminal window, locate the source code
 of this sample application (i.e., :zephyr_file:`samples/net/cloud/mqtt_azure`) and type:
@@ -76,7 +76,7 @@ Sample overlay file
 
 This is the overlay template for Azure IoT hub and other details:
 
-.. code-block:: console
+.. code-block:: cfg
 
 	CONFIG_SAMPLE_CLOUD_AZURE_USERNAME="<username>"
 	CONFIG_SAMPLE_CLOUD_AZURE_PASSWORD="<SAS token>"

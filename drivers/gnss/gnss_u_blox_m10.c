@@ -933,7 +933,7 @@ unlock:
 	return ret;
 }
 
-static struct gnss_driver_api gnss_api = {
+static const struct gnss_driver_api gnss_api = {
 	.set_fix_rate = ubx_m10_set_fix_rate,
 	.get_fix_rate = ubx_m10_get_fix_rate,
 	.set_navigation_mode = ubx_m10_set_navigation_mode,
@@ -1020,7 +1020,7 @@ static int ubx_m10_init(const struct device *dev)
 }
 
 #define UBX_M10(inst)										\
-	static struct ubx_m10_config ubx_m10_cfg_##inst = {					\
+	static const struct ubx_m10_config ubx_m10_cfg_##inst = {				\
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),					\
 		.uart_baudrate = DT_PROP(DT_DRV_INST(inst), uart_baudrate),			\
 	};											\

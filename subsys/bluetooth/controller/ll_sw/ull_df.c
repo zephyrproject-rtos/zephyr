@@ -401,7 +401,7 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
  * @return Status of command completion.
  *
  * @Note This function may put TX thread into wait state. This may lead to a
- *       situation that ll_sync_set instance is relased (RX thread has higher
+ *       situation that ll_sync_set instance is released (RX thread has higher
  *       priority than TX thread). ll_sync_set instance may not be accessed after
  *       call to ull_sync_slot_update.
  *       This is related with possible race condition with RX thread handling
@@ -665,173 +665,6 @@ static struct lll_df_adv_cfg *df_adv_cfg_acquire(void)
 	return df_adv_cfg;
 }
 
-#if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
-/*
- * @brief Function sets content of cte_info field in periodic advertising chain.
- *
- * The function allocates new PDU (or chain of PDUs) for periodic advertising to
- * fill it with information about CTE, that is going to be transmitted with the PDU.
- * If there is already allocated PDU, it will be updated to hold information about
- * CTE.
- *
- * @param lll_sync       Pointer to periodic advertising sync object.
- * @param pdu_prev       Pointer to a PDU that is already in use by LLL or was updated with new PDU
- *                       payload.
- * @param pdu            Pointer to a new head of periodic advertising chain. The pointer may have
- *                       the same value as @p pdu_prev, if payload of PDU pointed by @p pdu_prev
- *                       was already updated.
- * @param cte_count      Number of CTEs that should be transmitted in periodic advertising chain.
- * @param cte_into       Pointer to instance of cte_info structure that is added to PDUs extended
- *                       advertising header.
- *
- * @return Zero in case of success, other value in case of failure.
- */
-static uint8_t per_adv_chain_cte_info_set(struct lll_adv_sync *lll_sync,
-					  struct pdu_adv *pdu_prev,
-					  struct pdu_adv *pdu,
-					  uint8_t cte_count,
-					  struct pdu_cte_info *cte_info)
-{
-	uint8_t hdr_data[ULL_ADV_HDR_DATA_CTE_INFO_SIZE +
-			 ULL_ADV_HDR_DATA_LEN_SIZE +
-			 ULL_ADV_HDR_DATA_ADI_PTR_SIZE +
-			 ULL_ADV_HDR_DATA_LEN_SIZE +
-			 ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE] = {0, };
-	uint8_t pdu_add_field_flags;
-	struct pdu_adv *pdu_next;
-	uint8_t cte_index = 1;
-	bool adi_in_sync_ind;
-	bool new_chain;
-	uint8_t err;
-
-	new_chain = (pdu_prev == pdu ? false : true);
-
-	pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
-
-	(void)memcpy(&hdr_data[ULL_ADV_HDR_DATA_CTE_INFO_OFFSET],
-		     cte_info, sizeof(*cte_info));
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
-		adi_in_sync_ind = ull_adv_sync_pdu_had_adi(pdu_prev);
-	}
-
-	pdu_prev = lll_adv_pdu_linked_next_get(pdu_prev);
-
-	/* Update PDUs in existing chain. Add cte_info to extended advertising
-	 * header.
-	 */
-	while (pdu_prev) {
-		uint8_t	aux_ptr_offset = ULL_ADV_HDR_DATA_CTE_INFO_SIZE +
-					 ULL_ADV_HDR_DATA_LEN_SIZE;
-		uint8_t *hdr_data_ptr;
-
-		if (new_chain) {
-			pdu_next = lll_adv_pdu_alloc_pdu_adv();
-			lll_adv_pdu_linked_append(pdu_next, pdu);
-			pdu = pdu_next;
-		} else {
-			pdu = lll_adv_pdu_linked_next_get(pdu);
-		}
-
-		pdu_next = lll_adv_pdu_linked_next_get(pdu_prev);
-
-		/* If all CTEs were added to chain, remove CTE from flags */
-		if (cte_index >= cte_count) {
-			pdu_add_field_flags = 0U;
-			hdr_data_ptr =
-				&hdr_data[ULL_ADV_HDR_DATA_CTE_INFO_SIZE];
-		} else {
-			++cte_index;
-			hdr_data_ptr = hdr_data;
-		}
-
-		if (pdu_next) {
-			pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
-		} else {
-			pdu_add_field_flags &= ~ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) &&
-		    adi_in_sync_ind) {
-			pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_ADI;
-			aux_ptr_offset += ULL_ADV_HDR_DATA_ADI_PTR_SIZE +
-					  ULL_ADV_HDR_DATA_LEN_SIZE;
-		}
-
-		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
-						 pdu_add_field_flags, 0U,
-						 hdr_data_ptr);
-		if (err != BT_HCI_ERR_SUCCESS) {
-			/* TODO: implement gracefull error handling, cleanup of
-			 * changed PDUs and notify host about issue during start
-			 * of CTE transmission.
-			 */
-			return err;
-		}
-
-		if (pdu_next) {
-			const struct lll_adv *lll = lll_sync->adv;
-			struct pdu_adv_aux_ptr *aux_ptr;
-			uint32_t offs_us;
-
-			(void)memcpy(&aux_ptr, &hdr_data[aux_ptr_offset],
-				     sizeof(aux_ptr));
-
-			/* Fill the aux offset in the PDU */
-			offs_us = PDU_AC_US(pdu->len, lll->phy_s,
-					    lll->phy_flags) +
-				  EVENT_SYNC_B2B_MAFS_US;
-			offs_us += CTE_LEN_US(cte_info->time);
-			ull_adv_aux_ptr_fill(aux_ptr, offs_us, lll->phy_s);
-		}
-
-		pdu_prev = pdu_next;
-	}
-
-	/* If there is missing only one CTE do not add aux_ptr to PDU */
-	if (cte_count - cte_index >= 2) {
-		pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
-	} else {
-		pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && adi_in_sync_ind) {
-		pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_ADI;
-	}
-
-	/* Add new PDUs if the number of PDUs in existing chain is lower than
-	 * requested number of CTEs.
-	 */
-	while (cte_index < cte_count) {
-		const struct lll_adv *lll = lll_sync->adv;
-
-		pdu_prev = pdu;
-		pdu = lll_adv_pdu_alloc_pdu_adv();
-		if (!pdu) {
-			/* TODO: implement graceful error handling, cleanup of
-			 * changed PDUs.
-			 */
-			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-		}
-		ull_adv_sync_pdu_init(pdu, pdu_add_field_flags, lll->phy_s,
-				      lll->phy_flags, cte_info);
-
-		/* Link PDU into a chain */
-		lll_adv_pdu_linked_append(pdu, pdu_prev);
-
-		++cte_index;
-		/* If next PDU in a chain is last PDU, then remove aux_ptr field
-		 * flag from extended advertising header.
-		 */
-		if (cte_index == cte_count - 1) {
-			pdu_add_field_flags &= (~ULL_ADV_PDU_HDR_FIELD_AUX_PTR);
-		}
-	}
-
-	return BT_HCI_ERR_SUCCESS;
-}
-#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
-
 /*
  * @brief Function sets content of cte_info field for periodic advertising
  *
@@ -846,13 +679,9 @@ static uint8_t per_adv_chain_cte_info_set(struct lll_adv_sync *lll_sync,
 static uint8_t cte_info_set(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cfg, uint8_t *ter_idx,
 			    struct pdu_adv **first_pdu)
 {
-	uint8_t hdr_data[ULL_ADV_HDR_DATA_CTE_INFO_SIZE +
-			 ULL_ADV_HDR_DATA_LEN_SIZE +
-			 ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE] = {0, };
 	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct pdu_cte_info cte_info;
-	uint8_t pdu_add_field_flags;
 	void *extra_data;
 	uint8_t err;
 
@@ -878,175 +707,19 @@ static uint8_t cte_info_set(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cf
 	}
 
 #if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
-	if (df_cfg->cte_count > 1) {
-		pdu_add_field_flags =
-			ULL_ADV_PDU_HDR_FIELD_CTE_INFO | ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
-	} else
-#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
-	{
-		pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
-	}
+	err = ull_adv_sync_add_cteinfo(lll_sync, pdu_prev, pdu, &cte_info, df_cfg->cte_count);
+#else
+	err = ull_adv_sync_add_cteinfo(lll_sync, pdu_prev, pdu, &cte_info, 1U);
+#endif
 
-	(void)memcpy(&hdr_data[ULL_ADV_HDR_DATA_CTE_INFO_OFFSET],
-		     &cte_info, sizeof(cte_info));
-
-	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, pdu_add_field_flags, 0,
-					 hdr_data);
 	if (err != BT_HCI_ERR_SUCCESS) {
 		return err;
 	}
 
 	*first_pdu = pdu;
 
-#if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
-	if (df_cfg->cte_count > 1) {
-		struct pdu_adv_aux_ptr *aux_ptr;
-		uint32_t offs_us;
-
-		(void)memcpy(&aux_ptr,
-			     &hdr_data[ULL_ADV_HDR_DATA_CTE_INFO_SIZE +
-				       ULL_ADV_HDR_DATA_LEN_SIZE],
-			     sizeof(aux_ptr));
-
-		/* Fill the aux offset in the PDU */
-		offs_us = PDU_AC_US(pdu->len, adv->lll.phy_s,
-				    adv->lll.phy_flags) +
-			  EVENT_SYNC_B2B_MAFS_US;
-		offs_us += CTE_LEN_US(cte_info.time);
-		ull_adv_aux_ptr_fill(aux_ptr, offs_us, adv->lll.phy_s);
-	}
-
-	err = per_adv_chain_cte_info_set(lll_sync, pdu_prev, pdu, df_cfg->cte_count, &cte_info);
-	if (err != BT_HCI_ERR_SUCCESS) {
-		return err;
-	}
-#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
-
 	return BT_HCI_ERR_SUCCESS;
 }
-
-#if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
-static bool pdu_ext_adv_is_empty_without_cte(const struct pdu_adv *pdu)
-{
-	if (pdu->len != PDU_AC_PAYLOAD_SIZE_MIN) {
-		const struct pdu_adv_ext_hdr *ext_hdr;
-		uint8_t size_rem = 0;
-
-		if ((pdu->adv_ext_ind.ext_hdr_len + PDU_AC_EXT_HEADER_SIZE_MIN) != pdu->len) {
-			/* There are adv. data in PDU */
-			return false;
-		}
-
-		/* Check size of the ext. header without cte_info and aux_ptr. If that is minimum
-		 * extended PDU size then the PDU was allocated to transport CTE only.
-		 */
-		ext_hdr = &pdu->adv_ext_ind.ext_hdr;
-
-		if (ext_hdr->cte_info) {
-			size_rem += sizeof(struct pdu_cte_info);
-		}
-		if (ext_hdr->aux_ptr) {
-			size_rem += sizeof(struct pdu_adv_aux_ptr);
-		}
-		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && ext_hdr->adi) {
-			size_rem += sizeof(struct pdu_adv_adi);
-		}
-
-		if ((pdu->adv_ext_ind.ext_hdr_len - size_rem) != PDU_AC_EXT_HEADER_SIZE_MIN) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-/*
- * @brief Function removes content of cte_info field in periodic advertising chain.
- *
- * The function removes cte_info from extended advertising header in all PDUs in periodic
- * advertising chain. If particular PDU is empty (holds cte_info only) it will be removed from
- * chain.
- *
- * @param[in] lll_sync     Pointer to periodic advertising sync object.
- * @param[in-out] pdu_prev Pointer to a PDU that is already in use by LLL or was updated with new
- *                         PDU payload. Points to last PDU in a previous chain after return.
- * @param[in-out] pdu      Pointer to a new head of periodic advertising chain. The pointer may have
- *                         the same value as @p pdu_prev, if payload of PDU pointerd by @p pdu_prev
- *                         was already updated. Points to last PDU in a new chain after return.
- *
- * @return Zero in case of success, other value in case of failure.
- */
-static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
-					       struct pdu_adv **pdu_prev, struct pdu_adv **pdu)
-{
-	struct pdu_adv *pdu_new, *pdu_chained;
-	uint8_t pdu_rem_field_flags;
-	bool new_chain;
-	uint8_t err;
-
-	pdu_rem_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
-
-	/* It is possible that the function is called after e.g. advertising data were updated.
-	 * In such situation the function will run on already allocated chain. Do not allocate
-	 * new chain then. Reuse already allocated PDUs and allocate new ones only if the chain
-	 * was not updated yet.
-	 */
-	new_chain = (*pdu_prev == *pdu ? false : true);
-
-	/* Get next PDU in a chain. Alway use pdu_prev because it points to actual
-	 * former chain.
-	 */
-	pdu_chained = lll_adv_pdu_linked_next_get(*pdu_prev);
-
-	/* Go through existing chain and remove CTE info. */
-	while (pdu_chained) {
-		if (pdu_ext_adv_is_empty_without_cte(pdu_chained)) {
-			/* If there is an empty PDU then all remaining PDUs should be released. */
-			if (!new_chain) {
-				lll_adv_pdu_linked_release_all(pdu_chained);
-
-				/* Set new end of chain in PDUs linked list. If pdu differs from
-				 * prev_pdu then it is already end of a chain. If it doesn't differ,
-				 * then chain end is changed in right place by use of pdu_prev.
-				 * That makes sure there is no PDU released twice (here and when LLL
-				 * swaps PDU buffers).
-				 */
-				lll_adv_pdu_linked_append(NULL, *pdu_prev);
-			}
-			pdu_chained = NULL;
-		} else {
-			/* Update one before pdu_chained */
-			err = ull_adv_sync_pdu_set_clear(lll_sync, *pdu_prev, *pdu, 0,
-							 pdu_rem_field_flags, NULL);
-			if (err != BT_HCI_ERR_SUCCESS) {
-				/* TODO: return here leaves periodic advertising chain in
-				 * an inconsistent state. Add gracefull return or assert.
-				 */
-				return err;
-			}
-
-			/* Prepare for next iteration. Allocate new PDU or move to next one in
-			 * a chain.
-			 */
-			if (new_chain) {
-				pdu_new = lll_adv_pdu_alloc_pdu_adv();
-				lll_adv_pdu_linked_append(pdu_new, *pdu);
-				*pdu = pdu_new;
-			} else {
-				*pdu = lll_adv_pdu_linked_next_get(*pdu);
-			}
-
-			/* Move to next chained PDU (it moves through chain that is in use
-			 * by LLL or is new one with updated advertising payload).
-			 */
-			*pdu_prev = pdu_chained;
-			pdu_chained = lll_adv_pdu_linked_next_get(*pdu_prev);
-		}
-	}
-
-	return BT_HCI_ERR_SUCCESS;
-}
-#endif /* (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1) */
 
 /*
  * @brief Function removes content of cte_info field from periodic advertising PDUs.
@@ -1065,7 +738,6 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 	void *extra_data_prev, *extra_data;
 	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
-	uint8_t pdu_rem_field_flags;
 	uint8_t err;
 
 	lll_sync = adv->lll.sync;
@@ -1088,24 +760,11 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 
 	*first_pdu = pdu;
 
-	pdu_rem_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+	err = ull_adv_sync_remove_cteinfo(lll_sync, pdu_prev, pdu);
 
-#if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
-	err = rem_cte_info_from_per_adv_chain(lll_sync, &pdu_prev, &pdu);
-	if (err != BT_HCI_ERR_SUCCESS) {
-		return err;
-	}
-
-	/* Update last PDU in a chain. It may not have aux_ptr.
-	 * NOTE: If there is no AuxPtr flag in the PDU, attempt to remove it does not harm.
-	 */
-	pdu_rem_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
-#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
-
-	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0, pdu_rem_field_flags, NULL);
 	if (err != BT_HCI_ERR_SUCCESS) {
 		/* TODO: return here leaves periodic advertising chain in an inconsistent state.
-		 * Add gracefull return or assert.
+		 * Add graceful return or assert.
 		 */
 		return err;
 	}
@@ -1264,7 +923,7 @@ static void df_conn_cte_req_disable(void *param)
 /* @brief Function enables or disables CTE request control procedure for a connection.
  *
  * The procedure may be enabled in two modes:
- * - single-shot, it is autmatically disabled when the occurrence finishes.
+ * - single-shot, it is automatically disabled when the occurrence finishes.
  * - periodic, it is executed periodically until disabled, connection is lost or PHY is changed
  *   to the one that does not support CTE.
  *

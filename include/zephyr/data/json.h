@@ -32,11 +32,7 @@ enum json_tokens {
 	JSON_TOK_NONE = '_',
 	JSON_TOK_OBJECT_START = '{',
 	JSON_TOK_OBJECT_END = '}',
-	/* JSON_TOK_LIST_START will be removed use JSON_TOK_ARRAY_START */
-	JSON_TOK_LIST_START __deprecated = '[',
 	JSON_TOK_ARRAY_START = '[',
-	/* JSON_TOK_LIST_END will be removed use JSON_TOK_ARRAY_END */
-	JSON_TOK_LIST_END __deprecated = ']',
 	JSON_TOK_ARRAY_END = ']',
 	JSON_TOK_STRING = '"',
 	JSON_TOK_COLON = ':',
@@ -45,6 +41,7 @@ enum json_tokens {
 	JSON_TOK_FLOAT = '1',
 	JSON_TOK_OPAQUE = '2',
 	JSON_TOK_OBJ_ARRAY = '3',
+	JSON_TOK_ENCODED_OBJ = '4',
 	JSON_TOK_TRUE = 't',
 	JSON_TOK_FALSE = 'f',
 	JSON_TOK_NULL = 'n',

@@ -15,7 +15,6 @@
 #include <da1469x_pd.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/logging/log.h>
 
@@ -922,7 +921,7 @@ crypto_smartbond_hash_set_async_callback(const struct device *dev, hash_completi
 }
 #endif
 
-static struct crypto_driver_api crypto_smartbond_driver_api = {
+static const struct crypto_driver_api crypto_smartbond_driver_api = {
 	.cipher_begin_session = crypto_smartbond_cipher_begin_session,
 	.cipher_free_session = crypto_smartbond_cipher_free_session,
 #if defined(CONFIG_CRYPTO_ASYNC)
@@ -936,7 +935,7 @@ static struct crypto_driver_api crypto_smartbond_driver_api = {
 	.query_hw_caps = crypto_smartbond_query_hw_caps
 };
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 static int crypto_smartbond_pm_action(const struct device *dev,
 	enum pm_device_action action)
 {
@@ -984,14 +983,7 @@ static int crypto_smartbond_init(const struct device *dev)
 	/* Controller should be initialized once a crypyographic session is requested */
 	crypto_smartbond_set_status(false);
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	/* Make sure device state is marked as suspended */
-	pm_device_init_suspended(dev);
-
-	return pm_device_runtime_enable(dev);
-#else
 	return 0;
-#endif
 }
 
 /*

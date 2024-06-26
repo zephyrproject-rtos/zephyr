@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,bt-uart = &lpuart3;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 };
 
@@ -14,4 +14,9 @@
 	status = "okay";
 	current-speed = <3000000>;
 	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+	};
 };

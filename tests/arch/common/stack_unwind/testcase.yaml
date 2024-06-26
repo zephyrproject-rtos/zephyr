@@ -15,8 +15,8 @@ tests:
       type: multi_line
       regex:
         - "E: call trace:"
-        - "E:       0: fp: \\w+   ra: \\w+"
-        - "E:       1: fp: \\w+   ra: \\w+"
+        - "E:       0: ra: \\w+"
+        - "E:       1: ra: \\w+"
   arch.common.stack_unwind.riscv_sp:
     arch_allow: riscv
     integration_platforms:
@@ -26,8 +26,8 @@ tests:
       type: multi_line
       regex:
         - "E: call trace:"
-        - "E:       0: sp: \\w+   ra: \\w+"
-        - "E:       1: sp: \\w+   ra: \\w+"
+        - "E:       0: ra: \\w+"
+        - "E:       1: ra: \\w+"
   arch.common.stack_unwind.x86:
     arch_allow: x86
     extra_configs:

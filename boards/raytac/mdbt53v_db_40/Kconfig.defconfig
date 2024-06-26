@@ -53,9 +53,8 @@ config FLASH_LOAD_SIZE
 
 endif # BOARD_RAYTAC_MDBT53V_DB_40_NRF5340_CPUAPP_NS
 
-choice BT_HCI_BUS_TYPE
-	default BT_HCI_IPC if BT
-endchoice
+config BT_HCI_IPC
+	default y if BT
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int

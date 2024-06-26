@@ -37,6 +37,9 @@ static int stm32h7_m4_init(void)
 	LL_ART_SetBaseAddress(DT_REG_ADDR(DT_CHOSEN(zephyr_flash)));
 	LL_ART_Enable();
 
+	/* Enable hardware semaphore clock */
+	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
+
 	/* In case CM4 has not been forced boot by CM7,
 	 * CM4 needs to wait until CM7 has setup clock configuration
 	 */
@@ -47,7 +50,6 @@ static int stm32h7_m4_init(void)
 		 * (system clock config, external memory configuration.. ).
 		 * End of system initialization is reached when CM7 takes HSEM.
 		 */
-		LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
 		while ((HSEM->RLR[CFG_HW_ENTRY_STOP_MODE_SEMID] & HSEM_R_LOCK)
 				!= HSEM_R_LOCK)
 			;

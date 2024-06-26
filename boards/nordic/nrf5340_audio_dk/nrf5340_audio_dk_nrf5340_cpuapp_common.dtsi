@@ -13,7 +13,7 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
-		zephyr,bt-hci-ipc = &ipc0;
+		zephyr,bt-hci = &bt_hci_ipc0;
 		watchdog0 = &wdt0;
 	};
 

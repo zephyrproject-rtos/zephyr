@@ -7,7 +7,7 @@ description: |
 
 compatible: "zephyr,bt-hci-spi"
 
-include: spi-device.yaml
+include: [spi-device.yaml, bt-hci.yaml]
 
 properties:
   irq-gpios:
@@ -35,3 +35,9 @@ properties:
       resulting in an ignored transaction that then needs to be performed a second time.
       The default of 20uS was chosen as the lowest delay that reliably eliminated double
       transactions between a nRF9160 host and a nRF52832 controller.
+
+  bt-hci-name:
+    default: "SPI"
+
+  bt-hci-bus:
+    default: "BT_HCI_BUS_SPI"

@@ -11,4 +11,9 @@ ipc0: ipc0 {
 	mbox-names = "tx", "rx";
 	role = "host";
 	status = "okay";
+
+	bt_hci_ipc0: bt_hci_ipc0 {
+		compatible = "zephyr,bt-hci-ipc";
+		status = "okay";
+	};
 };

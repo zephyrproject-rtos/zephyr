@@ -121,4 +121,10 @@ def makeSPDX(cfg):
         log.err("SPDX writer failed for build document; bailing")
         return False
 
+    # write modules document
+    writeSPDX(os.path.join(cfg.spdxDir, "modules-deps.spdx"), w.docModulesExtRefs)
+    if not retval:
+        log.err("SPDX writer failed for modules-deps document; bailing")
+        return False
+
     return True

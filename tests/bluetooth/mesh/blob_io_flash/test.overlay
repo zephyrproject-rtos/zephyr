@@ -1,0 +1,9 @@
+/ {
+	chosen {
+		/delete-property/ zephyr,bt-hci;
+	};
+};
+
+&bt_hci_userchan {
+	status = "disabled";
+};

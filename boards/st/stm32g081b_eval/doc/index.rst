@@ -92,6 +92,7 @@ More information about the board can be found at the `STM32G081B-EVAL website`_.
 
 
 More information about STM32G081RB can be found here:
+
 - `G081RB on www.st.com`_
 - `STM32G081 reference manual`_
 

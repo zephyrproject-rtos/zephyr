@@ -8,6 +8,26 @@ common:
 
 tests:
   sample.sensor.qdec_sensor:
+    filter: dt_alias_exists("qdec0")
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Quadrature decoder sensor test"
+        - "Position = (.*) degrees"
+
+  sample.sensor.sam_qdec_sensor:
+    platform_allow:
+      - sam_e70_xplained/same70q21
+      - sam_e70_xplained/same70q21b
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Quadrature decoder sensor test"
+        - "Position = (.*) degrees"
+
+  sample.sensor.st_qdec_sensor:
     platform_allow: nucleo_f401re
     harness_config:
       fixture: fixture_mech_encoder
@@ -34,4 +54,4 @@ tests:
       ordered: true
       regex:
         - "Quadrature decoder sensor test"
-        - "Position = (.*) degrees"
+        - "Position = -[45678]\\d degrees"

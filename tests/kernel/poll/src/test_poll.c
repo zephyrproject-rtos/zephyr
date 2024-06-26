@@ -115,10 +115,13 @@ ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 		      -EINVAL,
 		      NULL);
 
+	/* can't use the initializer to misconstruct this */
 	struct k_poll_event bad_events2[] = {
-		K_POLL_EVENT_INITIALIZER(0xFU,
-					 K_POLL_MODE_NOTIFY_ONLY,
-					 &no_wait_sem),
+		{ .type = 0xFU,
+		  .state = K_POLL_STATE_NOT_READY,
+		  .mode = K_POLL_MODE_NOTIFY_ONLY,
+		  .obj = &no_wait_sem,
+		},
 	};
 	zassert_equal(k_poll(bad_events2, ARRAY_SIZE(bad_events), K_NO_WAIT),
 		      -EINVAL,

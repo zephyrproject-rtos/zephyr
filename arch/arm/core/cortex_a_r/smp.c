@@ -268,6 +268,4 @@ int arch_smp_init(void)
 	return 0;
 }
 
-SYS_INIT(arch_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
 #endif

@@ -26,7 +26,8 @@
  */
 static int st_stm32f4_init(void)
 {
-	/* Enable ART Flash cache accelerator for both instruction and data */
+	/* Enable ART Flash I/D-cache and prefetch */
+	LL_FLASH_EnablePrefetch();
 	LL_FLASH_EnableInstCache();
 	LL_FLASH_EnableDataCache();
 

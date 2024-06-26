@@ -94,11 +94,17 @@ static int _mbedtls_init(void)
 	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
 #endif
 
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
+	if (psa_crypto_init() != PSA_SUCCESS) {
+		return -EIO;
+	}
+#endif
+
 	return 0;
 }
 
 #if defined(CONFIG_MBEDTLS_INIT)
-SYS_INIT(_mbedtls_init, POST_KERNEL, 0);
+SYS_INIT(_mbedtls_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
 
 /* if CONFIG_MBEDTLS_INIT is not defined then this function

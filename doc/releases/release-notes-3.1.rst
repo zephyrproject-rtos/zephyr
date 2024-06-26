@@ -490,7 +490,7 @@ Drivers and Sensors
     series. Interrupt driven mode. Supports 1 and 8 lines in Single or Dual
     Transfer Modes.
   * STM32L5: Added support for Single Bank.
-  * STM32 QSPI driver was extended with with QER (SFDP, DTS), custom quad write opcode
+  * STM32 QSPI driver was extended with QER (SFDP, DTS), custom quad write opcode
     and 1-1-4 read mode.
   * Added support for STM32U5 series.
 

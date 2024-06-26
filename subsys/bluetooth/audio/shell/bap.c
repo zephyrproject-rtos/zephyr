@@ -1260,7 +1260,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	uni_stream = shell_stream_from_bap_stream(bap_stream);
 	copy_unicast_stream_preset(uni_stream, named_preset);
 
-	/* If location has been modifed, we update the location in the codec configuration */
+	/* If location has been modified, we update the location in the codec configuration */
 	struct bt_audio_codec_cfg *codec_cfg = &uni_stream->codec_cfg;
 
 	for (size_t i = 0U; i < codec_cfg->data_len;) {
@@ -1991,7 +1991,7 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 
 				return -1;
 			}
-		} else if (strcmp(arg, "stream_lang") == 0) {
+		} else if (strcmp(arg, "lang") == 0) {
 			if (++argn == argc) {
 				shell_help(sh);
 
@@ -2000,18 +2000,15 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 
 			arg = argv[argn];
 
-			if (strlen(arg) != 3) {
-				shell_error(sh, "Failed to parse stream lang from %s", arg);
+			if (strlen(arg) != BT_AUDIO_LANG_SIZE) {
+				shell_error(sh, "Failed to parse lang from %s", arg);
 
 				return -1;
 			}
 
-			val = sys_get_le24(arg);
-
-			err = bt_audio_codec_cfg_meta_set_stream_lang(codec_cfg, (uint32_t)val);
+			err = bt_audio_codec_cfg_meta_set_lang(codec_cfg, arg);
 			if (err < 0) {
-				shell_error(sh, "Failed to set stream lang with value %lu: %d", val,
-					    err);
+				shell_error(sh, "Failed to set lang with value %s: %d", arg, err);
 
 				return -1;
 			}
@@ -2904,8 +2901,8 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 			sh_stream->lc3_frame_duration_us = 0U;
 		}
 
-		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg,
-							     &sh_stream->lc3_chan_allocation);
+		ret = bt_audio_codec_cfg_get_chan_allocation(
+			codec_cfg, &sh_stream->lc3_chan_allocation, false);
 		if (ret == 0) {
 			sh_stream->lc3_chan_cnt =
 				bt_audio_get_chan_count(sh_stream->lc3_chan_allocation);
@@ -3967,7 +3964,7 @@ static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 
 #define HELP_CFG_META                                                                              \
 	"\n[meta" HELP_SEP "[pref_ctx <context>]" HELP_SEP "[stream_ctx <context>]" HELP_SEP       \
-	"[program_info <program info>]" HELP_SEP "[stream_lang <ISO 639-3 lang>]" HELP_SEP         \
+	"[program_info <program info>]" HELP_SEP "[lang <ISO 639-3 lang>]" HELP_SEP         \
 	"[ccid_list <ccids>]" HELP_SEP "[parental_rating <rating>]" HELP_SEP                       \
 	"[program_info_uri <URI>]" HELP_SEP "[audio_active_state <state>]" HELP_SEP                \
 	"[bcast_flag]" HELP_SEP "[extended <meta>]" HELP_SEP "[vendor <meta>]]"

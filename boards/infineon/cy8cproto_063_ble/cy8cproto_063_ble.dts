@@ -27,6 +27,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart5;
 		zephyr,shell-uart = &uart5;
+		zephyr,bt-hci = &bluetooth;
 	};
 
 	/delete-node/ cpu@0;

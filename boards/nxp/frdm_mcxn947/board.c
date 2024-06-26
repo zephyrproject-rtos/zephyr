@@ -298,6 +298,15 @@ static int frdm_mcxn947_init(void)
 	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lptmr0), okay)
+	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVsys);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1u);
+	CLOCK_AttachClk(kPLL0_to_FLEXIO);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 

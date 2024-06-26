@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include "eth_stats.h"
 #include "net_private.h"
 #include "ipv6.h"
-#include "ipv4_autoconf_internal.h"
+#include "ipv4.h"
 #include "bridge.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
@@ -390,8 +390,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			net_sprint_ll_addr((uint8_t *)hdr->src.addr,
 					   sizeof(struct net_eth_addr)));
 
-		if (IS_ENABLED(CONFIG_NET_IPV4_AUTO) &&
-		    net_ipv4_autoconf_input(iface, pkt) == NET_DROP) {
+		if (IS_ENABLED(CONFIG_NET_IPV4_ACD) &&
+		    net_ipv4_acd_input(iface, pkt) == NET_DROP) {
 			return NET_DROP;
 		}
 
@@ -402,7 +402,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		return net_gptp_recv(iface, pkt);
 	}
 
-	ethernet_update_length(iface, pkt);
+	if (type != NET_ETH_PTYPE_EAPOL) {
+		ethernet_update_length(iface, pkt);
+	}
 
 	return NET_CONTINUE;
 drop:
@@ -628,7 +630,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	    net_pkt_family(pkt) == AF_INET) {
 		struct net_pkt *tmp;
 
-		if (net_pkt_ipv4_auto(pkt)) {
+		if (net_pkt_ipv4_acd(pkt)) {
 			ptype = htons(NET_ETH_PTYPE_ARP);
 		} else {
 			tmp = ethernet_ll_prepare_on_ipv4(iface, pkt);

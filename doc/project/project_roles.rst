@@ -3,8 +3,8 @@
 TSC Project Roles
 *****************
 
-Main Roles
-##########
+Project Roles
+#############
 
 TSC projects generally will involve *Maintainers*, *Collaborators*, and
 *Contributors*:

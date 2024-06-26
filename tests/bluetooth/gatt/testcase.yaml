@@ -1,5 +1,7 @@
 tests:
   bluetooth.gatt:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
     platform_allow:
       - native_posix
       - native_posix/native/64
@@ -7,6 +9,24 @@ tests:
       - native_sim/native/64
       - qemu_x86
       - qemu_cortex_m3
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+      - gatt
+  bluetooth.gatt.psa:
+    filter: CONFIG_PSA_CRYPTO_CLIENT
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+      - qemu_cortex_m3
+      - nrf5340dk/nrf5340/cpuapp/ns
+      - nrf52840dk/nrf52840
     integration_platforms:
       - native_sim
     tags:

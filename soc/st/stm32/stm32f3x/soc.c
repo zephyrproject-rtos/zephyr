@@ -25,6 +25,9 @@
  */
 static int stm32f3_init(void)
 {
+	/* Enable ART Accelerator prefetch */
+	LL_FLASH_EnablePrefetch();
+
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 8 MHz from HSI */
 	SystemCoreClock = 8000000;

@@ -199,3 +199,13 @@ zephyr_udc0: &usbotg_fs {
 &vbat4 {
 	status = "okay";
 };
+
+&clk_lsi {
+	status = "okay";
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
+};

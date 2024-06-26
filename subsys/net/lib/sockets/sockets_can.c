@@ -58,14 +58,14 @@ int zcan_socket(int family, int type, int proto)
 	int fd;
 	int ret;
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
 
 	ret = net_context_get(family, type, proto, &ctx);
 	if (ret < 0) {
-		z_free_fd(fd);
+		zvfs_free_fd(fd);
 		errno = -ret;
 		return -1;
 	}
@@ -80,8 +80,8 @@ int zcan_socket(int family, int type, int proto)
 	 */
 	k_condvar_init(&ctx->cond.recv);
 
-	z_finalize_fd(fd, ctx,
-		      (const struct fd_op_vtable *)&can_sock_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&can_sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }

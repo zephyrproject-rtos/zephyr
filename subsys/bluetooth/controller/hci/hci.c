@@ -68,6 +68,7 @@
 #include "ll_sw/ull_sync_internal.h"
 #include "ll_sw/ull_conn_internal.h"
 #include "ll_sw/ull_sync_iso_internal.h"
+#include "ll_sw/ull_iso_internal.h"
 #include "ll_sw/ull_df_internal.h"
 
 #include "ll.h"
@@ -3130,7 +3131,7 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	/* TX LL thread has higher priority than RX thread. It may happen that host succefully
-	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporing
+	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporting
 	 * IQ samples after the functionality was disabled.
 	 */
 	if (ull_df_conn_cfg_is_not_enabled(&lll->df_rx_cfg)) {
@@ -5256,7 +5257,7 @@ static void vs_le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct ne
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	/* TX LL thread has higher priority than RX thread. It may happen that host succefully
-	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporing
+	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporting
 	 * IQ samples after the functionality was disabled.
 	 */
 	if (ull_df_conn_cfg_is_not_enabled(&lll->df_rx_cfg)) {
@@ -5767,7 +5768,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		sdu_frag_tx.iso_sdu_length = 0;
 	}
 
-	/* Packet boudary flags should be bitwise identical to the SDU state
+	/* Packet boundary flags should be bitwise identical to the SDU state
 	 * 0b00 BT_ISO_START
 	 * 0b01 BT_ISO_CONT
 	 * 0b10 BT_ISO_SINGLE
@@ -5789,6 +5790,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		struct ll_conn_iso_group *cig;
 		struct ll_iso_stream_hdr *hdr;
 		struct ll_iso_datapath *dp_in;
+		uint8_t event_offset;
 
 		cis = ll_iso_stream_connected_get(handle);
 		if (!cis) {
@@ -5797,13 +5799,35 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 		cig = cis->group;
 
+		/* We must ensure sufficient time for ISO-AL to fragment SDU and
+		 * deliver PDUs to the TX queue. By checking ull_ref_get, we
+		 * know if we are within the subevents of an ISO event. If so,
+		 * we can assume that we have enough time to deliver in the next
+		 * ISO event. If we're not active within the ISO event, we don't
+		 * know if there is enough time to deliver in the next event,
+		 * and for safety we set the target to current event + 2.
+		 *
+		 * For FT > 1, we have the opportunity to retransmit in later
+		 * event(s), in which case we have the option to target an
+		 * earlier event (this or next) because being late does not
+		 * instantly flush the payload.
+		 */
+
+		event_offset = ull_ref_get(&cig->ull) ? 1 : 2;
+
+		if (cis->lll.tx.ft > 1) {
+			/* FT > 1, target an earlier event */
+			event_offset -= 1;
+		}
+
 #if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
 		uint64_t event_count;
 		uint64_t pkt_seq_num;
 
 		/* Catch up local pkt_seq_num with internal pkt_seq_num */
-		event_count = cis->lll.event_count;
+		event_count = cis->lll.event_count + event_offset;
 		pkt_seq_num = event_count + 1U;
+
 		/* If pb_flag is BT_ISO_START (0b00) or BT_ISO_SINGLE (0b10)
 		 * then we simply check that the pb_flag is an even value, and
 		 * then  pkt_seq_num is a future sequence number value compare
@@ -5844,29 +5868,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 						   ISO_INT_UNIT_US));
 
 #else /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
-		uint8_t event_offset;
-
-		/* We must ensure sufficient time for ISO-AL to fragment SDU and
-		 * deliver PDUs to the TX queue. By checking ull_ref_get, we
-		 * know if we are within the subevents of an ISO event. If so,
-		 * we can assume that we have enough time to deliver in the next
-		 * ISO event. If we're not active within the ISO event, we don't
-		 * know if there is enough time to deliver in the next event,
-		 * and for safety we set the target to current event + 2.
-		 *
-		 * For FT > 1, we have the opportunity to retransmit in later
-		 * event(s), in which case we have the option to target an
-		 * earlier event (this or next) because being late does not
-		 * instantly flush the payload.
-		 */
-
-		event_offset = ull_ref_get(&cig->ull) ? 1 : 2;
-
-		if (cis->lll.tx.ft > 1) {
-			/* FT > 1, target an earlier event */
-			event_offset -= 1;
-		}
-
 		sdu_frag_tx.target_event = cis->lll.event_count + event_offset;
 		sdu_frag_tx.grp_ref_point =
 			isoal_get_wrapped_time_us(cig->cig_ref_point,
@@ -5908,7 +5909,10 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		struct lll_adv_iso_stream *stream;
 		struct ll_adv_iso_set *adv_iso;
 		struct lll_adv_iso *lll_iso;
+		uint16_t latency_prepare;
 		uint16_t stream_handle;
+		uint64_t target_event;
+		uint8_t event_offset;
 
 		/* Get BIS stream handle and stream context */
 		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
@@ -5926,13 +5930,42 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 		lll_iso = &adv_iso->lll;
 
+		/* Determine the target event and the first event offset after
+		 * datapath setup.
+		 * event_offset mitigates the possibility of first SDU being
+		 * late on the datapath and avoid all subsequent SDUs being
+		 * dropped for a said SDU interval. i.e. upper layer is not
+		 * drifting, say first SDU dropped, hence subsequent SDUs all
+		 * dropped, is mitigated by offsetting the grp_ref_point.
+		 *
+		 * It is ok to do the below for every received ISO data, ISOAL
+		 * will not consider subsequent skewed target_event after the
+		 * first use of target_event value.
+		 *
+		 * In BIG implementation in LLL, payload_count corresponds to
+		 * the next BIG event, hence calculate grp_ref_point for next
+		 * BIG event by incrementing the previous elapsed big_ref_point
+		 * by one additional ISO interval.
+		 */
+		target_event = lll_iso->payload_count / lll_iso->bn;
+		latency_prepare = lll_iso->latency_prepare;
+		if (latency_prepare) {
+			/* big_ref_point has been updated, but payload_count
+			 * hasn't been updated yet - increment target_event to
+			 * compensate
+			 */
+			target_event += latency_prepare;
+		}
+		event_offset = ull_ref_get(&adv_iso->ull) ? 0U : 1U;
+
 #if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
 		uint64_t event_count;
 		uint64_t pkt_seq_num;
 
 		/* Catch up local pkt_seq_num with internal pkt_seq_num */
-		event_count = lll_iso->payload_count / lll_iso->bn;
-		pkt_seq_num = event_count;
+		event_count = target_event + event_offset;
+		pkt_seq_num = event_count + 1U;
+
 		/* If pb_flag is BT_ISO_START (0b00) or BT_ISO_SINGLE (0b10)
 		 * then we simply check that the pb_flag is an even value, and
 		 * then  pkt_seq_num is a future sequence number value compare
@@ -5985,30 +6018,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 						   ISO_INT_UNIT_US));
 
 #else /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
-		uint64_t target_event;
-		uint8_t event_offset;
-
-		/* Determine the target event and the first event offset after
-		 * datapath setup.
-		 * event_offset mitigates the possibility of first SDU being
-		 * late on the datapath and avoid all subsequent SDUs being
-		 * dropped for a said SDU interval. i.e. upper layer is not
-		 * drifting, say first SDU dropped, hence subsequent SDUs all
-		 * dropped, is mitigated by offsetting the grp_ref_point.
-		 *
-		 * It is ok to do the below for every received ISO data, ISOAL
-		 * will not consider subsequent skewed target_event after the
-		 * first use of target_event value.
-		 *
-		 * In BIG implementation in LLL, payload_count corresponds to
-		 * the next BIG event, hence calculate grp_ref_point for next
-		 * BIG event by incrementing the previous elapsed big_ref_point
-		 * by one additional ISO interval.
-		 */
-		target_event = lll_iso->payload_count / lll_iso->bn;
-		event_offset = ull_ref_get(&adv_iso->ull) ? 0U : 1U;
-		event_offset += lll_iso->latency_prepare;
-
 		sdu_frag_tx.target_event = target_event + event_offset;
 		sdu_frag_tx.grp_ref_point =
 			isoal_get_wrapped_time_us(adv_iso->big_ref_point,
@@ -7345,7 +7354,7 @@ no_ext_hdr:
 	/* Clear the data status bits */
 	evt_type &= ~(BIT_MASK(2) << 5);
 
-	/* Allocate, append as buf fragement and construct the scan response
+	/* Allocate, append as buf fragment and construct the scan response
 	 * event.
 	 */
 	evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
@@ -7839,8 +7848,11 @@ static void le_big_sync_established(struct pdu_data *pdu,
 {
 	struct bt_hci_evt_le_big_sync_established *sep;
 	struct ll_sync_iso_set *sync_iso;
+	uint32_t transport_latency_big;
 	struct node_rx_sync_iso *se;
 	struct lll_sync_iso *lll;
+	uint32_t iso_interval_us;
+	uint32_t big_sync_delay;
 	size_t evt_size;
 	void *node;
 
@@ -7869,9 +7881,34 @@ static void le_big_sync_established(struct pdu_data *pdu,
 		return;
 	}
 
-	/* FIXME: Fill latency */
-	sys_put_le24(0, sep->latency);
+	/* BT Core v5.4 - Vol 6, Part B, Section 4.4.6.4:
+	 * BIG_Sync_Delay = (Num_BIS – 1) × BIS_Spacing + (NSE – 1) × Sub_Interval + MPT.
+	 *
+	 * BT Core v5.4 - Vol 6, Part G, Section 3.2.1: (Framed)
+	 * Transport_Latenct_BIG = BIG_Sync_Delay + PTO × (NSE / BN – IRC) * ISO_Interval +
+	 *                             ISO_Interval + SDU_Interval
+	 *
+	 * BT Core v5.4 - Vol 6, Part G, Section 3.2.2: (Unframed)
+	 * Transport_Latenct_BIG = BIG_Sync_Delay + (PTO × (NSE / BN – IRC) + 1) * ISO_Interval -
+	 *                             SDU_Interval
+	 */
+	iso_interval_us = lll->iso_interval * ISO_INT_UNIT_US;
+	big_sync_delay = ull_iso_big_sync_delay(lll->num_bis, lll->bis_spacing, lll->nse,
+						lll->sub_interval, lll->phy, lll->max_pdu,
+						lll->enc);
+	if (lll->framing) {
+		/* Framed */
+		transport_latency_big = big_sync_delay +
+					lll->pto * (lll->nse / lll->bn - lll->irc) *
+					iso_interval_us + iso_interval_us + lll->sdu_interval;
+	} else {
+		/* Unframed */
+		transport_latency_big = big_sync_delay +
+					(lll->pto * (lll->nse / lll->bn - lll->irc) + 1) *
+					iso_interval_us - lll->sdu_interval;
+	}
 
+	sys_put_le24(transport_latency_big, sep->latency);
 	sep->nse = lll->nse;
 	sep->bn = lll->bn;
 	sep->pto = lll->pto;

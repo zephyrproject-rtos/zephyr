@@ -43,7 +43,7 @@ char *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s, size_t n)
 {
 	char *dest = d;
 
-	while ((n > 0) && *s != '\0') {
+	while ((n > 0) && (*s != '\0')) {
 		*d = *s;
 		s++;
 		d++;
@@ -92,7 +92,7 @@ char *strrchr(const char *s, int c)
 		if (*s == (char)c) {
 			match = (char *)s;
 		}
-	} while (*s++);
+	} while (*s++ != '\0');
 
 	return match;
 }

@@ -504,8 +504,8 @@ static inline void bytecpy(void *dst, const void *src, size_t size)
  * Swap @a size bytes between memory regions @a a and @a b. This is
  * guaranteed to be done byte by byte.
  *
- * @param a Pointer to the the first memory region.
- * @param b Pointer to the the second memory region.
+ * @param a Pointer to the first memory region.
+ * @param b Pointer to the second memory region.
  * @param size The number of bytes to swap.
  */
 static inline void byteswp(void *a, void *b, size_t size)
@@ -789,7 +789,7 @@ static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const ui
 /* This is used in linker scripts so need to avoid type casting there */
 #define KB(x) ((x) << 10)
 #else
-#define KB(x) (((size_t)x) << 10)
+#define KB(x) (((size_t)(x)) << 10)
 #endif
 /** @brief Number of bytes in @p x mebibytes */
 #define MB(x) (KB(x) << 10)

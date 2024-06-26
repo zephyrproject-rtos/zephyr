@@ -173,23 +173,10 @@ static int memc_smartbond_init(const struct device *dev)
 	/* Should be called prior to switching to auto mode and when the quad bus is selected! */
 	da1469x_qspi_set_bus_mode(QSPIC2_ID, QSPI_BUS_MODE_QUAD);
 
-#if CONFIG_PM_DEVICE_RUNTIME
-	/*
-	 * Turn off the controller to minimize power consumption. Application is responsible to
-	 * configure/de-configure the controller before interacting with the memory.
-	 */
-	memc_set_status(false, 0);
-
-	/* Make sure device is marked as suspended */
-	pm_device_init_suspended(dev);
-
-	return pm_device_runtime_enable(dev);
-#else
 	da1469x_pd_acquire(MCU_PD_DOMAIN_SYS);
 
 	/* From this point onwards memory device should be seen as memory mapped device. */
 	memc_automode_configure();
-#endif
 
 	return 0;
 }

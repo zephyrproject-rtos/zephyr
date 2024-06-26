@@ -7,7 +7,7 @@ menuconfig ST7789V
 	bool "ST7789V display driver"
 	default y
 	depends on DT_HAS_SITRONIX_ST7789V_ENABLED
-	select SPI
+	select MIPI_DBI
 	help
 	  Enable driver for ST7789V display driver.
 

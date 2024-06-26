@@ -53,6 +53,10 @@
 	aliases {
 		led0 = &blue_led;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -129,6 +133,34 @@
 	};
 };
 
+&rng {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&wwdg {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A3 */
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&adc2 {
+	pinctrl-0 = <&adc2_inp2_pf13>; /* Arduino A4 */
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
 &spi4 {
 	pinctrl-0 = <&spi4_nss_pe4 &spi4_sck_pe12
 		     &spi4_miso_pe13 &spi4_mosi_pe14>;
@@ -139,4 +171,16 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

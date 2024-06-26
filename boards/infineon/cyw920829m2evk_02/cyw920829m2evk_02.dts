@@ -22,6 +22,7 @@
 		zephyr,flash = &app_region;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bluetooth;
 	};
 };
 
@@ -33,8 +34,9 @@ uart2: &scb2 {
 	compatible = "infineon,cat1-uart";
 	status = "okay";
 	current-speed = <115200>;
+	hw-flow-control;
 
-	pinctrl-0 = <&p3_3_scb2_uart_tx &p3_2_scb2_uart_rx>;
+	pinctrl-0 = <&p3_3_scb2_uart_tx &p3_2_scb2_uart_rx &p3_1_scb2_uart_rts &p3_0_scb2_uart_cts>;
 	pinctrl-names = "default";
 };
 
@@ -79,6 +81,10 @@ uart2: &scb2 {
 	status = "okay";
 };
 
+&bluetooth {
+	status = "okay";
+};
+
 / {
 	flash0: flash@60000000 {
 		compatible = "soc-nv-flash";
@@ -99,15 +105,15 @@ uart2: &scb2 {
 			bootstrap_region: flash@60000050 {
 				compatible = "zephyr,memory-region", "soc-nv-flash";
 				zephyr,memory-region = "BOOTSTRAP_FLASH";
-				reg = <0x60000050 0x2550>;
+				reg = <0x60000050 DT_SIZE_K(12)>;
 			};
-			app_region: flash@60002600 {
+			app_region: flash@60003050 {
 				compatible = "soc-nv-flash";
-				reg = <0x60002600 0x5da00>;
+				reg = <0x60003050 0x6CFB0>; /* 435kb */
 			};
-			storage_partition: flash@60060000 {
+			storage_partition: flash@60070000 {
 				compatible = "soc-nv-flash";
-				reg = <0x60060000 0x20000>;
+				reg = <0x60070000 DT_SIZE_K(64)>;
 			};
 		};
 	};

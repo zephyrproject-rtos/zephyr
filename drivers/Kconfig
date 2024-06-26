@@ -24,6 +24,7 @@ source "drivers/dai/Kconfig"
 source "drivers/disk/Kconfig"
 source "drivers/display/Kconfig"
 source "drivers/dma/Kconfig"
+source "drivers/dp/Kconfig"
 source "drivers/edac/Kconfig"
 source "drivers/eeprom/Kconfig"
 source "drivers/entropy/Kconfig"
@@ -57,6 +58,7 @@ source "drivers/mipi_dsi/Kconfig"
 source "drivers/misc/Kconfig"
 source "drivers/mm/Kconfig"
 source "drivers/modem/Kconfig"
+source "drivers/mspi/Kconfig"
 source "drivers/net/Kconfig"
 source "drivers/pcie/Kconfig"
 source "drivers/peci/Kconfig"
@@ -87,5 +89,7 @@ source "drivers/watchdog/Kconfig"
 source "drivers/wifi/Kconfig"
 source "drivers/xen/Kconfig"
 # zephyr-keep-sorted-stop
+
+source "drivers/tee/Kconfig"
 
 endmenu

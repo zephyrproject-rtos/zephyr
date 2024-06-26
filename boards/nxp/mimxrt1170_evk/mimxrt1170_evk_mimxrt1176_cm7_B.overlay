@@ -10,6 +10,7 @@
 		zephyr,flash-controller = &w25q512nw;
 		zephyr,flash = &w25q512nw;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 
 	aliases {
@@ -74,4 +75,30 @@
 		reg = <0>;
 		status = "okay";
 	};
+};
+
+m2_hci_uart: &lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2_flowcontrol>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+
+		m2_bt_module {
+			compatible = "nxp,bt-hci-uart";
+			sdio-reset-gpios = <&gpio9 15 GPIO_ACTIVE_HIGH>;
+			w-disable-gpios = <&gpio9 30 GPIO_ACTIVE_HIGH>;
+			hci-operation-speed = <115200>;
+			hw-flow-control;
+			fw-download-primary-speed = <115200>;
+			fw-download-secondary-speed = <3000000>;
+			fw-download-secondary-flowcontrol;
+		};
+	};
+};
+
+&m2_hci_uart {
+	status = "okay";
+	current-speed = <115200>;
 };

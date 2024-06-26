@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <zephyr/sys/cbprintf.h>
 
-#define DESC(d) ((void *)d)
+#define DESC(d) ((void *)(d))
 
 int fprintf(FILE *ZRESTRICT stream, const char *ZRESTRICT format, ...)
 {

@@ -50,4 +50,10 @@ config I2C_STM32_BUS_RECOVERY
 	help
 	  Enable STM32 driver bus recovery support via GPIO bitbanging.
 
+config I2C_STM32_V2_TIMING
+	bool "compute the I2C V2 bus timing"
+	depends on I2C_STM32_V2
+	help
+	  Enable STM32 driver bus to calculate the Timing.
+
 endif # I2C_STM32

@@ -17,42 +17,52 @@
 
 	emmc2_clk: emmc2_clk {
 		pin = <PIN_SD2_CLK FUNC_SD2_CLK>;
+		power-source = <PIN_VOLTAGE_1P8V>;
 	};
 
 	emmc2_cmd: emmc2_cmd {
 		pin = <PIN_SD2_CMD FUNC_SD2_CMD>;
+		power-source = <PIN_VOLTAGE_1P8V>;
 	};
 
 	emmc2_data0: emmc2_data0 {
 		pin = <PIN_SD2_DATA0 FUNC_SD2_DAT0>;
+		power-source = <PIN_VOLTAGE_1P8V>;
 	};
 
 	emmc2_data1: emmc2_data1 {
 		pin = <PIN_SD2_DATA1 FUNC_SD2_DAT1>;
+		power-source = <PIN_VOLTAGE_1P8V>;
 	};
 
 	emmc2_data2: emmc2_data2 {
 		pin = <PIN_SD2_DATA2 FUNC_SD2_DAT2>;
+		power-source = <PIN_VOLTAGE_1P8V>;
 	};
 
 	emmc2_data3: emmc2_data3 {
 		pin = <PIN_SD2_DATA3 FUNC_SD2_DAT3>;
+		power-source = <PIN_VOLTAGE_1P8V>;
 	};
 
 	emmc2_data4: emmc2_data4 {
 		pin = <PIN_SD1_DATA0 FUNC_SD2_DAT4>;
+		power-source = <PIN_VOLTAGE_1P8V>;
 	};
 
 	emmc2_data5: emmc2_data5 {
 		pin = <PIN_SD1_DATA1 FUNC_SD2_DAT5>;
+		power-source = <PIN_VOLTAGE_1P8V>;
 	};
 
 	emmc2_data6: emmc2_data6 {
 		pin = <PIN_SD1_DATA2 FUNC_SD2_DAT6>;
+		power-source = <PIN_VOLTAGE_1P8V>;
 	};
 
 	emmc2_data7: emmc2_data7 {
 		pin = <PIN_SD1_DATA3 FUNC_SD2_DAT7>;
+		power-source = <PIN_VOLTAGE_1P8V>;
 	};
 
 	emmc2_ds: emmc2_ds {

@@ -6,8 +6,6 @@
 
 if BOARD_CY8CPROTO_063_BLE
 
-choice BT_HCI_BUS_TYPE
-	default BT_PSOC6_BLESS if BT
-endchoice
+# No defaults to change for now
 
 endif # BOARD_CY8CPROTO_063_BLE

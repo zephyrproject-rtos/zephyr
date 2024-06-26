@@ -35,8 +35,7 @@ struct counter_smartbond_data {
 	void *user_data;
 	uint32_t guard_period;
 	uint32_t freq;
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
-	ATOMIC_DEFINE(pm_policy_state_flag, 1);
+#if defined(CONFIG_PM_DEVICE)
 	uint8_t pdc_idx;
 #endif
 };
@@ -59,19 +58,17 @@ struct counter_smartbond_config {
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
-static void counter_smartbond_pm_policy_state_lock_get(struct counter_smartbond_data *data)
+#if defined(CONFIG_PM_DEVICE)
+static void counter_smartbond_pm_policy_state_lock_get(const struct device *dev)
 {
-	if (!atomic_test_and_set_bit(data->pm_policy_state_flag, 0)) {
-		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_device_runtime_get(dev);
 }
 
-static void counter_smartbond_pm_policy_state_lock_put(struct counter_smartbond_data *data)
+static void counter_smartbond_pm_policy_state_lock_put(const struct device *dev)
 {
-	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0)) {
-		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+	pm_device_runtime_put(dev);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 
 /*
@@ -120,23 +117,18 @@ static void counter_smartbond_pdc_add(const struct device *dev)
 	struct counter_smartbond_data *data = dev->data;
 	uint8_t trigger = counter_smartbond_pdc_trigger_get(dev);
 
-	if (!atomic_test_and_set_bit(data->pm_policy_state_flag, 0)) {
+	data->pdc_idx = da1469x_pdc_add(trigger, MCU_PDC_MASTER_M33, PDC_XTAL_EN);
+	__ASSERT_NO_MSG(data->pdc_idx >= 0);
 
-		data->pdc_idx = da1469x_pdc_add(trigger, MCU_PDC_MASTER_M33, PDC_XTAL_EN);
-		__ASSERT_NO_MSG(data->pdc_idx >= 0);
-
-		da1469x_pdc_set(data->pdc_idx);
-		da1469x_pdc_ack(data->pdc_idx);
-	}
+	da1469x_pdc_set(data->pdc_idx);
+	da1469x_pdc_ack(data->pdc_idx);
 }
 
 static void counter_smartbond_pdc_del(const struct device *dev)
 {
 	struct counter_smartbond_data *data = dev->data;
 
-	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0)) {
-		da1469x_pdc_del(data->pdc_idx);
-	}
+	da1469x_pdc_del(data->pdc_idx);
 }
 #endif
 
@@ -145,23 +137,22 @@ static int counter_smartbond_start(const struct device *dev)
 	const struct counter_smartbond_config *config = dev->config;
 	TIMER2_Type *timer = config->timer;
 
-	/* Enable counter in free running mode */
-	timer->TIMER2_CTRL_REG |= (TIMER2_TIMER2_CTRL_REG_TIM_CLK_EN_Msk |
-				  TIMER2_TIMER2_CTRL_REG_TIM_EN_Msk |
-				  TIMER2_TIMER2_CTRL_REG_TIM_FREE_RUN_MODE_EN_Msk);
-
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 	if (!counter_smartbond_is_sleep_allowed(dev)) {
-		struct counter_smartbond_data *data = dev->data;
 		/*
 		 * Power mode constraints should be applied as long as the device
 		 * is up and running.
 		 */
-		counter_smartbond_pm_policy_state_lock_get(data);
+		counter_smartbond_pm_policy_state_lock_get(dev);
 	} else {
 		counter_smartbond_pdc_add(dev);
 	}
 #endif
+
+	/* Enable counter in free running mode */
+	timer->TIMER2_CTRL_REG |= (TIMER2_TIMER2_CTRL_REG_TIM_CLK_EN_Msk |
+				  TIMER2_TIMER2_CTRL_REG_TIM_EN_Msk |
+				  TIMER2_TIMER2_CTRL_REG_TIM_FREE_RUN_MODE_EN_Msk);
 
 	return 0;
 }
@@ -178,9 +169,9 @@ static int counter_smartbond_stop(const struct device *dev)
 					TIMER2_TIMER2_CTRL_REG_TIM_CLK_EN_Msk);
 	data->callback = NULL;
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 	if (!counter_smartbond_is_sleep_allowed(dev)) {
-		counter_smartbond_pm_policy_state_lock_put(data);
+		counter_smartbond_pm_policy_state_lock_put(dev);
 	} else {
 		counter_smartbond_pdc_del(dev);
 	}
@@ -421,7 +412,7 @@ static uint32_t counter_smartbond_get_freq(const struct device *dev)
 	return data->freq;
 }
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 static void counter_smartbond_resume(const struct device *dev)
 {
 	const struct counter_smartbond_config *cfg = dev->config;

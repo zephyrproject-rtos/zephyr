@@ -103,6 +103,13 @@ config XTENSA_NUM_SPIN_RELAX_NOPS
 	  Specify the number of NOPs in Xtensa specific
 	  arch_spin_relax().
 
+config XTENSA_BREAK_ON_UNRECOVERABLE_EXCEPTIONS
+	bool "Use BREAK instruction on unrecoverable exceptions"
+	help
+	  Use BREAK instruction when unrecoverable exceptions are
+	  encountered. This requires a debugger attached to catch
+	  the BREAK.
+
 menu "Xtensa HiFi Options"
 
 config XTENSA_CPU_HAS_HIFI

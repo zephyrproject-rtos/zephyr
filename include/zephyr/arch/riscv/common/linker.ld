@@ -55,13 +55,18 @@
 
 #elif DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash), jedec_spi_nor)
 /* For jedec,spi-nor we expect the spi controller to memory map the flash
- * and for that mapping to be the second register property of the spi
- * controller.
+ * and for that mapping to be on the register with the name flash_mmap and if a register with that
+ * name doesn't exists, we expect it to be in the second register property of the spi controller.
  */
 #define SPI_CTRL DT_PARENT(DT_CHOSEN(zephyr_flash))
-#define ROM_BASE (DT_REG_ADDR_BY_IDX(SPI_CTRL, 1) + FLASH_LOAD_OFFSET)
+#define FLASH_MMAP_NAME flash_mmap
+#define ROM_BASE                                                                                   \
+	(DT_REG_ADDR_BY_NAME_OR(SPI_CTRL, FLASH_MMAP_NAME, DT_REG_ADDR_BY_IDX(SPI_CTRL, 1)) +      \
+	 FLASH_LOAD_OFFSET)
 #ifndef ROM_SIZE
-#define ROM_SIZE (DT_REG_SIZE_BY_IDX(SPI_CTRL, 1) - ROM_END_OFFSET)
+#define ROM_SIZE                                                                                   \
+	(DT_REG_SIZE_BY_NAME_OR(SPI_CTRL, FLASH_MMAP_NAME, DT_REG_SIZE_BY_IDX(SPI_CTRL, 1)) -      \
+	 ROM_END_OFFSET)
 #endif
 
 #else /* Use Kconfig to cover the remaining cases */
@@ -185,6 +190,10 @@ SECTIONS
 
 	__rodata_region_start = .;
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)

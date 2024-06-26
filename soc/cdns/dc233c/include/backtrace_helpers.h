@@ -20,9 +20,4 @@ static inline bool xtensa_dc233c_ptr_executable(const void *p)
 	return (in_text || in_vecbase);
 }
 
-static inline bool xtensa_dc233c_stack_ptr_is_sane(uint32_t sp)
-{
-	return ((char *)sp >= __text_region_start);
-}
-
 #endif /* ZEPHYR_SOC_XTENSA_DC233C_BACKTRACE_HELPERS_H_ */

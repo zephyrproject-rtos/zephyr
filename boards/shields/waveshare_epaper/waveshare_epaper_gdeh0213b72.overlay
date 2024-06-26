@@ -10,63 +10,68 @@
 	chosen {
 		zephyr,display = &ssd16xx_waveshare_epaper_gdeh0213b72;
 	};
-};
 
-&arduino_spi {
-	ssd16xx_waveshare_epaper_gdeh0213b72: ssd16xxfb@0 {
-		compatible = "gooddisplay,gdeh0213b72", "solomon,ssd1675a";
-		spi-max-frequency = <4000000>;
-		reg = <0>;
-		width = <250>;
-		height = <120>;
-		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+	mipi_dbi_waveshare_epaper_gdeh0213b72 {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&arduino_spi>;
+		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;	/* D9 */
 		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
-		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;	/* D7 */
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-		full {
-			gdv = [15];
-			sdv = [41 a8 32];
-			vcom = <0x55>;
-			border-waveform = <0x03>;
-			dummy-line = <0x30>;
-			gate-line-width = <0x0a>;
-			lut = [
-				80 60 40 00 00 00 00
-				10 60 20 00 00 00 00
-				80 60 40 00 00 00 00
-				10 60 20 00 00 00 00
-				00 00 00 00 00 00 00
-				03 03 00 00 02
-				09 09 00 00 02
-				03 03 00 00 02
-				00 00 00 00 00
-				00 00 00 00 00
-				00 00 00 00 00
-				00 00 00 00 00
-			];
-		};
+		ssd16xx_waveshare_epaper_gdeh0213b72: ssd16xxfb@0 {
+			compatible = "gooddisplay,gdeh0213b72", "solomon,ssd1675a";
+			mipi-max-frequency = <4000000>;
+			reg = <0>;
+			width = <250>;
+			height = <120>;
+			busy-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;	/* D7 */
 
-		partial {
-			gdv = [15];
-			sdv = [41 a8 32];
-			vcom = <0x26>;
-			border-waveform = <0x01>;
-			dummy-line = <0x30>;
-			gate-line-width = <0x0a>;
-			lut = [
-				00 00 00 00 00 00 00
-				80 00 00 00 00 00 00
-				40 00 00 00 00 00 00
-				80 00 00 00 00 00 00
-				00 00 00 00 00 00 00
-				0A 00 00 00 04
-				00 00 00 00 00
-				00 00 00 00 00
-				00 00 00 00 00
-				00 00 00 00 00
-				00 00 00 00 00
-				00 00 00 00 00
-			];
+			full {
+				gdv = [15];
+				sdv = [41 a8 32];
+				vcom = <0x55>;
+				border-waveform = <0x03>;
+				dummy-line = <0x30>;
+				gate-line-width = <0x0a>;
+				lut = [
+					80 60 40 00 00 00 00
+					10 60 20 00 00 00 00
+					80 60 40 00 00 00 00
+					10 60 20 00 00 00 00
+					00 00 00 00 00 00 00
+					03 03 00 00 02
+					09 09 00 00 02
+					03 03 00 00 02
+					00 00 00 00 00
+					00 00 00 00 00
+					00 00 00 00 00
+					00 00 00 00 00
+				];
+			};
+
+			partial {
+				gdv = [15];
+				sdv = [41 a8 32];
+				vcom = <0x26>;
+				border-waveform = <0x01>;
+				dummy-line = <0x30>;
+				gate-line-width = <0x0a>;
+				lut = [
+					00 00 00 00 00 00 00
+					80 00 00 00 00 00 00
+					40 00 00 00 00 00 00
+					80 00 00 00 00 00 00
+					00 00 00 00 00 00 00
+					0A 00 00 00 04
+					00 00 00 00 00
+					00 00 00 00 00
+					00 00 00 00 00
+					00 00 00 00 00
+					00 00 00 00 00
+					00 00 00 00 00
+				];
+			};
 		};
 	};
 };

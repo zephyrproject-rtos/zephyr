@@ -22,6 +22,7 @@
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &fdcan1;
 	};
 
 	aliases {

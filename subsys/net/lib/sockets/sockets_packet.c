@@ -46,7 +46,7 @@ static int zpacket_socket(int family, int type, int proto)
 	int fd;
 	int ret;
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
@@ -67,7 +67,7 @@ static int zpacket_socket(int family, int type, int proto)
 
 	ret = net_context_get(family, type, proto, &ctx);
 	if (ret < 0) {
-		z_free_fd(fd);
+		zvfs_free_fd(fd);
 		errno = -ret;
 		return -1;
 	}
@@ -77,8 +77,8 @@ static int zpacket_socket(int family, int type, int proto)
 
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
-	z_finalize_fd(fd, ctx,
-		      (const struct fd_op_vtable *)&packet_sock_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&packet_sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }

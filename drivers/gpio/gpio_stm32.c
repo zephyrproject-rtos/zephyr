@@ -276,7 +276,7 @@ static void gpio_stm32_configure_raw(const struct device *dev, int pin,
 static int gpio_stm32_clock_request(const struct device *dev, bool on)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
-	int ret = 0;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -289,10 +289,6 @@ static int gpio_stm32_clock_request(const struct device *dev, bool on)
 	} else {
 		ret = clock_control_off(clk,
 					(clock_control_subsys_t)&cfg->pclken);
-	}
-
-	if (ret != 0) {
-		return ret;
 	}
 
 	return ret;
@@ -799,58 +795,24 @@ static int gpio_stm32_init(const struct device *dev)
 			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bits),\
 			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bus))
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay)
-GPIO_DEVICE_INIT_STM32(a, A);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay) */
+#define GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX) \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(gpio##__suffix), okay), \
+		    (GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)), \
+		    ())
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiob), okay)
-GPIO_DEVICE_INIT_STM32(b, B);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiob), okay) */
+GPIO_DEVICE_INIT_STM32_IF_OKAY(a, A);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(b, B);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(c, C);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(d, D);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(e, E);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(f, F);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(g, G);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(h, H);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(i, I);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(j, J);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(k, K);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioc), okay)
-GPIO_DEVICE_INIT_STM32(c, C);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioc), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiod), okay)
-GPIO_DEVICE_INIT_STM32(d, D);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiod), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioe), okay)
-GPIO_DEVICE_INIT_STM32(e, E);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioe), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiof), okay)
-GPIO_DEVICE_INIT_STM32(f, F);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiof), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay)
-GPIO_DEVICE_INIT_STM32(g, G);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioh), okay)
-GPIO_DEVICE_INIT_STM32(h, H);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioh), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioi), okay)
-GPIO_DEVICE_INIT_STM32(i, I);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioi), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioj), okay)
-GPIO_DEVICE_INIT_STM32(j, J);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioj), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiok), okay)
-GPIO_DEVICE_INIT_STM32(k, K);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiok), okay) */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiom), okay)
-GPIO_DEVICE_INIT_STM32(m, M);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiom), okay) */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpion), okay)
-GPIO_DEVICE_INIT_STM32(n, N);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpion), okay) */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioo), okay)
-GPIO_DEVICE_INIT_STM32(o, O);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioo), okay) */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiop), okay)
-GPIO_DEVICE_INIT_STM32(p, P);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiop), okay) */
+GPIO_DEVICE_INIT_STM32_IF_OKAY(m, M);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(n, N);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(o, O);
+GPIO_DEVICE_INIT_STM32_IF_OKAY(p, P);

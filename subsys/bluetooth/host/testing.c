@@ -20,9 +20,15 @@
 
 static sys_slist_t cb_slist;
 
-void bt_test_cb_register(struct bt_test_cb *cb)
+int bt_test_cb_register(struct bt_test_cb *cb)
 {
+	if (sys_slist_find(&cb_slist, &cb->node, NULL)) {
+		return -EEXIST;
+	}
+
 	sys_slist_append(&cb_slist, &cb->node);
+
+	return 0;
 }
 
 void bt_test_cb_unregister(struct bt_test_cb *cb)

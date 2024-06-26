@@ -174,7 +174,7 @@ add_doc_target(
     -d ${DOCS_DOCTREE_DIR}
     -w ${DOCS_BUILD_DIR}/latex.log
     -t ${DOC_TAG}
-    -t svgconvert
+    -t convertimages
     ${SPHINXOPTS}
     ${SPHINXOPTS_EXTRA}
     ${DOCS_SRC_DIR}

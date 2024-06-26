@@ -29,6 +29,12 @@ zephyr_interface_library_named(mbedTLS)
         include
     )
 
+    if (CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
+      target_include_directories(mbedTLS INTERFACE
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m
+      )
+    endif()
+
     # Add base library with files required by all drivers/backends.
     zephyr_library_named(mbedTLSBase)
 
@@ -132,6 +138,14 @@ zephyr_interface_library_named(mbedTLS)
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_client.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_slot_management.c
       )
+    endif()
+
+    if(CONFIG_MBEDTLS_PSA_P256M_DRIVER_ENABLED)
+      list(APPEND crypto_source
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m_driver_entrypoints.c
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m/p256-m.c
+      )
+      zephyr_library_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/library)
     endif()
 
     list(APPEND crypto_source

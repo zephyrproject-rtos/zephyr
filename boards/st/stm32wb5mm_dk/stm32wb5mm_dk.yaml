@@ -7,8 +7,11 @@ toolchain:
   - gnuarmemb
   - xtools
 ram: 256
-flash: 1024
+flash: 876
 supported:
   - gpio
   - uart
+  - i2c
+  - vl53l0x
+  - ism330dhcx
 vendor: st

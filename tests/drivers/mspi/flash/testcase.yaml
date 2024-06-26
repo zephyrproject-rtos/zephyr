@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.mspi.flash:
+    tags:
+      - drivers
+      - mspi
+      - flash
+    filter: dt_compat_enabled("zephyr,mspi-emul-flash") or
+            dt_compat_enabled("mspi-atxp032")
+    harness: ztest
+    platform_allow:
+      - native_sim
+      - apollo3p_evb
+    integration_platforms:
+      - native_sim
+      - apollo3p_evb

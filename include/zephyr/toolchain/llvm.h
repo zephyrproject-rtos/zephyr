@@ -35,11 +35,12 @@
  * Avoid collision with defines from include/zephyr/toolchain/zephyr_stdint.h
  */
 #ifdef CONFIG_MINIMAL_LIBC
-#ifndef CONFIG_ENFORCE_ZEPHYR_STDINT
 
 #define __int_c(v, suffix) v ## suffix
 #define int_c(v, suffix) __int_c(v, suffix)
 #define uint_c(v, suffix) __int_c(v ## U, suffix)
+
+#ifndef CONFIG_ENFORCE_ZEPHYR_STDINT
 
 #ifdef __INT64_TYPE__
 #undef __int_least64_c_suffix__
@@ -85,6 +86,8 @@
 #endif /* __int_least32_c_suffix__ */
 #endif /* __INT_LEAST32_TYPE__ */
 
+#endif /* !CONFIG_ENFORCE_ZEPHYR_STDINT */
+
 #ifdef __INT16_TYPE__
 #undef __int_least16_c_suffix__
 #undef __int_least8_c_suffix__
@@ -120,8 +123,6 @@
 #define __UINT8_C(x)	x ## U
 #endif /* __int_least8_c_suffix__ */
 #endif /* __INT_LEAST8_TYPE__ */
-
-#endif /* !CONFIG_ENFORCE_ZEPHYR_STDINT */
 
 #define __INTMAX_C(x)	int_c(x, __INTMAX_C_SUFFIX__)
 #define __UINTMAX_C(x)	int_c(x, __UINTMAX_C_SUFFIX__)

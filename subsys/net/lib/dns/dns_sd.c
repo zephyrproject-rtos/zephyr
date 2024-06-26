@@ -1048,8 +1048,8 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 			return -EINVAL;
 		}
 
-		if (qsize > size[i]) {
-			NET_DBG("qsize %zu > size[%zu] %zu", qsize, i, size[i]);
+		if (qsize >= size[i]) {
+			NET_DBG("qsize %zu >= size[%zu] %zu", qsize, i, size[i]);
 			return -ENOBUFS;
 		}
 
@@ -1137,36 +1137,6 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 	}
 
 	return offset;
-}
-
-int dns_sd_extract_service_proto_domain(const uint8_t *query, size_t query_size,
-					struct dns_sd_rec *record, char *service,
-					size_t service_size, char *proto, size_t proto_size,
-					char *domain, size_t domain_size)
-{
-	char instance[DNS_SD_INSTANCE_MAX_SIZE + 1];
-	char *label[4];
-	size_t size[] = {
-		ARRAY_SIZE(instance),
-		service_size,
-		proto_size,
-		domain_size,
-	};
-	size_t n = ARRAY_SIZE(label);
-
-	BUILD_ASSERT(ARRAY_SIZE(label) == ARRAY_SIZE(size),
-		"label and size arrays are different size");
-
-	/*
-	 * work around for bug in compliance scripts which say that the array
-	 * should be static const (incorrect)
-	 */
-	label[0] = instance;
-	label[1] = service;
-	label[2] = proto;
-	label[3] = domain;
-
-	return dns_sd_query_extract(query, query_size, record, label, size, &n);
 }
 
 bool dns_sd_is_service_type_enumeration(const struct dns_sd_rec *rec)

@@ -27,9 +27,20 @@
 void boot_banner(void)
 {
 #if defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0)
+#ifdef CONFIG_BOOT_BANNER
 	printk("***** delaying boot " DELAY_STR "ms (per build configuration) *****\n");
+#endif /* CONFIG_BOOT_BANNER */
 	k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
 #endif /* defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0) */
+
+#if defined(CONFIG_BOOT_CLEAR_SCREEN)
+	 /* \x1b[ = escape sequence
+	  * 3J = erase scrollback
+	  * 2J = erase screen
+	  * H = move cursor to top left
+	  */
+	printk("\x1b[3J\x1b[2J\x1b[H");
+#endif /* CONFIG_BOOT_CLEAR_SCREEN */
 
 #ifdef CONFIG_BOOT_BANNER
 	printk("*** " CONFIG_BOOT_BANNER_STRING " " BANNER_VERSION BANNER_POSTFIX " ***\n");

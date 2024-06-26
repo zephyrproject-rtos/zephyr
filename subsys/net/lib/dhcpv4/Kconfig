@@ -9,6 +9,7 @@ config NET_DHCPV4
 	bool "DHCPv4 client"
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO if NET_IPV4_ACD
 	depends on NET_IPV4 && NET_UDP
 
 if NET_DHCPV4

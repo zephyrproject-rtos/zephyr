@@ -5,17 +5,6 @@
 
 if BOARD_DA1469X_DK_PRO
 
-# Enable sleep and voltage rails manager so that
-# the device consumes the lowest possible current
-config PM
-	default y
-
-config PM_DEVICE
-	default y
-
-config REGULATOR
-	default y
-
 config I2C_CALLBACK
 	default y if I2C_SMARTBOND
 
@@ -63,10 +52,6 @@ config SERIAL_INIT_PRIORITY
 endif # PM || PM_DEVICE
 
 if BT
-
-choice BT_HCI_BUS_TYPE
-	default BT_DA1469X
-endchoice
 
 config BT_WAIT_NOP
 	default y

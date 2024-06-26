@@ -112,7 +112,7 @@ class TestReport:
         (
             os.path.join(TEST_DATA, 'tests', 'one_fail_two_error_one_pass'),
             ['qemu_x86'],
-            [r'one_fail_two_error_one_pass.agnostic.group1.subgroup2 on qemu_x86 FAILED \(Failed\)',
+            [r'one_fail_two_error_one_pass.agnostic.group1.subgroup2 on qemu_x86 FAILED \(.*\)',
             r'one_fail_two_error_one_pass.agnostic.group1.subgroup3 on qemu_x86 ERROR \(Build failure\)',
             r'one_fail_two_error_one_pass.agnostic.group1.subgroup4 on qemu_x86 ERROR \(Build failure\)'],
         )

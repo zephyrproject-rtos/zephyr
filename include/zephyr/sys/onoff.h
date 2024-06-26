@@ -188,14 +188,14 @@ struct onoff_manager {
  * to an off state. Can be null.
  */
 #define ONOFF_TRANSITIONS_INITIALIZER(_start, _stop, _reset) { \
-		.start = _start,			       \
-		.stop = _stop,				       \
-		.reset = _reset,			       \
+		.start = (_start),			       \
+		.stop = (_stop),			       \
+		.reset = (_reset),			       \
 }
 
 /** @cond INTERNAL_HIDDEN */
 #define ONOFF_MANAGER_INITIALIZER(_transitions) { \
-		.transitions = _transitions,	  \
+		.transitions = (_transitions),	  \
 }
 /** @endcond */
 
@@ -340,7 +340,7 @@ static inline bool onoff_has_error(const struct onoff_manager *mgr)
  *
  * @retval non-negative the observed state of the machine at the time
  * the request was processed, if successful.
- * @retval -EIO if service has recorded an an error.
+ * @retval -EIO if service has recorded an error.
  * @retval -EINVAL if the parameters are invalid.
  * @retval -EAGAIN if the reference count would overflow.
  */
@@ -361,7 +361,7 @@ int onoff_request(struct onoff_manager *mgr,
  *
  * @retval non-negative the observed state (ONOFF_STATE_ON) of the
  * machine at the time of the release, if the release succeeds.
- * @retval -EIO if service has recorded an an error.
+ * @retval -EIO if service has recorded an error.
  * @retval -ENOTSUP if the machine is not in a state that permits
  * release.
  */

@@ -1,4 +1,4 @@
-# Inspired by the the same configuration file available in the SystemView tool
+# Inspired by the same configuration file available in the SystemView tool
 
 Option    ReversePriority
 #

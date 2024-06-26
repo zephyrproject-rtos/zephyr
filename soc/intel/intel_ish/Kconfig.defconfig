@@ -8,6 +8,8 @@ if SOC_FAMILY_INTEL_ISH
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768 if HPET_TIMER
+	default 96000000 if APIC_TIMER_TSC && SOC_INTEL_ISH_5_4_1
+	default 100000000 if APIC_TIMER_TSC && !SOC_INTEL_ISH_5_4_1
 
 config X86_VERY_EARLY_CONSOLE
 	default n
@@ -20,6 +22,21 @@ config SRAM_OFFSET
 # (e.g. without BIOS, ACPI, CMOS, etc.).
 config X86_PC_COMPATIBLE
 	default n
+
+if APIC_TIMER_TSC
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+if SOC_INTEL_ISH_5_4_1
+
+config APIC_TIMER_TSC_N
+	default 1280
+
+config APIC_TIMER_TSC_M
+	default 256
+endif
+endif
 
 rsource "*/Kconfig.defconfig.series"
 

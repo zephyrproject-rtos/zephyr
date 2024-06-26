@@ -141,6 +141,28 @@ struct hid_device_ops kb_ops = {
 	.output_report = kb_output_report,
 };
 
+/* doc device msg-cb start */
+static void msg_cb(struct usbd_context *const usbd_ctx,
+		   const struct usbd_msg *const msg)
+{
+	LOG_INF("USBD message: %s", usbd_msg_type_string(msg->type));
+
+	if (usbd_can_detect_vbus(usbd_ctx)) {
+		if (msg->type == USBD_MSG_VBUS_READY) {
+			if (usbd_enable(usbd_ctx)) {
+				LOG_ERR("Failed to enable device support");
+			}
+		}
+
+		if (msg->type == USBD_MSG_VBUS_REMOVED) {
+			if (usbd_disable(usbd_ctx)) {
+				LOG_ERR("Failed to disable device support");
+			}
+		}
+	}
+}
+/* doc device msg-cb end */
+
 int main(void)
 {
 	struct usbd_context *sample_usbd;
@@ -178,16 +200,20 @@ int main(void)
 		return ret;
 	}
 
-	sample_usbd = sample_usbd_init_device(NULL);
+	sample_usbd = sample_usbd_init_device(msg_cb);
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to initialize USB device");
 		return -ENODEV;
 	}
 
-	ret = usbd_enable(sample_usbd);
-	if (ret) {
-		LOG_ERR("Failed to enable device support");
-		return ret;
+	if (!usbd_can_detect_vbus(sample_usbd)) {
+		/* doc device enable start */
+		ret = usbd_enable(sample_usbd);
+		if (ret) {
+			LOG_ERR("Failed to enable device support");
+			return ret;
+		}
+		/* doc device enable end */
 	}
 
 	LOG_INF("HID keyboard sample is initialized");

@@ -1,0 +1,15 @@
+identifier: nsim_arc_v/rmx100
+name: Synopsys rmx100
+simulation: nsim
+simulation_exec: nsimdrv
+type: sim
+arch: riscv
+toolchain:
+  - zephyr
+  - cross-compile
+  - arcmwdt
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

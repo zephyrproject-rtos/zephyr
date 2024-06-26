@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(adc_stm32);
 #include <zephyr/irq.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #endif
 
@@ -522,6 +522,7 @@ static void adc_stm32_calibration_start(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
@@ -556,6 +557,7 @@ static int adc_stm32_calibrate(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32C0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBAX) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -606,6 +608,7 @@ static int adc_stm32_calibrate(const struct device *dev)
 		linear_calib_buffer = *(uint32_t *)(
 			ADC_LINEAR_CALIB_REG_1_ADDR + channel_offset + count
 		);
+
 		LL_ADC_SetCalibrationLinearFactor(
 			adc, LL_ADC_CALIB_LINEARITY_WORD1 << count,
 			linear_calib_buffer
@@ -1425,6 +1428,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
 	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be awaken from deep sleep
@@ -1485,6 +1489,7 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
 	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be put into

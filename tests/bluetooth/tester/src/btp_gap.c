@@ -628,7 +628,7 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_ad
 		break;
 #if defined(CONFIG_BT_PRIVACY)
 	case BTP_GAP_ADDR_TYPE_RESOLVABLE_PRIVATE:
-		/* RPA usage is is controlled via privacy settings */
+		/* RPA usage is controlled via privacy settings */
 		if (!atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_PRIVACY)) {
 			return -EINVAL;
 		}

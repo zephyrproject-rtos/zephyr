@@ -55,7 +55,15 @@ features:
 +-----------+------------+-------------------------------------+
 | ARM TIMER | on-chip    | system clock                        |
 +-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| RDC       | on-chip    | Resource Domain Controller          |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
+| ENET      | on-chip    | ethernet port                       |
 +-----------+------------+-------------------------------------+
 
 The Zephyr mimx8mp_evk_m7 board configuration supports the following hardware
@@ -226,4 +234,4 @@ References
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/evaluation-kit-for-the-i-mx-8m-plus-applications-processor:8MPLUSLPD4-EVK
 
 .. _i.MX 8M Applications Processor Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/IMX8MPRM.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMX8MPRM

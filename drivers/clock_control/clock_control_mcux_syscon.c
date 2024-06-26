@@ -84,6 +84,16 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif /* defined(CONFIG_CAN_MCUX_MCAN) */
 
+#ifdef CONFIG_ETH_NXP_ENET
+	if ((uint32_t)sub_system == MCUX_ENET_CLK) {
+#ifdef CONFIG_SOC_SERIES_RW6XX
+		CLOCK_EnableClock(kCLOCK_TddrMciEnetClk);
+		CLOCK_EnableClock(kCLOCK_EnetIpg);
+		CLOCK_EnableClock(kCLOCK_EnetIpgS);
+#endif
+	}
+#endif
+
 	return 0;
 }
 
@@ -305,6 +315,14 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 #endif
 
+#ifdef CONFIG_ETH_NXP_ENET
+	case MCUX_ENET_CLK:
+#ifdef CONFIG_SOC_SERIES_RW6XX
+		*rate = CLOCK_GetTddrMciEnetClkFreq();
+#endif
+		break;
+#endif
+
 #if defined(CONFIG_MIPI_DBI_NXP_LCDIC)
 	case MCUX_LCDIC_CLK:
 		*rate = CLOCK_GetLcdClkFreq();
@@ -334,6 +352,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetFlexcanClkFreq(1);
 		break;
 #endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
+
+#if defined(CONFIG_MCUX_FLEXIO)
+	case MCUX_FLEXIO0_CLK:
+		*rate = CLOCK_GetFlexioClkFreq();
+		break;
+#endif /* defined(CONFIG_MCUX_FLEXIO) */
 	}
 
 	return 0;

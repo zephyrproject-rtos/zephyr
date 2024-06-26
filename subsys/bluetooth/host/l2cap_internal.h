@@ -214,14 +214,8 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
  *
  * Buffer ownership is transferred to stack in case of success.
  */
-int bt_l2cap_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
-		     bt_conn_tx_cb_t cb, void *user_data);
-
-static inline int bt_l2cap_send(struct bt_conn *conn, uint16_t cid,
-				struct net_buf *buf)
-{
-	return bt_l2cap_send_cb(conn, cid, buf, NULL, NULL);
-}
+int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
+		      bt_conn_tx_cb_t cb, void *user_data);
 
 /* Receive a new L2CAP PDU from a connection */
 void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf, bool complete);
@@ -252,3 +246,8 @@ void bt_l2cap_register_ecred_cb(const struct bt_l2cap_ecred_cb *cb);
 
 /* Returns a server if it exists for given psm. */
 struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm);
+
+/* Pull data from the L2CAP layer */
+struct net_buf *l2cap_data_pull(struct bt_conn *conn,
+				size_t amount,
+				size_t *length);

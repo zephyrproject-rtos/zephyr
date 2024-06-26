@@ -72,7 +72,7 @@ do {                                                                       \
 	if (!FOR##_mark) {                                                 \
 		FOR##_mark = p;                                            \
 	}                                                                  \
-} while (0)
+} while (false)
 
 /* Don't allow the total size of the HTTP headers (including the status
  * line) to exceed HTTP_MAX_HEADER_SIZE.  This check is here to protect

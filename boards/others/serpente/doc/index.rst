@@ -56,7 +56,7 @@ following hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/arturo182/serpente/serpente_defconfig`.
+:zephyr_file:`boards/others/serpente/serpente_defconfig`.
 
 Connections and IOs
 ===================

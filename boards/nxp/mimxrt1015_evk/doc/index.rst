@@ -161,40 +161,26 @@ and the remaining are not used.
 Programming and Debugging
 *************************
 
-Build and flash applications as usual (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
+This board supports 3 debug host tools. Please install your preferred host
+tool, then follow the instructions in `Configuring a Debug Probe`_ to
+configure the board appropriately.
+
+* :ref:`linkserver-debug-host-tools` (Default, Supported by NXP)
+* :ref:`jlink-debug-host-tools` (Supported by NXP)
+* :ref:`pyocd-debug-host-tools` (Not supported by NXP)
+
+Once the host tool and board are configured, build and flash applications
+as usual (see :ref:`build_an_application` and :ref:`application_run` for more
+details).
 
 Configuring a Debug Probe
 =========================
 
-A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`.
+For the RT1015, J47/J48 are the SWD isolation jumpers, J42 is the DFU
+mode jumper, and J34 is the 10 pin JTAG/SWD header.
 
-Using LinkServer: :ref:`opensda-daplink-onboard-debug-probe`
-------------------------------------------------------------
-
-Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
-search path.  LinkServer works with the default CMSIS-DAP firmware included in
-the on-board debugger.
-
-Linkserver is the default runner. You may also se the ``-r linkserver`` option
-with West to use the LinkServer runner.
-
-.. code-block:: console
-
-   west flash
-   west debug
-
-
-External JLink: :ref:`jlink-external-debug-probe`
--------------------------------------------------
-
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
-
-Attach a J-Link 10-pin connector to J55. Check that jumpers J47 and J48 are
-**off** (they are on by default when boards ship from the factory) to ensure
-SWD signals are disconnected from the OpenSDA microcontroller.
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst
+   :start-after: rt1xxx-lpclink2-probes
 
 Configuring a Console
 =====================

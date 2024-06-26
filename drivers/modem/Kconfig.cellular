@@ -8,6 +8,7 @@ config MODEM_CELLULAR
 	select MODEM_CMUX
 	select MODEM_CHAT
 	select MODEM_PIPE
+	select MODEM_PIPELINK
 	select MODEM_BACKEND_UART
 	select RING_BUFFER
 	select NET_L2_PPP_OPTION_MRU
@@ -48,6 +49,10 @@ config MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE
 
 config MODEM_CELLULAR_CHAT_BUFFER_SIZES
 	int "The size of the buffers used for the chat scripts in bytes."
+	default 128
+
+config MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES
+	int "The size of the buffers used for each user pipe in bytes."
 	default 128
 
 endif

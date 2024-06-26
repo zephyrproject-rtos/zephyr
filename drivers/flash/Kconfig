@@ -20,7 +20,7 @@ config FLASH_HAS_EX_OP
 config FLASH_HAS_EXPLICIT_ERASE
 	bool
 	help
-	  Device has does not do erase-on-write (erase-on-program, auto-erase
+	  Device does not do erase-on-write (erase-on-program, auto-erase
 	  on write) and requires explicit erase procedure to be programmed
 	  with random value, in place where it has already been programmed with
 	  some other value, as program can only change bits from erased-value
@@ -128,7 +128,7 @@ config FLASH_SHELL_BUFFER_SIZE
 endif # FLASH_SHELL
 
 config FLASH_FILL_BUFFER_SIZE
-	int "Buffer size of flash_fill funciton"
+	int "Buffer size of flash_fill function"
 	default 32
 	help
 	  Size of a buffer used by flash_fill function to fill a device with
@@ -138,7 +138,7 @@ config FLASH_FILL_BUFFER_SIZE
 	  be written to a device, and alignment of write offset.
 	  Even if device does not have such requirement, filling device by
 	  single bytes is not efficient.
-	  Value selected here should be multiply of the largest write-block-size
+	  Value selected here should be a multiple of the largest write-block-size
 	  among all the memory devices used in system.
 
 if FLASH_HAS_PAGE_LAYOUT
@@ -182,6 +182,8 @@ source "drivers/flash/Kconfig.nrf"
 source "drivers/flash/Kconfig.lpc"
 
 source "drivers/flash/Kconfig.mcux"
+
+source "drivers/flash/Kconfig.mspi"
 
 source "drivers/flash/Kconfig.nios2_qspi"
 

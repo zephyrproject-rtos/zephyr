@@ -121,7 +121,7 @@ static void comm_sendto_recvfrom(int client_sock,
 	 * Test server -> client sending
 	 */
 
-	sent = zsock_sendto(server_sock, BUF_AND_SIZE(TEST_STR2),
+	sent = zsock_sendto(server_sock, TEST_STR2, sizeof(TEST_STR2) - 1,
 			    0, &addr, addrlen);
 	zassert_equal(sent, STRLEN(TEST_STR2), "sendto failed");
 
@@ -144,10 +144,10 @@ static void comm_sendto_recvfrom(int client_sock,
 	/* Test that unleft leftover data from datagram is discarded. */
 
 	/* Send 2 datagrams */
-	sent = zsock_sendto(server_sock, BUF_AND_SIZE(TEST_STR2),
+	sent = zsock_sendto(server_sock, TEST_STR2, sizeof(TEST_STR2) - 1,
 			    0, &addr, addrlen);
 	zassert_equal(sent, STRLEN(TEST_STR2), "sendto failed");
-	sent = zsock_sendto(server_sock, BUF_AND_SIZE(TEST_STR_SMALL),
+	sent = zsock_sendto(server_sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1,
 			    0, &addr, addrlen);
 	zassert_equal(sent, STRLEN(TEST_STR_SMALL), "sendto failed");
 
@@ -303,7 +303,7 @@ ZTEST(net_socket_udp, test_01_send_recv_2_sock)
 	rv = zsock_connect(sock2, (struct sockaddr *)&conn_addr, sizeof(conn_addr));
 	zassert_equal(rv, 0, "connect failed");
 
-	len = zsock_send(sock2, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	len = zsock_send(sock2, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0);
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
 
 	clear_buf(buf);
@@ -1129,7 +1129,7 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 
 	/* MSG_TRUNC */
 
-	rv = zsock_send(sock_c, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	rv = zsock_send(sock_c, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0);
 	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "send failed");
 
 	memset(str_buf, 0, sizeof(str_buf));
@@ -1145,7 +1145,7 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 
 	/* MSG_TRUNC & MSG_PEEK combo */
 
-	rv = zsock_send(sock_c, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	rv = zsock_send(sock_c, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0);
 	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "send failed");
 
 	memset(str_buf, 0, sizeof(str_buf));
@@ -1839,7 +1839,7 @@ static void run_ancillary_recvmsg_test(int client_sock,
 	}
 
 	/* Make sure that the recvmsg() fails if control area is too small */
-	rv = zsock_sendto(client_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0,
+	rv = zsock_sendto(client_sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0,
 			  server_addr, server_addr_len);
 	zassert_equal(rv, STRLEN(TEST_STR_SMALL), "sendto failed (%d)", -errno);
 

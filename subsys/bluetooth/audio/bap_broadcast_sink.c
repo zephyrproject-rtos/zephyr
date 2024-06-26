@@ -589,39 +589,47 @@ static bool base_subgroup_bis_index_cb(const struct bt_bap_base_subgroup_bis *bi
 	sink_subgroup->bis_indexes |= BIT(bis->index);
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-	int err;
 
 	memcpy(&sink_bis->codec_cfg, data->subgroup_codec_cfg, sizeof(sink_bis->codec_cfg));
 
-	/* Merge subgroup codec configuration with the BIS configuration
-	 * As per the BAP spec, if a value exist at level 2 (subgroup) and 3 (BIS), then it is
-	 * the value at level 3 that shall be used
-	 */
-	if (sink_bis->codec_cfg.id == BT_HCI_CODING_FORMAT_LC3) {
-		memcpy(&sink_bis->codec_cfg, data->subgroup_codec_cfg, sizeof(sink_bis->codec_cfg));
-
-		err = bt_audio_data_parse(bis->data, bis->data_len, merge_bis_and_subgroup_data_cb,
-					  &sink_bis->codec_cfg);
-		if (err != 0) {
-			LOG_DBG("Could not merge BIS and subgroup config in codec_cfg: %d", err);
-
-			return false;
-		}
-	} else {
-		/* If it is not LC3, then we don't know how to merge the subgroup and BIS codecs,
-		 * so we just append them
+	if (bis->data_len > 0) {
+		/* Merge subgroup codec configuration with the BIS configuration
+		 * As per the BAP spec, if a value exist at level 2 (subgroup) and 3 (BIS), then it
+		 * is the value at level 3 that shall be used
 		 */
-		if (sink_bis->codec_cfg.data_len + bis->data_len >
-		    sizeof(sink_bis->codec_cfg.data)) {
-			LOG_DBG("Could not store BIS and subgroup config in codec_cfg (%u > %u)",
-				sink_bis->codec_cfg.data_len + bis->data_len,
-				sizeof(sink_bis->codec_cfg.data));
+		if (sink_bis->codec_cfg.id == BT_HCI_CODING_FORMAT_LC3) {
+			int err;
 
-			return false;
+			memcpy(&sink_bis->codec_cfg, data->subgroup_codec_cfg,
+			       sizeof(sink_bis->codec_cfg));
+
+			err = bt_audio_data_parse(bis->data, bis->data_len,
+						  merge_bis_and_subgroup_data_cb,
+						  &sink_bis->codec_cfg);
+			if (err != 0) {
+				LOG_DBG("Could not merge BIS and subgroup config in codec_cfg: %d",
+					err);
+
+				return false;
+			}
+		} else {
+			/* If it is not LC3, then we don't know how to merge the subgroup and BIS
+			 * codecs, so we just append them
+			 */
+			if (sink_bis->codec_cfg.data_len + bis->data_len >
+			    sizeof(sink_bis->codec_cfg.data)) {
+				LOG_DBG("Could not store BIS and subgroup config in codec_cfg (%u "
+					"> %u)",
+					sink_bis->codec_cfg.data_len + bis->data_len,
+					sizeof(sink_bis->codec_cfg.data));
+
+				return false;
+			}
+
+			memcpy(&sink_bis->codec_cfg.data[sink_bis->codec_cfg.data_len], bis->data,
+			       bis->data_len);
+			sink_bis->codec_cfg.data_len += bis->data_len;
 		}
-
-		memcpy(&sink_bis->codec_cfg.data[sink_bis->codec_cfg.data_len], bis->data,
-		       bis->data_len);
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
@@ -747,7 +755,7 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 	struct bt_bap_broadcast_sink *sink = (struct bt_bap_broadcast_sink *)user_data;
 	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
 	struct bt_bap_broadcast_sink_cb *listener;
-	size_t base_size;
+	int base_size;
 	int ret;
 
 	/* Base is NULL if the data does not contain a valid BASE */
@@ -793,11 +801,16 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 	}
 
 	/* We provide the BASE without the service data UUID */
-	base_size = data->data_len - BT_UUID_SIZE_16;
+	base_size = bt_bap_base_get_size(base);
+	if (base_size < 0) {
+		LOG_DBG("BASE get size failed (%d)", base_size);
+
+		return false;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->base_recv != NULL) {
-			listener->base_recv(sink, base, base_size);
+			listener->base_recv(sink, base, (size_t)base_size);
 		}
 	}
 

@@ -93,6 +93,6 @@ int akm09918c_sample_fetch_helper(const struct device *dev, enum sensor_channel 
 
 int akm09918c_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
 
-int akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_AKM09918C_AKM09918C_H_ */

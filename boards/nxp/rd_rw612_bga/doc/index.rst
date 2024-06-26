@@ -147,7 +147,7 @@ should see the following message in the terminal:
    Hello World! rd_rw612_bga
 
 Bluetooth
-=========
+*********
 
 BLE functionality requires to fetch binary blobs, so make sure to follow
 the ``Fetch Binary Blobs`` section first.
@@ -167,8 +167,39 @@ In this case, the BLE blob won't be linked with the application, so the user nee
 flash the BLE binary blob to the board at the address ``0x18540000``.
 The binary blob will be located here: ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x/rw61x_sb_ble_a2.bin``
 
+Board variants
+**************
+
+Ethernet
+========
+
+To use ethernet on the RD_RW612_BGA board, you first need to make the following
+modifications to the board hardware:
+
+Add resistors:
+
+- R485
+- R486
+- R487
+- R488
+- R489
+- R491
+- R490
+
+Remove resistors:
+
+- R522
+- R521
+- R520
+- R524
+- R523
+- R508
+- R505
+
+Then, build for the board target `rd_rw612_bga//ethernet`.
+
 Resources
-=========
+*********
 
 .. _RW612 Website:
    https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/wireless-mcu-with-integrated-tri-radiobr1x1-wi-fi-6-plus-bluetooth-low-energy-5-3-802-15-4:RW612

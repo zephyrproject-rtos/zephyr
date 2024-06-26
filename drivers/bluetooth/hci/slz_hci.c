@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 
 #include <sl_btctrl_linklayer.h>
 #include <sl_hci_common_transport.h>
@@ -15,6 +15,12 @@
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_slz);
+
+#define DT_DRV_COMPAT silabs_bt_hci
+
+struct hci_data {
+	bt_hci_recv_t recv;
+};
 
 #define SL_BT_CONFIG_ACCEPT_LIST_SIZE				1
 #define SL_BT_CONFIG_MAX_CONNECTIONS				1
@@ -53,6 +59,8 @@ void rail_isr_installer(void)
  */
 uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct hci_data *hci = dev->data;
 	struct net_buf *buf;
 	uint8_t packet_type = data[0];
 	uint8_t event_code;
@@ -77,16 +85,18 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 	}
 
 	net_buf_add_mem(buf, data, len);
-	bt_recv(buf);
+	hci->recv(dev, buf);
 
 	sl_btctrl_hci_transmit_complete(0);
 
 	return 0;
 }
 
-static int slz_bt_send(struct net_buf *buf)
+static int slz_bt_send(const struct device *dev, struct net_buf *buf)
 {
 	int rv = 0;
+
+	ARG_UNUSED(dev);
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
@@ -119,8 +129,9 @@ static void slz_thread_func(void *p1, void *p2, void *p3)
 	slz_ll_thread_func();
 }
 
-static int slz_bt_open(void)
+static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct hci_data *hci = dev->data;
 	int ret;
 
 	/* Start RX thread */
@@ -185,6 +196,8 @@ static int slz_bt_open(void)
 	}
 #endif
 
+	hci->recv = recv;
+
 	LOG_DBG("SiLabs BT HCI started");
 
 	return 0;
@@ -193,24 +206,16 @@ deinit:
 	return ret;
 }
 
-static const struct bt_hci_driver drv = {
-	.name           = "sl:bt",
-	.bus            = BT_HCI_DRIVER_BUS_UART,
+static const struct bt_hci_driver_api drv = {
 	.open           = slz_bt_open,
 	.send           = slz_bt_send,
-	.quirks         = BT_QUIRK_NO_RESET
 };
 
-static int slz_bt_init(void)
-{
-	int ret;
+#define HCI_DEVICE_INIT(inst) \
+	static struct hci_data hci_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
-	ret = bt_hci_driver_register(&drv);
-	if (ret) {
-		LOG_ERR("Failed to register SiLabs BT HCI %d", ret);
-	}
-
-	return ret;
-}
-
-SYS_INIT(slz_bt_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+/* Only one instance supported right now */
+HCI_DEVICE_INIT(0)

@@ -26,12 +26,9 @@ file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 if(HWMv1)
   # Support multiple SOC_ROOT
   file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR}/soc)
-  set(kconfig_soc_root ${BOARD_ROOT})
+  set(kconfig_soc_root ${SOC_ROOT})
   list(REMOVE_ITEM kconfig_soc_root ${ZEPHYR_BASE})
   set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/soc/Kconfig.defconfig)
-
-  # This loads Zephyr base SoC root defconfigs
-  file(WRITE ${soc_defconfig_file} "osource \"soc/soc_legacy/$(ARCH)/*/Kconfig.defconfig\"\n")
 
   set(OPERATION WRITE)
   foreach(root ${kconfig_soc_root})
@@ -401,7 +398,7 @@ if(CREATE_NEW_DOTCONFIG)
 endif()
 
 # Read out the list of 'Kconfig' sources that were used by the engine.
-file(STRINGS ${PARSED_KCONFIG_SOURCES_TXT} PARSED_KCONFIG_SOURCES_LIST)
+file(STRINGS ${PARSED_KCONFIG_SOURCES_TXT} PARSED_KCONFIG_SOURCES_LIST ENCODING UTF-8)
 
 # Force CMAKE configure when the Kconfig sources or configuration files changes.
 foreach(kconfig_input

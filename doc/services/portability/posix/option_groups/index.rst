@@ -368,7 +368,7 @@ POSIX_FILE_SYSTEM
     creat(),
     fchdir(),
     fpathconf(),
-    fstat(),
+    fstat(), yes
     fstatvfs(),
     getcwd(),
     link(),
@@ -388,6 +388,19 @@ POSIX_FILE_SYSTEM
     truncate(),
     unlink(), yes
     utime(),
+
+.. _posix_option_group_mapped_files:
+
+POSIX_MAPPED_FILES
+==================
+
+.. csv-table:: POSIX_MAPPED_FILES
+   :header: API, Supported
+   :widths: 50,10
+
+    mmap(),yes
+    msync(),yes
+    munmap(),yes
 
 .. _posix_option_group_networking:
 
@@ -559,6 +572,17 @@ This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
     putc_unlocked(),
     putchar_unlocked(),
 
+.. _posix_option_group_memory_protection:
+
+POSIX_MEMORY_PROTECTION
+=======================
+
+.. csv-table:: POSIX_MEMORY_PROTECTION
+   :header: API, Supported
+   :widths: 50,10
+
+    mprotect(), yes :ref:`†<posix_undefined_behaviour>`
+
 .. _posix_option_group_multi_process:
 
 POSIX_MULTI_PROCESS
@@ -603,18 +627,22 @@ Additional POSIX Options
 _POSIX_ASYNCHRONOUS_IO
 ++++++++++++++++++++++
 
+Functions part of the ``_POSIX_ASYNCHRONOUS_IO`` Option are not implemented in Zephyr but are
+provided so that conformant applications can still link. These functions will fail, setting
+``errno`` to ``ENOSYS``:ref:`†<posix_undefined_behaviour>`.
+
 .. csv-table:: _POSIX_ASYNCHRONOUS_IO
    :header: API, Supported
    :widths: 50,10
 
-    aio_cancel(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_error(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_fsync(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_read(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_return(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_suspend(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_write(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    lio_listio(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    aio_cancel(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_error(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_fsync(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_read(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_return(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_suspend(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_write(),yes :ref:`†<posix_undefined_behaviour>`
+    lio_listio(),yes :ref:`†<posix_undefined_behaviour>`
 
 .. _posix_option_cputime:
 
@@ -652,12 +680,16 @@ For more information, please refer to :ref:`Networking <networking>`.
 _POSIX_MEMLOCK
 ++++++++++++++
 
+Zephyr's :ref:`Demand Paging API <memory_management_api_demand_paging>` does not yet support
+pinning or unpinning all virtual memory regions. The functions below are expected to fail and
+set ``errno`` to ``ENOSYS`` :ref:`†<posix_undefined_behaviour>`.
+
 .. csv-table:: _POSIX_MEMLOCK
    :header: API, Supported
    :widths: 50,10
 
-    mlockall(),
-    munlockall(),
+    mlockall(), yes
+    munlockall(), yes
 
 .. _posix_option_memlock_range:
 
@@ -668,8 +700,8 @@ _POSIX_MEMLOCK_RANGE
    :header: API, Supported
    :widths: 50,10
 
-    mlock(),
-    munlock(),
+    mlock(), yes
+    munlock(), yes
 
 .. _posix_option_message_passing:
 
@@ -757,10 +789,10 @@ _POSIX_SHARED_MEMORY_OBJECTS
    :header: API, Supported
    :widths: 50,10
 
-    mmap(),
-    munmap(),
-    shm_open(),
-    shm_unlink(),
+    mmap(), yes
+    munmap(), yes
+    shm_open(), yes
+    shm_unlink(), yes
 
 .. _posix_option_synchronized_io:
 
@@ -872,16 +904,16 @@ _POSIX_THREAD_SAFE_FUNCTIONS
     flockfile(),
     ftrylockfile(),
     funlockfile(),
-    getc_unlocked(), yes
-    getchar_unlocked(), yes
+    getc_unlocked(),
+    getchar_unlocked(),
     getgrgid_r(),
     getgrnam_r(),
     getpwnam_r(),
     getpwuid_r(),
     gmtime_r(), yes
     localtime_r(),
-    putc_unlocked(), yes
-    putchar_unlocked(), yes
+    putc_unlocked(),
+    putchar_unlocked(),
     rand_r(), yes
     readdir_r(),
     strerror_r(), yes
@@ -909,18 +941,23 @@ _POSIX_TIMEOUTS
 _XOPEN_STREAMS
 ++++++++++++++
 
+With the exception of ``ioctl()``, functions in the ``_XOPEN_STREAMS`` option group are not
+implemented in Zephyr but are provided so that conformant applications can still link.
+Unimplemented functions in this option group will fail, setting ``errno`` to ``ENOSYS``
+:ref:`†<posix_undefined_behaviour>`.
+
 .. csv-table:: _XOPEN_STREAMS
    :header: API, Supported
    :widths: 50,10
 
-    fattach(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    fdetach(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    getmsg(),  yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    getpmsg(),  yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    ioctl(),yes
-    isastream(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    putmsg(), yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    putpmsg(),
+    fattach(), yes :ref:`†<posix_undefined_behaviour>`
+    fdetach(), yes :ref:`†<posix_undefined_behaviour>`
+    getmsg(), yes :ref:`†<posix_undefined_behaviour>`
+    getpmsg(), yes :ref:`†<posix_undefined_behaviour>`
+    ioctl(), yes
+    isastream(), yes :ref:`†<posix_undefined_behaviour>`
+    putmsg(), yes :ref:`†<posix_undefined_behaviour>`
+    putpmsg(), yes :ref:`†<posix_undefined_behaviour>`
 
 .. _Subprofiling Considerations:
     https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html

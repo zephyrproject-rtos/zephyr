@@ -310,8 +310,8 @@ static void espi_bus_cfg_update_isr(const struct device *dev)
 		espi_vw_send_bootload_done(dev);
 	}
 
-#if (defined(CONFIG_ESPI_FLASH_CHANNEL) && defined(CONFIG_ESPI_SAF))
-	/* If CONFIG_ESPI_SAF is set, set to auto or manual mode accroding
+#if (defined(CONFIG_ESPI_FLASH_CHANNEL) && defined(CONFIG_ESPI_TAF))
+	/* If CONFIG_ESPI_TAF is set, set to auto or manual mode accroding
 	 * to configuration.
 	 */
 	if (IS_BIT_SET(inst->ESPICFG, NPCX_ESPICFG_FLCHANMODE)) {
@@ -348,7 +348,7 @@ static void espi_bus_oob_rx_isr(const struct device *dev)
 #endif
 
 #if defined(CONFIG_ESPI_FLASH_CHANNEL)
-#if defined(CONFIG_ESPI_SAF)
+#if defined(CONFIG_ESPI_TAF)
 static struct espi_taf_pckt taf_pckt;
 
 static uint32_t espi_taf_parse(const struct device *dev)
@@ -382,7 +382,7 @@ static uint32_t espi_taf_parse(const struct device *dev)
 
 	return (uint32_t)&taf_pckt;
 }
-#endif /* CONFIG_ESPI_SAF */
+#endif /* CONFIG_ESPI_TAF */
 
 static void espi_bus_flash_rx_isr(const struct device *dev)
 {
@@ -404,9 +404,9 @@ static void espi_bus_flash_rx_isr(const struct device *dev)
 #endif
 		k_sem_give(&data->flash_rx_lock);
 	} else { /* Target Attached Flash Access */
-#if defined(CONFIG_ESPI_SAF)
+#if defined(CONFIG_ESPI_TAF)
 		struct espi_event evt = {
-			.evt_type = ESPI_BUS_SAF_NOTIFICATION,
+			.evt_type = ESPI_BUS_TAF_NOTIFICATION,
 			.evt_details = ESPI_CHANNEL_FLASH,
 			.evt_data = espi_taf_parse(dev),
 		};
@@ -1401,7 +1401,7 @@ static int espi_npcx_init(const struct device *dev)
 	/* Configure host sub-modules which HW blocks belong to core domain */
 	npcx_host_init_subs_core_domain(dev, &data->callbacks);
 
-#if defined(CONFIG_ESPI_FLASH_CHANNEL) && defined(CONFIG_ESPI_SAF)
+#if defined(CONFIG_ESPI_FLASH_CHANNEL) && defined(CONFIG_ESPI_TAF)
 	npcx_init_taf(dev, &data->callbacks);
 #endif
 

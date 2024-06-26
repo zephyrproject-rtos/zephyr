@@ -1,0 +1,12 @@
+identifier: ek_ra8m1
+name: Renesas EK-RA8M1
+type: mcu
+arch: arm
+ram: 1024
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart

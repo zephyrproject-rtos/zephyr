@@ -102,6 +102,8 @@ source "drivers/pwm/Kconfig.numaker"
 
 source "drivers/pwm/Kconfig.nxp_s32_emios"
 
+source "drivers/pwm/Kconfig.nxp_flexio"
+
 source "drivers/pwm/Kconfig.ene"
 
 endif # PWM

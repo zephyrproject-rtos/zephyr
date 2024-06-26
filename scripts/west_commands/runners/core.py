@@ -130,6 +130,8 @@ class BuildConfiguration:
 
     Kconfig configuration values are available (parsed from .config).'''
 
+    config_prefix = 'CONFIG'
+
     def __init__(self, build_dir: str):
         self.build_dir = build_dir
         self.options: Dict[str, Union[str, int]] = {}
@@ -153,8 +155,9 @@ class BuildConfiguration:
 
     def _parse(self):
         filename = self.path
-        opt_value = re.compile('^(?P<option>CONFIG_[A-Za-z0-9_]+)=(?P<value>.*)$')
-        not_set = re.compile('^# (?P<option>CONFIG_[A-Za-z0-9_]+) is not set$')
+
+        opt_value = re.compile(f'^(?P<option>{self.config_prefix}_[A-Za-z0-9_]+)=(?P<value>.*)$')
+        not_set = re.compile(f'^# (?P<option>{self.config_prefix}_[A-Za-z0-9_]+) is not set$')
 
         with open(filename, 'r') as f:
             for line in f:
@@ -186,6 +189,22 @@ class BuildConfiguration:
                 if match:
                     # '# CONFIG_FOO is not set' means a boolean option is false.
                     self.options[match.group('option')] = False
+
+class SysbuildConfiguration(BuildConfiguration):
+    '''This helper class provides access to sysbuild-time configuration.
+
+    Configuration options can be read as if the object were a dict,
+    either object['SB_CONFIG_FOO'] or object.get('SB_CONFIG_FOO').
+
+    Kconfig configuration values are available (parsed from .config).'''
+
+    config_prefix = 'SB_CONFIG'
+
+    def _parse(self):
+        # If the build does not use sysbuild, skip parsing the file.
+        if not os.path.exists(self.path):
+            return
+        super()._parse()
 
 class MissingProgram(FileNotFoundError):
     '''FileNotFoundError subclass for missing program dependencies.
@@ -652,6 +671,13 @@ class ZephyrBinaryRunner(abc.ABC):
         if not hasattr(self, '_build_conf'):
             self._build_conf = BuildConfiguration(self.cfg.build_dir)
         return self._build_conf
+
+    @property
+    def sysbuild_conf(self) -> SysbuildConfiguration:
+        '''Get a SysbuildConfiguration for the sysbuild directory.'''
+        if not hasattr(self, '_sysbuild_conf'):
+            self._sysbuild_conf = SysbuildConfiguration(os.path.dirname(self.cfg.build_dir))
+        return self._sysbuild_conf
 
     @property
     def thread_info_enabled(self) -> bool:

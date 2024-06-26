@@ -173,7 +173,7 @@ static void notify_one(struct onoff_manager *mgr,
 	onoff_client_callback cb =
 		(onoff_client_callback)sys_notify_finalize(&cli->notify, res);
 
-	if (cb) {
+	if (cb != NULL) {
 		cb(mgr, cli, state, res);
 	}
 }
@@ -643,7 +643,7 @@ int onoff_sync_finalize(struct onoff_sync_service *srv,
 
 	k_spin_unlock(&srv->lock, key);
 
-	if (cli) {
+	if (cli != NULL) {
 		/* Detect service mis-use: onoff does not callback on transition
 		 * to off, so no client should have been passed.
 		 */

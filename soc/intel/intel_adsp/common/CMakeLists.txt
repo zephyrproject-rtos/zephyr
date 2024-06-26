@@ -16,6 +16,7 @@ zephyr_library_sources(
     boot.c
     soc.c
     mem_window.c
+    boot_complete.c
     )
 
 zephyr_library_sources_ifdef(CONFIG_ADSP_CLOCK clk.c)

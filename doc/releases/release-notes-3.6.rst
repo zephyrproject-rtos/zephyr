@@ -176,12 +176,17 @@ Boards & SoC Support
     ``adi_eval_adin2111ebz``.
   * Added support for NXP UCANS32K1SIC board: ``ucans32k1sic``.
 
+* Added support for this RISC-V board:
+
+  * Added Lilygo TTGO T8-C3 board: ``ttgo_t8c3``.
+
 * Added support for these Xtensa boards:
 
   * Added support for NXP iMX8ULP board: ``nxp_adsp_imx8ulp``.
   * Added Heltec Wireless Stick Lite (V3) board: ``heltec_wireless_stick_lite_v3``.
   * Added KINCONY-KC868-A32 board: ``kincony_kc868_a32``.
   * Added Lolin ESP32-S2 Mini board: ``esp32s2_lolin_mini``.
+  * Added Lilygo TTGO LoRa32 board: ``ttgo_lora32``.
   * Added M5Stack AtomS3 board: ``m5stack_atoms3``.
   * Added M5Stack AtomS3-Lite board: ``m5stack_atoms3_lite``.
   * Added M5Stack StampS3 board: ``m5stack_stamps3``.

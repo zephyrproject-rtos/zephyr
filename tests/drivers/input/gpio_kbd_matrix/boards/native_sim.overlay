@@ -5,7 +5,7 @@
  */
 
 &gpio0 {
-        ngpios = <12>;
+	ngpios = <12>;
 };
 
 / {

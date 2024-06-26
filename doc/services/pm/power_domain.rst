@@ -184,5 +184,5 @@ Examples
 
 Some helpful examples showing power domain features:
 
-* :zephyr_file:`samples/subsys/pm/device_power_domains/`
-* :zephyr_file:`samples/subsys/pm/power_domain/`
+* :zephyr_file:`tests/subsys/pm/device_power_domains/`
+* :zephyr_file:`tests/subsys/pm/power_domain/`

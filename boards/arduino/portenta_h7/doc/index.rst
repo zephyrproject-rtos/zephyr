@@ -15,6 +15,7 @@ with 2MBytes of Flash memory, 1MB RAM, 480 MHz CPU, Art Accelerator, L1 cache, e
 large set of peripherals, SMPS, and MIPI-DSI.
 
 Additionally, the board features:
+
 - USB OTG FS
 - 3 color user LEDs
 
@@ -56,8 +57,22 @@ The current Zephyr arduino_portenta_h7 board configuration supports the followin
 +-----------+------------+-------------------------------------+
 | IPM       | on-chip    | virtual mailbox based on HSEM       |
 +-----------+------------+-------------------------------------+
+| EXTFLASH  | on-chip    | qspi                                |
++-----------+------------+-------------------------------------+
+| SDRAM     | on-chip    | sdram                               |
++-----------+------------+-------------------------------------+
+| USB       | on-board   | usb-hs                              |
++-----------+------------+-------------------------------------+
+| ETHERNET  | on-board   | eth                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
+
+The high precision low speed external (LSE) clock is only fully supported on
+boards with hardware revision 4.10 or greater. By default the internal source
+is used; to enable the use of the external oscillator, manually specify the
+hardware revision at build time (see :ref:`application_board_version` for
+information on how to build for specific revisions of the board).
 
 Resources sharing
 =================

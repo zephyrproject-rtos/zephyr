@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/debug/symtab.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
@@ -30,7 +29,7 @@ static const struct z_exc_handle exceptions[] = {
 #endif
 
 /* Stack trace function */
-void z_riscv_unwind_stack(const struct arch_esf *esf);
+void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf);
 
 uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf)
 {
@@ -80,14 +79,7 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 #endif /* CONFIG_RISCV_ISA_RV32E */
 		LOG_ERR("     sp: " PR_REG, z_riscv_get_sp_before_exc(esf));
 		LOG_ERR("     ra: " PR_REG, esf->ra);
-#ifndef CONFIG_SYMTAB
 		LOG_ERR("   mepc: " PR_REG, esf->mepc);
-#else
-		uint32_t offset = 0;
-		const char *name = symtab_find_symbol_name(esf->mepc, &offset);
-
-		LOG_ERR("   mepc: " PR_REG " [%s+0x%x]", esf->mepc, name, offset);
-#endif
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
 		LOG_ERR("");
 	}
@@ -107,8 +99,8 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 		LOG_ERR("");
 	}
 
-	if (IS_ENABLED(CONFIG_EXCEPTION_STACK_TRACE) && (esf != NULL)) {
-		z_riscv_unwind_stack(esf);
+	if (IS_ENABLED(CONFIG_EXCEPTION_STACK_TRACE)) {
+		z_riscv_unwind_stack(esf, csf);
 	}
 
 #endif /* CONFIG_EXCEPTION_DEBUG */

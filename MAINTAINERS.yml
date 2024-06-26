@@ -438,6 +438,7 @@ Bluetooth Audio:
     - larsgk
     - pin-zephyr
     - niym-ot
+    - jthm-ot
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
@@ -449,6 +450,7 @@ Bluetooth Audio:
     - tests/bluetooth/tester/src/audio/
     - doc/connectivity/bluetooth/api/audio/
     - samples/bluetooth/bap*/
+    - samples/bluetooth/cap*/
     - samples/bluetooth/hap*/
     - samples/bluetooth/pbp*/
     - samples/bluetooth/tmap*/
@@ -748,8 +750,8 @@ Device Driver Model:
   status: maintained
   maintainers:
     - gmarull
-  collaborators:
     - tbursztyka
+  collaborators:
     - dcpleung
     - nashif
   files:
@@ -781,10 +783,10 @@ DFU:
 
 Devicetree:
   status: maintained
-  maintainers:
-    - galak
+  maintainers: []
   collaborators:
     - decsny
+    - galak
   files:
     - scripts/dts/
     - dts/common/
@@ -802,10 +804,10 @@ Devicetree:
 
 Devicetree Bindings:
   status: maintained
-  maintainers:
-    - galak
+  maintainers: []
   collaborators:
     - decsny
+    - galak
   files:
     - dts/bindings/
     - include/zephyr/dt-bindings/
@@ -1339,7 +1341,7 @@ Release Notes:
 "Drivers: GNSS":
   status: maintained
   maintainers:
-    - bjarki-trackunit
+    - bjarki-andreasen
   collaborators:
     - tomi-font
     - fabiobaltieri
@@ -1508,6 +1510,26 @@ Release Notes:
   tests:
     - drivers.mipi_dsi
 
+"Drivers: MSPI":
+  status: maintained
+  maintainers:
+    - swift-tk
+  files:
+    - drivers/mspi/
+    - drivers/memc/*mspi*
+    - drivers/flash/*mspi*
+    - include/zephyr/drivers/mspi.h
+    - include/zephyr/drivers/mspi/
+    - samples/drivers/mspi/
+    - tests/drivers/mspi/
+    - doc/hardware/peripherals/mspi.rst
+    - dts/bindings/mspi/
+    - dts/bindings/mtd/mspi*
+  labels:
+    - "area: MSPI"
+  tests:
+    - drivers.mspi
+
 "Drivers: Reset":
   status: odd fixes
   collaborators:
@@ -1592,9 +1614,9 @@ Release Notes:
 "Drivers: LED Strip":
   status: maintained
   maintainers:
-    - mbolivar-ampere
     - simonguinot
   collaborators:
+    - mbolivar-ampere
     - soburi
     - thedjnK
   files:
@@ -1675,7 +1697,7 @@ Release Notes:
 "Drivers: RTC":
   status: maintained
   maintainers:
-    - bjarki-trackunit
+    - bjarki-andreasen
   files:
     - drivers/rtc/
     - include/zephyr/drivers/rtc/
@@ -2431,6 +2453,7 @@ Mbed TLS:
     - ceolin
   collaborators:
     - ithinuel
+    - valeriosetti
   files:
     - tests/crypto/mbedtls/
     - tests/benchmarks/mbedtls/
@@ -2478,7 +2501,7 @@ Modbus:
 Modem:
   status: maintained
   maintainers:
-    - bjarki-trackunit
+    - bjarki-andreasen
   collaborators:
     - tomi-font
   files:
@@ -2587,9 +2610,11 @@ Networking:
   files-exclude:
     - doc/connectivity/networking/api/gptp.rst
     - doc/connectivity/networking/api/ieee802154.rst
+    - doc/connectivity/networking/api/ptp.rst
     - doc/connectivity/networking/api/wifi.rst
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
+    - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/buf.h
     - include/zephyr/net/dhcpv4*.h
@@ -2605,6 +2630,7 @@ Networking:
     - subsys/net/lib/coap/
     - subsys/net/lib/config/ieee802154*
     - subsys/net/lib/lwm2m/
+    - subsys/net/lib/ptp/
     - subsys/net/lib/tls_credentials/
     - subsys/net/lib/dhcpv4/
     - tests/net/dhcpv4/
@@ -2759,6 +2785,20 @@ Networking:
     - "area: Networking"
   tests:
     - net.mqtt_sn
+
+"Networking: PTP":
+  status: maintained
+  maintainers:
+    - awojasinski
+  files:
+    - doc/connectivity/networking/api/ptp.rst
+    - include/zephyr/net/ptp.h
+    - subsys/net/lib/ptp/
+    - samples/net/ptp/
+  labels:
+    - "area: Networking"
+  tests:
+    - sample.net.ptp
 
 "Networking: Native IEEE 802.15.4":
   status: maintained
@@ -2925,6 +2965,8 @@ RISCV arch:
     - ycsin
   files:
     - arch/riscv/
+    - boards/enjoydigital/litex_vexriscv/
+    - boards/lowrisc/opentitan_earlgrey/
     - boards/qemu/riscv*/
     - boards/sifive/
     - boards/sparkfun/red_v_things_plus/
@@ -3120,16 +3162,18 @@ ADI Platforms:
     - microbuilder
   files:
     - boards/adi/
-    - drivers/*/max*
+    - drivers/*/*max*
     - drivers/*/*max*/
     - drivers/dac/dac_ltc*
     - drivers/ethernet/eth_adin*
     - drivers/mdio/mdio_adin*
     - drivers/regulator/regulator_adp5360*
     - drivers/sensor/adi/
+    - dts/arm/adi/
     - dts/bindings/*/adi,*
     - dts/bindings/*/lltc,*
     - dts/bindings/*/maxim,*
+    - soc/adi/
   labels:
     - "platform: ADI"
 
@@ -3240,8 +3284,13 @@ Raspberry Pi Pico Platforms:
   labels:
     - "platform: Raspberry Pi Pico"
 
-SiLabs Platforms:
-  status: odd fixes
+Silabs Platforms:
+  status: maintained
+  maintainers:
+    - jhedberg
+  collaborators:
+    - jerome-pouiller
+    - asmellby
   files:
     - soc/silabs/
     - boards/silabs/
@@ -3249,7 +3298,7 @@ SiLabs Platforms:
     - dts/bindings/*/silabs*
     - drivers/*/*_gecko*
   labels:
-    - "platform: SiLabs"
+    - "platform: Silabs"
 
 Intel Platforms (X86):
   status: maintained
@@ -3344,6 +3393,7 @@ NXP Drivers:
     - decsny
     - manuargue
     - dbaluta
+    - MarkWangChinese
   files:
     - drivers/*/*imx*
     - drivers/*/*lpc*.c
@@ -3475,6 +3525,20 @@ Microchip MEC Platforms:
   labels:
     - "platform: Microchip MEC"
 
+Microchip RISC-V Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - kgugala
+    - tgorochowik
+  files:
+    - boards/microchip/m2gl025_miv/
+    - boards/microchip/mpfs_icicle/
+    - dts/riscv/microchip/
+    - soc/microchip/miv/
+  labels:
+    - "platform: Microchip RISC-V"
+
 Microchip SAM Platforms:
   status: maintained
   maintainers:
@@ -3537,6 +3601,8 @@ Renesas SmartBond Platforms:
     - ioannis-karachalios
     - andrzej-kaczmarek
     - blauret
+  collaborators:
+    - ydamigos
   files:
     - boards/renesas/da14*/
     - drivers/*/*smartbond*
@@ -3616,6 +3682,7 @@ STM32 Platforms:
     - FRASTM
     - gautierg-st
     - GeorgeCGV
+    - marwaiehm-st
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -3795,6 +3862,7 @@ RTIO:
     - teburd
   collaborators:
     - yperess
+    - ubieda
   files:
     - samples/subsys/rtio/
     - include/zephyr/rtio/
@@ -3892,6 +3960,7 @@ TF-M Integration:
   collaborators:
     - Vge0rge
     - ithinuel
+    - valeriosetti
   files:
     - samples/tfm_integration/
     - modules/trusted-firmware-m/
@@ -3926,6 +3995,7 @@ TF-M Integration:
   files:
     - cmake/*/arcmwdt/
     - include/zephyr/toolchain/mwdt.h
+    - include/zephyr/linker/linker-tool-mwdt.h
     - lib/libc/arcmwdt/*
   labels:
     - "area: Toolchains"
@@ -4062,9 +4132,9 @@ VFS:
 
 West:
   status: maintained
-  maintainers:
-    - mbolivar-ampere
+  maintainers: []
   collaborators:
+    - mbolivar-ampere
     - carlescufi
     - swinslow
   files:
@@ -4431,6 +4501,7 @@ West:
   collaborators:
     - blauret
     - andrzej-kaczmarek
+    - ydamigos
   files: []
   labels:
     - "platform: Renesas"
@@ -4445,15 +4516,19 @@ West:
     - "platform: Raspberry Pi Pico"
 
 "West project: hal_silabs":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - jhedberg
   collaborators:
+    - jerome-pouiller
+    - asmellby
     - sateeshkotapati
     - yonsch
     - mnkp
   files:
     - modules/Kconfig.silabs
   labels:
-    - "platform: SiLabs"
+    - "platform: Silabs"
 
 "West project: hal_st":
   status: maintained
@@ -4470,9 +4545,8 @@ West:
     - erwango
   collaborators:
     - FRASTM
-    - ABOSTM
     - gautierg-st
-    - Desvauxm-st
+    - marwaiehm-st
   files:
     - modules/Kconfig.stm32
   labels:

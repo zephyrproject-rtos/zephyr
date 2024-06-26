@@ -16,6 +16,9 @@ supported:
   - mbox
   - flash
   - dma
+  - led
+  - syscon
+  - hwinfo
 testing:
   ignore_tags:
     - bluetooth

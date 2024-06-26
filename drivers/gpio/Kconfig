@@ -17,6 +17,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config GPIO_SHELL
 	bool "GPIO Shell"
 	depends on SHELL
+	imply DEVICE_DT_METADATA
 	help
 	  Enable GPIO Shell for testing.
 
@@ -154,6 +155,7 @@ source "drivers/gpio/Kconfig.pcf857x"
 source "drivers/gpio/Kconfig.psoc6"
 source "drivers/gpio/Kconfig.rcar"
 source "drivers/gpio/Kconfig.renesas_ra"
+source "drivers/gpio/Kconfig.renesas_ra8"
 source "drivers/gpio/Kconfig.rpi_pico"
 source "drivers/gpio/Kconfig.rt1718s"
 source "drivers/gpio/Kconfig.rv32m1"

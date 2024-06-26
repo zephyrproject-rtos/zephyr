@@ -1056,16 +1056,16 @@
 		 HID_MPS_LESS_65(DT_INST_PROP(n, in_report_size)))
 
 /* Get IN endpoint polling rate based on the desired speed. */
-#define HID_IN_EP_INTERVAL(n, hs)						\
-	COND_CODE_1(hs,								\
-		    (USB_HS_INT_EP_INTERVAL(DT_INST_PROP(n, in_polling_rate))),	\
-		    (USB_FS_INT_EP_INTERVAL(DT_INST_PROP(n, in_polling_rate))))
+#define HID_IN_EP_INTERVAL(n, hs)							\
+	COND_CODE_1(hs,									\
+		    (USB_HS_INT_EP_INTERVAL(DT_INST_PROP(n, in_polling_period_us))),	\
+		    (USB_FS_INT_EP_INTERVAL(DT_INST_PROP(n, in_polling_period_us))))
 
 /* Get OUT endpoint polling rate based on the desired speed. */
-#define HID_OUT_EP_INTERVAL(n, hs)						\
-	COND_CODE_1(hs,								\
-		    (USB_HS_INT_EP_INTERVAL(DT_INST_PROP(n, out_polling_rate))),\
-		    (USB_FS_INT_EP_INTERVAL(DT_INST_PROP(n, out_polling_rate))))
+#define HID_OUT_EP_INTERVAL(n, hs)							\
+	COND_CODE_1(hs,									\
+		    (USB_HS_INT_EP_INTERVAL(DT_INST_PROP(n, out_polling_period_us))),	\
+		    (USB_FS_INT_EP_INTERVAL(DT_INST_PROP(n, out_polling_period_us))))
 
 /* Get the number of endpoints, which can be either 1 or 2 */
 #define HID_NUM_ENDPOINTS(n)							\

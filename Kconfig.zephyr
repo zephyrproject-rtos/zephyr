@@ -478,6 +478,7 @@ choice COMPILER_OPTIMIZATIONS
 	prompt "Optimization level"
 	default NO_OPTIMIZATIONS    if COVERAGE
 	default DEBUG_OPTIMIZATIONS if DEBUG
+	default SIZE_OPTIMIZATIONS_AGGRESSIVE if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
 	default SIZE_OPTIMIZATIONS
 	help
 	  Note that these flags shall only control the compiler
@@ -488,6 +489,12 @@ config SIZE_OPTIMIZATIONS
 	bool "Optimize for size"
 	help
 	  Compiler optimizations will be set to -Os independently of other
+	  options.
+
+config SIZE_OPTIMIZATIONS_AGGRESSIVE
+	bool "Aggressively optimize for size"
+	help
+	  Compiler optimizations wil be set to -Oz independently of other
 	  options.
 
 config SPEED_OPTIMIZATIONS

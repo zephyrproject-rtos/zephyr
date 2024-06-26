@@ -226,9 +226,9 @@ the **bar** component of **foo**, you should copy the sample folder to
    ./scripts/twister -s tests/foo/bar/test-identifier
 
 In the example above ``tests/foo/bar`` signifies the path to the test and the
-``test-identifier`` references a test defined in the :file:`testcase.yaml` file.
+``test-identifier`` references a test scenario defined in the :file:`testcase.yaml` file.
 
-To run all tests defined in a test project, run:
+To run all test scenarios defined in a test application, run:
 
 .. code-block:: console
 
@@ -267,13 +267,13 @@ src/main.c (see :ref:`best practices <main_c_bp>`)
 
 
 
-A test case project may consist of multiple sub-tests or smaller tests that
-either can be testing functionality or APIs. Functions implementing a test
+A test application may consist of multiple test suites that
+either can be testing functionality or APIs. Functions implementing a test case
 should follow the guidelines below:
 
-* Test cases function names should be prefix with **test_**
+* Test cases function names should be prefixed with **test_**
 * Test cases should be documented using doxygen
-* Test function names should be unique within the section or component being
+* Test case function names should be unique within the section or component being
   tested
 
 For example:
@@ -283,7 +283,7 @@ For example:
    /**
     * @brief Test Asserts
     *
-    * This test verifies the zassert_true macro.
+    * This test case verifies the zassert_true macro.
     */
    ZTEST(my_suite, test_assert)
    {
@@ -293,18 +293,18 @@ For example:
 Listing Tests
 =============
 
-Tests (test projects) in the Zephyr tree consist of many testcases that run as
+Tests (test applications) in the Zephyr tree consist of many test scenarios that run as
 part of a project and test similar functionality, for example an API or a
-feature. The ``twister`` script can parse the testcases in all
-test projects or a subset of them, and can generate reports on a granular
-level, i.e. if cases have passed or failed or if they were blocked or skipped.
+feature. The ``twister`` script can parse the test scenarios, suites and cases in all
+test applications or a subset of them, and can generate reports on a granular
+level, i.e. if test cases have passed or failed or if they were blocked or skipped.
 
 Twister parses the source files looking for test case names, so you
 can list all kernel test cases, for example, by running:
 
 .. code-block:: console
 
-   twister --list-tests -T tests/kernel
+   ./scripts/twister --list-tests -T tests/kernel
 
 Skipping Tests
 ==============
@@ -378,18 +378,18 @@ Best practices for declaring the test suite
 *******************************************
 
 *twister* and other validation tools need to obtain the list of
-subcases that a Zephyr *ztest* test image will expose.
+test cases that a Zephyr *ztest* test image will expose.
 
 .. admonition:: Rationale
 
    This all is for the purpose of traceability. It's not enough to
-   have only a semaphore test project.  We also need to show that we
+   have only a semaphore test application.  We also need to show that we
    have testpoints for all APIs and functionality, and we trace back
    to documentation of the API, and functional requirements.
 
-   The idea is that test reports show results for every sub-testcase
+   The idea is that test reports show results for every test case
    as passed, failed, blocked, or skipped.  Reporting on only the
-   high-level test project level, particularly when tests do too
+   high-level test application, particularly when tests do too
    many things, is too vague.
 
 Other questions:
@@ -399,9 +399,9 @@ Other questions:
   If C pre-processing or building fails because of any issue, then we
   won't be able to tell the subcases.
 
-- Why not declare them in the YAML testcase description?
+- Why not declare them in the YAML test configuration?
 
-  A separate testcase description file would be harder to maintain
+  A separate test case description file would be harder to maintain
   than just keeping the information in the test source files
   themselves -- only one file to update when changes are made
   eliminates duplication.

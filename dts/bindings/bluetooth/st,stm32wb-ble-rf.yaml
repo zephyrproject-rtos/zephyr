@@ -6,8 +6,12 @@ description: |
 
 compatible: "st,stm32wb-rf"
 
-include: base.yaml
+include: bt-hci.yaml
 
 properties:
-    clocks:
-      required: true
+  clocks:
+    required: true
+  bt-hci-name:
+    default: "BT IPM"
+  bt-hci-bus:
+    default: "BT_HCI_BUS_IPM"

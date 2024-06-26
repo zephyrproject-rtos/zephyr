@@ -196,6 +196,7 @@ to :c:macro:`K_POLL_STATE_NOT_READY` by the user.
             } else if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
                 ret = k_pipe_get(events[3].pipe, buf, bytes_to_read, &bytes_read, min_xfer, K_NO_WAIT);
                 // handle data
+            }
             events[0].state = K_POLL_STATE_NOT_READY;
             events[1].state = K_POLL_STATE_NOT_READY;
             events[2].state = K_POLL_STATE_NOT_READY;

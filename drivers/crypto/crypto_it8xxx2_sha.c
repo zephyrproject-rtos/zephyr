@@ -215,7 +215,7 @@ static int it8xxx2_sha_init(const struct device *dev)
 	return 0;
 }
 
-static struct crypto_driver_api it8xxx2_crypto_api = {
+static const struct crypto_driver_api it8xxx2_crypto_api = {
 	.hash_begin_session = it8xxx2_hash_begin_session,
 	.hash_free_session = it8xxx2_hash_session_free,
 	.query_hw_caps = it8xxx2_query_hw_caps,

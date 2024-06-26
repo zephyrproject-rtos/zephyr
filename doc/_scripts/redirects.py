@@ -172,6 +172,7 @@ REDIRECTS = [
     ('reference/peripherals/led', 'hardware/peripherals/led'),
     ('reference/peripherals/mbox', 'hardware/peripherals/mbox'),
     ('reference/peripherals/mdio', 'hardware/peripherals/mdio'),
+    ('reference/peripherals/mspi', 'hardware/peripherals/mspi'),
     ('reference/peripherals/peci', 'hardware/peripherals/peci'),
     ('reference/peripherals/pinmux', 'hardware/peripherals/pinmux'),
     ('reference/peripherals/ps2', 'hardware/peripherals/ps2'),

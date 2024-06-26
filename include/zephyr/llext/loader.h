@@ -23,6 +23,10 @@ extern "C" {
 
 #include <zephyr/llext/llext.h>
 
+/** @cond ignore */
+struct llext_elf_sect_map; /* defined in llext_priv.h */
+/** @endcond */
+
 /**
  * @brief Linkable loadable extension loader context
  */
@@ -71,7 +75,9 @@ struct llext_loader {
 	/** @cond ignore */
 	elf_ehdr_t hdr;
 	elf_shdr_t sects[LLEXT_MEM_COUNT];
-	enum llext_mem *sect_map;
+	elf_shdr_t *sect_hdrs;
+	bool sect_hdrs_on_heap;
+	struct llext_elf_sect_map *sect_map;
 	uint32_t sect_cnt;
 	/** @endcond */
 };

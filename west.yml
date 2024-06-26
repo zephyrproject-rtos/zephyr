@@ -30,7 +30,7 @@ manifest:
   # Please add items below based on alphabetical order
   projects:
     - name: acpica
-      revision: da5f2721e1c7f188fe04aa50af76f4b94f3c3ea3
+      revision: 8d24867bc9c9d81c81eeac59391cda59333affd4
       path: modules/lib/acpica
     - name: bsim
       repo-path: babblesim-manifest
@@ -137,7 +137,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: 2858da5ab4a7a01cde48a41818a1a6693529f68d
+      revision: dee9a7b1eff13a9da0560daf8842d61657f9d61e
       path: modules/hal/adi
       groups:
         - hal
@@ -147,17 +147,17 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: fcbbd99e20db1432196f4aec92678bd1f5b19c96
+      revision: e25327f026df1ee08f1bf01a4bbfeb5e5f4026f1
       path: modules/hal/ambiq
       groups:
         - hal
     - name: hal_atmel
-      revision: d6221e73d76a4a31d802e0657342fcbda77e21ae
+      revision: 56d60ebc909ad065bf6554cee73487969857614b
       path: modules/hal/atmel
       groups:
         - hal
     - name: hal_espressif
-      revision: 5191505f915c0b1c706222f4709925a453e0e858
+      revision: e4e8df61b371554f4ce08d203426d7875421666e
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -173,17 +173,17 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: b1a47231e8671c882c5f055f9f10c32b18133d08
+      revision: f25734a72c585f6675e8254a382e80e78a3cd03a
       path: modules/hal/infineon
       groups:
         - hal
     - name: hal_intel
-      revision: 7b4c25669f1513b0d6d6ee78ee42340d91958884
+      revision: 0905a528623de56b1bedf817536321bcdbc0efae
       path: modules/hal/intel
       groups:
         - hal
     - name: hal_microchip
-      revision: 1279561ea9b71c5f572d3d52708b7b445a383662
+      revision: 71eba057c0cb7fc11b6f33eb40a82f1ebe2c571c
       path: modules/hal/microchip
       groups:
         - hal
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 88a7d079eed470ecc94010784931823a85ac3b39
+      revision: 862e001504bd6e0a4feade6a718e9f973116849c
       path: modules/hal/nxp
       groups:
         - hal
@@ -215,7 +215,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: a8cd5ed480a31982a86dab8952ac8baaf646c3cb
+      revision: af77d7cdfeeff290593e7e99f54f0c1e2a3f91e6
       groups:
         - hal
     - name: hal_rpi_pico
@@ -224,7 +224,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 0c39ee28be31c59a98ed490c3811f68caa1fcbd3
+      revision: a09dd1b82b24aa3060e162c0dfa40026c0dba450
       path: modules/hal/silabs
       groups:
         - hal
@@ -234,7 +234,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 54724a815d23b7f518fa88eb5fb7e991109e191b
+      revision: 855f195793df094644ce8b8617c01275408bbf58
       path: modules/hal/stm32
       groups:
         - hal
@@ -282,12 +282,12 @@ manifest:
       revision: 2b498e6f36d6b82ae1da12c8b7742e318624ecf5
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: c0cb49ffd24b4068a91425b74505b35ed0e81038
+      revision: 2f24831ee13d399ce019c4632b0bcd440a713f7c
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: 018dc01d484358d81f889c36471d9ce5590965b6
+      revision: 898a1ca64a759541d9fcc37fef921db93d99ad70
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -306,11 +306,11 @@ manifest:
       revision: da78aea63159771956fe0c9263f2e6985b66e9d5
       path: modules/lib/open-amp
     - name: openthread
-      revision: 49c59ec519cc8b49dd58978d1bc80b7ae7ba88d0
+      revision: 3873c6fcd5a8a9dd01b71e8efe32ef5dc7923bb1
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
-      revision: 7f6fb3f12ea1493a2f8ab6a876fb255a39db47c8
+      revision: 1a67f3e2dbc2a8d53e5248d72bac946db381692d
       groups:
         - debug
     - name: picolibc
@@ -332,12 +332,12 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-a
-      revision: 421dc050278287839f5c70019bd6aec617f2bbdb
+      revision: 713ffbf96c5bcbdeab757423f10f73eb304eff07
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
     - name: uoscore-uedhoc
-      revision: 150f4eb2955eaf36ac0f9519d4f4f58d5ade5740
+      revision: 84ef879a46d7bfd9a423fbfb502b04289861f9ea
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
       revision: 75d088037eb237b18e7ec1f47c9ce494b9b95aab

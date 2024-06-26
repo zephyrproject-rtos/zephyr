@@ -1441,6 +1441,16 @@ struct bt_bap_base_subgroup_bis {
 const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad);
 
 /**
+ * @brief Get the size of a BASE
+ *
+ * @param base The BASE pointer
+ *
+ * @retval -EINVAL if arguments are invalid
+ * @retval The size of the BASE
+ */
+int bt_bap_base_get_size(const struct bt_bap_base *base);
+
+/**
  * @brief Get the presentation delay value of a BASE
  *
  * @param base The BASE pointer

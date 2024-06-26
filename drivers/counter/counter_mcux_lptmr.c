@@ -142,6 +142,8 @@ static int mcux_lptmr_init(const struct device *dev)
 
 	LPTMR_Init(config->base, &lptmr_config);
 
+	LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
+
 	config->irq_config_func(dev);
 
 	return 0;
@@ -210,7 +212,8 @@ static void mcux_lptmr_irq_config_0(const struct device *dev);
 
 static struct mcux_lptmr_config mcux_lptmr_config_0 = {
 	.info = {
-		.max_top_value = UINT16_MAX,
+		.max_top_value = ((DT_INST_PROP(0, resolution) == 32)
+				? UINT32_MAX : UINT16_MAX),
 		.freq = DT_INST_PROP(0, clock_frequency) /
 			DT_INST_PROP(0, prescaler),
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,

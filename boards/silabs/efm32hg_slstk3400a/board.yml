@@ -1,5 +1,0 @@
-board:
-  name: efm32hg_slstk3400a
-  vendor: silabs
-  socs:
-  - name: efm32hg322f64

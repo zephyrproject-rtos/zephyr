@@ -93,6 +93,9 @@ config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
 	default y if UOSCORE || UEDHOC
 	select MBEDTLS_MD
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "DHE-RSA based ciphersuite modes"
@@ -501,6 +504,24 @@ config MBEDTLS_LMS
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT
 	depends on MBEDTLS_SHA256
 	select PSA_WANT_ALG_SHA_256
+
+config MBEDTLS_PSA_P256M_DRIVER_ENABLED
+	bool "P256-M driver"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	imply PSA_WANT_ALG_SHA_256
+	help
+	  Enable support for the optimized sofware implementation of the secp256r1
+	  curve through the standard PSA API interface.
+
+config MBEDTLS_PSA_P256M_DRIVER_RAW
+	bool "Access p256-m driver directly (without PSA interface)"
+	select MBEDTLS_PSA_P256M_DRIVER_ENABLED
+	help
+	  Allow access to p256-m driver directly without using the PSA interface.
+	  Warning: usage of this kconfig is prohibited in Zephyr's code base. Users
+			   can make optionally enable it in case very memory constrained
+			   devices, but please be aware that the p256-m interface is
+			   absolutely not guaranted to remain stable over time.
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"

@@ -32,7 +32,7 @@ void sys_trace_thread_info(struct k_thread *thread);
 	do {                                                                                       \
 		SEGGER_SYSVIEW_OnTaskCreate((uint32_t)(uintptr_t)new_thread);                      \
 		sys_trace_thread_info(new_thread);                                                 \
-	} while (0)
+	} while (false)
 
 #define sys_port_trace_k_thread_user_mode_enter()                                                  \
 	SEGGER_SYSVIEW_RecordVoid(TID_THREAD_USERMODE_ENTER)
@@ -102,7 +102,7 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_thread_name_set(thread, ret) do { \
 		SEGGER_SYSVIEW_RecordU32(TID_THREAD_NAME_SET, (uint32_t)(uintptr_t)thread); \
 		sys_trace_thread_info(thread);	\
-	} while (0)
+	} while (false)
 
 #define sys_port_trace_k_thread_switched_out() sys_trace_k_thread_switched_out()
 
@@ -674,6 +674,9 @@ void sys_trace_k_thread_info(struct k_thread *thread);
 #define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)		       \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_DISABLE,	       \
 					(uint32_t)ret)
+
+#define sys_trace_sys_init_enter(...)
+#define sys_trace_sys_init_exit(...)
 
 #ifdef __cplusplus
 }

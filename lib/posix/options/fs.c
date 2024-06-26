@@ -15,6 +15,8 @@
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/fs/fs.h>
 
+int zvfs_fstat(int fd, struct stat *buf);
+
 BUILD_ASSERT(PATH_MAX >= MAX_FILE_NAME, "PATH_MAX is less than MAX_FILE_NAME");
 
 struct posix_fs_desc {
@@ -90,14 +92,14 @@ int zvfs_open(const char *name, int flags)
 		return zmode;
 	}
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
 
 	ptr = posix_fs_alloc_obj(false);
 	if (ptr == NULL) {
-		z_free_fd(fd);
+		zvfs_free_fd(fd);
 		errno = EMFILE;
 		return -1;
 	}
@@ -108,12 +110,12 @@ int zvfs_open(const char *name, int flags)
 
 	if (rc < 0) {
 		posix_fs_free_obj(ptr);
-		z_free_fd(fd);
+		zvfs_free_fd(fd);
 		errno = -rc;
 		return -1;
 	}
 
-	z_finalize_fd(fd, ptr, &fs_fd_op_vtable);
+	zvfs_finalize_fd(fd, ptr, &fs_fd_op_vtable);
 
 	return fd;
 }
@@ -152,7 +154,18 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		}
 		break;
 	}
+	case ZFD_IOCTL_TRUNCATE: {
+		off_t length;
 
+		length = va_arg(args, off_t);
+
+		rc = fs_truncate(&ptr->file, length);
+		if (rc < 0) {
+			errno = -rc;
+			return -1;
+		}
+		break;
+	}
 	default:
 		errno = EOPNOTSUPP;
 		return -1;
@@ -408,35 +421,9 @@ int mkdir(const char *path, mode_t mode)
 	return 0;
 }
 
-/**
- * @brief Truncate file to specified length.
- *
- */
-int zvfs_ftruncate(int fd, off_t length)
-{
-	int rc;
-	struct posix_fs_desc *ptr = NULL;
-
-	ptr = z_get_fd_obj(fd, NULL, EBADF);
-	if (!ptr)
-		return -1;
-
-	rc = fs_truncate(&ptr->file, length);
-	if (rc < 0) {
-		errno = -rc;
-		return -1;
-	}
-
-	return 0;
-}
-
 int fstat(int fildes, struct stat *buf)
 {
-	ARG_UNUSED(fildes);
-	ARG_UNUSED(buf);
-
-	errno = ENOTSUP;
-	return -1;
+	return zvfs_fstat(fildes, buf);
 }
 #ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSTAT
 FUNC_ALIAS(fstat, _fstat, int);

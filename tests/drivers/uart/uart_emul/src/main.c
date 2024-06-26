@@ -24,10 +24,15 @@ struct uart_emul_fixture {
 	uint8_t sample_data[SAMPLE_DATA_SIZE];
 	uint8_t tx_content[SAMPLE_DATA_SIZE];
 	uint8_t rx_content[SAMPLE_DATA_SIZE];
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	struct k_sem tx_done_sem;
 	struct k_sem rx_done_sem;
 	size_t tx_remaining;
 	size_t rx_remaining;
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#ifdef CONFIG_UART_ASYNC_API
+	struct k_event async_events;
+#endif /* CONFIG_UART_ASYNC_API */
 };
 
 static void *uart_emul_setup(void)
@@ -38,8 +43,14 @@ static void *uart_emul_setup(void)
 		fixture.sample_data[i] = i;
 	}
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	k_sem_init(&fixture.tx_done_sem, 0, 1);
 	k_sem_init(&fixture.rx_done_sem, 0, 1);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#ifdef CONFIG_UART_ASYNC_API
+	k_event_init(&fixture.async_events);
+#endif /* CONFIG_UART_ASYNC_API */
 
 	zassert_not_null(fixture.dev);
 	return &fixture;
@@ -49,22 +60,31 @@ static void uart_emul_before(void *f)
 {
 	struct uart_emul_fixture *fixture = f;
 
-	uart_irq_tx_disable(fixture->dev);
-	uart_irq_rx_disable(fixture->dev);
-
 	uart_emul_flush_rx_data(fixture->dev);
 	uart_emul_flush_tx_data(fixture->dev);
 
 	uart_err_check(fixture->dev);
 
-	k_sem_reset(&fixture->tx_done_sem);
-	k_sem_reset(&fixture->rx_done_sem);
-
 	memset(fixture->tx_content, 0, sizeof(fixture->tx_content));
 	memset(fixture->rx_content, 0, sizeof(fixture->rx_content));
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_tx_disable(fixture->dev);
+	uart_irq_rx_disable(fixture->dev);
+
+	k_sem_reset(&fixture->tx_done_sem);
+	k_sem_reset(&fixture->rx_done_sem);
+
 	fixture->tx_remaining = SAMPLE_DATA_SIZE;
 	fixture->rx_remaining = SAMPLE_DATA_SIZE;
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#ifdef CONFIG_UART_ASYNC_API
+	uart_tx_abort(fixture->dev);
+	uart_rx_disable(fixture->dev);
+
+	k_event_set(&fixture->async_events, 0);
+#endif /* CONFIG_UART_ASYNC_API */
 }
 
 ZTEST_F(uart_emul, test_polling_out)
@@ -123,6 +143,7 @@ ZTEST_F(uart_emul, test_errors)
 	zassert_equal(errors, UART_ERROR_OVERRUN, "UART errors do not match");
 }
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_emul_isr_handle_tx_ready(struct uart_emul_fixture *fixture)
 {
 	uint32_t sample_data_it;
@@ -215,5 +236,122 @@ ZTEST_F(uart_emul, test_irq_rx)
 
 	uart_irq_rx_disable(fixture->dev);
 }
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#ifdef CONFIG_UART_ASYNC_API
+static void uart_emul_callback(const struct device *dev, struct uart_event *evt, void *user_data)
+{
+	struct uart_emul_fixture *fixture = user_data;
+
+	zassert_not_null(evt);
+	k_event_post(&fixture->async_events, ((uint32_t)1 << evt->type));
+
+	switch (evt->type) {
+	case UART_TX_DONE:
+		zassert_equal(evt->data.tx.len, sizeof(fixture->sample_data));
+		zassert_equal(evt->data.tx.buf, fixture->sample_data);
+		break;
+	case UART_RX_RDY:
+		zassert_equal(evt->data.rx.len, sizeof(fixture->sample_data));
+		zassert_mem_equal(&evt->data.rx.buf[evt->data.rx.offset], fixture->sample_data,
+				  sizeof(fixture->sample_data));
+		break;
+	case UART_RX_BUF_RELEASED:
+		zassert_equal(evt->data.rx_buf.buf, fixture->rx_content);
+		break;
+	case UART_TX_ABORTED:
+	case UART_RX_BUF_REQUEST:
+	case UART_RX_DISABLED:
+	case UART_RX_STOPPED:
+		break;
+	}
+}
+
+bool uart_emul_wait_for_event(struct uart_emul_fixture *fixture, enum uart_event_type event)
+{
+	return k_event_wait(&fixture->async_events, ((uint32_t)1 << event), false, K_SECONDS(1)) !=
+	       0;
+}
+
+ZTEST_F(uart_emul, test_async_tx)
+{
+	size_t tx_len;
+
+	uart_emul_set_release_buffer_on_timeout(fixture->dev, true);
+
+	zassert_equal(uart_callback_set(fixture->dev, uart_emul_callback, fixture), 0);
+	zassert_equal(uart_tx(fixture->dev, fixture->sample_data, sizeof(fixture->sample_data),
+			      SYS_FOREVER_US),
+		      0);
+
+	/* Wait for all data to be received in full */
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_TX_DONE),
+		     "UART_TX_DONE event expected");
+
+	tx_len = uart_emul_get_tx_data(fixture->dev, fixture->tx_content, SAMPLE_DATA_SIZE);
+	zassert_equal(tx_len, SAMPLE_DATA_SIZE, "TX buffer length does not match");
+	zassert_mem_equal(fixture->tx_content, fixture->sample_data, SAMPLE_DATA_SIZE);
+
+	/* No more data in TX buffer */
+	tx_len = uart_emul_get_tx_data(fixture->dev, fixture->tx_content,
+				       sizeof(fixture->tx_content));
+	zassert_equal(tx_len, 0, "TX buffer should be empty");
+}
+
+ZTEST_F(uart_emul, test_async_rx)
+{
+	zassert_equal(uart_callback_set(fixture->dev, uart_emul_callback, fixture), 0);
+	zassert_equal(uart_rx_enable(fixture->dev, fixture->rx_content, sizeof(fixture->rx_content),
+				     SYS_FOREVER_US),
+		      0);
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_BUF_REQUEST),
+		     "UART_RX_BUF_REQUEST event expected");
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_RDY), "UART_RX_RDY event expected");
+	zassert_mem_equal(fixture->rx_content, fixture->sample_data, SAMPLE_DATA_SIZE);
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_BUF_RELEASED),
+		     "UART_RX_BUF_RELEASED event expected");
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_DISABLED),
+		     "UART_RX_DISABLED event expected");
+}
+
+static void uart_emul_callback_rx_timeout(const struct device *dev, struct uart_event *evt,
+					  void *user_data)
+{
+	struct uart_emul_fixture *fixture = user_data;
+
+	zassert_not_null(evt);
+	k_event_post(&fixture->async_events, ((uint32_t)1 << evt->type));
+}
+
+ZTEST_F(uart_emul, test_async_rx_buffer_release)
+{
+	zassert_equal(uart_callback_set(fixture->dev, uart_emul_callback_rx_timeout, fixture), 0);
+
+	uint8_t rx_buffer[16];
+	uint8_t rx_data[5];
+
+	memset(rx_data, 1, sizeof(rx_data));
+
+	zassert_equal(
+		uart_rx_enable(fixture->dev, rx_buffer, sizeof(rx_buffer), 100 * USEC_PER_MSEC), 0);
+
+	uart_emul_set_release_buffer_on_timeout(fixture->dev, false);
+	uart_emul_put_rx_data(fixture->dev, rx_data, sizeof(rx_data));
+	zexpect_false(uart_emul_wait_for_event(fixture, UART_RX_BUF_RELEASED),
+		      "UART_RX_BUF_RELEASED event not expected");
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_RDY));
+
+	k_event_set(&fixture->async_events, 0);
+
+	uart_emul_set_release_buffer_on_timeout(fixture->dev, true);
+	uart_emul_put_rx_data(fixture->dev, rx_data, sizeof(rx_data));
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_BUF_RELEASED),
+		     "UART_RX_BUF_RELEASED event expected");
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_RDY));
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_DISABLED),
+		     "UART_RX_DISABLED event expected");
+}
+#endif /* CONFIG_UART_ASYNC_API */
 
 ZTEST_SUITE(uart_emul, NULL, uart_emul_setup, uart_emul_before, NULL, NULL);

@@ -10,20 +10,13 @@
 
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/drivers/display.h>
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_gc9x01x, CONFIG_DISPLAY_LOG_LEVEL);
-
-/* Command/data GPIO level for commands. */
-#define GC9X01X_GPIO_LEVEL_CMD 0U
-
-/* Command/data GPIO level for data. */
-#define GC9X01X_GPIO_LEVEL_DATA 1U
 
 /* Maximum number of default init registers  */
 #define GC9X01X_NUM_DEFAULT_INIT_REGS 12U
@@ -37,9 +30,8 @@ struct gc9x01x_data {
 
 /* Configuration data struct.*/
 struct gc9x01x_config {
-	struct spi_dt_spec spi;
-	struct gpio_dt_spec cmd_data;
-	struct gpio_dt_spec reset;
+	const struct device *mipi_dev;
+	struct mipi_dbi_config dbi_config;
 	uint8_t pixel_format;
 	uint16_t orientation;
 	uint16_t x_resolution;
@@ -229,35 +221,9 @@ static int gc9x01x_transmit(const struct device *dev, uint8_t cmd, const void *t
 			    size_t tx_len)
 {
 	const struct gc9x01x_config *config = dev->config;
-	int ret;
-	struct spi_buf tx_buf = {.buf = &cmd, .len = 1U};
-	struct spi_buf_set tx_bufs = {.buffers = &tx_buf, .count = 1U};
 
-	ret = gpio_pin_set_dt(&config->cmd_data, GC9X01X_GPIO_LEVEL_CMD);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = spi_write_dt(&config->spi, &tx_bufs);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* send data (if any) */
-	if (tx_data != NULL) {
-		tx_buf.buf = (void *)tx_data;
-		tx_buf.len = tx_len;
-
-		ret = gpio_pin_set_dt(&config->cmd_data, GC9X01X_GPIO_LEVEL_DATA);
-		if (ret < 0) {
-			return ret;
-		}
-		ret = spi_write_dt(&config->spi, &tx_bufs);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
+	return mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
+				      cmd, tx_data, tx_len);
 }
 
 static int gc9x01x_regs_init(const struct device *dev)
@@ -265,6 +231,10 @@ static int gc9x01x_regs_init(const struct device *dev)
 	const struct gc9x01x_config *config = dev->config;
 	const struct gc9x01x_regs *regs = config->regs;
 	int ret;
+
+	if (!device_is_ready(config->mipi_dev)) {
+		return -ENODEV;
+	}
 
 	/* Enable inter-command mode */
 	ret = gc9x01x_transmit(dev, GC9X01X_CMD_INREGEN1, NULL, 0);
@@ -371,17 +341,15 @@ static int gc9x01x_enter_sleep(const struct device *dev)
 static int gc9x01x_hw_reset(const struct device *dev)
 {
 	const struct gc9x01x_config *config = dev->config;
+	int ret;
 
-	if (config->reset.port == NULL) {
-		return -ENODEV;
+	ret = mipi_dbi_reset(config->mipi_dev, 100);
+	if (ret < 0) {
+		return ret;
 	}
-
-	gpio_pin_set_dt(&config->reset, 1U);
-	k_msleep(100);
-	gpio_pin_set_dt(&config->reset, 0U);
 	k_msleep(10);
 
-	return 0;
+	return ret;
 }
 
 static int gc9x01x_display_blanking_off(const struct device *dev)
@@ -492,37 +460,7 @@ static int gc9x01x_configure(const struct device *dev)
 
 static int gc9x01x_init(const struct device *dev)
 {
-	const struct gc9x01x_config *config = dev->config;
 	int ret;
-
-	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI device is not ready");
-		return -ENODEV;
-	}
-
-	if (!gpio_is_ready_dt(&config->cmd_data)) {
-		LOG_ERR("Command/Data GPIO device not ready");
-		return -ENODEV;
-	}
-
-	ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT);
-	if (ret < 0) {
-		LOG_ERR("Could not configure command/data GPIO (%d)", ret);
-		return ret;
-	}
-
-	if (config->reset.port != NULL) {
-		if (!device_is_ready(config->reset.port)) {
-			LOG_ERR("Reset GPIO device not ready");
-			return -ENODEV;
-		}
-
-		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
-			LOG_ERR("Could not configure reset GPIO (%d)", ret);
-			return ret;
-		}
-	}
 
 	gc9x01x_hw_reset(dev);
 
@@ -573,8 +511,7 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 	struct gc9x01x_data *data = dev->data;
 	int ret;
 	const uint8_t *write_data_start = (const uint8_t *)buf;
-	struct spi_buf tx_buf;
-	struct spi_buf_set tx_bufs;
+	struct display_buffer_descriptor mipi_desc;
 	uint16_t write_cnt;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
@@ -592,26 +529,30 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 	if (desc->pitch > desc->width) {
 		write_h = 1U;
 		nbr_of_writes = desc->height;
+		mipi_desc.height = 1;
+		mipi_desc.buf_size = desc->pitch * data->bytes_per_pixel;
 	} else {
 		write_h = desc->height;
+		mipi_desc.height = desc->height;
+		mipi_desc.buf_size = desc->width * data->bytes_per_pixel * write_h;
 		nbr_of_writes = 1U;
 	}
 
-	ret = gc9x01x_transmit(dev, GC9X01X_CMD_MEMWR, write_data_start,
-				  desc->width * data->bytes_per_pixel * write_h);
+	mipi_desc.width = desc->width;
+	/* Per MIPI API, pitch must always match width */
+	mipi_desc.pitch = desc->width;
+
+	ret = gc9x01x_transmit(dev, GC9X01X_CMD_MEMWR, NULL, 0);
 	if (ret < 0) {
 		return ret;
 	}
 
-	tx_bufs.buffers = &tx_buf;
-	tx_bufs.count = 1U;
-
-	write_data_start += desc->pitch * data->bytes_per_pixel;
-	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
-		tx_buf.buf = (void *)write_data_start;
-		tx_buf.len = desc->width * data->bytes_per_pixel * write_h;
-
-		ret = spi_write_dt(&config->spi, &tx_bufs);
+	for (write_cnt = 0U; write_cnt < nbr_of_writes; ++write_cnt) {
+		ret = mipi_dbi_write_display(config->mipi_dev,
+					     &config->dbi_config,
+					     write_data_start,
+					     &mipi_desc,
+					     data->pixel_format);
 		if (ret < 0) {
 			return ret;
 		}
@@ -679,9 +620,13 @@ static const struct display_driver_api gc9x01x_api = {
 #define GC9X01X_INIT(inst)                                                                         \
 	GC9X01X_REGS_INIT(inst);                                                                   \
 	static const struct gc9x01x_config gc9x01x_config_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),        \
-		.cmd_data = GPIO_DT_SPEC_INST_GET(inst, cmd_data_gpios),                           \
-		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
+		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
+		.dbi_config = {                                                                    \
+			.mode = MIPI_DBI_MODE_SPI_4WIRE,                                           \
+			.config = MIPI_DBI_SPI_CONFIG_DT_INST(inst,                                \
+							      SPI_OP_MODE_MASTER |                 \
+							      SPI_WORD_SET(8), 0),                 \
+		},                                                                                 \
 		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
 		.orientation = DT_INST_ENUM_IDX(inst, orientation),                                \
 		.x_resolution = DT_INST_PROP(inst, width),                                         \

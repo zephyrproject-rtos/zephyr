@@ -38,6 +38,24 @@
 		reg = <0x10010000 0xB0000>;
 	};
 
+	xip0: memory@52000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x52000000 0x2000000>;
+		zephyr,memory-region = "XIP0";
+	};
+
+	xip1: memory@54000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x54000000 0x2000000>;
+		zephyr,memory-region = "XIP1";
+	};
+
+	xip2: memory@56000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x56000000 0x2000000>;
+		zephyr,memory-region = "XIP2";
+	};
+
 	soc {
 		compatible = "ambiq,apollo3p-blue", "ambiq,apollo3x", "simple-bus";
 
@@ -268,9 +286,10 @@
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
 		};
 
-		mspi0: spi@50014000 {
-			compatible = "ambiq,mspi";
-			reg = <0x50014000 0x400>;
+		mspi0: mspi@50014000 {
+			compatible = "ambiq,mspi-controller";
+			reg = <0x50014000 0x400>,<0x52000000 0x2000000>;
+			clock-frequency = <48000000>;
 			interrupts = <20 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -278,9 +297,10 @@
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x800>;
 		};
 
-		mspi1: spi@50015000 {
-			compatible = "ambiq,mspi";
-			reg = <0x50015000 0x400>;
+		mspi1: mspi@50015000 {
+			compatible = "ambiq,mspi-controller";
+			reg = <0x50015000 0x400>,<0x54000000 0x2000000>;
+			clock-frequency = <48000000>;
 			interrupts = <32 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -288,9 +308,10 @@
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x1000>;
 		};
 
-		mspi2: spi@50016000 {
-			compatible = "ambiq,mspi";
-			reg = <0x50016000 0x400>;
+		mspi2: mspi@50016000 {
+			compatible = "ambiq,mspi-controller";
+			clock-frequency = <48000000>;
+			reg = <0x50016000 0x400>,<0x56000000 0x2000000>;
 			interrupts = <33 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -307,7 +328,7 @@
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x8000>;
 
-			bt-hci@0 {
+			bt_hci_apollo: bt-hci@0 {
 				compatible = "ambiq,bt-hci-spi";
 				reg = <0>;
 			};

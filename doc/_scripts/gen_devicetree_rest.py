@@ -163,7 +163,7 @@ class VndLookup:
 def main():
     args = parse_args()
     setup_logging(args.verbose)
-    bindings = load_bindings(args.dts_roots)
+    bindings = load_bindings(args.dts_roots, args.dts_folders)
     base_binding = load_base_binding()
     vnd_lookup = VndLookup(args.vendor_prefixes, bindings)
     dump_content(bindings, base_binding, vnd_lookup, args.out_dir,
@@ -180,6 +180,8 @@ def parse_args():
     parser.add_argument('--dts-root', dest='dts_roots', action='append',
                         help='''additional DTS root directory as it would
                         be set in DTS_ROOTS''')
+    parser.add_argument('--dts-folder', dest='dts_folders', action='append', default=[],
+                        help='additional DTS folders containing binding files')
     parser.add_argument('--turbo-mode', action='store_true',
                         help='Enable turbo mode (dummy references)')
     parser.add_argument('out_dir', help='output files are generated here')
@@ -196,7 +198,7 @@ def setup_logging(verbose):
     logging.basicConfig(format='%(filename)s:%(levelname)s: %(message)s',
                         level=log_level)
 
-def load_bindings(dts_roots):
+def load_bindings(dts_roots, dts_folders):
     # Get a list of edtlib.Binding objects from searching 'dts_roots'.
 
     if not dts_roots:
@@ -208,6 +210,9 @@ def load_bindings(dts_roots):
                                        recursive=True))
         binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yaml',
                                        recursive=True))
+    for folders in dts_folders:
+        binding_files.extend(glob.glob(f'{folders}/*.yml', recursive=False))
+        binding_files.extend(glob.glob(f'{folders}/*.yaml', recursive=False))
 
     bindings = edtlib.bindings_from_paths(binding_files, ignore_errors=True)
 
@@ -322,7 +327,9 @@ def write_bindings_rst(vnd_lookup, out_dir):
     .. rst-class:: rst-columns
     ''', string_io)
 
-    for vnd in vnd_lookup.vnd2bindings:
+    for vnd, bindings in vnd_lookup.vnd2bindings.items():
+        if len(bindings) == 0:
+            continue
         print(f'- :ref:`{vnd_lookup.target(vnd)}`', file=string_io)
 
     print_block('''\
@@ -357,6 +364,9 @@ def write_bindings_rst(vnd_lookup, out_dir):
             if isinstance(vnd, str):
                 title += f' ({vnd})'
         underline = '=' * len(title)
+
+        if len(bindings) == 0:
+            continue
 
         print_block(f'''\
         .. _{vnd_lookup.target(vnd)}:

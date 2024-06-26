@@ -6,6 +6,7 @@ config LOG_BACKEND_NATIVE_POSIX
 	depends on ARCH_POSIX
 	default y
 	select LOG_OUTPUT
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	help
 	  Enable backend in native_posix
 

@@ -342,12 +342,14 @@ int bt_le_scan_update(bool fast_scan)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
 		struct bt_conn *conn;
 
-		/* don't restart scan if we have pending connection */
-		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-					       BT_CONN_INITIATING);
-		if (conn) {
-			bt_conn_unref(conn);
-			return 0;
+		if (!BT_LE_STATES_SCAN_INIT(bt_dev.le.states)) {
+			/* don't restart scan if we have pending connection */
+			conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
+						BT_CONN_INITIATING);
+			if (conn) {
+				bt_conn_unref(conn);
+				return 0;
+			}
 		}
 
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
@@ -378,8 +380,11 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 {
 	struct bt_conn *conn;
 
-	/* No connections are allowed during explicit scanning */
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+	/* No connections are allowed during explicit scanning
+	 * when the controller does not support concurrent scanning and initiating.
+	 */
+	if (!BT_LE_STATES_SCAN_INIT(bt_dev.le.states) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return;
 	}
 
@@ -394,9 +399,11 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		return;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
-	    bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE)) {
-		goto failed;
+	if (!BT_LE_STATES_SCAN_INIT(bt_dev.le.states)) {
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
+		   bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE)) {
+			goto failed;
+		}
 	}
 
 	bt_addr_le_copy(&conn->le.resp_addr, addr);
@@ -613,6 +620,24 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		is_report_complete = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
 		more_to_come = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 
+		if (evt->length > buf->len) {
+			LOG_WRN("Adv report corrupted (wants %u out of %u)", evt->length, buf->len);
+
+			net_buf_reset(buf);
+
+			if (evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) {
+				return;
+			}
+
+			/* Start discarding irrespective of the `more_to_come` flag. We
+			 * assume we may have lost a partial adv report in the truncated
+			 * data.
+			 */
+			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
+
+			return;
+		}
+
 		if (evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) {
 			/* Legacy advertising reports are complete.
 			 * Create event immediately.
@@ -672,19 +697,6 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			 * Discard this and future reports from the advertiser.
 			 */
 			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
-		}
-
-		if (evt->length > buf->len) {
-			LOG_WRN("Adv report corrupted (wants %u out of %u)", evt->length, buf->len);
-
-			/* Start discarding irrespective of the `more_to_come` flag. We
-			 * assume we may have lost a partial adv report in the truncated
-			 * data.
-			 */
-			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
-			net_buf_reset(buf);
-
-			return;
 		}
 
 		if (reassembling_advertiser.state == FRAG_ADV_DISCARDING) {
@@ -1516,6 +1528,12 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+
+		if (IS_ENABLED(CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL) && param->timeout) {
+			atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
+			return -ENOTSUP;
+		}
+
 		struct bt_hci_ext_scan_phy param_1m;
 		struct bt_hci_ext_scan_phy param_coded;
 
@@ -1586,9 +1604,15 @@ int bt_le_scan_stop(void)
 	return bt_le_scan_update(false);
 }
 
-void bt_le_scan_cb_register(struct bt_le_scan_cb *cb)
+int bt_le_scan_cb_register(struct bt_le_scan_cb *cb)
 {
+	if (sys_slist_find(&scan_cbs, &cb->node, NULL)) {
+		return -EEXIST;
+	}
+
 	sys_slist_append(&scan_cbs, &cb->node);
+
+	return 0;
 }
 
 void bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb)
@@ -1831,9 +1855,15 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 	return err;
 }
 
-void bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb)
+int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb)
 {
+	if (sys_slist_find(&pa_sync_cbs, &cb->node, NULL)) {
+		return -EEXIST;
+	}
+
 	sys_slist_append(&pa_sync_cbs, &cb->node);
+
+	return 0;
 }
 
 static int bt_le_set_per_adv_recv_enable(

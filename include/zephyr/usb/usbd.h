@@ -388,7 +388,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	return c_data->priv;
 }
 
-#define USBD_DEVICE_DEFINE(device_name, uhc_dev, vid, pid)		\
+#define USBD_DEVICE_DEFINE(device_name, udc_dev, vid, pid)		\
 	static struct usb_device_descriptor				\
 	fs_desc_##device_name = {					\
 		.bLength = sizeof(struct usb_device_descriptor),	\
@@ -425,7 +425,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	};								\
 	static STRUCT_SECTION_ITERABLE(usbd_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
-		.dev = uhc_dev,						\
+		.dev = udc_dev,						\
 		.fs_desc = &fs_desc_##device_name,			\
 		.hs_desc = &hs_desc_##device_name,			\
 	}
@@ -660,13 +660,32 @@ int usbd_add_configuration(struct usbd_context *uds_ctx,
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] name    Class instance name
  * @param[in] speed   Configuration speed
- * @param[in] cfg     Configuration value (similar to bConfigurationValue)
+ * @param[in] cfg     Configuration value (bConfigurationValue)
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_register_class(struct usbd_context *uds_ctx,
 			const char *name,
 			const enum usbd_speed speed, uint8_t cfg);
+
+/**
+ * @brief Register all available USB class instances
+ *
+ * Register all available instances. Like usbd_register_class, but does not
+ * take the instance name and instead registers all available instances.
+ *
+ * @note This cannot be combined. If your application calls
+ * usbd_register_class for any device, configuration number, or instance,
+ * either usbd_register_class or this function will fail.
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] speed   Configuration speed
+ * @param[in] cfg     Configuration value (bConfigurationValue)
+ *
+ * @return 0 on success, other values on fail.
+ */
+int usbd_register_all_classes(struct usbd_context *uds_ctx,
+			      const enum usbd_speed speed, uint8_t cfg);
 
 /**
  * @brief Unregister an USB class instance
@@ -678,13 +697,28 @@ int usbd_register_class(struct usbd_context *uds_ctx,
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] name    Class instance name
  * @param[in] speed   Configuration speed
- * @param[in] cfg     Configuration value (similar to bConfigurationValue)
+ * @param[in] cfg     Configuration value (bConfigurationValue)
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_unregister_class(struct usbd_context *uds_ctx,
 			  const char *name,
 			  const enum usbd_speed speed, uint8_t cfg);
+
+/**
+ * @brief Unregister all available USB class instances
+ *
+ * Unregister all available instances. Like usbd_unregister_class, but does not
+ * take the instance name and instead unregisters all available instances.
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] speed   Configuration speed
+ * @param[in] cfg     Configuration value (bConfigurationValue)
+ *
+ * @return 0 on success, other values on fail.
+ */
+int usbd_unregister_all_classes(struct usbd_context *uds_ctx,
+				const enum usbd_speed speed, uint8_t cfg);
 
 /**
  * @brief Register USB notification message callback

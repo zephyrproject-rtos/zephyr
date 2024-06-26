@@ -77,7 +77,8 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 				bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret));
 		}
 
-		if (bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation) == 0) {
+		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
+		if (ret == 0) {
 			LOG_DBG("  Channel allocation: 0x%x", chan_allocation);
 		}
 
@@ -282,7 +283,7 @@ static int validate_codec_parameters(const struct bt_audio_codec_cfg *codec_cfg)
 	int ret;
 
 	chan_allocation_err =
-		bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation);
+		bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
 	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
 	frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
 

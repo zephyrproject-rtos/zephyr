@@ -39,6 +39,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define PHY_RT_RTL8211F_PAGSR_REG (0x1F)
 
+#define PHY_RT_RTL8211F_PAGE_MIICR_ADDR   (0xD08)
+#define PHY_RT_RTL8211F_MIICR1_REG        (0x11)
+#define PHY_RT_RTL8211F_MIICR2_REG        (0x15)
+#define PHY_RT_RTL8211F_MIICR1_TXDLY_MASK BIT(8)
+#define PHY_RT_RTL8211F_MIICR2_RXDLY_MASK BIT(3)
+
 #define PHY_RT_RTL8211F_PAGE_INTR_PIN_ADDR (0xD40)
 #define PHY_RT_RTL8211F_INTR_PIN_REG       (0x16)
 #define PHY_RT_RTL8211F_INTR_PIN_MASK      BIT(5)
@@ -475,9 +481,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 {
 	const struct rt_rtl8211f_config *config = dev->config;
 	struct rt_rtl8211f_data *data = dev->data;
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	uint32_t reg_val;
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 	int ret;
 
 	data->dev = dev;
@@ -506,10 +510,52 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Set RGMII Tx/Rx Delay. */
+	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
+					PHY_RT_RTL8211F_PAGE_MIICR_ADDR);
+	if (ret) {
+		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+		return ret;
+	}
+
+	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_MIICR1_REG, &reg_val);
+	if (ret) {
+		LOG_ERR("Error reading phy (%d) mii control register1", config->addr);
+		return ret;
+	}
+
+	reg_val |= PHY_RT_RTL8211F_MIICR1_TXDLY_MASK;
+	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_MIICR1_REG, reg_val);
+	if (ret) {
+		LOG_ERR("Error writing phy (%d) mii control register1", config->addr);
+		return ret;
+	}
+
+	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_MIICR2_REG, &reg_val);
+	if (ret) {
+		LOG_ERR("Error reading phy (%d) mii control register2", config->addr);
+		return ret;
+	}
+
+	reg_val |= PHY_RT_RTL8211F_MIICR2_RXDLY_MASK;
+	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_MIICR2_REG, reg_val);
+	if (ret) {
+		LOG_ERR("Error writing phy (%d) mii control register2", config->addr);
+		return ret;
+	}
+
+	/* Restore to default page 0 */
+	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, 0);
+	if (ret) {
+		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+		return ret;
+	}
+
 	k_work_init_delayable(&data->phy_monitor_work, phy_rt_rtl8211f_monitor_work_handler);
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	if (!config->interrupt_gpio.port) {
+		phy_rt_rtl8211f_monitor_work_handler(&data->phy_monitor_work.work);
 		goto skip_int_gpio;
 	}
 
@@ -589,6 +635,8 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 		return ret;
 	}
 skip_int_gpio:
+#else
+	phy_rt_rtl8211f_monitor_work_handler(&data->phy_monitor_work.work);
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
 	return 0;

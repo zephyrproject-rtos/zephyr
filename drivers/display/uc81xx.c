@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022 Andreas Sandberg
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +11,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "uc81xx_regs.h"
@@ -75,10 +76,9 @@ struct uc81xx_quirks {
 struct uc81xx_config {
 	const struct uc81xx_quirks *quirks;
 
-	struct spi_dt_spec bus;
-	struct gpio_dt_spec dc_gpio;
+	const struct device *mipi_dev;
+	const struct mipi_dbi_config dbi_config;
 	struct gpio_dt_spec busy_gpio;
-	struct gpio_dt_spec reset_gpio;
 
 	uint16_t height;
 	uint16_t width;
@@ -110,39 +110,13 @@ static inline int uc81xx_write_cmd(const struct device *dev, uint8_t cmd,
 				   const uint8_t *data, size_t len)
 {
 	const struct uc81xx_config *config = dev->config;
-	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
-	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
 	int err;
 
 	uc81xx_busy_wait(dev);
 
-	err = gpio_pin_set_dt(&config->dc_gpio, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	err = spi_write_dt(&config->bus, &buf_set);
-	if (err < 0) {
-		goto spi_out;
-	}
-
-	if (data != NULL) {
-		buf.buf = (void *)data;
-		buf.len = len;
-
-		err = gpio_pin_set_dt(&config->dc_gpio, 0);
-		if (err < 0) {
-			goto spi_out;
-		}
-
-		err = spi_write_dt(&config->bus, &buf_set);
-		if (err < 0) {
-			goto spi_out;
-		}
-	}
-
-spi_out:
-	spi_release_dt(&config->bus);
+	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
+				     cmd, data, len);
+	mipi_dbi_release(config->mipi_dev, &config->dbi_config);
 	return err;
 }
 
@@ -151,43 +125,42 @@ static inline int uc81xx_write_cmd_pattern(const struct device *dev,
 					   uint8_t pattern, size_t len)
 {
 	const struct uc81xx_config *config = dev->config;
-	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
-	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
+	struct display_buffer_descriptor mipi_desc;
 	int err;
 	uint8_t data[64];
 
 	uc81xx_busy_wait(dev);
 
-	err = gpio_pin_set_dt(&config->dc_gpio, 1);
+	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
+				     cmd, NULL, 0);
 	if (err < 0) {
 		return err;
 	}
 
-	err = spi_write_dt(&config->bus, &buf_set);
-	if (err < 0) {
-		goto spi_out;
-	}
-
-	err = gpio_pin_set_dt(&config->dc_gpio, 0);
-	if (err < 0) {
-		goto spi_out;
-	}
+	/*
+	 * MIPI display write API requires a display buffer descriptor.
+	 * Create one that describes the buffer we are writing
+	 */
+	mipi_desc.height = 1;
 
 	memset(data, pattern, sizeof(data));
 	while (len) {
-		buf.buf = data;
-		buf.len = MIN(len, sizeof(data));
+		mipi_desc.buf_size = mipi_desc.width = mipi_desc.pitch =
+			MIN(len, sizeof(data));
 
-		err = spi_write_dt(&config->bus, &buf_set);
+		err = mipi_dbi_write_display(config->mipi_dev,
+					     &config->dbi_config,
+					     data, &mipi_desc,
+					     PIXEL_FORMAT_MONO10);
 		if (err < 0) {
-			goto spi_out;
+			goto out;
 		}
 
-		len -= buf.len;
+		len -= mipi_desc.buf_size;
 	}
 
-spi_out:
-	spi_release_dt(&config->bus);
+out:
+	mipi_dbi_release(config->mipi_dev, &config->dbi_config);
 	return err;
 }
 
@@ -544,9 +517,7 @@ static int uc81xx_controller_init(const struct device *dev)
 	const struct uc81xx_config *config = dev->config;
 	struct uc81xx_data *data = dev->data;
 
-	gpio_pin_set_dt(&config->reset_gpio, 1);
-	k_sleep(K_MSEC(UC81XX_RESET_DELAY));
-	gpio_pin_set_dt(&config->reset_gpio, 0);
+	mipi_dbi_reset(config->mipi_dev, UC81XX_RESET_DELAY);
 	k_sleep(K_MSEC(UC81XX_RESET_DELAY));
 	uc81xx_busy_wait(dev);
 
@@ -570,25 +541,10 @@ static int uc81xx_init(const struct device *dev)
 
 	LOG_DBG("");
 
-	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+	if (!device_is_ready(config->mipi_dev)) {
+		LOG_ERR("MIPI device not ready");
 		return -ENODEV;
 	}
-
-	if (!gpio_is_ready_dt(&config->reset_gpio)) {
-		LOG_ERR("Reset GPIO device not ready");
-		return -ENODEV;
-	}
-
-	gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
-
-	if (!gpio_is_ready_dt(&config->dc_gpio)) {
-		LOG_ERR("DC GPIO device not ready");
-		return -ENODEV;
-	}
-
-	gpio_pin_configure_dt(&config->dc_gpio, GPIO_OUTPUT_INACTIVE);
-
 
 	if (!gpio_is_ready_dt(&config->busy_gpio)) {
 		LOG_ERR("Busy GPIO device not ready");
@@ -754,7 +710,7 @@ static const struct uc81xx_quirks uc8179_quirks = {
 };
 #endif
 
-static struct display_driver_api uc81xx_driver_api = {
+static const struct display_driver_api uc81xx_driver_api = {
 	.blanking_on = uc81xx_blanking_on,
 	.blanking_off = uc81xx_blanking_off,
 	.write = uc81xx_write,
@@ -816,12 +772,14 @@ static struct display_driver_api uc81xx_driver_api = {
 									\
 	static const struct uc81xx_config uc81xx_cfg_ ## n = {		\
 		.quirks = quirks_ptr,					\
-		.bus = SPI_DT_SPEC_GET(n,				\
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |		\
-			SPI_LOCK_ON,					\
-			0),						\
-		.reset_gpio = GPIO_DT_SPEC_GET(n, reset_gpios),		\
-		.dc_gpio = GPIO_DT_SPEC_GET(n, dc_gpios),		\
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                \
+		.dbi_config = {                                         \
+			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
+			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
+					SPI_OP_MODE_MASTER |            \
+					SPI_LOCK_ON | SPI_WORD_SET(8),  \
+					0),                             \
+		},                                                      \
 		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\
 									\
 		.height = DT_PROP(n, height),				\

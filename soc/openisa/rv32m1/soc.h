@@ -17,7 +17,7 @@
  * interrupts.
  *
  * Level 1 interrupts go straight to the SoC. Level 2 interrupts must
- * go through one of the 8 channels in the the INTMUX
+ * go through one of the 8 channels in the INTMUX
  * peripheral. There are 32 level 1 interrupts, including 8 INTMUX
  * interrupts. Each INTMUX interrupt can mux at most
  * CONFIG_MAX_IRQ_PER_AGGREGATOR (which happens to be 32) interrupts

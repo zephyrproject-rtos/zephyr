@@ -37,11 +37,6 @@
 	status = "disabled";
 };
 
-/* disable to avoid encoder emulater conflict */
-&touch_controller {
-	status = "disabled";
-};
-
 &qdec1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_qdec1>;

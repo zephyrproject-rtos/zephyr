@@ -12,10 +12,6 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	default 40960 if BT
 	default 4096
 
-choice BT_HCI_BUS_TYPE
-	default BT_ESP32 if BT
-endchoice
-
 config GPIO_HOGS_INIT_PRIORITY
 	default 70
 

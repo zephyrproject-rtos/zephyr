@@ -14,15 +14,15 @@
 #define SRAM1_DRAM_START    0x3ffe0000
 #define SRAM1_SIZE          0x20000
 #define SRAM1_DRAM_PROAPP_PRIV_SIZE 0x8000
-#define SRAM1_DRAM_USABLE_START 0x3ffe8000  /* Can be optimised - 0x3ffe5230 (?) */
-#define SRAM1_USABLE_SIZE   (0x40000000 - SRAM1_DRAM_USABLE_START)
+#define SRAM1_DRAM_USER_START 0x3ffe5400
+#define SRAM1_USER_SIZE     (0x40000000 - SRAM1_DRAM_USER_START)
 
 /* SRAM2 (200k) data memory */
 #define SRAM2_DRAM_START    0x3ffae000
 #define SRAM2_SIZE          0x32000
 #define SRAM2_DRAM_SHM_PRIV_SIZE 0x2000
-#define SRAM2_DRAM_USABLE_START  0x3ffb0000
-#define SRAM2_USABLE_SIZE   (SRAM1_DRAM_START - SRAM2_DRAM_USABLE_START)
+#define SRAM2_DRAM_USER_START 0x3ffb0000
+#define SRAM2_USER_SIZE     (SRAM1_DRAM_START - SRAM2_DRAM_USER_START)
 
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
@@ -48,18 +48,15 @@
 	(SRAM1_SIZE - ((addr_dram) - SRAM1_DRAM_START) + SRAM1_IRAM_START)
 
 /* For safety margin between bootloader data section and startup stacks */
-#define BOOTLOADER_DRAM_SEG_LEN        0x6400
+#define BOOTLOADER_DRAM_SEG_LEN        0x7a00
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x4000
-#define BOOTLOADER_IRAM_SEG_LEN        0x9500
+#define BOOTLOADER_IRAM_SEG_LEN        0xa000
 
 /* Start of the lower region is determined by region size and the end of the higher region */
 #define BOOTLOADER_DRAM_SEG_START  0x3fff0000
 #define BOOTLOADER_DRAM_SEG_END    (BOOTLOADER_DRAM_SEG_START + BOOTLOADER_DRAM_SEG_LEN)
 #define BOOTLOADER_IRAM_LOADER_SEG_START 0x40078000
-/* TODO: It should be possible to have this @ 0x40080400
- * but due a bug we need to use different memory location.
- */
-#define BOOTLOADER_IRAM_SEG_START     0x400a0000
+#define BOOTLOADER_IRAM_SEG_START  0x400a0000
 
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE

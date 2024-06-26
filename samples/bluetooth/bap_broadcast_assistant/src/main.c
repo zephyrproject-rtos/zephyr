@@ -42,7 +42,7 @@ static uint16_t selected_pa_interval;
 static bt_addr_le_t selected_addr;
 static struct bt_le_per_adv_sync *pa_sync;
 static uint8_t received_base[UINT8_MAX];
-static uint8_t received_base_size;
+static size_t received_base_size;
 static struct bt_bap_bass_subgroup
 	bass_subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 
@@ -133,7 +133,7 @@ static bool device_found(struct bt_data *data, void *user_data)
 static bool base_store(struct bt_data *data, void *user_data)
 {
 	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
-	uint8_t base_size;
+	int base_size;
 	int base_subgroup_count;
 
 	/* Base is NULL if the data does not contain a valid BASE */
@@ -148,13 +148,19 @@ static bool base_store(struct bt_data *data, void *user_data)
 		return true;
 	}
 
-	base_size = data->data_len - BT_UUID_SIZE_16; /* the BASE comes after the UUID */
+	base_size = bt_bap_base_get_size(base);
+	if (base_size < 0) {
+		printk("BASE get size failed (%d)\n", base_size);
+
+		return true;
+	}
 
 	/* Compare BASE and copy if different */
 	k_mutex_lock(&base_store_mutex, K_FOREVER);
-	if (base_size != received_base_size || memcmp(base, received_base, base_size) != 0) {
+	if ((size_t)base_size != received_base_size ||
+	    memcmp(base, received_base, (size_t)base_size) != 0) {
 		(void)memcpy(received_base, base, base_size);
-		received_base_size = base_size;
+		received_base_size = (size_t)base_size;
 	}
 	k_mutex_unlock(&base_store_mutex);
 

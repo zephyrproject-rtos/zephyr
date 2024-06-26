@@ -168,8 +168,14 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | PINMUX    | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random number generator        |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi bus                             |
 +-----------+------------+-------------------------------------+
@@ -180,8 +186,8 @@ The default configuration can be found in the defconfig and dts files:
 
 - Secure target:
 
-  - :zephyr_file:`boards/arm/stm32hs78_dk/stm32h7s78_dk_defconfig`
-  - :zephyr_file:`boards/arm/stm32h7s78_dk/stm32h7s78_dk.dts`
+  - :zephyr_file:`boards/st/stm32h7s78_dk/stm32h7s78_dk_defconfig`
+  - :zephyr_file:`boards/st/stm32h7s78_dk/stm32h7s78_dk.dts`
 
 Zephyr board options
 ====================

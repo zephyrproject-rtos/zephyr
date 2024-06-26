@@ -28,12 +28,12 @@ External tool interface
 In order to get data from the external tool, the test expects a Python module,
 named on testcase.yaml, with the following interface:
 
-    run(seconds: float, options: str) -> {}
+    run(seconds: float, options: str) -> {}, int
 
 The `seconds` parameter defines for how long the data collection is expected
 to run; `options` is a string defined on testcase.yaml with options known to
-the external tool helper module. It should return a dictionary with the
-following statistics, in seconds:
+the external tool helper module. It should return a tuple with a dictionary
+for the following time statistics, in seconds:
 
     'mean':         Mean time of each period
     'stddev':       Standard deviation from the mean time
@@ -41,6 +41,8 @@ following statistics, in seconds:
     'min':          Minimum period registered
     'max':          Maximum period registered
     'total_time':   Total time, between first and last period.
+
+and an integer value of how many data values are collected for the statistics.
 
 Note that the collection may need to go a bit after the "seconds" parameter,
 to account for expected drift in the test and between the DUT and the external

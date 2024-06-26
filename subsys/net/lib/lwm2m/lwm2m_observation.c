@@ -1047,20 +1047,6 @@ int lwm2m_update_observer_min_period(struct lwm2m_ctx *client_ctx,
 	return lwm2m_update_or_allocate_attribute(ref, LWM2M_ATTR_PMIN, &period_s);
 }
 
-int lwm2m_engine_update_observer_min_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
-					    uint32_t period_s)
-{
-	int ret;
-	struct lwm2m_obj_path path;
-
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return ret;
-	}
-
-	return lwm2m_update_observer_min_period(client_ctx, &path, period_s);
-}
-
 int lwm2m_update_observer_max_period(struct lwm2m_ctx *client_ctx,
 				     const struct lwm2m_obj_path *path, uint32_t period_s)
 {
@@ -1105,20 +1091,6 @@ int lwm2m_update_observer_max_period(struct lwm2m_ctx *client_ctx,
 	/* Update Observer timestamp */
 	return lwm2m_engine_observer_timestamp_update(&client_ctx->observer, path,
 						      client_ctx->srv_obj_inst);
-}
-
-int lwm2m_engine_update_observer_max_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
-					    uint32_t period_s)
-{
-	int ret;
-	struct lwm2m_obj_path path;
-
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return ret;
-	}
-
-	return lwm2m_update_observer_max_period(client_ctx, &path, period_s);
 }
 
 struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref, struct lwm2m_attr *prev)
@@ -1391,19 +1363,6 @@ bool lwm2m_path_is_observed(const struct lwm2m_obj_path *path)
 		}
 	}
 	return false;
-}
-
-bool lwm2m_engine_path_is_observed(const char *pathstr)
-{
-	int ret;
-	struct lwm2m_obj_path path;
-
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return false;
-	}
-
-	return lwm2m_path_is_observed(&path);
 }
 
 int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uint16_t accept,

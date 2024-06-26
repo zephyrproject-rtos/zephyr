@@ -403,7 +403,11 @@ static void cmd_prop_rx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 	LOG_DBG("ch: %u cmd: %04x st: %04x e: 0x%" PRIx64, ch,
 		op->commandNo, op->status, e);
 
-	if (e & RF_EventRxEntryDone) {
+	/* If PROP_ERROR_RXBUF is returned, then RF_EventRxEntryDone is never
+	 * triggered. So finished buffers need to be cleaned up even on this
+	 * status.
+	 */
+	if (e & RF_EventRxEntryDone || op->status == PROP_ERROR_RXBUF) {
 		drv_rx_done(drv_data);
 	}
 

@@ -16,12 +16,16 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/net/igmp.h>
+#include <zephyr/net/ipv4_autoconf.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ethernet.h>
+#ifdef CONFIG_WIFI_NM
+#include <zephyr/net/wifi_nm.h>
+#endif
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/socket.h>
@@ -30,7 +34,6 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include "net_private.h"
 #include "ipv4.h"
 #include "ipv6.h"
-#include "ipv4_autoconf_internal.h"
 
 #include "net_stats.h"
 
@@ -130,7 +133,7 @@ static sys_slist_t timestamp_callbacks;
 			net_pkt_iface(pkt));				\
 									\
 		NET_ASSERT(pkt->frags);					\
-	} while (0)
+	} while (false)
 #else
 #define debug_check_packet(...)
 #endif /* CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG */
@@ -2092,7 +2095,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 	}
 
 	if (net_if_ipv6_maddr_lookup(addr, &iface)) {
-		NET_WARN("Multicast address %s is is already registered.",
+		NET_WARN("Multicast address %s is already registered.",
 			net_sprint_ipv6_addr(addr));
 		goto out;
 	}
@@ -4110,6 +4113,118 @@ static struct net_if_addr *ipv4_addr_find(struct net_if *iface,
 	return NULL;
 }
 
+#if defined(CONFIG_NET_IPV4_ACD)
+void net_if_ipv4_acd_succeeded(struct net_if *iface, struct net_if_addr *ifaddr)
+{
+	net_if_lock(iface);
+
+	NET_DBG("ACD succeeded for %s at interface %d",
+		net_sprint_ipv4_addr(&ifaddr->address.in_addr),
+		ifaddr->ifindex);
+
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ACD_SUCCEED, iface,
+					&ifaddr->address.in_addr,
+					sizeof(struct in_addr));
+
+	net_if_unlock(iface);
+}
+
+void net_if_ipv4_acd_failed(struct net_if *iface, struct net_if_addr *ifaddr)
+{
+	net_if_lock(iface);
+
+	NET_DBG("ACD failed for %s at interface %d",
+		net_sprint_ipv4_addr(&ifaddr->address.in_addr),
+		ifaddr->ifindex);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ACD_FAILED, iface,
+					&ifaddr->address.in_addr,
+					sizeof(struct in_addr));
+
+	net_if_ipv4_addr_rm(iface, &ifaddr->address.in_addr);
+
+	net_if_unlock(iface);
+}
+
+void net_if_ipv4_start_acd(struct net_if *iface, struct net_if_addr *ifaddr)
+{
+	ifaddr->addr_state = NET_ADDR_TENTATIVE;
+
+	if (net_if_is_up(iface)) {
+		NET_DBG("Interface %p ll addr %s tentative IPv4 addr %s",
+			iface,
+			net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
+					   net_if_get_link_addr(iface)->len),
+			net_sprint_ipv4_addr(&ifaddr->address.in_addr));
+
+		if (net_ipv4_acd_start(iface, ifaddr) != 0) {
+			NET_DBG("Failed to start ACD for %s on iface %p.",
+				net_sprint_ipv4_addr(&ifaddr->address.in_addr),
+				iface);
+
+			/* Just act as if no conflict was detected. */
+			net_if_ipv4_acd_succeeded(iface, ifaddr);
+		}
+	} else {
+		NET_DBG("Interface %p is down, starting ACD for %s later.",
+			iface, net_sprint_ipv4_addr(&ifaddr->address.in_addr));
+	}
+}
+
+void net_if_start_acd(struct net_if *iface)
+{
+	struct net_if_ipv4 *ipv4;
+	int ret;
+
+	net_if_lock(iface);
+
+	NET_DBG("Starting ACD for iface %p", iface);
+
+	ret = net_if_config_ipv4_get(iface, &ipv4);
+	if (ret < 0) {
+		if (ret != -ENOTSUP) {
+			NET_WARN("Cannot do ACD IPv4 config is not valid.");
+		}
+
+		goto out;
+	}
+
+	if (!ipv4) {
+		goto out;
+	}
+
+	ipv4->conflict_cnt = 0;
+
+	/* Start ACD for all the addresses that were added earlier when
+	 * the interface was down.
+	 */
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != AF_INET ||
+		    net_ipv4_is_addr_loopback(
+			    &ipv4->unicast[i].ipv4.address.in_addr)) {
+			continue;
+		}
+
+		net_if_ipv4_start_acd(iface, &ipv4->unicast[i].ipv4);
+	}
+
+out:
+	net_if_unlock(iface);
+}
+#else
+void net_if_ipv4_start_acd(struct net_if *iface, struct net_if_addr *ifaddr)
+{
+	ARG_UNUSED(iface);
+
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+}
+
+#define net_if_start_acd(...)
+#endif /* CONFIG_NET_IPV4_ACD */
+
 struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 					 struct in_addr *addr,
 					 enum net_addr_type addr_type,
@@ -4167,12 +4282,18 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 		 *  TODO: Handle properly PREFERRED/DEPRECATED state when
 		 *  address in use, expired and renewal state.
 		 */
-		ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 		NET_DBG("[%d] interface %d (%p) address %s type %s added",
 			idx, net_if_get_by_iface(iface), iface,
 			net_sprint_ipv4_addr(addr),
 			net_addr_type2str(addr_type));
+
+		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
+		    !net_ipv4_is_addr_loopback(addr)) {
+			net_if_ipv4_start_acd(iface, ifaddr);
+		} else {
+			ifaddr->addr_state = NET_ADDR_PREFERRED;
+		}
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_ADD, iface,
 						&ifaddr->address.in_addr,
@@ -4524,9 +4645,22 @@ static void leave_ipv4_mcast_all(struct net_if *iface)
 	}
 }
 
+static void iface_ipv4_start(struct net_if *iface)
+{
+	if (!net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
+		net_if_start_acd(iface);
+	}
+}
+
+
 #else /* CONFIG_NET_NATIVE_IPV4 */
 #define leave_ipv4_mcast_all(...)
 #define iface_ipv4_init(...)
+#define iface_ipv4_start(...)
 
 struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *addr,
 						   struct net_if **iface)
@@ -4735,6 +4869,10 @@ static void remove_ipv4_ifaddr(struct net_if *iface,
 		goto out;
 	}
 
+#if defined(CONFIG_NET_IPV4_ACD)
+	net_ipv4_acd_cancel(iface, ifaddr);
+#endif
+
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_DEL,
 					iface,
 					&ifaddr->address.in_addr,
@@ -4932,14 +5070,33 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 	k_mutex_unlock(&lock);
 }
 
-static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps)
+static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps,
+			      enum net_if_checksum_type chksum_type)
 {
 #if defined(CONFIG_NET_L2_ETHERNET)
+	struct ethernet_config config;
+	enum ethernet_config_type config_type;
+
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return true;
 	}
 
-	return !(net_eth_get_hw_capabilities(iface) & caps);
+	if (!(net_eth_get_hw_capabilities(iface) & caps)) {
+		return true; /* No checksum offload*/
+	}
+
+	if (caps == ETHERNET_HW_RX_CHKSUM_OFFLOAD) {
+		config_type = ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT;
+	} else {
+		config_type = ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT;
+	}
+
+	if (net_eth_get_hw_config(iface, config_type, &config) != 0) {
+		return false; /* No extra info, assume all offloaded. */
+	}
+
+	/* bitmaps are encoded such that this works */
+	return !((config.chksum_support & chksum_type) == chksum_type);
 #else
 	ARG_UNUSED(iface);
 	ARG_UNUSED(caps);
@@ -4948,14 +5105,14 @@ static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps)
 #endif
 }
 
-bool net_if_need_calc_tx_checksum(struct net_if *iface)
+bool net_if_need_calc_tx_checksum(struct net_if *iface, enum net_if_checksum_type chksum_type)
 {
-	return need_calc_checksum(iface, ETHERNET_HW_TX_CHKSUM_OFFLOAD);
+	return need_calc_checksum(iface, ETHERNET_HW_TX_CHKSUM_OFFLOAD, chksum_type);
 }
 
-bool net_if_need_calc_rx_checksum(struct net_if *iface)
+bool net_if_need_calc_rx_checksum(struct net_if *iface, enum net_if_checksum_type chksum_type)
 {
-	return need_calc_checksum(iface, ETHERNET_HW_RX_CHKSUM_OFFLOAD);
+	return need_calc_checksum(iface, ETHERNET_HW_RX_CHKSUM_OFFLOAD, chksum_type);
 }
 
 int net_if_get_by_iface(struct net_if *iface)
@@ -5025,6 +5182,7 @@ static void notify_iface_up(struct net_if *iface)
 		 */
 		rejoin_multicast_groups(iface);
 		iface_ipv6_start(iface);
+		iface_ipv4_start(iface);
 		net_ipv4_autoconf_start(iface);
 	}
 }
@@ -5447,6 +5605,7 @@ static void net_tx_ts_thread(void *p1, void *p2, void *p3)
 		if (pkt) {
 			net_if_call_timestamp_cb(pkt);
 		}
+		net_pkt_unref(pkt);
 	}
 }
 
@@ -5499,6 +5658,7 @@ void net_if_call_timestamp_cb(struct net_pkt *pkt)
 void net_if_add_tx_timestamp(struct net_pkt *pkt)
 {
 	k_fifo_put(&tx_ts_queue, pkt);
+	net_pkt_ref(pkt);
 }
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
@@ -5518,6 +5678,40 @@ struct net_if *net_if_get_first_wifi(void)
 {
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (net_if_is_wifi(iface)) {
+			return iface;
+		}
+	}
+	return NULL;
+}
+
+struct net_if *net_if_get_wifi_sta(void)
+{
+	struct ethernet_context *eth_ctx = NULL;
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		eth_ctx = net_if_l2_data(iface);
+		if (net_if_is_wifi(iface)
+#ifdef CONFIG_WIFI_NM
+			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_STA))
+#endif
+			) {
+			return iface;
+		}
+	}
+	return NULL;
+}
+
+struct net_if *net_if_get_wifi_sap(void)
+{
+	struct ethernet_context *eth_ctx = NULL;
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		eth_ctx = net_if_l2_data(iface);
+		if (net_if_is_wifi(iface)
+#ifdef CONFIG_WIFI_NM
+			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_SAP))
+#endif
+			) {
 			return iface;
 		}
 	}
@@ -5660,6 +5854,16 @@ static void set_default_name(struct net_if *iface)
 			snprintk(name, sizeof(name) - 1, "ppp%d", count++);
 		}
 #endif /* CONFIG_NET_L2_PPP */
+	}
+
+	if (IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD)) {
+			static int count;
+
+			snprintk(name, sizeof(name) - 1, "thread%d", count++);
+		}
+#endif /* CONFIG_NET_L2_OPENTHREAD */
 	}
 
 	if (name[0] == '\0') {

@@ -31,7 +31,7 @@ static bool in_bounds(struct z_heap *h, chunkid_t c)
 static bool valid_chunk(struct z_heap *h, chunkid_t c)
 {
 	VALIDATE(chunk_size(h, c) > 0);
-	VALIDATE(c + chunk_size(h, c) <= h->end_chunk);
+	VALIDATE((c + chunk_size(h, c)) <= h->end_chunk);
 	VALIDATE(in_bounds(h, c));
 	VALIDATE(right_chunk(h, left_chunk(h, c)) == c);
 	VALIDATE(left_chunk(h, right_chunk(h, c)) == c);
@@ -128,7 +128,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 			return false;
 		}
 
-		if (empty && h->buckets[b].next != 0) {
+		if (empty && (h->buckets[b].next != 0)) {
 			return false;
 		}
 	}

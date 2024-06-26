@@ -6,6 +6,7 @@
 
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/led.h>
+#include <zephyr/dt-bindings/led/led.h>
 #include <stdlib.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
@@ -84,6 +85,28 @@ static int cmd_on(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
+static const char *led_color_to_str(uint8_t color)
+{
+	switch (color) {
+	case LED_COLOR_ID_WHITE:
+		return "white";
+	case LED_COLOR_ID_RED:
+		return "red";
+	case LED_COLOR_ID_GREEN:
+		return "green";
+	case LED_COLOR_ID_BLUE:
+		return "blue";
+	case LED_COLOR_ID_VIOLET:
+		return "violet";
+	case LED_COLOR_ID_YELLOW:
+		return "yellow";
+	case LED_COLOR_ID_IR:
+		return "IR";
+	default:
+		return "unknown";
+	}
+}
+
 static int cmd_get_info(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -109,11 +132,11 @@ static int cmd_get_info(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "Index      : %d", info->index);
 	shell_print(sh, "Num colors : %d", info->num_colors);
 	if (info->color_mapping) {
-		shell_fprintf(sh, SHELL_NORMAL, "Colors     : %d",
-			      info->color_mapping[0]);
+		shell_fprintf(sh, SHELL_NORMAL, "Colors     : %s",
+			      led_color_to_str(info->color_mapping[0]));
 		for (i = 1; i < info->num_colors; i++) {
-			shell_fprintf(sh, SHELL_NORMAL, ":%d",
-				      info->color_mapping[i]);
+			shell_fprintf(sh, SHELL_NORMAL, ":%s",
+				      led_color_to_str(info->color_mapping[i]));
 		}
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
 	}

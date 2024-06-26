@@ -290,7 +290,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	 * request and we want to send it again.
 	 */
 	if (entry) {
-		if (!net_pkt_ipv4_auto(pkt)) {
+		if (!net_pkt_ipv4_acd(pkt)) {
 			k_fifo_put(&entry->pending_queue, net_pkt_ref(pending));
 		}
 
@@ -325,7 +325,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	memcpy(hdr->src_hwaddr.addr, net_pkt_lladdr_src(pkt)->addr,
 	       sizeof(struct net_eth_addr));
 
-	if (net_pkt_ipv4_auto(pkt)) {
+	if (net_pkt_ipv4_acd(pkt)) {
 		my_addr = current_ip;
 	} else if (!entry) {
 		my_addr = (struct in_addr *)NET_IPV4_HDR(pending)->src;
@@ -353,6 +353,11 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 
 	if (!pkt || !pkt->buffer) {
 		return NULL;
+	}
+
+	if (net_pkt_ipv4_acd(pkt)) {
+		return arp_prepare(net_pkt_iface(pkt), request_ip, NULL,
+				   pkt, current_ip);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_AUTO)) {
@@ -406,8 +411,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 			 * in the pending list and if so, resend the request, otherwise just
 			 * append the packet to the request fifo list.
 			 */
-			if (!net_pkt_ipv4_auto(pkt) &&
-			    k_queue_unique_append(&entry->pending_queue._queue,
+			if (k_queue_unique_append(&entry->pending_queue._queue,
 						  net_pkt_ref(pkt))) {
 				NET_DBG("Pending ARP request for %s, queuing pkt %p",
 					net_sprint_ipv4_addr(addr), pkt);

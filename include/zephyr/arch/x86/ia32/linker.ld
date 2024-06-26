@@ -44,7 +44,7 @@
 
 #include <zephyr/linker/linker-tool.h>
 
-#if defined(CONFIG_XIP) || defined(Z_VM_KERNEL)
+#if defined(CONFIG_XIP) || defined(K_MEM_IS_VM_KERNEL)
 	#define ROMABLE_REGION ROM
 	#define RAMABLE_REGION RAM
 #else
@@ -68,7 +68,7 @@
 	#define MMU_PAGE_ALIGN_PERM
 #endif
 
-epoint = Z_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
+epoint = K_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
 ENTRY(epoint)
 
 /* SECTIONS definitions */
@@ -215,6 +215,10 @@ SECTIONS
 	lnkr_pinned_rodata_start = .;
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 
 	SECTION_PROLOGUE(pinned.rodata,,)
@@ -350,6 +354,10 @@ SECTIONS
 
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 #endif
 

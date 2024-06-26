@@ -1726,3 +1726,33 @@ CVE-2024-4785
 -------------
 
 Under embargo until 2024-08-07
+
+CVE-2024-5754
+-------------
+
+Under embargo until 2024-09-04
+
+CVE-2024-5931
+-------------
+
+Under embargo until 2024-09-10
+
+CVE-2024-6135
+-------------
+
+Under embargo until 2024-09-11
+
+CVE-2024-6137
+-------------
+
+Under embargo until 2024-09-11
+
+CVE-2024-6258
+-------------
+
+Under embargo until 2024-09-05
+
+CVE-2024-6259
+-------------
+
+Under embargo until 2024-09-12

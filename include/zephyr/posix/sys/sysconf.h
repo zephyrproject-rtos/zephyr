@@ -153,10 +153,14 @@ enum {
 	COND_CODE_1(CONFIG_POSIX_FSYNC, (_POSIX_FSYNC), (-1L))
 #define __z_posix_sysconf_SC_IPV6              COND_CODE_1(CONFIG_NET_IPV6, (_POSIX_IPV6), (-1L))
 #define __z_posix_sysconf_SC_JOB_CONTROL       (-1L)
-#define __z_posix_sysconf_SC_MAPPED_FILES      (-1L)
-#define __z_posix_sysconf_SC_MEMLOCK           (-1L)
-#define __z_posix_sysconf_SC_MEMLOCK_RANGE     (-1L)
-#define __z_posix_sysconf_SC_MEMORY_PROTECTION (-1L)
+#define __z_posix_sysconf_SC_MAPPED_FILES                                                          \
+	COND_CODE_1(CONFIG_POSIX_MAPPED_FILES, (_POSIX_MAPPED_FILES), (-1L))
+#define __z_posix_sysconf_SC_MEMLOCK                                                               \
+	COND_CODE_1(CONFIG_POSIX_MEMLOCK, (_POSIX_MEMLOCK), (-1L))
+#define __z_posix_sysconf_SC_MEMLOCK_RANGE                                                         \
+	COND_CODE_1(CONFIG_POSIX_MEMLOCK_RANGE, (_POSIX_MEMLOCK_RANGE), (-1L))
+#define __z_posix_sysconf_SC_MEMORY_PROTECTION                                                     \
+	COND_CODE_1(CONFIG_POSIX_MEMORY_PROTECTION, (_POSIX_MEMORY_PROTECTION), (-1L))
 #define __z_posix_sysconf_SC_MESSAGE_PASSING                                                       \
 	COND_CODE_1(CONFIG_POSIX_MESSAGE_PASSING, (_POSIX_MESSAGE_PASSING), (-1L))
 #define __z_posix_sysconf_SC_MONOTONIC_CLOCK                                                       \
@@ -174,7 +178,8 @@ enum {
 #define __z_posix_sysconf_SC_SAVED_IDS             (-1L)
 #define __z_posix_sysconf_SC_SEMAPHORES                                                            \
 	COND_CODE_1(CONFIG_POSIX_SEMAPHORES, (_POSIX_SEMAPHORES), (-1L))
-#define __z_posix_sysconf_SC_SHARED_MEMORY_OBJECTS (-1L)
+#define __z_posix_sysconf_SC_SHARED_MEMORY_OBJECTS                                                 \
+	COND_CODE_1(CONFIG_POSIX_SHARED_MEMORY_OBJECTS, (_POSIX_SHARED_MEMORY_OBJECTS), (-1L))
 #define __z_posix_sysconf_SC_SHELL                 (-1L)
 #define __z_posix_sysconf_SC_SPAWN                 (-1L)
 #define __z_posix_sysconf_SC_SPIN_LOCKS                                                            \
@@ -252,7 +257,7 @@ enum {
 #define __z_posix_sysconf_SC_XOPEN_REALTIME_THREADS       (-1L)
 #define __z_posix_sysconf_SC_XOPEN_SHM                    (-1L)
 #define __z_posix_sysconf_SC_XOPEN_STREAMS                                                         \
-	COND_CODE_1(CONFIG_XOPEN_STREAMS, (_POSIX_XOPEN_STREAMS), (-1))
+	COND_CODE_1(CONFIG_XOPEN_STREAMS, (_XOPEN_STREAMS), (-1))
 #define __z_posix_sysconf_SC_XOPEN_UNIX                   (-1L)
 #define __z_posix_sysconf_SC_XOPEN_UUCP                   (-1L)
 #define __z_posix_sysconf_SC_XOPEN_VERSION                _XOPEN_VERSION

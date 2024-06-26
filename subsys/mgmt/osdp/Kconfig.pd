@@ -10,7 +10,7 @@ config OSDP_NUM_CONNECTED_PD
 	int
 	default 1
 	help
-	  In PD mode, number of connected PDs is is always 1 and cannot
+	  In PD mode, number of connected PDs is always 1 and cannot
 	  be configured.
 
 config OSDP_PD_COMMAND_QUEUE_SIZE
@@ -37,7 +37,7 @@ config OSDP_PD_SCBK
 	string "Secure Channel Base Key (SCBK)"
 	default "NONE"
 	help
-	  Hexadecimal string representation of the the 16 byte OSDP PD Secure
+	  Hexadecimal string representation of the 16 byte OSDP PD Secure
 	  Channel Base Key. When this field is sent to "NONE", the PD is set to
 	  "Install Mode". In this mode, the PD would allow a CP to setup a secure
 	  channel with default SCBK. Once as secure channel is active with the

@@ -341,7 +341,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys);
  * example of this is reserved regions in the first megabyte on PC-like systems.
  *
  * Implementations of this function should mark all relevant entries in
- * z_page_frames with K_PAGE_FRAME_RESERVED. This function is called at
+ * k_mem_page_frames with K_PAGE_FRAME_RESERVED. This function is called at
  * early system initialization with mm_lock held.
  */
 void arch_reserved_pages_update(void);
@@ -390,9 +390,9 @@ void arch_mem_page_in(void *addr, uintptr_t phys);
  * Update current page tables for a temporary mapping
  *
  * Map a physical page frame address to a special virtual address
- * Z_SCRATCH_PAGE, with read/write access to supervisor mode, such that
+ * K_MEM_SCRATCH_PAGE, with read/write access to supervisor mode, such that
  * when this function returns, the calling context can read/write the page
- * frame's contents from the Z_SCRATCH_PAGE address.
+ * frame's contents from the K_MEM_SCRATCH_PAGE address.
  *
  * This mapping only needs to be done on the current set of page tables,
  * as it is only used for a short period of time exclusively by the caller.

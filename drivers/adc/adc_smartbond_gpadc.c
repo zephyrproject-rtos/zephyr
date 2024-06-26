@@ -8,6 +8,7 @@
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include <DA1469xAB.h>
+#include <da1469x_pd.h>
 #include "adc_context.h"
 #include <zephyr/dt-bindings/adc/smartbond-adc.h>
 
@@ -15,7 +16,13 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/math_extras.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/smartbond_clock_control.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 
 LOG_MODULE_REGISTER(adc_smartbond_adc);
 
@@ -99,6 +106,30 @@ static int adc_smartbond_channel_setup(const struct device *dev,
 	}
 
 	return 0;
+}
+
+static inline void gpadc_smartbond_pm_policy_state_lock_get(const struct device *dev,
+					      struct adc_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE)
+	pm_device_runtime_get(dev);
+	/*
+	 * Prevent the SoC from entering the normal sleep state.
+	 */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+}
+
+static inline void gpadc_smartbond_pm_policy_state_lock_put(const struct device *dev,
+					      struct adc_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE)
+	/*
+	 * Allow the SoC to enter the normal sleep state once GPADC is done.
+	 */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_device_runtime_put(dev);
+#endif
 }
 
 #define PER_CHANNEL_ADC_CONFIG_MASK (GPADC_GP_ADC_CTRL_REG_GP_ADC_SEL_Msk |	\
@@ -212,6 +243,7 @@ static void adc_smartbond_isr(const struct device *dev)
 	data->channel_read_mask ^= 1 << current_channel;
 
 	if (data->channel_read_mask == 0) {
+		gpadc_smartbond_pm_policy_state_lock_put(dev, data);
 		adc_context_on_sampling_done(&data->ctx, dev);
 	} else {
 		adc_context_start_sampling(&data->ctx);
@@ -228,6 +260,7 @@ static int adc_smartbond_read(const struct device *dev,
 	struct adc_smartbond_data *data = dev->data;
 
 	adc_context_lock(&data->ctx, false, NULL);
+	gpadc_smartbond_pm_policy_state_lock_get(dev, data);
 	error = start_read(dev, sequence);
 	adc_context_release(&data->ctx, error);
 
@@ -244,6 +277,7 @@ static int adc_smartbond_read_async(const struct device *dev,
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
+	gpadc_smartbond_pm_policy_state_lock_get(dev, data);
 	error = start_read(dev, sequence);
 	adc_context_release(&data->ctx, error);
 
@@ -251,26 +285,99 @@ static int adc_smartbond_read_async(const struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
-static int adc_smartbond_init(const struct device *dev)
+static int gpadc_smartbond_resume(const struct device *dev)
 {
-	int err;
-	struct adc_smartbond_data *data = dev->data;
+	int ret, rate;
 	const struct adc_smartbond_cfg *config = dev->config;
+	const struct device *clock_dev = DEVICE_DT_GET(DT_NODELABEL(osc));
+
+	da1469x_pd_acquire(MCU_PD_DOMAIN_PER);
+
+	/* Get current clock to determine GP_ADC_EN_DEL */
+	clock_control_get_rate(clock_dev, (clock_control_subsys_t)SMARTBOND_CLK_SYS_CLK, &rate);
+	GPADC->GP_ADC_CTRL3_REG = (rate/1600000)&0xff;
 
 	GPADC->GP_ADC_CTRL_REG = GPADC_GP_ADC_CTRL_REG_GP_ADC_EN_Msk;
-	GPADC->GP_ADC_CTRL2_REG = 0;
-	GPADC->GP_ADC_CTRL3_REG = 0x40;
-	GPADC->GP_ADC_CLEAR_INT_REG = 0x0;
 
 	/*
 	 * Configure dt provided device signals when available.
 	 * pinctrl is optional so ENOENT is not setup failure.
 	 */
-	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0 && err != -ENOENT) {
-		LOG_ERR("ADC pinctrl setup failed (%d)", err);
-		return err;
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		/* Disable the GPADC LDO */
+		GPADC->GP_ADC_CTRL_REG = 0;
+
+		/* Release the peripheral domain */
+		da1469x_pd_release(MCU_PD_DOMAIN_PER);
+
+		LOG_ERR("ADC pinctrl setup failed (%d)", ret);
+		return ret;
 	}
+
+	return 0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int gpadc_smartbond_suspend(const struct device *dev)
+{
+	int ret;
+	const struct adc_smartbond_cfg *config = dev->config;
+
+	/* Disable the GPADC LDO */
+	GPADC->GP_ADC_CTRL_REG = 0;
+
+	/* Release the peripheral domain */
+	da1469x_pd_release(MCU_PD_DOMAIN_PER);
+
+	/*
+	 * Configure dt provided device signals for sleep.
+	 * pinctrl is optional so ENOENT is not setup failure.
+	 */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	if (ret < 0 && ret != -ENOENT) {
+		LOG_WRN("Failed to configure the GPADC pins to inactive state");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int gpadc_smartbond_pm_action(const struct device *dev,
+				   enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = gpadc_smartbond_resume(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = gpadc_smartbond_suspend(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static int adc_smartbond_init(const struct device *dev)
+{
+	int ret;
+	struct adc_smartbond_data *data = dev->data;
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Make sure device state is marked as suspended */
+	pm_device_init_suspended(dev);
+
+	ret = pm_device_runtime_enable(dev);
+
+#else
+	ret = gpadc_smartbond_resume(dev);
+
+#endif
+
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    adc_smartbond_isr, DEVICE_DT_INST_GET(0), 0);
 
@@ -279,7 +386,7 @@ static int adc_smartbond_init(const struct device *dev)
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
-	return 0;
+	return ret;
 }
 
 static const struct adc_driver_api adc_smartbond_driver_api = {
@@ -312,8 +419,10 @@ static const struct adc_driver_api adc_smartbond_driver_api = {
 		ADC_CONTEXT_INIT_LOCK(adc_smartbond_data_##inst, ctx),	\
 		ADC_CONTEXT_INIT_SYNC(adc_smartbond_data_##inst, ctx),	\
 	};								\
-	DEVICE_DT_INST_DEFINE(0,					\
-			      adc_smartbond_init, NULL,			\
+	PM_DEVICE_DT_INST_DEFINE(inst, gpadc_smartbond_pm_action);	\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			      adc_smartbond_init,  \
+				  PM_DEVICE_DT_INST_GET(inst),			\
 			      &adc_smartbond_data_##inst,		\
 			      &adc_smartbond_cfg_##inst,		\
 			      POST_KERNEL,				\

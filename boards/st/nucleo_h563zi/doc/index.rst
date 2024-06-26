@@ -150,6 +150,8 @@ The Zephyr nucleo_h563zi board configuration supports the following hardware fea
 +===========+============+=====================================+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| CAN/CANFD | on-chip    | CAN                                 |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
@@ -216,6 +218,7 @@ Default Zephyr Peripheral Mapping:
 - ADC1 channel 3 input: PA6
 - ADC1 channel 15 input: PA3
 - DAC1 channel 2 output: PA5
+- CAN/CANFD TX/RX: PD1/PD0
 - LD1 (green): PB0
 - LD2 (yellow): PF4
 - LD3 (red): PG4

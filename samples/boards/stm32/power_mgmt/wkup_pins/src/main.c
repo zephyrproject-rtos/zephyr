@@ -10,6 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/poweroff.h>
+#include <zephyr/dt-bindings/gpio/stm32-gpio.h>
 
 #define WAIT_TIME_US 4000000
 
@@ -24,14 +25,14 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
 int main(void)
 {
-	__ASSERT_NO_MSG(gpio_is_ready_dt(&button));
-	printk("\nWake-up button set up at %s pin %d\n", button.port->name, button.pin);
+	printk("\nWake-up button is connected to %s pin %d\n", button.port->name, button.pin);
 
 	__ASSERT_NO_MSG(gpio_is_ready_dt(&led));
 	gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
 	gpio_pin_set(led.port, led.pin, 1);
 
-	printk("Device is ready\n");
+	/* Setup button GPIO pin as a source for exiting Poweroff */
+	gpio_pin_configure_dt(&button, STM32_GPIO_WKUP);
 
 	printk("Will wait %ds before powering the system off\n", (WAIT_TIME_US / 1000000));
 	k_busy_wait(WAIT_TIME_US);

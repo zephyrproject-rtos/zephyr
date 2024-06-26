@@ -13,7 +13,7 @@
 #include <zephyr/sys/sys_io.h>
 
 /* Number of bits represented by one bundle */
-#define bundle_bitness(ba)	(sizeof(ba->bundles[0]) * 8)
+#define bundle_bitness(ba)	(sizeof((ba)->bundles[0]) * 8)
 
 struct bundle_data {
 	 /* Start and end index of bundles */
@@ -218,10 +218,10 @@ int sys_bitarray_popcount_region(sys_bitarray_t *bitarray, size_t num_bits, size
 	struct bundle_data bd;
 	int ret;
 
-	key = k_spin_lock(&bitarray->lock);
-
 	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
 
 	if (num_bits == 0 || offset + num_bits > bitarray->num_bits) {
 		ret = -EINVAL;
@@ -266,13 +266,14 @@ int sys_bitarray_xor(sys_bitarray_t *dst, sys_bitarray_t *other, size_t num_bits
 	size_t idx;
 	struct bundle_data bd;
 
-	key_dst = k_spin_lock(&dst->lock);
-	key_other = k_spin_lock(&other->lock);
-
 	__ASSERT_NO_MSG(dst != NULL);
 	__ASSERT_NO_MSG(dst->num_bits > 0);
 	__ASSERT_NO_MSG(other != NULL);
 	__ASSERT_NO_MSG(other->num_bits > 0);
+
+	key_dst = k_spin_lock(&dst->lock);
+	key_other = k_spin_lock(&other->lock);
+
 
 	if (dst->num_bits != other->num_bits) {
 		ret = -EINVAL;
@@ -322,10 +323,10 @@ int sys_bitarray_set_bit(sys_bitarray_t *bitarray, size_t bit)
 	int ret;
 	size_t idx, off;
 
-	key = k_spin_lock(&bitarray->lock);
-
 	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
 
 	if (bit >= bitarray->num_bits) {
 		ret = -EINVAL;

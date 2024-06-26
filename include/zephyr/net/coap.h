@@ -741,7 +741,7 @@ static inline enum coap_block_size coap_bytes_to_block_size(uint16_t bytes)
 	if (sz > COAP_BLOCK_1024) {
 		return COAP_BLOCK_1024;
 	}
-	return sz;
+	return (enum coap_block_size)sz;
 }
 
 /**

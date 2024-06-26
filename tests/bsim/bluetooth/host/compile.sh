@@ -12,6 +12,7 @@ set -ue
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/adv/compile.sh
+app=tests/bsim/bluetooth/host/central compile
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/att/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/gatt/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/l2cap/compile.sh

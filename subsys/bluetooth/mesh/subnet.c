@@ -52,7 +52,7 @@ struct net_key_update {
 
 /* NetKey storage information */
 struct net_key_val {
-	uint8_t kr_flag:1,
+	uint8_t unused:1,
 		kr_phase:7;
 	struct bt_mesh_key val[2];
 } __packed;
@@ -107,7 +107,7 @@ static void store_subnet(uint16_t net_idx)
 
 	memcpy(&key.val[0], &sub->keys[0].net, sizeof(struct bt_mesh_key));
 	memcpy(&key.val[1], &sub->keys[1].net, sizeof(struct bt_mesh_key));
-	key.kr_flag = 0U; /* Deprecated */
+	key.unused = 0U;
 	key.kr_phase = sub->kr_phase;
 
 	err = settings_save_one(path, &key, sizeof(key));

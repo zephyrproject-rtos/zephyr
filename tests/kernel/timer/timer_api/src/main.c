@@ -45,8 +45,8 @@ struct timer_data {
  * between the two clocks.  Produce a maximum error for a given
  * duration in microseconds.
  */
-#define BUSY_SLEW_THRESHOLD_TICKS(_us)				\
-	k_us_to_ticks_ceil32((_us) * BUSY_TICK_SLEW_PPM		\
+#define BUSY_SLEW_THRESHOLD_TICKS(_us)					\
+	k_us_to_ticks_ceil32((_us) * (uint64_t)BUSY_TICK_SLEW_PPM	\
 			     / PPM_DIVISOR)
 
 static void duration_expire(struct k_timer *timer);
@@ -723,9 +723,11 @@ ZTEST_USER(timer_api, test_timer_remaining)
 	 * than expected on systems where the requested microsecond
 	 * delay cannot be exactly represented as an integer number of
 	 * ticks.
+	 * As above, use higher tolerance on platforms where the clock used
+	 * by the kernel timer and the one used for busy-waiting may be skewed.
 	 */
-	zassert_true(((int64_t)exp_ticks - (int64_t)now) <= (dur_ticks / 2) + 1,
-		     NULL);
+	zassert_true(((int64_t)exp_ticks - (int64_t)now)
+		     <= (dur_ticks / 2) + 1 + slew_ticks, NULL);
 }
 
 ZTEST_USER(timer_api, test_timeout_abs)

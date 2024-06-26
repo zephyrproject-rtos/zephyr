@@ -12,11 +12,11 @@ Overview
 ********
 
 This application creates a supervisor and a user thread.
-Then both threads call k_current_get() which returns a reference to the
+Then both threads call :c:func:`k_current_get()` which returns a reference to the
 current thread. The user thread has to go through a system call.
 
 Both threads are showing the number of core clock cycles and the number of
-instructions executed while calling k_current_get().
+instructions executed while calling :c:func:`k_current_get()`.
 
 
 Sample Output

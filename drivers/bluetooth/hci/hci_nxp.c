@@ -9,7 +9,7 @@
 /* -------------------------------------------------------------------------- */
 
 #include <zephyr/init.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/device.h>
@@ -25,6 +25,10 @@
 /* -------------------------------------------------------------------------- */
 
 #define DT_DRV_COMPAT nxp_hci_ble
+
+struct bt_nxp_data {
+	bt_hci_recv_t recv;
+};
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 LOG_MODULE_REGISTER(bt_driver);
@@ -244,6 +248,8 @@ static struct net_buf *bt_acl_recv(uint8_t *data, size_t len)
 
 static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_nxp_data *hci = dev->data;
 	struct net_buf *buf;
 
 	switch (packetType) {
@@ -262,13 +268,15 @@ static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
 
 	if (buf) {
 		/* Provide the buffer to the host */
-		bt_recv(buf);
+		hci->recv(dev, buf);
 	}
 }
 
-static int bt_nxp_send(struct net_buf *buf)
+static int bt_nxp_send(const struct device *dev, struct net_buf *buf)
 {
 	uint8_t packetType;
+
+	ARG_UNUSED(dev);
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_CMD:
@@ -290,8 +298,9 @@ static int bt_nxp_send(struct net_buf *buf)
 	return 0;
 }
 
-static int bt_nxp_open(void)
+static int bt_nxp_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct bt_nxp_data *hci = dev->data;
 	int ret = 0;
 
 	do {
@@ -312,13 +321,16 @@ static int bt_nxp_open(void)
 			LOG_ERR("HCI open failed");
 			break;
 		}
+
+		hci->recv = recv;
 	} while (false);
 
 	return ret;
 }
 
-int bt_nxp_setup(const struct bt_hci_setup_params *params)
+int bt_nxp_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
+	ARG_UNUSED(dev);
 	ARG_UNUSED(params);
 
 	int ret;
@@ -362,8 +374,9 @@ int bt_nxp_setup(const struct bt_hci_setup_params *params)
 	return ret;
 }
 
-static int bt_nxp_close(void)
+static int bt_nxp_close(const struct device *dev)
 {
+	struct bt_nxp_data *hci = dev->data;
 	int ret = 0;
 	/* Reset the Controller */
 #if CONFIG_BT_HCI_HOST
@@ -378,22 +391,24 @@ static int bt_nxp_close(void)
 		LOG_ERR("Failed to shutdown BLE controller");
 	}
 #endif
+	hci->recv = NULL;
+
 	return ret;
 }
 
-static const struct bt_hci_driver drv = {
-	.name = "BT NXP",
+static const struct bt_hci_driver_api drv = {
 	.open = bt_nxp_open,
 	.setup = bt_nxp_setup,
 	.close = bt_nxp_close,
 	.send = bt_nxp_send,
-	.bus = BT_HCI_DRIVER_BUS_IPM,
 };
 
-static int bt_nxp_init(void)
+static int bt_nxp_init(const struct device *dev)
 {
 	int status;
 	int ret = 0;
+
+	ARG_UNUSED(dev);
 
 	/* HCI Interrupt */
 	IRQ_CONNECT(HCI_IRQ_N, HCI_IRQ_P, ble_hci_handler, 0, 0);
@@ -414,16 +429,16 @@ static int bt_nxp_init(void)
 			ret = status;
 			break;
 		}
-
-		status = bt_hci_driver_register(&drv);
-		if (status < 0) {
-			LOG_ERR("HCI driver registration failed");
-			ret = status;
-			break;
-		}
 	} while (0);
 
 	return ret;
 }
 
-SYS_INIT(bt_nxp_init, POST_KERNEL, CONFIG_BT_HCI_INIT_PRIORITY);
+#define HCI_DEVICE_INIT(inst) \
+	static struct bt_nxp_data hci_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, bt_nxp_init, NULL, &hci_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_BT_HCI_INIT_PRIORITY, &drv)
+
+/* Only one instance supported right now */
+HCI_DEVICE_INIT(0)

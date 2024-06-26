@@ -16,7 +16,7 @@
 /* OOB operations will be attempted regardless of channel enabled or not */
 #include "espi_oob_handler.h"
 
-#ifdef CONFIG_ESPI_SAF
+#ifdef CONFIG_ESPI_TAF
 #include <zephyr/drivers/espi_saf.h>
 #endif
 
@@ -65,7 +65,7 @@ static uint8_t flash_write_buf[MAX_TEST_BUF_SIZE];
 static uint8_t flash_read_buf[MAX_TEST_BUF_SIZE];
 #endif
 
-#ifdef CONFIG_ESPI_SAF
+#ifdef CONFIG_ESPI_TAF
 #define SAF_BASE_ADDR DT_REG_ADDR(DT_NODELABEL(espi_saf0))
 
 #define SAF_TEST_FREQ_HZ  24000000U
@@ -128,7 +128,7 @@ static const struct espi_saf_flash_cfg flash_w25q128 = {
  * by QMSPI driver.
  * Use SAF hardware default TAG map.
  */
-#ifdef CONFIG_ESPI_SAF_XEC_V2
+#ifdef CONFIG_ESPI_TAF_XEC_V2
 static const struct espi_saf_cfg saf_cfg1 = {
 	.nflash_devices = 1U,
 	.hwcfg = {.version = 2U,               /* TODO */
@@ -757,7 +757,7 @@ int espi_saf_test1(uint32_t spi_addr)
 
 	return rc;
 }
-#endif /* CONFIG_ESPI_SAF */
+#endif /* CONFIG_ESPI_TAF */
 
 static void host_warn_handler(uint32_t signal, uint32_t status)
 {
@@ -1187,7 +1187,7 @@ int espi_test(void)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_ESPI_SAF
+#ifdef CONFIG_ESPI_TAF
 	if (!device_is_ready(qspi_dev)) {
 		LOG_ERR("%s: device not ready.", qspi_dev->name);
 		return -ENODEV;
@@ -1223,7 +1223,7 @@ int espi_test(void)
 
 	espi_init();
 
-#ifdef CONFIG_ESPI_SAF
+#ifdef CONFIG_ESPI_TAF
 	/*
 	 * eSPI SAF configuration must be after eSPI configuration.
 	 * eSPI SAF EC portal flash tests before EC releases RSMRST# and

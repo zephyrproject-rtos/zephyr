@@ -98,12 +98,12 @@ static bool smf_execute_all_entry_actions(struct smf_ctx *const ctx,
 	for (const struct smf_state *to_execute = get_child_of(new_state, topmost);
 	     to_execute != NULL && to_execute != new_state;
 	     to_execute = get_child_of(new_state, to_execute)) {
+		/* Keep track of the executing entry action in case it calls
+		 * smf_set_state()
+		 */
+		ctx->executing = to_execute;
 		/* Execute every entry action EXCEPT that of the topmost state */
 		if (to_execute->entry) {
-			/* Keep track of the executing entry action in case it calls
-			 * smf_set_State()
-			 */
-			ctx->executing = to_execute;
 			to_execute->entry(ctx);
 
 			/* No need to continue if terminate was set */
@@ -114,6 +114,7 @@ static bool smf_execute_all_entry_actions(struct smf_ctx *const ctx,
 	}
 
 	/* and execute the new state entry action */
+	ctx->executing = new_state;
 	if (new_state->entry) {
 		new_state->entry(ctx);
 
@@ -138,19 +139,14 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx *ctx)
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 	/* Execute all run actions in reverse order */
 
-	/* Return if the current state switched states */
-	if (internal->new_state) {
-		internal->new_state = false;
-		return false;
-	}
-
 	/* Return if the current state terminated */
 	if (internal->terminate) {
 		return true;
 	}
 
-	if (internal->handled) {
-		/* Event was handled by this state. Stop propagating */
+	/* The child state either transitioned or handled it. Either way, stop propagating. */
+	if (internal->new_state || internal->handled) {
+		internal->new_state = false;
 		internal->handled = false;
 		return false;
 	}
@@ -168,19 +164,16 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx *ctx)
 				return true;
 			}
 
-			if (internal->new_state) {
-				break;
-			}
-
-			if (internal->handled) {
-				/* Event was handled by this state. Stop propagating */
-				internal->handled = false;
+			/* This state dealt with it. Stop propagating. */
+			if (internal->new_state || internal->handled) {
 				break;
 			}
 		}
 	}
 
 	internal->new_state = false;
+	internal->handled = false;
+
 	/* All done executing the run actions */
 
 	return false;
@@ -197,7 +190,8 @@ static bool smf_execute_all_exit_actions(struct smf_ctx *const ctx, const struct
 {
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 
-	for (const struct smf_state *to_execute = ctx->current; to_execute != topmost;
+	for (const struct smf_state *to_execute = ctx->current;
+	     to_execute != NULL && to_execute != topmost;
 	     to_execute = to_execute->parent) {
 		if (to_execute->exit) {
 			to_execute->exit(ctx);
@@ -229,6 +223,8 @@ void smf_set_initial(struct smf_ctx *ctx, const struct smf_state *init_state)
 
 	internal->is_exit = false;
 	internal->terminate = false;
+	internal->handled = false;
+	internal->new_state = false;
 	ctx->current = init_state;
 	ctx->previous = NULL;
 	ctx->terminate_val = 0;

@@ -849,7 +849,7 @@ static const struct espi_saf_xec_config espi_saf_xec_config = {
 
 DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, NULL,
 		      &espi_saf_xec_data, &espi_saf_xec_config, POST_KERNEL,
-		      CONFIG_ESPI_SAF_INIT_PRIORITY, &espi_saf_xec_driver_api);
+		      CONFIG_ESPI_TAF_INIT_PRIORITY, &espi_saf_xec_driver_api);
 
 static int espi_saf_xec_init(const struct device *dev)
 {

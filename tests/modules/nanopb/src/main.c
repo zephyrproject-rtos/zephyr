@@ -67,7 +67,7 @@ ZTEST(nanopb_tests, test_nanopb_nested)
 
 	zassert_equal(42, msg.nested.id);
 	zassert_true(msg.has_nested);
-	zassert_equal(0, strcmp(msg.nested.name, "Test name"));
+	zassert_str_equal(msg.nested.name, "Test name");
 }
 
 ZTEST(nanopb_tests, test_nanopb_lib)

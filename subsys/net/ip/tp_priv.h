@@ -20,7 +20,7 @@ extern "C" {
 #define tp_err(fmt, args...) do {				\
 	printk("%s: Error: " fmt "\n", __func__, ## args);	\
 	k_oops();						\
-} while (0)
+} while (false)
 
 #define tp_assert(cond, fmt, args...) do {			\
 	if ((cond) == false) {					\
@@ -28,7 +28,7 @@ extern "C" {
 			__func__, #cond, ## args);		\
 		k_oops();					\
 	}							\
-} while (0)
+} while (false)
 
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
 #define ip_get(_x) ((struct net_ipv4_hdr *) net_pkt_ip_data((_x)))

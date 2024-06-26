@@ -29,6 +29,8 @@
 #define SSMODyD(y)		0x64 + 0x10*I2SIPCMC + 0x10*y
 #define SSMODyTSA(y)	0x68 + 0x10*I2SIPCMC + 0x10*y
 
+#define PCMSyCM_OFFSET(x)	0x16 + 0x4*(x)
+
 #define OUT_FIFO		SSMODyD(0)
 #define IN_FIFO			SSMIDyD(0)
 
@@ -53,6 +55,7 @@
 #define SSCR0_EFRDC     BIT(27)
 #define SSCR0_EFRDC2    BIT(28)
 #define SSCR0_DLE		DAI_INTEL_SSP_SET_BITS(30, 29, 0)
+#define SSCR0_ACS		BIT(30)
 #define SSCR0_MOD		BIT(31)
 
 /* SSCR1 bits */
@@ -211,8 +214,6 @@
 #define I2SLCTL_OFLEN		BIT(4)
 #define I2SLCTL_SPA(x)		BIT(16 + x)
 #define I2SLCTL_CPA(x)		BIT(23 + x)
-#define PCMS0CM_OFFSET		0x16
-#define PCMS1CM_OFFSET		PCMS0CM_OFFSET + 4 * I2SIPCMC
 
 #define I2CLCTL_MLCS(x)		DAI_INTEL_SSP_SET_BITS(30, 27, x)
 #define SHIM_CLKCTL		0x78

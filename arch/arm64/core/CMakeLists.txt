@@ -4,6 +4,7 @@ zephyr_library()
 
 zephyr_library_sources(
   cpu_idle.S
+  early_mem_funcs.S
   fatal.c
   irq_init.c
   irq_manage.c

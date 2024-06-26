@@ -11,6 +11,8 @@ source "subsys/net/lib/mqtt/Kconfig"
 
 source "subsys/net/lib/mqtt_sn/Kconfig"
 
+source "subsys/net/lib/ptp/Kconfig"
+
 source "subsys/net/lib/tftp/Kconfig"
 
 source "subsys/net/lib/http/Kconfig"

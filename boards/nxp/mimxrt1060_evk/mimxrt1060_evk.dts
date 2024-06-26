@@ -163,9 +163,9 @@ arduino_i2c: &lpi2c1 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
 		status = "okay";
-		mc,reset-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
-		mc,interrupt-gpio = <&gpio1 10 GPIO_ACTIVE_HIGH>;
-		mc,interface-type = "rmii";
+		reset-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
 	};
 };
 
@@ -183,6 +183,14 @@ arduino_i2c: &lpi2c1 {
 
 zephyr_udc0: &usb1 {
 	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <12>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
 };
 
 &flexpwm2_pwm3 {

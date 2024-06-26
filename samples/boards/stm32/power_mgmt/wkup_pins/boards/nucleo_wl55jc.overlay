@@ -4,16 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/gpio/stm32-gpio.h>
-
 / {
 	aliases {
 		wkup-src = &user_button_1;
 	};
-};
-
-&user_button_1 {
-	gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP | STM32_GPIO_WKUP)>;
 };
 
 &pwr {

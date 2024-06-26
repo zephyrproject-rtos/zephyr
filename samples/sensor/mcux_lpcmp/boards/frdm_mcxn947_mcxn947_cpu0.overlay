@@ -5,5 +5,5 @@
  */
 
 &lpcmp0 {
-    function-clock = "CMP_CLOCK";
+	function-clock = "CMP_CLOCK";
 };

@@ -442,7 +442,7 @@ static void ase_exit_state_enabling(struct bt_ascs_ase *ase)
 
 	/*
 	 * When the EP direction is BT_AUDIO_DIR_SOURCE the state machine goes from
-	 * enabled to disabled where the disabled calback will be called,
+	 * enabled to disabled where the disabled callback will be called,
 	 * for BT_AUDIO_DIR_SINK we go from enabled to qos_configured,
 	 * and logically we have to do the disabled callback first
 	 */
@@ -2112,8 +2112,8 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 
 		break;
 	}
-	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
-		if (data_len != 3) {
+	case BT_AUDIO_METADATA_TYPE_LANG:
+		if (data_len != BT_AUDIO_LANG_SIZE) {
 			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
 						       data_type);
 			result->err = -EBADMSG;

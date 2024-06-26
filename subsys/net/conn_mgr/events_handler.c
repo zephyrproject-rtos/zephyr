@@ -47,8 +47,6 @@ static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
 	default:
 		goto done;
 	}
-
-	iface_states[idx] |= CONN_MGR_IF_CHANGED;
 	k_sem_give(&conn_mgr_mon_updated);
 
 done:
@@ -95,7 +93,6 @@ static void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
 		goto done;
 	}
 
-	iface_states[idx] |= CONN_MGR_IF_CHANGED;
 	k_sem_give(&conn_mgr_mon_updated);
 
 done:
@@ -134,21 +131,26 @@ static void conn_mgr_ipv4_events_handler(struct net_mgmt_event_callback *cb,
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
 	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
+	case NET_EVENT_IPV4_CMD_ACD_SUCCEED:
+		__fallthrough;
 	case NET_EVENT_IPV4_CMD_ADDR_ADD:
-		iface_states[idx] |= CONN_MGR_IF_IPV4_SET;
-		break;
-	case NET_EVENT_IPV4_CMD_ADDR_DEL:
 		if (net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED)) {
-			break;
+			iface_states[idx] |= CONN_MGR_IF_IPV4_SET;
 		}
 
-		iface_states[idx] &= ~CONN_MGR_IF_IPV4_SET;
+		break;
+	case NET_EVENT_IPV4_CMD_ACD_FAILED:
+		__fallthrough;
+	case NET_EVENT_IPV4_CMD_ADDR_DEL:
+		if (!net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED)) {
+			iface_states[idx] &= ~CONN_MGR_IF_IPV4_SET;
+		}
+
 		break;
 	default:
 		goto done;
 	}
 
-	iface_states[idx] |= CONN_MGR_IF_CHANGED;
 	k_sem_give(&conn_mgr_mon_updated);
 
 done:

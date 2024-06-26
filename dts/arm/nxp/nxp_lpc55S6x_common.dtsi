@@ -161,22 +161,27 @@
 		};
 	};
 
-	gpio0: gpio@0 {
+	gpio: gpio@8c000 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x2488>;
-		int-source = "pint";
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <0>;
-	};
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	gpio1: gpio@1 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x8c000 0x2488>;
-		int-source = "pint";
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <1>;
+		gpio0: gpio@0 {
+			compatible = "nxp,lpc-gpio-port";
+			reg = <0>;
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@1 {
+			compatible = "nxp,lpc-gpio-port";
+			reg = <1>;
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
 	};
 
 	pint: pint@4000 {
@@ -382,6 +387,12 @@
 		reg = <0x94000 0x1000>;
 		interrupts = <47 1>;
 		num-bidir-endpoints = <6>;
+		status = "disabled";
+	};
+
+	usbphy1: usbphy@38000 {
+		compatible = "nxp,usbphy";
+		reg = <0x38000 0x1000>;
 		status = "disabled";
 	};
 

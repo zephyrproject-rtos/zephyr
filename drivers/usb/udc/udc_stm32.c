@@ -353,6 +353,16 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 	}
 }
 
+#if DT_INST_NODE_HAS_PROP(0, disconnect_gpios)
+void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
+{
+	struct gpio_dt_spec usb_disconnect = GPIO_DT_SPEC_INST_GET(0, disconnect_gpios);
+
+	gpio_pin_configure_dt(&usb_disconnect,
+			      state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
+}
+#endif
+
 static void udc_stm32_irq(const struct device *dev)
 {
 	const struct udc_stm32_data *priv =  udc_get_private(dev);
