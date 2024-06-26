@@ -1446,7 +1446,28 @@ static int adc_stm32_init(const struct device *dev)
 	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
 	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	LL_ADC_EnableInternalRegulator(adc);
+	/* Wait for Internal regulator stabilisation
+	 * Some series have a dedicated status bit, others relie on a delay
+	 */
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(ADC_VER_V5_V90)
+	/* ADC3 on H72x/H73x doesn't have the LDORDY status bit */
+	if (adc == ADC3) {
+		k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
+	} else {
+		while (LL_ADC_IsActiveFlag_LDORDY(adc) == 0) {
+		}
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* Don't use LL_ADC_IsActiveFlag_LDORDY since not present in U5 LL (1.5.0)
+	 * (internal issue 185106)
+	 */
+	while ((READ_BIT(adc->ISR, LL_ADC_FLAG_LDORDY) != (LL_ADC_FLAG_LDORDY))) {
+	}
+#else
 	k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
+#endif
 #endif
 
 	if (config->irq_cfg_func) {
