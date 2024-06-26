@@ -246,6 +246,8 @@ Boards & SoC Support
 
   * Introduced the simulated :ref:`nrf54l15bsim<nrf54l15bsim>` target.
 
+  * The nrf5x bsim targets now support BT LE Coded PHY.
+
   * LLVM fuzzing support has been refactored while adding support for it in native_sim.
 
 * Added support for these following shields:
@@ -795,3 +797,5 @@ Tests and Samples
   * Removed ``net/gsm_modem`` sample as the ``GSM_PPP`` device driver it depended on has been
     deprecated and removed. The sample has been replaced by the sample ``net/cellular_modem``
     based on the ``MODEM_CELLULAR`` device driver.
+
+  * BT LE Coded PHY is now runtime tested in CI with the nrf5x bsim targets.
