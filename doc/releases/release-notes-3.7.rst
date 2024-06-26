@@ -418,16 +418,67 @@ Drivers and Sensors
 
 * ADC
 
-  * Added support for STM32H7R/S series.
+  * Added ``ADC_DT_SPEC_*BY_NAME()`` macros to get ADC IO-channel information from DT by name.
+  * Added support for voltage biasing:
 
-  * Changed phandle type DT property ``nxp,reference-supply`` to phandle-array type DT property
-    ``nxp,references`` in ``nxp,lpc-lpadc`` binding. The NXP LPADC driver now supports passing
-    the reference voltage value by using ``nxp,references``.
-  * Enabled time based acquisition on NXP lpadc
+    * Added a :kconfig:option:`CONFIG_ADC_CONFIGURABLE_VBIAS_PIN` selected by drivers that support
+      voltage biasing.
+    * Added a ``zephyr,vbias-pins`` property to the adc-controller base binding to describe voltage
+      bias pins.
+    * Implemented for the TI ADC114s08 ADC driver.
+  * Sample changes
 
-  * Fixed issue which allowed negative ADC readings in single-ended mode using the ``adc_nrfx_saadc.c``
-    device driver. Note that this fix prevents the nRF54H and nRF54L series from performing
-    8-bit resolution single-ended readings due to hardware limitations.
+    * Renamed existing ADC sample to adc_dt.
+    * Added a new sample called adc_sequence that shows more of the runtime
+      :c:struct:`adc_sequence` features.
+  * New ADC Drivers
+
+    * Added driver for the ENE KB1200.
+    * Added driver for the NXP GAU ADC.
+  * ADI AD559x changes
+
+    * Added support for ADI's ad5593.
+    * Added I2C bus support for ADI ad559x.
+    * Added configuration of internal reference voltage value to ad559x to support
+      calls of :c:func:`adc_raw_to_millivolts()`.
+    * Fixed issue with driver initialization causing improper operation in the ad559x driver
+      regarding the availibility of :kconfig:option:`CONFIG_THREAD_NAME`.
+    * Improved the ADC read efficiency and validation in ad559x driver.
+  * ESP32 changes
+
+    * Updated ESP32 ADC driver to work with version 5.1 of hal_espressif.
+    * Added support for DMA mode operation for ESP32S3 and ESP32C3.
+  * nRF changes
+
+    * Added support for nRF54L15 and nRF54H20 in the nrfx_saadc driver.
+    * Improved the nRF SAADC driver by disabling burst mode on unused channels, avoiding freezes.
+    * Fixed issue which allowed negative ADC readings in single-ended mode using the
+      ``adc_nrfx_saadc.c`` device driver.
+      Note that this fix prevents the nRF54H and nRF54L series from performing
+      8-bit resolution single-ended readings due to hardware limitations.
+  * NXP LPADC changes
+
+    * Enabled acquisition time feature in the NXP LPADC driver.
+    * Added support for regulator output as reference to NXP LPADC.
+    * Changed phandle type DT property ``nxp,reference-supply`` to phandle-array type DT property
+      ``nxp,references`` in ``nxp,lpc-lpadc`` binding. The NXP LPADC driver now supports passing
+      the reference voltage value by using ``nxp,references``.
+  * Smartbond changes
+
+    * Added support for power management to the Smartbond SDADC and GPADC drivers.
+    * Fixed support for :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` in the Smartbond ADC driver.
+  * STM32 changes
+
+    * Fixed various issues with DMA support in the STM32 ADC driver.
+    * Added support for STM32H7R/S series.
+  * Other driver changes
+
+    * Added support for Nuvoton m2l31x in the numaker ADC driver.
+    * Fixed issue with configuration register access in the ads1119 driver.
+    * Fixed uninitialized value in kb1200 driver found in static analysis.
+    * Fixed issue with :c:func:`adc_raw_to_millivolts` returning half the actual voltage with
+      the tla2021 driver by correcting the reference voltage value.
+
 
 * Auxiliary Display
 
