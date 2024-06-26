@@ -329,8 +329,15 @@ config TRACING_PM
 	  Enable tracing Power Management.
 
 config TRACING_NETWORKING
-	bool "Tracing Network Sockets"
+	bool "Tracing Network Objects"
 	default y if NETWORKING
+	help
+	  Enable tracing network objects.
+
+config TRACING_NET_SOCKETS
+	bool "Tracing Network Sockets"
+	depends on TRACING_NETWORKING
+	default y if NET_SOCKETS
 	help
 	  Enable tracing network sockets.
 
