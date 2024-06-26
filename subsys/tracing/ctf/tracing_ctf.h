@@ -569,6 +569,17 @@ void sys_trace_socket_getsockname_exit(int sock, const struct sockaddr *addr, co
 void sys_trace_socket_socketpair_enter(int family, int type, int proto, int *sv);
 void sys_trace_socket_socketpair_exit(int sock_A, int sock_B, int ret);
 
+#define sys_port_trace_net_recv_data_enter(iface, pkt)          \
+	sys_trace_net_recv_data_enter(iface, pkt)
+#define sys_port_trace_net_recv_data_exit(iface, pkt, ret)	\
+	sys_trace_net_recv_data_exit(iface, pkt, ret)
+
+struct net_if;
+struct net_pkt;
+
+void sys_trace_net_recv_data_enter(struct net_if *iface, struct net_pkt *pkt);
+void sys_trace_net_recv_data_exit(struct net_if *iface, struct net_pkt *pkt, int ret);
+
 #ifdef __cplusplus
 }
 #endif
