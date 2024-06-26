@@ -113,6 +113,8 @@ Below interfaces are supported by Zephyr on APARD32690.
 +-----------+------------+------------------------------------+
 | ADIN1110  | spi        | ADIN1110 10BASE-T1L mac/phy        |
 +-----------+------------+------------------------------------+
+| W1        | on-chip    | one wire master                    |
++-----------+------------+------------------------------------+
 
 
 Connections and IOs
