@@ -52,6 +52,8 @@ Removed APIs in this release
 
  * Removed deprecated ``pcie_probe`` and ``pcie_bdf_lookup`` functions from the PCIe APIs.
 
+ * Removed deprecated ``CONFIG_EMUL_EEPROM_AT2X`` Kconfig option.
+
 Deprecated in this release
 ==========================
 
@@ -361,6 +363,10 @@ Drivers and Sensors
 * DMA
 
 * Entropy
+
+* EEPROM
+
+  * Added property for specifying ``address-width`` to :dtcompatible:`zephyr,i2c-target-eeprom`.
 
 * eSPI
 
