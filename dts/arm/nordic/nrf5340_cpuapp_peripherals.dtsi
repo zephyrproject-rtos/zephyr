@@ -12,10 +12,9 @@ dcnf: dcnf@0 {
 	status = "okay";
 };
 
-oscillators: oscillator@4000 {
-	compatible = "nordic,nrf-oscillators";
+oscillators: clock-controller@4000 {
+	compatible = "nordic,nrf53-oscillators";
 	reg = <0x4000 0x1000>;
-	status = "okay";
 };
 
 regulators: regulator@4000 {
