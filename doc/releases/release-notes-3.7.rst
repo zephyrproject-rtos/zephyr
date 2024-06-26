@@ -397,6 +397,19 @@ Drivers and Sensors
 * Flash
 
   * Added support for Ambiq Apollo3 series.
+  * Added support for multiple instances of the SPI NOR driver (spi_nor.c).
+  * Added preliminary support for non-erase devices with introduction of
+    device capabilities to c:struct:`flash_parameters` and the utility function
+    c:func:`flash_params_get_erase_cap` that allows to obtain the erase type
+    provided by a device; added c:macro:`FLASH_ERASE_C_EXPLICIT`, which is
+    currently the only supported erase type and is set by all flash devices.
+  * Added the c:func:`flash_flatten` function that can be used on devices,
+    with or without erase requirement, when erase has been used not for preparing
+    a device for a random data write, but rather to remove/scramble data from
+    that device.
+  * Added the c:func:`flash_fill` utility function which allows to write
+    a single value across a provided range in a selected device.
+  * Added support for RRAM on nrf54l15 devices.
 
 * GNSS
 
