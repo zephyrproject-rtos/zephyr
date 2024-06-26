@@ -219,7 +219,7 @@ static const struct gpio_shakti_config gpio_shakti_config0 ={
     //     .port_pin_mask  = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
     // },
     .gpio_base_addr     = GPIO_START,
-    .gpio_irq_base      = DT_INST_IRQN(0),
+    .gpio_irq_base      = DT_INST_IRQN(0)//GPIO_INTERRUPT_CONFIG_REG,
     .gpio_cfg_func      = gpio_shakti_cfg,
     .gpio_mode          = DT_PROP(DT_NODELABEL(gpio0), config_gpio)
 };
