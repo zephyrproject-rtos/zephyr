@@ -6,11 +6,15 @@
 / {
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
-		mboxes = <&cpuapp_bellboard 0>;
-		mbox-names = "rx";
+		mboxes = <&cpuppr_vevif 15>, <&cpuapp_bellboard 18>;
+		mbox-names = "rx", "tx";
 	};
 };
 
 &cpuapp_bellboard {
+	status = "okay";
+};
+
+&cpuppr_vevif {
 	status = "okay";
 };
