@@ -14,5 +14,6 @@ supported:
   - serial
   - spi
   - trng
+  - w1
 ram: 1024
 flash: 3072
