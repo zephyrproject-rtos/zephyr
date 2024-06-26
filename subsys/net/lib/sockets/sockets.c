@@ -1265,6 +1265,8 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 				    net_pkt_create_time(pkt),
 				    end_tick);
 
+	SYS_PORT_TRACING_FUNC(net, rx_time, pkt, end_tick);
+
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)) {
 		uint32_t val, prev = net_pkt_create_time(pkt);
 		int i;
@@ -1596,7 +1598,8 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) &&
+	if ((IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
+	     IS_ENABLED(CONFIG_TRACING_NET_CORE)) &&
 	    !(flags & ZSOCK_MSG_PEEK)) {
 		net_socket_update_tc_rx_time(pkt, k_cycle_get_32());
 	}
@@ -1669,7 +1672,8 @@ static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf
 					sock_set_eof(ctx);
 				}
 
-				if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS)) {
+				if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
+				    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 					net_socket_update_tc_rx_time(pkt, k_cycle_get_32());
 				}
 
