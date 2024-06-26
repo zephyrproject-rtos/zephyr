@@ -886,6 +886,16 @@ Libraries / Subsystems
   * FS: It is now possible to truncate a file while opening using :c:func:`fs_open`
     and by passing ``FS_O_TRUNC`` flag.
 
+  * Flash Map: TinyCrypt has been replaced with PSA Crypto in Flash Area integrity check.
+
+  * Flash Map: :c:func:`flash_area_flatten` has been added to be used where an erase
+    operation has been previously used for removing/scrambling data rather than
+    to prepare a device for a random data write.
+
+  * Flash Map: :c:macro:`FIXED_PARTITION_NODE_OFFSET`, :c:macro:`FIXED_PARTITION_NODE_SIZE`
+    and :c:macro:`FIXED_PARTITION_NODE_DEVICE` have been added to allow obtaining
+    fixed partition information from a devicetree node rather than a label.
+
 * POSIX API
 
 * LoRa/LoRaWAN
