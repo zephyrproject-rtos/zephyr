@@ -383,6 +383,9 @@ void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int resu
 #define sys_port_trace_socket_socketpair_enter(family, type, proto, sv)
 #define sys_port_trace_socket_socketpair_exit(sockA, sockB, ret)
 
+#define sys_port_trace_net_recv_data_enter(iface, pkt)
+#define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
+
 #ifdef __cplusplus
 }
 #endif

@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/tracing/tracing.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <string.h>
@@ -489,16 +490,23 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 /* Called by driver when a packet has been received */
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
+	int ret;
+
+	SYS_PORT_TRACING_FUNC_ENTER(net, recv_data, iface, pkt);
+
 	if (!pkt || !iface) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto err;
 	}
 
 	if (net_pkt_is_empty(pkt)) {
-		return -ENODATA;
+		ret = -ENODATA;
+		goto err;
 	}
 
 	if (!net_if_flag_is_set(iface, NET_IF_UP)) {
-		return -ENETDOWN;
+		ret = -ENETDOWN;
+		goto err;
 	}
 
 	net_pkt_set_overwrite(pkt, true);
@@ -520,7 +528,12 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		net_queue_rx(iface, pkt);
 	}
 
-	return 0;
+	ret = 0;
+
+err:
+	SYS_PORT_TRACING_FUNC_EXIT(net, recv_data, iface, pkt, ret);
+
+	return ret;
 }
 
 static inline void l3_init(void)
