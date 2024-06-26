@@ -22,6 +22,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <stm32_ll_adc.h>
+#include <stm32_ll_system.h>
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <stm32_ll_pwr.h>
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
@@ -535,6 +536,24 @@ static void adc_stm32_calibration_start(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	LL_ADC_StartCalibration(adc);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc != ADC4) {
+		uint32_t dev_id = LL_DBGMCU_GetDeviceID();
+		uint32_t rev_id = LL_DBGMCU_GetRevisionID();
+
+		/* Some U5 implement an extended calibration to enhance ADC performance.
+		 * It is not available for ADC4.
+		 * It is available on all U5 except U575/585 (dev ID 482) revision X (rev ID 2001).
+		 * The code below applies the procedure described in RM0456 in the ADC chapter:
+		 * "Extended calibration mode"
+		 */
+		if ((dev_id != 0x482UL) && (rev_id != 0x2001UL)) {
+			adc_stm32_enable(adc);
+			MODIFY_REG(adc->CR, ADC_CR_CALINDEX, 0x9UL << ADC_CR_CALINDEX_Pos);
+			MODIFY_REG(adc->CALFACT2, 0xFFFFFF00UL, 0x03021100UL);
+			SET_BIT(adc->CALFACT, ADC_CALFACT_LATCH_COEF);
+			adc_stm32_disable(adc);
+		}
+	}
 	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET, LL_ADC_SINGLE_ENDED);
