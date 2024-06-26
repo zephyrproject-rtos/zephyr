@@ -375,6 +375,12 @@ config NXP_FW_LOADER
 	   The firmware loader is used to load firmwares to embedded tranceivers.
 	   It is needed to enable connectivity features.
 
+config NXP_MONOLITHIC_WIFI
+	bool "WiFi firmware monolithic build"
+	help
+	   If enabled, the WiFi firmware used by the device will be linked with the
+	   application directly.
+
 config NXP_MONOLITHIC_BT
 	bool "BT firmware monolithic build"
 	help
