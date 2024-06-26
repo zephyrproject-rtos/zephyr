@@ -1,0 +1,21 @@
+&pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 7, 0)>;
+		};
+	};
+	pwm_sleep: pwm_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 7, 0)>;
+			low-power-enable;
+		};
+	};
+};
+
+&pwm120 {
+	status = "okay";
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-1 = <&pwm_sleep>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&dma_fast_region>;
+};

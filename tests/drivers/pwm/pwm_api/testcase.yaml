@@ -8,3 +8,8 @@ tests:
       or dt_alias_exists("pwm-3") or dt_compat_enabled("st,stm32-pwm")
       or dt_compat_enabled("intel,blinky-pwm") or dt_compat_enabled("nordic,nrf-pwm")
     depends_on: pwm
+
+  drivers.pwm.pwm_fast:
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
