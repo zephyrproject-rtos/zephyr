@@ -15,6 +15,12 @@ dcnf: dcnf@0 {
 oscillators: clock-controller@4000 {
 	compatible = "nordic,nrf53-oscillators";
 	reg = <0x4000 0x1000>;
+
+	lfxo: lfxo {
+		compatible = "nordic,nrf53-lfxo";
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+	};
 };
 
 regulators: regulator@4000 {
