@@ -4,3 +4,7 @@
 
 config BOARD_ARTEMIS_NANO
 	select SOC_APOLLO3_BLUE
+
+config FLASH_BASE_ADDRESS
+    hex
+    default 0x10000
