@@ -264,6 +264,9 @@ Build system and Infrastructure
   * Add sysbuild ``SB_CONFIG_COMPILER_WARNINGS_AS_ERRORS`` Kconfig option to turn on
     "warning as error" toolchain flags for all images, if set.
 
+  * Fixed issue whereby files used in a project (e.g. devicetree overlays or Kconfig fragments)
+    were not correctly watched and CMake would not reconfigure if they were changed.
+
 Drivers and Sensors
 *******************
 
