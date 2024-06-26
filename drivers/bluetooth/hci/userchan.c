@@ -73,10 +73,21 @@ static struct net_buf *get_rx(const uint8_t *buf)
 
 	switch (buf[0]) {
 	case BT_HCI_H4_EVT:
-		if (buf[1] == BT_HCI_EVT_LE_META_EVENT &&
-		    (buf[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
-			discardable = true;
-			timeout = K_NO_WAIT;
+		if (buf[1] == BT_HCI_EVT_LE_META_EVENT) {
+			if (buf[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT) {
+				discardable = true;
+				timeout = K_NO_WAIT;
+			} else if (buf[3] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT) {
+				const struct bt_hci_evt_le_ext_advertising_report *ext_adv
+										= (void *)&buf[4];
+				/* For extended advertising with legacy, use discardable. */
+				if ((ext_adv->num_reports == 1) &&
+				    (ext_adv->adv_info[0].evt_type &
+				     BT_HCI_LE_ADV_EVT_TYPE_LEGACY)) {
+					discardable = true;
+					timeout = K_NO_WAIT;
+				}
+			}
 		}
 
 		return bt_buf_get_evt(buf[1], discardable, timeout);

@@ -32,6 +32,9 @@ LOG_MODULE_REGISTER(bt_driver);
 
 #define DT_DRV_COMPAT zephyr_bt_hci_uart
 
+/* We only care about `num_reports` and `evt_type`. */
+#define EXT_ADV_HDR_SIZE offsetof(struct bt_hci_evt_le_ext_advertising_report, adv_info[0].addr)
+
 struct h4_data {
 	struct {
 		struct net_buf *buf;
@@ -50,7 +53,7 @@ struct h4_data {
 			struct bt_hci_evt_hdr evt;
 			struct bt_hci_acl_hdr acl;
 			struct bt_hci_iso_hdr iso;
-			uint8_t hdr[4];
+			uint8_t hdr[5];	/* Enough space for extended advertising header. */
 		};
 	} rx;
 
@@ -173,10 +176,32 @@ static inline void get_evt_hdr(const struct device *dev)
 	}
 
 	if (!h4->rx.remaining) {
-		if (h4->rx.evt.evt == BT_HCI_EVT_LE_META_EVENT &&
-		    (h4->rx.hdr[sizeof(*hdr)] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
-			LOG_DBG("Marking adv report as discardable");
-			h4->rx.discardable = true;
+		if (h4->rx.evt.evt == BT_HCI_EVT_LE_META_EVENT) {
+			uint8_t subevt_type = h4->rx.hdr[sizeof(*hdr)];
+
+			if (subevt_type == BT_HCI_EVT_LE_ADVERTISING_REPORT) {
+				LOG_DBG("Marking adv report as discardable");
+				h4->rx.discardable = true;
+			} else if (subevt_type == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT) {
+				if (h4->rx.hdr_len == sizeof(*hdr)) {
+					h4->rx.hdr_len  += EXT_ADV_HDR_SIZE;
+					h4->rx.remaining = EXT_ADV_HDR_SIZE;
+
+					/* Let's read more for extended advertising header. */
+					return;
+				}
+
+				const struct bt_hci_evt_le_ext_advertising_report *ext_adv
+							= (void *)&h4->rx.hdr[sizeof(*hdr) + 1];
+
+				/* For extended advertising with legacy, use discardable */
+				if ((ext_adv->num_reports == 1) &&
+				    (ext_adv->adv_info[0].evt_type &
+				     BT_HCI_LE_ADV_EVT_TYPE_LEGACY)) {
+					LOG_DBG("Marking extended adv report as discardable");
+					h4->rx.discardable = true;
+				}
+			}
 		}
 
 		h4->rx.remaining = hdr->len - (h4->rx.hdr_len - sizeof(*hdr));
