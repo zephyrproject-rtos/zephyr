@@ -468,6 +468,12 @@ Drivers and Sensors
 
 * Regulators
 
+* Reset
+
+  * Added driver for reset controller on Nuvoton NPCX chips.
+  * Added reset controller driver for NXP SYSCON.
+  * Added reset controller driver for NXP RSTCTL.
+
 * Retained memory
 
 * RTC
