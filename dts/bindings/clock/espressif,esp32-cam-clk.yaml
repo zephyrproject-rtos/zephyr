@@ -1,10 +1,10 @@
 #
-# Copyright (c) 2019, Linaro Limited
+# Copyright (c) 2024 espros photonics Co.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: NXP MCUX CMOS sensor interface
+description: esp32 camera clock
 
 compatible: "espressif,esp32-cam-clk"
 
