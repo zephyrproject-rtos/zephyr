@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+
 &mipi_dsi {
 	otm8009a: otm8009a@0 {
 		status = "okay";
@@ -16,5 +18,14 @@
 		data-lanes = <2>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
 		rotation = <90>;
+	};
+};
+
+&qsh_030_i2c {
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&dsi_lcd_qsh_030 4 0>;
+		status = "okay";
 	};
 };
