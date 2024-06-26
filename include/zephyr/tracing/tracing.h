@@ -2029,6 +2029,29 @@
 /** @} */ /* end of subsys_tracing_apis_pm_device_runtime */
 
 /**
+ * @brief Network Core Tracing APIs
+ * @defgroup subsys_tracing_apis_net Network Core Tracing APIs
+ * @{
+ */
+
+/**
+ * @brief Trace network data receive
+ * @param iface Network interface
+ * @param pkt Received network packet
+ */
+#define sys_port_trace_net_recv_data_enter(iface, pkt)
+
+/**
+ * @brief Trace network data receive attempt
+ * @param iface Network interface
+ * @param pkt Received network packet
+ * @param ret Return value
+ */
+#define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
+
+/** @} */ /* end of subsys_tracing_apis_net */
+
+/**
  * @brief Network Socket Tracing APIs
  * @defgroup subsys_tracing_apis_socket Network Socket Tracing APIs
  * @{

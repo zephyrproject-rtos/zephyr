@@ -191,6 +191,12 @@
 	#define sys_port_trace_type_mask_socket(trace_call)
 #endif
 
+#if defined(CONFIG_TRACING_NET_CORE)
+	#define sys_port_trace_type_mask_net(trace_call) trace_call
+#else
+	#define sys_port_trace_type_mask_net(trace_call)
+#endif
+
 /*
  * We cannot positively enumerate all traced APIs, as applications may trace
  * arbitrary custom APIs we know nothing about. Therefore we demand that tracing

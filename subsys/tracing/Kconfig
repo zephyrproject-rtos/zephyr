@@ -341,6 +341,14 @@ config TRACING_NET_SOCKETS
 	help
 	  Enable tracing network sockets.
 
+config TRACING_NET_CORE
+	bool "Tracing Network Core IP stack"
+	depends on TRACING_NETWORKING
+	default y if NET_IP
+	help
+	  Enable tracing core network IP stack, like packet reception
+	  and sending.
+
 endmenu  # Tracing Configuration
 
 endif
