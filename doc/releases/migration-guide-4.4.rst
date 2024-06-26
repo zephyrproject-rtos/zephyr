@@ -700,6 +700,12 @@ Input
 
   The dt-binding macro prefix have also been updated from ``CST816S_*`` to ``CST8XX_*``.
 
+Interrupt Controller
+====================
+
+* :dtcompatible:`swerv,pic` is now :dtcompatible:`cdns,swerv-pic` by adding vendor
+  prefix.
+
 Keyboard matrix
 ===============
 
