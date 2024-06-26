@@ -3,11 +3,17 @@
 LE Audio Stack
 ##############
 
-.. figure:: img/ble_audio_arch.svg
-   :align: center
-   :alt: Bluetooth Audio Architecture
+.. graphviz::
+   :caption: Bluetooth Audio Architecture
 
-   Bluetooth Audio Architecture
+   digraph bluetooth_audio_arch {
+      r [shape=record, width=5, height=3
+         label="{{TMAP | HAP | PBP | GMAP | ...} |
+                  GAF |
+                  {{{ GATT | GAP } | Low-level protocols (L2CAP, ATT, etc.)} | GAP | ISO}
+                  | HCI Driver (USB, UART, SPI, virtual, etc.)}"
+         ];
+   }
 
 Overall design
 **************
