@@ -21,3 +21,7 @@ tests:
       or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
       CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
+  drivers.pwm.pwm_fast:
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
