@@ -269,6 +269,41 @@ Drivers and Sensors
 
 * ADC
 
+  * Added ADC_DT_SPEC_*BY_NAME() macros to get ADC io-channel information from DT by name.
+  * Added support for voltage biasing:
+    * Added a :kconfig:option:`CONFIG_ADC_CONFIGURABLE_VBIAS_PIN` selected by drivers that support
+      voltage biasing.
+    * Added a `zephyr,vbias-pins` to the adc-controller base binding to describe voltage
+      bias pins.
+    * Implemented for the ADC114s08 ADC driver.
+  * Renamed existing ADC sample to adc_dt.
+  * Added a new sample called adc_sequence that shows more of the runtime adc sequence features.
+  * Added driver for the ENE KB1200.
+  * Added driver for the NXP GAU ADC.
+  * Added I2C bus support for ad559x.
+  * Added support for ad5593.
+  * Added configuration of internal reference voltage value to ad559x to support
+    calls of adc_raw_to_millivolts().
+  * Fixed issue with driver initialization causing improper operation in the ad559x driver
+    regarding the availibility of :kconfig:option:`CONFIG_THREAD_NAME`.
+  * Improved the adc read efficiency and validation in ad559x driver.
+  * Updated esp32 ADC driver to work with version 5.1 of hal_espressif.
+  * Added support for DMA mode operation for ESP32S3 and ESP32C3.
+  * Fixed issue with configuration register access in the ads1119 driver.
+  * Enabled acquisition time feature in the NXP LPADC driver.
+  * Supported regulator output as reference to NXP LPADC.
+  * Fixed various issues with dma support in the STM32 ADC driver.
+  * Fixed uninitialized value in kb1200 driver found in static analysis.
+  * Fixed issue with adc_raw_to_millivolts returning half the actual voltage with
+    the tla2021 driver by correcting the reference voltage value.
+  * Supported Nuvoton m2l31x in the numaker ADC driver.
+  * Supported nRF54L15 and nRF54H20 in the nrfx_saadc driver.
+  * Improved the nrf saadc driver by disabling burst mode on unused channels, avoiding freezes.
+  * Added support for power management to the smartbond sdadc and gpadc drivers.
+  * Fixed support for :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` in the smartbond ADC driver.
+
+
+
 * Auxiliary Display
 
 * Audio
