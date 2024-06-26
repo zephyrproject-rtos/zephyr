@@ -10,5 +10,9 @@ properties:
   reg:
     required: true
 
+  "#interrupt-cells":
+    const: 2
+
 interrupt-cells:
   - irq
+  - priority
