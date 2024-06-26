@@ -1,0 +1,23 @@
+identifier: zb_tv_h743zi
+name: ZB_TV H743ZI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 2048
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - uart
+  - gpio
+  - counter
+  - i2c
+  - pwm
+  - adc
+  - spi
+  - backup_sram
+  - watchdog
+  - usb_device
