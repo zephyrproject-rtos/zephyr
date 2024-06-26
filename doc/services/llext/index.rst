@@ -3,17 +3,22 @@
 Linkable Loadable Extensions (LLEXT)
 ####################################
 
+The LLEXT subsystem provides a toolbox for extending the functionality of an
+application at runtime with linkable loadable code.
+
+Extensions are precompiled executables in ELF format that can be verified,
+loaded, and linked with the main Zephyr binary. Extensions can be manipulated
+and introspected to some degree, as well as unloaded when no longer needed.
+
 .. toctree::
    :maxdepth: 1
 
+   config
    build
    load
    api
 
-The llext subsystem provides a toolbox for extending the functionality of an
-application at runtime with linkable loadable code.
+.. note::
 
-Extensions can be loaded from precompiled ELF formatted data which is
-verified, loaded, and linked with other extensions. Extensions can be
-manipulated and introspected to some degree, as well as unloaded when no longer
-needed.
+   The LLEXT subsystem requires architecture-specific support. It is currently
+   available only on ARM and Xtensa cores.
