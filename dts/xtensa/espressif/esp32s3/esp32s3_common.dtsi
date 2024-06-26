@@ -328,6 +328,14 @@
 			reg = <0x60041000 DT_SIZE_K(4)>;
 			clocks = <&rtc ESP32_LCD_CAM_MODULE>;
 			status = "disabled";
+			camera0: camera {
+				compatible = "espressif,esp32-cam";
+				interrupts = <LCD_CAM_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				dmas = <&dma 2>;
+				dma-names = "rx";
+				status = "disabled";
+			};
 		};
 
 		usb_serial: uart@60038000 {
