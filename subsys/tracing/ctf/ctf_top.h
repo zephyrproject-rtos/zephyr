@@ -151,6 +151,8 @@ typedef enum {
 	CTF_EVENT_SOCKET_GETSOCKNAME_EXIT = 0x59,
 	CTF_EVENT_SOCKET_SOCKETPAIR_ENTER = 0x5A,
 	CTF_EVENT_SOCKET_SOCKETPAIR_EXIT = 0x5B,
+	CTF_EVENT_NET_RECV_DATA_ENTER = 0x5C,
+	CTF_EVENT_NET_RECV_DATA_EXIT = 0x5D,
 
 } ctf_event_t;
 
@@ -608,5 +610,21 @@ static inline void ctf_top_socket_socketpair_exit(int32_t sock_A, int32_t sock_B
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SOCKETPAIR_EXIT), sock_A, sock_B, ret);
 }
+
+
+static inline void ctf_top_net_recv_data_enter(int32_t if_index, uint32_t iface, uint32_t pkt,
+					       uint32_t len)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_RECV_DATA_ENTER),
+		  if_index, iface, pkt, len);
+}
+
+static inline void ctf_top_net_recv_data_exit(int32_t if_index, uint32_t iface, uint32_t pkt,
+					      int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_RECV_DATA_EXIT),
+		  if_index, iface, pkt, ret);
+}
+
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
