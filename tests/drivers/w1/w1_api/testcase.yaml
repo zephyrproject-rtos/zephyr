@@ -34,6 +34,7 @@ tests:
   drivers.w1.max32:
     filter: dt_compat_enabled("adi,max32-w1")
     platform_allow:
+      - apard32690/max32690/m4
       - max32655evkit/max32655/m4
       - max32680evkit/max32680/m4
       - max32690evkit/max32690/m4
