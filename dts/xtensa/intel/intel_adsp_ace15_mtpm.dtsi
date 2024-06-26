@@ -340,6 +340,58 @@
 			};
 		};
 
+		uaol0: uaol@70000 {
+			compatible = "intel,adsp-uaol";
+			reg = <0x00070000 0x180>;
+			shim-offset = <0x0>;
+			ip-offset = <0x80>;
+			link = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			uaol00: uaol-dai@d {
+				compatible = "intel,uaol-dai";
+				reg = <0x0d>;
+				stream = <0>;
+				alh-stream = <13>;
+				dma-handshake = <26>;
+			};
+			uaol01: uaol-dai@e {
+				compatible = "intel,uaol-dai";
+				reg = <0x0e>;
+				stream = <1>;
+				alh-stream = <14>;
+				dma-handshake = <27>;
+			};
+			uaol02: uaol-dai@f {
+				compatible = "intel,uaol-dai";
+				reg = <0x0f>;
+				stream = <2>;
+				alh-stream = <15>;
+				dma-handshake = <36>;
+			};
+			uaol03: uaol-dai@10 {
+				compatible = "intel,uaol-dai";
+				reg = <0x10>;
+				stream = <3>;
+				alh-stream = <16>;
+				dma-handshake = <37>;
+			};
+			uaol04: uaol-dai@1d {
+				compatible = "intel,uaol-dai";
+				reg = <0x1d>;
+				stream = <4>;
+				alh-stream = <29>;
+				dma-handshake = <46>;
+			};
+			uaol05: uaol-dai@1e {
+				compatible = "intel,uaol-dai";
+				reg = <0x1e>;
+				stream = <5>;
+				alh-stream = <30>;
+				dma-handshake = <47>;
+			};
+		};
+
 		mem_window0: mem_window@70200 {
 			compatible = "intel,adsp-mem-window";
 			reg = <0x70200 0x8>;

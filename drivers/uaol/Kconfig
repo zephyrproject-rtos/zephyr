@@ -1,0 +1,35 @@
+# UAOL driver configuration options
+
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# UAOL options
+#
+menuconfig UAOL
+	bool "UAOL drivers"
+	default y
+	help
+	  Enable support for USB Audio Offload Link (UAOL) drivers.
+
+if UAOL
+
+config UAOL_INIT_PRIORITY
+	int "UAOL init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  UAOL driver device initialization priority.
+
+config UAOL_INTEL_ADSP
+	bool "Intel ADSP UAOL driver."
+	default y
+	depends on DT_HAS_INTEL_ADSP_UAOL_ENABLED
+	depends on PM_DEVICE_RUNTIME
+	help
+	  Intel ADSP UAOL driver.
+
+config UAOL_INTEL_ADSP_CLOCK_FREQUENCY
+	int "Clock frequency for UAOL"
+	default 19200000
+
+endif # UAOL
