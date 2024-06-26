@@ -165,3 +165,8 @@
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_VSEL_VDDIOH)>;
 };
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_6 &owm_pe_p0_7>;
+	pinctrl-names = "default";
+};
