@@ -72,6 +72,16 @@ Deprecated in this release
    Application developer will now need to set the advertised name themselves by updating the advertising data
    or the scan response data.
 
+* CAN
+
+  * Deprecated the :c:func:`can_calc_prescaler` API function, as it allows for bitrate
+    errors. Bitrate errors between nodes on the same network leads to them drifting apart after the
+    start-of-frame (SOF) synchronization has taken place, leading to bus errors.
+  * Deprecated the :c:func:`can_get_min_bitrate` and :c:func:`can_get_max_bitrate` API functions in
+    favor of :c:func:`can_get_bitrate_min` and :c:func:`can_get_bitrate_max`.
+  * Deprecated the :c:macro:`CAN_MAX_STD_ID` and :c:macro:`CAN_MAX_EXT_ID` macros in favor of
+    :c:macro:`CAN_STD_ID_MASK` and :c:macro:`CAN_EXT_ID_MASK`.
+
 .. _zephyr_3.7_posix_api_deprecations:
 
  * POSIX API
@@ -287,9 +297,6 @@ Drivers and Sensors
 
 * CAN
 
-  * Deprecated the :c:func:`can_calc_prescaler` API function, as it allows for bitrate
-    errors. Bitrate errors between nodes on the same network leads to them drifting apart after the
-    start-of-frame (SOF) synchronization has taken place, leading to bus errors.
   * Added :c:func:`can_get_bitrate_min` and :c:func:`can_get_bitrate_max` for retrieving the minimum
     and maximum supported bitrate for a given CAN controller/CAN transceiver combination, reflecting
     that retrieving the bitrate limits can no longer fail. Deprecated the existing
@@ -302,13 +309,16 @@ Drivers and Sensors
     transceiver.
   * Added support for specifying the minimum bitrate supported by a CAN controller in the internal
     ``CAN_DT_DRIVER_CONFIG_GET`` and ``CAN_DT_DRIVER_CONFIG_INST_GET`` macros.
-  * Added a new CAN controller API function :c:func:`can_get_min_bitrate` for getting the minimum
+  * Added a new CAN controller API function :c:func:`can_get_bitrate_min` for getting the minimum
     supported bitrate of a CAN controller/transceiver combination.
   * Updated the CAN timing functions to take the minimum supported bitrate into consideration when
     validating the bitrate.
   * Made the ``sample-point`` and ``sample-point-data`` devicetree properties optional.
   * Renamed the ``bus_speed`` and ``bus_speed_data`` fields of :c:struct:`can_driver_config` to
     ``bitrate`` and ``bitrate_data``.
+  * Added driver for :dtcompatible:`nordic,nrf-can`.
+  * Added driver support for Numaker M2l31x to the :dtcompatible:`nuvoton,numaker-canfd` driver.
+  * Added host communication test suite.
 
 * Charger
 
