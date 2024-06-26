@@ -2069,6 +2069,13 @@
  */
 #define sys_port_trace_net_rx_time(pkt, end_time)
 
+/**
+ * @brief Trace network data sent time
+ * @param pkt Sent network packet
+ * @param end_time When the TX processing stopped for this pkt (in ticks)
+ */
+#define sys_port_trace_net_tx_time(pkt, end_time)
+
 /** @} */ /* end of subsys_tracing_apis_net */
 
 /**

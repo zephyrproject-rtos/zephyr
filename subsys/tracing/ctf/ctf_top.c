@@ -718,3 +718,31 @@ void sys_trace_net_rx_time(struct net_pkt *pkt, uint32_t end_time)
 			    (uint32_t)tc,
 			    (uint32_t)duration_us);
 }
+
+void sys_trace_net_tx_time(struct net_pkt *pkt, uint32_t end_time)
+{
+	struct net_if *iface;
+	int ifindex;
+	uint32_t diff;
+	int tc;
+	uint32_t duration_us;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+		tc = 0;
+		duration_us = 0;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+		diff = end_time - net_pkt_create_time(pkt);
+		tc = net_rx_priority2tc(net_pkt_priority(pkt));
+		duration_us = k_cyc_to_ns_floor64(diff) / 1000U;
+	}
+
+	ctf_top_net_tx_time((int32_t)ifindex,
+			    (uint32_t)(uintptr_t)iface,
+			    (uint32_t)(uintptr_t)pkt,
+			    (uint32_t)net_pkt_priority(pkt),
+			    (uint32_t)tc,
+			    (uint32_t)duration_us);
+}

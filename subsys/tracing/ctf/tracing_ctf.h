@@ -579,6 +579,8 @@ void sys_trace_socket_socketpair_exit(int sock_A, int sock_B, int ret);
 	sys_trace_net_send_data_exit(pkt, ret)
 #define sys_port_trace_net_rx_time(pkt, end_time)		\
 	sys_trace_net_rx_time(pkt, end_time)
+#define sys_port_trace_net_tx_time(pkt, end_time)		\
+	sys_trace_net_tx_time(pkt, end_time)
 
 struct net_if;
 struct net_pkt;
@@ -588,6 +590,7 @@ void sys_trace_net_recv_data_exit(struct net_if *iface, struct net_pkt *pkt, int
 void sys_trace_net_send_data_enter(struct net_pkt *pkt);
 void sys_trace_net_send_data_exit(struct net_pkt *pkt, int ret);
 void sys_trace_net_rx_time(struct net_pkt *pkt, uint32_t end_time);
+void sys_trace_net_tx_time(struct net_pkt *pkt, uint32_t end_time);
 
 #ifdef __cplusplus
 }
