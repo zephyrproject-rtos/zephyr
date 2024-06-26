@@ -9,6 +9,9 @@
 #include "posix_types.h"
 #include "posix_features.h"
 
+#include <zephyr/kernel.h>
+#include <zephyr/posix/signal.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,13 +50,11 @@ extern "C" {
 
 #define SIGRTMIN 32
 #define SIGRTMAX (SIGRTMIN + RTSIG_MAX)
-#define _NSIG (SIGRTMAX + 1)
 
 BUILD_ASSERT(RTSIG_MAX >= 0);
 
-typedef struct {
-	unsigned long sig[DIV_ROUND_UP(_NSIG, BITS_PER_LONG)];
-} sigset_t;
+typedef struct k_sig_set sigset_t;
+struct timespec;
 
 #ifndef SIGEV_NONE
 #define SIGEV_NONE 1
@@ -68,13 +69,13 @@ typedef struct {
 #endif
 
 #ifndef SIG_BLOCK
-#define SIG_BLOCK 0
+#define SIG_BLOCK K_SIG_BLOCK
 #endif
 #ifndef SIG_SETMASK
-#define SIG_SETMASK 1
+#define SIG_SETMASK K_SIG_SETMASK
 #endif
 #ifndef SIG_UNBLOCK
-#define SIG_UNBLOCK 2
+#define SIG_UNBLOCK K_SIG_UNBLOCK
 #endif
 
 typedef int	sig_atomic_t;		/* Atomic entity type (ANSI) */
@@ -92,6 +93,8 @@ struct sigevent {
 	int sigev_signo;
 };
 
+typedef struct k_sig_info siginfo_t;
+
 char *strsignal(int signum);
 int sigemptyset(sigset_t *set);
 int sigfillset(sigset_t *set);
@@ -100,7 +103,13 @@ int sigdelset(sigset_t *set, int signo);
 int sigismember(const sigset_t *set, int signo);
 int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 
+int pthread_kill(pthread_t thread, int sig);
 int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
+
+int sigqueue(pid_t pid, int signo, union sigval value);
+int sigtimedwait(const sigset_t *ZRESTRICT set, siginfo_t *ZRESTRICT info,
+		 const struct timespec *ZRESTRICT timeout);
+int sigwaitinfo(const sigset_t *ZRESTRICT set, siginfo_t *ZRESTRICT info);
 
 #ifdef __cplusplus
 }

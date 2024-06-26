@@ -59,9 +59,6 @@ struct posix_thread {
 	/* Exit status */
 	void *retval;
 
-	/* Signal mask */
-	sigset_t sigset;
-
 	/* Queue ID (internal-only) */
 	uint8_t qid;
 };

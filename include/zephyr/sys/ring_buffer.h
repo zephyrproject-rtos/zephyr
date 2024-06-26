@@ -62,6 +62,19 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
 	buf->get_head = buf->get_tail = buf->get_base = value;
 }
 
+/** @cond INTERNAL_HIDDEN */
+
+#define RING_BUF_DECLARE_COMMON(name, size8, ...) \
+	BUILD_ASSERT((size8) < RING_BUFFER_MAX_SIZE,\
+		RING_BUFFER_SIZE_ASSERT_MSG); \
+	static uint8_t __noinit __aligned(4) _ring_buffer_data_##name[(size8)]; \
+	__VA_ARGS__ struct ring_buf name = { \
+		.buffer = _ring_buffer_data_##name, \
+		.size = (size8) \
+	}
+
+/** @endcond */
+
 /**
  * @brief Define and initialize a ring buffer for byte data.
  *
@@ -76,14 +89,20 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
  * @param name  Name of the ring buffer.
  * @param size8 Size of ring buffer (in bytes).
  */
-#define RING_BUF_DECLARE(name, size8) \
-	BUILD_ASSERT(size8 < RING_BUFFER_MAX_SIZE,\
-		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint8_t __noinit _ring_buffer_data_##name[size8]; \
-	struct ring_buf name = { \
-		.buffer = _ring_buffer_data_##name, \
-		.size = size8 \
-	}
+#define RING_BUF_DECLARE(name, size8) RING_BUF_DECLARE_COMMON(name, size8)
+
+/**
+ * @brief Define and initialize a static ring buffer for byte data.
+ *
+ * This macro establishes a ring buffer of an arbitrary size.
+ * The basic storage unit is a byte.
+ *
+ * The ring buffer cannot be accessed outside the module where it is defined.
+ *
+ * @param name  Name of the ring buffer.
+ * @param size8 Size of ring buffer (in bytes).
+ */
+#define RING_BUF_DECLARE_STATIC(name, size8) RING_BUF_DECLARE_COMMON(name, size8, static)
 
 /**
  * @brief Define and initialize an "item based" ring buffer.
@@ -100,14 +119,23 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
  * @param name Name of the ring buffer.
  * @param size32 Size of ring buffer (in 32-bit words).
  */
-#define RING_BUF_ITEM_DECLARE(name, size32) \
-	BUILD_ASSERT((size32) < RING_BUFFER_MAX_SIZE / 4,\
-		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint32_t __noinit _ring_buffer_data_##name[size32]; \
-	struct ring_buf name = { \
-		.buffer = (uint8_t *) _ring_buffer_data_##name, \
-		.size = 4 * (size32) \
-	}
+#define RING_BUF_ITEM_DECLARE(name, size32)                                                        \
+	RING_BUF_DECLARE_COMMON(name, (size32) * sizeof(uint32_t))
+
+/**
+ * @brief Define and initialize a static "item based" ring buffer.
+ *
+ * This macro establishes an "item based" ring buffer. Each data item is
+ * an array of 32-bit words (from zero to 1020 bytes in length), coupled
+ * with a 16-bit type identifier and an 8-bit integer value.
+ *
+ * The ring buffer cannot be accessed outside the module where it is defined.
+ *
+ * @param name Name of the ring buffer.
+ * @param size32 Size of ring buffer (in 32-bit words).
+ */
+#define RING_BUF_ITEM_DECLARE_STATIC(name, size32)                                                 \
+	RING_BUF_DECLARE_COMMON(name, (size32) * sizeof(uint32_t), static)
 
 /**
  * @brief Define and initialize an "item based" ring buffer.

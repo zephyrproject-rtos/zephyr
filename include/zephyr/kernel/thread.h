@@ -145,6 +145,10 @@ struct _thread_base {
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	struct k_cycle_stats  usage;   /* Track thread usage statistics */
 #endif /* CONFIG_SCHED_THREAD_USAGE */
+
+#ifdef CONFIG_SIGNAL
+	struct k_sig_set sig_mask; /* masked signals */
+#endif
 };
 
 typedef struct _thread_base _thread_base_t;
