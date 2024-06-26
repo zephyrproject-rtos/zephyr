@@ -247,7 +247,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	context = net_pkt_context(pkt);
 
 	if (net_if_flag_is_set(iface, NET_IF_LOWER_UP)) {
-		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
+		    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 			pkt_priority = net_pkt_priority(pkt);
 
 			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
@@ -262,7 +263,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		status = net_if_l2(iface)->send(iface, pkt);
 		net_if_tx_unlock(iface);
 
-		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
+		    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 			uint32_t end_tick = k_cycle_get_32();
 
 			net_pkt_set_tx_stats_tick(pkt, end_tick);
@@ -271,6 +273,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 						    pkt_priority,
 						    create_time,
 						    end_tick);
+
+			SYS_PORT_TRACING_FUNC(net, tx_time, pkt, end_tick);
 
 			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
 				update_txtime_stats_detail(
