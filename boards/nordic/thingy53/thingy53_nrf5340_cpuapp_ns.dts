@@ -22,3 +22,8 @@
 		watchdog0 = &wdt0;
 	};
 };
+
+&lfxo {
+	load-capacitors = "internal";
+	load-capacitance-picofarad = <7>;
+};
