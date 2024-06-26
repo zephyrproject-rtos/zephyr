@@ -2062,6 +2062,13 @@
  */
 #define sys_port_trace_net_send_data_exit(pkt, ret)
 
+/**
+ * @brief Trace network data receive time
+ * @param pkt Received network packet
+ * @param end_time When the RX processing stopped for this pkt (in ticks)
+ */
+#define sys_port_trace_net_rx_time(pkt, end_time)
+
 /** @} */ /* end of subsys_tracing_apis_net */
 
 /**

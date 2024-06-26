@@ -123,7 +123,8 @@ struct net_pkt {
 	struct net_ptp_time timestamp;
 #endif
 
-#if defined(CONFIG_NET_PKT_RXTIME_STATS) || defined(CONFIG_NET_PKT_TXTIME_STATS)
+#if defined(CONFIG_NET_PKT_RXTIME_STATS) || defined(CONFIG_NET_PKT_TXTIME_STATS) || \
+	defined(CONFIG_TRACING_NET_CORE)
 	struct {
 		/** Create time in cycles */
 		uint32_t create_time;
@@ -1107,7 +1108,9 @@ static inline void net_pkt_set_timestamp_ns(struct net_pkt *pkt, net_time_t time
 }
 #endif /* CONFIG_NET_PKT_TIMESTAMP || CONFIG_NET_PKT_TXTIME */
 
-#if defined(CONFIG_NET_PKT_RXTIME_STATS) || defined(CONFIG_NET_PKT_TXTIME_STATS)
+#if defined(CONFIG_NET_PKT_RXTIME_STATS) || defined(CONFIG_NET_PKT_TXTIME_STATS) || \
+	defined(CONFIG_TRACING_NET_CORE)
+
 static inline uint32_t net_pkt_create_time(struct net_pkt *pkt)
 {
 	return pkt->create_time;
@@ -1132,7 +1135,9 @@ static inline void net_pkt_set_create_time(struct net_pkt *pkt,
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(create_time);
 }
-#endif /* CONFIG_NET_PKT_RXTIME_STATS || CONFIG_NET_PKT_TXTIME_STATS */
+#endif /* CONFIG_NET_PKT_RXTIME_STATS || CONFIG_NET_PKT_TXTIME_STATS ||
+	* CONFIG_TRACING_NET_CORE
+	*/
 
 /**
  * @deprecated Use @ref net_pkt_timestamp or @ref net_pkt_timestamp_ns instead.
