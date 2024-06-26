@@ -491,6 +491,12 @@ Infineon
   * ``CONFIG_*_INFINEON_CAT1`` → ``CONFIG_*_INFINEON``
   * ``compatible: "infineon,cat1-adc"`` → ``compatible: "infineon,adc"``
 
+Interrupt Controller
+====================
+
+  * :dtcompatible:`swerv,pic` is now :dtcompatible:`cdns,swerv-pic` bv adding vendor
+    prefix.
+
 MDIO
 ====
 

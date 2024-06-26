@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
-description: SweRV EH1 PIC (Programmable Interrupt Controller) (Deprecated)
+description: Cadence SweRV PIC (Programmable Interrupt Controller)
 
-compatible: "swerv,pic"
+compatible: "cdns,swerv-pic"
 
 include: [interrupt-controller.yaml, base.yaml]
 

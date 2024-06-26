@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SWERV_PIC
-	bool "SweRV EH1 Programmable Interrupt Controller (PIC)"
+	bool "Cadence SweRV Programmable Interrupt Controller (PIC)"
 	default y
-	depends on DT_HAS_SWERV_PIC_ENABLED
+	depends on DT_HAS_CDNS_SWERV_PIC_ENABLED || DT_HAS_SWERV_PIC_ENABLED
 	help
-	  Programmable Interrupt Controller for the SweRV EH1 RISC-V CPU.
+	  Programmable Interrupt Controller for the Cadence SweRV RISC-V CPU.
