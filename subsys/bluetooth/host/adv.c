@@ -1613,7 +1613,7 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 }
 
 int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
-			struct bt_le_ext_adv_start_param *param)
+			const struct bt_le_ext_adv_start_param *param)
 {
 	struct bt_conn *conn = NULL;
 	int err;
