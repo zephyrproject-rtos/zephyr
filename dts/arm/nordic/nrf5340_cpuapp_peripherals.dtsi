@@ -21,6 +21,12 @@ oscillators: clock-controller@4000 {
 		#clock-cells = <0>;
 		clock-frequency = <32768>;
 	};
+
+	hfxo: hfxo {
+		compatible = "nordic,nrf53-hfxo";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(32)>;
+	};
 };
 
 regulators: regulator@4000 {
