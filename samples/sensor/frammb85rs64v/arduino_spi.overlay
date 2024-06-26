@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2020, Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Example configuration of a FRAMMB85RS64V device on an Arduino SPI bus. */
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;
+	frammb85rs64v@0 {
+		compatible = "fujitsu,frammb85rs64v";
+		reg = <0>;
+		label = "FRAMMB85RS64V_SPI";
+		spi-max-frequency = <1000000>; /* conservatively set to 1MHz */
+	};
+};

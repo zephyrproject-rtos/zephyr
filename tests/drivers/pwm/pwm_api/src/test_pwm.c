@@ -94,6 +94,12 @@
  * #define DEFAULT_PWM_PORT 3
  */
 #define DEFAULT_PWM_PORT 1
+#elif defined CONFIG_BOARD_ATM33_EVK
+#define DEFAULT_PWM_PORT 3
+#elif defined CONFIG_BOARD_ATM33_EVK_NS
+#define DEFAULT_PWM_PORT 3
+#elif defined CONFIG_BOARD_ATMx2_EVK23
+#define DEFAULT_PWM_PORT 2
 #else
 #define DEFAULT_PWM_PORT 0
 #endif

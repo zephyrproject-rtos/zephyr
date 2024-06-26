@@ -43,6 +43,10 @@ struct gpio_cmsdk_ahb_dev_data {
 	struct gpio_driver_data common;
 	/* list of callbacks */
 	sys_slist_t gpio_cb;
+#ifdef CONFIG_SOC_FAMILY_ATM
+	/* Software emulation for GPIO_INT_TRIG_BOTH */
+	uint32_t intboth;
+#endif
 };
 
 static int gpio_cmsdk_ahb_port_get_raw(const struct device *dev,
@@ -105,9 +109,17 @@ static int cmsdk_ahb_gpio_config(const struct device *dev, uint32_t mask,
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_SOC_FAMILY_ATM
+#ifdef CONFIG_SOC_SERIES_ATMx2
+	if ((flags & GPIO_PULL_DOWN) != 0) {
+		return -ENOTSUP;
+	}
+#endif
+#else
 	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0) {
 		return -ENOTSUP;
 	}
+#endif
 
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		return -ENOTSUP;
@@ -129,6 +141,28 @@ static int cmsdk_ahb_gpio_config(const struct device *dev, uint32_t mask,
 	} else {
 		cfg->port->outenableclr = mask;
 	}
+
+#ifdef CONFIG_SOC_FAMILY_ATM
+#ifndef CONFIG_SOC_SERIES_ATMx2
+	if ((flags & GPIO_PULL_DOWN) != 0) {
+		cfg->port->pulldown_enable_set = mask;
+	} else {
+		cfg->port->pulldown_enable_clr = mask;
+	}
+#endif
+
+	if ((flags & GPIO_PULL_UP) != 0) {
+		cfg->port->pullup_enable_set = mask;
+	} else {
+		cfg->port->pullup_enable_clr = mask;
+	}
+
+	if ((flags & GPIO_INPUT) != 0) {
+		cfg->port->inenable_set = mask;
+	} else {
+		cfg->port->inenable_clr = mask;
+	}
+#endif
 
 	cfg->port->altfuncclr = mask;
 
@@ -158,6 +192,17 @@ static int gpio_cmsdk_ahb_pin_interrupt_configure(const struct device *dev,
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config;
 
+#ifdef CONFIG_SOC_FAMILY_ATM
+	struct gpio_cmsdk_ahb_dev_data *data = dev->data;
+	if (trig == GPIO_INT_TRIG_BOTH) {
+		/* Emulate by toggling level trigger each interrupt */
+		data->intboth |= BIT(pin);
+		mode &= ~GPIO_INT_EDGE;
+		trig = (cfg->port->data & BIT(pin)) ? GPIO_INT_TRIG_LOW : GPIO_INT_TRIG_HIGH;
+	} else {
+		data->intboth &= ~BIT(pin);
+	}
+#else
 	if (trig == GPIO_INT_TRIG_BOTH) {
 		return -ENOTSUP;
 	}
@@ -168,6 +213,7 @@ static int gpio_cmsdk_ahb_pin_interrupt_configure(const struct device *dev,
 	if (mode == GPIO_INT_MODE_LEVEL) {
 		return -ENOTSUP;
 	}
+#endif
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		cfg->port->intenclr = BIT(pin);
@@ -200,11 +246,18 @@ static void gpio_cmsdk_ahb_isr(const struct device *dev)
 
 	int_stat = cfg->port->intstatus;
 
-	/* clear the port interrupts */
-	cfg->port->intclear = int_stat;
+#ifdef CONFIG_SOC_FAMILY_ATM
+	/* Toggle polarities to emulate GPIO_INT_TRIG_BOTH */
+	uint32_t intpoltog = int_stat & data->intboth;
+	uint32_t portdata = cfg->port->data;
+	cfg->port->intpolclr = intpoltog & portdata;
+	cfg->port->intpolset = intpoltog & ~portdata;
+#endif
 
 	gpio_fire_callbacks(&data->gpio_cb, dev, int_stat);
 
+	/* clear the port interrupts */
+	cfg->port->intclear = int_stat;
 }
 
 static int gpio_cmsdk_ahb_manage_callback(const struct device *dev,

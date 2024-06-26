@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2021-2023 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/atmosic/ATM33xx_partition_defs.h>
+
+&rram0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		spe_partition: partition@ATM_SPE_NODE_ID {
+			label = "spe_partition";
+			reg = <ATM_SPE_OFFSET ATM_SPE_SIZE>;
+		};
+		nspe_partition: partition@ATM_NSPE_NODE_ID {
+			label = "nspe_partition";
+			reg = <ATM_NSPE_OFFSET ATM_NSPE_SIZE>;
+		};
+		storage_partition: partition@ATM_STORAGE_NODE_ID {
+			label = "storage";
+			reg = <ATM_STORAGE_OFFSET ATM_STORAGE_SIZE>;
+		};
+#if ATMWSTK_SIZE
+		slot2_partition: partition@ATMWSTK_NODE_ID {
+			label = "image-2";
+			reg = <ATMWSTK_OFFSET ATMWSTK_SIZE>;
+		};
+#endif
+	};
+};

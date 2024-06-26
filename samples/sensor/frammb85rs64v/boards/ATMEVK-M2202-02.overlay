@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	status = "okay";
+	frammb85rs64v@0 {
+		compatible = "fujitsu,frammb85rs64v";
+		reg = <0>;
+		label = "FRAMMB85RS64V_SPI";
+		spi-max-frequency = <1000000>;
+	};
+};

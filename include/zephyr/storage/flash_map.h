@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  * Copyright (c) 2023 Sensorfy B.V.
+ * Copyright (c) 2024 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +63,10 @@ struct flash_area {
 	off_t fa_off;
 	/** Total size */
 	size_t fa_size;
+#if CONFIG_BOOT_NVM_COND_ERASE
+	/** if no erase before write is required; */
+	bool fa_no_erase_before_write;
+#endif
 	/** Backing flash device */
 	const struct device *fa_dev;
 #if CONFIG_FLASH_MAP_LABELS
@@ -184,6 +189,19 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
  * @return  0 on success, negative errno code on fail.
  */
 int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
+
+#if CONFIG_BOOT_NVM_COND_ERASE
+/**
+ * @brief Erases `len` bytes of flash memory at `off`
+ *
+ * @param[in] fa flash area
+ * @param[in] off offset from start of flash area
+ * @param[in] len length of erase
+ * @param[in] required states if erase can be skipped if flash device supports it
+ * @return int 0 on success
+ */
+int flash_area_cond_erase(const struct flash_area *fa, off_t off, uint32_t len, bool required);
+#endif
 
 /**
  * @brief Get write block size of the flash area

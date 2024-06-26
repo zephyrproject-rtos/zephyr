@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_ATM34
+	bool "Atmosic ATM34 15.4 driver support"
+	default y
+	depends on DT_HAS_ATMOSIC_ATM34_IEEE802154_ENABLED
+
+if IEEE802154_ATM34
+
+config IEEE802154_ATM34_RX_STACK_SIZE
+	int "Driver's internal RX thread stack size"
+	default 800
+	help
+	  This option sets the driver's stack size for its internal RX thread.
+
+config IEEE802154_ATM34_AUTO_CRC
+	bool "Controls HW transmit and receive of CRC"
+	default y
+
+config IEEE802154_ATM34_DELAY_TRX_ACC
+	int "Clock accuracy for delayed operations"
+	default 255
+	help
+	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission
+	  or delayed reception), in ppm.
+
+endif

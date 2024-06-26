@@ -1,0 +1,22 @@
+#
+
+description: |
+    This binding gives a base representation of the Atmosic BLE
+
+compatible: "atmosic,ble"
+
+properties:
+  reg:
+      type: array
+      description: mmio register space
+      required: true
+
+  interrupts:
+      type: array
+      description: required interrupts
+      required: true
+
+  label:
+      type: string
+      description: Human readable string describing the device (used by Zephyr for API name)
+      required: true

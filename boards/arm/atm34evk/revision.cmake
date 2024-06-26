@@ -1,0 +1,6 @@
+set(ATM34_VARIANT "mcuboot")
+if(DEFINED BOARD_REVISION)
+if (NOT BOARD_REVISION IN_LIST ATM34_VARIANT)
+  message(FATAL_ERROR "${BOARD_REVISION} is not a valid variant for ATMEVK34xx. Accepted revisions: ${ATM34_VARIANT}")
+endif()
+endif()

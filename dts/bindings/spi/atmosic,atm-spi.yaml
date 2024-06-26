@@ -1,0 +1,43 @@
+description: Atmosic SPI
+
+compatible: "atmosic,atm-spi"
+
+include: spi-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: false
+
+    instance:
+      type: int
+      required: true
+      description: SPI instance
+
+    dummy_cycles:
+      type: int
+      required: false
+      default: 0
+      description: Number of extra shift cycles to help with the turn-around
+
+    cs-pin:
+      type: int
+      required: true
+      description: CS pin to use
+
+    clk-pin:
+      type: int
+      required: true
+      description: CLK pin to use
+
+    mosi-pin:
+      type: int
+      required: false
+      description: MOSI pin to use
+
+    miso-pin:
+      type: int
+      required: false
+      description: MISO pin to use

@@ -1,0 +1,12 @@
+# Copyright (c) 2021-2023 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmosic ADC for ATMx2
+
+compatible: "atmosic,atmx2-adc"
+
+include: atmosic,adc-controller.yaml
+
+properties:
+    interrupts:
+      required: true

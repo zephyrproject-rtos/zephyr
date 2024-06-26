@@ -1,0 +1,7 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&uart0 {
+	current-speed = <2000000>;
+	status = "okay";
+	hw-flow-control;
+};

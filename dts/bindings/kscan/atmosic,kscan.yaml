@@ -1,0 +1,405 @@
+# Copyright (c) Atmosic 2022
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmosic keyboard matrix controller
+
+compatible: "atmosic,kscan"
+
+include: kscan.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    row0-pin:
+        type: int
+        required: false
+        description: configure row0 pin
+
+    row0-ksi:
+        type: int
+        required: false
+        description: configure row0 ksi
+
+    row1-pin:
+        type: int
+        required: false
+        description: configure row1 pin
+
+    row1-ksi:
+        type: int
+        required: false
+        description: configure row1 ksi
+
+    row2-pin:
+        type: int
+        required: false
+        description: configure row2 pin
+
+    row2-ksi:
+        type: int
+        required: false
+        description: configure row2 ksi
+
+    row3-pin:
+        type: int
+        required: false
+        description: configure row3 pin
+
+    row3-ksi:
+        type: int
+        required: false
+        description: configure row3 ksi
+
+    row4-pin:
+        type: int
+        required: false
+        description: configure row4 pin
+
+    row4-ksi:
+        type: int
+        required: false
+        description: configure row4 ksi
+
+    row5-pin:
+        type: int
+        required: false
+        description: configure row5 pin
+
+    row5-ksi:
+        type: int
+        required: false
+        description: configure row5 ksi
+
+    row6-pin:
+        type: int
+        required: false
+        description: configure row6 pin
+
+    row6-ksi:
+        type: int
+        required: false
+        description: configure row6 ksi
+
+    row7-pin:
+        type: int
+        required: false
+        description: configure row7 pin
+
+    row7-ksi:
+        type: int
+        required: false
+        description: configure row7 ksi
+
+    row8-pin:
+        type: int
+        required: false
+        description: configure row8 pin
+
+    row8-ksi:
+        type: int
+        required: false
+        description: configure row8 ksi
+
+    row9-pin:
+        type: int
+        required: false
+        description: configure row9 pin
+
+    row9-ksi:
+        type: int
+        required: false
+        description: configure row9 ksi
+
+    row10-pin:
+        type: int
+        required: false
+        description: configure row10 pin
+
+    row10-ksi:
+        type: int
+        required: false
+        description: configure row10 ksi
+
+    row11-pin:
+        type: int
+        required: false
+        description: configure row11 pin
+
+    row11-ksi:
+        type: int
+        required: false
+        description: configure row11 ksi
+
+    row12-pin:
+        type: int
+        required: false
+        description: configure row12 pin
+
+    row12-ksi:
+        type: int
+        required: false
+        description: configure row12 ksi
+
+    row13-pin:
+        type: int
+        required: false
+        description: configure row13 pin
+
+    row13-ksi:
+        type: int
+        required: false
+        description: configure row13 ksi
+
+    row14-pin:
+        type: int
+        required: false
+        description: configure row14 pin
+
+    row14-ksi:
+        type: int
+        required: false
+        description: configure row14 ksi
+
+    row15-pin:
+        type: int
+        required: false
+        description: configure row15 pin
+
+    row15-ksi:
+        type: int
+        required: false
+        description: configure row15 ksi
+
+    row16-pin:
+        type: int
+        required: false
+        description: configure row16 pin
+
+    row16-ksi:
+        type: int
+        required: false
+        description: configure row16 ksi
+
+    row17-pin:
+        type: int
+        required: false
+        description: configure row17 pin
+
+    row17-ksi:
+        type: int
+        required: false
+        description: configure row17 ksi
+
+    row18-pin:
+        type: int
+        required: false
+        description: configure row18 pin
+
+    row18-ksi:
+        type: int
+        required: false
+        description: configure row18 ksi
+
+    col0-pin:
+        type: int
+        required: false
+        description: configure col0 pin
+
+    col0-kso:
+        type: int
+        required: false
+        description: configure col0 kso
+
+    col1-pin:
+        type: int
+        required: false
+        description: configure col1 pin
+
+    col1-kso:
+        type: int
+        required: false
+        description: configure col1 kso
+
+    col2-pin:
+        type: int
+        required: false
+        description: configure col2 pin
+
+    col2-kso:
+        type: int
+        required: false
+        description: configure col2 kso
+
+    col3-pin:
+        type: int
+        required: false
+        description: configure col3 pin
+
+    col3-kso:
+        type: int
+        required: false
+        description: configure col3 kso
+
+    col4-pin:
+        type: int
+        required: false
+        description: configure col4 pin
+
+    col4-kso:
+        type: int
+        required: false
+        description: configure col4 kso
+
+    col5-pin:
+        type: int
+        required: false
+        description: configure col5 pin
+
+    col5-kso:
+        type: int
+        required: false
+        description: configure col5 kso
+
+    col6-pin:
+        type: int
+        required: false
+        description: configure col6 pin
+
+    col6-kso:
+        type: int
+        required: false
+        description: configure col6 kso
+
+    col7-pin:
+        type: int
+        required: false
+        description: configure col7 pin
+
+    col7-kso:
+        type: int
+        required: false
+        description: configure col7 kso
+
+    col8-pin:
+        type: int
+        required: false
+        description: configure col8 pin
+
+    col8-kso:
+        type: int
+        required: false
+        description: configure col8 kso
+
+    col9-pin:
+        type: int
+        required: false
+        description: configure col9 pin
+
+    col9-kso:
+        type: int
+        required: false
+        description: configure col9 kso
+
+    col10-pin:
+        type: int
+        required: false
+        description: configure col10 pin
+
+    col10-kso:
+        type: int
+        required: false
+        description: configure col10 kso
+
+    col11-pin:
+        type: int
+        required: false
+        description: configure col11 pin
+
+    col11-kso:
+        type: int
+        required: false
+        description: configure col11 kso
+
+    col12-pin:
+        type: int
+        required: false
+        description: configure col12 pin
+
+    col12-kso:
+        type: int
+        required: false
+        description: configure col12 kso
+
+    col13-pin:
+        type: int
+        required: false
+        description: configure col13 pin
+
+    col13-kso:
+        type: int
+        required: false
+        description: configure col13 kso
+
+    col14-pin:
+        type: int
+        required: false
+        description: configure col14 pin
+
+    col14-kso:
+        type: int
+        required: false
+        description: configure col14 kso
+
+    col15-pin:
+        type: int
+        required: false
+        description: configure col15 pin
+
+    col15-kso:
+        type: int
+        required: false
+        description: configure col15 kso
+
+    col16-pin:
+        type: int
+        required: false
+        description: configure col16 pin
+
+    col16-kso:
+        type: int
+        required: false
+        description: configure col16 kso
+
+    col17-pin:
+        type: int
+        required: false
+        description: configure col17 pin
+
+    col17-kso:
+        type: int
+        required: false
+        description: configure col17 kso
+
+    col18-pin:
+        type: int
+        required: false
+        description: configure col18 pin
+
+    col18-kso:
+        type: int
+        required: false
+        description: configure col18 kso
+
+    col19-pin:
+        type: int
+        required: false
+        description: configure col19 pin
+
+    col19-kso:
+        type: int
+        required: false
+        description: configure col19 kso

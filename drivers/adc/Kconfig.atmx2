@@ -1,0 +1,27 @@
+# ADC configuration options
+
+# Copyright (c) 2021-2023 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ATMx2
+	bool "Atmosic ATMx2 ADC driver"
+	default y
+	depends on DT_HAS_ATMOSIC_ATMX2_ADC_ENABLED
+	help
+	  This option enables the ADC driver for ATMx2
+	  family of processors.
+	  Voltage range 0 to 3300mV.
+	  Support 10-bit resolution.
+	  Support 10 channels: ch0~ch9.
+
+if ADC_ATMx2
+
+config CBPRINTF_FP_SUPPORT
+	default y
+	bool "Enable floating point support"
+
+config ADC_ASYNC
+	default y
+	bool "Enable asynchronous mode"
+
+endif

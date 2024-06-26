@@ -1,0 +1,37 @@
+description: Atmosic I2C
+
+compatible: "atmosic,atm-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    instance:
+      type: int
+      required: true
+      description: I2C instance
+
+    sda-pin:
+      type: int
+      required: false
+      description: SDA pin to use
+
+    scl-pin:
+      type: int
+      required: false
+      description: SCL pin to use
+
+    scl-pullup:
+      type: boolean
+      required: false
+      description: Clock pullup requirement
+
+    sda-pullup:
+      type: boolean
+      required: false
+      description: Data pullup requirement

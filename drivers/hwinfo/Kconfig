@@ -186,4 +186,11 @@ config HWINFO_ANDES
 	help
 	  Enable Andes hwinfo driver
 
+config HWINFO_ATM
+	bool "Atmosic device ID"
+	default y
+	depends on SOC_SERIES_ATM33
+	help
+	  Enable Atmosic hwinfo driver
+
 endif

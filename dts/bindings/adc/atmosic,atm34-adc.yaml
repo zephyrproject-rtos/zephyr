@@ -1,0 +1,35 @@
+# Copyright (c) 2023-2024 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmosic ADC for ATM34
+
+compatible: "atmosic,atm34-adc"
+
+include: atmosic,adc-controller.yaml
+
+properties:
+    interrupts:
+      required: true
+
+    clock-freq:
+      type: int
+      description: |
+        ADC clock frequency selector;
+      enum:
+        - 0 # 8 MHz
+        - 1 # 4 MHz (default)
+        - 2 # 2 MHz
+        - 3 # 1 MHz
+
+    sample-avg:
+      type: int
+      description: |
+        ADC samples (0 <= X <= 7) to be averaged. Default 6;
+
+    osr-select:
+      type: int
+      description: |
+        ADC OSR selector;
+      enum:
+        - 0 # 128 (default)
+        - 1 # 64

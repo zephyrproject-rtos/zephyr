@@ -8,6 +8,6 @@
 
 int main(void)
 {
-	printf("Hello World! %s\n", CONFIG_BOARD);
+	printf("Hello World! %s\n\x04\n", CONFIG_BOARD);
 	return 0;
 }

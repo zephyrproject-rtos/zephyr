@@ -1,0 +1,12 @@
+# PWM configuration options
+
+# Copyright (c) 2021-2023 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_ATM
+	bool "Atmosic PWM driver"
+	default y
+	depends on DT_HAS_ATMOSIC_ATM_PWM_ENABLED
+	help
+	  This option enables the PWM driver for Atmosic family of
+	  processors.

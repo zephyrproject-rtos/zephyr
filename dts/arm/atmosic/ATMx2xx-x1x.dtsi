@@ -1,0 +1,55 @@
+#include <arm/atmosic/ATMx2.dtsi>
+
+/ {
+	flash_controller: flash-controller@10000000 {
+		compatible = "atmosic,external-flash-controller";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		reg = <0x10000000 0x1000000>;
+		ranges = <0x0 0x10000000 0x1000000>;
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			erase-block-size = <4096>;
+			write-block-size = <1>;
+			reg = <0x0 0x80000>;
+		};
+	};
+
+	sram0: memory@20008000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20008000 0x10000>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xa000>;
+		};
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007a000 0x00006000>;
+		};
+	};
+};

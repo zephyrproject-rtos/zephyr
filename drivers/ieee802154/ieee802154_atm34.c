@@ -1,0 +1,863 @@
+/*
+ * Copyright (c) 2023-2024 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT atmosic_atm34_ieee802154
+
+#define LOG_MODULE_NAME ieee802154_atm34
+#if defined(CONFIG_IEEE802154_DRIVER_LOG_LEVEL)
+#define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
+#include <zephyr/net/ieee802154_radio.h>
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+#include <zephyr/net/openthread.h>
+#endif
+#include <zephyr/random/random.h>
+
+#include "arch.h"
+#include "ble_driver.h"
+#include "eui.h"
+#include "radio_hal_154.h"
+#include "radio_req_154.h"
+#include "radio_hal_frc.h"
+
+#define RX_GIVE_IRQn BLE_ISOTS_0_IRQn
+#define TX_GIVE_IRQn BLE_ISOTS_1_IRQn
+
+struct ieee802154_atm34_data {
+	uint8_t mac[8];
+	struct net_if *iface;
+
+	ieee802154_event_cb_t event_handler;
+
+	K_KERNEL_STACK_MEMBER(rx_stack, CONFIG_IEEE802154_ATM34_RX_STACK_SIZE);
+	uint8_t rx_buffer[MAX_154_PACKET_LEN];
+	uint8_t tx_buffer[MAX_154_PACKET_LEN];
+	struct k_thread rx_thread;
+
+	/*
+	 * Overall rx state of driver per external start/stop interface.
+	 */
+	enum {
+		IEEE802154_ATM34_IDLE = 0,
+		IEEE802154_ATM34_RX_RUNNING, /* should rx resume after tx or ed scan completion? */
+		IEEE802154_ATM34_CCW_RUNNING,
+	} state;
+	uint16_t set_channel;
+
+	/*
+	 * State and management of rx_thread
+	 */
+	bool volatile rx_enable;	// Should rx_thread keep receiving packets?
+	uint32_t rx_start_time;
+	uint32_t rx_duration;
+	uint16_t rx_channel;
+	struct k_sem rx_done;		// Wait until rx_thread paused
+	struct k_sem rx_pause;		// Used to pause rx_thread
+
+	/*
+	 * Use a single priority for all operations
+	 */
+	atm_mac_mgr_priority_t priority;
+
+	/*
+	 * Coordinate rx and completion callback
+	 */
+	struct k_sem rx_wait;
+	atm_mac_status_t volatile rx_status;
+	atm_mac_154_rx_complete_info_t volatile rx_info;
+
+	/*
+	 * Coordinate tx and completion callback
+	 */
+	struct k_sem tx_wait;
+	atm_mac_status_t volatile tx_status;
+	atm_mac_154_tx_complete_info_t volatile tx_info;
+
+	/*
+	 * Coordinate ed scan and completion callback
+	 */
+	energy_scan_done_cb_t energy_scan_done;
+
+	/*
+	 * Lookup tables for data pending.  FIXME: just one entry each for now.
+	 */
+	struct {
+		uint64_t addr;
+		bool status;
+	} long_pending;
+	struct {
+		uint16_t addr;
+		bool status;
+	} short_pending;
+};
+
+static struct ieee802154_atm34_data data;
+
+static void ieee802154_atm34_radio_iface_init(struct net_if *iface)
+{
+	read_eui64(data.mac);
+
+	net_if_set_link_addr(iface, data.mac, sizeof(data.mac), NET_LINK_IEEE802154);
+
+	data.iface = iface;
+
+	ieee802154_init(iface);
+}
+
+static enum ieee802154_hw_caps ieee802154_atm34_radio_get_capabilities(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return
+#ifdef CONFIG_IEEE802154_ATM34_AUTO_CRC
+		IEEE802154_HW_FCS |
+#endif
+		IEEE802154_HW_PROMISC | IEEE802154_HW_FILTER | IEEE802154_HW_CSMA |
+		IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_RXTIME;
+}
+
+static int ieee802154_atm34_radio_cca(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return 0;
+}
+
+static int ieee802154_atm34_radio_set_channel(const struct device *dev, uint16_t channel)
+{
+	ARG_UNUSED(dev);
+
+	if (channel < ATM_MAC_154_MIN_CHANNEL) {
+		return -ENOTSUP;
+	}
+	if (channel > ATM_MAC_154_MAX_CHANNEL) {
+		return -EINVAL;
+	}
+
+	data.set_channel = channel;
+	atm_req_154_set_channel(atm_154_iface, channel);
+	return 0;
+}
+
+static int ieee802154_atm34_radio_filter(const struct device *dev,
+					 bool set,
+					 enum ieee802154_filter_type type,
+					 const struct ieee802154_filter *filter)
+{
+	ARG_UNUSED(dev);
+
+	if (!set) {
+		return -ENOTSUP;
+	}
+
+	// FIXME: check endianess of filter->*_addr
+	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
+		atm_req_154_set_long_addr(atm_154_iface, *(uint64_t *)filter->ieee_addr);
+		return 0;
+	}
+	if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
+		atm_req_154_set_short_addr(atm_154_iface, filter->short_addr);
+		return 0;
+	}
+	if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
+		atm_req_154_set_pan_id(atm_154_iface, filter->pan_id);
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
+static int ieee802154_atm34_radio_set_txpower(const struct device *dev, int16_t dbm)
+{
+	ARG_UNUSED(dev);
+
+	atm_req_154_set_tx_power(atm_154_iface, dbm);
+	return 0;
+}
+
+static net_time_t ieee802154_atm34_radio_get_time(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	atm_mac_lock_sync();
+	net_time_t current_time = ((net_time_t)atm_mac_frc_get_current_time()) * NSEC_PER_USEC;
+	atm_mac_unlock();
+	return current_time;
+}
+
+static uint8_t ieee802154_atm34_radio_get_acc(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return CONFIG_IEEE802154_ATM34_DELAY_TRX_ACC;
+}
+
+static bool ieee802154_atm34_cb_rx_long_addr_pend(uint64_t address)
+{
+	if (data.long_pending.addr == address) {
+		return data.long_pending.status;
+	}
+
+	return false;
+}
+
+static bool ieee802154_atm34_cb_rx_short_addr_pend(uint16_t address)
+{
+	if (data.short_pending.addr == address) {
+		return data.short_pending.status;
+	}
+
+	return false;
+}
+
+ISR_DIRECT_DECLARE(ieee802154_atm34_rx_give)
+{
+	k_sem_give(&data.rx_wait);
+	return 1;
+}
+
+/*
+ * @note: Always called from zero-latency ATLC_IRQn, so kernel calls are not permitted.
+ */
+static void ieee802154_atm34_cb_rx_complete(atm_mac_status_t status,
+					    atm_mac_154_rx_complete_info_t const *info)
+{
+	data.rx_status = status;
+	data.rx_info = *info;
+	NVIC_SetPendingIRQ(RX_GIVE_IRQn);
+}
+
+static void ieee802154_atm34_rx_good_packet(void)
+{
+	uint8_t pkt_len = ATM_MAC_154_FRAME_LEN_READ(data.rx_buffer[ATM_MAC_154_LENGTH_OFFSET]);
+	LOG_DBG("Caught packet (Len:%u LQI:%u RSSI:%d)", pkt_len, data.rx_info.lqi,
+		data.rx_info.rssi);
+	LOG_HEXDUMP_DBG(data.rx_buffer + ATM_MAC_154_PHR_LEN, pkt_len, "rx");
+#ifdef CONFIG_IEEE802154_ATM34_AUTO_CRC
+	if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) || IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+		pkt_len += ATM_MAC_154_FCS_LEN;
+	}
+#endif
+
+	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(data.iface, pkt_len,
+							   AF_UNSPEC, 0, K_FOREVER);
+	if (!pkt) {
+		LOG_ERR("No free packet available.");
+		return;
+	}
+
+	if (net_pkt_write(pkt, data.rx_buffer + ATM_MAC_154_PHR_LEN, pkt_len)) {
+		LOG_ERR("Packet dropped by NET write");
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	net_pkt_set_ieee802154_lqi(pkt, data.rx_info.lqi);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, data.rx_info.rssi);
+	net_pkt_set_ieee802154_ack_fpb(pkt, data.rx_info.ack_sent);
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	net_pkt_set_timestamp_ns(pkt, ((net_time_t)data.rx_info.timestamp) * NSEC_PER_USEC);
+#endif
+
+	if (net_recv_data(data.iface, pkt) < 0) {
+		LOG_ERR("Packet dropped by NET stack");
+		net_pkt_unref(pkt);
+		return;
+	}
+}
+
+static void ieee802154_atm34_rx_packet(const struct device *dev)
+{
+	k_sem_reset(&data.rx_wait);
+	data.rx_status = ATM_MAC_154_RX_COMPLETE_STATUS_STOPPED;
+
+	if (data.rx_channel && (data.rx_channel != data.set_channel)) {
+		atm_req_154_set_channel(atm_154_iface, data.rx_channel);
+	}
+
+	atm_mac_lock_sync();
+	atm_req_154_receive_packet(atm_154_iface, data.rx_buffer, data.rx_start_time,
+				   data.rx_duration, data.priority);
+	atm_mac_unlock();
+
+	// Wait for rx_complete or rx_stop
+	k_sem_take(&data.rx_wait, K_FOREVER);
+
+	if (data.rx_channel && (data.rx_channel != data.set_channel)) {
+		atm_req_154_set_channel(atm_154_iface, data.set_channel);
+	}
+
+	enum ieee802154_rx_fail_reason reason;
+	switch (data.rx_status) {
+	case ATM_MAC_154_RX_COMPLETE_STATUS_SUCCESS:
+		ieee802154_atm34_rx_good_packet();
+		return;
+	case ATM_MAC_154_RX_COMPLETE_STATUS_FAIL_TIMEOUT:
+	case ATM_MAC_154_RX_COMPLETE_STATUS_FAIL_PAST:
+		reason = IEEE802154_RX_FAIL_NOT_RECEIVED;
+		break;
+	case ATM_MAC_154_RX_COMPLETE_STATUS_STOPPED:
+		return;
+	case ATM_MAC_154_RX_COMPLETE_STATUS_FAIL:
+	default:
+		reason = IEEE802154_RX_FAIL_OTHER;
+		break;
+	}
+
+	if (data.event_handler) {
+		data.event_handler(dev, IEEE802154_EVENT_RX_FAILED, &reason);
+	}
+}
+
+static void ieee802154_atm34_rx_thread(void *arg1, void *arg2, void *arg3)
+{
+	const struct device *dev = arg1;
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	for (;;) {
+		if (!data.rx_enable) {
+			LOG_DBG("rx pause");
+			k_sem_give(&data.rx_done);
+			k_sem_take(&data.rx_pause, K_FOREVER);
+			LOG_DBG("rx start");
+		}
+		ieee802154_atm34_rx_packet(dev);
+	}
+}
+
+static void ieee802154_atm34_rx_enable(void)
+{
+	if (data.rx_enable) {
+		return;
+	}
+
+	data.rx_enable = true;
+	k_sem_give(&data.rx_pause);
+}
+
+static int ieee802154_atm34_radio_start(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	switch (data.state) {
+	case IEEE802154_ATM34_IDLE:
+		break;
+	case IEEE802154_ATM34_RX_RUNNING:
+		return -EALREADY;
+	case IEEE802154_ATM34_CCW_RUNNING:
+		// data.state updated below
+		atm_mac_lock_sync();
+		atm_req_154_activate_carrier_wave(atm_154_iface, false);
+		atm_mac_unlock();
+		break;
+	default:
+		LOG_ERR("start: unknown state %d", data.state);
+		return -EIO;
+	}
+
+	data.rx_start_time = 0;
+	data.rx_duration = 0;
+	data.rx_channel = 0;
+	data.state = IEEE802154_ATM34_RX_RUNNING;
+	ieee802154_atm34_rx_enable();
+	LOG_INF("Receive started (channel:%d)", atm_req_154_get_channel(atm_154_iface));
+	return 0;
+}
+
+static void ieee802154_atm34_rx_stop(void)
+{
+	atm_mac_lock_sync();
+
+	if (data.rx_enable) {
+		k_sem_reset(&data.rx_done);
+		data.rx_enable = false;
+
+		// Abort any operation in flight
+		atm_req_154_stop(atm_154_iface);
+		k_sem_give(&data.rx_wait);
+
+		// Wait for rx_thread to pause
+		k_sem_take(&data.rx_done, K_FOREVER);
+	}
+
+	// Fully clear state
+	atm_req_154_stop(atm_154_iface);
+	atm_mac_unlock();
+}
+
+static int ieee802154_atm34_radio_stop(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	switch (data.state) {
+	case IEEE802154_ATM34_IDLE:
+		return -EALREADY;
+	case IEEE802154_ATM34_RX_RUNNING:
+		break;
+	case IEEE802154_ATM34_CCW_RUNNING:
+		data.state = IEEE802154_ATM34_IDLE;
+		atm_mac_lock_sync();
+		atm_req_154_activate_carrier_wave(atm_154_iface, false);
+		atm_mac_unlock();
+		LOG_INF("ccw stopped");
+		return 0;
+	default:
+		LOG_ERR("stop: unknown state %d", data.state);
+		return -EIO;
+	}
+
+	data.state = IEEE802154_ATM34_IDLE;
+	ieee802154_atm34_rx_stop();
+	LOG_INF("stopped");
+	return 0;
+}
+
+static int ieee802154_atm34_radio_continuous_carrier(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	switch (data.state) {
+	case IEEE802154_ATM34_IDLE:
+		break;
+	case IEEE802154_ATM34_RX_RUNNING:
+		// data.state updated below
+		ieee802154_atm34_rx_stop();
+		break;
+	case IEEE802154_ATM34_CCW_RUNNING:
+		return -EALREADY;
+	default:
+		LOG_ERR("ccw: unknown state %d", data.state);
+		return -EIO;
+	}
+
+	data.state = IEEE802154_ATM34_CCW_RUNNING;
+	atm_mac_lock_sync();
+	atm_req_154_activate_carrier_wave(atm_154_iface, true);
+	atm_mac_unlock();
+	LOG_INF("Continuous carrier wave transmission started (channel:%d)",
+		atm_req_154_get_channel(atm_154_iface));
+	return 0;
+}
+
+static int ieee802154_atm34_handle_ack(void)
+{
+	uint8_t ack_len = ATM_MAC_154_FRAME_LEN_READ(data.tx_info.ack_buffer[0]);
+	LOG_DBG("Caught ack (Len:%u LQI:%u RSSI:%d)", ack_len, data.tx_info.ack_lqi,
+		data.tx_info.ack_rssi);
+	LOG_HEXDUMP_DBG(data.tx_info.ack_buffer + ATM_MAC_154_PHR_LEN, ack_len, "ack");
+
+	struct net_pkt *ack_pkt = net_pkt_rx_alloc_with_buffer(data.iface, ack_len, AF_UNSPEC, 0,
+							       K_NO_WAIT);
+	if (!ack_pkt) {
+		LOG_ERR("No free packet available.");
+		return -ENOMEM;
+	}
+
+	/*
+	 * Upper layers expect the frame to start at the MAC header, skip the
+	 * PHY header (1 byte).
+	 */
+	if (net_pkt_write(ack_pkt, data.tx_info.ack_buffer + ATM_MAC_154_PHR_LEN, ack_len) < 0) {
+		LOG_ERR("Failed to write to a packet.");
+		net_pkt_unref(ack_pkt);
+		return -ENOMEM;
+	}
+
+	net_pkt_set_ieee802154_lqi(ack_pkt, data.tx_info.ack_lqi);
+	net_pkt_set_ieee802154_rssi_dbm(ack_pkt, data.tx_info.ack_rssi);
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	net_pkt_set_timestamp_ns(ack_pkt, ((net_time_t)data.tx_info.ack_timestamp) * NSEC_PER_USEC);
+#endif
+
+	net_pkt_cursor_init(ack_pkt);
+
+	if (ieee802154_handle_ack(data.iface, ack_pkt) != NET_OK) {
+		LOG_INF("ACK packet not handled - releasing.");
+	}
+
+	net_pkt_unref(ack_pkt);
+	return 0;
+}
+
+ISR_DIRECT_DECLARE(ieee802154_atm34_tx_give)
+{
+	k_sem_give(&data.tx_wait);
+	return 1;
+}
+
+/*
+ * @note: Always called from zero-latency ATLC_IRQn, so kernel calls are not permitted.
+ */
+static void ieee802154_atm34_cb_tx_complete(atm_mac_status_t status,
+					    atm_mac_154_tx_complete_info_t const *info)
+{
+	data.tx_status = status;
+	data.tx_info = *info;
+	NVIC_SetPendingIRQ(TX_GIVE_IRQn);
+}
+
+static int ieee802154_atm34_radio_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode,
+				     struct net_pkt *pkt, struct net_buf *frag)
+{
+	ARG_UNUSED(pkt);
+
+	uint8_t payload_len = frag->len;
+	uint8_t *payload = frag->data;
+
+	if (payload_len > IEEE802154_MTU) {
+		LOG_ERR("Payload too large: %d", payload_len);
+		return -EMSGSIZE;
+	}
+
+#ifndef CONFIG_IEEE802154_ATM34_AUTO_CRC
+	if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) || IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+		payload_len += ATM_MAC_154_FCS_LEN;
+	}
+#endif
+	LOG_DBG("%p (%u)", (void *)payload, payload_len);
+	LOG_HEXDUMP_DBG(payload, payload_len, "tx");
+
+	data.tx_buffer[ATM_MAC_154_LENGTH_OFFSET] = payload_len;
+	memcpy(data.tx_buffer + ATM_MAC_154_PHR_LEN, payload, payload_len);
+
+	switch (tx_mode) {
+	case IEEE802154_TX_MODE_DIRECT:
+	case IEEE802154_TX_MODE_CCA:
+	case IEEE802154_TX_MODE_CSMA_CA:
+		if (data.state == IEEE802154_ATM34_RX_RUNNING) {
+			ieee802154_atm34_rx_stop();
+		}
+		k_sem_reset(&data.tx_wait);
+		atm_mac_lock_sync();
+		atm_req_154_transmit_packet(atm_154_iface, data.tx_buffer,
+					    (tx_mode == IEEE802154_TX_MODE_CSMA_CA), false, 0,
+					    data.priority);
+		atm_mac_unlock();
+		break;
+	default:
+		NET_ERR("TX mode %d not supported", tx_mode);
+		return -ENOTSUP;
+	}
+
+	if (data.event_handler) {
+		data.event_handler(dev, IEEE802154_EVENT_TX_STARTED, frag);
+	}
+
+	k_sem_take(&data.tx_wait, K_FOREVER);
+
+	if (data.state == IEEE802154_ATM34_RX_RUNNING) {
+		ieee802154_atm34_rx_enable();
+	}
+
+	switch (data.tx_status) {
+	case ATM_MAC_154_TX_COMPLETE_STATUS_SUCCESS:
+		if (!data.tx_info.ack_received) {
+			return 0;
+		}
+		return ieee802154_atm34_handle_ack();
+	case ATM_MAC_154_TX_COMPLETE_STATUS_FAIL_CCA:
+		return -EBUSY;
+	case ATM_MAC_154_TX_COMPLETE_STATUS_FAIL_NO_ACK:
+		return -ENOMSG;
+	case ATM_MAC_154_TX_COMPLETE_STATUS_FAIL:
+	default:
+		return -EIO;
+	}
+}
+
+static void ieee802154_atm34_cb_ed_complete(atm_mac_status_t status, int8_t rssi)
+{
+	LOG_DBG("Rssi: %d", rssi);
+
+	if (data.state == IEEE802154_ATM34_RX_RUNNING) {
+		ieee802154_atm34_rx_enable();
+	}
+
+	if (!data.energy_scan_done) {
+		return;
+	}
+
+	energy_scan_done_cb_t callback = data.energy_scan_done;
+	data.energy_scan_done = NULL;
+	callback(net_if_get_device(data.iface), rssi);
+}
+
+static int ieee802154_atm34_radio_ed_scan(const struct device *dev, uint16_t duration,
+					  energy_scan_done_cb_t done_cb)
+{
+	ARG_UNUSED(dev);
+
+	if (data.energy_scan_done) {
+		return -EALREADY;
+	}
+
+	if (data.state == IEEE802154_ATM34_RX_RUNNING) {
+		ieee802154_atm34_rx_stop();
+	}
+
+	data.energy_scan_done = done_cb;
+	atm_mac_lock_sync();
+	atm_req_154_energy_detect(atm_154_iface, duration * USEC_PER_MSEC, data.priority);
+	atm_mac_unlock();
+	LOG_DBG("Energy detect started (channel:%d)", atm_req_154_get_channel(atm_154_iface));
+	return 0;
+}
+
+static int long_pending_set(uint64_t addr)
+{
+	if (data.long_pending.status && (data.long_pending.addr != addr)) {
+		return -ENOMEM;
+	}
+	data.long_pending.addr = addr;
+	data.long_pending.status = true;
+	return 0;
+}
+
+static int long_pending_clear(uint64_t addr)
+{
+	if (!data.long_pending.status || (data.long_pending.addr != addr)) {
+		return -ENOENT;
+	}
+	data.long_pending.status = false;
+	return 0;
+}
+
+static int long_pending_clear_all(void)
+{
+	data.long_pending.status = false;
+	return 0;
+}
+
+static int short_pending_set(uint16_t addr)
+{
+	if (data.short_pending.status && (data.short_pending.addr != addr)) {
+		return -ENOMEM;
+	}
+	data.short_pending.addr = addr;
+	data.short_pending.status = true;
+	return 0;
+}
+
+static int short_pending_clear(uint16_t addr)
+{
+	if (!data.short_pending.status || (data.short_pending.addr != addr)) {
+		return -ENOENT;
+	}
+	data.short_pending.status = false;
+	return 0;
+}
+
+static int short_pending_clear_all(void)
+{
+	data.short_pending.status = false;
+	return 0;
+}
+
+static int ieee802154_atm34_set_ack_fpb(bool extended, uint8_t *addr)
+{
+	LOG_INF("Set ACK_FPB addr %p%s", addr, extended ? " extended" : "");
+	// FIXME: check endianess of addr
+	if (extended) {
+		return long_pending_set(*(uint64_t *)addr);
+	}
+
+	return short_pending_set(*(uint16_t *)addr);
+}
+
+static int ieee802154_atm34_clear_ack_fpb(bool extended, uint8_t *addr)
+{
+	if (addr) {
+		LOG_INF("Clear ACK_FPB addr %p%s", addr, extended ? " extended" : "");
+		// FIXME: check endianess of addr
+		if (extended) {
+			return long_pending_clear(*(uint64_t *)addr);
+		}
+
+		return short_pending_clear(*(uint16_t *)addr);
+	}
+
+	LOG_INF("Clear ACK_FPB%s", extended ? " extended" : "");
+	if (extended) {
+		return long_pending_clear_all();
+	}
+
+	return short_pending_clear_all();
+}
+
+static int ieee802154_atm34_radio_configure(const struct device *dev,
+					    enum ieee802154_config_type type,
+					    const struct ieee802154_config *config)
+{
+	ARG_UNUSED(dev);
+
+	switch (type) {
+	case IEEE802154_CONFIG_PROMISCUOUS:
+		atm_req_154_disable_address_filtering(atm_154_iface, config->promiscuous);
+		return 0;
+	case IEEE802154_CONFIG_EVENT_HANDLER:
+		data.event_handler = config->event_handler;
+		return 0;
+	case IEEE802154_CONFIG_ACK_FPB:
+		if (config->ack_fpb.enabled) {
+			return ieee802154_atm34_set_ack_fpb(config->ack_fpb.extended,
+							    config->ack_fpb.addr);
+		}
+		return ieee802154_atm34_clear_ack_fpb(config->ack_fpb.extended,
+						      config->ack_fpb.addr);
+#if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
+	case IEEE802154_CONFIG_RX_SLOT:
+		switch (data.state) {
+		case IEEE802154_ATM34_IDLE:
+			break;
+		case IEEE802154_ATM34_RX_RUNNING:
+			ieee802154_atm34_rx_stop();
+			break;
+		case IEEE802154_ATM34_CCW_RUNNING:
+			return -EACCES;
+		default:
+			LOG_ERR("config RX_SLOT: unknown state %d", data.state);
+			return -EIO;
+		}
+
+		LOG_INF("Receive @%" PRIu32 " for %" PRIu32 " (channel:%d)",
+			data.rx_start_time, data.rx_duration, data.rx_channel);
+
+		if ((config->rx_slot.start == -1) || !config->rx_slot.duration) {
+			return 0;
+		}
+
+		data.rx_start_time = config->rx_slot.start / NSEC_PER_USEC;
+		data.rx_duration = config->rx_slot.duration / NSEC_PER_USEC;
+		data.rx_channel = config->rx_slot.channel;
+		data.state = IEEE802154_ATM34_RX_RUNNING;
+		ieee802154_atm34_rx_enable();
+		return 0;
+	case IEEE802154_CONFIG_CSL_PERIOD:
+		atm_req_154_set_csl_ie_period(atm_154_iface, config->csl_period);
+		return 0;
+	case IEEE802154_CONFIG_CSL_RX_TIME:
+		// Used in conjunction with CSL period to calculate the CSL phase
+		atm_req_154_set_csl_ie_rx_time(atm_154_iface, config->csl_rx_time / NSEC_PER_USEC);
+		return 0;
+#endif
+	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE:
+		// The long address must be little endian when passed down
+		uint64_t long_addr;
+		sys_memcpy_swap(&long_addr, config->ack_ie.ext_addr, sizeof(long_addr));
+
+		atm_req_154_enable_enhanced_ack(atm_154_iface, config->ack_ie.short_addr, long_addr,
+						config->ack_ie.data, config->ack_ie.data_len);
+		return 0;
+
+	default:
+		break;
+	}
+
+	LOG_INF("configure %d", type);
+
+	/* configure not supported */
+	return -ENOTSUP;
+}
+
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, ATM_MAC_154_MIN_CHANNEL,
+					 ATM_MAC_154_MAX_CHANNEL);
+
+static int ieee802154_atm34_radio_attr_get(const struct device *dev, enum ieee802154_attr attr,
+					   struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	return ieee802154_attr_get_channel_page_and_range(
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		&drv_attr.phy_supported_channels, value);
+}
+
+static int ieee802154_atm34_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	k_sem_init(&data.rx_done, 0, 1);
+	k_sem_init(&data.rx_pause, 0, 1);
+	k_sem_init(&data.rx_wait, 0, 1);
+	k_sem_init(&data.tx_wait, 0, 1);
+
+	IRQ_DIRECT_CONNECT(RX_GIVE_IRQn, IRQ_PRI_UI, ieee802154_atm34_rx_give, 0);
+	irq_enable(RX_GIVE_IRQn);
+	IRQ_DIRECT_CONNECT(TX_GIVE_IRQn, IRQ_PRI_UI, ieee802154_atm34_tx_give, 0);
+	irq_enable(TX_GIVE_IRQn);
+
+	atm_mac_lock_sync();
+
+	atm_req_154_init(atm_154_iface);
+#ifndef CONFIG_IEEE802154_ATM34_AUTO_CRC
+	atm_req_154_disable_auto_crc(atm_154_iface, true);
+#endif
+	atm_req_154_register_rx_long_addr_callback(atm_154_iface,
+						   ieee802154_atm34_cb_rx_long_addr_pend);
+	atm_req_154_register_rx_short_addr_callback(atm_154_iface,
+						    ieee802154_atm34_cb_rx_short_addr_pend);
+	atm_req_154_register_rx_complete_callback(atm_154_iface, ieee802154_atm34_cb_rx_complete);
+	atm_req_154_register_tx_complete_callback(atm_154_iface, ieee802154_atm34_cb_tx_complete);
+	atm_req_154_register_ed_complete_callback(atm_154_iface, ieee802154_atm34_cb_ed_complete);
+
+	k_thread_create(&data.rx_thread, data.rx_stack,
+			CONFIG_IEEE802154_ATM34_RX_STACK_SIZE,
+			ieee802154_atm34_rx_thread, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(2), 0, K_NO_WAIT);
+
+	k_thread_name_set(&data.rx_thread, "ieee802154_atm34");
+
+	atm_mac_unlock();
+	return 0;
+}
+
+static struct ieee802154_radio_api ieee802154_atm34_radio_api = {
+	.iface_api.init = ieee802154_atm34_radio_iface_init,
+	.get_capabilities = ieee802154_atm34_radio_get_capabilities,
+	.cca = ieee802154_atm34_radio_cca,
+	.set_channel = ieee802154_atm34_radio_set_channel,
+	.filter = ieee802154_atm34_radio_filter,
+	.set_txpower = ieee802154_atm34_radio_set_txpower,
+	.start = ieee802154_atm34_radio_start,
+	.stop = ieee802154_atm34_radio_stop,
+	.continuous_carrier = ieee802154_atm34_radio_continuous_carrier,
+	.tx = ieee802154_atm34_radio_tx,
+	.ed_scan = ieee802154_atm34_radio_ed_scan,
+	.get_time = ieee802154_atm34_radio_get_time,
+	.get_sch_acc = ieee802154_atm34_radio_get_acc,
+	.configure = ieee802154_atm34_radio_configure,
+	.attr_get = ieee802154_atm34_radio_attr_get,
+};
+
+#if defined(CONFIG_NET_L2_IEEE802154)
+#define L2 IEEE802154_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
+#define MTU 125
+#elif defined(CONFIG_NET_L2_OPENTHREAD)
+#define L2 OPENTHREAD_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
+#define MTU 1280
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
+NET_DEVICE_DT_INST_DEFINE(0, ieee802154_atm34_init, NULL, &data, NULL,
+			  80,
+			  &ieee802154_atm34_radio_api, L2, L2_CTX_TYPE, MTU);
+#else
+DEVICE_DT_INST_DEFINE(0, ieee802154_atm34_init, NULL, &data, NULL,
+		      POST_KERNEL, 80,
+		      &ieee802154_atm34_radio_api);
+#endif

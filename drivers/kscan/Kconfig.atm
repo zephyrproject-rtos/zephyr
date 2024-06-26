@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config KSCAN_ATM
+	bool "ATM keyscan driver"
+	default y
+	depends on DT_HAS_ATMOSIC_KSCAN_ENABLED
+	help
+	  Enable keyscan driver for ATM.
+
+config KSCAN_THREAD_STACK_SIZE
+	int "thread stack size"
+	default 1024
+	depends on KSCAN_ATM
+	help
+	  kscan thread stack size.

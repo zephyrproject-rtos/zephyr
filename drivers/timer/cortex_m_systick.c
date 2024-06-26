@@ -31,6 +31,7 @@
 #define MIN_DELAY MAX(1024U, ((uint32_t)CYC_PER_TICK/16U))
 
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
+#define EXT_REF (IS_ENABLED(CONFIG_CORTEX_M_SYSTICK_EXTERNAL_REF))
 
 static struct k_spinlock lock;
 
@@ -142,6 +143,16 @@ static uint32_t elapsed(void)
 
 	return (last_load - val2) + overflow_cyc;
 }
+
+#ifdef CONFIG_SOC_FAMILY_ATM
+void sys_clock_correct(uint32_t cycles)
+{
+	overflow_cyc += cycles;
+
+	/* pend a SysTick */
+	SCB->ICSR |= SCB_ICSR_PENDSTSET_Msk;
+}
+#endif
 
 /* Callout out of platform assembly, not hooked via IRQ_CONNECT... */
 void sys_clock_isr(void *arg)
@@ -320,7 +331,7 @@ static int sys_clock_driver_init(void)
 	SysTick->VAL = 0; /* resets timer to last_load */
 	SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
 			  SysTick_CTRL_TICKINT_Msk |
-			  SysTick_CTRL_CLKSOURCE_Msk);
+			  (EXT_REF ? 0 : SysTick_CTRL_CLKSOURCE_Msk));
 	return 0;
 }
 

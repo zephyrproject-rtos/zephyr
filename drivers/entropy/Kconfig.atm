@@ -1,0 +1,20 @@
+# Atmosic TRNG configuration
+
+# Copyright (c) 2023 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_ATM_TRNG
+	bool "Atmosic True Random Number Generator (TRNG) Driver"
+	default y
+	depends on DT_HAS_ATMOSIC_ATM_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable True Random Number Generator (TRNG) driver for Atmosic SOCs.
+
+config ENTROPY_ATM_RING_ENTRIES
+	int "Number of entries in ring buffer between ISR and driver methods"
+	default 8
+
+config ENTROPY_ATM_STATS
+	bool "Debug statistics for internal driver operations"
+	default n

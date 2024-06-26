@@ -1,0 +1,123 @@
+/*
+ * Copyright (c) 2023-2024 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/atmosic/ATM33xx_ns.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Atmosic EVK 3325-LQK-5";
+	compatible = "atmosic,ATMEVK-3325-LQK-5";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart1;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &rram0;
+		zephyr,code-partition = &nspe_partition;
+		zephyr,entropy = &trng;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+			label = "Red LED1";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED2";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED3";
+		};
+	};
+
+        pwmleds {
+                compatible = "pwm-leds";
+                pwm_led0: pwm_led_0 {
+                        pwms = <&pwm3 3 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "Red LED1";
+                };
+        };
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+			label = "Button1";
+		};
+		button1: button_1 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			label = "Button2";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		i2c-1 = &i2c1;
+		led0 = &led0;
+		pwm-0 = &pwm3;
+		pwm-led0 = &pwm_led0;
+		sw0 = &button0;
+	};
+};
+
+&flash_controller {
+	clk-pin = <6>;
+	csn-pin = <13>;
+	d0-pin = <2>;
+	d1-pin = <15>;
+	d2-pin = <16>;
+	d3-pin = <23>;
+};
+
+&i2c1 {
+        sda-pin = <5>;
+        scl-pin = <4>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&pwm3 {
+	pin = <29>;
+	status = "okay";
+};
+
+&spi0 {
+        clk-pin = <17>;
+        cs-pin = <20>;
+        mosi-pin = <18>;
+        miso-pin = <19>;
+};
+
+&spi1 {
+        clk-pin = <5>;
+        cs-pin = <4>;
+        mosi-pin = <22>;
+        miso-pin = <7>;
+};
+
+&adc {
+    ch-cell = <1>;
+    ch-batt = <11>;
+};
+
+&uart1 {
+	rx-pin = <21>;
+	tx-pin = <27>;
+};
+
+&uart0 {
+	rx-pin = <30>;
+	tx-pin = <19>;
+	rts-pin = <17>;
+	cts-pin = <20>;
+};

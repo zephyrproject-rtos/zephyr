@@ -1,0 +1,332 @@
+/*
+ * Copyright (c) 2021-2024 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <arm/atmosic/atm_irq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10>;
+		};
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1000>;
+		};
+		retain: retain {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <20000>;
+			exit-latency-us = <1000>;
+		};
+		hibernate: hibernate {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			substate-id = <0>;
+			min-residency-us = <100000>;
+		};
+		soc_off: soc_off {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			substate-id = <1>;
+			min-residency-us = <100000>;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m0";
+			clock-frequency = <16000000>;
+			reg = <0>;
+			cpu-power-states = <&idle &sleep &retain &hibernate>;
+		};
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <16000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		ble: ble@30000000 {
+			compatible = "atmosic,ble";
+			reg = <0x30000000 0x10000>;
+			interrupts = <IRQ_BLE 3>;
+			label = "BLE";
+			status = "okay";
+		};
+
+		timer0: timer@40000000 {
+			compatible = "arm,cmsdk-timer";
+			reg = <0x40000000 0x1000>;
+			interrupts = <IRQ_TIMER0 3>;
+		};
+
+		timer1: timer@40001000 {
+			compatible = "arm,cmsdk-timer";
+			reg = <0x40001000 0x1000>;
+			interrupts = <IRQ_TIMER1 3>;
+		};
+
+		dtimer0: dtimer@40002000 {
+			compatible = "arm,cmsdk-dtimer";
+			reg = <0x40002000 0x1000>;
+			interrupts = <IRQ_DUALTIMER 3>;
+		};
+
+		wrpr: wrpr@40003000 {
+			reg = <0x40003000 0x1000>;
+		};
+
+		uart0: uart@40004000 {
+			compatible = "atmosic,atm-uart";
+			reg = <0x40004000 0x1000>;
+			interrupts = <IRQ_UART0RX 3>, <IRQ_UART0TX 3>, <IRQ_UART0OVF 3>;
+			interrupt-names = "rx", "tx", "ovf";
+			clocks = <&sysclk>;
+			current-speed = <115200>;
+			instance = <0>;
+			status = "disabled";
+		};
+
+		uart1: uart@40005000 {
+			compatible = "atmosic,atm-uart";
+			reg = <0x40005000 0x1000>;
+			interrupts = <IRQ_UART1RX 3>, <IRQ_UART1TX 3>, <IRQ_UART1OVF 3>;
+			interrupt-names = "rx", "tx", "ovf";
+			clocks = <&sysclk>;
+			current-speed = <115200>;
+			instance = <1>;
+		};
+
+		pwm0: pwm@40006000 {
+			compatible = "atmosic,atm-pwm";
+			reg = <0x40006000 0x4>;
+			#pwm-cells = <3>;
+			channel = <0>;
+			max-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@40006004 {
+			compatible = "atmosic,atm-pwm";
+			reg = <0x40006004 0x4>;
+			#pwm-cells = <3>;
+			channel = <1>;
+			max-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@40006008 {
+			compatible = "atmosic,atm-pwm";
+			reg = <0x40006008 0x4>;
+			#pwm-cells = <3>;
+			channel = <2>;
+			max-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@4000600c {
+			compatible = "atmosic,atm-pwm";
+			reg = <0x4000600c 0x4>;
+			#pwm-cells = <3>;
+			channel = <3>;
+			max-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		pwm4: pwm@40006010 {
+			compatible = "atmosic,atm-pwm";
+			reg = <0x40006010 0x4>;
+			#pwm-cells = <3>;
+			channel = <4>;
+			max-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		pwm5: pwm@40006014 {
+			compatible = "atmosic,atm-pwm";
+			reg = <0x40006014 0x4>;
+			#pwm-cells = <3>;
+			channel = <5>;
+			max-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		pwm6: pwm@40006018 {
+			compatible = "atmosic,atm-pwm";
+			reg = <0x40006018 0x4>;
+			#pwm-cells = <3>;
+			channel = <6>;
+			max-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		pwm7: pwm@4000601c {
+			compatible = "atmosic,atm-pwm";
+			reg = <0x4000601c 0x4>;
+			#pwm-cells = <3>;
+			channel = <7>;
+			max-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		spi0: spi@40007000 {
+			compatible = "atmosic,atm-spi";
+			reg = <0x40007000 0x1000>;
+			interrupts = <IRQ_SPI0 3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			instance = <0>;
+			status = "disabled";
+		};
+
+		wdog0: wdog@40008000 {
+			compatible = "arm,cmsdk-watchdog";
+			clocks = <&sysclk>;
+			reg = <0x40008000 0x1000>;
+		};
+
+		oled: oled@40009000 {
+			reg = <0x40009000 0x1000>;
+		};
+
+		kscan: kscan@4000a000 {
+			compatible = "atmosic,kscan";
+			reg = <0x4000a000 0x1000>;
+			interrupts = <IRQ_KSM 3>;
+			status = "disabled";
+		};
+
+		spi2: spi@4000b000 {
+			compatible = "atmosic,atm-spi";
+			reg = <0x4000b000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			instance = <2>;
+			status = "disabled";
+		};
+
+		qdec: qdec@4000c000 {
+			reg = <0x4000c000 0x1000>;
+		};
+
+		spi1: spi@4000d000 {
+			compatible = "atmosic,atm-spi";
+			reg = <0x4000d000 0x1000>;
+			interrupts = <IRQ_SPI1 3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			instance = <1>;
+			status = "disabled";
+		};
+
+		slwtimer: slwtimer@4000e000 {
+			reg = <0x4000e000 0x1000>;
+			interrupts = <IRQ_SLWTIMER 3>;
+		};
+
+		qspi: qspi@4000f000 {
+			reg = <0x4000f000 0x1000>;
+		};
+
+		gpio0: gpio@40010000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40010000 0x1000>;
+			interrupts = <IRQ_PORT0_ALL 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@40011000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40011000 0x1000>;
+			interrupts = <IRQ_PORT1_ALL 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		i2c0: i2c@50000000 {
+			compatible = "atmosic,atm-i2c";
+			reg = <0x50000000 0x1000>;
+			interrupts = <IRQ_I2C0 3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			instance = <0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@50001000 {
+			compatible = "atmosic,atm-i2c";
+			reg = <0x50001000 0x1000>;
+			interrupts = <IRQ_I2C1 3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			instance = <1>;
+			status = "disabled";
+		};
+
+		nvm: nvm@50002000 {
+			reg = <0x50002000 0x1000>;
+		};
+
+		wrpr1: wrpr@50003000 {
+			reg = <0x50003000 0x1000>;
+		};
+
+		rif: rif@50004000 {
+			reg = <0x50004000 0x1000>;
+		};
+
+		radio: spi@50005000 {
+			reg = <0x50005000 0x1000>;
+			interrupts = <IRQ_RADIO 3>;
+		};
+
+		mdm: mdm@50006000 {
+			reg = <0x50006000 0x1000>;
+		};
+
+		pmu: spi@50007000 {
+			reg = <0x50007000 0x1000>;
+			interrupts = <IRQ_PMU 3>;
+		};
+
+		pseq: pseq@50008000 {
+			reg = <0x50008000 0x1000>;
+		};
+
+		adc: adc@5000a000 {
+			compatible = "atmosic,atmx2-adc";
+			reg = <0x5000a000 0x1000>;
+			interrupts = <IRQ_GADC 3>;
+			status = "okay";
+			#io-channel-cells = <1>;
+			resolution = <10>;
+		};
+
+		trng: trng@5000b000 {
+			compatible = "atmosic,atm-trng";
+			reg = <0x5000b000 0x1000>;
+			interrupts = <IRQ_SPI0 3>;
+			status = "okay";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

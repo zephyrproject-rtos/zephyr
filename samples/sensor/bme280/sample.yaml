@@ -6,6 +6,7 @@ tests:
     tags: sensors
     platform_allow:
       - adafruit_feather_m0_basic_proto
+      - atmevk_02
       - rpi_pico
     integration_platforms:
       - adafruit_feather_m0_basic_proto

@@ -1,0 +1,44 @@
+# ATM I2C configuration options
+
+# Copyright (c) 2021-2023 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_ATM
+	bool "Atmosic I2C driver"
+	default y
+	depends on DT_HAS_ATMOSIC_ATM_I2C_ENABLED
+	help
+	  Enables the ATM I2C driver
+
+if I2C_ATM
+
+config I2C_0
+	default y
+	bool "Enable I2C Port 0"
+
+config I2C_1
+	default y
+	bool "Enable I2C Port 1"
+
+config I2C_ATM_TIMEOUT
+	int "I2C busy wait timeout to receive a data bit"
+	default 100000
+
+if I2C_0
+
+config I2C_ATM_0_IRQ
+	int "Port 0 IRQ line"
+	default 4
+
+endif # I2C_0
+
+if I2C_1
+
+config I2C_ATM_1_IRQ
+	int "Port 1 IRQ line"
+	default 5
+
+endif # I2C_1
+
+endif # I2C_ATM
+

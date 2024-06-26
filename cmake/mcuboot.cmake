@@ -96,6 +96,10 @@ function(zephyr_mcuboot_tasks)
     set(imgtool_extra --key "${keyfile}" ${imgtool_extra})
   endif()
 
+  if(CONFIG_BOOT_MAX_IMG_SECTORS)
+    set(imgtool_extra --max-sectors "${CONFIG_BOOT_MAX_IMG_SECTORS}" ${imgtool_extra})
+  endif()
+
   set(imgtool_args -- ${imgtool_extra})
 
   # Extensionless prefix of any output file.

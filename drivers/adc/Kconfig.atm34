@@ -1,0 +1,32 @@
+# ADC configuration options
+
+# Copyright (c) 2023 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ATM34
+	bool "Atmosic ATM34 ADC driver"
+	default y
+	depends on DT_HAS_ATMOSIC_ATM34_ADC_ENABLED
+	help
+	  This option enables the ADC driver for ATM34
+	  family of processors.
+	  Support 16-bit resolution.
+	  Support 11 channels: ch1~ch11.
+
+if ADC_ATM34
+
+config CBPRINTF_FP_SUPPORT
+	default y
+	bool "Enable floating point support"
+
+config ADC_ASYNC
+	default y
+	bool "Enable asynchronous mode"
+
+config ADC_CAL_REFRESH_INTERVAL
+	int "Refresh interval (in ms) for gain extensions"
+	default 5000
+	help
+	    Schedules calibration measurements to update the offset_comp* registers
+
+endif

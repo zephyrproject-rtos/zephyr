@@ -1,0 +1,22 @@
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for ADC controllers
+
+include: adc-controller.yaml
+
+properties:
+    resolution:
+      type: int
+      required: true
+
+    ch-cell:
+      type: int
+      required: false
+
+    ch-batt:
+      type: int
+      required: false
+
+io-channel-cells:
+    - input

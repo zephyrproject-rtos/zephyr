@@ -4,6 +4,7 @@
  * Copyright (c) 2017 Linaro Ltd
  * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
  * Copyright (c) 2023 Sensorfy B.V.
+ * Copyright (c) 2024 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,6 +82,20 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 
 	return flash_erase(fa->fa_dev, fa->fa_off + off, len);
 }
+
+#if CONFIG_BOOT_NVM_COND_ERASE
+int flash_area_cond_erase(const struct flash_area *fa, off_t off, size_t len, bool required)
+{
+	if (!is_in_flash_area_bounds(fa, off, len)) {
+		return -EINVAL;
+	}
+	if (!required && fa->fa_no_erase_before_write) {
+		// Erase is not required and flash area does not require erase before write
+		return 0;
+	}
+	return flash_erase(fa->fa_dev, fa->fa_off + off, len);
+}
+#endif
 
 uint32_t flash_area_align(const struct flash_area *fa)
 {

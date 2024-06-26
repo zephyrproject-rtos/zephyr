@@ -1,0 +1,19 @@
+# ATM SPI configuration options
+
+# Copyright (c) 2021-2023 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_ATM
+	bool "Atmosic SPI driver"
+	default y
+	depends on DT_HAS_ATMOSIC_ATM_SPI_ENABLED
+	help
+	  Enables the ATM SPI driver
+
+if SPI_ATM
+
+config SPI_ATM_TIMEOUT
+	int "SPI IO timeout in usec"
+	default 100000
+
+endif # SPI_ATM

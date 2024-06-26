@@ -1,0 +1,281 @@
+/*
+ * Copyright (c) 2021-2024 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+timer0: timer@0 {
+	compatible = "arm,cmsdk-timer";
+	reg = <0x00000000 0x1000>;
+	interrupts = <3 8>;
+};
+
+timer1: timer@1000 {
+	compatible = "arm,cmsdk-timer";
+	reg = <0x00001000 0x1000>;
+	interrupts = <4 8>;
+};
+
+dtimer0: dtimer@2000 {
+	compatible = "arm,cmsdk-dtimer";
+	reg = <0x00002000 0x1000>;
+	interrupts = <5 8>;
+};
+
+wdog0: wdog@81000 {
+	compatible = "arm,cmsdk-watchdog";
+	clocks = <&sysclk>;
+	reg = <0x00081000 0x1000>;
+};
+
+gpio0: gpio@100000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x00100000 0x1000>;
+	interrupts = <93 8>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};
+
+gpio1: gpio@101000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x00101000 0x1000>;
+	interrupts = <94 8>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};
+
+ble: ble@120000 {
+	compatible = "atmosic,ble";
+	reg = <0x00120000 0x10000>;
+	interrupts = <72 4>, <75 8>, <80 8>, <95 2>;
+	label = "BLE";
+	status = "okay";
+};
+
+ieee802154: mac_154 {
+	compatible = "atmosic,atm34-ieee802154";
+	status = "disabled";
+};
+
+wrpr0: wrpr0@143000 {
+	reg = <0x00143000 0x1000>;
+};
+
+uart0: uart@144000 {
+	compatible = "atmosic,atm-uart";
+	reg = <0x00144000 0x1000>;
+	interrupts = <32 8>, <33 8>, <41 8>;
+	interrupt-names = "rx", "tx", "ovf";
+	clocks = <&clk_16M>;
+	current-speed = <115200>;
+	instance = <0>;
+	status = "disabled";
+};
+
+uart1: uart@145000 {
+	compatible = "atmosic,atm-uart";
+	reg = <0x00145000 0x1000>;
+	interrupts = <34 8>, <35 8>, <42 8>;
+	interrupt-names = "rx", "tx", "ovf";
+	clocks = <&clk_16M>;
+	current-speed = <115200>;
+	instance = <1>;
+};
+
+pwm0: pwm@146004 {
+	compatible = "atmosic,atm-pwm";
+	reg = <0x00146004 0x4>;
+	#pwm-cells = <3>;
+	channel = <0>;
+	max-frequency = <10000000>;
+	status = "disabled";
+};
+
+pwm1: pwm@146010 {
+	compatible = "atmosic,atm-pwm";
+	reg = <0x00146010 0x4>;
+	#pwm-cells = <3>;
+	channel = <1>;
+	max-frequency = <10000000>;
+	status = "disabled";
+};
+
+pwm2: pwm@14601c {
+	compatible = "atmosic,atm-pwm";
+	reg = <0x0014601c 0x4>;
+	#pwm-cells = <3>;
+	channel = <2>;
+	max-frequency = <10000000>;
+	status = "disabled";
+};
+
+pwm3: pwm@146028 {
+	compatible = "atmosic,atm-pwm";
+	reg = <0x00146028 0x4>;
+	#pwm-cells = <3>;
+	channel = <3>;
+	max-frequency = <10000000>;
+	status = "disabled";
+};
+
+pwm4: pwm@146034 {
+	compatible = "atmosic,atm-pwm";
+	reg = <0x00146034 0x4>;
+	#pwm-cells = <3>;
+	channel = <4>;
+	max-frequency = <10000000>;
+	status = "disabled";
+};
+
+pwm5: pwm@146040 {
+	compatible = "atmosic,atm-pwm";
+	reg = <0x00146040 0x4>;
+	#pwm-cells = <3>;
+	channel = <5>;
+	max-frequency = <10000000>;
+	status = "disabled";
+};
+
+pwm6: pwm@14604c {
+	compatible = "atmosic,atm-pwm";
+	reg = <0x0014604c 0x4>;
+	#pwm-cells = <3>;
+	channel = <6>;
+	max-frequency = <10000000>;
+	status = "disabled";
+};
+
+pwm7: pwm@146058 {
+	compatible = "atmosic,atm-pwm";
+	reg = <0x00146058 0x4>;
+	#pwm-cells = <3>;
+	channel = <7>;
+	max-frequency = <10000000>;
+	status = "disabled";
+};
+
+spi0: spi@147000 {
+	reg = <0x00147000 0x1000>;
+	interrupts = <40 8>;
+	compatible = "atmosic,atm-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	instance = <0>;
+	status = "disabled";
+};
+
+kscan: kscan@14a000 {
+	compatible = "atmosic,kscan";
+	reg = <0x0014a000 0x1000>;
+	interrupts = <43 12>;
+	status = "disabled";
+};
+
+spi2: spi@14b000 {
+	reg = <0x0014b000 0x1000>;
+	interrupts = <45 8>;
+};
+
+qdec: qdec@14c000 {
+	reg = <0x0014c000 0x1000>;
+};
+
+spi1: spi@14d000 {
+	reg = <0x0014d000 0x1000>;
+	interrupts = <36 8>;
+	compatible = "atmosic,atm-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	instance = <1>;
+	status = "disabled";
+};
+
+slwtimer: slwtimer@14e000 {
+	reg = <0x0014e000 0x1000>;
+	interrupts = <44 8>;
+};
+
+qspi: qspi@14f000 {
+	reg = <0x0014f000 0x1000>;
+};
+
+i2c0: i2c@150000 {
+	compatible = "atmosic,atm-i2c";
+	reg = <0x00150000 0x1000>;
+	interrupts = <50 8>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	instance = <0>;
+	status = "disabled";
+};
+
+i2c1: i2c@151000 {
+	compatible = "atmosic,atm-i2c";
+	reg = <0x00151000 0x1000>;
+	interrupts = <51 8>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	instance = <1>;
+	status = "disabled";
+};
+
+nvm: nvm@152000 {
+	reg = <0x00152000 0x1000>;
+	interrupts = <52 8>;
+};
+
+wrpr1: wrpr@153000 {
+	reg = <0x00153000 0x1000>;
+};
+
+rif: rif@154000 {
+	reg = <0x00154000 0x1000>;
+};
+
+radio: spi@155000 {
+	reg = <0x00155000 0x1000>;
+	interrupts = <48 8>;
+};
+
+mdm: mdm@156000 {
+	reg = <0x00156000 0x1000>;
+};
+
+pmu: spi@157000 {
+	reg = <0x00157000 0x1000>;
+	interrupts = <49 8>;
+};
+
+pseq: pseq@158000 {
+	reg = <0x00158000 0x1000>;
+	interrupts = <91 8>;
+};
+
+adc: adc@15a000 {
+	compatible = "atmosic,atm34-adc";
+	reg = <0x0015a000 0x1000>;
+	interrupts = <53 8>;
+	status = "okay";
+	#io-channel-cells = <1>;
+	resolution = <16>;
+	clock-freq = <2>;
+	sample-avg = <5>;
+	osr-select = <0>;
+};
+
+trng: trng@15b000 {
+	compatible = "atmosic,atm-trng";
+	reg = <0x0015b000 0x1000>;
+	interrupts = <54 8>;
+	status = "okay";
+};
+
+wrpr2: wrpr2@163000 {
+	reg = <0x00163000 0x1000>;
+};
+
+brownout: brownout {
+	compatible = "atmosic,brownout";
+	interrupts = <92 2>;
+	status = "okay";
+};

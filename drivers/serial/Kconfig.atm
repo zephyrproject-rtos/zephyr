@@ -1,0 +1,12 @@
+# Atmosic UART Configuration
+
+# Copyright (c) 2022 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_ATM
+	bool "Atmosic UART driver"
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on SOC_FAMILY_ATM
+	help
+	  This option enables the UART driver for Atmosic

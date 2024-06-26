@@ -74,6 +74,7 @@ static struct adc_hdl {
 	struct adc_channel_cfg channel_config;
 	uint8_t resolution;
 } adc_list[] = {
+	DT_FOREACH_STATUS_OKAY(atmosic_atm_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(atmel_sam_afec, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(espressif_esp32_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(atmel_sam_adc, ADC_HDL_LIST_ENTRY)

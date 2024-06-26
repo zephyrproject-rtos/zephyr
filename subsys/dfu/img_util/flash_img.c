@@ -2,6 +2,7 @@
  * Copyright (c) 2017, 2020 Nordic Semiconductor ASA
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2023 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +20,7 @@
 #endif
 
 #include <zephyr/devicetree.h>
-#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && !defined(CONFIG_MERGE_SPE_NSPE)
 	#define UPLOAD_FLASH_AREA_LABEL slot1_ns_partition
 #else
 #if FIXED_PARTITION_EXISTS(slot1_partition)

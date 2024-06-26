@@ -1,0 +1,38 @@
+# FRAM driver configuration options
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FRAM
+	bool "FRAM hardware support"
+	help
+	  Enable support for FRAM hardware.
+
+if FRAM
+
+module = FRAM
+module-str = fram
+source "subsys/logging/Kconfig.template.log_config"
+
+config FRAM_INIT_PRIORITY
+	int "FRAM init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  FRAM driver device initialization priority.
+
+config FRAM_SHELL
+	bool "Enable FRAM shell"
+	default y
+	depends on SHELL
+	help
+	  Enable the FRAM shell with FRAM related commands.
+
+config FRAM_SHELL_BUFFER_SIZE
+	int "FRAM shell buffer size"
+	default 256
+	depends on FRAM_SHELL
+	help
+	  Size of the buffer used for FRAM read/write commands in
+	  the FRAM shell.
+
+endif # FRAM

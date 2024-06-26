@@ -1,0 +1,27 @@
+# BMP280 temperature and pressure sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2017 IpTronix S.r.l.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FRAMMB85RS64V
+	bool "FRAMMB85RS64V/BMP280 sensor"
+	depends on I2C || SPI
+	help
+	  Enable driver for FRAMMB85RS64V I2C-based or SPI-based temperature and pressure sensor.
+
+if FRAMMB85RS64V
+
+choice
+	prompt "FRAMMB85RS64V sampling mode"
+	default FRAMMB85RS64V_MODE_NORMAL
+	help
+	  Select sampling mode. In normal mode continuous measurements are
+	  performed, whereas in forced mode only single measurement is performed.
+config FRAMMB85RS64V_MODE_NORMAL
+	bool "normal"
+config FRAMMB85RS64V_MODE_FORCED
+	bool "forced"
+endchoice
+
+endif # FRAMMB85RS64V

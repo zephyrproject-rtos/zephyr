@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ATM
+
+gsource "soc/arm/atmosic/*/Kconfig.defconfig.series"
+
+if ENTROPY_ATM_TRNG
+
+# default the RNG to a PRNG seeded by the ATM TRNG
+choice RNG_GENERATOR_CHOICE
+	default XOSHIRO_RANDOM_GENERATOR
+endchoice
+
+if MBEDTLS || TINYCRYPT
+# ATM TRNG HW should be used as an entropy source for a
+# secure PRNG implementation.  Use the default AES-CTR mode drbg.
+choice CSPRNG_GENERATOR_CHOICE
+	default CTR_DRBG_CSPRNG_GENERATOR
+endchoice
+endif # MBEDTLS || TINYCRYPT
+
+endif # ENTROPY_ATM_TRNG
+
+endif # SOC_FAMILY_ATM

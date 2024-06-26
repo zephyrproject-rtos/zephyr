@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2021-2024 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/atmosic/ATM34.dtsi>
+
+#ifndef FLASH_SIZE
+#define FLASH_SIZE 0x80000
+#endif
+
+/ {
+	flash_controller: flash-controller@10200000 {
+		compatible = "atmosic,external-flash-controller";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		reg = <0x10200000 0x1000000>;
+		ranges = <0x0 0x10200000 0x1000000>;
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			erase-block-size = <4096>;
+			write-block-size = <1>;
+			reg = <0x0 FLASH_SIZE>;
+		};
+	};
+
+	rram_controller: rram-controller@10010000 {
+		compatible = "atmosic,rram-controller";
+		no-erase-before-write;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		reg = <0x10010000 0x7f800>;
+
+		rram0: rram@10010000 {
+			compatible = "soc-nv-flash";
+			erase-block-size = <2048>;
+			write-block-size = <1>;
+			reg = <0x10010000 0x7f800>;
+		};
+	};
+
+	sec_jrnl: sec_jrnl@1008F800 {
+		compatible = "atmosic,sec_jrnl";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		reg = <0x1008F800 0x6f0>;
+	};
+
+	sec_cntr_keys: sec_cntr_keys@1008FEF0 {
+		compatible = "atmosic,sec_cntr_keys";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		reg = <0x1008FEF0 0x110>;
+	};
+
+	sram0: memory@30000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+#if defined(RUN_IN_FLASH) && (RUN_IN_FLASH == 2)
+		reg = <0x30000000 0x1000>;
+#else
+		reg = <0x30000000 0x4000>;
+#endif
+	};
+};
+
+#include "ATM34xx_partitions.dtsi"

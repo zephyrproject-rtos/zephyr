@@ -65,6 +65,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
 	)
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_I2C_ATM		i2c_atm.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_TEST		i2c_test.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		i2c_handlers.c)

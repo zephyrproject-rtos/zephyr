@@ -110,6 +110,15 @@ config MCUBOOT_IMGTOOL_SIGN_VERSION
 	  argument to the tool.
 	  The format is major.minor.revision+build.
 
+config BOOT_MAX_IMG_SECTORS
+	int "Maximum number of sectors per image slot"
+	default 128
+	help
+	  This option controls the maximum number of sectors that each of
+	  the two image areas can contain. Smaller values reduce MCUboot's
+	  memory usage; larger values allow it to support larger images.
+	  If unsure, leave at the default value.
+
 config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	string "Extra arguments to pass to imgtool when signing"
 	default ""

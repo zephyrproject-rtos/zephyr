@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2022-2023 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &spe_partition;
+/delete-node/ &nspe_partition;
+/delete-node/ &storage_partition;
+
+#include <arm/atmosic/ATM33xx_mcuboot_partition_defs.h>
+
+&rram0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@ATM_MCUBOOT_NODE_ID {
+			label = "mcuboot";
+
+			reg = <ATM_MCUBOOT_OFFSET ATM_MCUBOOT_SIZE>;
+		};
+#ifndef DFU_IN_FLASH
+		scratch_partition: partition@ATM_MCUBOOT_SCRATCH_NODE_ID {
+			label = "image-scratch";
+			reg = <ATM_MCUBOOT_SCRATCH_OFFSET ATM_MCUBOOT_SCRATCH_SIZE>;
+		};
+#endif
+		slot0_partition: partition@ATM_SLOT0_NODE_ID {
+			label = "image-0";
+			reg = <ATM_SLOT0_OFFSET ATM_SLOT0_SIZE>;
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				spe_partition: partition@ATM_SPE_NODE_ID {
+					label = "spe_partition";
+					reg = <ATM_SPE_OFFSET ATM_SPE_SIZE>;
+				};
+				nspe_partition: partition@ATM_NSPE_NODE_ID {
+					label = "nspe_partition";
+					reg = <ATM_NSPE_OFFSET ATM_NSPE_SIZE>;
+				};
+			};
+		};
+#ifndef DFU_IN_FLASH
+		// OTA staging area in RRAM, size must equal slot0_partition
+		slot1_partition: partition@ATM_SLOT1_NODE_ID {
+			label = "image-1";
+			reg = <ATM_SLOT1_OFFSET ATM_SLOT1_SIZE>;
+		};
+#endif
+		storage_partition: partition@ATM_STORAGE_NODE_ID {
+			label = "storage";
+			reg = <ATM_STORAGE_OFFSET ATM_STORAGE_SIZE>;
+		};
+#if ATMWSTK_SIZE
+		slot2_partition: partition@ATMWSTK_NODE_ID {
+			label = "image-2";
+			reg = <ATMWSTK_OFFSET ATMWSTK_SIZE>;
+		};
+#endif
+	};
+};
+
+
+#ifdef DFU_IN_FLASH
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		scratch_partition: partition@ATM_MCUBOOT_SCRATCH_NODE_ID {
+			label = "image-scratch";
+			reg = <ATM_MCUBOOT_SCRATCH_OFFSET ATM_MCUBOOT_SCRATCH_SIZE>;
+		};
+		// slot1 OTA staging area in flash, size must equal slot0_partition
+		slot1_partition: partition@ATM_SLOT1_NODE_ID {
+			label = "image-1";
+			reg = <ATM_SLOT1_OFFSET ATM_SLOT1_SIZE>;
+		};
+	};
+};
+#endif

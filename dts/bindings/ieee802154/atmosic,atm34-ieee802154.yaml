@@ -1,0 +1,8 @@
+# Copyright (c) Atmosic 2024
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmosic ATM34 IEEE 802.15.4 node
+
+compatible: "atmosic,atm34-ieee802154"
+
+include: base.yaml

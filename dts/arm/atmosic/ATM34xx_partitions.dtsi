@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2021-2024 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rram0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+#ifndef RUN_IN_FLASH
+		spe_partition: partition@0 {
+			label = "spe_partition";
+			reg = <0x00000 0x5800>;
+		};
+		nspe_partition: partition@5800 {
+			label = "nspe_partition";
+			reg = <0x5800 0x76000>;
+		};
+#elif (RUN_IN_FLASH == 2)
+		spe_partition: partition@0 {
+			label = "spe_partition";
+			reg = <0x00000 0x30000>;
+		};
+		fast_code_partition: partition@30000 {
+			label = "fast_code_partition";
+			reg = <0x30000 0x4b800>;
+		};
+#else
+		spe_partition: partition@0 {
+			label = "spe_partition";
+			reg = <0x00000 0x7b800>;
+		};
+#endif
+		storage_partition: partition@7b800 {
+			label = "storage";
+			reg = <0x7b800 0x4000>;
+		};
+	};
+};
+
+#ifdef RUN_IN_FLASH
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		nspe_partition: partition@0 {
+			label = "nspe_partition";
+			reg = <0x0 FLASH_SIZE>;
+		};
+	};
+};
+#endif

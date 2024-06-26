@@ -1,0 +1,13 @@
+# Low-Power 12-Bit A/D Converter with I2C Interface
+#
+# Copyright (c) 2023, Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MCP3221
+	bool "MCP3221 i2c 12-bit ADC"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP3221_ENABLED
+	select I2C
+	help
+	  Enable driver for MCP3221 i2c ADC.

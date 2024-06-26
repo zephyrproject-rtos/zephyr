@@ -1,0 +1,8 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: FRAMMB85RS64V integrated environmental sensor
+
+compatible: "fujitsu,frammb85rs64v"
+
+include: spi-device.yaml

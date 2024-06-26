@@ -18,7 +18,16 @@ struct gpio_cmsdk_ahb {
 	volatile uint32_t data;
 	/* Offset: 0x004 (r/w) data output latch register */
 	volatile uint32_t dataout;
+#ifdef CONFIG_SOC_SERIES_ATMx2
+	volatile uint32_t pullup_enable_set;
+	volatile uint32_t pullup_enable_clr;
+#endif
+#ifdef CONFIG_SOC_FAMILY_ATM
+	volatile uint32_t inenable_set;
+	volatile uint32_t inenable_clr;
+#else
 	volatile uint32_t reserved0[2];
+#endif
 	/* Offset: 0x010 (r/w) output enable set register */
 	volatile uint32_t outenableset;
 	/* Offset: 0x014 (r/w) output enable clear register */
@@ -45,7 +54,20 @@ struct gpio_cmsdk_ahb {
 		/* Offset: 0x038 ( /w) interrupt clear register */
 		volatile uint32_t  intclear;
 	};
+#ifdef CONFIG_SOC_FAMILY_ATM
+#ifdef CONFIG_SOC_SERIES_ATMx2
+	volatile uint32_t reserved1[239];
+#else
+	volatile uint32_t reserved0[8];
+	volatile uint32_t pullup_enable_set;
+	volatile uint32_t pullup_enable_clr;
+	volatile uint32_t pulldown_enable_set;
+	volatile uint32_t pulldown_enable_clr;
+	volatile uint32_t reserved1[229];
+#endif
+#else
 	volatile uint32_t reserved1[241];
+#endif
 	/* Offset: 0x400 - 0x7fc lower byte masked access register (r/w) */
 	volatile uint32_t lb_masked[256];
 	/* Offset: 0x800 - 0xbfc upper byte masked access register (r/w) */

@@ -1,0 +1,11 @@
+# Copyright (c) 2023, Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip MCP3221 Low-Power 12-Bit A/D Converter with I2C Interface.  See
+  https://www.microchip.com/en-us/product/mcp3221.
+
+compatible: "microchip,mcp3221"
+
+include: [sensor-device.yaml, i2c-device.yaml]

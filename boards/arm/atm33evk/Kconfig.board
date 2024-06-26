@@ -1,0 +1,9 @@
+# Copyright (c) 2021-2023 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ATM33_EVK
+	bool "ATM33xx Evaluation Kit Board"
+
+config BOARD_ATM33_EVK_NS
+	bool "ATM33xx Evaluation Kit Board Non-Secure"

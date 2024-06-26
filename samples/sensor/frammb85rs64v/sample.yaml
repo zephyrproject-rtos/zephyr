@@ -1,0 +1,8 @@
+sample:
+  name: FRAMMB85RS64V Sensor sample
+tests:
+  sample.sensor.frammb85rs64v:
+    tags: drivers fram
+    harness: fram
+    depends_on: fram frammb85rs64v
+    filter: dt_alias_exists("spi_0")

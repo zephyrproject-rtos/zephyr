@@ -40,3 +40,12 @@ config CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
 
 	  This is set to y by default when the hardware clock is fast enough
 	  to wrap sys_clock_cycle_get_32() in about a minute or less.
+
+config CORTEX_M_SYSTICK_EXTERNAL_REF
+	bool "Cortex-M SYSTICK timer external reference clock selection"
+	depends on CPU_CORTEX_M_HAS_SYSTICK
+	default n
+	help
+	  Selects the SysTick timer clock source. When set to n, the processor
+	  clock is selected, and when set to y, the external reference clock
+	  is selected.

@@ -95,6 +95,12 @@ config BT_PSOC6_BLESS
 	  PSOC6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
 
+config BT_ATMOSIC_HCI
+	bool "Atmosic HCI Interface"
+	help
+	  Atmosic HCI interface to the local link layer (LL). The driver
+	  is provided by the Atmosic HAL.
+
 config BT_NO_DRIVER
 	bool "No default HCI driver"
 	select BT_HAS_HCI_VS

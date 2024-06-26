@@ -1,0 +1,26 @@
+# ADC configuration options
+
+# Copyright (c) 2021-2023 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ATMx3
+	bool "Atmosic ATMx3 ADC driver"
+	default y
+	depends on DT_HAS_ATMOSIC_ATMX3_ADC_ENABLED
+	help
+	  This option enables the ADC driver for ATMx3
+	  family of processors.
+	  Support 11-bit resolution.
+	  Support 11 channels: ch1~ch11.
+
+if ADC_ATMx3
+
+config CBPRINTF_FP_SUPPORT
+	default y
+	bool "Enable floating point support"
+
+config ADC_ASYNC
+	default y
+	bool "Enable asynchronous mode"
+
+endif

@@ -156,7 +156,11 @@ static int bme280_wait_until_ready(const struct device *dev)
 
 	/* Wait for NVM to copy and and measurement to be completed */
 	do {
-		k_sleep(K_MSEC(3));
+		if (k_can_yield()) {
+			k_msleep(3);
+		} else {
+			k_busy_wait(3000);
+		}
 		ret = bme280_reg_read(dev, BME280_REG_STATUS, &status, 1);
 		if (ret < 0) {
 			return ret;

@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ATM33
+	bool "Atmosic Technologies ATM33 series"
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select FPU
+	select ARMV8_M_DSP
+	select CPU_HAS_TEE
+	select SOC_FAMILY_ATM
+	select HAS_PM
+	help
+	  Enable support for ATM33 series

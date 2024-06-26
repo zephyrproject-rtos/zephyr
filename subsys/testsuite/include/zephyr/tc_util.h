@@ -229,6 +229,11 @@ static inline void print_nothing(const char *fmt, ...)
 	LOG_PANIC(); \
 	posix_exit(result); \
 } while (0)
+#elif defined(CONFIG_SOC_FAMILY_ATM)
+#define TC_END_POST(result)						\
+	do {								\
+		TC_PRINT((result == TC_PASS) ? "\x04" : "\x03");	\
+	} while (1)
 #else
 #define TC_END_POST(result)
 #endif /* CONFIG_ARCH_POSIX */
