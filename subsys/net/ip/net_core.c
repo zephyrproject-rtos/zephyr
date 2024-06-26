@@ -380,13 +380,18 @@ drop:
 int net_send_data(struct net_pkt *pkt)
 {
 	int status;
+	int ret;
+
+	SYS_PORT_TRACING_FUNC_ENTER(net, send_data, pkt);
 
 	if (!pkt || !pkt->frags) {
-		return -ENODATA;
+		ret = -ENODATA;
+		goto err;
 	}
 
 	if (!net_pkt_iface(pkt)) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto err;
 	}
 
 	net_pkt_trim_buffer(pkt);
@@ -400,7 +405,8 @@ int net_send_data(struct net_pkt *pkt)
 		 * we just silently drop the packet by returning 0.
 		 */
 		if (status == -ENOMSG) {
-			return 0;
+			ret = 0;
+			goto err;
 		}
 
 		return status;
@@ -410,11 +416,13 @@ int net_send_data(struct net_pkt *pkt)
 		 */
 		NET_DBG("Loopback pkt %p back to us", pkt);
 		processing_data(pkt, true);
-		return 0;
+		ret = 0;
+		goto err;
 	}
 
 	if (net_if_send_data(net_pkt_iface(pkt), pkt) == NET_DROP) {
-		return -EIO;
+		ret = -EIO;
+		goto err;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
@@ -428,7 +436,12 @@ int net_send_data(struct net_pkt *pkt)
 		}
 	}
 
-	return 0;
+	ret = 0;
+
+err:
+	SYS_PORT_TRACING_FUNC_EXIT(net, send_data, pkt, ret);
+
+	return ret;
 }
 
 static void net_rx(struct net_if *iface, struct net_pkt *pkt)
