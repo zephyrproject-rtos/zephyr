@@ -38,16 +38,3 @@ tests:
     timeout: 400
     extra_args:
       DTC_OVERLAY_FILE="boards/mimxrt685_evk_rtc_1khz.overlay"
-  drivers.counter.basic_api.nrf54h20_cpuppr:
-    tags:
-      - drivers
-      - counter
-    depends_on: counter
-    platform_allow: nrf54h20dk/nrf54h20/cpuppr
-    timeout: 600
-    sysbuild: true
-    extra_args:
-      - vpr_launcher_DTC_OVERLAY_FILE="../../../tests/drivers/counter/counter_basic_api/boards/nrf54h20dk_nrf54h20_vpr_launcher.overlay"
-      - SB_CONFIG_VPR_LAUNCHER=y
-      # Disable asserts to fit in limited code memory
-      - CONFIG_ASSERT=n
