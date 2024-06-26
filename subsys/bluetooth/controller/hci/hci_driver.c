@@ -438,8 +438,18 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 	/* Check if we need to generate an HCI event or ACL data */
 	switch (class) {
-	case HCI_CLASS_EVT_DISCARDABLE:
 	case HCI_CLASS_EVT_REQUIRED:
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if (node_rx->hdr.type == NODE_RX_TYPE_EXT_1M_REPORT) {
+			struct pdu_adv *adv = (void *)node_rx->pdu;
+
+			/* Mark discardable */
+			if ((adv->type != PDU_ADV_TYPE_EXT_IND) || !adv->len) {
+				class = HCI_CLASS_EVT_DISCARDABLE;
+			}
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	case HCI_CLASS_EVT_DISCARDABLE:
 	case HCI_CLASS_EVT_CONNECTION:
 	case HCI_CLASS_EVT_LLCP:
 		if (class == HCI_CLASS_EVT_DISCARDABLE) {
