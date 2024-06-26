@@ -695,12 +695,13 @@
 			compatible = "nxp,s32-canxl";
 			reg = <0x4741b000 0x1000>,
 				<0x47423000 0x1000>,
-				<0x47425000 0x1000>;
-			reg-names = "sic", "rx_fifo", "rx_fifo_ctrl";
+				<0x47425000 0x1000>,
+				<0x47427000 0x1000>;
+			reg-names = "sic", "rx_fifo", "rx_fifo_ctrl", "mru";
 			status = "disabled";
 			interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 225 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "rx_tx", "error";
+					<GIC_SPI 225 IRQ_TYPE_LEVEL 0xb0>;
+			interrupt-names = "rx_tx_mru", "error";
 			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
 		};
 
@@ -708,12 +709,13 @@
 			compatible = "nxp,s32-canxl";
 			reg = <0x4751b000 0x1000>,
 				<0x47523000 0x1000>,
-				<0x47525000 0x1000>;
-			reg-names = "sic", "rx_fifo", "rx_fifo_ctrl";
+				<0x47525000 0x1000>,
+				<0x47527000 0x1000>;
+			reg-names = "sic", "rx_fifo", "rx_fifo_ctrl", "mru";
 			status = "disabled";
 			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 227 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "rx_tx", "error";
+					<GIC_SPI 227 IRQ_TYPE_LEVEL 0xb0>;
+			interrupt-names = "rx_tx_mru", "error";
 			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
 		};
 	};
