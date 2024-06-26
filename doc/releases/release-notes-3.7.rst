@@ -385,7 +385,7 @@ Drivers and Sensors
 
 * Ethernet
 
-  * Deperecated eth_mcux driver in favor of the reworked nxp_enet driver.
+  * Deprecated eth_mcux driver in favor of the reworked nxp_enet driver.
   * Driver nxp_enet is no longer experimental.
   * All boards and SOCs with :dtcompatible:`nxp,kinetis-ethernet` compatible nodes
     reworked to use the new :dtcompatible:`nxp,enet` binding.
@@ -523,7 +523,7 @@ Drivers and Sensors
     to control whether AP may poll the STA before throwing away STA due to inactivity.
 
   * Added support to configure "max_num_sta" BSS parameter. Users can set this both build and run time
-    parameter to control the maximum numuber of STA entries.
+    parameter to control the maximum number of STA entries.
 
 Networking
 **********
