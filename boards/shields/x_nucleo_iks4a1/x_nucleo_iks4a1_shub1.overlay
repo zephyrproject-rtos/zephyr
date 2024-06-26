@@ -7,6 +7,7 @@
 / {
 	aliases {
 		accel0 = &lsm6dsv16x_6b_x_nucleo_iks4a1;
+		temphum0 = &sht4x_44_x_nucleo_iks4a1;
 	};
 };
 
@@ -18,5 +19,12 @@
 		gyro-odr = <0x02>;
 		int1-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 */
 		drdy-pin = <1>;
+	};
+
+	sht4x_44_x_nucleo_iks4a1: sht4x@44 {
+		status = "okay";
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;
 	};
 };
