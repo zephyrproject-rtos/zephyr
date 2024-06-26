@@ -387,6 +387,7 @@ void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int resu
 #define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
 #define sys_port_trace_net_send_data_enter(pkt)
 #define sys_port_trace_net_send_data_exit(pkt, ret)
+#define sys_port_trace_net_rx_time(pkt, end_time)
 
 #ifdef __cplusplus
 }
