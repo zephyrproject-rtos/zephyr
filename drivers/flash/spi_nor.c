@@ -849,7 +849,12 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 				to_write = page_size - (addr % page_size);
 			}
 
-			spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+
+			if (ret != 0) {
+				break;
+			}
+
 			ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
 						src, to_write);
 			if (ret != 0) {
