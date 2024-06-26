@@ -536,42 +536,238 @@ Drivers and Sensors
 Networking
 **********
 
+* ARP:
+
+  * Added support for gratuitous ARP transmission.
+  * Fixed a possible deadlock between TX and RX threads within ARP module.
+  * Fixed a possible ARP entry leak.
+  * Improved ARP debug logs.
+
+* CoAP:
+
+  * Fixed CoAP observe age overflows.
+  * Increased upper limit for CoAP retransmissions (:kconfig:option:`CONFIG_COAP_MAX_RETRANSMIT`).
+  * Fixed CoAP observations in CoAP client library.
+  * Added new CoAP client :c:func:`coap_client_cancel_requests` API which allows
+    to cancel active observations.
+  * Fixed CoAP ID generation for responses in CoAP Server sample.
+
+* Connection manager:
+
+  * Added support for new net_mgmt events, which allow to track IPv4 and IPv6
+    connectivity independently:
+
+    * :c:macro:`NET_EVENT_L4_IPV4_CONNECTED`
+    * :c:macro:`NET_EVENT_L4_IPV4_DISCONNECTED`
+    * :c:macro:`NET_EVENT_L4_IPV6_CONNECTED`
+    * :c:macro:`NET_EVENT_L4_IPV6_DISCONNECTED`
+
 * DHCPv4:
 
   * Added support for encapsulated vendor specific options. By enabling
     :kconfig:option:`CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC` callbacks can be
     registered with :c:func:`net_dhcpv4_add_option_vendor_callback` to handle these options after
     being initialised with :c:func:`net_dhcpv4_init_option_vendor_callback`.
-
   * Added support for the "Vendor class identifier" option. Use the
     :kconfig:option:`CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER` to enable it and
     :kconfig:option:`CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING` to set it.
-
   * The NTP server from the DHCPv4 option can now be used to set the system time. This is done by
     default, if :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_INIT` is enabled.
+  * The syslog server address can now be set with DHCPv4 option. This is done by
+    default, if :kconfig:option:`CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION` is enabled.
+  * Fixed a bug, where options with registered callbacks were not requested from
+    the server.
+  * Fixed a bug, where netmask received from the server was not applied correctly.
+  * Reimplemented DHCPv4 client RENEW/REBIND logic to be compliant with RFC2131.
+  * Improved declined addresses management in DHCPv4 server, which now can be
+    reused after configured time.
+  * Fixed including client ID option in DHCPv4 server responsed, according to RFC6842.
+  * Added :kconfig:option:`CONFIG_NET_DHCPV4_SERVER_NAK_UNRECOGNIZED_REQUESTS` which
+    allows to override RFC-defined behavior, and NAK requests from unrecognized
+    clients.
+  * Other minor fixes in DHCPv4 client and server implementations.
 
-* LwM2M:
+* DHCPv6:
 
-  * Added new API function:
+  * Fixed incorrect DHCPv6 events code base for net_mgmt events.
+  * Added :kconfig:option:`CONFIG_NET_DHCPV6_DUID_MAX_LEN` which allows to configure
+    maximum supported DUID length.
+  * Added documentation page for DHCPv6.
 
-    * :c:func:`lwm2m_set_bulk`
+* HTTP:
 
-  * Added new ``offset`` parameter to :c:type:`lwm2m_engine_set_data_cb_t` callback type.
-    This affects post write and validate callbacks as well as some firmware callbacks.
+  * Added HTTP/2 server library and sample application with support for static,
+    dynamic and Websocket resource types.
+  * Added HTTP shell component.
+  * Improved HTTP client error reporting.
+  * Moved HTTP client library out of experimental.
 
 * IPSP:
 
   * Removed IPSP support. ``CONFIG_NET_L2_BT`` does not exist anymore.
 
-* TCP:
+* IPv4:
 
-  * ISN generation now uses SHA-256 instead of MD5. Moreover it now relies on PSA APIs
-    instead of legacy Mbed TLS functions for hash computation.
+  * Implemented IPv4 Address Conflict Detection, according to RFC 5227.
+  * Added :c:func:`net_ipv4_is_private_addr` API function.
+  * IPv4 netmask is now set individually for each address instead of being set
+    for the whole interface.
+  * Other minor fixes and improvements.
+
+* IPv6:
+
+  * Implemented IPv6 Privacy Extensions according to RFC 8981.
+  * Added :c:func:`net_ipv6_is_private_addr` API function.
+  * Implemented reachability hint for IPv6. Upper layers can use
+    c:func:`net_if_nbr_reachability_hint` to report Neigbor reachability and
+    avoid unnecessary Neighbor Discovery solicitations.
+  * Added :kconfig:option:`CONFIG_NET_IPV6_MTU` allowing to set custom IPv6 MTU.
+  * Added :kconfig:option:`CONFIG_NET_MCAST_ROUTE_MAX_IFACES` which allows to set
+    multiple interfaces for multicast forwarding entries.
+  * Added :kconfig:option:`CONFIG_NET_MCAST_ROUTE_MLD_REPORTS` which allows to
+    report multicast routes in MLDv2 reports.
+  * Fixed IPv6 hop limit handling for multicast packets.
+  * Improved IPv6 Neighbor Discovery test coverage.
+  * Fixed a bug, where Neighbor Advertisement packets reporting Duplicate address
+    detection conflict were dropped.
+  * Other minor fixes and improvements.
+
+* LwM2M:
+
+  * Added new API functions:
+
+    * :c:func:`lwm2m_set_bulk`
+    * :c:func:`lwm2m_rd_client_set_ctx`
+
+  * Added new ``offset`` parameter to :c:type:`lwm2m_engine_set_data_cb_t` callback type.
+    This affects post write and validate callbacks as well as some firmware callbacks.
+  * Fixed block context not being reset upon receiving block number 0 in block transfer.
+  * Fixed block size negotiation with the server in block transfer.
+  * Added :kconfig:option:`CONFIG_LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION` which
+    allows to force the client to always report object version.
+  * Block transfer is now possible with resource w/o registered callback.
+  * Fixed a bug, where an empty ACK sent from the registered callback would not
+    be sent immediately.
+  * Removed deprecated API functions and definitions.
+  * Other minor fixes and improvements.
 
 * mDNS:
 
   * Fixed an issue where the mDNS Responder did not work when the mDNS Resolver was also enabled.
     The mDNS Resolver and mDNS Responder can now be used simultaneously.
+
+* Misc:
+
+  * Implemented new networking POSIX APIs:
+
+    * :c:func:`if_nameindex`
+    * :c:func:`inet_ntoa`
+    * :c:func:`inet_addr`
+
+  * Improved overall networking API doxygen documentation.
+  * Converted TFTP library to use ``zsock_*`` API.
+  * Added SNTP :c:func:`sntp_simple_addr` API function to perform SNTP query
+    when the server IP address is already known.
+  * Added :kconfig:option:`CONFIG_NET_TC_THREAD_PRIO_CUSTOM` allowing to override
+    default traffic class threads priority.
+  * Fixed the IPv6 event handler initialization order in net config library.
+  * Reworked telnet shell backend to use sockets and socket services API.
+  * Fixed double dereference of IGMP packets.
+  * Moved from ``native_posix`` to ``native_sim`` support in various tests and
+    samples.
+  * Added support for copying user data in network buffers.
+  * Fixed cloning of zero sized network buffers.
+  * Added net_buf APIs to handle 40 bit data format.
+  * Added receive callback for dummy L2, applicable in certain use cases
+    (for example packet capture).
+  * Implemented pseudo interface, a.k.a "any" interface for packet capture use
+    case.
+  * Removed obsolete and unused ``tcp_first_msg`` :c:struct:`net_pkt` flag.
+  * Reworked LLMNR responder to use sockets and socket services API.
+  * Added new :zephyr:code-sample:`secure-mqtt-sensor-actuator` sample.
+  * Added support for partial L3 and L4 checksum offloading.
+  * Updated :zephyr:code-sample:`mqtt-azure` with new CA certificates, the current
+    on expires soon.
+
+* MQTT:
+
+  * Added ALPN support for MQTT TLS backend.
+  * Added user data field in :c:struct:`mqtt_client` context structure.
+
+* Network Interface:
+
+  * Added new API functions:
+
+    * :c:func:`net_if_ipv4_maddr_foreach`
+    * :c:func:`net_if_ipv6_maddr_foreach`
+
+  * Improved debug logging in the network interface code.
+  * Added reference counter to the :c:struct:`net_if_addr` structure.
+  * Fixed IPv6 DAD and MLDv2 operation when interface goes up.
+  * Other minor fixes.
+
+* OpenThread
+
+ * Removed deprecated ``openthread_set_state_changed_cb()`` function.
+ * Added implementation of BLE TCAT advertisement API.
+
+* PPP
+
+  * Removed deprecated ``gsm_modem`` driver and sample.
+  * Optimized memory allocation in PPP driver.
+  * Misc improvements in the :zephyr:code-sample:`cellular-modem` sample
+
+* Shell:
+
+  * Added ``net ipv4 gateway`` command to set IPv4 gateway address.
+  * Added argument validation in network shell macros.
+  * Fixed net_mgmt sockets information printout.
+  * Reworked VLAN information printout.
+  * Added option to set random MAC address with ``net iface set_mac`` command.
+  * Added multicast join status when printing multicast address information.
+
+* Syslog:
+
+  * Added new API functions:
+
+    * :c:func:`log_backend_net_set_ip` to initialize syslog net backend with IP
+      address directly.
+    * :c:func:`log_backend_net_start` to facilitate syslog net backend activation.
+
+  * Added structured logging support to syslog net backend.
+  * Added TCP support to syslog net backend.
+
+* TCP:
+
+  * Fixed possible deadlock when accepting new TCP connection.
+  * Fixed ACK number verification during connection teardown.
+  * Fixed a bug, where data bytes included in FIN packet were ignored.
+  * Fixed a possible TCP context leak in case initial SYN packet transmission failed.
+  * Deprecated ``CONFIG_NET_TCP_ACK_TIMEOUT`` as it was redundant with other configs.
+  * Improved debug logs, so that they're easier to follow under heavy load.
+  * ISN generation now uses SHA-256 instead of MD5. Moreover it now relies on PSA APIs
+    instead of legacy Mbed TLS functions for hash computation.
+
+* Websocket:
+
+  * Added new Websocket APIs:
+
+    * :c:func:`websocket_register`
+    * :c:func:`websocket_unregister`
+
+  * Converted Websocket library to use ``zsock_*`` API.
+  * Added Object Core support to Websocket sockets.
+
+* zperf:
+
+  * Fixed ``IP_TOS`` and ``IPV6_TCLASS`` options handling in zperf.
+  * Fixed throughput calculation during long zperf sessions.
+  * Fixed error on TCP upload session end in case multicast IP address was used.
+  * Fixed a bug, where IPv6 socket was bound with IPv4 address, giving error.
+  * Added an option to specify the network interface to use during zperf sessions.
+  * Added a new ``ZPERF_SESSION_PERIODIC_RESULT`` event for periodic updates
+    during TCP upload sessions.
+  * Fixed possible socket leak in case of errors during zperf session.
 
 USB
 ***
