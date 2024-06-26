@@ -12,4 +12,4 @@ ExternalZephyrProject_Add(
     BOARD ${SB_CONFIG_RPMSG_REMOTE_BOARD}
   )
 
-add_dependencies(rpmsg_service rpmsg_service_remote)
+add_dependencies(${DEFAULT_IMAGE} rpmsg_service_remote)
