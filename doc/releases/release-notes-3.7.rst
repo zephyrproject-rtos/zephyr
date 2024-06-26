@@ -841,6 +841,11 @@ Drivers and Sensors
 
 * MDIO
 
+  * Made the bus_enable and bus_disable functions optional for drivers to implement,
+    and removed empty implementation from many drivers.
+  * Added NXP ENET QOS MDIO controller driver.
+  * Fixed but with NXP ENET MDIO driver blocking the system workqueue.
+  * :kconfig:option:`CONFIG_MDIO_NXP_ENET_TIMEOUT` units change to microseconds.
   * Added support for STM32 MDIO controller driver.
 
 * MFD
