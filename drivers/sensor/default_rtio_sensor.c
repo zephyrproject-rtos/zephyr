@@ -423,6 +423,30 @@ static int decode_q31(const struct sensor_data_generic_header *header, const q31
 	return 1;
 }
 
+static int decode_prox(const struct sensor_data_generic_header *header, const q31_t *values,
+		       struct sensor_byte_data *data_out, enum sensor_channel channel,
+		       size_t channel_idx)
+{
+	int rc;
+	q31_t q;
+
+	data_out->header.base_timestamp_ns = header->timestamp_ns;
+	data_out->header.reading_count = 1;
+	data_out->readings[0].timestamp_delta = 0;
+	rc = get_q31_value(header, values, channel, channel_idx, &q);
+	if (rc < 0) {
+		return rc;
+	}
+	if (header->shift == 0) {
+		data_out->readings[0].is_near = 0;
+	} else if (header->shift == 1) {
+		data_out->readings[0].is_near = q == 0x3fffffff;
+	} else {
+		data_out->readings[0].is_near = q / (1 << (31 - header->shift)) == 1;
+	}
+	return 1;
+}
+
 /**
  * @brief Decode up to N samples from the buffer
  *
@@ -489,6 +513,9 @@ static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_POS_DX,
 					  SENSOR_CHAN_POS_DY, SENSOR_CHAN_POS_DZ,
 					  chan_spec.chan_idx);
+		break;
+	case SENSOR_CHAN_PROX:
+		count = decode_prox(header, q, data_out, channel, channel_idx);
 		break;
 	default:
 		count = decode_q31(header, q, data_out, chan_spec);
