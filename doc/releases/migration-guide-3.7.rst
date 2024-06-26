@@ -238,6 +238,27 @@ Device Drivers and Devicetree
         };
     };
 
+* The driver for :dtcompatible:`invensense,icm42688` now correctly supports device
+  tree configuration(:github:`74267`). Prior devicetrees may have tried to use
+  the bindings to set sample rate and scale for the accel/gyro without any
+  effect. The devicetree usage should now use the provided defines and include
+  file along with new bindings which take these values.
+
+  For example:
+
+  .. code-block:: devicetree
+
+    #include <zephyr/dt-bindings/sensor/icm42688.h>
+
+    icm42688: icm42688@0 {
+        accel-pwr-mode = <ICM42688_ACCEL_LN>;
+        accel-fs = <ICM42688_ACCEL_FS_16G>;
+        accel-odr = <ICM42688_ACCEL_ODR_2000>;
+        gyro-pwr-mode= <ICM42688_GYRO_LN>;
+        gyro-fs = <ICM42688_GYRO_FS_2000>;
+        gyro-odr = <ICM42688_GYRO_ODR_2000>;
+    };
+
 * `st,lis2mdl` property `spi-full-duplex` changed to `duplex =
   SPI_FULL_DUPLEX`. Full duplex is now the default.
 
