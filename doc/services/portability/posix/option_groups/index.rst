@@ -564,13 +564,13 @@ This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
    :header: API, Supported
    :widths: 50,10
 
-    flockfile(),
-    ftrylockfile(),
-    funlockfile(),
-    getc_unlocked(),
-    getchar_unlocked(),
-    putc_unlocked(),
-    putchar_unlocked(),
+    flockfile(), yes
+    ftrylockfile(), yes
+    funlockfile(), yes
+    getc_unlocked(), yes :ref:`†<posix_undefined_behaviour>`
+    getchar_unlocked(), yes :ref:`†<posix_undefined_behaviour>`
+    putc_unlocked(), yes
+    putchar_unlocked(), yes
 
 .. _posix_option_group_memory_protection:
 
@@ -901,11 +901,11 @@ _POSIX_THREAD_SAFE_FUNCTIONS
 
     asctime_r(),
     ctime_r(),
-    flockfile(),
-    ftrylockfile(),
-    funlockfile(),
-    getc_unlocked(),
-    getchar_unlocked(),
+    flockfile(), yes
+    ftrylockfile(), yes
+    funlockfile(), yes
+    getc_unlocked(), yes :ref:`†<posix_undefined_behaviour>`
+    getchar_unlocked(), yes :ref:`†<posix_undefined_behaviour>`
     getgrgid_r(),
     getgrnam_r(),
     getpwnam_r(),

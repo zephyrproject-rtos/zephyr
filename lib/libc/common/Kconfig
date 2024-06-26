@@ -82,3 +82,5 @@ config COMMON_LIBC_THRD
 	default y
 	help
 	  Common implementation of C11 <threads.h> API.
+
+rsource "source/Kconfig"

@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+config COMMON_LIBC_STDIO
+	bool
+	help
+	  common function implementation in stdio.h
+
+config COMMON_LIBC_GETC_UNLOCKED
+	bool
+	select COMMON_LIBC_STDIO
+	help
+	  common implementation of getc_unlocked() & getchar_unlocked().
+
+config COMMON_LIBC_PUTC_UNLOCKED
+	bool
+	select COMMON_LIBC_STDIO
+	help
+	  common implementation of putc_unlocked() & putchar_unlocked().
