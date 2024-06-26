@@ -37,7 +37,10 @@ def do_analysis(test, stats, stats_count, config, sys_clock_hw_cycles_per_sec):
     max_bound = (test_period + period_max_drift * test_period +
                  expected_period_drift) / 1_000_000
 
+    cyc_us = 1000000 / sys_clock_hw_cycles_per_sec
     max_stddev = int(config['TIMER_TEST_MAX_STDDEV']) / 1_000_000
+    # Max STDDEV cannot be lower than clock single cycle
+    max_stddev = max(cyc_us, max_stddev)
 
     max_drift_ppm = int(config['TIMER_EXTERNAL_TEST_MAX_DRIFT_PPM'])
     time_diff = stats['total_time'] - seconds - expected_total_drift
@@ -62,13 +65,13 @@ def do_analysis(test, stats, stats_count, config, sys_clock_hw_cycles_per_sec):
                 f', "min_bound_us":{min_bound * 1_000_000:.6f}'
                 f', "max_bound_us":{max_bound * 1_000_000:.6f}'
                 f', "expected_period_cycles":{expected_period:.0f}'
+                f', "MAX_STD_DEV":{max_stddev:.6f}'
                 f', "sys_clock_hw_cycles_per_sec":{sys_clock_hw_cycles_per_sec}, ' +
                 ', '.join(['"CONFIG_{}":{}'.format(k, str(config[k]).rstrip()) for k in [
                                             'SYS_CLOCK_HW_CYCLES_PER_SEC',
                                             'SYS_CLOCK_TICKS_PER_SEC',
                                             'TIMER_TEST_PERIOD',
                                             'TIMER_TEST_SAMPLES',
-                                            'TIMER_TEST_MAX_STDDEV',
                                             'TIMER_EXTERNAL_TEST_PERIOD_MAX_DRIFT_PPM',
                                             'TIMER_EXTERNAL_TEST_MAX_DRIFT_PPM'
                                                                                  ]
