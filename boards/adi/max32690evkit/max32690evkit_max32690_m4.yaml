@@ -12,5 +12,6 @@ supported:
   - serial
   - spi
   - i2c
+  - 1w
 ram: 1024
 flash: 3072
