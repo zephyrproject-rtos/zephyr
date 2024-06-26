@@ -16,5 +16,6 @@ supported:
   - spi
   - trng
   - counter
+  - w1
 ram: 1024
 flash: 3072
