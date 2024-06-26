@@ -654,3 +654,39 @@ void sys_trace_net_recv_data_exit(struct net_if *iface, struct net_pkt *pkt, int
 				   (uint32_t)(uintptr_t)pkt,
 				   (int32_t)ret);
 }
+
+void sys_trace_net_send_data_enter(struct net_pkt *pkt)
+{
+	struct net_if *iface;
+	int ifindex;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+	}
+
+	ctf_top_net_send_data_enter((int32_t)ifindex,
+				    (uint32_t)(uintptr_t)iface,
+				    (uint32_t)(uintptr_t)pkt,
+				    (uint32_t)net_pkt_get_len(pkt));
+}
+
+void sys_trace_net_send_data_exit(struct net_pkt *pkt, int ret)
+{
+	struct net_if *iface;
+	int ifindex;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+	}
+
+	ctf_top_net_send_data_exit((int32_t)ifindex,
+				   (uint32_t)(uintptr_t)iface,
+				   (uint32_t)(uintptr_t)pkt,
+				   (int32_t)ret);
+}
