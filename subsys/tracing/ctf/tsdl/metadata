@@ -729,3 +729,25 @@ event {
 		int32_t result;
 	};
 };
+
+event {
+	name = net_send_data_enter;
+	id = 0x5E;
+	fields := struct {
+		int32_t if_index;
+		uint32_t iface;
+		uint32_t pkt;
+		uint32_t pkt_len;
+	};
+};
+
+event {
+	name = net_send_data_exit;
+	id = 0x5F;
+	fields := struct {
+		int32_t if_index;
+		uint32_t iface;
+		uint32_t pkt;
+		int32_t result;
+	};
+};

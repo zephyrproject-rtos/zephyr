@@ -573,12 +573,18 @@ void sys_trace_socket_socketpair_exit(int sock_A, int sock_B, int ret);
 	sys_trace_net_recv_data_enter(iface, pkt)
 #define sys_port_trace_net_recv_data_exit(iface, pkt, ret)	\
 	sys_trace_net_recv_data_exit(iface, pkt, ret)
+#define sys_port_trace_net_send_data_enter(pkt)			\
+	sys_trace_net_send_data_enter(pkt)
+#define sys_port_trace_net_send_data_exit(pkt, ret)		\
+	sys_trace_net_send_data_exit(pkt, ret)
 
 struct net_if;
 struct net_pkt;
 
 void sys_trace_net_recv_data_enter(struct net_if *iface, struct net_pkt *pkt);
 void sys_trace_net_recv_data_exit(struct net_if *iface, struct net_pkt *pkt, int ret);
+void sys_trace_net_send_data_enter(struct net_pkt *pkt);
+void sys_trace_net_send_data_exit(struct net_pkt *pkt, int ret);
 
 #ifdef __cplusplus
 }

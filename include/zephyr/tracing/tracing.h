@@ -2049,6 +2049,19 @@
  */
 #define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
 
+/**
+ * @brief Trace network data send
+ * @param pkt Network packet to send
+ */
+#define sys_port_trace_net_send_data_enter(pkt)
+
+/**
+ * @brief Trace network data send attempt
+ * @param pkt Received network packet
+ * @param ret Return value
+ */
+#define sys_port_trace_net_send_data_exit(pkt, ret)
+
 /** @} */ /* end of subsys_tracing_apis_net */
 
 /**

@@ -734,6 +734,8 @@ void sys_trace_k_event_init(struct k_event *event);
 
 #define sys_port_trace_net_recv_data_enter(iface, pkt)
 #define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
+#define sys_port_trace_net_send_data_enter(pkt)
+#define sys_port_trace_net_send_data_exit(pkt, ret)
 
 #define sys_trace_sys_init_enter(...)
 #define sys_trace_sys_init_exit(...)
