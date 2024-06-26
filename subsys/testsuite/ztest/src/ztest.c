@@ -30,9 +30,15 @@ static bool failed_expectation;
 #include <stdlib.h>
 #include <time.h>
 #include <zephyr/random/random.h>
-
+#ifndef CONFIG_ZTEST_REPEAT
 #define NUM_ITER_PER_SUITE CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
 #define NUM_ITER_PER_TEST  CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+#endif
+#endif /* CONFIG_ZTEST_SHUFFLE */
+
+#ifdef CONFIG_ZTEST_REPEAT
+#define NUM_ITER_PER_SUITE CONFIG_ZTEST_SUITE_REPEAT_COUNT
+#define NUM_ITER_PER_TEST  CONFIG_ZTEST_TEST_REPEAT_COUNT
 #else
 #define NUM_ITER_PER_SUITE 1
 #define NUM_ITER_PER_TEST  1
