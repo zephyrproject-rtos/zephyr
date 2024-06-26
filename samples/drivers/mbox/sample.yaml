@@ -24,13 +24,12 @@ tests:
         - "Ping \\(on channel 1\\)"
         - "Pong \\(on channel 1\\)"
 
-  sample.drivers.mbox.nrf54h20_vevif:
+  sample.drivers.mbox.nrf54h20_app_ppr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      FILE_SUFFIX=vevif
       mbox_SNIPPET=nordic-ppr
     sysbuild: true
     harness: console
@@ -38,23 +37,22 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Ping \\(on channel 4\\)"
+        - "Ping \\(on channel 15\\)"
+        - "Pong \\(on channel 18\\)"
 
-  sample.drivers.mbox.nrf54h20_bellboard:
+  sample.drivers.mbox.nrf54h20_rad_app:
     platform_allow:
-      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
     integration_platforms:
-      - nrf54h20dk/nrf54h20/cpuapp
-    extra_args:
-      FILE_SUFFIX=bellboard
-      mbox_SNIPPET=nordic-ppr
+      - nrf54h20dk/nrf54h20/cpurad
     sysbuild: true
     harness: console
     harness_config:
       type: multi_line
       ordered: false
       regex:
-        - "Pong \\(on channel 0\\)"
+        - "Ping \\(on channel 18\\)"
+        - "Pong \\(on channel 12\\)"
 
   sample.drivers.mbox.simu:
     platform_allow:
