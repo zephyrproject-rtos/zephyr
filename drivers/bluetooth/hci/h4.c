@@ -32,8 +32,22 @@ LOG_MODULE_REGISTER(bt_driver);
 
 #define DT_DRV_COMPAT zephyr_bt_hci_uart
 
-/* We only care about `num_reports` and `evt_type`. */
-#define EXT_ADV_HDR_SIZE offsetof(struct bt_hci_evt_le_ext_advertising_report, adv_info[0].addr)
+union h4_hdr {
+	struct {
+		struct bt_hci_evt_hdr evt;
+		struct bt_hci_evt_le_meta_event meta_evt;
+
+		/**
+		 * We only care about the `num_reports` and `evt_type` fields
+		 * of extended advertising event.
+		 */
+		uint8_t le_ext_adv_hdr[offsetof(struct bt_hci_evt_le_ext_advertising_report,
+				       adv_info[0].addr)];
+	} __packed;
+
+	struct bt_hci_acl_hdr acl;
+	struct bt_hci_iso_hdr iso;
+} __packed;
 
 struct h4_data {
 	struct {
@@ -50,10 +64,8 @@ struct h4_data {
 
 		uint8_t         type;
 		union {
-			struct bt_hci_evt_hdr evt;
-			struct bt_hci_acl_hdr acl;
-			struct bt_hci_iso_hdr iso;
-			uint8_t hdr[5];	/* Enough space for extended advertising header. */
+			union h4_hdr hdr;
+			uint8_t      hdr_raw[sizeof(union h4_hdr)];
 		};
 	} rx;
 
@@ -87,16 +99,16 @@ static inline void h4_get_type(const struct device *dev)
 
 	switch (h4->rx.type) {
 	case BT_HCI_H4_EVT:
-		h4->rx.remaining = sizeof(h4->rx.evt);
+		h4->rx.remaining = sizeof(h4->rx.hdr.evt);
 		h4->rx.hdr_len = h4->rx.remaining;
 		break;
 	case BT_HCI_H4_ACL:
-		h4->rx.remaining = sizeof(h4->rx.acl);
+		h4->rx.remaining = sizeof(h4->rx.hdr.acl);
 		h4->rx.hdr_len = h4->rx.remaining;
 		break;
 	case BT_HCI_H4_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO)) {
-			h4->rx.remaining = sizeof(h4->rx.iso);
+			h4->rx.remaining = sizeof(h4->rx.hdr.iso);
 			h4->rx.hdr_len = h4->rx.remaining;
 			break;
 		}
@@ -114,7 +126,7 @@ static void h4_read_hdr(const struct device *dev)
 	int bytes_read = h4->rx.hdr_len - h4->rx.remaining;
 	int ret;
 
-	ret = uart_fifo_read(cfg->uart, h4->rx.hdr + bytes_read, h4->rx.remaining);
+	ret = uart_fifo_read(cfg->uart, h4->rx.hdr_raw + bytes_read, h4->rx.remaining);
 	if (unlikely(ret < 0)) {
 		LOG_ERR("Unable to read from UART (ret %d)", ret);
 	} else {
@@ -129,7 +141,7 @@ static inline void get_acl_hdr(const struct device *dev)
 	h4_read_hdr(dev);
 
 	if (!h4->rx.remaining) {
-		struct bt_hci_acl_hdr *hdr = &h4->rx.acl;
+		struct bt_hci_acl_hdr *hdr = &h4->rx.hdr.acl;
 
 		h4->rx.remaining = sys_le16_to_cpu(hdr->len);
 		LOG_DBG("Got ACL header. Payload %u bytes", h4->rx.remaining);
@@ -144,7 +156,7 @@ static inline void get_iso_hdr(const struct device *dev)
 	h4_read_hdr(dev);
 
 	if (!h4->rx.remaining) {
-		struct bt_hci_iso_hdr *hdr = &h4->rx.iso;
+		struct bt_hci_iso_hdr *hdr = &h4->rx.hdr.iso;
 
 		h4->rx.remaining = bt_iso_hdr_len(sys_le16_to_cpu(hdr->len));
 		LOG_DBG("Got ISO header. Payload %u bytes", h4->rx.remaining);
@@ -156,15 +168,16 @@ static inline void get_evt_hdr(const struct device *dev)
 {
 	struct h4_data *h4 = dev->data;
 
-	struct bt_hci_evt_hdr *hdr = &h4->rx.evt;
+	struct bt_hci_evt_hdr *hdr = &h4->rx.hdr.evt;
 
 	h4_read_hdr(dev);
 
 	if (h4->rx.hdr_len == sizeof(*hdr) && h4->rx.remaining < sizeof(*hdr)) {
-		switch (h4->rx.evt.evt) {
+		switch (h4->rx.hdr.evt.evt) {
 		case BT_HCI_EVT_LE_META_EVENT:
-			h4->rx.remaining++;
-			h4->rx.hdr_len++;
+			/* Let's read meta event. */
+			h4->rx.remaining += sizeof(h4->rx.hdr.meta_evt);
+			h4->rx.hdr_len   += sizeof(h4->rx.hdr.meta_evt);
 			break;
 #if defined(CONFIG_BT_CLASSIC)
 		case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
@@ -176,23 +189,22 @@ static inline void get_evt_hdr(const struct device *dev)
 	}
 
 	if (!h4->rx.remaining) {
-		if (h4->rx.evt.evt == BT_HCI_EVT_LE_META_EVENT) {
-			uint8_t subevt_type = h4->rx.hdr[sizeof(*hdr)];
-
-			if (subevt_type == BT_HCI_EVT_LE_ADVERTISING_REPORT) {
+		if (h4->rx.hdr.evt.evt == BT_HCI_EVT_LE_META_EVENT) {
+			if (h4->rx.hdr.meta_evt.subevent == BT_HCI_EVT_LE_ADVERTISING_REPORT) {
 				LOG_DBG("Marking adv report as discardable");
 				h4->rx.discardable = true;
-			} else if (subevt_type == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT) {
+			} else if (h4->rx.hdr.meta_evt.subevent ==
+					BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT) {
 				if (h4->rx.hdr_len == sizeof(*hdr)) {
-					h4->rx.hdr_len  += EXT_ADV_HDR_SIZE;
-					h4->rx.remaining = EXT_ADV_HDR_SIZE;
+					h4->rx.hdr_len  += sizeof(h4->rx.hdr.le_ext_adv_hdr);
+					h4->rx.remaining = sizeof(h4->rx.hdr.le_ext_adv_hdr);
 
 					/* Let's read more for extended advertising header. */
 					return;
 				}
 
 				const struct bt_hci_evt_le_ext_advertising_report *ext_adv
-							= (void *)&h4->rx.hdr[sizeof(*hdr) + 1];
+							  = (void *)h4->rx.hdr.le_ext_adv_hdr;
 
 				/* For extended advertising with legacy, use discardable */
 				if ((ext_adv->num_reports == 1) &&
@@ -213,7 +225,7 @@ static inline void get_evt_hdr(const struct device *dev)
 
 static inline void copy_hdr(struct h4_data *h4)
 {
-	net_buf_add_mem(h4->rx.buf, h4->rx.hdr, h4->rx.hdr_len);
+	net_buf_add_mem(h4->rx.buf, h4->rx.hdr_raw, h4->rx.hdr_len);
 }
 
 static void reset_rx(struct h4_data *h4)
@@ -227,11 +239,11 @@ static void reset_rx(struct h4_data *h4)
 
 static struct net_buf *get_rx(struct h4_data *h4, k_timeout_t timeout)
 {
-	LOG_DBG("type 0x%02x, evt 0x%02x", h4->rx.type, h4->rx.evt.evt);
+	LOG_DBG("type 0x%02x, evt 0x%02x", h4->rx.type, h4->rx.hdr.evt.evt);
 
 	switch (h4->rx.type) {
 	case BT_HCI_H4_EVT:
-		return bt_buf_get_evt(h4->rx.evt.evt, h4->rx.discardable, timeout);
+		return bt_buf_get_evt(h4->rx.hdr.evt.evt, h4->rx.discardable, timeout);
 	case BT_HCI_H4_ACL:
 		return bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
 	case BT_HCI_H4_ISO:
@@ -323,7 +335,7 @@ static inline void read_payload(const struct device *dev)
 		h4->rx.buf = get_rx(h4, K_NO_WAIT);
 		if (!h4->rx.buf) {
 			if (h4->rx.discardable) {
-				LOG_WRN("Discarding event 0x%02x", h4->rx.evt.evt);
+				LOG_WRN("Discarding event 0x%02x", h4->rx.hdr.evt.evt);
 				h4->rx.discard = h4->rx.remaining;
 				reset_rx(h4);
 				return;
