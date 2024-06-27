@@ -548,6 +548,12 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'c':
 			channel = strtol(state->optarg, &endptr, 10);
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+			if (iface_mode == WIFI_MODE_AP && channel == 0) {
+				params->channel = channel;
+				break;
+			}
+#endif
 			for (band = 0; band < ARRAY_SIZE(all_bands); band++) {
 				offset += snprintf(bands_str + offset,
 						   sizeof(bands_str) - offset,
@@ -658,6 +664,30 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		PR_ERROR("Channel not provided\n");
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	if (iface_mode == WIFI_MODE_AP) {
+		if (params->channel == 0 && params->band == WIFI_FREQ_BAND_UNKNOWN) {
+			PR_ERROR("Band not provided when channel is 0\n");
+			return -EINVAL;
+		}
+
+		if (params->channel > 0 && params->channel <= 14 &&
+		    (params->band != WIFI_FREQ_BAND_2_4_GHZ &&
+		     params->band != WIFI_FREQ_BAND_UNKNOWN)) {
+			PR_ERROR("Band and channel mismatch\n");
+			return -EINVAL;
+		}
+
+		if (params->channel >= 36 &&
+		    (params->band != WIFI_FREQ_BAND_5_GHZ &&
+		     params->band != WIFI_FREQ_BAND_UNKNOWN)) {
+			PR_ERROR("Band and channel mismatch\n");
+			return -EINVAL;
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -1437,7 +1467,11 @@ static int cmd_wifi_ap_stations(const struct shell *sh, size_t argc,
 static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	struct net_if *iface = net_if_get_wifi_sap();
+#else
 	struct net_if *iface = net_if_get_first_wifi();
+#endif
 	uint8_t mac[6];
 	int ret;
 
