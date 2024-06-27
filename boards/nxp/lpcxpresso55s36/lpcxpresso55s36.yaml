@@ -19,4 +19,5 @@ supported:
   - gpio
   - pwm
   - dac
+  - usb_device
 vendor: nxp
