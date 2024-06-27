@@ -266,6 +266,12 @@ Device Drivers and Devicetree
 * `st,lis2mdl` property `spi-full-duplex` changed to `duplex =
   SPI_FULL_DUPLEX`. Full duplex is now the default.
 
+* The DT property ``nxp,reference-supply`` of :dtcompatible:`nxp,lpc-lpadc` driver has
+  been removed, users should remove this property from their devicetree if it is present.
+  Added new phandle-array type DT property ``nxp,references``, the user can use this
+  property to specify the reference voltage and reference voltage value to be used by
+  the lpadc. (:github:`75005`)
+
 Analog-to-Digital Converter (ADC)
 =================================
 
