@@ -388,6 +388,9 @@ ZTEST_USER(canfd, test_set_timing_data_min)
 	err = can_set_timing_data(can_dev, can_get_timing_data_min(can_dev));
 	zassert_equal(err, 0, "failed to set minimum timing data parameters (err %d)", err);
 
+	err = can_set_bitrate_data(can_dev, CONFIG_CAN_DEFAULT_BITRATE_DATA);
+	zassert_equal(err, 0, "failed to restore default data bitrate");
+
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
@@ -434,6 +437,9 @@ ZTEST_USER(canfd, test_set_timing_data_max)
 
 	err = can_set_timing_data(can_dev, can_get_timing_data_max(can_dev));
 	zassert_equal(err, 0, "failed to set maximum timing data parameters (err %d)", err);
+
+	err = can_set_bitrate_data(can_dev, CONFIG_CAN_DEFAULT_BITRATE_DATA);
+	zassert_equal(err, 0, "failed to restore default data bitrate");
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
