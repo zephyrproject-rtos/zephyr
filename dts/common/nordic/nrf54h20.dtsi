@@ -1166,6 +1166,20 @@
 		};
 	};
 
+	cpuflpr_private: cpuflpr-private-bus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuflpr_clic: interrupt-controller@f0000000 {
+			compatible = "nordic,nrf-clic";
+			reg = <0xf0000000 0x3000>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			#address-cells = <1>;
+		};
+	};
+
 	temp_nrfs: temp {
 		compatible = "nordic,nrf-temp-nrfs";
 		status = "disabled";
