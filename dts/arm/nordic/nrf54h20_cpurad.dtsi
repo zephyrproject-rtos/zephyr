@@ -19,6 +19,7 @@ wdt011: &cpurad_wdt011 {};
 /delete-node/ &cpuapp_ppb;
 /delete-node/ &cpuapp_ram0;
 /delete-node/ &cpuppr;
+/delete-node/ &cpuflpr;
 
 / {
 	soc {
