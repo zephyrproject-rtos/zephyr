@@ -216,6 +216,10 @@
 		cpuppr_code_partition: partition@e4000 {
 			reg = <0xe4000 DT_SIZE_K(64)>;
 		};
+
+		cpuflpr_code_partition: partition@f4000 {
+			reg = <0xf4000 DT_SIZE_K(48)>;
+		};
 	};
 
 	cpuapp_rw_partitions: cpuapp-rw-partitions {
