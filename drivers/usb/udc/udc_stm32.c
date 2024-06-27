@@ -542,6 +542,16 @@ static int udc_stm32_disable(const struct device *dev)
 
 	irq_disable(DT_INST_IRQN(0));
 
+	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
+		LOG_ERR("Failed to disable control endpoint");
+		return -EIO;
+	}
+
+	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
+		LOG_ERR("Failed to disable control endpoint");
+		return -EIO;
+	}
+
 	status = HAL_PCD_Stop(&priv->pcd);
 	if (status != HAL_OK) {
 		LOG_ERR("PCD_Stop failed, %d", (int)status);
