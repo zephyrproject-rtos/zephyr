@@ -7,8 +7,8 @@
 
 #include "test_uart.h"
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_DT_DEFINED_NOCACHE)
-#define __NOCACHE	__attribute__ ((__section__(CONFIG_DT_DEFINED_NOCACHE_NAME)))
+#if defined(CONFIG_DCACHE) && defined(CONFIG_DT_NOCACHE_MEMORY)
+#define __NOCACHE	__attribute__ ((__section__(CONFIG_DT_NOCACHE_MEM_NAME)))
 #define NOCACHE_MEM 1
 #elif defined(CONFIG_DCACHE) && defined(CONFIG_NOCACHE_MEMORY)
 #define __NOCACHE	__nocache
