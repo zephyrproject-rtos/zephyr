@@ -220,7 +220,7 @@
 /**
  * @brief Utility macro to build nRF psels property entry.
  *
- * @param fun Pin function configuration (see NRF_FUNC_{name} macros).
+ * @param fun Pin function configuration (see NRF_FUN_{name} macros).
  * @param port Port (0 or 15).
  * @param pin Pin (0..31).
  */
