@@ -1335,7 +1335,10 @@ function(zephyr_linker_sources location)
     endif()
 
     # Find the relative path to the linker file from the include folder.
-    file(RELATIVE_PATH relpath ${ZEPHYR_BASE}/include ${path})
+    get_filename_component(ZEPHYR_BASE_REALPATH "${ZEPHYR_BASE}/include" REALPATH)
+    get_filename_component(PATH_REALPATH "${path}" REALPATH)
+
+    file(RELATIVE_PATH relpath "${ZEPHYR_BASE_REALPATH}" "${PATH_REALPATH}")
 
     # Create strings to be written into the file
     set (include_str "/* Sort key: \"${SORT_KEY}\" */#include \"${relpath}\"")
