@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - adc
   - gpio
   - uart
   - i2c

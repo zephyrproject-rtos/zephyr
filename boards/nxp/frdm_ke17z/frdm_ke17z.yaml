@@ -9,6 +9,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - adc
   - gpio
   - uart
 vendor: nxp
