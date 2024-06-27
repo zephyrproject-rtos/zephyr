@@ -34,6 +34,10 @@ user_sram_size = (user_sram_end - user_sram_org);
 #undef GROUP_ROM_LINK_IN
 #define GROUP_ROM_LINK_IN(vregion, lregion) > CACHED_REGION AT > lregion
 
+/* Make sure new sections have consistent alignment between input and output sections */
+#undef SECTION_PROLOGUE
+#define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
+
 /* TODO: add RTC support */
 #define RESERVE_RTC_MEM 0
 
