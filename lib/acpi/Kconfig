@@ -34,6 +34,11 @@ config ACPI_SHELL
 	help
 	  Enable commands for debugging ACPI using the built-in shell.
 
+config ACPI_POWEROFF
+	bool "Power off functionality by setting system to S5 power state"
+	help
+	  Enable support for system power off through ACPI.
+
 config ACPI_DEV_MAX
 	int "maximum child devices"
 	default 1000
