@@ -319,7 +319,7 @@
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x2000>;
 		};
 
-		bleif: bleif@5000c000 {
+		bleif: spi@5000c000 {
 			compatible = "ambiq,spi-bleif";
 			reg = <0x5000c000 0x414>;
 			interrupts = <12 1>;
@@ -330,6 +330,7 @@
 
 			bt_hci_apollo: bt-hci@0 {
 				compatible = "ambiq,bt-hci-spi";
+				spi-max-frequency = <DT_FREQ_M(6)>;
 				reg = <0>;
 			};
 		};
