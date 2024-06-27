@@ -25,4 +25,9 @@ config BT_HCI_VS
 
 endif # BT
 
+if MIPI_DBI_STM32_FMC
+	config MIPI_DBI_STM32_FMC_MEM_BARRIER
+	default n
+endif # MIPI_DBI_STM32_FMC
+
 endif # BOARD_STM32L562E_DK
