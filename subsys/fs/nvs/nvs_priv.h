@@ -45,12 +45,17 @@ struct nvs_ate {
 	uint16_t offset;	/* data offset within sector */
 	uint16_t len;	/* data len within sector */
 	uint8_t part;	/* part of a multipart data - future extension */
-	uint8_t crc8;	/* crc8 check of the entry */
+#ifdef CONFIG_NVS_ATE_CRC8
+	uint8_t crc;	/* CRC-8 check of the entry */
+#else
+	uint8_t crc[3];	/* CRC-24 check of the entry */
+#endif
 } __packed;
 
-BUILD_ASSERT(offsetof(struct nvs_ate, crc8) ==
-		 sizeof(struct nvs_ate) - sizeof(uint8_t),
-		 "crc8 must be the last member");
+
+BUILD_ASSERT(offsetof(struct nvs_ate, crc) ==
+		 sizeof(struct nvs_ate) - SIZEOF_FIELD(struct nvs_ate, crc),
+		 "crc must be the last member");
 
 #ifdef __cplusplus
 }

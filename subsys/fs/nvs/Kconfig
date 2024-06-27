@@ -37,6 +37,23 @@ config NVS_DATA_CRC
 	  The CRC-32 is transparently stored at the end of the data field,
 	  in the NVS data section, so 4 more bytes are needed per NVS element.
 
+choice NVS_ATE_CRC
+	bool "Allocation Table Entry CRC"
+	default NVS_ATE_CRC8
+
+config NVS_ATE_CRC8
+	bool "CRC-8"
+	help
+	  Need less storage room than CRC-24, but is far less robust.
+
+config NVS_ATE_CRC24
+	bool "CRC-24"
+	help
+	  Need 2 extra bytes of NVS storage for each ATE, but is far more
+	  robust than CRC-8.
+
+endchoice # NVS_ATE_CRC
+
 module = NVS
 module-str = nvs
 source "subsys/logging/Kconfig.template.log_config"
