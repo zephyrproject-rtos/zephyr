@@ -38,7 +38,7 @@ static int vevif_event_tx_send(const struct device *dev, uint32_t id, const stru
 	}
 
 	if (msg != NULL) {
-		return -ENOTSUP;
+		return -EMSGSIZE;
 	}
 
 	nrf_vpr_csr_vevif_events_trigger(BIT(id));
