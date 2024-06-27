@@ -37,3 +37,7 @@
 	execution-memory = <&cpuflpr_sram_code_data>;
 	source-memory = <&cpuflpr_code_partition>;
 };
+
+&cpuapp_vevif_tx {
+	status = "okay";
+};
