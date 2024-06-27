@@ -10,6 +10,7 @@ menuconfig SPI_AMBIQ
 	bool "AMBIQ SPI driver"
 	default y
 	depends on DT_HAS_AMBIQ_SPI_ENABLED
+	select GPIO
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_SPI
 	help
