@@ -1,0 +1,13 @@
+sample:
+  name: MBOX IPC negative test cases
+common:
+  tags: drivers mbox
+  harness: ztest
+tests:
+
+  tests.drivers.mbox_error_cases:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
