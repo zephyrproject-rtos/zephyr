@@ -85,6 +85,10 @@ struct bt_bap_unicast_group {
 	/* Unicast group fields */
 	uint8_t index;
 	bool allocated;
+	/* Used to determine whether any stream in this group has been started which will prevent
+	 * reconfiguring it
+	 */
+	bool has_been_connected;
 	struct bt_iso_cig *cig;
 	/* The ISO API for CIG creation requires an array of pointers to ISO channels */
 	struct bt_iso_chan *cis[UNICAST_GROUP_STREAM_CNT];
