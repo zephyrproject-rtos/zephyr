@@ -64,6 +64,19 @@ else() # Linux.x86_64
     check_set_compiler_property(APPEND PROPERTY fpsse2 "SHELL:-msse2 -mfpmath=sse")
     zephyr_compile_options($<TARGET_PROPERTY:compiler,fpsse2>)
     target_compile_options(native_simulator INTERFACE "$<TARGET_PROPERTY:compiler,fpsse2>")
+
+    # In some distributions the Linux kernel may be compiled without 32bit time_t support
+    # (for ex. Azure's "Ubuntu 24.04"), while its glibc remains defaulting time_t to 32bits
+    # for x86 32bit builds, resulting in a binary that can't interact with the kernel.
+    # Let's request the 64 bit time_t API implementation from glibc.
+    # https://sourceware.org/glibc/wiki/Y2038ProofnessDesign
+    if (CONFIG_ARCH_POSIX_64BIT_TIME_T)
+      if (CONFIG_NATIVE_APPLICATION)
+        zephyr_compile_options(-D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64)
+      else()
+        target_compile_options(native_simulator INTERFACE -D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64)
+      endif()
+    endif()
   endif ()
 endif()
 
