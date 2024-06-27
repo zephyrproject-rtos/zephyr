@@ -71,8 +71,8 @@ properties:
     required: true
     description: Offset value B to use if CONFIG_LPADC_DO_OFFSET_CALIBRATION is false
 
-  nxp,reference-supply:
-    type: phandles
+  nxp,references:
+    type: phandle-array
     description: References to required regulators which must be enabled for LPADC to function
 
   "#io-channel-cells":
