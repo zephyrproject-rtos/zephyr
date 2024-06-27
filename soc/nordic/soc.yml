@@ -32,6 +32,7 @@ family:
               - name: cpuapp
               - name: cpurad
               - name: cpuppr
+              - name: cpuflpr
       - name: nrf91
         socs:
           - name: nrf9131
