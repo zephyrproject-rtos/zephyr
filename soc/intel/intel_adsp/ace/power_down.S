@@ -60,6 +60,10 @@ power_down:
 	ipfl pfl_reg, 128
 	ipfl pfl_reg, 192
 
+	/*
+	 * This assumes a single HPSRAM segment although the code below is
+	 * generic and uses MAX_MEMORY_SEGMENTS for their number
+	 */
 	mov  pfl_reg, pu32_hpsram_mask
 	dpfl pfl_reg, 0
 	/* move some values to registries before switching off whole memory */
