@@ -8,6 +8,7 @@
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
+		address-width = <16>;
 		size = <1024>;
 	};
 };
@@ -17,6 +18,7 @@
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
+		address-width = <16>;
 		size = <1024>;
 	};
 };
