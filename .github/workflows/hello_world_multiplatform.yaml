@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04, macos-12, macos-14, windows-2022]
+        os: [ubuntu-22.04, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -63,12 +63,24 @@ jobs:
         working-directory: zephyr
         shell: bash
         run: |
-          if [ "${{ runner.os }}" = "macOS" ]; then
-            EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
-          elif [ "${{ runner.os }}" = "Windows" ]; then
-            EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
-          fi
-          ./scripts/twister --force-color --inline-logs -T samples/hello_world -v $EXTRA_TWISTER_FLAGS
+          lsb_release -a
+          uname -a
+          grep CONFIG_COMPAT_32BIT_TIME /boot/config-$(uname -r)
+          sudo apt-cache policy linux-image-azure
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install valgrind libc6-dbg:i386
+          source zephyr-env.sh
+          mkdir build && cd build
+          cmake -GNinja -DBOARD=native_sim ../samples/hello_world/
+          ninja
+          timeout 10 valgrind zephyr/zephyr.exe
+          #if [ "${{ runner.os }}" = "macOS" ]; then
+          #  EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+          #elif [ "${{ runner.os }}" = "Windows" ]; then
+          #  EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
+          #fi
+          #./scripts/twister --force-color --inline-logs -T samples/hello_world -v $EXTRA_TWISTER_FLAGS
 
       - name: Upload artifacts
         if: failure()

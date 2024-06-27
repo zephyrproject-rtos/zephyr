@@ -71,8 +71,10 @@ else() # Linux.x86_64
     # Let's request the 64 bit time_t API implementation from glibc.
     # https://sourceware.org/glibc/wiki/Y2038ProofnessDesign
     if (CONFIG_ARCH_POSIX_64BIT_TIME_T)
+      zephyr_compile_options(-D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64)
+      message(STATUS "TIME_BITS set to 64")
       if (CONFIG_NATIVE_APPLICATION)
-        zephyr_compile_options(-D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64)
+        
       else()
         target_compile_options(native_simulator INTERFACE -D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64)
       endif()
