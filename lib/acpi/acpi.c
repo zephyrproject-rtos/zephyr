@@ -14,6 +14,23 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ACPI, CONFIG_ACPI_LOG_LEVEL);
 
+#if defined(CONFIG_ACPI_POWEROFF)
+
+/* PM1_CNT register */
+#if (defined(CONFIG_BOARD_QEMU_X86_64) || defined(CONFIG_BOARD_QEMU_X86))
+#define PM1_CNT_SLP_TYP_S5 0x00 /* S5 SLP_TYP is 0 in QEMU */
+#elif defined(CONFIG_ACRN_COMMON)
+#define PM1_CNT_SLP_TYP_S5 0x05 /* S5 SLP_TYP is 5 in ACRN */
+#else
+#define PM1_CNT_SLP_TYP_S5 0x07 /* S5 SLP_TYP is 7 in other platforms*/
+#endif
+
+#define PM1_CNT_SLP_TYP_SHFT 0x0A /* SLP_TYP bits(10-12) in PM1_CNT */
+
+#define PM1_CNT_SLP_EN BIT(13) /* Sets SLP_EN bit13 */
+
+#endif /* CONFIG_ACPI_POWEROFF */
+
 static struct {
 	struct acpi_dev child_dev[CONFIG_ACPI_DEV_MAX];
 	int num_dev;
@@ -974,3 +991,34 @@ static int acpi_init(void)
 exit:
 	return status;
 }
+
+#if defined(CONFIG_ACPI_POWEROFF)
+
+int acpi_poweroff(void)
+{
+	ACPI_STATUS status;
+	uintptr_t pm1_cnt_addr;
+	uint32_t pm1_cnt;
+
+	if (!acpi.early_init) {
+		status = acpi_early_init();
+		if (status) {
+			LOG_ERR("ACPI early init failed");
+			return -ENODEV;
+		}
+	}
+
+	if (!AcpiGbl_FADT.Pm1aControlBlock) {
+		return -EINVAL;
+	}
+
+	pm1_cnt_addr = AcpiGbl_FADT.Pm1aControlBlock;
+
+	pm1_cnt = sys_in16(pm1_cnt_addr);
+	pm1_cnt |= ((PM1_CNT_SLP_TYP_S5 << PM1_CNT_SLP_TYP_SHFT) | PM1_CNT_SLP_EN);
+	sys_out16(pm1_cnt, pm1_cnt_addr);
+
+	return 0;
+}
+
+#endif /* CONFIG_ACPI_POWEROFF */
