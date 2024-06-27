@@ -8,6 +8,13 @@
 #include <nxp/kinetis/MKE17Z512VLL9-pinctrl.h>
 
 &pinctrl {
+	adc0_default: adc0_default {
+		group0 {
+			pinmux = <ADC0_SE0_PTE9>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 
 	/* Configures pin routing and optionally pin electrical features. */
 	lpuart2_default: lpuart2_default {
