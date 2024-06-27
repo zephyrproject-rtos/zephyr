@@ -104,9 +104,9 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x2f890000 0x10000>;
 
-			dma_fast_region: memory@8000 {
+			dma_fast_region: memory@c000 {
 				compatible = "zephyr,memory-region";
-				reg = <0x8000 DT_SIZE_K(16)>;
+				reg = <0xc000 DT_SIZE_K(16)>;
 				status = "disabled";
 				#memory-region-cells = <0>;
 				zephyr,memory-region = "DMA_RAM21";
