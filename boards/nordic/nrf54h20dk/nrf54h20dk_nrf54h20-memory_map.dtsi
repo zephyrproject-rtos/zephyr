@@ -210,11 +210,11 @@
 		#size-cells = <1>;
 
 		cpuapp_slot0_partition: partition@a6000 {
-			reg = <0xa6000 DT_SIZE_K(296)>;
+			reg = <0xa6000 DT_SIZE_K(248)>;
 		};
 
-		cpuppr_code_partition: partition@f0000 {
-			reg = <0xf0000 DT_SIZE_K(64)>;
+		cpuppr_code_partition: partition@e4000 {
+			reg = <0xe4000 DT_SIZE_K(64)>;
 		};
 	};
 
