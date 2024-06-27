@@ -32,7 +32,7 @@ static int ism330dhcx_freq_to_odr_val(uint16_t freq)
 	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(ism330dhcx_odr_map); i++) {
-		if (freq == ism330dhcx_odr_map[i]) {
+		if (freq <= ism330dhcx_odr_map[i]) {
 			return i;
 		}
 	}
