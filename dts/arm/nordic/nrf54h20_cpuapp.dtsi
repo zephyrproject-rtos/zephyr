@@ -15,6 +15,7 @@ wdt010: &cpuapp_wdt010 {};
 wdt011: &cpuapp_wdt011 {};
 
 /delete-node/ &cpuppr;
+/delete-node/ &cpuflpr;
 /delete-node/ &cpurad;
 /delete-node/ &cpurad_peripherals;
 /delete-node/ &cpurad_ppb;
