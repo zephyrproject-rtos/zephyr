@@ -19,6 +19,7 @@ tests:
     platform_allow:
       - mimxrt685_evk/mimxrt685s/cm33
       - lpcxpresso55s36
+      - frdm_mcxn947/mcxn947/cpu0
     harness_config:
       fixture: gpio_loopback
   drivers.regulator.voltage.rpi_pico_vreg:

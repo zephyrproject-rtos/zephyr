@@ -32,6 +32,7 @@ tests:
       - longan_nano
       - longan_nano/gd32vf103/lite
       - rd_rw612_bga
+      - frdm_mcxn947/mcxn947/cpu0
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840
