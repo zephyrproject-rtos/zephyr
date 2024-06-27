@@ -756,6 +756,22 @@ Bluetooth Host
   longer used in Zephyr 3.4.0 and later. Any references to this field should be removed. No further
   action is needed.
 
+* :c:macro:`BT_LE_ADV_PARAM` now returns a :code:`const` pointer.
+  Any place where the result is stored in a local variable such as
+  :code:`struct bt_le_adv_param *param = BT_LE_ADV_CONN;` will need to
+  be updated to :code:`const struct bt_le_adv_param *param = BT_LE_ADV_CONN;` or use it for
+  initialization like :code:`struct bt_le_adv_param param = *BT_LE_ADV_CONN;`
+
+  The change to :c:macro:`BT_LE_ADV_PARAM` also affects all of its derivatives, including but not
+  limited to:
+
+  * :c:macro:`BT_LE_ADV_CONN`
+  * :c:macro:`BT_LE_ADV_NCONN`
+  * :c:macro:`BT_LE_EXT_ADV_SCAN`
+  * :c:macro:`BT_LE_EXT_ADV_CODED_NCONN_NAME`
+
+  (:github:`75065`)
+
 Bluetooth Crypto
 ================
 
