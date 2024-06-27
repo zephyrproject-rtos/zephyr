@@ -68,6 +68,15 @@
 				nordic,tasks-mask = <0xfffffff0>;
 			};
 		};
+
+		cpuflpr: cpu@e {
+			compatible = "nordic,vpr";
+			reg = <14>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(320)>;
+			riscv,isa = "rv32emc";
+			nordic,bus-width = <64>;
+		};
 	};
 
 	reserved-memory {

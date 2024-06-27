@@ -19,6 +19,7 @@ cpusys_vevif: &cpusys_vevif_tx {};
 /delete-node/ &cpurad_peripherals;
 /delete-node/ &cpurad_ppb;
 /delete-node/ &cpurad_ram0;
+/delete-node/ &cpuflpr;
 
 / {
 	soc {
