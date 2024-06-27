@@ -183,7 +183,7 @@ static void cpu_idle_prepare_monitor_begin(void)
 static bool cpu_idle_prepare_monitor_end(void)
 {
 	/* The value stored is irrelevant. If any exception took place after
-	 * cpu_idle_prepare_monitor_begin, the the local monitor is cleared and
+	 * cpu_idle_prepare_monitor_begin, the local monitor is cleared and
 	 * the store fails returning 1.
 	 * See Arm v8-M Architecture Reference Manual:
 	 *   Chapter B9.2 The local monitors
@@ -265,7 +265,7 @@ void z_arm_on_enter_cpu_idle_prepare(void)
 					 */
 					rtc_pretick_cc_set_on_time = false;
 				} else {
-					/* The written rtc_pretick_cc is guaranteed to to trigger
+					/* The written rtc_pretick_cc is guaranteed to trigger
 					 * compare event.
 					 */
 					rtc_pretick_cc_set_on_time = true;

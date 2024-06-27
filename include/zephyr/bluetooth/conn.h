@@ -384,10 +384,6 @@ struct bt_security_info {
 	enum bt_security_flag flags;
 };
 
-/** Connection role (central or peripheral) */
-#define BT_CONN_ROLE_MASTER __DEPRECATED_MACRO BT_CONN_ROLE_CENTRAL
-#define BT_CONN_ROLE_SLAVE __DEPRECATED_MACRO BT_CONN_ROLE_PERIPHERAL
-
 /** Connection Info Structure */
 struct bt_conn_info {
 	/** Connection Type. */
@@ -901,7 +897,7 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
  *  This uses the Auto Connection Establishment procedure.
  *  The procedure will continue until a single connection is established or the
  *  procedure is stopped through @ref bt_conn_create_auto_stop.
- *  To establish connections to all devices in the the filter accept list the
+ *  To establish connections to all devices in the filter accept list the
  *  procedure should be started again in the connected callback after a
  *  new connection has been established.
  *

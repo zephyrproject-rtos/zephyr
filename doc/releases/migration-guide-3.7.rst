@@ -127,6 +127,14 @@ Trusted Firmware-M
 zcbor
 =====
 
+LVGL
+====
+
+* :kconfig:option:`CONFIG_LV_Z_POINTER_KSCAN` was removed, you need to convert your kscan based
+  driver to the input subsystem and use a :dtcompatible:`zephyr,lvgl-pointer-input` in your
+  devicetree instead. (:github:`73800`)
+
+
 Device Drivers and Devicetree
 *****************************
 
@@ -229,6 +237,9 @@ Device Drivers and Devicetree
             #pwm-cells = <2>;
         };
     };
+
+* `st,lis2mdl` property `spi-full-duplex` changed to `duplex =
+  SPI_FULL_DUPLEX`. Full duplex is now the default.
 
 Analog-to-Digital Converter (ADC)
 =================================

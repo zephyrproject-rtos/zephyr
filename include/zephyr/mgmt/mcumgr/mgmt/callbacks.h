@@ -137,7 +137,7 @@ enum smp_group_events {
 	/** Callback when a command is received, data is mgmt_evt_op_cmd_arg(). */
 	MGMT_EVT_OP_CMD_RECV			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SMP, 0),
 
-	/** Callback when a a status is updated, data is mgmt_evt_op_cmd_arg(). */
+	/** Callback when a status is updated, data is mgmt_evt_op_cmd_arg(). */
 	MGMT_EVT_OP_CMD_STATUS			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SMP, 1),
 
 	/** Callback when a command has been processed, data is mgmt_evt_op_cmd_arg(). */

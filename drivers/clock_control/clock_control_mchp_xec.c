@@ -267,7 +267,7 @@ static int periph_clk_src_using_pin(enum periph_clk32k_src src)
 /* MEC15xx uses the same 32KHz source for both PLL and Peripheral 32K clock domains.
  * We ignore the peripheral clock source.
  * If XTAL is selected (parallel) or single-ended the external 32KHz MUST stay on
- * even when when VTR goes off.
+ * even when VTR goes off.
  * If PIN(32KHZ_IN pin) as the external source, hardware can auto-switch to internal
  * silicon OSC if the signal on the 32KHZ_PIN goes away.
  * We ignore th
@@ -1090,7 +1090,7 @@ const struct xec_pcr_config pcr_xec_config = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &xec_clock_control_init,
+		    xec_clock_control_init,
 		    NULL,
 		    NULL, &pcr_xec_config,
 		    PRE_KERNEL_1,

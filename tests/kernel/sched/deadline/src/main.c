@@ -20,7 +20,7 @@ K_THREAD_STACK_ARRAY_DEFINE(worker_stacks, NUM_THREADS, STACK_SIZE);
 
 int thread_deadlines[NUM_THREADS];
 
-/* The number of worker threads that ran, and and array of their
+/* The number of worker threads that ran, and array of their
  * indices in execution order
  */
 int n_exec;

@@ -63,6 +63,18 @@ config SCHED_IPI_SUPPORTED
 	  thread to take an interrupt, which can be arbitrarily far in the
 	  future).
 
+config SCHED_IPI_CASCADE
+	bool "Use cascading IPIs to correct localized scheduling"
+	depends on SCHED_CPU_MASK && !SCHED_CPU_MASK_PIN_ONLY
+	default n
+	help
+	  Threads that are preempted by a local thread (a thread that is
+	  restricted by its CPU mask to execute on a subset of all CPUs) may
+	  trigger additional IPIs when the preempted thread is of higher
+	  priority than a currently executing thread on another CPU. Although
+	  these cascading IPIs will ensure that the system will settle upon a
+	  valid set of high priority threads, it comes at a performance cost.
+
 config TRACE_SCHED_IPI
 	bool "Test IPI"
 	help

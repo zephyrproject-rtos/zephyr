@@ -849,7 +849,7 @@ config BT_CTLR_ADV_ISO_STREAM_COUNT
 	range BT_CTLR_ADV_ISO_STREAM_MAX 64
 	default BT_ISO_MAX_CHAN
 	help
-	  Maximum Broadcast ISO Streams supported in the the Controller across
+	  Maximum Broadcast ISO Streams supported in the Controller across
 	  all Broadcast ISO groups.
 
 config BT_CTLR_ADV_ISO_PDU_LEN_MAX
@@ -882,7 +882,7 @@ config BT_CTLR_SYNC_ISO_STREAM_COUNT
 	range BT_CTLR_SYNC_ISO_STREAM_MAX 64
 	default BT_ISO_MAX_CHAN
 	help
-	  Maximum ISO Synchronized Receiver Streams supported in the the
+	  Maximum ISO Synchronized Receiver Streams supported in the
 	  Controller across all Broadcast ISO groups.
 
 config BT_CTLR_SYNC_ISO_PDU_LEN_MAX

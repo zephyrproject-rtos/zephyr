@@ -1515,6 +1515,8 @@ static const struct ethernet_api adin2111_port_api = {
 #define ADIN2111_STR(x)		#x
 #define ADIN2111_XSTR(x)	ADIN2111_STR(x)
 
+#define ADIN2111_DEF_BUF(name, size) static uint8_t __aligned(4) name[size]
+
 #define ADIN2111_MDIO_PHY_BY_ADDR(adin_n, phy_addr)						\
 	DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(adin_n, mdio), ethernet_phy_##phy_addr))
 
@@ -1538,7 +1540,12 @@ static const struct ethernet_api adin2111_port_api = {
 
 #define ADIN2111_SPI_OPERATION ((uint16_t)(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
 #define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)					\
-	static uint8_t __aligned(4) name##_buffer_##inst[CONFIG_ETH_ADIN2111_BUFFER_SIZE];	\
+	ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);		\
+	COND_CODE_1(DT_INST_PROP(inst, spi_oa),							\
+	(											\
+		ADIN2111_DEF_BUF(name##_oa_tx_buf_##inst, ADIN2111_OA_BUF_SZ);			\
+		ADIN2111_DEF_BUF(name##_oa_rx_buf_##inst, ADIN2111_OA_BUF_SZ);			\
+	), ())											\
 	static const struct adin2111_config name##_config_##inst = {				\
 		.id = dev_id,									\
 		.spi = SPI_DT_SPEC_INST_GET(inst, ADIN2111_SPI_OPERATION, 0),			\
@@ -1548,12 +1555,16 @@ static const struct ethernet_api adin2111_port_api = {
 	static struct adin2111_data name##_data_##inst = {					\
 		.ifaces_left_to_init = ifaces,							\
 		.port = {},									\
-		.offload_sem = Z_SEM_INITIALIZER(name##_data_##inst.offload_sem, 0, 1),         \
+		.offload_sem = Z_SEM_INITIALIZER(name##_data_##inst.offload_sem, 0, 1),		\
 		.lock = Z_MUTEX_INITIALIZER(name##_data_##inst.lock),				\
 		.buf = name##_buffer_##inst,							\
 		.oa = DT_INST_PROP(inst, spi_oa),						\
 		.oa_prot = DT_INST_PROP(inst, spi_oa_protection),				\
 		.oa_cps = 64,									\
+		.oa_tx_buf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),				\
+					 (name##_oa_tx_buf_##inst), (NULL)),			\
+		.oa_rx_buf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),				\
+					 (name##_oa_rx_buf_##inst), (NULL)),			\
 	};											\
 	/* adin */										\
 	DEVICE_DT_DEFINE(DT_DRV_INST(inst), adin2111_init, NULL,				\

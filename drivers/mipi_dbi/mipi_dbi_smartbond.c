@@ -77,7 +77,7 @@ struct mipi_dbi_smartbond_config {
 	lcdc_smartbond_bgcolor_cfg bgcolor_cfg;
 };
 
-/* Mark the device is is progress and so it's not allowed to enter the sleep state. */
+/* Mark the device is progress and so it's not allowed to enter the sleep state. */
 static inline void mipi_dbi_smartbond_pm_policy_state_lock_get(void)
 {
 	/*
@@ -509,7 +509,7 @@ static int mipi_dbi_smartbond_pm_action(const struct device *dev, enum pm_device
 
 static int mipi_dbi_smartbond_init(const struct device *dev)
 {
-	const struct mipi_dbi_smartbond_config *config = dev->config;
+	__unused const struct mipi_dbi_smartbond_config *config = dev->config;
 	struct mipi_dbi_smartbond_data *data = dev->data;
 	int ret;
 

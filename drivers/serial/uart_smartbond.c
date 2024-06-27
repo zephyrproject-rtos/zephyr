@@ -94,12 +94,6 @@ struct uart_smartbond_runtime_cfg {
 	uint8_t ier_reg_val;
 };
 
-enum uart_smartbond_pm_policy_state_flag {
-	UART_SMARTBOND_PM_POLICY_STATE_RX_FLAG,
-	UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG,
-	UART_SMARTBOND_PM_POLICY_STATE_FLAG_COUNT,
-};
-
 struct uart_smartbond_data {
 	struct uart_config current_config;
 	struct uart_smartbond_runtime_cfg runtime_cfg;
@@ -116,44 +110,38 @@ struct uart_smartbond_data {
 	struct gpio_callback rx_wake_cb;
 	int rx_wake_timeout;
 	struct k_work_delayable rx_timeout_work;
-
-	ATOMIC_DEFINE(pm_policy_state_flag, UART_SMARTBOND_PM_POLICY_STATE_FLAG_COUNT);
 #endif
 #endif
 };
 
 #ifdef CONFIG_PM_DEVICE
-static inline void uart_smartbond_pm_prevent_system_sleep(struct uart_smartbond_data *data,
-								int flag)
+static inline void uart_smartbond_pm_prevent_system_sleep(void)
 {
-	if (atomic_test_and_set_bit(data->pm_policy_state_flag, flag) == 0) {
-		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 
-static inline void uart_smartbond_pm_allow_system_sleep(struct uart_smartbond_data *data,
-								int flag)
+static inline void uart_smartbond_pm_allow_system_sleep(void)
 {
-	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, flag) == 1) {
-		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 
-static void uart_smartbond_pm_policy_state_lock_get(const struct device *dev, int flag)
+static void uart_smartbond_pm_policy_state_lock_get(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	pm_device_runtime_get(dev);
 #else
-	uart_smartbond_pm_prevent_system_sleep(dev->data, flag);
+	ARG_UNUSED(dev);
+	uart_smartbond_pm_prevent_system_sleep();
 #endif
 }
 
-static void uart_smartbond_pm_policy_state_lock_put(const struct device *dev, int flag)
+static void uart_smartbond_pm_policy_state_lock_put(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	pm_device_runtime_put(dev);
 #else
-	uart_smartbond_pm_allow_system_sleep(dev->data, flag);
+	ARG_UNUSED(dev);
+	uart_smartbond_pm_allow_system_sleep();
 #endif
 }
 
@@ -162,7 +150,7 @@ static void uart_smartbond_rx_refresh_timeout(struct k_work *work)
 	struct uart_smartbond_data *data = CONTAINER_OF(work, struct uart_smartbond_data,
 							rx_timeout_work.work);
 
-	uart_smartbond_pm_policy_state_lock_put(data->dev, UART_SMARTBOND_PM_POLICY_STATE_RX_FLAG);
+	uart_smartbond_pm_policy_state_lock_put(data->dev);
 }
 #endif
 
@@ -353,8 +341,7 @@ static void uart_smartbond_wake_handler(const struct device *gpio, struct gpio_c
 					   GPIO_INT_DISABLE);
 	/* Refresh console expired time */
 	if (data->rx_wake_timeout) {
-		uart_smartbond_pm_policy_state_lock_get(data->dev,
-							UART_SMARTBOND_PM_POLICY_STATE_RX_FLAG);
+		uart_smartbond_pm_policy_state_lock_get(data->dev);
 		k_work_reschedule(&data->rx_timeout_work, K_MSEC(data->rx_wake_timeout));
 	}
 }
@@ -367,11 +354,9 @@ static void uart_smartbond_dtr_handler(const struct device *gpio, struct gpio_ca
 	int pin = find_lsb_set(pins) - 1;
 
 	if (gpio_pin_get(gpio, pin) == 1) {
-		uart_smartbond_pm_policy_state_lock_put(data->dev,
-							UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG);
+		uart_smartbond_pm_policy_state_lock_put(data->dev);
 	} else {
-		uart_smartbond_pm_policy_state_lock_get(data->dev,
-							UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG);
+		uart_smartbond_pm_policy_state_lock_get(data->dev);
 	}
 }
 
@@ -420,8 +405,7 @@ static int uart_smartbond_init(const struct device *dev)
 							      GPIO_INT_TRIG_BOTH);
 			/* Check if DTR is already active (low), if so lock power state */
 			if (gpio_pin_get(config->dtr_gpio.port, config->dtr_gpio.pin) == 0) {
-				uart_smartbond_pm_policy_state_lock_get(dev,
-					UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG);
+				uart_smartbond_pm_policy_state_lock_get(dev);
 			}
 		}
 	}
@@ -717,8 +701,7 @@ static int uart_smartbond_pm_action(const struct device *dev,
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-		uart_smartbond_pm_prevent_system_sleep(dev->data,
-					UART_SMARTBOND_PM_POLICY_STATE_RX_FLAG);
+		uart_smartbond_pm_prevent_system_sleep();
 #endif
 		da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
 		apply_runtime_config(dev);
@@ -732,8 +715,7 @@ static int uart_smartbond_pm_action(const struct device *dev,
 							      GPIO_INT_TRIG_LOW);
 		}
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-		uart_smartbond_pm_allow_system_sleep(dev->data,
-					UART_SMARTBOND_PM_POLICY_STATE_RX_FLAG);
+		uart_smartbond_pm_allow_system_sleep();
 #endif
 		break;
 	default:

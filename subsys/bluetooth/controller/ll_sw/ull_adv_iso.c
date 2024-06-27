@@ -1159,7 +1159,7 @@ static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 		       (lll->sub_interval * lll->bn * lll->num_bis)) *
 		      lll->bn;
 
-		/* FIXME: Here we retrict to a maximum of BN Pre-Transmission
+		/* FIXME: Here we restrict to a maximum of BN Pre-Transmission
 		 * subevents per BIS
 		 */
 		ptc = MIN(ptc, lll->bn);

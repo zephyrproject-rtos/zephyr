@@ -11,6 +11,17 @@
 #ifndef ZEPHYR_MODEM_PIPELINK_
 #define ZEPHYR_MODEM_PIPELINK_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Modem pipelink
+ * @defgroup modem_pipelink Modem pipelink
+ * @ingroup modem
+ * @{
+ */
+
 /** Pipelink event */
 enum modem_pipelink_event {
 	/** Modem pipe has been connected and can be opened */
@@ -132,6 +143,8 @@ void modem_pipelink_notify_disconnected(struct modem_pipelink *link);
 
 /**
  * @brief Device driver instance variants of MODEM_PIPELINK_DT macros
+ * @name MODEM_PIPELINK_DT_INST macros
+ * @anchor MODEM_PIPELINK_DT_INST
  * @{
  */
 
@@ -145,5 +158,11 @@ void modem_pipelink_notify_disconnected(struct modem_pipelink *link);
 	MODEM_PIPELINK_DT_GET(DT_DRV_INST(inst), name)
 
 /** @} */
+
+/** @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_MODEM_PIPELINK_ */

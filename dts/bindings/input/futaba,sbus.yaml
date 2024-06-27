@@ -5,11 +5,11 @@ description: |
   SBUS input driver using
   This driver implements the SBUS protocol used on RC radio's
   to send out analogue joystick and switches output.
-  SBUS is an single-wire inverted serial protocol to either you need to
-  to the rx-invert feature of your serial driver or use an external signal inverter.
+  SBUS is an single-wire inverted serial protocol so either you need to use
+  the rx-invert feature of your serial driver or use an external signal inverter.
   The driver binds this to the Zephyr input system using INPUT_EV_CODES.
 
-  The following examples defines a a binding of 2 joysticks and a button using 5 channels.
+  The following examples defines a binding of 2 joysticks and a button using 5 channels.
 
   &lpuart6 {
     status = "okay";

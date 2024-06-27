@@ -33,7 +33,7 @@ psa_status_t att_get_iat(uint8_t *ch_buffer, uint32_t ch_sz,
 	size_t token_buf_size = ATT_MAX_TOKEN_SIZE;
 
 
-	/* Call with with bigger challenge object than allowed */
+	/* Call with bigger challenge object than allowed */
 
 	/*
 	 * First determine how large the token is on this system.

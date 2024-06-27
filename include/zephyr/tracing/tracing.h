@@ -1765,12 +1765,14 @@
 /**
  * @brief Trace System heap realloc enter
  * @param heap
+ * @param ptr
  */
 #define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)
 
 /**
  * @brief Trace System heap realloc exit
  * @param heap Heap object
+ * @param ptr Memory pointer
  * @param ret Return value
  */
 #define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)

@@ -442,7 +442,7 @@ static void ase_exit_state_enabling(struct bt_ascs_ase *ase)
 
 	/*
 	 * When the EP direction is BT_AUDIO_DIR_SOURCE the state machine goes from
-	 * enabled to disabled where the disabled calback will be called,
+	 * enabled to disabled where the disabled callback will be called,
 	 * for BT_AUDIO_DIR_SINK we go from enabled to qos_configured,
 	 * and logically we have to do the disabled callback first
 	 */

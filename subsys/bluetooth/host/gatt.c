@@ -646,7 +646,7 @@ static bool cf_set_value(struct gatt_cf_cfg *cfg, const uint8_t *value, uint16_t
 		}
 	}
 
-	/* Set the bits for each octect */
+	/* Set the bits for each octet */
 	for (i = 0U; i < len && i < CF_NUM_BYTES; i++) {
 		if (i == (CF_NUM_BYTES - 1)) {
 			cfg->data[i] |= value[i] & BIT_MASK(CF_NUM_BITS % 8);
@@ -924,11 +924,11 @@ static void db_hash_gen(void)
 	}
 
 	/**
-	 * Core 5.1 does not state the endianess of the hash.
+	 * Core 5.1 does not state the endianness of the hash.
 	 * However Vol 3, Part F, 3.3.1 says that multi-octet Characteristic
 	 * Values shall be LE unless otherwise defined. PTS expects hash to be
-	 * in little endianess as well. bt_smp_aes_cmac calculates the hash in
-	 * big endianess so we have to swap.
+	 * in little endianness as well. bt_smp_aes_cmac calculates the hash in
+	 * big endianness so we have to swap.
 	 */
 	sys_mem_swap(db_hash.hash, sizeof(db_hash.hash));
 
@@ -3434,7 +3434,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			ccc->cfg_changed(attr, ccc->value);
 		}
 
-		LOG_DBG("ccc %p reseted", ccc);
+		LOG_DBG("ccc %p reset", ccc);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -5324,10 +5324,6 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 
 	if (params->subscribe) {
 		params->subscribe(conn, att_err, params);
-	} else if (params->write) {
-		/* TODO: Remove after deprecation */
-		LOG_WRN("write callback is deprecated, use subscribe cb instead");
-		params->write(conn, att_err, NULL);
 	}
 }
 

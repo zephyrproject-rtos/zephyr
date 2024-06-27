@@ -1906,8 +1906,6 @@ struct bt_gatt_subscribe_params {
 	 */
 	bt_gatt_subscribe_func_t subscribe;
 
-	/** @deprecated{subscribe CCC write response callback} */
-	bt_gatt_write_func_t write;
 	/** Subscribe value handle */
 	uint16_t value_handle;
 	/** Subscribe CCC handle */

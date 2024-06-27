@@ -55,6 +55,7 @@ list(APPEND kernel_files
   errno.c
   fatal.c
   init.c
+  init_static.c
   kheap.c
   mem_slab.c
   float.c

@@ -35,10 +35,12 @@ tests:
   cpp.main.cpp98:
     arch_exclude: posix
     # Exclude nRF54L15 and nRF54H20 as Nordic HAL is not compatible with C++98.
+    # Exclude EK_RA8M1 as Renesas RA HAL is not compatible with C++98.
     platform_exclude:
       - nrf54l15pdk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
+      - ek_ra8m1
     build_only: true
     extra_configs:
       - CONFIG_STD_CPP98=y

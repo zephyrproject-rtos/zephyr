@@ -299,7 +299,7 @@ choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
 	default SCHED_DUMB
 	help
-	  The kernel can be built with with several choices for the
+	  The kernel can be built with several choices for the
 	  ready queue implementation, offering different choices between
 	  code size, constant factor runtime overhead and performance
 	  scaling when many threads are added.
@@ -982,6 +982,29 @@ config KERNEL_WHOLE_ARCHIVE
 	help
 	  This option forces every object file in the libkernel.a archive
 	  to be included, rather than searching the archive for required object files.
+
+config TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
+	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
+	# initialization of static objects, new toolchains can be added
+	# here if required.
+	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+
+config STATIC_INIT_GNU
+	bool "Support GNU-compatible initializers and constructors"
+	default y if CPP || NATIVE_BUILD || COVERAGE
+	depends on TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
+	depends on !CMAKE_LINKER_GENERATOR
+	help
+	  GNU-compatible initialization of static objects. This is required for
+	  C++ constructor support as well as for initializer functions as
+	  defined by GNU-compatible toolchains. This increases the size
+	  of Zephyr binaries by around 100 bytes. If you know your
+	  application doesn't need any initializers, you can disable this
+	  option.
+	  The ARC MWDT toolchain, does not support or use this setting,
+	  and has instead separate C++ constructor initialization code.
+	  Note the option CMAKE_LINKER_GENERATOR does not yet support this feature
+	  or CPP.
 
 endmenu
 

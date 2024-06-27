@@ -69,31 +69,6 @@ static inline bool in_user_thread_stack_bound(uintptr_t addr, const struct k_thr
 }
 #endif /* CONFIG_USERSPACE */
 
-static bool in_fatal_stack_bound(uintptr_t addr, const struct k_thread *const thread,
-				 const struct arch_esf *esf)
-{
-	ARG_UNUSED(thread);
-
-	if (!IS_ALIGNED(addr, sizeof(uintptr_t))) {
-		return false;
-	}
-
-	if (_current == NULL || arch_is_in_isr()) {
-		/* We were servicing an interrupt */
-		uint8_t cpu_id = IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0U;
-
-		return in_irq_stack_bound(addr, cpu_id);
-	}
-#ifdef CONFIG_USERSPACE
-	if ((esf != NULL) && ((esf->mstatus & MSTATUS_MPP) == PRV_U) &&
-	    ((_current->base.user_options & K_USER) != 0)) {
-		return in_user_thread_stack_bound(addr, _current);
-	}
-#endif /* CONFIG_USERSPACE */
-
-	return in_kernel_thread_stack_bound(addr, _current);
-}
-
 static bool in_stack_bound(uintptr_t addr, const struct k_thread *const thread,
 			   const struct arch_esf *esf)
 {
@@ -110,6 +85,23 @@ static bool in_stack_bound(uintptr_t addr, const struct k_thread *const thread,
 #endif /* CONFIG_USERSPACE */
 
 	return in_kernel_thread_stack_bound(addr, thread);
+}
+
+static bool in_fatal_stack_bound(uintptr_t addr, const struct k_thread *const thread,
+				 const struct arch_esf *esf)
+{
+	if (!IS_ALIGNED(addr, sizeof(uintptr_t))) {
+		return false;
+	}
+
+	if ((thread == NULL) || arch_is_in_isr()) {
+		/* We were servicing an interrupt */
+		uint8_t cpu_id = IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0U;
+
+		return in_irq_stack_bound(addr, cpu_id);
+	}
+
+	return in_stack_bound(addr, thread, esf);
 }
 
 static inline bool in_text_region(uintptr_t addr)
@@ -136,7 +128,6 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 		/* Unwind current thread (default case when nothing is provided ) */
 		fp = (uintptr_t)__builtin_frame_address(0);
 		ra = (uintptr_t)walk_stackframe;
-		thread = _current;
 	} else {
 		/* Unwind the provided thread */
 		fp = csf->s0;
@@ -179,7 +170,6 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 		/* Unwind current thread (default case when nothing is provided ) */
 		sp = current_stack_pointer;
 		ra = (uintptr_t)walk_stackframe;
-		thread = _current;
 	} else {
 		/* Unwind the provided thread */
 		sp = csf->sp;
@@ -210,8 +200,12 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		     const struct k_thread *thread, const struct arch_esf *esf)
 {
-	walk_stackframe(callback_fn, cookie, thread, esf, in_stack_bound,
-			thread != NULL ? &thread->callee_saved : NULL);
+	if (thread == NULL) {
+		/* In case `thread` is NULL, default that to `_current` and try to unwind */
+		thread = _current;
+	}
+
+	walk_stackframe(callback_fn, cookie, thread, esf, in_stack_bound, &thread->callee_saved);
 }
 
 #if __riscv_xlen == 32
@@ -245,6 +239,6 @@ void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf
 	int i = 0;
 
 	LOG_ERR("call trace:");
-	walk_stackframe(print_trace_address, &i, NULL, esf, in_fatal_stack_bound, csf);
+	walk_stackframe(print_trace_address, &i, _current, esf, in_fatal_stack_bound, csf);
 	LOG_ERR("");
 }

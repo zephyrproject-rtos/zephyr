@@ -345,9 +345,12 @@ static void send_sd_response(int sock,
 	bool service_type_enum = false;
 	const struct in6_addr *addr6 = NULL;
 	const struct in_addr *addr4 = NULL;
-	char instance_buf[DNS_SD_SERVICE_MAX_SIZE + 1];
+	char instance_buf[DNS_SD_INSTANCE_MAX_SIZE + 1];
 	char service_buf[DNS_SD_SERVICE_MAX_SIZE + 1];
-	char proto_buf[DNS_SD_PROTO_SIZE + 1];
+	/* Depending on segment count in the query, third buffer could hold
+	 * either protocol or domain, use larger size.
+	 */
+	char proto_buf[DNS_SD_DOMAIN_MAX_SIZE + 1];
 	char domain_buf[DNS_SD_DOMAIN_MAX_SIZE + 1];
 	char *label[4];
 	size_t size[] = {
@@ -659,8 +662,6 @@ static int dispatcher_cb(void *my_ctx, int sock,
 		NET_DBG("%s read failed (%d)", "mDNS", ret);
 	}
 
-	net_buf_unref(dns_data);
-
 	return ret;
 }
 
@@ -743,7 +744,7 @@ static int init_listener(void)
 				ifindex, ret);
 		} else {
 			memset(&if_req, 0, sizeof(if_req));
-			strncpy(if_req.ifr_name, name, sizeof(if_req.ifr_name));
+			strncpy(if_req.ifr_name, name, sizeof(if_req.ifr_name) - 1);
 
 			ret = zsock_setsockopt(v6, SOL_SOCKET, SO_BINDTODEVICE,
 					       &if_req, sizeof(if_req));

@@ -76,7 +76,7 @@ find_package(Dtc 1.4.6)
 # - DTC_OVERLAY_FILE: list of devicetree overlay files which will be
 #   used to modify or extend the base devicetree.
 # - EXTRA_DTC_OVERLAY_FILE: list of extra devicetree overlay files.
-#   This variable is is similar to DTC_OVERLAY_FILE but the files in
+#   This variable is similar to DTC_OVERLAY_FILE but the files in
 #   EXTRA_DTC_OVERLAY_FILE will be applied after DTC_OVERLAY_FILE and
 #   thus files specified by EXTRA_DTC_OVERLAY_FILE have higher precedence.
 # - EXTRA_DTC_FLAGS: list of extra command line options to pass to

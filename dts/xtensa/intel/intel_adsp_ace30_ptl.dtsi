@@ -188,25 +188,6 @@
 			status = "okay";
 		};
 
-		/*
-		 * FIXME this is modeling individual alh channels/instances
-		 * with node labels, which has problems. A better representation
-		 * is discussed here:
-		 *
-		 * https://github.com/zephyrproject-rtos/zephyr/pull/50287#discussion_r974591009
-		 */
-		alh0: alh0@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh1: alh1@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
 		sspbase: ssp_base@28000 {
 			compatible = "intel,ssp-sspbase";
 			reg = <0x28000 0x1000>;
@@ -458,37 +439,25 @@
 				compatible = "intel,adsp-power-domain";
 				bit-position = <15>;
 			};
-			hub_hp_domain: hub_hpp_domain {
+			ml0_domain: ml0_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <6>;
-			};
-			io0_domain: io0_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <8>;
+				bit-position = <12>;
 			};
 			io1_domain: io1_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <9>;
 			};
-			io2_domain: io2_domain {
+			io0_domain: io0_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <10>;
+				bit-position = <8>;
 			};
-			io3_domain: io3_domain {
+			hub_hp_domain: hub_hpp_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <11>;
+				bit-position = <6>;
 			};
 			hst_domain: hst_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <5>;
-			};
-			ml0_domain: ml0_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <12>;
-			};
-			ml1_domain: ml1_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <13>;
 			};
 		};
 

@@ -386,7 +386,7 @@ static void dhcpv4_immediate_timeout(struct net_if_dhcpv4 *dhcpv4)
 static void dhcpv4_set_timeout(struct net_if_dhcpv4 *dhcpv4,
 			       uint32_t timeout)
 {
-	NET_DBG("sched timeout dhcvp4=%p timeout=%us", dhcpv4, timeout);
+	NET_DBG("sched timeout dhcpv4=%p timeout=%us", dhcpv4, timeout);
 	dhcpv4->timer_start = k_uptime_get();
 	dhcpv4->request_time = timeout;
 
@@ -405,7 +405,7 @@ static void dhcpv4_set_timeout_inc(struct net_if_dhcpv4 *dhcpv4,
 {
 	int64_t timeout_ms;
 
-	NET_DBG("sched timeout dhcvp4=%p timeout=%us", dhcpv4, timeout);
+	NET_DBG("sched timeout dhcpv4=%p timeout=%us", dhcpv4, timeout);
 
 	timeout_ms = (now - dhcpv4->timer_start) + MSEC_PER_SEC * timeout;
 	dhcpv4->request_time = (uint32_t)(timeout_ms / MSEC_PER_SEC);

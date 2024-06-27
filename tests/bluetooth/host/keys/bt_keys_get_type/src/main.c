@@ -131,7 +131,7 @@ ZTEST(bt_keys_get_type_initially_filled_list, test_get_non_existing_key_referenc
  *  Expected behaviour:
  *   - A valid reference is returned by bt_keys_get_type()
  *   - Key reference returned matches the previously returned one
- *     when it was firstly inserted in the the list
+ *     when it was firstly inserted in the list
  */
 ZTEST(bt_keys_get_type_initially_filled_list, test_get_existing_key_reference)
 {

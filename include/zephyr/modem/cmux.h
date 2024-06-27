@@ -139,6 +139,10 @@ struct modem_cmux {
 	enum modem_cmux_state state;
 	bool flow_control_on;
 
+	/* Work lock */
+	bool attached;
+	struct k_spinlock work_lock;
+
 	/* Receive state*/
 	enum modem_cmux_receive_state receive_state;
 

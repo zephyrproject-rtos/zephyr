@@ -244,32 +244,44 @@ POSIX_SIGNALS
 Signal services are a basic mechanism within POSIX-based systems and are
 required for error and event handling.
 
+.. note::
+   As processes are not yet supported in Zephyr, the ISO C functions ``abort()``, ``signal()``,
+   and ``raise()``, as well as the other POSIX functions listed below, may exhibit undefined
+   behaviour. The POSIX functions ``kill()``, ``pause()``, ``sigaction()``, ``sigpending()``,
+   ``sigsuspend()``, and ``sigwait()`` are implemented to ensure that conformant applications can
+   link, but they are expected to fail, setting errno to ``ENOSYS``
+   :ref:`†<posix_undefined_behaviour>`.
+
 .. csv-table:: POSIX_SIGNALS
    :header: API, Supported
    :widths: 50,10
 
-    abort(),yes
-    alarm(),
-    kill(),
-    pause(),
-    raise(),
-    sigaction(),
+    abort(),yes :ref:`†<posix_undefined_behaviour>`
+    alarm(),yes :ref:`†<posix_undefined_behaviour>`
+    kill(),yes :ref:`†<posix_undefined_behaviour>`
+    pause(),yes :ref:`†<posix_undefined_behaviour>`
+    raise(),yes :ref:`†<posix_undefined_behaviour>`
+    sigaction(),yes :ref:`†<posix_undefined_behaviour>`
     sigaddset(),yes
     sigdelset(),yes
     sigemptyset(),yes
     sigfillset(),yes
     sigismember(),yes
-    signal(),
-    sigpending(),
+    signal(),yes :ref:`†<posix_undefined_behaviour>`
+    sigpending(),yes :ref:`†<posix_undefined_behaviour>`
     sigprocmask(),yes
-    sigsuspend(),
-    sigwait(),
+    sigsuspend(),yes :ref:`†<posix_undefined_behaviour>`
+    sigwait(),yes :ref:`†<posix_undefined_behaviour>`
     strsignal(),yes
 
 .. _posix_option_group_device_io:
 
 POSIX_DEVICE_IO
 ===============
+
+.. note::
+   When using Newlib, Picolibc, or other C libraries conforming to the ISO C Standard, the
+   C89 components of the ``POSIX_DEVICE_IO`` Option Group are considered supported.
 
 .. csv-table:: POSIX_DEVICE_IO
    :header: API, Supported
@@ -281,48 +293,48 @@ POSIX_DEVICE_IO
     FD_ZERO(),yes
     clearerr(),yes
     close(),yes
-    fclose(),
-    fdopen(),
-    feof(),
-    ferror(),
-    fflush(),
-    fgetc(),
-    fgets(),
-    fileno(),
-    fopen(),
+    fclose(),yes
+    fdopen(), yes
+    feof(),yes
+    ferror(),yes
+    fflush(),yes
+    fgetc(),yes
+    fgets(),yes
+    fileno(), yes
+    fopen(),yes
     fprintf(),yes
     fputc(),yes
     fputs(),yes
-    fread(),
-    freopen(),
-    fscanf(),
+    fread(),yes
+    freopen(),yes
+    fscanf(),yes
     fwrite(),yes
-    getc(),
-    getchar(),
-    gets(),
+    getc(),yes
+    getchar(),yes
+    gets(),yes
     open(),yes
     perror(),yes
     poll(),yes
     printf(),yes
-    pread(),
-    pselect(),
+    pread(),yes
+    pselect(),yes
     putc(),yes
     putchar(),yes
     puts(),yes
-    pwrite(),
+    pwrite(),yes
     read(),yes
-    scanf(),
+    scanf(),yes
     select(),yes
-    setbuf(),
-    setvbuf(),
-    stderr,
-    stdin,
-    stdout,
-    ungetc(),
+    setbuf(),yes
+    setvbuf(),yes
+    stderr,yes
+    stdin,yes
+    stdout,yes
+    ungetc(),yes
     vfprintf(),yes
-    vfscanf(),
+    vfscanf(),yes
     vprintf(),yes
-    vscanf(),
+    vscanf(),yes
     write(),yes
 
 .. _posix_option_group_barriers:
@@ -534,24 +546,26 @@ POSIX_TIMERS
 POSIX_FD_MGMT
 =============
 
-This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
+.. note::
+   When using Newlib, Picolibc, or other C libraries conforming to the ISO C Standard, the
+   C89 components of the ``POSIX_FD_MGMT`` Option Group are considered supported.
 
 .. csv-table:: POSIX_FD_MGMT
    :header: API, Supported
    :widths: 50,10
 
-    dup(),
-    dup2(),
-    fcntl(),
-    fgetpos(),
-    fseek(),
-    fseeko(),
-    fsetpos(),
-    ftell(),
-    ftello(),
-    ftruncate(),yes
-    lseek(),
-    rewind(),
+    dup(), yes
+    dup2(), yes
+    fcntl(), yes
+    fgetpos(), yes
+    fseek(), yes
+    fseeko(), yes
+    fsetpos(), yes
+    ftell(), yes
+    ftello(), yes
+    ftruncate(), yes
+    lseek(), yes
+    rewind(), yes
 
 .. _posix_option_group_file_locking:
 

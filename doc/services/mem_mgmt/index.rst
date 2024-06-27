@@ -92,7 +92,7 @@ to define and create a set of memory heaps from which the user can allocate
 memory from with certain attributes / capabilities.
 
 When the :kconfig:option:`CONFIG_MEM_ATTR_HEAP` is set, every region marked
-with one of the memory attributes listed in in
+with one of the memory attributes listed in
 :zephyr_file:`include/zephyr/dt-bindings/memory-attr/memory-attr-sw.h` is added
 to a pool of memory heaps used for dynamic allocation of memory buffers with
 certain attributes.
@@ -171,7 +171,7 @@ The following example shows the point 3:
 .. code-block:: c
 
    // This memory is allocated from `mem_non_cacheable`
-   block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_CACHE, 0x100);
+   block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_NON_CACHE, 0x100);
 
    // This memory is allocated from `mem_cacheable_big`
    block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_CACHE, 0x5000);

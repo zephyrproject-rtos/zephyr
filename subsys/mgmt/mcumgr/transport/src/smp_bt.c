@@ -464,7 +464,7 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 
 	/* Verify that the device is connected, the necessity for this check is that the remote
 	 * device might have sent a command and disconnected before the command has been processed
-	 * completely, if this happens then the the connection details will still be valid due to
+	 * completely, if this happens then the connection details will still be valid due to
 	 * the incremented connection reference count, but the connection has actually been
 	 * dropped, this avoids waiting for a semaphore that will never be given which would
 	 * otherwise cause a deadlock.

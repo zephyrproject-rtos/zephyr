@@ -19,9 +19,9 @@
 
 			channel@0 {
 				reg = <0>;
-                                zephyr,gain = "ADC_GAIN_1";
-                                zephyr,reference = "ADC_REF_VDD_1";
-                                zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_VDD_1";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 			};
 		};
 
@@ -288,17 +288,17 @@
 				invert-y;
 			};
 
-                        paw32xx@3 {
-                                compatible = "pixart,paw32xx";
-                                reg = <3>;
-                                spi-max-frequency = <0>;
-                                motion-gpios = <&test_gpio 0 0>;
-                                zephyr,axis-x = <0>;
-                                zephyr,axis-y = <1>;
-                                invert-x;
-                                invert-y;
-                                res-cpi = <800>;
-                        };
+			paw32xx@3 {
+				compatible = "pixart,paw32xx";
+				reg = <3>;
+				spi-max-frequency = <0>;
+				motion-gpios = <&test_gpio 0 0>;
+				zephyr,axis-x = <0>;
+				zephyr,axis-y = <1>;
+				invert-x;
+				invert-y;
+				res-cpi = <800>;
+			};
 		};
 	};
 };

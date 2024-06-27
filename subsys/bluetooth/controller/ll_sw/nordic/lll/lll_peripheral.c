@@ -119,7 +119,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll = p->param;
 
-	/* Check if stopped (on disconnection between prepare and pre-empt)
+	/* Check if stopped (on disconnection between prepare and preempt)
 	 */
 	if (unlikely(lll->handle == 0xFFFF)) {
 		radio_isr_set(lll_isr_early_abort, lll);

@@ -267,7 +267,7 @@ ZTEST(socket_packet, test_raw_packet_sockets)
 	addrlen = sizeof(src);
 	errno = 0;
 
-	/* The recvfrom reads the the whole received packet - including its
+	/* The recvfrom reads the whole received packet - including its
 	 * IP (20B) and UDP (8) headers. After those we can expect payload,
 	 * which have been sent.
 	 */

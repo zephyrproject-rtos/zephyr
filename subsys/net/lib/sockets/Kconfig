@@ -5,7 +5,9 @@
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
-	select FDTABLE
+	select ZVFS
+	select ZVFS_POLL
+	select ZVFS_SELECT
 	help
 	  Provide BSD Sockets like API on top of native Zephyr networking API.
 
@@ -47,9 +49,7 @@ config NET_SOCKETS_POSIX_NAMES
 
 config NET_SOCKETS_POLL_MAX
 	int "Max number of supported poll() entries"
-	default 6 if WIFI_NM_WPA_SUPPLICANT
-	default 4 if SHELL_BACKEND_TELNET
-	default 3
+	default ZVFS_POLL_MAX
 	help
 	  Maximum number of entries supported for poll() call.
 
@@ -136,6 +136,7 @@ config NET_SOCKETS_SERVICE_THREAD_PRIO
 config NET_SOCKETS_SERVICE_STACK_SIZE
 	int "Stack size for the thread handling socket services"
 	default 2400 if NET_DHCPV4_SERVER
+	default 1400 if MDNS_RESPONDER
 	default 1200
 	depends on NET_SOCKETS_SERVICE
 	help
@@ -396,6 +397,10 @@ config NET_SOCKETS_NET_MGMT
 	help
 	  Select this if you want to use socket API to get network
 	  managements events to your application.
+	  Note, that the thread using net_mgmt sockets should have at least
+	  the same priority as the thread processing network events (see
+	  CONFIG_NET_MGMT_EVENT_WORKER), otherwise in case of event bursts some
+	  events may be lost.
 
 config NET_SOCKETS_NET_MGMT_MAX_LISTENERS
 	int "Max number of sockets to listen"

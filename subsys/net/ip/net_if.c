@@ -2095,7 +2095,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 	}
 
 	if (net_if_ipv6_maddr_lookup(addr, &iface)) {
-		NET_WARN("Multicast address %s is is already registered.",
+		NET_WARN("Multicast address %s is already registered.",
 			net_sprint_ipv6_addr(addr));
 		goto out;
 	}
@@ -5854,6 +5854,16 @@ static void set_default_name(struct net_if *iface)
 			snprintk(name, sizeof(name) - 1, "ppp%d", count++);
 		}
 #endif /* CONFIG_NET_L2_PPP */
+	}
+
+	if (IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD)) {
+			static int count;
+
+			snprintk(name, sizeof(name) - 1, "thread%d", count++);
+		}
+#endif /* CONFIG_NET_L2_OPENTHREAD */
 	}
 
 	if (name[0] == '\0') {

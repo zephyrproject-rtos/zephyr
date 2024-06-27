@@ -284,13 +284,12 @@ struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
 		hdr = net_udp_get_hdr(pkt, NULL);
 	}
 
-	payload = ntohs(hdr->len) - NET_UDPH_LEN;
-
 	if (!hdr) {
 		LOG_ERR("Couldn't retrieve UDP header from the net packet");
 		return NULL;
 	}
 
+	payload = ntohs(hdr->len) - NET_UDPH_LEN;
 	port = ntohs(hdr->dst_port);
 
 	if (port != PTP_SOCKET_PORT_EVENT && port != PTP_SOCKET_PORT_GENERAL) {

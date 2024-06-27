@@ -6,13 +6,13 @@
 
 
 &pinctrl {
-        i2c1_default: i2c1_default {
-                group1 {
-                        bias-pull-up;
-                };
-        };
+	i2c1_default: i2c1_default {
+		group1 {
+			bias-pull-up;
+		};
+	};
 };
 
 &pico_i2c1 {
-        status = "okay";
+	status = "okay";
 };

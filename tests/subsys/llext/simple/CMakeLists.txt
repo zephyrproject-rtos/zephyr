@@ -27,6 +27,10 @@ if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA)
     list(APPEND ext_names pre_located)
 endif()
 
+if (CONFIG_LLEXT_STORAGE_WRITABLE)
+    list(APPEND ext_names find_section)
+endif()
+
 # generate extension targets foreach extension given by 'ext_names'
 foreach(ext_name ${ext_names})
   set(ext_src ${PROJECT_SOURCE_DIR}/src/${ext_name}_ext.c)

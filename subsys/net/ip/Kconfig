@@ -794,7 +794,7 @@ config NET_INTERFACE_NAME
 config NET_INTERFACE_NAME_LEN
 	int "Network interface max name length"
 	default 8
-	range 1 15
+	range 2 15
 	depends on NET_INTERFACE_NAME
 	help
 	  Maximum length of the network interface name.
