@@ -38,7 +38,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint
+        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint clang-format unidiff
         pip3 install west
 
     - name: west setup
@@ -94,16 +94,23 @@ jobs:
           exit 1;
         fi
 
+        warns=("ClangFormat")
         files=($(./scripts/ci/check_compliance.py -l))
+
         for file in "${files[@]}"; do
           f="${file}.txt"
           if [[ -s $f ]]; then
-            errors=$(cat $f)
-            errors="${errors//'%'/'%25'}"
-            errors="${errors//$'\n'/'%0A'}"
-            errors="${errors//$'\r'/'%0D'}"
-            echo "::error file=${f}::$errors"
-            exit=1
+            results=$(cat $f)
+            results="${results//'%'/'%25'}"
+            results="${results//$'\n'/'%0A'}"
+            results="${results//$'\r'/'%0D'}"
+
+            if [[ "${warns[@]}" =~ "${file}" ]]; then
+              echo "::warning file=${f}::$results"
+            else
+              echo "::error file=${f}::$results"
+              exit=1
+            fi
           fi
         done
 
