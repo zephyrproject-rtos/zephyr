@@ -49,6 +49,10 @@ static inline int reg_read(const struct device *dev, uint16_t reg_addr,
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
+	/* if there is no mdio (fixed-link) it is not supported to read */
+	if (cfg->mdio == NULL) {
+		return -ENOTSUP;
+	}
 	return mdio_read(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
 
@@ -57,6 +61,10 @@ static inline int reg_write(const struct device *dev, uint16_t reg_addr,
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
+	/* if there is no mdio (fixed-link) it is not supported to write */
+	if (cfg->mdio == NULL) {
+		return -ENOTSUP;
+	}
 	return mdio_write(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
 
