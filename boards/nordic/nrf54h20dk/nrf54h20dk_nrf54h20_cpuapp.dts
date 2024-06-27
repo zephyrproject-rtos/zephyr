@@ -130,8 +130,14 @@
 	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
 	interrupt-names = "irq0";
-	/* irq0: 0: cpuapp-cpusec, 6: cpuapp-cpusys, 13: cpuapp-cpuppr, 18: cpuapp-cpurad */
-	nordic,interrupt-mapping = <0x00042041 0>;
+	/* irq0:
+	 *  - 0:  cpuapp-cpusec
+	 *  - 6:  cpuapp-cpusys
+	 *  - 13: cpuapp-cpuppr
+	 *  - 14: cpuapp-cpuflpr
+	 *  - 18: cpuapp-cpurad
+	 */
+	nordic,interrupt-mapping = <0x00046041 0>;
 };
 
 &cpurad_bellboard {
@@ -173,6 +179,12 @@ ipc0: &cpuapp_cpurad_ipc {
 	mbox-names = "rx", "tx";
 	tx-region = <&cpuapp_cpuppr_ipc_shm>;
 	rx-region = <&cpuppr_cpuapp_ipc_shm>;
+};
+
+&cpuapp_cpuflpr_ipc {
+	mbox-names = "rx", "tx";
+	tx-region = <&cpuapp_cpuflpr_ipc_shm>;
+	rx-region = <&cpuflpr_cpuapp_ipc_shm>;
 };
 
 &cpuapp_dma_region {
