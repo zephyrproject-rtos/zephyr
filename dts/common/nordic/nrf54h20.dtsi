@@ -490,6 +490,18 @@
 				compatible = "nordic,nrf-vpr-coprocessor";
 				reg = <0x8d4000 0x1000>;
 				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x8d4000 0x1000>;
+
+				cpuflpr_vevif_tx: mailbox@0 {
+					compatible = "nordic,nrf-vevif-task-tx";
+					reg = <0x0 0x1000>;
+					status = "disabled";
+					#mbox-cells = <1>;
+					nordic,tasks = <32>;
+					nordic,tasks-mask = <0xffff0000>;
+				};
 			};
 
 			can120: can@8d8000 {
