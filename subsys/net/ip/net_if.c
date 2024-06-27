@@ -5686,10 +5686,7 @@ struct net_if *net_if_get_first_wifi(void)
 
 struct net_if *net_if_get_wifi_sta(void)
 {
-	struct ethernet_context *eth_ctx = NULL;
-
 	STRUCT_SECTION_FOREACH(net_if, iface) {
-		eth_ctx = net_if_l2_data(iface);
 		if (net_if_is_wifi(iface)
 #ifdef CONFIG_WIFI_NM
 			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_STA))
@@ -5703,10 +5700,7 @@ struct net_if *net_if_get_wifi_sta(void)
 
 struct net_if *net_if_get_wifi_sap(void)
 {
-	struct ethernet_context *eth_ctx = NULL;
-
 	STRUCT_SECTION_FOREACH(net_if, iface) {
-		eth_ctx = net_if_l2_data(iface);
 		if (net_if_is_wifi(iface)
 #ifdef CONFIG_WIFI_NM
 			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_SAP))
