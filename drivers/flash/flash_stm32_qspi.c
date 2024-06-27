@@ -352,6 +352,27 @@ static int qspi_read_jedec_id(const struct device *dev, uint8_t *id)
 }
 #endif /* CONFIG_FLASH_JESD216_API */
 
+static int qspi_write_unprotect(const struct device *dev)
+{
+	int ret = 0;
+	QSPI_CommandTypeDef cmd_unprotect = {
+			.Instruction = SPI_NOR_CMD_ULBPR,
+			.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+	};
+
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+		ret = qspi_send_cmd(dev, &cmd_write_en);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = qspi_send_cmd(dev, &cmd_unprotect);
+	}
+
+	return ret;
+}
+
 /*
  * Read Serial Flash Discovery Parameter
  */
@@ -1497,6 +1518,13 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+	ret = qspi_write_unprotect(dev);
+	if (ret != 0) {
+		LOG_ERR("write unprotect failed: %d", ret);
+		return -ENODEV;
+	}
+	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
 #if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
