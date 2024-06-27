@@ -281,6 +281,8 @@ Build system and Infrastructure
   * Fixed issue whereby files used in a project (e.g. devicetree overlays or Kconfig fragments)
     were not correctly watched and CMake would not reconfigure if they were changed.
 
+  * Added flash support for Intel Hex files for the LinkServer runner.
+
 Drivers and Sensors
 *******************
 
