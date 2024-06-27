@@ -28,7 +28,10 @@ ZTEST(rtc_api, test_y2k)
 		Y2K,
 	};
 
-	static struct rtc_time rtm[2];
+	static struct rtc_time rtm[2] = {
+		{.tm_isdst = -1, .tm_nsec = 0},
+		{.tm_isdst = -1, .tm_nsec = 0},
+	};
 	struct tm *const tm[2] = {
 		(struct tm *const)&rtm[0],
 		(struct tm *const)&rtm[1],

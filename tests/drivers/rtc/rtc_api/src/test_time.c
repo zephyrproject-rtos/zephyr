@@ -27,6 +27,9 @@ ZTEST(rtc_api, test_set_get_time)
 
 	gmtime_r(&timer_set, (struct tm *)(&datetime_set));
 
+	datetime_set.tm_isdst = -1;
+	datetime_set.tm_nsec = 0;
+
 	memset(&datetime_get, 0xFF, sizeof(datetime_get));
 
 	zassert_equal(rtc_set_time(rtc, &datetime_set), 0, "Failed to set time");
