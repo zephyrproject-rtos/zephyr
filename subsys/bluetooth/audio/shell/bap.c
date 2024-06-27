@@ -1437,19 +1437,14 @@ static int cmd_stream_qos(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int create_unicast_group(const struct shell *sh)
+static int set_group_param(
+	const struct shell *sh, struct bt_bap_unicast_group_param *group_param,
+	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)],
+	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)])
 {
-	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)];
-	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)];
-	struct bt_bap_unicast_group_param group_param;
 	size_t source_cnt = 0;
 	size_t sink_cnt = 0;
 	size_t cnt = 0;
-	int err;
-
-	memset(pair_param, 0, sizeof(pair_param));
-	memset(stream_params, 0, sizeof(stream_params));
-	memset(&group_param, 0, sizeof(group_param));
 
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		struct bt_bap_stream *stream = bap_stream_from_shell_stream(&unicast_streams[i]);
@@ -1479,16 +1474,50 @@ static int create_unicast_group(const struct shell *sh)
 		return -ENOEXEC;
 	}
 
-	group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
-	group_param.params = pair_param;
-	group_param.params_count = MAX(source_cnt, sink_cnt);
+	group_param->packing = BT_ISO_PACKING_SEQUENTIAL;
+	group_param->params = pair_param;
+	group_param->params_count = MAX(source_cnt, sink_cnt);
 
-	err = bt_bap_unicast_group_create(&group_param,
-					    &default_unicast_group);
+	return 0;
+}
+
+static int create_unicast_group(const struct shell *sh)
+{
+	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)] = {0};
+	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)] = {0};
+	struct bt_bap_unicast_group_param group_param = {0};
+	int err;
+
+	err = set_group_param(sh, &group_param, pair_param, stream_params);
 	if (err != 0) {
-		shell_error(sh,
-			    "Unable to create default unicast group: %d",
-			    err);
+		return err;
+	}
+
+	err = bt_bap_unicast_group_create(&group_param, &default_unicast_group);
+	if (err != 0) {
+		shell_error(sh, "Unable to create default unicast group: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int reconfig_unicast_group(const struct shell *sh)
+{
+	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)] = {0};
+	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)] = {0};
+	struct bt_bap_unicast_group_param group_param = {0};
+	int err;
+
+	err = set_group_param(sh, &group_param, pair_param, stream_params);
+	if (err != 0) {
+		return err;
+	}
+
+	err = bt_bap_unicast_group_reconfig(default_unicast_group, &group_param);
+	if (err != 0) {
+		shell_error(sh, "Unable to create default unicast group: %d", err);
 
 		return -ENOEXEC;
 	}
@@ -1512,6 +1541,11 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 
 	if (default_unicast_group == NULL) {
 		err = create_unicast_group(sh);
+		if (err != 0) {
+			return err;
+		}
+	} else {
+		err = reconfig_unicast_group(sh);
 		if (err != 0) {
 			return err;
 		}

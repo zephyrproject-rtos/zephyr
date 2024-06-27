@@ -1156,7 +1156,7 @@ struct bt_bap_unicast_group_param {
 };
 
 /**
- * @brief Create audio unicast group.
+ * @brief Create unicast group.
  *
  * Create a new audio unicast group with one or more audio streams as a unicast client.
  * All streams shall share the same framing.
@@ -1170,6 +1170,24 @@ struct bt_bap_unicast_group_param {
  */
 int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 				struct bt_bap_unicast_group **unicast_group);
+
+/**
+ * @brief Reconfigure unicast group.
+ *
+ * Reconfigure a unicast group with one or more audio streams as a unicast client.
+ * All streams shall share the same framing.
+ * All streams in the same direction shall share the same interval and latency (see
+ * @ref bt_audio_codec_qos).
+ * All streams in @p param shall already belong to @p unicast_group.
+ * Use bt_bap_unicast_group_add_streams() to add additional streams.
+ *
+ * @param unicast_group  Pointer to the unicast group created.
+ * @param param          The unicast group reconfigure parameters.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
+				  const struct bt_bap_unicast_group_param *param);
 
 /**
  * @brief Add streams to a unicast group as a unicast client
