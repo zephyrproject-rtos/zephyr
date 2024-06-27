@@ -208,6 +208,11 @@ ipc0: &cpuapp_cpurad_ipc {
 	source-memory = <&cpuppr_code_partition>;
 };
 
+&cpuflpr_vpr {
+	execution-memory = <&cpuflpr_code_data>;
+	source-memory = <&cpuflpr_code_partition>;
+};
+
 &gpiote130 {
 	status = "okay";
 	owned-channels = <0 1 2 3 4 5 6 7>;
@@ -226,6 +231,13 @@ ipc0: &cpuapp_cpurad_ipc {
 	child-owned-channels = <5 6>;
 	nonsecure-channels = <5 6>;
 	owned-channels = <4 5 6>;
+};
+
+&uart120 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart120_default>;
+	pinctrl-1 = <&uart120_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart135 {
