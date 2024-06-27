@@ -86,8 +86,6 @@ static int api_err_check(const struct device *dev)
 	return err;
 }
 
-#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-
 static int api_configure(const struct device *dev, const struct uart_config *uart_cfg)
 {
 	int err;
@@ -194,6 +192,8 @@ static int api_configure(const struct device *dev, const struct uart_config *uar
 	}
 	return 0;
 }
+
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 
 static int api_config_get(const struct device *dev, struct uart_config *uart_cfg)
 {
@@ -424,13 +424,11 @@ static const struct uart_driver_api uart_max32_driver_api = {
 #define MAX32_UART_INIT(_num)                                                                      \
 	PINCTRL_DT_INST_DEFINE(_num);                                                              \
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                                   \
-		   (static void uart_max32_irq_init_##_num(const struct device *dev)               \
-		   {                                                                               \
-			   IF_ENABLED(                                                             \
-				   CONFIG_UART_INTERRUPT_DRIVEN,                                   \
-				   (IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority),   \
-						uart_max32_isr, DEVICE_DT_INST_GET(_num), 0);      \
-				    irq_enable(DT_INST_IRQN(_num))));                              \
+		   (static void uart_max32_irq_init_##_num(const struct device *dev) \
+		   {             \
+			   IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority),            \
+				       uart_max32_isr, DEVICE_DT_INST_GET(_num), 0);               \
+			   irq_enable(DT_INST_IRQN(_num));                                         \
 		   }));                                                                            \
 	static const struct max32_uart_config max32_uart_config_##_num = {                         \
 		.regs = (mxc_uart_regs_t *)DT_INST_REG_ADDR(_num),                                 \
