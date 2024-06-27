@@ -42,6 +42,10 @@ user_dram_seg_len = user_idram_size;
 #undef GROUP_ROM_LINK_IN
 #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
 
+/* Make sure new sections have consistent alignment between input and output sections */
+#undef SECTION_PROLOGUE
+#define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
+
 #define RESERVE_RTC_MEM 0
 
 MEMORY
