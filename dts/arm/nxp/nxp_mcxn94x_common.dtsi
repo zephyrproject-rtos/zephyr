@@ -803,10 +803,12 @@
 		regulator-name = "mcxn94x-vref";
 		reg = <0x111000 0x14>;
 		status = "disabled";
+		#nxp,reference-cells = <1>;
 		nxp,buffer-startup-delay-us = <400>;
 		nxp,bandgap-startup-time-us = <20>;
 		regulator-min-microvolt = <1000000>;
 		regulator-max-microvolt = <2100000>;
+
 	};
 
 	lpadc0: lpadc@10d000 {
@@ -823,7 +825,7 @@
 		offset-value-b = <0>;
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
-		nxp,reference-supply = <&vref>;
+		nxp,references = <&vref 1800>;
 	};
 
 	lpadc1: lpadc@10e000 {
