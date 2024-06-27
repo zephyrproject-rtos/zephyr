@@ -289,6 +289,10 @@ Drivers and Sensors
 
 * ADC
 
+  * Changed phandle type DT property ``nxp,reference-supply`` to phandle-array type DT property
+    ``nxp,references`` in ``nxp,lpc-lpadc`` binding. The NXP LPADC driver now supports passing
+    the reference voltage value by using ``nxp,references``.
+
 * Auxiliary Display
 
 * Audio
