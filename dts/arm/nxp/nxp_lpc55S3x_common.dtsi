@@ -298,7 +298,7 @@
 		#io-channel-cells = <1>;
 		dmas = <&dma0 21>, <&dma0 22>;
 		dma-names = "adc0-dma0", "adc0-dma1";
-		nxp,reference-supply = <&vref0>;
+		nxp,references = <&vref0 1800>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
@@ -473,6 +473,7 @@
 		regulator-name = "lpc55s36-vref";
 		reg = <0xb5000 0x30>;
 		status = "disabled";
+		#nxp,reference-cells = <1>;
 		nxp,buffer-startup-delay-us = <400>;
 		nxp,bandgap-startup-time-us = <20>;
 	};
