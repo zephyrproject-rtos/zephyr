@@ -10,6 +10,7 @@ cpu: &cpuapp {};
 systick: &cpuapp_systick {};
 nvic: &cpuapp_nvic {};
 cpuppr_vevif: &cpuppr_vevif_tx {};
+cpuflpr_vevif: &cpuflpr_vevif_tx {};
 cpusys_vevif: &cpusys_vevif_tx {};
 wdt010: &cpuapp_wdt010 {};
 wdt011: &cpuapp_wdt011 {};
