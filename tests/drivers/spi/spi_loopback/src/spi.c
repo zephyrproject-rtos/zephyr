@@ -62,8 +62,8 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 
 #if CONFIG_NOCACHE_MEMORY
 #define __NOCACHE	__attribute__((__section__(".nocache")))
-#elif defined(CONFIG_DT_DEFINED_NOCACHE)
-#define __NOCACHE	__attribute__((__section__(CONFIG_DT_DEFINED_NOCACHE_NAME)))
+#elif defined(CONFIG_DT_NOCACHE_MEMORY)
+#define __NOCACHE	__attribute__((__section__(CONFIG_DT_NOCACHE_MEM_NAME)))
 #else /* CONFIG_NOCACHE_MEMORY */
 #define __NOCACHE
 #endif /* CONFIG_NOCACHE_MEMORY */
