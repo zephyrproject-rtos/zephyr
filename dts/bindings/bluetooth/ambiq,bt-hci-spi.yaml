@@ -7,7 +7,7 @@ description: |
 
 compatible: "ambiq,bt-hci-spi"
 
-include: bt-hci.yaml
+include: [spi-device.yaml, bt-hci.yaml]
 
 properties:
   reg:

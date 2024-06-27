@@ -71,7 +71,7 @@
 	status = "okay";
 };
 
-&iom0 {
+&i2c0 {
 	compatible = "ambiq,i2c";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
@@ -79,7 +79,7 @@
 	status = "okay";
 };
 
-&iom1 {
+&spi1 {
 	compatible = "ambiq,spi";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
@@ -88,7 +88,7 @@
 	status = "okay";
 };
 
-&iom4 {
+&spi4 {
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-names = "default";
 	status = "okay";
