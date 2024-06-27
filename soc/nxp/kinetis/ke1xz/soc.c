@@ -134,6 +134,10 @@ static ALWAYS_INLINE void clk_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Lpspi1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi1), ip_source));
 #endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay)
+	CLOCK_SetIpSrc(kCLOCK_Adc0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(adc0), ip_source));
+#endif
 }
 
 static int ke1xz_init(void)
