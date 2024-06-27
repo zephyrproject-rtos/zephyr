@@ -363,9 +363,6 @@ Using LinkServer
 ----------------
 
 Known limitations with LinkServer and these boards include:
-- ``west debug`` does not yet work correctly, and the application image is not
-properly written to the memory.  `NXP MCUXpresso for Visual Studio Code`_
-can be used to debug Zephyr applications with LinkServer.
 - ``west flash`` will not write images to non-flash locations. The flash
 command only works when all data in the image is written to flash memory
 regions.
