@@ -84,7 +84,7 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | USDHC     | on-chip    | sdhc                                |
 +-----------+------------+-------------------------------------+
-| VREF      | on-chip    | REGULATOR                           |
+| VREF      | on-chip    | regulator                           |
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
