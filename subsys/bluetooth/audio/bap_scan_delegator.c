@@ -835,22 +835,26 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	}
 
 	for (int i = 0; i < num_subgroups; i++) {
-		/* If the metadata len is 0, we shall not overwrite the existing metadata */
-		if (subgroups[i].metadata_len == 0) {
-			continue;
-		}
+		const bool metadata_len_changed =
+			subgroups[i].metadata_len != state->subgroups[i].metadata_len;
 
-		if (subgroups[i].metadata_len != state->subgroups[i].metadata_len) {
+		if (metadata_len_changed) {
 			state->subgroups[i].metadata_len = subgroups[i].metadata_len;
 			state_changed = true;
 		}
 
-		if (memcmp(subgroups[i].metadata, state->subgroups[i].metadata,
+		if (metadata_len_changed ||
+		    memcmp(subgroups[i].metadata, state->subgroups[i].metadata,
 			   sizeof(subgroups[i].metadata)) != 0) {
-			(void)memcpy(state->subgroups[i].metadata,
-				     subgroups[i].metadata,
-				     state->subgroups[i].metadata_len);
-			state->subgroups[i].metadata_len = subgroups[i].metadata_len;
+
+			if (state->subgroups[i].metadata_len == 0U) {
+				memset(state->subgroups[i].metadata, 0,
+				       state->subgroups[i].metadata_len);
+			} else {
+				(void)memcpy(state->subgroups[i].metadata, subgroups[i].metadata,
+					     state->subgroups[i].metadata_len);
+			}
+
 			state_changed = true;
 		}
 	}
