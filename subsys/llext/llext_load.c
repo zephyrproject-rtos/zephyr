@@ -105,7 +105,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 		ldr->sect_map[i].offset = 0;
 	}
 
-	ldr->sect_hdrs = llext_peek(ldr, ldr->hdr.e_shoff);
+	ldr->sect_hdrs = (elf_shdr_t *) llext_peek(ldr, ldr->hdr.e_shoff);
 	if (ldr->sect_hdrs) {
 		ldr->sect_hdrs_on_heap = false;
 	} else {
