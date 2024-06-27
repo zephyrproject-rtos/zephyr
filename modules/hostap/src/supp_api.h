@@ -190,6 +190,22 @@ int supplicant_get_wifi_conn_params(const struct device *dev,
 			 struct wifi_connect_req_params *params);
 
 #ifdef CONFIG_AP
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+/**
+ * @brief Get Wi-Fi AP Status
+ *
+ * @param dev Wi-Fi device
+ * @param params AP status
+ * @return 0 for OK; -1 for ERROR
+ */
+int hapd_state(const struct device *dev, int *state);
+#else
+static inline int hapd_state(const struct device *dev, int *state)
+{
+	return -EINVAL;
+}
+#endif
+
 /**
  * @brief Set Wi-Fi AP configuration
  *

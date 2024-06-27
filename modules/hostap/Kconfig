@@ -43,6 +43,10 @@ config WIFI_NM_WPA_SUPPLICANT_WQ_PRIO
 	int "Thread priority of wpa_supplicant iface workqueue"
 	default 7
 
+config WIFI_NM_WPA_SUPPLICANT_PRIO
+	int "Thread priority of wpa_supplicant"
+	default 0
+
 # Currently we default ZVFS_OPEN_MAX to 16 in lib/posix/Kconfig
 # l2_packet - 1
 # ctrl_iface - 2 * socketpairs = 4(local and global)
@@ -179,7 +183,7 @@ config WIFI_NM_WPA_SUPPLICANT_WPA3
 	default y
 
 config WIFI_NM_WPA_SUPPLICANT_AP
-	bool "AP mode support"
+	bool "SoftAP mode support based on WPA supplicant"
 
 config WIFI_NM_WPA_SUPPLICANT_WPS
 	bool "WPS support"
@@ -201,6 +205,10 @@ config WIFI_NM_WPA_SUPPLICANT_CLI
 config WIFI_NM_WPA_SUPPLICANT_INF_MON
 	bool "Monitor the net mgmt event to add/del interface"
 	default y
+
+config WIFI_NM_HOSTAPD_AP
+	bool "FullAP mode support based on Hostapd"
+	depends on !WIFI_NM_WPA_SUPPLICANT_INF_MON
 
 config WIFI_NM_WPA_SUPPLICANT_BSS_MAX_IDLE_TIME
 	int "BSS max idle timeout in seconds"
@@ -437,6 +445,12 @@ config DPP2
 	bool
 
 config DPP3
+	bool
+
+config ACS
+	bool
+
+config IEEE80211AC
 	bool
 
 config NW_SEL_RELIABILITY
