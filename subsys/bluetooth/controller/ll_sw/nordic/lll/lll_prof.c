@@ -15,6 +15,8 @@
 
 #include "util/memq.h"
 
+#include "ticker/ticker.h"
+
 #include "pdu_df.h"
 #include "pdu_vendor.h"
 #include "pdu.h"
@@ -23,7 +25,9 @@
 
 static int send(struct node_rx_pdu *rx);
 static inline void sample(uint32_t *timestamp);
+static inline void sample_ticks(uint32_t *timestamp_ticks);
 static inline void delta(uint32_t timestamp, uint16_t *cputime);
+static inline void delta_ticks(uint32_t timestamp_ticks, uint8_t *cputime_ticks);
 
 static uint32_t timestamp_radio;
 static uint32_t timestamp_lll;
@@ -41,44 +45,61 @@ static uint16_t cputime_max;
 static uint16_t cputime_prev;
 static uint32_t timestamp_latency;
 
+static uint32_t timestamp_ticks_radio;
+static uint32_t timestamp_ticks_lll;
+static uint32_t timestamp_ticks_ull_high;
+static uint32_t timestamp_ticks_ull_low;
+static uint8_t  cputime_ticks_radio;
+static uint8_t  cputime_ticks_lll;
+static uint8_t  cputime_ticks_ull_high;
+static uint8_t  cputime_ticks_ull_low;
+
 void lll_prof_enter_radio(void)
 {
 	sample(&timestamp_radio);
+	sample_ticks(&timestamp_ticks_radio);
 }
 
 void lll_prof_exit_radio(void)
 {
 	delta(timestamp_radio, &cputime_radio);
+	delta_ticks(timestamp_ticks_radio, &cputime_ticks_radio);
 }
 
 void lll_prof_enter_lll(void)
 {
 	sample(&timestamp_lll);
+	sample_ticks(&timestamp_ticks_lll);
 }
 
 void lll_prof_exit_lll(void)
 {
 	delta(timestamp_lll, &cputime_lll);
+	delta_ticks(timestamp_ticks_lll, &cputime_ticks_lll);
 }
 
 void lll_prof_enter_ull_high(void)
 {
 	sample(&timestamp_ull_high);
+	sample_ticks(&timestamp_ticks_ull_high);
 }
 
 void lll_prof_exit_ull_high(void)
 {
 	delta(timestamp_ull_high, &cputime_ull_high);
+	delta_ticks(timestamp_ticks_ull_high, &cputime_ticks_ull_high);
 }
 
 void lll_prof_enter_ull_low(void)
 {
 	sample(&timestamp_ull_low);
+	sample_ticks(&timestamp_ticks_ull_low);
 }
 
 void lll_prof_exit_ull_low(void)
 {
 	delta(timestamp_ull_low, &cputime_ull_low);
+	delta_ticks(timestamp_ticks_ull_low, &cputime_ticks_ull_low);
 }
 
 void lll_prof_latency_capture(void)
@@ -236,6 +257,10 @@ static int send(struct node_rx_pdu *rx)
 	p->lll = cputime_lll;
 	p->ull_high = cputime_ull_high;
 	p->ull_low = cputime_ull_low;
+	p->radio_ticks = cputime_ticks_radio;
+	p->lll_ticks = cputime_ticks_lll;
+	p->ull_high_ticks = cputime_ticks_ull_high;
+	p->ull_low_ticks = cputime_ticks_ull_low;
 
 	ull_rx_put_sched(rx->hdr.link, rx);
 
@@ -248,6 +273,11 @@ static inline void sample(uint32_t *timestamp)
 	*timestamp = radio_tmr_sample_get();
 }
 
+static inline void sample_ticks(uint32_t *timestamp_ticks)
+{
+	*timestamp_ticks = ticker_ticks_now_get();
+}
+
 static inline void delta(uint32_t timestamp, uint16_t *cputime)
 {
 	uint32_t delta;
@@ -256,5 +286,15 @@ static inline void delta(uint32_t timestamp, uint16_t *cputime)
 	delta = radio_tmr_sample_get() - timestamp;
 	if (delta < UINT16_MAX && delta > *cputime) {
 		*cputime = delta;
+	}
+}
+
+static inline void delta_ticks(uint32_t timestamp_ticks, uint8_t *cputime_ticks)
+{
+	uint32_t delta;
+
+	delta = ticker_ticks_now_get() - timestamp_ticks;
+	if (delta < UINT8_MAX && delta > *cputime_ticks) {
+		*cputime_ticks = delta;
 	}
 }
