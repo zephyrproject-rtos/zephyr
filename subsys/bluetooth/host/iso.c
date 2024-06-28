@@ -840,7 +840,7 @@ int conn_iso_send(struct bt_conn *conn, struct net_buf *buf, enum bt_iso_timesta
 		return -EINVAL;
 	}
 
-	net_buf_put(&conn->iso.txq, buf);
+	k_fifo_put(&conn->iso.txq, buf);
 	BT_ISO_DATA_DBG("%p put on list", buf);
 
 	/* only one ISO channel per conn-object */

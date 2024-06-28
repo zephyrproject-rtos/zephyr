@@ -356,7 +356,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 		return err;
 	}
 
-	net_buf_put(&bt_dev.cmd_tx_queue, buf);
+	k_fifo_put(&bt_dev.cmd_tx_queue, buf);
 	bt_tx_irq_raise();
 
 	return 0;
@@ -392,7 +392,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
 
-	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
+	k_fifo_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
 	bt_tx_irq_raise();
 
 	/* TODO: disallow sending sync commands from syswq altogether */
@@ -3042,7 +3042,7 @@ static void hci_core_send_cmd(void)
 
 	/* Get next command */
 	LOG_DBG("fetch cmd");
-	buf = net_buf_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
+	buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
 	BT_ASSERT(buf);
 
 	/* Clear out any existing sent command */

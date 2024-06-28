@@ -225,7 +225,7 @@ int bt_recv(struct net_buf *buf)
 	}
 
 	/* Queue to RAW rx queue */
-	net_buf_put(raw_rx, buf);
+	k_fifo_put(raw_rx, buf);
 
 	return 0;
 }
