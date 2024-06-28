@@ -195,7 +195,8 @@ static int llext_find_tables(struct llext_loader *ldr)
 }
 
 /*
- * Maps the section indexes and copies special section headers for easier use
+ * Maps the ELF sections into regions according to their usage flags,
+ * calculating ldr->sects and ldr->sect_map.
  */
 static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 {
@@ -251,7 +252,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			 */
 			memcpy(region, shdr, sizeof(*region));
 		} else {
-			/* Make sure the sections are compatible before merging */
+			/* Make sure this section is compatible with the region */
 			if (shdr->sh_flags != region->sh_flags) {
 				LOG_ERR("Unsupported section flags for %s (region %d)",
 					name, mem_idx);
@@ -269,9 +270,10 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			}
 
 			if (ldr->hdr.e_type == ET_DYN) {
-				/* In shared objects, sh_addr is the VMA. Before
-				 * merging these sections, make sure the delta
-				 * in VMAs matches that of file offsets.
+				/* In shared objects, sh_addr is the VMA.
+				 * Before merging this section in the region,
+				 * make sure the delta in VMAs matches that of
+				 * file offsets.
 				 */
 				if (shdr->sh_addr - region->sh_addr !=
 				    shdr->sh_offset - region->sh_offset) {
@@ -282,7 +284,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			}
 
 			/*
-			 * Extend the current section to include the new one
+			 * Extend the current region to include the new section
 			 * (overlaps are detected later)
 			 */
 			size_t address = MIN(region->sh_addr, shdr->sh_addr);
@@ -297,7 +299,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 	}
 
 	/*
-	 * Test that no computed range overlaps. This can happen if sections of
+	 * Test that no computed region overlaps. This can happen if sections of
 	 * different llext_mem type are interleaved in the ELF file or in VMAs.
 	 */
 	for (i = 0; i < LLEXT_MEM_COUNT; i++) {
@@ -307,7 +309,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 
 			if (x->sh_type == SHT_NULL || x->sh_size == 0 ||
 			    y->sh_type == SHT_NULL || y->sh_size == 0) {
-				/* Skip empty sections */
+				/* Skip empty regions */
 				continue;
 			}
 
@@ -350,8 +352,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 	}
 
 	/*
-	 * Calculate each ELF section's offset inside its memory area. This is
-	 * done as a separate pass so the final groups are already defined.
+	 * Calculate each ELF section's offset inside its memory region. This
+	 * is done as a separate pass so the final regions are already defined.
 	 */
 	for (i = 0; i < ldr->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ldr->sect_hdrs + i;
@@ -657,7 +659,7 @@ out:
 
 		/* Since the loading process failed, free the resources that
 		 * were allocated for the lifetime of the extension as well,
-		 * such as section data and exported symbols.
+		 * such as regions and exported symbols.
 		 */
 		llext_free_regions(ext);
 		llext_free(ext->exp_tab.syms);
