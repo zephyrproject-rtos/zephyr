@@ -532,21 +532,10 @@ Drivers and Sensors
 
 * Wi-Fi
 
-  * Added support for configuring RTS threshold. With this, users can set the RTS threshold value or
-    disable the RTS mechanism.
-
-  * Added support for configuring AP parameters. With this, users can set AP parameters at
-    build and run time.
-
-  * Added support to configure "max_inactivity" BSS parameter. Users can set this both build and runtime
-    duration to control the maximum time duration after which AP may disconnect a STA due to inactivity
-    from STA.
-
-  * Added support to configure "inactivity_poll" BSS parameter. Users can set build only AP parameter
-    to control whether AP may poll the STA before throwing away STA due to inactivity.
-
-  * Added support to configure "max_num_sta" BSS parameter. Users can set this both build and run time
-    parameter to control the maximum number of STA entries.
+  * Fixed message parsing for esp-at.
+  * Fixed esp-at connect failures.
+  * Implement :c:func:`bind` and :c:func:`recvfrom` for UDP sockets for esp-at.
+  * Added option for setting maximum data size for eswifi.
 
 Networking
 **********
@@ -596,7 +585,7 @@ Networking
   * Reimplemented DHCPv4 client RENEW/REBIND logic to be compliant with RFC2131.
   * Improved declined addresses management in DHCPv4 server, which now can be
     reused after configured time.
-  * Fixed including client ID option in DHCPv4 server responsed, according to RFC6842.
+  * Fixed including the client ID option in the DHCPv4 server response, according to RFC6842.
   * Added :kconfig:option:`CONFIG_NET_DHCPV4_SERVER_NAK_UNRECOGNIZED_REQUESTS` which
     allows to override RFC-defined behavior, and NAK requests from unrecognized
     clients.
@@ -608,6 +597,25 @@ Networking
   * Added :kconfig:option:`CONFIG_NET_DHCPV6_DUID_MAX_LEN` which allows to configure
     maximum supported DUID length.
   * Added documentation page for DHCPv6.
+
+* DNS/mDNS/LLMNR:
+
+  * Fixed an issue where the mDNS Responder did not work when the mDNS Resolver was also enabled.
+    The mDNS Resolver and mDNS Responder can now be used simultaneously.
+  * Reworked LLMNR and mDNS responders, and DNS resolver to use sockets and socket services API.
+  * Added ANY query resource type.
+  * Added support for mDNS to provide records in runtime.
+  * Added support for caching DNS records.
+  * Fixed error codes returned when socket creation fails, and when all results have been returned.
+  * Fixed DNS retransmission timeout calculation.
+
+* gPTP/PTP:
+
+  * Added support for IEEE 1588-2019 PTP.
+  * Added support for SO_TIMESTAMPING socket option to get timestamping information in socket
+    ancillary data.
+  * Fixed race condition on timestamp callback.
+  * Fixed clock master sync send SM if we are not the GM clock.
 
 * HTTP:
 
@@ -666,18 +674,7 @@ Networking
   * Removed deprecated API functions and definitions.
   * Other minor fixes and improvements.
 
-* mDNS:
-
-  * Fixed an issue where the mDNS Responder did not work when the mDNS Resolver was also enabled.
-    The mDNS Resolver and mDNS Responder can now be used simultaneously.
-
 * Misc:
-
-  * Implemented new networking POSIX APIs:
-
-    * :c:func:`if_nameindex`
-    * :c:func:`inet_ntoa`
-    * :c:func:`inet_addr`
 
   * Improved overall networking API doxygen documentation.
   * Converted TFTP library to use ``zsock_*`` API.
@@ -697,12 +694,16 @@ Networking
     (for example packet capture).
   * Implemented pseudo interface, a.k.a "any" interface for packet capture use
     case.
+  * Added cooded mode capture support. This allows non-IP based network data capture.
+  * Generate network events when starting or stopping packet capture.
   * Removed obsolete and unused ``tcp_first_msg`` :c:struct:`net_pkt` flag.
-  * Reworked LLMNR responder to use sockets and socket services API.
   * Added new :zephyr:code-sample:`secure-mqtt-sensor-actuator` sample.
   * Added support for partial L3 and L4 checksum offloading.
   * Updated :zephyr:code-sample:`mqtt-azure` with new CA certificates, the current
     on expires soon.
+  * Added new driver for Native Simulator offloaded sockets.
+  * Overhauled VLAN support to use Virtual network interfaces.
+  * Added statistics collection for Virtual network interfaces.
 
 * MQTT:
 
@@ -731,6 +732,7 @@ Networking
   * Removed deprecated ``gsm_modem`` driver and sample.
   * Optimized memory allocation in PPP driver.
   * Misc improvements in the :zephyr:code-sample:`cellular-modem` sample
+  * Added PPP low level packet capture support.
 
 * Shell:
 
@@ -740,6 +742,20 @@ Networking
   * Reworked VLAN information printout.
   * Added option to set random MAC address with ``net iface set_mac`` command.
   * Added multicast join status when printing multicast address information.
+
+* Sockets:
+
+  * Implemented new networking POSIX APIs:
+
+    * :c:func:`if_nameindex`
+    * :c:func:`inet_ntoa`
+    * :c:func:`inet_addr`
+
+  * Added support for tracing socket API calls.
+  * TLS sockets are no longer experimental API.
+  * Fixed the protocol field endianness for ``AF_PACKET`` type sockets.
+  * Fixed :c:func:`getsockname` for TCP.
+  * Improve :c:func:`sendmsg` support when using DTLS sockets.
 
 * Syslog:
 
@@ -758,7 +774,7 @@ Networking
   * Fixed ACK number verification during connection teardown.
   * Fixed a bug, where data bytes included in FIN packet were ignored.
   * Fixed a possible TCP context leak in case initial SYN packet transmission failed.
-  * Deprecated ``CONFIG_NET_TCP_ACK_TIMEOUT`` as it was redundant with other configs.
+  * Deprecated :kconfig:option:`CONFIG_NET_TCP_ACK_TIMEOUT` as it was redundant with other configs.
   * Improved debug logs, so that they're easier to follow under heavy load.
   * ISN generation now uses SHA-256 instead of MD5. Moreover it now relies on PSA APIs
     instead of legacy Mbed TLS functions for hash computation.
@@ -772,6 +788,27 @@ Networking
 
   * Converted Websocket library to use ``zsock_*`` API.
   * Added Object Core support to Websocket sockets.
+
+* Wi-Fi:
+
+  * Reduce memory usage of 5 GHz channel list.
+  * Added channel validity check in AP mode.
+  * Added support for BSSID configuration in connect call.
+  * Wifi shell help text fixes. Option parsing fixes.
+  * Support WPA auto personal security mode.
+  * Collect unicast received/sent network packet statistics.
+  * Added support for configuring RTS threshold. With this, users can set the RTS threshold
+    value or disable the RTS mechanism.
+  * Added support for configuring AP parameters. With this, users can set AP parameters at
+    build and run time.
+  * Added support to configure ``max_inactivity`` BSS parameter. Users can set this both
+    build and runtime duration to control the maximum time duration after which AP may
+    disconnect a STA due to inactivity from STA.
+  * Added support to configure ``inactivity_poll`` BSS parameter. Users can set build
+    only AP parameter to control whether AP may poll the STA before throwing away STA
+    due to inactivity.
+  * Added support to configure ``max_num_sta`` BSS parameter. Users can set this both
+    build and run time parameter to control the maximum number of STA entries.
 
 * zperf:
 
