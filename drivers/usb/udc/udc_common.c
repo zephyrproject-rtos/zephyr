@@ -739,13 +739,14 @@ udc_disable_error:
 	return ret;
 }
 
-int udc_init(const struct device *dev, udc_event_cb_t event_cb)
+int udc_init(const struct device *dev,
+	     udc_event_cb_t event_cb, const void *const event_ctx)
 {
 	const struct udc_api *api = dev->api;
 	struct udc_data *data = dev->data;
 	int ret;
 
-	if (event_cb == NULL) {
+	if (event_cb == NULL || event_ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -757,6 +758,7 @@ int udc_init(const struct device *dev, udc_event_cb_t event_cb)
 	}
 
 	data->event_cb = event_cb;
+	data->event_ctx = event_ctx;
 
 	ret = api->init(dev);
 	if (ret == 0) {
