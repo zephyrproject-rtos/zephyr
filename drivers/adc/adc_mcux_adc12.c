@@ -166,6 +166,15 @@ static void mcux_adc12_start_channel(const struct device *dev)
 	LOG_DBG("Starting channel %d", data->channel_id);
 	channel_config.enableInterruptOnConversionCompleted = true;
 	channel_config.channelNumber = data->channel_id;
+#if defined(CONFIG_SOC_S32K146) || defined(CONFIG_SOC_S32K148)
+	if (data->channel_id >= 16) {
+		/*
+		 * channels 16..31 are encoded as 100000b..101111b in
+		 * SC1[ADCH] field
+		 */
+		channel_config.channelNumber += 16;
+	}
+#endif
 	ADC12_SetChannelConfig(config->base, channel_group, &channel_config);
 }
 
