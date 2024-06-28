@@ -151,7 +151,7 @@ static int udc_mcux_ctrl_feed_dout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	net_buf_put(&cfg->fifo, buf);
+	k_fifo_put(&cfg->fifo, buf);
 
 	ret = udc_mcux_ep_feed(dev, cfg, buf);
 

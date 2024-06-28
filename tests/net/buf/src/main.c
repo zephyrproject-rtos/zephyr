@@ -140,8 +140,8 @@ ZTEST(net_buf_tests, test_net_buf_2)
 	}
 
 	k_fifo_init(&fifo);
-	net_buf_put(&fifo, head);
-	head = net_buf_get(&fifo, K_NO_WAIT);
+	k_fifo_put(&fifo, head);
+	head = k_fifo_get(&fifo, K_NO_WAIT);
 
 	destroy_called = 0;
 	net_buf_unref(head);
@@ -159,7 +159,7 @@ static void test_3_thread(void *arg1, void *arg2, void *arg3)
 
 	k_sem_give(sema);
 
-	buf = net_buf_get(fifo, TEST_TIMEOUT);
+	buf = k_fifo_get(fifo, TEST_TIMEOUT);
 	zassert_not_null(buf, "Unable to get buffer");
 
 	destroy_called = 0;
@@ -201,7 +201,7 @@ ZTEST(net_buf_tests, test_net_buf_3)
 	zassert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
 		     "Timeout while waiting for semaphore");
 
-	net_buf_put(&fifo, head);
+	k_fifo_put(&fifo, head);
 
 	zassert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
 		     "Timeout while waiting for semaphore");

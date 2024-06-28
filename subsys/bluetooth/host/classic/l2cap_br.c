@@ -300,7 +300,7 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 	LOG_DBG("push PDU: cb %p userdata %p", cb, user_data);
 
 	make_closure(buf->user_data, cb, user_data);
-	net_buf_put(&br_chan->_pdu_tx_queue, buf);
+	k_fifo_put(&br_chan->_pdu_tx_queue, buf);
 	raise_data_ready(br_chan);
 
 	return 0;
@@ -910,7 +910,7 @@ void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
 
 	/* Remove buffers on the PDU TX queue. */
 	while (chan_has_data(br_chan)) {
-		struct net_buf *buf = net_buf_get(&br_chan->_pdu_tx_queue, K_NO_WAIT);
+		struct net_buf *buf = k_fifo_get(&br_chan->_pdu_tx_queue, K_NO_WAIT);
 
 		net_buf_unref(buf);
 	}

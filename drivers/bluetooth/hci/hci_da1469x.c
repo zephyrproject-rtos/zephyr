@@ -242,7 +242,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		/* Let the ISR continue receiving new packets */
 		rx_isr_start();
 
-		buf = net_buf_get(&rx.fifo, K_FOREVER);
+		buf = k_fifo_get(&rx.fifo, K_FOREVER);
 		do {
 			rx_isr_start();
 
@@ -257,7 +257,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 			rx_isr_stop();
 
-			buf = net_buf_get(&rx.fifo, K_NO_WAIT);
+			buf = k_fifo_get(&rx.fifo, K_NO_WAIT);
 		} while (buf);
 	}
 }
@@ -339,7 +339,7 @@ static inline void read_payload(void)
 	reset_rx();
 
 	LOG_DBG("Putting buf %p to rx fifo", buf);
-	net_buf_put(&rx.fifo, buf);
+	k_fifo_put(&rx.fifo, buf);
 }
 
 static inline void read_header(void)

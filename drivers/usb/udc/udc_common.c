@@ -124,7 +124,7 @@ struct net_buf *udc_buf_get(const struct device *dev, const uint8_t ep)
 		return NULL;
 	}
 
-	return net_buf_get(&ep_cfg->fifo, K_NO_WAIT);
+	return k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
 }
 
 struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
@@ -169,7 +169,7 @@ struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep)
 void udc_buf_put(struct udc_ep_config *const ep_cfg,
 		 struct net_buf *const buf)
 {
-	net_buf_put(&ep_cfg->fifo, buf);
+	k_fifo_put(&ep_cfg->fifo, buf);
 }
 
 void udc_ep_buf_set_setup(struct net_buf *const buf)
