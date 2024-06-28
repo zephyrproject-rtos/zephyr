@@ -12,6 +12,7 @@
 #include <DA1469xAB.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smartbond_entropy, CONFIG_ENTROPY_LOG_LEVEL);
@@ -27,7 +28,7 @@ struct rng_pool {
 	uint8_t last;
 	uint8_t mask;
 	uint8_t threshold;
-	uint8_t buffer[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, buffer);
 };
 
 #define RNG_POOL_DEFINE(name, len) uint8_t name[sizeof(struct rng_pool) + (len)]
