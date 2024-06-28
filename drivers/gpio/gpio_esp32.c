@@ -478,11 +478,16 @@ static int gpio_esp32_init(const struct device *dev)
 	static bool isr_connected;
 
 	if (!isr_connected) {
-		esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
+		int ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
 			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)),
 			(ISR_HANDLER)gpio_esp32_isr,
 			(void *)dev,
 			NULL);
+
+		if (ret != 0) {
+			LOG_ERR("could not allocate interrupt (err %d)", ret);
+			return ret;
+		}
 
 		isr_connected = true;
 	}
