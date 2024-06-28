@@ -106,7 +106,7 @@ static int drv_send(const struct device *dev, struct net_buf *buf)
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "buf");
 
 	__ASSERT_NO_MSG(buf);
-	net_buf_put(&drv_send_fifo, buf);
+	k_fifo_put(&drv_send_fifo, buf);
 	return 0;
 }
 
@@ -213,7 +213,7 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 	for (uint16_t i = 0; i < HCI_NORMAL_CMD_BUF_COUNT; i++) {
 		/* The mock controller processes a command. */
 		{
-			struct net_buf *buf = net_buf_get(&drv_send_fifo, TIMEOUT_PRESUME_STUCK);
+			struct net_buf *buf = k_fifo_get(&drv_send_fifo, TIMEOUT_PRESUME_STUCK);
 
 			zassert_not_null(buf);
 			zassert_equal(buf->len, sizeof(h4_msg_cmd_dummy1) - 1, "Wrong length");
@@ -241,7 +241,7 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 	for (uint16_t i = 0; i < TEST_PARAM_HOST_COMPLETE_COUNT; i++) {
 		/* The mock controller processes a 'HCI Host Number of Completed Packets'. */
 		{
-			struct net_buf *buf = net_buf_get(&drv_send_fifo, TIMEOUT_PRESUME_STUCK);
+			struct net_buf *buf = k_fifo_get(&drv_send_fifo, TIMEOUT_PRESUME_STUCK);
 
 			zassert_not_null(buf);
 			zassert_equal(buf->len, sizeof(h4_msg_cmd_host_num_complete) - 1,

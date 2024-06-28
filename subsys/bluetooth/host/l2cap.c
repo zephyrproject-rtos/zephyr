@@ -261,7 +261,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 	 * `l2cap_chan_destroy()` as it is not called for fixed channels.
 	 */
 	while (chan_has_data(le_chan)) {
-		struct net_buf *buf = net_buf_get(&le_chan->tx_queue, K_NO_WAIT);
+		struct net_buf *buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT);
 
 		net_buf_unref(buf);
 	}
@@ -312,7 +312,7 @@ static void l2cap_rx_process(struct k_work *work)
 	struct bt_l2cap_le_chan *ch = CHAN_RX(work);
 	struct net_buf *buf;
 
-	while ((buf = net_buf_get(&ch->rx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&ch->rx_queue, K_NO_WAIT))) {
 		LOG_DBG("ch %p buf %p", ch, buf);
 		l2cap_chan_le_recv(ch, buf);
 		net_buf_unref(buf);
@@ -738,7 +738,7 @@ int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 	make_closure(pdu->user_data, cb, user_data);
 	LOG_DBG("push: pdu %p len %d cb %p userdata %p", pdu, pdu->len, cb, user_data);
 
-	net_buf_put(&le_chan->tx_queue, pdu);
+	k_fifo_put(&le_chan->tx_queue, pdu);
 
 	raise_data_ready(le_chan); /* tis just a flag */
 
@@ -1299,7 +1299,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	}
 
 	/* Remove buffers on the SDU RX queue */
-	while ((buf = net_buf_get(&le_chan->rx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -2259,12 +2259,12 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 	}
 
 	/* Remove buffers on the TX queue */
-	while ((buf = net_buf_get(&le_chan->tx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT))) {
 		l2cap_tx_buf_destroy(chan->conn, buf, -ESHUTDOWN);
 	}
 
 	/* Remove buffers on the RX queue */
-	while ((buf = net_buf_get(&le_chan->rx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -2669,7 +2669,7 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	net_buf_put(&chan->rx_queue, buf);
+	k_fifo_put(&chan->rx_queue, buf);
 	k_work_submit(&chan->rx_work);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -3162,7 +3162,7 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 	net_buf_push_le16(buf, sdu_len);
 
 	/* Put buffer on TX queue */
-	net_buf_put(&le_chan->tx_queue, buf);
+	k_fifo_put(&le_chan->tx_queue, buf);
 
 	/* Always process the queue in the same context */
 	raise_data_ready(le_chan);

@@ -308,7 +308,7 @@ static int usbd_ctrl_feed_dout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	net_buf_put(&cfg->fifo, buf);
+	k_fifo_put(&cfg->fifo, buf);
 	udc_nrf_clear_control_out(dev);
 
 	return 0;
