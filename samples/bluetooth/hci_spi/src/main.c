@@ -317,7 +317,7 @@ int main(void)
 	}
 
 	while (1) {
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		err = spi_send(buf);
 		if (err) {
 			LOG_ERR("Failed to send");
