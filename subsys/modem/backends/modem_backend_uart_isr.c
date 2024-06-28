@@ -233,7 +233,7 @@ static int modem_backend_uart_isr_close(void *data)
 	return 0;
 }
 
-struct modem_pipe_api modem_backend_uart_isr_api = {
+static const struct modem_pipe_api modem_backend_uart_isr_api = {
 	.open = modem_backend_uart_isr_open,
 	.transmit = modem_backend_uart_isr_transmit,
 	.receive = modem_backend_uart_isr_receive,
