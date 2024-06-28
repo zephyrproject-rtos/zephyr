@@ -1232,7 +1232,7 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 			  &usbd_cdc_acm_api,					\
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
 										\
-	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, tx_fifo_size));	\
+	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
 	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
 										\
 	static struct cdc_acm_uart_data uart_data_##n = {			\
