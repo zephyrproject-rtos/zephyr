@@ -20,7 +20,13 @@ int main(void)
 {
 	int ret;
 
-	printk("Hello from APP\n");
+	printk("Hello from APP - %s\n",
+#ifdef CONFIG_MULTITHREADING
+	"MULTITHREADING"
+#else
+	"SINGLETHREAD"
+#endif
+	);
 
 #ifdef CONFIG_RX_ENABLED
 	const struct mbox_dt_spec rx_channel = MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx);
@@ -42,7 +48,11 @@ int main(void)
 	const struct mbox_dt_spec tx_channel = MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx);
 
 	while (1) {
+#if defined(CONFIG_MULTITHREADING)
 		k_sleep(K_MSEC(2000));
+#else
+		k_busy_wait(2000000);
+#endif
 
 		printk("Ping (on channel %d)\n", tx_channel.channel_id);
 
