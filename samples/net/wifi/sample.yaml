@@ -12,6 +12,7 @@ tests:
       - cc3220sf_launchxl
       - disco_l475_iot1
       - reel_board
+      - rd_rw612_bga
     integration_platforms:
       - cc3220sf_launchxl
   sample.net.wifi.mikroe_wifi_bt_click:

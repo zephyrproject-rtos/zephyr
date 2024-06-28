@@ -1,0 +1,12 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: IMU interrupt info
+
+compatible: "nxp,wifi"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
