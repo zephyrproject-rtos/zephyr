@@ -30,6 +30,9 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
+* Deprecated the :c:func:`net_buf_put` and :c:func:`net_buf_get` API functions in favor of
+  :c:func:`k_fifo_put` and :c:func:`k_fifo_get`.
+
 Architectures
 *************
 
