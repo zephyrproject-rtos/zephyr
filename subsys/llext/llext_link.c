@@ -239,17 +239,17 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 			continue;
 		}
 
+		LOG_DBG("relocation section %s (%d) acting on section %d has %zd relocations",
+			name, i, shdr->sh_info, (size_t)rel_cnt);
+
 		enum llext_mem mem_idx = ldr->sect_map[shdr->sh_info].mem_idx;
 
 		if (mem_idx == LLEXT_MEM_COUNT) {
-			LOG_ERR("Section %d has no corresponding memory region", shdr->sh_info);
+			LOG_ERR("Section %d not loaded in any memory region", shdr->sh_info);
 			return -ENOEXEC;
 		}
 
 		sect_base = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
-
-		LOG_DBG("relocation section %s (%d) acting on section %d has %zd relocations",
-			name, i, shdr->sh_info, (size_t)rel_cnt);
 
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
