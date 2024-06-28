@@ -73,7 +73,8 @@ function(zephyr_mcuboot_tasks)
 
   # If single slot mode, or if in firmware updater mode and this is the firmware updater image,
   # use slot 0 information
-  if(NOT CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP AND (NOT CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER OR CONFIG_MCUBOOT_APPLICATION_FIRMWARE_UPDATER))
+  if(NOT CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP AND (NOT CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER OR CONFIG_MCUBOOT_APPLICATION_FIRMWARE_UPDATER)
+      AND NOT CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD)
     # Slot 1 size is used instead of slot 0 size
     set(slot_size)
     dt_nodelabel(slot1_flash NODELABEL "slot1_partition" REQUIRED)
@@ -116,6 +117,8 @@ function(zephyr_mcuboot_tasks)
     set(imgtool_args --align 1 --load-addr ${chosen_ram_address} ${imgtool_args})
     set(imgtool_args_alt_slot ${imgtool_args} --hex-addr ${slot1_partition_address})
     set(imgtool_args ${imgtool_args} --hex-addr ${slot0_partition_address})
+  elseif(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD)
+    set(imgtool_args --align 1 --load-addr ${CONFIG_MCUBOOT_SINGLE_APP_LOAD_ADDRESS} ${imgtool_args})
   else()
     set(imgtool_args --align ${write_block_size} ${imgtool_args})
   endif()
