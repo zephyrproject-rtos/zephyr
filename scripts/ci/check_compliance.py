@@ -1533,10 +1533,11 @@ def annotate(res):
     """
     https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#about-workflow-commands
     """
+    msg = res.message.replace('%', '%25').replace('\n', '%0A').replace('\r', '%0D')
     notice = f'::{res.severity} file={res.file}' + \
              (f',line={res.line}' if res.line else '') + \
              (f',col={res.col}' if res.col else '') + \
-             f',title={res.title}::{res.message}'
+             f',title={res.title}::{msg}'
     print(notice)
 
 
