@@ -120,10 +120,24 @@ static int ds18b20_read_scratchpad(const struct device *dev,
 	struct ds18b20_data *data = dev->data;
 	const struct ds18b20_config *cfg = dev->config;
 	const struct device *bus = cfg->bus;
+	int ret;
 	uint8_t cmd = DS18B20_CMD_READ_SCRATCHPAD;
+	uint8_t crc;
 
-	return w1_write_read(bus, &data->config, &cmd, 1,
-			     (uint8_t *)&scratchpad[0], 9);
+	memset(scratchpad, 0, sizeof(*scratchpad));
+	ret = w1_write_read(bus, &data->config, &cmd, 1,
+			     (uint8_t *)scratchpad, sizeof(*scratchpad));
+	if (ret != 0) {
+		return ret;
+	}
+
+	crc = w1_crc8((uint8_t *)scratchpad, sizeof(*scratchpad) - 1);
+	if (crc != scratchpad->crc) {
+		LOG_WRN("CRC does not match");
+		return -EIO;
+	}
+
+	return 0;
 }
 
 /* Starts sensor temperature conversion without waiting for completion. */
