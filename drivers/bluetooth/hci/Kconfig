@@ -71,6 +71,7 @@ config BT_STM32WBA
 	default y
 	depends on DT_HAS_ST_HCI_STM32WBA_ENABLED
 	select HAS_STM32LIB
+	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  ST STM32WBA HCI Bluetooth interface
 
