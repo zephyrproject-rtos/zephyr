@@ -24,6 +24,7 @@
 #include "lll.h"
 
 static int send(struct node_rx_pdu *rx);
+static uint16_t latency_get(void);
 static inline void sample(uint32_t *timestamp);
 static inline void sample_ticks(uint32_t *timestamp_ticks);
 static inline void delta(uint32_t timestamp, uint16_t *cputime);
@@ -108,6 +109,29 @@ void lll_prof_latency_capture(void)
 	 * and generate the profiling event at the end of the ISR.
 	 */
 	radio_tmr_sample();
+
+	/* Initialize so that if we call lll_prof_latency_get before it is
+	 * set, we can set it.
+	 */
+	timestamp_latency = UINT16_MAX;
+}
+
+uint16_t lll_prof_latency_get(void)
+{
+	uint16_t latency;
+
+	/* We are here before lll_prof_cputime_capture was called */
+	if (timestamp_latency == UINT16_MAX) {
+		/* get the ISR latency sample */
+		timestamp_latency = radio_tmr_sample_get();
+	}
+
+	/* Get the elapsed time in us since on-air radio packet end to ISR
+	 * entry.
+	 */
+	latency = latency_get();
+
+	return latency;
 }
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
@@ -181,14 +205,10 @@ static int send(struct node_rx_pdu *rx)
 	struct profile *p;
 	uint8_t chg = 0U;
 
-	/* calculate the elapsed time in us since on-air radio packet end
-	 * to ISR entry
+	/* Get the elapsed time in us since on-air radio packet end to ISR
+	 * entry.
 	 */
-#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
-	latency = timestamp_latency - timestamp_radio_end;
-#else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
-	latency = timestamp_latency - radio_tmr_end_get();
-#endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
+	latency = latency_get();
 
 	/* check changes in min, avg and max of latency */
 	if (latency > latency_max) {
@@ -265,6 +285,22 @@ static int send(struct node_rx_pdu *rx)
 	ull_rx_put_sched(rx->hdr.link, rx);
 
 	return 0;
+}
+
+static uint16_t latency_get(void)
+{
+	uint16_t latency;
+
+	/* calculate the elapsed time in us since on-air radio packet end
+	 * to ISR entry
+	 */
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	latency = timestamp_latency - timestamp_radio_end;
+#else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
+	latency = timestamp_latency - radio_tmr_end_get();
+#endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
+
+	return latency;
 }
 
 static inline void sample(uint32_t *timestamp)
