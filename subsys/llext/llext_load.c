@@ -139,12 +139,12 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
  */
 static int llext_find_tables(struct llext_loader *ldr)
 {
-	int sect_cnt, i;
+	int table_cnt, i;
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
 
 	/* Find symbol and string tables */
-	for (i = 0, sect_cnt = 0; i < ldr->sect_cnt; ++i) {
+	for (i = 0, table_cnt = 0; i < ldr->sect_cnt && table_cnt < 3; ++i) {
 		elf_shdr_t *shdr = ldr->sect_hdrs + i;
 
 		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
@@ -165,7 +165,7 @@ static int llext_find_tables(struct llext_loader *ldr)
 			LOG_DBG("symtab at %d", i);
 			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
-			sect_cnt++;
+			table_cnt++;
 			break;
 		case SHT_STRTAB:
 			if (ldr->hdr.e_shstrndx == i) {
@@ -177,7 +177,7 @@ static int llext_find_tables(struct llext_loader *ldr)
 				ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
 				ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
 			}
-			sect_cnt++;
+			table_cnt++;
 			break;
 		default:
 			break;
