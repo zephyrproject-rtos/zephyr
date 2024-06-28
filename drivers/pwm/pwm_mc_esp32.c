@@ -87,7 +87,7 @@ struct mcpwm_esp32_config {
 	uint8_t prescale_timer2;
 	struct mcpwm_esp32_channel_config channel_config[MCPWM_CHANNEL_NUM];
 #ifdef CONFIG_PWM_CAPTURE
-	void (*irq_config_func)(const struct device *dev);
+	int (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_PWM_CAPTURE */
 };
 
@@ -435,9 +435,13 @@ int mcpwm_esp32_init(const struct device *dev)
 	mcpwm_ll_group_flush_shadow(data->hal.dev);
 
 #ifdef CONFIG_PWM_CAPTURE
-	config->irq_config_func(dev);
+	ret = config->irq_config_func(dev);
+
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+	}
 #endif /* CONFIG_PWM_CAPTURE */
-	return 0;
+	return ret;
 }
 
 #ifdef CONFIG_PWM_CAPTURE
@@ -531,12 +535,14 @@ static const struct pwm_driver_api mcpwm_esp32_api = {
 
 #ifdef CONFIG_PWM_CAPTURE
 #define IRQ_CONFIG_FUNC(idx)                                                                       \
-	static void mcpwm_esp32_irq_config_func_##idx(const struct device *dev)                    \
+	static int mcpwm_esp32_irq_config_func_##idx(const struct device *dev)                    \
 	{                                                                                          \
-		esp_intr_alloc(DT_INST_IRQ_BY_IDX(idx, 0, irq),                            \
+		int ret;                                                                   \
+		ret = esp_intr_alloc(DT_INST_IRQ_BY_IDX(idx, 0, irq),                      \
 				ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |          \
 					ESP_INTR_FLAG_IRAM,                                            \
 				(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);               \
+		return ret;                                                                \
 	}
 #define CAPTURE_INIT(idx) .irq_config_func = mcpwm_esp32_irq_config_func_##idx
 #else
