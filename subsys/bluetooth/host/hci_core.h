@@ -311,6 +311,8 @@ struct bt_dev_le {
 #endif /* CONFIG_BT_SMP */
 	/* List of `struct bt_conn` that have either pending data to send, or
 	 * something to process (e.g. a disconnection event).
+	 *
+	 * Each element in this list contains a reference to its `conn` object.
 	 */
 	sys_slist_t		conn_ready;
 };
