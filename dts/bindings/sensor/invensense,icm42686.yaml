@@ -1,30 +1,31 @@
 # Copyright (c) 2024 Intel Corporation
 # Copyright (c) 2022 Esco Medical ApS
 # Copyright (c) 2020 TDK Invensense
+# Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    ICM-42688 motion tracking device.
-    The properties included in this bindings file are the ones which are
-    different in different models. Common ones are included in icm4268x.yaml
+    ICM-42686 motion tracking device.
+    The properties included in this bindings file are the ones which
+    are different in diffrent models. Common ones are in icm4268x.yaml.
     When setting the accel-pwr-mode, accel-fs, accel-odr, gyro-pwr-mode,
     gyro-fs, gyro-odr properties in a .dts or .dtsi file you may include
-    icm42688.h and use the macros defined there.
+    icm4268x.h and use the macros defined there.
 
     Example:
-    #include <zephyr/dt-bindings/sensor/icm42688.h>
+    #include <zephyr/dt-bindings/sensor/icm4268x.h>
 
-    icm42688: icm42688@0 {
+    icm42686: icm42686@0 {
       ...
 
       accel-pwr-mode = <ICM4268X_DT_ACCEL_LN>;
-      accel-fs = <ICM4268X_DT_ACCEL_FS_16>;
+      accel-fs = <ICM4268X_DT_ACCEL_FS_32>;
       accel-odr = <ICM4268X_DT_ACCEL_ODR_2000>;
       gyro-pwr-mode= <ICM4268X_DT_GYRO_LN>;
-      gyro-fs = <ICM4268X_DT_GYRO_FS_2000>;
+      gyro-fs = <ICM4268X_DT_GYRO_FS_4000>;
       gyro-odr = <ICM4268X_DT_GYRO_ODR_2000>;
     };
-compatible: "invensense,icm42688"
+compatible: "invensense,icm42686"
 include: invensense,icm4268x-common.yaml
 
 properties:
@@ -35,6 +36,7 @@ properties:
       Specify the accelerometer range in g.
       Default is power-up configuration.
     enum:
+      - 0 # ICM4268X_DT_ACCEL_FS_32
       - 1 # ICM4268X_DT_ACCEL_FS_16
       - 2 # ICM4268X_DT_ACCEL_FS_8
       - 3 # ICM4268X_DT_ACCEL_FS_4
@@ -47,11 +49,12 @@ properties:
       Specify the gyro range in degrees per second.
       Default is power-up configuration.
     enum:
-      - 1 # ICM4268X_DT_GYRO_FS_2000
-      - 2 # ICM4268X_DT_GYRO_FS_1000
-      - 3 # ICM4268X_DT_GYRO_FS_500
-      - 4 # ICM4268X_DT_GYRO_FS_250
-      - 5 # ICM4268X_DT_GYRO_FS_125
-      - 6 # ICM4268X_DT_GYRO_FS_62_5
-      - 7 # ICM4268X_DT_GYRO_FS_31_25
-      - 8 # ICM4268X_DT_GYRO_FS_15_625
+      - 0 # ICM42686_DT_GYRO_FS_4000
+      - 1 # ICM42686_DT_GYRO_FS_2000
+      - 2 # ICM42686_DT_GYRO_FS_1000
+      - 3 # ICM42686_DT_GYRO_FS_500
+      - 4 # ICM42686_DT_GYRO_FS_250
+      - 5 # ICM42686_DT_GYRO_FS_125
+      - 6 # ICM42686_DT_GYRO_FS_62_5
+      - 7 # ICM42686_DT_GYRO_FS_31_25
+      - 8 # ICM42686_DT_GYRO_FS_15_625

@@ -1,11 +1,12 @@
 /*
  * Copyright (c) 2022 Intel Corporation
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_ICM42688_REG_H_
-#define ZEPHYR_DRIVERS_SENSOR_ICM42688_REG_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_ICM4268X_REG_H_
+#define ZEPHYR_DRIVERS_SENSOR_ICM4268X_REG_H_
 
 #include <zephyr/sys/util.h>
 
@@ -205,14 +206,15 @@
 
 /* Bank0 REG_GYRO_CONFIG0 */
 #define MASK_GYRO_UI_FS_SEL   GENMASK(7, 5)
-#define BIT_GYRO_UI_FS_2000   0x00
-#define BIT_GYRO_UI_FS_1000   0x01
-#define BIT_GYRO_UI_FS_500    0x02
-#define BIT_GYRO_UI_FS_250    0x03
-#define BIT_GYRO_UI_FS_125    0x04
-#define BIT_GYRO_UI_FS_62_5   0x05
-#define BIT_GYRO_UI_FS_31_25  0x06
-#define BIT_GYRO_UI_FS_15_625 0x07
+#define BIT_GYRO_UI_FS_4000   0x00
+#define BIT_GYRO_UI_FS_2000   0x01
+#define BIT_GYRO_UI_FS_1000   0x02
+#define BIT_GYRO_UI_FS_500    0x03
+#define BIT_GYRO_UI_FS_250    0x04
+#define BIT_GYRO_UI_FS_125    0x05
+#define BIT_GYRO_UI_FS_62_5   0x06
+#define BIT_GYRO_UI_FS_31_25  0x07
+#define BIT_GYRO_UI_FS_15_625 0x08
 #define MASK_GYRO_ODR	      GENMASK(3, 0)
 #define BIT_GYRO_ODR_32000    0x01
 #define BIT_GYRO_ODR_16000    0x02
@@ -229,10 +231,11 @@
 
 /* Bank0 REG_ACCEL_CONFIG0 */
 #define MASK_ACCEL_UI_FS_SEL GENMASK(7, 5)
-#define BIT_ACCEL_UI_FS_16   0x00
-#define BIT_ACCEL_UI_FS_8    0x01
-#define BIT_ACCEL_UI_FS_4    0x02
-#define BIT_ACCEL_UI_FS_2    0x03
+#define BIT_ACCEL_UI_FS_32   0x00
+#define BIT_ACCEL_UI_FS_16   0x01
+#define BIT_ACCEL_UI_FS_8    0x02
+#define BIT_ACCEL_UI_FS_4    0x03
+#define BIT_ACCEL_UI_FS_2    0x04
 #define MASK_ACCEL_ODR	     GENMASK(3, 0)
 #define BIT_ACCEL_ODR_32000  0x01
 #define BIT_ACCEL_ODR_16000  0x02
@@ -278,6 +281,7 @@
 
 /* misc. defines */
 #define WHO_AM_I_ICM42688     0x47
+#define WHO_AM_I_ICM42686     0x44
 #define MIN_ACCEL_SENS_SHIFT  11
 #define ACCEL_DATA_SIZE	      6
 #define GYRO_DATA_SIZE	      6
@@ -294,4 +298,4 @@
 #define FIFO_HEADER_ODR_ACCEL BIT(1)
 #define FIFO_HEADER_ODR_GYRO BIT(0)
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_ICM42688_REG_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_ICM4268X_REG_H_ */

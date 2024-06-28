@@ -1,0 +1,15 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: ICM4268x Sensor Sample
+tests:
+  sample.sensor.icm42688:
+    build_only: true
+    platform_allow: vmu_rt1170/mimxrt1176/cm7
+    integration_platforms:
+      - vmu_rt1170/mimxrt1176/cm7
+    tags: sensors
