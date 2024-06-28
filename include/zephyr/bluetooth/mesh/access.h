@@ -187,6 +187,10 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_REMOTE_PROV_SRV           0x0004
 /** Remote Provisioning Client */
 #define BT_MESH_MODEL_ID_REMOTE_PROV_CLI           0x0005
+/** Bridge Configuration Sever */
+#define BT_MESH_MODEL_ID_BRG_CFG_SRV               0x0008
+/** Bridge Configuration Client */
+#define BT_MESH_MODEL_ID_BRG_CFG_CLI               0x0009
 /** Private Beacon Server */
 #define BT_MESH_MODEL_ID_PRIV_BEACON_SRV           0x000a
 /** Private Beacon Client */
