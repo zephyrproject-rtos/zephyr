@@ -596,6 +596,7 @@ void radio_status_reset(void)
 	 *       EVENT_* registers are not reset to save code and CPU time.
 	 */
 	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_READY);
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_ADDRESS);
 	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_END);
 #if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 	/* Clear it only for SoCs supporting DF extension */
@@ -614,6 +615,11 @@ void radio_status_reset(void)
 uint32_t radio_is_ready(void)
 {
 	return (NRF_RADIO->EVENTS_READY != 0);
+}
+
+uint32_t radio_is_address(void)
+{
+	return (NRF_RADIO->EVENTS_ADDRESS != 0);
 }
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
