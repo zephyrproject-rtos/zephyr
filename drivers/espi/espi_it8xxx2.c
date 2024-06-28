@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 #include <soc_dt.h>
 #include "soc_espi.h"
@@ -945,7 +946,7 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 		   ((((tag) & 0xF) << 4) | (((len) >> 8) & 0xF))
 
 struct espi_oob_msg_packet {
-	uint8_t data_byte[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data_byte);
 };
 
 static int espi_it8xxx2_send_oob(const struct device *dev,
