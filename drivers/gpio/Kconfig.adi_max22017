@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MAX22017
+	bool "Analog devices MAX22017 DAC gpio support"
+	default y
+	depends on DAC_MAX22017 && DT_HAS_ADI_MAX22017_ENABLED
+	help
+	  Enable GPIO support for the Analog devices MAX22017 DAC
+
+if GPIO_MAX22017
+
+config GPIO_MAX22017_INIT_PRIORITY
+	int "Init priority"
+	default 81
+	help
+	  Analog devices MAX22017 DAC gpio device driver initialization priority.
+
+endif # GPIO_MAX22017
