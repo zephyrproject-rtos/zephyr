@@ -103,10 +103,5 @@ SECTION_FUNC(vectors, __start)
 
 #endif /* CONFIG_RISCV_VECTORED_MODE */
 
-#if CONFIG_INCLUDE_RESET_VECTOR
 	/* Jump to __reset */
 	tail __reset
-#else
-	/* Jump to __initialize */
-	tail __initialize
-#endif
