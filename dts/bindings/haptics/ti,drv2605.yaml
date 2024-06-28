@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  DRV2605 Haptic Driver for ERM and LRA with built-in library and smart-loop
+  architecture.
+
+compatible: "ti,drv2605"
+
+include: i2c-device.yaml
+
+properties:
+  actuator-mode:
+    type: string
+    enum:
+      - "ERM"
+      - "LRA"
+  feedback-brake-factor:
+    type: string
+    enum:
+      - "1X"
+      - "2X"
+      - "3X"
+      - "4X"
+      - "6X"
+      - "8X"
+      - "16X"
+      - "DISABLED"
+  loop-gain:
+    type: string
+    enum:
+      - "LOW"
+      - "MEDIUM"
+      - "HIGH"
+      - "VERY_HIGH"
