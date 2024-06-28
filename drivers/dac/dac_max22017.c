@@ -12,6 +12,11 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 
+#ifdef CONFIG_GPIO_MAX22017
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_utils.h>
+#endif
+
 #include <zephyr/logging/log.h>
 
 #define DT_DRV_COMPAT adi_max22017
@@ -144,6 +149,12 @@ struct max22017_data {
 	struct k_work int_work;
 	struct gpio_callback callback_int;
 	bool crc_enabled;
+#ifdef CONFIG_GPIO_MAX22017
+	sys_slist_t callbacks_gpi;
+#ifdef CONFIG_GPIO_MAX22017_INT_QUIRK
+	struct k_timer int_quirk_timer;
+#endif
+#endif
 };
 
 static int max22017_reg_read(const struct device *dev, uint8_t addr, uint16_t *value)
@@ -448,10 +459,297 @@ static void max22017_int_worker(struct k_work *work)
 	ret = FIELD_GET(MAX22017_GEN_INT_GPI_INT, gen_int);
 	if (ret) {
 		LOG_INF("GPI Interrupt: %d", ret);
+#ifdef CONFIG_GPIO_MAX22017
+		uint16_t gpi_sta, lsb;
+
+		ret = max22017_reg_read(dev, MAX22017_GEN_GPI_INT_STA_OFF, &gpi_sta);
+		if (ret) {
+			goto fail;
+		}
+
+		/* Aggregate both positive and negative edge together */
+		gpi_sta = FIELD_GET(MAX22017_GEN_GPI_INT_GPI_NEG_EDGE_INT, gpi_sta) |
+			  FIELD_GET(MAX22017_GEN_GPI_INT_GPI_POS_EDGE_INT, gpi_sta);
+		while (gpi_sta) {
+			lsb = LSB_GET(gpi_sta);
+			gpio_fire_callbacks(&data->callbacks_gpi, dev, lsb);
+			gpi_sta &= ~lsb;
+		}
+#endif
 	}
 fail:
 	k_sem_give(&data->lock);
 }
+
+#ifdef CONFIG_GPIO_MAX22017
+
+#ifdef CONFIG_GPIO_MAX22017_INT_QUIRK
+void isr_quirk_handler(struct k_timer *int_quirk_timer)
+{
+	int ret;
+	struct max22017_data *data = k_timer_user_data_get(int_quirk_timer);
+	k_sem_take(&data->lock, K_FOREVER);
+
+	ret = k_work_submit(&data->int_work);
+	if (ret < 0) {
+		LOG_WRN("Could not submit int work: %d", ret);
+	}
+
+	k_sem_give(&data->lock);
+}
+#endif
+
+int adi_max22017_gpio_set_output(const struct device *dev, uint8_t pin, bool initial_value)
+{
+	int ret;
+	uint16_t gpio_data, gpio_ctrl;
+	struct max22017_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_GPIO_DATA_OFF, &gpio_data);
+	if (ret) {
+		goto fail;
+	}
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_GPIO_CTRL_OFF, &gpio_ctrl);
+	if (ret) {
+		goto fail;
+	}
+
+	if (initial_value) {
+		gpio_data |= FIELD_PREP(MAX22017_GEN_GPIO_DATA_GPO_DATA, BIT(pin));
+	} else {
+		gpio_data &= ~FIELD_PREP(MAX22017_GEN_GPIO_DATA_GPO_DATA, BIT(pin));
+	}
+
+	gpio_ctrl |= FIELD_PREP(MAX22017_GEN_GPIO_CTRL_GPIO_EN, BIT(pin)) |
+		     FIELD_PREP(MAX22017_GEN_GPIO_CTRL_GPIO_DIR, BIT(pin));
+
+	ret = max22017_reg_write(dev, MAX22017_GEN_GPIO_DATA_OFF, gpio_data);
+	if (ret) {
+		goto fail;
+	}
+
+	ret = max22017_reg_write(dev, MAX22017_GEN_GPIO_CTRL_OFF, gpio_ctrl);
+fail:
+	k_sem_give(&data->lock);
+	return ret;
+}
+
+int adi_max22017_gpio_set_input(const struct device *dev, uint8_t pin)
+{
+	int ret;
+	uint16_t gpio_ctrl;
+	struct max22017_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_GPIO_CTRL_OFF, &gpio_ctrl);
+	if (ret) {
+		goto fail;
+	}
+
+	gpio_ctrl |= FIELD_PREP(MAX22017_GEN_GPIO_CTRL_GPIO_EN, BIT(pin));
+	gpio_ctrl &= ~FIELD_PREP(MAX22017_GEN_GPIO_CTRL_GPIO_DIR, BIT(pin));
+
+	ret = max22017_reg_write(dev, MAX22017_GEN_GPIO_CTRL_OFF, gpio_ctrl);
+fail:
+	k_sem_give(&data->lock);
+	return ret;
+}
+
+int adi_max22017_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					      enum gpio_int_mode mode, enum gpio_int_trig trig)
+{
+	int ret;
+	uint16_t gpio_int, gen_int_en;
+	struct max22017_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		ret = -ENOTSUP;
+		goto fail;
+	}
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_GPI_INT_OFF, &gpio_int);
+	if (ret) {
+		goto fail;
+	}
+
+	if (mode & GPIO_INT_EDGE_RISING) {
+		gpio_int |= FIELD_PREP(MAX22017_GEN_GPI_INT_GPI_POS_EDGE_INT, BIT(pin));
+	}
+	if (mode & GPIO_INT_EDGE_FALLING) {
+		gpio_int |= FIELD_PREP(MAX22017_GEN_GPI_INT_GPI_NEG_EDGE_INT, BIT(pin));
+	}
+
+	ret = max22017_reg_write(dev, MAX22017_GEN_GPI_INT_OFF, gpio_int);
+	if (ret) {
+		goto fail;
+	}
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_INTEN_OFF, &gen_int_en);
+	if (ret) {
+		goto fail;
+	}
+
+	ret = max22017_reg_write(dev, MAX22017_GEN_INTEN_OFF,
+				 gen_int_en | FIELD_PREP(MAX22017_GEN_INTEN_GPI_INTEN, 1));
+fail:
+	k_sem_give(&data->lock);
+	return ret;
+}
+
+int adi_max22017_gpio_deconfigure(const struct device *dev, uint8_t pin)
+{
+	int ret;
+	uint16_t gpio_ctrl;
+	struct max22017_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_GPIO_CTRL_OFF, &gpio_ctrl);
+	if (ret) {
+		goto fail;
+	}
+
+	gpio_ctrl &= ~FIELD_PREP(MAX22017_GEN_GPIO_CTRL_GPIO_EN, BIT(pin));
+
+	ret = max22017_reg_write(dev, MAX22017_GEN_GPIO_CTRL_OFF, gpio_ctrl);
+fail:
+	k_sem_give(&data->lock);
+	return ret;
+}
+
+int adi_max22017_gpio_set_pin_value(const struct device *dev, uint8_t pin, bool value)
+{
+	int ret;
+	uint16_t gpio_data;
+	struct max22017_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_GPIO_DATA_OFF, &gpio_data);
+	if (ret) {
+		goto fail;
+	}
+
+	if (value) {
+		gpio_data |= FIELD_PREP(MAX22017_GEN_GPIO_DATA_GPO_DATA, BIT(pin));
+	} else {
+		gpio_data &= ~FIELD_PREP(MAX22017_GEN_GPIO_DATA_GPO_DATA, BIT(pin));
+	}
+
+	ret = max22017_reg_write(dev, MAX22017_GEN_GPIO_DATA_OFF, gpio_data);
+fail:
+	k_sem_give(&data->lock);
+	return ret;
+}
+
+int adi_max22017_gpio_get_pin_value(const struct device *dev, uint8_t pin, bool *value)
+{
+	int ret;
+	uint16_t gpio_data;
+	struct max22017_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_GPIO_DATA_OFF, &gpio_data);
+	if (ret) {
+		goto fail;
+	}
+
+	*value = FIELD_GET(MAX22017_GEN_GPIO_DATA_GPI_DATA, gpio_data) & BIT(pin);
+
+fail:
+	k_sem_give(&data->lock);
+	return ret;
+}
+
+int adi_max22017_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
+{
+	int ret;
+	struct max22017_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_GPIO_DATA_OFF, (uint16_t *)value);
+	if (ret) {
+		goto fail;
+	}
+
+	*value = FIELD_GET(MAX22017_GEN_GPIO_DATA_GPI_DATA, *value);
+
+fail:
+	k_sem_give(&data->lock);
+	return ret;
+}
+
+int adi_max22017_gpio_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+					  gpio_port_value_t value)
+{
+	int ret;
+	uint16_t gpio_data, tmp_val;
+	struct max22017_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_GPIO_DATA_OFF, &gpio_data);
+	if (ret) {
+		goto fail;
+	}
+
+	tmp_val = FIELD_GET(MAX22017_GEN_GPIO_DATA_GPO_DATA, gpio_data);
+	tmp_val = (tmp_val & ~mask) | (value & mask);
+	gpio_data = FIELD_PREP(MAX22017_GEN_GPIO_DATA_GPO_DATA, tmp_val) |
+		    FIELD_PREP(MAX22017_GEN_GPIO_DATA_GPI_DATA,
+			       FIELD_GET(MAX22017_GEN_GPIO_DATA_GPI_DATA, gpio_data));
+
+	ret = max22017_reg_write(dev, MAX22017_GEN_GPIO_DATA_OFF, gpio_data);
+fail:
+	k_sem_give(&data->lock);
+	return ret;
+}
+
+int adi_max22017_gpio_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
+{
+	int ret;
+	uint16_t gpio_data, tmp_val;
+	struct max22017_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	ret = max22017_reg_read(dev, MAX22017_GEN_GPIO_DATA_OFF, &gpio_data);
+	if (ret) {
+		goto fail;
+	}
+
+	tmp_val = FIELD_GET(MAX22017_GEN_GPIO_DATA_GPO_DATA, gpio_data);
+	tmp_val = (tmp_val ^ pins);
+	gpio_data = FIELD_PREP(MAX22017_GEN_GPIO_DATA_GPO_DATA, tmp_val) |
+		    FIELD_PREP(MAX22017_GEN_GPIO_DATA_GPI_DATA,
+			       FIELD_GET(MAX22017_GEN_GPIO_DATA_GPI_DATA, gpio_data));
+
+	ret = max22017_reg_write(dev, MAX22017_GEN_GPIO_DATA_OFF, gpio_data);
+fail:
+	k_sem_give(&data->lock);
+	return ret;
+}
+
+int adi_max22017_manage_cb(const struct device *dev, struct gpio_callback *callback, bool set)
+{
+	int ret;
+	struct max22017_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
+	ret = gpio_manage_callback(&data->callbacks_gpi, callback, set);
+	k_sem_give(&data->lock);
+
+	return ret;
+}
+#endif /* CONFIG_GPIO_MAX22017 */
 
 static int max22017_init(const struct device *dev)
 {
@@ -566,6 +864,12 @@ static int max22017_init(const struct device *dev)
 
 	LOG_INF("MAX22017 version: 0x%lx 0x%lx", FIELD_GET(MAX22017_GEN_ID_PROD_ID, version),
 		FIELD_GET(MAX22017_GEN_ID_REV_ID, version));
+
+#if defined(CONFIG_GPIO_MAX22017) && defined(CONFIG_GPIO_MAX22017_INT_QUIRK)
+	k_timer_init(&data->int_quirk_timer, isr_quirk_handler, NULL);
+	k_timer_user_data_set(&data->int_quirk_timer, data);
+	k_timer_start(&data->int_quirk_timer, K_MSEC(25), K_MSEC(25));
+#endif
 
 fail:
 	k_sem_give(&data->lock);

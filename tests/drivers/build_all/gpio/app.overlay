@@ -440,6 +440,22 @@
 				ngpios = <8>;
 				#gpio-cells = <2>;
 			};
+
+			test_spi_max22017: max22017_dac@5 {
+				compatible = "adi,max22017";
+				status = "okay";
+				reg = <0x5>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <2>;
+
+				max22017_gpio0: max22017_gpio {
+					compatible = "adi,max22017-gpio";
+					status = "okay";
+					gpio-controller;
+					ngpios = <5>;
+					#gpio-cells = <2>;
+				};
+			};
 		};
 	};
 };
