@@ -242,9 +242,9 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  */
 #define Z_PM_DEVICE_BASE_INIT(obj, node_id, pm_action_cb, _flags)	     \
 	{								     \
-		.action_cb = pm_action_cb,				     \
-		.state = PM_DEVICE_STATE_ACTIVE,			     \
 		.flags = ATOMIC_INIT(Z_PM_DEVICE_FLAGS(node_id) | (_flags)), \
+		.state = PM_DEVICE_STATE_ACTIVE,			     \
+		.action_cb = pm_action_cb,				     \
 		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			     \
 	}
 
