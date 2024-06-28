@@ -39,7 +39,7 @@ static int cmd_llext_list_symbols(const struct shell *sh, size_t argc, char *arg
 
 	if (m == NULL) {
 		shell_print(sh, "No such llext %s", argv[1]);
-		return -EINVAL;
+		return -ENOENT;
 	}
 
 	shell_print(sh, "Extension: %s symbols", m->name);
@@ -159,7 +159,7 @@ static int cmd_llext_unload(const struct shell *sh, size_t argc, char *argv[])
 
 	if (ext == NULL) {
 		shell_print(sh, "No such extension %s", argv[1]);
-		return -EINVAL;
+		return -ENOENT;
 	}
 
 	llext_unload(&ext);
@@ -174,7 +174,7 @@ static int cmd_llext_call_fn(const struct shell *sh, size_t argc, char *argv[])
 
 	if (ext == NULL) {
 		shell_print(sh, "No such extension %s", argv[1]);
-		return -EINVAL;
+		return -ENOENT;
 	}
 
 	llext_call_fn(ext, argv[2]);
