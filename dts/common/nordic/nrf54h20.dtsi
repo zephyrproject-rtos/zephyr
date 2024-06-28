@@ -492,7 +492,7 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0x8e6000 0x1000>;
 				status = "disabled";
-				interrupts = <229 NRF_DEFAULT_IRQ_PRIORITY>;
+				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
 			spi121: spi@8e7000 {
