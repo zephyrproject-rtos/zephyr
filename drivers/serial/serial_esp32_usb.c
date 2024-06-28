@@ -107,8 +107,12 @@ static int serial_esp32_usb_init(const struct device *dev)
 
 	int ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
+	if (ret != 0) {
+		return ret;
+	}
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	esp_intr_alloc(config->irq_source,
+	ret = esp_intr_alloc(config->irq_source,
 			esp_intr_level_to_flags(config->irq_priority),
 			(ISR_HANDLER)serial_esp32_usb_isr,
 			(void *)dev, NULL);
