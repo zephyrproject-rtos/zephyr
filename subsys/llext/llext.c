@@ -201,7 +201,7 @@ int llext_unload(struct llext **ext)
 	*ext = NULL;
 	k_mutex_unlock(&llext_lock);
 
-	llext_free_sections(tmp);
+	llext_free_regions(tmp);
 	llext_free(tmp->sym_tab.syms);
 	llext_free(tmp->exp_tab.syms);
 	llext_free(tmp);
