@@ -40,6 +40,7 @@ typedef uint32_t gpio_flags_t;
 #define GPIO_QUAL_MAX_CYCLES 15
 #define ALL_GPIO_PINS -1
 
+#define GPIO_IRQ_BASE 1
 
 #define GPIO0  (1 <<  0)
 #define GPIO1  (1 <<  1)
