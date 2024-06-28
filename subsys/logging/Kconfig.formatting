@@ -145,6 +145,9 @@ if LOG_BACKEND_SHOW_COLOR
 config LOG_INFO_COLOR_GREEN
 	bool "Use green color for info level logs"
 
+config LOG_DBG_COLOR_BLUE
+	bool "Use blue color for debug level logs"
+
 endif # LOG_BACKEND_SHOW_COLOR
 
 config LOG_TAG_MAX_LEN
