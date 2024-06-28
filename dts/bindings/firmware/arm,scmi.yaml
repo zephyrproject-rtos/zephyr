@@ -1,0 +1,12 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: System Control and Management Interface (SCMI)
+
+compatible: "arm,scmi"
+
+include: [base.yaml]
+
+properties:
+  shmem:
+    type: phandles

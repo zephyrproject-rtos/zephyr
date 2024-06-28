@@ -7,6 +7,7 @@ add_definitions(-D__ZEPHYR_SUPERVISOR__)
 
 # zephyr-keep-sorted-start
 add_subdirectory(disk)
+add_subdirectory(firmware)
 add_subdirectory(interrupt_controller)
 add_subdirectory(misc)
 add_subdirectory(pcie)
