@@ -6,14 +6,14 @@ Coding Guidelines
 The project TSC and the Safety Committee of the project agreed to implement
 a staged and incremental approach for complying with a set of coding rules (AKA
 Coding Guidelines) to improve quality and consistency of the code base. Below
-are the agreed upon stages and the approximate timelines:
+are the agreed upon stages:
 
 Stage I
   Coding guideline rules are available to be followed and referenced,
   but not enforced. Rules are not yet enforced in CI and pull-requests cannot be
   blocked by reviewers/approvers due to violations.
 
-Stage II
+Stage II ( Current stage )
   Begin enforcement on a limited scope of the code base. Initially, this would be
   the safety certification scope. For rules easily applied across codebase, we
   should not limit compliance to initial scope. This step requires tooling,
@@ -32,6 +32,12 @@ Stage IV
 
     Coding guideline rules may be removed/changed at any time by filing a
     GH issue/RFC.
+
+.. important::
+
+    **Current stage**
+    The marked current **stage II** has not completely started yet. The prerequisites for this stage are
+    in progress. The tooling is in evaluation, CI setup and enforcement strategy is being worked on.
 
 Main rules
 **********
