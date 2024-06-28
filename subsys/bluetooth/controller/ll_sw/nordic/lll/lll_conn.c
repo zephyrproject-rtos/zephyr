@@ -397,10 +397,10 @@ void lll_conn_isr_rx(void *param)
 
 	/* assert if radio packet ptr is not set and radio started tx */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+		LL_ASSERT_MSG(!radio_is_address(), "%s: Radio ISR latency: %u", __func__,
 			      lll_prof_latency_get());
 	} else {
-		LL_ASSERT(!radio_is_ready());
+		LL_ASSERT(!radio_is_address());
 	}
 
 lll_conn_isr_rx_exit:
@@ -576,10 +576,10 @@ void lll_conn_isr_tx(void *param)
 
 	/* assert if radio packet ptr is not set and radio started rx */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+		LL_ASSERT_MSG(!radio_is_address(), "%s: Radio ISR latency: %u", __func__,
 			      lll_prof_latency_get());
 	} else {
-		LL_ASSERT(!radio_is_ready());
+		LL_ASSERT(!radio_is_address());
 	}
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
