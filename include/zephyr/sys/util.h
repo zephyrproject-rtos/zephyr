@@ -130,6 +130,21 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
+ * @brief Declare a flexible array member.
+ *
+ * This macro declares a flexible array member in a struct. The member
+ * is named @p name and has type @p type.
+ *
+ * The macro is specially useful for cases where flexible arrays are
+ * used in unions or are not the last element in the struct.
+ */
+#define FLEXIBLE_ARRAY_DECLARE(type, name) \
+	struct { \
+		struct { } __unused_##name; \
+		type name[]; \
+	}
+
+/**
  * @brief Whether @p ptr is an element of @p array
  *
  * This macro can be seen as a slightly stricter version of @ref PART_OF_ARRAY
