@@ -13,6 +13,7 @@
 
 #include <zephyr/linker/sections.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/toolchain/common.h>
 
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/linker/linker-defs.h>
