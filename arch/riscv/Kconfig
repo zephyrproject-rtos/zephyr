@@ -48,10 +48,11 @@ config RISCV_EXCEPTION_STACK_TRACE
 menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR
-	bool "Include Reset vector"
+	bool "Jumps to __initialize directly"
 	help
-	  Include the reset vector stub, which initializes the stack and
-	  prepares for running C code.
+	  Select 'y' here to use the Zephyr provided default implementation that
+	  jumps to `__initialize` directly. Otherwise a SOC needs to provide its
+	  custom `__reset` routine.
 
 config RISCV_PRIVILEGED
 	bool
