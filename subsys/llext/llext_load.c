@@ -186,7 +186,8 @@ static int llext_find_tables(struct llext_loader *ldr)
 
 	if (!ldr->sects[LLEXT_MEM_SHSTRTAB].sh_type ||
 	    !ldr->sects[LLEXT_MEM_STRTAB].sh_type ||
-	    !ldr->sects[LLEXT_MEM_SYMTAB].sh_type) {
+	    !ldr->sects[LLEXT_MEM_SYMTAB].sh_type ||
+	    sect_cnt != 3) {
 		LOG_ERR("Some sections are missing or present multiple times!");
 		return -ENOENT;
 	}
