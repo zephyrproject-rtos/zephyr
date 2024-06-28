@@ -28,7 +28,7 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
 
 /*
- * Initialize the memory partition associated with the extension memory
+ * Initialize the memory partition associated with the specified memory region
  */
 static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 			uintptr_t start, size_t len)
@@ -70,6 +70,7 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 
 	if (ldr->sects[mem_idx].sh_type != SHT_NOBITS &&
 	    IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
+		/* Directly use data from the ELF buffer if peek() is supported */
 		ext->mem[mem_idx] = llext_peek(ldr, ldr->sects[mem_idx].sh_offset);
 		if (ext->mem[mem_idx]) {
 			llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],

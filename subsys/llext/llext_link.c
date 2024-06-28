@@ -37,8 +37,8 @@ __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
 }
 
 /*
- * Find the section containing the supplied offset and return file offset for
- * that value
+ * Find the memory region containing the supplied offset and return the
+ * corresponding file offset
  */
 static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
 {
@@ -353,7 +353,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 	}
 
 #ifdef CONFIG_CACHE_MANAGEMENT
-	/* Make sure changes to ext sections are flushed to RAM */
+	/* Make sure changes to memory regions are flushed to RAM */
 	for (i = 0; i < LLEXT_MEM_COUNT; ++i) {
 		if (ext->mem[i]) {
 			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);
