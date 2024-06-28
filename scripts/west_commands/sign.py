@@ -250,6 +250,7 @@ class ImgtoolSigner(Signer):
         # The vector table offset and application version are set in Kconfig:
         appver = self.get_cfg(command, build_conf, 'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION')
         vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
+        load_addr = self.get_cfg(command, build_conf, 'CONFIG_MCUBOOT_IMGTOOL_LOAD_ADDRESS')
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
         flash = self.edt_flash_node(b, args.quiet)
@@ -288,6 +289,9 @@ class ImgtoolSigner(Signer):
                                '--align', str(align),
                                '--header-size', str(vtoff),
                                '--slot-size', str(size)]
+        if load_addr > 0:
+            sign_base += ['--load-addr', str(load_addr)]
+
         sign_base.extend(args.tool_args)
 
         if not args.quiet:
