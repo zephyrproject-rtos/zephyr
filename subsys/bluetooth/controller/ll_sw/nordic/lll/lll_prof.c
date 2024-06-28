@@ -294,11 +294,15 @@ static uint16_t latency_get(void)
 	/* calculate the elapsed time in us since on-air radio packet end
 	 * to ISR entry
 	 */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
-	latency = timestamp_latency - timestamp_radio_end;
+		latency = timestamp_latency - timestamp_radio_end;
 #else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
-	latency = timestamp_latency - radio_tmr_end_get();
+		latency = timestamp_latency - radio_tmr_end_get();
 #endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
+	} else {
+		latency = timestamp_latency;
+	}
 
 	return latency;
 }
