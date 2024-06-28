@@ -167,11 +167,16 @@ static int wdt_esp32_init(const struct device *dev)
 
 	wdt_hal_init(&data->hal, config->wdt_inst, MWDT_TICK_PRESCALER, true);
 
-	esp_intr_alloc(config->irq_source,
-		ESP_PRIO_TO_FLAGS(cfg->irq_priority),
-		(ISR_HANDLER)wdt_esp32_isr,
-		(void *)dev,
-		NULL);
+	int ret = esp_intr_alloc(config->irq_source,
+				ESP_PRIO_TO_FLAGS(config->irq_priority),
+				(ISR_HANDLER)wdt_esp32_isr,
+				(void *)dev,
+				NULL);
+
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		return ret;
+	}
 
 #ifndef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_esp32_enable(dev);

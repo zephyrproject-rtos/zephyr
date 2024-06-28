@@ -762,11 +762,16 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
-	esp_intr_alloc(config->irq_source,
+	ret = esp_intr_alloc(config->irq_source,
 			ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INTR_FLAG_IRAM,
 			i2c_esp32_isr,
 			(void *)dev,
 			NULL);
+
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		return ret;
+	}
 
 	i2c_hal_master_init(&data->hal);
 

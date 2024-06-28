@@ -244,11 +244,16 @@ static int spi_esp32_init(const struct device *dev)
 	spi_ll_disable_int(cfg->spi);
 	spi_ll_clear_int_stat(cfg->spi);
 
-	esp_intr_alloc(cfg->irq_source,
+	err = esp_intr_alloc(cfg->irq_source,
 			ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INTR_FLAG_IRAM,
 			(ISR_HANDLER)spi_esp32_isr,
 			(void *)dev,
 			NULL);
+
+	if (err != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", err);
+		return err;
+	}
 #endif
 
 	err = spi_context_cs_configure_all(&data->ctx);

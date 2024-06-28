@@ -203,11 +203,15 @@ static int can_esp32_twai_init(const struct device *dev)
 	can_esp32_twai_write_reg32(dev, TWAI_CLOCK_DIVIDER_REG, twai_config->cdr32);
 #endif /* !CONFIG_SOC_SERIES_ESP32 */
 
-	esp_intr_alloc(twai_config->irq_source,
+	err = esp_intr_alloc(twai_config->irq_source,
 			ESP_PRIO_TO_FLAGS(twai_config->irq_priority) | ESP_INTR_FLAG_IRAM,
 			can_esp32_twai_isr, (void *)dev, NULL);
 
-	return 0;
+	if (err != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", err);
+	}
+
+	return err;
 }
 
 const struct can_driver_api can_esp32_twai_driver_api = {
