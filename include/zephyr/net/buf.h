@@ -1437,8 +1437,7 @@ struct net_buf * __must_check net_buf_alloc_with_data(struct net_buf_pool *pool,
 /**
  * @brief Get a buffer from a FIFO.
  *
- * This function is NOT thread-safe if the buffers in the FIFO contain
- * fragments.
+ * @deprecated Use @a k_fifo_get() instead.
  *
  * @param fifo Which FIFO to take the buffer from.
  * @param timeout Affects the action taken should the FIFO be empty.
@@ -1448,14 +1447,14 @@ struct net_buf * __must_check net_buf_alloc_with_data(struct net_buf_pool *pool,
  * @return New buffer or NULL if the FIFO is empty.
  */
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf * __must_check net_buf_get_debug(struct k_fifo *fifo,
-						k_timeout_t timeout,
-						const char *func, int line);
+__deprecated struct net_buf * __must_check net_buf_get_debug(struct k_fifo *fifo,
+							     k_timeout_t timeout,
+							     const char *func, int line);
 #define	net_buf_get(_fifo, _timeout) \
 	net_buf_get_debug(_fifo, _timeout, __func__, __LINE__)
 #else
-struct net_buf * __must_check net_buf_get(struct k_fifo *fifo,
-					  k_timeout_t timeout);
+__deprecated struct net_buf * __must_check net_buf_get(struct k_fifo *fifo,
+						       k_timeout_t timeout);
 #endif
 
 /**
@@ -1503,9 +1502,6 @@ void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve);
 /**
  * @brief Put a buffer into a list
  *
- * If the buffer contains follow-up fragments this function will take care of
- * inserting them as well into the list.
- *
  * @param list Which list to append the buffer to.
  * @param buf Buffer.
  */
@@ -1513,9 +1509,6 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
 
 /**
  * @brief Get a buffer from a list.
- *
- * If the buffer had any fragments, these will automatically be recovered from
- * the list as well and be placed to the buffer's fragment list.
  *
  * @param list Which list to take the buffer from.
  *
@@ -1526,13 +1519,12 @@ struct net_buf * __must_check net_buf_slist_get(sys_slist_t *list);
 /**
  * @brief Put a buffer to the end of a FIFO.
  *
- * If the buffer contains follow-up fragments this function will take care of
- * inserting them as well into the FIFO.
+ * @deprecated Use @a k_fifo_put() instead.
  *
  * @param fifo Which FIFO to put the buffer to.
  * @param buf Buffer.
  */
-void net_buf_put(struct k_fifo *fifo, struct net_buf *buf);
+__deprecated void net_buf_put(struct k_fifo *fifo, struct net_buf *buf);
 
 /**
  * @brief Decrements the reference count of a buffer.

@@ -50,14 +50,11 @@ Both the maximum data and user data capacity of the buffers is
 compile-time defined when declaring the buffer pool.
 
 The buffers have native support for being passed through k_fifo kernel
-objects. This is a very practical feature when the buffers need to be
-passed from one thread to another. However, since a net_buf may have a
-fragment chain attached to it, instead of using the :c:func:`k_fifo_put`
-and :c:func:`k_fifo_get` APIs, special :c:func:`net_buf_put` and
-:c:func:`net_buf_get` APIs must be used when passing buffers through
-FIFOs. These APIs ensure that the buffer chains stay intact. The same
-applies for passing buffers through a singly linked list, in which case
-the :c:func:`net_buf_slist_put` and :c:func:`net_buf_slist_get`
+objects. Use :c:func:`k_fifo_put` and :c:func:`k_fifo_get` to pass buffer
+from one thread to another.
+
+Special functions exist for dealing with buffers in single linked lists,
+where the :c:func:`net_buf_slist_put` and :c:func:`net_buf_slist_get`
 functions must be used instead of :c:func:`sys_slist_append` and
 :c:func:`sys_slist_get`.
 
