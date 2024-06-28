@@ -37,8 +37,8 @@ __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
 }
 
 /*
- * Find the section containing the supplied offset and return file offset for
- * that value
+ * Find the segment containing the supplied offset and return the
+ * corresponding file offset
  */
 static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
 {
@@ -120,7 +120,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 		 * has been built.
 		 *
 		 * NOTE: The calculations below assumes offsets from the
-		 * beginning of the .text section in the ELF file can be
+		 * beginning of the .text segment in the ELF file can be
 		 * applied to the memory location of mem[LLEXT_MEM_TEXT].
 		 *
 		 * This is valid only when CONFIG_LLEXT_STORAGE_WRITABLE=y
@@ -353,7 +353,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 	}
 
 #ifdef CONFIG_CACHE_MANAGEMENT
-	/* Make sure changes to ext sections are flushed to RAM */
+	/* Make sure changes to memory segments are flushed to RAM */
 	for (i = 0; i < LLEXT_MEM_COUNT; ++i) {
 		if (ext->mem[i]) {
 			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);

@@ -196,7 +196,7 @@ static int llext_find_tables(struct llext_loader *ldr)
 }
 
 /*
- * Maps the section indexes and copies special section headers for easier use
+ * Maps the section indexes into segments according to their usage flags.
  */
 static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 {
@@ -283,7 +283,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			}
 
 			/*
-			 * Extend the current section to include the new one
+			 * Extend the current segment to include the new section
 			 * (overlaps are detected later)
 			 */
 			size_t address = MIN(seg->sh_addr, shdr->sh_addr);
@@ -298,7 +298,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 	}
 
 	/*
-	 * Test that no computed range overlaps. This can happen if sections of
+	 * Test that no computed segment overlaps. This can happen if sections of
 	 * different llext_mem type are interleaved in the ELF file or in VMAs.
 	 */
 	for (i = 0; i < LLEXT_MEM_COUNT; i++) {
@@ -308,7 +308,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 
 			if (x->sh_type == SHT_NULL || x->sh_size == 0 ||
 			    y->sh_type == SHT_NULL || y->sh_size == 0) {
-				/* Skip empty sections */
+				/* Skip empty segments */
 				continue;
 			}
 
@@ -351,8 +351,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 	}
 
 	/*
-	 * Calculate each ELF section's offset inside its memory area. This is
-	 * done as a separate pass so the final groups are already defined.
+	 * Calculate each ELF section's offset inside its memory segment. This
+	 * is done as a separate pass so the final segments are already defined.
 	 */
 	for (i = 0; i < ldr->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ldr->sect_hdrs + i;
@@ -658,7 +658,7 @@ out:
 
 		/* Since the loading process failed, free the resources that
 		 * were allocated for the lifetime of the extension as well,
-		 * such as section data and exported symbols.
+		 * such as segments and exported symbols.
 		 */
 		llext_free_segments(ext);
 		llext_free(ext->exp_tab.syms);
