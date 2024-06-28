@@ -175,6 +175,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/x509_csr.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/x509write_crt.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/x509write_csr.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/x509write.c
     )
 
     zephyr_library_sources(${x509_source})
