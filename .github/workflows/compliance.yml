@@ -74,6 +74,9 @@ jobs:
         name: compliance.xml
         path: compliance.xml
 
+    - name: Create annotation for build error
+      run: echo "::notice file=samples/basic/button/src/main.c,line=30,endLine=35,title=BLABLA::Missing semicolon"
+
     - name: check-warns
       run: |
         if [[ ! -s "compliance.xml" ]]; then
