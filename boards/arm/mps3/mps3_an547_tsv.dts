@@ -21,6 +21,7 @@
 		led1 = &led_1;
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
+                uart-0 = &jtag_uart;
 	};
 
 	chosen {
@@ -56,6 +57,11 @@
 		};
 	};
 
+        jtag_uart: uart@201000 {
+                compatible = "altr,jtag-uart";
+                reg = <0x201000 0x8>;
+                status = "disabled";
+        };
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -146,7 +152,10 @@
 		};
 	};
 };
-
+&jtag_uart {
+	status = "okay";
+	current-speed = <115200>;
+};
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
