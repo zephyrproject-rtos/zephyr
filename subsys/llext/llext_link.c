@@ -28,7 +28,7 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 __weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
 			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias)
 {
-	return -EOPNOTSUPP;
+	return -ENOTSUP;
 }
 
 __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,

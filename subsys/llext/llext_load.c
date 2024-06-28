@@ -63,7 +63,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 	/* check whether this is a valid ELF file */
 	if (memcmp(ldr->hdr.e_ident, ELF_MAGIC, sizeof(ELF_MAGIC)) != 0) {
 		LOG_HEXDUMP_ERR(ldr->hdr.e_ident, 16, "Invalid ELF, magic does not match");
-		return -EINVAL;
+		return -ENOEXEC;
 	}
 
 	switch (ldr->hdr.e_type) {
@@ -77,7 +77,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 
 	default:
 		LOG_ERR("Unsupported ELF file type %x", ldr->hdr.e_type);
-		return -EINVAL;
+		return -ENOEXEC;
 	}
 
 	/*
@@ -88,7 +88,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 
 	if (ldr->hdr.e_shentsize != sizeof(elf_shdr_t)) {
 		LOG_ERR("Invalid section header size %d", ldr->hdr.e_shentsize);
-		return -EINVAL;
+		return -ENOEXEC;
 	}
 
 	ldr->sect_cnt = ldr->hdr.e_shnum;
@@ -188,7 +188,7 @@ static int llext_find_tables(struct llext_loader *ldr)
 	    !ldr->sects[LLEXT_MEM_STRTAB].sh_type ||
 	    !ldr->sects[LLEXT_MEM_SYMTAB].sh_type) {
 		LOG_ERR("Some sections are missing or present multiple times!");
-		return -ENOENT;
+		return -ENOEXEC;
 	}
 
 	return 0;
@@ -263,7 +263,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 				 * independent entities.
 				 */
 				LOG_ERR("Multiple SHT_NOBITS sections are not supported");
-				return -ENOEXEC;
+				return -ENOTSUP;
 			}
 
 			if (ldr->hdr.e_type == ET_DYN) {
@@ -514,7 +514,7 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 					LOG_DBG("section %d peeked at %p", sect, base);
 				} else {
 					LOG_ERR("No data for section %d", sect);
-					return -EOPNOTSUPP;
+					return -ENOTSUP;
 				}
 			}
 
