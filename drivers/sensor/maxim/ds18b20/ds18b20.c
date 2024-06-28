@@ -72,6 +72,7 @@ struct ds18b20_data {
 };
 
 static int ds18b20_configure(const struct device *dev);
+static int ds18b20_read_scratchpad(const struct device *dev, struct ds18b20_scratchpad *scratchpad);
 
 /* measure wait time for 9-bit, 10-bit, 11-bit, 12-bit resolution respectively */
 static const uint16_t measure_wait_ds18b20_ms[4] = { 94, 188, 376, 750 };
@@ -104,6 +105,7 @@ static int ds18b20_write_scratchpad(const struct device *dev,
 	struct ds18b20_data *data = dev->data;
 	const struct ds18b20_config *cfg = dev->config;
 	const struct device *bus = cfg->bus;
+	int ret;
 	uint8_t sp_data[4] = {
 		DS18B20_CMD_WRITE_SCRATCHPAD,
 		scratchpad.alarm_temp_high,
@@ -111,7 +113,22 @@ static int ds18b20_write_scratchpad(const struct device *dev,
 		scratchpad.config
 	};
 
-	return w1_write_read(bus, &data->config, sp_data, sizeof(sp_data), NULL, 0);
+	ret = w1_write_read(bus, &data->config, sp_data, sizeof(sp_data), NULL, 0);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = ds18b20_read_scratchpad(dev, &scratchpad);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if ((sp_data[3] & DS18B20_RESOLUTION_MASK) !=
+	    (scratchpad.config & DS18B20_RESOLUTION_MASK)) {
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static int ds18b20_read_scratchpad(const struct device *dev,
