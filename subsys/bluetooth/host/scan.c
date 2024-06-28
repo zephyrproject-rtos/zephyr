@@ -1461,8 +1461,8 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 {
-	if (param->type != BT_HCI_LE_SCAN_PASSIVE &&
-	    param->type != BT_HCI_LE_SCAN_ACTIVE) {
+	if (param->type != BT_LE_SCAN_TYPE_PASSIVE &&
+	    param->type != BT_LE_SCAN_TYPE_ACTIVE) {
 		return false;
 	}
 
