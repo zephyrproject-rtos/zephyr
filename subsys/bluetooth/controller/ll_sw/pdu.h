@@ -931,16 +931,16 @@ struct pdu_data_llctrl {
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 struct profile {
-	uint8_t lcur;
-	uint8_t lmin;
-	uint8_t lmax;
-	uint8_t cur;
-	uint8_t min;
-	uint8_t max;
-	uint8_t radio;
-	uint8_t lll;
-	uint8_t ull_high;
-	uint8_t ull_low;
+	uint16_t lcur;
+	uint16_t lmin;
+	uint16_t lmax;
+	uint16_t cur;
+	uint16_t min;
+	uint16_t max;
+	uint16_t radio;
+	uint16_t lll;
+	uint16_t ull_high;
+	uint16_t ull_low;
 } __packed;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
