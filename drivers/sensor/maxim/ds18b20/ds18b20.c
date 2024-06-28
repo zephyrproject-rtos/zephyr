@@ -15,14 +15,61 @@
  * Parasite power configuration is not supported by the driver.
  */
 
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/w1_sensor.h>
+#include "zephyr/drivers/w1.h"
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
-
-#include "ds18b20.h"
+#include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(DS18B20, CONFIG_SENSOR_LOG_LEVEL);
+
+#define DS18B20_CMD_CONVERT_T         0x44
+#define DS18B20_CMD_WRITE_SCRATCHPAD  0x4E
+#define DS18B20_CMD_READ_SCRATCHPAD   0xBE
+#define DS18B20_CMD_COPY_SCRATCHPAD   0x48
+#define DS18B20_CMD_RECALL_EEPROM     0xB8
+#define DS18B20_CMD_READ_POWER_SUPPLY 0xB4
+
+/* resolution is set using bit 5 and 6 of configuration register
+ * macro only valid for values 9 to 12
+ */
+#define DS18B20_RESOLUTION_POS		5
+#define DS18B20_RESOLUTION_MASK		(BIT_MASK(2) << DS18B20_RESOLUTION_POS)
+/* convert resolution in bits to scratchpad config format */
+#define DS18B20_RESOLUTION(res)		((res - 9) << DS18B20_RESOLUTION_POS)
+/* convert resolution in bits to array index (for resolution specific elements) */
+#define DS18B20_RESOLUTION_INDEX(res)	(res - 9)
+
+#define DS18B20_FAMILYCODE 0x28
+#define DS18S20_FAMILYCODE 0x10
+
+enum chip_type {type_ds18b20, type_ds18s20};
+
+struct ds18b20_scratchpad {
+	int16_t temp;
+	uint8_t alarm_temp_high;
+	uint8_t alarm_temp_low;
+	uint8_t config;
+	uint8_t res[3];
+	uint8_t crc;
+} __packed;
+
+struct ds18b20_config {
+	const struct device *bus;
+	uint8_t family;
+	uint8_t resolution;
+	enum chip_type chip;
+};
+
+struct ds18b20_data {
+	struct w1_slave_config config;
+	struct ds18b20_scratchpad scratchpad;
+	bool lazy_loaded;
+};
 
 static int ds18b20_configure(const struct device *dev);
 
@@ -55,7 +102,8 @@ static int ds18b20_write_scratchpad(const struct device *dev,
 				    struct ds18b20_scratchpad scratchpad)
 {
 	struct ds18b20_data *data = dev->data;
-	const struct device *bus = ds18b20_bus(dev);
+	const struct ds18b20_config *cfg = dev->config;
+	const struct device *bus = cfg->bus;
 	uint8_t sp_data[4] = {
 		DS18B20_CMD_WRITE_SCRATCHPAD,
 		scratchpad.alarm_temp_high,
@@ -70,7 +118,8 @@ static int ds18b20_read_scratchpad(const struct device *dev,
 				   struct ds18b20_scratchpad *scratchpad)
 {
 	struct ds18b20_data *data = dev->data;
-	const struct device *bus = ds18b20_bus(dev);
+	const struct ds18b20_config *cfg = dev->config;
+	const struct device *bus = cfg->bus;
 	uint8_t cmd = DS18B20_CMD_READ_SCRATCHPAD;
 
 	return w1_write_read(bus, &data->config, &cmd, 1,
@@ -82,7 +131,8 @@ static int ds18b20_temperature_convert(const struct device *dev)
 {
 	int ret;
 	struct ds18b20_data *data = dev->data;
-	const struct device *bus = ds18b20_bus(dev);
+	const struct ds18b20_config *cfg = dev->config;
+	const struct device *bus = cfg->bus;
 
 	(void)w1_lock_bus(bus);
 	ret = w1_reset_select(bus, &data->config);
