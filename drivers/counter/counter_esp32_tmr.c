@@ -96,13 +96,17 @@ static int counter_esp32_init(const struct device *dev)
 	timer_ll_set_reload_value(data->hal_ctx.dev, data->hal_ctx.timer_id, 0);
 	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->config.counter_en);
 
-	esp_intr_alloc(cfg->irq_source,
-			ESP_PRIO_TO_FLAGS(cfg->irq_priority),
-			(ISR_HANDLER)counter_esp32_isr, (void *)dev, NULL);
-
 	k_spin_unlock(&lock, key);
 
-	return 0;
+	int ret = esp_intr_alloc(cfg->irq_source,
+				ESP_PRIO_TO_FLAGS(cfg->irq_priority),
+				(ISR_HANDLER)counter_esp32_isr, (void *)dev, NULL);
+
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+	}
+
+	return ret;
 }
 
 static int counter_esp32_start(const struct device *dev)

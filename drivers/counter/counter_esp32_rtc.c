@@ -63,13 +63,17 @@ static int counter_esp32_init(const struct device *dev)
 			       (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW,
 			       &data->clk_src_freq);
 
-	esp_intr_alloc(cfg->irq_source,
-			ESP_PRIO_TO_FLAGS(cfg->irq_priority),
-			(ESP32_COUNTER_RTC_ISR_HANDLER)counter_esp32_isr,
-			(void *)dev,
-			NULL);
+	int ret = esp_intr_alloc(cfg->irq_source,
+				ESP_PRIO_TO_FLAGS(cfg->irq_priority),
+				(ESP32_COUNTER_RTC_ISR_HANDLER)counter_esp32_isr,
+				(void *)dev,
+				NULL);
 
-	return 0;
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+	}
+
+	return ret;
 }
 
 static int counter_esp32_start(const struct device *dev)
