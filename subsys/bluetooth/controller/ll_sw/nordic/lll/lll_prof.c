@@ -23,22 +23,22 @@
 
 static int send(struct node_rx_pdu *rx);
 static inline void sample(uint32_t *timestamp);
-static inline void delta(uint32_t timestamp, uint8_t *cputime);
+static inline void delta(uint32_t timestamp, uint16_t *cputime);
 
 static uint32_t timestamp_radio;
 static uint32_t timestamp_lll;
 static uint32_t timestamp_ull_high;
 static uint32_t timestamp_ull_low;
-static uint8_t cputime_radio;
-static uint8_t cputime_lll;
-static uint8_t cputime_ull_high;
-static uint8_t cputime_ull_low;
-static uint8_t latency_min = (uint8_t) -1;
-static uint8_t latency_max;
-static uint8_t latency_prev;
-static uint8_t cputime_min = (uint8_t) -1;
-static uint8_t cputime_max;
-static uint8_t cputime_prev;
+static uint16_t cputime_radio;
+static uint16_t cputime_lll;
+static uint16_t cputime_ull_high;
+static uint16_t cputime_ull_low;
+static uint16_t latency_min = UINT16_MAX;
+static uint16_t latency_max;
+static uint16_t latency_prev;
+static uint16_t cputime_min = UINT16_MAX;
+static uint16_t cputime_max;
+static uint16_t cputime_prev;
 static uint32_t timestamp_latency;
 
 void lll_prof_enter_radio(void)
@@ -155,7 +155,7 @@ void lll_prof_reserve_send(struct node_rx_pdu *rx)
 
 static int send(struct node_rx_pdu *rx)
 {
-	uint8_t latency, cputime, prev;
+	uint16_t latency, cputime, prev;
 	struct pdu_data *pdu;
 	struct profile *p;
 	uint8_t chg = 0U;
@@ -248,13 +248,13 @@ static inline void sample(uint32_t *timestamp)
 	*timestamp = radio_tmr_sample_get();
 }
 
-static inline void delta(uint32_t timestamp, uint8_t *cputime)
+static inline void delta(uint32_t timestamp, uint16_t *cputime)
 {
 	uint32_t delta;
 
 	radio_tmr_sample();
 	delta = radio_tmr_sample_get() - timestamp;
-	if (delta < UINT8_MAX && delta > *cputime) {
+	if (delta < UINT16_MAX && delta > *cputime) {
 		*cputime = delta;
 	}
 }
