@@ -428,4 +428,10 @@ config MIPI_STP_DECODER
 	bool "MIPI STPv2 decoder"
 	depends on !BIG_ENDIAN
 	help
-	  Module decodes a stream of STPv2 data.
+	  Module decodes a stream of STMv2 data.
+
+config CS_TRACE_DEFMT
+	bool "Coresight Trace Deformatter"
+	help
+	  Module is decoding data which is formatted using Coresight
+	  Trace Formatter, e.g. when data is put into ETR (Embedded Trace Router).
