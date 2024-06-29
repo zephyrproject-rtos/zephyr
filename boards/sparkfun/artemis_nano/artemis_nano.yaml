@@ -1,4 +1,5 @@
 # Artemis Nano Board Definition
+identifier: artemis_nano
 name: Artemis Nano
 type: mcu
 arch: arm
@@ -14,5 +15,3 @@ testing:
   ignore_tags:
     - net
 vendor: sparkfun
-maintainers:
-  - "ali.sarlak@protonmail.com"
