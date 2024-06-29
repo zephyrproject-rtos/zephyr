@@ -32,6 +32,14 @@ config LOG_BACKEND_FS_OVERWRITE
 	  When enabled backend overwrites oldest log files.
 	  In other case, when memory is full, new messages are dropped.
 
+config LOG_BACKEND_FS_APPEND_TO_NEWEST_FILE
+	bool "Append to the newest log file"
+	default y
+	help
+	  When enabled and when there is space left in the newest log file,
+	  backend appends to it.
+	  When disabled backend creates a new log file on every startup.
+
 config LOG_BACKEND_FS_FILE_PREFIX
 	string "Log file name prefix"
 	default "log."
