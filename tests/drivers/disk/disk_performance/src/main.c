@@ -14,9 +14,9 @@
 
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
 #define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
-#elif IS_ENABLED(CONFIG_DISK_DRIVER_MMC)
+#elif defined(CONFIG_DISK_DRIVER_MMC)
 #define DISK_NAME CONFIG_MMC_VOLUME_NAME
-#elif IS_ENABLED(CONFIG_NVME)
+#elif defined(CONFIG_NVME)
 #define DISK_NAME "nvme0n0"
 #else
 #error "No disk device defined, is your board supported?"

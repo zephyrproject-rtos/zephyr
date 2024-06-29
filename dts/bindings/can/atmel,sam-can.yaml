@@ -9,6 +9,15 @@ include:
 properties:
   reg:
     required: true
+    description: |
+      2 reg blocks needed; Register block for the MCAN configuration registers;
+      Register block for the DMA Base Address
+
+  reg-names:
+    type: string-array
+    required: true
+    description: |
+      description of reg blocks
 
   interrupts:
     required: true

@@ -11,5 +11,5 @@ ExternalZephyrProject_Add(
   BOARD ${SB_CONFIG_REMOTE_BOARD}
 )
 
-add_dependencies(hello_world remote)
-sysbuild_add_dependencies(FLASH hello_world remote)
+add_dependencies(${DEFAULT_IMAGE} remote)
+sysbuild_add_dependencies(FLASH ${DEFAULT_IMAGE} remote)

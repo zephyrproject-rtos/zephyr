@@ -246,6 +246,8 @@ Boards & SoC Support
 
   * Introduced the simulated :ref:`nrf54l15bsim<nrf54l15bsim>` target.
 
+  * The nrf5x bsim targets now support BT LE Coded PHY.
+
   * LLVM fuzzing support has been refactored while adding support for it in native_sim.
 
 * Added support for these following shields:
@@ -278,6 +280,8 @@ Build system and Infrastructure
 
   * Fixed issue whereby files used in a project (e.g. devicetree overlays or Kconfig fragments)
     were not correctly watched and CMake would not reconfigure if they were changed.
+
+  * Added flash support for Intel Hex files for the LinkServer runner.
 
 Drivers and Sensors
 *******************
@@ -385,7 +389,7 @@ Drivers and Sensors
 
 * Ethernet
 
-  * Deperecated eth_mcux driver in favor of the reworked nxp_enet driver.
+  * Deprecated eth_mcux driver in favor of the reworked nxp_enet driver.
   * Driver nxp_enet is no longer experimental.
   * All boards and SOCs with :dtcompatible:`nxp,kinetis-ethernet` compatible nodes
     reworked to use the new :dtcompatible:`nxp,enet` binding.
@@ -393,6 +397,19 @@ Drivers and Sensors
 * Flash
 
   * Added support for Ambiq Apollo3 series.
+  * Added support for multiple instances of the SPI NOR driver (spi_nor.c).
+  * Added preliminary support for non-erase devices with introduction of
+    device capabilities to c:struct:`flash_parameters` and the utility function
+    c:func:`flash_params_get_erase_cap` that allows to obtain the erase type
+    provided by a device; added c:macro:`FLASH_ERASE_C_EXPLICIT`, which is
+    currently the only supported erase type and is set by all flash devices.
+  * Added the c:func:`flash_flatten` function that can be used on devices,
+    with or without erase requirement, when erase has been used not for preparing
+    a device for a random data write, but rather to remove/scramble data from
+    that device.
+  * Added the c:func:`flash_fill` utility function which allows to write
+    a single value across a provided range in a selected device.
+  * Added support for RRAM on nrf54l15 devices.
 
 * GNSS
 
@@ -468,6 +485,12 @@ Drivers and Sensors
 
 * Regulators
 
+* Reset
+
+  * Added driver for reset controller on Nuvoton NPCX chips.
+  * Added reset controller driver for NXP SYSCON.
+  * Added reset controller driver for NXP RSTCTL.
+
 * Retained memory
 
 * RTC
@@ -509,24 +532,39 @@ Drivers and Sensors
 
 * Wi-Fi
 
-  * Added support for configuring RTS threshold. With this, users can set the RTS threshold value or
-    disable the RTS mechanism.
-
-  * Added support for configuring AP parameters. With this, users can set AP parameters at
-    build and run time.
-
-  * Added support to configure "max_inactivity" BSS parameter. Users can set this both build and runtime
-    duration to control the maximum time duration after which AP may disconnect a STA due to inactivity
-    from STA.
-
-  * Added support to configure "inactivity_poll" BSS parameter. Users can set build only AP parameter
-    to control whether AP may poll the STA before throwing away STA due to inactivity.
-
-  * Added support to configure "max_num_sta" BSS parameter. Users can set this both build and run time
-    parameter to control the maximum numuber of STA entries.
+  * Fixed message parsing for esp-at.
+  * Fixed esp-at connect failures.
+  * Implement :c:func:`bind` and :c:func:`recvfrom` for UDP sockets for esp-at.
+  * Added option for setting maximum data size for eswifi.
 
 Networking
 **********
+
+* ARP:
+
+  * Added support for gratuitous ARP transmission.
+  * Fixed a possible deadlock between TX and RX threads within ARP module.
+  * Fixed a possible ARP entry leak.
+  * Improved ARP debug logs.
+
+* CoAP:
+
+  * Fixed CoAP observe age overflows.
+  * Increased upper limit for CoAP retransmissions (:kconfig:option:`CONFIG_COAP_MAX_RETRANSMIT`).
+  * Fixed CoAP observations in CoAP client library.
+  * Added new CoAP client :c:func:`coap_client_cancel_requests` API which allows
+    to cancel active observations.
+  * Fixed CoAP ID generation for responses in CoAP Server sample.
+
+* Connection manager:
+
+  * Added support for new net_mgmt events, which allow to track IPv4 and IPv6
+    connectivity independently:
+
+    * :c:macro:`NET_EVENT_L4_IPV4_CONNECTED`
+    * :c:macro:`NET_EVENT_L4_IPV4_DISCONNECTED`
+    * :c:macro:`NET_EVENT_L4_IPV6_CONNECTED`
+    * :c:macro:`NET_EVENT_L4_IPV6_DISCONNECTED`
 
 * DHCPv4:
 
@@ -534,36 +572,254 @@ Networking
     :kconfig:option:`CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC` callbacks can be
     registered with :c:func:`net_dhcpv4_add_option_vendor_callback` to handle these options after
     being initialised with :c:func:`net_dhcpv4_init_option_vendor_callback`.
-
   * Added support for the "Vendor class identifier" option. Use the
     :kconfig:option:`CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER` to enable it and
     :kconfig:option:`CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING` to set it.
-
   * The NTP server from the DHCPv4 option can now be used to set the system time. This is done by
     default, if :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_INIT` is enabled.
+  * The syslog server address can now be set with DHCPv4 option. This is done by
+    default, if :kconfig:option:`CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION` is enabled.
+  * Fixed a bug, where options with registered callbacks were not requested from
+    the server.
+  * Fixed a bug, where netmask received from the server was not applied correctly.
+  * Reimplemented DHCPv4 client RENEW/REBIND logic to be compliant with RFC2131.
+  * Improved declined addresses management in DHCPv4 server, which now can be
+    reused after configured time.
+  * Fixed including the client ID option in the DHCPv4 server response, according to RFC6842.
+  * Added :kconfig:option:`CONFIG_NET_DHCPV4_SERVER_NAK_UNRECOGNIZED_REQUESTS` which
+    allows to override RFC-defined behavior, and NAK requests from unrecognized
+    clients.
+  * Other minor fixes in DHCPv4 client and server implementations.
 
-* LwM2M:
+* DHCPv6:
 
-  * Added new API function:
+  * Fixed incorrect DHCPv6 events code base for net_mgmt events.
+  * Added :kconfig:option:`CONFIG_NET_DHCPV6_DUID_MAX_LEN` which allows to configure
+    maximum supported DUID length.
+  * Added documentation page for DHCPv6.
 
-    * :c:func:`lwm2m_set_bulk`
+* DNS/mDNS/LLMNR:
 
-  * Added new ``offset`` parameter to :c:type:`lwm2m_engine_set_data_cb_t` callback type.
-    This affects post write and validate callbacks as well as some firmware callbacks.
+  * Fixed an issue where the mDNS Responder did not work when the mDNS Resolver was also enabled.
+    The mDNS Resolver and mDNS Responder can now be used simultaneously.
+  * Reworked LLMNR and mDNS responders, and DNS resolver to use sockets and socket services API.
+  * Added ANY query resource type.
+  * Added support for mDNS to provide records in runtime.
+  * Added support for caching DNS records.
+  * Fixed error codes returned when socket creation fails, and when all results have been returned.
+  * Fixed DNS retransmission timeout calculation.
+
+* gPTP/PTP:
+
+  * Added support for IEEE 1588-2019 PTP.
+  * Added support for SO_TIMESTAMPING socket option to get timestamping information in socket
+    ancillary data.
+  * Fixed race condition on timestamp callback.
+  * Fixed clock master sync send SM if we are not the GM clock.
+
+* HTTP:
+
+  * Added HTTP/2 server library and sample application with support for static,
+    dynamic and Websocket resource types.
+  * Added HTTP shell component.
+  * Improved HTTP client error reporting.
+  * Moved HTTP client library out of experimental.
 
 * IPSP:
 
   * Removed IPSP support. ``CONFIG_NET_L2_BT`` does not exist anymore.
 
+* IPv4:
+
+  * Implemented IPv4 Address Conflict Detection, according to RFC 5227.
+  * Added :c:func:`net_ipv4_is_private_addr` API function.
+  * IPv4 netmask is now set individually for each address instead of being set
+    for the whole interface.
+  * Other minor fixes and improvements.
+
+* IPv6:
+
+  * Implemented IPv6 Privacy Extensions according to RFC 8981.
+  * Added :c:func:`net_ipv6_is_private_addr` API function.
+  * Implemented reachability hint for IPv6. Upper layers can use
+    c:func:`net_if_nbr_reachability_hint` to report Neigbor reachability and
+    avoid unnecessary Neighbor Discovery solicitations.
+  * Added :kconfig:option:`CONFIG_NET_IPV6_MTU` allowing to set custom IPv6 MTU.
+  * Added :kconfig:option:`CONFIG_NET_MCAST_ROUTE_MAX_IFACES` which allows to set
+    multiple interfaces for multicast forwarding entries.
+  * Added :kconfig:option:`CONFIG_NET_MCAST_ROUTE_MLD_REPORTS` which allows to
+    report multicast routes in MLDv2 reports.
+  * Fixed IPv6 hop limit handling for multicast packets.
+  * Improved IPv6 Neighbor Discovery test coverage.
+  * Fixed a bug, where Neighbor Advertisement packets reporting Duplicate address
+    detection conflict were dropped.
+  * Other minor fixes and improvements.
+
+* LwM2M:
+
+  * Added new API functions:
+
+    * :c:func:`lwm2m_set_bulk`
+    * :c:func:`lwm2m_rd_client_set_ctx`
+
+  * Added new ``offset`` parameter to :c:type:`lwm2m_engine_set_data_cb_t` callback type.
+    This affects post write and validate callbacks as well as some firmware callbacks.
+  * Fixed block context not being reset upon receiving block number 0 in block transfer.
+  * Fixed block size negotiation with the server in block transfer.
+  * Added :kconfig:option:`CONFIG_LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION` which
+    allows to force the client to always report object version.
+  * Block transfer is now possible with resource w/o registered callback.
+  * Fixed a bug, where an empty ACK sent from the registered callback would not
+    be sent immediately.
+  * Removed deprecated API functions and definitions.
+  * Other minor fixes and improvements.
+
+* Misc:
+
+  * Improved overall networking API doxygen documentation.
+  * Converted TFTP library to use ``zsock_*`` API.
+  * Added SNTP :c:func:`sntp_simple_addr` API function to perform SNTP query
+    when the server IP address is already known.
+  * Added :kconfig:option:`CONFIG_NET_TC_THREAD_PRIO_CUSTOM` allowing to override
+    default traffic class threads priority.
+  * Fixed the IPv6 event handler initialization order in net config library.
+  * Reworked telnet shell backend to use sockets and socket services API.
+  * Fixed double dereference of IGMP packets.
+  * Moved from ``native_posix`` to ``native_sim`` support in various tests and
+    samples.
+  * Added support for copying user data in network buffers.
+  * Fixed cloning of zero sized network buffers.
+  * Added net_buf APIs to handle 40 bit data format.
+  * Added receive callback for dummy L2, applicable in certain use cases
+    (for example packet capture).
+  * Implemented pseudo interface, a.k.a "any" interface for packet capture use
+    case.
+  * Added cooded mode capture support. This allows non-IP based network data capture.
+  * Generate network events when starting or stopping packet capture.
+  * Removed obsolete and unused ``tcp_first_msg`` :c:struct:`net_pkt` flag.
+  * Added new :zephyr:code-sample:`secure-mqtt-sensor-actuator` sample.
+  * Added support for partial L3 and L4 checksum offloading.
+  * Updated :zephyr:code-sample:`mqtt-azure` with new CA certificates, the current
+    on expires soon.
+  * Added new driver for Native Simulator offloaded sockets.
+  * Overhauled VLAN support to use Virtual network interfaces.
+  * Added statistics collection for Virtual network interfaces.
+
+* MQTT:
+
+  * Added ALPN support for MQTT TLS backend.
+  * Added user data field in :c:struct:`mqtt_client` context structure.
+
+* Network Interface:
+
+  * Added new API functions:
+
+    * :c:func:`net_if_ipv4_maddr_foreach`
+    * :c:func:`net_if_ipv6_maddr_foreach`
+
+  * Improved debug logging in the network interface code.
+  * Added reference counter to the :c:struct:`net_if_addr` structure.
+  * Fixed IPv6 DAD and MLDv2 operation when interface goes up.
+  * Other minor fixes.
+
+* OpenThread
+
+ * Removed deprecated ``openthread_set_state_changed_cb()`` function.
+ * Added implementation of BLE TCAT advertisement API.
+
+* PPP
+
+  * Removed deprecated ``gsm_modem`` driver and sample.
+  * Optimized memory allocation in PPP driver.
+  * Misc improvements in the :zephyr:code-sample:`cellular-modem` sample
+  * Added PPP low level packet capture support.
+
+* Shell:
+
+  * Added ``net ipv4 gateway`` command to set IPv4 gateway address.
+  * Added argument validation in network shell macros.
+  * Fixed net_mgmt sockets information printout.
+  * Reworked VLAN information printout.
+  * Added option to set random MAC address with ``net iface set_mac`` command.
+  * Added multicast join status when printing multicast address information.
+
+* Sockets:
+
+  * Implemented new networking POSIX APIs:
+
+    * :c:func:`if_nameindex`
+    * :c:func:`inet_ntoa`
+    * :c:func:`inet_addr`
+
+  * Added support for tracing socket API calls.
+  * TLS sockets are no longer experimental API.
+  * Fixed the protocol field endianness for ``AF_PACKET`` type sockets.
+  * Fixed :c:func:`getsockname` for TCP.
+  * Improve :c:func:`sendmsg` support when using DTLS sockets.
+
+* Syslog:
+
+  * Added new API functions:
+
+    * :c:func:`log_backend_net_set_ip` to initialize syslog net backend with IP
+      address directly.
+    * :c:func:`log_backend_net_start` to facilitate syslog net backend activation.
+
+  * Added structured logging support to syslog net backend.
+  * Added TCP support to syslog net backend.
+
 * TCP:
 
+  * Fixed possible deadlock when accepting new TCP connection.
+  * Fixed ACK number verification during connection teardown.
+  * Fixed a bug, where data bytes included in FIN packet were ignored.
+  * Fixed a possible TCP context leak in case initial SYN packet transmission failed.
+  * Deprecated :kconfig:option:`CONFIG_NET_TCP_ACK_TIMEOUT` as it was redundant with other configs.
+  * Improved debug logs, so that they're easier to follow under heavy load.
   * ISN generation now uses SHA-256 instead of MD5. Moreover it now relies on PSA APIs
     instead of legacy Mbed TLS functions for hash computation.
 
-* mDNS:
+* Websocket:
 
-  * Fixed an issue where the mDNS Responder did not work when the mDNS Resolver was also enabled.
-    The mDNS Resolver and mDNS Responder can now be used simultaneously.
+  * Added new Websocket APIs:
+
+    * :c:func:`websocket_register`
+    * :c:func:`websocket_unregister`
+
+  * Converted Websocket library to use ``zsock_*`` API.
+  * Added Object Core support to Websocket sockets.
+
+* Wi-Fi:
+
+  * Reduce memory usage of 5 GHz channel list.
+  * Added channel validity check in AP mode.
+  * Added support for BSSID configuration in connect call.
+  * Wifi shell help text fixes. Option parsing fixes.
+  * Support WPA auto personal security mode.
+  * Collect unicast received/sent network packet statistics.
+  * Added support for configuring RTS threshold. With this, users can set the RTS threshold
+    value or disable the RTS mechanism.
+  * Added support for configuring AP parameters. With this, users can set AP parameters at
+    build and run time.
+  * Added support to configure ``max_inactivity`` BSS parameter. Users can set this both
+    build and runtime duration to control the maximum time duration after which AP may
+    disconnect a STA due to inactivity from STA.
+  * Added support to configure ``inactivity_poll`` BSS parameter. Users can set build
+    only AP parameter to control whether AP may poll the STA before throwing away STA
+    due to inactivity.
+  * Added support to configure ``max_num_sta`` BSS parameter. Users can set this both
+    build and run time parameter to control the maximum number of STA entries.
+
+* zperf:
+
+  * Fixed ``IP_TOS`` and ``IPV6_TCLASS`` options handling in zperf.
+  * Fixed throughput calculation during long zperf sessions.
+  * Fixed error on TCP upload session end in case multicast IP address was used.
+  * Fixed a bug, where IPv6 socket was bound with IPv4 address, giving error.
+  * Added an option to specify the network interface to use during zperf sessions.
+  * Added a new ``ZPERF_SESSION_PERIODIC_RESULT`` event for periodic updates
+    during TCP upload sessions.
+  * Fixed possible socket leak in case of errors during zperf session.
 
 USB
 ***
@@ -645,6 +901,11 @@ Libraries / Subsystems
     for the Mbed TLS's p256-m driver PSA crypto library. This is a Cortex-M SW
     optimized implementation of secp256r1 curve.
 
+* CMSIS-NN
+
+  * CMSIS-NN was updated to v6.0.0 from v4.1.0:
+    https://arm-software.github.io/CMSIS-NN/latest/rev_hist.html
+
 * Random
 
   * Besides the existing :c:func:`sys_rand32_get` function, :c:func:`sys_rand8_get`,
@@ -679,6 +940,16 @@ Libraries / Subsystems
 
   * FS: It is now possible to truncate a file while opening using :c:func:`fs_open`
     and by passing ``FS_O_TRUNC`` flag.
+
+  * Flash Map: TinyCrypt has been replaced with PSA Crypto in Flash Area integrity check.
+
+  * Flash Map: :c:func:`flash_area_flatten` has been added to be used where an erase
+    operation has been previously used for removing/scrambling data rather than
+    to prepare a device for a random data write.
+
+  * Flash Map: :c:macro:`FIXED_PARTITION_NODE_OFFSET`, :c:macro:`FIXED_PARTITION_NODE_SIZE`
+    and :c:macro:`FIXED_PARTITION_NODE_DEVICE` have been added to allow obtaining
+    fixed partition information from a devicetree node rather than a label.
 
 * POSIX API
 
@@ -789,3 +1060,5 @@ Tests and Samples
   * Removed ``net/gsm_modem`` sample as the ``GSM_PPP`` device driver it depended on has been
     deprecated and removed. The sample has been replaced by the sample ``net/cellular_modem``
     based on the ``MODEM_CELLULAR`` device driver.
+
+  * BT LE Coded PHY is now runtime tested in CI with the nrf5x bsim targets.

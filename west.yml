@@ -124,7 +124,7 @@ manifest:
       revision: 6489e771e9c405f1763b52d64a3f17a1ec488ace
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
-      revision: 0c8669d81381ccf3b1a01d699f3b68b50134a99f
+      revision: ea987c1ca661be723de83bd159aed815d6cbd430
       path: modules/lib/cmsis-nn
     - name: edtt
       revision: 8d7b543d4d2f2be0f78481e4e1d8d73a88024803
@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: e4e8df61b371554f4ce08d203426d7875421666e
+      revision: 61b977fd2b033c656b1b2fa07b3137872236f710
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -327,7 +327,7 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-m
-      revision: bdc4df1734b870de43237d56eb1b2a7af016ee95
+      revision: 8df9cc8baf46252fd188bba1d87333a8daa9a5e8
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

@@ -349,6 +349,13 @@ if (CONFIG_BUILD_WITH_TFM)
     interface/interface.c
     )
 
+  # A dependency on tfm_s.hex for zephyr.elf will not cause a Zephyr re-link when
+  # tfm_s.hex is updated, as the hex is not a direct input on the executable.
+  # Instead we establish a source file dependency which ensures that tfm_api is
+  # updated when there are changes in tfm itself, this again will trigger an re-link
+  # of Zephyr.elf.
+  set_property(SOURCE interface/interface.c APPEND PROPERTY OBJECT_DEPENDS ${TFM_S_HEX_FILE})
+
   # Non-Secure interface to request system reboot
   if (CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
     zephyr_library_sources(src/reboot.c)
