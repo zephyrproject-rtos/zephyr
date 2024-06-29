@@ -118,6 +118,7 @@ config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
 choice BT_LL_SW_LLCP_IMPL
 	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
+	default BT_LL_SW_LLCP_LEGACY if SOC_SERIES_NRF51X
 	default BT_LL_SW_LLCP
 	help
 	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
