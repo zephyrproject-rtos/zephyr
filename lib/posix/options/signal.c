@@ -16,6 +16,10 @@
 
 BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0);
 
+/* external libc compatibility / workaround */
+#undef snprintf
+extern int snprintf(char *ZRESTRICT buf, size_t size, const char *ZRESTRICT format, ...);
+
 static inline bool signo_valid(int signo)
 {
 	return ((signo > 0) && (signo < _NSIG));

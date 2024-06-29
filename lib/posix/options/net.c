@@ -15,6 +15,10 @@
 #include <zephyr/posix/net/if.h>
 #include <zephyr/posix/sys/socket.h>
 
+/* external libc compatibility / workaround */
+#undef snprintf
+extern int snprintf(char *ZRESTRICT buf, size_t size, const char *ZRESTRICT format, ...);
+
 /* From arpa/inet.h */
 
 in_addr_t inet_addr(const char *cp)
