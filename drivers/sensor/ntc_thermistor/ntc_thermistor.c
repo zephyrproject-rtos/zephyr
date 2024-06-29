@@ -15,8 +15,8 @@ LOG_MODULE_REGISTER(NTC_THERMISTOR, CONFIG_SENSOR_LOG_LEVEL);
 
 struct ntc_thermistor_data {
 	struct k_mutex mutex;
-	int16_t raw;
-	int16_t sample_val;
+	int32_t raw;
+	int32_t sample_val;
 };
 
 struct ntc_thermistor_config {
