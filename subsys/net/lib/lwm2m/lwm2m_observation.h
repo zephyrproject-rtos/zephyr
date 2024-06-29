@@ -30,6 +30,8 @@ struct observe_node {
 struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref, struct lwm2m_attr *prev);
 const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr);
 
+const char *const lwm2m_attr_to_str(uint8_t type);
+
 void clear_attrs(void *ref);
 
 int64_t engine_observe_shedule_next_event(struct observe_node *obs, uint16_t srv_obj_inst,
