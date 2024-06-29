@@ -321,10 +321,8 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
-      - nrf51dk/nrf51822
     integration_platforms:
       - nrf52840dk/nrf52840
-      - nrf51dk/nrf51822
   bluetooth.init.test_h5:
     extra_args:
       - CONF_FILE=prj_h5.conf
