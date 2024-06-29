@@ -44,6 +44,7 @@ legend,
     text-align: center;
     margin-top: 8px;
     opacity: 0.75;
+    color: var(--body-color);
 }
 
 .rst-content div.figure.figure-w480 {
