@@ -81,3 +81,7 @@
 &gpio2 {
 	status = "okay";
 };
+
+&trng {
+	status = "okay";
+};

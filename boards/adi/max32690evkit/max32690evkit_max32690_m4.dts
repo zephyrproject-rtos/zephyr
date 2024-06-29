@@ -87,3 +87,7 @@
 	parity = "none";
 	status = "okay";
 };
+
+&trng {
+	status = "okay";
+};
