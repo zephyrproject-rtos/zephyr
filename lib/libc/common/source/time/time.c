@@ -6,9 +6,6 @@
 
 #include <time.h>
 
-/* clock_gettime() prototype */
-#include <zephyr/posix/time.h>
-
 time_t time(time_t *tloc)
 {
 	struct timespec ts;

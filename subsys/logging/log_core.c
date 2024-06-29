@@ -3,6 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <ctype.h>
+#include <time.h>
+
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_ctrl.h>
@@ -16,16 +20,11 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <ctype.h>
 #include <zephyr/logging/log_frontend.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_output_custom.h>
 #include <zephyr/linker/utils.h>
-
-#ifdef CONFIG_LOG_TIMESTAMP_USE_REALTIME
-#include <zephyr/posix/time.h>
-#endif
 
 LOG_MODULE_REGISTER(log);
 

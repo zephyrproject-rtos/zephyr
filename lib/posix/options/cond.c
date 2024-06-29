@@ -226,7 +226,7 @@ int pthread_condattr_init(pthread_condattr_t *att)
 {
 	__ASSERT_NO_MSG(att != NULL);
 
-	att->clock = CLOCK_MONOTONIC;
+	att->clock = TIMER_ABSTIME;
 
 	return 0;
 }
@@ -248,7 +248,7 @@ int pthread_condattr_getclock(const pthread_condattr_t *ZRESTRICT att,
 
 int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id)
 {
-	if (clock_id != CLOCK_REALTIME && clock_id != CLOCK_MONOTONIC) {
+	if (clock_id != CLOCK_REALTIME && !is_monotonic_clock(clock_id)) {
 		return -EINVAL;
 	}
 

@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dns_resolve.h>
@@ -18,7 +19,6 @@
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/data/json.h>
 #include <zephyr/random/random.h>
-#include <zephyr/posix/time.h>
 #include <zephyr/logging/log.h>
 
 

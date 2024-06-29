@@ -20,11 +20,15 @@ LOG_MODULE_REGISTER(clock_test, LOG_LEVEL_DBG);
 static const struct timespec ref_ts = {1514821501, NSEC_PER_SEC / 2U};
 
 static const clockid_t clocks[] = {
+#if defined(_POSIX_CLOCK_MONOTONIC)
 	CLOCK_MONOTONIC,
+#endif
 	CLOCK_REALTIME,
 };
 static const bool settable[] = {
+#if defined(_POSIX_CLOCK_MONOTONIC)
 	false,
+#endif
 	true,
 };
 
@@ -216,6 +220,7 @@ ZTEST(clock, test_realtime)
 
 ZTEST(clock, test_clock_getcpuclockid)
 {
+#if defined(_POSIX_CPUTIME)
 	int ret = 0;
 	clockid_t clock_id = CLOCK_INVALID;
 
@@ -225,6 +230,9 @@ ZTEST(clock, test_clock_getcpuclockid)
 
 	ret = clock_getcpuclockid((pid_t)2482, &clock_id);
 	zassert_equal(ret, EPERM, "POSIX clock_getcpuclock id failed");
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(clock, test_clock_getres)
@@ -247,13 +255,27 @@ ZTEST(clock, test_clock_getres)
 		{CLOCK_INVALID, NULL, -1},
 		{CLOCK_INVALID, &res, -1},
 		{CLOCK_REALTIME, NULL, 0},
+#if defined(_POSIX_CLOCK_MONOTONIC)
 		{CLOCK_MONOTONIC, NULL, 0},
+#endif
+#if defined(_POSIX_CPUTIME)
 		{CLOCK_PROCESS_CPUTIME_ID, NULL, 0},
+#endif
+#if defined(_POSIX_THREAD_CPUTIME)
+		{CLOCK_THREAD_CPUTIME_ID, NULL, 0},
+#endif
 
 		/* all valid inputs */
 		{CLOCK_REALTIME, &res, 0},
+#if defined(_POSIX_CLOCK_MONOTONIC)
 		{CLOCK_MONOTONIC, &res, 0},
+#endif
+#if defined(_POSIX_CPUTIME)
 		{CLOCK_PROCESS_CPUTIME_ID, &res, 0},
+#endif
+#if defined(_POSIX_THREAD_CPUTIME)
+		{CLOCK_THREAD_CPUTIME_ID, &res, 0},
+#endif
 	};
 
 	ARRAY_FOR_EACH_PTR(args, arg) {
