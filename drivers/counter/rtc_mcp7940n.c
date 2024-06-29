@@ -31,10 +31,16 @@ LOG_MODULE_REGISTER(MCP7940N, CONFIG_COUNTER_LOG_LEVEL);
 /* Largest block size */
 #define MAX_WRITE_SIZE                  (RTC_TIME_REGISTERS_SIZE)
 
-/* tm struct uses years since 1900 but unix time uses years since
- * 1970. MCP7940N default year is '1' so the offset is 69
+/* The MCP7940N RTCC does not keep century bits in its registers.
+ * This uses the user-accessible SRAM to store century bits for the driver.
  */
-#define UNIX_YEAR_OFFSET		69
+#define RTC_CENTURY		0x32
+
+/* The MCP7940N RTCC compensates for leap years from 2001 to 2399.
+ * The tm struct uses years since 1900.
+ */
+#define YEAR_MIN		101
+#define YEAR_MAX		499
 
 /* Macro used to decode BCD to UNIX time to avoid potential copy and paste
  * errors.
@@ -64,6 +70,46 @@ struct mcp7940n_data {
 	bool int_active_high;
 };
 
+/** @brief Reads single register from MCP7940N
+ *
+ * @param dev the MCP7940N device pointer.
+ * @param addr register address.
+ * @param val pointer to uint8_t that will contain register value if
+ * successful.
+ *
+ * @retval return 0 on success, or a negative error code from an I2C
+ * transaction.
+ */
+static int read_register(const struct device *dev, uint8_t addr, uint8_t *val)
+{
+	const struct mcp7940n_config *cfg = dev->config;
+
+	int rc = i2c_write_read_dt(&cfg->i2c, &addr, sizeof(addr), val, 1);
+
+	return rc;
+}
+
+/** @brief Write a single register to MCP7940N
+ *
+ * @param dev the MCP7940N device pointer.
+ * @param addr register address.
+ * @param value Value that will be written to the register.
+ *
+ * @retval return 0 on success, or a negative error code from an I2C
+ * transaction or invalid parameter.
+ */
+static int write_register(const struct device *dev, enum mcp7940n_register addr, uint8_t value)
+{
+	const struct mcp7940n_config *cfg = dev->config;
+	int rc = 0;
+
+	uint8_t time_data[2] = {addr, value};
+
+	rc = i2c_write_dt(&cfg->i2c, time_data, sizeof(time_data));
+
+	return rc;
+}
+
 /** @brief Convert bcd time in device registers to UNIX time
  *
  * @param dev the MCP7940N device pointer.
@@ -75,17 +121,23 @@ static time_t decode_rtc(const struct device *dev)
 	struct mcp7940n_data *data = dev->data;
 	time_t time_unix = 0;
 	struct tm time = { 0 };
+	uint8_t cent;
+
+	/* Read century digits from SRAM*/
+	read_register(dev, RTC_CENTURY, &cent);
 
 	time.tm_sec = RTC_BCD_DECODE(data->registers.rtc_sec.sec);
 	time.tm_min = RTC_BCD_DECODE(data->registers.rtc_min.min);
 	time.tm_hour = RTC_BCD_DECODE(data->registers.rtc_hours.hr);
 	time.tm_mday = RTC_BCD_DECODE(data->registers.rtc_date.date);
-	time.tm_wday = data->registers.rtc_weekday.weekday;
+	/* tm struct uses 0-6 for weekday, mcp7940n uses 1-7 */
+	time.tm_wday = data->registers.rtc_weekday.weekday - 1;
 	/* tm struct starts months at 0, mcp7940n starts at 1 */
 	time.tm_mon = RTC_BCD_DECODE(data->registers.rtc_month.month) - 1;
-	/* tm struct uses years since 1900 but unix time uses years since 1970 */
-	time.tm_year = RTC_BCD_DECODE(data->registers.rtc_year.year) +
-		UNIX_YEAR_OFFSET;
+	/* Century digits are stored on sram. Need to combine with year digits (00 - 99)
+	 * tm struct uses years since 1900.
+	 */
+	time.tm_year = (100 * (int)cent + RTC_BCD_DECODE(data->registers.rtc_year.year)) - 1900;
 
 	time_unix = timeutil_timegm(&time);
 
@@ -107,15 +159,21 @@ static int encode_rtc(const struct device *dev, struct tm *time_buffer)
 {
 	struct mcp7940n_data *data = dev->data;
 	uint8_t month;
-	uint8_t year_since_epoch;
+	uint8_t year;
+	uint8_t cent;
 
 	/* In a tm struct, months start at 0, mcp7940n starts with 1 */
 	month = time_buffer->tm_mon + 1;
 
-	if (time_buffer->tm_year < UNIX_YEAR_OFFSET) {
+	/* Year is 2 digit number from 00 to 99*/
+	year = (1900 + time_buffer->tm_year) % 100;
+	/* Century digits need to be included on user-accessible SRAM*/
+	cent = (1900 + time_buffer->tm_year) / 100;
+
+	/* Datasheet states that this RTC is leap year compensated for 2001-2399*/
+	if (time_buffer->tm_year < YEAR_MIN || time_buffer->tm_year > YEAR_MAX) {
 		return -EINVAL;
 	}
-	year_since_epoch = time_buffer->tm_year - UNIX_YEAR_OFFSET;
 
 	/* Set external oscillator configuration bit */
 	data->registers.rtc_sec.start_osc = 1;
@@ -126,15 +184,19 @@ static int encode_rtc(const struct device *dev, struct tm *time_buffer)
 	data->registers.rtc_min.min_ten = time_buffer->tm_min / 10;
 	data->registers.rtc_hours.hr_one = time_buffer->tm_hour % 10;
 	data->registers.rtc_hours.hr_ten = time_buffer->tm_hour / 10;
-	data->registers.rtc_weekday.weekday = time_buffer->tm_wday;
+	/* tm struct uses 0-6 for weekday, mcp7940n uses 1-7 */
+	data->registers.rtc_weekday.weekday = time_buffer->tm_wday + 1;
 	data->registers.rtc_date.date_one = time_buffer->tm_mday % 10;
 	data->registers.rtc_date.date_ten = time_buffer->tm_mday / 10;
 	data->registers.rtc_month.month_one = month % 10;
 	data->registers.rtc_month.month_ten = month / 10;
-	data->registers.rtc_year.year_one = year_since_epoch % 10;
-	data->registers.rtc_year.year_ten = year_since_epoch / 10;
+	data->registers.rtc_year.year_one = year % 10;
+	data->registers.rtc_year.year_ten = year / 10;
 
-	return 0;
+	/* Write century to SRAM*/
+	int rc = write_register(dev, RTC_CENTURY, cent);
+
+	return rc;
 }
 
 /** @brief Encode time struct tm into mcp7940n alarm registers
@@ -169,32 +231,14 @@ static int encode_alarm(const struct device *dev, struct tm *time_buffer, uint8_
 	alm_regs->alm_min.min_ten = time_buffer->tm_min / 10;
 	alm_regs->alm_hours.hr_one = time_buffer->tm_hour % 10;
 	alm_regs->alm_hours.hr_ten = time_buffer->tm_hour / 10;
-	alm_regs->alm_weekday.weekday = time_buffer->tm_wday;
+	/* tm struct uses 0-6 for weekday, mcp7940n uses 1-7 */
+	alm_regs->alm_weekday.weekday = time_buffer->tm_wday + 1;
 	alm_regs->alm_date.date_one = time_buffer->tm_mday % 10;
 	alm_regs->alm_date.date_ten = time_buffer->tm_mday / 10;
 	alm_regs->alm_month.month_one = month % 10;
 	alm_regs->alm_month.month_ten = month / 10;
 
 	return 0;
-}
-
-/** @brief Reads single register from MCP7940N
- *
- * @param dev the MCP7940N device pointer.
- * @param addr register address.
- * @param val pointer to uint8_t that will contain register value if
- * successful.
- *
- * @retval return 0 on success, or a negative error code from an I2C
- * transaction.
- */
-static int read_register(const struct device *dev, uint8_t addr, uint8_t *val)
-{
-	const struct mcp7940n_config *cfg = dev->config;
-
-	int rc = i2c_write_read_dt(&cfg->i2c, &addr, sizeof(addr), val, 1);
-
-	return rc;
 }
 
 /** @brief Read registers from device and populate mcp7940n_registers struct
@@ -218,27 +262,6 @@ static int read_time(const struct device *dev, time_t *unix_time)
 	if (rc >= 0) {
 		*unix_time = decode_rtc(dev);
 	}
-
-	return rc;
-}
-
-/** @brief Write a single register to MCP7940N
- *
- * @param dev the MCP7940N device pointer.
- * @param addr register address.
- * @param value Value that will be written to the register.
- *
- * @retval return 0 on success, or a negative error code from an I2C
- * transaction or invalid parameter.
- */
-static int write_register(const struct device *dev, enum mcp7940n_register addr, uint8_t value)
-{
-	const struct mcp7940n_config *cfg = dev->config;
-	int rc = 0;
-
-	uint8_t time_data[2] = {addr, value};
-
-	rc = i2c_write_dt(&cfg->i2c, time_data, sizeof(time_data));
 
 	return rc;
 }
@@ -288,11 +311,13 @@ static int write_data_block(const struct device *dev, enum mcp7940n_register add
 	return rc;
 }
 
-/** @brief Sets the correct weekday.
+/** @brief Sets the weekday.
  *
- * If the time is never set then the device defaults to 1st January 1970
- * but with the wrong weekday set. This function ensures the weekday is
- * correct in this case.
+ * Note: This function was originally added with a wrong assumption of the RTC.
+ * I am keeping this function due to the following from the datasheet:
+ * Writing to the RTCWKDAY register will always clear the PWRFAIL bit.
+ * The PWRFAIL bit must be cleared to log new time-stamp data.
+ * This is to ensure previous time-stamp data is not lost.
  *
  * @param dev the MCP7940N device pointer.
  * @param unix_time pointer to unix time that will be used to work out the weekday
@@ -307,7 +332,8 @@ static int set_day_of_week(const struct device *dev, time_t *unix_time)
 	int rc = 0;
 
 	if (gmtime_r(unix_time, &time_buffer) != NULL) {
-		data->registers.rtc_weekday.weekday = time_buffer.tm_wday;
+		/* tm struct uses 0-6 for weekday, mcp7940n uses 1-7 */
+		data->registers.rtc_weekday.weekday = time_buffer.tm_wday + 1;
 		rc = write_register(dev, REG_RTC_WDAY,
 			*((uint8_t *)(&data->registers.rtc_weekday)));
 	} else {
