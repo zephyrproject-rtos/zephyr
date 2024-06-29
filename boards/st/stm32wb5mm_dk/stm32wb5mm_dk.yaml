@@ -9,9 +9,12 @@ toolchain:
 ram: 256
 flash: 876
 supported:
+  - arduino_i2c
+  - arduino_spi
   - gpio
   - uart
   - i2c
+  - spi
   - vl53l0x
   - ism330dhcx
 vendor: st
