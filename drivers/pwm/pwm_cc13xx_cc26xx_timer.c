@@ -176,6 +176,8 @@ static int init_pwm(const struct device *dev)
 
 	/* Enable GPIO peripheral. */
 	PRCMPeripheralRunEnable(get_timer_peripheral(config));
+	PRCMPeripheralSleepEnable(get_timer_peripheral(config));
+	PRCMPeripheralDeepSleepEnable(get_timer_peripheral(config));
 
 	/* Load PRCM settings. */
 	PRCMLoadSet();
