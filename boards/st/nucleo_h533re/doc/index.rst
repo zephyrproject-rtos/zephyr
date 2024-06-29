@@ -172,6 +172,8 @@ The Zephyr nucleo_h533re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB full-speed host/device bus      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
