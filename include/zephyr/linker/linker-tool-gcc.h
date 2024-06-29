@@ -200,7 +200,7 @@
  */
 #if defined(CONFIG_XIP)
 #define SECTION_DATA_PROLOGUE(name, options, align) \
-	name options : ALIGN_WITH_INPUT align
+	name options : ALIGN_WITH_INPUT
 #else
 #define SECTION_DATA_PROLOGUE(name, options, align) \
 	SECTION_PROLOGUE(name, options, align)
