@@ -209,9 +209,146 @@ static void uart_cdns_irq_handler(const struct device *dev)
 
 #endif
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+
+static enum uart_config_parity parity_from_cdns(enum csr_parity_val parity)
+{
+	switch (parity) {
+	case EVEN_PARITY_VAL:
+		return UART_CFG_PARITY_EVEN;
+	case ODD_PARITY_VAL:
+		return UART_CFG_PARITY_ODD;
+	case SPACE_PARITY_VAL:
+		return UART_CFG_PARITY_SPACE;
+	case MARK_PARITY_VAL:
+		return UART_CFG_PARITY_MARK;
+	case NO_PARITY_VAL:
+		return UART_CFG_PARITY_NONE;
+	}
+	return UART_CFG_PARITY_NONE;
+}
+
+static int32_t parity_to_cdns(enum uart_config_parity parity)
+{
+	switch (parity) {
+	case UART_CFG_PARITY_NONE:
+		return NO_PARITY_VAL;
+	case UART_CFG_PARITY_ODD:
+		return ODD_PARITY_VAL;
+	case UART_CFG_PARITY_EVEN:
+		return EVEN_PARITY_VAL;
+	case UART_CFG_PARITY_MARK:
+		return MARK_PARITY_VAL;
+	case UART_CFG_PARITY_SPACE:
+		return SPACE_PARITY_VAL;
+	}
+	return -1;
+}
+
+static int32_t stop_bits_to_cdns(enum uart_config_stop_bits stop_bits)
+{
+	switch (stop_bits) {
+	case UART_CFG_STOP_BITS_0_5:
+		return -1;
+	case UART_CFG_STOP_BITS_1:
+		return 0;
+	case UART_CFG_STOP_BITS_1_5:
+		return 1;
+	case UART_CFG_STOP_BITS_2:
+		return 2;
+	}
+	return -1;
+}
+
+static int32_t data_bits_to_cdns(enum uart_config_data_bits data_bits)
+{
+	switch (data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		return -1;
+	case UART_CFG_DATA_BITS_6:
+		return 3;
+	case UART_CFG_DATA_BITS_7:
+		return 2;
+	case UART_CFG_DATA_BITS_8:
+		return 0;
+	case UART_CFG_DATA_BITS_9:
+		return -1;
+	}
+	return -1;
+}
+
+static int32_t flow_ctrl_to_cdns(enum uart_config_flow_control flow_ctrl)
+{
+	switch (flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		return 0;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		return 1;
+	case UART_CFG_FLOW_CTRL_DTR_DSR:
+	case UART_CFG_FLOW_CTRL_RS485:
+		return -1;
+	}
+	return -1;
+}
+
+static void uart_cdns_config_init(const struct device *dev)
+{
+	const struct uart_cdns_device_config *const dev_cfg = dev->config;
+	struct uart_cdns_data *dev_data = dev->data;
+	dev_data->cfg.baudrate = dev_cfg->baud_rate;
+	dev_data->cfg.parity = parity_from_cdns(dev_cfg->parity);
+	dev_data->cfg.stop_bits = UART_CFG_STOP_BITS_1;
+	dev_data->cfg.data_bits = UART_CFG_DATA_BITS_8;
+	dev_data->cfg.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+}
+
+static int uart_cdns_configure(const struct device *dev, const struct uart_config *cfg)
+{
+	struct uart_cdns_data *dev_data = dev->data;
+	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
+
+	int32_t parity = parity_to_cdns(cfg->parity);
+	int32_t stop_bits = stop_bits_to_cdns(cfg->stop_bits);
+	int32_t data_bits = data_bits_to_cdns(cfg->data_bits);
+	int32_t flow_ctrl = flow_ctrl_to_cdns(cfg->flow_ctrl);
+	if (parity < 0 || stop_bits < 0 || data_bits < 0 || flow_ctrl < 0) {
+		return -EINVAL;
+	}
+
+	uart_cdns_set_baudrate(uart_regs, dev->config, cfg->baudrate);
+
+	uint32_t mode = uart_regs->mode;
+	mode &= ~(MODE_NBSTOP_MASK | MODE_PAR_MASK | MODE_CHRL_MASK);
+	mode |= (stop_bits << MODE_NBSTOP_SHIFT) | (parity << MODE_PAR_SHIFT) | (data_bits << MODE_CHRL_SHIFT);
+	uart_regs->mode = mode;
+
+	uint32_t modem_ctrl = uart_regs->modem_control;
+	modem_ctrl &= ~MCR_FCM_MASK;
+	modem_ctrl |= (flow_ctrl << MCR_FCM_SHIFT);
+	uart_regs->modem_control = modem_ctrl;
+
+	uart_regs->ctrl |= CTRL_TXRES_MASK | CTRL_RXRES_MASK;
+
+	dev_data->cfg = *cfg;
+	return 0;
+}
+
+static int uart_cdns_config_get(const struct device *dev, struct uart_config *cfg)
+{
+	struct uart_cdns_data *dev_data = dev->data;
+	*cfg = dev_data->cfg;
+	return 0;
+}
+
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
+
 static const struct uart_driver_api uart_cdns_driver_api = {
 	.poll_in = uart_cdns_poll_in,
 	.poll_out = uart_cdns_poll_out,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = uart_cdns_configure,
+	.config_get = uart_cdns_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_cdns_fill_fifo,
 	.fifo_read = uart_cdns_read_fifo,
@@ -259,6 +396,10 @@ static int uart_cdns_init(const struct device *dev)
 		/* Setup IRQ handler */
 		dev_cfg->cfg_func();
 	}
+
+#if CONFIG_UART_USE_RUNTIME_CONFIGURE
+	uart_cdns_config_init(dev);
+#endif
 
 	return 0;
 }

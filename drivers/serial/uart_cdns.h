@@ -56,7 +56,7 @@ enum csr_parity_val {
 #define MODE_PAR_SHIFT	  (3)
 #define MODE_PAR_SIZE	  (3)
 #define MODE_CHRL_MASK	  (0x3 << 1)
-#define MODE_CHRL_SHIFT	  (2)
+#define MODE_CHRL_SHIFT	  (1)
 #define MODE_CHRL_SIZE	  (2)
 #define MODE_CLKS_MASK	  (1 << 0)
 #define MODE_CLKS_SHIFT	  (0)
@@ -90,6 +90,9 @@ enum csr_parity_val {
 #define CSR_REMPTY_SHIFT (1)
 #define CSR_RTRIG_MASK	 (1 << 0)
 #define CSR_RTRIG_SHIFT	 (0)
+
+#define MCR_FCM_MASK  (1 << 5)
+#define MCR_FCM_SHIFT (5)
 
 #define RXDATA_MASK   0xFF /* Receive Data Mask */
 #define MAX_FIFO_SIZE (64)
@@ -139,6 +142,9 @@ struct uart_cdns_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
+#endif
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	struct uart_config cfg;
 #endif
 };
 
