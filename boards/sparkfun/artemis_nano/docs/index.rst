@@ -59,7 +59,7 @@ Flashing an application
 -----------------------
 
 Connect your device to your host computer using the USB-C port.
-The sample application :ref:`blinky` is used for this example.
+The sample application `blinky` is used for this example.
 Build the Zephyr kernel and application, then flash it to the device:
 
 .. zephyr-app-commands::
