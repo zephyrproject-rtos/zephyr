@@ -42,6 +42,9 @@
 #define WDG_FEED_INTERVAL (WDT_MIN_WINDOW + ((WDT_MAX_WINDOW - WDT_MIN_WINDOW) / 4))
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_wdt)
 #define WDT_ALLOW_CALLBACK 0
+#elif DT_HAS_COMPAT_STATUS_OKAY(wch_iwdg)
+#define WDT_ALLOW_CALLBACK 0
+#define WDT_OPT            0
 #endif
 
 #ifndef WDT_ALLOW_CALLBACK
