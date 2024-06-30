@@ -7,10 +7,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
-#include "icm42670_spi.h"
+#include "icm42670.h"
 #include "icm42670_reg.h"
 
-static inline int spi_write_register(const struct spi_dt_spec *bus, uint8_t reg, uint8_t data)
+#if ICM42670_BUS_SPI
+static inline int spi_write_register(const union icm42670_bus *bus, uint8_t reg, uint8_t data)
 {
 	const struct spi_buf buf[2] = {
 		{
@@ -28,10 +29,10 @@ static inline int spi_write_register(const struct spi_dt_spec *bus, uint8_t reg,
 		.count = 2,
 	};
 
-	return spi_write_dt(bus, &tx);
+	return spi_write_dt(&bus->spi, &tx);
 }
 
-static inline int spi_read_register(const struct spi_dt_spec *bus, uint8_t reg, uint8_t *data,
+static inline int spi_read_register(const union icm42670_bus *bus, uint8_t reg, uint8_t *data,
 				    size_t len)
 {
 	uint8_t tx_buffer = REG_SPI_READ_BIT | reg;
@@ -62,10 +63,10 @@ static inline int spi_read_register(const struct spi_dt_spec *bus, uint8_t reg, 
 		.count = 2,
 	};
 
-	return spi_transceive_dt(bus, &tx, &rx);
+	return spi_transceive_dt(&bus->spi, &tx, &rx);
 }
 
-static inline int spi_read_mreg(const struct spi_dt_spec *bus, uint8_t reg, uint8_t bank,
+static inline int spi_read_mreg(const union icm42670_bus *bus, uint8_t reg, uint8_t bank,
 				uint8_t *buf, size_t len)
 {
 	int res = spi_write_register(bus, REG_BLK_SEL_R, bank);
@@ -97,7 +98,7 @@ static inline int spi_read_mreg(const struct spi_dt_spec *bus, uint8_t reg, uint
 	return 0;
 }
 
-static inline int spi_write_mreg(const struct spi_dt_spec *bus, uint8_t reg, uint8_t bank,
+static inline int spi_write_mreg(const union icm42670_bus *bus, uint8_t reg, uint8_t bank,
 				 uint8_t buf)
 {
 	int res = spi_write_register(bus, REG_BLK_SEL_W, bank);
@@ -123,7 +124,7 @@ static inline int spi_write_mreg(const struct spi_dt_spec *bus, uint8_t reg, uin
 	return 0;
 }
 
-int icm42670_spi_read(const struct spi_dt_spec *bus, uint16_t reg, uint8_t *data, size_t len)
+int icm42670_spi_read(const union icm42670_bus *bus, uint16_t reg, uint8_t *data, size_t len)
 {
 	int res = 0;
 	uint8_t bank = FIELD_GET(REG_BANK_MASK, reg);
@@ -138,7 +139,22 @@ int icm42670_spi_read(const struct spi_dt_spec *bus, uint16_t reg, uint8_t *data
 	return res;
 }
 
-int icm42670_spi_update_register(const struct spi_dt_spec *bus, uint16_t reg, uint8_t mask,
+int icm42670_spi_single_write(const union icm42670_bus *bus, uint16_t reg, uint8_t data)
+{
+	int res = 0;
+	uint8_t bank = FIELD_GET(REG_BANK_MASK, reg);
+	uint8_t address = FIELD_GET(REG_ADDRESS_MASK, reg);
+
+	if (bank) {
+		res = spi_write_mreg(bus, address, bank, data);
+	} else {
+		res = spi_write_register(bus, address, data);
+	}
+
+	return res;
+}
+
+int icm42670_spi_update_register(const union icm42670_bus *bus, uint16_t reg, uint8_t mask,
 				 uint8_t data)
 {
 	uint8_t temp = 0;
@@ -154,17 +170,16 @@ int icm42670_spi_update_register(const struct spi_dt_spec *bus, uint16_t reg, ui
 	return icm42670_spi_single_write(bus, reg, temp);
 }
 
-int icm42670_spi_single_write(const struct spi_dt_spec *bus, uint16_t reg, uint8_t data)
+static int icm42670_bus_check_spi(const union icm42670_bus *bus)
 {
-	int res = 0;
-	uint8_t bank = FIELD_GET(REG_BANK_MASK, reg);
-	uint8_t address = FIELD_GET(REG_ADDRESS_MASK, reg);
-
-	if (bank) {
-		res = spi_write_mreg(bus, address, bank, data);
-	} else {
-		res = spi_write_register(bus, address, data);
-	}
-
-	return res;
+	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
 }
+
+const struct icm42670_bus_io icm42670_bus_io_spi = {
+	.check = icm42670_bus_check_spi,
+	.read = icm42670_spi_read,
+	.write = icm42670_spi_single_write,
+	.update = icm42670_spi_update_register,
+};
+
+#endif /* ICM42670_BUS_SPI */
