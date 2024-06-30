@@ -1,7 +1,12 @@
+/*
+ * Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
-// ambiq_apollo3_blue.dtsi in dts/arm/ambiq
+
 #include <ambiq/ambiq_apollo3_blue.dtsi>
-// 
 #include <../boards/ambiq/apollo3_evb/apollo3_evb-pinctrl.dtsi>
 
 / {
