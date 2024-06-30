@@ -1032,7 +1032,7 @@ static int rtc_stm32_get_calibration(const struct device *dev, int32_t *calibrat
 #endif
 #endif /* CONFIG_RTC_CALIBRATION */
 
-static const struct rtc_driver_api rtc_stm32_driver_api = {
+static RTC_DRIVER_API(rtc_stm32_driver_api) = {
 	.set_time = rtc_stm32_set_time,
 	.get_time = rtc_stm32_get_time,
 #ifdef CONFIG_RTC_ALARM

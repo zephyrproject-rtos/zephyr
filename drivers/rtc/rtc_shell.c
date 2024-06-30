@@ -7,6 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/drivers/api.h>
 #include <zephyr/drivers/rtc.h>
 #include <time.h>
 #include <stdlib.h>
@@ -155,6 +156,11 @@ static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
+	if (!device_is_rtc(dev)) {
+		shell_error(sh, "device %s is not an RTC", argv[1]);
+		return -ENODEV;
+	}
+
 	argc--;
 	argv++;
 
@@ -195,6 +201,11 @@ static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 
 	if (!device_is_ready(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	if (!device_is_rtc(dev)) {
+		shell_error(sh, "device %s is not an RTC", argv[1]);
 		return -ENODEV;
 	}
 

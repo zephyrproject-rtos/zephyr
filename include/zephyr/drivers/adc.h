@@ -14,6 +14,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_ADC_H_
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/api.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/kernel.h>
 
@@ -709,6 +710,18 @@ __subsystem struct adc_driver_api {
 };
 
 /**
+ * @brief Verify that a device has an ADC driver API.
+ *
+ * @param dev a device pointer
+ *
+ * @return true if the device's API is located in the ADC API section.
+ */
+static inline bool device_has_adc_driver_api(const struct device *dev)
+{
+	return DRIVER_API_IS(adc_driver_api, dev->api);
+}
+
+/**
  * @brief Configure an ADC channel.
  *
  * It is required to call this function and configure each channel before it is
@@ -728,6 +741,8 @@ static inline int z_impl_adc_channel_setup(const struct device *dev,
 {
 	const struct adc_driver_api *api =
 				(const struct adc_driver_api *)dev->api;
+
+	DRIVER_API_EVAL(adc_driver_api, api);
 
 	return api->channel_setup(dev, channel_cfg);
 }
@@ -780,6 +795,8 @@ static inline int z_impl_adc_read(const struct device *dev,
 	const struct adc_driver_api *api =
 				(const struct adc_driver_api *)dev->api;
 
+	DRIVER_API_EVAL(adc_driver_api, api);
+
 	return api->read(dev, sequence);
 }
 
@@ -831,6 +848,8 @@ static inline int z_impl_adc_read_async(const struct device *dev,
 	const struct adc_driver_api *api =
 				(const struct adc_driver_api *)dev->api;
 
+	DRIVER_API_EVAL(adc_driver_api, api);
+
 	return api->read_async(dev, sequence, async);
 }
 #endif /* CONFIG_ADC_ASYNC */
@@ -848,6 +867,8 @@ static inline uint16_t adc_ref_internal(const struct device *dev)
 {
 	const struct adc_driver_api *api =
 				(const struct adc_driver_api *)dev->api;
+
+	DRIVER_API_EVAL(adc_driver_api, api);
 
 	return api->ref_internal;
 }
