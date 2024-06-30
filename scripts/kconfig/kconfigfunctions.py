@@ -917,6 +917,35 @@ def substring(kconf, _, string, start, stop=None):
     else:
         return string[int(start):]
 
+def int_add(kconf, _, arg0, arg1):
+    """
+    Calculate the addition of integers.
+    """
+    return str(int(int(arg0) + int(arg1)))
+
+def int_subtract(kconf, _, arg0, arg1):
+    """
+    Calculate the subtraction of integers.
+    """
+    return str(int(int(arg0) - int(arg1)))
+
+def int_multiple(kconf, _, arg0, arg1):
+    """
+    Calculate the multiplication of integers.
+    """
+    return str(int(int(arg0) * int(arg1)))
+
+def int_divide(kconf, _, arg0, arg1):
+    """
+    Calculate the division of integers.
+    """
+    return str(int(int(arg0) / int(arg1)))
+
+def int_modulo(kconf, _, arg0, arg1):
+    """
+    Calculate the modulo of integers.
+    """
+    return str(int(int(arg0) % int(arg1)))
 
 # Keys in this dict are the function names as they appear
 # in Kconfig files. The values are tuples in this form:
@@ -976,4 +1005,9 @@ functions = {
         "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
         "substring": (substring, 2, 3),
+        "int_add": (int_add, 2, 2),
+        "int_subtract": (int_subtract, 2, 2),
+        "int_multiple": (int_multiple, 2, 2),
+        "int_divide": (int_divide, 2, 2),
+        "int_modulo": (int_modulo, 2, 2),
 }
