@@ -76,4 +76,4 @@
 /* We re-use the IPC shared buffer definition from the real HW. But note the start address of the
  * buffer won't be used.
  */
-#include <../boards/nordic/nrf5340dk/nrf5340_shared_sram_planning_conf.dtsi>
+ #include <common/nordic/nrf5340_shared_sram_partition.dtsi>

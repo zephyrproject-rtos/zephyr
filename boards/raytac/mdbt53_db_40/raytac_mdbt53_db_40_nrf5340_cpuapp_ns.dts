@@ -13,7 +13,7 @@
 	compatible = "raytac,raytac-mdbt53-db-40-cpuapp";
 
 	chosen {
-		zephyr,sram = &sram0_ns;
+		zephyr,sram = &sram0_ns_app;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
 	};
