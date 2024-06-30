@@ -217,3 +217,10 @@ zephyr_library_compile_options_ifdef(
   CONFIG_BT_CTLR_OPTIMIZE_FOR_SPEED
   ${OPTIMIZE_FOR_SPEED_FLAG}
   )
+
+# Reserve some PPI channels and groups
+include(${ZEPHYR_BASE}/modules/hal_nordic/nrfx/reserve_ppi.cmake)
+
+set(SDC_PPIS 13 2)
+set(SDC_PPI_GROUPS 9 5 3)
+reserve_ppi("SDC" "${SDC_PPIS}" "${SDC_PPI_GROUPS}")

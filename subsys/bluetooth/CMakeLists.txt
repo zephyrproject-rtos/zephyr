@@ -13,6 +13,11 @@ add_subdirectory_ifdef(CONFIG_BT_AUDIO audio)
 add_subdirectory_ifdef(CONFIG_BT_CRYPTO crypto)
 
 if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
+  include(${ZEPHYR_BASE}/modules/hal_nordic/nrfx/reserve_ppi.cmake)
+
+  set(MPSL_PPIS 4 20)
+  reserve_ppi("MPSL" "${MPSL_PPIS}" "")
+
   add_subdirectory(controller)
 endif()
 
