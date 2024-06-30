@@ -112,6 +112,8 @@ features:
 +-------------+------------+-------------------------------------+
 | SPI         | on-chip    | spi                                 |
 +-------------+------------+-------------------------------------+
+| FDCAN       | on-chip    | CAN-FD Control Area Network         |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
