@@ -16,6 +16,7 @@ supported:
   - counter
   - i2c
   - pwm
+  - can
   - netif:eth
   - spi
   - usb_device
