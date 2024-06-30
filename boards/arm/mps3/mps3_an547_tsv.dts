@@ -57,9 +57,9 @@
 		};
 	};
 
-        jtag_uart: uart@3000 {
+        jtag_uart: uart@95003000 {
                 compatible = "altr,jtag-uart";
-                reg = <0x3000 0x8>;
+                reg = <0x95003000 0x8>;
                 status = "disabled";
         };
 	cpus {
