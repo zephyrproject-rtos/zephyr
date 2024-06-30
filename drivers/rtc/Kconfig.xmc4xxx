@@ -1,0 +1,9 @@
+# Copyright 2023 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_XMC4XXX
+	bool "XMC4xxx RTC driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_RTC_ENABLED
+	help
+	  Build RTC driver for XMC4xxx SoCs.
