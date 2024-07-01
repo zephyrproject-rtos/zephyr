@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2025 Andes Technology Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <riscv/andes/andes_v5_ae350.dtsi>
+
+/ {
+
+	cpus {
+		/delete-node/ cpu@1;
+		/delete-node/ cpu@2;
+		/delete-node/ cpu@3;
+		/delete-node/ cpu@4;
+		/delete-node/ cpu@5;
+		/delete-node/ cpu@6;
+		/delete-node/ cpu@7;
+
+		cpu0: cpu@0 {
+			/delete-node/ interrupt-controller;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clic0: interrupt-controller@e2000000 {
+				/delete-property/ #plic-target-cells;
+				compatible = "riscv,clic";
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				reg = <0xe2000000 0x2000>;
+			};
+		};
+	};
+
+	soc {
+		compatible = "andestech,ae350-clic";
+		/delete-node/ interrupt-controller@e4000000;
+		/delete-node/ interrupt-controller@e6400000;
+	};
+};
+
+&mtimer {
+	interrupts-extended = <&clic0 7 1>;
+};
+
+&uart0 {
+	interrupts = <26 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&uart1 {
+	interrupts = <27 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&pit0 {
+	interrupts = <21 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&rtc0 {
+	interrupts = <19 1>, <20 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&gpio0 {
+	interrupts = <25 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&i2c0 {
+	interrupts = <24 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&spi0 {
+	interrupts = <22 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&spi1 {
+	interrupts = <23 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&dma0 {
+	interrupts = <28 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&eth0 {
+	interrupts = <37 2>;
+	interrupt-parent = <&clic0>;
+};
+
+&lcd0 {
+	interrupts = <38 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&wdt {
+	interrupts = <20 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&snd0 {
+	interrupts = <35 1>;
+	interrupt-parent = <&clic0>;
+};
+
+&mmc0 {
+	interrupts = <36 1>;
+	interrupt-parent = <&clic0>;
+};
