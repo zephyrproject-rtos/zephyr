@@ -785,7 +785,7 @@ module ``bar`` to be present in the build system:
    name: foo
    build:
      depends:
-     - bar
+       - bar
 
 This example will ensure that ``bar`` is present when ``foo`` is included into
 the build system, and it will also ensure that ``bar`` is processed before
