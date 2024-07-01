@@ -730,7 +730,10 @@ static const struct i2c_driver_api i2c_esp32_driver_api = {
 	.configure = i2c_esp32_configure,
 	.get_config = i2c_esp32_get_config,
 	.transfer = i2c_esp32_transfer,
-	.recover_bus = i2c_esp32_recover
+	.recover_bus = i2c_esp32_recover,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 static int IRAM_ATTR i2c_esp32_init(const struct device *dev)

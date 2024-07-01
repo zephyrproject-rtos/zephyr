@@ -289,8 +289,11 @@ static int i2c_nrfx_twim_recover_bus(const struct device *dev)
 }
 
 static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
-	.configure   = i2c_nrfx_twim_configure,
-	.transfer    = i2c_nrfx_twim_transfer,
+	.configure = i2c_nrfx_twim_configure,
+	.transfer = i2c_nrfx_twim_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 	.recover_bus = i2c_nrfx_twim_recover_bus,
 };
 
