@@ -101,14 +101,38 @@ void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf)
  *
  * @param esf exception frame
  * @param callee_regs Callee-saved registers (R4-R11)
+ * @param exc_return EXC_RETURN value present in LR after exception entry.
  */
-void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs)
+void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs, uint32_t exc_return)
 {
 #if !(defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE))
 	ARG_UNUSED(callee_regs);
 #endif
 	/* Stacked R0 holds the exception reason. */
 	unsigned int reason = esf->basic.r0;
+
+#ifdef CONFIG_DEBUG_COREDUMP
+	z_arm_coredump_fault_sp = POINTER_TO_UINT(esf);
+
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	/* Gdb expects a stack pointer that does not include the exception stack frame in order to
+	 * unwind. So adjust the stack pointer accordingly.
+	 */
+	z_arm_coredump_fault_sp += sizeof(esf->basic);
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	if ((exc_return & EXC_RETURN_INDICATOR_PREFIX) == EXC_RETURN_INDICATOR_PREFIX) {
+		/* Assess whether thread had been using the FP registers and add size of additional
+		 * registers if necessary
+		 */
+		if ((exc_return & EXC_RETURN_STACK_FRAME_TYPE_STANDARD) ==
+				EXC_RETURN_STACK_FRAME_TYPE_EXTENDED) {
+			z_arm_coredump_fault_sp += sizeof(esf->fpu);
+		}
+	}
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE || CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#endif /* CONFIG_DEBUG_COREDUMP */
 
 #if defined(CONFIG_USERSPACE)
 	if (z_arm_preempted_thread_in_user_mode(esf)) {
