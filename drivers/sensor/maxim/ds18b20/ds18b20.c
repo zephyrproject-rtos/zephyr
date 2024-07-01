@@ -15,6 +15,8 @@
  * Parasite power configuration is not supported by the driver.
  */
 
+#include <stdbool.h>
+
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
@@ -96,6 +98,17 @@ static inline void ds18b20_temperature_from_raw(const struct device *dev,
 	}
 }
 
+static inline bool slave_responded(uint8_t *rx_buf, size_t len)
+{
+	uint8_t cmp_byte = 0xff;
+
+	for (int i = 0; i < len; i++) {
+		cmp_byte &= rx_buf[i];
+	}
+
+	return (cmp_byte == 0xff) ? false : true;
+}
+
 /*
  * Write scratch pad, read back, then copy to eeprom
  */
@@ -146,6 +159,11 @@ static int ds18b20_read_scratchpad(const struct device *dev,
 			     (uint8_t *)scratchpad, sizeof(*scratchpad));
 	if (ret != 0) {
 		return ret;
+	}
+
+	if (!slave_responded((uint8_t *)scratchpad, sizeof(*scratchpad))) {
+		LOG_WRN("Slave not reachable");
+		return -ENODEV;
 	}
 
 	crc = w1_crc8((uint8_t *)scratchpad, sizeof(*scratchpad) - 1);
