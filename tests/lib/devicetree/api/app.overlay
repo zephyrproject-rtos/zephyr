@@ -741,6 +741,25 @@
 				};
 			};
 		};
+
+		test_unique_device_type_reserved: test_unique_device_type_reserved {
+			compatible = "test-unique-device-type";
+			status = "reserved";
+		};
+
+		test_unique_device_type_disabled: test_unique_device_type_disabled {
+			compatible = "test-unique-device-type";
+			status = "disabled";
+		};
+
+		test_unique_device_type_no_status: test_unique_device_type_no_status {
+			compatible = "test-unique-device-type";
+		};
+
+		test_unique_device_type_okay: test_unique_device_type_okay {
+			compatible = "test-unique-device-type";
+			status = "okay";
+		};
 	};
 
 	test_64 {
