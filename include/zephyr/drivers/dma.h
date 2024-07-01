@@ -315,6 +315,9 @@ struct dma_context {
 typedef int (*dma_api_config)(const struct device *dev, uint32_t channel,
 			      struct dma_config *config);
 
+typedef int (*dma_api_request_channel)(const struct device *dev, void *filter_param);
+typedef int (*dma_api_release_channel)(const struct device *dev, uint32_t channel);
+
 #ifdef CONFIG_DMA_64BIT
 typedef int (*dma_api_reload)(const struct device *dev, uint32_t channel,
 			      uint64_t src, uint64_t dst, size_t size);
@@ -353,6 +356,8 @@ typedef bool (*dma_api_chan_filter)(const struct device *dev,
 				int channel, void *filter_param);
 
 __subsystem struct dma_driver_api {
+	dma_api_request_channel request_channel;
+	dma_api_release_channel release_channel;
 	dma_api_config config;
 	dma_api_reload reload;
 	dma_api_start start;
@@ -538,7 +543,7 @@ static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
  * request DMA channel resources
  * return -EINVAL if there is no valid channel available.
  *
- * @funcprops \isr_ok
+ * @note Driver defined whether ISR safe or not
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param filter_param filter function parameter
@@ -558,6 +563,11 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
 		(const struct dma_driver_api *)dev->api;
 	/* dma_context shall be the first one in dev data */
 	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
+
+	/* Driver has overridden the default implementation */
+	if (api->request_channel) {
+		return api->request_channel(dev, filter_param);
+	}
 
 	if (dma_ctx->magic != DMA_MAGIC) {
 		return channel;
@@ -583,7 +593,7 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
  *
  * release DMA channel resources
  *
- * @funcprops \isr_ok
+ * @note Driver defined whether ISR safe or not
  *
  * @param dev  Pointer to the device structure for the driver instance.
  * @param channel  channel number
@@ -595,7 +605,15 @@ __syscall void dma_release_channel(const struct device *dev,
 static inline void z_impl_dma_release_channel(const struct device *dev,
 					      uint32_t channel)
 {
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->api;
 	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
+
+	/* Driver as overridden release channel */
+	if (api->release_channel) {
+		api->release_channel(dev, channel);
+		return;
+	}
 
 	if (dma_ctx->magic != DMA_MAGIC) {
 		return;
