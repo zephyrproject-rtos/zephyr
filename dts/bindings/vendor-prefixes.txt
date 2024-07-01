@@ -347,6 +347,7 @@ kinetic	Kinetic Technologies
 kingdisplay	King & Display Technology Co., Ltd.
 kingnovel	Kingnovel Technology Co., Ltd.
 kionix	Kionix, Inc.
+ks	Kernelspace
 kobo	Rakuten Kobo Inc.
 kobol	Kobol Innovations Pte. Ltd.
 koe	Kaohsiung Opto-Electronics Inc.
