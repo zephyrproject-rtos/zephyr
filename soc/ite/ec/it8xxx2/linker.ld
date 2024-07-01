@@ -179,6 +179,9 @@ SECTIONS
 #ifdef CONFIG_SOC_IT8XXX2_KERNEL_IN_RAM
 			*libkernel.a:*
 #endif
+#ifdef CONFIG_SOC_IT8XXX2_ZEPHYR_IN_RAM
+			*libzephyr.a:*
+#endif
 #ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
 		)
 			.text
@@ -193,6 +196,9 @@ SECTIONS
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_KERNEL_IN_RAM
 			*libkernel.a:*
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_ZEPHYR_IN_RAM
+			*libzephyr.a:*
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
 		)
@@ -230,6 +236,11 @@ SECTIONS
 		*libkernel.a:*(.text .text.*)
 		*libkernel.a:*(.rodata .rodata.*)
 		*libkernel.a:*(.srodata .srodata.*)
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_ZEPHYR_IN_RAM
+		*libzephyr.a:*(.text .text.*)
+		*libzephyr.a:*(.rodata .rodata.*)
+		*libzephyr.a:*(.srodata .srodata.*)
 #endif
 		__ilm_flash_end = .;
 		/* ILM mapping is always a multiple of 4k size; ensure following
