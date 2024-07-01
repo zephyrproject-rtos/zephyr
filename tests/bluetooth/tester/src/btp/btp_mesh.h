@@ -114,8 +114,7 @@ struct btp_mesh_health_generate_faults_rp {
 	uint8_t test_id;
 	uint8_t cur_faults_count;
 	uint8_t reg_faults_count;
-	uint8_t current_faults[0];
-	uint8_t registered_faults[0];
+	uint8_t faults[];
 } __packed;
 
 #define BTP_MESH_HEALTH_CLEAR_FAULTS		0x0c
