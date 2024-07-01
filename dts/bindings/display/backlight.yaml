@@ -1,0 +1,24 @@
+# Copyright (c) 2024, Martin Kiepfer
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+properties:
+  init-level:
+    type: int
+    default: 80
+    description: Initial value of the Backlight.
+
+  disable-init-on-boot:
+    type: boolean
+    description: |
+      Disable the initial value during bootup of the device. By default the
+      init-level is applied on boot. This option can prevent from this default
+      behaviour. Backlight needs to be enabled manually later in this case.
+
+  label:
+    type: string
+    description: |
+      Human readable string describing the Backlight. It can be used by an
+      application to identify this Backlight or to retrieve its
+      number/index (i.e. child node number) on the parent device.
