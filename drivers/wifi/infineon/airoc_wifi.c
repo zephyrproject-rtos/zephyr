@@ -125,8 +125,7 @@ static void airoc_wifi_scan_cb_search(whd_scan_result_t **result_ptr, void *user
 	if (status == WHD_SCAN_COMPLETED_SUCCESSFULLY) {
 		k_sem_give(&airoc_wifi_data.sema_scan);
 	} else if ((status == WHD_SCAN_INCOMPLETE) && (user_data != NULL) &&
-		   ((**result_ptr).SSID.length > 0)) {
-
+		   ((**result_ptr).SSID.length == ((whd_scan_result_t *)user_data)->SSID.length)) {
 		if (strncmp(((whd_scan_result_t *)user_data)->SSID.value, (**result_ptr).SSID.value,
 			    (**result_ptr).SSID.length) == 0) {
 			memcpy(user_data, *result_ptr, sizeof(whd_scan_result_t));
