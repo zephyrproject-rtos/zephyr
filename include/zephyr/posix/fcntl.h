@@ -8,13 +8,9 @@
 #define ZEPHYR_POSIX_FCNTL_H_
 
 #ifdef CONFIG_PICOLIBC
-#define O_CREAT  0x0040
-#define O_TRUNC  0x0200
-#define O_APPEND 0x0400
+#define O_CREAT 0x0040
 #else
-#define O_APPEND 0x0008
-#define O_CREAT  0x0200
-#define O_TRUNC  0x0400
+#define O_CREAT 0x0200
 #endif
 
 #define O_ACCMODE (O_RDONLY | O_WRONLY | O_RDWR)
@@ -23,6 +19,7 @@
 #define O_WRONLY 01
 #define O_RDWR	 02
 
+#define O_APPEND   0x0400
 #define O_EXCL	   0x0800
 #define O_NONBLOCK 0x4000
 
