@@ -244,34 +244,26 @@ POSIX_SIGNALS
 Signal services are a basic mechanism within POSIX-based systems and are
 required for error and event handling.
 
-.. note::
-   As processes are not yet supported in Zephyr, the ISO C functions ``abort()``, ``signal()``,
-   and ``raise()``, as well as the other POSIX functions listed below, may exhibit undefined
-   behaviour. The POSIX functions ``kill()``, ``pause()``, ``sigaction()``, ``sigpending()``,
-   ``sigsuspend()``, and ``sigwait()`` are implemented to ensure that conformant applications can
-   link, but they are expected to fail, setting errno to ``ENOSYS``
-   :ref:`†<posix_undefined_behaviour>`.
-
 .. csv-table:: POSIX_SIGNALS
    :header: API, Supported
    :widths: 50,10
 
-    abort(),yes :ref:`†<posix_undefined_behaviour>`
-    alarm(),yes :ref:`†<posix_undefined_behaviour>`
-    kill(),yes :ref:`†<posix_undefined_behaviour>`
-    pause(),yes :ref:`†<posix_undefined_behaviour>`
-    raise(),yes :ref:`†<posix_undefined_behaviour>`
-    sigaction(),yes :ref:`†<posix_undefined_behaviour>`
+    abort(),yes
+    alarm(),
+    kill(),
+    pause(),
+    raise(),
+    sigaction(),
     sigaddset(),yes
     sigdelset(),yes
     sigemptyset(),yes
     sigfillset(),yes
     sigismember(),yes
-    signal(),yes :ref:`†<posix_undefined_behaviour>`
-    sigpending(),yes :ref:`†<posix_undefined_behaviour>`
+    signal(),
+    sigpending(),
     sigprocmask(),yes
-    sigsuspend(),yes :ref:`†<posix_undefined_behaviour>`
-    sigwait(),yes :ref:`†<posix_undefined_behaviour>`
+    sigsuspend(),
+    sigwait(),
     strsignal(),yes
 
 .. _posix_option_group_device_io:
