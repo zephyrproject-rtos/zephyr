@@ -147,7 +147,7 @@ def test_logging_dictionary(dut: DeviceAdapter, is_fpu_build):
     '''
     Main entrance to setup test result validation.
     '''
-    build_dir = dut.device_config.build_dir
+    build_dir = dut.device_config.app_build_dir
 
     logger.info(f'FPU build? {is_fpu_build}')
 
