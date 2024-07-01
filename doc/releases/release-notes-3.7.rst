@@ -215,6 +215,7 @@ Bluetooth
 * HCI Driver
 
   * Added support for Ambiq Apollo3 Blue series.
+  * Added support for NXP platforms.
 
 Boards & SoC Support
 ********************
@@ -222,10 +223,13 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * Added support for Ambiq Apollo3 Blue and Apollo3 Blue Plus SoC series.
+  * Added support for NXP mke15z7, mke17z7, mke17z9, MCXNx4x, RW61x
 
 * Made these changes in other SoC series:
 
   * ITE: Rename the Kconfig symbol for all ITE SoC variants.
+  * NXP IMX8M: added resource domain controller support
+  * NXP s32k146: set RTC clock source to internal oscillator
 
 * Added support for these ARM boards:
 
@@ -236,10 +240,15 @@ Boards & SoC Support
   * Added support for :ref:`Mikroe RA4M1 Clicker board <mikroe_clicker_ra4m1>`: ``mikroe_clicker_ra4m1``.
   * Added support for :ref:`Arduino UNO R4 WiFi board <arduino_uno_r4>`: ``arduino_uno_r4_wifi``.
   * Added support for :ref:`Renesas EK-RA8M1 board <ek_ra8m1>`: ``ek_ra8m1``.
+  * Added support for NXP boards: ``frdm_mcxn947``, ``ke17z512``, ``rd_rw612_bga``, ``frdm_rw612``, ``frdm_ke15z``, ``frdm_ke17z``
 
 * Added support for these Xtensa boards:
 
 * Made these changes for ARM boards:
+
+  * Add HEX file support for Linkserver to all NXP boards
+  * Updated the Linkserver west runner to reflect changes to the CLI of LinkServer v1.5.xx
+  * Add LinkServer support to NXP ``mimxrt1010_evk``, ``mimxrt1160_evk``, ``frdm_rw612``, ``rd_rw612_bga``, ``frdm_mcxn947``
 
 * Made these changes for RISC-V boards:
 
@@ -289,6 +298,8 @@ Drivers and Sensors
 
 * ADC
 
+  * enabled time based acquisition on NXP lpadc
+
 * Auxiliary Display
 
 * Audio
@@ -337,6 +348,7 @@ Drivers and Sensors
 * Counter
 
   * Added support for Ambiq Apollo3 series.
+  * Add driver for LPTMR to NXP MCXN947
 
 * Crypto
 
@@ -374,8 +386,15 @@ Drivers and Sensors
     the :c:func:`display_set_pixel_format` API.
   * Inversion mode can now be disabled in the ST7789V driver
     (:dtcompatible:`sitronix,st7789v`) using the ``inversion-off`` property.
+  * Add support for NXP MCXNx4x
 
 * DMA
+
+  * Add support to NXP MCXN947
+
+* DMIC
+
+    * Added support for NXP ``rd_rw612_bga``
 
 * Entropy
 
@@ -394,6 +413,8 @@ Drivers and Sensors
   * Driver nxp_enet is no longer experimental.
   * All boards and SOCs with :dtcompatible:`nxp,kinetis-ethernet` compatible nodes
     reworked to use the new :dtcompatible:`nxp,enet` binding.
+  * Add ethernet QOS driver to NXP MCXN947
+  * Added 1 GigE to NXP mimxrt1170
 
 * Flash
 
@@ -411,6 +432,7 @@ Drivers and Sensors
   * Added the c:func:`flash_fill` utility function which allows to write
     a single value across a provided range in a selected device.
   * Added support for RRAM on nrf54l15 devices.
+  * Added FlexSPI support to NXP MCXN947
 
 * GNSS
 
@@ -422,6 +444,7 @@ Drivers and Sensors
 * I2C
 
   * Added support for Ambiq Apollo3 series.
+  * Add support to NXP MCXN947
 
 * I2S
 
@@ -480,9 +503,15 @@ Drivers and Sensors
 
 * MIPI-DBI
 
+    * Added release API
+    * Added support for mode selection via the device tree
+
 * Pin control
 
 * PWM
+
+    * Added a Add QTMR PWM driver for NXP imxrt11xx
+    * Made the NXP MCUX PWM driver thread safe
 
 * Regulators
 
@@ -518,10 +547,20 @@ Drivers and Sensors
 
 * SPI
 
+  * Add support to NXP MCXN947
   * Added support for Ambiq Apollo3 series general IOM based SPI.
   * Added support for Ambiq Apollo3 BLEIF based SPI, which is specific for internal HCI.
 
 * USB
+
+  * Enable NXP USB Device controllers
+
+* Video
+
+    * Added support for the ov7670 camera
+    * Added support for the ov5640 camera
+    * Added CSI-2 MIPI driver for NXP MCUX
+    * Added support for DVP FPC 24-pins mt9m114 camera module shield
 
 * W1
 
@@ -1008,6 +1047,10 @@ MCUboot
   * Added defines for ``SOC_FLASH_0_ID`` and ``SPI_FLASH_0_ID``
 
   * The MCUboot version in this release is version ``2.1.0+0-dev``.
+
+  * Added support for NXP MCXN947
+
+  * Enabled tests for NXP ``rd_rw612_bga``
 
 Trusted Firmware-M
 ******************
