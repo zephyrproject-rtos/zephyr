@@ -17,6 +17,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/mayfly.h"
 #include "util/dbuf.h"
 
 #include "pdu_df.h"
@@ -52,10 +53,10 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-#define LLCTRL_PDU_SIZE (offsetof(struct pdu_data, llctrl) + sizeof(struct pdu_data_llctrl))
 #define PROC_CTX_BUF_SIZE WB_UP(sizeof(struct proc_ctx))
-#define TX_CTRL_BUF_SIZE WB_UP(offsetof(struct node_tx, pdu) + LLCTRL_PDU_SIZE)
-#define NTF_BUF_SIZE WB_UP(offsetof(struct node_rx_pdu, pdu) + LLCTRL_PDU_SIZE)
+#define TX_CTRL_BUF_SIZE WB_UP(offsetof(struct node_tx, pdu) + \
+				offsetof(struct pdu_data, llctrl) + \
+				PDU_DC_CTRL_TX_SIZE_MAX)
 
 /* LLCP Allocations */
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
@@ -75,13 +76,48 @@ static uint8_t MALIGN(4) buffer_mem_remote_ctx[PROC_CTX_BUF_SIZE *
 static struct llcp_mem_pool mem_remote_ctx = { .pool = buffer_mem_remote_ctx };
 
 /*
+ * LLCP Shared Data Locking
+ */
+
+static ALWAYS_INLINE uint32_t shared_data_access_lock(void)
+{
+	bool enabled;
+
+	if (mayfly_is_running()) {
+		/* We are in Mayfly context, nothing to be done */
+		return false;
+	}
+
+	/* We are in thread context and have to disable TICKER_USER_ID_ULL_HIGH */
+	enabled = mayfly_is_enabled(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH) != 0U;
+	mayfly_enable(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH, 0U);
+
+	return enabled;
+}
+
+static ALWAYS_INLINE void shared_data_access_unlock(bool key)
+{
+	if (key) {
+		/* We are in thread context and have to reenable TICKER_USER_ID_ULL_HIGH */
+		mayfly_enable(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH, 1U);
+	}
+}
+
+/*
  * LLCP Resource Management
  */
 static struct proc_ctx *proc_ctx_acquire(struct llcp_mem_pool *owner)
 {
 	struct proc_ctx *ctx;
 
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+	bool key = shared_data_access_lock();
+
 	ctx = (struct proc_ctx *)mem_acquire(&owner->free);
+
+	shared_data_access_unlock(key);
 
 	if (ctx) {
 		/* Set the owner */
@@ -93,11 +129,21 @@ static struct proc_ctx *proc_ctx_acquire(struct llcp_mem_pool *owner)
 
 void llcp_proc_ctx_release(struct proc_ctx *ctx)
 {
+	struct llcp_mem_pool *owner;
+
 	/* We need to have an owner otherwise the memory allocated would leak */
-	LL_ASSERT(ctx->owner);
+	owner = ctx->owner;
+	LL_ASSERT(owner);
+
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+	bool key = shared_data_access_lock();
 
 	/* Release the memory back to the owner */
-	mem_release(ctx, &ctx->owner->free);
+	mem_release(ctx, &owner->free);
+
+	shared_data_access_unlock(key);
 }
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
@@ -221,6 +267,9 @@ struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ARG_UNUSED(conn);
 	tx = (struct node_tx *)mem_acquire(&mem_tx.free);
+	if (!tx) {
+		return NULL;
+	}
 
 	pdu = (struct pdu_data *)tx->pdu;
 	ull_pdu_data_init(pdu);
