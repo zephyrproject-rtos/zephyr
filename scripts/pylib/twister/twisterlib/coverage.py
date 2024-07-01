@@ -428,5 +428,8 @@ def run_coverage(testplan, options):
     # Ignore branch coverage on LOG_* and LOG_HEXDUMP_* macros
     # Branch misses are due to the implementation of Z_LOG2 and cannot be avoided
     coverage_tool.add_ignore_branch_pattern(r"^\s*LOG_(?:HEXDUMP_)?(?:DBG|INF|WRN|ERR)\(.*")
+    # Ignore branch coverage on __ASSERT* macros
+    # Covering the failing case is not desirable as it will immediately terminate the test.
+    coverage_tool.add_ignore_branch_pattern(r"^\s*__ASSERT(?:_EVAL|_NO_MSG|_POST_ACTION)?\(.*")
     coverage_completed = coverage_tool.generate(options.outdir)
     return coverage_completed
