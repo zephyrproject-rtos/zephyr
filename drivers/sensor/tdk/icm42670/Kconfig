@@ -1,19 +1,51 @@
-# ICM42670 Six-Axis Motion Tracking device configuration options
+# ICM42670-P ICM42670-S Six-Axis Motion Tracking device configuration options
 #
+# Copyright (c) 2023 TDK Invensense
 # Copyright (c) 2022 Esco Medical ApS
 # Copyright (c) 2020 TDK Invensense
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ICM42670
-	bool "ICM42670 Six-Axis Motion Tracking Device"
+	bool "ICM42670 6-Axis Motion Tracking Device"
 	default y
 	depends on DT_HAS_INVENSENSE_ICM42670_ENABLED
-	select SPI
+	depends on ZEPHYR_HAL_TDK_MODULE
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670),spi)
 	help
-	  Enable driver for ICM42670 SPI-based six-axis motion tracking device.
+	  Enable driver for ICM42670 I2C-based or SPI-based Six-Axis Motion Tracking device.
 
 if ICM42670
+
+choice ICM_VARIANT
+	prompt "ICM variant to identify the sensor"
+	help
+	  Select the ICM variant
+config ICM42670P
+	bool "ICM42670-P IMU 6-Axis Motion Tracking"
+config ICM42670S
+	bool "ICM42670-S IMU 6-Axis Motion Tracking with Air Motion Library (AML)"
+endchoice
+
+config TDK_APEX
+	bool "TDK APEX features"
+	default n
+
+choice APEX_FEATURES
+	prompt "TDK APEX features"
+	depends on TDK_APEX
+	default TDK_APEX_PEDOMETER
+	help
+	  Select APEX feature for IMU sensor.
+config TDK_APEX_PEDOMETER
+	bool "Pedometer: Tracks step count"
+config TDK_APEX_TILT
+	bool "Tilt Detection: Detect the Tilt angle exceeds 35 degrees"
+config TDK_APEX_SMD
+	bool "Significant Motion Detector (SMD): Detects significant motion based on accelerometer data"
+config TDK_APEX_WOM
+	bool "Wake on Motion (WoM): Detects motion when accelerometer samples exceed a programmable threshold"
+endchoice
 
 choice ICM42670_TRIGGER_MODE
 	prompt "Trigger mode"

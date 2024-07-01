@@ -1,0 +1,31 @@
+# Copyright (c) 2024, TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+# Sensor: ICM42670-P TDK 6-axis motion device
+# Choose between : ICM42670P or ICM42670S
+choice ICM_VARIANT
+	default ICM42670P
+endchoice
+
+# Enable trigger to get APEX sensor data
+
+config ICM42670_TRIGGER
+	default y
+
+choice ICM42670_TRIGGER_MODE
+	default ICM42670_TRIGGER_OWN_THREAD
+endchoice
+
+# Enable APEX features support for the IMU device selected
+
+config TDK_APEX
+	default y
+
+# Choose between :
+# TDK_APEX_PEDOMETER, TDK_APEX_TILT, TDK_APEX_SMD or TDK_APEX_WOM
+
+choice APEX_FEATURES
+	default TDK_APEX_PEDOMETER
+endchoice
+
+source "Kconfig.zephyr"

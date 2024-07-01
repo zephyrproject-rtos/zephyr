@@ -1,0 +1,141 @@
+# Copyright (c) 2024 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+include: [sensor-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The INT signal default configuration is active-high.  The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  power-mode:
+    type: string
+    default: "low noise"
+    description: |
+      Power mode.
+      Low power mode is allowed for accelerometer sensor only from
+      1.5625Hz to 400Hz.
+      The default is chosen to support both accelerometer and
+      gyroscope sensors.
+    enum:
+      - "low noise"
+      - "low power"
+
+  accel-hz:
+    type: int
+    default: 800
+    description: |
+      Accelerometer frequency. (Unit - Hz)
+      Maps to ACCEL_ODR field in ACCEL_CONFIG0 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 0
+      - 1600
+      - 800
+      - 400
+      - 200
+      - 100
+      - 50
+      - 25
+      - 12
+      - 6
+      - 3
+      - 1
+
+  accel-fs:
+    type: int
+    default: 16
+    description: |
+      Accelerometer full scale. (Unit - g)
+      Maps to ACCEL_UI_FS_SEL field in ACCEL_CONFIG0 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 16
+      - 8
+      - 4
+      - 2
+
+  accel-avg:
+    type: int
+    default: 32
+    description: |
+      Averaging filter setting to create accelerometer output
+      in accelerometer low power mode.
+      Maps to ACCEL_UI_AVG field in ACCEL_CONFIG1 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+
+  accel-filt-bw:
+    type: int
+    default: 180
+    description: |
+      Accelerometer low pass filter bandwidth frequency.
+      Maps to ACCEL_UI_FILT_BW field in ACCEL_CONFIG1 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 0
+      - 180
+      - 121
+      - 73
+      - 53
+      - 34
+      - 25
+      - 16
+
+  gyro-hz:
+    type: int
+    default: 800
+    description: |
+      Gyroscope frequency. (Unit - Hz)
+      Maps to GYRO_ODR field in GYRO_CONFIG0 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 0
+      - 1600
+      - 800
+      - 400
+      - 200
+      - 100
+      - 50
+      - 25
+      - 12
+
+  gyro-fs:
+    type: int
+    default: 2000
+    description: |
+      Gyroscope full scale. (Unit - DPS)
+      Maps to GYRO_UI_FS_SEL field in GYRO_CONFIG0 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 2000
+      - 1000
+      - 500
+      - 250
+
+  gyro-filt-bw:
+    type: int
+    default: 180
+    description: |
+      Gyroscope low pass filter bandwidth frequency.
+      Maps to GYRO_UI_FILT_BW field in GYRO_CONFIG1 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 0
+      - 180
+      - 121
+      - 73
+      - 53
+      - 34
+      - 25
+      - 16
