@@ -324,6 +324,9 @@ static const struct i2c_driver_api i2c_sc18im_driver_api = {
 	.configure = i2c_sc18im_configure,
 	.get_config = i2c_sc18im_get_config,
 	.transfer = i2c_sc18im_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 #define I2C_SC18IM_DEFINE(n)									\
