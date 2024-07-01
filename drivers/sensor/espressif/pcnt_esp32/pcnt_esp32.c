@@ -123,7 +123,6 @@ static int pcnt_esp32_channel_get(const struct device *dev, enum sensor_channel 
 
 static int pcnt_esp32_configure_pinctrl(const struct device *dev)
 {
-	int ret;
 	struct pcnt_esp32_config *config = (struct pcnt_esp32_config *)dev->config;
 
 	return pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);

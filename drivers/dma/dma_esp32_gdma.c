@@ -192,7 +192,6 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
-	struct dma_block_config *block = config_dma->head_block;
 
 	dma_channel->dir = DMA_RX;
 
@@ -277,9 +276,7 @@ static int dma_esp32_config_tx_descriptor(struct dma_esp32_channel *dma_channel,
 static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channel *dma_channel,
 				struct dma_config *config_dma)
 {
-	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
-	struct dma_block_config *block = config_dma->head_block;
 
 	dma_channel->dir = DMA_TX;
 
@@ -315,7 +312,6 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 				struct dma_config *config_dma)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 	struct dma_esp32_channel *dma_channel = &config->dma_channel[channel];
 	int ret = 0;
 
