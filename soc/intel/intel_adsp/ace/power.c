@@ -340,18 +340,20 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 #ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
-			/* This assumes a single HPSRAM segment */
-			static uint32_t hpsram_mask;
+			const int dcache_words = XCHAL_DCACHE_LINESIZE / sizeof(uint32_t);
+			uint32_t hpsram_mask[dcache_words] __aligned(XCHAL_DCACHE_LINESIZE);
+
+			hpsram_mask[0] = 0;
 			/* turn off all HPSRAM banks - get a full bitmap */
 			uint32_t ebb_banks = ace_hpsram_get_bank_count();
-			hpsram_mask = (1 << ebb_banks) - 1;
+			hpsram_mask[0] = (1 << ebb_banks) - 1;
 #define HPSRAM_MASK_ADDR sys_cache_cached_ptr_get(&hpsram_mask)
 #else
 #define HPSRAM_MASK_ADDR NULL
 #endif /* CONFIG_ADSP_POWER_DOWN_HPSRAM */
-			/* do power down - this function won't return */
 			ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
 			__ASSERT_NO_MSG(ret == 0);
+			/* do power down - this function won't return */
 			power_down(true, HPSRAM_MASK_ADDR, true);
 		} else {
 			power_gate_entry(cpu);
