@@ -75,7 +75,7 @@ struct display_stm32_ltdc_config {
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pctrl;
 	void (*irq_config_func)(const struct device *dev);
-	const struct device *display_controller;
+	const struct device *panel_controller;
 };
 
 static void stm32_ltdc_global_isr(const struct device *dev)
@@ -250,35 +250,35 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 static int stm32_ltdc_display_blanking_off(const struct device *dev)
 {
 	const struct display_stm32_ltdc_config *config = dev->config;
-	const struct device *display_dev = config->display_controller;
+	const struct device *panel_dev = config->panel_controller;
 
-	if (display_dev == NULL) {
+	if (panel_dev == NULL) {
 		return 0;
 	}
 
-	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Display device %s not ready", display_dev->name);
+	if (!device_is_ready(panel_dev)) {
+		LOG_ERR("Panel controller's device %s is not ready", panel_dev->name);
 		return -ENODEV;
 	}
 
-	return display_blanking_off(display_dev);
+	return display_blanking_off(panel_dev);
 }
 
 static int stm32_ltdc_display_blanking_on(const struct device *dev)
 {
 	const struct display_stm32_ltdc_config *config = dev->config;
-	const struct device *display_dev = config->display_controller;
+	const struct device *panel_dev = config->panel_controller;
 
-	if (display_dev == NULL) {
+	if (panel_dev == NULL) {
 		return 0;
 	}
 
-	if (!device_is_ready(config->display_controller)) {
-		LOG_ERR("Display device %s not ready", display_dev->name);
+	if (!device_is_ready(panel_dev)) {
+		LOG_ERR("Panel controller's device %s is not ready", panel_dev->name);
 		return -ENODEV;
 	}
 
-	return display_blanking_on(display_dev);
+	return display_blanking_on(panel_dev);
 }
 
 static int stm32_ltdc_init(const struct device *dev)
@@ -607,8 +607,8 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 		},										\
 		.pctrl = STM32_LTDC_DEVICE_PINCTRL_GET(inst),					\
 		.irq_config_func = stm32_ltdc_irq_config_func_##inst,				\
-		.display_controller = DEVICE_DT_GET_OR_NULL(					\
-			DT_INST_PHANDLE(inst, display_controller)),				\
+		.panel_controller = DEVICE_DT_GET_OR_NULL(					\
+			DT_INST_PHANDLE(inst, panel_controller)),				\
 	};											\
 	DEVICE_DT_INST_DEFINE(inst,								\
 			&stm32_ltdc_init,							\
