@@ -7,7 +7,6 @@ menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
 	select ZVFS
 	select ZVFS_POLL
-	select ZVFS_SELECT
 	help
 	  Provide BSD Sockets like API on top of native Zephyr networking API.
 

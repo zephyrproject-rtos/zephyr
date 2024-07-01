@@ -10,32 +10,13 @@
 #include <zephyr/posix/poll.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/sys/select.h>
+#include <zephyr/posix/sys/socket.h>
 
 /* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
 int zvfs_close(int fd);
 int zvfs_open(const char *name, int flags);
 ssize_t zvfs_read(int fd, void *buf, size_t sz, size_t *from_offset);
 ssize_t zvfs_write(int fd, const void *buf, size_t sz, size_t *from_offset);
-
-void FD_CLR(int fd, struct zvfs_fd_set *fdset)
-{
-	return ZVFS_FD_CLR(fd, (struct zvfs_fd_set *)fdset);
-}
-
-int FD_ISSET(int fd, struct zvfs_fd_set *fdset)
-{
-	return ZVFS_FD_ISSET(fd, (struct zvfs_fd_set *)fdset);
-}
-
-void FD_SET(int fd, struct zvfs_fd_set *fdset)
-{
-	ZVFS_FD_SET(fd, (struct zvfs_fd_set *)fdset);
-}
-
-void FD_ZERO(fd_set *fdset)
-{
-	ZVFS_FD_ZERO((struct zvfs_fd_set *)fdset);
-}
 
 int close(int fd)
 {
@@ -93,7 +74,8 @@ FUNC_ALIAS(read, _read, ssize_t);
 
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)
 {
-	return zvfs_select(nfds, readfds, writefds, exceptfds, timeout);
+	/* TODO: create  zvfs_select() and dispatch to subsystems based on file type */
+	return zsock_select(nfds, readfds, writefds, exceptfds, (struct zsock_timeval *)timeout);
 }
 
 ssize_t write(int fd, const void *buf, size_t sz)

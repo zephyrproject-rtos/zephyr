@@ -10,7 +10,6 @@ config POSIX_DEVICE_IO
 	select REQUIRES_FULL_LIBC
 	select ZVFS
 	select ZVFS_POLL
-	select ZVFS_SELECT
 	help
 	  Select 'y' here and Zephyr will provide an implementation of the POSIX_DEVICE_IO Option
 	  Group such as FD_CLR(), FD_ISSET(), FD_SET(), FD_ZERO(), close(), fdopen(), fileno(), open(),
