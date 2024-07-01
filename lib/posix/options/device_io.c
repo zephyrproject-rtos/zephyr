@@ -15,7 +15,6 @@
 /* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
 int zvfs_close(int fd);
 FILE *zvfs_fdopen(int fd, const char *mode);
-int zvfs_fileno(FILE *file);
 int zvfs_open(const char *name, int flags);
 ssize_t zvfs_read(int fd, void *buf, size_t sz, size_t *from_offset);
 ssize_t zvfs_write(int fd, const void *buf, size_t sz, size_t *from_offset);
@@ -51,11 +50,6 @@ FUNC_ALIAS(close, _close, int);
 FILE *fdopen(int fd, const char *mode)
 {
 	return zvfs_fdopen(fd, mode);
-}
-
-int fileno(FILE *file)
-{
-	return zvfs_fileno(file);
 }
 
 int open(const char *name, int flags, ...)
