@@ -41,4 +41,15 @@ config ARCH_POSIX_TRAP_ON_FATAL
 	  Raise a SIGTRAP signal on fatal error before exiting.
 	  This automatically suspends the target if a debugger is attached.
 
+config ARCH_POSIX_64BIT_TIME_T
+	bool "Set _TIME_BITS=64"
+	default y
+	help
+	  This is a workaround option which most users should not need to change.
+	  The native_sim executable is built by default requesting glibc to provide the 64bit time_t API
+	  also when building the 32bit variant for x86.
+	  If this causes trouble due to needing to link with another pre-compiled library whose interface
+	  uses a 32bit time_t, you can disable this option to build the native simulator executable using
+	  a 32bit time_t.
+
 endmenu
