@@ -116,7 +116,7 @@ static int flash_w91_erase(const struct device *dev, off_t offset, size_t len)
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 			flash_w91_erase, &erase_req, &err,
-			CONFIG_FLASH_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+			CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	blocking_event_rm();
 
@@ -172,7 +172,7 @@ static int flash_w91_write(const struct device *dev, off_t offset, const void *d
 
 		IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 				flash_w91_write, &write_req, &err,
-				CONFIG_FLASH_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+				CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 		blocking_event_rm();
 
@@ -258,7 +258,7 @@ static int flash_w91_read(const struct device *dev, off_t offset, void *data, si
 
 		IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 				flash_w91_read, &read_req, &read_resp,
-				CONFIG_FLASH_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+				CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 		blocking_event_rm();
 
@@ -309,7 +309,7 @@ int flash_w91_get_id(const struct device *dev, uint8_t *hw_id)
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 			flash_w91_get_id, NULL, &read_resp,
-			CONFIG_FLASH_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+			CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	if (read_resp.err != 0) {
 		LOG_ERR("Flash get ID operation failed");

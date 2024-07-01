@@ -32,7 +32,7 @@ static void heartbeat_w91_thread(void *p1, void *p2, void *p3)
 
 		IPC_DISPATCHER_HOST_SEND_DATA(
 			&ipc_data, 0, heartbeat_w91_check, NULL, &heartbeat_response_status,
-			CONFIG_CORE_HEARTBEAT_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+			CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 		if (!heartbeat_response_status) {
 #ifdef CONFIG_LOG
@@ -62,7 +62,7 @@ static int heartbeat_w91_init(void)
 
 	IPC_DISPATCHER_HOST_SEND_DATA(
 		&ipc_data, 0, heartbeat_w91_start, NULL, &err,
-		CONFIG_CORE_HEARTBEAT_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	if (err) {
 		return err;

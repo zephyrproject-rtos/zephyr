@@ -81,7 +81,7 @@ static int pwm_w91_ipc_configure(const struct device *dev, uint32_t channel,
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 		pwm_w91_ipc_configure, &pwm_config_req, &err,
-		CONFIG_PWM_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }
@@ -136,13 +136,13 @@ static int pwm_w91_init(const struct device *dev)
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 		timer0_ipc_wrap_get_speed, NULL, &timers_get_speed_resp,
-		CONFIG_PWM_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	data->timer0_clock_frequency = timers_get_speed_resp.value / FREQ_DIVIDER;
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 		timer1_ipc_wrap_get_speed, NULL, &timers_get_speed_resp,
-		CONFIG_PWM_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	data->timer1_clock_frequency = timers_get_speed_resp.value / FREQ_DIVIDER;
 

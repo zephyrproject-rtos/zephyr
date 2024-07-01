@@ -60,7 +60,7 @@ static int pinctrl_w91_pin_configure(uint8_t pin, uint8_t func)
 
 	IPC_DISPATCHER_HOST_SEND_DATA(&ipc_data, 0,
 			pinctrl_w91_pin_configure, &pin_config_req, &err,
-			CONFIG_PINCTRL_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+			CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }

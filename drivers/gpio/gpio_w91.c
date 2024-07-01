@@ -160,7 +160,7 @@ static int gpio_w91_pin_configure(const struct device *dev,
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 		gpio_w91_pin_configure, &pin_config_req, &err,
-		CONFIG_GPIO_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }
@@ -194,7 +194,7 @@ static int gpio_w91_port_get_raw(const struct device *dev, gpio_port_value_t *va
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 		gpio_w91_port_get_raw, NULL, &port_get_raw_resp,
-		CONFIG_GPIO_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	if (!port_get_raw_resp.err) {
 		*value = port_get_raw_resp.value;
@@ -240,7 +240,7 @@ static int gpio_w91_port_set_masked_raw(const struct device *dev,
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 		gpio_w91_port_set_masked_raw, &port_set_masked_raw_req, &err,
-		CONFIG_GPIO_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }
@@ -272,7 +272,7 @@ static int gpio_w91_port_set_bits_raw(const struct device *dev, gpio_port_pins_t
 	uint8_t inst = ((struct gpio_w91_config *)dev->config)->instance_id;
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst, gpio_w91_port_set_bits_raw, &mask, &err,
-		CONFIG_GPIO_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }
@@ -304,7 +304,7 @@ static int gpio_w91_port_clear_bits_raw(const struct device *dev, gpio_port_pins
 	uint8_t inst = ((struct gpio_w91_config *)dev->config)->instance_id;
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst, gpio_w91_port_clear_bits_raw, &mask, &err,
-		CONFIG_GPIO_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }
@@ -336,7 +336,7 @@ static int gpio_w91_port_toggle_bits(const struct device *dev, gpio_port_pins_t 
 	uint8_t inst = ((struct gpio_w91_config *)dev->config)->instance_id;
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst, gpio_w91_port_toggle_bits, &mask, &err,
-		CONFIG_GPIO_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }
@@ -402,7 +402,7 @@ static int gpio_w91_pin_interrupt_configure(const struct device *dev,
 
 	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 		gpio_w91_pin_interrupt_configure, &pin_irq_config_req, &err,
-		CONFIG_GPIO_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }

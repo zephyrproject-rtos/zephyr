@@ -99,7 +99,7 @@ static int entropy_w91_trng_get_entropy(const struct device *dev,
 		IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
 				entropy_w91_trng_get_entropy,
 				&entropy_length, &trng_get_entropy_resp,
-				CONFIG_ENTROPY_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+				CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 		if (trng_get_entropy_resp.err || (length <= ENTROPY_TRNG_MAX_SIZE_IN_PACK)) {
 			break;

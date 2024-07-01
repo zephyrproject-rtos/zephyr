@@ -77,7 +77,7 @@ static int blocking_w91_set_state_addr(uint32_t addr)
 
 	IPC_DISPATCHER_HOST_SEND_DATA(&ipc_data, 0,
 			blocking_w91_set_state_addr, &addr, &err,
-			CONFIG_BLOCKING_CORE_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+			CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	return err;
 }

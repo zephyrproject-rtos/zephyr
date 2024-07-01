@@ -128,7 +128,7 @@ int telink_w91_ecp_alt_check_pubkey(const mbedtls_ecp_group *grp,
 
 				IPC_DISPATCHER_HOST_SEND_DATA(&telink_w91_ecp_alt_ipc, 0,
 					telink_w91_ecp_alt_check_pubkey, &request, &result,
-					CONFIG_TELINK_W91_ECC_HW_ACC_IPC_RESPONSE_TIMEOUT_MS);
+					CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 				if (result && result != MBEDTLS_ERR_ECP_INVALID_KEY) {
 					LOG_ERR("%s failed on curve %s %d", __func__,
@@ -224,7 +224,7 @@ int telink_w91_ecp_alt_mul_restartable(mbedtls_ecp_group *grp,
 
 				IPC_DISPATCHER_HOST_SEND_DATA(&telink_w91_ecp_alt_ipc, 0,
 					telink_w91_ecp_alt_mul_restartable, &request, &response,
-					CONFIG_TELINK_W91_ECC_HW_ACC_IPC_RESPONSE_TIMEOUT_MS);
+					CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 				result = response.err;
 				if (!result) {
@@ -330,7 +330,7 @@ int telink_w91_ecp_alt_muladd_restartable(mbedtls_ecp_group *grp,
 
 				IPC_DISPATCHER_HOST_SEND_DATA(&telink_w91_ecp_alt_ipc, 0,
 					telink_w91_ecp_alt_muladd_restartable, &request, &response,
-					CONFIG_TELINK_W91_ECC_HW_ACC_IPC_RESPONSE_TIMEOUT_MS);
+					CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 				result = response.err;
 				if (!result) {

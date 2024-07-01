@@ -73,7 +73,7 @@ static int hci_w91_open(void)
 
 	IPC_DISPATCHER_HOST_SEND_DATA(&ipc_data, 0,
 			hci_w91_open, mac, &err,
-			CONFIG_BLE_HCI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+			CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	if (err == 0) {
 		bt_ctrl_state = W91_BT_CTRL_STATE_ACTIVATED;
@@ -102,7 +102,7 @@ static int hci_w91_close(void)
 
 	IPC_DISPATCHER_HOST_SEND_DATA(&ipc_data, 0,
 			hci_w91_close, NULL, &err,
-			CONFIG_BLE_HCI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+			CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	if (err == 0) {
 		bt_ctrl_state = W91_BT_CTRL_STATE_STOPPED;
@@ -167,7 +167,7 @@ static int hci_w91_send(struct net_buf *buf)
 
 	IPC_DISPATCHER_HOST_SEND_DATA(&ipc_data, 0,
 		hci_w91_send, &send_req, &err,
-		CONFIG_BLE_HCI_TELINK_W91_IPC_SEND_RESPONSE_TIMEOUT_MS);
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
 
 	net_buf_unref(buf);
 	return err;
