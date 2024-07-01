@@ -51,12 +51,9 @@ typedef struct zvfs_fd_set zsock_fd_set;
 static inline int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
 			       zsock_fd_set *exceptfds, struct zsock_timeval *timeout)
 {
-	struct timespec to = {
-		.tv_sec = (timeout == NULL) ? 0 : timeout->tv_sec,
-		.tv_nsec = (long)((timeout == NULL) ? 0 : timeout->tv_usec * NSEC_PER_USEC)};
+	struct timeval;
 
-	return zvfs_select(nfds, (struct zvfs_fd_set *)readfds, (struct zvfs_fd_set *)writefds,
-			   (struct zvfs_fd_set *)exceptfds, (timeout == NULL) ? NULL : &to, NULL);
+	return zvfs_select(nfds, readfds, writefds, exceptfds, (struct timeval *)timeout);
 }
 
 /** Number of file descriptors which can be added to zsock_fd_set */
