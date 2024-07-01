@@ -323,6 +323,13 @@
 			status = "disabled";
 		};
 
+		lcd_cam: lcd_cam@60041000 {
+			compatible = "espressif,esp32-cam-clk";
+			reg = <0x60041000 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_LCD_CAM_MODULE>;
+			status = "disabled";
+		};
+
 		usb_serial: uart@60038000 {
 			compatible = "espressif,esp32-usb-serial";
 			reg = <0x60038000 DT_SIZE_K(4)>;
