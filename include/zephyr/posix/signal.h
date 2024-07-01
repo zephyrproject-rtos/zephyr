@@ -77,16 +77,6 @@ typedef struct {
 #define SIG_UNBLOCK 2
 #endif
 
-#define SIG_DFL ((void *)0)
-#define SIG_IGN ((void *)1)
-#define SIG_ERR ((void *)-1)
-
-#define SI_USER 1
-#define SI_QUEUE 2
-#define SI_TIMER 3
-#define SI_ASYNCIO 4
-#define SI_MESGQ 5
-
 typedef int	sig_atomic_t;		/* Atomic entity type (ANSI) */
 
 union sigval {
@@ -102,34 +92,12 @@ struct sigevent {
 	int sigev_signo;
 };
 
-typedef struct {
-	int si_signo;
-	int si_code;
-	union sigval si_value;
-} siginfo_t;
-
-struct sigaction {
-	void (*sa_handler)(int signno);
-	sigset_t sa_mask;
-	int sa_flags;
-	void (*sa_sigaction)(int signo, siginfo_t *info, void *context);
-};
-
-unsigned int alarm(unsigned int seconds);
-int kill(pid_t pid, int sig);
-int pause(void);
-int raise(int signo);
-int sigaction(int sig, const struct sigaction *ZRESTRICT act, struct sigaction *ZRESTRICT oact);
-int sigpending(sigset_t *set);
-int sigsuspend(const sigset_t *sigmask);
-int sigwait(const sigset_t *ZRESTRICT set, int *ZRESTRICT signo);
 char *strsignal(int signum);
 int sigemptyset(sigset_t *set);
 int sigfillset(sigset_t *set);
 int sigaddset(sigset_t *set, int signo);
 int sigdelset(sigset_t *set, int signo);
 int sigismember(const sigset_t *set, int signo);
-void (*signal(int signo, void (*)(int signo)))(int signo);
 int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 
 int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
