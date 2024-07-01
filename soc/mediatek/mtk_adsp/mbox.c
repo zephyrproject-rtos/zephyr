@@ -28,20 +28,31 @@
  *
  * In practice: The first device (mbox0) is for IPC commands in both
  * directions.  The cmd register is written with a 1 ("IPI_OP_REQ")
- * and the command is placed in shared DRAM.  The message registers
- * are ignored.  The second device (mbox1) is for responses to IPC
- * commands, writing a 2 (IPI_OP_RSP) to the command register.  (Yes,
- * this is redundant, and the actual value is ignored by the ISRs on
- * both sides).
+ * and the command is placed in shared DRAM.
+ *
+ * Note that the 8195 has ten "msg" registers.  These only exist on
+ * this version of the hardware, and act as uninspected r/w scratch
+ * registers to both the host and DSP, with no other behavior.  They
+ * aren't used by the Linux kernel at all (which has a single driver
+ * for all these DSPs), so are described here for completeness but
+ * otherwise ignored.  In practice they don't do anything that simple
+ * shared memory can't.
  */
 
 struct mtk_mbox {
+#ifdef SOC_SERIES_MT8195_ADSP
 	uint32_t in_cmd;
 	uint32_t in_cmd_clr;
 	uint32_t in_msg[5];
 	uint32_t out_cmd;
 	uint32_t out_cmd_clr;
 	uint32_t out_msg[5];
+#else
+	uint32_t in_cmd;
+	uint32_t out_cmd;
+	uint32_t in_cmd_clr;
+	uint32_t out_cmd_clr;
+#endif
 };
 
 struct mbox_cfg {
@@ -63,25 +74,6 @@ void mtk_adsp_mbox_set_handler(const struct device *mbox, uint32_t chan,
 		data->handlers[chan] = handler;
 		data->handler_arg[chan] = arg;
 	}
-}
-
-void mtk_adsp_mbox_set_msg(const struct device *mbox, uint32_t idx, uint32_t val)
-{
-	const struct mbox_cfg *cfg = ((struct device *)mbox)->config;
-
-	if (idx < MTK_ADSP_MBOX_MSG_WORDS) {
-		cfg->mbox->out_msg[idx] = val;
-	}
-}
-
-uint32_t mtk_adsp_mbox_get_msg(const struct device *mbox, uint32_t idx)
-{
-	const struct mbox_cfg *cfg = ((struct device *)mbox)->config;
-
-	if (idx < MTK_ADSP_MBOX_MSG_WORDS) {
-		return cfg->mbox->in_msg[idx];
-	}
-	return 0;
 }
 
 void mtk_adsp_mbox_signal(const struct device *mbox, uint32_t chan)

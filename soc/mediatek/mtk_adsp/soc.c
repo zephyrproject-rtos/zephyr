@@ -23,7 +23,9 @@ extern char _mtk_adsp_dram_end[];
  * it lands and extract its address in the loader.  This represents
  * the minimum amount of effort required to successfully call a C
  * function (and duplicates a few versions elsewhere in the tree:
- * really this should move to the arch layer).
+ * really this should move to the arch layer).  Note that the stack
+ * used is 15MB into the DRAM region and safe/unused by all devices.
+ * But really this should be z_interrupt_stacks[0].
  */
 __asm__(".align 4\n\t"
 	".global mtk_adsp_boot_entry\n\t"
@@ -35,7 +37,7 @@ __asm__(".align 4\n\t"
 	"  movi  a0, 1\n\t"
 	"  wsr   a0, WINDOWSTART\n\t"
 	"  rsync\n\t"
-	"  movi  a1, 0x40040000\n\t"
+	"  movi  a1, 0x60e00000\n\t"
 	"  call4 c_boot\n\t");
 
 /* Initial MPU configuration, needed to enable caching */
@@ -147,7 +149,9 @@ void c_boot(void)
 	 */
 	__asm__ volatile("wsr %0, VECBASE; rsync" :: "r"(&z_xtensa_vecbase));
 
+#ifdef CONFIG_SOC_SERIES_MT8195_ADSP
 	mtk_adsp_cpu_freq_init();
+#endif
 
 	/* Likewise, memory power is external to the device, and the
 	 * kernel SOF loader doesn't zero it, so zero our unlinked
@@ -170,6 +174,10 @@ void c_boot(void)
 	__ASSERT_NO_MSG(XCHAL_NUM_TIMERS == 3);
 	val = 0xffffffff;
 	__asm__ volatile("wsr %0, INTCLEAR" :: "r"(val));
+
+	/* Default console, a driver can override this later */
+	void __stdout_hook_install(int (*hook)(int));
+	__stdout_hook_install(arch_printk_char_out);
 
 	z_cstart();
 }
