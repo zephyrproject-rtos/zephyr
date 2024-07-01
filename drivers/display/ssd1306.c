@@ -240,12 +240,14 @@ static int ssd1306_write_default(const struct device *dev, const uint16_t x, con
 				 const struct display_buffer_descriptor *desc, const void *buf,
 				 const size_t buf_len)
 {
+	const struct ssd1306_config *config = dev->config;
+	uint8_t x_off = config->segment_offset;
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_MEM_ADDRESSING_MODE,
 		SSD1306_ADDRESSING_MODE,
 		SSD1306_SET_COLUMN_ADDRESS,
-		x,
-		(x + desc->width - 1),
+		x + x_off,
+		(x + desc->width - 1) + x_off,
 		SSD1306_SET_PAGE_ADDRESS,
 		y/8,
 		((y + desc->height)/8 - 1)
