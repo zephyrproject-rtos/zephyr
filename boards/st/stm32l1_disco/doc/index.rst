@@ -146,8 +146,18 @@ Flashing
 ========
 
 STM32L1DISCOVERY and STM32L152CDISCOVERY boards include an ST-LINK/V2 embedded
-debug tool interface. This interface is supported by the openocd version
-included in the Zephyr SDK.
+debug tool interface.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
+Alternatively, openocd or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application
 -----------------------
@@ -189,3 +199,6 @@ References
 
 .. _STM32L152CDISCOVERY board User Manual:
    https://www.st.com/resource/en/user_manual/um1079-discovery-kit-with-stm32l152rc-mcu-stmicroelectronics.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

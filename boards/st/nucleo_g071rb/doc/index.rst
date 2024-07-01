@@ -158,6 +158,17 @@ Flashing
 
 Nucleo G071RB board includes an ST-LINK/V3 embedded debug tool interface.
 
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
+Alternatively, openocd or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
 Flashing an application to Nucleo G071RB
 ----------------------------------------
 
@@ -198,3 +209,6 @@ References
 
 .. _G071RB on www.st.com:
    https://www.st.com/en/microcontrollers/stm32g071rb.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

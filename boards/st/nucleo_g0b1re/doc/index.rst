@@ -156,8 +156,17 @@ Flashing
 
 Nucleo G0B1RE board includes an ST-LINK/V2-1 embedded debug tool interface.
 
-This interface is not yet supported by the openocd version included in the Zephyr SDK.
-But JLink, STM32CubeProgrammer and Pyocd interfaces are supported.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
+Alternatively, openocd or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
 Pyocd support is currently limited: As the stm32g0b1 target causes issues,
 the stm32g071 target is used. For STM32G0 support pyocd needs additional target
 information, which can be installed by adding "pack" support with the
@@ -167,7 +176,6 @@ following pyocd command:
 
    $ pyocd pack --update
    $ pyocd pack --install stm32g0
-
 
 Flashing an application to Nucleo G0B1RE
 ----------------------------------------
@@ -209,3 +217,6 @@ References
 
 .. _G0B1RE on www.st.com:
    https://www.st.com/en/microcontrollers/stm32g0b1re.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

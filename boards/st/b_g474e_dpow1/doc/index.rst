@@ -114,6 +114,9 @@ Flashing
 
 The B-G474E-DPOW1 Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
 .. code-block:: console
 
    $ west flash
@@ -158,3 +161,6 @@ References
 
 .. _G474RE on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32g474re.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

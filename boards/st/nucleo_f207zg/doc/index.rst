@@ -191,8 +191,21 @@ do it by removing ``SB156`` jumper on the back side of the board.
 Programming and Debugging
 *************************
 
+Flashing
+========
+
 Nucleo F207ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
+Alternatively, openocd or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 
 .. _Nucleo F207ZG website:
@@ -206,3 +219,6 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 .. _STM32F207 reference manual:
    https://www.st.com/resource/en/reference_manual/cd00225773.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
