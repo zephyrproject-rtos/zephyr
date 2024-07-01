@@ -77,7 +77,7 @@ void ZVFS_FD_SET(int fd, struct zvfs_fd_set *set)
 int z_impl_zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 		       struct zvfs_fd_set *ZRESTRICT writefds,
 		       struct zvfs_fd_set *ZRESTRICT exceptfds,
-		       const struct timespec *ZRESTRICT timeout, const void *ZRESTRICT sigmask)
+		       const struct timeval *ZRESTRICT timeout)
 {
 	struct zvfs_pollfd pfds[CONFIG_ZVFS_POLL_MAX];
 	k_timeout_t poll_timeout;
@@ -142,8 +142,7 @@ int z_impl_zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 	if (timeout == NULL) {
 		poll_timeout = K_FOREVER;
 	} else {
-		poll_timeout =
-			K_USEC(timeout->tv_sec * USEC_PER_SEC + timeout->tv_nsec / NSEC_PER_USEC);
+		poll_timeout = K_USEC(timeout->tv_sec * USEC_PER_SEC + timeout->tv_usec);
 	}
 
 	res = zvfs_poll_internal(pfds, num_pfds, poll_timeout);
@@ -221,11 +220,10 @@ int z_impl_zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 static int z_vrfy_zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 			      struct zvfs_fd_set *ZRESTRICT writefds,
 			      struct zvfs_fd_set *ZRESTRICT exceptfds,
-			      const struct timespec *ZRESTRICT timeout,
-			      const void *ZRESTRICT sigmask)
+			      const struct timeval *ZRESTRICT timeout)
 {
 	struct zvfs_fd_set *readfds_copy = NULL, *writefds_copy = NULL, *exceptfds_copy = NULL;
-	struct timespec *to = NULL;
+	struct timeval *to = NULL;
 	int ret = -1;
 
 	if (readfds) {
@@ -263,7 +261,7 @@ static int z_vrfy_zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 		}
 	}
 
-	ret = z_impl_zvfs_select(nfds, readfds_copy, writefds_copy, exceptfds_copy, to, sigmask);
+	ret = z_impl_zvfs_select(nfds, readfds_copy, writefds_copy, exceptfds_copy, to);
 
 	if (ret >= 0) {
 		if (readfds_copy) {
