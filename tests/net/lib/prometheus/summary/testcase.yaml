@@ -1,0 +1,10 @@
+tests:
+  # section.subsection
+  prometheus.summary:
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+    platform_exclude:
+      - native_posix
+      - native_posix/native/64
+    tags: prometheus
