@@ -108,7 +108,6 @@ static int gpio_esp32_config(const struct device *dev,
 			     gpio_flags_t flags)
 {
 	const struct gpio_esp32_config *const cfg = dev->config;
-	struct gpio_esp32_data *data = dev->data;
 	uint32_t io_pin = (uint32_t) pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
 	uint32_t key;
 	int ret = 0;
@@ -474,7 +473,6 @@ static void gpio_esp32_isr(void *param);
 
 static int gpio_esp32_init(const struct device *dev)
 {
-	struct gpio_esp32_data *data = dev->data;
 	static bool isr_connected;
 
 	if (!isr_connected) {

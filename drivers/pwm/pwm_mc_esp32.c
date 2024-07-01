@@ -413,7 +413,6 @@ int mcpwm_esp32_init(const struct device *dev)
 	int ret;
 	struct mcpwm_esp32_config *config = (struct mcpwm_esp32_config *)dev->config;
 	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
-	struct mcpwm_esp32_channel_config *channel;
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -452,7 +451,6 @@ static void IRAM_ATTR mcpwm_esp32_isr(const struct device *dev)
 	struct mcpwm_esp32_channel_config *channel;
 	struct mcpwm_esp32_capture_config *capture;
 	uint32_t mcpwm_intr_status;
-	struct capture_data cap_data;
 
 	mcpwm_intr_status = mcpwm_ll_intr_get_capture_status(data->hal.dev);
 

@@ -305,7 +305,6 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	struct spi_context *ctx = &data->ctx;
 	spi_hal_context_t *hal = &data->hal;
 	spi_hal_dev_config_t *hal_dev = &data->dev_config;
-	spi_dev_t *hw = hal->hw;
 	int freq;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
@@ -331,6 +330,11 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 
 	hal_dev->cs_pin_id = ctx->config->slave;
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+
+	if (ret) {
+		LOG_ERR("Failed to configure SPI pins");
+		return ret;
+	}
 
 	/* input parameters to calculate timing configuration */
 	spi_hal_timing_param_t timing_param = {
@@ -376,6 +380,8 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 
 	/* Workaround to handle default state of MISO and MOSI lines */
 #ifndef CONFIG_SOC_SERIES_ESP32
+	spi_dev_t *hw = hal->hw;
+
 	if (cfg->line_idle_low) {
 		hw->ctrl.d_pol = 0;
 		hw->ctrl.q_pol = 0;
