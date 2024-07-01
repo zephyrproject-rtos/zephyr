@@ -39,7 +39,7 @@ def process_logs(dut: DeviceAdapter, build_dir):
 
     # Read the encoded logs and save them to a file
     # as the log parser requires file as input
-    handler_output = dut.readlines_until(regex = '^##ZLOGV1##[0-9]+', timeout = 10.0)
+    handler_output = dut.readlines_until(regex = '.*##ZLOGV1##[0-9]+', timeout = 10.0)
 
     encoded_logs = handler_output[-1]
 
@@ -67,7 +67,7 @@ def expected_regex_common():
     '''
     return [
     # *** Booting Zephyr OS build <version> ***
-    re.compile(r'^[*][*][*] Booting Zephyr OS build [0-9a-z.-]+'),
+    re.compile(r'.*[*][*][*] Booting Zephyr OS build [0-9a-z.-]+'),
     # Hello World! <board name>
     re.compile(r'[\s]+Hello World! [\w-]+'),
     # [        10] <err> hello_world: error string
