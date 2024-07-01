@@ -36,6 +36,17 @@ This sample application has been tested on the following platforms:
 - Arm FVP BaseR AEMv8-R
 - ARM BASE RevC AEMv8A Fixed Virtual Platforms
 
+For best performance, the sample configures a lot of network packets and buffers.
+Because of this, the sample's RAM requirements are quite large. In case the
+sample does not fit into target platform RAM, reduce the following configs:
+
+.. code-block:: cfg
+
+   CONFIG_NET_PKT_RX_COUNT=40
+   CONFIG_NET_PKT_TX_COUNT=40
+   CONFIG_NET_BUF_RX_COUNT=160
+   CONFIG_NET_BUF_TX_COUNT=160
+
 Requirements
 ************
 
