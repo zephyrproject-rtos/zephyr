@@ -92,4 +92,6 @@ source "drivers/clock_control/Kconfig.rpi_pico"
 
 source "drivers/clock_control/Kconfig.nrf_auxpll"
 
+source "drivers/clock_control/Kconfig.xlnx_ps7_clkc"
+
 endif # CLOCK_CONTROL
