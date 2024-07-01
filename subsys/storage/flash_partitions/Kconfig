@@ -1,0 +1,31 @@
+# Copyright (c) 2024, Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FLASH_PARTITIONS
+	bool "flash partitions support"
+	default y if DT_HAS_ZEPHYR_FLASH_PARTITIONS_ENABLED
+	select FLASH
+	help
+	  Enables support for the flash partitions system, which enables using
+	  unified routines to work with partitions defined on flash devices.
+
+if FLASH_PARTITIONS
+
+config FLASH_PARTITIONS_RUNTIME_VERIFY
+	bool "runtime verification of erase-block-size"
+	select FLASH_PAGE_LAYOUT
+	help
+	  Enable runtime verification that erase-block-size is a multiple of the
+	  flash erase block size.
+
+config FLASH_PARTITIONS_LABELS
+	bool "Access flash partition labels at runtime"
+	help
+	  If enabled the label property of the flash partitions can be retrieved
+	  at runtime.
+
+module = FLASH_PARTITIONS
+module-str = flash_partitions
+source "subsys/logging/Kconfig.template.log_config"
+
+endif #FLASH_PARTITIONS

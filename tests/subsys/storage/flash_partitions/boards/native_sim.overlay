@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 Laczen
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	compatible = "soc-nv-flash", "zephyr,flash-no-erase";
+
+	flash_partitions {
+		compatible = "zephyr,flash-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0_partition0: partition@0 {
+			reg = <0x00000000 0x00002000>;
+			erase-block-size = <DT_SIZE_K(8)>;
+			read-only;
+		};
+
+                flash0_partition1: partition@2000 {
+			reg = <0x00002000 0x00002000>;
+		};
+	};
+};
