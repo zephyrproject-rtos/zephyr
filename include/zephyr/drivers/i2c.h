@@ -983,6 +983,17 @@ static inline int i2c_transfer_signal(const struct device *dev,
 #if defined(CONFIG_I2C_RTIO) || defined(__DOXYGEN__)
 
 /**
+ * @brief Fallback submit implementation
+ *
+ * This implementation will schedule a blocking I2C transaction on the bus via the system work
+ * queue. It is only used if the I2C driver did not implement the iodev_submit function.
+ *
+ * @param iodev_sqe Prepared submissions queue entry connected to an iodev
+ *                  defined by I2C_DT_IODEV_DEFINE.
+ */
+void i2c_iodev_submit_fallback(struct rtio_iodev_sqe *iodev_sqe);
+
+/**
  * @brief Submit request(s) to an I2C device with RTIO
  *
  * @param iodev_sqe Prepared submissions queue entry connected to an iodev
@@ -994,7 +1005,12 @@ static inline void i2c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 	const struct device *dev = dt_spec->bus;
 	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
 
-	api->iodev_submit(dt_spec->bus, iodev_sqe);
+	if (api->iodev_submit != NULL) {
+		api->iodev_submit(dt_spec->bus, iodev_sqe);
+		return;
+	}
+	/* Fallback to the system work queue. */
+	i2c_iodev_submit_fallback(iodev_sqe);
 }
 
 extern const struct rtio_iodev_api i2c_iodev_api;
