@@ -106,8 +106,18 @@ struct jesd216_sfdp_header {
  *
  * @return required buffer size in bytes.
  */
+#ifdef CONFIG_MISRA_SANE
+/*
+ * When CONFIG_MISRA_SANE=y, this macro is forcing the size of raw[]
+ * with decl_nph = 2 (assuming 'const uint8_t decl_nph = 2' always)
+ * else ISO C90 forbids array 'raw' whose size cannot be evaluated
+ */
+#define JESD216_SFDP_SIZE(nph) (sizeof(struct jesd216_sfdp_header)	\
+				+ ((2) * sizeof(struct jesd216_param_header)))
+#else
 #define JESD216_SFDP_SIZE(nph) (sizeof(struct jesd216_sfdp_header)	\
 				+ ((nph) * sizeof(struct jesd216_param_header)))
+#endif /* CONFIG_MISRA_SANE */
 
 /** Extract the magic number from the SFDP structure in host byte order.
  *
