@@ -53,7 +53,6 @@ static int esp32_temp_channel_get(const struct device *dev, enum sensor_channel 
 					struct sensor_value *val)
 {
 	struct esp32_temp_data *data = dev->data;
-	const struct esp32_temp_config *cfg = dev->config;
 
 	if (chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;

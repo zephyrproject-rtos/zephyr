@@ -147,7 +147,6 @@ static i2c_clock_source_t i2c_get_clk_src(uint32_t clk_freq)
 static int i2c_esp32_config_pin(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
-	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	int ret = 0;
 
 	if (config->index >= SOC_I2C_NUM) {
@@ -311,7 +310,6 @@ static void i2c_esp32_configure_data_mode(const struct device *dev)
 
 static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 {
-	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	uint32_t bitrate;
 
@@ -506,7 +504,6 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 					struct i2c_msg *msg, uint16_t addr)
 {
 	int ret = 0;
-	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
 	/* Set the R/W bit to R */
 	addr |= BIT(0);
@@ -582,7 +579,6 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 					 struct i2c_msg *msg, uint16_t addr)
 {
-	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	int ret = 0;
 
 	if (msg->flags & I2C_MSG_RESTART) {
