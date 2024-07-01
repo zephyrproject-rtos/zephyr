@@ -31,6 +31,8 @@ config RTIO_SYS_MEM_BLOCKS
 	  without a pre-allocated memory buffer. Instead the buffer will be taken
 	  from the allocated memory pool associated with the RTIO context.
 
+rsource "Kconfig.workq"
+
 module = RTIO
 module-str = RTIO
 module-help = Sets log level for RTIO support

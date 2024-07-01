@@ -34,6 +34,7 @@ tests:
     extra_configs:
       - CONFIG_GENERIC_SENSOR_TEST=y
       - CONFIG_ZTEST=y
+      - CONFIG_ZTEST_THREAD_PRIORITY=1
       - CONFIG_EMUL=y
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
       - CONFIG_SENSOR_ASYNC_API=y
