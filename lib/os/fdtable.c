@@ -414,16 +414,6 @@ FILE *zvfs_fdopen(int fd, const char *mode)
 	return (FILE *)&fdtable[fd];
 }
 
-int zvfs_fileno(FILE *file)
-{
-	if (!IS_ARRAY_ELEMENT(fdtable, file)) {
-		errno = EBADF;
-		return -1;
-	}
-
-	return (struct fd_entry *)file - fdtable;
-}
-
 int zvfs_fstat(int fd, struct stat *buf)
 {
 	if (_check_fd(fd) < 0) {
