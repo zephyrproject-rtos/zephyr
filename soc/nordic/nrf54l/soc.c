@@ -24,6 +24,7 @@
 #include <hal/nrf_oscillators.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_regulators.h>
+#include <helpers/nrfx_ram_ctrl.h>
 #endif
 #include <soc/nrfx_coredep.h>
 
@@ -35,6 +36,19 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define LFXO_NODE DT_NODELABEL(lfxo)
 #define HFXO_NODE DT_NODELABEL(hfxo)
 #endif
+
+#define _BUILD_MEM_REGION(node_id, a)   \
+	{.dt_addr = DT_REG_ADDR(DT_PARENT(node_id)),\
+	 .dt_size = DT_REG_SIZE(DT_PARENT(node_id))}
+
+struct ret_mem_region {
+	uintptr_t dt_addr;
+	size_t dt_size;
+};
+
+static const struct ret_mem_region ret_mem_regions[] = {
+	DT_FOREACH_STATUS_OKAY_VARGS(zephyr_retained_ram, _BUILD_MEM_REGION)
+};
 
 static int nordicsemi_nrf54l_init(void)
 {
@@ -161,6 +175,10 @@ static int nordicsemi_nrf54l_init(void)
 	nrf_regulators_elv_mode_allow_set(NRF_REGULATORS, NRF_REGULATORS_ELV_ELVGRTCLFXO_MASK);
 #endif /* CONFIG_ELV_GRTC_LFXO_ALLOWED */
 #endif /* NRF_APPLICATION */
+
+	for (size_t i = 0; i < ARRAY_SIZE(ret_mem_regions); i++) {
+		nrfx_ram_ctrl_retention_enable_set((void *)ret_mem_regions[i].dt_addr, ret_mem_regions[i].dt_size, true);
+	}
 
 	return 0;
 }
