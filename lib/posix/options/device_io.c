@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/posix/poll.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/sys/select.h>
@@ -17,28 +16,28 @@
 int zvfs_close(int fd);
 FILE *zvfs_fdopen(int fd, const char *mode);
 int zvfs_fileno(FILE *file);
-int zvfs_open(const char *name, int flags, int mode);
+int zvfs_open(const char *name, int flags);
 ssize_t zvfs_read(int fd, void *buf, size_t sz, size_t *from_offset);
 ssize_t zvfs_write(int fd, const void *buf, size_t sz, size_t *from_offset);
 
 void FD_CLR(int fd, struct zvfs_fd_set *fdset)
 {
-	return ZVFS_FD_CLR(fd, fdset);
+	return ZVFS_FD_CLR(fd, (struct zvfs_fd_set *)fdset);
 }
 
 int FD_ISSET(int fd, struct zvfs_fd_set *fdset)
 {
-	return ZVFS_FD_ISSET(fd, fdset);
+	return ZVFS_FD_ISSET(fd, (struct zvfs_fd_set *)fdset);
 }
 
 void FD_SET(int fd, struct zvfs_fd_set *fdset)
 {
-	ZVFS_FD_SET(fd, fdset);
+	ZVFS_FD_SET(fd, (struct zvfs_fd_set *)fdset);
 }
 
 void FD_ZERO(fd_set *fdset)
 {
-	ZVFS_FD_ZERO(fdset);
+	ZVFS_FD_ZERO((struct zvfs_fd_set *)fdset);
 }
 
 int close(int fd)
@@ -61,16 +60,8 @@ int fileno(FILE *file)
 
 int open(const char *name, int flags, ...)
 {
-	int mode = 0;
-	va_list args;
-
-	if ((flags & O_CREAT) != 0) {
-		va_start(args, flags);
-		mode = va_arg(args, int);
-		va_end(args);
-	}
-
-	return zvfs_open(name, flags, mode);
+	/* FIXME: necessarily need to check for O_CREAT and unpack ... if set */
+	return zvfs_open(name, flags);
 }
 #ifdef CONFIG_POSIX_DEVICE_IO_ALIAS_OPEN
 FUNC_ALIAS(open, _open, int);
