@@ -177,15 +177,21 @@ static char *max31865_error_to_string(uint8_t fault_register)
 static int max31865_fault_register(const struct device *dev)
 {
 	uint8_t fault_register;
+	uint8_t old_d5_d3_d2;
 
 	max31865_spi_read(dev, (REG_FAULT_STATUS), &fault_register, 1);
 	struct max31865_data *data = dev->data;
+	old_d5_d3_d2 = data->config_control_bits & 0b00101100;
 	/*Clear fault register */
 	WRITE_BIT(data->config_control_bits, 1, 1);
+	WRITE_BIT(data->config_control_bits, 5, 0);
+	WRITE_BIT(data->config_control_bits, 3, 0);
+	WRITE_BIT(data->config_control_bits, 2, 0);
 	configure_device(dev);
 	LOG_ERR("Fault Register: 0x%02x, %s", fault_register,
 		max31865_error_to_string(fault_register));
 	WRITE_BIT(data->config_control_bits, 1, 0);
+	data->config_control_bits |= old_d5_d3_d2;
 
 	return 0;
 }
