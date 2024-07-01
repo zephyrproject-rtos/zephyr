@@ -348,6 +348,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			/* do power down - this function won't return */
 			ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
 			__ASSERT_NO_MSG(ret == 0);
+			sys_cache_data_flush_and_invd_all();
 			power_down(true, sys_cache_cached_ptr_get(&hpsram_mask),
 				   true);
 		} else {
