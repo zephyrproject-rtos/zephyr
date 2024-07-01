@@ -424,46 +424,6 @@ int zvfs_fileno(FILE *file)
 	return (struct fd_entry *)file - fdtable;
 }
 
-int zvfs_dup(int fd, int *newfd)
-{
-	int ret;
-
-	if (_check_fd(fd) < 0) {
-		return -1;
-	}
-
-	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
-
-	if (newfd == NULL) {
-		/* dup() - just find lowest-numbered fd */
-		ret = _find_fd_entry();
-	} else {
-		/* dup2() - check if newfd is valid */
-		if (_check_fd(*newfd) < 0) {
-			ret = -1;
-		} else {
-			if (fdtable[fd].vtable->close) {
-				(void)fdtable[fd].vtable->close(fdtable[fd].obj);
-			}
-			ret = *newfd;
-		}
-	}
-
-	if (ret >= 0) {
-		/* Mark entry as used and initialize fields */
-		if (newfd == NULL) {
-			(void)z_fd_ref(ret);
-		}
-		fdtable[ret] = fdtable[fd];
-		k_mutex_init(&fdtable[ret].lock);
-		k_condvar_init(&fdtable[ret].cond);
-	}
-
-	k_mutex_unlock(&fdtable_lock);
-
-	return ret;
-}
-
 int zvfs_fstat(int fd, struct stat *buf)
 {
 	if (_check_fd(fd) < 0) {
