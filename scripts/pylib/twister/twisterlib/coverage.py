@@ -330,7 +330,10 @@ class Gcovr(CoverageTool):
         ztestfile = os.path.join(outdir, "ztest.json")
 
         excludes = Gcovr._interleave_list("-e", self.ignores)
-        excludes += Gcovr._interleave_list("--exclude-branches-by-pattern", self.ignore_branch_patterns)
+        if len(self.ignore_branch_patterns) > 0:
+            # Last pattern overrides previous values, so merge all patterns together
+            merged_regex = "|".join([f"({p})" for p in self.ignore_branch_patterns])
+            excludes += ["--exclude-branches-by-pattern", merged_regex]
 
         # Different ifdef-ed implementations of the same function should not be
         # in conflict treated by GCOVR as separate objects for coverage statistics.
