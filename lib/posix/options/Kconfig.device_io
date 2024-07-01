@@ -42,14 +42,6 @@ config POSIX_DEVICE_IO_ALIAS_WRITE
 	help
 	  Select 'y' here and Zephyr will provide an alias for write() as _write().
 
-config POSIX_DEVICE_IO_STDIN_STDOUT_STDERR
-	bool
-	help
-	  Select 'y' here and Zephyr will provide the stdin, stdout, and stderr variables.
-
-	  Some libc's that implement the POSIX API may already have declared these variables.
-	  However, it should be noted that they are a part of POSIX and not a part of ISO C.
-
 endif # POSIX_DEVICE_IO
 
 config POSIX_OPEN_MAX

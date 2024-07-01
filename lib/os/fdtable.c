@@ -14,7 +14,6 @@
  */
 
 #include <errno.h>
-#include <stdio.h>
 #include <string.h>
 
 #include <zephyr/posix/fcntl.h>
@@ -72,12 +71,6 @@ static struct fd_entry fdtable[CONFIG_ZVFS_OPEN_MAX] = {
 	{0},
 #endif
 };
-
-#ifdef CONFIG_POSIX_DEVICE_IO_STDIN_STDOUT_STDERR
-FILE *stdin = &fdtable[0];
-FILE *stdout = &fdtable[1];
-FILE *stderr = &fdtable[2];
-#endif
 
 static K_MUTEX_DEFINE(fdtable_lock);
 
