@@ -34,3 +34,69 @@ family:
     - name: mimxrt685s
       cpuclusters:
       - name: cm33
+runners:
+  run_once:
+    '--erase':
+    - run: first
+      runners:
+      - all
+      groups:
+      - qualifiers:
+        - mimxrt1011
+      - qualifiers:
+        - mimxrt1015
+      - qualifiers:
+        - mimxrt1021
+      - qualifiers:
+        - mimxrt1024
+      - qualifiers:
+        - mimxrt1042
+      - qualifiers:
+        - mimxrt1052
+      - qualifiers:
+        - mimxrt1062
+      - qualifiers:
+        - mimxrt1064
+      - qualifiers:
+        - mimxrt1166/cm7
+        - mimxrt1166/cm4
+      - qualifiers:
+        - mimxrt1176/cm7
+        - mimxrt1176/cm4
+      - qualifiers:
+        - mimxrt595s/cm33
+        - mimxrt595s/f1
+      - qualifiers:
+        - mimxrt685s/cm33
+    '--reset':
+    - run: last
+      runners:
+      - all
+      groups:
+      - qualifiers:
+        - mimxrt1011
+      - qualifiers:
+        - mimxrt1015
+      - qualifiers:
+        - mimxrt1021
+      - qualifiers:
+        - mimxrt1024
+      - qualifiers:
+        - mimxrt1042
+      - qualifiers:
+        - mimxrt1052
+      - qualifiers:
+        - mimxrt1062
+      - qualifiers:
+        - mimxrt1064
+      - qualifiers:
+        - mimxrt1166/cm7
+        - mimxrt1166/cm4
+      - qualifiers:
+        - mimxrt1176/cm7
+        - mimxrt1176/cm4
+      - qualifiers:
+        - mimxrt595s/cm33
+        - mimxrt595s/f1
+      - qualifiers:
+        - mimxrt685s/cm33
