@@ -10,3 +10,17 @@ include: i2c-controller.yaml
 properties:
   reg:
     required: true
+  forwards:
+    type: phandle-array
+    description: |
+      When added, read/write requests sent to this bus for a given address will
+      be forwarded to the specified phandle (must be another i2c bus). As an
+      example, if we wanted to forward any requests from i2c0@0x20 to i2c1, we
+      would use:
+
+      &i2c0 {
+        forward = <&i2c1 0x20>;
+      };
+
+forward-cells:
+  - addr

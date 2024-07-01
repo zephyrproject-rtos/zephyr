@@ -1,0 +1,7 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.i2c.emul:
+    platform_allow:
+      - native_sim
