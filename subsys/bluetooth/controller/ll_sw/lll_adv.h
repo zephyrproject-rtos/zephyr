@@ -88,6 +88,10 @@ struct lll_adv_iso {
 #endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 	uint16_t stream_handle[BT_CTLR_ADV_ISO_STREAM_MAX];
+
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	uint16_t pa_iss_us;
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 };
 
 struct lll_adv_sync {
