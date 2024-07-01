@@ -5,3 +5,23 @@ family:
     socs:
     - name: rw612
     - name: rw610
+runners:
+  run_once:
+    '--erase':
+    - run: first
+      runners:
+      - all
+      groups:
+      - qualifiers:
+        - rw612
+      - qualifiers:
+        - rw610
+    '--reset':
+    - run: last
+      runners:
+      - all
+      groups:
+      - qualifiers:
+        - rw612
+      - qualifiers:
+        - rw610
