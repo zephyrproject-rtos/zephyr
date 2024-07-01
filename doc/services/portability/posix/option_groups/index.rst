@@ -271,10 +271,6 @@ required for error and event handling.
 POSIX_DEVICE_IO
 ===============
 
-.. note::
-   When using Newlib, Picolibc, or other C libraries conforming to the ISO C Standard, the
-   C89 components of the ``POSIX_DEVICE_IO`` Option Group are considered supported.
-
 .. csv-table:: POSIX_DEVICE_IO
    :header: API, Supported
    :widths: 50,10
@@ -285,48 +281,48 @@ POSIX_DEVICE_IO
     FD_ZERO(),yes
     clearerr(),yes
     close(),yes
-    fclose(),yes
-    fdopen(), yes
-    feof(),yes
-    ferror(),yes
-    fflush(),yes
-    fgetc(),yes
-    fgets(),yes
-    fileno(), yes
-    fopen(),yes
+    fclose(),
+    fdopen(),
+    feof(),
+    ferror(),
+    fflush(),
+    fgetc(),
+    fgets(),
+    fileno(),
+    fopen(),
     fprintf(),yes
     fputc(),yes
     fputs(),yes
-    fread(),yes
-    freopen(),yes
-    fscanf(),yes
+    fread(),
+    freopen(),
+    fscanf(),
     fwrite(),yes
-    getc(),yes
-    getchar(),yes
-    gets(),yes
+    getc(),
+    getchar(),
+    gets(),
     open(),yes
     perror(),yes
     poll(),yes
     printf(),yes
-    pread(),yes
-    pselect(),yes
+    pread(),
+    pselect(),
     putc(),yes
     putchar(),yes
     puts(),yes
-    pwrite(),yes
+    pwrite(),
     read(),yes
-    scanf(),yes
+    scanf(),
     select(),yes
-    setbuf(),yes
-    setvbuf(),yes
-    stderr,yes
-    stdin,yes
-    stdout,yes
-    ungetc(),yes
+    setbuf(),
+    setvbuf(),
+    stderr,
+    stdin,
+    stdout,
+    ungetc(),
     vfprintf(),yes
-    vfscanf(),yes
+    vfscanf(),
     vprintf(),yes
-    vscanf(),yes
+    vscanf(),
     write(),yes
 
 .. _posix_option_group_barriers:
