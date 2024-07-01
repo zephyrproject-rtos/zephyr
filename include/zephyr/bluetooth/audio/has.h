@@ -1,5 +1,11 @@
+/**
+ * @file
+ * @brief Bluetooth Hearing Access Service (HAS) APIs.
+ */
+
 /*
  * Copyright (c) 2022 Codecoup
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,10 +39,17 @@
 extern "C" {
 #endif
 
-/** Preset index definitions */
+/**
+ * @name Preset index definitions
+ * @{
+ */
+/** No index */
 #define BT_HAS_PRESET_INDEX_NONE 0x00
+/** First preset index */
 #define BT_HAS_PRESET_INDEX_FIRST 0x01
+/** Last preset index */
 #define BT_HAS_PRESET_INDEX_LAST 0xFF
+/** @} */
 
 /** Preset name minimum length */
 #define BT_HAS_PRESET_NAME_MIN 1
@@ -48,8 +61,20 @@ struct bt_has;
 
 /** Hearing Aid device type */
 enum bt_has_hearing_aid_type {
+	/**
+	 * Two hearing aids that form a Coordinated Set, one for the right ear and one for the left
+	 * ear of the user. Typically used by a user with bilateral hearing loss.
+	 */
 	BT_HAS_HEARING_AID_TYPE_BINAURAL = 0x00,
+	/**
+	 * A single hearing aid for the left or the right ear. Typically used by a user with
+	 * unilateral hearing loss.
+	 */
 	BT_HAS_HEARING_AID_TYPE_MONAURAL = 0x01,
+	/**
+	 * Two hearing aids with a connection to one another that expose a single Bluetooth radio
+	 * interface.
+	 */
 	BT_HAS_HEARING_AID_TYPE_BANDED = 0x02,
 };
 
@@ -67,6 +92,7 @@ enum bt_has_properties {
 
 /** Hearing Aid device capabilities */
 enum bt_has_capabilities {
+	/** Indicate support for presets */
 	BT_HAS_PRESET_SUPPORT = BIT(0),
 };
 
@@ -191,11 +217,12 @@ struct bt_has_client_cb {
 				    bool is_last);
 };
 
-/** @brief Registers the callbacks used by the Hearing Access Service client.
+/**
+ * @brief Registers the callbacks used by the Hearing Access Service client.
  *
- *  @param cb The callback structure.
+ * @param cb The callback structure.
  *
- *  @return 0 in case of success or negative value in case of error.
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_has_client_cb_register(const struct bt_has_client_cb *cb);
 
@@ -396,8 +423,11 @@ int bt_has_preset_available(uint8_t index);
  */
 int bt_has_preset_unavailable(uint8_t index);
 
+/** Enum for return values for @ref bt_has_preset_func_t functions */
 enum {
+	/** Stop iterating */
 	BT_HAS_PRESET_ITER_STOP = 0,
+	/** Continue iterating */
 	BT_HAS_PRESET_ITER_CONTINUE,
 };
 
