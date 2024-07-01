@@ -168,7 +168,7 @@ class Handler:
             domain_path = os.path.join(self.build_dir, "domains.yaml")
             domains = Domains.from_file(domain_path)
             logger.debug("Loaded sysbuild domain data from %s" % domain_path)
-            build_dir = domains.get_default_domain().build_dir
+            build_dir = os.path.join(self.build_dir, domains.get_default_domain().name)
         else:
             build_dir = self.build_dir
         return build_dir

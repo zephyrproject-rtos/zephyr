@@ -413,6 +413,12 @@ class Pytest(Harness):
         else:
             raise PytestHarnessException(f'Support for handler {handler.type_str} not implemented yet')
 
+        if self.instance.required_build_dirs:
+            # skip first image, it is used as main app when no_own_image is set
+            start_index = 1 if self.instance.no_own_image else 0
+            for req_image in self.instance.required_build_dirs[start_index:]:
+                command.append(f'--required-image={req_image}')
+
         if handler.type_str != 'device':
             for fixture in handler.options.fixture:
                 command.append(f'--twister-fixture={fixture}')
