@@ -352,6 +352,11 @@ Controller Area Network (CAN)
     :c:func:`can_set_mode` during application startup instead of failing when :c:func:`can_recover`
     is called at a later point in time.
 
+Crypto
+======
+
+* The CSS driver has been deprecated on NXP lpc55s36 (:github:`71173`).
+
 Display
 =======
 
@@ -672,7 +677,7 @@ Serial
 Timer
 =====
 
-regulator
+Regulator
 =========
 
 * The :dtcompatible:`nxp,vref` driver no longer supports the ground selection function,

@@ -307,6 +307,7 @@ Bluetooth
 * HCI Driver
 
   * Added support for Ambiq Apollo3 Blue series.
+  * Added support for NXP platforms.
 
 Boards & SoC Support
 ********************
@@ -315,6 +316,7 @@ Boards & SoC Support
 
   * Added support for Ambiq Apollo3 Blue and Apollo3 Blue Plus SoC series.
   * Added support for STM32H7R/S SoC series.
+  * Added support for NXP mke15z7, mke17z7, mke17z9, MCXNx4x, RW61x
 
 * Made these changes in other SoC series:
 
@@ -324,6 +326,8 @@ Boards & SoC Support
   * STM32WL: Decreased Sub-GHz SPI frequency from 12 to 8MHz.
   * STM32C0: Added support for :kconfig:option:`CONFIG_POWEROFF`.
   * STM32U5: Added support for Stop3 mode.
+  * NXP IMX8M: added resource domain controller support
+  * NXP s32k146: set RTC clock source to internal oscillator
 
 * Added support for these boards:
 
@@ -340,6 +344,7 @@ Boards & SoC Support
   * Added support for :ref:`ST STM32H7S78-DK Discovery <stm32h7s78_dk_board>`: ``stm32h7s78_dk``.
   * Added support for :ref:`ST STM32L152CDISCOVERY board <stm32l1_disco_board>`: ``stm32l152c_disco``.
   * Added support for :ref:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1_board>`: ``steval_stwinbx1``.
+  * Added support for NXP boards: ``frdm_mcxn947``, ``ke17z512``, ``rd_rw612_bga``, ``frdm_rw612``, ``frdm_ke15z``, ``frdm_ke17z``
 
 * Made these board changes:
 
@@ -348,6 +353,9 @@ Boards & SoC Support
     optimal LVGL performance.
   * On ST STM32 boards, stm32cubeprogrammer runner can now be used to program external
     flash using ``--extload`` option.
+  * Add HEX file support for Linkserver to all NXP boards
+  * Updated the Linkserver west runner to reflect changes to the CLI of LinkServer v1.5.xx
+  * Add LinkServer support to NXP ``mimxrt1010_evk``, ``mimxrt1160_evk``, ``frdm_rw612``, ``rd_rw612_bga``, ``frdm_mcxn947``
   * Introduced the simulated :ref:`nrf54l15bsim<nrf54l15bsim>` target.
   * The nrf5x bsim targets now support BT LE Coded PHY.
   * LLVM fuzzing support has been refactored while adding support for it in native_sim.
@@ -398,6 +406,7 @@ Drivers and Sensors
   * Changed phandle type DT property ``nxp,reference-supply`` to phandle-array type DT property
     ``nxp,references`` in ``nxp,lpc-lpadc`` binding. The NXP LPADC driver now supports passing
     the reference voltage value by using ``nxp,references``.
+  * Enabled time based acquisition on NXP lpadc
 
   * Fixed issue which allowed negative ADC readings in single-ended mode using the ``adc_nrfx_saadc.c``
     device driver. Note that this fix prevents the nRF54H and nRF54L series from performing
@@ -455,6 +464,9 @@ Drivers and Sensors
 
   * Added support for Ambiq Apollo3 series.
   * Added support for STM32H7R/S series.
+  * Added driver for LPTMR to NXP MCXN947
+  * Added the ``resolution`` property in ``nxp,lptmr`` binding to represent the maximum width
+    in bits the LPTMR peripheral uses for its counter.
 
 * Crypto
 
@@ -493,8 +505,15 @@ Drivers and Sensors
     the :c:func:`display_set_pixel_format` API.
   * Inversion mode can now be disabled in the ST7789V driver
     (:dtcompatible:`sitronix,st7789v`) using the ``inversion-off`` property.
+  * Added support for NXP MCXNx4x
 
 * DMA
+
+  * Add support to NXP MCXN947
+
+* DMIC
+
+  * Added support for NXP ``rd_rw612_bga``
 
 * Entropy
 
@@ -516,6 +535,8 @@ Drivers and Sensors
   * All boards and SOCs with :dtcompatible:`nxp,kinetis-ethernet` compatible nodes
     reworked to use the new :dtcompatible:`nxp,enet` binding.
   * Added support for PTP on compatible STM32 series (STM32F7, STM32H5 and STM32H7).
+  * Added ethernet QOS driver to NXP MCXN947
+  * Added 1 GigE to NXP mimxrt1170
 
 * Flash
 
@@ -538,6 +559,7 @@ Drivers and Sensors
   * Added support for XIP on external NOR flash in STM32 OSPI, QSPI and XSPI driver.
   * STM32 OSPI driver: clk, dqs, ncs ports can now be configured by device tree
     configurable (see :dtcompatible:`st,stm32-ospi`).
+  * Added FlexSPI support to NXP MCXN947
 
 * GNSS
 
@@ -563,6 +585,7 @@ Drivers and Sensors
     :kconfig:option:`CONFIG_I2C_STM32_V2_TIMING` could be disabled, bus timings configured
     using device tree.
   * Added support for STM32H5 series.
+  * Added support to NXP MCXN947
 
 * I2S
 
@@ -639,6 +662,9 @@ Drivers and Sensors
 
 * MIPI-DBI
 
+  * Added release API
+  * Added support for mode selection via the device tree
+
 * Pin control
 
   * Added driver for Renesas RA8 series
@@ -653,6 +679,8 @@ Drivers and Sensors
 * PWM
 
   * Added support for STM32H7R/S series.
+  * Added a Add QTMR PWM driver for NXP imxrt11xx
+  * Made the NXP MCUX PWM driver thread safe
 
 * Regulators
 
@@ -762,6 +790,7 @@ Drivers and Sensors
 
 * SPI
 
+  * Added support to NXP MCXN947
   * Added support for Ambiq Apollo3 series general IOM based SPI.
   * Added support for Ambiq Apollo3 BLEIF based SPI, which is specific for internal HCI.
   * Added support for :kconfig:option:`CONFIG_PM` and :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` on STM32 SPI driver.
@@ -773,6 +802,11 @@ Drivers and Sensors
 * Video
 
   * Added support for STM32 Digital camera interface (DCMI) driver (:dtcompatible:`st,stm32-dcmi`).
+  * Enabled NXP USB Device controllers
+  * Added support for the ov7670 camera
+  * Added support for the ov5640 camera
+  * Added CSI-2 MIPI driver for NXP MCUX
+  * Added support for DVP FPC 24-pins mt9m114 camera module shield
 
 * W1
 
@@ -1321,6 +1355,8 @@ MCUboot
   * Fixed various imgtool dumpinfo issues
 
   * Fixed imgtool verify command for edcsa-p384 signed images
+
+  * Added support for NXP MCXN947
 
   * The MCUboot version in this release is version ``2.1.0+0-dev``.
 
