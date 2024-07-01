@@ -55,6 +55,14 @@ config XLNX_IPI
 	  Inter Processor Interrupt driver for AMD-Xilinx
 	  platforms such as ZynqMP Ultrascale+.
 
+config IPM_MBOX
+	bool "IPM over MBOX driver"
+	default y
+	depends on DT_HAS_ZEPHYR_MBOX_IPM_ENABLED
+	depends on MBOX
+	help
+	  IPM driver using a MBOX driver as the backend mechanism.
+
 source "drivers/ipm/Kconfig.nrfx"
 source "drivers/ipm/Kconfig.imx"
 source "drivers/ipm/Kconfig.stm32"
