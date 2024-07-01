@@ -60,7 +60,7 @@ static int test_file_open_flags(void)
 
 	/* 2 Create file for read only, attempt to read, attempt to write */
 	TC_PRINT("Open on non-existent file, flags = O_CREAT | O_WRONLY\n");
-	fd = open(THE_FILE, O_CREAT | O_WRONLY, 0440);
+	fd = open(THE_FILE, O_CREAT | O_WRONLY);
 	if (fd < 0) {
 		TC_PRINT("Expected success; fd = %d, errno = %d\n", fd, errno);
 		return TC_FAIL;
@@ -236,7 +236,7 @@ static int test_file_open_flags(void)
 	TC_PRINT("Attempt write to file opened with O_APPEND | O_RDWR\n");
 	/* Clean start */
 	unlink(THE_FILE);
-	fd = open(THE_FILE, O_CREAT | O_WRONLY, 0440);
+	fd = open(THE_FILE, O_CREAT | O_WRONLY);
 	if (fd < 0) {
 		TC_PRINT("Expected success, fd = %d, errno = %d\n", fd, errno);
 		return TC_FAIL;
