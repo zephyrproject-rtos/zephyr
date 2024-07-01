@@ -37,7 +37,8 @@ FUNC_ALIAS(open, _open, int);
 
 int poll(struct pollfd *fds, int nfds, int timeout)
 {
-	return zvfs_poll(fds, nfds, timeout);
+	/* TODO: create  zvfs_poll() and dispatch to subsystems based on file type */
+	return zsock_poll(fds, nfds, timeout);
 }
 
 ssize_t pread(int fd, void *buf, size_t count, off_t offset)

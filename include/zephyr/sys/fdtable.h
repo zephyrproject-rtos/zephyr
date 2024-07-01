@@ -27,13 +27,6 @@
 #define ZVFS_MODE_IFLNK  0120000
 #define ZVFS_MODE_IFSOCK 0140000
 
-#define ZVFS_POLLIN   BIT(0)
-#define ZVFS_POLLPRI  BIT(1)
-#define ZVFS_POLLOUT  BIT(2)
-#define ZVFS_POLLERR  BIT(3)
-#define ZVFS_POLLHUP  BIT(4)
-#define ZVFS_POLLNVAL BIT(5)
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -199,17 +192,6 @@ static inline int zvfs_fdtable_call_ioctl(const struct fd_op_vtable *vtable, voi
 	return res;
 }
 
-struct zvfs_pollfd {
-	int fd;
-	short events;
-	short revents;
-};
-
-__syscall int zvfs_poll(struct zvfs_pollfd *fds, int nfds, int poll_timeout);
-
-struct zsock_fd_set {
-	uint32_t bitset[(CONFIG_ZVFS_OPEN_MAX + 31) / 32];
-};
 /**
  * Request codes for fd_op_vtable.ioctl().
  *

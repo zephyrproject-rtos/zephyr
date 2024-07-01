@@ -12,9 +12,6 @@ zephyr_sources(
   )
 
 zephyr_sources_ifdef(CONFIG_FDTABLE fdtable.c)
-zephyr_syscall_header_ifdef(CONFIG_FDTABLE
-  ${ZEPHYR_BASE}/include/zephyr/sys/fdtable.h
-)
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
