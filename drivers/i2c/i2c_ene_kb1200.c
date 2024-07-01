@@ -297,6 +297,9 @@ static const struct i2c_driver_api i2c_kb1200_api = {
 	.configure = i2c_kb1200_configure,
 	.get_config = i2c_kb1200_get_config,
 	.transfer = i2c_kb1200_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 #define KB1200_FSMBM_DEV(inst) DEVICE_DT_INST_GET(inst),

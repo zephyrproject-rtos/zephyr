@@ -733,13 +733,14 @@ static void i2c_atciic100_irq_handler(void *arg)
 }
 
 static const struct i2c_driver_api i2c_atciic100_driver = {
-	.configure		= (i2c_api_configure_t)i2c_atciic100_configure,
-	.transfer		= (i2c_api_full_io_t)i2c_atciic100_transfer,
+	.configure = (i2c_api_configure_t)i2c_atciic100_configure,
+	.transfer = (i2c_api_full_io_t)i2c_atciic100_transfer,
 #if defined(CONFIG_I2C_TARGET)
-	.target_register	=
-		(i2c_api_target_register_t)i2c_atciic100_target_register,
-	.target_unregister	=
-		(i2c_api_target_unregister_t)i2c_atciic100_target_unregister
+	.target_register = (i2c_api_target_register_t)i2c_atciic100_target_register,
+	.target_unregister = (i2c_api_target_unregister_t)i2c_atciic100_target_unregister,
+#endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
 };
 
