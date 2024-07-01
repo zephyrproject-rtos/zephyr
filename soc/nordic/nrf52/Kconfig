@@ -103,4 +103,14 @@ config NRF52_ANOMALY_109_WORKAROUND_EGU_INSTANCE
 	help
 	  EGU instance used by the nRF52 Anomaly 109 workaround for PWM.
 
+config NRF52_ANOMALY_89_WORKAROUND
+	bool "Anomaly 89 workaround"
+	default y
+	depends on SOC_NRF52832
+	depends on NRFX_TWIM
+	depends on NRFX_GPIOTE
+	help
+	  This helps in reducing the 400uA to 450uA static current consumption when
+	  GPIOTE and TWIM is enabled.
+
 endif # SOC_SERIES_NRF52X
