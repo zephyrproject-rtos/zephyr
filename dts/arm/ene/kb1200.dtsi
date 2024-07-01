@@ -335,6 +335,12 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		bbram: bbram@40041000 {
+			compatible = "ene,kb1200-bbram";
+			reg = <0x40041000 0x84>;
+			status = "disabled";
+		};
 	};
 };
 
