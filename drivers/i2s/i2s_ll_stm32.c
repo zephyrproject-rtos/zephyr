@@ -474,8 +474,25 @@ static int i2s_stm32_write(const struct device *dev, void *mem_block,
 	return 0;
 }
 
+static const struct i2s_config *i2s_stm32_config_get(const struct device *dev,
+						    enum i2s_dir dir)
+{
+	struct i2s_stm32_data *dev_data = dev->data;
+
+	if ((dir == I2S_DIR_TX) && (dev_data->tx.tx_stop_for_drain == false)) {
+		return &dev_data->tx.cfg;
+	}
+
+	if (dir == I2S_DIR_RX) {
+		return &dev_data->rx.cfg;
+	}
+
+	return NULL;
+}
+
 static const struct i2s_driver_api i2s_stm32_driver_api = {
 	.configure = i2s_stm32_configure,
+	.config_get = i2s_stm32_config_get,
 	.read = i2s_stm32_read,
 	.write = i2s_stm32_write,
 	.trigger = i2s_stm32_trigger,
