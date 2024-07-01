@@ -101,7 +101,7 @@ The *Realtime Controller System Profile* (PSE52) includes all features from PSE5
    :widths: 50, 10, 50
 
     :ref:`POSIX_C_LANG_MATH <posix_option_group_c_lang_math>`, yes,
-    :ref:`POSIX_FD_MGMT <posix_option_group_fd_mgmt>`, yes, :kconfig:option:`CONFIG_POSIX_FD_MGMT`
+    :ref:`POSIX_FD_MGMT <posix_option_group_fd_mgmt>`,, :kconfig:option:`CONFIG_POSIX_FD_MGMT`
     :ref:`POSIX_FILE_SYSTEM <posix_option_group_file_system>`,, :kconfig:option:`CONFIG_POSIX_FILE_SYSTEM`
 
 .. csv-table:: PSE52 Option Requirements
