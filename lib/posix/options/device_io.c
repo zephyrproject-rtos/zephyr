@@ -15,8 +15,8 @@
 /* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
 int zvfs_close(int fd);
 int zvfs_open(const char *name, int flags);
-ssize_t zvfs_read(int fd, void *buf, size_t sz, size_t *from_offset);
-ssize_t zvfs_write(int fd, const void *buf, size_t sz, size_t *from_offset);
+ssize_t zvfs_read(int fd, void *buf, size_t sz);
+ssize_t zvfs_write(int fd, const void *buf, size_t sz);
 
 int close(int fd)
 {
@@ -41,33 +41,9 @@ int poll(struct pollfd *fds, int nfds, int timeout)
 	return zsock_poll(fds, nfds, timeout);
 }
 
-ssize_t pread(int fd, void *buf, size_t count, off_t offset)
-{
-	size_t off = (size_t)offset;
-
-	if (offset < 0) {
-		errno = EINVAL;
-		return -1;
-	}
-
-	return zvfs_read(fd, buf, count, (size_t *)&off);
-}
-
-ssize_t pwrite(int fd, void *buf, size_t count, off_t offset)
-{
-	size_t off = (size_t)offset;
-
-	if (offset < 0) {
-		errno = EINVAL;
-		return -1;
-	}
-
-	return zvfs_write(fd, buf, count, (size_t *)&off);
-}
-
 ssize_t read(int fd, void *buf, size_t sz)
 {
-	return zvfs_read(fd, buf, sz, NULL);
+	return zvfs_read(fd, buf, sz);
 }
 #ifdef CONFIG_POSIX_DEVICE_IO_ALIAS_READ
 FUNC_ALIAS(read, _read, ssize_t);
@@ -81,7 +57,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struc
 
 ssize_t write(int fd, const void *buf, size_t sz)
 {
-	return zvfs_write(fd, buf, sz, NULL);
+	return zvfs_write(fd, buf, sz);
 }
 #ifdef CONFIG_POSIX_DEVICE_IO_ALIAS_WRITE
 FUNC_ALIAS(write, _write, ssize_t);
