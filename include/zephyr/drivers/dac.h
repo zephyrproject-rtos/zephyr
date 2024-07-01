@@ -28,6 +28,12 @@ extern "C" {
  */
 
 /**
+ * @brief Broadcast channel identifier for DACs that support it.
+ * @note Only for use in dac_write_value().
+ */
+#define DAC_CHANNEL_BROADCAST	0xFF
+
+/**
  * @brief Structure for specifying the configuration of a DAC channel.
  */
 struct dac_channel_cfg {
