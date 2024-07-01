@@ -7,8 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_NET_SOCKET_POLL_H_
 #define ZEPHYR_INCLUDE_NET_SOCKET_POLL_H_
 
-#include <zephyr/sys/fdtable.h>
-
 /* Setting for pollfd to avoid circular inclusion */
 
 /**
@@ -27,7 +25,11 @@ extern "C" {
  *
  * An array of these descriptors is passed as an argument to poll().
  */
-#define zsock_pollfd zvfs_pollfd
+struct zsock_pollfd {
+	int fd;        /**< Socket descriptor */
+	short events;  /**< Requested events */
+	short revents; /**< Returned events */
+};
 
 #ifdef __cplusplus
 }
