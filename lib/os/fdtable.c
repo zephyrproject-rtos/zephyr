@@ -301,7 +301,7 @@ int zvfs_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
 	return fd;
 }
 
-static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write)
+ssize_t zvfs_read(int fd, void *buf, size_t sz)
 {
 	ssize_t res;
 
@@ -310,57 +310,63 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write)
 	}
 
 	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-
-	if (is_write) {
-		if (fdtable[fd].vtable->write_offset == NULL) {
-			res = -1;
-			errno = EIO;
-		} else {
-			res = fdtable[fd].vtable->write_offset(fdtable[fd].obj, buf, sz,
-							       fdtable[fd].offset);
-		}
-	} else {
-		if (fdtable[fd].vtable->read == NULL) {
-			res = -1;
-			errno = EIO;
-		} else {
-			res = fdtable[fd].vtable->read_offset(fdtable[fd].obj, buf, sz,
-							      fdtable[fd].offset);
-		}
-	}
+	res = fdtable[fd].vtable->read_offs(fdtable[fd].obj, buf, sz, fdtable[fd].offset);
 	if (res > 0) {
-		fdtable[fd].offset += res;
+		switch (fdtable[fd].mode & ZVFS_MODE_IFMT) {
+		case ZVFS_MODE_IFDIR:
+		case ZVFS_MODE_IFBLK:
+		case ZVFS_MODE_IFSHM:
+		case ZVFS_MODE_IFREG:
+			fdtable[fd].offset += res;
+			break;
+		default:
+			break;
+		}
 	}
-
-unlock:
 	k_mutex_unlock(&fdtable[fd].lock);
 
 	return res;
 }
 
-ssize_t zvfs_read(int fd, void *buf, size_t sz)
-{
-	return zvfs_rw(fd, buf, sz, false);
-}
-
 ssize_t zvfs_write(int fd, const void *buf, size_t sz)
 {
-	return zvfs_rw(fd, (void *)buf, sz, true);
-}
-
-int zvfs_close(int fd)
-{
-	int res = 0;
+	ssize_t res;
 
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
 	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-	if (fdtable[fd].vtable->close != NULL) {
-		/* close() is optional - e.g. stdinout_fd_op_vtable */
-		res = fdtable[fd].vtable->close(fdtable[fd].obj);
+	res = fdtable[fd].vtable->write_offs(fdtable[fd].obj, buf, sz, fdtable[fd].offset);
+	if (res > 0) {
+		switch (fdtable[fd].mode & ZVFS_MODE_IFMT) {
+		case ZVFS_MODE_IFDIR:
+		case ZVFS_MODE_IFBLK:
+		case ZVFS_MODE_IFSHM:
+		case ZVFS_MODE_IFREG:
+			fdtable[fd].offset += res;
+			break;
+		default:
+			break;
+		}
 	}
+	k_mutex_unlock(&fdtable[fd].lock);
+
+	return res;
+}
+
+int zvfs_close(int fd)
+{
+	int res;
+
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
+
+	res = fdtable[fd].vtable->close(fdtable[fd].obj);
+
 	k_mutex_unlock(&fdtable[fd].lock);
 
 	zvfs_free_fd(fd);
