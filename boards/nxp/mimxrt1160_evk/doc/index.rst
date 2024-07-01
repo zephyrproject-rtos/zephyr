@@ -145,6 +145,11 @@ already supported, which can also be re-used on this mimxrt1160_evk board:
 +-----------+------------+-------------------------------------+
 | PIT       | on-chip    | pit                                 |
 +-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | eLCDIF; MIPI-DSI. Tested with       |
+|           |            | :ref:`rk055hdmipi4m`,               |
+|           |            | :ref:`rk055hdmipi4ma0`,             |
+|           |            | and :ref:`g1120b0mipi` shields      |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1160_evk/mimxrt1160_evk_mimxrt1166_cm7_defconfig`
