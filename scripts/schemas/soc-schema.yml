@@ -88,6 +88,11 @@ mapping:
   runners:
     type: map
     mapping:
+      priority:
+        type: int
+        desc: |
+              Priority of this flash run once configuration. The highest value data will be used
+              instead of any with lower priorities. If omitted, will default to 0.
       run_once:
         type: map
         desc: |
