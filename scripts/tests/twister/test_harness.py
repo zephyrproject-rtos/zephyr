@@ -33,7 +33,7 @@ GTEST_FAIL_STATE = "  FAILED  "
 SAMPLE_GTEST_START = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Running all tests.[0m"
 )
-SAMPLE_GTEST_FMT = "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test}[0m"
+SAMPLE_GTEST_FMT = "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test} (0ms)[0m"
 SAMPLE_GTEST_END = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Done running all tests.[0m"
 )

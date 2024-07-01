@@ -570,11 +570,11 @@ class Pytest(Harness):
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_SKIP_PATTERN = r".*\[ DISABLED \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    FINISHED_PATTERN = r".*\[==========\] Done running all tests\.$"
+    TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    TEST_SKIP_PATTERN = r".*\[ DISABLED \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    FINISHED_PATTERN = r".*\[==========\] Done running all tests\."
 
     def __init__(self):
         super().__init__()
