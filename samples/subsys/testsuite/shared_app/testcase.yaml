@@ -1,0 +1,36 @@
+common:
+  filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
+  min_ram: 40
+  extra_configs:
+    - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+  integration_platforms:
+    - native_sim
+tests:
+  sample.shared.build_only:
+    build_only: true
+  sample.shared.with_own_image.pytest:
+    required_images:
+      - sample.shared.build_only
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: module
+    tags: pytest shared
+  sample.shared.no_own_image.pytest:
+    no_own_image: true
+    required_images:
+      - sample.shared.with_own_image.pytest
+      - sample.shared.build_only
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: module
+    tags: pytest shared
+  sample.shared.no_own_image.helloworld:
+    no_own_image: true
+    required_images:
+      - sample.basic.helloworld
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World! (.*)"
+    tags: shared
