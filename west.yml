@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: e589b872d92d8515ce512b2d34f255d0bccb0e0f
+      revision: 2960684fda406b573a827d6f6ff022c673be55dd
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:

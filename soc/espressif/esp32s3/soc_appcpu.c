@@ -47,8 +47,6 @@ static void core_intr_matrix_clear(void)
 void IRAM_ATTR __app_cpu_start(void)
 {
 	extern uint32_t _init_start;
-	extern uint32_t _bss_start;
-	extern uint32_t _bss_end;
 
 	/* Move the exception vector table to IRAM. */
 	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
