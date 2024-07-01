@@ -86,10 +86,10 @@ if (DEFINED CONFIG_ARM OR DEFINED CONFIG_X86 OR DEFINED CONFIG_ARM64
 endif()
 
 
-# isr_tables is a normal CMake library and not a zephyr_library because it
-# should not be --whole-archive'd
+# isr_tables is not a zephyr_library, because it shouldn't be --whole-archive'd,
+# but we should always link with isr_tables.c.obj regardless.
 if (CONFIG_GEN_ISR_TABLES)
-  add_library(isr_tables
+  add_library(isr_tables OBJECT
     isr_tables.c
   )
 
