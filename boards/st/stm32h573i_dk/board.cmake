@@ -11,4 +11,4 @@ board_runner_args(pyocd "--target=stm32h573iikx")
 
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
-# FIXME: openocd runner not yet available.
+include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)

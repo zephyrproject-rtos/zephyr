@@ -292,16 +292,25 @@ Flashing
 ========
 
 STM32L562E-DK Discovery board includes an ST-LINK/V3E embedded debug tool
-interface. Support can be enabled on pyocd by adding "pack" support with the
+interface.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required.
+
+Alternatively, openocd can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+
+Support can also be enabled for pyocd by adding "pack" support with the
 following pyocd command:
 
 .. code-block:: console
 
    $ pyocd pack --update
    $ pyocd pack --install stm32l562qe
-
-Alternatively, this interface is supported by the openocd version
-included in the Zephyr SDK since v0.13.1.
 
 Flashing an application to STM32L562E-DK Discovery
 --------------------------------------------------
