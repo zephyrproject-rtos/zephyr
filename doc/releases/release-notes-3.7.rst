@@ -7,17 +7,68 @@ Zephyr 3.7.0 (Working Draft)
 
 We are pleased to announce the release of Zephyr version 3.7.0.
 
+This release is the last non-maintenance 3.x release and, as such, will be the next
+:ref:`Long Term Support (LTS) release <release_process_lts>`.
+
 Major enhancements with this release include:
 
-* A new, completely overhauled hardware model has been introduced. This changes
-  the way both SoCs and boards are named, defined and constructed in Zephyr.
+* A new, completely overhauled hardware model has been introduced. This change the way both SoCs and
+  boards are named, defined and constructed in Zephyr.
   Additional information can be found in the :ref:`board_porting_guide`.
-* Zephyr now requires Python 3.10 or higher
+* A long-awaited HTTP server library, and associated service API, allow to easily implement HTTP/1.1
+  and HTTP/2 servers in Zephyr. Resources can be registered statically or at runtime, and WebSocket
+  support is included.
+* POSIX support has been extended, with all the Option Requirements of POSIX Subprofiling Option
+  Groups now being supported for PSE51, PSE52, and PSE53 profiles.
+* Bluetooth Host has been extended with support for the Nordic UART Service (NUS), Hands-free Audio
+  Gateway (AG), Advanced Audio Distribution Profile (A2DP), and Audio/Video Distribution Transport
+  Protocol (AVDTP).
+* Sensor abstraction model has been overhauled to adopt a read-then-decode approach that enables
+  more types of sensors and data flows than the previous fetch/get APIs.
+* A new LLEXT Extension Development Kit (EDK) makes it easier to develop and integrate custom
+  extensions into Zephyr, including outside of the Zephyr tree.
+* Native simulator now supports leveraging native host networking stack without having to rely on
+  complex setup of the host environment.
 * Trusted Firmware-M (TF-M) 2.1.0 and Mbed TLS 3.6.0 have been integrated into Zephyr.
   Both of these versions are LTS releases.
+* New documentation pages have been introduced to help developers setup their local development
+  environment with Visual Studio Code and CLion.
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.6.0 to Zephyr v3.7.0 can be found in the separate :ref:`migration guide<migration_3.7>`.
+
+While you may refer to release notes from previous 3.x releases for a full description, other major
+enhancements and changes since previous LTS release, Zephyr 2.7.0, include:
+
+* Added support for Picolibc as the new default C library.
+* Added support for the following types of hardware peripherals:
+
+  * 1-Wire
+  * Battery Charger
+  * Cellular Modem
+  * Fuel Gauge
+  * GNSS
+  * Hardware Spinlock
+  * I3C
+  * RTC (Real Time Clock)
+  * SMBus
+
+* Added support for snippets. Snippets are common configuration settings that can be used across
+  platforms.
+* Added support for Linkable Loadable Extensions (LLEXT).
+* Summary of breaking changes (refer to release notes and migration guides from previous release
+  notes for more details):
+
+  * All Zephyr public headers have been moved to :file:`include/zephyr`, meaning they need to be
+    prefixed with ``<zephyr/...>`` when included.
+  * Pinmux API has been removed. Pin control needs to be used as its replacement, refer to
+    :ref:`pinctrl-guide` for more details.
+
+  * The following deprecated or experimental features have been removed:
+
+    * 6LoCAN
+    * civetweb module. See Zephyr 3.7's new HTTP server as a replacement.
+    * tinycbor module. You may use zcbor as a replacement.
 
 The following sections provide detailed lists of changes by component.
 
