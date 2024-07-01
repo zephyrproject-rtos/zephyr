@@ -30,8 +30,12 @@
  * communication between the host MCU and the driver.
  */
 
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/led.h>
+#if CONFIG_REGULATOR
+#include <zephyr/drivers/regulator.h>
+#endif
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 
@@ -163,6 +167,8 @@ enum lp5562_engine_fade_dirs {
 
 struct lp5562_config {
 	struct i2c_dt_spec bus;
+	struct gpio_dt_spec supply_gpio;
+	const struct device *vin_supply;
 	uint8_t r_current;
 	uint8_t g_current;
 	uint8_t b_current;
@@ -933,6 +939,22 @@ static int lp5562_led_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if CONFIG_REGULATOR
+	if (config->vin_supply != NULL) {
+		if (regulator_enable(config->vin_supply)) {
+			LOG_ERR("Enabling LP5562 regulator failed.");
+			return -EIO;
+		}
+	}
+#endif
+
+	if (config->supply_gpio.port) {
+		if (gpio_pin_configure_dt(&config->supply_gpio, GPIO_OUTPUT_ACTIVE)) {
+			LOG_ERR("Enabling LP5562 failed.");
+			return -EIO;
+		}
+	}
+
 	/* Hardware specific limits */
 	dev_data->min_period = LP5562_MIN_BLINK_PERIOD;
 	dev_data->max_period = LP5562_MAX_BLINK_PERIOD;
@@ -989,6 +1011,10 @@ static const struct led_driver_api lp5562_led_api = {
 		"White channel current must be between 0 and 25.5 mA.");	\
 	static const struct lp5562_config lp5562_config_##id = {	\
 		.bus = I2C_DT_SPEC_INST_GET(id),			\
+		.supply_gpio = GPIO_DT_SPEC_INST_GET_OR(                \
+			id, supply_gpios, {}),                          \
+		.vin_supply = DEVICE_DT_GET_OR_NULL(                    \
+			DT_INST_PHANDLE(id, vin_supply)),               \
 		.r_current = DT_INST_PROP(id, red_output_current),	\
 		.g_current = DT_INST_PROP(id, green_output_current),	\
 		.b_current = DT_INST_PROP(id, blue_output_current),	\
