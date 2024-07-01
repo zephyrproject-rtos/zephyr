@@ -49,11 +49,6 @@ config ZVFS_POLL_MAX
 	help
 	  Maximum number of entries supported for poll() call.
 
-config ZVFS_SELECT
-	bool "ZVFS select"
-	help
-	  Enable support for zvfs_select().
-
 endif # ZVFS_POLL
 
 endif # ZVFS
