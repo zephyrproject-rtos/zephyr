@@ -223,7 +223,7 @@ struct timespec;
 __syscall int zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 			  struct zvfs_fd_set *ZRESTRICT writefds,
 			  struct zvfs_fd_set *ZRESTRICT errorfds,
-			  const struct timespec *ZRESTRICT timeout, const void *ZRESTRICT sigmask);
+			  const struct timeval *ZRESTRICT timeout);
 
 /**
  * Request codes for fd_op_vtable.ioctl().
