@@ -35,7 +35,8 @@ static struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios,
 void button_pressed(const struct device *dev, struct gpio_callback *cb,
 		    uint32_t pins)
 {
-	printk("Button pressed at %" PRIu32 "\n", k_cycle_get_32());
+	printk("Button pressed at %" PRIu32 "\n",
+	       k_cycle_get_32());
 }
 
 int main(void)
@@ -78,9 +79,8 @@ int main(void)
 			printk("Error %d: failed to configure LED device %s pin %d\n",
 			       ret, led.port->name, led.pin);
 			led.port = NULL;
-		} else {
+		} else
 			printk("Set up LED at %s pin %d\n", led.port->name, led.pin);
-		}
 	}
 
 	printk("Press the button\n");

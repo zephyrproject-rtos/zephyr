@@ -19,6 +19,7 @@ import traceback
 import shlex
 import shutil
 import textwrap
+import unidiff
 
 from yamllint import config, linter
 
@@ -261,6 +262,40 @@ class BoardYmlCheck(ComplianceTest):
         path = Path(ZEPHYR_BASE)
         for file in path.glob("**/board.yml"):
             self.check_board_file(file, vendor_prefixes)
+
+
+class ClangFormatCheck(ComplianceTest):
+    """
+    Check if clang-format reports any issues
+    """
+    name = "ClangFormat"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#clang-format for more details."
+    path_hint = "<git-top>"
+
+    def run(self):
+        for file in get_files():
+            diff = subprocess.Popen(('git', 'diff', '-U0', '--no-color', COMMIT_RANGE, '--', file),
+                                    stdout=subprocess.PIPE,
+                                    cwd=GIT_TOP)
+            try:
+                subprocess.run(('clang-format-diff.py', '-p1'),
+                               check=True,
+                               stdin=diff.stdout,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT,
+                               cwd=GIT_TOP)
+
+            except subprocess.CalledProcessError as ex:
+                patchset = unidiff.PatchSet.from_string(ex.output, encoding="utf-8")
+                for patch in patchset:
+                    for hunk in patch:
+                        # Strip the before and after context
+                        msg = "".join([str(l) for l in hunk[3:-3]])
+                        # show the hunk starting at the first removed line
+                        self.fmtd_failure("notice",
+                                          "You may want to run clang-format on this change",
+                                          file, line=hunk.source_start + 3, desc=f'\r\n{msg}')
+
 
 class DevicetreeBindingsCheck(ComplianceTest):
     """
@@ -1513,10 +1548,11 @@ def annotate(res):
     """
     https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#about-workflow-commands
     """
+    msg = res.message.replace('%', '%25').replace('\n', '%0A').replace('\r', '%0D')
     notice = f'::{res.severity} file={res.file}' + \
              (f',line={res.line}' if res.line else '') + \
              (f',col={res.col}' if res.col else '') + \
-             f',title={res.title}::{res.message}'
+             f',title={res.title}::{msg}'
     print(notice)
 
 
