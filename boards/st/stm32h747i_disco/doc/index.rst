@@ -175,11 +175,11 @@ support in Zephyr by adding the shield ``st_b_lcd40_dsi1_mb1166`` or
 .. note::
    The shield comes in different hardware revisions, the MB1166-A09
    is utilizing a NT35510 panel controller and shall specifically
-   use ``st_b_lcd40_dsi1_mb1166_a09`` as SHIELD when building
+   use ``st_b_lcd40_dsi1_mb1166_a09`` as SHIELD when building.
    Prior versions are utilizing an OTM8009a controller and shall
-   use shield name without postfix, that is: ``st_b_lcd40_dsi1_mb1166``
+   use shield name without postfix, that is: ``st_b_lcd40_dsi1_mb1166``.
    Shield version is printed on a sticker placed below the two bottom
-   mounting holes and has the format: MB1166-Axx
+   mounting holes and has the format: MB1166-Axx.
 
 Resources sharing
 =================
