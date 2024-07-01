@@ -151,12 +151,7 @@ class Build(Forceable):
                            -DSHIELD... cmake arguments: the results are
                            undefined''')
 
-        group = parser.add_mutually_exclusive_group()
-        group.add_argument('--sysbuild', action='store_true',
-                           help='''create multi domain build system''')
-        group.add_argument('--no-sysbuild', action='store_true',
-                           help='''do not create multi domain build system
-                                   (default)''')
+        self._add_sysbuild_args(parser)
 
         group = parser.add_argument_group('pristine builds',
                                           PRISTINE_DESCRIPTION)
@@ -165,6 +160,21 @@ class Build(Forceable):
                             help='pristine build folder setting')
 
         return parser
+
+    def _add_sysbuild_args(self, parser):
+        group = parser.add_mutually_exclusive_group()
+        sysbuild_arg = group.add_argument('--sysbuild', action='store_true',
+                                          help='create multi domain build system')
+        no_sysbuild_arg = group.add_argument('--no-sysbuild', action='store_true',
+                                             help='''do not create multi domain
+                                             build system''')
+
+        # Check whether sysbuild is enabled by default.
+        # Update the help messages accordingly.
+        default_sysbuild, comment = self._check_sysbuild_default()
+
+        default_arg = sysbuild_arg if default_sysbuild else no_sysbuild_arg
+        default_arg.help += f' ({comment})'
 
     def do_run(self, args, remainder):
         self.args = args        # Avoid having to pass them around
@@ -575,12 +585,12 @@ class Build(Forceable):
         if user_args:
             cmake_opts.extend(shlex.split(user_args))
 
-        config_sysbuild = config_getboolean('sysbuild', False)
-        if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
+        default_sysbuild, _ = self._check_sysbuild_default()
+        if self.args.sysbuild or (default_sysbuild and not self.args.no_sysbuild):
             cmake_opts.extend(['-S{}'.format(SYSBUILD_PROJ_DIR),
                                '-DAPP_DIR:PATH={}'.format(self.source_dir)])
         else:
-            # self.args.no_sysbuild == True or config sysbuild False
+            # self.args.no_sysbuild == True or default_sysbuild == False
             cmake_opts.extend(['-S{}'.format(self.source_dir)])
 
         # Invoke CMake from the current working directory using the
@@ -662,3 +672,11 @@ class Build(Forceable):
             if add_dashes:
                 extra_args.append('--')
             extra_args.append('VERBOSE=1')
+
+    def _check_sysbuild_default(self):
+        # Returns tuple: (default boolean, comment string)
+        config_sysbuild = config_getboolean('sysbuild', None)
+        if config_sysbuild is not None:
+            return config_sysbuild, 'default, based on west config'
+
+        return False, 'default'
