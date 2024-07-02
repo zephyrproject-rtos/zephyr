@@ -66,6 +66,7 @@ static void ticker_update_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_iso_disable(void *param);
 static void disabled_cb(void *param);
+static void stop_ticker(struct ll_sync_iso_set *sync_iso, ticker_op_func fp_op_func);
 
 static memq_link_t link_lll_prepare;
 static struct mayfly mfy_lll_prepare = {0U, 0U, &link_lll_prepare, NULL, NULL};
@@ -712,6 +713,15 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 		elapsed_event = latency_event + 1U;
 	}
 
+	/* Check for establishmet failure */
+	if (done->extra.estab_failed) {
+		/* Stop Sync ISO Ticker directly. Establishment failure has been
+		 * notified.
+		 */
+		stop_ticker(sync_iso, NULL);
+		return;
+	}
+
 	/* Sync drift compensation and new skip calculation
 	 */
 	ticks_drift_plus = 0U;
@@ -791,8 +801,6 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 	struct ll_sync_iso_set *sync_iso;
 	struct lll_sync_iso *lll;
 	struct node_rx_pdu *rx;
-	uint8_t handle;
-	uint32_t ret;
 
 	/* Get reference to ULL context */
 	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
@@ -806,13 +814,7 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 	*((uint8_t *)rx->pdu) = lll->term_reason;
 
 	/* Stop Sync ISO Ticker */
-	handle = sync_iso_handle_get(sync_iso);
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  (TICKER_ID_SCAN_SYNC_ISO_BASE +
-			   sync_iso_handle_to_index(handle)),
-			  ticker_stop_op_cb, (void *)sync_iso);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	stop_ticker(sync_iso, ticker_stop_op_cb);
 }
 
 static void disable(uint8_t sync_idx)
@@ -821,6 +823,11 @@ static void disable(uint8_t sync_idx)
 	int err;
 
 	sync_iso = &ll_sync_iso[sync_idx];
+
+	/* Stop any active resume ticker */
+	(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE + sync_idx,
+			  NULL, NULL);
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_ISO_BASE +
 					sync_idx, sync_iso, &sync_iso->lll);
@@ -891,8 +898,6 @@ static uint16_t sync_iso_stream_handle_get(struct lll_sync_iso_stream *stream)
 static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 {
 	struct node_rx_pdu *rx;
-	uint8_t handle;
-	uint32_t ret;
 
 	/* Populate the Sync Lost which will be enqueued in disabled_cb */
 	rx = (void *)&sync_iso->node_rx_lost;
@@ -908,13 +913,7 @@ static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 	}
 
 	/* Stop Sync ISO Ticker */
-	handle = sync_iso_handle_get(sync_iso);
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  (TICKER_ID_SCAN_SYNC_ISO_BASE +
-			   sync_iso_handle_to_index(handle)),
-			  ticker_stop_op_cb, (void *)sync_iso);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	stop_ticker(sync_iso, ticker_stop_op_cb);
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
@@ -1038,4 +1037,25 @@ static void disabled_cb(void *param)
 
 	/* Enqueue the BIG sync lost towards ULL context */
 	ll_rx_put_sched(link, rx);
+}
+
+static void stop_ticker(struct ll_sync_iso_set *sync_iso, ticker_op_func fp_op_func)
+{
+
+	uint8_t handle;
+	uint32_t ret;
+
+	handle = sync_iso_handle_get(sync_iso);
+
+	(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE +
+			  sync_iso_handle_to_index(handle), NULL, NULL);
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  TICKER_ID_SCAN_SYNC_ISO_BASE +
+			  sync_iso_handle_to_index(handle),
+			  fp_op_func, fp_op_func ? (void *)sync_iso : NULL);
+
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
 }
