@@ -49,6 +49,7 @@ class TestInstance:
         self.status = None
         self.reason = "Unknown"
         self.metrics = dict()
+        self.defconfig = None
         self.handler = None
         self.recording = None
         self.outdir = outdir
