@@ -124,7 +124,7 @@ static int mcux_igpio_configure(const struct device *dev,
 			}
 		} else {
 			/* Set pin to no pull */
-			reg |= IOMUXC_SW_PAD_CTL_PAD_PUS_MASK;
+			reg |= IOMUXC_SW_PAD_CTL_PAD_PULL_MASK;
 		}
 		/* PDRV/SNVS/LPSR reg have different ODE bits */
 		if (config->pin_muxes[cfg_idx].pdrv_mux) {
