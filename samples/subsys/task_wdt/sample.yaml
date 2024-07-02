@@ -25,6 +25,8 @@ tests:
   sample.task_wdt:
     integration_platforms:
       - nucleo_g474re
+  sample.task_wdt.stm32:
+    filter: dt_compat_enabled("st,stm32-window-watchdog")
   sample.task_wdt.no_hw_fallback:
     extra_args: CONF_FILE="prj_no_hw_fallback.conf"
     platform_allow:

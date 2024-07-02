@@ -71,7 +71,8 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
 #define TIMEOUTS 0
-#define WDT_TEST_MAX_WINDOW 200
+/* Boards where the sysclock is high and APB1 prescaler 16 requires a lower WDG window */
+#define WDT_TEST_MAX_WINDOW 170U
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_watchdog)
 #define TIMEOUTS 0
@@ -159,8 +160,8 @@ static struct wdt_timeout_cfg m_cfg_wdt1;
  */
 volatile DATATYPE m_state __attribute__((section(NOINIT_SECTION)));
 
-/* m_testcase_index is incremented after each test to make test possible
- * switch to next testcase.
+	/* m_testcase_index is incremented after each test to make test possible
+	 * switch to next testcase.
  */
 volatile DATATYPE m_testcase_index __attribute__((section(NOINIT_SECTION)));
 
