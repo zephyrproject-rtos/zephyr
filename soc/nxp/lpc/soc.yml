@@ -25,3 +25,37 @@ family:
       cpuclusters:
       - name: cpu0
       - name: cpu1
+runners:
+  run_once:
+    '--erase':
+    - run: first
+      runners:
+      - all
+      groups:
+      - qualifiers:
+        - lpc55s06
+      - qualifiers:
+        - lpc55s16
+      - qualifiers:
+        - lpc55s28
+      - qualifiers:
+        - lpc55s36
+      - qualifiers:
+        - lpc55s69/cpu0
+        - lpc55s69/cpu1
+    '--reset':
+    - run: last
+      runners:
+      - all
+      groups:
+      - qualifiers:
+        - lpc55s06
+      - qualifiers:
+        - lpc55s16
+      - qualifiers:
+        - lpc55s28
+      - qualifiers:
+        - lpc55s36
+      - qualifiers:
+        - lpc55s69/cpu0
+        - lpc55s69/cpu1
