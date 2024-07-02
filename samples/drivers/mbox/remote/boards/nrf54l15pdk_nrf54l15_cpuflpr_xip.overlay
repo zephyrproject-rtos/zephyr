@@ -18,3 +18,7 @@
 &cpuflpr_vevif_tx {
 	status = "okay";
 };
+
+&uart30 {
+	/delete-property/ hw-flow-control;
+};
