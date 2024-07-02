@@ -59,6 +59,7 @@ static int mb85rs64v_access(const struct device *spi,
 		}
 	} else {
 		tx.count = 1;
+		bufs[0].len = 1;
 	}
 
 	return spi_write(spi, spi_cfg, &tx);
@@ -69,10 +70,30 @@ static int mb85rs64v_read_id(const struct device *spi,
 			     struct spi_config *spi_cfg)
 {
 	uint8_t id[4];
-	int err;
 
-	err = mb85rs64v_access(spi, spi_cfg,
-			       MB85RS64V_MANUFACTURER_ID_CMD, 0, &id, 4);
+	uint8_t cmd = MB85RS64V_MANUFACTURER_ID_CMD;
+	struct spi_buf bufs[] = {
+		{
+			.buf = &cmd,
+			.len = 1
+		},
+		{
+			.buf = id,
+			.len = sizeof(id)
+		}
+	};
+	struct spi_buf_set tx = {
+		.buffers = bufs,
+		.count = 1
+	};
+	struct spi_buf_set rx = {
+		.buffers = bufs,
+		.count = 2
+	};
+
+	int err;
+	err = spi_transceive(spi, spi_cfg, &tx, &rx);
+
 	if (err) {
 		printk("Error during ID read\n");
 		return -EIO;
@@ -140,20 +161,21 @@ static int read_bytes(const struct device *spi, struct spi_config *spi_cfg,
 int main(void)
 {
 	const struct device *spi;
-	struct spi_config spi_cfg = {0};
+	struct spi_config spi_cfg = {
+		.frequency = 256000U,
+		.operation = SPI_WORD_SET(8),
+		.cs = SPI_CS_CONTROL_INIT(DT_NODELABEL(spidev), 10),
+	};
 	int err;
 
 	printk("fujitsu FRAM example application\n");
 
-	spi = DEVICE_DT_GET(DT_ALIAS(spi_1));
+	/* change "spi2" to your node label */
+	spi = DEVICE_DT_GET(DT_NODELABEL(spi2));
 	if (!device_is_ready(spi)) {
 		printk("SPI device %s is not ready\n", spi->name);
 		return 0;
 	}
-
-	spi_cfg.operation = SPI_WORD_SET(8);
-	spi_cfg.frequency = 256000U;
-
 
 	err = mb85rs64v_read_id(spi, &spi_cfg);
 	if (err) {
