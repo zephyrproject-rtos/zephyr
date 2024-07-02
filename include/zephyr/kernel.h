@@ -4566,9 +4566,10 @@ __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 int k_msgq_cleanup(struct k_msgq *msgq);
 
 /**
- * @brief Send a message to a message queue.
+ * @brief Send a message to the back of a message queue.
  *
- * This routine sends a message to message queue @a q.
+ * This routine sends a message to message queue @a q, inserting it after any
+ * other messages already in the queue.
  *
  * @note The message content is copied from @a data into @a msgq and the @a data
  * pointer is not retained, so the message content will not be modified
@@ -4586,6 +4587,29 @@ int k_msgq_cleanup(struct k_msgq *msgq);
  * @retval -EAGAIN Waiting period timed out.
  */
 __syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
+
+/**
+ * @brief Send a message to the front of a message queue.
+ *
+ * This routine sends a message to message queue @a q, inserting it before any
+ * other messages already in the queue.
+ *
+ * @note The message content is copied from @a data into @a msgq and the @a data
+ * pointer is not retained, so the message content will not be modified
+ * by this function.
+ * @note When there was no space to add message, LIFO is not guaranteed.
+ * @funcprops \isr_ok
+ *
+ * @param msgq Address of the message queue.
+ * @param data Pointer to the message.
+ * @param timeout Waiting period to add the message, or one of the special
+ *                values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval 0 Message sent.
+ * @retval -ENOMSG Returned without waiting or queue purged.
+ * @retval -EAGAIN Waiting period timed out.
+ */
+__syscall int k_msgq_prepend(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
 
 /**
  * @brief Receive a message from a message queue.

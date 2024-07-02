@@ -1398,6 +1398,28 @@
 #define sys_port_trace_k_msgq_put_exit(msgq, timeout, ret)
 
 /**
+ * @brief Trace Message Queue prepend attempt entry
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_msgq_prepend_enter(msgq, timeout)
+
+/**
+ * @brief Trace Message Queue prepend attempt blocking
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_msgq_prepend_blocking(msgq, timeout)
+
+/**
+ * @brief Trace Message Queue prepend attempt outcome
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_msgq_prepend_exit(msgq, timeout, ret)
+
+/**
  * @brief Trace Message Queue get attempt entry
  * @param msgq Message Queue object
  * @param timeout Timeout period

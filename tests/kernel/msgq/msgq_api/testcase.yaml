@@ -3,3 +3,9 @@ tests:
     tags:
       - kernel
       - userspace
+  kernel.message_queue.prepend:
+    tags:
+      - kernel
+      - userspace
+    extra_configs:
+      - CONFIG_TEST_MSGQ_PREPEND=y

@@ -74,6 +74,15 @@ extern "C" {
 
 /* end - states */
 
+/* pending reason: Which call making thread pending */
+
+/* Which call make make thread pending,
+ * one is z_impl_k_msgq_prepend, Zero is z_impl_k_msgq_put
+ */
+#define _MSG_PENDING (BIT(0))
+
+/* end - pending_reason */
+
 #ifdef CONFIG_STACK_SENTINEL
 /* Magic value in lowest bytes of the stack */
 #define STACK_SENTINEL 0xF0F0F0F0
