@@ -41,6 +41,9 @@ static int vlan_interface_stop(const struct device *dev);
 static enum virtual_interface_caps vlan_get_capabilities(struct net_if *iface);
 static int vlan_interface_start(const struct device *dev);
 static int virt_dev_init(const struct device *dev);
+static int vlan_interface_get_config(struct net_if *iface,
+				     enum virtual_interface_config_type type,
+				     struct virtual_interface_config *config);
 
 static K_MUTEX_DEFINE(lock);
 
@@ -62,6 +65,7 @@ static const struct virtual_interface_api vlan_iface_api = {
 	.send = vlan_interface_send,
 	.recv = vlan_interface_recv,
 	.attach = vlan_interface_attach,
+	.get_config = vlan_interface_get_config,
 };
 
 #define ETH_DEFINE_VLAN(x, _)						\
@@ -629,6 +633,39 @@ static int vlan_interface_attach(struct net_if *vlan_iface,
 	ctx->attached_to = iface;
 
 	return 0;
+}
+
+static size_t get_l2_reserve(struct net_if *iface)
+{
+	struct net_if *main_iface;
+
+	main_iface = net_eth_get_vlan_main(iface);
+	if (main_iface == NULL) {
+		return 0U;
+	}
+
+	if (net_if_l2(main_iface) != &NET_L2_GET_NAME(ETHERNET) ||
+	    !IS_ENABLED(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER)) {
+		return 0U;
+	}
+
+	return sizeof(struct net_eth_vlan_hdr);
+}
+
+static int vlan_interface_get_config(struct net_if *iface,
+				     enum virtual_interface_config_type type,
+				     struct virtual_interface_config *config)
+{
+	switch (type) {
+	case VIRTUAL_INTERFACE_CONFIG_TYPE_L2_RESERVE:
+		config->l2_reserve = get_l2_reserve(iface);
+		return 0;
+
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
 }
 
 static void vlan_iface_init(struct net_if *iface)

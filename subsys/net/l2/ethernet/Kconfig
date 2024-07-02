@@ -16,6 +16,14 @@ module-str = Log level for Ethernet L2 layer
 module-help = Enables Ethernet L2 to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+config NET_L2_ETHERNET_RESERVE_HEADER
+	bool "Reserve space for Ethernet header in first net_buf in TX"
+	help
+	  If enabled, then reserve space for Ethernet header to the first
+	  net_buf when sending data. The default is still to have layer 2
+	  header in a separate net_buf. In RX side the Ethernet header
+	  is always part of the first net_buf.
+
 config NET_L2_ETHERNET_MGMT
 	bool "Ethernet network management interface"
 	select NET_MGMT

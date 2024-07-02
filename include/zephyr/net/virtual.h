@@ -55,6 +55,7 @@ enum virtual_interface_config_type {
 	VIRTUAL_INTERFACE_CONFIG_TYPE_PEER_ADDRESS,
 	VIRTUAL_INTERFACE_CONFIG_TYPE_MTU,
 	VIRTUAL_INTERFACE_CONFIG_TYPE_LINK_TYPE,
+	VIRTUAL_INTERFACE_CONFIG_TYPE_L2_RESERVE,
 };
 
 struct virtual_interface_link_types {
@@ -71,6 +72,7 @@ struct virtual_interface_config {
 		struct in6_addr peer6addr;
 		int mtu;
 		struct virtual_interface_link_types link_types;
+		size_t l2_reserve;
 	};
 };
 

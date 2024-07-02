@@ -1,8 +1,13 @@
 common:
   depends_on: netif
+  min_ram: 32
+  tags:
+    - net
+    - vlan
 tests:
-  net.vlan:
-    min_ram: 32
-    tags:
-      - net
-      - vlan
+  net.vlan.separate_net_buf:
+    extra_configs:
+      - CONFIG_NET_L2_ETHERNET_RESERVE_HEADER=n
+  net.vlan.header_reserved:
+    extra_configs:
+      - CONFIG_NET_L2_ETHERNET_RESERVE_HEADER=y

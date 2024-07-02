@@ -859,11 +859,13 @@ void net_pkt_print(void)
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
-					size_t size, k_timeout_t timeout,
+					size_t size, size_t headroom,
+					k_timeout_t timeout,
 					const char *caller, int line)
 #else
 static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
-					size_t size, k_timeout_t timeout)
+					size_t size, size_t headroom,
+					k_timeout_t timeout)
 #endif
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);
@@ -885,11 +887,25 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 		}
 
 		current = new;
-		if (current->size > size) {
-			current->size = size;
-		}
 
-		size -= current->size;
+		/* If there is headroom reserved, then allocate that to the
+		 * first buf.
+		 */
+		if (current == first && headroom > 0) {
+			if (current->size > (headroom + size)) {
+				current->size = size + headroom;
+
+				size = 0U;
+			} else {
+				size -= current->size;
+			}
+		} else {
+			if (current->size > size) {
+				current->size = size;
+			}
+
+			size -= current->size;
+		}
 
 		timeout = sys_timepoint_timeout(end);
 
@@ -917,14 +933,18 @@ error:
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
-					size_t size, k_timeout_t timeout,
+					size_t size, size_t headroom,
+					k_timeout_t timeout,
 					const char *caller, int line)
 #else
 static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
-					size_t size, k_timeout_t timeout)
+					size_t size, size_t headroom,
+					k_timeout_t timeout)
 #endif
 {
 	struct net_buf *buf;
+
+	ARG_UNUSED(headroom);
 
 	buf = net_buf_alloc_len(pool, size, timeout);
 
@@ -1125,17 +1145,19 @@ int net_pkt_remove_tail(struct net_pkt *pkt, size_t length)
 }
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
-			       size_t size,
-			       enum net_ip_protocol proto,
-			       k_timeout_t timeout,
-			       const char *caller,
-			       int line)
+int net_pkt_alloc_buffer_with_reserve_debug(struct net_pkt *pkt,
+					    size_t size,
+					    size_t reserve,
+					    enum net_ip_protocol proto,
+					    k_timeout_t timeout,
+					    const char *caller,
+					    int line)
 #else
-int net_pkt_alloc_buffer(struct net_pkt *pkt,
-			 size_t size,
-			 enum net_ip_protocol proto,
-			 k_timeout_t timeout)
+int net_pkt_alloc_buffer_with_reserve(struct net_pkt *pkt,
+				      size_t size,
+				      size_t reserve,
+				      enum net_ip_protocol proto,
+				      k_timeout_t timeout)
 #endif
 {
 	struct net_buf_pool *pool = NULL;
@@ -1165,8 +1187,8 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	/* Calculate the maximum that can be allocated depending on size */
 	alloc_len = pkt_buffer_length(pkt, size + hdr_len, proto, alloc_len);
 
-	NET_DBG("Data allocation maximum size %zu (requested %zu)",
-		alloc_len, size);
+	NET_DBG("Data allocation maximum size %zu (requested %zu, reserve %zu)",
+		alloc_len, size, reserve);
 
 	if (pkt->context) {
 		pool = get_data_pool(pkt->context);
@@ -1177,24 +1199,90 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	buf = pkt_alloc_buffer(pool, alloc_len, timeout, caller, line);
+	buf = pkt_alloc_buffer(pool, alloc_len, reserve,
+			       timeout, caller, line);
 #else
-	buf = pkt_alloc_buffer(pool, alloc_len, timeout);
+	buf = pkt_alloc_buffer(pool, alloc_len, reserve, timeout);
 #endif
 
 	if (!buf) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		NET_ERR("Data buffer (%zd) allocation failed (%s:%d)",
-			alloc_len, caller, line);
+		NET_ERR("Data buffer (%zu) allocation failed (%s:%d)",
+			alloc_len + reserve, caller, line);
 #else
-		NET_ERR("Data buffer (%zd) allocation failed.", alloc_len);
+		NET_ERR("Data buffer (%zu) allocation failed.",
+			alloc_len + reserve);
 #endif
 		return -ENOMEM;
 	}
 
 	net_pkt_append_buffer(pkt, buf);
 
+	/* Hide the link layer header for now. The space is used when
+	 * link layer header needs to be written to the packet by L2 send.
+	 */
+	if (reserve > 0U) {
+		NET_DBG("Reserving %zu bytes for L2 header", reserve);
+
+		net_buf_reserve(pkt->buffer, reserve);
+
+		net_pkt_cursor_init(pkt);
+	}
+
 	return 0;
+}
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
+			       size_t size,
+			       enum net_ip_protocol proto,
+			       k_timeout_t timeout,
+			       const char *caller,
+			       int line)
+#else
+int net_pkt_alloc_buffer(struct net_pkt *pkt,
+			 size_t size,
+			 enum net_ip_protocol proto,
+			 k_timeout_t timeout)
+#endif
+{
+	int ret;
+
+	if (!size && proto == 0 && net_pkt_family(pkt) == AF_UNSPEC) {
+		return 0;
+	}
+
+	if (k_is_in_isr()) {
+		timeout = K_NO_WAIT;
+	}
+
+
+	if (net_pkt_iface(pkt) && net_if_l2(net_pkt_iface(pkt))->alloc != NULL) {
+		ret = net_if_l2(net_pkt_iface(pkt))->alloc(net_pkt_iface(pkt),
+							   pkt, size, proto,
+							   timeout);
+		if (ret != -ENOTSUP) {
+			return ret;
+		}
+	}
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	ret = net_pkt_alloc_buffer_with_reserve_debug(pkt,
+						      size,
+						      0U,
+						      proto,
+						      timeout,
+						      caller,
+						      line);
+#else
+	ret = net_pkt_alloc_buffer_with_reserve(pkt,
+						size,
+						0U,
+						proto,
+						timeout);
+#endif
+
+	return ret;
 }
 
 
@@ -1229,9 +1317,9 @@ int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	buf = pkt_alloc_buffer(pool, size, timeout, caller, line);
+	buf = pkt_alloc_buffer(pool, size, 0U, timeout, caller, line);
 #else
-	buf = pkt_alloc_buffer(pool, size, timeout);
+	buf = pkt_alloc_buffer(pool, size, 0U, timeout);
 #endif
 
 	if (!buf) {
@@ -1461,7 +1549,7 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 	struct net_pkt *pkt;
 	int ret;
 
-	NET_DBG("On iface %p size %zu", iface, size);
+	NET_DBG("On iface %d (%p) size %zu", net_if_get_by_iface(iface), iface, size);
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	pkt = pkt_alloc_on_iface(slab, iface, timeout, caller, line);

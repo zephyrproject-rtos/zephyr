@@ -164,8 +164,35 @@ enum net_l2_flags virtual_flags(struct net_if *iface)
 	return ctx->virtual_l2_flags;
 }
 
+static int virtual_l2_alloc(struct net_if *iface, struct net_pkt *pkt,
+			    size_t size, enum net_ip_protocol proto,
+			    k_timeout_t timeout)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct virtual_interface_api *api = dev->api;
+	struct virtual_interface_config config = { 0 };
+	int ret;
+
+	if (api->get_config == NULL) {
+		ret = -ENOTSUP;
+		goto out;
+	}
+
+	ret = api->get_config(iface, VIRTUAL_INTERFACE_CONFIG_TYPE_L2_RESERVE,
+			      &config);
+	if (ret) {
+		ret = -ENOTSUP;
+		goto out;
+	}
+
+	ret = net_pkt_alloc_buffer_with_reserve(pkt, size, config.l2_reserve,
+						proto, timeout);
+out:
+	return ret;
+}
+
 NET_L2_INIT(VIRTUAL_L2, virtual_recv, virtual_send, virtual_enable,
-	    virtual_flags);
+	    virtual_flags, virtual_l2_alloc);
 
 static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
