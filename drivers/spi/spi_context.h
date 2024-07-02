@@ -169,13 +169,13 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 			return -ETIMEDOUT;
 		}
 		status = ctx->sync_status;
-	}
 
 #ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(ctx) && !status) {
-		return ctx->recv_frames;
-	}
+		if (spi_context_is_slave(ctx) && !status) {
+			status = ctx->recv_frames;
+		}
 #endif /* CONFIG_SPI_SLAVE */
+	}
 
 	return status;
 }

@@ -778,7 +778,7 @@ static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
  * @param rx_bufs Buffer array where data to be read will be written to.
  *
  * @retval frames Positive number of frames received in slave mode.
- * @retval 0 If successful.
+ * @retval 0 If successful in master mode.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_read(const struct device *dev,
@@ -871,8 +871,7 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  *        successfully or not).
  * @param userdata Userdata passed to callback
  *
- * @retval frames Positive number of frames received in slave mode.
- * @retval 0 If successful in master mode.
+ * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_transceive_cb(const struct device *dev,
@@ -915,8 +914,7 @@ void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userda
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
- * @retval frames Positive number of frames received in slave mode.
- * @retval 0 If successful in master mode.
+ * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_transceive_signal(const struct device *dev,
@@ -952,7 +950,6 @@ static inline int spi_transceive_signal(const struct device *dev,
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
- * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful
  * @retval -errno Negative errno code on failure.
  */
