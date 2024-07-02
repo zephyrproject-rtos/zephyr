@@ -19,6 +19,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart9;
 		zephyr,shell-uart = &uart9;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -92,4 +93,43 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+};
+
+&ulpt0 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "application";
+			reg = <0x00000000 DT_SIZE_M(1)>;
+		};
+
+		storage_partition: partition@100000 {
+			label = "storage";
+			reg = <0x100000 DT_SIZE_K(992)>;
+		};
+	};
+};
+
+&iic1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
 };

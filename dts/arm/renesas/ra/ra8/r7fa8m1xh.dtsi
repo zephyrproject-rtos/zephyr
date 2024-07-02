@@ -84,49 +84,49 @@
 			cpuclk: cpuclk {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_1>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			iclk: iclk {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_2>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclka: pclka {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_4>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkb: pclkb {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_8>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkc: pclkc {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_8>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkd: pclkd {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_4>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclke: pclke {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_2>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
@@ -139,62 +139,62 @@
 					sdclk = <1>;
 					#clock-cells = <0>;
 				};
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			fclk: fclk {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_8>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			clkout: clkout {
 				compatible = "renesas,ra8-cgc-pclk";
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "disabled";
 			};
 
 			sciclk: sciclk {
 				compatible = "renesas,ra8-cgc-pclk";
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "disabled";
 			};
 
 			spiclk: spiclk {
 				compatible = "renesas,ra8-cgc-pclk";
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "disabled";
 			};
 
 			canfdclk: canfdclk {
 				compatible = "renesas,ra8-cgc-pclk";
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "disabled";
 			};
 
 			i3cclk: i3cclk {
 				compatible = "renesas,ra8-cgc-pclk";
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "disabled";
 			};
 
 			uclk: uclk {
 				compatible = "renesas,ra8-cgc-pclk";
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "disabled";
 			};
 
 			u60clk: u60clk {
 				compatible = "renesas,ra8-cgc-pclk";
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "disabled";
 			};
 
 			octaspiclk: octaspiclk {
 				compatible = "renesas,ra8-cgc-pclk";
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "disabled";
 			};
 		};

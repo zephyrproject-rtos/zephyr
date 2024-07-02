@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+spibb0: &spi0 {
+	rx-dtc;
+	tx-dtc;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&ioport7 3 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&ioport7 {
+	status = "okay";
+};

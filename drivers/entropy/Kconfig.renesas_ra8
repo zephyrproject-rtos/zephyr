@@ -1,0 +1,13 @@
+# Renesas RA entropy generator driver configuration
+
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_RA8_RSIP7_TRNG
+	bool "Renesas RA RSIP7 TRNG driver"
+	default y
+	depends on DT_HAS_RENESAS_RA8_RSIP7_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	select USE_RA_FSP_SCE
+	help
+	  This option enables the Renesas RA RSIP7 RNG.

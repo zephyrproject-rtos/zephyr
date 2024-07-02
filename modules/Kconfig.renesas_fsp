@@ -17,3 +17,45 @@ config USE_RA_FSP_DTC
 	bool
 	help
 	  Enable RA FSP DTC driver
+
+config USE_RA_FSP_SCE
+	bool
+	help
+	  Enable RA FSP SCE driver
+
+if USE_RA_FSP_SCE
+
+config HAS_RENESAS_RA_RSIP7
+	bool
+	default y
+	depends on ENTROPY_RA8_RSIP7_TRNG
+	help
+	  Includes RSIP7 implementation for SCE driver
+
+endif
+
+config USE_RA_FSP_SPI_B
+	bool
+	help
+	  Enable RA FSP SPI-B driver
+
+config USE_RA_FSP_TIMER_ULPT
+	bool
+	help
+	  Enable RA FSP TIMER-ULPT driver
+
+config USE_RA_FSP_LPM
+	bool
+	default y
+	depends on PM
+	help
+	  Enable RA FSP LPM driver
+
+config USE_RA_FSP_FLASH_HP
+	bool
+	help
+	  Enable RA FSP FLASH HP driver
+config USE_RA_FSP_I2C_IIC
+	bool
+	help
+	  Enable Renesas RA I2C IIC Master driver

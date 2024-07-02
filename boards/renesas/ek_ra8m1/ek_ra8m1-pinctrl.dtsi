@@ -15,4 +15,22 @@
 			psels = <RA_PSEL(RA_PSEL_SCI_9, 10, 15)>;
 		};
 	};
+
+	spi1_default: spi1_default {
+		group1 {
+			/* MISO MOSI RSPCK SSL*/
+			psels = <RA_PSEL(RA_PSEL_SPI, 4, 10)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 11)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 12)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 13)>;
+		};
+	};
+
+	iic1_default: iic1_default {
+		group1 {
+			/* SCL1 SDA1*/
+			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
+			drive-strength = "medium";
+		};
+	};
 };

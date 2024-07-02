@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RENESAS_RA_CGC
+	bool "RA CGC driver"
+	default y
+	depends on SOC_FAMILY_RENESAS_RA
+	depends on HAS_RENESAS_RA_FSP
+	help
+	  Enable support for Renesas RA CGC driver.

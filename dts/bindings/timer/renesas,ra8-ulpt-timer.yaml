@@ -1,0 +1,16 @@
+description: Renesas RA8 ULPT TIMER
+
+compatible: "renesas,ra8-ulpt-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  interrupts:
+    required: true

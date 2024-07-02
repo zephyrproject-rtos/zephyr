@@ -8,7 +8,7 @@
 #include <arm/armv8.1-m.dtsi>
 #include <freq.h>
 #include <zephyr/dt-bindings/pinctrl/renesas/ra-pinctrl.h>
-
+#include <zephyr/dt-bindings/clock/ra_clock.h>
 
 / {
 	cpus {
@@ -21,11 +21,25 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&stop0 &stop1>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8.1m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+		};
+
+		power-states {
+			stop0: state0 {
+					compatible = "zephyr,power-state";
+					power-state-name = "runtime-idle";
+					min-residency-us = <300>;
+				};
+			stop1: state1 {
+					compatible = "zephyr,power-state";
+					power-state-name = "standby";
+					min-residency-us = <50000>;
+				};
 		};
 	};
 
@@ -170,12 +184,29 @@
 			status = "disabled";
 		};
 
+		iic0: iic0@4025e000 {
+			compatible = "renesas,ra-iic";
+			channel = <0>;
+			interrupts = <87 1>, <88 1>, <89 1>, <90 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4025E000 0x100>;
+			status = "disabled";
+		};
+		iic1: iic1@4025e100 {
+			compatible = "renesas,ra-iic";
+			channel = <1>;
+			interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4025E100 0x100>;
+			status = "disabled";
+		};
+
 		sci0: sci0@40358000 {
 			compatible = "renesas,ra-sci";
 			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358000 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 31>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -189,7 +220,7 @@
 			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358100 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 30>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -203,7 +234,7 @@
 			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358200 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 29>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -217,7 +248,7 @@
 			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358300 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 28>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -231,7 +262,7 @@
 			interrupts = <20 1>, <21 1>, <22 1>, <23 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358400 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 27>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -245,7 +276,7 @@
 			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358900 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 22>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -254,10 +285,57 @@
 			};
 		};
 
-		flash-controller@407fe000 {
-			reg = <0x407fe000 0x1000>;
+		flash: flash-controller@40100000 {
+			compatible = "renesas,ra-flash-hp-controller";
+			reg = <0x40100000 0x20000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			interrupts = <38 1>, <39 1>;
+			interrupt-names = "frdyi", "fiferr";
+		};
+
+		trng: trng {
+			compatible = "renesas,ra8-rsip7-trng";
+		};
+
+		spi0: spi@4035c000 {
+			compatible = "renesas,ra8-spi-b";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4035c000 0x100>;
+			status = "disabled";
+		};
+
+		spi1: spi@4035c100 {
+			compatible = "renesas,ra8-spi-b";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <1>;
+			interrupts = <32 1>, <33 1>, <34 1>, <35 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4035c100 0x100>;
+			status = "disabled";
+		};
+
+		ulpt0: timers@40220000 {
+			compatible = "renesas,ra8-ulpt-timer";
+			reg = <0x40220000 0x100>;
+			channel = <0>;
+			interrupt-names = "ulpti";
+			interrupts = <36 0>;
+			status = "disabled";
+		};
+
+		ulpt1: timers@40220100 {
+			compatible = "renesas,ra8-ulpt-timer";
+			reg = <0x40220100 0x100>;
+			channel = <1>;
+			interrupt-names = "ulpti";
+			interrupts = <37 0>;
+			status = "disabled";
 		};
 
 		option_setting_ofs: option_setting_ofs@300a100 {

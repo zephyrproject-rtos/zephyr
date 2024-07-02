@@ -238,4 +238,6 @@ source "drivers/flash/Kconfig.nrf_mram"
 
 source "drivers/flash/Kconfig.numaker_rmc"
 
+source "drivers/flash/Kconfig.renesas_ra"
+
 endif # FLASH
