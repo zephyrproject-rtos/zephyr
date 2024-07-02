@@ -48,36 +48,36 @@ respective core have been flashed.
   runners:
     run_once:
       '--recover':
-        - run: first
-          runners:
-            - nrfjprog
-          groups:
-            - qualifiers:
-                - nrf5340/cpunet
-                - nrf5340/cpuapp
-                - nrf5340/cpuapp/ns
+      - run: first
+        runners:
+        - nrfjprog
+        groups:
+        - qualifiers:
+          - nrf5340/cpunet
+          - nrf5340/cpuapp
+          - nrf5340/cpuapp/ns
       '--reset':
-        - run: last
-          runners:
-            - nrfjprog
-            - jlink
-          groups:
-            - qualifiers:
-                - nrf5340/cpunet
-            - qualifiers:
-                - nrf5340/cpuapp
-                - nrf5340/cpuapp/ns
-        # Made up non-real world example to show how to specify different options for different
-        # flash runners
-        - run: first
-          runners:
-            - some_other_runner
-          groups:
-            - qualifiers:
-                - nrf5340/cpunet
-            - qualifiers:
-                - nrf5340/cpuapp
-                - nrf5340/cpuapp/ns
+      - run: last
+        runners:
+        - nrfjprog
+        - jlink
+        groups:
+        - qualifiers:
+          - nrf5340/cpunet
+        - qualifiers:
+          - nrf5340/cpuapp
+          - nrf5340/cpuapp/ns
+      # Made up non-real world example to show how to specify different options for different
+      # flash runners
+      - run: first
+        runners:
+        - some_other_runner
+        groups:
+        - qualifiers:
+          - nrf5340/cpunet
+        - qualifiers:
+          - nrf5340/cpuapp
+          - nrf5340/cpuapp/ns
 
 Usage
 *****
