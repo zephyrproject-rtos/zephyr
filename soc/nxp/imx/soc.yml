@@ -48,6 +48,10 @@ family:
       cpuclusters:
       - name: a55
       - name: m33
+    - name: mimx9596
+      cpuclusters:
+      - name: a55
+      - name: m7
   - name: imx6sx
     socs:
     - name: mcimx6x

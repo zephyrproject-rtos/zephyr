@@ -7,6 +7,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_ADSP                clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_ESP32               clock_control_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_FIXED_RATE_CLOCK    clock_control_fixed_rate.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_GD32                clock_control_gd32.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_IMX_SCMI            clock_control_imx_scmi.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_LITEX               clock_control_litex.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_LPC11U6X            clock_control_lpc11u6x.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCHP_XEC            clock_control_mchp_xec.c)

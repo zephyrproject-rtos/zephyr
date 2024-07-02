@@ -1,0 +1,27 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: i.MX SCMI iomuxc node
+
+compatible: "nxp,imx-iomuxc-scmi"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: pin mux option
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        An array of values defining the pin mux selection, in the following format:
+        <mux_register, mux_val, input_reg, daisy_val, cfg_reg>
+        mux_register: register that will be written to make mux selection
+        mux_val: value to write to mux_register
+        input_reg: peripheral register that will direct peripheral signal to pin
+        daisy_val: value to write to input_reg
+        cfg_reg: register that will configure pin pull, drive strength, and open drain

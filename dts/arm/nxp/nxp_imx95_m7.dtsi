@@ -1,0 +1,124 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/imx95_clk_scmi.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	soc {
+		itcm: itcm@0 {
+			compatible = "nxp,imx-itcm";
+			reg = <0x0 DT_SIZE_K(256)>;
+		};
+
+		dtcm: dtcm@20000000 {
+			compatible = "nxp,imx-dtcm";
+			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+
+		scmi {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			clk: protocol@14 {
+				compatible = "nxp,imx-clk-scmi";
+				reg = <0x14>;
+				#clock-cells = <1>;
+			};
+
+			iomuxc: protocol@19 {
+				compatible = "nxp,imx-iomuxc-scmi";
+				reg = <0x19>;
+				pinctrl: pinctrl {
+					status = "okay";
+					compatible = "nxp,imx95-pinctrl", "nxp,imx93-pinctrl";
+				};
+			};
+		};
+
+		lpuart1: serial@44380000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x44380000 DT_SIZE_K(64)>;
+			interrupts = <19 3>;
+			clocks = <&clk IMX95_CLK_LPUART1>;
+			status = "disabled";
+		};
+
+		lpuart2: serial@44390000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x44390000 DT_SIZE_K(64)>;
+			interrupts = <20 3>;
+			clocks = <&clk IMX95_CLK_LPUART2>;
+			status = "disabled";
+		};
+
+		lpuart3: serial@42570000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x42570000 DT_SIZE_K(64)>;
+			interrupts = <64 3>;
+			clocks = <&clk IMX95_CLK_LPUART3>;
+			status = "disabled";
+		};
+
+		lpuart4: serial@42580000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x42580000 DT_SIZE_K(64)>;
+			interrupts = <65 3>;
+			clocks = <&clk IMX95_CLK_LPUART4>;
+			status = "disabled";
+		};
+
+		lpuart5: serial@42590000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x42590000 DT_SIZE_K(64)>;
+			interrupts = <66 3>;
+			clocks = <&clk IMX95_CLK_LPUART5>;
+			status = "disabled";
+		};
+
+		lpuart6: serial@425a0000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x425a0000 DT_SIZE_K(64)>;
+			interrupts = <67 3>;
+			clocks = <&clk IMX95_CLK_LPUART6>;
+			status = "disabled";
+		};
+
+		lpuart7: serial@42690000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x42690000 DT_SIZE_K(64)>;
+			interrupts = <68 3>;
+			clocks = <&clk IMX95_CLK_LPUART7>;
+			status = "disabled";
+		};
+
+		lpuart8: serial@426a0000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x426a0000 DT_SIZE_K(64)>;
+			interrupts = <69 3>;
+			clocks = <&clk IMX95_CLK_LPUART8>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
