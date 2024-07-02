@@ -6,73 +6,50 @@
 
 #include <zephyr/init.h>
 #include <ipc/ipc_based_driver.h>
-#include <zephyr/sys/reboot.h>
+
+#include <stdlib.h>
+
 #include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(heartbeat, CONFIG_SOC_LOG_LEVEL);
 
-LOG_MODULE_REGISTER(heartbeat);
+#if CONFIG_CORE_HEARTBEAT_TELINK_W91_TIMEOUT_MS <= CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS
+#error CORE_HEARTBEAT_TELINK_W91_TIMEOUT_MS should be greater than \
+TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS
+#endif
 
-static struct ipc_based_driver ipc_data;
-static struct k_thread heartbeat_thread_data;
-
-K_THREAD_STACK_DEFINE(heartbeat_thread_stack, CONFIG_TELINK_W91_CORE_HEARTBEAT_THREAD_STACK_SIZE);
+static struct telink_w91_heartbeat_data {
+	struct ipc_based_driver     ipc;
+	struct k_work_delayable     work;
+} telink_w91_heartbeat;
 
 enum {
-	IPC_DISPATCHER_HEARTBEAT_INIT = IPC_DISPATCHER_HEARTBEAT,
-	IPC_DISPATCHER_HEARTBEAT_CHECK,
+	IPC_DISPATCHER_HEARTBEAT_CHECK = IPC_DISPATCHER_HEARTBEAT,
 };
 
-IPC_DISPATCHER_PACK_FUNC_WITHOUT_PARAM(heartbeat_w91_check, IPC_DISPATCHER_HEARTBEAT_CHECK);
-
-IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(heartbeat_w91_check);
-
-static void heartbeat_w91_thread(void *p1, void *p2, void *p3)
+static void telink_w91_heartbeat_worker(struct k_work *item)
 {
-	while (1) {
-		bool heartbeat_response_status = 0;
+	struct telink_w91_heartbeat_data *heartbeat =
+		CONTAINER_OF(item, struct telink_w91_heartbeat_data, work);
+	const uint32_t id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_HEARTBEAT_CHECK, 0);
 
-		IPC_DISPATCHER_HOST_SEND_DATA(
-			&ipc_data, 0, heartbeat_w91_check, NULL, &heartbeat_response_status,
-			CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
-
-		if (!heartbeat_response_status) {
-#ifdef CONFIG_LOG
-			LOG_ERR("No response from core N22, rebooting...\n");
-			k_msleep(100);
-#else
-			printk("[E] No response from core N22, rebooting...\n");
-			k_msleep(100);
-#endif
-			/* board reboots */
-			sys_reboot(0);
-		}
-
-		k_msleep(CONFIG_CORE_HEARTBEAT_TELINK_W91_TIMEOUT_MS);
+	if (ipc_based_driver_send(&heartbeat->ipc, &id, sizeof(id), NULL,
+		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS)) {
+		LOG_ERR("N22 core response failed");
+		abort();
 	}
+
+	(void) k_work_schedule(&heartbeat->work,
+		K_MSEC(CONFIG_CORE_HEARTBEAT_TELINK_W91_TIMEOUT_MS));
 }
 
-IPC_DISPATCHER_PACK_FUNC_WITHOUT_PARAM(heartbeat_w91_start, IPC_DISPATCHER_HEARTBEAT_INIT);
-
-IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(heartbeat_w91_start);
-
-static int heartbeat_w91_init(void)
+static int telink_w91_heartbeat_init(void)
 {
-	int err = 0;
-
-	ipc_based_driver_init(&ipc_data);
-
-	IPC_DISPATCHER_HOST_SEND_DATA(
-		&ipc_data, 0, heartbeat_w91_start, NULL, &err,
-		CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
-
-	if (err) {
-		return err;
-	}
-
-	k_thread_create(&heartbeat_thread_data, heartbeat_thread_stack,
-			K_THREAD_STACK_SIZEOF(heartbeat_thread_stack), heartbeat_w91_thread, NULL,
-			NULL, NULL, CONFIG_TELINK_W91_CORE_HEARTBEAT_THREAD_PRIORITY, 0, K_NO_WAIT);
+	ipc_based_driver_init(&telink_w91_heartbeat.ipc);
+	k_work_init_delayable(&telink_w91_heartbeat.work, telink_w91_heartbeat_worker);
+	(void) k_work_schedule(&telink_w91_heartbeat.work,
+		K_MSEC(CONFIG_CORE_HEARTBEAT_TELINK_W91_TIMEOUT_MS));
 
 	return 0;
 }
 
-SYS_INIT(heartbeat_w91_init, POST_KERNEL, CONFIG_TELINK_W91_IPC_PRE_DRIVERS_INIT_PRIORITY);
+SYS_INIT(telink_w91_heartbeat_init, POST_KERNEL, CONFIG_TELINK_W91_IPC_PRE_DRIVERS_INIT_PRIORITY);
