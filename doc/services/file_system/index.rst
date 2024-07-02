@@ -14,7 +14,7 @@ mechanisms.
 In Zephyr, any file system implementation or library can be plugged into or
 pulled out through a file system registration API.  Each file system
 implementation must have a globally unique integer identifier; use
-:c:macro:`FS_TYPE_EXTERNAL_BASE` to avoid clashes with in-tree identifiers.
+:c:enumerator:`FS_TYPE_EXTERNAL_BASE` to avoid clashes with in-tree identifiers.
 
 .. code-block:: c
 

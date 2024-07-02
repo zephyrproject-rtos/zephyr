@@ -1,6 +1,5 @@
 # DOC: used to generate docs
 
-breathe>=4.34
 sphinx
 sphinx_rtd_theme~=2.0
 sphinx-tabs
