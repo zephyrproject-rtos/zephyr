@@ -1,0 +1,65 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/base:debian",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/zephyrproject/zephyr,type=bind",
+    "workspaceFolder": "/home/vscode/zephyrproject/zephyr",
+    "onCreateCommand": "bash -i /home/vscode/zephyrproject/zephyr/.devcontainer/setup.sh",
+    "customizations": {
+      "vscode": {
+        "settings": {
+          "C_Cpp.default.compileCommands": "/home/vscode/zephyrproject/zephyr/build/compile_commands.json",
+          "checkpatch.checkpatchPath": "/home/vscode/zephyrproject/zephyr/scripts/checkpatch.pl",
+          "checkpatch.checkpatchArgs": [
+            "--emacs",
+            "--summary-file",
+            "--show-types",
+            "--max-line-length=100",
+            "--min-conf-desc-length=1",
+            "--typedefsfile=scripts/checkpatch/typedefsfile",
+            "--ignore BRACES",
+            "--ignore PRINTK_WITHOUT_KERN_LEVEL",
+            "--ignore SPLIT_STRING",
+            "--ignore VOLATILE",
+            "--ignore CONFIG_EXPERIMENTAL",
+            "--ignore PREFER_KERNEL_TYPES",
+            "--ignore PREFER_SECTION",
+            "--ignore AVOID_EXTERNS",
+            "--ignore NETWORKING_BLOCK_COMMENT_STYLE",
+            "--ignore DATE_TIME",
+            "--ignore MINMAX",
+            "--ignore CONST_STRUCT",
+            "--ignore FILE_PATH_CHANGES",
+            "--ignore SPDX_LICENSE_TAG",
+            "--ignore C99_COMMENT_TOLERANCE",
+            "--ignore REPEATED_WORD",
+            "--ignore UNDOCUMENTED_DT_STRING",
+            "--ignore DT_SPLIT_BINDING_PATCH",
+            "--ignore DT_SCHEMA_BINDING_PATCH",
+            "--ignore TRAILING_SEMICOLON",
+            "--ignore COMPLEX_MACRO",
+            "--ignore MULTISTATEMENT_MACRO_USE_DO_WHILE",
+            "--ignore ENOSYS",
+            "--ignore IS_ENABLED_CONFIG",
+            "--ignore EXPORT_SYMBOL"
+          ],
+          "devicetree.zephyr": "/home/vscode/zephyrproject/zephyr",
+          "extensions.ignoreRecommendations": true,
+          "git.allowForcePush": true,
+          "git.autofetch": false
+        },
+        "extensions": [
+          "ms-vscode.cpptools",
+          "josetr.cmake-language-support-vscode",
+          "ms-vscode.hexeditor",
+          "nordic-semiconductor.nrf-devicetree",
+          "nordic-semiconductor.nrf-kconfig",
+          "eamodio.gitlens",
+          "editorconfig.editorconfig",
+          "idanp.checkpatch",
+          "trond-snekvik.simple-rst",
+          "trond-snekvik.gnu-mapfiles",
+          "yzhang.markdown-all-in-one",
+          "shd101wyy.markdown-preview-enhanced"
+        ]
+      }
+    }
+  }
