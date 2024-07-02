@@ -20,6 +20,7 @@ config ENTROPY_INIT_PRIORITY
 	help
 	  Entropy driver device initialization priority.
 
+source "drivers/entropy/Kconfig.ateccx08"
 source "drivers/entropy/Kconfig.b91"
 source "drivers/entropy/Kconfig.cc13xx_cc26xx"
 source "drivers/entropy/Kconfig.mcux"
