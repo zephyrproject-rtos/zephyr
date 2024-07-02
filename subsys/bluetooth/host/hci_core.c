@@ -4329,6 +4329,9 @@ int bt_disable(void)
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
 
+	/* Let threads run before aborting */
+	k_yield();
+
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* Abort RX thread */
 	k_thread_abort(&bt_workq.thread);
