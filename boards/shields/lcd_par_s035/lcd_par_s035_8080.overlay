@@ -10,6 +10,13 @@
 	chosen {
 		zephyr,display = &st7796s;
 	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911_lcd_par_s035>;
+		swap-xy;
+		invert-y;
+	};
 };
 
 &nxp_flexio_lcd {
@@ -37,5 +44,15 @@
 		ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
 		madctl = <0x28>;
 		color-invert;
+	};
+};
+
+&flexio_i2c {
+	status = "okay";
+	gt911_lcd_par_s035: gt911-lcd_par_s035@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&nxp_flexio_connector 0 GPIO_ACTIVE_HIGH>; // INT
+		reset-gpios = <&nxp_flexio_connector 1 GPIO_ACTIVE_HIGH>; // RESET
 	};
 };

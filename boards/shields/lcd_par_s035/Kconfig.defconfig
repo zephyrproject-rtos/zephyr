@@ -4,6 +4,11 @@
 if SHIELD_LCD_PAR_S035
 if LVGL
 
+# Configure LVGL to use touchscreen with KSCAN API
+
+config INPUT
+	default y
+
 # Enable double buffering
 config LV_Z_DOUBLE_VDB
 	default y

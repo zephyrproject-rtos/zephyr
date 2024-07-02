@@ -52,6 +52,18 @@
 			status = "disabled";
 		};
 	};
+
+	nxp_flexio_connector: flexio-connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<
+			0  0 &gpio4 6 0 /* Pin 6, INT */
+			1  0 &gpio4 0 0 /* Pin 0, BOGUS RESET */
+		>;
+	};
+
 };
 
 &flexcomm1_lpspi1 {
@@ -59,7 +71,7 @@
 	pinctrl-names = "default";
 };
 
-&flexcomm2_lpi2c2 {
+flexio_i2c: &flexcomm2_lpi2c2 {
 	pinctrl-0 = <&pinmux_flexcomm2_lpi2c>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;

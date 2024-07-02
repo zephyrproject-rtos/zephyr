@@ -1,0 +1,17 @@
+/*
+ * Copyright 2024, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+&flexio_i2c {
+	status = "okay";
+	gt911_lcd_par_s035: gt911-lcd_par_s035@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&nxp_flexio_connector 0 GPIO_ACTIVE_HIGH>;
+		/delete-property/ reset-gpios;
+		alt-addr = <0x14>;
+	};
+};
