@@ -150,21 +150,40 @@ config ZTEST_SHUFFLE
 
 if ZTEST_SHUFFLE
 config ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
+	int "[DEPRECATED] Number of iterations the test suite will run"
+	default 3
+	help
+	  This is used to execute a test suite N number of times.
+	  [DEPRECATED] use ZTEST_SUITE_REPEAT_COUNT instead.
+
+config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+	int "[DEPRECATED] Number of iterations the test will run"
+	default 3
+	help
+	  This is used to execute a test case N number of times.
+	  [DEPRECATED] use ZTEST_TEST_REPEAT_COUNT instead.
+
+endif #ZTEST_SHUFFLE
+
+config ZTEST_REPEAT
+	bool "Repeat the tests and suites"
+	help
+	  This rule will repeat the tests and the test suites.
+
+if ZTEST_REPEAT
+config ZTEST_SUITE_REPEAT_COUNT
 	int "Number of iterations the test suite will run"
 	default 3
 	help
-	  This rule will execute a test suite N number of times. The tests
-	  per suite will be shuffled on each iteration.  The test order will likely
-	  be different per iteration.
+	  This rule will execute a test suite N number of times.
 
-config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+config ZTEST_TEST_REPEAT_COUNT
 	int "Number of iterations the test will run"
 	default 3
 	help
-	  This rule will execute a test N number of times.  The test order will
-	  likely be different per iteration.
+	  This rule will execute a test N number of times.
 
-endif #ZTEST_SHUFFLE
+endif #ZTEST_REPEAT
 
 config ZTEST_SUMMARY
 	bool "Display test summary"
