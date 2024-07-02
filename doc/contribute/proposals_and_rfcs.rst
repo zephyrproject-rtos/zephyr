@@ -40,10 +40,9 @@ Some changes do not require an RFC:
 - Addition of new boards, SoCs or drivers to existing subsystems
 - ...
 
-The process in itself consists in creating a GitHub issue with the :ref:`RFC
-label <gh_labels>` that documents the proposal thoroughly. There is an `RFC
-template`_ included in the main Zephyr GitHub repository that serves as a
-guideline to write a new RFC.
+The process in itself consists in `creating a GitHub issue`_ with the `RFC label`_
+that documents the proposal thoroughly. There is an `RFC template`_ included in
+the main Zephyr GitHub repository that serves as a guideline to write a new RFC.
 
 As with Pull Requests, RFCs might require discussion in the context of one of
 the `Zephyr meetings`_ in order to move it forward in cases where there is
@@ -51,5 +50,7 @@ either disagreement or not enough voiced opinions in order to proceed. Make sure
 to either label it appropriately or include it in the corresponding GitHub
 project in order for it to be examined during the next meeting.
 
+.. _`creating a GitHub issue`: https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&projects=&template=003_rfc-proposal.md&title=
+.. _`RFC label`: https://github.com/zephyrproject-rtos/zephyr/issues?q=is%3Aissue+label%3ARFC
 .. _`RFC template`: https://github.com/zephyrproject-rtos/zephyr/blob/main/.github/ISSUE_TEMPLATE/003_rfc-proposal.md
 .. _`Zephyr meetings`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
