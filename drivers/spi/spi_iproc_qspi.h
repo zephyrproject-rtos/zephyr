@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2020 Broadcom
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef __SPI_IPROC_QSPI_H__
+#define __SPI_IPROC_QSPI_H__
+
+/* BSPI registers */
+#define BSPI_REVISION_ID		0x000
+#define BSPI_SCRATCH			0x004
+#define BSPI_MAST_N_BOOT_CTRL		0x008
+#define MAST_N_BOOT_SHIFT		0
+#define BSPI_BUSY_STATUS		0x00c
+#define BUSY_SHIFT			0
+#define BSPI_INTR_STATUS		0x010
+#define BSPI_B0_STATUS			0x014
+#define BSPI_B0_CTRL			0x018
+#define BSPI_B0_CTRL_B0_FLUSH_SHIFT	0x000
+
+#define BSPI_B1_STATUS			0x01c
+#define BSPI_B1_CTRL			0x020
+#define BSPI_B1_CTRL_B1_FLUSH_SHIFT	0x000
+
+#define BSPI_STRAP_OVERRIDE_CTRL	0x024
+#define BSPI_FLEX_MODE_ENABLE		0x028
+#define BSPI_BITS_PER_CYCLE		0x02C
+#define BSPI_BITS_PER_PHASE		0x030
+#define BSPI_CMD_AND_MODE_BYTE		0x034
+#define BSPI_FLASH_UPPER_ADDR_BYTE	0x038
+#define BSPI_XOR_VALUE			0x03C
+#define BSPI_XOR_ENABLE			0x040
+#define BSPI_PIO_MODE_ENABLE		0x044
+#define BSPI_PIO_IODIR			0x048
+#define BSPI_PIO_DATA			0x04C
+
+/* MSPI register offsets */
+#define MSPI_SPCR0_LSB			0x000
+#define MSPI_SPCR0_MSB			0x004
+#define MSPI_SPCR0_MSB_CPHA_SHIFT	0U
+#define MSPI_SPCR0_MSB_CPOL_SHIFT	1U
+#define MSPI_SPCR0_MSB_BITS_SHIFT	2U
+#define MSPI_SPCR0_MSB_MSTR_SHIFT	7U
+#define MSPI_SPCR1_LSB			0x008
+#define MSPI_SPCR1_MSB			0x00c
+#define MSPI_NEWQP			0x010
+#define MSPI_ENDQP			0x014
+#define MSPI_SPCR2			0x018
+#define MSPI_STATUS			0x020
+#define MSPI_STATUS_SPIF_MASK		0x1
+#define MSPI_CPTQP			0x024
+#define MSPI_SPCR3			0x028
+#define MSPI_TXRAM			0x040
+#define MSPI_TXRAM00_OFFSET		0x000
+#define MSPI_TXRAM01_OFFSET		0x004
+#define MSPI_TXRAM02_OFFSET		0x008
+#define MSPI_RXRAM			0x0c0
+#define MSPI_RXRAM00_OFFSET		0x000
+#define MSPI_RXRAM01_OFFSET		0x004
+#define MSPI_RXRAM02_OFFSET		0x008
+#define MSPI_CDRAM			0x140
+#define MSPI_CDRAM00_OFFSET		0x000
+#define MSPI_CDRAM01_OFFSET		0x004
+#define MSPI_CDRAM02_OFFSET		0x008
+#define MSPI_CDRAM_CONT_SHIFT		7U
+#define MSPI_CDRAM_PCS_MASK		0x3
+#define MSPI_WRITE_LOCK			0x180
+
+#define SPBR_MIN			8U
+#define SPBR_MAX			255U
+#define NUM_TXRAM			32U
+#define NUM_RXRAM			32U
+#define NUM_CDRAM			16U
+
+/* SPI transfer flags */
+#define SPI_XFER_BEGIN			0x01
+#define SPI_XFER_END			0x02
+
+#define QSPI_WAIT_TIMEOUT_US		200000U /* usec */
+
+#endif /* __SPI_IPROC_QSPI_H__ */

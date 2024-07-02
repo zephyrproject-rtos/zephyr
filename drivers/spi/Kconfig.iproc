@@ -1,0 +1,10 @@
+# Copyright (c) 2020, Broadcom
+# Copyright (c) 2024, Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_IPROC_QSPI
+	bool "Broadcom iProc QSPI driver"
+	default y
+	depends on DT_HAS_BRCM_IPROC_QSPI_ENABLED
+	help
+	  Enable support for Broadcom iProc QSPI driver.
