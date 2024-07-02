@@ -235,6 +235,8 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		* CONFIG_TIMER_TEST_SAMPLES;
 	double time_diff_us = actual_time_us - expected_time_us
 		- expected_time_drift_us;
+	/* If max stddev is lower than a single clock cycle then round it up. */
+	uint32_t max_stddev = MAX(k_cyc_to_us_ceil32(1), CONFIG_TIMER_TEST_MAX_STDDEV);
 
 	TC_PRINT("timer clock rate %d, kernel tick rate %d\n",
 		 sys_clock_hw_cycles_per_sec(), CONFIG_SYS_CLOCK_TICKS_PER_SEC);
@@ -283,7 +285,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		 ", \"CONFIG_SYS_CLOCK_TICKS_PER_SEC\":%d"
 		 ", \"CONFIG_TIMER_TEST_PERIOD\":%d"
 		 ", \"CONFIG_TIMER_TEST_SAMPLES\":%d"
-		 ", \"CONFIG_TIMER_TEST_MAX_STDDEV\":%d"
+		 ", \"MAX STD DEV\":%d"
 		 "}\n",
 		 mechanism,
 		 CONFIG_TIMER_TEST_SAMPLES - periodic_rollovers, periodic_rollovers,
@@ -304,7 +306,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		 CONFIG_SYS_CLOCK_TICKS_PER_SEC,
 		 CONFIG_TIMER_TEST_PERIOD,
 		 CONFIG_TIMER_TEST_SAMPLES,
-		 CONFIG_TIMER_TEST_MAX_STDDEV
+		 max_stddev
 		 );
 
 	/* Validate the maximum/minimum timer period is off by no more than 10% */
@@ -323,10 +325,11 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		"Longest timer period too long (off by more than expected %d%)",
 		CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT);
 
+
 	/* Validate the timer deviation (precision/jitter of the timer) is within a configurable
 	 * bound
 	 */
-	zassert_true(stddev_us < (double)CONFIG_TIMER_TEST_MAX_STDDEV,
+	zassert_true(stddev_us < (double)max_stddev,
 		     "Standard deviation (in microseconds) outside expected bound");
 
 	/* Validate the timer drift (accuracy over time) is within a configurable bound */
