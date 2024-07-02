@@ -9,6 +9,8 @@ SPHINXOPTS_EXTRA ?=
 LATEXMKOPTS ?= -halt-on-error -no-shell-escape
 DT_TURBO_MODE ?= 0
 
+DOXYGEN_MANPAGES ?= 0
+
 # ------------------------------------------------------------------------------
 # Documentation targets
 
@@ -29,6 +31,7 @@ configure:
 		-DSPHINXOPTS="${SPHINXOPTS}" \
 		-DSPHINXOPTS_EXTRA="${SPHINXOPTS_EXTRA}" \
 		-DLATEXMKOPTS="${LATEXMKOPTS}" \
+		-DDOXYGEN_MANPAGES=${DOXYGEN_MANPAGES} \
 		-DDT_TURBO_MODE=${DT_TURBO_MODE}
 
 clean:

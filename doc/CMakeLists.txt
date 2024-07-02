@@ -18,6 +18,7 @@ set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk 
 set(DT_TURBO_MODE OFF CACHE BOOL "Enable DT turbo mode")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
 set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
+set(DOXYGEN_MANPAGES OFF CACHE BOOL "Ask doxygen to also build man pages")
 
 separate_arguments(SPHINXOPTS)
 separate_arguments(SPHINXOPTS_EXTRA)
@@ -88,6 +89,12 @@ set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr.doxyfile)
 set(ZEPHYR_VERSION "${Zephyr_VERSION}")
+
+if(DOXYGEN_MANPAGES)
+  set(GENERATE_MAN_PAGES "YES")
+else()
+  set(GENERATE_MAN_PAGES "NO")
+endif()
 
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 
