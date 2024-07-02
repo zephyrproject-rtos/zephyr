@@ -602,6 +602,73 @@ Drivers and Sensors
     enables using Bluetooth as a transport to all the subsystems that are currently supported by
     UART (e.g: Console, Shell, Logging).
 
+  * Added support for HSCIF (High Speed Serial Communication Interface with FIFO) in the UART
+    driver for Renesas RCar platforms.
+
+  * Added driver for ENE KB1200 UART.
+
+  * Added driver for UART on Analog Devices MAX32 series microcontrollers.
+
+  * Added driver for UART on Renesas RA8 devices.
+
+  * ``uart_emul`` (:dtcompatible:`zephyr,uart-emul`):
+
+    * Added support for asynchronous API for the emulated UART driver.
+
+  * ``uart_esp32`` (:dtcompatible:`espressif,esp32-uart`):
+
+    * Added support to invert TX and RX pin signals.
+
+    * Added support for ESP32C6 SoC.
+
+  * ``uart_native_tty`` (:dtcompatible:`zephyr,native-tty-uart`):
+
+    * Added support to emulate interrupt driven UART.
+
+  * ``uart_mcux_lpuart`` (:dtcompatible:`nxp,kinetis-lpuart`):
+
+    * Added support for single wire half-duplex communication.
+
+    * Added support to invert TX and RX pin signals.
+
+  * ``uart_npcx`` (:dtcompatible:`nuvoton,npcx-uart`):
+
+    * Added support for asynchronous API.
+
+    * Added support for baud rate of 3MHz.
+
+  * ``uart_nrfx_uarte`` (:dtcompatible:`nordic,nrf-uarte`):
+
+    * Added support to put TX and RX pins into low power mode when UART is not active.
+
+  * ``uart_nrfx_uarte2`` (:dtcompatible:`nordic,nrf-uarte`):
+
+    * Prevents UART from transmitting when device is suspended.
+
+    * Fixed some events not being triggered.
+
+  * ``uart_pl011`` (:dtcompatible:`arm,pl011`):
+
+    * Added support for runtime configuration.
+
+    * Added support for reset device.
+
+    * Added support to use clock control to determine frequency.
+
+    * Added support for hardware flow control.
+
+    * Added support for UART on Ambiq Apollo3 SoC.
+
+  * ``uart_smartbond`` (:dtcompatible:`renesas,smartbond-uart`):
+
+    * Added support for power management.
+
+    * Added support to wake up via DTR and RX lines.
+
+  * ``uart_stm32`` (:dtcompatible:`st,stm32-uart`):
+
+    * Added support to identify if DMA buffers are in data cache or non-cacheable memory.
+
 * SPI
 
   * Added support for Ambiq Apollo3 series general IOM based SPI.

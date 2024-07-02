@@ -659,6 +659,9 @@ Sensors
 Serial
 ======
 
+* The Raspberry Pi UART driver ``uart_rpi_pico`` has been removed.
+  Use ``uart_pl011`` (:dtcompatible:`arm,pl011`) instead. (:github:`71074`)
+
 Timer
 =====
 
