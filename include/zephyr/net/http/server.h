@@ -230,14 +230,14 @@ BUILD_ASSERT(offsetof(struct http_resource_detail_websocket, common) == 0);
 
 /** @cond INTERNAL_HIDDEN */
 
-enum http_stream_state {
-	HTTP_SERVER_STREAM_IDLE,
-	HTTP_SERVER_STREAM_RESERVED_LOCAL,
-	HTTP_SERVER_STREAM_RESERVED_REMOTE,
-	HTTP_SERVER_STREAM_OPEN,
-	HTTP_SERVER_STREAM_HALF_CLOSED_LOCAL,
-	HTTP_SERVER_STREAM_HALF_CLOSED_REMOTE,
-	HTTP_SERVER_STREAM_CLOSED
+enum http2_stream_state {
+	HTTP2_STREAM_IDLE,
+	HTTP2_STREAM_RESERVED_LOCAL,
+	HTTP2_STREAM_RESERVED_REMOTE,
+	HTTP2_STREAM_OPEN,
+	HTTP2_STREAM_HALF_CLOSED_LOCAL,
+	HTTP2_STREAM_HALF_CLOSED_REMOTE,
+	HTTP2_STREAM_CLOSED
 };
 
 enum http_server_state {
@@ -271,14 +271,14 @@ enum http1_parser_state {
 /** @endcond */
 
 /** @brief HTTP/2 stream representation. */
-struct http_stream_ctx {
+struct http2_stream_ctx {
 	int stream_id; /**< Stream identifier. */
-	enum http_stream_state stream_state; /**< Stream state. */
+	enum http2_stream_state stream_state; /**< Stream state. */
 	int window_size; /**< Stream-level window size. */
 };
 
 /** @brief HTTP/2 frame representation. */
-struct http_frame {
+struct http2_frame {
 	uint32_t length; /**< Frame payload length. */
 	uint32_t stream_identifier; /**< Stream ID the frame belongs to. */
 	uint8_t type; /**< Frame type. */
@@ -308,7 +308,7 @@ struct http_client_ctx {
 	enum http_server_state server_state;
 
 	/** Currently processed HTTP/2 frame. */
-	struct http_frame current_frame;
+	struct http2_frame current_frame;
 
 	/** Currently processed resource detail. */
 	struct http_resource_detail *current_detail;
@@ -317,7 +317,7 @@ struct http_client_ctx {
 	struct http_hpack_header_buf header_field;
 
 	/** HTTP/2 streams context. */
-	struct http_stream_ctx streams[HTTP_SERVER_MAX_STREAMS];
+	struct http2_stream_ctx streams[HTTP_SERVER_MAX_STREAMS];
 
 	/** HTTP/1 parser configuration. */
 	struct http_parser_settings parser_settings;
