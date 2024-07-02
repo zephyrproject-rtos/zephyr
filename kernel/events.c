@@ -346,7 +346,7 @@ uint32_t z_vrfy_k_event_wait_all(struct k_event *event, uint32_t events,
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_EVENT
-static int init_event_obj_core_list(void)
+int init_event_obj_core_list(void)
 {
 	/* Initialize condvar object type */
 
@@ -361,7 +361,4 @@ static int init_event_obj_core_list(void)
 
 	return 0;
 }
-
-SYS_INIT(init_event_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_EVENT */

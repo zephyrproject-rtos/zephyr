@@ -436,7 +436,7 @@ static inline void *z_vrfy_k_queue_peek_tail(struct k_queue *queue)
 #ifdef CONFIG_OBJ_CORE_FIFO
 struct k_obj_type _obj_type_fifo;
 
-static int init_fifo_obj_core_list(void)
+int init_fifo_obj_core_list(void)
 {
 	/* Initialize fifo object type */
 
@@ -451,15 +451,12 @@ static int init_fifo_obj_core_list(void)
 
 	return 0;
 }
-
-SYS_INIT(init_fifo_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_FIFO */
 
 #ifdef CONFIG_OBJ_CORE_LIFO
 struct k_obj_type _obj_type_lifo;
 
-static int init_lifo_obj_core_list(void)
+int init_lifo_obj_core_list(void)
 {
 	/* Initialize lifo object type */
 
@@ -474,7 +471,4 @@ static int init_lifo_obj_core_list(void)
 
 	return 0;
 }
-
-SYS_INIT(init_lifo_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_LIFO */

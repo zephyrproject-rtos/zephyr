@@ -19,7 +19,7 @@ static K_KERNEL_STACK_DEFINE(sys_work_q_stack,
 
 struct k_work_q k_sys_work_q;
 
-static int k_sys_work_q_init(void)
+int init_system_workqueue(void)
 {
 	struct k_work_queue_config cfg = {
 		.name = "sysworkq",
@@ -33,5 +33,3 @@ static int k_sys_work_q_init(void)
 			    CONFIG_SYSTEM_WORKQUEUE_PRIORITY, &cfg);
 	return 0;
 }
-
-SYS_INIT(k_sys_work_q_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
