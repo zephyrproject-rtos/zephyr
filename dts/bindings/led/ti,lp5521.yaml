@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Croxel, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI LP5521 LED
+
+compatible: "ti,lp5521"
+
+include: ti,lp55xx.yaml

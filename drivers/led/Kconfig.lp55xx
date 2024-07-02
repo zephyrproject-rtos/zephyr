@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Croxel, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config LP55XX
+	bool "LP55XX LED controller"
+	default y
+	depends on DT_HAS_TI_LP5562_ENABLED || DT_HAS_TI_LP5521_ENABLED
+	select I2C
+	help
+	  Enable driver for the Texas Instruments LP55XX I2C LED
+	  controllers. It supports: LP5562 and LP5529.

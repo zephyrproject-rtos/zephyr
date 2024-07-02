@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Croxel, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI LP55XX LED
+
+include: i2c-device.yaml
+
+properties:
+  red-output-current:
+    type: int
+    default: 175
+    description: Output current of red channel in 0.1 mA (0-25.5 mA).
+                 Default value is the power-on default. Valid range = 0 - 255
+  green-output-current:
+    type: int
+    default: 175
+    description: Output current of green channel in 0.1 mA (0-25.5 mA)
+                 Default value is the power-on default. Valid range = 0 - 255
+  blue-output-current:
+    type: int
+    default: 175
+    description: Output current of blue channel in 0.1 mA (0-25.5 mA)
+                 Default value is the power-on default. Valid range = 0 - 255
+  white-output-current:
+    type: int
+    default: 175
+    description: Output current of white channel in 0.1 mA (0-25.5 mA)
+                 Default value is the power-on default. Valid range = 0 - 255
+  en-gpios:
+    type: phandle-array
+    description: |
+      GPIO to enable LP55XX (both Charge-pump and Digital Communications interface).
+
+      If not provided, user must ensure enable pin is already asserted externally (e.g:
+      pull-up resistor).

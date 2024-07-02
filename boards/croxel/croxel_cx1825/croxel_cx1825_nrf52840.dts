@@ -114,6 +114,13 @@
 		reg = <0x18>;
 		irq-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 	};
+
+	lp5521: lp5521@32 {
+		status = "okay";
+		compatible = "ti,lp5521";
+		reg = <0x32>;
+		en-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 zephyr_udc0: &usbd {
