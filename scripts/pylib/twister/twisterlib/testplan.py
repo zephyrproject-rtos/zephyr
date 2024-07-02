@@ -35,6 +35,7 @@ from twisterlib.platform import Platform
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.testinstance import TestInstance
 from twisterlib.quarantine import Quarantine
+from twisterlib.scripting import Scripting
 
 import list_boards
 from zephyr_module import parse_modules
@@ -88,6 +89,10 @@ class TestPlan:
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
 
+    scripting_schema = scl.yaml_load(
+        os.path.join(ZEPHYR_BASE,
+                     "scripts", "schemas", "twister", "scripting-schema.yaml"))
+
     tc_schema_path = os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister", "test-config-schema.yaml")
 
     SAMPLE_FILENAME = 'sample.yaml'
@@ -101,6 +106,7 @@ class TestPlan:
         # Keep track of which test cases we've filtered out and why
         self.testsuites = {}
         self.quarantine = None
+        self.scripting = None
         self.platforms = []
         self.platform_names = []
         self.selected_platforms = []
@@ -211,6 +217,19 @@ class TestPlan:
                 except scl.EmptyYamlFileException:
                     logger.debug(f'Quarantine file {quarantine_file} is empty')
             self.quarantine = Quarantine(ql)
+
+        #handle extra scripts
+        sl = self.options.scripting_list
+        if sl:
+            for scripting_file in sl:
+                try:
+                    # validate scripting yaml file against the provided schema
+                    scl.yaml_load_verify(scripting_file, self.scripting_schema)
+                except scl.EmptyYamlFileException:
+                    logger.debug(f'Scripting file {scripting_file} is empty')
+                except FileNotFoundError:
+                    logger.error(f'Scripting file {scripting_file} not found')
+            self.scripting = Scripting(sl)
 
     def load(self):
 
@@ -928,6 +947,29 @@ class TestPlan:
 
                 # handle quarantined tests
                 self.handle_quarantined_tests(instance, plat)
+
+                # Check if scripting is available
+                if self.scripting:
+                    matched_scripting = self.scripting.get_matched_scripting(instance.testsuite.id, plat.name)
+                    if matched_scripting:
+                        # Define a function to validate if the platform is supported by the matched scripting
+                        def validate_boards(platform_scope, platform_from_yaml):
+                            return any(board in platform_scope for board in platform_from_yaml)
+
+                        # Define the types of scripts we are interested in
+                        script_types = {'pre_script': 'pre_script','post_flash_script': 'post_flash_script', 'post_script': 'post_script' }
+
+                        # Iterate over all DUTs to set the appropriate scripts if they match the platform and are supported
+                        for dut in self.env.hwm.duts:
+                            if dut.platform == plat.name and validate_boards(plat.name, matched_scripting.platforms):
+                                for script_type, script_name in script_types.items():
+                                    script = getattr(matched_scripting, script_type, None)
+                                    if script:
+                                        if Path(script).is_file():
+                                            logger.info(f"{script_name} {script} will be executed")  # Validate if test exists
+                                            setattr(dut, script_name, script)
+                                        else:
+                                            logger.error(f"{script_name} script not found under path: {script}")
 
                 # platform_key is a list of unique platform attributes that form a unique key a test
                 # will match against to determine if it should be scheduled to run. A key containing a

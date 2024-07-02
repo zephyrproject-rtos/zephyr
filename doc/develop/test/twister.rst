@@ -1211,6 +1211,43 @@ using an external J-Link probe.  The ``probe_id`` keyword overrides the
       runner: jlink
       serial: null
 
+Additional Scripts
+++++++++++++++++++
+
+Twister offers users the flexibility to automate the execution of external
+scripts at precise moments. These scripts can be strategically deployed in
+three distinct phases: pre-script, post-flash-script and post-script.
+This functionality could help configuring the environment optimally
+before testing.
+
+To leverage the scripting capability, users must append the argument
+``--scripting-list <PATH_TO_SCRIPTING_LIST_YAML>`` to a twister call.
+
+The scripting YAML should consist of a series of dictionaries,
+each containing the keys scenarios, ``scenarios``, ``platforms``,
+``pre_script``,  ``post_flash_script``, ``post_script``. These keys define
+the specific combinations of scenarios and platforms, as well as the
+corresponding scripts to be executed at each stage. Additionally, it is mandatory
+to include a comment entry ``comment``  which is used to give more
+details about scripts and purpose of use.
+
+An example of entries in a scripting list yaml:
+
+.. code-block:: yaml
+
+    - scenarios:
+        - sample.basic.helloworld
+        platforms:
+        - frdm_k64f
+        pre_script:
+            <PATH_TO_PRE_SCRIPT>
+        post_flash_script:
+            <PATH_TO_POST_FLASH_SCRIPT>
+        post_script:
+            <PATH_TO_POST_SCRIPT>
+        comment:
+            Testing extra scripts
+
 Quarantine
 ++++++++++
 
