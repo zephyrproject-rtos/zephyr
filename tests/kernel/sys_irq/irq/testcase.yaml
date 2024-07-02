@@ -1,0 +1,4 @@
+tests:
+  kernel.sys_irq.irq:
+    platform_allow:
+      - b_u585i_iot02a

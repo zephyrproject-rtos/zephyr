@@ -15,7 +15,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/barrier.h>
 #include <haly/nrfy_rtc.h>
-#include <zephyr/irq.h>
+#include <zephyr/sys/irq.h>
 
 #define RTC_PRETICK (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK) && \
 		     IS_ENABLED(CONFIG_SOC_NRF5340_CPUNET))
@@ -30,8 +30,8 @@
 
 BUILD_ASSERT(CHAN_COUNT <= CHAN_COUNT_MAX, "Not enough compare channels");
 /* Ensure that counter driver for RTC1 is not enabled. */
-BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), disabled),
-	     "Counter for RTC1 must be disabled");
+BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), reserved),
+	     "Counter for RTC1 must be reserved");
 
 #define COUNTER_BIT_WIDTH 24U
 #define COUNTER_SPAN BIT(COUNTER_BIT_WIDTH)
@@ -176,7 +176,7 @@ static void compare_int_unlock(int32_t chan, bool key)
 		atomic_or(&int_mask, BIT(chan));
 		nrfy_rtc_int_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 		if (atomic_get(&force_isr_mask) & BIT(chan)) {
-			NVIC_SetPendingIRQ(RTC_IRQn);
+			sys_irq_trigger(SYS_DT_IRQN(DT_NODELABEL(RTC_LABEL)));
 		}
 	}
 }
@@ -719,9 +719,9 @@ static void int_event_disable_rtc(void)
 void sys_clock_disable(void)
 {
 	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_STOP);
-	irq_disable(RTC_IRQn);
+	sys_irq_disable(SYS_DT_IRQN(DT_NODELABEL(RTC_LABEL)));
 	int_event_disable_rtc();
-	NVIC_ClearPendingIRQ(RTC_IRQn);
+	sys_irq_clear(SYS_DT_IRQN(DT_NODELABEL(RTC_LABEL)));
 }
 
 static int sys_clock_driver_init(void)
@@ -744,11 +744,9 @@ static int sys_clock_driver_init(void)
 
 	nrfy_rtc_int_enable(RTC, NRF_RTC_INT_OVERFLOW_MASK);
 
-	NVIC_ClearPendingIRQ(RTC_IRQn);
-
-	IRQ_CONNECT(RTC_IRQn, DT_IRQ(DT_NODELABEL(RTC_LABEL), priority),
-		    rtc_nrf_isr, 0, 0);
-	irq_enable(RTC_IRQn);
+	sys_irq_configure(SYS_DT_IRQN(DT_NODELABEL(RTC_LABEL)),
+			  SYS_DT_IRQ_FLAGS(DT_NODELABEL(RTC_LABEL)));
+	sys_irq_enable(SYS_DT_IRQN(DT_NODELABEL(RTC_LABEL)));
 
 	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
 	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_START);

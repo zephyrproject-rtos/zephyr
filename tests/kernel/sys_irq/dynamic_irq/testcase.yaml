@@ -1,0 +1,5 @@
+tests:
+  kernel.sys_irq.dynamic_irq:
+    platform_allow:
+      - b_u585i_iot02a
+      - nrf9160dk/nrf9160
