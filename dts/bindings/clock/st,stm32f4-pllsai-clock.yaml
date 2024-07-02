@@ -1,0 +1,53 @@
+# Copyright (c) 2024, Move Innovation ApS.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32F4 PLLSAI node binding:
+
+  Takes same input as Main PLL. PLLM factor and PLL source are common with Main PLL
+
+  1 output clocks supported, the frequency can be computed with the following formula:
+
+    f(PLL_R) = f(VCO clock) / (PLLR × PLLDIVR)  --> PLLSAI
+
+      with f(VCO clock) = f(PLL clock input) × (PLLNSAI / PLLM)
+
+
+compatible: "st,stm32f4-pllsai-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        PLLSAI multiplication factor for VCO
+        Valid range may vary between parts: 50 - 432 , 192 - 432
+
+  div-r:
+    type: int
+    required: true
+    description: |
+        PLLSAIR division factor for SAI Clocks
+    enum:
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  div-divr:
+    type: int
+    required: true
+    description: |
+        PLLSAIDIVR division factor for SAI Clocks
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16

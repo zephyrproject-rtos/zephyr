@@ -80,6 +80,13 @@
 	status = "okay";
 };
 
+&pllsai {
+	mul-n = <384>;
+	div-r = <5>;
+	div-divr = <8>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(216)>;
