@@ -117,12 +117,25 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 	return true;
 }
 
-bool pm_system_suspend(int32_t ticks)
+bool pm_system_suspend(int32_t kernel_ticks)
 {
 	uint8_t id = _current_cpu->id;
 	k_spinlock_key_t key;
+	int32_t ticks, low_latency_events_ticks;
 
-	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
+	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
+
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+	/*
+	 * In this case CPU needs to be fully wake up before the event is
+	 * triggered. We need to find out first the ticks to the next event
+	 */
+	low_latency_events_ticks = pm_policy_next_low_latency_event_ticks();
+	ticks = (kernel_ticks < low_latency_events_ticks) ?
+		kernel_ticks : low_latency_events_ticks;
+#else
+		ticks = kernel_ticks;
+#endif
 
 	key = k_spin_lock(&pm_forced_state_lock);
 	if (z_cpus_pm_forced_state[id].state != PM_STATE_ACTIVE) {

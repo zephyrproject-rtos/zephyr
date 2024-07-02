@@ -145,6 +145,10 @@ static struct k_spinlock events_lock;
 static sys_slist_t events_list;
 /** Next event, in absolute cycles (<0: none, [0, UINT32_MAX]: cycles) */
 static int64_t next_event_cyc = -1;
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+/** Pointer to Next Low Latency Event. */
+static struct pm_policy_event *next_low_latency_event;
+#endif
 
 /** @brief Update maximum allowed latency. */
 static void update_max_latency(void)
@@ -202,6 +206,11 @@ static void update_next_event(uint32_t cyc)
 		if ((new_next_event_cyc < 0) ||
 		    (cyc_evt < new_next_event_cyc)) {
 			new_next_event_cyc = cyc_evt;
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+			if (evt->low_latency) {
+				next_low_latency_event = evt;
+			}
+#endif
 		}
 	}
 
@@ -212,6 +221,20 @@ static void update_next_event(uint32_t cyc)
 
 	next_event_cyc = new_next_event_cyc;
 }
+
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+int32_t pm_policy_next_low_latency_event_ticks(void)
+{
+	int32_t cyc_evt = -1;
+
+	if ((next_low_latency_event) &&
+	   (next_low_latency_event->value_cyc > 0)) {
+		cyc_evt = next_low_latency_event->value_cyc - k_cycle_get_32();
+	}
+
+	return k_cyc_to_ticks_ceil32(cyc_evt);
+}
+#endif
 
 #ifdef CONFIG_PM_POLICY_DEFAULT
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
@@ -380,11 +403,12 @@ void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription
 	k_spin_unlock(&latency_lock, key);
 }
 
-void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us)
+void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us, bool low_latency)
 {
 	k_spinlock_key_t key = k_spin_lock(&events_lock);
 	uint32_t cyc = k_cycle_get_32();
 
+	evt->low_latency = low_latency;
 	evt->value_cyc = cyc + k_us_to_cyc_ceil32(time_us);
 	sys_slist_append(&events_list, &evt->node);
 	update_next_event(cyc);

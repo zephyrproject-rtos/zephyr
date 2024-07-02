@@ -323,8 +323,8 @@ ZTEST(policy_api, test_pm_policy_events)
 	 *
 	 * first event wins, so we must stay active
 	 */
-	pm_policy_event_register(&evt1, 10000);
-	pm_policy_event_register(&evt2, 200000);
+	pm_policy_event_register(&evt1, 10000, false);
+	pm_policy_event_register(&evt2, 200000, false);
 	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(2000000));
 	zassert_is_null(next);
 
@@ -348,7 +348,7 @@ ZTEST(policy_api, test_pm_policy_events)
 	 *
 	 * system wakeup wins, so we can go up to runtime idle.
 	 */
-	pm_policy_event_register(&evt1, 2000000);
+	pm_policy_event_register(&evt1, 2000000, false);
 	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(200000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 

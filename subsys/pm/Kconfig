@@ -51,6 +51,14 @@ config PM_NEED_ALL_DEVICES_IDLE
 	  When this option is enabled, check that no devices are busy before
 	  entering into system low power mode.
 
+config PM_LOW_LATENCY_EVENTS
+	bool "Low latency events"
+	default y
+	help
+	  When this option is enabled, we make sure that CPU is active before
+	  the event happens so that it could be handled with a very low latency
+	  constraint
+
 choice PM_POLICY
 	prompt "Idle State Power Management Policy"
 	default PM_POLICY_DEFAULT

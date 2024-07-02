@@ -68,6 +68,9 @@ struct pm_policy_event {
 	/** @cond INTERNAL_HIDDEN */
 	sys_snode_t node;
 	uint32_t value_cyc;
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+	bool low_latency;
+#endif
 	/** @endcond */
 };
 
@@ -188,6 +191,9 @@ void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription
  * will wake up the system at a known time in the future. By registering such
  * event, the policy manager will be able to decide whether certain power states
  * are worth entering or not.
+ * If the event needs to be handled with a low latency constraint, calling this
+ * function using a low_latency==true parameters will make sure that the system is up
+ * when the event happens
  *
  * @note It is mandatory to unregister events once they have happened by using
  * pm_policy_event_unregister(). Not doing so is an API contract violation,
@@ -196,10 +202,12 @@ void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription
  *
  * @param evt Event.
  * @param time_us When the event will occur, in microseconds from now.
+ * @param low_latency If True indicates that the system needs to be up before the
+ *                    events happens
  *
  * @see pm_policy_event_unregister
  */
-void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us);
+void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us, bool low_latency);
 
 /**
  * @brief Update an event.
@@ -245,6 +253,16 @@ void pm_policy_device_power_lock_get(const struct device *dev);
  * @see pm_policy_state_lock_put()
  */
 void pm_policy_device_power_lock_put(const struct device *dev);
+
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+/**
+ * @brief Returns the ticks until the next low latency events
+ *
+ * If a low latency event is registred, it will return the number of ticks
+ * until the next low latency event, otherwise it returns -1
+ */
+int32_t pm_policy_next_low_latency_event_ticks(void);
+#endif /* CONFIG_PM_LOW_LATENCY_EVENTS */
 
 #else
 static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
