@@ -535,6 +535,9 @@ Drivers and Sensors
 
 * PCIE
 
+  * ``pcie_bdf_lookup`` and ``pcie_probe`` have been removed since they have been
+    deprecated since v3.3.0.
+
 * MEMC
 
 * MIPI-DBI
