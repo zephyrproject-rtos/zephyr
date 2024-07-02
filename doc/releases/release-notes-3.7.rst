@@ -221,6 +221,23 @@ Architectures
 
 * Xtensa
 
+  * Added support to save/restore HiFi AudioEngine registers.
+
+  * Added support to utilize MPU.
+
+  * Added support to automatically generate interrupt handlers.
+
+  * Added support to generate vector table at build time to be included in the linker script.
+
+  * Added kconfig :kconfig:option:`CONFIG_XTENSA_BREAK_ON_UNRECOVERABLE_EXCEPTIONS` to guard
+    using break instruction for unrecoverable exceptions. Enabling the break instruction via
+    this kconfig may result in an infinite interrupt storm which may hinder debugging efforts.
+
+  * Fixed an issue where passing the 7th argument via syscall was handled incorrectly.
+
+  * Fixed an issue where :c:func:`arch_user_string_nlen` accessing unmapped memory resulted
+    in an unrecoverable exception.
+
 Kernel
 ******
 
