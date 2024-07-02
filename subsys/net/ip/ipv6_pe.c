@@ -216,16 +216,17 @@ static bool ipv6_pe_prefix_update_lifetimes(struct net_if_ipv6 *ipv6,
 }
 
 /* RFC 8981 ch 3.3.2 */
-static void gen_temporary_iid(struct net_if *iface,
-			      const struct in6_addr *prefix,
-			      uint8_t *network_id, size_t network_id_len,
-			      uint8_t dad_counter,
-			      uint8_t *temporary_iid,
-			      size_t temporary_iid_len)
+static int gen_temporary_iid(struct net_if *iface,
+			     const struct in6_addr *prefix,
+			     uint8_t *network_id, size_t network_id_len,
+			     uint8_t dad_counter,
+			     uint8_t *temporary_iid,
+			     size_t temporary_iid_len)
 {
 	const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
 	mbedtls_md_context_t ctx;
 	uint8_t digest[32];
+	int ret;
 	static bool once;
 	static uint8_t secret_key[16]; /* Min 128 bits, RFC 8981 ch 3.3.2 */
 	struct {
@@ -256,12 +257,30 @@ static void gen_temporary_iid(struct net_if *iface,
 
 	mbedtls_md_init(&ctx);
 	mbedtls_md_setup(&ctx, md_info, true);
-	mbedtls_md_hmac_starts(&ctx, secret_key, sizeof(secret_key));
-	mbedtls_md_hmac_update(&ctx, (uint8_t *)&buf, sizeof(buf));
-	mbedtls_md_hmac_finish(&ctx, digest);
-	mbedtls_md_free(&ctx);
+	ret = mbedtls_md_hmac_starts(&ctx, secret_key, sizeof(secret_key));
+	if (ret != 0) {
+		NET_DBG("Cannot %s hmac (%d)", "start", ret);
+		goto err;
+	}
+
+	ret = mbedtls_md_hmac_update(&ctx, (uint8_t *)&buf, sizeof(buf));
+	if (ret != 0) {
+		NET_DBG("Cannot %s hmac (%d)", "update", ret);
+		goto err;
+	}
+
+	ret = mbedtls_md_hmac_finish(&ctx, digest);
+	if (ret != 0) {
+		NET_DBG("Cannot %s hmac (%d)", "finish", ret);
+		goto err;
+	}
 
 	memcpy(temporary_iid, digest, MIN(sizeof(digest), temporary_iid_len));
+
+err:
+	mbedtls_md_free(&ctx);
+
+	return ret;
 }
 
 void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
@@ -272,7 +291,7 @@ void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
 	struct in6_addr addr;
 	k_ticks_t remaining;
 	k_timeout_t vlifetimeout;
-	int i, dad_count = 1;
+	int i, ret, dad_count = 1;
 	int32_t lifetime;
 	bool valid = false;
 
@@ -328,21 +347,22 @@ void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
 	net_ipaddr_copy(&addr, prefix);
 
 	do {
-		gen_temporary_iid(iface, prefix,
-				  COND_CODE_1(CONFIG_NET_INTERFACE_NAME,
-					      (iface->config.name,
-					       sizeof(iface->config.name)),
-					      (net_if_get_device(iface)->name,
-					       strlen(net_if_get_device(iface)->name))),
-				  dad_count,
-				  &addr.s6_addr[8], 8U);
-
-		ifaddr = net_if_ipv6_addr_lookup(&addr, NULL);
-		if (ifaddr == NULL && !net_ipv6_is_addr_unspecified(&addr) &&
-		    memcmp(&addr, &reserved_anycast_subnet,
-			   sizeof(struct in6_addr)) != 0) {
-			valid = true;
-			break;
+		ret = gen_temporary_iid(iface, prefix,
+					COND_CODE_1(CONFIG_NET_INTERFACE_NAME,
+						    (iface->config.name,
+						     sizeof(iface->config.name)),
+						    (net_if_get_device(iface)->name,
+						     strlen(net_if_get_device(iface)->name))),
+					dad_count,
+					&addr.s6_addr[8], 8U);
+		if (ret == 0) {
+			ifaddr = net_if_ipv6_addr_lookup(&addr, NULL);
+			if (ifaddr == NULL && !net_ipv6_is_addr_unspecified(&addr) &&
+			    memcmp(&addr, &reserved_anycast_subnet,
+				   sizeof(struct in6_addr)) != 0) {
+				valid = true;
+				break;
+			}
 		}
 
 	} while (dad_count++ < TEMP_IDGEN_RETRIES);
