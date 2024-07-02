@@ -2,7 +2,7 @@
  * @file
  * @brief Header for Bluetooth Gaming Audio Profile (GMAP).
  *
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,15 +10,24 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_GMAP_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_GMAP_
 
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/sys/util_macro.h>
-
 /**
  * @brief Bluetooth Gaming Audio Profile (GMAP)
+ *
  * @defgroup bt_gmap Bluetooth Gaming Audio Profile
+ *
+ * @since 3.5
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
  */
+
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/util_macro.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Gaming Role bitfield */
 enum bt_gmap_role {
@@ -230,6 +239,9 @@ int bt_gmap_register(enum bt_gmap_role role, struct bt_gmap_feat features);
  */
 int bt_gmap_set_role(enum bt_gmap_role role, struct bt_gmap_feat features);
 
+#ifdef __cplusplus
+}
+#endif
 /** @} */ /* end of bt_gmap */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_GMAP_ */
