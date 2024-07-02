@@ -13,10 +13,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 
@@ -64,29 +62,6 @@ struct video_esp32_data {
 
 static int video_esp32_reload_dma(struct video_esp32_data *data);
 
-static void video_esp32_irq_handler(void *arg)
-{
-	const struct device *dev = (const struct device *)arg;
-	const struct video_esp32_config *cfg = dev->config;
-	struct video_esp32_data *data = dev->data;
-	lcd_cam_lc_dma_int_st_reg_t status = LCD_CAM.lc_dma_int_st;
-
-	if (!status.cam_vsync_int_st) {
-		LOG_WRN("Unexpected interrupt. status = %x", status.val);
-		return;
-	}
-
-	LCD_CAM.lc_dma_int_clr.val = status.val;
-	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
-
-	if (data->active_vbuf == NULL) {
-		LOG_WRN("Frame dropped. No buffer available");
-		return;
-	}
-
-	video_esp32_reload_dma(data);
-}
-
 void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t channel,
 			     int status)
 {
@@ -109,7 +84,13 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 	}
 
 	k_fifo_put(&data->fifo_out, data->active_vbuf);
-	data->active_vbuf = NULL;
+	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+
+	if (data->active_vbuf == NULL) {
+		LOG_WRN("Frame dropped. No buffer available");
+		return;
+	}
+	video_esp32_reload_dma(data);
 }
 
 static int video_esp32_reload_dma(struct video_esp32_data *data)
@@ -372,22 +353,6 @@ static void video_esp32_cam_ctrl_init(const struct device *dev)
 	LCD_CAM.cam_rgb_yuv.val = 0;
 }
 
-static int esp32_interrupt_init(const struct device *dev)
-{
-	const struct video_esp32_config *cfg = dev->config;
-	int ret = 0;
-
-	LCD_CAM.lc_dma_int_clr.cam_hs_int_clr = 1;
-	LCD_CAM.lc_dma_int_clr.cam_vsync_int_clr = 1;
-	LCD_CAM.lc_dma_int_ena.cam_vsync_int_ena = 1;
-	LCD_CAM.lc_dma_int_ena.cam_hs_int_ena = 1;
-
-	ret = esp_intr_alloc(cfg->irq_source, cfg->irq_priority,
-			     (intr_handler_t)video_esp32_irq_handler, (void *)dev, NULL);
-
-	return ret;
-}
-
 static int esp32_init(const struct device *dev)
 {
 	const struct video_esp32_config *cfg = dev->config;
@@ -406,12 +371,6 @@ static int esp32_init(const struct device *dev)
 	}
 
 	video_esp32_cam_ctrl_init(dev);
-
-	ret = esp32_interrupt_init(dev);
-	if (ret) {
-		LOG_ERR("Failed to initialize interrupt");
-		return ret;
-	}
 
 	if (!device_is_ready(cfg->dma_dev)) {
 		return -ENODEV;
@@ -445,8 +404,6 @@ static const struct video_esp32_config esp32_config = {
 	.source_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, source)),
 	.dma_dev = ESP32_DT_INST_DMA_CTLR(0, rx),
 	.rx_dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
-	.irq_source = DT_INST_IRQN(0),
-	.irq_priority = ESP_INTR_FLAG_LOWMED,
 	.enable_16_bit = DT_INST_PROP(0, enable_16bit_mode),
 	.invert_bit_order = DT_INST_PROP(0, invert_bit_order),
 	.invert_byte_order = DT_INST_PROP(0, invert_byte_order),
