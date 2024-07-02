@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Julien Vermillard <julien@vermillard.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_M5STACK_ROVERC
+	def_bool $(shields_list_contains,m5stack_roverc)
