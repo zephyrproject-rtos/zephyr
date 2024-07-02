@@ -659,7 +659,7 @@ class PropertySpec:
     def enum_tokenizable(self) -> bool:
         "See the class docstring"
         if not hasattr(self, '_enum_tokenizable'):
-            if self.type != 'string' or self.enum is None:
+            if self.type not in {'string', 'string-array'} or self.enum is None:
                 self._enum_tokenizable = False
             else:
                 # Saving _as_tokens here lets us reuse it in
@@ -765,13 +765,13 @@ class Property:
       Convenience for spec.type.
 
     val_as_token:
-      The value of the property as a token, i.e. with non-alphanumeric
+      The value of the property as a list of tokens, i.e. with non-alphanumeric
       characters replaced with underscores. This is only safe to access
       if 'spec.enum_tokenizable' returns True.
 
-    enum_index:
-      The index of 'val' in 'spec.enum' (which comes from the 'enum:' list
-      in the binding), or None if spec.enum is None.
+    enum_indices:
+      A list of indices of 'val' in 'spec.enum' (which comes from the 'enum:'
+      list in the binding), or None if spec.enum is None.
     """
 
     spec: PropertySpec
@@ -794,16 +794,20 @@ class Property:
         return self.spec.type
 
     @property
-    def val_as_token(self) -> str:
+    def val_as_token(self) -> List[str]:
         "See the class docstring"
-        assert isinstance(self.val, str)
-        return str_as_token(self.val)
+        ret = []
+        for subval in self.val if isinstance(self.val, list) else [self.val]:
+            assert isinstance(subval, str)
+            ret.append(str_as_token(subval))
+        return ret
 
     @property
-    def enum_index(self) -> Optional[int]:
+    def enum_indices(self) -> Optional[List[int]]:
         "See the class docstring"
         enum = self.spec.enum
-        return enum.index(self.val) if enum else None
+        val = self.val if isinstance(self.val, list) else [self.val]
+        return [enum.index(subval) for subval in val] if enum else None
 
 
 @dataclass
@@ -1519,10 +1523,11 @@ class Node:
             return
 
         enum = prop_spec.enum
-        if enum and val not in enum:
-            _err(f"value of property '{name}' on {self.path} in "
-                 f"{self.edt.dts_path} ({val!r}) is not in 'enum' list in "
-                 f"{self.binding_path} ({enum!r})")
+        for subval in val if isinstance(val, list) else [val]:
+            if enum and subval not in enum:
+                _err(f"value of property '{name}' on {self.path} in "
+                    f"{self.edt.dts_path} ({subval!r}) is not in 'enum' list in "
+                    f"{self.binding_path} ({enum!r})")
 
         const = prop_spec.const
         if const is not None and val != const:
@@ -2267,7 +2272,6 @@ class EDT:
                 _err(
                         f"'{binding_path}' appears in binding directories "
                         f"but isn't valid YAML: {e}")
-                continue
 
             # Convert the raw data to a Binding object, erroring out
             # if necessary.
