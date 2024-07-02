@@ -75,7 +75,7 @@ See :zephyr:code-sample:`ft800` sample for details.
 Build and Programming
 *********************
 
-Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
+Set ``--shield <shield designator>`` when you invoke ``west build``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/misc/ft800

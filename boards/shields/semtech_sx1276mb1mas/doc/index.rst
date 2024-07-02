@@ -58,7 +58,7 @@ Arduino connectors and defines node aliases for SPI and GPIO interfaces (see
 Programming
 ***********
 
-Set ``-DSHIELD=semtech_sx1271mb1mas`` when you invoke ``west build``. For
+Set ``--shield semtech_sx1271mb1mas`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::
