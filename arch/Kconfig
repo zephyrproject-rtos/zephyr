@@ -398,13 +398,29 @@ config DYNAMIC_OBJECTS
 	  zero.
 
 config NOCACHE_MEMORY
-	bool "Support for uncached memory"
+	bool "Support for uncached memory defined by linker"
 	depends on ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Add a "nocache" read-write memory section that is configured to
 	  not be cached. This memory section can be used to perform DMA
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
+
+config DT_NOCACHE_MEMORY
+	bool "Support uncached memory section defined in devicetree"
+	depends on DCACHE
+	help
+	  Use "nocache" memory section that is defined in devicetree
+	  to perform DMA transfers when cache coherence issues are not optimal
+	  or can not be solved using cache maintenance operations.
+	  This section will have priority over the one that may be created by linker.
+
+config DT_NOCACHE_MEM_NAME
+	string "Name of uncached memory section defined in devicetree (uppercase)"
+	depends on DT_NOCACHE_MEMORY
+	help
+	  Name of "nocache" read-write memory section defined in devicetree.
+	  Should be in uppercase.
 
 config FRAME_POINTER
 	bool "Compile the kernel with frame pointers"
