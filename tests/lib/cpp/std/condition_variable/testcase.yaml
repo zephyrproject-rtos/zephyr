@@ -1,0 +1,25 @@
+common:
+  tags: cpp
+  filter: CONFIG_FULL_LIBCPP_SUPPORTED
+  integration_platforms:
+    - qemu_cortex_a53
+    - mps2/an385
+    - qemu_riscv32
+    - qemu_riscv64
+    - qemu_x86
+    - qemu_x86_64
+  # llvm currently excluded due to 'inttypes.h' file not found
+  toolchain_exclude:
+    - llvm
+tests:
+  cpp.condition_variable.newlib.except:
+    tags: newlib
+    filter: CONFIG_NEWLIB_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_CPP_EXCEPTIONS=y
+  cpp.condition_variable.newlib.noexcept:
+    tags: newlib
+    filter: CONFIG_NEWLIB_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
