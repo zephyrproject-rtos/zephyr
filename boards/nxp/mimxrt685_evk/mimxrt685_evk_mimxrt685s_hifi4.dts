@@ -59,6 +59,10 @@
 	status = "okay";
 };
 
+&dma1 {
+	status = "okay";
+};
+
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
@@ -69,4 +73,42 @@
 
 &mbox {
 	status = "okay";
+};
+/* I2S receive channel */
+i2s0: &flexcomm1 {
+	status = "okay";
+	compatible = "nxp,lpc-i2s";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma1 2>;
+	dma-names = "rx";
+	pinctrl-0 = <&pinmux_flexcomm1_i2s>;
+	pinctrl-names = "default";
+};
+
+/* I2S transmit channel */
+i2s1: &flexcomm3 {
+	status = "okay";
+	compatible = "nxp,lpc-i2s";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma1 7>;
+	dma-names = "tx";
+	pinctrl-0 = <&pinmux_flexcomm3_i2s>;
+	pinctrl-names = "default";
+};
+
+&i3c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_i3c>;
+	pinctrl-names = "default";
+
+	audio_codec: wm8904@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a 0 0>;
+		clock-source = "MCLK";
+
+		clocks = <&clkctl0 MCUX_AUDIO_MCLK>;
+		clock-names = "mclk";
+	};
 };
