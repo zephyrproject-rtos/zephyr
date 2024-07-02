@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	uart2_default: uart2_default {
+		group1 {
+			pinmux = <CVI_PINMUX(VIVO_D10, UART2_TX)>,  /* B11 */
+				 <CVI_PINMUX(VIVO_D9, UART2_RX)>;   /* B12 */
+		};
+	};
+};

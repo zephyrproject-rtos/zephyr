@@ -28,6 +28,7 @@ _names = [
     'blackmagicprobe',
     'bossac',
     'canopen_program',
+    'cvi_fiptool',
     'dediprog',
     'dfu',
     'esp32',

@@ -423,6 +423,7 @@ microsoft	Microsoft Corporation
 microsys	MicroSys Electronics GmbH
 mikroe	MikroElektronika d.o.o.
 mikrotik	MikroTik
+milkv	Shenzhen MilkV Technology Co., Ltd
 miniand	Miniand Tech
 minix	MINIX Technology Ltd.
 miramems	MiraMEMS Sensing Technology Co., Ltd.
@@ -626,6 +627,7 @@ solderparty	Solder Party AB
 solidrun	SolidRun
 solomon	Solomon Systech Limited
 sony	Sony Corporation
+sophgo	SOPHGO Technologies
 spacecubics	Space Cubics, LLC
 spansion	Spansion Inc.
 sparkfun	SparkFun Electronics
@@ -662,6 +664,7 @@ telit	Telit Cinterion
 tempo	Tempo Semiconductor
 terasic	Terasic Inc.
 tfc	Three Five Corp
+thead	T-Head Semiconductor Co., Ltd.
 thine	THine Electronics, Inc.
 thingyjp	thingy.jp
 ti	Texas Instruments

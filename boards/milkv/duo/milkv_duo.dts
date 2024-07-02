@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <sophgo/cv180x.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+#include "milkv_duo-pinctrl.dtsi"
+
+/ {
+	model = "Milk-V Duo";
+	compatible = "milkv,duo";
+
+	chosen {
+		zephyr,sram = &sram;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	aliases {
+		led0 = &led;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led: led {
+			gpios = <&gpioc 24 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	soc {
+		/*
+		 * Memory region reserved for the RTOS core.
+		 *
+		 * Keep in sync with FREERTOS_ADDR and FREERTOS_SIZE in
+		 * build/boards/cv180x/cv1800b_milkv_duo_sd/memmap.py
+		 *
+		 * see: https://github.com/milkv-duo/duo-buildroot-sdk
+		 */
+		sram: memory@83f40000 {
+			compatible = "mmio-sram";
+			reg = <0x83f40000 DT_SIZE_K(768)>;
+		};
+	};
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
