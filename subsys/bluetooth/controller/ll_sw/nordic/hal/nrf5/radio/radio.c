@@ -664,7 +664,19 @@ uint32_t radio_crc_is_valid(void)
 	return (NRF_RADIO->CRCSTATUS != 0);
 }
 
-static uint8_t MALIGN(4) _pkt_empty[PDU_EM_LL_SIZE_MAX];
+/* Note: Only 3 bytes (PDU_EM_LL_SIZE_MAX) is required for empty PDU
+ *       transmission, but in case of Radio ISR latency if rx packet pointer
+ *       is not setup then Radio DMA will use previously assigned buffer which
+ *       can be this empty PDU buffer. Radio DMA will overrun this buffer and
+ *       cause memory corruption. Any detection of ISR latency will not happen
+ *       if the ISR function pointer in RAM is corrupted by this overrun.
+ *       Increasing ISR latencies in OS and CPU usage in the ULL_HIGH priority
+ *       if it is same as LLL priority in Controller implementation then it is
+ *       making it tight to execute Controller code in the tIFS between Tx-Rx
+ *       PDU's Radio ISRs.
+ */
+static uint8_t MALIGN(4) _pkt_empty[MAX(HAL_RADIO_PDU_LEN_MAX,
+					PDU_EM_LL_SIZE_MAX)];
 static uint8_t MALIGN(4) _pkt_scratch[MAX((HAL_RADIO_PDU_LEN_MAX + 3),
 				       PDU_AC_LL_SIZE_MAX)];
 
@@ -1849,10 +1861,8 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
-#endif /* !CONFIG_SOC_SERIES_NRF51X */
 
-#if !defined(CONFIG_SOC_SERIES_NRF51X) && \
-	!defined(CONFIG_SOC_NRF52832) && \
+#if !defined(CONFIG_SOC_NRF52832) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4U)))
 	uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
@@ -1876,6 +1886,11 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 		break;
 	}
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
+
+#else /* CONFIG_SOC_SERIES_NRF51X */
+	hal_trigger_crypt_ppi_config();
+	hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
+#endif /* CONFIG_SOC_SERIES_NRF51X */
 
 	NRF_CCM->MODE = mode;
 	NRF_CCM->CNFPTR = (uint32_t)cnf;
