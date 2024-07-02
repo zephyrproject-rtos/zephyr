@@ -118,16 +118,30 @@ struct video_buffer {
 	uint32_t timestamp;
 };
 
+/*
+ * Lowest nibble of an endpoint ID is a flag that tells its direction
+ */
+#define VIDEO_EP_DIR_OUT  0x0
+#define VIDEO_EP_DIR_IN   0x1
+#define VIDEO_EP_DIR_ANY  0x2
+#define VIDEO_EP_DIR_NONE 0x3
+
 /**
  * @brief video_endpoint_id enum
  *
  * Identify the video device endpoint.
+ * Numbers 0 or above refer to individual interfaces numbers.
+ * These extra definitions refer to generic endpoint to select endpoint(s).
  */
 enum video_endpoint_id {
-	VIDEO_EP_NONE,
-	VIDEO_EP_ANY,
-	VIDEO_EP_IN,
-	VIDEO_EP_OUT,
+	/** Controls that affect all output interfaces */
+	VIDEO_EP_ANY_OUT = 0xfff0 | VIDEO_EP_DIR_OUT,
+	/** Controls that affect all input interfaces */
+	VIDEO_EP_ANY_IN = 0xfff0 | VIDEO_EP_DIR_IN,
+	/** Controls that affect all interfaces */
+	VIDEO_EP_ANY = 0xfff0 | VIDEO_EP_DIR_ANY,
+	/** Controls that do not affect any interface */
+	VIDEO_EP_NONE = 0xfff0 | VIDEO_EP_DIR_NONE,
 };
 
 /**

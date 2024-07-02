@@ -52,7 +52,12 @@ static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpo
 	struct video_sw_generator_data *data = dev->data;
 	int i = 0;
 
-	if (ep != VIDEO_EP_OUT) {
+	switch (ep) {
+	case VIDEO_EP_ANY_OUT:
+	case VIDEO_EP_ANY:
+	case 0x0:
+		break;
+	default:
 		return -EINVAL;
 	}
 
@@ -79,7 +84,12 @@ static int video_sw_generator_get_fmt(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	switch (ep) {
+	case VIDEO_EP_ANY_OUT:
+	case VIDEO_EP_ANY:
+	case 0x0:
+		break;
+	default:
 		return -EINVAL;
 	}
 
@@ -171,7 +181,12 @@ static int video_sw_generator_enqueue(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	switch (ep) {
+	case VIDEO_EP_ANY_OUT:
+	case VIDEO_EP_ANY:
+	case 0x0:
+		break;
+	default:
 		return -EINVAL;
 	}
 
@@ -185,7 +200,12 @@ static int video_sw_generator_dequeue(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	switch (ep) {
+	case VIDEO_EP_ANY_OUT:
+	case VIDEO_EP_ANY:
+	case 0x0:
+		break;
+	default:
 		return -EINVAL;
 	}
 
@@ -202,6 +222,15 @@ static int video_sw_generator_flush(const struct device *dev, enum video_endpoin
 {
 	struct video_sw_generator_data *data = dev->data;
 	struct video_buffer *vbuf;
+
+	switch (ep) {
+	case VIDEO_EP_ANY_OUT:
+	case VIDEO_EP_ANY:
+	case 0x0:
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	if (!cancel) {
 		/* wait for all buffer to be processed */
@@ -223,6 +252,15 @@ static int video_sw_generator_flush(const struct device *dev, enum video_endpoin
 static int video_sw_generator_get_caps(const struct device *dev, enum video_endpoint_id ep,
 				       struct video_caps *caps)
 {
+	switch (ep) {
+	case VIDEO_EP_ANY_OUT:
+	case VIDEO_EP_ANY:
+	case 0x0:
+		break;
+	default:
+		return -EINVAL;
+	}
+
 	caps->format_caps = fmts;
 	caps->min_vbuf_count = 0;
 
@@ -234,6 +272,15 @@ static int video_sw_generator_set_signal(const struct device *dev, enum video_en
 					 struct k_poll_signal *signal)
 {
 	struct video_sw_generator_data *data = dev->data;
+
+	switch (ep) {
+	case VIDEO_EP_ANY_OUT:
+	case VIDEO_EP_ANY:
+	case 0x0:
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	if (data->signal && signal != NULL) {
 		return -EALREADY;
