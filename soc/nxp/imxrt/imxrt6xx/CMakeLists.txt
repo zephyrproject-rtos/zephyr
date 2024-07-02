@@ -6,4 +6,6 @@
 
 if(CONFIG_SOC_MIMXRT685S_CM33)
   add_subdirectory(cm33)
+elseif(CONFIG_SOC_MIMXRT685S_ADSP)
+  add_subdirectory(adsp)
 endif()

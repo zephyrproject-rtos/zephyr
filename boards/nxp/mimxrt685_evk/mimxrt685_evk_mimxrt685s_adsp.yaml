@@ -1,0 +1,10 @@
+identifier: mimxrt685_evk/mimxrt685s/adsp
+name: i.MXRT685 HIFI4 DSP
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  only_tags:
+    - kernel
+vendor: nxp

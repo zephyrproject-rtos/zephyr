@@ -6,3 +6,41 @@ config BOARD_INIT_PRIORITY
 	default 45
 	help
 	  Board initialization priority.
+
+DT_ADSP_RESET_MEM := $(dt_nodelabel_path,adsp_reset)
+DT_ADSP_DATA_MEM := $(dt_nodelabel_path,adsp_data)
+DT_ADSP_TEXT_MEM := $(dt_nodelabel_path,adsp_text)
+
+if BOARD_MIMXRT685_EVK_MIMXRT685S_ADSP
+config RT685_ADSP_STACK_SIZE
+	hex "Boot time stack size"
+	default 0x1000
+	help
+	  Stack space is reserved at the end of the RT685_ADSP_DATA_MEM
+	  region, starting at RT685_ADSP_DATA_MEM_ADDR - RT685_ADSP_STACK_SIZE
+
+config RT685_ADSP_RESET_MEM_ADDR
+	hex
+	default $(dt_node_reg_addr_hex,$(DT_ADSP_RESET_MEM))
+
+config RT685_ADSP_RESET_MEM_SIZE
+	hex
+	default $(dt_node_reg_size_hex,$(DT_ADSP_RESET_MEM))
+
+config RT685_ADSP_DATA_MEM_ADDR
+	hex
+	default $(dt_node_reg_addr_hex,$(DT_ADSP_DATA_MEM))
+
+config RT685_ADSP_DATA_MEM_SIZE
+	hex
+	default $(dt_node_reg_size_hex,$(DT_ADSP_DATA_MEM))
+
+config RT685_ADSP_TEXT_MEM_ADDR
+	hex
+	default $(dt_node_reg_addr_hex,$(DT_ADSP_TEXT_MEM))
+
+config RT685_ADSP_TEXT_MEM_SIZE
+	hex
+	default $(dt_node_reg_size_hex,$(DT_ADSP_TEXT_MEM))
+
+endif #  BOARD_MIMXRT685_EVK_MIMXRT685S_ADSP

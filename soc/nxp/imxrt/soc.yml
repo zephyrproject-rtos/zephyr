@@ -34,3 +34,4 @@ family:
     - name: mimxrt685s
       cpuclusters:
       - name: cm33
+      - name: adsp

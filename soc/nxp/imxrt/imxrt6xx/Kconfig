@@ -32,11 +32,21 @@ config SOC_MIMXRT685S_CM33
 	select HAS_MCUX_USB_LPCIP3511
 	select HAS_MCUX_CTIMER
 
+config SOC_MIMXRT685S_ADSP
+	select XTENSA
+	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
+	select XTENSA_RESET_VECTOR
+	select XTENSA_USE_CORE_CRT1
+	select CLOCK_CONTROL
+
 if SOC_SERIES_IMXRT6XX
 
 config MCUX_CORE_SUFFIX
 	default "_cm33" if SOC_MIMXRT685S_CM33
+	default "_adsp" if SOC_MIMXRT685S_ADSP
+endif
 
+if SOC_MIMXRT685S_CM33
 config INIT_SYS_PLL
 	bool "Initialize SYS PLL"
 

@@ -1,0 +1,56 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <xtensa/xtensa.dtsi>
+#include <mem.h>
+
+/ {
+	model = "nxp_adsp_rt685";
+	compatible = "nxp,mimxrt685";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		itcm: memory@24020000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x24020000 DT_SIZE_K(64)>;
+
+			adsp_reset: memory@24020000 {
+				reg = <0x24020000 DT_SIZE_K(1)>;
+			};
+
+			adsp_text: memory@24020400 {
+				reg = <0x24020400 DT_SIZE_K(63)>;
+			};
+		};
+
+		dtcm: memory@24000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x24000000 DT_SIZE_K(64)>;
+
+			adsp_data: memory@24000000 {
+				reg = <0x24000000 DT_SIZE_K(64)>;
+			};
+		};
+	};
+};
