@@ -502,7 +502,7 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 }
 
 
-void z_impl_k_thread_suspend(struct k_thread *thread)
+void z_impl_k_thread_suspend(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, suspend, thread);
 
@@ -524,7 +524,7 @@ void z_impl_k_thread_suspend(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_suspend(struct k_thread *thread)
+static inline void z_vrfy_k_thread_suspend(k_tid_t thread)
 {
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_thread_suspend(thread);
@@ -532,7 +532,7 @@ static inline void z_vrfy_k_thread_suspend(struct k_thread *thread)
 #include <zephyr/syscalls/k_thread_suspend_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_impl_k_thread_resume(struct k_thread *thread)
+void z_impl_k_thread_resume(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, resume, thread);
 
@@ -553,7 +553,7 @@ void z_impl_k_thread_resume(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
+static inline void z_vrfy_k_thread_resume(k_tid_t thread)
 {
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_thread_resume(thread);
@@ -1215,7 +1215,7 @@ static inline int32_t z_vrfy_k_sleep(k_timeout_t timeout)
 #include <zephyr/syscalls/k_sleep_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int32_t z_impl_k_usleep(int us)
+int32_t z_impl_k_usleep(int32_t us)
 {
 	int32_t ticks;
 
@@ -1232,7 +1232,7 @@ int32_t z_impl_k_usleep(int us)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int32_t z_vrfy_k_usleep(int us)
+static inline int32_t z_vrfy_k_usleep(int32_t us)
 {
 	return z_impl_k_usleep(us);
 }
@@ -1442,7 +1442,7 @@ void z_thread_abort(struct k_thread *thread)
 }
 
 #if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
-void z_impl_k_thread_abort(struct k_thread *thread)
+void z_impl_k_thread_abort(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
 

@@ -135,14 +135,14 @@ static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
 #include <zephyr/syscalls/k_thread_priority_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
+int z_impl_k_thread_name_set(k_tid_t thread, const char *str)
 {
 #ifdef CONFIG_THREAD_NAME
 	if (thread == NULL) {
 		thread = _current;
 	}
 
-	strncpy(thread->name, value, CONFIG_THREAD_MAX_NAME_LEN - 1);
+	strncpy(thread->name, str, CONFIG_THREAD_MAX_NAME_LEN - 1);
 	thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, name_set, thread, 0);
@@ -150,7 +150,7 @@ int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 	return 0;
 #else
 	ARG_UNUSED(thread);
-	ARG_UNUSED(value);
+	ARG_UNUSED(str);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, name_set, thread, -ENOSYS);
 
@@ -159,7 +159,7 @@ int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *str)
+static inline int z_vrfy_k_thread_name_set(k_tid_t thread, const char *str)
 {
 #ifdef CONFIG_THREAD_NAME
 	char name[CONFIG_THREAD_MAX_NAME_LEN];
@@ -340,7 +340,7 @@ void z_check_stack_sentinel(void)
 }
 #endif /* CONFIG_STACK_SENTINEL */
 
-void z_impl_k_thread_start(struct k_thread *thread)
+void z_impl_k_thread_start(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, start, thread);
 
@@ -348,7 +348,7 @@ void z_impl_k_thread_start(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_start(struct k_thread *thread)
+static inline void z_vrfy_k_thread_start(k_tid_t thread)
 {
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_start(thread);
