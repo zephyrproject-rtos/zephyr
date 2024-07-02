@@ -109,12 +109,31 @@ enum sensor_channel {
 	/** Altitude, in meters */
 	SENSOR_CHAN_ALTITUDE,
 
-	/** 1.0 micro-meters Particulate Matter, in ug/m^3 */
+	/** 1.0 micro-meters Particulate Matter (under atmospheric pressure), in ug/m^3 */
 	SENSOR_CHAN_PM_1_0,
-	/** 2.5 micro-meters Particulate Matter, in ug/m^3 */
+	/** 2.5 micro-meters Particulate Matter (under atmospheric pressure), in ug/m^3 */
 	SENSOR_CHAN_PM_2_5,
-	/** 10 micro-meters Particulate Matter, in ug/m^3 */
+	/** 10 micro-meters Particulate Matter (under atmospheric pressure), in ug/m^3 */
 	SENSOR_CHAN_PM_10,
+	/** 1.0 micro-meters Particulate Matter (CF=1，standard particle), in ug/m^3 */
+	SENSOR_CHAN_PM_1_0_CF,
+	/** 2.5 micro-meters Particulate Matter (CF=1，standard particle), in ug/m^3 */
+	SENSOR_CHAN_PM_2_5_CF,
+	/** 10.0 micro-meters Particulate Matter (CF=1，standard particle), in ug/m^3 */
+	SENSOR_CHAN_PM_10_CF,
+	/** The number of particles with diameter beyond  0.3um in 0.1L of air. */
+	SENSOR_CHAN_PM_0_3_COUNT,
+	/** The number of particles with diameter beyond 0.5um in 0.1L of air. */
+	SENSOR_CHAN_PM_0_5_COUNT,
+	/** The number of particles with diameter beyond 1.0um in 0.1L of air. */
+	SENSOR_CHAN_PM_1_0_COUNT,
+	/** The number of particles with diameter beyond 2.5um in 0.1L of air. */
+	SENSOR_CHAN_PM_2_5_COUNT,
+	/** The number of particles with diameter beyond 5.0um in 0.1L of air. */
+	SENSOR_CHAN_PM_5_0_COUNT,
+	/** The number of particles with diameter beyond 10.0um in 0.1L of air. */
+	SENSOR_CHAN_PM_10_0_COUNT,
+
 	/** Distance. From sensor to target, in meters */
 	SENSOR_CHAN_DISTANCE,
 
