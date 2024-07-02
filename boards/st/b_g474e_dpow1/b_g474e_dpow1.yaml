@@ -14,4 +14,5 @@ supported:
   - watchdog
   - tcpc
   - usb
+  - usbd
 vendor: st

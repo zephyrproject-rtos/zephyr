@@ -16,4 +16,5 @@ supported:
   - watchdog
   - adc
   - counter
+  - usbd
 vendor: st
