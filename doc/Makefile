@@ -2,12 +2,18 @@
 # Makefile for documentation build
 # SPDX-License-Identifier: Apache-2.0
 
+# Note: If the load is too high for your machine, you can limit the number of
+# processes by adding likely "-j1" to SPHINXOPTS_EXTRA as shown below.
+# (Although "-j auto" is already set, the setting will be overwritten by your
+#  one.)
+#
+# make SPHINXOPTS_EXTRA=-j1 html-fast
+
+define set_cmake_variable_if_defined
+  $(if ${$1},-D$1="${$1}")
+endef
+
 BUILDDIR ?= _build
-DOC_TAG ?= development
-SPHINXOPTS ?= -j auto -W --keep-going -T
-SPHINXOPTS_EXTRA ?=
-LATEXMKOPTS ?= -halt-on-error -no-shell-escape
-DT_TURBO_MODE ?= 0
 
 # ------------------------------------------------------------------------------
 # Documentation targets
@@ -25,11 +31,12 @@ configure:
 		-GNinja \
 		-B${BUILDDIR} \
 		-S. \
-		-DDOC_TAG=${DOC_TAG} \
-		-DSPHINXOPTS="${SPHINXOPTS}" \
-		-DSPHINXOPTS_EXTRA="${SPHINXOPTS_EXTRA}" \
-		-DLATEXMKOPTS="${LATEXMKOPTS}" \
-		-DDT_TURBO_MODE=${DT_TURBO_MODE}
+		$(call set_cmake_variable_if_defined,SPHINXOPTS) \
+		$(call set_cmake_variable_if_defined,SPHINXOPTS_EXTRA) \
+		$(call set_cmake_variable_if_defined,LATEXMKOPTS) \
+		$(call set_cmake_variable_if_defined,DT_TURBO_MODE) \
+		$(call set_cmake_variable_if_defined,DOC_TAG) \
+		$(call set_cmake_variable_if_defined,DTS_ROOTS)
 
 clean:
 	cmake --build ${BUILDDIR} --target clean
