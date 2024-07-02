@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Xiaomi Coopration
+ * Copyright (c) 2024 Xiaomi Corporation
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -123,8 +123,8 @@ static uint8_t unack_queue_len;
 
 static const uint8_t sync_req[] = { 0x01, 0x7e };
 static const uint8_t sync_rsp[] = { 0x02, 0x7d };
-/* Third byte may change */
 static const uint8_t conf_req[] = { 0x03, 0xfc };
+/* Third byte may change */
 static uint8_t conf_rsp[3] = { 0x04, 0x7b,};
 
 /* H5 signal buffers pool */
@@ -588,11 +588,6 @@ static void process_events(struct k_poll_event *ev, int count)
 		case K_POLL_STATE_SIGNALED:
 			break;
 		case K_POLL_STATE_SEM_AVAILABLE:
-			/* After this fn is exec'd, `bt_conn_prepare_events()`
-			 * will be called once again, and this time buffers will
-			 * be available, so the FIFO will be added to the poll
-			 * list instead of the ctlr buffers semaphore.
-			 */
 			break;
 		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
 			if (ev->tag == 0) {

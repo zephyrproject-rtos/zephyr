@@ -60,12 +60,12 @@ struct friend_pdu_info {
 	uint32_t  iv_index;
 };
 
-BUILD_ASSERT(CONFIG_BT_MESH_LABEL_COUNT <= 0xFFFU, "Friend doesn't support more than 4096 labels.");
+BUILD_ASSERT(CONFIG_BT_MESH_LABEL_COUNT <= 0xFFFU, "Friend doesn't support more than 4095 labels.");
 
 struct friend_adv {
 	uint16_t app_idx;
 	struct {
-		/* CONFIG_BT_MESH_LABEL_COUNT max value is 4096. */
+		/* CONFIG_BT_MESH_LABEL_COUNT max value is 4095. */
 		uint16_t uuidx:15,
 			 seg:1;
 	};
