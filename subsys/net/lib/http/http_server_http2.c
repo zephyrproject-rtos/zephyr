@@ -57,7 +57,6 @@ static void print_http_frames(struct http_client_ctx *client)
 #endif
 
 	struct http_frame *frame = &client->current_frame;
-	int payload_received_length;
 
 	LOG_DBG("%s=====================================%s", green, reset);
 	LOG_DBG("%sReceived %s Frame :%s", bold, get_frame_type_name(frame->type), reset);
@@ -65,14 +64,6 @@ static void print_http_frames(struct http_client_ctx *client)
 	LOG_DBG("  %sType:%s %u (%s)", blue, reset, frame->type, get_frame_type_name(frame->type));
 	LOG_DBG("  %sFlags:%s %u", blue, reset, frame->flags);
 	LOG_DBG("  %sStream Identifier:%s %u", blue, reset, frame->stream_identifier);
-
-	if (client->data_len > frame->length) {
-		payload_received_length = frame->length;
-	} else {
-		payload_received_length = client->data_len;
-	}
-
-	LOG_HEXDUMP_DBG(frame->payload, payload_received_length, "Payload");
 	LOG_DBG("%s=====================================%s", green, reset);
 }
 
@@ -1222,28 +1213,22 @@ const char *get_frame_type_name(enum http_frame_type type)
 
 int parse_http_frame_header(struct http_client_ctx *client)
 {
-	unsigned char *buffer = client->cursor;
-	unsigned long buffer_len = client->data_len;
+	uint8_t *buffer = client->cursor;
 	struct http_frame *frame = &client->current_frame;
 
 	frame->length = 0;
 	frame->stream_identifier = 0;
 
-	if (buffer_len < HTTP_SERVER_FRAME_HEADER_SIZE) {
+	if (client->data_len < HTTP_SERVER_FRAME_HEADER_SIZE) {
 		return 0;
 	}
 
-	frame->length = (buffer[HTTP_SERVER_FRAME_LENGTH_OFFSET] << 16) |
-			(buffer[HTTP_SERVER_FRAME_LENGTH_OFFSET + 1] << 8) |
-			buffer[HTTP_SERVER_FRAME_LENGTH_OFFSET + 2];
+	frame->length = sys_get_be24(&buffer[HTTP_SERVER_FRAME_LENGTH_OFFSET]);
 	frame->type = buffer[HTTP_SERVER_FRAME_TYPE_OFFSET];
 	frame->flags = buffer[HTTP_SERVER_FRAME_FLAGS_OFFSET];
-	frame->stream_identifier = (buffer[HTTP_SERVER_FRAME_STREAM_ID_OFFSET] << 24) |
-				   (buffer[HTTP_SERVER_FRAME_STREAM_ID_OFFSET + 1] << 16) |
-				   (buffer[HTTP_SERVER_FRAME_STREAM_ID_OFFSET + 2] << 8) |
-				   buffer[HTTP_SERVER_FRAME_STREAM_ID_OFFSET + 3];
+	frame->stream_identifier = sys_get_be32(
+				&buffer[HTTP_SERVER_FRAME_STREAM_ID_OFFSET]);
 	frame->stream_identifier &= 0x7FFFFFFF;
-	frame->payload = buffer + HTTP_SERVER_FRAME_HEADER_SIZE;
 
 	LOG_DBG("Frame len %d type 0x%02x flags 0x%02x id %d",
 		frame->length, frame->type, frame->flags, frame->stream_identifier);

@@ -283,7 +283,6 @@ struct http_frame {
 	uint32_t stream_identifier; /**< Stream ID the frame belongs to. */
 	uint8_t type; /**< Frame type. */
 	uint8_t flags; /**< Frame flags. */
-	uint8_t *payload; /**< A pointer to the frame payload. */
 };
 
 /**
