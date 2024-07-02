@@ -334,7 +334,7 @@ rtc1: rtc@15000 {
 	reg = <0x15000 0x1000>;
 	cc-num = <4>;
 	interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
-	status = "disabled";
+	status = "reserved";
 	clock-frequency = <32768>;
 	prescaler = <1>;
 };
