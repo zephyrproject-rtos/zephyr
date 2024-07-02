@@ -21,4 +21,5 @@ supported:
   - adc
   - dac
   - rtc
+  - usbd
 vendor: st
