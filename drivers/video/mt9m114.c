@@ -507,7 +507,7 @@ static int mt9m114_init(const struct device *dev)
 	fmt.height = 272;
 	fmt.pitch = fmt.width * 2;
 
-	ret = mt9m114_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = mt9m114_set_fmt(dev, VIDEO_EP_ANY_OUT, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;

@@ -605,7 +605,7 @@ static int ov7725_init(const struct device *dev)
 	fmt.width = 640;
 	fmt.height = 480;
 	fmt.pitch = 640 * 2;
-	ret = ov7725_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = ov7725_set_fmt(dev, VIDEO_EP_ANY_OUT, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;

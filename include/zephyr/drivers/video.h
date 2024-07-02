@@ -33,6 +33,122 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Video Device Tree endpoint identifier
+ *
+ * Identify a particular port and particular endpoint of a video device,
+ * providing all the context necessary to act upon a video device, via one of
+ * its endpoint.
+ */
+struct video_dt_spec {
+	/** Device instance of the remote video device to communicate with. */
+	const struct device *dev;
+	/** Devicetree address for this endpoint. */
+	uint32_t endpoint;
+};
+
+/**
+ * @brief Get a device reference for an endpoint of a video controller.
+ *
+ * @code
+ * mipi0: mipi-controller@... {
+ *     mipi0out: endpoint@0 {
+ *         remote-endpoint = <&mjpeg0in>;
+ *     };
+ * };
+ * @endcode
+ *
+ * Here, the devicetree spec for mipi0out can be obtaine with:
+ *
+ * @code
+ * struct video_dt_spec spec = VIDEO_DT_SPEC_GET(DT_NODELABEL(mipi0out));
+ * @endcode
+ *
+ * @param node_id node identifier of an endpoint phandle property
+ */
+#define VIDEO_DT_SPEC_GET(node_id)                                                                 \
+	{.dev = DEVICE_DT_GET(DT_BUS(node_id)), .endpoint = VIDEO_DT_ENDPOINT_ID(node_id)}
+
+/**
+ * Obtain the endpoint ID out of an devicetree endpoint node.
+ *
+ * This allows referring endpoints that contain up to 3 levels deep including the 0/1 direction,
+ * and concatenate them such as:
+ * @code{c}
+ * ep = REG2 << 8 | REG1 << 4 | IN_OR_OUT << 0;
+ * @endcode
+ *
+ * With 1 level of address + direction:
+ *
+ * @code{c}
+ * switch (ep) {
+ * case VIDEO_EP_IN(0x0):  // endpoint 0 in:  0x01
+ * case VIDEO_EP_OUT(0x0): // endpoint 0 out: 0x00
+ * case VIDEO_EP_IN(0x1):  // endpoint 1 in:  0x11
+ * case VIDEO_EP_OUT(0x1): // endpoint 1 out: 0x10
+ * case VIDEO_EP_IN(0x2):  // endpoint 2 in:  0x21
+ * case VIDEO_EP_OUT(0x2): // endpoint 2 out: 0x20
+ * }
+ * @endcode
+ *
+ * With 2 levels of address + direction:
+ *
+ * @code
+ * switch (ep) {
+ * case VIDEO_EP_OUT(0x00): // port 0 endpoint 0 out: 0x000
+ * case VIDEO_EP_OUT(0x01): // port 0 endpoint 1 out: 0x010
+ * case VIDEO_EP_OUT(0x02): // port 0 endpoint 2 out: 0x020
+ * case VIDEO_EP_OUT(0x10): // port 1 endpoint 0 out: 0x100
+ * case VIDEO_EP_OUT(0x11): // port 1 endpoint 1 out: 0x110
+ * case VIDEO_EP_OUT(0x12): // port 1 endpoint 2 out: 0x120
+ * }
+ * @endcodde
+ *
+ * @param node_id node identifier of an endpoint phandle property
+ * @return an integer aggregating all the addresses
+ */
+#define VIDEO_DT_ENDPOINT_ID(node_id)                                                              \
+	(Z_VIDEO_REG(node_id, 2) << 8 | Z_VIDEO_REG(node_id, 1) << 4 | Z_VIDEO_REG(node_id, 0))
+#define Z_VIDEO_REG(node_id, n)                                                                    \
+	COND_CODE_1(DT_REG_HAS_IDX(node_id, n), (DT_REG_ADDR_BY_IDX(node_id, n)), (0))
+
+/**
+ * @brief Encode an input endpoint ID, for the OUT direction.
+ *
+ * The lower nibble set to 0x0, and the rest of the endpoint ID shifted to the left by one nibble:
+ * Input endpoint 0x4f becomes 0x4f1, input endpoint 5 becomes 0x51.
+ *
+ * @param ep_id a \ref video_endpoint_id such a from \ref VIDEO_DT_ENDPOINT_ID
+ * @return an integer built out of the endpoint number and the direction
+ */
+#define VIDEO_EP_IN(ep_id) ((ep_id) << 4 | VIDEO_DIR_IN)
+
+/**
+ * @brief Encode an output endpoint ID, for the OUT direction.
+ *
+ * The lower nibble set to 0x0, and the rest of the endpoint ID shifted to the left by one nibble:
+ * Output endpoint 0x4f becomes 0x4f0, output endpoint 5 becomes 0x50.
+ *
+ * @param ep_id a \ref video_endpoint_id such a from \ref VIDEO_DT_ENDPOINT_ID
+ * @return an integer built out of the endpoint number and the direction
+ */
+#define VIDEO_EP_OUT(ep_id) ((ep_id) << 4 | VIDEO_DIR_OUT)
+
+/**
+ * @brief Verify that the direction of a \ref video_endpoint_id is IN
+ *
+ * @retval true if the endpoint is receiving data and is a sink
+ * @retval false if the endpoint is producing data and is a source
+ */
+#define VIDEO_EP_IS_IN(ep_id) ((ep_id) & 0xf == VIDEO_DIR_IN || (ep_id) & 0xf == VIDEO_DIR_ANY)
+
+/**
+ * @brief Verify that the direction of a \ref video_endpoint_id is OUT
+ *
+ * @retval true if the endpoint is producing data and is a source
+ * @retval false if the endpoint is receiving data and is a sink
+ */
+#define VIDEO_EP_IS_OUT(ep_id) ((ep_id) & 0xf == VIDEO_DIR_OUT || (ep_id) & 0xf == VIDEO_DIR_ANY)
 
 /**
  * @struct video_format
@@ -118,16 +234,30 @@ struct video_buffer {
 	uint32_t timestamp;
 };
 
+/*
+ * Lowest nibble of an endpoint ID is a flag that tells its direction
+ */
+#define VIDEO_DIR_OUT  0x0
+#define VIDEO_DIR_IN   0x1
+#define VIDEO_DIR_ANY  0x2
+#define VIDEO_DIR_NONE 0x3
+
 /**
  * @brief video_endpoint_id enum
  *
  * Identify the video device endpoint.
+ * Numbers 0 or above refer to individual interfaces numbers.
+ * These extra definitions refer to generic endpoint to select endpoint(s).
  */
 enum video_endpoint_id {
-	VIDEO_EP_NONE,
-	VIDEO_EP_ANY,
-	VIDEO_EP_IN,
-	VIDEO_EP_OUT,
+	/** Controls that affect all output interfaces */
+	VIDEO_EP_ANY_OUT = 0xfff0 | VIDEO_DIR_OUT,
+	/** Controls that affect all input interfaces */
+	VIDEO_EP_ANY_IN = 0xfff0 | VIDEO_DIR_IN,
+	/** Controls that affect all interfaces */
+	VIDEO_EP_ANY = 0xfff0 | VIDEO_DIR_ANY,
+	/** Controls that do not affect any interface */
+	VIDEO_EP_NONE = 0xfff0 | VIDEO_DIR_NONE,
 };
 
 /**

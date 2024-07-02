@@ -1013,7 +1013,7 @@ static int ov2640_init(const struct device *dev)
 	fmt.width = SVGA_HSIZE;
 	fmt.height = SVGA_VSIZE;
 	fmt.pitch = SVGA_HSIZE * 2;
-	ret = ov2640_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = ov2640_set_fmt(dev, VIDEO_EP_ANY_OUT, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
