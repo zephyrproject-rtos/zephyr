@@ -1,0 +1,12 @@
+# ST7528I display driver configuration options
+
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config ST7528I
+	bool "ST7528I display driver"
+	default y
+	depends on DT_HAS_SITRONIX_ST7528I_ENABLED
+	select I2C
+	help
+	  Enable driver for ST7528I display driver.
