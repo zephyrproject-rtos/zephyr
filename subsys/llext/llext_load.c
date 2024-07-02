@@ -63,7 +63,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 	/* check whether this is a valid ELF file */
 	if (memcmp(ldr->hdr.e_ident, ELF_MAGIC, sizeof(ELF_MAGIC)) != 0) {
 		LOG_HEXDUMP_ERR(ldr->hdr.e_ident, 16, "Invalid ELF, magic does not match");
-		return -EINVAL;
+		return -ENOEXEC;
 	}
 
 	switch (ldr->hdr.e_type) {
@@ -77,7 +77,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 
 	default:
 		LOG_ERR("Unsupported ELF file type %x", ldr->hdr.e_type);
-		return -EINVAL;
+		return -ENOEXEC;
 	}
 
 	/*
@@ -88,7 +88,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 
 	if (ldr->hdr.e_shentsize != sizeof(elf_shdr_t)) {
 		LOG_ERR("Invalid section header size %d", ldr->hdr.e_shentsize);
-		return -EINVAL;
+		return -ENOEXEC;
 	}
 
 	ldr->sect_cnt = ldr->hdr.e_shnum;
@@ -186,16 +186,17 @@ static int llext_find_tables(struct llext_loader *ldr)
 
 	if (!ldr->sects[LLEXT_MEM_SHSTRTAB].sh_type ||
 	    !ldr->sects[LLEXT_MEM_STRTAB].sh_type ||
-	    !ldr->sects[LLEXT_MEM_SYMTAB].sh_type) {
+	    !ldr->sects[LLEXT_MEM_SYMTAB].sh_type ||
+	    sect_cnt != 3) {
 		LOG_ERR("Some sections are missing or present multiple times!");
-		return -ENOENT;
+		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
 /*
- * Maps the section indexes and copies special section headers for easier use
+ * Maps the section indexes into segments according to their usage flags.
  */
 static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 {
@@ -240,18 +241,20 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			continue;
 		}
 
-		LOG_DBG("section %d name %s maps to idx %d", i, name, mem_idx);
+		LOG_DBG("section %d name %s maps to seg %d", i, name, mem_idx);
 
 		ldr->sect_map[i].mem_idx = mem_idx;
-		elf_shdr_t *sect = ldr->sects + mem_idx;
+		elf_shdr_t *seg = ldr->sects + mem_idx;
 
-		if (sect->sh_type == SHT_NULL) {
-			/* First section of this type, copy all info */
-			memcpy(sect, shdr, sizeof(*sect));
+		if (seg->sh_type == SHT_NULL) {
+			/* First section of this type, copy all info to the
+			 * segment descriptor.
+			 */
+			memcpy(seg, shdr, sizeof(*seg));
 		} else {
 			/* Make sure the sections are compatible before merging */
-			if (shdr->sh_flags != sect->sh_flags) {
-				LOG_ERR("Unsupported section flags for %s (mem %d)",
+			if (shdr->sh_flags != seg->sh_flags) {
+				LOG_ERR("Unsupported section flags for %s (seg %d)",
 					name, mem_idx);
 				return -ENOEXEC;
 			}
@@ -263,7 +266,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 				 * independent entities.
 				 */
 				LOG_ERR("Multiple SHT_NOBITS sections are not supported");
-				return -ENOEXEC;
+				return -ENOTSUP;
 			}
 
 			if (ldr->hdr.e_type == ET_DYN) {
@@ -271,31 +274,31 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 				 * merging these sections, make sure the delta
 				 * in VMAs matches that of file offsets.
 				 */
-				if (shdr->sh_addr - sect->sh_addr !=
-				    shdr->sh_offset - sect->sh_offset) {
+				if (shdr->sh_addr - seg->sh_addr !=
+				    shdr->sh_offset - seg->sh_offset) {
 					LOG_ERR("Incompatible section addresses "
-						"for %s (mem %d)", name, mem_idx);
+						"for %s (seg %d)", name, mem_idx);
 					return -ENOEXEC;
 				}
 			}
 
 			/*
-			 * Extend the current section to include the new one
+			 * Extend the current segment to include the new section
 			 * (overlaps are detected later)
 			 */
-			size_t address = MIN(sect->sh_addr, shdr->sh_addr);
-			size_t bot_ofs = MIN(sect->sh_offset, shdr->sh_offset);
-			size_t top_ofs = MAX(sect->sh_offset + sect->sh_size,
+			size_t address = MIN(seg->sh_addr, shdr->sh_addr);
+			size_t bot_ofs = MIN(seg->sh_offset, shdr->sh_offset);
+			size_t top_ofs = MAX(seg->sh_offset + seg->sh_size,
 					     shdr->sh_offset + shdr->sh_size);
 
-			sect->sh_addr = address;
-			sect->sh_offset = bot_ofs;
-			sect->sh_size = top_ofs - bot_ofs;
+			seg->sh_addr = address;
+			seg->sh_offset = bot_ofs;
+			seg->sh_size = top_ofs - bot_ofs;
 		}
 	}
 
 	/*
-	 * Test that no computed range overlaps. This can happen if sections of
+	 * Test that no computed segment overlaps. This can happen if sections of
 	 * different llext_mem type are interleaved in the ELF file or in VMAs.
 	 */
 	for (i = 0; i < LLEXT_MEM_COUNT; i++) {
@@ -305,7 +308,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 
 			if (x->sh_type == SHT_NULL || x->sh_size == 0 ||
 			    y->sh_type == SHT_NULL || y->sh_size == 0) {
-				/* Skip empty sections */
+				/* Skip empty segments */
 				continue;
 			}
 
@@ -317,7 +320,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 				     x->sh_addr + x->sh_size > y->sh_addr) ||
 				    (y->sh_addr <= x->sh_addr &&
 				     y->sh_addr + y->sh_size > x->sh_addr)) {
-					LOG_ERR("VMA range %d (0x%zx +%zd) "
+					LOG_ERR("VMA segment %d (0x%zx +%zd) "
 						"overlaps with %d (0x%zx +%zd)",
 						i, (size_t)x->sh_addr, (size_t)x->sh_size,
 						j, (size_t)y->sh_addr, (size_t)y->sh_size);
@@ -348,8 +351,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 	}
 
 	/*
-	 * Calculate each ELF section's offset inside its memory area. This is
-	 * done as a separate pass so the final groups are already defined.
+	 * Calculate each ELF section's offset inside its memory segment. This
+	 * is done as a separate pass so the final segments are already defined.
 	 */
 	for (i = 0; i < ldr->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ldr->sect_hdrs + i;
@@ -489,21 +492,21 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 
 		uint32_t stt = ELF_ST_TYPE(sym.st_info);
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
-		unsigned int sect = sym.st_shndx;
+		unsigned int shndx = sym.st_shndx;
 
 		if ((stt == STT_FUNC || stt == STT_OBJECT) &&
-		    stb == STB_GLOBAL && sect != SHN_UNDEF) {
+		    stb == STB_GLOBAL && shndx != SHN_UNDEF) {
 			const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
 			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
 
 			sym_tab->syms[j].name = name;
 
-			elf_shdr_t *shdr = ldr->sect_hdrs + sect;
+			elf_shdr_t *shdr = ldr->sect_hdrs + shndx;
 			uintptr_t section_addr = shdr->sh_addr;
 			const void *base;
 
-			base = llext_loaded_sect_ptr(ldr, ext, sect);
+			base = llext_loaded_sect_ptr(ldr, ext, shndx);
 			if (!base) {
 				/* If the section is not mapped, try to peek.
 				 * Be noisy about it, since this is addressing
@@ -511,10 +514,10 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 				 */
 				base = llext_peek(ldr, shdr->sh_offset);
 				if (base) {
-					LOG_DBG("section %d peeked at %p", sect, base);
+					LOG_DBG("section %d peeked at %p", shndx, base);
 				} else {
-					LOG_ERR("No data for section %d", sect);
-					return -EOPNOTSUPP;
+					LOG_ERR("No data for section %d", shndx);
+					return -ENOTSUP;
 				}
 			}
 
@@ -585,10 +588,10 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
-	LOG_DBG("Allocate and copy sections...");
-	ret = llext_copy_sections(ldr, ext);
+	LOG_DBG("Allocate and copy segments...");
+	ret = llext_copy_segments(ldr, ext);
 	if (ret != 0) {
-		LOG_ERR("Failed to copy ELF sections, ret %d", ret);
+		LOG_ERR("Failed to copy ELF segments, ret %d", ret);
 		goto out;
 	}
 
@@ -655,9 +658,9 @@ out:
 
 		/* Since the loading process failed, free the resources that
 		 * were allocated for the lifetime of the extension as well,
-		 * such as section data and exported symbols.
+		 * such as segments and exported symbols.
 		 */
-		llext_free_sections(ext);
+		llext_free_segments(ext);
 		llext_free(ext->exp_tab.syms);
 		ext->exp_tab.sym_cnt = 0;
 		ext->exp_tab.syms = NULL;
