@@ -1,0 +1,5 @@
+board:
+  name: yd_stm32h750vb
+  vendor: vcc-gnd
+  socs:
+    - name: stm32h750xx

@@ -1,0 +1,7 @@
+# YD-STM32H750VB board configuration
+
+# Copyright(c) 2024 John Sanpe <sanpeqf@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_YD_STM32H750VB
+	select SOC_STM32H750XX
