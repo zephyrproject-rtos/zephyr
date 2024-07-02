@@ -64,7 +64,7 @@ Programming
 
 You can use the X-NUCLEO-BNRG2A1 as a Bluetooth Low-Energy controller
 shield with an SPI host controller interface (HCI-SPI).  Activate the presence
-of the shield for the project build by adding the ``-DSHIELD`` arg to the
+of the shield for the project build by adding the ``--shield`` arg to the
 build command:
 
  .. zephyr-app-commands::

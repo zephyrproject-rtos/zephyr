@@ -56,7 +56,7 @@ for Arduino connectors and defines node aliases for SPI and GPIO interfaces
 Programming
 ***********
 
-Set ``-DSHIELD=buydisplay_2_8_tft_touch_arduino`` when you invoke
+Set ``--shield buydisplay_2_8_tft_touch_arduino`` when you invoke
 ``west build``. For example:
 
 .. zephyr-app-commands::
