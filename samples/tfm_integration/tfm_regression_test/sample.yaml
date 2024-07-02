@@ -10,6 +10,7 @@ common:
     - nrf9161dk/nrf9161/ns
     - v2m_musca_s1/musca_s1/ns
     - rd_rw612_bga/rw612/ns
+    - frdm_rw612/rw612/ns
   integration_platforms:
     - nrf5340dk/nrf5340/cpuapp/ns
   harness: console
@@ -36,6 +37,7 @@ tests:
   sample.tfm.regression_sfn:
     platform_exclude:
       - rd_rw612_bga/rw612/ns
+      - frdm_rw612/rw612/ns
     extra_args:
       - CONFIG_TFM_SFN=y
       - CONFIG_TFM_ISOLATION_LEVEL=1
