@@ -113,9 +113,7 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 	return 0;
 }
 
-#define DT_DRV_COMPAT microchip_mcp23sxx
-
-#define GPIO_MCP23SXX_DEVICE(inst)                                                               \
+#define GPIO_MCP23SXX_DEVICE(inst, num_gpios, open_drain)                                     \
 	static struct mcp23xxx_drv_data mcp23sxx_##inst##_drvdata = {                         \
 		/* Default for registers according to datasheet */                            \
 		.reg_cache.iodir = 0xFFFF, .reg_cache.ipol = 0x0,   .reg_cache.gpinten = 0x0, \
@@ -134,7 +132,8 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 		},                                                                            \
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                   \
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),               \
-		.ngpios =  DT_INST_PROP(inst, ngpios),		                              \
+		.ngpios =  num_gpios,				                              \
+		.is_open_drain = open_drain,                                                  \
 		.read_fn = mcp23sxx_read_port_regs,                                           \
 		.write_fn = mcp23sxx_write_port_regs,                                         \
 		.bus_fn = mcp23sxx_bus_is_ready                                               \
@@ -143,4 +142,16 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 			      &mcp23sxx_##inst##_config, POST_KERNEL,                         \
 			      CONFIG_GPIO_MCP23SXX_INIT_PRIORITY, &gpio_mcp23xxx_api_table);
 
-DT_INST_FOREACH_STATUS_OKAY(GPIO_MCP23SXX_DEVICE)
+
+#define DT_DRV_COMPAT microchip_mcp23s08
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 8, false)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT microchip_mcp23s09
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 8, true)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT microchip_mcp23s17
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 16, false)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT microchip_mcp23s18
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 16, true)
+#undef DT_DRV_COMPAT

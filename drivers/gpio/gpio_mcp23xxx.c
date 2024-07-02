@@ -171,6 +171,7 @@ static int setup_pin_pull(const struct device *dev, uint32_t pin, int flags)
 static int mcp23xxx_pin_cfg(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	struct mcp23xxx_drv_data *drv_data = dev->data;
+	const struct mcp23xxx_config *config = dev->config;
 	int ret;
 
 	if (k_is_in_isr()) {
@@ -179,7 +180,8 @@ static int mcp23xxx_pin_cfg(const struct device *dev, gpio_pin_t pin, gpio_flags
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	if ((flags & GPIO_SINGLE_ENDED) != 0U) {
+	if ((bool)(flags & GPIO_SINGLE_ENDED) != config->is_open_drain ||
+	    (bool)(flags & GPIO_LINE_OPEN_DRAIN) != config->is_open_drain) {
 		ret = -ENOTSUP;
 		goto done;
 	}
