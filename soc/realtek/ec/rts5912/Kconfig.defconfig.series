@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+if SOC_SERIES_RTS5912
+
+config NUM_IRQS
+	default 240
+
+rsource "Kconfig.defconfig.rts5912"
+
+if REALTEK_RTS5912_RTMR
+
+config SOC_HAS_TIMING_FUNCTIONS
+	default y
+
+endif # REALTEK_RTS5912_RTMR
+
+endif # SOC_SERIES_RTS5912

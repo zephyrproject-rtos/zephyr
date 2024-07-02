@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+if SOC_RTS5912
+
+config PINCTRL
+	default y
+
+config CLOCK_CONTROL
+	default y
+
+config GPIO
+	default y
+
+config REALTEK_RTS5912_RTMR
+	default y
+	
+endif # SOC_RTS5912

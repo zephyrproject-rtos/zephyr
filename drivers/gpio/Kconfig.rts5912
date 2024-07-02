@@ -1,0 +1,6 @@
+config GPIO_RTS5912
+	bool "Realtek embedded controller (EC) gpio driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_GPIO_ENABLED
+	help
+	  Enable support for Realtek GPIO controller.

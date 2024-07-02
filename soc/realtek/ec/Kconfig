@@ -1,0 +1,103 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+if SOC_FAMILY_REALTEK_EC
+
+menuconfig REALTEK_RTS5912_IMG_HEADER
+	bool "The output binary with RTS5912 image header"
+	help
+	  the RTS5912 ROM code loads firmware image from flash to RAM by the image header setting. 
+	  Enable this to invoke the 'rts5912_imgtool' to generates the RTS5912 image header.
+
+if REALTEK_RTS5912_IMG_HEADER
+
+config REALTEK_HEADER_CHIP
+	string
+	default "RTS5912" if SOC_RTS5912	
+	
+config REALTEK_RTS5912_OUTPUT_BIN
+	bool "Build RTS5912 binary in BIN format"
+	default y
+	help
+	  Build a "raw" binary zephyr/zephyr.rts5912.bin in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config REALTEK_RTS5912_IMG_HEADER_LOAD_ADDRESS
+	string "The loading address where the RTS5912 ROM code loads firmware image from flash to RAM"
+	default "0x200003E0"
+	help
+	  The loading address where the RTS5912 ROM code loads firmware image from flash to RAM.
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_MODE
+	int "Flash SPI Mode used by the SPI flash"
+	range 0 3
+	default 0
+	help
+	  Choice the SPI mode used by the SPI flash.
+
+choice REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_CHOICE
+	prompt "Clock frequency to use for SPI flash"
+	default REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_DIV1
+	help
+	  This selects the SPI clock frequency that will be used for loading
+	  firmware binary from flash to RAM.
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_DIV1
+	bool "SPI flash clock frequency is SPIC engine clock divide 1"
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_DIV2
+	bool "SPI flash clock frequency is SPIC engine clock divide 2"
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_DIV4
+	bool "SPI flash clock frequency is SPIC engine clock divide 4"
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_DIV8
+	bool "SPI flash clock frequency is SPIC engine clock divide 8"
+
+endchoice # REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_CHOICE
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ
+	int
+	default 0 if REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_DIV1
+	default 1 if REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_DIV2
+	default 2 if REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_DIV4
+	default 3 if REALTEK_RTS5912_IMG_HEADER_SPI_FREQ_MHZ_DIV8
+
+choice REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_CHOICE
+	prompt "Read command used by the SPI flash"
+	default REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_QUAD
+	help
+	  This sets the reading command that can be used by the SPI flash.
+	  Suppot normal read / fast read / dual read / quad read
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_NORMAL
+	bool "Use normal read (0x03) to access SPI flash"
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_FAST
+	bool "Use fast read (0x0B) to access SPI flash"
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_DUAL
+	bool "Use dual read (0x3B) to access SPI flash"
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_QUAD
+	bool "Use quad read (0x6B) to access SPI flash"
+
+endchoice # REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_CHOICE
+
+config REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD
+	string
+	default "0x03" if REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_NORMAL
+	default "0x0B" if REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_FAST
+	default "0x3B" if REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_DUAL
+	default "0x6B" if REALTEK_RTS5912_IMG_HEADER_SPI_READ_CMD_QUAD
+
+endif # REALTEK_RTS5912_IMG_HEADER
+
+#source "soc/arm/realtek_ec/*/Kconfig.soc"
+
+endif # SOC_FAMILY_REALTEK_EC
+
+# Select SoC Part No. and configuration options
+rsource "*/Kconfig"
