@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Extreme Engineering Solutions, Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MCUMGR_GRP_ENUM
+	bool "MCUmgr handlers for enumeration management"
+	help
+	  Enables MCUmgr handlers for enumeration management. This allows
+	  for listing supported command groups.
