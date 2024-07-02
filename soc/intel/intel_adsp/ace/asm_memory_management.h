@@ -12,9 +12,11 @@
 #ifdef _ASMLANGUAGE
 
 /* These definitions should be placed elsewhere, but I can't find a good place for them. */
-#define LSPGCTL						0x71D80
-#define MAX_MEMORY_SEGMENTS			1
-#define EBB_SEGMENT_SIZE			32
+#define LSPGCTL				0x71D80
+#define LSPGCTL_HIGH			(LSPGCTL >> 12)
+#define LSPGCTL_LOW			((LSPGCTL >> 4) & 0xff)
+#define MAX_MEMORY_SEGMENTS		1
+#define EBB_SEGMENT_SIZE		32
 #define PLATFORM_HPSRAM_EBB_COUNT	22
 
 .macro m_ace_hpsram_power_change segment_index, mask, ax, ay, az, au, aw
@@ -29,12 +31,15 @@
 	.else
 		.err
 	.endif
-	.set ebb_index, \segment_index << 5
-	.set i, 0               /* i = bank bit in segment */
 
 	rsr.sar \aw             /* store old sar value */
 
-	movi \az, (0x17A800 + 0x0008 * ebb_index)/* SHIM_HSPGCTL(ebb_index) */
+	/* SHIM_HSPGCTL(ebb_index): 0x17a800 >> 11 == 0x2f5 */
+	movi \az, 0x2f5
+	slli \az, \az, 0xb
+	/* 8 * (\segment_index << 5) == (\segment_index << 5) << 3 == \segment_index << 8 */
+	addmi \az, \az, \segment_index
+
 	movi \au, i_end - 1     /* au = banks count in segment */
 2 :
 	/* au = current bank in segment */
@@ -57,7 +62,9 @@
 
 .macro m_ace_lpsram_power_down_entire ax, ay, az, au
 	movi \au, 8 /* LPSRAM_EBB_QUANTITY */
-	movi \az, LSPGCTL
+	movi \az, LSPGCTL_LOW
+	addmi \az, \az, LSPGCTL_HIGH
+	slli \az, \az, 4
 
 	movi \ay, 1
 2 :
