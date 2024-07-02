@@ -1,0 +1,24 @@
+# WIZ550io (W5500 Ethernet) driver configuration options
+
+# Copyright (c) 2024 Grant Ramsay
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIZ550IO
+	bool "WIZ550io (W5500 Ethernet) driver"
+	default y
+	depends on DT_HAS_WIZNET_WIZ550IO_ENABLED && ETH_W5500
+	help
+	  This driver provides the initialsation sequence required for
+	  WIZ550io to configure the W5500 Ethernet controller with its
+	  embedded unique MAC address.
+
+if WIZ550IO
+
+config WIZ550IO_INIT_PRIORITY
+	int "WIZ550io init priority"
+	default 79
+	help
+	  WIZ550io init must occur before W5500 init.
+	  The default is ETH_INIT_PRIORITY - 1.
+
+endif # WIZ550IO

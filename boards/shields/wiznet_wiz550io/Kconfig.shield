@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Grant Ramsay
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_WIZNET_WIZ550IO
+	def_bool $(shields_list_contains,wiznet_wiz550io)

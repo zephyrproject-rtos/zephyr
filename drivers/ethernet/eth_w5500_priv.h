@@ -100,4 +100,7 @@ struct w5500_runtime {
 	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
 };
 
+int w5500_spi_read(const struct device *dev, uint32_t addr,
+		   uint8_t *data, uint32_t len);
+
 #endif /*_W5500_*/
