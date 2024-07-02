@@ -585,3 +585,33 @@ int pm_device_runtime_usage(const struct device *dev)
 
 	return usage;
 }
+
+int pm_device_runtime_flush(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+	int ret = 0;
+
+	if (!pm_device_runtime_is_enabled(dev)) {
+		return -ENOTSUP;
+	}
+
+	(void)k_sem_take(&pm->lock, K_FOREVER);
+
+	if (pm->base.state == PM_DEVICE_STATE_SUSPENDED) {
+		ret = -EALREADY;
+		goto unlock;
+	}
+
+	if ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) &&
+	    ((k_work_cancel_delayable(&pm->work) & K_WORK_RUNNING) == 0)) {
+		ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
+		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
+	} else {
+		ret = -EINVAL;
+	}
+
+ unlock:
+	k_sem_give(&pm->lock);
+
+	return ret;
+}
