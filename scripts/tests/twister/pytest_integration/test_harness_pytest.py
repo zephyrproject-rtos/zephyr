@@ -169,7 +169,7 @@ def test_if_report_is_parsed(pytester, testinstance: TestInstance):
 
     pytest_harness._update_test_status()
 
-    assert pytest_harness.state == "passed"
+    assert pytest_harness.status == "passed"
     assert testinstance.status == "passed"
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
@@ -199,7 +199,7 @@ def test_if_report_with_error(pytester, testinstance: TestInstance):
 
     pytest_harness._update_test_status()
 
-    assert pytest_harness.state == "failed"
+    assert pytest_harness.status == "failed"
     assert testinstance.status == "failed"
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
@@ -235,7 +235,7 @@ def test_if_report_with_skip(pytester, testinstance: TestInstance):
 
     pytest_harness._update_test_status()
 
-    assert pytest_harness.state == "skipped"
+    assert pytest_harness.status == "skipped"
     assert testinstance.status == "skipped"
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
@@ -265,7 +265,7 @@ def test_if_report_with_filter(pytester, testinstance: TestInstance):
     pytest_harness.configure(testinstance)
     pytest_harness.report_file = report_file
     pytest_harness._update_test_status()
-    assert pytest_harness.state == "passed"
+    assert pytest_harness.status == "passed"
     assert testinstance.status == "passed"
     assert len(testinstance.testcases) == 1
 
@@ -291,5 +291,5 @@ def test_if_report_with_no_collected(pytester, testinstance: TestInstance):
     pytest_harness.configure(testinstance)
     pytest_harness.report_file = report_file
     pytest_harness._update_test_status()
-    assert pytest_harness.state == "skipped"
+    assert pytest_harness.status == "skipped"
     assert testinstance.status == "skipped"
