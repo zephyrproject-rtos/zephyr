@@ -11,9 +11,11 @@ import contextlib
 import mmap
 import glob
 from typing import List
+
 from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import TwisterException, TwisterRuntimeError
+from twisterlib.twister_path import TPath
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -268,11 +270,16 @@ def find_c_files_in(path: str, extensions: list = ['c', 'cpp', 'cxx', 'cc']) -> 
     os.chdir(path)
 
     filenames = []
+    ffs = []
     for ext in extensions:
         # glob.glob('**/*.c') does not pick up the base directory
-        filenames += [os.path.join(path, x) for x in glob.glob(f'*.{ext}')]
+        filenames += [TPath(path, x) for x in glob.glob(f'*.{ext}')]
         # glob matches in subdirectories too
-        filenames += [os.path.join(path, x) for x in glob.glob(f'**/*.{ext}')]
+        filenames += [TPath(path, x) for x in glob.glob(f'**/*.{ext}')]
+        # glob.glob('**/*.c') does not pick up the base directory
+        ffs += [os.path.join(path, x) for x in glob.glob(f'*.{ext}')]
+        # glob matches in subdirectories too
+        ffs += [os.path.join(path, x) for x in glob.glob(f'**/*.{ext}')]
 
     # restore previous CWD
     os.chdir(oldpwd)
@@ -344,10 +351,10 @@ def _find_src_dir_path(test_dir_path):
     optimization reasons it is placed in upper directory.
     """
     src_dir_name = "src"
-    src_dir_path = os.path.join(test_dir_path, src_dir_name)
+    src_dir_path = TPath(test_dir_path, src_dir_name)
     if os.path.isdir(src_dir_path):
         return src_dir_path
-    src_dir_path = os.path.join(test_dir_path, "..", src_dir_name)
+    src_dir_path = TPath(os.path.join(test_dir_path, "..", src_dir_name))
     if os.path.isdir(src_dir_path):
         return src_dir_path
     return ""
@@ -396,7 +403,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             the testcase.yaml defines multiple tests
         """
 
-        workdir = os.path.relpath(suite_path, suite_root)
+        workdir = TPath(os.path.relpath(suite_path, suite_root))
 
         assert self.check_suite_name(name, suite_root, workdir)
         self.detailed_test_id = detailed_test_id
@@ -404,7 +411,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.id = name
 
         self.source_dir = suite_path
-        self.source_dir_rel = os.path.relpath(os.path.realpath(suite_path), start=canonical_zephyr_base)
+        self.source_dir_rel = TPath(os.path.relpath(os.path.realpath(suite_path), start=canonical_zephyr_base))
         self.yamlfile = suite_path
         self.testcases = []
         self.integration_platforms = []
@@ -447,18 +454,18 @@ class TestSuite(DisablePyTestCollectionMixin):
     @staticmethod
     def get_unique(testsuite_root, workdir, name):
 
-        canonical_testsuite_root = os.path.realpath(testsuite_root)
+        canonical_testsuite_root = TPath(os.path.realpath(testsuite_root))
         if Path(canonical_zephyr_base) in Path(canonical_testsuite_root).parents:
             # This is in ZEPHYR_BASE, so include path in name for uniqueness
             # FIXME: We should not depend on path of test for unique names.
-            relative_ts_root = os.path.relpath(canonical_testsuite_root,
-                                               start=canonical_zephyr_base)
+            relative_ts_root = TPath(os.path.relpath(canonical_testsuite_root,
+                                               start=canonical_zephyr_base))
         else:
             relative_ts_root = ""
 
         # workdir can be "."
-        unique = os.path.normpath(os.path.join(relative_ts_root, workdir, name)).replace(os.sep, '/')
-        return unique
+        unique = TPath(os.path.normpath(os.path.join(relative_ts_root, workdir, name)))
+        return unique.get_rel_after_dots_str()
 
     @staticmethod
     def check_suite_name(name, testsuite_root, workdir):
