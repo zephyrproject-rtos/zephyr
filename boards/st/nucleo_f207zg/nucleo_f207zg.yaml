@@ -25,4 +25,5 @@ supported:
   - rng
   - dma
   - rtc
+  - usbd
 vendor: st

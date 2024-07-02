@@ -23,4 +23,5 @@ supported:
   - dma
   - usb_device
   - lptim
+  - usbd
 vendor: st
