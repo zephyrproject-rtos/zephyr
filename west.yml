@@ -270,6 +270,10 @@ manifest:
     - name: liblc3
       revision: 1a5938ebaca4f13fe79ce074f5dee079783aa29f
       path: modules/lib/liblc3
+    - name: libsbc
+      revision: 14609a5ca90334a8fde24983a8773001b9a323b7
+      path: modules/lib/libsbc
+      url: https://github.com/MarkWangChinese/libsbc.git
     - name: littlefs
       path: modules/fs/littlefs
       groups:
