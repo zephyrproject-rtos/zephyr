@@ -59,7 +59,7 @@
 	pinctrl-names = "default";
 };
 
-&flexcomm2_lpi2c2 {
+touch_panel_i2c: &flexcomm2_lpi2c2 {
 	pinctrl-0 = <&pinmux_flexcomm2_lpi2c>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;

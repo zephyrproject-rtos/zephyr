@@ -1,0 +1,9 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gt911_lcd_par_s035 {
+	irq-gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>;
+};
