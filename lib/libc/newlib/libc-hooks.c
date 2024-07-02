@@ -144,8 +144,10 @@ static int malloc_prepare(void)
 
 SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_LIBC);
 
+#ifndef CONFIG_NEWLIB_LIBC_CUSTOM_SBRK
 /* Current offset from HEAP_BASE of unused memory */
 LIBC_BSS static size_t heap_sz;
+#endif /* CONFIG_NEWLIB_LIBC_CUSTOM_SBRK */
 
 static int _stdout_hook_default(int c)
 {
@@ -297,6 +299,7 @@ __weak void _exit(int status)
 	}
 }
 
+#ifndef CONFIG_NEWLIB_LIBC_CUSTOM_SBRK
 void *_sbrk(intptr_t count)
 {
 	void *ret, *ptr;
@@ -317,6 +320,7 @@ void *_sbrk(intptr_t count)
 	return ret;
 }
 __weak FUNC_ALIAS(_sbrk, sbrk, void *);
+#endif /* CONFIG_NEWLIB_LIBC_CUSTOM_SBRK */
 
 #ifdef CONFIG_MULTITHREADING
 
