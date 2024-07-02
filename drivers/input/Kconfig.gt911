@@ -26,4 +26,16 @@ config INPUT_GT911_INTERRUPT
 	help
 	  Enable interrupt support (requires GPIO).
 
+config INPUT_GT911_MULTITOUCH_ENABLED
+	bool "Multitouch support enablement"
+	help
+	  Enables multitouch support.
+
+config INPUT_GT911_MAX_TOUCH_POINTS
+	int "Touch Number"
+	default 5
+	range 1 5
+	depends on INPUT_GT911_MULTITOUCH_ENABLED
+	help
+	  Maximum number of touch points to be handled.
 endif # INPUT_GT911
