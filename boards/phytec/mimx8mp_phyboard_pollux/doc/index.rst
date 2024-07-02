@@ -47,8 +47,7 @@ Board features:
    :height: 405px
    :alt: PhyBOARD Pollux
 
-More information about the board can be found at the
-`PHYTEC website`_.
+More information about the board can be found at the `PHYTEC website`_.
 
 Supported Features
 ==================
@@ -56,32 +55,30 @@ Supported Features
 The Zephyr mimx8mp_phyboard_polis board configuration supports the following hardware
 features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO output                         |
-|           |            | GPIO input                          |
-+-----------+------------+-------------------------------------+
++-----------+------------+------------------------------------+
+| Interface | Controller | Driver/Component                   |
++===========+============+====================================+
+| NVIC      | on-chip    | nested vector interrupt controller |
++-----------+------------+------------------------------------+
+| SYSTICK   | on-chip    | systick                            |
++-----------+------------+------------------------------------+
+| CLOCK     | on-chip    | clock_control                      |
++-----------+------------+------------------------------------+
+| PINMUX    | on-chip    | pinmux                             |
++-----------+------------+------------------------------------+
+| UART      | on-chip    | serial port-polling;               |
+|           |            | serial port-interrupt              |
++-----------+------------+------------------------------------+
+| GPIO      | on-chip    | GPIO output                        |
+|           |            | GPIO input                         |
++-----------+------------+------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/phytec/mimx8mp_phyboard_pollux/mimx8mp_phyboard_pollux_mimx8ml8_m7_defconfig`.
 
 It's recommended to disable peripherals used by the M7-Core on the host running
-on the Linux host.
-
-Other hardware features are not currently supported with Zephyr on the
-M7-Core.
+on the Linux host. Other hardware features are not currently supported with
+Zephyr on the M7-Core.
 
 Connections and IOs
 ===================
@@ -91,32 +88,27 @@ The following Compontens are tested and working correctly.
 UART
 ----
 
-+---------------+-----------------+-----------------------------------+
-| Board Name    | SoM Name        | Usage                             |
-+===============+=================+===================================+
-| Debug USB(A53)| UART1           | UART Debug Console via USB        |
-+---------------+-----------------+-----------------------------------+
-| Wo WiFi Module| UART3           | UART to WiFi/BLE Module           |
-+---------------+-----------------+-----------------------------------+
-| Debug USB(M4) | UART4           | UART Debug Console via USB        |
-+---------------+-----------------+-----------------------------------+
++-----------------+----------+----------------------------+
+| Board Name      | SoM Name | Usage                      |
++=================+==========+============================+
+| Debug USB (A53) | UART1    | UART Debug Console via USB |
++-----------------+----------+----------------------------+
+| Wo WiFi Module  | UART3    | UART to WiFi/BLE Module    |
++-----------------+----------+----------------------------+
+| Debug USB (M7)  | UART4    | UART Debug Console via USB |
++-----------------+----------+----------------------------+
 
 .. note::
-  Please note, that the, to UART3 connected, Wifi/BLE Module isn't working with
-  Zephyr yet. UART3 can also be used through pin 31(RX) and 33(TX) of the
-  X6 Connector.
+  The WiFi/BLE Module connected to UART3 isn't working with Zephyr yet. UART3
+  can also be used through pin 31(RX) and 33(TX) of connector X6.
 
 GPIO
 ----
 
 The pinmuxing for the GPIOs is the standard pinmuxing of the mimx8mp devicetree
-created by NXP. You can find it here:
-
-:zephyr_file:`dts/arm/nxp/nxp_imx8ml_m7.dtsi`.
-
-The Pinout of the PhyBOARD Polis can be found here:
-
-`PHYTEC website`_
+created by NXP and can be found at
+:zephyr_file:`dts/arm/nxp/nxp_imx8ml_m7.dtsi`. The Pinout of the PhyBOARD Polis
+can be found at the `PHYTEC website`_.
 
 Programming and Debugging
 *************************
@@ -124,25 +116,23 @@ Programming and Debugging
 The i.MX8MP does not have a separate flash for the M7-Core. Because of this
 the A53-Core has to load the program for the M7-Core to the right memory
 address, set the PC and start the processor.
-This can only by done with u-boot at the moment. We are working on our BSP to
-enable remoteproc support.
 
 The M7 can use up to 3 different RAMs (currently, only two configurations are
 supported: ITCM and DDR). These are the memory mapping for A53 and M7:
 
-+------------+-------------------------+------------------------+-----------------------+----------------------+
-| Region     | Cortex-A53              | Cortex-M7 (System Bus) | Cortex-M7 (Code Bus)  | Size                 |
-+============+=========================+========================+=======================+======================+
-| OCRAM      | 0x00900000-0x0098FFFF   | 0x20200000-0x2028FFFF  | 0x00900000-0x0098FFFF | 576KB                |
-+------------+-------------------------+------------------------+-----------------------+----------------------+
-| DTCM       | 0x00800000-0x0081FFFF   | 0x20000000-0x2001FFFF  |                       | 128KB                |
-+------------+-------------------------+------------------------+-----------------------+----------------------+
-| ITCM       | 0x007E0000-0x007FFFFF   |                        | 0x00000000-0x0001FFFF | 128KB                |
-+------------+-------------------------+------------------------+-----------------------+----------------------+
-| OCRAM_S    | 0x00180000-0x00188FFF   | 0x20180000-0x20188FFF  | 0x00180000-0x00188FFF | 36KB                 |
-+------------+-------------------------+------------------------+-----------------------+----------------------+
-| DDR        | 0x80000000-0x803FFFFF   | 0x80200000-0x803FFFFF  | 0x80000000-0x801FFFFF | 2MB                  |
-+------------+-------------------------+------------------------+-----------------------+----------------------+
++---------+-----------------------+------------------------+-----------------------+-------+
+| Region  | Cortex-A53            | Cortex-M7 (System Bus) | Cortex-M7 (Code Bus)  | Size  |
++=========+=======================+========================+=======================+=======+
+| OCRAM   | 0x00900000-0x0098FFFF | 0x20200000-0x2028FFFF  | 0x00900000-0x0098FFFF | 576KB |
++---------+-----------------------+------------------------+-----------------------+-------+
+| DTCM    | 0x00800000-0x0081FFFF | 0x20000000-0x2001FFFF  |                       | 128KB |
++---------+-----------------------+------------------------+-----------------------+-------+
+| ITCM    | 0x007E0000-0x007FFFFF |                        | 0x00000000-0x0001FFFF | 128KB |
++---------+-----------------------+------------------------+-----------------------+-------+
+| OCRAM_S | 0x00180000-0x00188FFF | 0x20180000-0x20188FFF  | 0x00180000-0x00188FFF | 36KB  |
++---------+-----------------------+------------------------+-----------------------+-------+
+| DDR     | 0x80000000-0x803FFFFF | 0x80200000-0x803FFFFF  | 0x80000000-0x801FFFFF | 2MB   |
++---------+-----------------------+------------------------+-----------------------+-------+
 
 For more information about memory mapping see the
 `i.MX 8M Plus Applications Processor Reference Manual`_  (section 2.1 to 2.3)
@@ -151,20 +141,17 @@ At compilation time you have to choose which memory region will be used. This
 configuration is done in the devicetree and the defconfig / the config of your
 program.
 
-**By default Zephyr will use the TCM memory region.** You can configure it like
-this for the DDR region:
-
-In the devicetree overwrite the following nodes like this:
+**By default Zephyr will use the TCM memory region.** You can configure it
+to use the DDR region. In the devicetree overwrite you can select both options.
 
 .. code-block:: DTS
 
    chosen {
       /* TCM */
       zephyr,flash = &itcm;
-	   zephyr,sram = &dtcm;
+      zephyr,sram = &dtcm;
    };
 
-change it to
 
 .. code-block:: DTS
 
@@ -175,55 +162,45 @@ change it to
    };
 
 
-In your prj.conf overwrite the configuration like this for the **DDR** memory
-region:
+And in the prj.conf the configuration to the **DDR** memory region:
 
 .. code-block:: cfg
 
    CONFIG_CODE_DDR=y
    CONFIG_CODE_ITCM=n
 
+Connecting to the Serial Console
+================================
 
-Starting the M7-Core via U-Boot
+A serial console for both the application CPU and the Cortex M7 coprocessor are
+available via the onboard dual USB-to-UART converter. If you use Linux, create a
+udev rule (as ``root``) to fix a permission issue when not using root for
+flashing.
+
+.. code-block:: console
+
+   # echo 'ATTR{idProduct}=="0a70", ATTR{idVendor}=="10c4", MODE="0666", GROUP="plugdev"' > /etc/udev/rules.d/50-usb-uart.rules
+
+Reload the rules and replug the device.
+
+.. code-block:: console
+
+   $ sudo udevadm control --reload-rules
+
+Finally, unplug and plug the board again for the rules to take effect.
+
+Connect to the console via your favorite terminal program. For example:
+
+.. code-block:: console
+
+   $ minicom -D /dev/ttyUSB1 -b 115200
+
+Flashing and Debugging via JTAG
 ===============================
 
-Load the compiled zephyr.bin to memory address 0x4800000.
-This should output something like this:
-
-.. code-block:: console
-
-   u-boot=> tftp 0x48000000 192.168.3.10:zephyr.bin
-   Using ethernet@30be0000 device
-   TFTP from server 192.168.3.10; our IP address is 192.168.3.11
-   Filename 'zephyr.bin'.
-   Load address: 0x48000000
-   Loading: ##
-            2 KiB/s
-   done
-   Bytes transferred = 27240 (6a68 hex)
-
-Because it's not possible to load directly to the TCM memory area you have to
-copy the binaries. The last argument given is the size of the file in bytes,
-you can copy it from the output of the last command.
-
-.. code-block:: console
-
-   u-boot=> cp.b 0x48000000 0x7e0000 27240
-
-And finaly starting the M7-Core at the right memory address:
-
-.. code-block:: console
-
-   u-boot=> bootaux 0x7e0000
-   ## Starting auxiliary core stack = 0x20003A58, pc = 0x1FFE1905...
-
-Debugging
-=========
-
-The PhyBOARD Polis can be debugged using a JTAG Debugger.
-The easiest way to do that is to use a SEGGER JLink Debugger and Phytec's
-``PEB-EVAL-01`` Shield, which can be directly connected to the JLink.
-You can find the JLink Software package here: `JLink Software`_
+The PhyBOARD-Pollux can be debugged using a JTAG or SWD debug adapter. A Segger
+JLink can be connected to the compatible JTAG connector on Phytec's
+``PEB-EVAL-01`` shield.
 
 .. figure:: img/PEB-EVAL-01.jpg
    :alt: PEB-EVAL-01
@@ -231,36 +208,46 @@ You can find the JLink Software package here: `JLink Software`_
 
    PEB-EVAL-01
 
-To debug efficiently you have to use multiple terminals:
-
-After connecting everything and building with west use this command while in
-the directory of the program you build earlier to start a debug server:
+Before flashing or debugging via a JTAG debug adapter,
+the M7 core has to be switched on:
 
 .. code-block:: console
 
-   host$ west debugserver
+   u-boot=> bootaux 0x7e0000
 
-West automatically connects via the JLink to the Target and keeps open a
-debug server.
+Here is an example for the :ref:`hello_world` application:
 
-Use another terminal, start gdb, connect to target and load Zephyr on the
-target:
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mimx8mp_phyboard_pollux/mimx8ml8/m7
+   :goals: flash
+
+The console should now show the output of the application:
 
 .. code-block:: console
 
-   host$ gdb-multiarch build/zephyr/zephyr.elf -tui
-   (gdb) targ rem :2331
-   Remote debugging using :2331
-   0x1ffe0008 in _vector_table ()
-   (gdb) mon halt
-   (gdb) mon reset
-   (gdb) c
-   Continuing.
+   *** Booting Zephyr OS build v3.7.0 ***
+   Hello World! mimx8mp_phyboard_pollux/mimx8ml8/m7
 
-The program can be debugged using standard gdb techniques.
+Starting a debug session is similar to flashing:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mimx8mp_phyboard_pollux/mimx8ml8/m7
+   :goals: debug
+
+Starting the M7-Core from U-Boot and Linux
+==========================================
+
+Loading binaries and starting the M7-Core is supported from Linux via remoteproc
+or from U-boot by directly copying the firmware binary. Please check the
+`phyCORE-i.MX 8M Plus BSP Manual`_ for more information.
 
 References
 ==========
+
+- `i.MX 8M Plus Applications Processor Reference Manual`_
+- `phyCORE-i.MX 8M Plus BSP Manual`_
 
 .. _PHYTEC website:
    https://www.phytec.de/produkte/single-board-computer/phyboard-pollux/
@@ -270,3 +257,6 @@ References
 
 .. _JLink Software:
    https://www.segger.com/downloads/jlink/
+
+.. _phyCORE-i.MX 8M Plus BSP Manual:
+   https://phytec.github.io/doc-bsp-yocto/bsp/imx8/imx8mp/imx8mp.html
