@@ -2244,14 +2244,6 @@ static const struct udc_api udc_dwc2_api = {
 		.ghwcfg4 = DT_INST_PROP(n, ghwcfg4),				\
 	};									\
 										\
-	IF_ENABLED(CONFIG_DCACHE, (BUILD_ASSERT(				\
-		!IS_ENABLED(CONFIG_UDC_DWC2_DMA) ||				\
-		(DT_INST_PROP(n, ghwcfg2) & USB_DWC2_GHWCFG2_OTGARCH_MASK) !=	\
-			(USB_DWC2_GHWCFG2_OTGARCH_INTERNALDMA <<		\
-			 USB_DWC2_GHWCFG2_OTGARCH_POS),				\
-		"USB stack does not provide D-Cache aware buffers yet");	\
-	))									\
-										\
 	static struct udc_dwc2_data udc_priv_##n = {				\
 	};									\
 										\
