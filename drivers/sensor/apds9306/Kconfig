@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Daniel Kampert
+# Author: Daniel Kampert <DanielKampert@Kampis-Elektroecke.de>
+
+menuconfig APDS9306
+	bool "APDS9306 Sensor"
+	default y
+	depends on DT_HAS_AVAGO_APDS9306_ENABLED
+	select I2C
+	help
+		Enable the driver for the APDS9306 digital light sensor.
+
+if APDS9306
+config EMUL_APDS9306
+	bool "Emulate a Avago APDS9306 light sensor"
+	default y
+	depends on EMUL
+	depends on APDS9306
+	help
+	  This is an emulator for the Avago APDS9306 light sensor.
+
+endif
