@@ -20,4 +20,5 @@ supported:
   - eeprom
   - nvs
   - lora
+  - usbd
 vendor: st
