@@ -7,6 +7,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Need a name different than bt_l2cap_fixed_chan for a different section */
+struct bt_l2cap_br_fixed_chan {
+	uint16_t		cid;
+	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
+};
+
+#define BT_L2CAP_BR_CHANNEL_DEFINE(_name, _cid, _accept)		\
+	const STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
+				.cid = _cid,			\
+				.accept = _accept,		\
+			}
+
 /* Initialize BR/EDR L2CAP signal layer */
 void bt_l2cap_br_init(void);
 

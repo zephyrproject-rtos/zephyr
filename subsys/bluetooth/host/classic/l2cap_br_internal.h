@@ -131,18 +131,6 @@ struct bt_l2cap_info_rsp {
 	uint8_t  data[0];
 } __packed;
 
-/* Need a name different than bt_l2cap_fixed_chan for a different section */
-struct bt_l2cap_br_fixed_chan {
-	uint16_t		cid;
-	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
-};
-
-#define BT_L2CAP_BR_CHANNEL_DEFINE(_name, _cid, _accept)		\
-	const STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
-				.cid = _cid,			\
-				.accept = _accept,		\
-			}
-
 #define BR_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_br_chan, chan)
 
 /* Add channel to the connection */

@@ -830,6 +830,13 @@ static enum security_result rfcomm_dlc_security(struct bt_rfcomm_dlc *dlc)
 	}
 
 	if (!bt_conn_set_security(conn, dlc->required_sec_level)) {
+		/*
+		 * General Bonding refers to the process of performing bonding
+		 * during connection setup or channel establishment procedures
+		 * as a precursor to accessing a service.
+		 * For current case, it is dedicated bonding.
+		 */
+		atomic_set_bit(conn->flags, BT_CONN_BR_GENERAL_BONDING);
 		/* If Security elevation is initiated or in progress */
 		return RFCOMM_SECURITY_PENDING;
 	}

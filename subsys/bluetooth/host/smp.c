@@ -37,7 +37,6 @@
 #include "keys.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
-#include "classic/l2cap_br_interface.h"
 #include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_SMP_LOG_LEVEL
@@ -1256,8 +1255,8 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 	smp->local_dist &= rsp->init_key_dist;
 	smp->remote_dist &= rsp->resp_key_dist;
 
-	smp->local_dist &= SEND_KEYS_SC;
-	smp->remote_dist &= RECV_KEYS_SC;
+	smp->local_dist &= BR_SEND_KEYS_SC;
+	smp->remote_dist &= BR_RECV_KEYS_SC;
 
 	/* Peripheral distributes its keys first */
 
@@ -1459,7 +1458,7 @@ static int smp_br_error(struct bt_smp_br *smp, uint8_t reason)
 	 * SMP timer is not restarted for PairingFailed so don't use
 	 * smp_br_send
 	 */
-	if (bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf,
+	if (bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf,
 				NULL, NULL)) {
 		net_buf_unref(buf);
 	}
@@ -2635,6 +2634,11 @@ static int smp_init(struct bt_smp *smp)
 void bt_set_bondable(bool enable)
 {
 	bondable = enable;
+}
+
+bool bt_get_bondable(void)
+{
+	return bondable;
 }
 
 void bt_le_oob_set_sc_flag(bool enable)
@@ -6034,8 +6038,7 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept, NULL);
 #if defined(CONFIG_BT_CLASSIC)
-BT_L2CAP_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
-			bt_smp_br_accept, NULL);
+BT_L2CAP_BR_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP, bt_smp_br_accept);
 #endif /* CONFIG_BT_CLASSIC */
 
 int bt_smp_init(void)

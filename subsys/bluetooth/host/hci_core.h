@@ -537,6 +537,9 @@ void bt_finalize_init(void);
 
 void bt_hci_host_num_completed_packets(struct net_buf *buf);
 
+/* Get bondable flag */
+bool bt_get_bondable(void);
+
 /* HCI event handlers */
 void bt_hci_pin_code_req(struct net_buf *buf);
 void bt_hci_link_key_notify(struct net_buf *buf);
