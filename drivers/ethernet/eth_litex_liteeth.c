@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT litex_eth0
 
-#define LOG_MODULE_NAME eth_liteeth
+#define LOG_MODULE_NAME eth_litex
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
@@ -199,8 +199,6 @@ static int eth_set_config(const struct device *dev, enum ethernet_config_type ty
 	return ret;
 }
 
-#ifdef CONFIG_ETH_LITEETH_0
-
 static struct eth_liteeth_dev_data eth_data = {
 	.mac_addr =  DT_INST_PROP(0, local_mac_address)
 };
@@ -281,5 +279,3 @@ static void eth_irq_config(void)
 	irq_enable(LITEETH_IRQ);
 	litex_write8(1, LITEETH_RX_EV_ENABLE_ADDR);
 }
-
-#endif /* CONFIG_ETH_LITEETH_0 */
