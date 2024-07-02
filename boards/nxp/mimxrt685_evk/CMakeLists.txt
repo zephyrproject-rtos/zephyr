@@ -11,6 +11,7 @@ endif()
 
 if(CONFIG_BOARD_MIMXRT685_EVK_MIMXRT685S_HIFI4)
 zephyr_library()
+zephyr_library_sources(hifi4/init.c)
 endif()
 
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
