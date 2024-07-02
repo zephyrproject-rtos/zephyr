@@ -486,6 +486,13 @@ Drivers and Sensors
 
 * I3C
 
+  * Added shell support for querying bus and CCC commands.
+
+  * Added driver to support the I3C controller on NPCX.
+
+  * Improvements and bug fixes on :dtcompatible:`nxp,mcux-i3c`, including handling the bus
+    being busy more gracefully instead of simply returning errors.
+
 * IEEE 802.15.4
 
 * Input
