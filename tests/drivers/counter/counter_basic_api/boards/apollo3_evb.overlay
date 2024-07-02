@@ -1,0 +1,31 @@
+&counter0 {
+	status = "okay";
+};
+
+&counter1 {
+	status = "disabled";
+};
+
+&counter2 {
+	status = "disabled";
+};
+
+&counter3 {
+	status = "disabled";
+};
+
+&counter4 {
+	status = "disabled";
+};
+
+&counter5 {
+	status = "disabled";
+};
+
+&counter6 {
+	status = "disabled";
+};
+
+&counter7 {
+	status = "disabled";
+};
