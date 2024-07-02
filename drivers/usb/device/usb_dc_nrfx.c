@@ -124,7 +124,8 @@ struct nrf_usbd_ep_buf {
  */
 struct nrf_usbd_ep_ctx {
 	struct nrf_usbd_ep_cfg cfg;
-	struct nrf_usbd_ep_buf buf;
+	uint8_t *in_buf;
+	struct nrf_usbd_ep_buf out_buf;
 	volatile bool read_complete;
 	volatile bool read_pending;
 	volatile bool write_in_progress;
@@ -202,17 +203,26 @@ K_MEM_SLAB_DEFINE(fifo_elem_slab, FIFO_ELEM_SZ,
 #define EP_ISOIN_INDEX CFG_EPIN_CNT
 #define EP_ISOOUT_INDEX (CFG_EPIN_CNT + CFG_EP_ISOIN_CNT + CFG_EPOUT_CNT)
 
-#define EP_BUF_MAX_SZ		64UL
-#define ISO_EP_BUF_MAX_SZ	1024UL
+#define EP_IN_BUF_MAX_SZ	1024UL
+#define EP_OUT_BUF_MAX_SZ	64UL
+#define ISO_EP_OUT_BUF_MAX_SZ	1024UL
+
+/**
+ * @brief Input endpoint buffers
+ *	Used as buffers for the input endpoints' data transfer
+ *	Max buffers size possible: 1024 Bytes
+ */
+static uint8_t ep_in_bufs[CFG_EPIN_CNT][EP_IN_BUF_MAX_SZ]
+	       __aligned(sizeof(uint32_t));
 
 /**
  * @brief Output endpoint buffers
- *	Used as buffers for the endpoints' data transfer
+ *	Used as buffers for the output endpoints' data transfer
  *	Max buffers size possible: 1536 Bytes (8 EP * 64B + 1 ISO * 1024B)
  */
-static uint8_t ep_out_bufs[CFG_EPOUT_CNT][EP_BUF_MAX_SZ]
+static uint8_t ep_out_bufs[CFG_EPOUT_CNT][EP_OUT_BUF_MAX_SZ]
 	       __aligned(sizeof(uint32_t));
-static uint8_t ep_isoout_bufs[CFG_EP_ISOOUT_CNT][ISO_EP_BUF_MAX_SZ]
+static uint8_t ep_isoout_bufs[CFG_EP_ISOOUT_CNT][ISO_EP_OUT_BUF_MAX_SZ]
 	       __aligned(sizeof(uint32_t));
 
 /** Total endpoints configured */
@@ -601,9 +611,9 @@ static void usbd_enable_endpoints(struct nrf_usbd_ctx *ctx)
  */
 static void ep_ctx_reset(struct nrf_usbd_ep_ctx *ep_ctx)
 {
-	ep_ctx->buf.data = ep_ctx->buf.block.data;
-	ep_ctx->buf.curr = ep_ctx->buf.data;
-	ep_ctx->buf.len  = 0U;
+	ep_ctx->out_buf.data = ep_ctx->out_buf.block.data;
+	ep_ctx->out_buf.curr = ep_ctx->out_buf.data;
+	ep_ctx->out_buf.len  = 0U;
 
 	/* Abort ongoing write operation. */
 	if (ep_ctx->write_in_progress) {
@@ -632,14 +642,16 @@ static int eps_ctx_init(void)
 		ep_ctx = in_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 		ep_ctx_reset(ep_ctx);
+
+		ep_ctx->in_buf = ep_in_bufs[i];
 	}
 
 	for (i = 0U; i < CFG_EPOUT_CNT; i++) {
 		ep_ctx = out_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 
-		if (!ep_ctx->buf.block.data) {
-			ep_ctx->buf.block.data = ep_out_bufs[i];
+		if (!ep_ctx->out_buf.block.data) {
+			ep_ctx->out_buf.block.data = ep_out_bufs[i];
 		}
 
 		ep_ctx_reset(ep_ctx);
@@ -657,8 +669,8 @@ static int eps_ctx_init(void)
 		ep_ctx = out_endpoint_ctx(NRF_USBD_EPOUT(8));
 		__ASSERT_NO_MSG(ep_ctx);
 
-		if (!ep_ctx->buf.block.data) {
-			ep_ctx->buf.block.data = ep_isoout_bufs[0];
+		if (!ep_ctx->out_buf.block.data) {
+			ep_ctx->out_buf.block.data = ep_isoout_bufs[0];
 		}
 
 		ep_ctx_reset(ep_ctx);
@@ -745,14 +757,14 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	 * For compatibility with the USB stack,
 	 * SETUP packet must be reassembled.
 	 */
-	usbd_setup = (struct usb_setup_packet *)ep_ctx->buf.data;
+	usbd_setup = (struct usb_setup_packet *)ep_ctx->out_buf.data;
 	memset(usbd_setup, 0, sizeof(struct usb_setup_packet));
 	usbd_setup->bmRequestType = nrf_usbd_setup_bmrequesttype_get(NRF_USBD);
 	usbd_setup->bRequest = nrf_usbd_setup_brequest_get(NRF_USBD);
 	usbd_setup->wValue = nrf_usbd_setup_wvalue_get(NRF_USBD);
 	usbd_setup->wIndex = nrf_usbd_setup_windex_get(NRF_USBD);
 	usbd_setup->wLength = nrf_usbd_setup_wlength_get(NRF_USBD);
-	ep_ctx->buf.len = sizeof(struct usb_setup_packet);
+	ep_ctx->out_buf.len = sizeof(struct usb_setup_packet);
 
 	/* Copy setup packet to driver internal structure */
 	memcpy(&usbd_ctx.setup, usbd_setup, sizeof(struct usb_setup_packet));
@@ -792,7 +804,7 @@ static inline void usbd_work_process_recvreq(struct nrf_usbd_ctx *ctx,
 	ep_ctx->read_complete = false;
 
 	k_mutex_lock(&ctx->drv_lock, K_FOREVER);
-	NRF_USBD_COMMON_TRANSFER_OUT(transfer, ep_ctx->buf.data,
+	NRF_USBD_COMMON_TRANSFER_OUT(transfer, ep_ctx->out_buf.data,
 				     ep_ctx->cfg.max_sz);
 	nrfx_err_t err = nrf_usbd_common_ep_transfer(
 		ep_addr_to_nrfx(ep_ctx->cfg.addr), &transfer);
@@ -916,17 +928,17 @@ static void usbd_event_transfer_ctrl(nrf_usbd_common_evt_t const *const p_event)
 			ev->evt.ep_evt.ep = ep_ctx;
 
 			err_code = nrf_usbd_common_ep_status_get(
-				p_event->data.eptransfer.ep, &ep_ctx->buf.len);
+				p_event->data.eptransfer.ep, &ep_ctx->out_buf.len);
 
 			if (err_code != NRF_USBD_COMMON_EP_OK) {
 				LOG_ERR("_ep_status_get failed! Code: %d",
 					err_code);
 				__ASSERT_NO_MSG(0);
 			}
-			LOG_DBG("ctrl read done: %d", ep_ctx->buf.len);
+			LOG_DBG("ctrl read done: %d", ep_ctx->out_buf.len);
 
-			if (ctx->ctrl_read_len > ep_ctx->buf.len) {
-				ctx->ctrl_read_len -= ep_ctx->buf.len;
+			if (ctx->ctrl_read_len > ep_ctx->out_buf.len) {
+				ctx->ctrl_read_len -= ep_ctx->out_buf.len;
 				/* Allow next data chunk on EP0 OUT */
 				nrf_usbd_common_setup_data_clear();
 			} else {
@@ -1017,12 +1029,12 @@ static void usbd_event_transfer_data(nrf_usbd_common_evt_t const *const p_event)
 				return;
 			}
 
-			ep_ctx->buf.len = nrf_usbd_ep_amount_get(NRF_USBD,
+			ep_ctx->out_buf.len = nrf_usbd_ep_amount_get(NRF_USBD,
 				p_event->data.eptransfer.ep);
 
 			LOG_DBG("read complete, ep 0x%02x, len %d",
 				(uint32_t)p_event->data.eptransfer.ep,
-				ep_ctx->buf.len);
+				ep_ctx->out_buf.len);
 
 			ev->evt_type = USBD_EVT_EP;
 			ev->evt.ep_evt.evt_type = EP_EVT_RECV_COMPLETE;
@@ -1473,8 +1485,8 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	ep_ctx->buf.len = 0U;
-	ep_ctx->buf.curr = ep_ctx->buf.data;
+	ep_ctx->out_buf.len = 0U;
+	ep_ctx->out_buf.curr = ep_ctx->out_buf.data;
 
 	LOG_DBG("STALL on EP 0x%02x", ep);
 
@@ -1612,8 +1624,8 @@ int usb_dc_ep_flush(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	ep_ctx->buf.len = 0U;
-	ep_ctx->buf.curr = ep_ctx->buf.data;
+	ep_ctx->out_buf.len = 0U;
+	ep_ctx->out_buf.curr = ep_ctx->out_buf.data;
 
 	nrf_usbd_common_transfer_out_drop(ep_addr_to_nrfx(ep));
 
@@ -1621,7 +1633,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 }
 
 int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
-		    const uint32_t data_len, uint32_t *const ret_bytes)
+		    uint32_t data_len, uint32_t *const ret_bytes)
 {
 	LOG_DBG("ep_write: ep 0x%02x, len %d", ep, data_len);
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
@@ -1689,8 +1701,13 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		return 0;
 	}
 
+	if (data_len > EP_IN_BUF_MAX_SZ) {
+		data_len = EP_IN_BUF_MAX_SZ;
+	}
+	memcpy(ep_ctx->in_buf, data, data_len);
+
 	ep_ctx->write_in_progress = true;
-	NRF_USBD_COMMON_TRANSFER_IN(transfer, data, data_len, 0);
+	NRF_USBD_COMMON_TRANSFER_IN(transfer, ep_ctx->in_buf, data_len, 0);
 	nrfx_err_t err = nrf_usbd_common_ep_transfer(ep_addr_to_nrfx(ep), &transfer);
 
 	if (err != NRFX_SUCCESS) {
@@ -1741,20 +1758,20 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 
 	k_mutex_lock(&ctx->drv_lock, K_FOREVER);
 
-	bytes_to_copy = MIN(max_data_len, ep_ctx->buf.len);
+	bytes_to_copy = MIN(max_data_len, ep_ctx->out_buf.len);
 
 	if (!data && !max_data_len) {
 		if (read_bytes) {
-			*read_bytes = ep_ctx->buf.len;
+			*read_bytes = ep_ctx->out_buf.len;
 		}
 		k_mutex_unlock(&ctx->drv_lock);
 		return 0;
 	}
 
-	memcpy(data, ep_ctx->buf.curr, bytes_to_copy);
+	memcpy(data, ep_ctx->out_buf.curr, bytes_to_copy);
 
-	ep_ctx->buf.curr += bytes_to_copy;
-	ep_ctx->buf.len -= bytes_to_copy;
+	ep_ctx->out_buf.curr += bytes_to_copy;
+	ep_ctx->out_buf.len -= bytes_to_copy;
 	if (read_bytes) {
 		*read_bytes = bytes_to_copy;
 	}
@@ -1787,8 +1804,8 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	}
 
 	k_mutex_lock(&ctx->drv_lock, K_FOREVER);
-	if (!ep_ctx->buf.len) {
-		ep_ctx->buf.curr = ep_ctx->buf.data;
+	if (!ep_ctx->out_buf.len) {
+		ep_ctx->out_buf.curr = ep_ctx->out_buf.data;
 		ep_ctx->read_complete = true;
 
 		if (ep_ctx->read_pending) {
