@@ -40,6 +40,8 @@ typedef enum {
 	AUDIO_PCM_RATE_32K	= 32000,	/**< 32 kHz sample rate */
 	AUDIO_PCM_RATE_44P1K	= 44100,	/**< 44.1 kHz sample rate */
 	AUDIO_PCM_RATE_48K	= 48000,	/**< 48 kHz sample rate */
+	AUDIO_PCM_RATE_11K	= 11025,	/*!< 11.025kHz */
+	AUDIO_PCM_RATE_22K	= 22050,	/*!< 22.05kHz */
 	AUDIO_PCM_RATE_96K	= 96000,	/**< 96 kHz sample rate */
 	AUDIO_PCM_RATE_192K	= 192000,	/**< 192 kHz sample rate */
 } audio_pcm_rate_t;
@@ -59,6 +61,10 @@ typedef enum {
  */
 typedef enum {
 	AUDIO_DAI_TYPE_I2S,	/**< I2S Interface */
+	AUDIO_DAI_TYPE_LEFT_JUSTIFIED,
+	AUDIO_DAI_TYPE_RIGHT_JUSTIFIED,
+	AUDIO_DAI_TYPE_PCMA,
+	AUDIO_DAI_TYPE_PCMB,
 	AUDIO_DAI_TYPE_INVALID,	/**< Other interfaces can be added here */
 } audio_dai_type_t;
 
@@ -83,6 +89,10 @@ typedef enum {
 	AUDIO_CHANNEL_REAR_CENTER,	/**< Rear center channel */
 	AUDIO_CHANNEL_SIDE_LEFT,	/**< Side left channel */
 	AUDIO_CHANNEL_SIDE_RIGHT,	/**< Side right channel */
+	AUDIO_CHANNEL_HEADPHONE_LEFT,
+	AUDIO_CHANNEL_HEADPHONE_RIGHT,
+	AUDIO_CHANNEL_LINEOUT_LEFT,
+	AUDIO_CHANNEL_LINEOUT_RIGHT,
 	AUDIO_CHANNEL_ALL,		/**< All channels */
 } audio_channel_t;
 
@@ -96,6 +106,16 @@ typedef union {
 				/* Other DAI types go here */
 } audio_dai_cfg_t;
 
+/*
+ * DAI Route types
+ */
+typedef enum {
+	AUDIO_ROUTE_BYPASS,
+	AUDIO_ROUTE_PLAYBACK,
+	AUDIO_ROUTE_PLAYBACK_CAPTURE,
+	AUDIO_ROUTE_CAPTURE,
+} audio_route_t;
+
 /**
  * Codec configuration parameters
  */
@@ -103,6 +123,7 @@ struct audio_codec_cfg {
 	uint32_t		mclk_freq;	/**< MCLK input frequency in Hz */
 	audio_dai_type_t	dai_type;	/**< Digital interface type */
 	audio_dai_cfg_t		dai_cfg;	/**< DAI configuration info */
+	audio_route_t		dai_route;	/* DAI route info */
 };
 
 /**
@@ -111,6 +132,7 @@ struct audio_codec_cfg {
 typedef union {
 	int	vol;	/**< Volume level in 0.5dB resolution */
 	bool	mute;	/**< Mute if @a true, unmute if @a false */
+	bool    loopback; /* loopback mode */
 } audio_property_value_t;
 
 /**

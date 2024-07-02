@@ -1,0 +1,49 @@
+# Copyright (c) 2023, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_WM8904
+	bool "use WM8904"
+	select I2C
+	select I2S
+	help
+	  This option is to use the WM8904 codec
+
+if AUDIO_CODEC_WM8904
+
+config AUDIO_LOOP_DIVIDER
+	int "PLL loop divider"
+	default 32
+	help
+	  PLL loop divider. Valid range for DIV_SELECT divider value: 27~54
+
+config AUDIO_POST_DIVIDER
+	int "Divider after the PLL"
+	default 1
+	help
+	  Divider after the PLL, should only be 1, 2, 4, 8, 16
+
+config AUDIO_NUMERATOR
+	int "numerator of fractional loop divider."
+	default 77
+	help
+	  30 bit numerator of fractional loop divider.
+
+config AUDIO_DENOMINATOR
+	int "denominator"
+	default 100
+	help
+	  30 bit denominator of fractional loop divider
+
+config WM8904_LEFT_INPUT
+	int "left input"
+	default 0
+	help
+	  WM8904 left input 0 - 5
+
+config WM8904_RIGHT_INPUT
+	int "right input"
+	default 2
+	help
+	  WM8904 right input 0 - 5
+
+endif # AUDIO_WM8904
