@@ -617,6 +617,35 @@ endfunction()
 # String functions - end
 #
 
+# Deduplicates a list of objects by their NAME property. The last object with a given NAME wins, and
+# is inserted at the position of the first object with that NAME. Otherwise, order is preserved.
+function(dedup_by_name list_var)
+  foreach(object ${${list_var}})
+    if("${object}" MATCHES "^{(.*)}$")
+      cmake_parse_arguments(FIELDS "" "NAME" "" ${CMAKE_MATCH_1})
+      set(key ${FIELDS_NAME})
+
+      list(FIND object_keys ${key} key_idx)
+      if(${key_idx} EQUAL -1)
+        # don't have this key yet, append it
+        list(LENGTH object_keys key_idx)
+        list(APPEND object_keys ${key})
+      endif()
+
+      set(object_${key_idx} "${object}")
+    endif()
+  endforeach()
+
+  list(LENGTH object_keys num_keys)
+  math(EXPR max_key_idx ${num_keys}-1)
+  foreach(key_idx RANGE ${max_key_idx})
+    string(REPLACE ";" "\\\\\\;" object "${object_${key_idx}}")
+    list(APPEND dedup_objects ${object})
+  endforeach()
+
+  set(${list_var} ${dedup_objects} PARENT_SCOPE)
+endfunction()
+
 create_system(OBJECT new_system NAME ZEPHYR_LINKER_v1 FORMAT ${FORMAT} ENTRY ${ENTRY})
 
 # Sorting the memory sections in ascending order.
@@ -646,12 +675,14 @@ foreach(region ${MEMORY_REGIONS_SORTED})
   endif()
 endforeach()
 
+dedup_by_name(GROUPS)
 foreach(group ${GROUPS})
   if("${group}" MATCHES "^{(.*)}$")
     create_group(OBJECT new_group ${CMAKE_MATCH_1})
   endif()
 endforeach()
 
+dedup_by_name(SECTIONS)
 foreach(section ${SECTIONS})
   if("${section}" MATCHES "^{(.*)}$")
     create_section(${CMAKE_MATCH_1} SYSTEM ${new_system})

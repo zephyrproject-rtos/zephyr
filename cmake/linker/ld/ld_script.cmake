@@ -251,16 +251,16 @@ function(section_to_string)
       endif()
     endif()
 
+    if(DEFINED offset AND NOT ("${offset}" STREQUAL "${current_offset}"))
+      set(TEMP "${TEMP}\n  . = ${offset};")
+      set(current_offset ${offset})
+    endif()
+
     if(DEFINED symbol_start)
       set(TEMP "${TEMP}\n  ${symbol_start} = .;")
     endif()
 
     foreach(setting ${input})
-      if(DEFINED offset AND NOT ("${offset}" STREQUAL "${current_offset}"))
-        set(TEMP "${TEMP}\n  . = ${offset};")
-        set(current_offset ${offset})
-      endif()
-
       if(keep AND sort)
         set(TEMP "${TEMP}\n  KEEP(*(${SORT_TYPE_${sort}}(${setting})));")
       elseif(SETTINGS_SORT)
