@@ -298,10 +298,16 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * Added support for Ambiq Apollo3 Blue and Apollo3 Blue Plus SoC series.
+  * Added support for STM32H7R/S SoC series.
 
 * Made these changes in other SoC series:
 
   * ITE: Rename the Kconfig symbol for all ITE SoC variants.
+  * STM32: Enabled ART Accelerator, I-cache, D-cache and prefetch on compatible series.
+  * STM32H5: Added support for Stop mode and :kconfig:option:`CONFIG_PM`.
+  * STM32WL: Decreased Sub-GHz SPI frequency from 12 to 8MHz.
+  * STM32C0: Added support for :kconfig:option:`CONFIG_POWEROFF`.
+  * STM32U5: Added support for Stop3 mode.
 
 * Added support for these ARM boards:
 
@@ -312,10 +318,22 @@ Boards & SoC Support
   * Added support for :ref:`Mikroe RA4M1 Clicker board <mikroe_clicker_ra4m1>`: ``mikroe_clicker_ra4m1``.
   * Added support for :ref:`Arduino UNO R4 WiFi board <arduino_uno_r4>`: ``arduino_uno_r4_wifi``.
   * Added support for :ref:`Renesas EK-RA8M1 board <ek_ra8m1>`: ``ek_ra8m1``.
+  * Added support for :ref:`ST Nucleo H533RE <nucleo_h533re_board>`: ``nucleo_h533re``.
+  * Added support for :ref:`ST STM32C0116-DK Discovery Kit <stm32c0116_dk_board>`: ``stm32c0116_dk``.
+  * Added support for :ref:`ST STM32H745I Discovery <stm32h745i_disco_board>`: ``stm32h745i_disco``.
+  * Added support for :ref:`ST STM32H7S78-DK Discovery <stm32h7s78_dk_board>`: ``stm32h7s78_dk``.
+  * Added support for :ref:`ST STM32L152CDISCOVERY board <stm32l1_disco_board>`: ``stm32l152c_disco``.
+  * Added support for :ref:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1_board>`: ``steval_stwinbx1``.
 
 * Added support for these Xtensa boards:
 
 * Made these changes for ARM boards:
+
+  * On :ref:`ST STM32H7B3I Discovery Kit <stm32h7b3i_dk_board>`: ``stm32h7b3i_dk_board``,
+    enabled full cache management, Chrom-ART, double frame buffer and full refresh for
+    optimal LVGL perfomances.
+  * On ST STM32 boards, stm32cubeprogrammer runner can now be used to program external
+    flash using ``--extload`` option.
 
 * Made these changes for RISC-V boards:
 
@@ -365,6 +383,8 @@ Drivers and Sensors
 
 * ADC
 
+  * Added support for STM32H7R/S series.
+
 * Auxiliary Display
 
 * Audio
@@ -375,6 +395,8 @@ Drivers and Sensors
     limit to automatically start charging again.
 
 * Battery backed up RAM
+
+  * Added support for STM32G0 and STM32H5 series.
 
 * CAN
 
@@ -410,9 +432,13 @@ Drivers and Sensors
 
 * Clock control
 
+  * Added support for Microcontroller Clock Output (MCO) on STM32H5 series.
+  * Added support for MSI clock on STM32WL series.
+
 * Counter
 
   * Added support for Ambiq Apollo3 series.
+  * Added support for STM32H7R/S series.
 
 * Crypto
 
@@ -427,6 +453,7 @@ Drivers and Sensors
     :c:macro:`DISK_IOCTL_CTRL_DEINIT` macros, which allow for initializing
     and de-initializing a disk at runtime. This allows hotpluggable
     disk devices (like SD cards) to be removed and reinserted at runtime.
+  * Added SDMMC support for STM32H5 series.
 
 * Display
 
@@ -455,6 +482,8 @@ Drivers and Sensors
 
 * Entropy
 
+  * Added support for STM32H7R/S series.
+
 * EEPROM
 
   * Added property for specifying ``address-width`` to :dtcompatible:`zephyr,i2c-target-eeprom`.
@@ -470,6 +499,7 @@ Drivers and Sensors
   * Driver nxp_enet is no longer experimental.
   * All boards and SOCs with :dtcompatible:`nxp,kinetis-ethernet` compatible nodes
     reworked to use the new :dtcompatible:`nxp,enet` binding.
+  * Added support for PTP on compatible STM32 series (STM32F7, STM32H5 and STM32H7).
 
 * Flash
 
@@ -487,6 +517,11 @@ Drivers and Sensors
   * Added the c:func:`flash_fill` utility function which allows to write
     a single value across a provided range in a selected device.
   * Added support for RRAM on nrf54l15 devices.
+  * Added support of non busy wait polling in STM32 OSPI driver.
+  * Added support for STM32 XSPI external NOR flash driver (:dtcompatible:`st,stm32-xspi-nor`).
+  * Added support for XIP on external NOR flash in STM32 OSPI, QSPI and XSPI driver.
+  * STM32 OSPI driver: clk, dqs, ncs ports can now be configured by device tree
+    configurable (see :dtcompatible:`st,stm32-ospi`).
 
 * GNSS
 
@@ -494,12 +529,28 @@ Drivers and Sensors
 
   * Added support for Ambiq Apollo3 series.
   * Added Broadcom Set-top box(brcmstb) SoC GPIO driver.
+  * Added c:macro:`STM32_GPIO_WKUP` flag which allows to configure specific pins as wakeup source
+    from Power Off state on STM32 L4, U5, WB, & WL SoC series.
+
+* Hardware info
+
+  * Added device EUI64 ID support and implementation for STM32WB, STM32WBA and STM32WL series.
 
 * I2C
 
   * Added support for Ambiq Apollo3 series.
+  * In STM32 V2 driver, added support for a new :kconfig:option:`CONFIG_I2C_STM32_V2_TIMING`
+    which automatically computes bus timings which should be used to configure the hardware
+    block depending on the clock configuration in use. To avoid embedding this heavy algorithm
+    in a production application, a dedicated sample :zephyr:code-sample:`stm32_i2c_v2_timings` is provided
+    to get the output of the algorithm. Once bus timings configuration is available,
+    :kconfig:option:`CONFIG_I2C_STM32_V2_TIMING` could be disabled, bus timings configured
+    using device tree.
+  * Added support for STM32H5 series.
 
 * I2S
+
+  * Added support for STM32H5 series.
 
 * I3C
 
@@ -531,7 +582,13 @@ Drivers and Sensors
 
   * Added driver for Reyax LoRa module
 
+* Mailbox
+
+  * Added support for HSEM based STM32 driver.
+
 * MDIO
+
+  * Added support for STM32 MDIO controller driver.
 
 * MFD
 
@@ -570,6 +627,8 @@ Drivers and Sensors
 
 * PWM
 
+  * Added support for STM32H7R/S series.
+
 * Regulators
 
 * Reset
@@ -583,24 +642,31 @@ Drivers and Sensors
 * RTC
 
   * Added Raspberry Pi Pico RTC driver.
+  * Added support for :kconfig:option:`CONFIG_RTC_ALARM` on all STM32 MCU series (except STM32F1).
 
-* SMBUS:
+* SMBUS
 
 * SDHC
 
   * Added ESP32 SDHC driver (:dtcompatible:`espressif,esp32-sdhc`).
   * Added SDHC driver for Renesas MMC controller (:dtcompatible:`renesas,rcar-mmc`).
 
-* Sensor
+* Sensors
 
   * Added TMP114 driver
   * Added DS18S20 1-wire temperature sensor driver.
+  * STM32 QDEC driver now supports encoder mode configuration (see :dtcompatible:`st,stm32-qdec`).
+  * Added support for STM32 Digital Temperature Sensor (:dtcompatible:`st,stm32-digi-temp`).
 
 * Serial
 
   * Added driver to support UART over Bluetooth LE using NUS (Nordic UART Service). This driver
     enables using Bluetooth as a transport to all the subsystems that are currently supported by
     UART (e.g: Console, Shell, Logging).
+  * Added :kconfig:option:`CONFIG_NOCACHE_MEMORY` support in async DMA mode in STM32 driver.
+    It is now possible to use UART in DMA mode with :kconfig:option:`CONFIG_DCACHE` enabled
+    on STM32 F7 & H7 SoC series, as long as DMA buffers are placed in an uncached memory section.
+  * Added support for STM32H7R/S series.
 
   * Added support for HSCIF (High Speed Serial Communication Interface with FIFO) in the UART
     driver for Renesas RCar platforms.
@@ -673,8 +739,15 @@ Drivers and Sensors
 
   * Added support for Ambiq Apollo3 series general IOM based SPI.
   * Added support for Ambiq Apollo3 BLEIF based SPI, which is specific for internal HCI.
+  * Added support for :kconfig:option:`CONFIG_PM` and :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` on STM32 SPI driver.
+  * Added support for :kconfig:option:`CONFIG_NOCACHE_MEMORY` in DMA SPI mode for STM32F7x SoC series.
+  * Added support for STM32H7R/S series.
 
 * USB
+
+* Video
+
+  * Added support for STM32 Digital camera interface (DCMI) driver (:dtcompatible:`st,stm32-dcmi`).
 
 * W1
 
@@ -683,6 +756,7 @@ Drivers and Sensors
   * Added :kconfig:option:`CONFIG_WDT_NPCX_WARNING_LEADING_TIME_MS` to set the leading warning time
     in milliseconds. Removed no longer used :kconfig:option:`CONFIG_WDT_NPCX_DELAY_CYCLES`.
   * Added support for Ambiq Apollo3 series.
+  * Added support for STM32H7R/S series.
 
 * Wi-Fi
 
@@ -1122,6 +1196,20 @@ HALs
 ****
 
 * STM32
+
+  * Updated STM32F0 to cube version V1.11.5.
+  * Updated STM32F3 to cube version V1.11.5.
+  * Updated STM32F4 to cube version V1.28.0.
+  * Updated STM32F7 to cube version V1.17.2.
+  * Updated STM32G0 to cube version V1.6.2.
+  * Updated STM32G4 to cube version V1.5.2.
+  * Updated STM32H5 to cube version V1.2.0.
+  * Updated STM32H7 to cube version V1.11.2.
+  * Updated STM32L5 to cube version V1.5.1.
+  * Updated STM32U5 to cube version V1.5.0.
+  * Updated STM32WB to cube version V1.19.1.
+  * Updated STM32WBA to cube version V1.3.1.
+  * Added STM32H7R/S with cube version V1.0.0.
 
 MCUboot
 *******
