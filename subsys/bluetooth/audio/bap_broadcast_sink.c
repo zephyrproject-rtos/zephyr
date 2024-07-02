@@ -299,6 +299,33 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 	}
 }
 
+/** Gets the "highest" state of all BIS in the broadcast sink */
+static enum bt_bap_ep_state broadcast_sink_get_state(struct bt_bap_broadcast_sink *sink)
+{
+	enum bt_bap_ep_state state = BT_BAP_EP_STATE_IDLE;
+	struct bt_bap_stream *stream;
+
+	if (sink == NULL) {
+		LOG_DBG("sink is NULL");
+
+		return state;
+	}
+
+	if (sys_slist_is_empty(&sink->streams)) {
+		LOG_DBG("Sink does not have any streams");
+
+		return state;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink->streams, stream, _node) {
+		if (stream->ep != NULL) {
+			state = MAX(state, stream->ep->status.state);
+		}
+	}
+
+	return state;
+}
+
 static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
@@ -306,7 +333,6 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 	struct bt_bap_broadcast_sink *sink;
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep = iso->rx.ep;
-	bool all_connected;
 
 	if (ep == NULL) {
 		LOG_ERR("iso %p not bound with ep", chan);
@@ -340,17 +366,7 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 		LOG_WRN("No callback for started set");
 	}
 
-	all_connected = true;
-	SYS_SLIST_FOR_EACH_CONTAINER(&sink->streams, stream, _node) {
-		__ASSERT(stream->ep, "Endpoint is NULL");
-
-		if (stream->ep->status.state != BT_BAP_EP_STATE_STREAMING) {
-			all_connected = false;
-			break;
-		}
-	}
-
-	if (all_connected) {
+	if (broadcast_sink_get_state(sink) != BT_BAP_EP_STATE_STREAMING) {
 		update_recv_state_big_synced(sink);
 	}
 }
@@ -1278,8 +1294,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 
 int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 {
-	struct bt_bap_stream *stream;
-	sys_snode_t *head_node;
+	enum bt_bap_ep_state state;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -1292,21 +1307,9 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 		return -EALREADY;
 	}
 
-	head_node = sys_slist_peek_head(&sink->streams);
-	stream = CONTAINER_OF(head_node, struct bt_bap_stream, _node);
-
-	/* All streams in a broadcast source is in the same state,
-	 * so we can just check the first stream
-	 */
-	if (stream->ep == NULL) {
-		LOG_DBG("stream->ep is NULL");
-		return -EINVAL;
-	}
-
-	if (stream->ep->status.state != BT_BAP_EP_STATE_STREAMING &&
-	    stream->ep->status.state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_DBG("Broadcast sink stream %p invalid state: %u", stream,
-			stream->ep->status.state);
+	state = broadcast_sink_get_state(sink);
+	if (state != BT_BAP_EP_STATE_STREAMING && state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
+		LOG_DBG("Broadcast sink %p invalid state: %u", sink, state);
 		return -EBADMSG;
 	}
 
@@ -1324,25 +1327,17 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 
 int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 {
+	enum bt_bap_ep_state state;
+
 	CHECKIF(sink == NULL) {
 		LOG_DBG("sink is NULL");
 		return -EINVAL;
 	}
 
-	if (!sys_slist_is_empty(&sink->streams)) {
-		struct bt_bap_stream *stream;
-		sys_snode_t *head_node;
-
-		head_node = sys_slist_peek_head(&sink->streams);
-		stream = CONTAINER_OF(head_node, struct bt_bap_stream, _node);
-
-		/* All streams in a broadcast source is in the same state,
-		 * so we can just check the first stream
-		 */
-		if (stream->ep != NULL) {
-			LOG_DBG("Sink is not stopped");
-			return -EBADMSG;
-		}
+	state = broadcast_sink_get_state(sink);
+	if (state != BT_BAP_EP_STATE_IDLE) {
+		LOG_DBG("Broadcast sink %p invalid state: %u", sink, state);
+		return -EBADMSG;
 	}
 
 	/* Reset the broadcast sink */
