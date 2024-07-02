@@ -5068,6 +5068,6 @@ zbus:
     - subsys/llext/
     - doc/services/llext/
   labels:
-    - "area: Linkable Loadable Extensions"
+    - "area: llext"
   tests:
     - llext
