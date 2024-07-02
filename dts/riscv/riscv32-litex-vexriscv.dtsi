@@ -120,6 +120,23 @@
 				"uptime_cycles";
 			status = "disabled";
 		};
+		wdt0: watchdog@e000d000 {
+			compatible = "litex,watchdog";
+			interrupt-parent = <&intc0>;
+			reg = <0xe000d000 0x4>,
+				<0xe000d004 0x4>,
+				<0xe000d008 0x4>,
+				<0xe000d00c 0x4>,
+				<0xe000d010 0x4>,
+				<0xe000d014 0x4>;
+			reg-names = "control",
+				"cycles",
+				"remaining",
+				"ev_status",
+				"ev_pending",
+				"ev_enable";
+			interrupts = <8 15>;
+		};
 		eth0: ethernet@e0009800 {
 			compatible = "litex,eth0";
 			interrupt-parent = <&intc0>;
