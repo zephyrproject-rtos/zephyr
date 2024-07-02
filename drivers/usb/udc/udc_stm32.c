@@ -789,9 +789,11 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 
+#ifdef USBD_HS_SPEED
 	if (priv->pcd.Init.speed == USBD_HS_SPEED) {
 		return UDC_BUS_SPEED_HS;
 	}
+#endif
 
 	if (priv->pcd.Init.speed == USBD_FS_SPEED) {
 		return UDC_BUS_SPEED_FS;
