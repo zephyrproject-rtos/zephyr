@@ -248,7 +248,7 @@
 			cc-num = <4>;
 			interrupts = <22 NRF_DEFAULT_IRQ_PRIORITY>;
 			clock-frequency = <32768>;
-			status = "disabled";
+			status = "reserved";
 		};
 
 		timer1: timer@41018000 {
