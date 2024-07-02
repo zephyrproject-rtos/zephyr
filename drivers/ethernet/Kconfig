@@ -76,6 +76,7 @@ source "drivers/ethernet/Kconfig.xmc4xxx"
 
 source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
 
+source "drivers/ethernet/dwc_xgmac/Kconfig"
 source "drivers/ethernet/phy/Kconfig"
 
 source "drivers/ethernet/nxp_enet/Kconfig"
