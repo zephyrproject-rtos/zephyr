@@ -1,7 +1,6 @@
-.. _i2c_config:
-
-STM32 I2C V2 timings
-####################
+.. zephyr:code-sample:: stm32_i2c_v2_timings
+   :name: STM32 I2C V2 timings
+   :relevant-api: i2c_interface
 
 Overview
 ********
