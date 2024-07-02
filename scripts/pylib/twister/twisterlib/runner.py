@@ -8,7 +8,6 @@ import logging
 import multiprocessing
 import os
 import pickle
-import queue
 import re
 import shutil
 import subprocess
@@ -18,7 +17,8 @@ import traceback
 import yaml
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
-from typing import List
+from collections import deque
+from typing import List, Dict
 from packaging import version
 
 from colorama import Fore
@@ -536,7 +536,7 @@ class ProjectBuilder(FilterBuilder):
         super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir, jobserver)
 
         self.log = "build.log"
-        self.instance = instance
+        self.instance: TestInstance = instance
         self.filtered_tests = 0
         self.options = env.options
         self.env = env
@@ -599,8 +599,8 @@ class ProjectBuilder(FilterBuilder):
         else:
             self.log_info("{}".format(b_log), inline_logs)
 
-
-    def process(self, pipeline, done, message, lock, results):
+    def process(self, pipeline: deque, done: Dict[str, TestInstance],
+                message, lock: Lock, results: ExecutionCounter):
         op = message.get('op')
 
         self.instance.setup_handler(self.env)
@@ -608,7 +608,7 @@ class ProjectBuilder(FilterBuilder):
         if op == "filter":
             ret = self.cmake(filter_stages=self.instance.filter_stages)
             if self.instance.status in ["failed", "error"]:
-                pipeline.put({"op": "report", "test": self.instance})
+                pipeline.append({"op": "report", "test": self.instance})
             else:
                 # Here we check the dt/kconfig filter results coming from running cmake
                 if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
@@ -617,19 +617,19 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.reason = "runtime filter"
                     results.skipped_runtime += 1
                     self.instance.add_missing_case_status("skipped")
-                    pipeline.put({"op": "report", "test": self.instance})
+                    pipeline.append({"op": "report", "test": self.instance})
                 else:
-                    pipeline.put({"op": "cmake", "test": self.instance})
+                    pipeline.append({"op": "cmake", "test": self.instance})
 
         # The build process, call cmake and build with configured generator
         elif op == "cmake":
             ret = self.cmake()
             if self.instance.status in ["failed", "error"]:
-                pipeline.put({"op": "report", "test": self.instance})
+                pipeline.append({"op": "report", "test": self.instance})
             elif self.options.cmake_only:
                 if self.instance.status is None:
                     self.instance.status = "passed"
-                pipeline.put({"op": "report", "test": self.instance})
+                pipeline.append({"op": "report", "test": self.instance})
             else:
                 # Here we check the runtime filter results coming from running cmake
                 if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
@@ -638,9 +638,9 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.reason = "runtime filter"
                     results.skipped_runtime += 1
                     self.instance.add_missing_case_status("skipped")
-                    pipeline.put({"op": "report", "test": self.instance})
+                    pipeline.append({"op": "report", "test": self.instance})
                 else:
-                    pipeline.put({"op": "build", "test": self.instance})
+                    pipeline.append({"op": "build", "test": self.instance})
 
         elif op == "build":
             logger.debug("build test: %s" % self.instance.name)
@@ -648,7 +648,7 @@ class ProjectBuilder(FilterBuilder):
             if not ret:
                 self.instance.status = "error"
                 self.instance.reason = "Build Failure"
-                pipeline.put({"op": "report", "test": self.instance})
+                pipeline.append({"op": "report", "test": self.instance})
             else:
                 # Count skipped cases during build, for example
                 # due to ram/rom overflow.
@@ -658,28 +658,28 @@ class ProjectBuilder(FilterBuilder):
 
                 if ret.get('returncode', 1) > 0:
                     self.instance.add_missing_case_status("blocked", self.instance.reason)
-                    pipeline.put({"op": "report", "test": self.instance})
+                    pipeline.append({"op": "report", "test": self.instance})
                 else:
                     logger.debug(f"Determine test cases for test instance: {self.instance.name}")
                     try:
                         self.determine_testcases(results)
-                        pipeline.put({"op": "gather_metrics", "test": self.instance})
+                        pipeline.append({"op": "gather_metrics", "test": self.instance})
                     except BuildError as e:
                         logger.error(str(e))
                         self.instance.status = "error"
                         self.instance.reason = str(e)
-                        pipeline.put({"op": "report", "test": self.instance})
+                        pipeline.append({"op": "report", "test": self.instance})
 
         elif op == "gather_metrics":
             ret = self.gather_metrics(self.instance)
             if not ret or ret.get('returncode', 1) > 0:
                 self.instance.status = "error"
                 self.instance.reason = "Build Failure at gather_metrics."
-                pipeline.put({"op": "report", "test": self.instance})
+                pipeline.append({"op": "report", "test": self.instance})
             elif self.instance.run and self.instance.handler.ready:
-                pipeline.put({"op": "run", "test": self.instance})
+                pipeline.append({"op": "run", "test": self.instance})
             else:
-                pipeline.put({"op": "report", "test": self.instance})
+                pipeline.append({"op": "report", "test": self.instance})
 
         # Run the generated binary using one of the supported handlers
         elif op == "run":
@@ -690,7 +690,7 @@ class ProjectBuilder(FilterBuilder):
                 # to make it work with pickle
                 self.instance.handler.thread = None
                 self.instance.handler.duts = None
-                pipeline.put({
+                pipeline.append({
                     "op": "report",
                     "test": self.instance,
                     "status": self.instance.status,
@@ -704,16 +704,16 @@ class ProjectBuilder(FilterBuilder):
         # Report results and output progress to screen
         elif op == "report":
             with lock:
-                done.put(self.instance)
+                done.update({self.instance.name: self.instance})
                 self.report_out(results)
 
             if not self.options.coverage:
                 if self.options.prep_artifacts_for_testing:
-                    pipeline.put({"op": "cleanup", "mode": "device", "test": self.instance})
+                    pipeline.append({"op": "cleanup", "mode": "device", "test": self.instance})
                 elif self.options.runtime_artifact_cleanup == "pass" and self.instance.status == "passed":
-                    pipeline.put({"op": "cleanup", "mode": "passed", "test": self.instance})
+                    pipeline.append({"op": "cleanup", "mode": "passed", "test": self.instance})
                 elif self.options.runtime_artifact_cleanup == "all":
-                    pipeline.put({"op": "cleanup", "mode": "all", "test": self.instance})
+                    pipeline.append({"op": "cleanup", "mode": "all", "test": self.instance})
 
         elif op == "cleanup":
             mode = message.get("mode")
@@ -1184,11 +1184,10 @@ class ProjectBuilder(FilterBuilder):
 class TwisterRunner:
 
     def __init__(self, instances, suites, env=None) -> None:
-        self.pipeline = None
         self.options = env.options
         self.env = env
-        self.instances = instances
-        self.suites = suites
+        self.instances: Dict[str, TestInstance] = instances
+        self.suites: Dict[str, TestSuite] = suites
         self.duts = None
         self.jobs = 1
         self.results = None
@@ -1198,14 +1197,15 @@ class TwisterRunner:
 
         retries = self.options.retry_failed + 1
 
-        BaseManager.register('LifoQueue', queue.LifoQueue)
+        BaseManager.register('deque', deque, exposed=['append', 'appendleft', 'pop'])
+        BaseManager.register('get_dict', dict)
         manager = BaseManager()
         manager.start()
 
         self.results = ExecutionCounter(total=len(self.instances))
         self.iteration = 0
-        pipeline = manager.LifoQueue()
-        done_queue = manager.LifoQueue()
+        pipeline: deque = manager.deque()
+        done: Dict[str, TestInstance] = manager.get_dict()
 
         # Set number of jobs
         if self.options.jobs:
@@ -1243,18 +1243,13 @@ class TwisterRunner:
             else:
                 self.results.done = self.results.skipped_filter
 
-            self.execute(pipeline, done_queue)
+            self.execute(pipeline, done)
 
-            while True:
-                try:
-                    inst = done_queue.get_nowait()
-                except queue.Empty:
-                    break
-                else:
-                    inst.metrics.update(self.instances[inst.name].metrics)
-                    inst.metrics["handler_time"] = inst.execution_time
-                    inst.metrics["unrecognized"] = []
-                    self.instances[inst.name] = inst
+            for inst in done.values():
+                inst.metrics.update(self.instances[inst.name].metrics)
+                inst.metrics["handler_time"] = inst.execution_time
+                inst.metrics["unrecognized"] = []
+                self.instances[inst.name] = inst
 
             print("")
 
@@ -1291,7 +1286,8 @@ class TwisterRunner:
                     self.results.skipped_filter,
                     self.results.skipped_configs - self.results.skipped_filter))
 
-    def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False, retry_build_errors=False):
+    def add_tasks_to_queue(self, pipeline: deque, build_only=False,
+                           test_only=False, retry_build_errors=False):
         for instance in self.instances.values():
             if build_only:
                 instance.run = False
@@ -1311,51 +1307,108 @@ class TwisterRunner:
                 if instance.testsuite.filter:
                     instance.filter_stages = self.get_cmake_filter_stages(instance.testsuite.filter, expr_parser.reserved.keys())
 
-                if test_only and instance.run:
-                    pipeline.put({"op": "run", "test": instance})
+                if test_only and instance.run or instance.no_own_image:
+                    pipeline.append({"op": "run", "test": instance})
                 elif instance.filter_stages and "full" not in instance.filter_stages:
-                    pipeline.put({"op": "filter", "test": instance})
+                    pipeline.append({"op": "filter", "test": instance})
                 else:
                     cache_file = os.path.join(instance.build_dir, "CMakeCache.txt")
                     if os.path.exists(cache_file) and self.env.options.aggressive_no_clean:
-                        pipeline.put({"op": "build", "test": instance})
+                        pipeline.append({"op": "build", "test": instance})
                     else:
-                        pipeline.put({"op": "cmake", "test": instance})
+                        pipeline.append({"op": "cmake", "test": instance})
 
+    def _required_images_are_ready(self, instance: TestInstance, done: Dict[str, TestInstance]):
+        for required_image in instance.required_images:
+            if required_image not in done.keys():
+                return False
+        return True
 
-    def pipeline_mgr(self, pipeline, done_queue, lock, results):
+    def _required_images_failed(self, instance: TestInstance, done: Dict[str, TestInstance]):
+        # Verify that all required images were successfully built
+        for required_image in instance.required_images:
+            inst = done.get(required_image)
+            if inst.status != "passed":
+                logger.debug(f"{required_image}: Required image failed: {inst.reason}")
+                return True
+        return False
+
+    def required_images_processed(self, instance: TestInstance, pipeline: deque,
+                                  done: Dict[str, TestInstance], task):
+        if not instance.required_images:
+            return True
+
+        if not self._required_images_are_ready(instance, done):
+            # required image not ready yet,
+            # add the task back to the pipeline to process it later
+            if self.jobs > 1:
+                # to avoid busy waiting
+                time.sleep(1)
+            pipeline.appendleft(task)
+            return False
+
+        if self._required_images_failed(instance, done):
+            # verify that all required images were successfully built
+            instance.status = "skipped"
+            for tc in instance.testcases:
+                tc.status = "skipped"
+            instance.reason = "Required image failed"
+            instance.required_images = []
+            pipeline.append({"op": "report", "test": instance})
+            return False
+
+        if instance.no_own_image:
+            # copy build_dir from the first required image to the current instance
+            origin_build_dir = self.instances[instance.required_images[0]].build_dir
+            shutil.copytree(origin_build_dir, instance.build_dir, dirs_exist_ok=True)
+            logger.debug(f"Copied build_dir from {origin_build_dir}")
+            if not instance.run or self.options.build_only:
+                instance.status = "skipped"
+                instance.reason = "not run"
+                instance.required_images = []
+                pipeline.append({"op": "report", "test": instance})
+                return False
+
+        # keep paths to required build dirs for further processing
+        for required_image in instance.required_images:
+            instance.required_build_dirs.append(self.instances[required_image].build_dir)
+
+        # required images are ready, clear to not process them later
+        instance.required_images = []
+        return True
+
+    def _pipeline_mgr(self, pipeline: deque, done: Dict[str, TestInstance],
+                      lock: Lock, results: ExecutionCounter):
+        while True:
+            try:
+                task = pipeline.pop()
+            except IndexError:
+                break
+            else:
+                instance: TestInstance = task['test']
+
+                if not self.required_images_processed(instance, pipeline, done, task):
+                    # break processing task if required images are not ready
+                    continue
+
+                pb = ProjectBuilder(instance, self.env, self.jobserver)
+                pb.duts = self.duts
+                pb.process(pipeline, done, task, lock, results)
+        return True
+
+    def pipeline_mgr(self, pipeline: deque, done: Dict[str, TestInstance],
+                     lock: Lock, results: ExecutionCounter):
         try:
             if sys.platform == 'linux':
                 with self.jobserver.get_job():
-                    while True:
-                        try:
-                            task = pipeline.get_nowait()
-                        except queue.Empty:
-                            break
-                        else:
-                            instance = task['test']
-                            pb = ProjectBuilder(instance, self.env, self.jobserver)
-                            pb.duts = self.duts
-                            pb.process(pipeline, done_queue, task, lock, results)
-
-                    return True
+                    return self._pipeline_mgr(pipeline, done, lock, results)
             else:
-                while True:
-                    try:
-                        task = pipeline.get_nowait()
-                    except queue.Empty:
-                        break
-                    else:
-                        instance = task['test']
-                        pb = ProjectBuilder(instance, self.env, self.jobserver)
-                        pb.duts = self.duts
-                        pb.process(pipeline, done_queue, task, lock, results)
-                return True
+                return self._pipeline_mgr(pipeline, done, lock, results)
         except Exception as e:
-            logger.error(f"General exception: {e}")
+            logger.exception(f"General exception: {e}")
             sys.exit(1)
 
-    def execute(self, pipeline, done):
+    def execute(self, pipeline: deque, done: Dict[str, TestInstance]):
         lock = Lock()
         logger.info("Adding tasks to the queue...")
         self.add_tasks_to_queue(pipeline, self.options.build_only, self.options.test_only,

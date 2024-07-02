@@ -60,6 +60,14 @@ schema;scenario-schema:
     "extra_sections":
       type: any
       required: false
+    "required_images":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "no_own_image":
+      type: bool
+      required: false
     "required_snippets":
       type: seq
       required: false

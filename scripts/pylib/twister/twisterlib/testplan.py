@@ -20,6 +20,7 @@ import snippets
 from colorama import Fore
 from pathlib import Path
 from argparse import Namespace
+from typing import Dict
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -70,6 +71,8 @@ class Filters:
     TOOLCHAIN = 'Toolchain filter'
     # in case an optional module is not available
     MODULE = 'Module filter'
+    # in case of missing required image
+    REQUIRED_IMAGE = 'Required image filter'
 
 
 class TestLevel:
@@ -107,7 +110,7 @@ class TestPlan:
         self.filtered_platforms = []
         self.default_platforms = []
         self.load_errors = 0
-        self.instances = dict()
+        self.instances: Dict[str, TestInstance] = dict()
         self.instance_fail_count = 0
         self.warnings = 0
 
@@ -660,6 +663,7 @@ class TestPlan:
         except FileNotFoundError as e:
             logger.error(f"{e}")
             return 1
+        self.apply_changes_for_required_images()
 
     def apply_filters(self, **kwargs):
 
@@ -1001,6 +1005,8 @@ class TestPlan:
             else:
                 self.add_instances(instance_list)
 
+        self.apply_changes_for_required_images()
+
         for _, case in self.instances.items():
             case.create_overlay(case.platform, self.options.enable_asan, self.options.enable_ubsan, self.options.enable_coverage, self.options.coverage_platform)
 
@@ -1015,10 +1021,72 @@ class TestPlan:
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
                                       if p.status != "skipped" )
 
+    def _get_required_platform_and_id(self, required_image, instance: TestInstance):
+        # required_image can be in the form of platform:test_id or just test_id
+        split_req_image = required_image.split(':')
+        req_platform = instance.platform.name
+        if len(split_req_image) == 2:
+            req_platform = split_req_image[0]
+        req_test_id = split_req_image[-1]
+        return req_platform, req_test_id
+
+    def _find_required_instance(self, required_image, instance: TestInstance):
+        req_platform, req_test_id = self._get_required_platform_and_id(required_image, instance)
+        for inst_id, inst in self.instances.items():
+            if req_test_id == inst.testsuite.id and req_platform == inst.platform.name:
+                return inst_id
+        return ''
+
+    def apply_changes_for_required_images(self):
+        # check if required images are in scope
+        for instance in self.instances.values():
+            if not instance.testsuite.required_images:
+                continue
+
+            if self.options.subset:
+                reason = "Required images are not supported with --subsets"
+                instance.add_filter(reason, Filters.REQUIRED_IMAGE)
+                logger.debug(f"{instance.name}: {reason}")
+                continue
+
+            if self.options.runtime_artifact_cleanup:
+                reason = "Required images are not supported with --runtime-artifact-cleanup"
+                instance.add_filter(reason, Filters.REQUIRED_IMAGE)
+                logger.debug(f"{instance.name}: {reason}")
+                continue
+
+            if instance.testsuite.no_own_image or not Path(
+                    Path(instance.testsuite.source_dir) / 'CMakeLists.txt').exists():
+                instance.no_own_image = True
+                # filter out qemu platforms, because for tests must use origin path to QEMU_PIPE,
+                # can be done, but first better to refactor QemuHandler
+                if instance.platform.simulation == 'qemu':
+                    instance.add_filter("QEMU with no own image not supported", Filters.REQUIRED_IMAGE)
+                    logger.debug(f"{instance.name}: QEMU with no own image not supported")
+                    continue
+
+                # check if platform is correct in required images
+                first_image = instance.testsuite.required_images[0]
+                req_platform, _ = self._get_required_platform_and_id(first_image, instance)
+                if req_platform != instance.platform.name:
+                    instance.add_filter(f"Wrong platform in required image: {first_image}", Filters.REQUIRED_IMAGE)
+                    logger.warning(f"{instance.name}: If there is no own image, the first required image"
+                                   " should be for the same platform as the test")
+                    continue
+
+            for required_image in instance.testsuite.required_images:
+                required_inst_id = self._find_required_instance(required_image, instance)
+                if not required_inst_id or self.instances[required_inst_id].status:
+                    instance.add_filter(f"Missing required image {required_image}", Filters.REQUIRED_IMAGE)
+                    logger.debug(f"{instance.name}: Required image '{required_image}' was not found."
+                                 " Please verify if required image is provided with --testsuite-root"
+                                 " or if it is not filtered")
+                    break
+                instance.required_images.append(required_inst_id)
+
     def add_instances(self, instance_list):
         for instance in instance_list:
             self.instances[instance.name] = instance
-
 
     def get_testsuite(self, identifier):
         results = []
@@ -1091,7 +1159,7 @@ def change_skip_to_error_if_integration(options, instance):
         filters = {t['type'] for t in instance.filters}
         ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY,
                          Filters.TOOLCHAIN, Filters.MODULE, Filters.TESTPLAN,
-                         Filters.QUARANTINE}
+                         Filters.QUARANTINE, Filters.REQUIRED_IMAGE}
         if filters.intersection(ignore_filters):
             return
         instance.status = "error"
