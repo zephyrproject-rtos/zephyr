@@ -1,0 +1,5 @@
+tests:
+  drivers.gpio.retention:
+    platform_allow:
+      - nucleo_f746zg
+    tags: drivers gpio retention
