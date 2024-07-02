@@ -1,0 +1,7 @@
+sample:
+  name: Ambient Temperature Polling Sample
+tests:
+  sample.sensor.temp_polling:
+    harness: sensor
+    tags: sensors
+    filter: dt_alias_exists("temp0")

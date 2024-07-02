@@ -1,0 +1,7 @@
+sample:
+  name: Accel Streaming Sample
+tests:
+  sample.sensor.accel_stream:
+    harness: sensor
+    tags: sensors
+    filter: dt_alias_exists("accel0") and dt_alias_exists("accel1")
