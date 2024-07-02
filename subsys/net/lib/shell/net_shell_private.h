@@ -11,7 +11,7 @@
 #define PR(fmt, ...)                                                            \
 	do {                                                                    \
 		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__);    \
+			shell_print_impl(sh, fmt, ##__VA_ARGS__);               \
 		} else {                                                        \
 			printk(fmt, ##__VA_ARGS__);                             \
 		}                                                               \
@@ -20,7 +20,7 @@
 #define PR_SHELL(sh, fmt, ...)                                                  \
 	do {                                                                    \
 		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__);    \
+			shell_print_impl(sh, fmt, ##__VA_ARGS__);               \
 		} else {                                                        \
 			printk(fmt, ##__VA_ARGS__);                             \
 		}                                                               \
@@ -29,7 +29,7 @@
 #define PR_ERROR(fmt, ...)                                                      \
 	do {                                                                    \
 		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_ERROR, fmt, ##__VA_ARGS__);     \
+			shell_error_impl(sh, fmt, ##__VA_ARGS__);               \
 		} else {                                                        \
 			printk(fmt, ##__VA_ARGS__);                             \
 		}                                                               \
@@ -38,7 +38,7 @@
 #define PR_INFO(fmt, ...)                                                       \
 	do {                                                                    \
 		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_INFO, fmt, ##__VA_ARGS__);      \
+			shell_info_impl(sh, fmt, ##__VA_ARGS__);                \
 		} else {                                                        \
 			printk(fmt, ##__VA_ARGS__);                             \
 		}                                                               \
@@ -47,7 +47,7 @@
 #define PR_WARNING(fmt, ...)                                                    \
 	do {                                                                    \
 		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_WARNING, fmt, ##__VA_ARGS__);   \
+			shell_warn_impl(sh, fmt, ##__VA_ARGS__);                \
 		} else {                                                        \
 			printk(fmt, ##__VA_ARGS__);                             \
 		}                                                               \
