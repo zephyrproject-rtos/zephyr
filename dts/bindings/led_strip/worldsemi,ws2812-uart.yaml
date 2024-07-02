@@ -1,0 +1,62 @@
+# Copyright (c) 2024 Croxel, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Worldsemi WS2812 LED strip, UART binding
+
+  Driver bindings for controlling a WS2812 or compatible LED
+  strip with a UART.
+
+  The UART driver should be usable as long as a zephyr UART API driver is available for your
+  board and has tx-invert property available and enabled.
+
+  Data serialisation explanation for WS2812:
+  3 pulses/bits of UART are used to represent one bit of RGB data. During the development of this
+  driver, I was using an ESP32C3 MCU with its UART baud rate set to 2.5Mbits per sec. Hence, 1
+  bit equals 400ns. For WS2812 timing details, please refer to its datasheet.
+  Link: https://cdn-shop.adafruit.com/datasheets/WS2812.pdf
+
+  We need to carefully analyse the pulse timing requirements of ws2812 ic or any other ic in
+  order to construct Logic 0, Logic 1 frame, rgb-frame-per-uart-frame (Total number of RGB data
+  bits send per UART transaction) and frame-len(bits to represent single rgb bit).
+
+  For WS2812:-                       ___
+  Logic 0 frame-> 0x4 or 0b100 ->  _| 1 |_0__0_
+                                     ______
+  Logic 1 frame-> 0x6 or 0b110 ->  _| 1  1 |_0_
+
+  rgb-frame-per-uart-frame -> 3 (3 RGB data bits will be send per per uart transaction)
+  frame-len -> 3 (3 UART bits needed to represent 1 RGB bit)
+
+  Calculation will be done using these node properties to build a lookup table using C macros
+  automatically. And that lookup-table will be used to feed the actual UART buffer which
+  will be send to WS2812 ic.
+
+compatible: "worldsemi,ws2812-uart"
+
+include: [uart-controller.yaml, ws2812.yaml]
+
+properties:
+  rgb-frame-per-uart-frame:
+    type: int
+    required: true
+    description: |
+      Total number of RGB bits send per UART transaction.
+
+  zero-frame:
+    type: int
+    required: true
+    description: |
+      The UART frame value representing a logic 0.
+
+  one-frame:
+    type: int
+    required: true
+    description: |
+      The UART frame value representing a logic 1.
+
+  frame-len:
+    type: int
+    required: true
+    description: |
+      Number of bits to represent 1 RGB data bit.
