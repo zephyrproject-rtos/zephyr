@@ -977,7 +977,7 @@ struct net_wifi_mgmt_offload {
 
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 /* Make sure wifi_drv_ops is after wifi_mgmt_api */
-BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, wifi_mgmt_api) <
+BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, wifi_mgmt_api) < \
 	     offsetof(struct net_wifi_mgmt_offload, wifi_drv_ops));
 #endif
 

@@ -1,0 +1,81 @@
+# Native-sim wifi driver configuration options
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_NATIVE_SIM
+	bool "Simple WiFi driver for native-sim board"
+	default y
+	depends on ARCH_POSIX
+	depends on WIFI_NM_WPA_SUPPLICANT
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	select NET_INTERFACE_NAME
+	help
+	  Enable native-sim WiFi support. This is currently only usable
+	  for simple verification of the hostap APIs etc. No simulation
+	  of Wi-Fi network atm.
+
+if WIFI_NATIVE_SIM
+
+config WIFI_NATIVE_SIM_INTERFACE_COUNT
+	int "Number of network interfaces created"
+	default 1
+	range 1 32
+	help
+	  By default only one network interface is created. It is possible
+	  to create multiple interfaces if needed.
+
+config WIFI_NATIVE_SIM_DRV_NAME
+	string "Wi-Fi driver name"
+	default "zwifi"
+	help
+	  This option sets the driver name and the name of the network interface
+	  in your host system. If there are multiple network interfaces defined,
+	  then this value is used as a prefix and the interface names will be
+	  like zwifi0, zwifi1, etc.
+
+config WIFI_NATIVE_SIM_RANDOM_MAC
+	bool "Random MAC address"
+	depends on ENTROPY_GENERATOR
+	default y
+	help
+	  Generate a random MAC address dynamically.
+
+config WIFI_NATIVE_SIM_MAC_ADDR
+	string "MAC address for the interface"
+	default ""
+	depends on !WIFI_NATIVE_SIM_RANDOM_MAC
+	help
+	  Specify a MAC address for the wifi interface in the form of
+	  six hex 8-bit chars separated by colons (e.g.:
+	  aa:33:cc:22:e2:c0).  The default is an empty string, which
+	  means the code will make 00:00:5E:00:53:XX, where XX will be
+	  random.
+
+config WIFI_NATIVE_SIM_RX_TIMEOUT
+	int "Wifi RX timeout (ms)"
+	default 50
+	range 1 100
+	help
+	  Native sim wifi driver repeatedly checks for new data.
+	  Specify how long the thread sleeps between these checks if no new data
+	  available.
+
+config WIFI_NATIVE_SIM_SUPPLICANT_CONF_FILE
+	string ""
+	help
+	  wpa_supplicant configuration file that is used to connect
+	  to Linux mac80211_hwsim based network.
+
+config WIFI_NATIVE_SIM_SUPPLICANT_LOG_FILE
+	string "/var/log/zephyr-host-wpa_supplicant.log"
+	help
+	  wpa_supplicant log file for host side output.
+
+# FIXME: This should be set somewhere else
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	int
+	default 65536
+
+endif # WIFI_NATIVE_SIM

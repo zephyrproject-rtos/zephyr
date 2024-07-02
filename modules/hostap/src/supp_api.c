@@ -77,6 +77,13 @@ static K_WORK_DELAYABLE_DEFINE(wpa_supp_status_work,
 	status;								\
 })
 
+static const struct wifi_mgmt_ops *const get_wifi_mgmt_api(const struct device *dev)
+{
+	struct net_wifi_mgmt_offload *api = (struct net_wifi_mgmt_offload *)dev->api;
+
+	return api ? api->wifi_mgmt_api : NULL;
+}
+
 static struct wpa_supplicant *get_wpa_s_handle(const struct device *dev)
 {
 	struct net_if *iface = net_if_lookup_by_dev(dev);
@@ -594,6 +601,18 @@ out:
 	return ret;
 }
 
+static int drv_supplicant_connect(const struct device *dev,
+				   struct wifi_connect_req_params *params)
+{
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+
+	if (!wifi_mgmt_api || !wifi_mgmt_api->connect) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->connect(dev, params);
+}
+
 /* Public API */
 int supplicant_connect(const struct device *dev, struct wifi_connect_req_params *params)
 {
@@ -622,6 +641,13 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 		wpa_printf(MSG_ERROR, "Interface %s is not in STA mode", dev->name);
 		goto out;
 	}
+
+	/* Ignore the errors as this is a special case when connect driver API
+	 * is used. Currently this is only needed by native_sim driver which
+	 * acts as a proxy for Linux host so we need to tell it we want to
+	 * connect the host side.
+	 */
+	(void)drv_supplicant_connect(dev, params);
 
 	ret = wpas_add_and_config_network(wpa_s, params, false);
 	if (ret) {
@@ -784,13 +810,6 @@ out:
  * In the future these might be implemented natively by the WPA
  * supplicant.
  */
-
-static const struct wifi_mgmt_ops *const get_wifi_mgmt_api(const struct device *dev)
-{
-	struct net_wifi_mgmt_offload *api = (struct net_wifi_mgmt_offload *)dev->api;
-
-	return api ? api->wifi_mgmt_api : NULL;
-}
 
 int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
 		    scan_result_cb_t cb)
