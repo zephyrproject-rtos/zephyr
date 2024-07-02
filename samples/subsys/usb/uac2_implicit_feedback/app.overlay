@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/usb/audio.h>
+
+/ {
+	uac2_headset: usb_audio2 {
+		compatible = "zephyr,uac2";
+		status = "okay";
+		audio-function = <AUDIO_FUNCTION_HEADSET>;
+
+		uac_aclk: aclk {
+			compatible = "zephyr,uac2-clock-source";
+			clock-type = "internal-programmable";
+			frequency-control = "host-programmable";
+			sampling-frequencies = <48000>;
+		};
+
+		out_terminal: out_terminal {
+			compatible = "zephyr,uac2-input-terminal";
+			clock-source = <&uac_aclk>;
+			terminal-type = <USB_TERMINAL_STREAMING>;
+			front-left;
+			front-right;
+		};
+
+		headphones_output: headphones {
+			compatible = "zephyr,uac2-output-terminal";
+			data-source = <&out_terminal>;
+			clock-source = <&uac_aclk>;
+			terminal-type = <BIDIRECTIONAL_TERMINAL_HEADSET>;
+			assoc-terminal = <&mic_input>;
+		};
+
+		mic_input: microphone {
+			compatible = "zephyr,uac2-input-terminal";
+			clock-source = <&uac_aclk>;
+			terminal-type = <BIDIRECTIONAL_TERMINAL_HEADSET>;
+			/* Circular reference, macros will figure it out and
+                         * provide correct associated terminal ID because the
+                         * terminals associations are always 1-to-1.
+                         *
+                         * assoc-terminal = <&headphones_output>;
+                         */
+			front-left;
+		};
+
+		in_terminal: in_terminal {
+			compatible = "zephyr,uac2-output-terminal";
+			data-source = <&mic_input>;
+			clock-source = <&uac_aclk>;
+			terminal-type = <USB_TERMINAL_STREAMING>;
+		};
+
+		as_iso_out: out_interface {
+			compatible = "zephyr,uac2-audio-streaming";
+			linked-terminal = <&out_terminal>;
+			implicit-feedback;
+			subslot-size = <2>;
+			bit-resolution = <16>;
+		};
+
+		as_iso_in: in_interface {
+			compatible = "zephyr,uac2-audio-streaming";
+			linked-terminal = <&in_terminal>;
+			implicit-feedback;
+			subslot-size = <2>;
+			bit-resolution = <16>;
+		};
+	};
+};
