@@ -83,6 +83,16 @@ extern "C" {
 #else
 #define PROCESSOR_NAME "cortex-r7+nofp"
 #endif
+#elif defined(CONFIG_CPU_CORTEX_R8)
+#if defined(CONFIG_FPU) && defined(CONFIG_CPU_HAS_VFP)
+#if !defined(CONFIG_VFP_FEATURE_DOUBLE_PRECISION)
+#define PROCESSOR_NAME "cortex-r8+nofp.dp"
+#else
+#define PROCESSOR_NAME "cortex-r8"
+#endif
+#else
+#define PROCESSOR_NAME "cortex-r8+nofp"
+#endif
 #elif defined(CONFIG_CPU_CORTEX_R52)
 #if defined(CONFIG_FPU) && defined(CONFIG_CPU_HAS_VFP)
 #if !defined(CONFIG_VFP_FEATURE_DOUBLE_PRECISION)
