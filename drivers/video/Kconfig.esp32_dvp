@@ -1,0 +1,6 @@
+config VIDEO_ESP32S3
+	bool "Blink device drivers"
+	default n
+	depends on DMA
+	help
+	  This option enables the blink custom driver class.

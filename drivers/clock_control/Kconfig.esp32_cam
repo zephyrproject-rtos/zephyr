@@ -1,0 +1,4 @@
+config CLOCK_CONTROL_ESP32_CAM
+	bool "master clock for esp32 camera interface"
+	help
+	  This option enables the pheriphery and cam clock for the lcd_cam module.
