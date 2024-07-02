@@ -36,10 +36,10 @@ enum {
  * Transfers through two endpoints proceed in a synchronous manner,
  * with maximum block of NET_ETH_MAX_FRAME_SIZE.
  */
-NET_BUF_POOL_FIXED_DEFINE(cdc_ecm_ep_pool,
-			  DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-			  NET_ETH_MAX_FRAME_SIZE,
-			  sizeof(struct udc_buf_info), NULL);
+UDC_BUF_POOL_DEFINE(cdc_ecm_ep_pool,
+		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
+		    NET_ETH_MAX_FRAME_SIZE,
+		    sizeof(struct udc_buf_info), NULL);
 
 struct cdc_ecm_notification {
 	union {

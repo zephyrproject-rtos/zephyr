@@ -37,7 +37,7 @@ enum mouse_report_idx {
 	MOUSE_REPORT_COUNT = 4,
 };
 
-static uint8_t __aligned(sizeof(void *)) report[MOUSE_REPORT_COUNT];
+UDC_STATIC_BUF_DEFINE(report, MOUSE_REPORT_COUNT);
 static K_SEM_DEFINE(report_sem, 0, 1);
 
 static inline void status_cb(enum usb_dc_status_code status, const uint8_t *param)
@@ -59,7 +59,7 @@ static void input_cb(struct input_event *evt)
 {
 	uint8_t tmp[MOUSE_REPORT_COUNT];
 
-	(void)memcpy(tmp, report, sizeof(tmp));
+	(void)memcpy(tmp, report, MOUSE_REPORT_COUNT);
 
 	switch (evt->code) {
 	case INPUT_KEY_0:
@@ -89,7 +89,7 @@ static void input_cb(struct input_event *evt)
 	}
 
 	if (memcmp(tmp, report, sizeof(tmp))) {
-		memcpy(report, tmp, sizeof(report));
+		memcpy(report, tmp, MOUSE_REPORT_COUNT);
 		k_sem_give(&report_sem);
 	}
 }
@@ -165,7 +165,7 @@ int main(void)
 	while (true) {
 		k_sem_take(&report_sem, K_FOREVER);
 
-		ret = hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
+		ret = hid_int_ep_write(hid_dev, report, MOUSE_REPORT_COUNT, NULL);
 		report[MOUSE_X_REPORT_IDX] = 0U;
 		report[MOUSE_Y_REPORT_IDX] = 0U;
 		if (ret) {

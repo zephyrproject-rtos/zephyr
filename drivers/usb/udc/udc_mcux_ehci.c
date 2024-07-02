@@ -52,37 +52,6 @@ struct udc_mcux_data {
 	uint8_t controller_id; /* 0xFF is invalid value */
 };
 
-/* TODO: implement the cache maintenance
- * solution1: Use the non-cached buf to do memcpy before/after giving buffer to usb controller.
- * solution2: Use cache API to flush/invalid cache. but it needs the given buffer is
- * cache line size aligned and the buffer range cover multiple of cache line size block.
- * Need to change the usb stack to implement it, will try to implement it later.
- */
-#if defined(CONFIG_NOCACHE_MEMORY)
-K_HEAP_DEFINE_NOCACHE(mcux_packet_alloc_pool, USB_DEVICE_CONFIG_ENDPOINTS * 2u * 1024u);
-
-/* allocate non-cached buffer for usb */
-static void *udc_mcux_nocache_alloc(uint32_t size)
-{
-	void *p = (void *)k_heap_alloc(&mcux_packet_alloc_pool, size, K_NO_WAIT);
-
-	if (p != NULL) {
-		(void)memset(p, 0, size);
-	}
-
-	return p;
-}
-
-/* free the allocated non-cached buffer */
-static void udc_mcux_nocache_free(void *p)
-{
-	if (p == NULL) {
-		return;
-	}
-	k_heap_free(&mcux_packet_alloc_pool, p);
-}
-#endif
-
 static int udc_mcux_control(const struct device *dev, usb_device_control_type_t command,
 				void *param)
 {
@@ -128,21 +97,12 @@ static int udc_mcux_ep_feed(const struct device *dev,
 
 		if (USB_EP_DIR_IS_OUT(cfg->addr)) {
 			len = net_buf_tailroom(buf);
-#if defined(CONFIG_NOCACHE_MEMORY)
-			data = (len == 0 ? NULL : udc_mcux_nocache_alloc(len));
-#else
 			data = net_buf_tail(buf);
-#endif
 			status = mcux_if->deviceRecv(priv->mcux_device.controllerHandle,
 					cfg->addr, data, len);
 		} else {
 			len = buf->len;
-#if defined(CONFIG_NOCACHE_MEMORY)
-			data = (len == 0 ? NULL : udc_mcux_nocache_alloc(len));
-			memcpy(data, buf->data, len);
-#else
 			data = buf->data;
-#endif
 			status = mcux_if->deviceSend(priv->mcux_device.controllerHandle,
 					cfg->addr, data, len);
 		}
@@ -258,10 +218,6 @@ static int udc_mcux_handler_ctrl_out(const struct device *dev, struct net_buf *b
 	uint32_t len;
 
 	len = MIN(net_buf_tailroom(buf), mcux_len);
-#if defined(CONFIG_NOCACHE_MEMORY)
-	memcpy(net_buf_tail(buf), mcux_buf, len);
-	udc_mcux_nocache_free(mcux_buf);
-#endif
 	net_buf_add(buf, len);
 	if (udc_ctrl_stage_is_status_out(dev)) {
 		/* Update to next stage of control transfer */
@@ -289,9 +245,6 @@ static int udc_mcux_handler_ctrl_in(const struct device *dev, struct net_buf *bu
 	len = MIN(buf->len, mcux_len);
 	buf->data += len;
 	buf->len -= len;
-#if defined(CONFIG_NOCACHE_MEMORY)
-	udc_mcux_nocache_free(mcux_buf);
-#endif
 
 	if (udc_ctrl_stage_is_status_in(dev) ||
 	udc_ctrl_stage_is_no_data(dev)) {
@@ -324,9 +277,6 @@ static int udc_mcux_handler_non_ctrl_in(const struct device *dev, uint8_t ep,
 	buf->data += len;
 	buf->len -= len;
 
-#if defined(CONFIG_NOCACHE_MEMORY)
-	udc_mcux_nocache_free(mcux_buf);
-#endif
 	err = udc_submit_ep_event(dev, buf, 0);
 	udc_mcux_ep_try_feed(dev, udc_get_ep_cfg(dev, ep));
 
@@ -340,14 +290,8 @@ static int udc_mcux_handler_non_ctrl_out(const struct device *dev, uint8_t ep,
 	uint32_t len;
 
 	len = MIN(net_buf_tailroom(buf), mcux_len);
-#if defined(CONFIG_NOCACHE_MEMORY)
-	memcpy(net_buf_tail(buf), mcux_buf, len);
-#endif
 	net_buf_add(buf, len);
 
-#if defined(CONFIG_NOCACHE_MEMORY)
-	udc_mcux_nocache_free(mcux_buf);
-#endif
 	err = udc_submit_ep_event(dev, buf, 0);
 	udc_mcux_ep_try_feed(dev, udc_get_ep_cfg(dev, ep));
 

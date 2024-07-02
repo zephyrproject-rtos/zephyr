@@ -18,7 +18,7 @@
 #include <zephyr/usb/bos.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/usbd_msg.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/drivers/usb/udc_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/logging/log.h>

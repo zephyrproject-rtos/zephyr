@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/drivers/usb/udc_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/usb/usb_ch9.h>
 

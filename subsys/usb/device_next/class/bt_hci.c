@@ -73,9 +73,9 @@ static K_FIFO_DEFINE(bt_hci_tx_queue);
  * REVISE: global (bulk, interrupt, iso) specific pools would be more
  * RAM usage efficient.
  */
-NET_BUF_POOL_FIXED_DEFINE(bt_hci_ep_pool,
-			  3, 512,
-			  sizeof(struct udc_buf_info), NULL);
+UDC_BUF_POOL_DEFINE(bt_hci_ep_pool,
+		    3, 512,
+		    sizeof(struct udc_buf_info), NULL);
 /* HCI RX/TX threads */
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread rx_thread_data;
