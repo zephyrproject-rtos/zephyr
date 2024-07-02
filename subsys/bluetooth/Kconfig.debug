@@ -1,0 +1,11 @@
+# Bluetooth debug configuration options
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_DEBUG_HCI_ERR_TO_STR
+	bool "Print HCI error codes as strings"
+	help
+	  This configuration enables printing of HCI error
+	  codes represented as strings.
+	  See bt_hci_err_to_str() for more details.

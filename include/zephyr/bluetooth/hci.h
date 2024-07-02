@@ -32,7 +32,11 @@ extern "C" {
  *
  * @return The string representation of the HCI error code.
  */
+#ifdef CONFIG_BT_DEBUG_HCI_ERR_TO_STR
 const char *bt_hci_err_to_str(uint8_t hci_err);
+#else
+static inline const char *bt_hci_err_to_str(uint8_t hci_err) { return ""; }
+#endif
 
 /** Allocate a HCI command buffer.
   *
