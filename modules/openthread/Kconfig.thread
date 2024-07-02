@@ -194,3 +194,13 @@ config OPENTHREAD_BLE_TCAT_RING_BUF_SIZE
 	default 512
 	help
 	   Openthread BLE TCAT ringbuffer size.
+
+config OPENTHREAD_NAT64_CIDR
+	string "Set IPv4 CIDR used by NAT64"
+	default "192.168.255.0/24"
+	depends on OPENTHREAD_BORDER_ROUTING && OPENTHREAD_NAT64_TRANSLATOR
+	help
+	  Set the IPv4 CIDR (Classless Inter-Domain Routing) used by NAT64
+	  to set source address of the outgoing translated IPv4 packets.
+	  The CIDR must have four bytes in the address with the
+	  non-zero length of prefix (e.g., "127.0.0.1/24").
