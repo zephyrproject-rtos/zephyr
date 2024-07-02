@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &dummy_dc;
+	};
+
+	dummy_dc: dummy_dc {
+		compatible = "zephyr,dummy-dc";
+		height = <240>;
+		width = <320>;
+	};
+
+	/delete-node/ lvgl_pointer;
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+	};
+
+};
