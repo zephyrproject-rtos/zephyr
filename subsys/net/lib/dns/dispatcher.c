@@ -161,7 +161,7 @@ void dns_dispatcher_svc_handler(struct k_work *work)
 	int ret;
 
 	ret = recv_data(pev);
-	if (ret < 0 && ret != DNS_EAI_ALLDONE) {
+	if (ret < 0 && ret != DNS_EAI_ALLDONE && ret != -ENOENT) {
 		NET_ERR("DNS recv error (%d)", ret);
 	}
 }
