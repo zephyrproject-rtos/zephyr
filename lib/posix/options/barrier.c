@@ -19,6 +19,10 @@ struct posix_barrier {
 	uint32_t count;
 };
 
+struct posix_barrierattr {
+	int pshared;
+};
+
 static struct posix_barrier posix_barrier_pool[CONFIG_MAX_PTHREAD_BARRIER_COUNT];
 SYS_BITARRAY_DEFINE_STATIC(posix_barrier_bitarray, CONFIG_MAX_PTHREAD_BARRIER_COUNT);
 
@@ -163,27 +167,33 @@ int pthread_barrier_destroy(pthread_barrier_t *b)
 
 int pthread_barrierattr_init(pthread_barrierattr_t *attr)
 {
+	struct posix_barrierattr *const _attr = (struct posix_barrierattr *)attr;
+
 	__ASSERT_NO_MSG(attr != NULL);
 
-	attr->pshared = PTHREAD_PROCESS_PRIVATE;
+	_attr->pshared = PTHREAD_PROCESS_PRIVATE;
 
 	return 0;
 }
 
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared)
 {
+	struct posix_barrierattr *const _attr = (struct posix_barrierattr *)attr;
+
 	if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_PUBLIC) {
 		return -EINVAL;
 	}
 
-	attr->pshared = pshared;
+	_attr->pshared = pshared;
 	return 0;
 }
 
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *restrict attr,
 				   int *restrict pshared)
 {
-	*pshared = attr->pshared;
+	struct posix_barrierattr *const _attr = (struct posix_barrierattr *)attr;
+
+	*pshared = _attr->pshared;
 
 	return 0;
 }

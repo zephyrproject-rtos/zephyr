@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <time.h>
+
 #include <zephyr/kernel.h>
 #include <ksched.h>
-#include <zephyr/posix/time.h>
 
 int64_t timespec_to_timeoutms(const struct timespec *abstime)
 {

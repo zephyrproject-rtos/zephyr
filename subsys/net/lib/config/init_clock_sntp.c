@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
-
 #include <errno.h>
+#include <time.h>
+
+#include <zephyr/logging/log.h>
 #include <zephyr/net/sntp.h>
-#include <zephyr/posix/time.h>
+
+LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
 static int sntp_init_helper(struct sntp_time *tm)
 {

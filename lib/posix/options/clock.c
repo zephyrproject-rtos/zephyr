@@ -6,10 +6,12 @@
  */
 
 #include "posix_clock.h"
+#include "posix_internal.h"
+
+#include <time.h>
 
 #include <zephyr/kernel.h>
 #include <errno.h>
-#include <zephyr/posix/time.h>
 #include <zephyr/posix/sys/time.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -66,10 +68,12 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 	struct timespec base;
 
 	switch (clock_id) {
+#if defined(_POSIX_MONOTONIC_CLOCK)
 	case CLOCK_MONOTONIC:
 		base.tv_sec = 0;
 		base.tv_nsec = 0;
 		break;
+#endif
 
 	case CLOCK_REALTIME:
 		(void)__posix_clock_get_base(clock_id, &base);
@@ -104,8 +108,8 @@ int clock_getres(clockid_t clock_id, struct timespec *res)
 			     CONFIG_SYS_CLOCK_TICKS_PER_SEC <= NSEC_PER_SEC,
 		     "CONFIG_SYS_CLOCK_TICKS_PER_SEC must be > 0 and <= NSEC_PER_SEC");
 
-	if (!(clock_id == CLOCK_MONOTONIC || clock_id == CLOCK_REALTIME ||
-	      clock_id == CLOCK_PROCESS_CPUTIME_ID)) {
+	if (!(is_monotonic_clock(clock_id) || clock_id == CLOCK_REALTIME ||
+	      is_process_cputime_clock(clock_id) || is_thread_cputime_clock(clock_id))) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -201,7 +205,7 @@ static int __z_clock_nanosleep(clockid_t clock_id, int flags, const struct times
 	k_spinlock_key_t key;
 	const bool update_rmtp = rmtp != NULL;
 
-	if (!((clock_id == CLOCK_REALTIME) || (clock_id == CLOCK_MONOTONIC))) {
+	if (!((clock_id == CLOCK_REALTIME) || is_monotonic_clock(clock_id))) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -257,7 +261,7 @@ do_rmtp_update:
 
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
-	return __z_clock_nanosleep(CLOCK_MONOTONIC, 0, rqtp, rmtp);
+	return __z_clock_nanosleep(TIMER_ABSTIME, 0, rqtp, rmtp);
 }
 
 int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
@@ -287,6 +291,7 @@ int gettimeofday(struct timeval *tv, void *tz)
 	return res;
 }
 
+#if defined(_POSIX_PROCESS_CPUTIME_ID)
 int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
 {
 	/* We don't allow any process ID but our own.  */
@@ -298,6 +303,7 @@ int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
 
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_ZTEST
 #include <zephyr/ztest.h>

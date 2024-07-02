@@ -5,7 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "posix_internal.h"
+
 #include <errno.h>
+#include <time.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/posix/fcntl.h>

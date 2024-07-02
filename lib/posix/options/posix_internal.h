@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/posix/pthread.h>
@@ -97,6 +98,44 @@ static inline uint32_t mark_pthread_obj_initialized(uint32_t obj)
 static inline uint32_t mark_pthread_obj_uninitialized(uint32_t obj)
 {
 	return obj & ~PTHREAD_OBJ_MASK_INIT;
+}
+
+static inline bool is_process_cputime_clock(clockid_t id)
+{
+#if defined(_POSIX_CPUTIME)
+	if (id == CLOCK_PROCESS_CPUTIME_ID) {
+		return true;
+	}
+#endif
+
+	return false;
+}
+
+static inline bool is_thread_cputime_clock(clockid_t id)
+{
+#if defined(_POSIX_THREAD_CPUTIME)
+	if (id == CLOCK_THREAD_CPUTIME_ID) {
+		return true;
+	}
+#endif
+
+	return false;
+}
+
+static inline bool is_monotonic_clock(clockid_t id)
+{
+#if defined(_POSIX_MONOTONIC_CLOCK)
+	if (id == CLOCK_MONOTONIC) {
+		return true;
+	}
+#endif
+
+	return false;
+}
+
+static inline int32_t _ts_to_ms(const struct timespec *to)
+{
+	return (int32_t)(to->tv_sec * MSEC_PER_SEC) + (int32_t)(to->tv_nsec / NSEC_PER_MSEC);
 }
 
 struct posix_thread *to_posix_thread(pthread_t pth);

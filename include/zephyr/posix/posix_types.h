@@ -87,11 +87,15 @@ BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr));
 /* Barrier */
 typedef uint32_t pthread_barrier_t;
 
-typedef struct pthread_barrierattr {
+struct pthread_barrierattr {
 	int pshared;
-} pthread_barrierattr_t;
+};
 
-typedef uint32_t pthread_rwlockattr_t;
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) ||                                    \
+	defined(CONFIG_ARMCLANG_STD_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
+typedef struct pthread_barrierattr pthread_barrierattr_t;
+#endif
+BUILD_ASSERT(sizeof(pthread_barrierattr_t) >= sizeof(struct pthread_barrierattr));
 
 typedef uint32_t pthread_rwlock_t;
 
@@ -103,6 +107,7 @@ struct pthread_once {
 	|| defined(CONFIG_ARCMWDT_LIBC)
 typedef uint32_t pthread_key_t;
 typedef struct pthread_once pthread_once_t;
+typedef uint32_t pthread_rwlockattr_t;
 #endif
 
 /* Newlib typedefs pthread_once_t as a struct with two ints */
