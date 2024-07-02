@@ -127,6 +127,9 @@ Glossary of Terms
       Power gating reduces power consumption by shutting off areas of an
       integrated circuit that are not in use.
 
+   project timeline
+      The Project timeline for the zephyr safety certification
+
    SoC
       A `System on a chip`_, that is, an integrated circuit that contains at
       least one :term:`CPU cluster` (in turn with at least one :term:`CPU core`),
