@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_WCH_RCC
+	bool "WCH_RCC clock control"
+	default y
+	depends on DT_HAS_WCH_RCC_ENABLED
+	help
+	  Enable driver for RCC

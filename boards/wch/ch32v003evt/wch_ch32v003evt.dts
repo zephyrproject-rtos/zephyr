@@ -1,0 +1,53 @@
+/dts-v1/;
+
+#include <wch/ch32v00x.dtsi>
+#include <zephyr/dt-bindings/pinctrl/ch32v003-pinctrl.h>
+
+/ {
+	model = "ch32v003evt";
+	compatible = "wch,ch32v003";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &debug0;
+		zephyr,shell-uart = &usart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led0 {
+			gpios = <&gpiod 6 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+	};
+};
+
+&debug0 {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group0 {
+			pinmux = <USART1_TX_PD5_0>, <USART1_RX_PD6_0>;
+			bias-pull-up;
+			drive-push-pull;
+		};
+	};
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
