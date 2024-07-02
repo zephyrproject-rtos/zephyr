@@ -221,9 +221,11 @@ class Maintainers:
 
         # Make 'path' relative to the repository root and normalize it.
         # normpath() would remove a trailing '/', so we add it afterwards.
-        path = os.path.normpath(os.path.join(
+        # Ensure the path is in posix format to allow script to run in
+        # any OS (the manifest tends to format paths as posix style).
+        path = pathlib.PurePath(os.path.join(
             os.path.relpath(os.getcwd(), self._toplevel),
-            path))
+            path)).as_posix()
 
         if is_dir:
             path += "/"
