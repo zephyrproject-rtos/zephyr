@@ -1231,13 +1231,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		case BT_CONN_DISCONNECT_COMPLETE:
 			wait_for_tx_work(conn);
 
-			/* Cancel Connection Update if it is pending */
-			if ((conn->type == BT_CONN_TYPE_LE) &&
-			    (k_work_delayable_busy_get(&conn->deferred_work) &
-			     (K_WORK_QUEUED | K_WORK_DELAYED))) {
-				k_work_cancel_delayable(&conn->deferred_work);
-			}
-
 			LOG_DBG("trigger disconnect work");
 			k_work_reschedule(&conn->deferred_work, K_NO_WAIT);
 
