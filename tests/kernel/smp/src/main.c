@@ -25,6 +25,12 @@
 #define THREAD_DELAY 1
 #define SLEEP_MS_LONG ((int)(15000 * RUN_FACTOR))
 
+/* We iterate priorities in spawn_threads() - so we need to have enough priorities */
+#define SPAWN_THREADS_MAX_PRIO 16
+BUILD_ASSERT(SPAWN_THREADS_MAX_PRIO >= CONFIG_MP_MAX_NUM_CPUS);
+BUILD_ASSERT(SPAWN_THREADS_MAX_PRIO + 1 < CONFIG_NUM_PREEMPT_PRIORITIES);
+BUILD_ASSERT(SPAWN_THREADS_MAX_PRIO + 1 < CONFIG_NUM_COOP_PRIORITIES);
+
 struct k_thread t2;
 K_THREAD_STACK_DEFINE(t2_stack, T2_STACK_SIZE);
 
@@ -198,18 +204,40 @@ ZTEST(smp, test_cpu_id_threads)
 	k_thread_join(tid, K_FOREVER);
 }
 
+static void set_tinfo(void *p1)
+{
+	int thread_num = POINTER_TO_INT(p1);
+
+	tinfo[thread_num].executed  = 1;
+	tinfo[thread_num].cpu_id = curr_cpu();
+}
+
 static void thread_entry_fn(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
-	int thread_num = POINTER_TO_INT(p1);
 	int count = 0;
 
-	tinfo[thread_num].executed  = 1;
-	tinfo[thread_num].cpu_id = curr_cpu();
+	set_tinfo(p1);
 
-	while (count++ < 5) {
+	/* We use this thread function with spawn_threads helper which increase delay before each
+	 * new thread is spawned. So we need take into account the amount of threads we are going to
+	 * spawn to wait enough time before exiting the thread (alternatively we could just increase
+	 * wait time for all configurations)
+	 */
+	while (count++ < (5 + arch_num_cpus())) {
 		k_busy_wait(DELAY_US);
+	}
+}
+
+static void thread_entry_inf_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	set_tinfo(p1);
+
+	while (true) {
 	}
 }
 
@@ -372,12 +400,16 @@ ZTEST(smp, test_coop_resched_threads)
 	 * since we don't give up current CPU, last thread
 	 * will not get scheduled
 	 */
-	spawn_threads(K_PRIO_COOP(10), num_threads, !EQUAL_PRIORITY,
-		      &thread_entry_fn, THREAD_DELAY);
+	spawn_threads(K_PRIO_COOP(SPAWN_THREADS_MAX_PRIO), num_threads, !EQUAL_PRIORITY,
+		      &thread_entry_inf_fn, THREAD_DELAY);
 
-	/* Wait for some time to let other core's thread run */
-	k_busy_wait(DELAY_US);
-
+	/* Wait for some time to let other core's thread run. We spawn threads function with
+	 * spawn_threads helper which increase delay before each new thread is spawned. So we
+	 * need take into account the amount of threads we are going to spawn to wait enough
+	 * time before checking the expected data from spawned threads (alternatively we could just
+	 * increase wait time for all configurations)
+	 */
+	k_busy_wait(DELAY_US * (num_threads / 2));
 
 	/* Reassure that cooperative thread's are not preempted
 	 * by checking last thread's execution
@@ -413,7 +445,7 @@ ZTEST(smp, test_preempt_resched_threads)
 	 * lower priority thread should
 	 * be preempted by higher ones
 	 */
-	spawn_threads(K_PRIO_PREEMPT(10), num_threads, !EQUAL_PRIORITY,
+	spawn_threads(K_PRIO_PREEMPT(SPAWN_THREADS_MAX_PRIO), num_threads, !EQUAL_PRIORITY,
 		      &thread_entry_fn, THREAD_DELAY);
 
 	spin_for_threads_exit();
@@ -446,7 +478,7 @@ ZTEST(smp, test_yield_threads)
 	 * of cores, so the last thread would be
 	 * pending.
 	 */
-	spawn_threads(K_PRIO_COOP(10), num_threads, !EQUAL_PRIORITY,
+	spawn_threads(K_PRIO_COOP(SPAWN_THREADS_MAX_PRIO), num_threads, !EQUAL_PRIORITY,
 		      &thread_entry_fn, !THREAD_DELAY);
 
 	k_yield();
@@ -475,7 +507,7 @@ ZTEST(smp, test_sleep_threads)
 {
 	unsigned int num_threads = arch_num_cpus();
 
-	spawn_threads(K_PRIO_COOP(10), num_threads, !EQUAL_PRIORITY,
+	spawn_threads(K_PRIO_COOP(SPAWN_THREADS_MAX_PRIO), num_threads, !EQUAL_PRIORITY,
 		      &thread_entry_fn, !THREAD_DELAY);
 
 	k_msleep(TIMEOUT);
@@ -558,7 +590,7 @@ ZTEST(smp, test_wakeup_threads)
 	unsigned int num_threads = arch_num_cpus();
 
 	/* Spawn threads to run on all remaining cores */
-	spawn_threads(K_PRIO_COOP(10), num_threads - 1, !EQUAL_PRIORITY,
+	spawn_threads(K_PRIO_COOP(SPAWN_THREADS_MAX_PRIO), num_threads - 1, !EQUAL_PRIORITY,
 		      &thread_wakeup_entry, !THREAD_DELAY);
 
 	/* Check if all the threads have started, then call wakeup */
