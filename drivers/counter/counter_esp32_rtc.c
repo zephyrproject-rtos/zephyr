@@ -42,6 +42,7 @@ static void counter_esp32_isr(void *arg);
 struct counter_esp32_config {
 	struct counter_config_info counter_info;
 	int irq_source;
+	int irq_priority;
 	const struct device *clock_dev;
 };
 
@@ -62,13 +63,17 @@ static int counter_esp32_init(const struct device *dev)
 			       (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW,
 			       &data->clk_src_freq);
 
-	esp_intr_alloc(cfg->irq_source,
-			0,
-			(ESP32_COUNTER_RTC_ISR_HANDLER)counter_esp32_isr,
-			(void *)dev,
-			NULL);
+	int ret = esp_intr_alloc(cfg->irq_source,
+				esp_intr_level_to_flags(cfg->irq_priority),
+				(ESP32_COUNTER_RTC_ISR_HANDLER)counter_esp32_isr,
+				(void *)dev,
+				NULL);
 
-	return 0;
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+	}
+
+	return ret;
 }
 
 static int counter_esp32_start(const struct device *dev)
@@ -199,7 +204,8 @@ static const struct counter_esp32_config counter_config = {
 		.channels = 1
 	},
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.irq_source = DT_INST_IRQN(0),
+	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
+	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority)
 };
 
 static const struct counter_driver_api rtc_timer_esp32_api = {
