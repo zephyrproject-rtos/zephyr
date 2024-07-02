@@ -1766,3 +1766,8 @@ CVE-2024-6443
 -------------
 
 Under embargo until 2024-09-22
+
+CVE-2024-6444
+-------------
+
+Under embargo until 2024-09-22
