@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2024 Norik Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "octopus_io_board_common-pinctrl.dtsi"
+#include "../octopus_som/octopus_som_common.dtsi"
+
+/ {
+	model = "Norik Octopus IO-Board";
+	compatible = "norik,octopus-io-board";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	peripheral-power-controller {
+		compatible = "gpio-keys";
+
+		pwrgpio0: pwrgpio_0 {
+			label = "VP on/off";
+			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+		};
+
+		pwrgpio1: pwrgpio_1 {
+			label = "CHG control";
+			gpios = <&gpio0 20 (GPIO_ACTIVE_LOW)>;
+		};
+
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		watchdog0 = &wdt0;
+		ldoctrl = &pwrgpio0;
+		chgctrl = &pwrgpio1;
+		bq25180 = &bq25180;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	bq25180: bq25180@6a {
+		compatible = "i2c-device";
+		status = "okay";
+		label = "BQ25180";
+		reg = <0x6a>;
+	};
+};
+
+&spi3 {
+	status = "okay";
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+
+	w25q64: w25q64@0 {
+		compatible = "jedec,spi-nor";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		jedec-id = [ef 40 17];
+		size = <0x4000000>;
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+	};
+};
