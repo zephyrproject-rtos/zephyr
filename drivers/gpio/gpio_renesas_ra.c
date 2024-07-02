@@ -414,10 +414,13 @@ static const struct gpio_driver_api gpio_ra_driver_api = {
 
 #define GPIO_RA_INIT(idx)                                                                          \
 	static struct gpio_ra_data gpio_ra_data_##idx = {};                                        \
-	DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_DECL_PINS);                        \
-	DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_ISR_DECL);                         \
-	struct gpio_ra_irq_info gpio_ra_irq_info_##idx[] = {                                       \
-		DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_IRQ_INFO)};                \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(idx, interrupt_names),                                    \
+		   (DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_DECL_PINS);            \
+		    DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_ISR_DECL);))           \
+	static struct gpio_ra_irq_info gpio_ra_irq_info_##idx[] = {                                \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(idx, interrupt_names),                            \
+			   (DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_IRQ_INFO)))    \
+	};                                                                                         \
 	static struct gpio_ra_config gpio_ra_config_##idx = {                                      \
 		.common = {                                                                        \
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \

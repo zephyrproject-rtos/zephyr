@@ -10,7 +10,7 @@
 #define PORT4_POS  29
 #define PORT4_MASK 0x1
 #define PSEL_POS   24
-#define PSEL_MASK  0x5
+#define PSEL_MASK  0x1f
 #define PORT_POS   21
 #define PORT_MASK  0x7
 #define PIN_POS    17
