@@ -1,0 +1,47 @@
+/*
+ * Copyright 2024 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		qdec0 = &qdec130;
+		qenca = &phase_a;
+		qencb = &phase_b;
+	};
+
+	encoder-emulate {
+		compatible = "gpio-leds";
+		phase_a: phase_a {
+			gpios = <&gpio7 2 GPIO_ACTIVE_HIGH>;
+		};
+		phase_b: phase_b {
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&pinctrl {
+	qdec_pinctrl: qdec_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 0)>,
+				<NRF_PSEL(QDEC_B, 1, 2)>;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio7 {
+	status = "okay";
+};
+
+&qdec130 {
+	status = "okay";
+	pinctrl-0 = <&qdec_pinctrl>;
+	pinctrl-names = "default";
+	steps = <127>;
+	led-pre = <500>;
+};
