@@ -1,0 +1,71 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_AT2X
+	bool
+	help
+	  Enable support for Atmel AT2x (and compatible) I2C/SPI
+	  EEPROMs.
+
+config EEPROM_AT2X_I2C
+	bool "I2C EEPROMs compatible with Atmel's AT24 family"
+	select I2C
+	select EEPROM_AT2X
+	help
+	  Enable support for I2C EEPROMs compatible with Atmel's AT24 family.
+
+	  There are multiple vendors manufacturing I2C EEPROMs compatible with
+	  the programming model of the Atmel AT24.
+
+	  Examples of compatible EEPROM families:
+	  - Microchip AT24xxx
+	  - ST M24xxx
+
+config EEPROM_AT2X_SPI
+	bool "SPI EEPROMs compatible with Atmel's AT25 family"
+	select SPI
+	select EEPROM_AT2X
+	help
+	  Enable support for SPI EEPROMs compatible with Atmel's AT25 family.
+
+	  There are multiple vendors manufacturing SPI EEPROMs compatible with
+	  the programming model of the Atmel AT25.
+
+	  Examples of compatible EEPROM families:
+	  - Microchip AT25xxx
+	  - ST M95xxx
+
+config EEPROM_AT24
+	bool "Atmel AT24 I2C EEPROM support"
+	default y
+	depends on DT_HAS_ATMEL_AT24_ENABLED
+	select EEPROM_AT2X_I2C
+	help
+	  Enable support for Atmel AT24 I2C EEPROMs.
+
+config EEPROM_AT25
+	bool "Atmel AT25 SPI EEPROM support"
+	default y
+	depends on DT_HAS_ATMEL_AT25_ENABLED
+	select EEPROM_AT2X_SPI
+	help
+	  Enable support for Atmel AT25 SPI EEPROMs.
+
+config EEPROM_M24
+	bool "ST M24 I2C EEPROM support"
+	default y
+	depends on DT_HAS_ST_M24XXX_ENABLED
+	select EEPROM_AT2X_I2C
+	help
+	  Enable support for ST M24 I2C EEPROMs.
+
+config EEPROM_AT2X_INIT_PRIORITY
+	int "AT2X EEPROM init priority"
+	default 80
+	depends on EEPROM_AT2X
+	help
+	  AT2X EEPROM driver device initialization priority.
+
+	  The EEPROM is connected to I2C or SPI bus and has to be initialized
+	  after I2C/SPI driver.
