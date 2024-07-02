@@ -1,0 +1,29 @@
+# SDP3X temperature and differential pressure sensor configuration options
+
+# Copyright (c) 2024 Yann Gaillard
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SDP3X
+	bool "SDP3x"
+	default y
+	depends on DT_HAS_SENSIRION_SDP3X_ENABLED
+	select I2C
+	select CRC
+	help
+	  Enable driver for SDP3x temperature and differential pressure sensors.
+
+if SDP3X
+
+choice SDP3X_MEASUREMENT_MODE
+	prompt "Measurement mode"
+	default SDP3X_PERIODIC_MODE
+
+config SDP3X_SINGLE_SHOT_MODE
+	bool "single shot"
+
+config SDP3X_PERIODIC_MODE
+	bool "periodic data acquisition"
+
+endchoice
+
+endif
