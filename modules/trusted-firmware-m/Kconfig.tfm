@@ -53,6 +53,13 @@ menuconfig BUILD_WITH_TFM
 
 if BUILD_WITH_TFM
 
+config TFM_DEVICETREE_LAYOUT
+	bool "Use the memory layout from devicetree instead of TFM_BOARD"
+	depends on SOC_COMPATIBLE_NRF
+	help
+		Use partition and memory layouts from the Zephyr devicetree
+		instead of the hardcoded values from {module}/platform/ext/target/{family}/partition.
+
 config TFM_PROFILE
 	string
 	default "profile_small" if TFM_PROFILE_TYPE_SMALL
@@ -192,7 +199,9 @@ config TFM_IMAGE_VERSION_S
 	help
 	  MCUBoot may be configured to prevent rollback prevention based on image
 	  versions of both the secure firmware and non-secure firmware. This sets
-	  the secure firmware's version for rollback prevention.
+	  the secure firmware's version for rollback prevention. This version is
+	  also used for merged secure + non-secure builds
+	  (TFM_MCUBOOT_IMAGE_NUMBER == 1).
 
 config TFM_IMAGE_VERSION_NS
 	string "Version of the Non-Secure Image"
@@ -209,6 +218,11 @@ config TFM_BL2
 	help
 	  TFM is designed to run with MCUboot in a certain configuration.
 	  This config adds MCUboot to the build - built via TFM's build system.
+
+config TFM_BL2_QSPI_FLASH
+	bool "External QSPI flash drivers for BL2"
+	depends on TFM_BL2
+	depends on SOC_COMPATIBLE_NRF
 
 config TFM_USE_NS_APP
 	bool "Use the TF-M Non-Secure application"
@@ -250,7 +264,8 @@ config TFM_KEY_FILE_S
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing secure
-	  firmware images.
+	  firmware images. This key file is also used for merged secure +
+	  non-secure builds (TFM_MCUBOOT_IMAGE_NUMBER == 1).
 
 config TFM_KEY_FILE_NS
 	string "Path to private key used to sign non-secure firmware images."

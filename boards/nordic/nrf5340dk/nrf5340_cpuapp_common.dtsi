@@ -19,6 +19,29 @@
 		zephyr,ieee802154 = &ieee802154;
 	};
 
+	tfm_config {
+		compatible = "arm,trusted-firmware-m";
+		sram = <&sram0>;
+		sram-secure = <&sram0_s>;
+		sram-nonsecure = <&sram0_ns>;
+		spu-flash-region-size = <0x00004000>;
+		spu-sram-region-size = <0x00002000>;
+
+		onboard_flash {
+			driver = "Driver_FLASH0";
+			complete = <&flash0>;
+			img-bl2 = <&boot_partition>;
+			img-primary-secure = <&slot0_partition>;
+			img-primary-nonsecure = <&slot0_ns_partition>;
+			img-secondary-secure = <&slot1_partition>;
+			img-secondary-nonsecure = <&slot1_ns_partition>;
+			partition-ps = <&tfm_ps_partition>;
+			partition-its = <&tfm_its_partition>;
+			partition-otp = <&tfm_otp_partition>;
+			partition-nonsecure-storage = <&storage_partition>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
@@ -244,7 +267,18 @@ arduino_spi: &spi4 {
 		slot1_ns_partition: partition@c0000 {
 			label = "image-1-nonsecure";
 		};
-		/* 0xf0000 to 0xf7fff reserved for TF-M partitions */
+		tfm_ps_partition: partition@f0000 {
+			label = "tfm-ps";
+			reg = <0x000f0000 0x00004000>;
+		};
+		tfm_its_partition: partition@f4000 {
+			label = "tfm-its";
+			reg = <0x000f4000 0x00002000>;
+		};
+		tfm_otp_partition: partition@f6000 {
+			label = "tfm-otp";
+			reg = <0x000f6000 0x00002000>;
+		};
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;

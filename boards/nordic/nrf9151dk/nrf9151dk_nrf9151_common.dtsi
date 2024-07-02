@@ -229,15 +229,27 @@ arduino_spi: &spi3 {
 		slot0_ns_partition: partition@50000 {
 			label = "image-0-nonsecure";
 		};
-		slot1_partition: partition@85000 {
+		slot1_partition: partition@80000 {
 			label = "image-1";
 		};
-		slot1_ns_partition: partition@c5000 {
+		slot1_ns_partition: partition@c0000 {
 			label = "image-1-nonsecure";
 		};
-		storage_partition: partition@fa000 {
+		tfm_ps_partition: partition@f0000 {
+			label = "tfm-ps";
+			reg = <0x000f0000 0x00004000>;
+		};
+		tfm_its_partition: partition@f4000 {
+			label = "tfm-its";
+			reg = <0x000f4000 0x00002000>;
+		};
+		tfm_otp_partition: partition@f6000 {
+			label = "tfm-otp";
+			reg = <0x000f6000 0x00002000>;
+		};
+		storage_partition: partition@f8000 {
 			label = "storage";
-			reg = <0x000fa000 0x00006000>;
+			reg = <0x000f8000 0x00008000>;
 		};
 	};
 };
