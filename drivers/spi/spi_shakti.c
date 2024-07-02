@@ -892,10 +892,8 @@ static int spi_shakti_transceive(const struct device *dev,
     {
       len = tx_bufs->buffers->len;
       for(int i = 0;i<len;i++){
-      k_sched_lock();
       sspi8_shakti_transmit_data(dev, ((uint8_t*)(tx_bufs->buffers->buf))[i]);
       ((uint8_t*)(tx_bufs->buffers->buf))[i] = sspi8_shakti_receive_data(dev);  
-      k_sched_unlock();
     }
     }
     if (spi_size == DATA_SIZE_16)
