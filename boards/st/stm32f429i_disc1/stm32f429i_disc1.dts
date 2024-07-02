@@ -235,7 +235,7 @@
 		     &ltdc_hsync_pc6 &ltdc_vsync_pa4>;
 	pinctrl-names = "default";
 	ext-sdram = <&sdram2>;
-	display-controller = <&ili9341>;
+	panel-controller = <&ili9341>;
 	status = "okay";
 
 	width = <240>;

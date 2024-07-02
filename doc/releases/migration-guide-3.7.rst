@@ -539,6 +539,9 @@ Display
   drop this property from their devicetree, and set orientation at runtime
   via :c:func:`display_set_orientation` (:github:`73360`)
 
+* The ``display-controller`` property of :dtcompatible:`st,stm32-ltdc`
+  has been renamed to ``panel-controller`` (:github:`75050`)
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
