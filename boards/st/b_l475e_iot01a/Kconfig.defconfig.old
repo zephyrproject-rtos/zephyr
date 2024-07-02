@@ -1,0 +1,11 @@
+# STM32L475E DISCOVERY board configuration
+
+# Copyright (c) 2023 Mohammed Billoo
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_B_L475E_IOT01A
+
+config BOARD
+	default "stm32l475e_disco"
+
+endif # BOARD_STM32L475E_DISCO

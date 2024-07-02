@@ -1,0 +1,7 @@
+# STM32L475E Discovery board configuration
+
+# Copyright (c) 2023 Mohammed Billoo
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_B_L475E_IOT01A
+	select SOC_STM32L475XX

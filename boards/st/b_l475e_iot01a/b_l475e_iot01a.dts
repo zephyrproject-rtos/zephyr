@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2023 Mohammed Billoo
+ *
+ * Based on stm32l476g_disco:
+ *
+ * Copyright (c) 2017 Arthur Sfez
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l4/stm32l475Xg.dtsi>
+#include <st/l4/stm32l475v(c-e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32L475E-DISCO board";
+	compatible = "st,stm32l475e-disco";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		green_led_2: led_2 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_btn: user_btn {
+			label = "user button";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_2;
+		sw0 = &user_btn;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <20>;
+	div-p = <7>;
+	div-q = <2>;
+	div-r = <4>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(80)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
+};

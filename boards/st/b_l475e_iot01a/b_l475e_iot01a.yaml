@@ -1,0 +1,14 @@
+identifier: b_l457e_io01
+name: ST B_L457E_IOT01A Discovery kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 96
+flash: 1024
+supported:
+  - gpio
+  - counter
+vendor: st

@@ -1,0 +1,5 @@
+board:
+  name: b_l475e_iot01a
+  vendor: st
+  socs:
+    - name: stm32l475xx
