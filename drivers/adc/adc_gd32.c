@@ -356,7 +356,7 @@ static int adc_gd32_read_async(const struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
-static struct adc_driver_api adc_gd32_driver_api = {
+static DEVICE_API(adc, adc_gd32_driver_api) = {
 	.channel_setup = adc_gd32_channel_setup,
 	.read = adc_gd32_read,
 #ifdef CONFIG_ADC_ASYNC

@@ -39,3 +39,9 @@ tests:
     platform_allow: mec15xxevb_assy6853
   drivers.adc.test.build:
     platform_allow: qemu_cortex_m3
+  drivers.adc.linker_generator.build:
+    platform_allow: qemu_cortex_m3
+    tags:
+      - linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

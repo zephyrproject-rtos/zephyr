@@ -389,7 +389,7 @@ static int max11102_17_init(const struct device *dev)
 	return result;
 }
 
-static const struct adc_driver_api api = {
+static DEVICE_API(adc, api) = {
 	.channel_setup = max11102_17_channel_setup,
 	.read = max11102_17_read,
 	.ref_internal = 0,

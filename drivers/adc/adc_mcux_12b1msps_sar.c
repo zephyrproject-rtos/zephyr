@@ -262,7 +262,7 @@ static int mcux_12b1msps_sar_adc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api mcux_12b1msps_sar_adc_driver_api = {
+static DEVICE_API(adc, mcux_12b1msps_sar_adc_driver_api) = {
 	.channel_setup = mcux_12b1msps_sar_adc_channel_setup,
 	.read = mcux_12b1msps_sar_adc_read,
 #ifdef CONFIG_ADC_ASYNC

@@ -274,7 +274,7 @@ static void adc_cc13xx_cc26xx_isr(const struct device *dev)
 	adc_context_on_sampling_done(&data->ctx, dev);
 }
 
-static const struct adc_driver_api cc13xx_cc26xx_driver_api = {
+static DEVICE_API(adc, cc13xx_cc26xx_driver_api) = {
 	.channel_setup = adc_cc13xx_cc26xx_channel_setup,
 	.read = adc_cc13xx_cc26xx_read,
 #ifdef CONFIG_ADC_ASYNC

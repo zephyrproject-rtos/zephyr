@@ -334,7 +334,7 @@ static void adc_nxp_s32_isr(const struct device *dev)
 }
 
 #define ADC_NXP_S32_DRIVER_API(n)						\
-	static const struct adc_driver_api adc_nxp_s32_driver_api_##n = {	\
+	static DEVICE_API(adc, adc_nxp_s32_driver_api_##n) = {			\
 		.channel_setup = adc_nxp_s32_channel_setup,			\
 		.read = adc_nxp_s32_read,					\
 		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_nxp_s32_read_async,))\

@@ -297,7 +297,7 @@ static int mcp320x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api mcp320x_adc_api = {
+static DEVICE_API(adc, mcp320x_adc_api) = {
 	.channel_setup = mcp320x_channel_setup,
 	.read = mcp320x_read,
 #ifdef CONFIG_ADC_ASYNC

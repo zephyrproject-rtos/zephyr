@@ -503,7 +503,7 @@ static int adc_sam0_read_async(const struct device *dev,
 }
 #endif
 
-static const struct adc_driver_api adc_sam0_api = {
+static DEVICE_API(adc, adc_sam0_api) = {
 	.channel_setup = adc_sam0_channel_setup,
 	.read = adc_sam0_read,
 #ifdef CONFIG_ADC_ASYNC

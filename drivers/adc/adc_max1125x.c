@@ -765,7 +765,7 @@ static int max1125x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api max1125x_api = {
+static DEVICE_API(adc, max1125x_api) = {
 	.channel_setup = max1125x_channel_setup,
 	.read = max1125x_read,
 	.ref_internal = 2048,

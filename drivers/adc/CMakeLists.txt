@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/adc.h)
+zephyr_iterable_section(
+  NAME adc_driver_api
+  KVMA RAM_REGION GROUP RODATA_REGION
+  SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 
 zephyr_library()
 

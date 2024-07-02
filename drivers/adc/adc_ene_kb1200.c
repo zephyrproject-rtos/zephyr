@@ -212,7 +212,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	}
 }
 
-struct adc_driver_api adc_kb1200_api = {
+static DEVICE_API(adc, adc_kb1200_api) = {
 	.channel_setup = adc_kb1200_channel_setup,
 	.read = adc_kb1200_read,
 	.ref_internal = ADC_VREF_ANALOG,

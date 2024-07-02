@@ -244,6 +244,9 @@ Device Drivers and Devicetree
 Analog-to-Digital Converter (ADC)
 =================================
 
+* All in-tree device driver API instances have been placed in an iterable section using
+  the :c:macro:`DEVICE_API` wrapper macro. Out-of-tree driver instances should do the same.
+
 Bluetooth HCI
 =============
 
