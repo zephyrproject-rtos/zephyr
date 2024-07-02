@@ -198,11 +198,25 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 			/* Event has not yet been handled */
 			__fallthrough;
 		default:
-			if (msg[EVT_HEADER_EVENT] == BT_HCI_EVT_LE_META_EVENT &&
-			    (msg[EVT_LE_META_SUBEVENT] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
-				discardable = true;
-				timeout = K_NO_WAIT;
+			if (msg[EVT_HEADER_EVENT] == BT_HCI_EVT_LE_META_EVENT) {
+				if (msg[EVT_LE_META_SUBEVENT] ==
+				    BT_HCI_EVT_LE_ADVERTISING_REPORT) {
+					discardable = true;
+					timeout = K_NO_WAIT;
+				} else if (msg[EVT_LE_META_SUBEVENT] ==
+					   BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT) {
+					const struct bt_hci_evt_le_ext_advertising_report *ext_adv
+							= (void *)&msg[EVT_LE_META_SUBEVENT + 1];
+					/* For extended advertising with legacy, use discardable */
+					if ((ext_adv->num_reports == 1) &&
+					    (ext_adv->adv_info[0].evt_type &
+					     BT_HCI_LE_ADV_EVT_TYPE_LEGACY)) {
+						discardable = true;
+						timeout = K_NO_WAIT;
+					}
+				}
 			}
+
 			buf = bt_buf_get_evt(msg[EVT_HEADER_EVENT],
 					     discardable, timeout);
 			if (!buf) {
