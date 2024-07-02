@@ -64,6 +64,10 @@ Kernel
 
 * The named struct ``z_arch_esf_t`` is now deprecated. Use ``struct arch_esf`` instead. (:github:`73593`)
 
+* The header file :zephyr_file:`include/zephyr/arch/arch_interface.h` has been moved from
+  ``include/zephyr/sys/`` into ``include/zephyr/arch/``. Out-of-tree source files will need to
+  update the include path. (:github:`64987`)
+
 Boards
 ******
 
