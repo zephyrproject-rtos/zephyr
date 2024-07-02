@@ -929,6 +929,11 @@ static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec *spec,
 		resolution -= 1U;
 	}
 
+	/* Adjust resolution with the oversampling factor */
+	if(spec->oversampling) {
+		resolution += spec->oversampling >> 1U;
+	}
+
 	return adc_raw_to_millivolts(vref_mv, spec->channel_cfg.gain,
 				     resolution, valp);
 }
