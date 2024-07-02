@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Junhui Liu <liujh2818@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: canmv_k230
+  vendor: canaan
+  socs:
+    - name: k230
