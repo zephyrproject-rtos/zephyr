@@ -320,6 +320,11 @@ Controller Area Network (CAN)
     :c:func:`can_set_mode` during application startup instead of failing when :c:func:`can_recover`
     is called at a later point in time.
 
+Crypto
+======
+
+* The CSS driver has been deprecated on NXP lpc55s36
+
 Display
 =======
 
@@ -553,6 +558,11 @@ Enhanced Serial Peripheral Interface (eSPI)
   The KConfig ``CONFIG_ESPI_SLAVE`` was renamed to ``CONFIG_ESPI_TARGET``, similarly
   ``CONFIG_ESPI_SAF`` was renamed as ``CONFIG_ESPI_TAF`` (:github:`73887`)
 
+Ethernet
+========
+
+* Deprecated NXP's eth_mcux and introduced nxp_enet
+
 Flash
 =====
 
@@ -637,6 +647,9 @@ Serial
 Timer
 =====
 
+* Added the ``resolution`` property in ``nxp,lptmr`` binding to represent the maximum width
+  in bits the LPTMR peripheral uses for it's counter.
+
 regulator
 =========
 
@@ -644,6 +657,11 @@ regulator
   as this setting should not be modified by the user. The DT property ``nxp,ground-select``
   has been removed, users should remove this property from their devicetree if it is present.
   (:github:`70642`)
+
+USB
+===
+
+* Introduction of a USB device controller driver for NXP SoC's (udc_mcux)
 
 Watchdog
 ========
