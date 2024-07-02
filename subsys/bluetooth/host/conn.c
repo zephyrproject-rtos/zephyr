@@ -3017,15 +3017,6 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	LOG_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn, conn->le.features[0],
 		param->interval_min, param->interval_max, param->latency, param->timeout);
 
-	/* Check if there's a need to update conn params */
-	if (conn->le.interval >= param->interval_min &&
-	    conn->le.interval <= param->interval_max &&
-	    conn->le.latency == param->latency &&
-	    conn->le.timeout == param->timeout) {
-		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
-		return -EALREADY;
-	}
-
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_CONN_ROLE_CENTRAL) {
 		return send_conn_le_param_update(conn, param);
