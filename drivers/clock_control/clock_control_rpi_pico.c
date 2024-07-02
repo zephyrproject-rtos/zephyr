@@ -488,13 +488,21 @@ static int clock_control_rpi_pico_on(const struct device *dev, clock_control_sub
 {
 	const struct clock_control_rpi_pico_config *config = dev->config;
 	enum rpi_pico_clkid clkid = (enum rpi_pico_clkid)sys;
-	clocks_hw_t *clocks_regs = config->clocks_regs;
 
 	if (rpi_pico_is_valid_clock_index(clkid) < 0) {
 		return -EINVAL;
 	}
 
-	hw_set_bits(&clocks_regs->clk[clkid].ctrl, CTRL_ENABLE_BITS);
+	switch (clkid) {
+	case rpi_pico_clkid_pll_sys:
+		hw_clear_bits(&config->pll_sys_regs->pwr, PLL_PWR_BITS);
+		break;
+	case rpi_pico_clkid_pll_usb:
+		hw_clear_bits(&config->pll_usb_regs->pwr, PLL_PWR_BITS);
+		break;
+	default:
+		hw_set_bits(&config->clocks_regs->clk[clkid].ctrl, CTRL_ENABLE_BITS);
+	}
 
 	return 0;
 }
@@ -503,13 +511,21 @@ static int clock_control_rpi_pico_off(const struct device *dev, clock_control_su
 {
 	const struct clock_control_rpi_pico_config *config = dev->config;
 	enum rpi_pico_clkid clkid = (enum rpi_pico_clkid)sys;
-	clocks_hw_t *clocks_regs = config->clocks_regs;
 
 	if (rpi_pico_is_valid_clock_index(clkid) < 0) {
 		return -EINVAL;
 	}
 
-	hw_clear_bits(&clocks_regs->clk[clkid].ctrl, CTRL_ENABLE_BITS);
+	switch (clkid) {
+	case rpi_pico_clkid_pll_sys:
+		hw_set_bits(&config->pll_sys_regs->pwr, PLL_PWR_BITS);
+		break;
+	case rpi_pico_clkid_pll_usb:
+		hw_set_bits(&config->pll_usb_regs->pwr, PLL_PWR_BITS);
+		break;
+	default:
+		hw_clear_bits(&config->clocks_regs->clk[clkid].ctrl, CTRL_ENABLE_BITS);
+	}
 
 	return 0;
 }
