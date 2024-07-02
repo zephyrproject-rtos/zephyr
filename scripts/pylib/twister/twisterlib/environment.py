@@ -114,6 +114,13 @@ Artificially long but functional example:
         help="Run only those tests that failed the previous twister run "
              "invocation.")
 
+    case_select.add_argument(
+        "--dyn-filter",
+        action="store",
+        choices=["changed_src"],
+        nargs="+",
+        help="Run only the test-/sample-projects that have changed .c/.h file dependencies.")
+
     case_select.add_argument("--list-tests", action="store_true",
                              help="""List of all sub-test functions recursively found in
         all --testsuite-root arguments. Note different sub-tests can share
