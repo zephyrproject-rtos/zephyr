@@ -12,6 +12,13 @@ compress & decompress the user data to the console.
 Building and Running
 ********************
 
+Add the lz4 module to your West manifest and pull it:
+
+.. code-block:: console
+
+    west config manifest.project-filter -- +lz4
+    west update
+
 The sample can be built and executed on nrf52840dk/nrf52840 as follows:
 
 .. zephyr-app-commands::
