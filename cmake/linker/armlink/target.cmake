@@ -79,6 +79,7 @@ function(toolchain_ld_link_elf)
     $<TARGET_OBJECTS:arch__arm__core__cortex_m>
     --map --list=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
     ${ZEPHYR_LIBS_OBJECTS}
+    ${ZEPHYR_LINK_LIBS_PROPERTY}
     kernel
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     --library_type=microlib
