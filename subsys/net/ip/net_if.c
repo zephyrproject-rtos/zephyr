@@ -5689,13 +5689,15 @@ struct net_if *net_if_get_wifi_sta(void)
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (net_if_is_wifi(iface)
 #ifdef CONFIG_WIFI_NM
-			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_STA))
+			&& wifi_nm_iface_is_sta(iface)
 #endif
 			) {
 			return iface;
 		}
 	}
-	return NULL;
+
+	/* If no STA interface is found, return the first WiFi interface */
+	return net_if_get_first_wifi();
 }
 
 struct net_if *net_if_get_wifi_sap(void)
@@ -5703,13 +5705,15 @@ struct net_if *net_if_get_wifi_sap(void)
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (net_if_is_wifi(iface)
 #ifdef CONFIG_WIFI_NM
-			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_SAP))
+			&& wifi_nm_iface_is_sap(iface)
 #endif
 			) {
 			return iface;
 		}
 	}
-	return NULL;
+
+	/* If no STA interface is found, return the first WiFi interface */
+	return net_if_get_first_wifi();
 }
 
 int net_if_get_name(struct net_if *iface, char *buf, int len)
