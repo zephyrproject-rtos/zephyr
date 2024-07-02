@@ -16,7 +16,26 @@
 #include <testlib/conn.h>
 #include <testlib/scan.h>
 
-void start_scanning(void)
+static K_SEM_DEFINE(sem_scan_timeout, 0, 1);
+
+static void scan_callback(const struct bt_le_scan_recv_info *info,
+			  struct net_buf_simple *buf)
+{
+	ARG_UNUSED(info);
+	ARG_UNUSED(buf);
+}
+
+static void timeout_callback(void)
+{
+	k_sem_give(&sem_scan_timeout);
+}
+
+static struct bt_le_scan_cb scan_cb = {
+	.recv = scan_callback,
+	.timeout = timeout_callback,
+};
+
+void start_scanning(uint16_t scan_timeout_units)
 {
 	int err;
 	struct bt_le_scan_param param;
@@ -32,7 +51,7 @@ void start_scanning(void)
 	param.options = BT_LE_SCAN_OPT_FILTER_DUPLICATE;
 	param.interval = BT_GAP_SCAN_FAST_INTERVAL;
 	param.window = BT_GAP_SCAN_FAST_WINDOW;
-	param.timeout = 0;
+	param.timeout = scan_timeout_units;
 	param.interval_coded = 0;
 	param.window_coded = 0;
 
@@ -44,9 +63,26 @@ void start_scanning(void)
 
 void dut_procedure(void)
 {
-	start_scanning();
+	start_scanning(0);
 
 	/* Nothing to do */
+
+	PASS("PASS\n");
+}
+
+void dut_procedure_with_scan_timeout(void)
+{
+	int err;
+	uint32_t scan_timeout_ms = 4 * CONFIG_BT_RPA_TIMEOUT * 1000;
+
+	bt_le_scan_cb_register(&scan_cb);
+
+	start_scanning(scan_timeout_ms / 10);
+
+	/* Nothing to do */
+	err = k_sem_take(&sem_scan_timeout, K_MSEC(3 * scan_timeout_ms));
+	TEST_ASSERT(err == 0, "Failed getting scan timeout within %d ms (err %d)",
+		    2 * scan_timeout_ms, err);
 
 	PASS("PASS\n");
 }

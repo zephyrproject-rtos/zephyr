@@ -10,6 +10,7 @@
 void tester_procedure(void);
 void tester_procedure_periph_delayed_start_of_conn_adv(void);
 void dut_procedure(void);
+void dut_procedure_with_scan_timeout(void);
 void dut_procedure_connect_short_rpa_timeout(void);
 void dut_procedure_connect_timeout(void);
 
@@ -20,6 +21,13 @@ static const struct bst_test_instance test_to_add[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = dut_procedure,
+	},
+	{
+		.test_id = "central_scan_with_timeout",
+		.test_descr = "Central performs active scanning using RPA",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = dut_procedure_with_scan_timeout,
 	},
 	{
 		.test_id = "central_connect_short_rpa_timeout",
