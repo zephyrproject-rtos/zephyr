@@ -56,6 +56,7 @@ config I2C_CALLBACK
 
 config HAS_I2C_RTIO
 	bool
+	default y
 	help
 	  This option must be selected by I2C controller drivers that optionally implement the RTIO
 	  interface.
@@ -87,6 +88,15 @@ config I2C_RTIO_CQ_SIZE
 	  structs that may be in the array given to i2c_transfer. A sensible default
 	  is going to be 4 given the device address, register address, and a value
 	  to be read or written.
+
+config I2C_RTIO_MAX_PENDING_SYS_WORKQUEUE_REQUESTS
+	int "Number of pending sys workqueue requests"
+	default 16
+	help
+	  When a user calls rtio_submit() on an I2C driver which hasn't implemented
+	  the iodev_submit function of the API, then we'll offload to the system
+	  work queue. A work item will be allocated and scheduled to perform the
+	  I2C operation.
 
 endif # I2C_RTIO
 
