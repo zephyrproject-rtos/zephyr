@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include <zephyr/dt-bindings/led/led.h>
 #include "nrf52840dongle_nrf52840-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -48,14 +49,21 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
-		red_pwm_led: pwm_led_0 {
-			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		ld1_green_pwm_led: ld1_green_led {
+			pwms = <&pwm0 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "LD1";
+			index = <0>;
+			color-mapping = <LED_COLOR_ID_GREEN>;
 		};
-		green_pwm_led: pwm_led_1 {
-			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
-		};
-		blue_pwm_led: pwm_led_2 {
-			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		ld2_rgb_pwm_led: ld2_rgb_led {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>,
+			       <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>,
+			       <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "LD2";
+			index = <1>;
+			color-mapping = <LED_COLOR_ID_RED>,
+					<LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_BLUE>;
 		};
 	};
 
@@ -79,12 +87,9 @@
 		led1-red   = &led1_red;
 		led1-green = &led1_green;
 		led1-blue  = &led1_blue;
-		pwm-led0 = &red_pwm_led;
-		pwm-led1 = &green_pwm_led;
-		pwm-led2 = &blue_pwm_led;
-		red-pwm-led = &red_pwm_led;
-		green-pwm-led = &green_pwm_led;
-		blue-pwm-led = &blue_pwm_led;
+		pwm-led0 = &ld1_green_pwm_led;
+		pwm-led1 = &ld2_rgb_pwm_led;
+		rgb-pwm-led = &ld2_rgb_pwm_led;
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0_green;
 		watchdog0 = &wdt0;

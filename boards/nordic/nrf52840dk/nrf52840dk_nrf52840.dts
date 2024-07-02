@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include <zephyr/dt-bindings/led/led.h>
 #include "nrf52840dk_nrf52840-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -49,6 +50,27 @@
 		compatible = "pwm-leds";
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "LED0";
+			index = <0>;
+			color-mapping = <LED_COLOR_ID_GREEN>;
+		};
+		pwm_led1: pwm_led_1 {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "LED1";
+			index = <1>;
+			color-mapping = <LED_COLOR_ID_GREEN>;
+		};
+		pwm_led2: pwm_led_2 {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "LED2";
+			index = <2>;
+			color-mapping = <LED_COLOR_ID_GREEN>;
+		};
+		pwm_led3: pwm_led_3 {
+			pwms = <&pwm0 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "LED3";
+			index = <3>;
+			color-mapping = <LED_COLOR_ID_GREEN>;
 		};
 	};
 

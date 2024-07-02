@@ -24,6 +24,36 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the PWM controller from a
+ *        property name at an index
+ *
+ * Example devicetree fragment:
+ *
+ *     pwm1: pwm-controller@... { ... };
+ *
+ *     pwm2: pwm-controller@... { ... };
+ *
+ *     n: node {
+ *             pwms-foo = <&pwm1 1 PWM_POLARITY_NORMAL>,
+ *                    <&pwm2 3 PWM_POLARITY_INVERTED>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_PWMS_CTLR_BY_IDX(DT_NODELABEL(n), pwms_foo, 0) // DT_NODELABEL(pwm1)
+ *     DT_PWMS_CTLR_BY_IDX(DT_NODELABEL(n), pwms_foo, 1) // DT_NODELABEL(pwm2)
+ *
+ * @param node_id node identifier for a node with a pwms property
+ * @param prop lowercase-and-underscores property name
+ * @param idx logical index into pwms property
+ * @return the node identifier for the PWM controller referenced at
+ *         index "idx"
+ * @see DT_PROP_BY_PHANDLE_IDX()
+ */
+#define DT_PWMS_CTLR_BY_PROP_AND_IDX(node_id, prop, idx) \
+	DT_PHANDLE_BY_IDX(node_id, prop, idx)
+
+/**
+ * @brief Get the node identifier for the PWM controller from a
  *        pwms property at an index
  *
  * Example devicetree fragment:
