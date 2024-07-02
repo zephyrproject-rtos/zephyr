@@ -88,7 +88,7 @@ for Arduino connectors and defines node aliases for SPI and GPIO interfaces
 Programming
 ***********
 
-Set ``-DSHIELD=ls013b7dh03`` when you invoke ``west build``. For example:
+Set ``--shield ls013b7dh03`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl

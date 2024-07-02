@@ -38,7 +38,7 @@ for Arduino connectors and defines a node alias for the I2C interface
 Programming
 ***********
 
-Set ``-DSHIELD=ssd1306_128x64`` when you invoke ``west build``. For example:
+Set ``--shield ssd1306_128x64`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl

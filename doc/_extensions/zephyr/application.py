@@ -57,6 +57,7 @@ class ZephyrAppCommandsDirective(Directive):
 
     \:shield:
       if set, the application build will target the given shield.
+      Multiple shields can be provided in a comma separated list.
 
     \:conf:
       if set, the application build will use the given configuration
@@ -200,6 +201,9 @@ class ZephyrAppCommandsDirective(Directive):
         # Create snippet array
         snippet_list = snippets.split(',') if snippets is not None else None
 
+        # Create shields array
+        shield_list = shield.split(',') if shield is not None else None
+
         # Build the command content as a list, then convert to string.
         content = []
         tool_comment = None
@@ -212,7 +216,7 @@ class ZephyrAppCommandsDirective(Directive):
             'in_tree': in_tree,
             'cd_into': cd_into,
             'board': board,
-            'shield': shield,
+            'shield': shield_list,
             'conf': conf,
             'gen_args': gen_args,
             'build_args': build_args,
@@ -274,6 +278,7 @@ class ZephyrAppCommandsDirective(Directive):
         build_dir = kwargs['build_dir']
         build_dir_fmt = kwargs['build_dir_fmt']
         compact = kwargs['compact']
+        shield = kwargs['shield']
         snippets = kwargs['snippets']
         west_args = kwargs['west_args']
         flash_args = kwargs['flash_args']
@@ -285,6 +290,7 @@ class ZephyrAppCommandsDirective(Directive):
         west_args = ' {}'.format(west_args) if west_args else ''
         flash_args = ' {}'.format(flash_args) if flash_args else ''
         snippet_args = ''.join(f' -S {s}' for s in snippets) if snippets else ''
+        shield_args = ''.join(f' --shield {s}' for s in shield) if shield else ''
         # ignore zephyr_app since west needs to run within
         # the installation. Instead rely on relative path.
         src = ' {}'.format(app) if app and not cd_into else ''
@@ -314,8 +320,8 @@ class ZephyrAppCommandsDirective(Directive):
         # defaulting to west.
         #
         # For now, this keeps the resulting commands working.
-        content.append('west build -b {}{}{}{}{}{}'.
-                       format(board, west_args, snippet_args, build_dst, src, cmake_args))
+        content.append('west build -b {}{}{}{}{}{}{}'.
+                       format(board, west_args, snippet_args, shield_args, build_dst, src, cmake_args))
 
         # If we're signing, we want to do that next, so that flashing
         # etc. commands can use the signed file which must be created
@@ -356,15 +362,13 @@ class ZephyrAppCommandsDirective(Directive):
     @staticmethod
     def _cmake_args(**kwargs):
         board = kwargs['board']
-        shield = kwargs['shield']
         conf = kwargs['conf']
         gen_args = kwargs['gen_args']
         board_arg = ' -DBOARD={}'.format(board) if board else ''
-        shield_arg = ' -DSHIELD={}'.format(shield) if shield else ''
         conf_arg = ' -DCONF_FILE={}'.format(conf) if conf else ''
         gen_args = ' {}'.format(gen_args) if gen_args else ''
 
-        return '{}{}{}{}'.format(board_arg, shield_arg, conf_arg, gen_args)
+        return '{}{}{}'.format(board_arg, conf_arg, gen_args)
 
     def _cd_into(self, mkdir, **kwargs):
         app = kwargs['app']
@@ -411,6 +415,7 @@ class ZephyrAppCommandsDirective(Directive):
         build_dir = kwargs['build_dir']
         build_args = kwargs['build_args']
         snippets = kwargs['snippets']
+        shield = kwargs['shield']
         skip_config = kwargs['skip_config']
         goals = kwargs['goals']
         compact = kwargs['compact']
@@ -437,6 +442,7 @@ class ZephyrAppCommandsDirective(Directive):
         gen_arg = ' -GNinja' if generator == 'ninja' else ''
         build_args = ' {}'.format(build_args) if build_args else ''
         snippet_args = ' -DSNIPPET="{}"'.format(';'.join(snippets)) if snippets else ''
+        shield_args = ' -DSHIELD="{}"'.format(';'.join(shield)) if shield else ''
         cmake_args = self._cmake_args(**kwargs)
 
         if not compact:
@@ -448,8 +454,8 @@ class ZephyrAppCommandsDirective(Directive):
                 content.append('# Use cmake to configure a {}-based build' \
                                'system:'.format(generator.capitalize()))  # noqa: E501
 
-        content.append('cmake{}{}{}{}{}'.format(cmake_build_dir, gen_arg,
-                                              cmake_args, snippet_args, source_dir))
+        content.append('cmake{}{}{}{}{}{}'.format(cmake_build_dir, gen_arg,
+                                              cmake_args, snippet_args, shield_args, source_dir))
         if not compact:
             content.extend(['',
                             '# Now run the build tool on the generated build system:'])

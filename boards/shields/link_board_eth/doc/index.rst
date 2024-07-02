@@ -102,7 +102,7 @@ For more information about the link board ETH and ENC424J600:
 Programming
 ***********
 
-Set ``-DSHIELD=link_board_eth`` when you invoke ``west build`` or ``cmake`` in your
+Set ``--shield link_board_eth`` when you invoke ``west build`` or ``cmake`` in your
 Zephyr application. For example:
 
 .. zephyr-app-commands::

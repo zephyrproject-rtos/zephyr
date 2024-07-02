@@ -27,7 +27,7 @@ Pins Assignments
 Programming
 ***********
 
-Set ``-DSHIELD=adafruit_pca9685`` when you invoke ``west build``.
+Set ``--shield adafruit_pca9685`` when you invoke ``west build``.
 For example:
 
 .. zephyr-app-commands::

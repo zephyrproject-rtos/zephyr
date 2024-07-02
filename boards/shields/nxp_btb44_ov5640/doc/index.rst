@@ -117,7 +117,7 @@ as above, such as i.MX RT1160 and RT1170 EVK boards.
 Programming
 ***********
 
-Set ``-DSHIELD=nxp_btb44_ov5640`` when you invoke ``west build``. For example:
+Set ``--shield nxp_btb44_ov5640`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/video/capture

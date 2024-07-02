@@ -289,7 +289,7 @@ config file. See :zephyr:code-sample:`sockets-echo-server` and
 Build and Programming
 *********************
 
-Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
+Set ``--shield <shield designator>`` when you invoke ``west build``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server

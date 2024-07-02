@@ -339,8 +339,8 @@ For more information about the Adafruit PiCowbell CAN Bus shield:
 Programming
 ***********
 
-Set ``-DSHIELD=dfrobot_can_bus_v2_0`` or ``-DSHIELD=keyestudio_can_bus_ks0411``
-or ``-DSHIELD=adafruit_can_picowbell`` when you invoke ``west build`` or ``cmake`` in your Zephyr application. For
+Set ``--shield dfrobot_can_bus_v2_0`` or ``--shield keyestudio_can_bus_ks0411``
+or ``--shield adafruit_can_picowbell`` when you invoke ``west build`` or ``cmake`` in your Zephyr application. For
 example:
 
 .. zephyr-app-commands::

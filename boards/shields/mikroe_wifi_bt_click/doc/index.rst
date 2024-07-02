@@ -89,7 +89,7 @@ initial log and last message should be the version of the AT firmware flashed.
 Build and Programming
 *********************
 
-Set ``-DSHIELD=<shield designation>`` when you invoke ``west build``.
+Set ``--shield <shield designation>`` when you invoke ``west build``.
 
 See the example below for lpcxpresso55s69 board using Mikrobus serial:
 

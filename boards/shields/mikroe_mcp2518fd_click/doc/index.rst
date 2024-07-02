@@ -23,7 +23,7 @@ support level triggered interrupts.
 Programming
 ***********
 
-Set ``-DSHIELD=mikroe_mcp2518fd_click`` when you invoke ``west build``,
+Set ``--shield mikroe_mcp2518fd_click`` when you invoke ``west build``,
 for example:
 
 .. zephyr-app-commands::

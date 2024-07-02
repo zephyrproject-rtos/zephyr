@@ -75,7 +75,7 @@ connector with DVP (parallel) interface, such as the i.MX RT1050, RT1060, RT1064
 Programming
 ***********
 
-Set ``-DSHIELD=dvp_fpc24_mt9m114`` when you invoke ``west build``. For example:
+Set ``--shield dvp_fpc24_mt9m114`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/video/capture

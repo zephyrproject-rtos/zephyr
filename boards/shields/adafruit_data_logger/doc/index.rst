@@ -62,7 +62,7 @@ defines node aliases for SPI and GPIO interfaces (see :ref:`shields` for more de
 Programming
 ***********
 
-Set ``-DSHIELD=adafruit_data_logger`` when you invoke ``west build``. For example:
+Set ``--shield adafruit_data_logger`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: tests/drivers/rtc/rtc_api

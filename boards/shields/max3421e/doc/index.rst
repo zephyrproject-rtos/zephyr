@@ -54,5 +54,5 @@ Pins Assignment of the Shield Connector
 Programming
 ***********
 
-Set ``-DSHIELD=sparkfun_max3421e`` when you invoke ``west build`` or ``cmake``
+Set ``--shield sparkfun_max3421e`` when you invoke ``west build`` or ``cmake``
 in your Zephyr application.

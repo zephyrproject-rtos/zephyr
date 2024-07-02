@@ -53,7 +53,7 @@ Programming
 LED Button Sample
 =================
 
-Set ``-DSHIELD=seeed_xiao_expansion_board`` when you invoke ``west build``. For example:
+Set ``--shield seeed_xiao_expansion_board`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/button
@@ -64,7 +64,7 @@ Set ``-DSHIELD=seeed_xiao_expansion_board`` when you invoke ``west build``. For 
 LVGL Basic Sample
 ==========================
 
-Set ``-DSHIELD=seeed_xiao_expansion_board`` when you invoke ``west build``. For example:
+Set ``--shield seeed_xiao_expansion_board`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl

@@ -23,7 +23,7 @@ More information can be found on `the Getting Started page`_
 Programming
 ***********
 
-Set ``-DSHIELD=seeed_xiao_round_display`` when you invoke ``west build``.
+Set ``--shield seeed_xiao_round_display`` when you invoke ``west build``.
 
 LVGL Basic Sample
 =================

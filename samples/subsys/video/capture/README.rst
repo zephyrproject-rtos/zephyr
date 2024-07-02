@@ -43,7 +43,7 @@ For :ref:`mimxrt1064_evk`, build this sample application with the following comm
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/video/capture
    :board: mimxrt1064_evk
-   :shield: "dvp_fpc24_mt9m114 rk043fn66hs_ctg"
+   :shield: dvp_fpc24_mt9m114,rk043fn66hs_ctg
    :goals: build
    :compact:
 
@@ -52,7 +52,7 @@ For :ref:`mimxrt1170_evk`, build this sample application with the following comm
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/video/capture
    :board: mimxrt1170_evk/mimxrt1176/cm7
-   :shield: "nxp_btb44_ov5640 rk055hdmipi4ma0"
+   :shield: nxp_btb44_ov5640,rk055hdmipi4ma0
    :goals: build
    :compact:
 
