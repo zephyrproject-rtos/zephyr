@@ -48,6 +48,7 @@ source "kernel/Kconfig"
 source "drivers/Kconfig"
 source "lib/Kconfig"
 source "subsys/Kconfig"
+source "cmake/sca/Kconfig"
 
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig"
 
