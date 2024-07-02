@@ -5071,3 +5071,12 @@ zbus:
     - "area: Linkable Loadable Extensions"
   tests:
     - llext
+
+"West project: json-c":
+  status: maintained
+  maintainers:
+    - parthitce
+  files:
+    - modules/json-c/
+  labels:
+    - "area: JSON"
