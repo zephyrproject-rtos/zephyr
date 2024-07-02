@@ -134,6 +134,16 @@
 	};
 };
 
+&dcdcen {
+	status = "okay";
+	regulator-boot-on;
+};
+
+&dcdcen0 {
+	status = "okay";
+	regulator-boot-on;
+};
+
 &adc {
 	status = "okay";
 };

@@ -5,20 +5,10 @@
 
 if BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
-config BOARD_ENABLE_DCDC_APP
-	bool "Application MCU DCDC converter"
-	select SOC_DCDC_NRF53X_APP
-	default y
-
-config BOARD_ENABLE_DCDC_NET
-	bool "Network MCU DCDC converter"
-	select SOC_DCDC_NRF53X_NET
-	default y
-
-config BOARD_ENABLE_DCDC_HV
-	bool "High Voltage DCDC converter"
-	select SOC_DCDC_NRF53X_HV
-	default y
+config BOARD_NRF5340DK
+	select BOARD_HAS_DCDC_NRF53X_APP
+	select BOARD_HAS_DCDC_NRF53X_NET
+	select BOARD_HAS_DCDC_NRF53X_HV
 
 config BOARD_ENABLE_CPUNET
 	bool "NRF53 Network MCU"

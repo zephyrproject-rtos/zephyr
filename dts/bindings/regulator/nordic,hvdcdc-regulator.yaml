@@ -1,0 +1,21 @@
+# Copyright 2019-2020 Peter Bigot Consulting, LLC
+# Copyright 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic high voltage DC/DC regulator
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-boot-on
+      - regulator-init-microvolt
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+
+compatible: "nordic,hvdcdc-regulator"
+
+properties:
+  regulator-name:
+    required: true

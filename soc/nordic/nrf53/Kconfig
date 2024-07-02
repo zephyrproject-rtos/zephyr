@@ -104,20 +104,39 @@ endif
 
 if SOC_NRF5340_CPUAPP
 
+config BOARD_HAS_DCDC_NRF53X_APP
+	bool
+	help
+	  Hidden open that is set if board has components for on Chip Application MCU DC/DC
+	  converter.
+
+config BOARD_HAS_DCDC_NRF53X_NET
+	bool
+	help
+	  Hidden open that is set if board has components for on Chip Network MCU DC/DC converter.
+
+config BOARD_HAS_DCDC_NRF53X_HV
+	bool
+	help
+	  Hidden open that is set if board has components for on Chip High Voltage DC/DC converter.
+
 config SOC_DCDC_NRF53X_APP
 	bool
+	depends on BOARD_HAS_DCDC_NRF53X_APP
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	help
 	  Enable nRF53 series System on Chip Application MCU DC/DC converter.
 
 config SOC_DCDC_NRF53X_NET
 	bool
+	depends on BOARD_HAS_DCDC_NRF53X_NET
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	help
 	  Enable nRF53 series System on Chip Network MCU DC/DC converter.
 
 config SOC_DCDC_NRF53X_HV
 	bool
+	depends on BOARD_HAS_DCDC_NRF53X_HV
 	help
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
