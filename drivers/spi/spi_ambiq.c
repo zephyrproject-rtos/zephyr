@@ -55,6 +55,7 @@ static void spi_ambiq_callback(void *callback_ctxt, uint32_t status)
 	struct spi_ambiq_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
+	spi_context_cs_control(ctx, false);
 	spi_context_complete(ctx, dev, (status == AM_HAL_STATUS_SUCCESS) ? 0 : -EIO);
 }
 
@@ -67,6 +68,7 @@ static void spi_ambiq_reset(const struct device *dev)
 	am_hal_iom_disable(data->iom_handler);
 	/* NULL config to trigger reconfigure on next xfer */
 	ctx->config = NULL;
+	spi_context_cs_control(ctx, false);
 	/* signal any thread waiting on sync semaphore */
 	spi_context_complete(ctx, dev, -ETIMEDOUT);
 	/* clean up for next xfer */
@@ -299,6 +301,12 @@ static int spi_ambiq_fill_instruction(const struct device *dev, am_hal_iom_trans
 	 */
 	if (trans->ui32InstrLen + len > AM_HAL_IOM_MAX_OFFSETSIZE) {
 		ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_TX, *trans, true);
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+		trans->ui32Instr = 0;
+#else
+		trans->ui64Instr = 0;
+#endif
+		trans->ui32InstrLen = 0;
 	} else {
 		trans->ui32InstrLen += len;
 		for (int i = 0; i < len; i++) {
@@ -316,19 +324,13 @@ static int spi_ambiq_fill_instruction(const struct device *dev, am_hal_iom_trans
 static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_ambiq_data *data = dev->data;
-	const struct spi_ambiq_config *cfg = dev->config;
 	struct spi_context *ctx = &data->ctx;
 	int ret = 0;
 	bool cont = (config->operation & SPI_HOLD_ON_CS) ? true : false;
 
 	am_hal_iom_transfer_t trans = {0};
 
-	/* TODO Need to get iom_nce from different nodes of spi */
-#if defined(CONFIG_SOC_SERIES_APOLLO3X)
-	trans.uPeerInfo.ui32SpiChipSelect = cfg->pcfg->states->pins[SPI_CS_INDEX].iom_nce;
-#else
-	trans.uPeerInfo.ui32SpiChipSelect = cfg->pcfg->states->pins[SPI_CS_INDEX].iom_nce % 4;
-#endif
+	spi_context_cs_control(ctx, true);
 
 	/* There's data to send */
 	if (spi_context_tx_on(ctx)) {
@@ -346,8 +348,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 				ret = spi_ambiq_xfer_full_duplex(dev, AM_HAL_IOM_FULLDUPLEX, trans,
 								 cont);
 			} else {
-				ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_RX, trans,
-								 cont);
+				ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_RX, trans, cont);
 			}
 		} else { /* There's no data to Receive */
 			/* Regard the first tx_buf as cmd if there are more than one buffer */
@@ -362,6 +363,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 
 #ifndef CONFIG_SPI_AMBIQ_DMA
 	if (!cont) {
+		spi_context_cs_control(ctx, false);
 		spi_context_complete(ctx, dev, ret);
 	}
 #endif
@@ -436,6 +438,7 @@ static int spi_ambiq_init(const struct device *dev)
 	ret = cfg->pwr_func();
 
 	ret |= pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	ret |= spi_context_cs_configure_all(&data->ctx);
 	if (ret < 0) {
 		LOG_ERR("Fail to config SPI pins\n");
 		goto end;
@@ -473,7 +476,8 @@ end:
 	};                                                                                         \
 	static struct spi_ambiq_data spi_ambiq_data##n = {                                         \
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
-		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx), .inst_idx = n};                     \
+		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx),                                     \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx).inst_idx = n};                \
 	static const struct spi_ambiq_config spi_ambiq_config##n = {                               \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.size = DT_INST_REG_SIZE(n),                                                       \
