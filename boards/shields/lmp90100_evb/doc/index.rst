@@ -41,7 +41,7 @@ Zephyr RTOS includes one sample targeting the LMP90100 EVB:
 Programming
 ***********
 
-Set ``-DSHIELD=lmp90100_evb`` when you invoke ``west build``. For example:
+Set ``--shield lmp90100_evb`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/lmp90100_evb/rtd

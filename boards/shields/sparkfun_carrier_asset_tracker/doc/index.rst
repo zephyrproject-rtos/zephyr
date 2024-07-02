@@ -97,7 +97,7 @@ Micromod connectors and defines node aliases for UART, I2C and SPI interfaces (s
 Programming
 ***********
 
-Set ``-DSHIELD=sparkfun_carrier_asset_tracker`` when you invoke ``west build``. For
+Set ``--shield sparkfun_carrier_asset_tracker`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::

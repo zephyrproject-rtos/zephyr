@@ -34,7 +34,7 @@ documentation:
 Programming
 ***********
 
-Set ``-DSHIELD=mikroe_weather_click`` when you invoke ``west build``. For
+Set ``--shield mikroe_weather_click`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::
