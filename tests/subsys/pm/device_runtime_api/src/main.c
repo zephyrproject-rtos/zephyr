@@ -261,6 +261,92 @@ ZTEST(device_runtime_api, test_api)
 	zassert_equal(pm_device_runtime_usage(test_dev), -ENOTSUP);
 }
 
+ZTEST(device_runtime_api, test_api_key)
+{
+	int ret;
+	struct pm_device_runtime_key test_dev_key;
+
+	ret = pm_device_runtime_key_init(&test_dev_key, test_dev);
+	zassert_equal(ret, 0);
+
+	ret = pm_device_runtime_get_key(&test_dev_key);
+	zassert_equal(ret, 0);
+
+	/* Lets check device usage */
+	ret = pm_device_runtime_usage(test_dev);
+	zassert_equal(ret, 1);
+
+	/* Next calls to get_key shouldn't increase the device reference count */
+	ret = pm_device_runtime_get_key(&test_dev_key);
+	zassert_equal(ret, 0);
+
+	ret = pm_device_runtime_get_key(&test_dev_key);
+	zassert_equal(ret, 0);
+
+	/* Check usage again. It should still be 1 */
+	ret = pm_device_runtime_usage(test_dev);
+	zassert_equal(ret, 1);
+
+	/* Now, pm_device_runtime_get should increase the reference */
+	ret = pm_device_runtime_get(test_dev);
+	zassert_equal(ret, 0);
+
+	ret = pm_device_runtime_usage(test_dev);
+	zassert_equal(ret, 2);
+
+	/* Lets decrease the reference making a put */
+	ret = pm_device_runtime_put(test_dev);
+	zassert_equal(ret, 0);
+
+	ret = pm_device_runtime_usage(test_dev);
+	zassert_equal(ret, 1);
+
+	/* A bunch of key_get() now */
+	for (int i = 0; i < 10; i++) {
+		ret = pm_device_runtime_get_key(&test_dev_key);
+		zassert_equal(ret, 0);
+	}
+
+	/** Finally lets test if one call to put_key is enough to
+	 *  suspend the device for the given key
+	 */
+	ret = pm_device_runtime_put_key(&test_dev_key);
+	zassert_equal(ret, 0);
+
+	ret = pm_device_runtime_usage(test_dev);
+	zassert_equal(ret, 0);
+
+	/* Device is suspended, trying to suspend using they key must fail  */
+	ret = pm_device_runtime_put_key(&test_dev_key);
+	zassert_equal(ret, -EALREADY);
+
+	/** Now lets get the device again and ensure that we can't
+	 *  suspend the device using the key
+	 */
+	ret = pm_device_runtime_get(test_dev);
+	zassert_equal(ret, 0);
+
+	ret = pm_device_runtime_put_key(&test_dev_key);
+	zassert_not_equal(ret, 0);
+
+	ret = pm_device_runtime_usage(test_dev);
+	zassert_equal(ret, 1);
+
+	/* Now lets key using the key */
+	ret = pm_device_runtime_get_key(&test_dev_key);
+	zassert_equal(ret, 0);
+
+	/* Finally lets release the refernce we get and then use they key to suspend async */
+	ret = pm_device_runtime_put(test_dev);
+	zassert_equal(ret, 0);
+
+	ret = pm_device_runtime_put_async_key(&test_dev_key, K_NO_WAIT);
+	zassert_equal(ret, 0);
+
+	ret = pm_device_runtime_usage(test_dev);
+	zassert_equal(ret, 0);
+}
+
 DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", NULL, NULL, NULL, NULL,
 	      POST_KERNEL, 0, NULL);
 

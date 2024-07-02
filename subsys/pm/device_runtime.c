@@ -274,6 +274,35 @@ end:
 	return ret;
 }
 
+int pm_device_runtime_get_key(struct pm_device_runtime_key *key)
+{
+	int ret = 0;
+
+	if ((key == NULL) || (key->dev == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!k_is_pre_kernel()) {
+		ret = k_sem_take(&key->lock, k_is_in_isr() ? K_NO_WAIT : K_FOREVER);
+		if (ret < 0) {
+			return -EWOULDBLOCK;
+		}
+	}
+
+	if (key->active == false) {
+		ret = pm_device_runtime_get(key->dev);
+		if (ret == 0) {
+			key->active = true;
+		}
+	}
+
+	if (!k_is_pre_kernel()) {
+		k_sem_give(&key->lock);
+	}
+
+	return ret;
+}
+
 
 static int put_sync_locked(const struct device *dev)
 {
@@ -346,6 +375,37 @@ int pm_device_runtime_put(const struct device *dev)
 	return ret;
 }
 
+int pm_device_runtime_put_key(struct pm_device_runtime_key *key)
+{
+	int ret;
+
+	if ((key == NULL) || (key->dev == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!k_is_pre_kernel()) {
+		ret = k_sem_take(&key->lock, k_is_in_isr() ? K_NO_WAIT : K_FOREVER);
+		if (ret < 0) {
+			return -EWOULDBLOCK;
+		}
+	}
+
+	if (key->active == false) {
+		ret = -EALREADY;
+		goto end;
+	}
+
+	ret = pm_device_runtime_put(key->dev);
+	key->active = false;
+
+end:
+	if (!k_is_pre_kernel()) {
+		k_sem_give(&key->lock);
+	}
+
+	return ret;
+}
+
 int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 {
 	int ret;
@@ -366,6 +426,37 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 		ret = runtime_suspend(dev, true, delay);
 	}
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put_async, dev, delay, ret);
+
+	return ret;
+}
+
+int pm_device_runtime_put_async_key(struct pm_device_runtime_key *key, k_timeout_t delay)
+{
+	int ret;
+
+	if ((key == NULL) || (key->dev == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!k_is_pre_kernel()) {
+		ret = k_sem_take(&key->lock, k_is_in_isr() ? K_NO_WAIT : K_FOREVER);
+		if (ret < 0) {
+			return -EWOULDBLOCK;
+		}
+	}
+
+	if (key->active == false) {
+		ret = -EALREADY;
+		goto end;
+	}
+
+	ret = pm_device_runtime_put_async(key->dev, delay);
+	key->active = false;
+
+end:
+	if (!k_is_pre_kernel()) {
+		k_sem_give(&key->lock);
+	}
 
 	return ret;
 }
@@ -550,6 +641,19 @@ unlock:
 
 end:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_disable, dev, ret);
+
+	return ret;
+}
+
+int pm_device_runtime_key_init(struct pm_device_runtime_key *key, const struct device *dev)
+{
+	int ret;
+
+	ret = k_sem_init(&key->lock, 1, 1);
+	if (ret == 0) {
+		key->dev = dev;
+		key->active = false;
+	}
 
 	return ret;
 }
