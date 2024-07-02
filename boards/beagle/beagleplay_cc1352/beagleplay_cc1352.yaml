@@ -1,0 +1,14 @@
+identifier: beagleplay_cc1352
+name: BeaglePlay CC1352
+type: mcu
+arch: arm
+ram: 144
+flash: 704
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - uart
+vendor: beagle
