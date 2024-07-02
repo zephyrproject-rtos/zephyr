@@ -98,6 +98,26 @@ struct wifi_nm_instance *wifi_nm_get_instance_iface(struct net_if *iface);
 unsigned char wifi_nm_get_type_iface(struct net_if *iface);
 
 /**
+ * @brief Check if the interface is a Wi-Fi station interface
+ *
+ * @param iface Interface
+ *
+ * @retval true If the interface is a Wi-Fi station interface.
+ *
+ */
+bool wifi_nm_iface_is_sta(struct net_if *iface);
+
+/**
+ * @brief Check if the interface is a Wi-Fi Soft AP interface
+ *
+ * @param iface Interface
+ *
+ * @retval true If the interface is a Wi-Fi Soft AP interface.
+ *
+ */
+bool wifi_nm_iface_is_sap(struct net_if *iface);
+
+/**
  * @brief Register a managed interface
  *
  * @param nm Pointer to Network manager instance
