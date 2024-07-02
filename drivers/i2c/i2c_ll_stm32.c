@@ -137,8 +137,36 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
-static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
-			      uint8_t num_msgs, uint16_t slave)
+#if defined(CONFIG_I2C_CALLBACK) && defined(CONFIG_I2C_STM32_V2)
+static void i2c_stm32_async_done(const struct device *dev, int result)
+{
+	struct i2c_stm32_data *data = dev->data;
+	i2c_callback_t cb = data->cb;
+	void *userdata = data->userdata;
+
+	/* Reset all internal transfer data */
+	data->msg = 0;
+	data->msg_buf_pos = 0;
+	data->msgs = NULL;
+	data->num_msgs = 0;
+	data->cb = NULL;
+	data->userdata = NULL;
+	data->addr = 0;
+
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+	/* Allow driver to be suspended by PM once I2C transaction is complete */
+	#ifdef CONFIG_PM_DEVICE_RUNTIME
+		(void)pm_device_runtime_put(dev);
+	#endif
+
+	k_sem_give(&data->bus_mutex);
+
+	cb(dev, result, userdata);
+}
+
+static int i2c_stm32_transfer_cb(const struct device *dev, struct i2c_msg *msgs,
+			      uint8_t num_msgs, uint16_t addr, i2c_callback_t cb, void *userdata)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_msg *current, *next;
@@ -147,7 +175,118 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 	/* Check for validity of all messages, to prevent having to abort
 	 * in the middle of a transfer
 	 */
-	current = msg;
+	current = msgs;
+
+	/*
+	 * Set I2C_MSG_RESTART flag on first message in order to send start
+	 * condition
+	 */
+	current->flags |= I2C_MSG_RESTART;
+
+	for (uint8_t i = 1; i <= num_msgs; i++) {
+
+		if (i < num_msgs) {
+			next = current + 1;
+
+			/*
+			 * Restart condition between messages
+			 * of different directions is required
+			 */
+			if (OPERATION(current) != OPERATION(next)) {
+				if (!(next->flags & I2C_MSG_RESTART)) {
+					ret = -EINVAL;
+					break;
+				}
+			}
+
+			/* Stop condition is only allowed on last message */
+			if (current->flags & I2C_MSG_STOP) {
+				ret = -EINVAL;
+				break;
+			}
+		} else {
+			/* Stop condition is required for the last message */
+			current->flags |= I2C_MSG_STOP;
+		}
+
+		current++;
+	}
+
+	if (ret) {
+		return ret;
+	}
+
+	/* Cannot start async transfer if bus is busy */
+	if (k_sem_take(&data->bus_mutex, K_NO_WAIT) != 0) {
+		return -EWOULDBLOCK;
+	}
+
+	/* Prevent driver from being suspended by PM until I2C transaction is complete */
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_get(dev);
+#endif
+
+	/* Prevent the clocks to be stopped during the i2c transaction */
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+	/*
+	 * Begin an asynchronous, non-blocking, I2C transfer.
+	 *
+	 * Here, transfer just the first unit of data. The function i2c_stm32_async_isr()
+	 * will be called by an ISR each time a unit of data has been transferred and
+	 * handles transferring the next unit.
+	 */
+	data->msg = 0;
+	data->msgs = msgs;
+	data->msg_buf_pos = 0;
+	data->num_msgs = num_msgs;
+	data->addr = addr;
+	data->cb = cb;
+	data->userdata = userdata;
+
+	stm32_i2c_transfer_next(dev);
+
+	return ret;
+}
+
+void i2c_stm32_async_isr(void *arg)
+{
+	const struct device *dev = (const struct device *) arg;
+	struct i2c_stm32_data *data = dev->data;
+
+	if (k_sem_take(&data->device_sync_sem, K_NO_WAIT) == 0) {
+		/* data->cb is used to indicate that the current transfer is async.
+		 * It's possible to perform synchronous transfers when async
+		 * transfers are enabled. In this case this function should do nothing
+		 */
+		if (data->cb != NULL) {
+			/* Error occurred - finish with error */
+			if (stm32_i2c_check_error(data, false)) {
+				i2c_stm32_async_done(dev, -EIO);
+			} else {
+				/* Try next transfer. 1 indicates nothing left to send */
+				if (stm32_i2c_transfer_next(dev) == 1) {
+					i2c_stm32_async_done(dev, 0);
+				}
+			}
+		}
+	}
+}
+#else /* CONFIG_I2C_CALLBACK && CONFIG_I2C_STM32_V2 */
+#define i2c_stm32_async_isr(arg)
+#endif /* CONFIG_I2C_CALLBACK && CONFIG_I2C_STM32_V2 */
+
+static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
+			      uint8_t num_msgs, uint16_t addr)
+{
+	struct i2c_stm32_data *data = dev->data;
+	struct i2c_msg *current, *next;
+	int ret = 0;
+
+	/* Check for validity of all messages, to prevent having to abort
+	 * in the middle of a transfer
+	 */
+	current = msgs;
 
 	/*
 	 * Set I2C_MSG_RESTART flag on first message in order to send start
@@ -199,21 +338,22 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 	/* Prevent the clocks to be stopped during the i2c transaction */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
-	current = msg;
+	/* Perform a synchronous, blocking, I2C transfer */
+	data->msgs = msgs;
+	data->num_msgs = num_msgs;
+	data->addr = addr;
+	data->msg = 0;
+	data->msg_buf_pos = 0;
 
-	while (num_msgs > 0) {
-		uint8_t *next_msg_flags = NULL;
-
-		if (num_msgs > 1) {
-			next = current + 1;
-			next_msg_flags = &(next->flags);
-		}
-		ret = stm32_i2c_transaction(dev, *current, next_msg_flags, slave);
-		if (ret < 0) {
-			break;
-		}
-		current++;
-		num_msgs--;
+	/* Transfer next unit of data until there is nothing left to send.
+	 * 0 is success, < 0 is error, 1 is nothing left to send.
+	 */
+	while (ret == 0) {
+		ret = stm32_i2c_transfer_next(dev);
+	}
+	/* If all data was sent then no error */
+	if (ret == 1) {
+		ret = 0;
 	}
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -311,6 +451,25 @@ restore:
 }
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
+#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
+void i2c_stm32_combined_isr(void *arg)
+{
+	stm32_i2c_combined_isr(arg);
+	i2c_stm32_async_isr(arg);
+}
+#else
+void i2c_stm32_event_isr(void *arg)
+{
+	stm32_i2c_event_isr(arg);
+	i2c_stm32_async_isr(arg);
+}
+
+void i2c_stm32_error_isr(void *arg)
+{
+	stm32_i2c_error_isr(arg);
+	i2c_stm32_async_isr(arg);
+}
+#endif
 
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_stm32_runtime_configure,
@@ -319,6 +478,11 @@ static const struct i2c_driver_api api_funcs = {
 #if CONFIG_I2C_STM32_BUS_RECOVERY
 	.recover_bus = i2c_stm32_recover_bus,
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
+/* Restricted to V2 driver for now, TODO: add async support for V1 driver */
+#if defined(CONFIG_I2C_STM32_INTERRUPT) && defined(CONFIG_I2C_CALLBACK) \
+	&& defined(CONFIG_I2C_STM32_V2)
+	.transfer_cb = i2c_stm32_transfer_cb,
+#endif
 #if defined(CONFIG_I2C_TARGET)
 	.target_register = i2c_stm32_target_register,
 	.target_unregister = i2c_stm32_target_unregister,
@@ -541,7 +705,7 @@ void i2c_stm32_smbalert_disable(const struct device *dev)
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQN(index),			\
 			    DT_INST_IRQ(index, priority),		\
-			    stm32_i2c_combined_isr,			\
+			    i2c_stm32_combined_isr,			\
 			    DEVICE_DT_INST_GET(index), 0);		\
 		irq_enable(DT_INST_IRQN(index));			\
 	} while (false)
@@ -550,13 +714,13 @@ void i2c_stm32_smbalert_disable(const struct device *dev)
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, event, irq),	\
 			    DT_INST_IRQ_BY_NAME(index, event, priority),\
-			    stm32_i2c_event_isr,			\
+			    i2c_stm32_event_isr,			\
 			    DEVICE_DT_INST_GET(index), 0);		\
 		irq_enable(DT_INST_IRQ_BY_NAME(index, event, irq));	\
 									\
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, error, irq),	\
 			    DT_INST_IRQ_BY_NAME(index, error, priority),\
-			    stm32_i2c_error_isr,			\
+			    i2c_stm32_error_isr,			\
 			    DEVICE_DT_INST_GET(index), 0);		\
 		irq_enable(DT_INST_IRQ_BY_NAME(index, error, irq));	\
 	} while (false)

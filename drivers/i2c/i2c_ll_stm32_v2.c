@@ -457,19 +457,19 @@ static void stm32_i2c_event(const struct device *dev)
 		return;
 	}
 #endif
-	if (data->current.len) {
+	if (data->current.msg.len) {
 		/* Send next byte */
 		if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
-			LL_I2C_TransmitData8(i2c, *data->current.buf);
+			LL_I2C_TransmitData8(i2c, *data->current.msg.buf);
 		}
 
 		/* Receive next byte */
 		if (LL_I2C_IsActiveFlag_RXNE(i2c)) {
-			*data->current.buf = LL_I2C_ReceiveData8(i2c);
+			*data->current.msg.buf = LL_I2C_ReceiveData8(i2c);
 		}
 
-		data->current.buf++;
-		data->current.len--;
+		data->current.msg.buf++;
+		data->current.msg.len--;
 	}
 
 	/* NACK received */
@@ -495,7 +495,7 @@ static void stm32_i2c_event(const struct device *dev)
 	if (LL_I2C_IsActiveFlag_TC(i2c) ||
 	    LL_I2C_IsActiveFlag_TCR(i2c)) {
 		/* Issue stop condition if necessary */
-		if (data->current.msg->flags & I2C_MSG_STOP) {
+		if (data->current.msg.flags & I2C_MSG_STOP) {
 			LL_I2C_GenerateStopCondition(i2c);
 		} else {
 			stm32_i2c_disable_transfer_interrupts(dev);
@@ -576,39 +576,15 @@ void stm32_i2c_error_isr(void *arg)
 }
 #endif
 
-static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
-			uint8_t *next_msg_flags, uint16_t slave)
+int stm32_i2c_check_error(struct i2c_stm32_data *data, bool is_timeout)
 {
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
-	bool is_timeout = false;
-
-	data->current.len = msg->len;
-	data->current.buf = msg->buf;
-	data->current.is_write = 1U;
-	data->current.is_nack = 0U;
-	data->current.is_err = 0U;
-	data->current.msg = msg;
-
-	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
-
-	stm32_i2c_enable_transfer_interrupts(dev);
-	LL_I2C_EnableIT_TX(i2c);
-
-	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
-		stm32_i2c_master_mode_end(dev);
-		k_sem_take(&data->device_sync_sem, K_FOREVER);
-		is_timeout = true;
-	}
-
 	if (data->current.is_nack || data->current.is_err ||
-	    data->current.is_arlo || is_timeout) {
+		data->current.is_arlo || is_timeout) {
 		goto error;
 	}
 
 	return 0;
+
 error:
 	if (data->current.is_arlo) {
 		LOG_DBG("%s: ARLO %d", __func__,
@@ -634,6 +610,41 @@ error:
 	return -EIO;
 }
 
+static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
+			uint8_t *next_msg_flags, uint16_t slave)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = cfg->i2c;
+	bool is_timeout = false;
+
+	data->current.is_write = 1U;
+	data->current.is_nack = 0U;
+	data->current.is_err = 0U;
+	data->current.msg = *msg;
+
+	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
+
+	stm32_i2c_enable_transfer_interrupts(dev);
+	LL_I2C_EnableIT_TX(i2c);
+
+	/* For async, return immediately without blocking */
+#ifdef CONFIG_I2C_CALLBACK
+	if (data->cb != NULL) {
+		return 0;
+	}
+#endif
+
+	if (k_sem_take(&data->device_sync_sem,
+			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+		stm32_i2c_master_mode_end(dev);
+		k_sem_take(&data->device_sync_sem, K_FOREVER);
+		is_timeout = true;
+	}
+
+	return stm32_i2c_check_error(data, is_timeout);
+}
+
 static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 		       uint8_t *next_msg_flags, uint16_t slave)
 {
@@ -642,55 +653,32 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 	I2C_TypeDef *i2c = cfg->i2c;
 	bool is_timeout = false;
 
-	data->current.len = msg->len;
-	data->current.buf = msg->buf;
 	data->current.is_write = 0U;
 	data->current.is_arlo = 0U;
 	data->current.is_err = 0U;
 	data->current.is_nack = 0U;
-	data->current.msg = msg;
+	data->current.msg = *msg;
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_READ);
 
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_RX(i2c);
 
+	/* For async, return immediately without blocking */
+#ifdef CONFIG_I2C_CALLBACK
+	if (data->cb != NULL) {
+		return 0;
+	}
+#endif
+
 	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
 		stm32_i2c_master_mode_end(dev);
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
 	}
 
-	if (data->current.is_nack || data->current.is_err ||
-	    data->current.is_arlo || is_timeout) {
-		goto error;
-	}
-
-	return 0;
-error:
-	if (data->current.is_arlo) {
-		LOG_DBG("%s: ARLO %d", __func__,
-				    data->current.is_arlo);
-		data->current.is_arlo = 0U;
-	}
-
-	if (data->current.is_nack) {
-		LOG_DBG("%s: NACK", __func__);
-		data->current.is_nack = 0U;
-	}
-
-	if (data->current.is_err) {
-		LOG_DBG("%s: ERR %d", __func__,
-				    data->current.is_err);
-		data->current.is_err = 0U;
-	}
-
-	if (is_timeout) {
-		LOG_DBG("%s: TIMEOUT", __func__);
-	}
-
-	return -EIO;
+	return stm32_i2c_check_error(data, is_timeout);
 }
 
 #else /* !CONFIG_I2C_STM32_INTERRUPT */
@@ -1126,51 +1114,76 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 }
 #endif /* CONFIG_I2C_STM32_V2_TIMING */
 
-int stm32_i2c_transaction(const struct device *dev,
-						  struct i2c_msg msg, uint8_t *next_msg_flags,
-						  uint16_t periph)
+static int stm32_i2c_transfer_message_chunk(const struct device *dev)
 {
 	/*
-	 * Perform a I2C transaction, while taking into account the STM32 I2C V2
-	 * peripheral has a limited maximum chunk size. Take appropriate action
-	 * if the message to send exceeds that limit.
+	 * Transfer a chunk of an I2C message. The chunk may be a whole message
+	 or part of a message divided to the limited maximum chunk size.
 	 *
-	 * The last chunk of a transmission uses this function's next_msg_flags
-	 * parameter for its backend calls (_write/_read). Any previous chunks
-	 * use a copy of the current message's flags, with the STOP and RESTART
-	 * bits turned off. This will cause the backend to use reload-mode,
-	 * which will make the combination of all chunks to look like one big
-	 * transaction on the wire.
+	 * The last chunk of a transmission uses next_msg_flags for its backend
+	 * calls (_write/_read). Any previous chunks use a copy of the current
+	 * message's flags, with the STOP and RESTART bits turned off. This will
+	 * cause the backend to use reload-mode, which will make the combination
+	 * of all chunks to look like one big transaction on the wire.
 	 */
+	struct i2c_stm32_data *data = dev->data;
+
+	uint8_t *next_msg_flags = NULL;
+
+	if (data->msg < data->num_msgs - 1) {
+		next_msg_flags = &(data->msgs[data->msg + 1].flags);
+	}
+
+	struct i2c_msg msg = data->msgs[data->msg];
 	const uint32_t i2c_stm32_maxchunk = 255U;
 	const uint8_t saved_flags = msg.flags;
 	uint8_t combine_flags =
 		saved_flags & ~(I2C_MSG_STOP | I2C_MSG_RESTART);
 	uint8_t *flagsp = NULL;
-	uint32_t rest = msg.len;
 	int ret = 0;
 
-	do { /* do ... while to allow zero-length transactions */
-		if (msg.len > i2c_stm32_maxchunk) {
-			msg.len = i2c_stm32_maxchunk;
-			msg.flags &= ~I2C_MSG_STOP;
-			flagsp = &combine_flags;
-		} else {
-			msg.flags = saved_flags;
-			flagsp = next_msg_flags;
-		}
-		if ((msg.flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			ret = stm32_i2c_msg_write(dev, &msg, flagsp, periph);
-		} else {
-			ret = stm32_i2c_msg_read(dev, &msg, flagsp, periph);
-		}
-		if (ret < 0) {
-			break;
-		}
-		rest -= msg.len;
-		msg.buf += msg.len;
-		msg.len = rest;
-	} while (rest > 0U);
+	if ((msg.len - data->msg_buf_pos) > i2c_stm32_maxchunk) {
+		msg.len = i2c_stm32_maxchunk;
+		msg.flags &= ~I2C_MSG_STOP;
+		flagsp = &combine_flags;
+	} else {
+		msg.len -= data->msg_buf_pos;
+		flagsp = next_msg_flags;
+	}
+	msg.buf += data->msg_buf_pos;
+	data->msg_buf_pos += msg.len;
+	if ((msg.flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+		ret = stm32_i2c_msg_write(dev, &msg, flagsp, data->addr);
+	} else {
+		ret = stm32_i2c_msg_read(dev, &msg, flagsp, data->addr);
+	}
+	return ret;
+}
+
+int stm32_i2c_transfer_next(const struct device *dev)
+{
+	/* Transfer the next unit of data in a transfer consisting of possibly
+	 * multiple messages, while taking into account the STM32 I2C peripheral
+	 * has a limited maximum chunk size. Take appropriate action if the message
+	 * to send exceeds that limit.
+	 *
+	 * Returns 1 if there is nothing more to transfer, 0 on successful
+	 * transfer, error code on unsuccessful transfer.
+	 */
+	struct i2c_stm32_data *data = dev->data;
+
+	int ret = 0;
+	/* More data in current message - transfer next chunk */
+	if (data->msg_buf_pos < data->msgs[data->msg].len) {
+		ret = stm32_i2c_transfer_message_chunk(dev);
+	/* Current message done but more messages - transfer next message */
+	} else if (data->msg < data->num_msgs - 1) {
+		data->msg++;
+		data->msg_buf_pos = 0;
+		ret = stm32_i2c_transfer_message_chunk(dev);
+	} else {
+		ret = 1;
+	}
 
 	return ret;
 }
