@@ -60,6 +60,8 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 
 	zassert_ok(pthread_mutexattr_gettype(&mut_attr, &actual_type),
 		   "reading mutex type is failed");
+
+	zassert_ok(pthread_mutexattr_setprotocol(&mut_attr, PTHREAD_PRIO_NONE));
 	zassert_ok(pthread_mutexattr_getprotocol(&mut_attr, &protocol),
 		   "reading mutex protocol is failed");
 	zassert_ok(pthread_mutexattr_destroy(&mut_attr));
@@ -76,6 +78,18 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 
 	zassert_ok(pthread_join(th, NULL));
 	zassert_ok(pthread_mutex_destroy(&mutex), "Destroying mutex is failed");
+}
+
+ZTEST(mutex, test_mutex_prioceiling_stubs)
+{
+#ifdef CONFIG_POSIX_THREAD_PRIO_PROTECT
+	zassert_equal(pthread_mutex_getprioceiling(NULL, NULL), ENOSYS);
+	zassert_equal(pthread_mutex_setprioceiling(NULL, 0, NULL), ENOSYS);
+	zassert_equal(pthread_mutexattr_getprioceiling(NULL, NULL), ENOSYS);
+	zassert_equal(pthread_mutexattr_setprioceiling(NULL, 0), ENOSYS);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_POSIX_THREAD_PRIO_PROTECT */
 }
 
 /**
