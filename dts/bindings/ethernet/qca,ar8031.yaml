@@ -1,0 +1,28 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Qualcomm AR8031 PHY
+
+compatible: "qca,ar8031"
+
+include: phy.yaml
+
+properties:
+  reg:
+    required: true
+    description: PHY address
+
+  EEE:
+    type: boolean
+    description: Energy Efficient Ethernet
+
+  fixed-link:
+    type: string
+    description: This link is fixed and does not require PHY configuration
+    enum:
+      - "10BASE-T Half-Duplex"
+      - "10BASE-T Full-Duplex"
+      - "100BASE-T Half-Duplex"
+      - "100BASE-T Full-Duplex"
+      - "1000BASE-T Half-Duplex"
+      - "1000BASE-T Full-Duplex"
