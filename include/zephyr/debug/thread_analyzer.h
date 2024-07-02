@@ -52,18 +52,25 @@ typedef void (*thread_analyzer_cb)(struct thread_analyzer_info *info);
 /** @brief Run the thread analyzer and provide information to the callback
  *
  *  This function analyzes the current state for all threads and calls
- *  a given callback on every thread found.
+ *  a given callback on every thread found. In the special case when Kconfig
+ *  option THREAD_ANALYZER_AUTO_SEPARATE_CORES is set, the function analyzes
+ *  only the threads running on the specified cpu.
  *
  *  @param cb The callback function handler
+ *  @param cpu cpu to analyze, ignored if THREAD_ANALYZER_AUTO_SEPARATE_CORES=n
  */
-void thread_analyzer_run(thread_analyzer_cb cb);
+void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu);
 
 /** @brief Run the thread analyzer and print stack size statistics.
  *
- *  This function runs the thread analyzer and prints the output in standard
- *  form.
+ *  This function runs the thread analyzer and prints the output in
+ *  standard form. In the special case when Kconfig option
+ *  THREAD_ANALYZER_AUTO_SEPARATE_CORES is set, the function analyzes
+ *  only the threads running on the specified cpu.
+ *
+ *  @param cpu cpu to analyze, ignored if THREAD_ANALYZER_AUTO_SEPARATE_CORES=n
  */
-void thread_analyzer_print(void);
+void thread_analyzer_print(unsigned int cpu);
 
 /** @} */
 
