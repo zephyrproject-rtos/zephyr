@@ -15,6 +15,7 @@ tests:
       - gd32f350r_eval
       - arduino_portenta_h7/stm32h747xx/m4
       - arduino_giga_r1/stm32h747xx/m4
+      - nucleo_h755zi_q/stm32h755xx/m4
     harness: keyboard
     min_ram: 12
     integration_platforms:
