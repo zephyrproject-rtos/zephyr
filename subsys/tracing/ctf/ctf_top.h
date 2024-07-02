@@ -151,7 +151,13 @@ typedef enum {
 	CTF_EVENT_SOCKET_GETSOCKNAME_EXIT = 0x59,
 	CTF_EVENT_SOCKET_SOCKETPAIR_ENTER = 0x5A,
 	CTF_EVENT_SOCKET_SOCKETPAIR_EXIT = 0x5B,
-
+	CTF_EVENT_GPIO_ACTIVE = 0x5C,
+	CTF_EVENT_GPIO_INACTIVE = 0x5D,
+	CTF_EVENT_GPIO_CONFIGURED_INPUT = 0x5E,
+	CTF_EVENT_GPIO_CONFIGURED_OUTPUT = 0x5F,
+	CTF_EVENT_GPIO_EVENT_ATTACHED = 0x60,
+	CTF_EVENT_GPIO_EVENT_REMOVED = 0x61,
+	CTF_EVENT_GPIO_EVENT_EXECUTED = 0x62
 } ctf_event_t;
 
 typedef struct {
@@ -607,6 +613,41 @@ static inline void ctf_top_socket_socketpair_enter(uint32_t family, uint32_t typ
 static inline void ctf_top_socket_socketpair_exit(int32_t sock_A, int32_t sock_B, int32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SOCKETPAIR_EXIT), sock_A, sock_B, ret);
+}
+
+static inline void ctf_top_gpio_pin_active(uint32_t port, uint32_t pin)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_ACTIVE), port, pin);
+}
+
+static inline void ctf_top_gpio_pin_inactive(uint32_t port, uint32_t pin)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_INACTIVE), port, pin);
+}
+
+static inline void ctf_top_gpio_pin_configured_input(uint32_t port, uint32_t pin, uint32_t flags)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_CONFIGURED_INPUT), port, pin, flags);
+}
+
+static inline void ctf_top_gpio_pin_configured_output(uint32_t port, uint32_t pin, uint32_t flags)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_CONFIGURED_OUTPUT), port, pin, flags);
+}
+
+static inline void ctf_top_gpio_pin_event_attached(uint32_t port, uint32_t callback)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_EVENT_ATTACHED), port, callback);
+}
+
+static inline void ctf_top_gpio_pin_event_removed(uint32_t port, uint32_t callback)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_EVENT_REMOVED), port, callback);
+}
+
+static inline void ctf_top_gpio_pin_event_executed(uint32_t port, uint32_t callback)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_EVENT_EXECUTED), port, callback);
 }
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */

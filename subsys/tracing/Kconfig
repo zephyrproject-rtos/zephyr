@@ -334,6 +334,12 @@ config TRACING_NETWORKING
 	help
 	  Enable tracing network sockets.
 
+config TRACING_GPIO
+	bool "Tracing GPIO"
+	default y if GPIO
+	help
+	  Enable tracing GPIO.
+
 endmenu  # Tracing Configuration
 
 endif

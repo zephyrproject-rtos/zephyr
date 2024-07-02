@@ -635,3 +635,46 @@ void sys_trace_socket_socketpair_exit(int sock_A, int sock_B, int ret)
 {
 	ctf_top_socket_socketpair_exit(sock_A, sock_B, ret);
 }
+
+/* GPIO */
+void sys_port_trace_gpio_pin_active(const struct device *port, gpio_pin_t pin)
+{
+	ctf_top_gpio_pin_active((uint32_t)(uintptr_t)port, (uint32_t)pin);
+}
+
+void sys_port_trace_gpio_pin_inactive(const struct device *port, gpio_pin_t pin)
+{
+	ctf_top_gpio_pin_inactive((uint32_t)(uintptr_t)port, (uint32_t)pin);
+}
+
+void sys_port_trace_gpio_pin_configured_output(const struct device *port, gpio_pin_t pin,
+								gpio_flags_t flags)
+{
+	ctf_top_gpio_pin_configured_output((uint32_t)(uintptr_t)port, (uint32_t)pin,
+								(uint32_t)flags);
+}
+
+void sys_port_trace_gpio_pin_configured_input(const struct device *port, gpio_pin_t pin,
+								gpio_flags_t flags)
+{
+	ctf_top_gpio_pin_configured_output((uint32_t)(uintptr_t)port, (uint32_t)pin,
+								(uint32_t)flags);
+}
+
+void sys_port_trace_gpio_pin_event_attached(const struct device *port,
+								struct gpio_callback *callback)
+{
+	ctf_top_gpio_pin_event_attached((uint32_t)(uintptr_t)port, (uint32_t)(uintptr_t)callback);
+}
+
+void sys_port_trace_gpio_pin_event_removed(const struct device *port,
+						struct gpio_callback *callback)
+{
+	ctf_top_gpio_pin_event_removed((uint32_t)(uintptr_t)port, (uint32_t)(uintptr_t)callback);
+}
+
+void sys_port_trace_gpio_pin_event_executed(const struct device *port,
+						struct gpio_callback *callback)
+{
+	ctf_top_gpio_pin_event_executed((uint32_t)(uintptr_t)port, (uint32_t)(uintptr_t)callback);
+}
