@@ -222,6 +222,10 @@ static int uart_sedi_poll_in(const struct device *dev, unsigned char *data)
 	uint32_t status;
 	int ret = 0;
 
+#ifndef CONFIG_UART_SEDI_POLL_TRANSFER
+	return -1;
+#endif
+
 	sedi_uart_get_status(instance, (uint32_t *) &status);
 
 	/* In order to check if there is any data to read from UART
@@ -242,9 +246,11 @@ static int uart_sedi_poll_in(const struct device *dev, unsigned char *data)
 static void uart_sedi_poll_out(const struct device *dev,
 			       unsigned char data)
 {
+#ifdef CONFIG_UART_SEDI_POLL_TRANSFER
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
 	sedi_uart_write(instance, data);
+#endif
 }
 
 #ifdef CONFIG_UART_LINE_CTRL

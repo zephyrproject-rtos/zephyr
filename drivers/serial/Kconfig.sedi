@@ -13,3 +13,13 @@ config UART_SEDI
 	  This option enables the Intel SEDI UART driver.
 	  This driver is simply a shim driver built upon the SEDI
 	  bare metal UART driver in the hal-intel module
+
+if UART_SEDI
+
+config UART_SEDI_POLL_TRANSFER
+	bool "Enable actual poll transfer"
+	default y
+	help
+	  This enables the actual transfer of poll in and poll out.
+
+endif # UART_SEDI
