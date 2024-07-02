@@ -72,6 +72,8 @@ static enum wifi_conn_status wpas_to_wifi_mgmt_conn_status(int status)
 static enum wifi_disconn_reason wpas_to_wifi_mgmt_disconn_status(int status)
 {
 	switch (status) {
+	case WIFI_REASON_DISCONN_SUCCESS:
+		return WIFI_REASON_DISCONN_SUCCESS;
 	case WLAN_REASON_DEAUTH_LEAVING:
 		return WIFI_REASON_DISCONN_AP_LEAVING;
 	case WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY:
