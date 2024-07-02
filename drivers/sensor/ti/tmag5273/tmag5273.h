@@ -248,6 +248,7 @@
 #define TMAG5273_TEMPERATURE_T_ADC_RES	60.1
 
 #define TMAG5273_T_START_SLEEP_US	50
+#define TMAG5273_T_START_MEASURE_US	70
 #define TMAG5273_T_GO_SLEEP_US		20
 /**
  * @brief calculate conversion time as defined in the datasheet

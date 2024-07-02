@@ -97,14 +97,14 @@ properties:
 
       Ignored if temperature is not measured.
 
-  trigger-conversion-via-int:
+  trigger-via-int:
     type: boolean
     description: |
-      Selects initiation of a single conversion based on a trigger via
-      the INT-pin if enabled, and via I2C-command if disabled.
+      Selects triggering of wakeup from sleep mode and initiation of a
+      single conversion (if not in continuous mode) based on a trigger
+      via the INT-pin if enabled and via I2C-command if disabled.
 
-      Used in "standby"-, "wakeup-and-sleep"- and "sleep"-mode.
-      Using I2C-conversion trigger may result in (handled) I2C-errors.
+      Using I2C-command trigger may result in (handled) I2C-errors.
 
   angle-magnitude-axis:
     type: int
