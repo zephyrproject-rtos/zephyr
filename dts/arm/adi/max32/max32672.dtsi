@@ -16,6 +16,7 @@
 };
 
 /delete-node/ &clk_iso;
+/delete-node/ &w1;
 
 /* MAX32672 extra peripherals. */
 / {

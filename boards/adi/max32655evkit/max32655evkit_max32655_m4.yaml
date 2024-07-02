@@ -10,5 +10,6 @@ toolchain:
 supported:
   - gpio
   - serial
+  - w1
 ram: 128
 flash: 512
