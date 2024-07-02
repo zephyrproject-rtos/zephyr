@@ -28,6 +28,7 @@ tests:
       - rpi_pico
       - efr32bg22_brd4184a
       - mr_canhubk3
+      - npcm400f_evb
     integration_platforms:
       - nucleo_f091rc
     extra_configs:
