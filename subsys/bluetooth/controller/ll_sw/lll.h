@@ -396,6 +396,7 @@ struct node_rx_iso_meta {
 	uint64_t payload_number:39; /* cisPayloadNumber */
 	uint64_t status:8;          /* Status of reception (OK/not OK) */
 	uint32_t timestamp;         /* Time of reception */
+	void     *next;             /* Pointer to next pre-transmission rx_node (BIS) */
 };
 
 /* Define invalid/unassigned Controller state/role instance handle */
