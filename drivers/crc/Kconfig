@@ -1,0 +1,30 @@
+# Copyright (c) 2024 Brill Power Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CRC_HW
+	bool "CRC HW acceleration"
+
+if CRC_HW
+
+module = CRC_HW
+module-str = CRC_HW
+source "subsys/logging/Kconfig.template.log_config"
+
+config CRC_INIT_PRIORITY
+	int "CRC init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	depends on CRC_HW
+	help
+	  CRC driver device initialization priority.
+
+config CRC_THREADSAFE
+	bool "Make HW CRC threadsafe"
+	default n
+	depends on CRC_HW
+	help
+	  If hardware CRC driver is called from multiple threads, enabling
+	  this option provides a mutex to guard against re-entrance
+
+source "drivers/crc/Kconfig.stm32"
+
+endif # CRC

@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Brill Power Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST STM32 family CRC
+
+compatible: "st,stm32-crc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    type: phandle-array
+    required: true
+    description: Clock information
+
+  crc-8-timeout:
+    type: int
+    default: 0
+    description: |
+      Timeout period (milliseconds) for use when acquiring mutex lock for 8-bit CRC
+      in thread-safe mode.
+      Min=0, Max=65535, >10000=K_FOREVER
+
+  crc-32-timeout:
+    type: int
+    default: 0
+    description: |
+      Timeout period (milliseconds) for use when acquiring mutex lock for 32-bit CRC
+      in thread-safe mode.
+      Min=0, Max=65535, >10000=K_FOREVER
