@@ -19,6 +19,17 @@
 #define MAC_STR_LEN 18 /* for ':' or '-' separated MAC address string */
 #define CHAN_NUM_LEN 6 /* for space-separated channel numbers string */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+struct wpa_supp_enterprise_file {
+    uint8_t *ca_cert;
+    uint32_t ca_cert_len;
+    uint8_t *client_cert;
+    uint32_t client_cert_len;
+    uint8_t *client_key;
+    uint32_t client_key_len;
+};
+#endif
+
 /**
  * @brief Request a connection
  *
@@ -73,6 +84,14 @@ int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
 int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats);
 #endif /* CONFIG_NET_STATISTICS_WIFI || __DOXYGEN__ */
 
+/** Flush PMKSA cache entries
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_pmksa_flush(const struct device *dev);
+
 /**
  * @brief Set Wi-Fi power save configuration
  *
@@ -119,6 +138,16 @@ int supplicant_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_
  */
 int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+/** Set Wi-Fi enterprise mode CA/client Cert and key file
+ *
+ * @param file Pointer to the CA/client Cert and key file.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_add_enterprise_file(struct wpa_supp_enterprise_file *file);
+#endif
+
 /**
  * @brief Set Wi-Fi packet filter for sniffing operation
  *
@@ -136,6 +165,12 @@ int supplicant_filter(const struct device *dev, struct wifi_filter_info *filter)
  * @return 0 for OK; -1 for ERROR
  */
 int supplicant_channel(const struct device *dev, struct wifi_channel_info *channel);
+
+/** Get Wi-Fi connection paramters recently used
+ *
+ * @return pointer to the Wi-Fi connection paramters recently used
+ */
+struct wifi_connect_req_params *supplicant_get_wifi_conn_params(void);
 
 #ifdef CONFIG_AP
 /**

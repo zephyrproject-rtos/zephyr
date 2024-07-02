@@ -402,6 +402,14 @@ struct wifi_connect_req_params {
 	uint8_t bssid[WIFI_MAC_ADDR_LEN];
 	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
 	int timeout;
+	/** anonymous identity */
+	const uint8_t *aid;
+	/** aid length */
+	uint8_t aid_length; /* Max 64 */
+	/** Private key passwd for enterprise mode */
+	const uint8_t *key_passwd;
+	/** Private key passwd length */
+	uint8_t key_passwd_length; /* Max 128 */
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status

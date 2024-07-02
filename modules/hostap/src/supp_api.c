@@ -24,6 +24,9 @@
 extern struct k_sem wpa_supplicant_ready_sem;
 extern struct wpa_global *global;
 
+/* save the last wifi connection parameters */
+static struct wifi_connect_req_params last_wifi_conn_params;
+
 enum requested_ops {
 	CONNECT = 0,
 	DISCONNECT
@@ -41,6 +44,10 @@ enum status_thread_state {
 #define CONNECTION_TERMINATED 2
 
 #define DISCONNECT_TIMEOUT_MS 5000
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+static struct wpa_supp_enterprise_file enterprise_file;
+#endif
 
 K_MUTEX_DEFINE(wpa_supplicant_mutex);
 
@@ -320,6 +327,56 @@ static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int 
 	}
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+int supplicant_add_enterprise_file(struct wpa_supp_enterprise_file *file)
+{
+	if (!file)
+		return -1;
+
+	memcpy((void *)&enterprise_file, (void *)file, sizeof(struct wpa_supp_enterprise_file));
+
+	return 0;
+}
+
+static int wpas_config_process_blob(struct wpa_config *config, char *name, uint8_t *data, uint32_t data_len)
+{
+	struct wpa_config_blob *blob;
+
+	if (!data || !data_len)
+	{
+		return -1;
+	}
+
+	blob = os_zalloc(sizeof(*blob));
+	if (blob == NULL)
+	{
+		return -1;
+	}
+
+	blob->data = os_zalloc(data_len);
+	if (blob->data == NULL)
+	{
+		os_free(blob);
+		return -1;
+	}
+
+	blob->name = os_strdup(name);
+
+	if (blob->name == NULL)
+	{
+		wpa_config_free_blob(blob);
+		return -1;
+	}
+
+	os_memcpy(blob->data, data, data_len);
+	blob->len = data_len;
+
+	wpa_config_set_blob(config, blob);
+
+	return 0;
+}
+#endif
+
 static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				       struct wifi_connect_req_params *params,
 				       bool mode_ap)
@@ -442,6 +499,63 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 					goto out;
 				}
 			}
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+			} else if (params->security == WIFI_SECURITY_TYPE_EAP_TLS) {
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-EAP",
+					   resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d proto RSN",
+					   resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d eap TLS",
+					   resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d anonymous_identity \"%s\"",
+					   resp.network_id, params->aid)) {
+				goto out;
+			}
+
+			if (wpas_config_process_blob(wpa_s->conf, "ca_cert",
+					   enterprise_file.ca_cert, enterprise_file.ca_cert_len)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d ca_cert \"blob://ca_cert\"",
+					   resp.network_id)) {
+				goto out;
+			}
+
+			if (wpas_config_process_blob(wpa_s->conf, "client_cert",
+					   enterprise_file.client_cert, enterprise_file.client_cert_len)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d client_cert \"blob://client_cert\"",
+					   resp.network_id)) {
+				goto out;
+			}
+
+			if (wpas_config_process_blob(wpa_s->conf, "private_key",
+					   enterprise_file.client_key, enterprise_file.client_key_len)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d private_key \"blob://private_key\"",
+					   resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d private_key_passwd \"%s\"",
+					   resp.network_id, params->key_passwd)) {
+				goto out;
+			}
+#endif
 		} else {
 			ret = -1;
 			wpa_printf(MSG_ERROR, "Unsupported security type: %d",
@@ -519,6 +633,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		goto out;
 	}
 
+	memcpy((void *)&last_wifi_conn_params, params, sizeof(struct wifi_connect_req_params));
 	return 0;
 
 rem_net:
@@ -819,6 +934,31 @@ int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats)
 }
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 
+int supplicant_pmksa_flush(const struct device *dev)
+{
+	struct wpa_supplicant *wpa_s;
+	int ret = 0;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
+		goto out;
+	}
+
+	if (!wpa_cli_cmd_v("pmksa_flush")) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "pmksa_flush failed");
+		goto out;
+	}
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return ret;
+}
+
 int supplicant_set_power_save(const struct device *dev, struct wifi_ps_params *params)
 {
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
@@ -903,6 +1043,11 @@ int supplicant_channel(const struct device *dev, struct wifi_channel_info *chann
 	}
 
 	return wifi_mgmt_api->channel(dev, channel);
+}
+
+struct wifi_connect_req_params *supplicant_get_wifi_conn_params(void)
+{
+	return &last_wifi_conn_params;
 }
 
 #ifdef CONFIG_AP
