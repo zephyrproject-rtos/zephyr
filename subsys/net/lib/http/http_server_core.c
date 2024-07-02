@@ -361,7 +361,7 @@ static void init_client_ctx(struct http_client_ctx *client, int new_socket)
 	http_client_timer_restart(client);
 
 	ARRAY_FOR_EACH(client->streams, i) {
-		client->streams[i].stream_state = HTTP_SERVER_STREAM_IDLE;
+		client->streams[i].stream_state = HTTP2_STREAM_IDLE;
 		client->streams[i].stream_id = 0;
 	}
 }

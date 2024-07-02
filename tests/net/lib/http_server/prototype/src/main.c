@@ -319,25 +319,25 @@ ZTEST(server_function_tests, test_http_server_start_stop)
 
 ZTEST(server_function_tests, test_get_frame_type_name)
 {
-	zassert_str_equal(get_frame_type_name(HTTP_SERVER_DATA_FRAME), "DATA",
+	zassert_str_equal(get_frame_type_name(HTTP2_DATA_FRAME), "DATA",
 			  "Unexpected frame type");
-	zassert_str_equal(get_frame_type_name(HTTP_SERVER_HEADERS_FRAME),
+	zassert_str_equal(get_frame_type_name(HTTP2_HEADERS_FRAME),
 			  "HEADERS", "Unexpected frame type");
-	zassert_str_equal(get_frame_type_name(HTTP_SERVER_PRIORITY_FRAME),
+	zassert_str_equal(get_frame_type_name(HTTP2_PRIORITY_FRAME),
 			  "PRIORITY", "Unexpected frame type");
-	zassert_str_equal(get_frame_type_name(HTTP_SERVER_RST_STREAM_FRAME),
+	zassert_str_equal(get_frame_type_name(HTTP2_RST_STREAM_FRAME),
 			  "RST_STREAM", "Unexpected frame type");
-	zassert_str_equal(get_frame_type_name(HTTP_SERVER_SETTINGS_FRAME),
+	zassert_str_equal(get_frame_type_name(HTTP2_SETTINGS_FRAME),
 			  "SETTINGS", "Unexpected frame type");
-	zassert_str_equal(get_frame_type_name(HTTP_SERVER_PUSH_PROMISE_FRAME),
+	zassert_str_equal(get_frame_type_name(HTTP2_PUSH_PROMISE_FRAME),
 			  "PUSH_PROMISE", "Unexpected frame type");
-	zassert_str_equal(get_frame_type_name(HTTP_SERVER_PING_FRAME), "PING",
+	zassert_str_equal(get_frame_type_name(HTTP2_PING_FRAME), "PING",
 			  "Unexpected frame type");
-	zassert_str_equal(get_frame_type_name(HTTP_SERVER_GOAWAY_FRAME),
+	zassert_str_equal(get_frame_type_name(HTTP2_GOAWAY_FRAME),
 			  "GOAWAY", "Unexpected frame type");
-	zassert_str_equal(get_frame_type_name(HTTP_SERVER_WINDOW_UPDATE_FRAME),
+	zassert_str_equal(get_frame_type_name(HTTP2_WINDOW_UPDATE_FRAME),
 			  "WINDOW_UPDATE", "Unexpected frame type");
-	zassert_str_equal(get_frame_type_name(HTTP_SERVER_CONTINUATION_FRAME),
+	zassert_str_equal(get_frame_type_name(HTTP2_CONTINUATION_FRAME),
 			  "CONTINUATION", "Unexpected frame type");
 }
 
@@ -345,7 +345,7 @@ ZTEST(server_function_tests, test_parse_http_frames)
 {
 	static struct http_client_ctx ctx_client1;
 	static struct http_client_ctx ctx_client2;
-	struct http_frame *frame;
+	struct http2_frame *frame;
 
 	unsigned char buffer1[] = {
 		0x00, 0x00, 0x0c, 0x04, 0x00, 0x00, 0x00, 0x00,
