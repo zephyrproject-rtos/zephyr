@@ -13,7 +13,7 @@
 
 LOG_MODULE_DECLARE(ICM42688_RTIO);
 
-int icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe)
+void icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	struct icm42688_dev_data *data = sensor->data;
@@ -35,7 +35,8 @@ int icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *i
 			break;
 		default:
 			LOG_DBG("Trigger (%d) not supported", cfg->triggers[i].trigger);
-			break;
+			rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+			return;
 		}
 	}
 
@@ -46,12 +47,12 @@ int icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *i
 
 		if (rc != 0) {
 			LOG_ERR("Failed to configure sensor");
-			return rc;
+			rtio_iodev_sqe_err(iodev_sqe, rc);
+			return;
 		}
 	}
 
 	data->streaming_sqe = iodev_sqe;
-	return 0;
 }
 
 static void icm42688_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
@@ -155,7 +156,7 @@ static void icm42688_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 	write_fifo_addr->flags = RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_fifo_data, spi_iodev, RTIO_PRIO_NORM, read_buf, read_len,
 			   iodev_sqe);
-
+	read_fifo_data->flags = RTIO_SQE_CHAINED;
 	rtio_sqe_prep_callback(complete_op, icm42688_complete_cb, (void *)dev, iodev_sqe);
 
 	rtio_submit(r, 0);
@@ -280,6 +281,7 @@ static void icm42688_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr, v
 	rtio_sqe_prep_tiny_write(write_fifo_count_reg, spi_iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
 	write_fifo_count_reg->flags = RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_fifo_count, spi_iodev, RTIO_PRIO_NORM, read_buf, 2, NULL);
+	read_fifo_count->flags = RTIO_SQE_CHAINED;
 	rtio_sqe_prep_callback(check_fifo_count, icm42688_fifo_count_cb, arg, NULL);
 
 	rtio_submit(r, 0);
@@ -314,6 +316,7 @@ void icm42688_fifo_event(const struct device *dev)
 	rtio_sqe_prep_tiny_write(write_int_reg, spi_iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
 	write_int_reg->flags = RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_int_reg, spi_iodev, RTIO_PRIO_NORM, &drv_data->int_status, 1, NULL);
+	read_int_reg->flags = RTIO_SQE_CHAINED;
 	rtio_sqe_prep_callback(check_int_status, icm42688_int_status_cb, (void *)dev, NULL);
 	rtio_submit(r, 0);
 }
