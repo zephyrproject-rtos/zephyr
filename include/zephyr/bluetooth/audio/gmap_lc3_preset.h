@@ -1,7 +1,7 @@
 /** @file
  *  @brief Header for Bluetooth GMAP LC3 presets.
  *
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,11 +9,28 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_GMAP_LC3_PRESET_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_GMAP_LC3_PRESET_
 
+/**
+ * @brief Gaming Audio Profile (GMAP) LC3 Presets
+ *
+ * @defgroup bt_gmap_lc3_preset Gaming Audio Profile (GMAP) LC3 Presets
+ *
+ * @since 3.5
+ * @version 0.8.0
+ *
+ * @ingroup bluetooth
+ * @{
+ *
+ * These APIs provide preset for codec configuration and codec QoS based on values supplied by the
+ * codec configuration from table 3.16 in the GMAP v1.0 specification
+ */
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 
-/* GMAP LC3 unicast presets defined by table 3.16 in the GMAP v1.0 specification */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  *  @brief Helper to declare LC3 32_1_gr codec configuration
@@ -212,5 +229,10 @@
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 120u, 1, \
 						    _stream_context),                              \
 			  BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, 120U, 1U, 10U, 10000U))
+
+#ifdef __cplusplus
+}
+#endif
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_GMAP_LC3_PRESET_ */
