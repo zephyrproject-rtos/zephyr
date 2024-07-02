@@ -14,6 +14,7 @@ config TFM_BOARD
 	default "adi/max32657" if BOARD_MAX32657EVKIT_MAX32657_NS || BOARD_MAX32658EVKIT_MAX32658_NS
 	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS
 	default "nxp/rdrw61x" if BOARD_RD_RW612_BGA
+	default "nxp/frdmrw612" if BOARD_FRDM_RW612
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
 	default "nxp/frdmmcxn947" if BOARD_FRDM_MCXN947_MCXN947_CPU0_NS
 	default "arm/mps3/corstone300/fvp" if BOARD_MPS3_CORSTONE300_FVP_NS
