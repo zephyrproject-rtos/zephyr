@@ -23,3 +23,26 @@ config UART_RA_SCI_B_UART_FIFO_ENABLE
 	  Enable RA SCI_B FIFO
 
 endif
+
+config UART_RA8_SCI
+	bool "Renesas RA SCI UART"
+	default y
+	depends on DT_HAS_RENESAS_RA8_UART_SCI_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC
+	select USE_RA_FSP_SCI_UART
+	select USE_RA_FSP_DTC if UART_ASYNC_API
+	help
+	  Enable Renesas RA SCI UART Driver.
+
+if UART_RA8_UART_SCI && (UART_INTERRUPT_DRIVEN || UART_ASYNC_API)
+
+config UART_RA_UART_SCI_FIFO_ENABLE
+	bool "Enable RA SCI UART FIFO"
+	default y if UART_INTERRUPT_DRIVEN
+	default n if UART_ASYNC_API
+	help
+	  Enable RA SCI FIFO
+
+endif
