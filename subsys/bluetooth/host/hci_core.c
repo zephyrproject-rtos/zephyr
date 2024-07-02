@@ -117,6 +117,9 @@ struct cmd_data {
 
 	/** Used by bt_hci_cmd_send_sync. */
 	struct k_sem *sync;
+
+	/** Response */
+	struct net_buf_simple *rsp;
 };
 
 static struct cmd_data cmd_data[CONFIG_BT_BUF_CMD_TX_COUNT];
@@ -156,13 +159,8 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
 	cmd(buf)->state = state;
 }
 
-/* HCI command buffers. Derive the needed size from both Command and Event
- * buffer length since the buffer is also used for the response event i.e
- * command complete or command status.
- */
-#define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
 NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
-			  CMD_BUF_SIZE, sizeof(struct bt_buf_data), NULL);
+			  BT_BUF_CMD_TX_SIZE, sizeof(struct bt_buf_data), NULL);
 
 struct event_handler {
 	uint8_t event;
@@ -303,6 +301,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	cmd(buf)->opcode = opcode;
 	cmd(buf)->sync = NULL;
 	cmd(buf)->state = NULL;
+	cmd(buf)->rsp = NULL;
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->opcode = sys_cpu_to_le16(opcode);
@@ -344,9 +343,11 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 }
 
 static bool process_pending_cmd(k_timeout_t timeout);
-int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
-			 struct net_buf **rsp)
+
+int bt_hci_cmd_send_sync_v2(uint16_t opcode, struct net_buf *buf,
+			    void *rsp, uint16_t rsp_len)
 {
+	struct net_buf_simple b;
 	struct k_sem sync_sem;
 	uint8_t status;
 	int err;
@@ -372,6 +373,13 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	 */
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
+
+	if (rsp) {
+		net_buf_simple_init_with_data(&b, rsp, rsp_len);
+		net_buf_simple_reset(&b);
+
+		cmd(buf)->rsp = &b;
+	}
 
 	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
 	bt_tx_irq_raise();
@@ -428,15 +436,48 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		default:
 			return -EIO;
 		}
-	}
-
-	LOG_DBG("rsp %p opcode 0x%04x len %u", buf, opcode, buf->len);
-
-	if (rsp) {
-		*rsp = buf;
-	} else {
+	} else if (rsp && (b.len != rsp_len)) {
+		LOG_WRN("opcode 0x%04x len %u expected %u", opcode, b.len, rsp_len);
 		net_buf_unref(buf);
+
+		return -EMSGSIZE;
 	}
+
+	LOG_DBG("rsp %p opcode 0x%04x len %u", rsp, opcode, b.len);
+
+	net_buf_unref(buf);
+
+	return 0;
+}
+
+int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
+			 struct net_buf **rsp)
+{
+	struct net_buf_simple_state state;
+	int err;
+
+	if (!rsp) {
+		return bt_hci_cmd_send_sync_v2(opcode, buf, NULL, 0);
+	}
+
+	if (!buf) {
+		buf = bt_hci_cmd_create(opcode, 0);
+		if (!buf) {
+			return -ENOBUFS;
+		}
+	}
+
+	net_buf_simple_save(&buf->b, &state);
+
+	err = bt_hci_cmd_send_sync_v2(opcode, net_buf_ref(buf), buf->data, buf->size);
+	if (err && err != -EMSGSIZE) {
+		net_buf_unref(buf);
+		return err;
+	}
+
+	net_buf_simple_restore(&buf->b, &state);
+
+	*rsp = buf;
 
 	return 0;
 }
@@ -2414,6 +2455,7 @@ static void hci_reset_complete(struct net_buf *buf)
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_buf)
 {
 	/* Original command buffer. */
+	struct net_buf_simple *rsp = NULL;
 	struct net_buf *buf = NULL;
 
 	LOG_DBG("opcode 0x%04x status 0x%02x buf %p", opcode, status, evt_buf);
@@ -2441,16 +2483,6 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 		goto exit;
 	}
 
-	/* Response data is to be delivered in the original command
-	 * buffer.
-	 */
-	if (evt_buf != buf) {
-		net_buf_reset(buf);
-		bt_buf_set_type(buf, BT_BUF_EVT);
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		net_buf_add_mem(buf, evt_buf->data, evt_buf->len);
-	}
-
 	if (cmd(buf)->state && !status) {
 		struct bt_hci_cmd_state_set *update = cmd(buf)->state;
 
@@ -2461,6 +2493,12 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	if (cmd(buf)->sync) {
 		LOG_DBG("sync cmd released");
 		cmd(buf)->status = status;
+
+		rsp = cmd(buf)->rsp;
+		if (!status && rsp) {
+			net_buf_simple_add_mem(rsp, evt_buf->data, evt_buf->len);
+		}
+
 		k_sem_give(cmd(buf)->sync);
 	}
 

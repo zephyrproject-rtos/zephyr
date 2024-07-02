@@ -1119,9 +1119,10 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 				const struct bt_le_adv_param *param,
 				bool  has_scan_data)
 {
+	struct bt_hci_rp_le_set_ext_adv_param rsp;
 	struct bt_hci_cp_le_set_ext_adv_param *cp;
 	bool dir_adv = param->peer != NULL, scannable;
-	struct net_buf *buf, *rsp;
+	struct net_buf *buf;
 	int err;
 	enum adv_name_type name_type;
 	uint16_t props = 0;
@@ -1217,18 +1218,14 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	cp->sid = param->sid;
 
 	cp->props = sys_cpu_to_le16(props);
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, buf, &rsp);
+	err = bt_hci_cmd_send_sync_v2(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, buf, &rsp, sizeof(rsp));
 	if (err) {
 		return err;
 	}
 
 #if defined(CONFIG_BT_EXT_ADV)
-	struct bt_hci_rp_le_set_ext_adv_param *rp = (void *)rsp->data;
-
 	adv->tx_power = rp->tx_power;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
-
-	net_buf_unref(rsp);
 
 	atomic_set_bit(adv->flags, BT_ADV_PARAMS_SET);
 
