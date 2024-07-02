@@ -13,8 +13,14 @@
 /**
  * @brief Bluetooth Basic Audio Profile (BAP)
  * @defgroup bt_bap Bluetooth Basic Audio Profile
+
+ * @since 3.0
+ * @version 0.8.0
+
  * @ingroup bluetooth
  * @{
+ *
+ * The Basic Audio Profile (BAP) allow for both unicast and broadcast Audio Stream control.
  */
 
 #include <stdbool.h>
@@ -261,7 +267,7 @@ struct bt_bap_bass_subgroup {
 	/** Length of the metadata */
 	uint8_t metadata_len;
 
-#if defined(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE)
+#if defined(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) || defined(__DOXYGEN__)
 	/** The metadata */
 	uint8_t metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE */
@@ -300,6 +306,11 @@ struct bt_bap_scan_delegator_recv_state {
 	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
+/**
+ * @brief Struct to hold the Basic Audio Profile Scan Delegator callbacks
+ *
+ * These can be registered for usage with bt_bap_scan_delegator_register_cb().
+ */
 struct bt_bap_scan_delegator_cb {
 	/**
 	 * @brief Receive state updated
@@ -458,7 +469,7 @@ struct bt_bap_stream {
 	/** Audio stream operations */
 	struct bt_bap_stream_ops *ops;
 
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(__DOXYGEN__)
 	/**
 	 * @brief Audio ISO reference
 	 *
@@ -473,7 +484,8 @@ struct bt_bap_stream {
 	/** Stream user data */
 	void *user_data;
 
-#if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
+#if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM) || defined(__DOXYGEN__)
+	/** @internal Previously sent sequence number */
 	uint16_t _prev_seq_num;
 #endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
 
@@ -483,7 +495,7 @@ struct bt_bap_stream {
 
 /** @brief Stream operation. */
 struct bt_bap_stream_ops {
-#if defined(CONFIG_BT_BAP_UNICAST)
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
 	/**
 	 * @brief Stream configured callback
 	 *
@@ -564,7 +576,7 @@ struct bt_bap_stream_ops {
 	 */
 	void (*stopped)(struct bt_bap_stream *stream, uint8_t reason);
 
-#if defined(CONFIG_BT_AUDIO_RX)
+#if defined(CONFIG_BT_AUDIO_RX) || defined(__DOXYGEN__)
 	/**
 	 * @brief Stream audio HCI receive callback.
 	 *
@@ -580,7 +592,7 @@ struct bt_bap_stream_ops {
 		     struct net_buf *buf);
 #endif /* CONFIG_BT_AUDIO_RX */
 
-#if defined(CONFIG_BT_AUDIO_TX)
+#if defined(CONFIG_BT_AUDIO_TX) || defined(__DOXYGEN__)
 	/**
 	 * @brief Stream audio HCI sent callback
 	 *
@@ -1095,6 +1107,7 @@ struct bt_bap_unicast_group_stream_pair_param {
 	struct bt_bap_unicast_group_stream_param *tx_param;
 };
 
+/** Parameters for the creating unicast groups with bt_bap_unicast_group_create() */
 struct bt_bap_unicast_group_param {
 	/** The number of parameters in @p params */
 	size_t params_count;
@@ -1110,7 +1123,7 @@ struct bt_bap_unicast_group_param {
 	 */
 	uint8_t packing;
 
-#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 	/** @brief Central to Peripheral flush timeout
 	 *
 	 *  The flush timeout in multiples of ISO_Interval for each payload sent
@@ -1422,7 +1435,7 @@ struct bt_bap_base_codec_id {
 
 /** BIS structure for each BIS in a Broadcast Audio Source Endpoint (BASE) subgroup */
 struct bt_bap_base_subgroup_bis {
-	/* Unique index of the BIS */
+	/** Unique index of the BIS */
 	uint8_t index;
 	/** Codec Specific Data length. */
 	uint8_t data_len;
@@ -1614,7 +1627,7 @@ struct bt_bap_broadcast_source_stream_param {
 	/** Audio stream */
 	struct bt_bap_stream *stream;
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 || defined(__DOXYGEN__)
 	/**
 	 * @brief The number of elements in the @p data array.
 	 *
@@ -1674,7 +1687,7 @@ struct bt_bap_broadcast_source_param {
 	 */
 	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 
-#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 	/** @brief Immediate Repetition Count
 	 *
 	 *  The number of times the scheduled payloads are transmitted in a
@@ -1978,6 +1991,7 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 	uint8_t src_id,
 	uint32_t bis_synced[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]);
 
+/** Parameters for bt_bap_scan_delegator_add_src() */
 struct bt_bap_scan_delegator_add_src_param {
 	/** The periodic adverting sync */
 	struct bt_le_per_adv_sync *pa_sync;
@@ -2010,6 +2024,7 @@ struct bt_bap_scan_delegator_add_src_param {
  */
 int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_param *param);
 
+/** Parameters for bt_bap_scan_delegator_mod_src() */
 struct bt_bap_scan_delegator_mod_src_param {
 	/** The periodic adverting sync */
 	uint8_t src_id;
@@ -2104,6 +2119,11 @@ const struct bt_bap_scan_delegator_recv_state *bt_bap_scan_delegator_find_state(
 typedef void (*bt_bap_broadcast_assistant_write_cb)(struct bt_conn *conn,
 						    int err);
 
+/**
+ * @brief Struct to hold the Basic Audio Profile Broadcast Assistant callbacks
+ *
+ * These can be registered for usage with bt_bap_broadcast_assistant_register_cb().
+ */
 struct bt_bap_broadcast_assistant_cb {
 	/**
 	 * @brief Callback function for bt_bap_broadcast_assistant_discover.

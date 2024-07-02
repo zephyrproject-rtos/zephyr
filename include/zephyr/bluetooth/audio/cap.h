@@ -1,5 +1,9 @@
+/** @file
+ *  @brief Bluetooth Common Audio Profile (CAP) APIs.
+ */
+
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +21,12 @@
  *
  * @ingroup bluetooth
  * @{
+ *
+ * Common Audio Profile (CAP) specifies procedures to start, update, and stop unicast and broadcast
+ * Audio Streams on individual or groups of devices using procedures in the Basic Audio Profile
+ * (BAP). This profile specifies procedures to control volume and device input on groups of devices
+ * using procedures in the Volume Control Profile (VCP) and the Microphone Control Profile (MICP).
+ * This profile specification also refers to the Common Audio Service (CAS).
  */
 
 #include <stdbool.h>
@@ -62,7 +72,7 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 
 /** Callback structure for CAP procedures */
 struct bt_cap_initiator_cb {
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_discover().
 	 *
@@ -151,6 +161,12 @@ union bt_cap_set_member {
 	struct bt_csip_set_coordinator_csis_inst *csip;
 };
 
+/**
+ * @brief Common Audio Profile stream structure.
+ *
+ * Streams represents a Basic Audio Profile (BAP) stream and operation callbacks.
+ * See @ref bt_bap_stream for additional information.
+ */
 struct bt_cap_stream {
 	struct bt_bap_stream bap_stream;
 	struct bt_bap_stream_ops *ops;
@@ -383,6 +399,10 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
  */
 int bt_cap_initiator_unicast_audio_cancel(void);
 
+/**
+ * Parameters part of @p bt_cap_initiator_broadcast_subgroup_param for
+ * bt_cap_initiator_broadcast_audio_create()
+ */
 struct bt_cap_initiator_broadcast_stream_param {
 	/** Audio stream */
 	struct bt_cap_stream *stream;
@@ -397,6 +417,10 @@ struct bt_cap_initiator_broadcast_stream_param {
 	uint8_t *data;
 };
 
+/**
+ * Parameters part of @p bt_cap_initiator_broadcast_create_param for
+ * bt_cap_initiator_broadcast_audio_create()
+ */
 struct bt_cap_initiator_broadcast_subgroup_param {
 	/** The number of parameters in @p stream_params */
 	size_t stream_count;
@@ -408,6 +432,7 @@ struct bt_cap_initiator_broadcast_subgroup_param {
 	struct bt_audio_codec_cfg *codec_cfg;
 };
 
+/** Parameters for * bt_cap_initiator_broadcast_audio_create() */
 struct bt_cap_initiator_broadcast_create_param {
 	/** The number of parameters in @p subgroup_params */
 	size_t subgroup_count;
@@ -444,7 +469,7 @@ struct bt_cap_initiator_broadcast_create_param {
 	 */
 	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 
-#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 	/** @brief Immediate Repetition Count
 	 *
 	 *  The number of times the scheduled payloads are transmitted in a
@@ -597,6 +622,7 @@ int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *broa
 int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf);
 
+/** Parameters for  bt_cap_initiator_unicast_to_broadcast() */
 struct bt_cap_unicast_to_broadcast_param {
 	/** The source unicast group with the streams. */
 	struct bt_bap_unicast_group *unicast_group;
@@ -643,6 +669,7 @@ struct bt_cap_unicast_to_broadcast_param {
 int bt_cap_initiator_unicast_to_broadcast(const struct bt_cap_unicast_to_broadcast_param *param,
 					  struct bt_cap_broadcast_source **source);
 
+/** Parameters for  bt_cap_initiator_broadcast_to_unicast() */
 struct bt_cap_broadcast_to_unicast_param {
 	/**
 	 * @brief The source broadcast source with the streams.
@@ -705,7 +732,7 @@ struct bt_cap_commander_cb {
 				   const struct bt_csip_set_coordinator_set_member *member,
 				   const struct bt_csip_set_coordinator_csis_inst *csis_inst);
 
-#if defined(CONFIG_BT_VCP_VOL_CTLR)
+#if defined(CONFIG_BT_VCP_VOL_CTLR) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_commander_change_volume().
 	 *
@@ -730,7 +757,7 @@ struct bt_cap_commander_cb {
 	 */
 	void (*volume_mute_changed)(struct bt_conn *conn, int err);
 
-#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_commander_change_volume_offset().
 	 *
@@ -744,7 +771,7 @@ struct bt_cap_commander_cb {
 	void (*volume_offset_changed)(struct bt_conn *conn, int err);
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
-#if defined(CONFIG_BT_MICP_MIC_CTLR)
+#if defined(CONFIG_BT_MICP_MIC_CTLR) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_commander_change_microphone_mute_state().
 	 *
@@ -756,7 +783,7 @@ struct bt_cap_commander_cb {
 	 *                       by bt_cap_commander_cancel().
 	 */
 	void (*microphone_mute_changed)(struct bt_conn *conn, int err);
-#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_commander_change_microphone_gain_setting().
 	 *
@@ -771,7 +798,7 @@ struct bt_cap_commander_cb {
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
 
-#if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
+#if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_commander_broadcast_reception_start().
 	 *
@@ -851,6 +878,10 @@ int bt_cap_commander_discover(struct bt_conn *conn);
  */
 int bt_cap_commander_cancel(void);
 
+/**
+ * Parameters part of @ref bt_cap_commander_broadcast_reception_start_param for
+ * bt_cap_commander_broadcast_reception_start()
+ */
 struct bt_cap_commander_broadcast_reception_start_member_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;

@@ -35,20 +35,32 @@ extern "C" {
 #define BT_MICP_MIC_DEV_AICS_CNT 0
 #endif /* CONFIG_BT_MICP_MIC_DEV */
 
-/** Application error codes */
+/**
+ * @name Application error codes
+ * @{
+ */
+/** Mute/unmute commands are disabled. */
 #define BT_MICP_ERR_MUTE_DISABLED                  0x80
+/** @} */
 
-/** Microphone Control Profile mute states */
+/**
+ * @name Microphone Control Profile mute states
+ * @{
+ */
+/** The microphone state is unmuted */
 #define BT_MICP_MUTE_UNMUTED                       0x00
+/** The microphone state is muted */
 #define BT_MICP_MUTE_MUTED                         0x01
+/** The microphone state is disabled and cannot be muted or unmuted */
 #define BT_MICP_MUTE_DISABLED                      0x02
+/** @} */
 
 /** @brief Opaque Microphone Controller instance. */
 struct bt_micp_mic_ctlr;
 
 /** @brief Register parameters structure for Microphone Control Service */
 struct bt_micp_mic_dev_register_param {
-#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS) || defined(__DOXYGEN__)
 	/** Register parameter structure for Audio Input Control Services */
 	struct bt_aics_register_param aics_param[BT_MICP_MIC_DEV_AICS_CNT];
 #endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
@@ -98,6 +110,11 @@ int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param);
  */
 int bt_micp_mic_dev_included_get(struct bt_micp_included *included);
 
+/**
+ * @brief Struct to hold the Microphone Device callbacks
+ *
+ * These can be registered for usage with bt_micp_mic_dev_register().
+ */
 struct bt_micp_mic_dev_cb {
 	/**
 	 * @brief Callback function for Microphone Device mute.
@@ -141,6 +158,11 @@ int bt_micp_mic_dev_mute_disable(void);
  */
 int bt_micp_mic_dev_mute_get(void);
 
+/**
+ * @brief Struct to hold the Microphone Controller callbacks
+ *
+ * These can be registered for usage with bt_micp_mic_ctlr_cb_register().
+ */
 struct bt_micp_mic_ctlr_cb {
 	/**
 	 * @brief Callback function for Microphone Control Profile mute.
