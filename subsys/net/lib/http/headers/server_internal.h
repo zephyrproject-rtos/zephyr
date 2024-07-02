@@ -42,6 +42,6 @@ void http_client_timer_restart(struct http_client_ctx *client);
 
 /* TODO Could be static, but currently used in tests. */
 int parse_http_frame_header(struct http_client_ctx *client);
-const char *get_frame_type_name(enum http_frame_type type);
+const char *get_frame_type_name(enum http2_frame_type type);
 
 #endif /* HTTP_SERVER_INTERNAL_H_ */
