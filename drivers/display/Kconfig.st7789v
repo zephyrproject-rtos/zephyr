@@ -24,4 +24,7 @@ config ST7789V_RGB888
 config ST7789V_RGB565
 	bool "RGB565"
 
+config ST7789V_BGR565
+	bool "BGR565"
+
 endchoice

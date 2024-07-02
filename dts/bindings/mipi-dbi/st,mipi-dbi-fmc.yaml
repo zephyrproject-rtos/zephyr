@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Bootlin
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 FMC display controller
+compatible: "st,stm32-fmc-mipi-dbi"
+
+include: ["mipi-dbi-controller.yaml"]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin.
+
+  power-gpios:
+    type: phandle-array
+    description: |
+      Power GPIO pin.
