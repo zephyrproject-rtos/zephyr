@@ -499,7 +499,7 @@ static int dma_esp32_configure_irq(const struct device *dev)
 	for (uint8_t i = 0; i < config->irq_size; i++) {
 		dma_channel = &config->dma_channel[i];
 		int ret = esp_intr_alloc(config->irq_src[i],
-					 0,
+					 ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED,
 					 (ISR_HANDLER)config->irq_handlers[i / 2],
 					 (void *)dev,
 					 &dma_channel->intr_handle);
