@@ -133,12 +133,12 @@
 		 * https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/tree/platform/ext/target/mps3/an547/partition/flash_layout.h
 		 */
 
-		code: memory@4000 {
-			reg = <0x4000 DT_SIZE_K(16)>;
+		code: memory@60000000 {
+			reg = <0x60000000 DT_SIZE_K(16)>;
 		};
 
-		ram: memory@60000000 {
-			reg = <0x60000000 DT_SIZE_M(2)>;
+		ram: memory@60008000 {
+			reg = <0x60008000 DT_SIZE_K(2032)>;
 		};
 	};
 
