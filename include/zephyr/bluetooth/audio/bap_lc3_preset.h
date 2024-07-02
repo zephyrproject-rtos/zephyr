@@ -9,8 +9,28 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_
 
+/**
+ * @brief Basic Audio Profile (BAP) LC3 Presets
+ *
+ * @defgroup bt_bap_lc3_preset Basic Audio Profile (BAP) LC3 Presets
+ *
+ * @since 3.0
+ * @version 0.8.0
+ *
+ * @ingroup bluetooth
+ * @{
+ *
+ * These APIs provide preset for codec configuration and codec QoS based on values supplied by the
+ * codec configuration tables in the BAP specification.
+ *
+ */
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/lc3.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Struct to hold a BAP defined LC3 preset */
 struct bt_bap_lc3_preset {
@@ -810,5 +830,10 @@ struct bt_bap_lc3_preset {
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 155u, 1, \
 						    _stream_context),                              \
 			  BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, 155u, 4u, 65u, 40000u))
+
+#ifdef __cplusplus
+}
+#endif
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_ */
