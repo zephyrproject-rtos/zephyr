@@ -377,7 +377,7 @@
 /drivers/i2c/i2c_ll_stm32*                @ydamigos
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
 /drivers/i2c/*sam0*                       @Sizurka
-/drivers/i2c/i2c_dw*                      @dcpleung
+/drivers/i2c/i2c_dw*                      @dcpleung @samitsingh7
 /drivers/i2c/*tca954x*                    @kurddt
 /drivers/*/*xec*                          @franciscomunoz @albertofloyd @sjvasanth1
 /drivers/watchdog/*gecko*                 @oanerer
