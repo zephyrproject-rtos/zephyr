@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Capgemini
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/silabs/gpio_gecko.h>
+#include <dt-bindings/pinctrl/gecko-pinctrl.h>
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group1 {
+			psels = <GECKO_PSEL(UART_TX, A, 5)>,   // TX pin
+				<GECKO_PSEL(UART_RX, A, 6)>,   // RX pin
+				<GECKO_LOC(UART, 0)>;          // Location configuration
+		};
+	};
+
+	usart0_spi_default: usart0_spi_default {
+		group1 {
+			psels = <GECKO_PSEL(SPI_SCK, C, 2)>,    // SPI clock pin
+				<GECKO_PSEL(SPI_MISO, C, 1)>,   // SPI MISO pin
+				<GECKO_PSEL(SPI_MOSI, C, 0)>;   // SPI MOSI pin
+		};
+	};
+};
