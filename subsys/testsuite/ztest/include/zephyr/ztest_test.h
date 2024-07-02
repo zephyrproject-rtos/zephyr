@@ -18,6 +18,17 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <stdbool.h>
 
+
+/**
+ * @defgroup ztest_test Ztest testing macros
+ * @ingroup ztest
+ *
+ * This module eases the testing process by providing helpful macros and other
+ * testing structures.
+ *
+ * @{
+ */
+
 #if defined(CONFIG_USERSPACE)
 #define __USERSPACE_FLAGS (K_USER)
 #else
@@ -107,6 +118,7 @@ struct ztest_unit_test {
 
 extern struct ztest_unit_test _ztest_unit_test_list_start[];
 extern struct ztest_unit_test _ztest_unit_test_list_end[];
+/** Number of registered unit tests */
 #define ZTEST_TEST_COUNT (_ztest_unit_test_list_end - _ztest_unit_test_list_start)
 
 /**
@@ -200,6 +212,8 @@ struct ztest_suite_node {
 
 extern struct ztest_suite_node _ztest_suite_node_list_start[];
 extern struct ztest_suite_node _ztest_suite_node_list_end[];
+
+/** Number of registered test suites */
 #define ZTEST_SUITE_COUNT (_ztest_suite_node_list_end - _ztest_suite_node_list_start)
 
 /**
@@ -344,8 +358,17 @@ struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_un
 
 /* definitions for use with testing application shared memory   */
 #ifdef CONFIG_USERSPACE
+/**
+ * @brief Make data section used by Ztest userspace accessible
+ */
 #define ZTEST_DMEM K_APP_DMEM(ztest_mem_partition)
+/**
+ * @brief Make bss section used by Ztest userspace accessible
+ */
 #define ZTEST_BMEM K_APP_BMEM(ztest_mem_partition)
+/**
+ * @brief Ztest data section for accessing data from userspace
+ */
 #define ZTEST_SECTION K_APP_DMEM_SECTION(ztest_mem_partition)
 extern struct k_mem_partition ztest_mem_partition;
 #else
@@ -353,16 +376,6 @@ extern struct k_mem_partition ztest_mem_partition;
 #define ZTEST_BMEM
 #define ZTEST_SECTION .data
 #endif
-
-/**
- * @defgroup ztest_test Ztest testing macros
- * @ingroup ztest
- *
- * This module eases the testing process by providing helpful macros and other
- * testing structures.
- *
- * @{
- */
 
 /**
  * @brief Fail the currently running test.
