@@ -1,0 +1,5 @@
+board:
+  name: artemis_nano
+  vendor: sparkfun
+  socs:
+  - name: apollo3_blue
