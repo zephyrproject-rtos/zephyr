@@ -1,0 +1,135 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+# MAX14906 GPIO configuration options
+
+menuconfig GPIO_MAX14906
+	bool "MAX14906 GPIO driver"
+	default y
+	depends on DT_HAS_ADI_MAX14906_GPIO_ENABLED && SPI
+	help
+	  Enabe MAX14906 quad industrial digital
+	  input/output with diagnostics
+
+config GPIO_MAX14906_INIT_PRIORITY
+	int "Driver init priority"
+	default 99
+	depends on GPIO_MAX14906
+	help
+	  Device driver initialization priority.
+
+if GPIO_MAX14906
+
+menu "Config register 1"
+
+config GPIO_MAX14906_FLED_SET
+	bool "Fault LED enable"
+	default y
+	depends on GPIO_MAX14906
+	help
+	  Internal fault diagnostics include (if enabled): SafeDemagF_, SHVDD_,
+	  VDDOV_, OWOff_, AboveVDD_, CL_, OVL_, VDDOKFault_.
+
+config GPIO_MAX14906_SLED_SET
+	bool "Status LEDs enable"
+	default y
+	depends on GPIO_MAX14906
+	help
+	  Enable status LEDs
+
+config GPIO_MAX14906_FLED_STRETCH
+	int "Minimum on time for FLEDs"
+	default 0
+	range 0 3
+	depends on GPIO_MAX14906
+	help
+	  Set minimum on time for FLEDs in case of fault
+	  0 - Disable minimum fault LED (FLED) on-time
+	  1 - Minimum fault LED (FLED) on-time = 1s (typ)
+	  2 - Minimum fault LED (FLED) on-time = 2s (typ)
+	  3 - Minimum fault LED (FLED) on-time = 3s (typ)
+
+config GPIO_MAX14906_FFILTER_EN
+	bool "Blanking and filtering of the SHVDD_ and OWOff_ diagnostic bits"
+	default y
+	depends on GPIO_MAX14906
+	help
+	  When the fault LEDs (FLEDs) are controlled internally (FLEDSet = 0), open-
+	  wire and short-to-V DD diagnostics always use filtering and cannot be disabled
+	  by the FFilterEn bit.
+
+config GPIO_MAX14906_FILTER_LONG
+	bool "FFILTER enable"
+	default n
+	depends on GPIO_MAX14906
+	help
+	  Set minimum on time for FLEDs in case of fault
+
+config GPIO_MAX14906_FLATCH_EN
+	bool "FLATCH enable"
+	default y
+	depends on GPIO_MAX14906
+	help
+	  Set minimum on time for FLEDs in case of fault
+
+config GPIO_MAX14906_LED_CUR_LIM
+	bool "LED current limit enable"
+	default n
+	depends on GPIO_MAX14906
+	help
+	  Enable fault LEDs (FLEDs) signaling current limit
+endmenu
+
+menu "Config register 2"
+config GPIO_MAX14906_VDD_ON_THR
+	bool "VDD on thresholds"
+	default n
+	depends on GPIO_MAX14906
+	help
+	  Enable higher voltage thresholds for V DD and V DD_ undervoltage monitoring
+
+config GPIO_MAX14906_SYNCH_WD_EN
+	bool "SYNCH Watchdog Status and Timeout"
+	default n
+	depends on GPIO_MAX14906
+	help
+	  The SYNCH watchdog timeout is defined by the WDTo[1:0] bits if the SPI
+	  watchdog is enabled. When WDTo[1:0] = 00 (SPI watchdog disabled), the
+	  SYNCH watchdog timeout is 600ms (typ) if enabled.
+
+config GPIO_MAX14906_SHT_VDD_THR
+	int "Set threshold voltage for short-to-V DD detection"
+	default 0
+	range 0 3
+	depends on GPIO_MAX14906
+	help
+	  0: Set threshold voltage for short-to-VDD detection to 9V (typ)
+	  1: Set threshold voltage for short-to-VDD detection to 10V (typ)
+	  2: Set threshold voltage for short-to-VDD detection to 12V (typ)
+	  3: Set threshold voltage for short-to-VDD detection to 14V (typ)
+
+config GPIO_MAX14906_OW_OFF_CS
+	int "Set the pullup current for open-wire and short-to-VDD detection"
+	default 0
+	range 0 3
+	depends on GPIO_MAX14906
+	help
+	  0: Set open-wire and short-to-VDD detection current to 60μA (typ)
+	  1: Set open-wire and short-to-VDD detection current to 100μA (typ)
+	  2: Set open-wire and short-to-VDD detection current to 300μA (typ)
+	  3: Set open-wire and short-to-VDD detection current to 600μA (typ)
+
+config GPIO_MAX14906_WD_TO
+	int "SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout"
+	default 0
+	range 0 3
+	depends on GPIO_MAX14906
+	help
+	  0: Disable SPI Watchdog Status and SPI Watchdog Timeout
+	  1: Enable SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout to 200ms (typ)
+	  2: Enable SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout to 600ms (typ)
+	  3: Enable SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout to 1.2s (typ)
+endmenu
+
+endif

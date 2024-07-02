@@ -1,0 +1,87 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX14906 quad industrial Input/Output with advanced diagnostics
+
+compatible: "adi,max14906-gpio"
+
+properties:
+  "#gpio-cells":
+    const: 2
+  ngpios:
+    type: int
+    required: true
+    const: 4
+    description: Number of gpios supported
+  drdy-gpios:
+    description: Ready pin which show when chip is ready
+    type: phandle-array
+  fault-gpios:
+    description: |
+      Fault pin indicates when there is Fault state in either FAULT1 or FAULT2
+      bothe of which are cleaned on read once problem is not persistent
+    type: phandle-array
+  sync-gpios:
+    description: |
+      Latch the data so it could be read (partially duplicate CS)
+    type: phandle-array
+  en-gpios:
+    description: |
+      Latch the data so it could be read (partially duplicate CS)
+    type: phandle-array
+  crc-en:
+    description: to notify driver if crc pin is enabled
+    type: boolean
+  spi-addr:
+    type: int
+    default: 0
+    required: true
+    description: |
+      selectable device address, configurable from A0 and A1
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+  ow-en:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      Enable or disable open-wire functionality per channel.
+      - 0 mean enable
+      - 1 mean disable
+      channels indentation start from CH0...CH3
+  vdd-ov-en:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      VDDOVEN
+      Enable or disable open-wire functionality per channel.
+      - 0 mean enable
+      - 1 mean disable
+      channels indentation start from CH0...CH3
+  gdrv-en:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      GDrvEn - Gate drive enabl disable for power eff
+      Enable or disable open-wire functionality per channel.
+      - 0 mean enable
+      - 1 mean disable
+      channels indentation start from CH0...CH3
+  sh-vdd-en:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      ShVddEN - Short to VDD enable
+      Enable or disable short to VDD functionality per channel.
+      - 0 mean enable
+      - 1 mean disable
+      channels indentation start from CH0...CH3
+
+gpio-cells:
+  - pin
+  - flags
+
+include: [gpio-controller.yaml, spi-device.yaml]
