@@ -130,6 +130,7 @@ SECTION_FUNC(PINNED_TEXT, _exception_enter)
 #endif
 	/* ESP is pointing to the ESF at this point */
 
+#ifndef CONFIG_X86_MMU
 #if defined(CONFIG_LAZY_FPU_SHARING)
 
 	movl	_kernel + _kernel_offset_to_current, %edx
@@ -164,12 +165,14 @@ SECTION_FUNC(PINNED_TEXT, _exception_enter)
 	testl	$0x200, __struct_arch_esf_eflags_OFFSET(%esp)
 	je	allDone
 	sti
+#endif /* CONFIG_X86_MMU */
 
 allDone:
 	pushl	%esp			/* push struct_arch_esf * parameter */
 	call	*%ecx			/* call exception handler */
 	addl	$0x4, %esp
 
+#ifndef CONFIG_X86_MMU
 #if defined(CONFIG_LAZY_FPU_SHARING)
 
 	movl	_kernel + _kernel_offset_to_current, %ecx
@@ -201,6 +204,7 @@ allDone:
 
 nestedException:
 #endif /* CONFIG_LAZY_FPU_SHARING */
+#endif /* CONFIG_X86_MMU */
 
 #ifdef CONFIG_GDBSTUB
 	popl %ss
