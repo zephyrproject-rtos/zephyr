@@ -1,0 +1,24 @@
+# Copyright (c) 2023 KNS Group LLC (YADRO)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config PROFILING_PERF
+	bool "Perf support"
+	depends on THREAD_STACK_INFO
+	depends on !SMP
+	depends on FRAME_POINTER
+	depends on SHELL
+	depends on EVENTS
+	depends on RISCV || X86_64
+	help
+	  Enable perf shell command.
+
+if PROFILING_PERF
+
+config PROFILING_PERF_BUFFER_SIZE
+	int "Perf buffer size"
+	default 2048
+	help
+	  Size of buffer, that used by perf to save samples from stack tracing.
+
+endif
