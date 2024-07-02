@@ -60,7 +60,6 @@ static void i2c_ambiq_callback(void *callback_ctxt, uint32_t status)
 		data->callback(dev, status, data->callback_data);
 	}
 	data->transfer_status = status;
-	k_sem_give(&data->transfer_sem);
 }
 #endif
 
@@ -72,6 +71,7 @@ static void i2c_ambiq_isr(const struct device *dev)
 	am_hal_iom_interrupt_status_get(data->iom_handler, false, &ui32Status);
 	am_hal_iom_interrupt_clear(data->iom_handler, ui32Status);
 	am_hal_iom_interrupt_service(data->iom_handler, ui32Status);
+	k_sem_give(&data->transfer_sem);
 }
 
 static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
@@ -197,6 +197,7 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		}
 
 		if (ret != 0) {
+			k_sem_give(&data->bus_sem);
 			return ret;
 		}
 	}
@@ -237,8 +238,8 @@ static int i2c_ambiq_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_I2C_AMBIQ_DMA
-	am_hal_iom_interrupt_clear(data->iom_handler, AM_HAL_IOM_INT_CQUPD | AM_HAL_IOM_INT_ERR);
-	am_hal_iom_interrupt_enable(data->iom_handler, AM_HAL_IOM_INT_CQUPD | AM_HAL_IOM_INT_ERR);
+	am_hal_iom_interrupt_clear(data->iom_handler, AM_HAL_IOM_INT_DCMP | AM_HAL_IOM_INT_CMDCMP);
+	am_hal_iom_interrupt_enable(data->iom_handler, AM_HAL_IOM_INT_DCMP | AM_HAL_IOM_INT_CMDCMP);
 	config->irq_config_func();
 #endif
 

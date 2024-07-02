@@ -48,3 +48,4 @@ scripts/ci/pylintrc
 scripts/footprint/*
 scripts/set_assignees.py
 scripts/gitlint/zephyr_commit_rules.py
+scripts/west_commands/runners/canopen_program.py

@@ -19,9 +19,8 @@ Hardware
 
 For more information about the CYW20829 SoC and CYW920829M2EVK-02 board:
 
-- `CYW920829M2EVK-02 Website`_
-- `CYW920829M2EVK-02 BT User Guide`_
-
+- `CYW20829 SoC Website`_
+- `CYW920829M2EVK-02 Board Website`_
 
 Kit Features:
 =============
@@ -86,45 +85,64 @@ To fetch Binary Blobs:
 Build blinking led sample
 *************************
 
-Here is an example for the :zephyr:code-sample:`blinky` application.
+Here is an example for building the :zephyr:code-sample:`blinky` sample application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: cyw920829m2evk_02
-   :goals: build flash
-
-OpenOCD Installation
-====================
-
-To get the OpenOCD package, it is required that you
-
-1. Download and install the `ModusToolbox`_ software.
-2. After the installation, add the directory containing the OpenOCD scripts to your environment's PATH variable.
-
+   :goals: build
 
 Programming and Debugging
 *************************
 
-The CYW920829M2EVK-02 includes an onboard programmer/debugger (KitProg3) to provide debugging, flash programming, and serial communication over USB. Flash and debug commands must be pointed to the Cypress OpenOCD you downloaded above.
+The CYW920829M2EVK-02 includes an onboard programmer/debugger (`KitProg3`_) to provide debugging, flash programming, and serial communication over USB. Flash and debug commands use OpenOCD and require a custom Infineon OpenOCD version, that supports KitProg3, to be installed.
 
-On Windows:
+Infineon OpenOCD Installation
+=============================
 
-.. code-block:: shell
+Both the full `ModusToolbox`_ and the `ModusToolbox Programming Tools`_ packages include Infineon OpenOCD. Installing either of these packages will also install Infineon OpenOCD. If neither package is installed, a minimal installation can be done by downloading the `Infineon OpenOCD`_ release for your system and manually extract the files to a location of your choice.
 
-   west flash --openocd path/to/infineon/openocd/bin/openocd.exe
-   west debug --openocd path/to/infineon/openocd/bin/openocd.exe
+.. note:: Linux requires device access rights to be set up for KitProg3. This is handled automatically by the ModusToolbox and ModusToolbox Programming Tools installations. When doing a minimal installation, this can be done manually by executing the script ``openocd/udev_rules/install_rules.sh``.
 
-On Linux:
+West Commands
+=============
 
-.. code-block:: shell
+The path to the installed Infineon OpenOCD executable must be available to the ``west`` tool commands. There are multiple ways of doing this. The example below uses a permanent CMake argument to set the CMake variable ``OPENOCD``.
 
-   west flash --openocd path/to/infineon/openocd/bin/openocd
-   west debug --openocd path/to/infineon/openocd/bin/openocd
+   .. tabs::
+      .. group-tab:: Windows
+
+         .. code-block:: shell
+
+            # Run west config once to set permanent CMake argument
+            west config build.cmake-args -- -DOPENOCD=path/to/infineon/openocd/bin/openocd.exe
+
+            # Do a pristine build once after setting CMake argument
+            west build -b cyw920829m2evk_02 -p always samples/basic/blinky
+
+            west flash
+            west debug
+
+      .. group-tab:: Linux
+
+         .. code-block:: shell
+
+            # Run west config once to set permanent CMake argument
+            west config build.cmake-args -- -DOPENOCD=path/to/infineon/openocd/bin/openocd
+
+            # Do a pristine build once after setting CMake argument
+            west build -b cyw920829m2evk_02 -p always samples/basic/blinky
+
+            west flash
+            west debug
 
 Once the gdb console starts after executing the west debug command, you may now set breakpoints and perform other standard GDB debugging on the CYW20829 CM33 core.
 
-.. _CYW920829M2EVK-02 Website:
+.. _CYW20829 SoC Website:
     https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-bluetooth-le-bluetooth-multiprotocol/airoc-bluetooth-le/cyw20829/
+
+.. _CYW920829M2EVK-02 Board Website:
+    https://www.infineon.com/cms/en/product/evaluation-boards/cyw920829m2evk-02/
 
 .. _CYW920829M2EVK-02 BT User Guide:
     https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-bluetooth-le-bluetooth-multiprotocol/airoc-bluetooth-le/cyw20829/#!?fileId=8ac78c8c8929aa4d018a16f726c46b26
@@ -132,5 +150,11 @@ Once the gdb console starts after executing the west debug command, you may now 
 .. _ModusToolbox:
     https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolbox
 
+.. _ModusToolbox Programming Tools:
+    https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolboxprogtools
+
 .. _Infineon OpenOCD:
-    https://github.com/infineon/openocd/releases/tag/release-v4.3.0
+    https://github.com/Infineon/openocd/releases/latest
+
+.. _KitProg3:
+    https://github.com/Infineon/KitProg3

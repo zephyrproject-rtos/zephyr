@@ -194,6 +194,9 @@ a.icon-home:visited {
     border-color: var(--code-border-color);
 }
 
+.rst-content table.docutils caption, .rst-content table.field-list caption, .wy-table caption {
+    color: var(--body-color);
+}
 .wy-table-odd td,
 .wy-table-striped tr:nth-child(2n-1) td,
 .rst-content table.docutils:not(.field-list) tr:nth-child(2n-1) td {

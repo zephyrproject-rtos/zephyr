@@ -95,7 +95,7 @@ __weak void nrfs_backend_error_handler(enum nrfs_backend_error error_id, int err
 
 static void ipc_sysctrl_ept_bound(void *priv)
 {
-	LOG_INF("Bound to sysctrl.");
+	LOG_DBG("Bound to sysctrl.");
 	k_event_post(&ipc_connected_event, IPC_INIT_DONE_EVENT);
 	atomic_set(&ipc_cpusys_channel_config.status, CONNECTED);
 }
@@ -150,7 +150,7 @@ static int ipc_channel_init(void)
 		return ret;
 	}
 
-	LOG_INF("ipc_service_open_instance() done.");
+	LOG_DBG("ipc_service_open_instance() done.");
 
 	ret = ipc_service_register_endpoint(ch_cfg->ipc_instance,
 					    &ch_cfg->ipc_ept,
@@ -160,7 +160,7 @@ static int ipc_channel_init(void)
 		return ret;
 	}
 
-	LOG_INF("ipc_service_register_endpoint() done.");
+	LOG_DBG("ipc_service_register_endpoint() done.");
 
 	return ret;
 }
