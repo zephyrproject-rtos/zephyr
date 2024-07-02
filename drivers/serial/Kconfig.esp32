@@ -27,3 +27,19 @@ config SERIAL_ESP32_USB
 	  USB host. The USB stack is built into the chip and accessed
 	  by the firmware through a simplified API similar to a "normal"
 	  UART peripheral.
+
+config UART_ESP32_TX_FIFO_THRESH
+	hex "ESP32 UART TX FIFO Threshold"
+	depends on UART_ESP32
+	default 0x1
+	range 1 127
+	help
+	  Configure the TX FIFO threshold for ESP32 UART driver.
+
+config UART_ESP32_RX_FIFO_THRESH
+	hex "ESP32 UART RX FIFO Threshold"
+	depends on UART_ESP32
+	default 0x16
+	range 1 127
+	help
+	  Configure the RX FIFO threshold for ESP32 UART driver.
