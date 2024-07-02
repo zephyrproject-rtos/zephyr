@@ -138,6 +138,17 @@ int supplicant_filter(const struct device *dev, struct wifi_filter_info *filter)
 int supplicant_channel(const struct device *dev, struct wifi_channel_info *channel);
 
 #ifdef CONFIG_AP
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+/**
+ * @brief Get Wi-Fi AP Status
+ *
+ * @param dev Wi-Fi device
+ * @param params AP status
+ * @return 0 for OK; -1 for ERROR
+ */
+int hapd_state(const struct device *dev, int *state);
+#endif
+
 /**
  * @brief Set Wi-Fi AP configuration
  *
