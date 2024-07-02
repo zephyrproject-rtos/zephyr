@@ -20,6 +20,7 @@ tests:
       - frdm_k22f
       - mimxrt1024_evk
       - mimxrt595_evk/mimxrt595s/cm33
+      - frdm_ke17z
     integration_platforms:
       - frdm_k64f
     extra_configs:

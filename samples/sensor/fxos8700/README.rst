@@ -133,6 +133,17 @@ Sample can be built and executed for the MIMXRT595-EVK as follows:
    :goals: build flash
    :compact:
 
+Building and Running for FRDM-KE17Z
+===================================
+FRDM-KE17Z is equipped with FXOS8700CQ accelerometer and magnetometer.
+Sample can be built and executed for the FRDM-KE17Z as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxos8700
+   :board: frdm_ke17z
+   :goals: build flash
+   :compact:
+
 Sample Output
 =============
 

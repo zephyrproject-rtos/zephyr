@@ -1,0 +1,12 @@
+# FRDM-KE17Z board
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_KE17Z
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
+
+endif # BOARD_FRDM_KE17Z
