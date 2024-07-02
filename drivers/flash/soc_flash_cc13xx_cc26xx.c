@@ -164,6 +164,7 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 	struct flash_priv *priv = dev->data;
 	uint32_t vims_mode;
 	unsigned int key;
+	void *pdata = (void *)data;
 	int rc = 0;
 
 	if (!size) {
@@ -183,17 +184,29 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 	 *
 	 * The pui8DataBuffer pointer can not point to flash.
 	 */
+#if K_HEAP_MEM_POOL_SIZE
+	if ((data >= (void *)FLASH_ADDR) &&
+	    (data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
+		pdata = k_malloc(size);
+		if (!pdata)
+			return -ENOMEM;
+		memcpy(pdata, data, size);
+	}
+#else
 	if ((data >= (void *)FLASH_ADDR) &&
 	    (data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
 		return -EINVAL;
 	}
+#endif
 
 	if (flash_cc13xx_cc26xx_range_protected(offs, size)) {
-		return -EINVAL;
+		rc = -EINVAL;
+		goto free_pdata;
 	}
 
 	if (k_sem_take(&priv->mutex, K_FOREVER)) {
-		return -EACCES;
+		rc = -EACCES;
+		goto free_pdata;
 	}
 
 	vims_mode = flash_cc13xx_cc26xx_cache_disable();
@@ -202,7 +215,7 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 
 	while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY)
 		;
-	rc = FlashProgram((uint8_t *)data, offs, size);
+	rc = FlashProgram((uint8_t *)pdata, offs, size);
 	if (rc != FAPI_STATUS_SUCCESS) {
 		rc = -EIO;
 	}
@@ -212,6 +225,14 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 	flash_cc13xx_cc26xx_cache_restore(vims_mode);
 
 	k_sem_give(&priv->mutex);
+
+free_pdata:
+#if K_HEAP_MEM_POOL_SIZE
+	if ((data >= (void *)FLASH_ADDR) &&
+	    (data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
+		k_free(pdata);
+	}
+#endif
 
 	return rc;
 }
