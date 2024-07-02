@@ -111,7 +111,7 @@ struct modem_cmux_dlci {
 };
 
 struct modem_cmux_frame {
-	uint16_t dlci_address;
+	uint8_t dlci_address;
 	bool cr;
 	bool pf;
 	uint8_t type;
