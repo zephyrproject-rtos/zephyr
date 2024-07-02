@@ -52,13 +52,10 @@ static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 		default:
 			break;
 		}
-		LOG_DBG("mem partition %d start 0x%lx, size %d", mem_idx,
-			ext->mem_parts[mem_idx].start,
-			ext->mem_parts[mem_idx].size);
 	}
 #endif
 
-	LOG_DBG("mem idx %d: start 0x%zx, size %zd", mem_idx, (size_t)start, len);
+	LOG_DBG("segment %d: start 0x%zx, size %zd", mem_idx, (size_t)start, len);
 }
 
 static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
@@ -143,7 +140,7 @@ int llext_copy_strings(struct llext_loader *ldr, struct llext *ext)
 	return ret;
 }
 
-int llext_copy_sections(struct llext_loader *ldr, struct llext *ext)
+int llext_copy_segments(struct llext_loader *ldr, struct llext *ext)
 {
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
 		/* strings have already been copied */
@@ -161,11 +158,11 @@ int llext_copy_sections(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
-void llext_free_sections(struct llext *ext)
+void llext_free_segments(struct llext *ext)
 {
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
 		if (ext->mem_on_heap[i]) {
-			LOG_DBG("freeing memory region %d", i);
+			LOG_DBG("freeing memory for segment %d", i);
 			llext_free(ext->mem[i]);
 			ext->mem[i] = NULL;
 		}

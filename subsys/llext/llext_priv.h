@@ -20,8 +20,8 @@ struct llext_elf_sect_map {
  */
 
 int llext_copy_strings(struct llext_loader *ldr, struct llext *ext);
-int llext_copy_sections(struct llext_loader *ldr, struct llext *ext);
-void llext_free_sections(struct llext *ext);
+int llext_copy_segments(struct llext_loader *ldr, struct llext *ext);
+void llext_free_segments(struct llext *ext);
 
 static inline void *llext_alloc(size_t bytes)
 {

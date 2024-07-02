@@ -28,7 +28,7 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 __weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
 			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias)
 {
-	return -EOPNOTSUPP;
+	return -ENOTSUP;
 }
 
 __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
@@ -239,17 +239,17 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 			continue;
 		}
 
+		LOG_DBG("relocation section %s (%d) acting on section %d has %zd relocations",
+			name, i, shdr->sh_info, (size_t)rel_cnt);
+
 		enum llext_mem mem_idx = ldr->sect_map[shdr->sh_info].mem_idx;
 
 		if (mem_idx == LLEXT_MEM_COUNT) {
-			LOG_ERR("Section %d has no corresponding memory region", shdr->sh_info);
+			LOG_ERR("Section %d has no corresponding memory segment", shdr->sh_info);
 			return -ENOEXEC;
 		}
 
 		sect_base = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
-
-		LOG_DBG("relocation section %s (%d) acting on section %d has %zd relocations",
-			name, i, shdr->sh_info, (size_t)rel_cnt);
 
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
