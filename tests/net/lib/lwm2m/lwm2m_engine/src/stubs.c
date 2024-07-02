@@ -54,7 +54,7 @@ sys_slist_t *lwm2m_obs_obj_path_list(void)
 static sys_slist_t engine_obj_inst_list = SYS_SLIST_STATIC_INIT(&engine_obj_inst_list);
 sys_slist_t *lwm2m_engine_obj_inst_list(void) { return &engine_obj_inst_list; }
 
-struct zvfs_pollfd {
+struct zsock_pollfd {
 	int fd;
 	short events;
 	short revents;
@@ -123,7 +123,7 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 	return -1;
 }
 
-int z_impl_zvfs_poll(struct zvfs_pollfd *fds, int nfds, int poll_timeout)
+int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 {
 	k_sleep(K_MSEC(1));
 	fds->revents = my_events;

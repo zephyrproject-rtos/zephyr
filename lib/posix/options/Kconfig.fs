@@ -15,6 +15,6 @@ if POSIX_FILE_SYSTEM
 config POSIX_FILE_SYSTEM_ALIAS_FSTAT
 	bool
 	help
-	  When selected via Kconfig, Zephyr will provide an alias for fstat() as _fstat().
+	  Select 'y' here and Zephyr will provide an alias for fstat() as _fstat().
 
 endif # POSIX_FILE_SYSTEM

@@ -6,11 +6,8 @@ menu "POSIX device I/O"
 
 config POSIX_DEVICE_IO
 	bool "POSIX device I/O [EXPERIMENTAL]"
+	select FDTABLE
 	select EXPERIMENTAL
-	select REQUIRES_FULL_LIBC
-	select ZVFS
-	select ZVFS_POLL
-	select ZVFS_SELECT
 	help
 	  Select 'y' here and Zephyr will provide an implementation of the POSIX_DEVICE_IO Option
 	  Group such as FD_CLR(), FD_ISSET(), FD_SET(), FD_ZERO(), close(), fdopen(), fileno(), open(),
@@ -27,30 +24,22 @@ if POSIX_DEVICE_IO
 config POSIX_DEVICE_IO_ALIAS_CLOSE
 	bool
 	help
-	  When selected via Kconfig, Zephyr will provide an alias for close() as _close().
+	  Select 'y' here and Zephyr will provide an alias for close() as _close().
 
 config POSIX_DEVICE_IO_ALIAS_OPEN
 	bool
 	help
-	  When selected via Kconfig, Zephyr will provide an alias for open() as _open().
+	  Select 'y' here and Zephyr will provide an alias for open() as _open().
 
 config POSIX_DEVICE_IO_ALIAS_READ
 	bool
 	help
-	  When selected via Kconfig, Zephyr will provide an alias for read() as _read().
+	  Select 'y' here and Zephyr will provide an alias for read() as _read().
 
 config POSIX_DEVICE_IO_ALIAS_WRITE
 	bool
 	help
-	  When selected via Kconfig, Zephyr will provide an alias for write() as _write().
-
-config POSIX_DEVICE_IO_STDIN_STDOUT_STDERR
-	bool
-	help
-	  When selected via Kconfig, Zephyr will provide the stdin, stdout, and stderr variables.
-
-	  Some libc's that implement the POSIX API may already have declared these variables.
-	  However, it should be noted that they are a part of POSIX and not a part of ISO C.
+	  Select 'y' here and Zephyr will provide an alias for write() as _write().
 
 endif # POSIX_DEVICE_IO
 

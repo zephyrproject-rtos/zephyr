@@ -521,7 +521,7 @@ void sys_trace_k_event_init(struct k_event *event);
  */
 struct sockaddr;
 struct msghdr;
-struct zvfs_pollfd;
+struct zsock_pollfd;
 
 void sys_trace_socket_init(int sock, int family, int type, int proto);
 void sys_trace_socket_close_enter(int sock);
@@ -552,8 +552,8 @@ void sys_trace_socket_fcntl_enter(int sock, int cmd, int flags);
 void sys_trace_socket_fcntl_exit(int sock, int ret);
 void sys_trace_socket_ioctl_enter(int sock, int req);
 void sys_trace_socket_ioctl_exit(int sock, int ret);
-void sys_trace_socket_poll_enter(const struct zvfs_pollfd *fds, int nfds, int timeout);
-void sys_trace_socket_poll_exit(const struct zvfs_pollfd *fds, int nfds, int ret);
+void sys_trace_socket_poll_enter(const struct zsock_pollfd *fds, int nfds, int timeout);
+void sys_trace_socket_poll_exit(const struct zsock_pollfd *fds, int nfds, int ret);
 void sys_trace_socket_getsockopt_enter(int sock, int level, int optname);
 void sys_trace_socket_getsockopt_exit(int sock, int level, int optname, void *optval,
 				      size_t optlen, int ret);

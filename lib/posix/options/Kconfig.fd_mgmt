@@ -5,8 +5,6 @@
 menuconfig POSIX_FD_MGMT
 	bool "POSIX file descriptor management [EXPERIMENTAL]"
 	select EXPERIMENTAL
-	select FDTABLE
-	select REQUIRES_FULL_LIBC
 	help
 	  Select 'y' here and Zephyr will provide implementations for the POSIX_FD_MGMT Option Group.
 	  This includes support for dup(), dup2(), fcntl(), fseeko(), ftello(), ftruncate(),
@@ -23,16 +21,16 @@ if POSIX_FD_MGMT
 config POSIX_FD_MGMT_ALIAS_FCNTL
 	bool
 	help
-	  When selected via Kconfig, Zephyr will provide an alias for fcntl() as _fcntl().
+	  Select 'y' here and Zephyr will provide an alias for fcntl() as _fcntl().
 
 config POSIX_FD_MGMT_ALIAS_FTRUNCATE
 	bool
 	help
-	  When selected via Kconfig, Zephyr will provide an alias for ftruncate() as _ftruncate().
+	  Select 'y' here and Zephyr will provide an alias for ftruncate() as _ftruncate().
 
 config POSIX_FD_MGMT_ALIAS_LSEEK
 	bool
 	help
-	  When selected via Kconfig, Zephyr will provide an alias for lseek() as _lseek().
+	  Select 'y' here and Zephyr will provide an alias for lseek() as _lseek().
 
 endif # POSIX_FD_MGMT

@@ -16,7 +16,7 @@ if ZVFS
 
 config ZVFS_EVENTFD
 	bool "ZVFS event file descriptor support"
-	imply ZVFS_POLL
+	select POLL
 	help
 	  Enable support for ZVFS event file descriptors. An eventfd can
 	  be used as an event wait/notify mechanism together with POSIX calls
@@ -32,28 +32,5 @@ config ZVFS_EVENTFD_MAX
 	  The maximum number of supported event file descriptors.
 
 endif # ZVFS_EVENTFD
-
-config ZVFS_POLL
-	bool "ZVFS poll"
-	select POLL
-	help
-	  Enable support for zvfs_poll().
-
-if ZVFS_POLL
-
-config ZVFS_POLL_MAX
-	int "Max number of supported zvfs_poll() entries"
-	default 6 if WIFI_NM_WPA_SUPPLICANT
-	default 4 if SHELL_BACKEND_TELNET
-	default 3
-	help
-	  Maximum number of entries supported for poll() call.
-
-config ZVFS_SELECT
-	bool "ZVFS select"
-	help
-	  Enable support for zvfs_select().
-
-endif # ZVFS_POLL
 
 endif # ZVFS

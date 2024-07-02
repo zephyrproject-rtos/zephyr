@@ -21,6 +21,3 @@ pid_t getpid(void)
 
 	return 42;
 }
-#ifdef CONFIG_POSIX_MULTI_PROCESS_ALIAS_GETPID
-FUNC_ALIAS(getpid, _getpid, pid_t);
-#endif /* CONFIG_POSIX_MULTI_PROCESS_ALIAS_GETPID */
