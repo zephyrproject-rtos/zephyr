@@ -20,3 +20,18 @@ tests:
   drivers.gpio.mr_canhubk3_wkpu:
     platform_allow: mr_canhubk3
     extra_args: "DTC_OVERLAY_FILE=boards/mr_canhubk3_wkpu.overlay"
+
+  drivers.gpio.2pin.nrf54h20dk_nrf54h20_cpuppr:
+    tags:
+      - drivers
+      - gpio
+    depends_on: gpio
+    # Fix exclude when we can exclude just sim run
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuppr
+    sysbuild: true
+    extra_configs:
+      # Disable asserts to fit in limited code memory
+      - CONFIG_ASSERT=n
+    extra_args:
+      - SB_CONFIG_VPR_LAUNCHER=y
