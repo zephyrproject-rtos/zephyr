@@ -15,3 +15,15 @@ properties:
     required: true
     description: |
       Width of the panel driven by the controller, with the units in pixels.
+
+  backlight-gpio:
+    type: phandle
+    required: false
+    description: |
+      External GPIO handle for controlling backlight.
+
+  backlight-pwm:
+    type: phandle
+    required: false
+    description: |
+      External PWM handle for controlling backlight.
