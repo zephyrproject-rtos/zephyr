@@ -1,0 +1,19 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Clock output node. This node describes a clock output, which accepts one
+  specifier. This specifier will be used as a frequency setting for the
+  clock output, provided support for rate setting is enabled in the clock
+  management subsystem.
+
+compatible: "clock-output"
+
+include: [clock-node.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - frequency

@@ -1,0 +1,54 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This file needs to be included by devices that need to specify clock
+  controller states. The maximum number of states currently defined is 5
+  (clock-state-0...clock-state-4) but can be incremented if required.
+  Clock state nodes are used to configure a clock controller, by setting
+  properties on clock nodes declared as children of the clock controller.
+  Clock states may represent a full clock tree, but there is no requirement
+  for them to.
+properties:
+  clock-outputs:
+    type: phandles
+    description: Output clock sources
+
+  clock-state-0:
+    type: phandle-array
+    specifier-space: clock
+    description: |
+      Clock configuration/s for the first state. Content should be a series of
+      references to the clock nodes declared as children of the clock
+      controller. The specifier cells to these clock nodes are specific to the
+      implementation of the system's clock controller
+
+  clock-state-1:
+    type: phandle-array
+    specifier-space: clock
+    description: |
+      Clock configuration/s for the second state. See clock-state-0.
+
+  clock-state-2:
+    type: phandle-array
+    specifier-space: clock
+    description: |
+      Clock configuration/s for the third state. See clock-state-0.
+
+  clock-state-3:
+    type: phandle-array
+    specifier-space: clock
+    description: |
+      Clock configuration/s for the fourth state. See clock-state-0.
+
+  clock-state-4:
+    type: phandle-array
+    specifier-space: clock
+    description: |
+      Clock configuration/s for the fifth state. See clock-state-0.
+
+  clock-state-names:
+    type: string-array
+    description: |
+      Names for the provided states. The number of names needs to match the
+      number of states.

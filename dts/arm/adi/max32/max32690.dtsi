@@ -171,3 +171,5 @@
 		};
 	};
 };
+
+#include "max32690-clocks.dtsi"

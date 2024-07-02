@@ -107,6 +107,17 @@
 
 &flexcomm0 {
 	status = "okay";
+	clock-state-0 = <&fcclksel0 3>;
+	clock-state-names = "default";
+};
+
+&cpu0 {
+	clock-state-0 = <&ahbclkdiv 1 &fro_12m 1 &mainclkselb 0 &mainclksela 0
+			&xtal32m 1 &clk_in_en 1 &pll1clksel 1
+			&pll1_pdec 2 &pll1 288000000 8 144 0 53 31
+			&pll1_directo 0 &pll1_bypass 0
+			&mainclkselb 2>;
+	clock-state-names = "default";
 };
 
 &flexcomm4 {

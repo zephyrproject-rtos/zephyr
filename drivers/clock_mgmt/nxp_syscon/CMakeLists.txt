@@ -1,0 +1,12 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library_sources_ifdef(CONFIG_CLOCK_MGMT_NXP_SYSCON_SOURCE nxp_syscon_source.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_MGMT_NXP_SYSCON_GATE nxp_syscon_gate.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_MGMT_NXP_SYSCON_DIV nxp_syscon_div.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_MGMT_NXP_SYSCON_MUX nxp_syscon_mux.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_MGMT_NXP_SYSCON_FLEXFRG nxp_syscon_flexfrg.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_MGMT_NXP_SYSCON_RTCCLK nxp_syscon_rtcclk.c)
+
+# SOC specific PLL drivers
+zephyr_library_sources_ifdef(CONFIG_CLOCK_MGMT_NXP_LPC55SXX_PLL nxp_lpc55sxx_pll.c)

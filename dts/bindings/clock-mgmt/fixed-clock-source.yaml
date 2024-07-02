@@ -1,0 +1,20 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Fixed clock source node. This node describes a fixed clock source, which
+  is not configurable at runtime. It does not accept any specifiers.
+
+compatible: "fixed-clock-source"
+
+include: [clock-node.yaml]
+
+properties:
+  frequency:
+    type: int
+    required: true
+    description: |
+      frequency this clock source provides, in Hz
+
+  "#clock-cells":
+    const: 0
