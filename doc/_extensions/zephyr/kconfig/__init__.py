@@ -91,7 +91,7 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
         root_args = argparse.Namespace(**{'soc_roots': [Path(ZEPHYR_BASE)]})
         v2_systems = list_hardware.find_v2_systems(root_args)
 
-        soc_folders = {soc.folder for soc in v2_systems.get_socs()}
+        soc_folders = {soc.folder[0] for soc in v2_systems.get_socs()}
         with open(Path(td) / "soc" / "Kconfig.defconfig", "w") as f:
             f.write('')
 
@@ -114,8 +114,9 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
 
         (Path(td) / 'boards').mkdir(exist_ok=True)
         root_args = argparse.Namespace(**{'board_roots': [Path(ZEPHYR_BASE)],
-                                          'soc_roots': [Path(ZEPHYR_BASE)], 'board': None})
-        v2_boards = list_boards.find_v2_boards(root_args)
+                                          'soc_roots': [Path(ZEPHYR_BASE)], 'board': None,
+                                          'board_dir': []})
+        v2_boards = list_boards.find_v2_boards(root_args).values()
 
         with open(Path(td) / "boards" / "Kconfig.boards", "w") as f:
             for board in v2_boards:
@@ -126,7 +127,8 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
                     board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", qualifier).upper()
                     f.write('config  ' + board_str + '\n')
                     f.write('\t bool\n')
-                f.write('source "' + (board.dir / ('Kconfig.' + board.name)).as_posix() + '"\n\n')
+                f.write('source "' +
+                        (board.directories[0] / ('Kconfig.' + board.name)).as_posix() + '"\n\n')
 
         # base environment
         os.environ["ZEPHYR_BASE"] = str(ZEPHYR_BASE)
@@ -140,7 +142,7 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
         os.environ["HWM_SCHEME"] = "v2"
 
         os.environ["BOARD"] = "boards"
-        os.environ["BOARD_DIR"] = str(Path(td) / "boards")
+        os.environ["KCONFIG_BOARD_DIR"] = str(Path(td) / "boards")
 
         # insert external Kconfigs to the environment
         module_paths = dict()
