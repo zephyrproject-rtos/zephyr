@@ -189,8 +189,11 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 		}
 
 	} else {
-		ret = zsock_recv(pev->event.fd, buf, sizeof(buf), 0);
+		ret = zsock_recv(pev->event.fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
 		if (ret < 0) {
+			if (errno == EAGAIN) {
+				return 0;
+			}
 			(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 					       SO_DOMAIN, &family, &optlen);
 			NET_ERR("recv failed on IPv%d socket (%d)",
