@@ -124,6 +124,9 @@ Flashing
 
 The STM32G071B Discovery board includes an ST-LINK/V2-1 embedded debug tool interface.
 
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
 .. code-block:: console
 
    $ west flash
@@ -168,3 +171,6 @@ References
 
 .. _G071RB on www.st.com:
    https://www.st.com/en/microcontrollers/stm32g071rb.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

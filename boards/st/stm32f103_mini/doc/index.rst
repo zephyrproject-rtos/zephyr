@@ -162,3 +162,6 @@ References
 
 .. _STM32F103 data sheet:
    https://www.st.com/resource/en/datasheet/stm32f103rc.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

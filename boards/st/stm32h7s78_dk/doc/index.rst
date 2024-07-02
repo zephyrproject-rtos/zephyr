@@ -248,9 +248,17 @@ Flashing
 ========
 
 STM32H7S78-DK Discovery board includes an ST-LINK/V3E embedded debug tool
-interface. Support is available on STM32CubeProgrammer V2.13.0.
+interface.
 
-Alternatively, this interface will be supported by a next openocd version.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
+Alternatively, openocd can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
 
 Flashing an application to STM32H7S78-DK Discovery
 --------------------------------------------------

@@ -157,8 +157,21 @@ supports both device and host functions through its micro USB connector
 Programming and Debugging
 *************************
 
+Flashing
+========
+
 Nucleo F413ZH board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
+Alternatively, openocd or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 
 .. _Nucleo F413ZH website:
@@ -172,3 +185,6 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 .. _STM32F413/423 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00305666.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

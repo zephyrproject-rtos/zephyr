@@ -204,7 +204,17 @@ Flashing
 ========
 
 STM32H7B3I Discovery kit includes an STLINK-V3E embedded debug tool interface.
-This interface is supported by the openocd version included in the Zephyr SDK.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
+Alternatively, openocd or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing may depend on the SoC option bytes configuration, which can be checked and
 updated using `STM32CubeProgrammer`_.

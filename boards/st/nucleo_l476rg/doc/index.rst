@@ -189,8 +189,18 @@ Flashing
 ========
 
 Nucleo L476RG board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is supported by the openocd version
-included in the Zephyr SDK since v0.9.2.
+interface.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
+Alternatively, openocd or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to Nucleo L476RG
 ----------------------------------------
@@ -241,3 +251,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32L476 reference manual:
    https://www.st.com/resource/en/reference_manual/DM00083560.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
