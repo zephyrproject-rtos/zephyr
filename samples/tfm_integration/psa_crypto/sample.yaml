@@ -21,6 +21,7 @@ tests:
       - stm32l562e_dk/stm32l562xx/ns
       - bl5340_dvk/nrf5340/cpuapp/ns
       - rd_rw612_bga/rw612/ns
+      - frdm_rw612/rw612/ns
     integration_platforms:
       - mps2/an521/cpu0/ns
     harness: console
