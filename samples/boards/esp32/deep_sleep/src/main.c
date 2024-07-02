@@ -6,7 +6,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/poweroff.h>
-#include "esp_sleep.h"
+#include <esp_sleep.h>
+#include <driver/rtc_io.h>
 
 #define WAKEUP_TIME_SEC		(20)
 
@@ -81,6 +82,12 @@ int main(void)
 			ext_wakeup_pin_1, ext_wakeup_pin_2);
 	esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask,
 			ESP_EXT1_WAKEUP_ANY_HIGH);
+
+	/* enable pull-down on ext1 pins to avoid random wake-ups */
+	rtc_gpio_pullup_dis(EXT_WAKEUP_PIN_1);
+	rtc_gpio_pulldown_en(EXT_WAKEUP_PIN_1);
+	rtc_gpio_pullup_dis(EXT_WAKEUP_PIN_2);
+	rtc_gpio_pulldown_en(EXT_WAKEUP_PIN_2);
 #endif /* CONFIG_EXAMPLE_EXT1_WAKEUP */
 #ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
 	if (!gpio_is_ready_dt(&wakeup_button)) {
