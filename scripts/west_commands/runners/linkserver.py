@@ -187,8 +187,10 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         if self.erase:
             self.do_erase()
 
-        # Use .hex or .bin, preferring .hex over .bin
-        if self.supports_hex and self.hex_name is not None and os.path.isfile(self.hex_name):
+        # Use .elf, .hex or .bin, preferring .elf over .hex over .bin
+        if self.elf_name is not None and os.path.isfile(self.elf_name):
+            flash_cmd = (["load", self.elf_name])
+        elif self.supports_hex and self.hex_name is not None and os.path.isfile(self.hex_name):
             flash_cmd = (["load", self.hex_name])
         elif self.bin_name is not None and os.path.isfile(self.bin_name):
             if self.dt_flash:
