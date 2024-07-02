@@ -11,6 +11,7 @@ config TFM_BOARD
 	string
 	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS
 	default "nxp/rdrw61x" if BOARD_RD_RW612_BGA
+	default "nxp/frdmrw612" if BOARD_FRDM_RW612
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
 	default "arm/mps3/an547" if BOARD_MPS3_AN547
 	default "stm/b_u585i_iot02a" if BOARD_B_U585I_IOT02A
