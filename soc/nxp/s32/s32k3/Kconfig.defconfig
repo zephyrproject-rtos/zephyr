@@ -15,7 +15,7 @@ config NUM_IRQS
 config FPU
 	default y
 
-if NET_L2_ETHERNET
+if ETH_DRIVER && NET_L2_ETHERNET
 
 config NET_TCP_CHECKSUM
 	default n
@@ -23,7 +23,7 @@ config NET_TCP_CHECKSUM
 config NET_UDP_CHECKSUM
 	default n
 
-endif # NET_L2_ETHERNET
+endif # ETH_DRIVER && NET_L2_ETHERNET
 
 config CACHE_MANAGEMENT
 	default y
