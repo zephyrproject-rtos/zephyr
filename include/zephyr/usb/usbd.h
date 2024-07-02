@@ -226,6 +226,8 @@ struct usbd_context {
 	const char *name;
 	/** Access mutex */
 	struct k_mutex mutex;
+	/** Remote wakeup semaphore */
+	struct k_sem rwup_sem;
 	/** Pointer to UDC device */
 	const struct device *dev;
 	/** Notification message recipient callback */

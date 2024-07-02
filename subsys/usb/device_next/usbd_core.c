@@ -204,6 +204,8 @@ int usbd_device_init_core(struct usbd_context *const uds_ctx)
 {
 	int ret;
 
+	k_sem_init(&uds_ctx->rwup_sem, 0, 1);
+
 	ret = udc_init(uds_ctx->dev, usbd_event_carrier);
 	if (ret != 0) {
 		LOG_ERR("Failed to init device driver");

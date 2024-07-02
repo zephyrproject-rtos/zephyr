@@ -93,6 +93,9 @@ static inline void usbd_status_suspended(struct usbd_context *const uds_ctx,
 					 const bool value)
 {
 	uds_ctx->status.suspended = value;
+	if (!value) {
+		k_sem_give(&uds_ctx->rwup_sem);
+	}
 }
 
 /**
