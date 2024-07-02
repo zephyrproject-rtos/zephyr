@@ -215,24 +215,30 @@ function can be written as follows:
 Quick start - Integration testing
 *********************************
 
-A simple working base is located at :zephyr_file:`samples/subsys/testsuite/integration`.  Just
-copy the files to ``tests/`` and edit them for your needs. The test will then
-be automatically built and run by the twister script. If you are testing
-the **bar** component of **foo**, you should copy the sample folder to
-``tests/foo/bar``. It can then be tested with:
+A simple working base is located at :zephyr_file:`samples/subsys/testsuite/integration`.
+To make a test application for the **bar** component of **foo**, you should copy the
+sample folder to ``tests/foo/bar`` and edit files there adjusting for your test
+application's purposes.
 
-.. code-block:: console
-
-   ./scripts/twister -s tests/foo/bar/test-identifier
-
-In the example above ``tests/foo/bar`` signifies the path to the test and the
-``test-identifier`` references a test scenario defined in the :file:`testcase.yaml` file.
-
-To run all test scenarios defined in a test application, run:
+To build and execute all applicable test scenarios defined in your test application
+use the :ref:`Twister <twister_script>` tool, for example:
 
 .. code-block:: console
 
     ./scripts/twister -T tests/foo/bar/
+
+To select just one of the test scenarios, run Twister with ``--scenario`` command:
+
+.. code-block:: console
+
+   ./scripts/twister --scenario tests/foo/bar/your.test.scenario.name
+
+In the command line above ``tests/foo/bar`` is the path to your test application and
+``your.test.scenario.name`` references a test scenario defined in :file:`testcase.yaml`
+file, which is like ``sample.testing.ztest`` in the boilerplate test suite sample.
+
+See :ref:`Twister test project diagram <twister_test_project_diagram>` for more details
+on how Twister deals with Ztest application.
 
 The sample contains the following files:
 

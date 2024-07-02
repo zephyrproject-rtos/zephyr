@@ -218,6 +218,15 @@ files in the application's project directory. This test application
 configuration file may contain one or more entries in the tests section each
 identifying a test scenario.
 
+.. _twister_test_project_diagram:
+
+.. figure:: figures/twister_test_project.svg
+   :alt: Twister and a Test applications' project.
+   :figclass: align-center
+
+   Twister and a Test applications' project.
+
+
 Test application configurations are written using the YAML syntax and share the
 same structure as samples.
 
@@ -1157,7 +1166,7 @@ When running ``twister`` with ``--device-testing``, the configured fixture
 in the hardware map file will be matched to test scenarios requesting the same fixtures
 and these tests will be executed on the boards that provide this fixture.
 
-.. figure:: fixtures.svg
+.. figure:: figures/fixtures.svg
    :figclass: align-center
 
 Fixtures can also be provided via twister command option ``--fixture``, this option
