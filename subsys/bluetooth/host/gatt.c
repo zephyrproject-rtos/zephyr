@@ -3606,10 +3606,31 @@ static bool check_subscribe_security_level(struct bt_conn *conn,
 	return true;
 }
 
+static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct gatt_sub *sub,
+						 uint16_t handle, const void *data, uint16_t length)
+{
+	struct bt_gatt_subscribe_params *params, *tmp;
+	int err;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
+		if (handle != params->value_handle) {
+			continue;
+		}
+
+		if (check_subscribe_security_level(conn, params)) {
+			if (params->notify(conn, params, data, length) == BT_GATT_ITER_STOP) {
+				err = bt_gatt_unsubscribe(conn, params);
+				if (err != 0) {
+					LOG_WRN("Failed to unsubscribe (err %d)", err);
+				}
+			}
+		}
+	}
+}
+
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 			  const void *data, uint16_t length)
 {
-	struct bt_gatt_subscribe_params *params, *tmp;
 	struct gatt_sub *sub;
 
 	LOG_DBG("handle 0x%04x length %u", handle, length);
@@ -3619,24 +3640,12 @@ void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
-		if (handle != params->value_handle) {
-			continue;
-		}
-
-		if (check_subscribe_security_level(conn, params)) {
-			if (params->notify(conn, params, data, length) ==
-			    BT_GATT_ITER_STOP) {
-				bt_gatt_unsubscribe(conn, params);
-			}
-		}
-	}
+	call_notify_cb_and_maybe_unsubscribe(conn, sub, handle, data, length);
 }
 
 void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
 			       uint16_t length)
 {
-	struct bt_gatt_subscribe_params *params, *tmp;
 	const struct bt_att_notify_mult *nfy;
 	struct net_buf_simple buf;
 	struct gatt_sub *sub;
@@ -3666,19 +3675,7 @@ void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
 			return;
 		}
 
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp,
-						  node) {
-			if (handle != params->value_handle) {
-				continue;
-			}
-
-			if (check_subscribe_security_level(conn, params)) {
-				if (params->notify(conn, params, nfy->value, len) ==
-					BT_GATT_ITER_STOP) {
-					bt_gatt_unsubscribe(conn, params);
-				}
-			}
-		}
+		call_notify_cb_and_maybe_unsubscribe(conn, sub, handle, nfy->value, len);
 
 		net_buf_simple_pull_mem(&buf, len);
 	}
