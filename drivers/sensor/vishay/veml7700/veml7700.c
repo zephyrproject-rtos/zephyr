@@ -92,14 +92,14 @@ struct veml7700_data {
 	uint32_t int_flags;
 };
 
-static bool is_veml7700_gain_in_range(int32_t gain_selection)
+static bool is_veml7700_gain_in_range(uint32_t gain_selection)
 {
-	return ((gain_selection >= 0U) && (gain_selection < VEML7700_ALS_GAIN_ELEM_COUNT));
+	return (gain_selection < VEML7700_ALS_GAIN_ELEM_COUNT);
 }
 
-static bool is_veml7700_it_in_range(int32_t it_selection)
+static bool is_veml7700_it_in_range(uint32_t it_selection)
 {
-	return ((it_selection >= 0U) && (it_selection < VEML7700_ALS_IT_ELEM_COUNT));
+	return (it_selection < VEML7700_ALS_IT_ELEM_COUNT);
 }
 
 /**
