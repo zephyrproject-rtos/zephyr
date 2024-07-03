@@ -359,8 +359,8 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 		return -EBADMSG;
 	}
 
-	strncpy(res.ssid, ssid, sizeof(res.ssid));
 	res.ssid_length = MIN(sizeof(res.ssid), strlen(ssid));
+	memcpy(res.ssid, ssid, res.ssid_length);
 
 	res.rssi = strtol(rssi, NULL, 10);
 
