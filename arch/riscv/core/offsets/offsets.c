@@ -112,6 +112,10 @@ GEN_OFFSET_STRUCT(arch_esf, a7);
 GEN_OFFSET_STRUCT(arch_esf, mepc);
 GEN_OFFSET_STRUCT(arch_esf, mstatus);
 
+#ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
+GEN_OFFSET_STRUCT(arch_esf, mcause);
+#endif /* CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL */
+
 GEN_OFFSET_STRUCT(arch_esf, s0);
 
 #ifdef CONFIG_USERSPACE
