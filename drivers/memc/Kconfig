@@ -4,8 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MEMC
-	bool "Memory controller drivers [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Memory controller drivers"
 	help
 	  Add support for memory controllers
 
