@@ -71,8 +71,13 @@ static int lps22hh_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	data->sample_press = raw_press;
-	data->sample_temp = raw_temp;
+	/** Prevent overwriting values that weren't fetched */
+	if (chan == SENSOR_CHAN_PRESS || chan == SENSOR_CHAN_ALL) {
+		data->sample_press = raw_press;
+	}
+	if (chan == SENSOR_CHAN_AMBIENT_TEMP || chan == SENSOR_CHAN_ALL) {
+		data->sample_temp = raw_temp;
+	}
 
 	return 0;
 }
