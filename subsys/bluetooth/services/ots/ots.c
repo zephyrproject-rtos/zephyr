@@ -467,21 +467,19 @@ int bt_ots_init(struct bt_ots *ots,
 		return -EINVAL;
 	}
 
-	__ASSERT(ots_init->cb->obj_created,
-		 "Callback for object creation is not set");
-	__ASSERT(ots_init->cb->obj_deleted ||
-		 !BT_OTS_OACP_GET_FEAT_CREATE(ots_init->features.oacp),
-		 "Callback for object deletion is not set and object creation is enabled");
+	__ASSERT(ots_init->cb->obj_created || !BT_OTS_OACP_GET_FEAT_CREATE(ots_init->features.oacp),
+		 "Callback for object creation is not set and object creation is enabled");
+	__ASSERT(ots_init->cb->obj_deleted || !BT_OTS_OACP_GET_FEAT_DELETE(ots_init->features.oacp),
+		 "Callback for object deletion is not set and object deletion is enabled");
 #if defined(CONFIG_BT_OTS_OACP_CHECKSUM_SUPPORT)
-	__ASSERT(ots_init->cb->obj_cal_checksum,
-		 "Callback for object calculate checksum is not set");
+	__ASSERT(ots_init->cb->obj_cal_checksum ||
+			 !BT_OTS_OACP_GET_FEAT_CHECKSUM(ots_init->features.oacp),
+		 "Callback for object calculate checksum is not set and checksum is enabled");
 #endif
-	__ASSERT(ots_init->cb->obj_read ||
-		 !BT_OTS_OACP_GET_FEAT_READ(ots_init->features.oacp),
-		 "Callback for object reading is not set");
-	__ASSERT(ots_init->cb->obj_write ||
-		 !BT_OTS_OACP_GET_FEAT_WRITE(ots_init->features.oacp),
-		 "Callback for object write is not set");
+	__ASSERT(ots_init->cb->obj_read || !BT_OTS_OACP_GET_FEAT_READ(ots_init->features.oacp),
+		 "Callback for object reading is not set and object read is enabled");
+	__ASSERT(ots_init->cb->obj_write || !BT_OTS_OACP_GET_FEAT_WRITE(ots_init->features.oacp),
+		 "Callback for object write is not set and object write is enabled");
 
 	/* Set callback structure. */
 	ots->cb = ots_init->cb;
