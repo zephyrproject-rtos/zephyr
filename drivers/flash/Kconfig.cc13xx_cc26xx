@@ -11,3 +11,14 @@ config SOC_FLASH_CC13XX_CC26XX
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enables TI SimpleLink CC13xx/CC26xx flash controller driver.
+
+config CC13XX_CC26XX_FLASH_TO_FLASH_SUPPORT
+	bool "Support of flash to flash write operation"
+	default n
+	depends on SOC_FLASH_CC13XX_CC26XX
+	help
+	  Writing data in flash from a flash address is forbidden.
+	  This enables a buffer to read data from the flash and then
+	  write data to flash.
+	  This may be required by settings subsystem to write a pair of key and value
+	  if the key name is a const string located in the flash address space.

@@ -6,6 +6,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <string.h>
@@ -21,9 +22,15 @@
 #define FLASH_ERASE_SIZE     DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 #define FLASH_WRITE_SIZE     DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 
+#ifdef CONFIG_CC13XX_CC26XX_FLASH_TO_FLASH_SUPPORT
+#define WRITE_BUFFER_LEN     (128)
+#endif
 
 struct flash_priv {
 	struct k_sem mutex;
+#ifdef CONFIG_CC13XX_CC26XX_FLASH_TO_FLASH_SUPPORT
+	uint8_t write_buffer[WRITE_BUFFER_LEN];
+#endif
 };
 
 static const struct flash_parameters flash_cc13xx_cc26xx_parameters = {
@@ -158,6 +165,63 @@ static int flash_cc13xx_cc26xx_erase(const struct device *dev, off_t offs,
 	return rc;
 }
 
+static int flash_cc13xx_cc26xx_data_address_valid(const void *data)
+{
+	if ((data >= (void *)FLASH_ADDR) &&
+	    (data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
+#ifdef CONFIG_CC13XX_CC26XX_FLASH_TO_FLASH_SUPPORT
+		return 1;
+#else
+		return 0;
+#endif
+	}
+
+	return 1;
+}
+
+
+static int _flash_cc13xx_cc26xx_write(struct flash_priv *priv, const void *data, off_t offs,
+				      size_t size)
+{
+	int rc = 0;
+
+#ifdef CONFIG_CC13XX_CC26XX_FLASH_TO_FLASH_SUPPORT
+	/*
+	 * From TI's HAL 'driverlib/flash.h':
+	 *
+	 * The pui8DataBuffer pointer can not point to flash.
+	 * Use a buffer in this situation.
+	 */
+	if ((data >= (void *)FLASH_ADDR) &&
+		(data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
+		int write_len;
+
+		write_len = WRITE_BUFFER_LEN;
+		while (size > 0) {
+			size_t len = MIN(size, write_len);
+
+			memcpy(priv->write_buffer, data, len);
+			rc = FlashProgram(priv->write_buffer, offs, len);
+			if (rc != FAPI_STATUS_SUCCESS) {
+				rc = -EIO;
+				break;
+			}
+			offs += len;
+			size -= len;
+		}
+
+		return rc;
+	}
+#endif
+
+	rc = FlashProgram((uint8_t *)data, offs, size);
+	if (rc != FAPI_STATUS_SUCCESS) {
+		rc = -EIO;
+	}
+
+	return rc;
+}
+
 static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 				     const void *data, size_t size)
 {
@@ -183,8 +247,7 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 	 *
 	 * The pui8DataBuffer pointer can not point to flash.
 	 */
-	if ((data >= (void *)FLASH_ADDR) &&
-	    (data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
+	if (!flash_cc13xx_cc26xx_data_address_valid(data)) {
 		return -EINVAL;
 	}
 
@@ -202,7 +265,7 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 
 	while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY)
 		;
-	rc = FlashProgram((uint8_t *)data, offs, size);
+	rc = _flash_cc13xx_cc26xx_write(priv, data, offs, size);
 	if (rc != FAPI_STATUS_SUCCESS) {
 		rc = -EIO;
 	}
