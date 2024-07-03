@@ -26,20 +26,9 @@ static const char content_404[] = {
 #endif
 };
 
-static bool settings_ack_flag(unsigned char flags)
+static bool is_header_flag_set(uint8_t flags, uint8_t mask)
 {
-	return (flags & HTTP2_FLAG_SETTINGS_ACK) != 0;
-}
-
-/* Disabled for now to avoid warning, as temporarily not used. */
-static bool end_headers_flag(unsigned char flags)
-{
-	return (flags & HTTP2_FLAG_END_HEADERS) != 0;
-}
-
-static bool end_stream_flag(unsigned char flags)
-{
-	return (flags & HTTP2_FLAG_END_STREAM) != 0;
+	return (flags & mask) != 0;
 }
 
 static void print_http_frames(struct http_client_ctx *client)
@@ -199,7 +188,7 @@ static int send_data_frame(struct http_client_ctx *client, const char *payload,
 	int ret;
 
 	encode_frame_header(frame_header, length, HTTP2_DATA_FRAME,
-			    end_stream_flag(flags) ?
+			    is_header_flag_set(flags, HTTP2_FLAG_END_STREAM) ?
 			    HTTP2_FLAG_END_STREAM : 0,
 			    stream_id);
 
@@ -465,7 +454,8 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 		client->data_len -= copy_len;
 		frame->length -= copy_len;
 
-		if (frame->length == 0 && end_stream_flag(frame->flags)) {
+		if (frame->length == 0 &&
+		    is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 			status = HTTP_SERVER_DATA_FINAL;
 		} else {
 			status = HTTP_SERVER_DATA_MORE;
@@ -493,7 +483,8 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 			/* In case no more data is available, that was the last
 			 * callback call, so we can include END_STREAM flag.
 			 */
-			if (frame->length == 0 && end_stream_flag(frame->flags)) {
+			if (frame->length == 0 &&
+			    is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 				flags = HTTP2_FLAG_END_STREAM;
 			}
 
@@ -511,7 +502,8 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 		copy_len = MIN(data_len, dynamic_detail->data_buffer_len);
 	};
 
-	if (frame->length == 0 && end_stream_flag(frame->flags)) {
+	if (frame->length == 0 &&
+	    is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 		if (!client->headers_sent) {
 			/* The callback did not report any data to send, therefore send
 			 * headers frame now, including END_STREAM flag.
@@ -904,7 +896,7 @@ int handle_http_frame_data(struct http_client_ctx *client)
 		/* Whole frame consumed, expect next one. */
 		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
-		if (end_stream_flag(frame->flags)) {
+		if (is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 			client->current_detail = NULL;
 			release_http_stream_context(client, frame->stream_identifier);
 		}
@@ -1008,7 +1000,7 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		}
 	}
 
-	if (!end_headers_flag(frame->flags)) {
+	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
 		/* More headers to come in the continuation frame. */
 		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
@@ -1044,7 +1036,7 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		}
 	}
 
-	if (end_stream_flag(frame->flags)) {
+	if (is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 		release_http_stream_context(client, frame->stream_identifier);
 	}
 
@@ -1114,7 +1106,7 @@ int handle_http_frame_settings(struct http_client_ctx *client)
 	client->data_len -= bytes_consumed;
 	client->cursor += bytes_consumed;
 
-	if (!settings_ack_flag(frame->flags)) {
+	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_SETTINGS_ACK)) {
 		int ret;
 
 		ret = send_settings_frame(client, true);
