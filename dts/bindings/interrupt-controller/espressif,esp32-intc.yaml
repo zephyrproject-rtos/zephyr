@@ -11,8 +11,9 @@ properties:
     required: true
 
   "#interrupt-cells":
-    const: 2
+    const: 3
 
 interrupt-cells:
   - irq
   - priority
+  - flags

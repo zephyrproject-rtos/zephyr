@@ -50,6 +50,7 @@ enum dma_channel_dir {
 struct irq_config {
 	uint8_t irq_source;
 	uint8_t irq_priority;
+	int irq_flags;
 };
 
 struct dma_esp32_channel {
@@ -454,15 +455,15 @@ static int dma_esp32_configure_irq(const struct device *dev)
 
 	for (uint8_t i = 0; i < config->irq_size; i++) {
 		int ret = esp_intr_alloc(irq_cfg[i].irq_source,
-					esp_intr_level_to_flags(irq_cfg[i].irq_priority) |
-						ESP_INTR_FLAG_IRAM,
+				esp_intr_level_to_flags(irq_cfg[i].irq_priority) |
+				esp_intr_flags_check(irq_cfg[i].irq_flags) | ESP_INTR_FLAG_IRAM,
 #if defined(CONFIG_SOC_SERIES_ESP32S3)
-					(ISR_HANDLER)config->irq_handlers[i / 2],
+				(ISR_HANDLER)config->irq_handlers[i / 2],
 #else
-					(ISR_HANDLER)config->irq_handlers[i],
+				(ISR_HANDLER)config->irq_handlers[i],
 #endif
-					(void *)dev,
-					NULL);
+				(void *)dev,
+				NULL);
 		if (ret != 0) {
 			LOG_ERR("Could not allocate interrupt handler");
 			return ret;
@@ -546,8 +547,10 @@ static void *irq_handlers[] = {
 	};
 
 #define IRQ_NUM(idx)	DT_NUM_IRQS(DT_DRV_INST(idx))
-#define IRQ_ENTRY(n, idx) \
-	{ DT_INST_IRQ_BY_IDX(idx, n, irq), DT_INST_IRQ_BY_IDX(idx, n, priority) },
+#define IRQ_ENTRY(n, idx) {	\
+	DT_INST_IRQ_BY_IDX(idx, n, irq),	\
+	DT_INST_IRQ_BY_IDX(idx, n, priority),	\
+	DT_INST_IRQ_BY_IDX(idx, n, flags)	},
 
 #define DMA_ESP32_INIT(idx)                                                                        \
 	static struct irq_config irq_config_##idx[] = {                                            \

@@ -146,7 +146,8 @@ static int sys_clock_driver_init(void)
 	int ret;
 
 	ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, irq),
-		esp_intr_level_to_flags(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, priority)),
+		esp_intr_level_to_flags(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, priority)) |
+		esp_intr_flags_check(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, flags)),
 		sys_timer_isr,
 		NULL,
 		NULL);

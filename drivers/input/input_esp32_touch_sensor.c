@@ -164,7 +164,9 @@ static esp_err_t esp32_rtc_isr_install(intr_handler_t intr_handler, const void *
 	REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
 
 	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq),
-				DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority),
+				esp_intr_level_to_flags(
+					DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
+				esp_intr_flags_check(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, flags)),
 				intr_handler, (void *)handler_arg, NULL);
 
 	return err;

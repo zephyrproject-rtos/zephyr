@@ -35,8 +35,10 @@ struct esp32_ipm_memory {
 struct esp32_ipm_config {
 	int irq_source_pro_cpu;
 	int irq_priority_pro_cpu;
+	int irq_flags_pro_cpu;
 	int irq_source_app_cpu;
 	int irq_priority_app_cpu;
+	int irq_flags_app_cpu;
 };
 
 struct esp32_ipm_data {
@@ -221,6 +223,7 @@ static int esp32_ipm_init(const struct device *dev)
 	if (data->this_core_id == 0) {
 		ret = esp_intr_alloc(cfg->irq_source_pro_cpu,
 				esp_intr_level_to_flags(cfg->irq_priority_pro_cpu) |
+				esp_intr_flags_check(cfg->irq_flags_pro_cpu) |
 					ESP_INTR_FLAG_IRAM,
 				(intr_handler_t)esp32_ipm_isr,
 				(void *)dev,
@@ -238,6 +241,7 @@ static int esp32_ipm_init(const struct device *dev)
 		 */
 		ret = esp_intr_alloc(cfg->irq_source_app_cpu,
 				esp_intr_level_to_flags(cfg->irq_priority_app_cpu) |
+				esp_intr_flags_check(cfg->irq_flags_app_cpu) |
 					ESP_INTR_FLAG_IRAM,
 				(intr_handler_t)esp32_ipm_isr,
 				(void *)dev,
@@ -281,8 +285,10 @@ static const struct ipm_driver_api esp32_ipm_driver_api = {
 static struct esp32_ipm_config esp32_ipm_device_cfg_##idx = {		\
 	.irq_source_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, irq),			\
 	.irq_priority_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, priority),	\
+	.irq_flags_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, flags),			\
 	.irq_source_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, irq),			\
 	.irq_priority_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, priority),	\
+	.irq_flags_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, flags),			\
 };	\
 	\
 static struct esp32_ipm_data esp32_ipm_device_data_##idx = {	\

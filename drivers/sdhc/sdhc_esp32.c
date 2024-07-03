@@ -66,6 +66,7 @@ struct sdhc_esp32_config {
 
 	int irq_source;
 	int irq_priority;
+	int irq_flags;
 	uint8_t bus_width_cfg;
 
 	struct sdhc_host_props props;
@@ -1342,7 +1343,8 @@ static int sdhc_esp32_init(const struct device *dev)
 
 	/* Attach interrupt handler */
 	ret = esp_intr_alloc(cfg->irq_source,
-				esp_intr_level_to_flags(cfg->irq_priority) | ESP_INTR_FLAG_IRAM,
+				esp_intr_level_to_flags(cfg->irq_priority) |
+				esp_intr_flags_check(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
 				&sdio_esp32_isr, (void *)dev,
 				&data->s_host_ctx.intr_handle);
 
@@ -1411,6 +1413,7 @@ static const struct sdhc_driver_api sdhc_api = {.reset = sdhc_esp32_reset,
 		.sdio_hw = (const sdmmc_dev_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                    \
 		.irq_source = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, irq),                            \
 		.irq_priority = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, priority),                     \
+		.irq_flags = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, flags),                           \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),                                 \
