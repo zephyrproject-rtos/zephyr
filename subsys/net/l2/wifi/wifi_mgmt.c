@@ -849,24 +849,6 @@ static int wifi_btm_query(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY, wifi_btm_query);
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
-static int wifi_dpp(uint32_t mgmt_request, struct net_if *iface,
-			   void *data, size_t len)
-{
-	const struct device *dev = net_if_get_device(iface);
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
-	struct wifi_dpp_params *params = data;
-
-	if (wifi_mgmt_api == NULL || wifi_mgmt_api->dpp_dispatch == NULL) {
-		return -ENOTSUP;
-	}
-
-	return wifi_mgmt_api->dpp_dispatch(dev, params);
-}
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP, wifi_dpp);
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
-
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
 					   struct wifi_raw_scan_result *raw_scan_result)
