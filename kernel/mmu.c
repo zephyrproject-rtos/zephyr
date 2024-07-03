@@ -575,28 +575,34 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	uint8_t *pos;
 	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0U;
 
-	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0U) &&
-		   ((flags & K_MEM_MAP_UNINIT) != 0U)),
-		 "user access to anonymous uninitialized pages is forbidden");
-	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0U,
-		 "unaligned size %zu passed to %s", size, __func__);
-	__ASSERT(size != 0, "zero sized memory mapping");
 	__ASSERT(!is_anon || (is_anon && page_frames_initialized),
 		 "%s called too early", __func__);
 	__ASSERT((flags & K_MEM_CACHE_MASK) == 0U,
 		 "%s does not support explicit cache settings", __func__);
 
-	CHECKIF(size_add_overflow(size, CONFIG_MMU_PAGE_SIZE * 2, &total_size)) {
+	if (((flags & K_MEM_PERM_USER) != 0U) &&
+	    ((flags & K_MEM_MAP_UNINIT) != 0U)) {
+		LOG_ERR("user access to anonymous uninitialized pages is forbidden");
+		return NULL;
+	}
+	if ((size % CONFIG_MMU_PAGE_SIZE) != 0U) {
+		LOG_ERR("unaligned size %zu passed to %s", size, __func__);
+		return NULL;
+	}
+	if (size == 0) {
+		LOG_ERR("zero sized memory mapping");
+		return NULL;
+	}
+
+	/* Need extra for the guard pages (before and after) which we
+	 * won't map.
+	 */
+	if (size_add_overflow(size, CONFIG_MMU_PAGE_SIZE * 2, &total_size)) {
 		LOG_ERR("too large size %zu passed to %s", size, __func__);
 		return NULL;
 	}
 
 	key = k_spin_lock(&z_mm_lock);
-
-	/* Need extra for the guard pages (before and after) which we
-	 * won't map.
-	 */
-	total_size = size + (CONFIG_MMU_PAGE_SIZE * 2);
 
 	dst = virt_region_alloc(total_size, CONFIG_MMU_PAGE_SIZE);
 	if (dst == NULL) {
