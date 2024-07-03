@@ -164,7 +164,7 @@ int lis2dux12_trigger_set(const struct device *dev, const struct sensor_trigger 
 	const struct lis2dux12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lis2dux12_xl_data_t xldata;
-	lis2dux12_md_t mode;
+	lis2dux12_md_t mode = {.fs = cfg->range};
 	int ret;
 
 	if (!cfg->trig_enabled) {
