@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2024 NXP.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,4 +131,9 @@ uint32_t otPlatAlarmMicroGetNow(void)
 uint16_t otPlatTimeGetXtalAccuracy(void)
 {
 	return otPlatRadioGetCslAccuracy(NULL);
+}
+
+uint64_t otPlatTimeGet(void)
+{
+	return  (uint64_t)(k_uptime_get() * 1000);
 }
