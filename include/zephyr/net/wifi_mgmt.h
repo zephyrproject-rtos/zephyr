@@ -103,8 +103,6 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_BTM_QUERY,
 	/** DPP actions */
 	NET_REQUEST_WIFI_CMD_DPP,
-	/** WPS pbc */
-	NET_REQUEST_WIFI_CMD_WPS_PBC,
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -237,11 +235,6 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTM_QUERY)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
-
-#define NET_REQUEST_WIFI_WPS_PBC				\
-        (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_WPS_PBC)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_PBC);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 #define NET_REQUEST_WIFI_DPP			\
@@ -1223,13 +1216,6 @@ struct wifi_mgmt_ops {
 	 */
 	int (*dpp_dispatch)(const struct device *dev, struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
-	/** Start WPS pbc
-	 *
-	 * @param dev Pointer to the device structure for the driver instance
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*wps_pbc)(const struct device *dev);
 };
 
 /** Wi-Fi management offload API */

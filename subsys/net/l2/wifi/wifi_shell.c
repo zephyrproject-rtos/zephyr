@@ -1786,20 +1786,6 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_first_wifi();
-
-	context.sh = sh;
-
-	if (net_mgmt(NET_REQUEST_WIFI_WPS_PBC, iface, NULL, 0)) {
-		PR_WARNING("Start wps pbc connection failed\n");
-		return -ENOEXEC;
-	}
-
-	return 0;
-}
-
 static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
@@ -3012,9 +2998,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	SHELL_CMD(dpp, &wifi_cmd_dpp, "DPP actions\n", NULL),
 #endif
-	SHELL_CMD_ARG(wps_pbc, NULL,
-		     "Start wps pbc connection.\n",
-		     cmd_wifi_wps_pbc, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 

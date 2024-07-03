@@ -209,14 +209,6 @@ int supplicant_channel(const struct device *dev, struct wifi_channel_info *chann
  */
 int supplicant_btm_query(const struct device *dev, uint8_t reason);
 
-/** Start wps pbc connection
- *
- * @param dev Pointer to the device structure for the driver instance.
- *
- * @return 0 if ok, < 0 if error
- */
-int supplicant_wps_pbc(const struct device *dev);
-
 /** Flush PMKSA cache entries
  *
  * @param dev Pointer to the device structure for the driver instance.
