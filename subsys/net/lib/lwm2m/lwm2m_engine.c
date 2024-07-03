@@ -96,7 +96,7 @@ static sys_slist_t engine_service_list;
 static K_KERNEL_STACK_DEFINE(engine_thread_stack, CONFIG_LWM2M_ENGINE_STACK_SIZE);
 static struct k_thread engine_thread_data;
 
-#define MAX_POLL_FD CONFIG_NET_SOCKETS_POLL_MAX
+#define MAX_POLL_FD CONFIG_ZVFS_POLL_MAX
 
 /* Resources */
 static struct zsock_pollfd sock_fds[MAX_POLL_FD];
