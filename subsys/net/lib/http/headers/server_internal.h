@@ -26,6 +26,7 @@ int handle_http_frame_window_update(struct http_client_ctx *client);
 int handle_http_frame_header(struct http_client_ctx *client);
 int handle_http_frame_headers(struct http_client_ctx *client);
 int handle_http_frame_data(struct http_client_ctx *client);
+int handle_http_frame_padding(struct http_client_ctx *client);
 int handle_http1_request(struct http_client_ctx *client);
 int handle_http1_to_http2_upgrade(struct http_client_ctx *client);
 int handle_http1_to_websocket_upgrade(struct http_client_ctx *client);

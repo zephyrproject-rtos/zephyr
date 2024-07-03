@@ -253,6 +253,7 @@ enum http_server_state {
 	HTTP_SERVER_FRAME_PING_STATE,
 	HTTP_SERVER_FRAME_RST_STREAM_STATE,
 	HTTP_SERVER_FRAME_GOAWAY_STATE,
+	HTTP_SERVER_FRAME_PADDING_STATE,
 	HTTP_SERVER_DONE_STATE,
 };
 
@@ -283,6 +284,7 @@ struct http2_frame {
 	uint32_t stream_identifier; /**< Stream ID the frame belongs to. */
 	uint8_t type; /**< Frame type. */
 	uint8_t flags; /**< Frame flags. */
+	uint8_t padding_len; /**< Frame padding length. */
 };
 
 /**
