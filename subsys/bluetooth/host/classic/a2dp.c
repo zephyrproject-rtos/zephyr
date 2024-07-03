@@ -252,13 +252,11 @@ static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 			stream->remote_ep = NULL;
 			stream->codec_config = *cfg.codec_config;
 			ep->stream = stream;
-		}
-	}
 
-	ops = stream->ops;
-	if (*errcode == 0) {
-		if ((ops != NULL) && (stream->ops->configured != NULL)) {
-			stream->ops->configured(stream);
+			ops = stream->ops;
+			if ((ops != NULL) && (ops->configured != NULL)) {
+				ops->configured(stream);
+			}
 		}
 	}
 
