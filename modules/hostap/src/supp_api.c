@@ -24,9 +24,6 @@
 extern struct k_sem wpa_supplicant_ready_sem;
 extern struct wpa_global *global;
 
-/* save the last wifi connection parameters */
-static struct wifi_connect_req_params last_wifi_conn_params;
-
 enum requested_ops {
 	CONNECT = 0,
 	DISCONNECT
@@ -522,7 +519,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		goto out;
 	}
 
-	memcpy((void *)&last_wifi_conn_params, params, sizeof(struct wifi_connect_req_params));
 	return 0;
 
 rem_net:
@@ -957,36 +953,6 @@ out:
     k_mutex_unlock(&wpa_supplicant_mutex);
 
     return ret;
-}
-
-int supplicant_pmksa_flush(const struct device *dev)
-{
-	struct wpa_supplicant *wpa_s;
-	int ret = 0;
-
-	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-
-	wpa_s = get_wpa_s_handle(dev);
-	if (!wpa_s) {
-		ret = -1;
-		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
-		goto out;
-	}
-
-	if (!wpa_cli_cmd_v("pmksa_flush")) {
-		ret = -1;
-		wpa_printf(MSG_ERROR, "pmksa_flush failed");
-		goto out;
-	}
-
-out:
-	k_mutex_unlock(&wpa_supplicant_mutex);
-	return ret;
-}
-
-struct wifi_connect_req_params *supplicant_get_wifi_conn_params(void)
-{
-	return &last_wifi_conn_params;
 }
 
 #ifdef CONFIG_AP
