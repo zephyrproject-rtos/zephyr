@@ -136,14 +136,6 @@ struct pm_state_info {
 	 *			exit-latency-us = <200>;
 	 *			zephyr,pm-device-disabled;
 	 *		};
-	 *		state2: state2 {
-	 *			compatible = "zephyr,power-state";
-	 *			power-state-name = "suspend-to-idle";
-	 *			substate-id = <3>;
-	 *			min-residency-us = <50000>;
-	 *			exit-latency-us = <500>;
-	 *			zephyr,pm-turn-on-off-action;
-	 *		};
 	 *	};
 	 * @endcode
 	 */
@@ -157,16 +149,6 @@ struct pm_state_info {
 	 * properly resume them when leaving it.
 	 */
 	bool pm_device_disabled;
-
-	/**
-	 * Whether or not this state triggers PM_DEVICE_ACTION_TURN_OFF
-	 * and PM_DEVICE_ACTION_TURN_ON actions to device management.
-	 *
-	 * When this property is false the power management subsystem
-	 * will only suspend and resume devices when entering and exiting
-	 * this state.
-	 */
-	bool pm_turn_on_off_action;
 
 	/**
 	 * Minimum residency duration in microseconds. It is the minimum
@@ -256,7 +238,6 @@ struct pm_state_constraint {
 		.min_residency_us = DT_PROP_OR(node_id, min_residency_us, 0),  \
 		.exit_latency_us = DT_PROP_OR(node_id, exit_latency_us, 0),    \
 		.pm_device_disabled = DT_PROP(node_id, zephyr_pm_device_disabled),    \
-		.pm_turn_on_off_action = DT_PROP(node_id, zephyr_pm_turn_on_off_action), \
 	}
 
 /**
@@ -309,14 +290,6 @@ struct pm_state_constraint {
  *				min-residency-us = <50000>;
  *				exit-latency-us = <500>;
  *				zephyr,pm-device-disabled;
- *			};
- *
- *			state2: state2 {
- *				compatible = "zephyr,power-state";
- *				power-state-name = "soft-off";
- *				min-residency-us = <80000>;
- *				exit-latency-us = <800>;
- *				zephyr,pm-turn-on-off-action;
  *			};
  *		};
  *	};
