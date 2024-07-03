@@ -185,7 +185,7 @@ SECTIONS
   #pragma push_macro("GROUP_ROM_LINK_IN")
   #undef GROUP_ROM_LINK_IN
   #define GROUP_ROM_LINK_IN(vregion, lregion) > RAMABLE_REGION AT > lregion
-  #include <zephyr/linker/common-rom/common-rom-cpp.ld>
+  #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
   #include <zephyr/linker/common-rom/common-rom-net.ld>

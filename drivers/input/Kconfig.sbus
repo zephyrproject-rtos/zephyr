@@ -29,7 +29,7 @@ config INPUT_SBUS_REPORT_FILTER
 	default 1
 	help
 	  SBUS tends to be a bit noisy you can increase the threshold to
-	  to lower the amounts of input events. Set to 0 for no filtering
+	  lower the amounts of input events. Set to 0 for no filtering
 
 config INPUT_SBUS_SEND_SYNC
 	bool "Send Sync to input subsys on each SBUS frame"

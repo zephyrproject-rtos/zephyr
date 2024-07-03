@@ -428,7 +428,7 @@ static int bt_ipm_set_addr(void)
 {
 	bt_addr_t *uid_addr;
 	struct aci_set_ble_addr *param;
-	struct net_buf *buf, *rsp;
+	struct net_buf *buf;
 	int err;
 
 	uid_addr = bt_get_ble_addr();
@@ -452,18 +452,18 @@ static int bt_ipm_set_addr(void)
 	param->value[4] = uid_addr->val[4];
 	param->value[5] = uid_addr->val[5];
 
-	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, &rsp);
+	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, NULL);
 	if (err) {
 		return err;
 	}
-	net_buf_unref(rsp);
+
 	return 0;
 }
 
 static int bt_ipm_ble_init(void)
 {
 	struct aci_set_tx_power *param;
-	struct net_buf *buf, *rsp;
+	struct net_buf *buf;
 	int err;
 
 	err = bt_ipm_set_addr();
@@ -480,11 +480,10 @@ static int bt_ipm_ble_init(void)
 	param->value[0] = 0x18;
 	param->value[1] = 0x01;
 
-	err = bt_hci_cmd_send_sync(ACI_WRITE_SET_TX_POWER_LEVEL, buf, &rsp);
+	err = bt_hci_cmd_send_sync(ACI_WRITE_SET_TX_POWER_LEVEL, buf, NULL);
 	if (err) {
 		return err;
 	}
-	net_buf_unref(rsp);
 
 	return 0;
 }
@@ -585,14 +584,12 @@ static int bt_ipm_close(const struct device *dev)
 {
 	struct hci_data *hci = dev->data;
 	int err;
-	struct net_buf *rsp;
 
-	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, &rsp);
+	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, NULL);
 	if (err) {
 		LOG_ERR("IPM Channel Close Issue");
 		return err;
 	}
-	net_buf_unref(rsp);
 
 	/* Wait till C2DS set */
 	while (LL_PWR_IsActiveFlag_C2DS() == 0) {

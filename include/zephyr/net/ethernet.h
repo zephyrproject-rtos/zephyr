@@ -92,6 +92,9 @@ struct net_eth_addr {
 #if !defined(ETH_P_ECAT)
 #define  ETH_P_ECAT	NET_ETH_PTYPE_ECAT
 #endif
+#if !defined(ETH_P_EAPOL)
+#define ETH_P_EAPOL	NET_ETH_PTYPE_EAPOL
+#endif
 #if !defined(ETH_P_IEEE802154)
 #define  ETH_P_IEEE802154 NET_ETH_PTYPE_IEEE802154
 #endif

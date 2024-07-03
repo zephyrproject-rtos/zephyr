@@ -5,5 +5,5 @@
  */
 
 &tempmon {
-    status = "okay";
+	status = "okay";
 };

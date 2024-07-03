@@ -270,7 +270,7 @@ struct bt_csip_set_coordinator_set_info {
 	uint8_t set_size;
 
 	/**
-	 * @brief The rank of the set on on the remote device
+	 * @brief The rank of the set on the remote device
 	 *
 	 * Will be 0 if not exposed by the server.
 	 */

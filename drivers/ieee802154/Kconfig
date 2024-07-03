@@ -80,12 +80,6 @@ source "drivers/ieee802154/Kconfig.dw1000"
 
 source "drivers/ieee802154/Kconfig.uart_pipe"
 
-config IEEE802154_2015
-	bool "Support for IEEE 802.15.4-2015 frames (DEPRECATED)"
-	select DEPRECATED
-	help
-	  Enable radio driver support for IEEE 802.15.4-2015 frames, including security handling of frames and ACKs.
-
 config IEEE802154_CSL_ENDPOINT
 	bool "Support for CSL Endpoint"
 	help

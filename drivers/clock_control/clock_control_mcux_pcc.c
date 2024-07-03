@@ -143,7 +143,7 @@ static uint32_t clocks[] = {};
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
-			    &mcux_pcc_init,				\
+			    mcux_pcc_init,				\
 			    NULL,					\
 			    NULL, &mcux_pcc##inst##_config,		\
 			    PRE_KERNEL_1,				\

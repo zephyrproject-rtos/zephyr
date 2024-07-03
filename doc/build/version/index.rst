@@ -34,20 +34,21 @@ a newline. The basic ``VERSION`` file has the following structure:
    VERSION_TWEAK =
    EXTRAVERSION =
 
-Each field and the values it supports is described below (note that there may be further
-restrictions depending upon what the version is used for, e.g. bootloaders might only support some
-of these fields or might place limits on the maximum values of fields):
+Each field and the values it supports is described below. Zephyr limits the value of each numeric
+field to a single byte (note that there may be further restrictions depending upon what the version
+is used for, e.g. bootloaders might only support some of these fields or might place limits on the
+maximum values of fields):
 
 +---------------+----------------------------------------+
 | Field         | Data type                              |
 +---------------+----------------------------------------+
-| VERSION_MAJOR | Numerical                              |
+| VERSION_MAJOR | Numerical (0-255)                      |
 +---------------+----------------------------------------+
-| VERSION_MINOR | Numerical                              |
+| VERSION_MINOR | Numerical (0-255)                      |
 +---------------+----------------------------------------+
-| PATCHLEVEL    | Numerical                              |
+| PATCHLEVEL    | Numerical (0-255)                      |
 +---------------+----------------------------------------+
-| VERSION_TWEAK | Numerical                              |
+| VERSION_TWEAK | Numerical (0-255)                      |
 +---------------+----------------------------------------+
 | EXTRAVERSION  | Alphanumerical (Lowercase a-z and 0-9) |
 +---------------+----------------------------------------+
@@ -91,7 +92,7 @@ following defines are available:
 +-----------------------------+-------------------+------------------------------------------------------+-------------------------+
 | APP_PATCHLEVEL              | Numerical         | ``PATCHLEVEL``                                       | 3                       |
 +-----------------------------+-------------------+------------------------------------------------------+-------------------------+
-| APP_VERSION_TWEAK           | Numerical         | ``VERSION_TWEAK``                                    | 4                       |
+| APP_TWEAK                   | Numerical         | ``VERSION_TWEAK``                                    | 4                       |
 +-----------------------------+-------------------+------------------------------------------------------+-------------------------+
 | APP_VERSION_STRING          | String (quoted)   | ``VERSION_MAJOR``, |br|                              | "1.2.3-unstable"        |
 |                             |                   | ``VERSION_MINOR``, |br|                              |                         |

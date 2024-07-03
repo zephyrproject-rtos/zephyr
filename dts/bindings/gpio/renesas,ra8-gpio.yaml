@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA8 GPIO
+
+compatible: "renesas,ra8-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port:
+    type: int
+    required: true
+
+  vbatts_pins:
+    type: array
+    description: Array of vbatt pin on port
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

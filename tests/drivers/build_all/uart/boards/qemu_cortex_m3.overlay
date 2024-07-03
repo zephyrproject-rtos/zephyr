@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- / {
+/ {
 	uart3: uart@88888888 {
 		compatible = "cdns,uart";
 		reg = <0x88888888 0x400>;

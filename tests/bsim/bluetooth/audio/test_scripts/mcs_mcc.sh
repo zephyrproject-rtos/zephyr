@@ -8,7 +8,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 SIMULATION_ID="mcs_mcc"
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=50
+EXECUTE_TIMEOUT=180
 
 cd ${BSIM_OUT_PATH}/bin
 

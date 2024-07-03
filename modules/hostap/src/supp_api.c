@@ -515,6 +515,10 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		goto out;
 	}
 
+	if (!wpa_cli_cmd_v("select_network %d", resp.network_id)) {
+		goto out;
+	}
+
 	return 0;
 
 rem_net:

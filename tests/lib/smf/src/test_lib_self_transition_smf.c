@@ -22,44 +22,6 @@
 
 #define SMF_RUN 5
 
-/* Initial Setup: Testing initial transitions */
-#define ROOT_ENTRY_BIT      BIT(0)
-#define PARENT_AB_ENTRY_BIT BIT(1)
-#define STATE_A_ENTRY_BIT   BIT(2)
-
-/* Run 0: normal state transition */
-#define STATE_A_RUN_BIT   BIT(3)
-#define STATE_A_EXIT_BIT  BIT(4)
-#define STATE_B_ENTRY_BIT BIT(5)
-
-/* Run 1: Test smf_set_handled() */
-#define STATE_B_1ST_RUN_BIT BIT(6)
-
-/* Run 2: Normal state transition via parent */
-#define STATE_B_2ND_RUN_BIT    BIT(7)
-#define PARENT_AB_RUN_BIT      BIT(8)
-#define STATE_B_EXIT_BIT       BIT(9)
-#define PARENT_AB_EXIT_BIT     BIT(10)
-#define PARENT_C_1ST_ENTRY_BIT BIT(11)
-#define STATE_C_1ST_ENTRY_BIT  BIT(12)
-
-/* Run 3: PARENT_C executes transition to self  */
-#define STATE_C_1ST_RUN_BIT    BIT(13)
-#define PARENT_C_RUN_BIT       BIT(14)
-#define STATE_C_1ST_EXIT_BIT   BIT(15)
-#define PARENT_C_1ST_EXIT_BIT  BIT(16)
-#define PARENT_C_2ND_ENTRY_BIT BIT(17)
-#define STATE_C_2ND_ENTRY_BIT  BIT(18)
-
-/* Run 4: Test transition from parent state */
-#define STATE_C_2ND_RUN_BIT   BIT(19)
-#define STATE_C_2ND_EXIT_BIT  BIT(20)
-#define PARENT_C_2ND_EXIT_BIT BIT(21)
-
-/* Unused functions: Error checks if set */
-#define ROOT_RUN_BIT  BIT(22)
-#define ROOT_EXIT_BIT BIT(23)
-
 /* Number of state transitions for each test: */
 #define TEST_VALUE_NUM              22
 #define TEST_PARENT_ENTRY_VALUE_NUM 1
@@ -69,41 +31,84 @@
 #define TEST_RUN_VALUE_NUM          6
 #define TEST_EXIT_VALUE_NUM         15
 
+enum test_steps {
+	/* Initial Setup: Testing initial transitions */
+	ROOT_ENTRY = 0,
+	PARENT_AB_ENTRY,
+	STATE_A_ENTRY,
+
+	/* Run 0: normal state transition */
+	STATE_A_RUN,
+	STATE_A_EXIT,
+	STATE_B_ENTRY,
+
+	/* Run 1: Test smf_set_handled() */
+	STATE_B_1ST_RUN,
+
+	/* Run 2: Normal state transition via parent */
+	STATE_B_2ND_RUN,
+	PARENT_AB_RUN,
+	STATE_B_EXIT,
+	PARENT_AB_EXIT,
+	PARENT_C_1ST_ENTRY,
+	STATE_C_1ST_ENTRY,
+
+	/* Run 3: PARENT_C executes transition to self  */
+	STATE_C_1ST_RUN,
+	PARENT_C_RUN,
+	STATE_C_1ST_EXIT,
+	PARENT_C_1ST_EXIT,
+	PARENT_C_2ND_ENTRY,
+	STATE_C_2ND_ENTRY,
+
+	/* Run 4: Test transition from parent state */
+	STATE_C_2ND_RUN,
+	STATE_C_2ND_EXIT,
+	PARENT_C_2ND_EXIT,
+
+	/* End of run */
+	FINAL_VALUE,
+
+	/* Unused functions: Error checks if set */
+	ROOT_RUN,
+	ROOT_EXIT,
+};
+
 /*
  * Note: Test values are taken before the appropriate test bit for that state is set i.e. if
  * ROOT_ENTRY_BIT is BIT(0), test_value for root_entry() will be BIT_MASK(0) not BIT_MASK(1)
  */
 static uint32_t test_value[] = {
 	/* Initial Setup */
-	BIT_MASK(0), /* ROOT_ENTRY_BIT */
-	BIT_MASK(1), /* PARENT_AB_ENTRY_BIT */
-	BIT_MASK(2), /* STATE_A_ENTRY_BIT */
+	BIT_MASK(ROOT_ENTRY),
+	BIT_MASK(PARENT_AB_ENTRY),
+	BIT_MASK(STATE_A_ENTRY),
 	/* Run 0 */
-	BIT_MASK(3), /* STATE_A_RUN_BIT */
-	BIT_MASK(4), /* STATE_A_EXIT_BIT */
-	BIT_MASK(5), /* STATE_B_ENTRY_BIT */
+	BIT_MASK(STATE_A_RUN),
+	BIT_MASK(STATE_A_EXIT),
+	BIT_MASK(STATE_B_ENTRY),
 	/* Run 1 */
-	BIT_MASK(6), /* STATE_B_1ST_RUN_BIT */
+	BIT_MASK(STATE_B_1ST_RUN),
 	/* Run 2 */
-	BIT_MASK(7), /* STATE_B_2ND_RUN_BIT */
-	BIT_MASK(8), /* PARENT_AB_RUN_BIT */
-	BIT_MASK(9), /* STATE_B_EXIT_BIT */
-	BIT_MASK(10), /* PARENT_AB_EXIT_BIT */
-	BIT_MASK(11), /* PARENT_C_1ST_ENTRY_BIT */
-	BIT_MASK(12), /* STATE_C_1ST_ENTRY_BIT */
+	BIT_MASK(STATE_B_2ND_RUN),
+	BIT_MASK(PARENT_AB_RUN),
+	BIT_MASK(STATE_B_EXIT),
+	BIT_MASK(PARENT_AB_EXIT),
+	BIT_MASK(PARENT_C_1ST_ENTRY),
+	BIT_MASK(STATE_C_1ST_ENTRY),
 	/* Run 3 */
-	BIT_MASK(13), /* STATE_C_1ST_RUN_BIT */
-	BIT_MASK(14), /* PARENT_C_RUN_BIT */
-	BIT_MASK(15), /* STATE_C_1ST_EXIT_BIT */
-	BIT_MASK(16), /* PARENT_C_1ST_EXIT_BIT */
-	BIT_MASK(17), /* PARENT_C_2ND_ENTRY_BIT */
-	BIT_MASK(18), /* STATE_C_2ND_ENTRY_BIT */
+	BIT_MASK(STATE_C_1ST_RUN),
+	BIT_MASK(PARENT_C_RUN),
+	BIT_MASK(STATE_C_1ST_EXIT),
+	BIT_MASK(PARENT_C_1ST_EXIT),
+	BIT_MASK(PARENT_C_2ND_ENTRY),
+	BIT_MASK(STATE_C_2ND_ENTRY),
 	/* Run 4 */
-	BIT_MASK(19), /* STATE_C_2ND_RUN_BIT */
-	BIT_MASK(20), /* STATE_C_2ND_EXIT_BIT */
-	BIT_MASK(21), /* PARENT_C_2ND_EXIT_BIT */
+	BIT_MASK(STATE_C_2ND_RUN),
+	BIT_MASK(STATE_C_2ND_EXIT),
+	BIT_MASK(PARENT_C_2ND_EXIT),
 	/* Post-run Check */
-	BIT_MASK(22), /* FINAL_VALUE */
+	BIT_MASK(FINAL_VALUE),
 };
 
 /* Forward declaration of test_states */
@@ -117,7 +122,7 @@ enum test_state {
 	STATE_A,
 	STATE_B,
 	STATE_C,
-	STATE_D
+	STATE_D,
 };
 
 enum terminate_action {
@@ -157,7 +162,7 @@ static void root_entry(void *obj)
 
 	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Root entry failed");
 
-	o->transition_bits |= ROOT_ENTRY_BIT;
+	o->transition_bits |= BIT(ROOT_ENTRY);
 }
 
 static void root_run(void *obj)
@@ -168,7 +173,7 @@ static void root_run(void *obj)
 
 	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Root run failed");
 
-	o->transition_bits |= ROOT_RUN_BIT;
+	o->transition_bits |= BIT(ROOT_RUN);
 
 	/* Return to parent run state */
 }
@@ -180,7 +185,7 @@ static void root_exit(void *obj)
 	o->tv_idx++;
 
 	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Root exit failed");
-	o->transition_bits |= ROOT_EXIT_BIT;
+	o->transition_bits |= BIT(ROOT_EXIT);
 }
 
 static void parent_ab_entry(void *obj)
@@ -196,7 +201,7 @@ static void parent_ab_entry(void *obj)
 		return;
 	}
 
-	o->transition_bits |= PARENT_AB_ENTRY_BIT;
+	o->transition_bits |= BIT(PARENT_AB_ENTRY);
 }
 
 static void parent_ab_run(void *obj)
@@ -212,8 +217,14 @@ static void parent_ab_run(void *obj)
 		return;
 	}
 
-	o->transition_bits |= PARENT_AB_RUN_BIT;
+	o->transition_bits |= BIT(PARENT_AB_RUN);
 
+	/*
+	 * You should not call smf_set_handled() in the same code path as smf_set_state().
+	 * There was a bug that did not reset the handled bit if both were called,
+	 * so check it's still fixed:
+	 */
+	smf_set_handled(SMF_CTX(obj));
 	smf_set_state(SMF_CTX(obj), &test_states[STATE_C]);
 }
 
@@ -230,7 +241,7 @@ static void parent_ab_exit(void *obj)
 		return;
 	}
 
-	o->transition_bits |= PARENT_AB_EXIT_BIT;
+	o->transition_bits |= BIT(PARENT_AB_EXIT);
 }
 
 static void parent_c_entry(void *obj)
@@ -242,9 +253,9 @@ static void parent_c_entry(void *obj)
 	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent C entry failed");
 	if (o->first_time & PARENT_C_ENTRY_FIRST_TIME) {
 		o->first_time &= ~PARENT_C_ENTRY_FIRST_TIME;
-		o->transition_bits |= PARENT_C_1ST_ENTRY_BIT;
+		o->transition_bits |= BIT(PARENT_C_1ST_ENTRY);
 	} else {
-		o->transition_bits |= PARENT_C_2ND_ENTRY_BIT;
+		o->transition_bits |= BIT(PARENT_C_2ND_ENTRY);
 	}
 }
 
@@ -256,7 +267,7 @@ static void parent_c_run(void *obj)
 
 	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent C run failed");
 
-	o->transition_bits |= PARENT_C_RUN_BIT;
+	o->transition_bits |= BIT(PARENT_C_RUN);
 
 	smf_set_state(SMF_CTX(obj), &test_states[PARENT_C]);
 }
@@ -271,9 +282,9 @@ static void parent_c_exit(void *obj)
 
 	if (o->first_time & B_ENTRY_FIRST_TIME) {
 		o->first_time &= ~B_ENTRY_FIRST_TIME;
-		o->transition_bits |= PARENT_C_1ST_EXIT_BIT;
+		o->transition_bits |= BIT(PARENT_C_1ST_EXIT);
 	} else {
-		o->transition_bits |= PARENT_C_2ND_EXIT_BIT;
+		o->transition_bits |= BIT(PARENT_C_2ND_EXIT);
 	}
 }
 
@@ -290,7 +301,7 @@ static void state_a_entry(void *obj)
 		return;
 	}
 
-	o->transition_bits |= STATE_A_ENTRY_BIT;
+	o->transition_bits |= BIT(STATE_A_ENTRY);
 }
 
 static void state_a_run(void *obj)
@@ -301,7 +312,7 @@ static void state_a_run(void *obj)
 
 	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State A run failed");
 
-	o->transition_bits |= STATE_A_RUN_BIT;
+	o->transition_bits |= BIT(STATE_A_RUN);
 
 	smf_set_state(SMF_CTX(obj), &test_states[STATE_B]);
 }
@@ -313,7 +324,7 @@ static void state_a_exit(void *obj)
 	o->tv_idx++;
 
 	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State A exit failed");
-	o->transition_bits |= STATE_A_EXIT_BIT;
+	o->transition_bits |= BIT(STATE_A_EXIT);
 }
 
 static void state_b_entry(void *obj)
@@ -324,7 +335,7 @@ static void state_b_entry(void *obj)
 
 	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State B entry failed");
 
-	o->transition_bits |= STATE_B_ENTRY_BIT;
+	o->transition_bits |= BIT(STATE_B_ENTRY);
 }
 
 static void state_b_run(void *obj)
@@ -342,10 +353,10 @@ static void state_b_run(void *obj)
 
 	if (o->first_time & B_RUN_FIRST_TIME) {
 		o->first_time &= ~B_RUN_FIRST_TIME;
-		o->transition_bits |= STATE_B_1ST_RUN_BIT;
+		o->transition_bits |= BIT(STATE_B_1ST_RUN);
 		smf_set_handled(SMF_CTX(obj));
 	} else {
-		o->transition_bits |= STATE_B_2ND_RUN_BIT;
+		o->transition_bits |= BIT(STATE_B_2ND_RUN);
 		/* bubble up to PARENT_AB */
 	}
 }
@@ -358,7 +369,7 @@ static void state_b_exit(void *obj)
 
 	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State B exit failed");
 
-	o->transition_bits |= STATE_B_EXIT_BIT;
+	o->transition_bits |= BIT(STATE_B_EXIT);
 }
 
 static void state_c_entry(void *obj)
@@ -370,9 +381,9 @@ static void state_c_entry(void *obj)
 	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State C entry failed");
 	if (o->first_time & C_ENTRY_FIRST_TIME) {
 		o->first_time &= ~C_ENTRY_FIRST_TIME;
-		o->transition_bits |= STATE_C_1ST_ENTRY_BIT;
+		o->transition_bits |= BIT(STATE_C_1ST_ENTRY);
 	} else {
-		o->transition_bits |= STATE_C_2ND_ENTRY_BIT;
+		o->transition_bits |= BIT(STATE_C_2ND_ENTRY);
 	}
 }
 
@@ -386,10 +397,10 @@ static void state_c_run(void *obj)
 
 	if (o->first_time & C_RUN_FIRST_TIME) {
 		o->first_time &= ~C_RUN_FIRST_TIME;
-		o->transition_bits |= STATE_C_1ST_RUN_BIT;
+		o->transition_bits |= BIT(STATE_C_1ST_RUN);
 		/* Do nothing, Let parent handle it */
 	} else {
-		o->transition_bits |= STATE_C_2ND_RUN_BIT;
+		o->transition_bits |= BIT(STATE_C_2ND_RUN);
 		smf_set_state(SMF_CTX(obj), &test_states[STATE_D]);
 	}
 }
@@ -409,9 +420,9 @@ static void state_c_exit(void *obj)
 
 	if (o->first_time & C_EXIT_FIRST_TIME) {
 		o->first_time &= ~C_EXIT_FIRST_TIME;
-		o->transition_bits |= STATE_C_1ST_EXIT_BIT;
+		o->transition_bits |= BIT(STATE_C_1ST_EXIT);
 	} else {
-		o->transition_bits |= STATE_C_2ND_EXIT_BIT;
+		o->transition_bits |= BIT(STATE_C_2ND_EXIT);
 	}
 }
 

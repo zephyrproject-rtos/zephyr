@@ -170,8 +170,11 @@ const struct bt_mesh_model_op _bt_mesh_large_comp_data_srv_op[] = {
 
 static int large_comp_data_srv_init(const struct bt_mesh_model *model)
 {
-	if (!bt_mesh_model_in_primary(model)) {
-		LOG_ERR("Large Composition Data Server only allowed in primary element");
+	const struct bt_mesh_model *config_srv =
+		bt_mesh_model_find(bt_mesh_model_elem(model), BT_MESH_MODEL_ID_CFG_SRV);
+
+	if (config_srv == NULL) {
+		LOG_ERR("Large Composition Data Server cannot extend Configuration server");
 		return -EINVAL;
 	}
 
@@ -180,6 +183,8 @@ static int large_comp_data_srv_init(const struct bt_mesh_model *model)
 	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	srv.model = model;
+
+	bt_mesh_model_extend(model, config_srv);
 
 	return 0;
 }

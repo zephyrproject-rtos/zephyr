@@ -118,6 +118,13 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 		/*
 		 * Both r_offset and sh_addr are addresses for which the extension
 		 * has been built.
+		 *
+		 * NOTE: The calculations below assumes offsets from the
+		 * beginning of the .text section in the ELF file can be
+		 * applied to the memory location of mem[LLEXT_MEM_TEXT].
+		 *
+		 * This is valid only when CONFIG_LLEXT_STORAGE_WRITABLE=y
+		 * and peek() is usable on the source ELF file.
 		 */
 		size_t got_offset;
 
@@ -162,7 +169,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 
 int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 {
-	uintptr_t loc = 0;
+	uintptr_t sect_base = 0;
 	elf_rela_t rel;
 	elf_sym_t sym;
 	elf_word rel_cnt = 0;
@@ -172,44 +179,77 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 	for (i = 0; i < ldr->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ldr->sect_hdrs + i;
 
-		/* find relocation sections */
-		if (shdr->sh_type != SHT_REL && shdr->sh_type != SHT_RELA) {
+		/* find proper relocation sections */
+		switch (shdr->sh_type) {
+		case SHT_REL:
+			if (shdr->sh_entsize != sizeof(elf_rel_t)) {
+				LOG_ERR("Invalid entry size %zd for SHT_REL section %d",
+					(size_t)shdr->sh_entsize, i);
+				return -ENOEXEC;
+			}
+			break;
+		case SHT_RELA:
+			/* FIXME: currently implemented only on the Xtensa code path */
+			if (!IS_ENABLED(CONFIG_XTENSA)) {
+				LOG_ERR("Found unsupported SHT_RELA section %d", i);
+				return -ENOTSUP;
+			}
+			if (shdr->sh_entsize != sizeof(elf_rela_t)) {
+				LOG_ERR("Invalid entry size %zd for SHT_RELA section %d",
+					(size_t)shdr->sh_entsize, i);
+				return -ENOEXEC;
+			}
+			break;
+		default:
+			/* ignore this section */
 			continue;
+		}
+
+		if (shdr->sh_info >= ldr->sect_cnt ||
+		    shdr->sh_size % shdr->sh_entsize != 0) {
+			LOG_ERR("Sanity checks failed for section %d "
+				"(info %zd, size %zd, entsize %zd)", i,
+				(size_t)shdr->sh_info,
+				(size_t)shdr->sh_size,
+				(size_t)shdr->sh_entsize);
+			return -ENOEXEC;
 		}
 
 		rel_cnt = shdr->sh_size / shdr->sh_entsize;
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
 
-		if (strcmp(name, ".rel.text") == 0) {
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
-		} else if (strcmp(name, ".rel.bss") == 0 ||
-			   strcmp(name, ".rela.bss") == 0) {
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_BSS];
-		} else if (strcmp(name, ".rel.rodata") == 0 ||
-			   strcmp(name, ".rela.rodata") == 0) {
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_RODATA];
-		} else if (strcmp(name, ".rel.data") == 0) {
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_DATA];
-		} else if (strcmp(name, ".rel.exported_sym") == 0) {
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_EXPORT];
-		} else if (strcmp(name, ".rela.plt") == 0 ||
-			   strcmp(name, ".rela.dyn") == 0) {
-			llext_link_plt(ldr, ext, shdr, do_local, NULL);
-			continue;
-		} else if (strncmp(name, ".rela", 5) == 0 && strlen(name) > 5) {
-			elf_shdr_t *tgt = llext_section_by_name(ldr, name + 5);
+		/*
+		 * FIXME: The Xtensa port is currently using a different way of
+		 * handling relocations that ultimately results in separate
+		 * arch-specific code paths. This code should be merged with
+		 * the logic below once the differences are resolved.
+		 */
+		if (IS_ENABLED(CONFIG_XTENSA)) {
+			elf_shdr_t *tgt;
 
-			if (tgt)
-				llext_link_plt(ldr, ext, shdr, do_local, tgt);
+			if (strcmp(name, ".rela.plt") == 0 ||
+			    strcmp(name, ".rela.dyn") == 0) {
+				tgt = NULL;
+			} else {
+				tgt = ldr->sect_hdrs + shdr->sh_info;
+			}
+
+			llext_link_plt(ldr, ext, shdr, do_local, tgt);
 			continue;
-		} else if (strcmp(name, ".rel.dyn") == 0) {
-			/* we assume that first load segment starts at MEM_TEXT */
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
 		}
 
-		LOG_DBG("relocation section %s (%d) linked to section %d has %zd relocations",
-			name, i, shdr->sh_link, (size_t)rel_cnt);
+		enum llext_mem mem_idx = ldr->sect_map[shdr->sh_info].mem_idx;
+
+		if (mem_idx == LLEXT_MEM_COUNT) {
+			LOG_ERR("Section %d has no corresponding memory region", shdr->sh_info);
+			return -ENOEXEC;
+		}
+
+		sect_base = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
+
+		LOG_DBG("relocation section %s (%d) acting on section %d has %zd relocations",
+			name, i, shdr->sh_info, (size_t)rel_cnt);
 
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
@@ -237,16 +277,16 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 
 			name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
-			LOG_DBG("relocation %d:%d info %zx (type %zd, sym %zd) offset %zd sym_name "
-				"%s sym_type %d sym_bind %d sym_ndx %d",
+			LOG_DBG("relocation %d:%d info 0x%zx (type %zd, sym %zd) offset %zd "
+				"sym_name %s sym_type %d sym_bind %d sym_ndx %d",
 				i, j, (size_t)rel.r_info, (size_t)ELF_R_TYPE(rel.r_info),
-				(size_t)ELF_R_SYM(rel.r_info),
-				(size_t)rel.r_offset, name, ELF_ST_TYPE(sym.st_info),
+				(size_t)ELF_R_SYM(rel.r_info), (size_t)rel.r_offset,
+				name, ELF_ST_TYPE(sym.st_info),
 				ELF_ST_BIND(sym.st_info), sym.st_shndx);
 
 			uintptr_t link_addr, op_loc;
 
-			op_loc = loc + rel.r_offset;
+			op_loc = sect_base + rel.r_offset;
 
 			if (ELF_R_SYM(rel.r_info) == 0) {
 				/* no symbol ex: R_ARM_V4BX relocation, R_ARM_RELATIVE  */
@@ -288,8 +328,9 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 				 * adding st_value to the start address of the section
 				 * in which the target symbol resides.
 				 */
-				link_addr = (uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
-					+ sym.st_value;
+				link_addr = (uintptr_t)llext_loaded_sect_ptr(ldr, ext,
+									     sym.st_shndx)
+					    + sym.st_value;
 			} else {
 				LOG_ERR("rela section %d, entry %d: cannot apply relocation: "
 					"target symbol has unexpected section index %d (0x%X)",

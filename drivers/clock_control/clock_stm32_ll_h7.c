@@ -1151,7 +1151,7 @@ void HAL_RCC_CSSCallback(void)
  * that the device init runs just after SOC init
  */
 DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
-		    &stm32_clock_control_init,
+		    stm32_clock_control_init,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,

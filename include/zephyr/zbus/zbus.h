@@ -56,6 +56,12 @@ struct zbus_channel_data {
 	 */
 	sys_slist_t observers;
 #endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
+
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION) || defined(__DOXYGEN__)
+	/** Net buf pool for message subscribers. It can be either the global or a separated one.
+	 */
+	struct net_buf_pool *msg_subscriber_pool;
+#endif /* ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION */
 };
 
 /**
@@ -347,6 +353,9 @@ struct zbus_channel_observation {
 		.user_data = _user_data,                                                  \
 		.validator = _validator,                                                  \
 		.data = &_CONCAT(_zbus_chan_data_, _name),                                \
+		IF_ENABLED(ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION, (                   \
+			.msg_subscriber_pool = &_zbus_msg_subscribers_pool,               \
+		))                                                                        \
 	};                                                                                \
 	/* Extern declaration of observers */                                             \
 	ZBUS_OBS_DECLARE(_observers);                                                     \
@@ -683,6 +692,25 @@ static inline void *zbus_chan_user_data(const struct zbus_channel *chan)
 
 	return chan->user_data;
 }
+
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION) || defined(__DOXYGEN__)
+
+/**
+ * @brief Set the channel's msg subscriber `net_buf` pool.
+ *
+ * @param chan The channel's reference.
+ * @param pool The reference to the `net_buf` memory pool.
+ */
+static inline void zbus_chan_set_msg_sub_pool(const struct zbus_channel *chan,
+					      struct net_buf_pool *pool)
+{
+	__ASSERT(chan != NULL, "chan is required");
+	__ASSERT(pool != NULL, "pool is required");
+
+	chan->data->msg_subscriber_pool = pool;
+}
+
+#endif /* ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION */
 
 #if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS) || defined(__DOXYGEN__)
 

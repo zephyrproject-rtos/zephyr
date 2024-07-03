@@ -3457,7 +3457,7 @@ void k_work_queue_init(struct k_work_q *queue);
  *
  * @param stack pointer to the work thread stack area.
  *
- * @param stack_size size of the the work thread stack area, in bytes.
+ * @param stack_size size of the work thread stack area, in bytes.
  *
  * @param prio initial thread priority
  *

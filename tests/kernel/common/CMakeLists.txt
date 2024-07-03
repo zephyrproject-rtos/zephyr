@@ -23,6 +23,12 @@ target_sources(app PRIVATE
   )
 
 target_sources_ifdef(
+	CONFIG_STATIC_INIT_GNU
+	app PRIVATE
+	src/constructor.c
+)
+
+target_sources_ifdef(
 	CONFIG_IRQ_OFFLOAD
 	app PRIVATE
 	src/irq_offload.c

@@ -38,7 +38,7 @@ BUILD_ASSERT(CONFIG_NET_IPV6_PE_TEMP_PREFERRED_LIFETIME <
 	     CONFIG_NET_IPV6_PE_TEMP_VALID_LIFETIME);
 
 /* IPv6 privacy extension (RFC 8981) constants. Note that the code uses
- * seconds value internally for applicaple options. These are also values
+ * seconds value internally for applicable options. These are also values
  * that can be changed at runtime if needed as recommended in RFC 8981
  * chapter 3.6.
  */

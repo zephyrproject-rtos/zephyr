@@ -467,19 +467,19 @@ int cache_instr_flush_and_invd_range(void *addr, size_t size)
 	return -ENOTSUP;
 }
 
-#if IS_ENABLED(CONFIG_DCACHE_LINE_SIZE_DETECT)
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
 size_t cache_data_line_size_get(void)
 {
 	return cache_cfg.data_line_size;
 }
-#endif /* IS_ENABLED(CONFIG_DCACHE_LINE_SIZE_DETECT) */
+#endif /* defined(CONFIG_DCACHE_LINE_SIZE_DETECT) */
 
-#if IS_ENABLED(CONFIG_ICACHE_LINE_SIZE_DETECT)
+#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT)
 size_t cache_instr_line_size_get(void)
 {
 	return cache_cfg.instr_line_size;
 }
-#endif /* IS_ENABLED(CONFIG_ICACHE_LINE_SIZE_DETECT) */
+#endif /* defined(CONFIG_ICACHE_LINE_SIZE_DETECT) */
 
 static int andes_cache_init(void)
 {
@@ -492,7 +492,7 @@ static int andes_cache_init(void)
 			LOG_ERR("Platform doesn't support I-cache, "
 				"please disable CONFIG_ICACHE");
 		}
-#if IS_ENABLED(CONFIG_ICACHE_LINE_SIZE_DETECT)
+#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT)
 		/* Icache line size */
 		if (line_size <= 5) {
 			cache_cfg.instr_line_size = 1 << (line_size + 2);
@@ -507,7 +507,7 @@ static int andes_cache_init(void)
 #else
 		LOG_ERR("Please specific the i-cache-line-size "
 			"CPU0 property of the DT");
-#endif /* IS_ENABLED(CONFIG_ICACHE_LINE_SIZE_DETECT) */
+#endif /* defined(CONFIG_ICACHE_LINE_SIZE_DETECT) */
 	}
 
 	if (IS_ENABLED(CONFIG_DCACHE)) {
@@ -516,7 +516,7 @@ static int andes_cache_init(void)
 			LOG_ERR("Platform doesn't support D-cache, "
 				"please disable CONFIG_DCACHE");
 		}
-#if IS_ENABLED(CONFIG_DCACHE_LINE_SIZE_DETECT)
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
 		/* Dcache line size */
 		if (line_size <= 5) {
 			cache_cfg.data_line_size = 1 << (line_size + 2);
@@ -531,7 +531,7 @@ static int andes_cache_init(void)
 #else
 		LOG_ERR("Please specific the d-cache-line-size "
 			"CPU0 property of the DT");
-#endif /* IS_ENABLED(CONFIG_DCACHE_LINE_SIZE_DETECT) */
+#endif /* defined(CONFIG_DCACHE_LINE_SIZE_DETECT) */
 	}
 
 	if (!(csr_read(NDS_MMSC_CFG) & MMSC_CFG_CCTLCSR)) {

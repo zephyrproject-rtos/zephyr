@@ -10,6 +10,12 @@
 #define MAX_MULTI_HEAPS 8
 
 /**
+ * @defgroup multi_heap_wrapper Multi-Heap Wrapper
+ * @ingroup heaps
+ * @{
+ */
+
+/**
  * @brief Multi-heap allocator
  *
  * A sys_multi_heap represents a single allocator made from multiple,
@@ -161,5 +167,9 @@ const struct sys_multi_heap_rec *sys_multi_heap_get_heap(const struct sys_multi_
  * @param block Block to free, must be a pointer to a block allocated by sys_multi_heap_alloc
  */
 void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block);
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_SYS_MULTI_HEAP_H_ */

@@ -81,7 +81,7 @@ Hardware Configuration
 +---------------+---------+-----------------------------------------------+
 | SB6/SB7       | Open    | Connect PB4/PB6 (UCPD1_CCx) to USB-C CCx pins |
 +---------------+---------+-----------------------------------------------+
-| SB3/SB5       | Open    | Connect PA9/PA10 (UCPD1_DBCCx) to to PB6/PB4  |
+| SB3/SB5       | Open    | Connect PA9/PA10 (UCPD1_DBCCx) to PB6/PB4     |
 +---------------+---------+-----------------------------------------------+
 | SB4           | Open    | Connect PB2 to VBUS voltage divider           |
 +---------------+---------+-----------------------------------------------+

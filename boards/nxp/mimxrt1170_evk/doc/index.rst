@@ -344,6 +344,7 @@ Configuring a Debug Probe
 A debug probe is used for both flashing and debugging the board. The on-board
 debugger listed below works with the LinkServer runner by default, or can be
 reprogrammed with JLink firmware.
+
 - MIMXRT1170-EVKB: :ref:`mcu-link-cmsis-onboard-debug-probe`
 - MIMXRT1170-EVK:  :ref:`opensda-daplink-onboard-debug-probe`
 
@@ -362,9 +363,6 @@ Using LinkServer
 ----------------
 
 Known limitations with LinkServer and these boards include:
-- ``west debug`` does not yet work correctly, and the application image is not
-properly written to the memory.  `NXP MCUXpresso for Visual Studio Code`_
-can be used to debug Zephyr applications with LinkServer.
 - ``west flash`` will not write images to non-flash locations. The flash
 command only works when all data in the image is written to flash memory
 regions.
@@ -392,10 +390,12 @@ We will use the on-board debugger
 microcontroller as a usb-to-serial adapter for the serial console. The following
 jumper settings are default on these boards, and are required to connect the
 UART signals to the USB bridge circuit:
+
 - MIMXRT1170-EVKB: JP2 open (default)
 - MIMXRT1170-EVK:  J31 and J32 shorted (default)
 
 Connect a USB cable from your PC to the on-board debugger USB port:
+
 - MIMXRT1170-EVKB: J86
 - MIMXRT1170-EVK:  J11
 

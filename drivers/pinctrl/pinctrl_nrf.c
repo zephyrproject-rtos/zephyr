@@ -37,57 +37,57 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 
 #define PSEL_DISCONNECTED 0xFFFFFFFFUL
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_uart)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_uart) || defined(CONFIG_NRFX_UART)
 #define NRF_PSEL_UART(reg, line) ((NRF_UART_Type *)reg)->PSEL##line
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_uarte)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_uarte) || defined(CONFIG_NRFX_UARTE)
 #include <hal/nrf_uarte.h>
 #define NRF_PSEL_UART(reg, line) ((NRF_UARTE_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spi)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spi) || defined(CONFIG_NRFX_SPI)
 #define NRF_PSEL_SPIM(reg, line) ((NRF_SPI_Type *)reg)->PSEL##line
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spim)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spim) || defined(CONFIG_NRFX_SPIM)
 #include <hal/nrf_spim.h>
 #define NRF_PSEL_SPIM(reg, line) ((NRF_SPIM_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spis)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spis) || defined(CONFIG_NRFX_SPIS)
 #include <hal/nrf_spis.h>
 #if defined(NRF51)
 #define NRF_PSEL_SPIS(reg, line) ((NRF_SPIS_Type *)reg)->PSEL##line
 #else
 #define NRF_PSEL_SPIS(reg, line) ((NRF_SPIS_Type *)reg)->PSEL.line
 #endif
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spis) */
+#endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twi)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twi) || defined(CONFIG_NRFX_TWI)
 #if !defined(TWI_PSEL_SCL_CONNECT_Pos)
 #define NRF_PSEL_TWIM(reg, line) ((NRF_TWI_Type *)reg)->PSEL##line
 #else
 #define NRF_PSEL_TWIM(reg, line) ((NRF_TWI_Type *)reg)->PSEL.line
 #endif
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twim)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twim) || defined(CONFIG_NRFX_TWIM)
 #include <hal/nrf_twim.h>
 #define NRF_PSEL_TWIM(reg, line) ((NRF_TWIM_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_i2s)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_i2s) || defined(CONFIG_NRFX_I2S)
 #define NRF_PSEL_I2S(reg, line) ((NRF_I2S_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pdm)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pdm) || defined(CONFIG_NRFX_PDM)
 #define NRF_PSEL_PDM(reg, line) ((NRF_PDM_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwm)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwm) || defined(CONFIG_NRFX_PWM)
 #define NRF_PSEL_PWM(reg, line) ((NRF_PWM_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qdec)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qdec) || defined(CONFIG_NRFX_QDEC)
 #define NRF_PSEL_QDEC(reg, line) ((NRF_QDEC_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi) || defined(CONFIG_NRFX_QSPI)
 #define NRF_PSEL_QSPI(reg, line) ((NRF_QSPI_Type *)reg)->PSEL.line
 #endif
 

@@ -20,9 +20,7 @@
 #include "usb_device_config.h"
 #include "usb_device_mcux_drv_port.h"
 #include "usb_device_ehci.h"
-#ifdef CONFIG_DT_HAS_NXP_USBPHY_ENABLED
 #include "usb_phy.h"
-#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_mcux, CONFIG_UDC_DRIVER_LOG_LEVEL);
@@ -45,9 +43,7 @@ struct udc_mcux_config {
 	struct udc_ep_config *ep_cfg_out;
 	uintptr_t base;
 	const struct pinctrl_dev_config *pincfg;
-#ifdef CONFIG_DT_HAS_NXP_USBPHY_ENABLED
 	usb_phy_config_struct_t *phy_config;
-#endif
 };
 
 struct udc_mcux_data {
@@ -856,7 +852,6 @@ static const usb_device_controller_interface_struct_t udc_mcux_if = {
 	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
 };
 
-#ifdef CONFIG_DT_HAS_NXP_USBPHY_ENABLED
 #define UDC_MCUX_PHY_DEFINE(n)								\
 static usb_phy_config_struct_t phy_config_##n = {					\
 	.D_CAL = DT_PROP_OR(DT_INST_PHANDLE(n, phy_handle), tx_d_cal, 0),		\
@@ -869,12 +864,8 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 		    (UDC_MCUX_PHY_DEFINE(n)), ())
 
 #define UDC_MCUX_PHY_CFG_PTR_OR_NULL(n)							\
-	.phy_config = COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), phy_handle),		\
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), phy_handle),			\
 		    (&phy_config_##n), (NULL))
-#else
-#define UDC_MCUX_PHY_DEFINE_OR(n)
-#define UDC_MCUX_PHY_CFG_PTR_OR_NULL(n)
-#endif
 
 #define USB_MCUX_EHCI_DEVICE_DEFINE(n)							\
 	UDC_MCUX_PHY_DEFINE_OR(n);							\
@@ -910,7 +901,7 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 		.ep_cfg_out = ep_cfg_out##n,						\
 		.mcux_if = &udc_mcux_if,						\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
-		UDC_MCUX_PHY_CFG_PTR_OR_NULL(n),					\
+		.phy_config = UDC_MCUX_PHY_CFG_PTR_OR_NULL(n),				\
 	};										\
 											\
 	static struct udc_mcux_data priv_data_##n = {					\

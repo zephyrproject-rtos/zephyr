@@ -360,6 +360,9 @@ static int rzt2m_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		break;
 	case GPIO_INT_TRIG_BOTH:
 		md_mode = INT_BOTH_EDGE;
+		break;
+	default:
+		return -EINVAL;
 	}
 
 	rzt2m_gpio_unlock();

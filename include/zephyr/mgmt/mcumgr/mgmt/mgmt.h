@@ -74,7 +74,7 @@ typedef int (*mgmt_handler_fn)(struct smp_streamer *ctxt);
 struct mgmt_handler {
 	mgmt_handler_fn mh_read;
 	mgmt_handler_fn mh_write;
-#if IS_ENABLED(CONFIG_MCUMGR_MGMT_HANDLER_USER_DATA)
+#if defined(CONFIG_MCUMGR_MGMT_HANDLER_USER_DATA)
 	void *user_data;
 #endif
 };
@@ -93,7 +93,7 @@ struct mgmt_group {
 	/** The numeric ID of this group. */
 	uint16_t mg_group_id;
 
-#if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+#if defined(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
 	/** A function handler for translating version 2 SMP error codes to version 1 SMP error
 	 * codes (optional)
 	 */
@@ -152,7 +152,7 @@ const struct mgmt_group *mgmt_find_group(uint16_t group_id);
  */
 const struct mgmt_handler *mgmt_get_handler(const struct mgmt_group *group, uint16_t command_id);
 
-#if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+#if defined(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
 /**
  * @brief		Finds a registered error translation function for converting from SMP
  *			version 2 error codes to legacy SMP version 1 error codes.

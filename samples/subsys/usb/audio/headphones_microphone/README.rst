@@ -27,6 +27,7 @@ Testing
 *******
 
 Steps to test the sample:
+
 - Build and flash the sample as described above.
 - Connect to the HOST.
 - Chose default Audio IN/OUT.

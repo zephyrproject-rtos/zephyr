@@ -14,7 +14,7 @@
 };
 
 &npm1300_ek_buck1 {
-        regulator-init-microvolt = <2000000>;
+	regulator-init-microvolt = <2000000>;
 };
 
 &npm1300_ek_buck2 {

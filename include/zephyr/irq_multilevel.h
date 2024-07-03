@@ -191,7 +191,7 @@ static inline unsigned int irq_from_level(unsigned int irq, unsigned int level)
 }
 
 /**
- * @brief Converts irq from level 1 to to a given level
+ * @brief Converts irq from level 1 to a given level
  *
  * @param irq IRQ number in its zephyr format
  * @param level IRQ level

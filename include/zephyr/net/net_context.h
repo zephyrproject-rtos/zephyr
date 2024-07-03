@@ -85,7 +85,7 @@ struct net_context;
  *
  * @param context The context to use.
  * @param pkt Network buffer that is received. If the pkt is not NULL,
- * then the callback will own the buffer and it needs to to unref the pkt
+ * then the callback will own the buffer and it needs to unref the pkt
  * as soon as it has finished working with it.  On EOF, pkt will be NULL.
  * @param ip_hdr a pointer to relevant IP (v4 or v6) header.
  * @param proto_hdr a pointer to relevant protocol (udp or tcp) header.

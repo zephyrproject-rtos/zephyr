@@ -853,14 +853,27 @@ static bool chan_has_credits(struct bt_l2cap_le_chan *lechan)
 #endif
 }
 
+__weak void bt_test_l2cap_data_pull_spy(struct bt_conn *conn,
+					struct bt_l2cap_le_chan *lechan,
+					size_t amount,
+					size_t *length)
+{
+}
+
 struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 				size_t amount,
 				size_t *length)
 {
 	struct bt_l2cap_le_chan *lechan = get_ready_chan(conn);
 
+	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+		/* Allow tests to snoop in */
+		bt_test_l2cap_data_pull_spy(conn, lechan, amount, length);
+	}
+
 	if (!lechan) {
 		LOG_DBG("no channel conn %p", conn);
+		bt_tx_irq_raise();
 		return NULL;
 	}
 
@@ -873,6 +886,7 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	struct net_buf *pdu = k_fifo_peek_head(&lechan->tx_queue);
 
 	if (!pdu) {
+		bt_tx_irq_raise();
 		return NULL;
 	}
 	/* __ASSERT(pdu, "signaled ready but no PDUs in the TX queue"); */
@@ -1288,7 +1302,7 @@ static uint16_t le_err_to_result(int err)
 		return BT_L2CAP_LE_ERR_KEY_SIZE;
 	case -ENOTSUP:
 		/* This handle the cases where a fixed channel is registered but
-		 * for some reason (e.g. controller not suporting a feature)
+		 * for some reason (e.g. controller not supporting a feature)
 		 * cannot be used.
 		 */
 		return BT_L2CAP_LE_ERR_PSM_NOT_SUPP;

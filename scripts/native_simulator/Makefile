@@ -3,7 +3,7 @@
 
 # Native Simulator (NSI) Makefile.
 # It builds the simulator runner itself, and produces the final
-# Linux executable by linking it to the the embedded cpu library
+# Linux executable by linking it to the embedded cpu library
 
 # By default all the build output is placed under the _build folder, but the user can override it
 # setting the NSI_BUILD_PATH

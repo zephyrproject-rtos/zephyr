@@ -408,7 +408,7 @@ static int regulator_da1469x_init(const struct device *dev)
 	return regulator_common_init(dev, 0);
 }
 
-#if IS_ENABLED(CONFIG_PM_DEVICE)
+#if defined(CONFIG_PM_DEVICE)
 static int regulator_da1469x_pm_action(const struct device *dev,
 				       enum pm_device_action action)
 {

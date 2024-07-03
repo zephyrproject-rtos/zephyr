@@ -206,27 +206,21 @@ remaining are not used.
 Programming and Debugging
 *************************
 
-Build and flash applications as usual (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
+This board supports 2 debug host tools. Please install your preferred host
+tool, then follow the instructions in `Configuring a Debug Probe`_ to
+configure the board appropriately.
+
+* :ref:`jlink-debug-host-tools` (Default, Supported by NXP)
+* :ref:`pyocd-debug-host-tools` (Not supported by NXP)
 
 Configuring a Debug Probe
 =========================
 
-A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
-however the :ref:`pyocd-debug-host-tools` do not yet support programming the
-external flashes on this board so you must reconfigure the board for one of the
-following debug probes instead.
+For the RT1024, J47/J48 are the SWD isolation jumpers, J42 is the DFU
+mode jumper, and J55 is the 10 pin JTAG/SWD header.
 
-:ref:`jlink-external-debug-probe`
----------------------------------
-
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
-
-Attach a J-Link 10-pin connector to J55. Check that jumpers J47 and J48 are
-**off** (they are on by default when boards ship from the factory) to ensure
-SWD signals are disconnected from the OpenSDA microcontroller.
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst
+   :start-after: rt1xxx-lpclink2-probes
 
 Configuring a Console
 =====================

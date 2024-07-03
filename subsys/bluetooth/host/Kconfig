@@ -299,7 +299,7 @@ config BT_CONN_PARAM_ANY
 	  Some controllers support additional connection parameter ranges
 	  beyond what is described in the specification. Enabling this option
 	  allows the application to set any value to all connection parameters.
-	  Tbe Host will perform no limits nor consistency checks on any of the
+	  The Host will perform no limits nor consistency checks on any of the
 	  connection parameters (conn interval min and max, latency and timeout).
 	  However, the Host will still use numerical comparisons between the
 	  min and max connection intervals in order to verify whether the
@@ -541,9 +541,9 @@ config BT_ID_UNPAIR_MATCHING_BONDS
 	  limitation" below.
 
 	  [RL limitation]:
-	  The Host implementors have considered it unlikely that applications
+	  The Host implementers have considered it unlikely that applications
 	  would ever want to have multiple bonds with the same peer. The
-	  implementors prioritize the simplicity of the implementation over this
+	  implementers prioritize the simplicity of the implementation over this
 	  capability.
 
 	  The Resolve List on a Controller is not able to accommodate multiple
@@ -765,7 +765,7 @@ config BT_SCAN_WITH_IDENTITY
 	  always use a non-resolvable private address (NRPA) in order to avoid
 	  disclosing local identity information. By not scanning with the
 	  identity address the scanner will receive directed advertise reports
-	  for for the local identity. If this use case is required, then enable
+	  for the local identity. If this use case is required, then enable
 	  this option.
 
 config BT_SCAN_AND_INITIATE_IN_PARALLEL
@@ -911,7 +911,7 @@ config BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES
 	  Direction Finging connectionless IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E section 7.7.65.21. This option enables a vendor specific Host
-	  extenstion to handle connectionless IQ reports with samples that are in 16 bit signed
+	  extension to handle connectionless IQ reports with samples that are in 16 bit signed
 	  integer format.
 
 config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
@@ -921,7 +921,7 @@ config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 	  Direction Finging connection IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E sections 7.7.65.22. This option enables a vendor specific Host
-	  extenstion to handle connection IQ report with samples that are in 16 bit signed integer
+	  extension to handle connection IQ report with samples that are in 16 bit signed integer
 	  format.
 
 endif # BT_DF

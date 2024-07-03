@@ -72,7 +72,7 @@ __subsystem struct kscan_driver_api {
  * @brief Configure a Keyboard scan instance.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param callback called when keyboard devices reply to to a keyboard
+ * @param callback called when keyboard devices reply to a keyboard
  * event such as key pressed/released.
  *
  * @retval 0 If successful.

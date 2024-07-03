@@ -252,7 +252,7 @@ void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf);
  *
  * The architecture-specific memory fault handler will invoke this to tell the
  * eviction algorithm the provided physical address belongs to a page frame
- * being accessed and such page frame should become unlikely to be be
+ * being accessed and such page frame should become unlikely to be
  * considered as the next eviction candidate.
  *
  * This function is invoked with interrupts locked.

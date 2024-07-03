@@ -187,7 +187,7 @@ void bt_bap_iso_configure_data_path(struct bt_bap_ep *ep, struct bt_audio_codec_
 	}
 
 	/* Configure the data path to either use the controller for transcoding, or set the path to
-	 * be transparant to indicate that the transcoding happens somewhere else
+	 * be transparent to indicate that the transcoding happens somewhere else
 	 */
 	path->pid = codec_cfg->path_id;
 

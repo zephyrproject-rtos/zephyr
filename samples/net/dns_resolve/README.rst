@@ -47,7 +47,7 @@ In this sample application, both static or DHCPv4 IP addresses are supported.
 Static IP addresses are specified in the project configuration file,
 for example:
 
-.. code-block:: console
+.. code-block:: cfg
 
 	CONFIG_NET_CONFIG_MY_IPV6_ADDR="2001:db8::1"
 	CONFIG_NET_CONFIG_PEER_IPV6_ADDR="2001:db8::2"
@@ -75,7 +75,7 @@ the appropriate 'prj.conf' file and update the DNS server addresses.  For
 instance, if using the usual IP addresses assigned to testing, update them
 to the following values:
 
-.. code-block:: console
+.. code-block:: cfg
 
     CONFIG_DNS_SERVER1="192.0.2.2:5353"
     CONFIG_DNS_SERVER2="[2001:db8::2]:5353"
@@ -113,7 +113,7 @@ LLMNR Responder
 If you want Zephyr to respond to a LLMNR DNS request that Windows host is
 sending, then following config options could be set:
 
-.. code-block:: console
+.. code-block:: cfg
 
     CONFIG_NET_HOSTNAME_ENABLE=y
     CONFIG_NET_HOSTNAME="zephyr-device"

@@ -424,7 +424,7 @@ static void mcux_lpadc_isr(const struct device *dev)
 	LOG_DBG("Finished channel %d. Raw result is 0x%04x",
 		channel, conv_result.convValue);
 	/*
-	 * For 12 or 13 bit resolution the the LSBs will be 0, so a bit shift
+	 * For 12 or 13 bit resolution the LSBs will be 0, so a bit shift
 	 * is needed. For differential modes, the ADC conversion to
 	 * millivolts expects to use a shift one less than the resolution.
 	 *

@@ -525,7 +525,7 @@ static void spi_flash_at45_pages_layout(const struct device *dev,
 	*layout = &cfg->pages_layout;
 	*layout_size = 1;
 }
-#endif /* IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT) */
+#endif /* defined(CONFIG_FLASH_PAGE_LAYOUT) */
 
 static int power_down_op(const struct device *dev, uint8_t opcode,
 			 uint32_t delay)
@@ -636,7 +636,7 @@ static int spi_flash_at45_pm_action(const struct device *dev,
 
 	return 0;
 }
-#endif /* IS_ENABLED(CONFIG_PM_DEVICE) */
+#endif /* defined(CONFIG_PM_DEVICE) */
 
 static const struct flash_parameters *
 flash_at45_get_parameters(const struct device *dev)

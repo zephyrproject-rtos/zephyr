@@ -204,7 +204,7 @@ static int shm_mmap(struct shm_obj *shm, void *addr, size_t len, int prot, int f
 
 static ssize_t shm_rw(struct shm_obj *shm, void *buf, size_t size, bool is_write, size_t offset)
 {
-	if (offset >= size) {
+	if (offset >= shm->size) {
 		size = 0;
 	} else {
 		size = MIN(size, shm->size - offset);
@@ -325,7 +325,7 @@ int shm_open(const char *name, int oflag, mode_t mode)
 		return -1;
 	}
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		errno = EMFILE;
 		return -1;
@@ -341,7 +341,7 @@ int shm_open(const char *name, int oflag, mode_t mode)
 
 	if (creat) {
 		if ((shm != NULL) && excl) {
-			z_free_fd(fd);
+			zvfs_free_fd(fd);
 			errno = EEXIST;
 			return -1;
 		}
@@ -349,7 +349,7 @@ int shm_open(const char *name, int oflag, mode_t mode)
 		if (shm == NULL) {
 			shm = k_calloc(1, sizeof(*shm));
 			if (shm == NULL) {
-				z_free_fd(fd);
+				zvfs_free_fd(fd);
 				errno = ENOSPC;
 				return -1;
 			}
@@ -363,7 +363,7 @@ int shm_open(const char *name, int oflag, mode_t mode)
 	}
 
 	++shm->refs;
-	z_finalize_typed_fd(fd, shm, &shm_vtable, ZVFS_MODE_IFSHM);
+	zvfs_finalize_typed_fd(fd, shm, &shm_vtable, ZVFS_MODE_IFSHM);
 
 	return fd;
 }

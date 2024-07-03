@@ -36,12 +36,13 @@ config LPC55XXX_SRAM_CLOCKS
 # By default, USB RAM is assumed to be present.
 # Disable this Kconfig in case there is no dedicated USB RAM.
 config LPC55XXX_USB_RAM
-	default y
+	default y if (!SOC_LPC55S06 && !SOC_LPC55S36)
+
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 512
 
 if SOC_LPC55S06
-
-config LPC55XXX_USB_RAM
-	default n
 
 endif # SOC_LPC55S06
 
@@ -70,9 +71,6 @@ if SOC_LPC55S36
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_LPCIP3511
 endchoice
-
-config LPC55XXX_USB_RAM
-	default n
 
 endif # SOC_LPC55S36
 

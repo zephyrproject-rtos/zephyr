@@ -1494,10 +1494,13 @@ static int rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
 	struct bt_rfcomm_hdr *hdr = (void *)buf->data;
+	struct bt_rfcomm_hdr_ext *hdr_ext = (void *)buf->data;
 	uint8_t dlci, frame_type, fcs, fcs_len;
+	uint16_t msg_len;
+	uint16_t hdr_len;
 
 	/* Need to consider FCS also*/
-	if (buf->len < (sizeof(*hdr) + 1)) {
+	if (buf->len < (sizeof(*hdr) + sizeof(fcs))) {
 		LOG_ERR("Too small RFCOMM Frame");
 		return 0;
 	}
@@ -1507,19 +1510,28 @@ static int rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	LOG_DBG("session %p dlci %x type %x", session, dlci, frame_type);
 
-	fcs_len = (frame_type == BT_RFCOMM_UIH) ? BT_RFCOMM_FCS_LEN_UIH :
-		   BT_RFCOMM_FCS_LEN_NON_UIH;
-	fcs = *(net_buf_tail(buf) - 1);
+	if (BT_RFCOMM_LEN_EXTENDED(hdr->length)) {
+		msg_len = BT_RFCOMM_GET_LEN_EXTENDED(hdr_ext->hdr.length, hdr_ext->second_length);
+		hdr_len = sizeof(*hdr_ext);
+	} else {
+		msg_len = BT_RFCOMM_GET_LEN(hdr->length);
+		hdr_len = sizeof(*hdr);
+	}
+
+	if (buf->len < (hdr_len + msg_len + sizeof(fcs))) {
+		LOG_ERR("Too small RFCOMM information (%d < %d)", buf->len,
+			hdr_len + msg_len + sizeof(fcs));
+		return 0;
+	}
+
+	fcs_len = (frame_type == BT_RFCOMM_UIH) ? BT_RFCOMM_FCS_LEN_UIH : hdr_len;
+	fcs = *(net_buf_tail(buf) - sizeof(fcs));
 	if (!rfcomm_check_fcs(fcs_len, buf->data, fcs)) {
 		LOG_ERR("FCS check failed");
 		return 0;
 	}
 
-	if (BT_RFCOMM_LEN_EXTENDED(hdr->length)) {
-		net_buf_pull(buf, sizeof(*hdr) + 1);
-	} else {
-		net_buf_pull(buf, sizeof(*hdr));
-	}
+	net_buf_pull(buf, hdr_len);
 
 	switch (frame_type) {
 	case BT_RFCOMM_SABM:
@@ -1529,8 +1541,7 @@ static int rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		if (!dlci) {
 			rfcomm_handle_msg(session, buf);
 		} else {
-			rfcomm_handle_data(session, buf, dlci,
-					   BT_RFCOMM_GET_PF(hdr->control));
+			rfcomm_handle_data(session, buf, dlci, BT_RFCOMM_GET_PF(hdr->control));
 		}
 		break;
 	case BT_RFCOMM_DISC:

@@ -532,7 +532,7 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 					  uint32_t *gap_settings)
 {
 	int err;
-	struct bt_le_adv_param *param = BT_LE_EXT_ADV_NCONN;
+	struct bt_le_adv_param param = *BT_LE_EXT_ADV_NCONN;
 
 	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
@@ -559,8 +559,8 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 	base_ad[1].type = BT_DATA_NAME_COMPLETE;
 	base_ad[1].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
 	base_ad[1].data = CONFIG_BT_DEVICE_NAME;
-	err = tester_gap_create_adv_instance(param, BTP_GAP_ADDR_TYPE_IDENTITY, base_ad, 2,
-					     NULL, 0, gap_settings);
+	err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY, base_ad, 2, NULL,
+					     0, gap_settings);
 	if (err != 0) {
 		LOG_DBG("Failed to create extended advertising instance: %d", err);
 

@@ -84,7 +84,7 @@
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 /* Allocate 2 adjacent channels for PHYEND delay compensation. Use the same channels as for
  * PHY CODED S2. The CTEINLINE may not be enabled for PHY CODED so PHYEND event is generated
- * at the same instant as END event. Hence the channels are uesed interchangeably.
+ * at the same instant as END event. Hence the channels are used interchangeably.
  * That saves from use of another timer.
  */
 #define SW_SWITCH_TIMER_EVTS_COMP_PHYEND_DELAY_COMPENSATION_BASE 2
@@ -108,7 +108,7 @@
  */
 #define NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk
 
-/* Delay of EVENTS_PHYEND event on receive PDU without CTE inclded when CTEINLINE is enabled */
+/* Delay of EVENTS_PHYEND event on receive PDU without CTE included when CTEINLINE is enabled */
 #define RADIO_EVENTS_PHYEND_DELAY_US 16
 
 /* Delay of CCM TASKS_CRYPT start in number of bits for Radio Bit counter */

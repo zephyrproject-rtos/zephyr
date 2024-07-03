@@ -131,8 +131,6 @@ function(create_runners_yaml)
   # Write the final contents and set its location in the cache.
   file(GENERATE OUTPUT "${runners_yaml}" CONTENT
     $<TARGET_PROPERTY:runners_yaml_props_target,yaml_contents>)
-  set(ZEPHYR_RUNNERS_YAML "${runners_yaml}" CACHE INTERNAL
-    "a configuration file for the runners Python package")
 endfunction()
 
 get_property(RUNNERS GLOBAL PROPERTY ZEPHYR_RUNNERS)

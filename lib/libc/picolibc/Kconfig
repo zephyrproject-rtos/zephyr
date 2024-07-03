@@ -19,18 +19,6 @@ config PICOLIBC_USE_TOOLCHAIN
 	default y if PICOLIBC && !PICOLIBC_USE_MODULE
 	select THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 
-config PICOLIBC_HEAP_SIZE
-	int "[DEPRECATED] Picolibc heap size (bytes)"
-	default -2
-	help
-	  [DEPRECATED] Use COMMON_LIBC_MALLOC_ARENA_SIZE
-
-	  Indicate the size in bytes of the memory arena used for common C
-	  library malloc() implementation when using Picolibc.
-
-	  If set to -2, then the value of COMMON_LIBC_MALLOC_ARENA_SIZE
-	  will be used.
-
 choice PICOLIBC_IO_LEVEL
 	prompt "Picolibc printf/scanf level"
 	default PICOLIBC_IO_MINIMAL if CBPRINTF_NANO

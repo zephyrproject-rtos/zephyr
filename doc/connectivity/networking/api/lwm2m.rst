@@ -670,7 +670,7 @@ where it cannot recover.
      - Try to recover network connection. Then restart the client by calling :c:func:`lwm2m_rd_client_start`.
        This might also indicate configuration issue.
 
-Sending of data in the table above refers to calling :c:func:`lwm2m_send_cb` or by writing into of of the observed resources where observation would trigger a notify message.
+Sending of data in the table above refers to calling :c:func:`lwm2m_send_cb` or by writing into one of the observed resources where observation would trigger a notify message.
 Receiving of data refers to receiving read, write or execute operations from the server. Application can register callbacks for these operations.
 
 Configuring lifetime and activity period

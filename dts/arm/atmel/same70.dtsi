@@ -354,6 +354,11 @@
 				 <&pmc PMC_TYPE_PERIPHERAL 24>,
 				 <&pmc PMC_TYPE_PERIPHERAL 25>;
 			status = "disabled";
+
+			qdec {
+				compatible = "atmel,sam-tc-qdec";
+				status = "disabled";
+			};
 		};
 
 		tc1: tc@40010000 {
@@ -366,6 +371,11 @@
 				 <&pmc PMC_TYPE_PERIPHERAL 27>,
 				 <&pmc PMC_TYPE_PERIPHERAL 28>;
 			status = "disabled";
+
+			qdec {
+				compatible = "atmel,sam-tc-qdec";
+				status = "disabled";
+			};
 		};
 
 		tc2: tc@40014000 {
@@ -378,6 +388,11 @@
 				 <&pmc PMC_TYPE_PERIPHERAL 48>,
 				 <&pmc PMC_TYPE_PERIPHERAL 49>;
 			status = "disabled";
+
+			qdec {
+				compatible = "atmel,sam-tc-qdec";
+				status = "disabled";
+			};
 		};
 
 		tc3: tc@40054000 {
@@ -390,6 +405,11 @@
 				 <&pmc PMC_TYPE_PERIPHERAL 51>,
 				 <&pmc PMC_TYPE_PERIPHERAL 52>;
 			status = "disabled";
+
+			qdec {
+				compatible = "atmel,sam-tc-qdec";
+				status = "disabled";
+			};
 		};
 
 		trng: random@40070000 {
@@ -419,7 +439,8 @@
 
 		can0: can@40030000 {
 			compatible = "atmel,sam-can";
-			reg = <0x40030000 0x100>;
+			reg = <0x40030000 0x100>, <0x40088110 0x04>;
+			reg-names = "m_can", "dma_base";
 			interrupts = <35 0>, <36 0>;
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 35>;
@@ -430,7 +451,8 @@
 
 		can1: can@40034000 {
 			compatible = "atmel,sam-can";
-			reg = <0x40034000 0x100>;
+			reg = <0x40034000 0x100>, <0x40088114 0x4>;
+			reg-names = "m_can", "dma_base";
 			interrupts = <37 0>, <38 0>;
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;

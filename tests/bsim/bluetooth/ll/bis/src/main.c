@@ -753,7 +753,7 @@ static struct bt_le_scan_cb scan_callbacks = {
 static void test_iso_recv_main(void)
 {
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_ACTIVE,
+		.type       = BT_LE_SCAN_TYPE_ACTIVE,
 		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = 0x0004,
 		.window     = 0x0004,
@@ -1028,7 +1028,7 @@ static void test_iso_recv_main(void)
 static void test_iso_recv_vs_dp_main(void)
 {
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_ACTIVE,
+		.type       = BT_LE_SCAN_TYPE_ACTIVE,
 		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = 0x0004,
 		.window     = 0x0004,

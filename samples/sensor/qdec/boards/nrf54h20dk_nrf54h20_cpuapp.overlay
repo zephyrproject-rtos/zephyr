@@ -13,7 +13,7 @@
 	encoder-emulate {
 		compatible = "gpio-leds";
 		phase_a: phase_a {
-			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio7 2 GPIO_ACTIVE_HIGH>;
 		};
 		phase_b: phase_b {
 			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
@@ -31,6 +31,10 @@
 };
 
 &gpio1 {
+	status = "okay";
+};
+
+&gpio7 {
 	status = "okay";
 };
 

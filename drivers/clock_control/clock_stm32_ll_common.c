@@ -867,7 +867,7 @@ void __weak config_regulator_voltage(uint32_t hclk_freq) {}
  * that the device init runs just after SOC init
  */
 DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
-		    &stm32_clock_control_init,
+		    stm32_clock_control_init,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,

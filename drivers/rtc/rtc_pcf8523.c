@@ -581,10 +581,17 @@ unlock:
 	return err;
 }
 
-#if PCF8523_INT1_GPIOS_IN_USE
 static int pcf8523_alarm_set_callback(const struct device *dev, uint16_t id,
 				      rtc_alarm_callback callback, void *user_data)
 {
+#ifndef PCF8523_INT1_GPIOS_IN_USE
+	ARG_UNUSED(dev);
+	ARG_UNUSED(id);
+	ARG_UNUSED(callback);
+	ARG_UNUSED(user_data);
+
+	return -ENOTSUP;
+#else
 	const struct pcf8523_config *config = dev->config;
 	struct pcf8523_data *data = dev->data;
 	uint8_t control_1;
@@ -638,8 +645,8 @@ unlock:
 	k_sem_give(&data->int1_sem);
 
 	return err;
-}
 #endif /* PCF8523_INT1_GPIOS_IN_USE */
+}
 #endif /* CONFIG_RTC_ALARM */
 
 #if PCF8523_INT1_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE)
@@ -928,9 +935,7 @@ static const struct rtc_driver_api pcf8523_driver_api = {
 	.alarm_set_time = pcf8523_alarm_set_time,
 	.alarm_get_time = pcf8523_alarm_get_time,
 	.alarm_is_pending = pcf8523_alarm_is_pending,
-#if PCF8523_INT1_GPIOS_IN_USE
 	.alarm_set_callback = pcf8523_alarm_set_callback,
-#endif /* PCF8523_INT1_GPIOS_IN_USE */
 #endif /* CONFIG_RTC_ALARM */
 #if PCF8523_INT1_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE)
 	.update_set_callback = pcf8523_update_set_callback,

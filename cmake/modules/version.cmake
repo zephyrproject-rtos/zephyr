@@ -11,18 +11,18 @@
 #
 # Outputs with examples::
 #
-#   PROJECT_VERSION                    1.14.99.07
+#   PROJECT_VERSION                    1.14.99.7
 #   KERNEL_VERSION_STRING             "1.14.99-extraver"
 #   KERNEL_VERSION_EXTENDED_STRING    "1.14.99-extraver+7"
 #   KERNEL_VERSION_TWEAK_STRING       "1.14.99+7"
 #
-#   KERNEL_VERSION_MAJOR      1
-#   KERNEL_VERSION_MINOR        14
-#   KERNEL_PATCHLEVEL              99
-#   KERNEL_VERSION_TWEAK              07
+#   KERNEL_VERSION_MAJOR     1
+#   KERNEL_VERSION_MINOR     14
+#   KERNEL_PATCHLEVEL        99
+#   KERNEL_VERSION_TWEAK     7
 #   KERNELVERSION            0x10E6307
 #   KERNEL_VERSION_NUMBER    0x10E63
-#   ZEPHYR_VERSION_CODE        69219
+#   ZEPHYR_VERSION_CODE      69219
 #
 # Most outputs are converted to C macros, see ``version.h.in``
 #
@@ -65,6 +65,20 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
 
   string(REGEX MATCH "EXTRAVERSION = ([a-z0-9]*)" _ ${ver})
   set(${type}_VERSION_EXTRA ${CMAKE_MATCH_1})
+
+  # Validate all version fields fit in a single byte
+  if(${type}_VERSION_MAJOR GREATER 255)
+    message(FATAL_ERROR "VERSION_MAJOR must be in the range 0-255 (Current ${${type}_VERSION_MAJOR})")
+  endif()
+  if(${type}_VERSION_MINOR GREATER 255)
+    message(FATAL_ERROR "VERSION_MINOR must be in the range 0-255 (Current ${${type}_VERSION_MINOR})")
+  endif()
+  if(${type}_PATCHLEVEL GREATER 255)
+    message(FATAL_ERROR "PATCHLEVEL must be in the range 0-255 (Current ${${type}_PATCHLEVEL})")
+  endif()
+  if(${type}_VERSION_TWEAK GREATER 255)
+    message(FATAL_ERROR "VERSION_TWEAK must be in the range 0-255 (Current ${${type}_VERSION_TWEAK})")
+  endif()
 
   # Temporary convenience variables
   set(${type}_VERSION_WITHOUT_TWEAK ${${type}_VERSION_MAJOR}.${${type}_VERSION_MINOR}.${${type}_PATCHLEVEL})

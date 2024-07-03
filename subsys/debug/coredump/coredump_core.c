@@ -66,7 +66,7 @@ static void dump_thread(struct k_thread *thread)
 	/*
 	 * When dumping minimum information,
 	 * the current thread struct and stack need to
-	 * to be dumped so debugger can examine them.
+	 * be dumped so debugger can examine them.
 	 */
 
 	if (thread == NULL) {

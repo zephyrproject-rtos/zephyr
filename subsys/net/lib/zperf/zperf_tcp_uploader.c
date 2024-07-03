@@ -192,7 +192,7 @@ static void tcp_upload_async_work(struct k_work *work)
 			if (ret < 0) {
 				upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
 						     upload_ctx->user_data);
-				return;
+				goto cleanup;
 			}
 			upload_ctx->callback(ZPERF_SESSION_PERIODIC_RESULT, &periodic_result,
 					     upload_ctx->user_data);
@@ -209,12 +209,13 @@ static void tcp_upload_async_work(struct k_work *work)
 		if (ret < 0) {
 			upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
 					     upload_ctx->user_data);
-			return;
+			goto cleanup;
 		}
 	}
 
 	upload_ctx->callback(ZPERF_SESSION_FINISHED, &result,
 			     upload_ctx->user_data);
+cleanup:
 	zsock_close(sock);
 }
 

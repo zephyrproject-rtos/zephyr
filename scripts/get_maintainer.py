@@ -509,6 +509,9 @@ def _check_maintainers(maints_path, yaml):
             ferr("either 'files' or 'files-regex' (or both) must be specified "
                  "for area '{}'".format(area_name))
 
+        if not area_dict.get("maintainers") and area_dict.get("status") == "maintained":
+            ferr("maintained area '{}' with no maintainers".format(area_name))
+
         for list_name in "maintainers", "collaborators", "inform", "files", \
                          "files-regex", "labels", "tags", "tests":
             if list_name in area_dict:

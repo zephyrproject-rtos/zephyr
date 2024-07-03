@@ -11,7 +11,7 @@
 
 /*
  * This file lists the functions the posix "inf_clock" soc
- * expect the the board to provide
+ * expect the board to provide
  *
  * All functions listed here must be provided by the implementation of the board
  *

@@ -1,5 +1,6 @@
 identifier: max32690evkit/max32690/m4
 name: max32690evkit m4
+vendor: adi
 type: mcu
 arch: arm
 toolchain:

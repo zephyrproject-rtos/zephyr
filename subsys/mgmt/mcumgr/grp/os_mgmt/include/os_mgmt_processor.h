@@ -47,6 +47,16 @@ extern "C" {
 #else
 #define PROCESSOR_NAME "cortex-m55+nodsp"
 #endif
+#elif defined(CONFIG_CPU_CORTEX_M85)
+#if defined(CONFIG_ARMV8_1_M_MVEF)
+#define PROCESSOR_NAME "cortex-m85"
+#elif defined(CONFIG_ARMV8_1_M_MVEI)
+#define PROCESSOR_NAME "cortex-m85+nomve.fp"
+#elif defined(CONFIG_ARMV8_M_DSP)
+#define PROCESSOR_NAME "cortex-m85+nomve"
+#else
+#define PROCESSOR_NAME "cortex-m85+nodsp"
+#endif
 #elif defined(CONFIG_CPU_CORTEX_R4)
 #if defined(CONFIG_FPU) && defined(CONFIG_CPU_HAS_VFP)
 #define PROCESSOR_NAME "cortex-r4f"

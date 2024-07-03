@@ -6,7 +6,8 @@ BQ274XX Sensor Sample
 Overview
 ********
 
-This sample application retrieves all the fuel gauge parameters,
+This sample application retrieves all the fuel gauge parameters:
+
 - Voltage, in volts
 - Average current, in amps
 - Standby current, in amps

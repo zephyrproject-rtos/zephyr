@@ -34,7 +34,7 @@
 	cmdq-buffer-size = <256>;
 
 	aps6404l: aps6404l@0 {
-		compatible = "mspi-aps6404l";
+		compatible = "ambiq,mspi-device", "mspi-aps6404l";
 		size = <DT_SIZE_M(64)>;
 		reg = <0>;
 		status = "disabled";
@@ -55,7 +55,7 @@
 	};
 
 	atxp032: atxp032@1 {
-		compatible = "mspi-atxp032";
+		compatible = "ambiq,mspi-device", "mspi-atxp032";
 		size = <DT_SIZE_M(32)>;
 		reg = <1>;
 		status = "okay";

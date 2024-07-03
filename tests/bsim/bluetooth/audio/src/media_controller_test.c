@@ -595,7 +595,7 @@ static bool test_verify_media_state_wait_flags(uint8_t expected_state)
 	return true;
 }
 
-/* Helper function to write commands to to the control point, including the
+/* Helper function to write commands to the control point, including the
  * flag handling.
  * Will FAIL on error to send the command.
  * Will WAIT for the required flags before returning.

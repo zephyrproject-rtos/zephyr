@@ -178,7 +178,7 @@ change it to
 In your prj.conf overwrite the configuration like this for the **DDR** memory
 region:
 
-.. code-block:: console
+.. code-block:: cfg
 
    CONFIG_CODE_DDR=y
    CONFIG_CODE_ITCM=n
@@ -192,10 +192,10 @@ This should output something like this:
 
 .. code-block:: console
 
-   u-boot=> tftp 0x48000000 192.168.3.10:zyphr.bin
+   u-boot=> tftp 0x48000000 192.168.3.10:zephyr.bin
    Using ethernet@30be0000 device
    TFTP from server 192.168.3.10; our IP address is 192.168.3.11
-   Filename 'zepyhr.bin'.
+   Filename 'zephyr.bin'.
    Load address: 0x48000000
    Loading: ##
             2 KiB/s

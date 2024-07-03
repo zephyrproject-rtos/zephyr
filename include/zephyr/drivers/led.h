@@ -273,7 +273,7 @@ static inline int z_impl_led_set_channel(const struct device *dev,
  * @param led LED number
  * @param num_colors Number of colors in the array.
  * @param color Array of colors. It must be ordered following the color
- *        mapping of the LED controller. See the the color_mapping member
+ *        mapping of the LED controller. See the color_mapping member
  *        in struct led_info.
  * @return 0 on success, negative on error
  */

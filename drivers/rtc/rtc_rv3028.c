@@ -133,7 +133,8 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 /* RTC time fields supported by the RV3028 */
 #define RV3028_RTC_TIME_MASK                                                                       \
 	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
-	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_YEAR)
+	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_YEAR |     \
+	 RTC_ALARM_TIME_MASK_WEEKDAY)
 
 /* Helper macro to guard int-gpios related code */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) &&                                                 \
@@ -711,11 +712,17 @@ unlock:
 	return err;
 }
 
-#if RV3028_INT_GPIOS_IN_USE
-
 static int rv3028_alarm_set_callback(const struct device *dev, uint16_t id,
 				     rtc_alarm_callback callback, void *user_data)
 {
+#ifndef RV3028_INT_GPIOS_IN_USE
+	ARG_UNUSED(dev);
+	ARG_UNUSED(id);
+	ARG_UNUSED(callback);
+	ARG_UNUSED(user_data);
+
+	return -ENOTSUP;
+#else
 	const struct rv3028_config *config = dev->config;
 	struct rv3028_data *data = dev->data;
 	uint8_t control_2;
@@ -766,9 +773,9 @@ unlock:
 	k_work_submit(&data->work);
 
 	return err;
+#endif /* RV3028_INT_GPIOS_IN_USE */
 }
 
-#endif /* RV3028_INT_GPIOS_IN_USE */
 #endif /* CONFIG_RTC_ALARM */
 
 #if RV3028_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE)
@@ -952,9 +959,7 @@ static const struct rtc_driver_api rv3028_driver_api = {
 	.alarm_set_time = rv3028_alarm_set_time,
 	.alarm_get_time = rv3028_alarm_get_time,
 	.alarm_is_pending = rv3028_alarm_is_pending,
-#if RV3028_INT_GPIOS_IN_USE
 	.alarm_set_callback = rv3028_alarm_set_callback,
-#endif /* RV3028_INT_GPIOS_IN_USE */
 #endif /* CONFIG_RTC_ALARM */
 #if RV3028_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE)
 	.update_set_callback = rv3028_update_set_callback,

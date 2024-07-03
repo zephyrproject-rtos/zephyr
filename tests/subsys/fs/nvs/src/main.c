@@ -8,11 +8,12 @@
  * This test is designed to be run using flash-simulator which provide
  * functionality for flash property customization and emulating errors in
  * flash operation in parallel to regular flash API.
- * Test should be run on qemu_x86 or native_sim target.
+ * Test should be run on qemu_x86, mps2_an385 or native_sim target.
  */
 
-#if !defined(CONFIG_BOARD_QEMU_X86) && !defined(CONFIG_ARCH_POSIX)
-#error "Run only on qemu_x86 or a posix architecture based target (for ex. native_sim)"
+#if !defined(CONFIG_BOARD_QEMU_X86) && !defined(CONFIG_ARCH_POSIX) &&                              \
+	!defined(CONFIG_BOARD_MPS2_AN385)
+#error "Run only on qemu_x86, mps2_an385, or a posix architecture based target (for ex. native_sim)"
 #endif
 
 #include <stdio.h>

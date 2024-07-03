@@ -131,6 +131,7 @@ Deviations from the standard
 ****************************
 
 Certain parts of the protocol are not yet supported in the library.
+
 * Pre-defined topic IDs
 * QoS -1 - it's most useful with predefined topics
 * Gateway discovery using ADVERTISE, SEARCHGW and GWINFO messages.

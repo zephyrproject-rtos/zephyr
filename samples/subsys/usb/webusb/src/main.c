@@ -64,7 +64,7 @@ static struct msosv2_descriptor_t {
 		.wLength = sizeof(struct msosv2_function_subset_header),
 		.wDescriptorType = MS_OS_20_SUBSET_HEADER_FUNCTION,
 		/* The WebUSB interface number becomes the first when CDC_ACM is enabled by
-		 * configuration.  Beware that if this sample is used as as inspiration for
+		 * configuration.  Beware that if this sample is used as an inspiration for
 		 * applications, where the WebUSB interface is no longer the first,
 		 * remember to adjust bFirstInterface.
 		 */

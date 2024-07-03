@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- / {
+/ {
 	resources {
 		compatible = "test-gpio-basic-api";
 		out-gpios = <&gpio1 10 0>;
@@ -13,9 +13,9 @@
 };
 
 &gpiote20 {
-    status = "okay";
+	status = "okay";
 };
 
 &gpio1 {
-    status = "okay";
+	status = "okay";
 };

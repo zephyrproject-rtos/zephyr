@@ -210,3 +210,31 @@ zephyr_udc0: &usbhs {
 		max-bitrate = <5000000>;
 	};
 };
+
+&tc0 {
+	qdec0: qdec {
+		pinctrl-0 = <&qdec0_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&tc1 {
+	qdec1: qdec {
+		pinctrl-0 = <&qdec1_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&tc2 {
+	qdec2: qdec {
+		pinctrl-0 = <&qdec2_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&tc3 {
+	qdec3: qdec {
+		pinctrl-0 = <&qdec3_default>;
+		pinctrl-names = "default";
+	};
+};

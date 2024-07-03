@@ -300,8 +300,10 @@ static void api_irq_tx_disable(const struct device *dev)
 static int api_irq_tx_ready(const struct device *dev)
 {
 	struct max32_uart_data *const data = dev->data;
+	const struct max32_uart_config *cfg = dev->config;
+	uint32_t inten = Wrap_MXC_UART_GetRegINTEN(cfg->regs);
 
-	return ((data->flags & (ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM)) ||
+	return ((inten & (ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM)) &&
 		!(data->status & MXC_F_UART_STATUS_TX_FULL));
 }
 
@@ -333,8 +335,10 @@ static int api_irq_tx_complete(const struct device *dev)
 static int api_irq_rx_ready(const struct device *dev)
 {
 	struct max32_uart_data *const data = dev->data;
+	const struct max32_uart_config *cfg = dev->config;
+	uint32_t inten = Wrap_MXC_UART_GetRegINTEN(cfg->regs);
 
-	return (data->flags & ADI_MAX32_UART_INT_RX);
+	return ((inten & ADI_MAX32_UART_INT_RX) && !(data->status & ADI_MAX32_UART_RX_EMPTY));
 }
 
 static void api_irq_err_enable(const struct device *dev)

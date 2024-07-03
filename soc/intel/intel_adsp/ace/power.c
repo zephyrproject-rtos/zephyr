@@ -164,9 +164,6 @@ static ALWAYS_INLINE void _restore_core_context(void)
 {
 	uint32_t core_id = arch_proc_id();
 
-#ifdef CONFIG_XTENSA_MMU
-	xtensa_mmu_init();
-#endif
 	XTENSA_WSR("PS", core_desc[core_id].ps);
 	XTENSA_WSR("VECBASE", core_desc[core_id].vecbase);
 	XTENSA_WSR("EXCSAVE2", core_desc[core_id].excsave2);
@@ -175,6 +172,9 @@ static ALWAYS_INLINE void _restore_core_context(void)
 #if (XCHAL_NUM_MISC_REGS == 2)
 	XTENSA_WSR("MISC0", core_desc[core_id].misc[0]);
 	XTENSA_WSR("MISC1", core_desc[core_id].misc[1]);
+#endif
+#ifdef CONFIG_XTENSA_MMU
+	xtensa_mmu_reinit();
 #endif
 	__asm__ volatile("mov a0, %0" :: "r"(core_desc[core_id].a0));
 	__asm__ volatile("mov a1, %0" :: "r"(core_desc[core_id].a1));

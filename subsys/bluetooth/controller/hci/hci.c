@@ -68,6 +68,7 @@
 #include "ll_sw/ull_sync_internal.h"
 #include "ll_sw/ull_conn_internal.h"
 #include "ll_sw/ull_sync_iso_internal.h"
+#include "ll_sw/ull_iso_internal.h"
 #include "ll_sw/ull_df_internal.h"
 
 #include "ll.h"
@@ -3130,7 +3131,7 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	/* TX LL thread has higher priority than RX thread. It may happen that host succefully
-	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporing
+	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporting
 	 * IQ samples after the functionality was disabled.
 	 */
 	if (ull_df_conn_cfg_is_not_enabled(&lll->df_rx_cfg)) {
@@ -5256,7 +5257,7 @@ static void vs_le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct ne
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	/* TX LL thread has higher priority than RX thread. It may happen that host succefully
-	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporing
+	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporting
 	 * IQ samples after the functionality was disabled.
 	 */
 	if (ull_df_conn_cfg_is_not_enabled(&lll->df_rx_cfg)) {
@@ -5767,7 +5768,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		sdu_frag_tx.iso_sdu_length = 0;
 	}
 
-	/* Packet boudary flags should be bitwise identical to the SDU state
+	/* Packet boundary flags should be bitwise identical to the SDU state
 	 * 0b00 BT_ISO_START
 	 * 0b01 BT_ISO_CONT
 	 * 0b10 BT_ISO_SINGLE
@@ -7353,7 +7354,7 @@ no_ext_hdr:
 	/* Clear the data status bits */
 	evt_type &= ~(BIT_MASK(2) << 5);
 
-	/* Allocate, append as buf fragement and construct the scan response
+	/* Allocate, append as buf fragment and construct the scan response
 	 * event.
 	 */
 	evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
@@ -7847,8 +7848,11 @@ static void le_big_sync_established(struct pdu_data *pdu,
 {
 	struct bt_hci_evt_le_big_sync_established *sep;
 	struct ll_sync_iso_set *sync_iso;
+	uint32_t transport_latency_big;
 	struct node_rx_sync_iso *se;
 	struct lll_sync_iso *lll;
+	uint32_t iso_interval_us;
+	uint32_t big_sync_delay;
 	size_t evt_size;
 	void *node;
 
@@ -7877,9 +7881,34 @@ static void le_big_sync_established(struct pdu_data *pdu,
 		return;
 	}
 
-	/* FIXME: Fill latency */
-	sys_put_le24(0, sep->latency);
+	/* BT Core v5.4 - Vol 6, Part B, Section 4.4.6.4:
+	 * BIG_Sync_Delay = (Num_BIS – 1) × BIS_Spacing + (NSE – 1) × Sub_Interval + MPT.
+	 *
+	 * BT Core v5.4 - Vol 6, Part G, Section 3.2.1: (Framed)
+	 * Transport_Latenct_BIG = BIG_Sync_Delay + PTO × (NSE / BN – IRC) * ISO_Interval +
+	 *                             ISO_Interval + SDU_Interval
+	 *
+	 * BT Core v5.4 - Vol 6, Part G, Section 3.2.2: (Unframed)
+	 * Transport_Latenct_BIG = BIG_Sync_Delay + (PTO × (NSE / BN – IRC) + 1) * ISO_Interval -
+	 *                             SDU_Interval
+	 */
+	iso_interval_us = lll->iso_interval * ISO_INT_UNIT_US;
+	big_sync_delay = ull_iso_big_sync_delay(lll->num_bis, lll->bis_spacing, lll->nse,
+						lll->sub_interval, lll->phy, lll->max_pdu,
+						lll->enc);
+	if (lll->framing) {
+		/* Framed */
+		transport_latency_big = big_sync_delay +
+					lll->pto * (lll->nse / lll->bn - lll->irc) *
+					iso_interval_us + iso_interval_us + lll->sdu_interval;
+	} else {
+		/* Unframed */
+		transport_latency_big = big_sync_delay +
+					(lll->pto * (lll->nse / lll->bn - lll->irc) + 1) *
+					iso_interval_us - lll->sdu_interval;
+	}
 
+	sys_put_le24(transport_latency_big, sep->latency);
 	sep->nse = lll->nse;
 	sep->bn = lll->bn;
 	sep->pto = lll->pto;

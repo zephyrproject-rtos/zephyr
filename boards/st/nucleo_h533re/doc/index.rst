@@ -170,6 +170,8 @@ The Zephyr nucleo_h533re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC Controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -205,9 +207,9 @@ For more details please refer to `STM32H5 Nucleo-64 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- ADC1 channel 14 input: PB1
+- ADC1 channel 0 input: PA0
 - USART1 TX/RX : PB14/PB15 (Arduino USART1)
-- SPI1 SCK/MISO/MOSI/NSS: PA5/PA6/PA7/PC9
+- SPI1 SCK/MISO/MOSI/NSS: PA5/PA6/PA7/PA4
 - UART2 TX/RX : PA2/PA3 (VCP)
 - USER_PB : PC13
 
@@ -221,7 +223,7 @@ as well as main PLL clock. By default System clock is driven by PLL clock at
 Serial Port
 -----------
 
-Nucleo H533RE board has up to 6 U(S)ARTs. The Zephyr console output is assigned
+Nucleo H533RE board has up to 4 USARTs, 2 UARTs, and one LPUART. The Zephyr console output is assigned
 to USART2. Default settings are 115200 8N1.
 
 Programming and Debugging

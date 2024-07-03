@@ -2045,7 +2045,7 @@ static int rcar_mmc_init_controller_regs(const struct device *dev)
 	reg |= RCAR_MMC_DMA_MODE_ADDR_INC | RCAR_MMC_DMA_MODE_WIDTH;
 	rcar_mmc_write_reg32(dev, RCAR_MMC_DMA_MODE, reg);
 
-	/* store version of of introductory IP */
+	/* store version of introductory IP */
 	data->ver = rcar_mmc_read_reg32(dev, RCAR_MMC_VERSION);
 	data->ver &= RCAR_MMC_VERSION_IP;
 

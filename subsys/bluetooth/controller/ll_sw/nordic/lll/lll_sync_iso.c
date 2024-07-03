@@ -298,7 +298,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 	lll_chan_set(data_chan_use);
 
-	/* By design, there shall alway be one free node rx available for
+	/* By design, there shall always be one free node rx available for
 	 * setting up radio for new PDU reception.
 	 */
 	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
@@ -934,7 +934,7 @@ isr_rx_next_subevent:
 			payload_count += (lll->bn_curr - 1U) +
 					 (lll->ptc_curr * lll->pto);
 
-			/* By design, there shall alway be one free node rx
+			/* By design, there shall always be one free node rx
 			 * available for setting up radio for new PDU reception.
 			 */
 			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
@@ -959,7 +959,7 @@ isr_rx_next_subevent:
 		struct pdu_bis *pdu;
 
 		if (bis) {
-			/* By design, there shall alway be one free node rx
+			/* By design, there shall always be one free node rx
 			 * available for setting up radio for new PDU reception.
 			 */
 			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
@@ -1170,13 +1170,13 @@ static void isr_rx_done(void *param)
 		 *
 		 * When a Synchronized Receiver receives such a PDU where
 		 * (instant - bigEventCounter) mod 65536 is greater than or
-		 * equal to 32767 (because the instant is in the past), the
+		 * equal to 32767 (because the instant is in the past),
 		 * the Link Layer may stop synchronization with the BIG.
 		 */
 
 		/* Note: We are not validating whether the control PDU was
 		 * received after the instant but apply the new channel map.
-		 * If the channel map was new at or after the instant and the
+		 * If the channel map was new at or after the instant and
 		 * the channel at the event counter did not match then the
 		 * control PDU would not have been received.
 		 */

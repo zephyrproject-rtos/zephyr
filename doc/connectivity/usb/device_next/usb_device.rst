@@ -30,22 +30,22 @@ The USB device stack has built-in USB functions. Some can be used directly in
 the user application through a special API, such as HID or Audio class devices,
 while others use a general Zephyr RTOS driver API, such as MSC and CDC class
 implementations. The *Identification string* identifies a class or function
-instance (n) and is used as an argument to the :c:func:`usbd_register_class`.
+instance (`n`) and is used as an argument to the :c:func:`usbd_register_class`.
 
 +-----------------------------------+-------------------------+-------------------------+
 | Class or function                 | User API (if any)       | Identification string   |
 +===================================+=========================+=========================+
-| USB Audio 2 class                 | :ref:`uac2_device`      | uac2_(n)                |
+| USB Audio 2 class                 | :ref:`uac2_device`      | :samp:`uac2_{n}`        |
 +-----------------------------------+-------------------------+-------------------------+
-| USB CDC ACM class                 | :ref:`uart_api`         | cdc_acm_(n)             |
+| USB CDC ACM class                 | :ref:`uart_api`         | :samp:`cdc_acm_{n}`     |
 +-----------------------------------+-------------------------+-------------------------+
-| USB CDC ECM class                 | Ethernet device         | cdc_ecm_(n)             |
+| USB CDC ECM class                 | Ethernet device         | :samp:`cdc_ecm_{n}`     |
 +-----------------------------------+-------------------------+-------------------------+
-| USB Mass Storage Class (MSC)      | :ref:`disk_access_api`  | msc_(n)                 |
+| USB Mass Storage Class (MSC)      | :ref:`usbd_msc_device`  | :samp:`msc_{n}`         |
 +-----------------------------------+-------------------------+-------------------------+
-| USB Human Interface Devices (HID) | :ref:`usbd_hid_device`  | hid_(n)                 |
+| USB Human Interface Devices (HID) | :ref:`usbd_hid_device`  | :samp:`hid_{n}`         |
 +-----------------------------------+-------------------------+-------------------------+
-| Bluetooth HCI USB transport layer | :ref:`bt_hci_raw`       | bt_hci_(n)              |
+| Bluetooth HCI USB transport layer | :ref:`bt_hci_raw`       | :samp:`bt_hci_{n}`      |
 +-----------------------------------+-------------------------+-------------------------+
 
 Samples
@@ -99,6 +99,7 @@ must not be directly accessed or manipulated by the application.
 
 .. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
+   :dedent:
    :start-after: doc device instantiation start
    :end-before: doc device instantiation end
 
@@ -112,6 +113,7 @@ require a single instantiation of the language descriptor using the
 
 .. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
+   :dedent:
    :start-after: doc string instantiation start
    :end-before: doc string instantiation end
 
@@ -120,6 +122,7 @@ initializing the USB device with :c:func:`usbd_add_descriptor`.
 
 .. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
+   :dedent:
    :start-after: doc add string descriptor start
    :end-before: doc add string descriptor end
 
@@ -129,6 +132,7 @@ a configuration. Later, USB device functions are assigned to a configuration.
 
 .. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
+   :dedent:
    :start-after: doc configuration instantiation start
    :end-before: doc configuration instantiation end
 
@@ -140,6 +144,7 @@ configuration will get ``bConfigurationValue`` one, and then further upward.
 
 .. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
+   :dedent:
    :start-after: doc configuration register start
    :end-before: doc configuration register end
 
@@ -155,6 +160,7 @@ instances.
 
 .. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
+   :dedent:
    :start-after: doc functions register start
    :end-before: doc functions register end
 
@@ -173,6 +179,7 @@ steps, which should be performed prior to initializing the USB device.
 
 .. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
+   :dedent:
    :start-after: doc device init start
    :end-before: doc device init end
 
@@ -183,5 +190,34 @@ enumerating the device. The application can disable the USB device using
 
 .. literalinclude:: ../../../../samples/subsys/usb/hid-keyboard/src/main.c
    :language: c
+   :dedent:
    :start-after: doc device enable start
    :end-before: doc device enable end
+
+USB Message notifications
+=========================
+
+The application can register a callback using :c:func:`usbd_msg_register_cb` to
+receive message notification from the USB device support subsystem. The
+messages are mostly about the common device state changes, and a few specific
+types from the USB CDC ACM implementation.
+
+.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
+   :language: c
+   :dedent:
+   :start-after: doc device init-and-msg start
+   :end-before: doc device init-and-msg end
+
+The helper function :c:func:`usbd_msg_type_string()` can be used to convert
+:c:enumerator:`usbd_msg_type` to a human readable form for logging.
+
+If the controller supports VBUS state change detection, the battery-powered
+application may want to enable the USB device only when it is connected to a
+host. A generic application should use :c:func:`usbd_can_detect_vbus` to check
+for this capability.
+
+.. literalinclude:: ../../../../samples/subsys/usb/hid-keyboard/src/main.c
+   :language: c
+   :dedent:
+   :start-after: doc device msg-cb start
+   :end-before: doc device msg-cb end

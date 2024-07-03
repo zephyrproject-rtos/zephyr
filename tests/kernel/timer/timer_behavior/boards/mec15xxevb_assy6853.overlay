@@ -5,9 +5,9 @@
  */
 
 / {
-    resources {
-        compatible = "test-kernel-timer-behavior-external";
+	resources {
+		compatible = "test-kernel-timer-behavior-external";
 
-        timerout-gpios = <&gpio_140_176 14 GPIO_ACTIVE_LOW>;
-    };
+		timerout-gpios = <&gpio_140_176 14 GPIO_ACTIVE_LOW>;
+	};
 };

@@ -569,7 +569,7 @@ void bt_mesh_test_send_over_adv(void *data, size_t len)
 int bt_mesh_test_wait_for_packet(bt_le_scan_cb_t scan_cb, struct k_sem *observer_sem, uint16_t wait)
 {
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
+		.type       = BT_LE_SCAN_TYPE_PASSIVE,
 		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = BT_MESH_ADV_SCAN_UNIT(1000),
 		.window     = BT_MESH_ADV_SCAN_UNIT(1000)

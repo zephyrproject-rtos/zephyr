@@ -134,7 +134,7 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_gain_setting_d
 	zexpect_call_count("bt_cap_commander_cb.microphone_gain_setting_changed", 1,
 			   mock_cap_commander_microphone_gain_changed_cb_fake.call_count);
 
-	/* That that it still works as expected if we set the same value twice */
+	/* Test that it still works as expected if we set the same value twice */
 	err = bt_cap_commander_change_microphone_gain_setting(&param);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
@@ -344,7 +344,7 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_mute_state_dou
 	zexpect_call_count("bt_cap_commander_cb.microphone_mute_changed", 1,
 			   mock_cap_commander_microphone_mute_changed_cb_fake.call_count);
 
-	/* That that it still works as expected if we set the same value twice */
+	/* Test that it still works as expected if we set the same value twice */
 	err = bt_cap_commander_change_microphone_mute_state(&param);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 

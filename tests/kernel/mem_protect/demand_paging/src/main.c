@@ -117,6 +117,8 @@ static void print_paging_stats(struct k_mem_paging_stats_t *stats, const char *s
 
 static void touch_anon_pages(bool zig, bool zag)
 {
+	void **arena_ptr = (void **)arena;
+	size_t arena_ptr_size = arena_size / sizeof(void *);
 	unsigned long faults;
 	struct k_mem_paging_stats_t stats;
 	k_tid_t tid = k_current_get();
@@ -134,21 +136,21 @@ static void touch_anon_pages(bool zig, bool zag)
 	}
 
 	printk("writing data\n");
-	/* Write a pattern of data to the whole arena */
-	for (size_t j = 0; j < arena_size; j++) {
-		size_t i = zag ? (arena_size - 1 - j) : j;
+	/* Fill the whole arena with each location's own virtual address */
+	for (size_t j = 0; j < arena_ptr_size; j++) {
+		size_t i = zag ? (arena_ptr_size - 1 - j) : j;
 
-		arena[i] = nums[i % 10];
+		arena_ptr[i] = &arena_ptr[i];
 	}
 
 	/* And ensure it can be read back */
 	printk("verify written data\n");
-	for (size_t j = 0; j < arena_size; j++) {
-		size_t i = zig ? (arena_size - 1 - j) : j;
+	for (size_t j = 0; j < arena_ptr_size; j++) {
+		size_t i = zig ? (arena_ptr_size - 1 - j) : j;
 
-		zassert_equal(arena[i], nums[i % 10],
-			      "arena corrupted at index %d (%p): got 0x%hhx expected 0x%hhx",
-			      i, &arena[i], arena[i], nums[i % 10]);
+		zassert_equal(arena_ptr[i], &arena_ptr[i],
+			      "arena corrupted at index %d: got %p expected %p",
+			      i, arena_ptr[i], &arena_ptr[i]);
 	}
 
 	faults = k_mem_num_pagefaults_get() - faults;
@@ -170,12 +172,12 @@ static void touch_anon_pages(bool zig, bool zag)
 	 * since the arena is not modified.
 	 */
 	printk("reading unmodified data\n");
-	for (size_t j = 0; j < arena_size; j++) {
-		size_t i = zag ? (arena_size - 1 - j) : j;
+	for (size_t j = 0; j < arena_ptr_size; j++) {
+		size_t i = zag ? (arena_ptr_size - 1 - j) : j;
 
-		zassert_equal(arena[i], nums[i % 10],
-			      "arena corrupted at index %d (%p): got 0x%hhx expected 0x%hhx",
-			      i, &arena[i], arena[i], nums[i % 10]);
+		zassert_equal(arena_ptr[i], &arena_ptr[i],
+			      "arena corrupted at index %d: got %p expected %p",
+			      i, arena_ptr[i], &arena_ptr[i]);
 	}
 
 	k_mem_paging_stats_get(&stats);

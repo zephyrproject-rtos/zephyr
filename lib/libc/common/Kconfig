@@ -53,7 +53,7 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 config COMMON_LIBC_CALLOC
 	bool "Common C library calloc"
 	depends on COMMON_LIBC_MALLOC
-	default n if MINIMAL_LIBC && !MINIMAL_LIBC_CALLOC
+	default n if MINIMAL_LIBC
 	default y
 	help
 	  Enable the common C library trivial implementation of calloc,
@@ -62,7 +62,7 @@ config COMMON_LIBC_CALLOC
 config COMMON_LIBC_REALLOCARRAY
 	bool "Common C library reallocarray"
 	depends on COMMON_LIBC_MALLOC
-	default n if MINIMAL_LIBC && !MINIMAL_LIBC_REALLOCARRAY
+	default n if MINIMAL_LIBC
 	default y
 	help
 	  Enable the common C library trivial implementation of

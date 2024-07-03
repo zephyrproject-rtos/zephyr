@@ -74,7 +74,7 @@ To build without toolchain bundled Picolibc, the toolchain must
 enable :kconfig:option:`CONFIG_PICOLIBC_SUPPORTED`. For example,
 this needs to be added to the toolchain Kconfig file:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config TOOLCHAIN_<name>_PICOLIBC_SUPPORTED
       def_bool y

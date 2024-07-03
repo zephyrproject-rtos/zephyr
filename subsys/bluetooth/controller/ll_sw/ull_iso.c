@@ -321,9 +321,12 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		sdu_interval = lll_iso->sdu_interval;
 		burst_number = lll_iso->bn;
 		flush_timeout = 0U; /* Not used for Broadcast ISO */
-		group_sync_delay = 0U; /* FIXME: */
-		stream_sync_delay = 0U; /* FIXME: */
-		framed = 0U; /* FIXME: pick the framing value from context */
+		group_sync_delay = ull_iso_big_sync_delay(lll_iso->num_bis, lll_iso->bis_spacing,
+							  lll_iso->nse, lll_iso->sub_interval,
+							  lll_iso->phy, lll_iso->max_pdu,
+							  lll_iso->enc);
+		stream_sync_delay = group_sync_delay - stream_handle * lll_iso->bis_spacing;
+		framed = lll_iso->framing;
 		max_octets = lll_iso->max_pdu;
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
@@ -346,11 +349,15 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		iso_interval = lll_iso->iso_interval;
 		sdu_interval = lll_iso->sdu_interval;
 		burst_number = lll_iso->bn;
+
+		group_sync_delay = ull_iso_big_sync_delay(lll_iso->num_bis, lll_iso->bis_spacing,
+							  lll_iso->nse, lll_iso->sub_interval,
+							  lll_iso->phy, lll_iso->max_pdu,
+							  lll_iso->enc);
+		stream_sync_delay = group_sync_delay - stream_handle * lll_iso->bis_spacing;
+		framed = lll_iso->framing;
+		max_octets = lll_iso->max_pdu;
 		flush_timeout = 0U; /* Not used for Broadcast ISO */
-		group_sync_delay = 0U; /* FIXME: */
-		stream_sync_delay = 0U; /* FIXME: */
-		framed = 0U; /* FIXME: pick the framing value from context */
-		max_octets = 0U;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 	} else {
@@ -880,11 +887,14 @@ uint8_t ll_iso_receive_test(uint16_t handle, uint8_t payload_type)
 		 * BIG_Sync_Delay = (Num_BIS – 1) × BIS_Spacing
 		 *			+ (NSE – 1) × Sub_Interval + MPT.
 		 */
-		group_sync_delay = ull_big_sync_delay(lll_iso);
+		group_sync_delay = ull_iso_big_sync_delay(lll_iso->num_bis, lll_iso->bis_spacing,
+							  lll_iso->nse, lll_iso->sub_interval,
+							  lll_iso->phy, lll_iso->max_pdu,
+							  lll_iso->enc);
 		stream_sync_delay = group_sync_delay - stream_handle * lll_iso->bis_spacing;
 
 		role = ISOAL_ROLE_BROADCAST_SINK;
-		framed = 0; /* FIXME: Get value from biginfo */
+		framed = lll_iso->framing;
 		bn = lll_iso->bn;
 		ft = 0;
 		sdu_interval = lll_iso->sdu_interval;
@@ -1496,14 +1506,37 @@ void ull_iso_lll_event_prepare(uint16_t handle, uint64_t event_count)
 			isoal_tx_event_prepare(dp->source_hdl, event_count);
 		}
 	} else if (IS_ADV_ISO_HANDLE(handle)) {
-		/* Send event deadline trigger to ISO-AL.
-		 * TODO: Can be unified with CIS implementation.
-		 */
+		struct ll_iso_datapath *dp = NULL;
+		struct lll_adv_iso_stream *stream;
+		uint16_t stream_handle;
+
+		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
+		stream = ull_adv_iso_stream_get(stream_handle);
+
+		if (stream) {
+			dp = stream->dp;
+		}
+
+		if (dp) {
+			isoal_tx_event_prepare(dp->source_hdl, event_count);
+		}
 	} else {
 		LL_ASSERT(0);
 	}
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
+uint32_t ull_iso_big_sync_delay(uint8_t num_bis, uint32_t bis_spacing, uint8_t nse,
+				uint32_t sub_interval, uint8_t phy, uint8_t max_pdu, bool enc)
+{
+	/* BT Core v5.4 - Vol 6, Part B, Section 4.4.6.4:
+	 * BIG_Sync_Delay = (Num_BIS – 1) × BIS_Spacing + (NSE – 1) × Sub_Interval + MPT.
+	 */
+	return (num_bis - 1) * bis_spacing + (nse - 1) * sub_interval +
+	       BYTES2US(PDU_OVERHEAD_SIZE(phy) + max_pdu + (enc ? 4 : 0), phy);
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO */
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 void *ull_iso_pdu_rx_alloc_peek(uint8_t count)

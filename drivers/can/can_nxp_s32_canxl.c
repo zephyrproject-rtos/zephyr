@@ -65,6 +65,7 @@ struct can_nxp_s32_config {
 	CANXL_RXFIFO_Type * base_rx_fifo;
 	CANXL_RXFIFO_CONTROL_Type *base_rx_fifo_ctrl;
 #endif
+	CANXL_MRU_Type * base_mru;
 	uint8 instance;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
@@ -1003,11 +1004,16 @@ static int can_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-static void can_nxp_s32_isr_rx_tx(const struct device *dev)
+static void can_nxp_s32_isr_rx_tx_mru(const struct device *dev)
 {
 	const struct can_nxp_s32_config *config = dev->config;
 
 	Canexcel_Ip_RxTxIRQHandler(config->instance);
+
+	if ((config->base_mru->CHXCONFIG[0u].CH_CFG0 & CANXL_MRU_CH_CFG0_CHE_MASK)
+					== CANXL_MRU_CH_CFG0_CHE_MASK) {
+		Canexcel_Ip_MruIRQHandler(config->instance);
+	}
 }
 
 static void can_nxp_s32_isr_error(const struct device *dev)
@@ -1164,6 +1170,7 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 				DT_INST_REG_ADDR_BY_NAME(n, rx_fifo),			\
 			.base_rx_fifo_ctrl = (CANXL_RXFIFO_CONTROL_Type *)		\
 				DT_INST_REG_ADDR_BY_NAME(n, rx_fifo_ctrl),))		\
+		.base_mru = (CANXL_MRU_Type *)DT_INST_REG_ADDR_BY_NAME(n, mru),		\
 		.instance = CAN_NXP_S32_HW_INSTANCE(n),					\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clock_subsys = (clock_control_subsys_t)				\

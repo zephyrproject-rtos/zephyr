@@ -2107,13 +2107,7 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 		}
 
 		block_ctx->last_block = last_block;
-
-		/* Initial block sent by the server might be larger or smaller than
-		 * our block size, therefore it is needed to take this into account
-		 * when calculating next expected block number.
-		 */
-		block_ctx->expected +=
-			1 << MAX(0, GET_BLOCK_SIZE(block_opt) - block_ctx->ctx.block_size);
+		block_ctx->expected++;
 	}
 
 	r = do_write_op(msg, format);
@@ -3601,35 +3595,4 @@ cleanup:
 	LOG_WRN("LwM2M send is only supported for CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1");
 	return -ENOTSUP;
 #endif
-}
-
-int lwm2m_send(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
-			 uint8_t path_list_size, bool confirmation_request)
-{
-	if (!confirmation_request) {
-		return -EINVAL;
-	}
-
-	return lwm2m_send_cb(ctx, path_list, path_list_size, NULL);
-}
-
-int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
-		      bool confirmation_request)
-{
-	int ret;
-	struct lwm2m_obj_path lwm2m_path_list[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
-
-	if (path_list_size > CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE) {
-		return -E2BIG;
-	}
-
-	for (int i = 0; i < path_list_size; i++) {
-		/* translate path -> path_obj */
-		ret = lwm2m_string_to_path(path_list[i], &lwm2m_path_list[i], '/');
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return lwm2m_send_cb(ctx, lwm2m_path_list, path_list_size, NULL);
 }

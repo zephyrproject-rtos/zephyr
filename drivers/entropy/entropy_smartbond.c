@@ -11,7 +11,6 @@
 #include <zephyr/sys/barrier.h>
 #include <DA1469xAB.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
 
 #include <zephyr/logging/log.h>
@@ -47,10 +46,6 @@ struct entropy_smartbond_dev_data {
 
 	RNG_POOL_DEFINE(isr, CONFIG_ENTROPY_SMARTBOND_ISR_POOL_SIZE);
 	RNG_POOL_DEFINE(thr, CONFIG_ENTROPY_SMARTBOND_THR_POOL_SIZE);
-
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
-	ATOMIC_DEFINE(pm_policy_state_flag, 1);
-#endif
 };
 
 static struct entropy_smartbond_dev_data entropy_smartbond_data;
@@ -62,30 +57,22 @@ static struct entropy_smartbond_dev_data entropy_smartbond_data;
 #define FIFO_COUNT_MASK                                                                            \
 	(TRNG_TRNG_FIFOLVL_REG_TRNG_FIFOFULL_Msk | TRNG_TRNG_FIFOLVL_REG_TRNG_FIFOLVL_Msk)
 
-static inline void entropy_smartbond_pm_policy_state_lock_get(const struct device *dev)
+static inline void entropy_smartbond_pm_policy_state_lock_get(void)
 {
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
-	struct entropy_smartbond_dev_data *data = dev->data;
-
-	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
-		/*
-		 * Prevent the SoC from etering the normal sleep state as PDC does not support
-		 * waking up the application core following TRNG events.
-		 */
-		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+#if defined(CONFIG_PM_DEVICE)
+	/*
+	 * Prevent the SoC from etering the normal sleep state as PDC does not support
+	 * waking up the application core following TRNG events.
+	 */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 #endif
 }
 
-static inline void entropy_smartbond_pm_policy_state_lock_put(const struct device *dev)
+static inline void entropy_smartbond_pm_policy_state_lock_put(void)
 {
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
-	struct entropy_smartbond_dev_data *data = dev->data;
-
-	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0) == 1) {
-		/* Allow the SoC to enter the nornmal sleep state once TRNG is inactive */
-		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+#if defined(CONFIG_PM_DEVICE)
+	/* Allow the SoC to enter the nornmal sleep state once TRNG is inactive */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 #endif
 }
 
@@ -102,12 +89,12 @@ static void trng_enable(bool enable)
 		 * Sleep is not allowed as long as the ISR and thread SW FIFOs
 		 * are being filled with random numbers.
 		 */
-		entropy_smartbond_pm_policy_state_lock_get(DEVICE_DT_INST_GET(0));
+		entropy_smartbond_pm_policy_state_lock_get();
 	} else {
 		CRG_TOP->CLK_AMBA_REG &= ~CRG_TOP_CLK_AMBA_REG_TRNG_CLK_ENABLE_Msk;
 		TRNG->TRNG_CTRL_REG = 0;
 
-		entropy_smartbond_pm_policy_state_lock_put(DEVICE_DT_INST_GET(0));
+		entropy_smartbond_pm_policy_state_lock_put();
 	}
 	irq_unlock(key);
 }
@@ -379,7 +366,7 @@ static int entropy_smartbond_get_entropy_isr(const struct device *dev, uint8_t *
 	return cnt;
 }
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#if defined(CONFIG_PM_DEVICE)
 static int entropy_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
@@ -432,13 +419,6 @@ static int entropy_smartbond_init(const struct device *dev)
 	irq_enable(IRQN);
 
 	trng_enable(true);
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	/* Make sure device state is marked as suspended */
-	pm_device_init_suspended(dev);
-
-	return pm_device_runtime_enable(dev);
-#endif
 
 	return 0;
 }

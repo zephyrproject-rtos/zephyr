@@ -195,7 +195,7 @@ void sip_svc_id_map_delete(struct sip_svc_id_map *id_map)
 	}
 }
 
-/* Retrieve index from from database with key(id)*/
+/* Retrieve index from database with key(id)*/
 static int sip_svc_id_map_get_idx(struct sip_svc_id_map *id_map, uint32_t id)
 {
 	int i;

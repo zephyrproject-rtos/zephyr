@@ -1765,12 +1765,14 @@
 /**
  * @brief Trace System heap realloc enter
  * @param heap
+ * @param ptr
  */
 #define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)
 
 /**
  * @brief Trace System heap realloc exit
  * @param heap Heap object
+ * @param ptr Memory pointer
  * @param ret Return value
  */
 #define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)
@@ -2347,6 +2349,16 @@ void sys_trace_isr_exit_to_scheduler(void);
  */
 void sys_trace_idle(void);
 #endif /* CONFIG_PERCEPIO_TRACERECORDER */
+
+/**
+ * @brief Called when entering an init function
+ */
+#define sys_trace_sys_init_enter(entry, level)
+
+/**
+ * @brief Called when exiting an init function
+ */
+#define sys_trace_sys_init_exit(entry, level, result)
 
 /** @} */ /* end of subsys_tracing_apis */
 

@@ -253,7 +253,7 @@ void common_release_per_adv_chain(struct ll_adv_set *adv_set)
 /*
  * @brief Helper function that validates content of periodic advertising PDU.
  *
- * The function verifies if content of periodic advertising PDU as as expected. The function
+ * The function verifies if content of periodic advertising PDU as expected. The function
  * verifies two types of PDUs: AUX_SYNC_IND and AUX_CHAIN_IND. AUX_CHAIN_IND is validated
  * as if its superior PDU is AUX_SYNC_IND only.
  *

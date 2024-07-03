@@ -40,11 +40,11 @@
 			clock-source = <&uac_aclk>;
 			terminal-type = <BIDIRECTIONAL_TERMINAL_HEADSET>;
 			/* Circular reference, macros will figure it out and
-                         * provide correct associated terminal ID because the
-                         * terminals associations are always 1-to-1.
-                         *
-                         * assoc-terminal = <&headphones_output>;
-                         */
+			 * provide correct associated terminal ID because the
+			 * terminals associations are always 1-to-1.
+			 *
+			 * assoc-terminal = <&headphones_output>;
+			 */
 			front-left;
 		};
 

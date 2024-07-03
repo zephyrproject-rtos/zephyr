@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config SPI_AMBIQ
+menuconfig SPI_AMBIQ
 	bool "AMBIQ SPI driver"
 	default y
 	depends on DT_HAS_AMBIQ_SPI_ENABLED
@@ -14,6 +14,8 @@ config SPI_AMBIQ
 	select AMBIQ_HAL_USE_SPI
 	help
 	  Enable driver for Ambiq SPI.
+
+if SPI_AMBIQ
 
 config SPI_AMBIQ_DMA
 	bool "AMBIQ APOLLO SPI DMA Support"
@@ -27,6 +29,8 @@ config SPI_DMA_TCB_BUFFER_SIZE
 	depends on SPI_AMBIQ_DMA
 	help
 	  DMA Transfer Control Buffer size in words
+
+endif # SPI_AMBIQ
 
 config MSPI_AMBIQ
 	bool "AMBIQ MSPI driver"

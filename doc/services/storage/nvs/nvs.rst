@@ -24,11 +24,13 @@ only calculated over the metadata and only ensures that a write has been
 completed. The actual data of the element can be protected by a different (and optional)
 CRC-32. Use the :kconfig:option:`CONFIG_NVS_DATA_CRC` configuration item to enable
 the data part CRC.
-**Note:** the data CRC is checked only when the whole data of the element is read.
-The data CRC is not checked for a partial read, as it is stored at the end of the
-element data area.
-**Note 2:** enabling the data CRC feature on a previously existing NVS content without
-data CRC will make all existing data invalid.
+
+.. note:: The data CRC is checked only when the whole data of the element is read.
+  The data CRC is not checked for a partial read, as it is stored at the end of the
+  element data area.
+
+.. note:: Enabling the data CRC feature on a previously existing NVS content without
+  data CRC will make all existing data invalid.
 
 A write of data to nvs always starts with writing the data, followed by a write
 of the metadata. Data that is written in flash without metadata is ignored

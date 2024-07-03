@@ -52,14 +52,6 @@ config SETTINGS_FILE
 	help
 	  Use a file (on mounted file system) as a settings storage back-end.
 
-config SETTINGS_FS
-	bool "FS (DEPRECATED)"
-	depends on FILE_SYSTEM
-	select SETTINGS_ENCODE_LEN
-	select DEPRECATED
-	help
-	  This is deprecated, please use SETTINGS_FILE instead.
-
 config SETTINGS_NVS
 	bool "NVS non-volatile storage support"
 	depends on NVS
@@ -124,27 +116,6 @@ config SETTINGS_FILE_MAX_LINES
 	depends on SETTINGS_FILE
 	help
 	  Limit how many items stored in a file before compressing
-
-config SETTINGS_FS_DIR
-	string "Serialization directory (DEPRECATED)"
-	default "/settings"
-	depends on SETTINGS_FS
-	help
-	  This is deprecated. Use SETTINGS_FILE_PATH instead.
-
-config SETTINGS_FS_FILE
-	string "Default settings file (DEPRECATED)"
-	default "/settings/run"
-	depends on SETTINGS_FS
-	help
-	  This is deprecated. Use SETTINGS_FILE_PATH instead.
-
-config SETTINGS_FS_MAX_LINES
-	int "Compression threshold (DEPRECATED)"
-	default 32
-	depends on SETTINGS_FS
-	help
-	  This is deprecated. Use SETTINGS_FILE_MAX_LINES instead.
 
 config SETTINGS_NVS_SECTOR_SIZE_MULT
 	int "Sector size of the NVS settings area"

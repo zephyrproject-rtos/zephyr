@@ -19,7 +19,7 @@
 static const uint8_t magic[] = {0x45, 0x6d, 0x31, 0x6c, 0x31, 0x4b,
 				0x30, 0x72, 0x6e, 0x33, 0x6c, 0x69, 0x34};
 
-#if IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE)
+#if defined(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE)
 static K_THREAD_STACK_DEFINE(icmsg_stack, CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE);
 static struct k_work_q icmsg_workq;
 static struct k_work_q *const workq = &icmsg_workq;
@@ -301,7 +301,7 @@ int icmsg_send(const struct icmsg_config_t *conf,
 	return sent_bytes;
 }
 
-#if IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE)
+#if defined(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE)
 
 static int work_q_init(void)
 {

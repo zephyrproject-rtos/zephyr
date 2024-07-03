@@ -13,7 +13,7 @@
 
 /*
  * This code is conditionally built please refer to the SoC cmake file and
- * is not built normally. If this is is not built then timer5 is available
+ * is not built normally. If this is not built then timer5 is available
  * for other uses.
  */
 #define BTMR_XEC_REG_BASE						\

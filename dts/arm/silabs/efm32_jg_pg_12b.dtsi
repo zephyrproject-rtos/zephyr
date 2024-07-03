@@ -26,7 +26,7 @@
 	};
 
 	sram0: memory@20000000 {
-	       compatible = "mmio-sram";
+		compatible = "mmio-sram";
 	};
 
 	soc {

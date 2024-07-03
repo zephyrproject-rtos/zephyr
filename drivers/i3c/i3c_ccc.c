@@ -566,6 +566,7 @@ int i3c_ccc_do_getcaps(const struct i3c_device_desc *target,
 				memcpy(caps->fmt2.crcaps, data, len);
 				/* for values not received, assume default (1'b0) */
 				memset(&caps->fmt2.crcaps[len], 0, sizeof(caps->fmt2.crcaps) - len);
+				break;
 			case GETCAPS_FORMAT_2_VTCAPS:
 				memcpy(caps->fmt2.vtcaps, data, len);
 				/* for values not received, assume default (1'b0) */

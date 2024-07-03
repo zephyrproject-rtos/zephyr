@@ -2,19 +2,35 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "host/buf_view.h"
 #include "host/hci_core.h"
@@ -750,6 +766,9 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn,
 
 	if (!frag) {
 		LOG_DBG("signaled ready but no frag available");
+		/* Service other connections */
+		bt_tx_irq_raise();
+
 		return NULL;
 	}
 
@@ -758,6 +777,9 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn,
 
 		LOG_DBG("channel has been disconnected");
 		__ASSERT_NO_MSG(b == frag);
+
+		/* Service other connections */
+		bt_tx_irq_raise();
 
 		return NULL;
 	}
@@ -1921,6 +1943,9 @@ static void cleanup_cig(struct bt_iso_cig *cig)
 static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
 			    const struct bt_iso_cig *cig)
 {
+	bool is_c_to_p = false;
+	bool is_p_to_c = false;
+
 	if (param == NULL) {
 		return false;
 	}
@@ -1929,17 +1954,22 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
 		struct bt_iso_chan *cis = param->cis_channels[i];
 
 		if (cis == NULL) {
-			LOG_DBG("cis_channels[%d]: NULL channel", i);
+			LOG_DBG("cis_channels[%u]: NULL channel", i);
+			return false;
+		}
+
+		if (cis->qos == NULL) {
+			LOG_DBG("cis_channels[%u]: NULL QoS", i);
 			return false;
 		}
 
 		if (cis->iso != NULL && !cis_is_in_cig(cig, cis)) {
-			LOG_DBG("cis_channels[%d]: already allocated to CIG %p", i, get_cig(cis));
+			LOG_DBG("cis_channels[%u]: already allocated to CIG %p", i, get_cig(cis));
 			return false;
 		}
 
 		if (!valid_chan_qos(cis->qos, advanced)) {
-			LOG_DBG("cis_channels[%d]: Invalid QOS", i);
+			LOG_DBG("cis_channels[%u]: Invalid QOS", i);
 			return false;
 		}
 
@@ -1948,6 +1978,14 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
 				LOG_DBG("ISO %p duplicated at index %u and %u", cis, i, j);
 				return false;
 			}
+		}
+
+		if (cis->qos->rx != NULL && cis->qos->rx->sdu != 0U) {
+			is_p_to_c = true;
+		}
+
+		if (cis->qos->tx != NULL && cis->qos->tx->sdu != 0U) {
+			is_c_to_p = true;
 		}
 	}
 
@@ -1970,25 +2008,30 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
 		return false;
 	}
 
-	if (!IN_RANGE(param->c_to_p_interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX)) {
+	if (is_c_to_p &&
+	    !IN_RANGE(param->c_to_p_interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX)) {
 		LOG_DBG("Invalid C to P interval: %u", param->c_to_p_interval);
 		return false;
 	}
 
-	if (!IN_RANGE(param->p_to_c_interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX)) {
+	if (is_p_to_c &&
+	    !IN_RANGE(param->p_to_c_interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX)) {
 		LOG_DBG("Invalid P to C interval: %u", param->p_to_c_interval);
 		return false;
 	}
 
-	if (!advanced &&
-	    !IN_RANGE(param->c_to_p_latency, BT_ISO_LATENCY_MIN, BT_ISO_LATENCY_MAX)) {
-		LOG_DBG("Invalid C to P latency: %u", param->c_to_p_latency);
-		return false;
-	}
-	if (!advanced &&
-	    !IN_RANGE(param->p_to_c_latency, BT_ISO_LATENCY_MIN, BT_ISO_LATENCY_MAX)) {
-		LOG_DBG("Invalid P to C latency: %u", param->p_to_c_latency);
-		return false;
+	if (!advanced) {
+		if (is_c_to_p &&
+		    !IN_RANGE(param->c_to_p_latency, BT_ISO_LATENCY_MIN, BT_ISO_LATENCY_MAX)) {
+			LOG_DBG("Invalid C to P latency: %u", param->c_to_p_latency);
+			return false;
+		}
+
+		if (is_p_to_c &&
+		    !IN_RANGE(param->p_to_c_latency, BT_ISO_LATENCY_MIN, BT_ISO_LATENCY_MAX)) {
+			LOG_DBG("Invalid P to C latency: %u", param->p_to_c_latency);
+			return false;
+		}
 	}
 
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
@@ -2518,7 +2561,7 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 	 */
 	err = iso_chan_connect_security(param, count);
 	if (err != 0) {
-		LOG_DBG("Failed to initate security for all CIS: %d", err);
+		LOG_DBG("Failed to initiate security for all CIS: %d", err);
 		return err;
 	}
 #endif /* CONFIG_BT_SMP */

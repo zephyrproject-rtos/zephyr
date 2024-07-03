@@ -65,7 +65,7 @@ void np_timer_isr_test_hook(const void *arg)
  *
  * Informs the system clock driver that the next needed call to
  * sys_clock_announce() will not be until the specified number of ticks
- * from the the current time have elapsed.
+ * from the current time have elapsed.
  *
  * See system_timer.h for more information
  *

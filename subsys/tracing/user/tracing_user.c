@@ -7,6 +7,7 @@
 
 #include <tracing_user.h>
 #include <zephyr/kernel.h>
+#include <zephyr/init.h>
 
 void __weak sys_trace_thread_create_user(struct k_thread *thread) {}
 void __weak sys_trace_thread_abort_user(struct k_thread *thread) {}
@@ -22,6 +23,8 @@ void __weak sys_trace_thread_priority_set_user(struct k_thread *thread, int prio
 void __weak sys_trace_isr_enter_user(void) {}
 void __weak sys_trace_isr_exit_user(void) {}
 void __weak sys_trace_idle_user(void) {}
+void __weak sys_trace_sys_init_enter_user(const struct init_entry *entry, int level) {}
+void __weak sys_trace_sys_init_exit_user(const struct init_entry *entry, int level, int result) {}
 
 void sys_trace_thread_create(struct k_thread *thread)
 {
@@ -91,4 +94,14 @@ void sys_trace_isr_exit(void)
 void sys_trace_idle(void)
 {
 	sys_trace_idle_user();
+}
+
+void sys_trace_sys_init_enter(const struct init_entry *entry, int level)
+{
+	sys_trace_sys_init_enter_user(entry, level);
+}
+
+void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result)
+{
+	sys_trace_sys_init_exit_user(entry, level, result);
 }

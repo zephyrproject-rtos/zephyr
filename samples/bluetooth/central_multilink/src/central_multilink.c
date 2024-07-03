@@ -90,7 +90,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 static void start_scan(void)
 {
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
+		.type       = BT_LE_SCAN_TYPE_PASSIVE,
 		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = SCAN_INTERVAL,
 		.window     = SCAN_WINDOW,

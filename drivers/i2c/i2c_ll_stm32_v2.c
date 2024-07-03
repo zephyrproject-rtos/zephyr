@@ -1119,7 +1119,7 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 		return -EINVAL;
 	}
 
-	LOG_INF("I2C TIMING = 0x%x\n", timing);
+	LOG_INF("I2C TIMING = 0x%x", timing);
 	LL_I2C_SetTiming(i2c, timing);
 
 	return 0;

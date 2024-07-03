@@ -402,8 +402,8 @@ static int async_write(struct shell_uart_async *sh_uart,
 	return err;
 }
 
-static int write(const struct shell_transport *transport,
-		 const void *data, size_t length, size_t *cnt)
+static int write_uart(const struct shell_transport *transport,
+		      const void *data, size_t length, size_t *cnt)
 {
 	struct shell_uart_common *sh_uart = (struct shell_uart_common *)transport->ctx;
 
@@ -479,8 +479,8 @@ static int async_read(struct shell_uart_async *sh_uart,
 	return 0;
 }
 
-static int read(const struct shell_transport *transport,
-		void *data, size_t length, size_t *cnt)
+static int read_uart(const struct shell_transport *transport,
+		     void *data, size_t length, size_t *cnt)
 {
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_API_INTERRUPT_DRIVEN)) {
 		return irq_read((struct shell_uart_int_driven *)transport->ctx, data, length, cnt);
@@ -508,8 +508,8 @@ const struct shell_transport_api shell_uart_transport_api = {
 	.init = init,
 	.uninit = uninit,
 	.enable = enable,
-	.write = write,
-	.read = read,
+	.write = write_uart,
+	.read = read_uart,
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 	.update = update,
 #endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */

@@ -1309,7 +1309,11 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 
 	free_space = 0;
 	for (uint16_t i = 1; i < fs->sector_count; i++) {
-		free_space += (fs->sector_size - ate_size);
+		/*
+		 * There is always a closing ATE and a reserved ATE for
+		 * deletion in each sector
+		 */
+		free_space += (fs->sector_size - (2 * ate_size));
 	}
 
 	step_addr = fs->ate_wra;
@@ -1333,11 +1337,17 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 			}
 		}
 
-		if ((wlk_addr == step_addr) && step_ate.len &&
-		    (nvs_ate_valid(fs, &step_ate))) {
-			/* count needed */
-			free_space -= nvs_al_size(fs, step_ate.len);
-			free_space -= ate_size;
+		if (nvs_ate_valid(fs, &step_ate)) {
+			/* Take into account the GC done ATE if it is present */
+			if (step_ate.len == 0) {
+				if (step_ate.id == 0xFFFF) {
+					free_space -= ate_size;
+				}
+			} else if (wlk_addr == step_addr) {
+				/* count needed */
+				free_space -= nvs_al_size(fs, step_ate.len);
+				free_space -= ate_size;
+			}
 		}
 
 		if (step_addr == fs->ate_wra) {

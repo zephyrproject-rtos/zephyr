@@ -26,7 +26,7 @@ config SRAM_NC_SIZE
 config SRAM_NC_BASE_ADDRESS
 	hex "noncached SRAM Base Address"
 	help
-	  The non-cached SRAM base address. The default value comes from from
+	  The non-cached SRAM base address. The default value comes from
 	  reg[1] of /chosen/zephyr,sram in devicetree. The user should
 	  generally avoid changing it via menuconfig or in configuration files.
 

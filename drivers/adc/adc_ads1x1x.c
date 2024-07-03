@@ -616,7 +616,7 @@ static const struct adc_driver_api ads1x1x_api = {
 /* The ADS111X provides 16 bits of data in binary two's complement format
  * A positive full-scale (+FS) input produces an output code of 7FFFh and a
  * negative full-scale (–FS) input produces an output code of 8000h. Single
- * ended signal measurements only only use the positive code range from
+ * ended signal measurements only use the positive code range from
  * 0000h to 7FFFh
  */
 #define ADS111X_RESOLUTION 16
@@ -659,7 +659,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1113_INIT)
 /* The ADS101X provides 12 bits of data in binary two's complement format
  * A positive full-scale (+FS) input produces an output code of 7FFh and a
  * negative full-scale (–FS) input produces an output code of 800h. Single
- * ended signal measurements only only use the positive code range from
+ * ended signal measurements only use the positive code range from
  * 000h to 7FFh
  */
 #define ADS101X_RESOLUTION 12

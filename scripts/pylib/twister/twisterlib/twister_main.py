@@ -94,6 +94,9 @@ def main(options, default_options):
                     print("Renaming output directory to {}".format(new_out))
                     shutil.move(options.outdir, new_out)
                     break
+            else:
+                sys.exit(f"Too many '{options.outdir}.*' directories. Run either with --no-clean, "
+                         "or --clobber-output, or delete these directories manually.")
 
     previous_results_file = None
     os.makedirs(options.outdir, exist_ok=True)

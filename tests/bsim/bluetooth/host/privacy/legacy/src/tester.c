@@ -18,6 +18,7 @@
 LOG_MODULE_REGISTER(tester, 4);
 
 struct test_data_t {
+	bool		id_addr_ok;
 	bt_addr_le_t	old_addr;
 	int64_t		old_time;
 	int		rpa_rotations;
@@ -81,8 +82,6 @@ static void cb_expect_rpa(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 static void cb_expect_id(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	int err;
-
 	LOG_DBG("expecting addr:");
 	print_address(&dut_addr);
 	LOG_DBG("got addr:");
@@ -96,33 +95,24 @@ static void cb_expect_id(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	if (!bt_addr_le_eq(&dut_addr, addr)) {
 		FAIL("DUT not using identity address\n");
 	}
-
-	err = bt_le_scan_stop();
-	if (err) {
-		FAIL("Failed to stop scan: %d\n", err);
-	}
-
-	backchannel_sync_send();
 }
 
-void start_scanning(bool expect_rpa)
+static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad)
 {
-	int err;
-	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
-		.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
-		.interval   = 0x0040,
-		.window     = 0x0020,
-	};
+	/* The DUT advertises with the identity address first, to test
+	 * that option, but also to allow the DUT time to start its
+	 * scanner. The scanner must be ready to capture the one of
+	 * first RPA advertisements to accurately judge the RPA
+	 * timeout, which is measured from the first RPA advertisement.
+	 */
+	if (!test_data.id_addr_ok) {
+		cb_expect_id(addr, rssi, type, ad);
 
-	if (expect_rpa) {
-		err = bt_le_scan_start(&scan_param, cb_expect_rpa);
+		/* Tell DUT to switch to RPA */
+		backchannel_sync_send();
+		test_data.id_addr_ok = true;
 	} else {
-		err = bt_le_scan_start(&scan_param, cb_expect_id);
-	}
-
-	if (err) {
-		FAIL("Failed to start scanning\n");
+		cb_expect_rpa(addr, rssi, type, ad);
 	}
 }
 
@@ -138,9 +128,9 @@ void tester_procedure(void)
 		FAIL("Failed to enable bluetooth (err %d\n)", err);
 	}
 
-	start_scanning(false);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_CONTINUOUS, scan_cb);
 
-	backchannel_sync_wait();
-
-	start_scanning(true);
+	if (err) {
+		FAIL("Failed to start scanning\n");
+	}
 }

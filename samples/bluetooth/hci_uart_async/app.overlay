@@ -6,15 +6,15 @@
  */
 
 bt_c2h_uart: &uart0 {
-        status = "okay";
-        current-speed = <1000000>;
+	status = "okay";
+	current-speed = <1000000>;
 	hw-flow-control;
 };
 
 / {
-        chosen {
-                zephyr,bt-c2h-uart = &bt_c2h_uart;
-        };
+	chosen {
+		zephyr,bt-c2h-uart = &bt_c2h_uart;
+	};
 };
 
 /* Some boards are by default assigning the &uart0 to these other
@@ -22,10 +22,10 @@ bt_c2h_uart: &uart0 {
  * instead of accidental interference.
  */
 / {
-        chosen {
-                 /delete-property/ zephyr,console;
-                 /delete-property/ zephyr,shell-uart;
-                 /delete-property/ zephyr,uart-mcumgr;
-                 /delete-property/ zephyr,bt-mon-uart;
-        };
+	chosen {
+		/delete-property/ zephyr,console;
+		/delete-property/ zephyr,shell-uart;
+		/delete-property/ zephyr,uart-mcumgr;
+		/delete-property/ zephyr,bt-mon-uart;
+	};
 };

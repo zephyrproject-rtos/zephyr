@@ -69,7 +69,7 @@ int znet_mgmt_socket(int family, int type, int proto)
 		return -1;
 	}
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		errno = ENOSPC;
 		return -1;
@@ -80,7 +80,7 @@ int znet_mgmt_socket(int family, int type, int proto)
 	mgmt->alloc_timeout = MSG_ALLOC_TIMEOUT;
 	mgmt->wait_timeout = K_FOREVER;
 
-	z_finalize_typed_fd(fd, mgmt, (const struct fd_op_vtable *)&net_mgmt_sock_fd_op_vtable,
+	zvfs_finalize_typed_fd(fd, mgmt, (const struct fd_op_vtable *)&net_mgmt_sock_fd_op_vtable,
 			    ZVFS_MODE_IFSOCK);
 
 	return fd;

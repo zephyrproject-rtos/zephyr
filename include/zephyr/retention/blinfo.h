@@ -33,7 +33,7 @@ extern "C" {
  * @{
  */
 
-#if IS_ENABLED(CONFIG_RETENTION_BOOTLOADER_INFO_OUTPUT_FUNCTION) || defined(__DOXYGEN__)
+#if defined(CONFIG_RETENTION_BOOTLOADER_INFO_OUTPUT_FUNCTION) || defined(__DOXYGEN__)
 /**
  * @brief		Returns bootinfo information.
  *

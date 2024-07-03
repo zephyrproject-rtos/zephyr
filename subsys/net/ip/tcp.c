@@ -278,7 +278,7 @@ int net_tcp_endpoint_copy(struct net_context *ctx,
 	}
 
 	if (peer != NULL) {
-		memcpy(local, &conn->dst.sa, newlen);
+		memcpy(peer, &conn->dst.sa, newlen);
 	}
 
 	return 0;
@@ -2262,6 +2262,8 @@ in:
 	return verdict;
 }
 
+#if defined(CONFIG_NET_TCP_ISN_RFC6528)
+
 static uint32_t seq_scale(uint32_t seq)
 {
 	return seq + (k_ticks_to_ns_floor32(k_uptime_ticks()) >> 6);
@@ -2288,6 +2290,7 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 	};
 
 	uint8_t hash[16];
+	size_t hash_len;
 	static bool once;
 
 	if (!once) {
@@ -2297,12 +2300,8 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
-#if defined(CONFIG_NET_TCP_ISN_RFC6528)
-	size_t hash_len;
-
 	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
 			 hash, sizeof(hash), &hash_len);
-#endif
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
 }
@@ -2326,6 +2325,7 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 	};
 
 	uint8_t hash[16];
+	size_t hash_len;
 	static bool once;
 
 	if (!once) {
@@ -2335,15 +2335,19 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 
 	memcpy(buf.key, unique_key, sizeof(unique_key));
 
-#if defined(CONFIG_NET_TCP_ISN_RFC6528)
-	size_t hash_len;
 
 	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
 			 hash, sizeof(hash), &hash_len);
-#endif
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
 }
+
+#else
+
+#define tcpv6_init_isn(...) (0UL)
+#define tcpv4_init_isn(...) (0UL)
+
+#endif /* CONFIG_NET_TCP_ISN_RFC6528 */
 
 static uint32_t tcp_init_isn(struct sockaddr *saddr, struct sockaddr *daddr)
 {
@@ -2437,7 +2441,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	 * address, remote port) to be properly identified. Remote address and port
 	 * are already copied above from conn->dst. The call to net_context_bind
 	 * with the prepared local_addr further copies the local address. However,
-	 * this call wont copy the local port, as the bind would then fail due to
+	 * this call won't copy the local port, as the bind would then fail due to
 	 * an address/port reuse without the REUSEPORT option enables for both
 	 * connections. Therefore, we copy the port after the bind call.
 	 * It is safe to bind to this address/port combination, as the new TCP
@@ -2691,7 +2695,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 }
 
 static enum net_verdict tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
-					  size_t *len)
+					  size_t *len, bool psh)
 {
 	enum net_verdict ret;
 
@@ -2707,7 +2711,7 @@ static enum net_verdict tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
 	/* Delay ACK response in case of small window or missing PSH,
 	 * as described in RFC 813.
 	 */
-	if (tcp_short_window(conn)) {
+	if (tcp_short_window(conn) || !psh) {
 		k_work_schedule_for_queue(&tcp_work_q, &conn->ack_timer,
 					  ACK_DELAY);
 	} else {
@@ -3248,7 +3252,9 @@ next_state:
 		if (th) {
 			if (th_seq(th) == conn->ack) {
 				if (len > 0) {
-					verdict = tcp_data_received(conn, pkt, &len);
+					bool psh = FL(&fl, &, PSH);
+
+					verdict = tcp_data_received(conn, pkt, &len, psh);
 					if (verdict == NET_OK) {
 						/* net_pkt owned by the recv fifo now */
 						pkt = NULL;
@@ -3263,7 +3269,7 @@ next_state:
 				 * RISK:
 				 * There is a tiny risk of creating a ACK loop this way when
 				 * both ends of the connection are out of order due to packet
-				 * loss is a simulatanious bidirectional data flow.
+				 * loss is a simultaneous bidirectional data flow.
 				 */
 				tcp_out(conn, ACK); /* peer has resent */
 
@@ -4304,7 +4310,8 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 		conn = (void *)sys_slist_peek_head(&tcp_conns);
 		tcp_to_json(conn, buf, &json_len);
 		break;
-	case TP_DEBUG_STOP: case TP_DEBUG_CONTINUE:
+	case TP_DEBUG_STOP:
+	case TP_DEBUG_CONTINUE:
 		tp_state = tp->type;
 		break;
 	default:
@@ -4535,7 +4542,7 @@ void net_tcp_init(void)
 		tcp_max_timeout_ms += rto;
 		rto += rto >> 1;
 	}
-	/* At the last timeout cicle */
+	/* At the last timeout cycle */
 	tcp_max_timeout_ms += tcp_rto;
 
 	/* When CONFIG_NET_TCP_RANDOMIZED_RTO is active in can be worse case 1.5 times larger */

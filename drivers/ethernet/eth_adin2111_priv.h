@@ -229,22 +229,21 @@ struct adin2111_config {
 };
 
 struct adin2111_data {
-	/* Port 0: PHY 1, Port 1: PHY 2 */
-	const struct device *port[2];
-	struct gpio_callback gpio_int_callback;
-	struct k_sem offload_sem;
 	struct k_mutex lock;
+	struct k_sem offload_sem;
 	uint32_t imask0;
 	uint32_t imask1;
-	uint16_t ifaces_left_to_init;
 	uint8_t *buf;
+	/* Port 0: PHY 1, Port 1: PHY 2 */
+	const struct device *port[2];
+	uint8_t *oa_tx_buf;
+	uint8_t *oa_rx_buf;
+	uint16_t ifaces_left_to_init;
 	uint16_t scur;
+	struct gpio_callback gpio_int_callback;
 	bool oa;
 	bool oa_prot;
 	uint8_t oa_cps;
-	uint8_t oa_tx_buf[ADIN2111_OA_BUF_SZ];
-	uint8_t oa_rx_buf[ADIN2111_OA_BUF_SZ];
-
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_ADIN2111_IRQ_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
 };

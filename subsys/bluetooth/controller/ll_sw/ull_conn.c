@@ -99,7 +99,7 @@ static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /* Connection context pointer used as CPR mutex to serialize connection
- * parameter requests procedures across simulataneous connections so that
+ * parameter requests procedures across simultaneous connections so that
  * offsets exchanged to the peer do not get changed.
  */
 struct ll_conn *conn_upd_curr;

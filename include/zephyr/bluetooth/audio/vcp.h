@@ -246,7 +246,7 @@ struct bt_vcp_vol_ctlr_cb {
 	 * Called when the value is remotely read as the Volume Controller.
 	 * Called if the value is changed by the Volume Renderer.
 	 *
-	 * A non-zero value indicates the the volume has been changed on the
+	 * A non-zero value indicates the volume has been changed on the
 	 * Volume Renderer since it was booted.
 	 *
 	 * @param vol_ctlr  Volume Controller instance pointer.

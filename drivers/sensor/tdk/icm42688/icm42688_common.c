@@ -64,8 +64,8 @@ int icm42688_reset(const struct device *dev)
 
 static uint16_t icm42688_compute_fifo_wm(const struct icm42688_cfg *cfg)
 {
-	const bool accel_enabled = cfg->accel_mode != ICM42688_ACCEL_OFF;
-	const bool gyro_enabled = cfg->gyro_mode != ICM42688_GYRO_OFF;
+	const bool accel_enabled = cfg->accel_pwr_mode != ICM42688_DT_ACCEL_OFF;
+	const bool gyro_enabled = cfg->gyro_pwr_mode != ICM42688_DT_GYRO_OFF;
 	const int pkt_size = cfg->fifo_hires ? 20 : (accel_enabled && gyro_enabled ? 16 : 8);
 	int accel_modr = 0;
 	int gyro_modr = 0;
@@ -149,8 +149,8 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 	/* TODO maybe do the next few steps intelligently by checking current config */
 
 	/* Power management to set gyro/accel modes */
-	uint8_t pwr_mgmt0 = FIELD_PREP(MASK_GYRO_MODE, cfg->gyro_mode) |
-			    FIELD_PREP(MASK_ACCEL_MODE, cfg->accel_mode) |
+	uint8_t pwr_mgmt0 = FIELD_PREP(MASK_GYRO_MODE, cfg->gyro_pwr_mode) |
+			    FIELD_PREP(MASK_ACCEL_MODE, cfg->accel_pwr_mode) |
 			    FIELD_PREP(BIT_TEMP_DIS, cfg->temp_dis);
 
 	LOG_DBG("PWR_MGMT0 (0x%x) 0x%x", REG_PWR_MGMT0, pwr_mgmt0);
@@ -235,8 +235,8 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 
 	uint8_t int_config1 = 0;
 
-	if ((cfg->accel_odr <= ICM42688_ACCEL_ODR_4000 ||
-	     cfg->gyro_odr <= ICM42688_GYRO_ODR_4000)) {
+	if ((cfg->accel_odr <= ICM42688_DT_ACCEL_ODR_4000 ||
+	     cfg->gyro_odr <= ICM42688_DT_GYRO_ODR_4000)) {
 		int_config1 = FIELD_PREP(BIT_INT_TPULSE_DURATION, 1) |
 			      FIELD_PREP(BIT_INT_TDEASSERT_DISABLE, 1);
 	}

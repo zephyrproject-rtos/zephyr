@@ -5,5 +5,5 @@
  */
 
 &clk_lsi {
-    status = "okay";
+	status = "okay";
 };

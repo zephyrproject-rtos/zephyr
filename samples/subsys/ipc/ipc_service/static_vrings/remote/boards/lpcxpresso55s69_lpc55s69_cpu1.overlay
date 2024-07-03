@@ -7,7 +7,7 @@
 #include <zephyr/dt-bindings/ipc_service/static_vrings.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
- / {
+/ {
 	chosen {
 		/* Delete ipc chosen property where old IPM mailbox driver bellow is
 		 * configured.

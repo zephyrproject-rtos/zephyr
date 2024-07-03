@@ -49,7 +49,7 @@
 #ifdef TC_RUNID
 #define TC_PRINT_RUNID PRINT_DATA("RunID: " TC_STR(TC_RUNID) "\n")
 #else
-#define TC_PRINT_RUNID do {} while (0)
+#define TC_PRINT_RUNID do {} while (false)
 #endif
 
 #ifndef PRINT_LINE
@@ -118,7 +118,7 @@ static inline void get_test_duration_ms(void)
 	do {                                                 \
 		PRINT_DATA(FMT_ERROR, "FAIL", __func__, __LINE__); \
 		PRINT_DATA(fmt, ##__VA_ARGS__);                  \
-	} while (0)
+	} while (false)
 #endif
 
 static inline void print_nothing(const char *fmt, ...)
@@ -194,7 +194,7 @@ static inline void print_nothing(const char *fmt, ...)
 	do {							\
 		TC_SUITE_PRINT("Running TESTSUITE %s\n", name);	\
 		PRINT_LINE;					\
-	} while (0)
+	} while (false)
 #endif
 
 #ifndef TC_SUITE_END
@@ -205,7 +205,7 @@ static inline void print_nothing(const char *fmt, ...)
 		} else {						\
 			TC_SUITE_PRINT("TESTSUITE %s failed.\n", name);	\
 		}							\
-	} while (0)
+	} while (false)
 #endif
 
 #if defined(CONFIG_ARCH_POSIX)
@@ -227,7 +227,7 @@ static inline void print_nothing(const char *fmt, ...)
 		       "PROJECT EXECUTION %s\n",               \
 		       (result) == TC_PASS ? "SUCCESSFUL" : "FAILED");	\
 		TC_END_POST(result);                                    \
-	} while (0)
+	} while (false)
 #endif
 
 #if defined(CONFIG_SHELL)

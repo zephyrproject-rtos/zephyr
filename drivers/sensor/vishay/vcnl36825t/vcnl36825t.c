@@ -240,37 +240,21 @@ static int vcnl36825t_init_registers(const struct device *dev)
 	switch (config->proximity_it) {
 	case VCNL36825T_PROXIMITY_INTEGRATION_1T:
 		reg_value |= VCNL36825T_PS_IT_1T;
-		data->meas_timeout_us *= 1 * VCNL36825T_FORCED_FACTOR_SCALE;
-		break;
-	case VCNL36825T_PROXIMITY_INTEGRATION_1_5T:
-		reg_value |= VCNL36825T_PS_IT_1_5T;
-		data->meas_timeout_us *= 1.5 * VCNL36825T_FORCED_FACTOR_SCALE;
+		data->meas_timeout_us *= 1;
 		break;
 	case VCNL36825T_PROXIMITY_INTEGRATION_2T:
 		reg_value |= VCNL36825T_PS_IT_2T;
-		data->meas_timeout_us *= 2 * VCNL36825T_FORCED_FACTOR_SCALE;
-		break;
-	case VCNL36825T_PROXIMITY_INTEGRATION_2_5T:
-		reg_value |= VCNL36825T_PS_IT_2_5T;
-		data->meas_timeout_us *= 2.5 * VCNL36825T_FORCED_FACTOR_SCALE;
-		break;
-	case VCNL36825T_PROXIMITY_INTEGRATION_3T:
-		reg_value |= VCNL36825T_PS_IT_3T;
-		data->meas_timeout_us *= 3 * VCNL36825T_FORCED_FACTOR_SCALE;
-		break;
-	case VCNL36825T_PROXIMITY_INTEGRATION_3_5T:
-		reg_value |= VCNL36825T_PS_IT_3_5T;
-		data->meas_timeout_us *= 3.5 * VCNL36825T_FORCED_FACTOR_SCALE;
+		data->meas_timeout_us *= 2;
 		break;
 	case VCNL36825T_PROXIMITY_INTEGRATION_4T:
 		reg_value |= VCNL36825T_PS_IT_4T;
-		data->meas_timeout_us *= 4 * VCNL36825T_FORCED_FACTOR_SCALE;
+		data->meas_timeout_us *= 4;
 		break;
 	case VCNL36825T_PROXIMITY_INTEGRATION_8T:
 		__fallthrough;
 	default:
 		reg_value |= VCNL36825T_PS_IT_8T;
-		data->meas_timeout_us *= 8 * VCNL36825T_FORCED_FACTOR_SCALE;
+		data->meas_timeout_us *= 8;
 		break;
 	}
 
@@ -393,7 +377,7 @@ static int vcnl36825t_init_registers(const struct device *dev)
 	 */
 	data->meas_timeout_us =
 		(data->meas_timeout_us * VCNL36825T_FORCED_FACTOR_SUM) /
-			(VCNL36825T_FORCED_FACTOR_SCALE * VCNL36825T_FORCED_FACTOR_SCALE) +
+			(VCNL36825T_FORCED_FACTOR_SCALE) +
 		1;
 
 	return 0;

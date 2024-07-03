@@ -399,7 +399,7 @@ static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t compare_reg_index,
 {
 	/* NOTE: As independent PPI are used to trigger the Radio Tx task,
 	 *       double buffers implementation works for sw_switch using PPIs,
-	 *       simply reuse the hal_radio_txen_on_sw_switch() functon to set
+	 *       simply reuse the hal_radio_txen_on_sw_switch() function to set
 	 *	 the next PPIs task to be Radio Tx enable.
 	 */
 	hal_radio_txen_on_sw_switch(compare_reg_index, radio_enable_ppi);
@@ -425,7 +425,7 @@ static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t compare_reg_index,
 {
 	/* NOTE: As independent PPI are used to trigger the Radio Tx task,
 	 *       double buffers implementation works for sw_switch using PPIs,
-	 *       simply reuse the hal_radio_txen_on_sw_switch() functon to set
+	 *       simply reuse the hal_radio_txen_on_sw_switch() function to set
 	 *	 the next PPIs task to be Radio Tx enable.
 	 */
 	hal_radio_rxen_on_sw_switch(compare_reg_index, radio_enable_ppi);
@@ -565,7 +565,7 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
 #define SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_EVTS_COMP(index) \
 	(SW_SWITCH_TIMER_EVTS_COMP_PHYEND_DELAY_COMPENSATION_BASE + (index))
 /* Wire the SW SWITCH PHYEND delay compensation TIMER EVENTS_COMPARE[<cc_offset>] event to software
- * switch TIMER0->CLEAR taks task.
+ * switch TIMER0->CLEAR task.
  */
 #define HAL_SW_SWITCH_RADIO_ENABLE_PHYEND_DELAY_COMPENSATION_PPI(index) \
 	(HAL_SW_SWITCH_RADIO_ENABLE_PHYEND_DELAY_COMPENSATION_PPI_BASE + (index))
@@ -590,7 +590,7 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
  * Radio peripheral. The EVENTS_CTEPRESENT event is wired to cancel EVENTS_COMPARE setup for
  * handling delayed EVENTS_PHYEND.
  *
- * Disable of the group of PPIs responsbile for handling of software based switch is done by
+ * Disable of the group of PPIs responsible for handling of software based switch is done by
  * timeout of regular EVENTS_PHYEND event. The EVENTS_PHYEND delay is short enough (16 us) that
  * it can use the same PPI to trigger disable the group for timeout for both EVENTS_COMPAREs.
  * In case the EVENTS_COMPARE for delayed EVENTS_PHYEND event timesout, the group will be disabled

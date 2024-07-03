@@ -10,10 +10,10 @@
 		compatible = "ti,ina219";
 		reg = <0x43>;
 		brng = <1>;
-                pg = <3>;
-                sadc = <12>;
-                badc = <12>;
-                shunt-milliohm = <100>;
-                lsb-microamp = <20>;
+		pg = <3>;
+		sadc = <12>;
+		badc = <12>;
+		shunt-milliohm = <100>;
+		lsb-microamp = <20>;
 	};
 };

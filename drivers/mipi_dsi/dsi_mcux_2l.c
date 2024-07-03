@@ -86,7 +86,7 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	 * Color streams are a special case for this DSI peripheral, because
 	 * the SMARTDMA peripheral (if enabled) can be used to accelerate
 	 * the transfer of data to the DSI. The SMARTDMA has the additional
-	 * advantage over traditional DMA of being able to to automatically
+	 * advantage over traditional DMA of being able to automatically
 	 * byte swap color data. This is advantageous, as most graphical
 	 * frameworks store RGB data in little endian format, but many
 	 * MIPI displays expect color data in big endian format.

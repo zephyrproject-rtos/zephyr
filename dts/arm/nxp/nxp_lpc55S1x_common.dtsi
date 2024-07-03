@@ -266,6 +266,12 @@
 		num-bidir-endpoints = <6>;
 		status = "disabled";
 	};
+
+	usbphy1: usbphy@38000 {
+		compatible = "nxp,usbphy";
+		reg = <0x38000 0x1000>;
+		status = "disabled";
+	};
 };
 
 &nvic {

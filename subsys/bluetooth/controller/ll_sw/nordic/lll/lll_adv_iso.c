@@ -294,7 +294,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	if (!link) {
 		pdu = radio_pkt_empty_get();
-		pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
+		pdu->ll_id = lll->framing ? PDU_BIS_LLID_FRAMED : PDU_BIS_LLID_START_CONTINUE;
 		pdu->len = 0U;
 	} else {
 		pdu = (void *)tx->pdu;
@@ -650,7 +650,8 @@ static void isr_tx_common(void *param,
 		}
 		if (!link || (tx->payload_count != payload_count)) {
 			pdu = radio_pkt_empty_get();
-			pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
+			pdu->ll_id = lll->framing ? PDU_BIS_LLID_FRAMED :
+						    PDU_BIS_LLID_START_CONTINUE;
 			pdu->len = 0U;
 		} else {
 			pdu = (void *)tx->pdu;

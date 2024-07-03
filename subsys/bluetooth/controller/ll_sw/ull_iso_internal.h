@@ -29,6 +29,8 @@ void ll_iso_rx_put(memq_link_t *link, void *rx);
 void *ll_iso_rx_get(void);
 void ll_iso_rx_dequeue(void);
 void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire);
+uint32_t ull_iso_big_sync_delay(uint8_t num_bis, uint32_t bis_spacing, uint8_t nse,
+				uint32_t sub_interval, uint8_t phy, uint8_t max_pdu, bool enc);
 
 /* Must be implemented by vendor if vendor-specific data path is supported */
 bool ll_data_path_configured(uint8_t data_path_dir, uint8_t data_path_id);

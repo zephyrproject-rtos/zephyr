@@ -1543,7 +1543,7 @@ static void ticks_to_expire_prep(struct ticker_node *ticker,
  *
  * @details Calculates whether the remainder should increments expiration time
  * for above-microsecond precision counter HW. The remainder enables improved
- * ticker precision, but is disabled for for sub-microsecond precision
+ * ticker precision, but is disabled for sub-microsecond precision
  * configurations.
  * Note: This is the same functionality as ticker_remainder_inc(), except this
  * function allows doing the calculation without modifying any tickers
@@ -1574,7 +1574,7 @@ static inline uint8_t ticker_add_to_remainder(uint32_t *remainder, uint32_t to_a
  *
  * @details Calculates whether the remainder should increments expiration time
  * for above-microsecond precision counter HW. The remainder enables improved
- * ticker precision, but is disabled for for sub-microsecond precision
+ * ticker precision, but is disabled for sub-microsecond precision
  * configurations.
  *
  * @param ticker Pointer to ticker node
@@ -1592,7 +1592,7 @@ static uint8_t ticker_remainder_inc(struct ticker_node *ticker)
  *
  * @details Calculates whether the remainder should decrements expiration time
  * for above-microsecond precision counter HW. The remainder enables improved
- * ticker precision, but is disabled for for sub-microsecond precision
+ * ticker precision, but is disabled for sub-microsecond precision
  * configurations.
  *
  * @param ticker Pointer to ticker node

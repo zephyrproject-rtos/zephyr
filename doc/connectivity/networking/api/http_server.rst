@@ -103,7 +103,7 @@ macro:
 
     HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10, NULL);
 
-Alternatively, an HTTPS service can be defined with with
+Alternatively, an HTTPS service can be defined with
 :c:macro:`HTTPS_SERVICE_DEFINE`:
 
 .. code-block:: c
@@ -277,7 +277,7 @@ in the reply.
 Websocket resources
 ===================
 
-Websocket resources register an application callback, which is is called when a
+Websocket resources register an application callback, which is called when a
 Websocket connection upgrade takes place. The callback is provided with a socket
 descriptor corresponding to the underlying TCP/TLS connection. Once called,
 the application takes full control over the socket, i. e. is responsible to

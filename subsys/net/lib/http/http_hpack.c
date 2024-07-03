@@ -411,7 +411,7 @@ static int hpack_handle_dynamic_size_update(const uint8_t *buf, size_t datalen)
 int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
 			     struct http_hpack_header_buf *header)
 {
-	uint8_t prefix = *buf;
+	uint8_t prefix;
 	int ret;
 
 	if (buf == NULL || header == NULL) {
@@ -421,6 +421,8 @@ int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
 	if (datalen == 0) {
 		return -EAGAIN;
 	}
+
+	prefix = *buf;
 
 	if ((prefix & HPACK_PREFIX_INDEXED_MASK) == HPACK_PREFIX_INDEXED) {
 		ret = hpack_handle_indexed(buf, datalen, header);

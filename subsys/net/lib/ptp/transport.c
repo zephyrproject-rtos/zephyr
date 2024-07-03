@@ -127,7 +127,7 @@ static int transport_udp_ipv4_open(struct net_if *iface, uint16_t port)
 	}
 
 	tos &= ~0xFC;
-	tos = CONFIG_PTP_DSCP_VALUE << 2;
+	tos |= CONFIG_PTP_DSCP_VALUE << 2;
 	length = sizeof(tos);
 
 	if (zsock_setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, length)) {
@@ -175,7 +175,7 @@ static int transport_udp_ipv6_open(struct net_if *iface, uint16_t port)
 	}
 
 	tclass &= ~0xFC;
-	tclass = CONFIG_PTP_DSCP_VALUE << 2;
+	tclass |= CONFIG_PTP_DSCP_VALUE << 2;
 	length = sizeof(tclass);
 
 	if (zsock_setsockopt(socket, IPPROTO_IPV6, IPV6_TCLASS, &tclass, length)) {
@@ -318,6 +318,8 @@ int ptp_transport_recv(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 
 int ptp_transport_protocol_addr(struct ptp_port *port, uint8_t *addr)
 {
+	__ASSERT_NO_MSG(addr);
+
 	int length = 0;
 
 	if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {

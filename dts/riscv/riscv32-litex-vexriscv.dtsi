@@ -25,7 +25,7 @@
 			compatible = "litex,vexriscv-standard", "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv32ima_zicsr_zifencei";
+			riscv,isa = "rv32im_zicsr_zifencei";
 			status = "okay";
 		};
 	};

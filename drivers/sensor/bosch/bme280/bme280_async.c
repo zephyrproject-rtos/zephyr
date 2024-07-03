@@ -20,21 +20,6 @@ void bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	const struct sensor_chan_spec *const channels = cfg->channels;
 	const size_t num_channels = cfg->count;
 
-	/* Check if the requested channels are supported */
-	for (size_t i = 0; i < num_channels; i++) {
-		switch (channels[i].chan_type) {
-		case SENSOR_CHAN_AMBIENT_TEMP:
-		case SENSOR_CHAN_HUMIDITY:
-		case SENSOR_CHAN_PRESS:
-		case SENSOR_CHAN_ALL:
-			break;
-		default:
-			LOG_ERR("Unsupported channel type %d", channels[i].chan_type);
-			rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
-			return;
-		}
-	}
-
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (rc != 0) {
 		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
@@ -45,8 +30,33 @@ void bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	struct bme280_encoded_data *edata;
 
 	edata = (struct bme280_encoded_data *)buf;
-
 	edata->header.timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	edata->has_temp = 0;
+	edata->has_humidity = 0;
+	edata->has_press = 0;
+
+	/* Check if the requested channels are supported */
+	for (size_t i = 0; i < num_channels; i++) {
+		switch (channels[i].chan_type) {
+		case SENSOR_CHAN_AMBIENT_TEMP:
+			edata->has_temp = 1;
+			break;
+		case SENSOR_CHAN_HUMIDITY:
+			edata->has_humidity = 1;
+			break;
+		case SENSOR_CHAN_PRESS:
+			edata->has_press = 1;
+			break;
+		case SENSOR_CHAN_ALL:
+			edata->has_temp = 1;
+			edata->has_humidity = 1;
+			edata->has_press = 1;
+			break;
+		default:
+			continue;
+			break;
+		}
+	}
 
 	rc = bme280_sample_fetch_helper(dev, SENSOR_CHAN_ALL, &edata->reading);
 	if (rc != 0) {

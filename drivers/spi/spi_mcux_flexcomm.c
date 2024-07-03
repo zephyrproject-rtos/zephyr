@@ -400,7 +400,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		if (last_packet  &&
 		    ((word_size > 8) ? (len > 2U) : (len > 1U))) {
 			spi_mcux_prepare_txdummy(&data->last_word, last_packet, spi_cfg);
-			blk_cfg->source_gather_en = 1;
 			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
 			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 			blk_cfg->block_size = (word_size > 8) ?
@@ -434,7 +433,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		 */
 		if (last_packet  &&
 		    ((word_size > 8) ? (len > 2U) : (len > 1U))) {
-			blk_cfg->source_gather_en = 1;
 			blk_cfg->source_address = (uint32_t)buf;
 			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 			blk_cfg->block_size = (word_size > 8) ?
@@ -638,7 +636,7 @@ static int transceive_dma(const struct device *dev,
 		/* at this point, last just means whether or not
 		 * this transfer will completely cover
 		 * the current tx/rx buffer in data->ctx
-		 * or require additional transfers because the
+		 * or require additional transfers because
 		 * the two buffers are not the same size.
 		 *
 		 * if it covers the current ctx tx/rx buffers, then

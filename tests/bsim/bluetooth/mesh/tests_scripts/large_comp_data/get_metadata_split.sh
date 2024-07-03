@@ -4,7 +4,7 @@
 
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
-# Test that the the LCD server model is able to split the
+# Test that the LCD server model is able to split the
 # metadata when the total size exceeds the maximum access message size.
 #
 # Test procedure:

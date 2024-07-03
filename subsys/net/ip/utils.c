@@ -548,7 +548,7 @@ uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
 	size_t pending = len;
 	int odd_start = ((uintptr_t)data & 0x01);
 
-	/* Sum in is in host endiannes, working order endiannes is both dependent on endianness
+	/* Sum in is in host endianness, working order endianness is both dependent on endianness
 	 * and the offset of starting
 	 */
 	if (odd_start == CHECKSUM_BIG_ENDIAN) {
@@ -600,7 +600,7 @@ uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
 		sum = (sum & 0xffff) + (sum >> 16);
 	}
 
-	/* Sum in is in host endiannes, working order endiannes is both dependent on endianness
+	/* Sum in is in host endianness, working order endianness is both dependent on endianness
 	 * and the offset of starting
 	 */
 	if (odd_start == CHECKSUM_BIG_ENDIAN) {

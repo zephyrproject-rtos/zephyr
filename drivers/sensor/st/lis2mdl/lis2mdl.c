@@ -528,10 +528,11 @@ static int lis2mdl_pm_action(const struct device *dev,
 		STMEMSC_CTX_SPI(&lis2mdl_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-					   LIS2MDL_SPI_OPERATION,	\
-					   0),				\
+						LIS2MDL_SPI_OPERATION,	\
+						0),			\
 		},							\
-		.spi_4wires = DT_INST_PROP(inst, spi_full_duplex),	\
+		.spi_4wires = DT_INST_PROP(inst, duplex) ==		\
+						SPI_FULL_DUPLEX,	\
 		LIS2MDL_CONFIG_COMMON(inst)				\
 	}
 

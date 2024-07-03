@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- / {
+/ {
 	chosen {
 		zephyr,console = &bt_nus_console_uart;
 	};

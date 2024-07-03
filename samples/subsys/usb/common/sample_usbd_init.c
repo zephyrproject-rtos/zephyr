@@ -148,15 +148,15 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 
 	sample_fix_code_triple(&sample_usbd, USBD_SPEED_FS);
 
-	/* doc message callback register start */
 	if (msg_cb != NULL) {
+		/* doc device init-and-msg start */
 		err = usbd_msg_register_cb(&sample_usbd, msg_cb);
 		if (err) {
 			LOG_ERR("Failed to register message callback");
 			return NULL;
 		}
+		/* doc device init-and-msg end */
 	}
-	/* doc message callback register end */
 
 	if (IS_ENABLED(CONFIG_SAMPLE_USBD_20_EXTENSION_DESC)) {
 		(void)usbd_device_set_bcd(&sample_usbd, USBD_SPEED_FS, 0x0201);

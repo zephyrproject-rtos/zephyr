@@ -9,7 +9,8 @@
 #include <st/h5/stm32h573iikxq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 / {
 	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
 	compatible = "st,stm32h573i-dk";
@@ -59,6 +60,14 @@
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+	};
+
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 };
 

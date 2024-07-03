@@ -141,13 +141,15 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | CAP    | Acceptor                      | 1.0     | 3.2              | - Feature complete    | - Sample Application                             |
+   | CAP    | Acceptor                      | 1.0     | 3.2              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
+   |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Initiator                     | 1.0     | 3.3              | - Feature complete    | - Sample Application                             |
+   |        | Initiator                     | 1.0     | 3.3              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
+   |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
    |        | Commander                     |         |                  | - WIP                 | - Feature complete                               |
    |        |                               |         |                  |                       | - Shell Module                                   |

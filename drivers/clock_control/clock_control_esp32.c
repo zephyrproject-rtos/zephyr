@@ -696,7 +696,7 @@ static const struct esp32_clock_config esp32_clock_config0 = {
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(rtc),
-		 &clock_control_esp32_init,
+		 clock_control_esp32_init,
 		 NULL,
 		 NULL,
 		 &esp32_clock_config0,

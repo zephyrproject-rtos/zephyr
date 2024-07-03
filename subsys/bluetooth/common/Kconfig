@@ -198,7 +198,7 @@ config BT_HCI_VS_FATAL_ERROR
 	bool "Allow vendor specific HCI event Zephyr Fatal Error"
 	depends on BT_HCI_VS
 	help
-	  Enable emiting HCI Vendor-Specific events for system and Controller
+	  Enable emitting HCI Vendor-Specific events for system and Controller
 	  errors that are unrecoverable.
 
 config BT_HCI_VS_EXT_DETECT
@@ -265,17 +265,6 @@ config BT_DEBUG_NONE
 	bool "No debug log"
 	help
 	  Select this to disable all Bluetooth debug logs.
-
-config BT_DEBUG_LOG
-	bool "[DEPRECATED] Normal printf-style to console"
-	select DEPRECATED
-	select LOG
-	imply LOG_FUNC_NAME_PREFIX_INF
-	imply LOG_FUNC_NAME_PREFIX_WRN
-	imply LOG_FUNC_NAME_PREFIX_ERR
-	help
-	  This option enables Bluetooth debug going to standard
-	  serial console.
 
 config BT_DEBUG_MONITOR_UART
 	bool "Monitor protocol over UART"

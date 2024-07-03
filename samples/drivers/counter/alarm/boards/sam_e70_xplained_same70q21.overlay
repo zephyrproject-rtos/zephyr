@@ -1,4 +1,4 @@
 &tc0 {
-        clk = <4>;
-        status = "okay";
+	clk = <4>;
+	status = "okay";
 };

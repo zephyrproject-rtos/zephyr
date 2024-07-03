@@ -573,7 +573,7 @@ int ll_init(struct k_sem *sem_rx)
 	 * On init mayfly memq head and tail is assigned with a link instance
 	 * that is used during enqueue operation. New link provided by enqueue
 	 * is added as a tail and will be used in future enqueue. While dequeue,
-	 * the link that was used for storage of the job is relesed and stored
+	 * the link that was used for storage of the job is released and stored
 	 * in a job it was related to. The job may store initial link. If mayfly
 	 * is re-initialized but job objects were not re-initialized there is a
 	 * risk that enqueued job will point to the same link as it is in a memq
@@ -1849,7 +1849,7 @@ uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb)
 {
 	if ((ret == TICKER_STATUS_BUSY) || (*ret_cb != TICKER_STATUS_BUSY)) {
 		/* Operation is either pending of completed via callback
-		 * prior to this function call. Take the sempaphore and wait,
+		 * prior to this function call. Take the semaphore and wait,
 		 * or take it to balance take/give counting.
 		 */
 		k_sem_take(&sem_ticker_api_cb, K_FOREVER);

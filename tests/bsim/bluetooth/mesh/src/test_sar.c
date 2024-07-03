@@ -305,7 +305,7 @@ static const struct bst_test_instance test_sar[] = {
 	TEST_CASE(cli, max_len_sdu_slow_send,
 		  "Send a 32-segment message with SAR configured with slowest timings."),
 	TEST_CASE(srv, max_len_sdu_slow_receive,
-		  "Receive a 32-segment message with with SAR configured with slowest timings."),
+		  "Receive a 32-segment message with SAR configured with slowest timings."),
 
 	BSTEST_END_MARKER};
 

@@ -244,7 +244,7 @@ net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
  * @brief Send MLDv2 report message with a single entry.
  *
  * @param iface Network interface where message is sent
- * @param addr Mutlicast group
+ * @param addr Multicast group
  * @param mode MLDv2 mode (NET_IPV6_MLDv2_MODE_IS_INCLUDE NET_IPV6_MLDv2_MODE_IS_EXCLUDE)
  *
  * @return Return 0 if leaving is done, <0 otherwise.

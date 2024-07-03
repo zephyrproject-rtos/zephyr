@@ -108,7 +108,7 @@ config PM_DEVICE_POWER_DOMAIN
 	  domain is suspended or resumed.
 
 config PM_DEVICE_POWER_DOMAIN_DYNAMIC
-	bool "Dynamically bind devices to a Power Pomain"
+	bool "Dynamically bind devices to a Power Domain"
 	depends on PM_DEVICE_POWER_DOMAIN && DEVICE_DEPS_DYNAMIC
 	help
 	  Enable support for dynamically bind devices to a Power Domain.

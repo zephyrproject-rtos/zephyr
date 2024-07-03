@@ -237,10 +237,11 @@ MIPS arch:
     - arch.mips
 
 Ambiq Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - AlessandroLuo
   collaborators:
     - aaronyegx
-    - AlessandroLuo
     - RichardSWheatley
   files:
     - soc/ambiq/
@@ -750,8 +751,8 @@ Device Driver Model:
   status: maintained
   maintainers:
     - gmarull
-  collaborators:
     - tbursztyka
+  collaborators:
     - dcpleung
     - nashif
   files:
@@ -782,8 +783,7 @@ DFU:
     - dfu
 
 Devicetree:
-  status: maintained
-  maintainers: []
+  status: odd fixes
   collaborators:
     - decsny
     - galak
@@ -803,8 +803,7 @@ Devicetree:
     - libraries.devicetree
 
 Devicetree Bindings:
-  status: maintained
-  maintainers: []
+  status: odd fixes
   collaborators:
     - decsny
     - galak
@@ -1341,7 +1340,7 @@ Release Notes:
 "Drivers: GNSS":
   status: maintained
   maintainers:
-    - bjarki-trackunit
+    - bjarki-andreasen
   collaborators:
     - tomi-font
     - fabiobaltieri
@@ -1516,10 +1515,15 @@ Release Notes:
     - swift-tk
   files:
     - drivers/mspi/
+    - drivers/memc/*mspi*
+    - drivers/flash/*mspi*
     - include/zephyr/drivers/mspi.h
     - include/zephyr/drivers/mspi/
+    - samples/drivers/mspi/
     - tests/drivers/mspi/
     - doc/hardware/peripherals/mspi.rst
+    - dts/bindings/mspi/
+    - dts/bindings/mtd/mspi*
   labels:
     - "area: MSPI"
   tests:
@@ -1692,7 +1696,7 @@ Release Notes:
 "Drivers: RTC":
   status: maintained
   maintainers:
-    - bjarki-trackunit
+    - bjarki-andreasen
   files:
     - drivers/rtc/
     - include/zephyr/drivers/rtc/
@@ -2448,6 +2452,7 @@ Mbed TLS:
     - ceolin
   collaborators:
     - ithinuel
+    - valeriosetti
   files:
     - tests/crypto/mbedtls/
     - tests/benchmarks/mbedtls/
@@ -2495,7 +2500,7 @@ Modbus:
 Modem:
   status: maintained
   maintainers:
-    - bjarki-trackunit
+    - bjarki-andreasen
   collaborators:
     - tomi-font
   files:
@@ -2959,6 +2964,8 @@ RISCV arch:
     - ycsin
   files:
     - arch/riscv/
+    - boards/enjoydigital/litex_vexriscv/
+    - boards/lowrisc/opentitan_earlgrey/
     - boards/qemu/riscv*/
     - boards/sifive/
     - boards/sparkfun/red_v_things_plus/
@@ -3385,6 +3392,7 @@ NXP Drivers:
     - decsny
     - manuargue
     - dbaluta
+    - MarkWangChinese
   files:
     - drivers/*/*imx*
     - drivers/*/*lpc*.c
@@ -3515,6 +3523,20 @@ Microchip MEC Platforms:
     - dts/bindings/*/microchip,*
   labels:
     - "platform: Microchip MEC"
+
+Microchip RISC-V Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - kgugala
+    - tgorochowik
+  files:
+    - boards/microchip/m2gl025_miv/
+    - boards/microchip/mpfs_icicle/
+    - dts/riscv/microchip/
+    - soc/microchip/miv/
+  labels:
+    - "platform: Microchip RISC-V"
 
 Microchip SAM Platforms:
   status: maintained
@@ -3937,6 +3959,7 @@ TF-M Integration:
   collaborators:
     - Vge0rge
     - ithinuel
+    - valeriosetti
   files:
     - samples/tfm_integration/
     - modules/trusted-firmware-m/
@@ -3971,6 +3994,7 @@ TF-M Integration:
   files:
     - cmake/*/arcmwdt/
     - include/zephyr/toolchain/mwdt.h
+    - include/zephyr/linker/linker-tool-mwdt.h
     - lib/libc/arcmwdt/*
   labels:
     - "area: Toolchains"
@@ -4106,8 +4130,7 @@ VFS:
     - filesystem
 
 West:
-  status: maintained
-  maintainers: []
+  status: odd fixes
   collaborators:
     - mbolivar-ampere
     - carlescufi
@@ -5004,7 +5027,7 @@ Random:
 
 # This area is to be converted to a subarea
 Testing with Renode:
-  status: maintained
+  status: odd fixes
   collaborators:
     - mateusz-holenko
     - fkokosinski

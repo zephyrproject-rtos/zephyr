@@ -81,7 +81,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-arduino_i2c: &i2c0 {
+&i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	pinctrl-0 = <&i2c0_default>;

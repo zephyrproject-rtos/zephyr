@@ -691,9 +691,8 @@ static int dhcpv4_get_client_id(struct dhcp_msg *msg, uint8_t *options,
 	}
 
 	client_id->buf[0] = msg->htype;
-	client_id->buf[1] = msg->hlen;
-	memcpy(client_id->buf + 2, msg->chaddr, msg->hlen);
-	client_id->len = msg->hlen + 2;
+	memcpy(client_id->buf + 1, msg->chaddr, msg->hlen);
+	client_id->len = msg->hlen + 1;
 
 	return 0;
 }
@@ -737,7 +736,7 @@ static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 			      void *user_data)
 {
 	struct dhcpv4_server_ctx *ctx = user_data;
-	struct dhcpv4_server_probe_ctx *probe_ctx = &ctx->probe_ctx;
+	struct dhcpv4_server_probe_ctx *probe_ctx;
 	struct dhcpv4_addr_slot *new_slot = NULL;
 	struct in_addr peer_addr;
 
@@ -747,6 +746,12 @@ static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 	ARG_UNUSED(icmp_hdr);
 
 	k_mutex_lock(&server_lock, K_FOREVER);
+
+	if (ctx == NULL) {
+		goto out;
+	}
+
+	probe_ctx = &ctx->probe_ctx;
 
 	if (probe_ctx->slot == NULL) {
 		goto out;

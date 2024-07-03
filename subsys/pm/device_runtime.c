@@ -29,7 +29,7 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
  *
  * @note Asynchronous operations are not supported when in pre-kernel mode. In
  * this case, the async flag will be always forced to be false, and so the
- * the function will be blocking.
+ * function will be blocking.
  *
  * @funcprops \pre_kernel_ok
  *

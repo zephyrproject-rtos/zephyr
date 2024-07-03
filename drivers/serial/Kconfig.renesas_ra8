@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_RA8_SCI_B
+	bool "Renesas RA SCI_B UART"
+	default y
+	depends on DT_HAS_RENESAS_RA8_UART_SCI_B_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC
+	select USE_RA_FSP_SCI_B_UART
+	select USE_RA_FSP_DTC if UART_ASYNC_API
+	help
+	  Enable Renesas RA SCI_B UART Driver.
+
+if UART_RA8_SCI_B && (UART_INTERRUPT_DRIVEN || UART_ASYNC_API)
+
+config UART_RA_SCI_B_UART_FIFO_ENABLE
+	bool "RA SCI_B UART FIFO usage enable"
+	default y if UART_INTERRUPT_DRIVEN
+	default n if UART_ASYNC_API
+	help
+	  Enable RA SCI_B FIFO
+
+endif

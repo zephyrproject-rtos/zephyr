@@ -2035,7 +2035,7 @@ def to_nums(data: bytes, length: int = 4, signed: bool = False) -> List[int]:
 
     if len(data) % length:
         _err(f"{data!r} is {len(data)} bytes long, "
-             f"expected a length that's a a multiple of {length}")
+             f"expected a length that's a multiple of {length}")
 
     return [int.from_bytes(data[i:i + length], "big", signed=signed)
             for i in range(0, len(data), length)]

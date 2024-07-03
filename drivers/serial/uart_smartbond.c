@@ -12,6 +12,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/byteorder.h>
@@ -93,12 +94,6 @@ struct uart_smartbond_runtime_cfg {
 	uint8_t ier_reg_val;
 };
 
-enum uart_smartbond_pm_policy_state_flag {
-	UART_SMARTBOND_PM_POLICY_STATE_RX_FLAG,
-	UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG,
-	UART_SMARTBOND_PM_POLICY_STATE_FLAG_COUNT,
-};
-
 struct uart_smartbond_data {
 	struct uart_config current_config;
 	struct uart_smartbond_runtime_cfg runtime_cfg;
@@ -111,30 +106,43 @@ struct uart_smartbond_data {
 	uint8_t tx_enabled;
 #if CONFIG_PM_DEVICE
 	struct gpio_callback dtr_wake_cb;
-	const struct uart_smartbond_cfg *config;
+	const struct device *dev;
 	struct gpio_callback rx_wake_cb;
 	int rx_wake_timeout;
 	struct k_work_delayable rx_timeout_work;
-
-	ATOMIC_DEFINE(pm_policy_state_flag, UART_SMARTBOND_PM_POLICY_STATE_FLAG_COUNT);
 #endif
 #endif
 };
 
-#if defined(CONFIG_PM_DEVICE)
-
-static void uart_smartbond_pm_policy_state_lock_get(struct uart_smartbond_data *data, int flag)
+#ifdef CONFIG_PM_DEVICE
+static inline void uart_smartbond_pm_prevent_system_sleep(void)
 {
-	if (atomic_test_and_set_bit(data->pm_policy_state_flag, flag) == 0) {
-		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 
-static void uart_smartbond_pm_policy_state_lock_put(struct uart_smartbond_data *data, int flag)
+static inline void uart_smartbond_pm_allow_system_sleep(void)
 {
-	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, flag) == 1) {
-		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static void uart_smartbond_pm_policy_state_lock_get(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_runtime_get(dev);
+#else
+	ARG_UNUSED(dev);
+	uart_smartbond_pm_prevent_system_sleep();
+#endif
+}
+
+static void uart_smartbond_pm_policy_state_lock_put(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_runtime_put(dev);
+#else
+	ARG_UNUSED(dev);
+	uart_smartbond_pm_allow_system_sleep();
+#endif
 }
 
 static void uart_smartbond_rx_refresh_timeout(struct k_work *work)
@@ -142,9 +150,8 @@ static void uart_smartbond_rx_refresh_timeout(struct k_work *work)
 	struct uart_smartbond_data *data = CONTAINER_OF(work, struct uart_smartbond_data,
 							rx_timeout_work.work);
 
-	uart_smartbond_pm_policy_state_lock_put(data, UART_SMARTBOND_PM_POLICY_STATE_RX_FLAG);
+	uart_smartbond_pm_policy_state_lock_put(data->dev);
 }
-
 #endif
 
 static int uart_smartbond_poll_in(const struct device *dev, unsigned char *p_char)
@@ -153,13 +160,17 @@ static int uart_smartbond_poll_in(const struct device *dev, unsigned char *p_cha
 	struct uart_smartbond_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+	pm_device_runtime_get(dev);
+
 	if ((config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_RFNE_Msk) == 0) {
+		pm_device_runtime_put(dev);
 		k_spin_unlock(&data->lock, key);
 		return -1;
 	}
 
 	*p_char = config->regs->UART2_RBR_THR_DLL_REG;
 
+	pm_device_runtime_put(dev);
 	k_spin_unlock(&data->lock, key);
 
 	return 0;
@@ -171,11 +182,15 @@ static void uart_smartbond_poll_out(const struct device *dev, unsigned char out_
 	struct uart_smartbond_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+	pm_device_runtime_get(dev);
+
 	while (!(config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_TFNF_Msk)) {
 		/* Wait until FIFO has free space */
 	}
 
 	config->regs->UART2_RBR_THR_DLL_REG = out_char;
+
+	pm_device_runtime_put(dev);
 
 	k_spin_unlock(&data->lock, key);
 }
@@ -287,7 +302,9 @@ static int uart_smartbond_configure(const struct device *dev,
 	data->runtime_cfg.lcr_reg_val = lcr_reg_val;
 	data->runtime_cfg.mcr_reg_val = cfg->flow_ctrl ? UART2_UART2_MCR_REG_UART_AFCE_Msk : 0;
 
+	pm_device_runtime_get(dev);
 	apply_runtime_config(dev);
+	pm_device_runtime_put(dev);
 
 	data->current_config = *cfg;
 
@@ -324,9 +341,7 @@ static void uart_smartbond_wake_handler(const struct device *gpio, struct gpio_c
 					   GPIO_INT_DISABLE);
 	/* Refresh console expired time */
 	if (data->rx_wake_timeout) {
-
-		uart_smartbond_pm_policy_state_lock_get(data,
-							UART_SMARTBOND_PM_POLICY_STATE_RX_FLAG);
+		uart_smartbond_pm_policy_state_lock_get(data->dev);
 		k_work_reschedule(&data->rx_timeout_work, K_MSEC(data->rx_wake_timeout));
 	}
 }
@@ -339,11 +354,9 @@ static void uart_smartbond_dtr_handler(const struct device *gpio, struct gpio_ca
 	int pin = find_lsb_set(pins) - 1;
 
 	if (gpio_pin_get(gpio, pin) == 1) {
-		uart_smartbond_pm_policy_state_lock_put(data,
-							UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG);
+		uart_smartbond_pm_policy_state_lock_put(data->dev);
 	} else {
-		uart_smartbond_pm_policy_state_lock_get(data,
-							UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG);
+		uart_smartbond_pm_policy_state_lock_get(data->dev);
 	}
 }
 
@@ -354,13 +367,21 @@ static int uart_smartbond_init(const struct device *dev)
 	struct uart_smartbond_data *data = dev->data;
 	int ret = 0;
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Make sure device state is marked as suspended */
+	pm_device_init_suspended(dev);
+
+	ret = pm_device_runtime_enable(dev);
+#else
 	da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+#endif
 
 #ifdef CONFIG_PM_DEVICE
 	int rx_wake_timeout;
 	const struct uart_smartbond_cfg *config = dev->config;
 	const struct device *uart_console_dev =
 		DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	data->dev = dev;
 	/* All uarts can have wake time specified in device tree to keep
 	 * device awake after receiving data
 	 */
@@ -384,8 +405,7 @@ static int uart_smartbond_init(const struct device *dev)
 							      GPIO_INT_TRIG_BOTH);
 			/* Check if DTR is already active (low), if so lock power state */
 			if (gpio_pin_get(config->dtr_gpio.port, config->dtr_gpio.pin) == 0) {
-				uart_smartbond_pm_policy_state_lock_get(data,
-					UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG);
+				uart_smartbond_pm_policy_state_lock_get(dev);
 			}
 		}
 	}
@@ -403,9 +423,11 @@ static int uart_smartbond_init(const struct device *dev)
 #endif
 
 	ret = uart_smartbond_configure(dev, &data->current_config);
+#ifndef CONFIG_PM_DEVICE_RUNTIME
 	if (ret < 0) {
 		da1469x_pd_release(MCU_PD_DOMAIN_COM);
 	}
+#endif
 
 	return ret;
 }
@@ -414,31 +436,39 @@ static int uart_smartbond_init(const struct device *dev)
 static inline void irq_tx_enable(const struct device *dev)
 {
 	const struct uart_smartbond_cfg *config = dev->config;
+	struct uart_smartbond_data *data = dev->data;
 
 	config->regs->UART2_IER_DLH_REG |= UART2_UART2_IER_DLH_REG_PTIME_DLH7_Msk |
 					   UART2_UART2_IER_DLH_REG_ETBEI_DLH1_Msk;
+	data->runtime_cfg.ier_reg_val = config->regs->UART2_IER_DLH_REG;
 }
 
 static inline void irq_tx_disable(const struct device *dev)
 {
 	const struct uart_smartbond_cfg *config = dev->config;
+	struct uart_smartbond_data *data = dev->data;
 
 	config->regs->UART2_IER_DLH_REG &= ~(UART2_UART2_IER_DLH_REG_PTIME_DLH7_Msk |
-					     UART2_UART2_IER_DLH_REG_ETBEI_DLH1_Msk);
+					UART2_UART2_IER_DLH_REG_ETBEI_DLH1_Msk);
+	data->runtime_cfg.ier_reg_val = config->regs->UART2_IER_DLH_REG;
 }
 
 static inline void irq_rx_enable(const struct device *dev)
 {
 	const struct uart_smartbond_cfg *config = dev->config;
+	struct uart_smartbond_data *data = dev->data;
 
 	config->regs->UART2_IER_DLH_REG |= UART2_UART2_IER_DLH_REG_ERBFI_DLH0_Msk;
+	data->runtime_cfg.ier_reg_val = config->regs->UART2_IER_DLH_REG;
 }
 
 static inline void irq_rx_disable(const struct device *dev)
 {
 	const struct uart_smartbond_cfg *config = dev->config;
+	struct uart_smartbond_data *data = dev->data;
 
 	config->regs->UART2_IER_DLH_REG &= ~UART2_UART2_IER_DLH_REG_ERBFI_DLH0_Msk;
+	data->runtime_cfg.ier_reg_val = config->regs->UART2_IER_DLH_REG;
 }
 
 static int uart_smartbond_fifo_fill(const struct device *dev,
@@ -450,6 +480,7 @@ static int uart_smartbond_fifo_fill(const struct device *dev,
 	int num_tx = 0;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+	pm_device_runtime_get(dev);
 	while ((len - num_tx > 0) &&
 	       (config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_TFNF_Msk)) {
 		config->regs->UART2_RBR_THR_DLL_REG = tx_data[num_tx++];
@@ -459,6 +490,7 @@ static int uart_smartbond_fifo_fill(const struct device *dev,
 		irq_tx_enable(dev);
 	}
 
+	pm_device_runtime_put(dev);
 	k_spin_unlock(&data->lock, key);
 
 	return num_tx;
@@ -472,6 +504,7 @@ static int uart_smartbond_fifo_read(const struct device *dev, uint8_t *rx_data,
 	int num_rx = 0;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+	pm_device_runtime_get(dev);
 	while ((size - num_rx > 0) &&
 	       (config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_RFNE_Msk)) {
 		rx_data[num_rx++] = config->regs->UART2_RBR_THR_DLL_REG;
@@ -486,6 +519,8 @@ static int uart_smartbond_fifo_read(const struct device *dev, uint8_t *rx_data,
 		k_work_reschedule(&data->rx_timeout_work, K_MSEC(data->rx_wake_timeout));
 	}
 #endif
+
+	pm_device_runtime_put(dev);
 	k_spin_unlock(&data->lock, key);
 
 	return num_rx;
@@ -517,7 +552,9 @@ static int uart_smartbond_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_smartbond_cfg *config = dev->config;
 
-	return (config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_TFNF_Msk) != 0;
+	bool ret = (config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_TFNF_Msk) != 0;
+
+	return ret;
 }
 
 static void uart_smartbond_irq_rx_enable(const struct device *dev)
@@ -546,14 +583,18 @@ static int uart_smartbond_irq_tx_complete(const struct device *dev)
 {
 	const struct uart_smartbond_cfg *config = dev->config;
 
-	return (config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_TFE_Msk) != 0;
+	bool ret = (config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_TFE_Msk) != 0;
+
+	return ret;
 }
 
 static int uart_smartbond_irq_rx_ready(const struct device *dev)
 {
 	const struct uart_smartbond_cfg *config = dev->config;
 
-	return (config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_RFNE_Msk) != 0;
+	bool ret = (config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_RFNE_Msk) != 0;
+
+	return ret;
 }
 
 static void uart_smartbond_irq_err_enable(const struct device *dev)
@@ -659,6 +700,9 @@ static int uart_smartbond_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+		uart_smartbond_pm_prevent_system_sleep();
+#endif
 		da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
 		apply_runtime_config(dev);
 		break;
@@ -670,6 +714,9 @@ static int uart_smartbond_pm_action(const struct device *dev,
 							      GPIO_INT_MODE_EDGE |
 							      GPIO_INT_TRIG_LOW);
 		}
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+		uart_smartbond_pm_allow_system_sleep();
+#endif
 		break;
 	default:
 		ret = -ENOTSUP;

@@ -183,7 +183,7 @@ class MdbHwBinaryRunner(ZephyrBinaryRunner):
                             help='''choose the number of cores that target has,
                                     e.g. --cores=1''')
         parser.add_argument('--dig-device', default='',
-                            help='''choose the the specific digilent device to
+                            help='''choose the specific digilent device to
                              connect, this is useful when multiple
                              targets are connected''')
 

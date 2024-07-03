@@ -4,7 +4,7 @@
  * Copyright (c) 2024, Vitrolife A/S
  */
 
- / {
+/ {
 	zephyr,user {
 		/* CN9 pin 1 */
 		io-channels = <&adc1 3>;

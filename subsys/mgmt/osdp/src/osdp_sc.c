@@ -92,7 +92,7 @@ void osdp_compute_cp_cryptogram(struct osdp_pd *pd)
 /**
  * Like memcmp; but operates at constant time.
  *
- * Returns 0 if memory pointed to by s1 and and s2 are identical; non-zero
+ * Returns 0 if memory pointed to by s1 and s2 are identical; non-zero
  * otherwise.
  */
 static int osdp_ct_compare(const void *s1, const void *s2, size_t len)

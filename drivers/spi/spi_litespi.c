@@ -11,6 +11,7 @@
 LOG_MODULE_REGISTER(spi_litespi);
 #include "spi_litespi.h"
 #include <stdbool.h>
+#include <soc.h>
 
 /* Helper Functions */
 static int spi_config(const struct spi_config *config, uint16_t *control)

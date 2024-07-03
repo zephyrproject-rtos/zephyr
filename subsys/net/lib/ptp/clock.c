@@ -55,7 +55,7 @@ struct ptp_clock {
 	} timestamp;			/* latest timestamps in nanoseconds */
 };
 
-static struct ptp_clock clock = { 0 };
+__maybe_unused static struct ptp_clock ptp_clk = { 0 };
 char str_clock_id[] = "FF:FF:FF:FF:FF:FF:FF:FF";
 
 static int clock_generate_id(ptp_clk_id *clock_id, struct net_if *iface)
@@ -146,7 +146,7 @@ static void clock_forward_management_msg(struct ptp_port *port, struct ptp_msg *
 		length = msg->header.msg_length;
 		msg->management.boundary_hops--;
 
-		SYS_SLIST_FOR_EACH_CONTAINER(&clock.ports_list, iter, node) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&ptp_clk.ports_list, iter, node) {
 			if (clock_forward_msg(port, iter, msg, &net_byte_ord)) {
 				LOG_ERR("Failed to forward message to %d Port",
 					iter->port_ds.id.port_number);
@@ -168,11 +168,11 @@ static int clock_management_set(struct ptp_port *port,
 
 	switch (tlv->id) {
 	case PTP_MGMT_PRIORITY1:
-		clock.default_ds.priority1 = *tlv->data;
+		ptp_clk.default_ds.priority1 = *tlv->data;
 		send_resp = true;
 		break;
 	case PTP_MGMT_PRIORITY2:
-		clock.default_ds.priority2 = *tlv->data;
+		ptp_clk.default_ds.priority2 = *tlv->data;
 		send_resp = true;
 		break;
 	default:
@@ -184,54 +184,54 @@ static int clock_management_set(struct ptp_port *port,
 
 static void clock_update_grandmaster(void)
 {
-	memset(&clock.current_ds, 0, sizeof(struct ptp_current_ds));
+	memset(&ptp_clk.current_ds, 0, sizeof(struct ptp_current_ds));
 
-	memcpy(&clock.parent_ds.port_id.clk_id,
-	       &clock.default_ds.clk_id,
+	memcpy(&ptp_clk.parent_ds.port_id.clk_id,
+	       &ptp_clk.default_ds.clk_id,
 	       sizeof(ptp_clk_id));
-	memcpy(&clock.parent_ds.gm_id,
-	       &clock.default_ds.clk_id,
+	memcpy(&ptp_clk.parent_ds.gm_id,
+	       &ptp_clk.default_ds.clk_id,
 	       sizeof(ptp_clk_id));
-	clock.parent_ds.port_id.port_number = 0;
-	clock.parent_ds.gm_clk_quality = clock.default_ds.clk_quality;
-	clock.parent_ds.gm_priority1 = clock.default_ds.priority1;
-	clock.parent_ds.gm_priority2 = clock.default_ds.priority2;
+	ptp_clk.parent_ds.port_id.port_number = 0;
+	ptp_clk.parent_ds.gm_clk_quality = ptp_clk.default_ds.clk_quality;
+	ptp_clk.parent_ds.gm_priority1 = ptp_clk.default_ds.priority1;
+	ptp_clk.parent_ds.gm_priority2 = ptp_clk.default_ds.priority2;
 
-	clock.time_prop_ds.current_utc_offset = 37; /* IEEE 1588-2019 9.4 */
-	clock.time_prop_ds.time_src = clock.time_src;
-	clock.time_prop_ds.flags = 0;
+	ptp_clk.time_prop_ds.current_utc_offset = 37; /* IEEE 1588-2019 9.4 */
+	ptp_clk.time_prop_ds.time_src = ptp_clk.time_src;
+	ptp_clk.time_prop_ds.flags = 0;
 }
 
 static void clock_update_time_receiver(void)
 {
-	struct ptp_msg *best_msg = (struct ptp_msg *)k_fifo_peek_tail(&clock.best->messages);
+	struct ptp_msg *best_msg = (struct ptp_msg *)k_fifo_peek_tail(&ptp_clk.best->messages);
 
-	clock.current_ds.steps_rm = 1 + clock.best->dataset.steps_rm;
+	ptp_clk.current_ds.steps_rm = 1 + ptp_clk.best->dataset.steps_rm;
 
-	memcpy(&clock.parent_ds.gm_id,
+	memcpy(&ptp_clk.parent_ds.gm_id,
 	       &best_msg->announce.gm_id,
 	       sizeof(best_msg->announce.gm_id));
-	memcpy(&clock.parent_ds.port_id,
-	       &clock.best->dataset.sender,
-	       sizeof(clock.best->dataset.sender));
-	clock.parent_ds.gm_clk_quality = best_msg->announce.gm_clk_quality;
-	clock.parent_ds.gm_priority1 = best_msg->announce.gm_priority1;
-	clock.parent_ds.gm_priority2 = best_msg->announce.gm_priority2;
+	memcpy(&ptp_clk.parent_ds.port_id,
+	       &ptp_clk.best->dataset.sender,
+	       sizeof(ptp_clk.best->dataset.sender));
+	ptp_clk.parent_ds.gm_clk_quality = best_msg->announce.gm_clk_quality;
+	ptp_clk.parent_ds.gm_priority1 = best_msg->announce.gm_priority1;
+	ptp_clk.parent_ds.gm_priority2 = best_msg->announce.gm_priority2;
 
-	clock.time_prop_ds.current_utc_offset = best_msg->announce.current_utc_offset;
-	clock.time_prop_ds.flags = best_msg->header.flags[1];
+	ptp_clk.time_prop_ds.current_utc_offset = best_msg->announce.current_utc_offset;
+	ptp_clk.time_prop_ds.flags = best_msg->header.flags[1];
 }
 
 static void clock_check_pollfd(void)
 {
 	struct ptp_port *port;
-	struct zsock_pollfd *fd = &clock.pollfd[1];
+	struct zsock_pollfd *fd = &ptp_clk.pollfd[1];
 
-	if (clock.pollfd_valid) {
+	if (ptp_clk.pollfd_valid) {
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&clock.ports_list, port, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&ptp_clk.ports_list, port, node) {
 		for (int i = 0; i < PTP_SOCKET_CNT; i++) {
 			fd->fd = port->socket[i];
 			fd->events = ZSOCK_POLLIN | ZSOCK_POLLPRI;
@@ -239,16 +239,16 @@ static void clock_check_pollfd(void)
 		}
 	}
 
-	clock.pollfd_valid = true;
+	ptp_clk.pollfd_valid = true;
 }
 
 const struct ptp_clock *ptp_clock_init(void)
 {
-	struct ptp_default_ds *dds = &clock.default_ds;
-	struct ptp_parent_ds *pds  = &clock.parent_ds;
+	struct ptp_default_ds *dds = &ptp_clk.default_ds;
+	struct ptp_parent_ds *pds  = &ptp_clk.parent_ds;
 	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
 
-	clock.time_src = (enum ptp_time_src)PTP_TIME_SRC_INTERNAL_OSC;
+	ptp_clk.time_src = (enum ptp_time_src)PTP_TIME_SRC_INTERNAL_OSC;
 
 	/* Initialize Default Dataset. */
 	int ret = clock_generate_id(&dds->clk_id, iface);
@@ -279,18 +279,18 @@ const struct ptp_clock *ptp_clock_init(void)
 	/* Parent statistics haven't been measured - IEEE 1588-2019 7.6.4.2 */
 	pds->stats = false;
 
-	clock.phc = net_eth_get_ptp_clock(iface);
-	if (!clock.phc) {
+	ptp_clk.phc = net_eth_get_ptp_clock(iface);
+	if (!ptp_clk.phc) {
 		LOG_ERR("Couldn't get PTP HW Clock for the interface.");
 		return NULL;
 	}
 
-	clock.pollfd[0].fd = eventfd(0, EFD_NONBLOCK);
-	clock.pollfd[0].events = ZSOCK_POLLIN;
+	ptp_clk.pollfd[0].fd = eventfd(0, EFD_NONBLOCK);
+	ptp_clk.pollfd[0].events = ZSOCK_POLLIN;
 
-	sys_slist_init(&clock.ports_list);
+	sys_slist_init(&ptp_clk.ports_list);
 	LOG_DBG("PTP Clock %s initialized", clock_id_str(&dds->clk_id));
-	return &clock;
+	return &ptp_clk;
 }
 
 struct zsock_pollfd *ptp_clock_poll_sockets(void)
@@ -298,14 +298,14 @@ struct zsock_pollfd *ptp_clock_poll_sockets(void)
 	int ret;
 
 	clock_check_pollfd();
-	ret = zsock_poll(clock.pollfd, PTP_SOCKET_CNT * clock.default_ds.n_ports + 1, -1);
-	if (ret > 0 && clock.pollfd[0].revents) {
+	ret = zsock_poll(ptp_clk.pollfd, PTP_SOCKET_CNT * ptp_clk.default_ds.n_ports + 1, -1);
+	if (ret > 0 && ptp_clk.pollfd[0].revents) {
 		eventfd_t value;
 
-		eventfd_read(clock.pollfd[0].fd, &value);
+		eventfd_read(ptp_clk.pollfd[0].fd, &value);
 	}
 
-	return &clock.pollfd[1];
+	return &ptp_clk.pollfd[1];
 }
 
 void ptp_clock_handle_state_decision_evt(void)
@@ -314,11 +314,11 @@ void ptp_clock_handle_state_decision_evt(void)
 	struct ptp_port *port;
 	bool tt_changed = false;
 
-	if (!clock.state_decision_event) {
+	if (!ptp_clk.state_decision_event) {
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&clock.ports_list, port, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&ptp_clk.ports_list, port, node) {
 		foreign = ptp_port_best_foreign(port);
 		if (!foreign) {
 			continue;
@@ -328,9 +328,9 @@ void ptp_clock_handle_state_decision_evt(void)
 		}
 	}
 
-	clock.best = best;
+	ptp_clk.best = best;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&clock.ports_list, port, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&ptp_clk.ports_list, port, node) {
 		enum ptp_port_state state;
 		enum ptp_port_event event;
 
@@ -362,7 +362,7 @@ void ptp_clock_handle_state_decision_evt(void)
 		ptp_port_event_handle(port, event, tt_changed);
 	}
 
-	clock.state_decision_event = false;
+	ptp_clk.state_decision_event = false;
 }
 
 int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
@@ -494,7 +494,7 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 		if (target_port->port_number == port->port_ds.id.port_number) {
 			ptp_port_management_msg_process(port, port, msg, mgmt);
 		} else if (target_port->port_number == UINT16_MAX) {
-			SYS_SLIST_FOR_EACH_CONTAINER(&clock.ports_list, iter, node) {
+			SYS_SLIST_FOR_EACH_CONTAINER(&ptp_clk.ports_list, iter, node) {
 				if (ptp_port_management_msg_process(iter, port, msg, mgmt)) {
 					break;
 				}
@@ -509,108 +509,108 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 {
 	int64_t offset;
-	uint64_t delay = clock.current_ds.mean_delay >> 16;
+	uint64_t delay = ptp_clk.current_ds.mean_delay >> 16;
 
-	clock.timestamp.t1 = egress;
-	clock.timestamp.t2 = ingress;
+	ptp_clk.timestamp.t1 = egress;
+	ptp_clk.timestamp.t2 = ingress;
 
-	if (!clock.current_ds.mean_delay) {
+	if (!ptp_clk.current_ds.mean_delay) {
 		return;
 	}
 
-	offset = clock.timestamp.t2 - clock.timestamp.t1 - delay;
+	offset = ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1 - delay;
 
-	/* If diff is too big, clock needs to be set first. */
+	/* If diff is too big, ptp_clk needs to be set first. */
 	if (offset > NSEC_PER_SEC || offset < -NSEC_PER_SEC) {
 		struct net_ptp_time current;
 
 		LOG_WRN("Clock offset exceeds 1 second.");
 
-		ptp_clock_get(clock.phc, &current);
+		ptp_clock_get(ptp_clk.phc, &current);
 
 		current.second -= (uint64_t)(offset / NSEC_PER_SEC);
 		current.nanosecond -= (uint32_t)(offset % NSEC_PER_SEC);
 
-		ptp_clock_set(clock.phc, &current);
+		ptp_clock_set(ptp_clk.phc, &current);
 		return;
 	}
 
 	LOG_DBG("Offset %lldns", offset);
-	clock.current_ds.offset_from_tt = clock_ns_to_timeinterval(offset);
+	ptp_clk.current_ds.offset_from_tt = clock_ns_to_timeinterval(offset);
 
-	ptp_clock_adjust(clock.phc, offset);
+	ptp_clock_adjust(ptp_clk.phc, offset);
 }
 
 void ptp_clock_delay(uint64_t egress, uint64_t ingress)
 {
 	int64_t delay;
 
-	clock.timestamp.t3 = egress;
-	clock.timestamp.t4 = ingress;
+	ptp_clk.timestamp.t3 = egress;
+	ptp_clk.timestamp.t4 = ingress;
 
-	delay = ((clock.timestamp.t2 - clock.timestamp.t3) +
-		 (clock.timestamp.t4 - clock.timestamp.t1)) / 2;
+	delay = ((ptp_clk.timestamp.t2 - ptp_clk.timestamp.t3) +
+		 (ptp_clk.timestamp.t4 - ptp_clk.timestamp.t1)) / 2;
 
 	LOG_DBG("Delay %lldns", delay);
-	clock.current_ds.mean_delay = clock_ns_to_timeinterval(delay);
+	ptp_clk.current_ds.mean_delay = clock_ns_to_timeinterval(delay);
 }
 
 sys_slist_t *ptp_clock_ports_list(void)
 {
-	return &clock.ports_list;
+	return &ptp_clk.ports_list;
 }
 
 enum ptp_clock_type ptp_clock_type(void)
 {
-	return (enum ptp_clock_type)clock.default_ds.type;
+	return (enum ptp_clock_type)ptp_clk.default_ds.type;
 }
 
 const struct ptp_default_ds *ptp_clock_default_ds(void)
 {
-	return &clock.default_ds;
+	return &ptp_clk.default_ds;
 }
 
 const struct ptp_parent_ds *ptp_clock_parent_ds(void)
 {
-	return &clock.parent_ds;
+	return &ptp_clk.parent_ds;
 }
 
 const struct ptp_current_ds *ptp_clock_current_ds(void)
 {
-	return &clock.current_ds;
+	return &ptp_clk.current_ds;
 }
 
 const struct ptp_time_prop_ds *ptp_clock_time_prop_ds(void)
 {
-	return &clock.time_prop_ds;
+	return &ptp_clk.time_prop_ds;
 }
 
 const struct ptp_dataset *ptp_clock_ds(void)
 {
-	struct ptp_dataset *ds = &clock.dataset;
+	struct ptp_dataset *ds = &ptp_clk.dataset;
 
-	ds->priority1		 = clock.default_ds.priority1;
-	ds->clk_quality		 = clock.default_ds.clk_quality;
-	ds->priority2		 = clock.default_ds.priority2;
+	ds->priority1		 = ptp_clk.default_ds.priority1;
+	ds->clk_quality		 = ptp_clk.default_ds.clk_quality;
+	ds->priority2		 = ptp_clk.default_ds.priority2;
 	ds->steps_rm		 = 0;
 	ds->sender.port_number	 = 0;
 	ds->receiver.port_number = 0;
-	memcpy(&ds->clk_id, &clock.default_ds.clk_id, sizeof(ptp_clk_id));
-	memcpy(&ds->sender.clk_id, &clock.default_ds.clk_id, sizeof(ptp_clk_id));
-	memcpy(&ds->receiver.clk_id, &clock.default_ds.clk_id, sizeof(ptp_clk_id));
+	memcpy(&ds->clk_id, &ptp_clk.default_ds.clk_id, sizeof(ptp_clk_id));
+	memcpy(&ds->sender.clk_id, &ptp_clk.default_ds.clk_id, sizeof(ptp_clk_id));
+	memcpy(&ds->receiver.clk_id, &ptp_clk.default_ds.clk_id, sizeof(ptp_clk_id));
 	return ds;
 }
 
 const struct ptp_dataset *ptp_clock_best_foreign_ds(void)
 {
-	return clock.best ? &clock.best->dataset : NULL;
+	return ptp_clk.best ? &ptp_clk.best->dataset : NULL;
 }
 
 struct ptp_port *ptp_clock_port_from_iface(struct net_if *iface)
 {
 	struct ptp_port *port;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&clock.ports_list, port, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&ptp_clk.ports_list, port, node) {
 		if (port->iface == iface) {
 			return port;
 		}
@@ -621,28 +621,28 @@ struct ptp_port *ptp_clock_port_from_iface(struct net_if *iface)
 
 void ptp_clock_pollfd_invalidate(void)
 {
-	clock.pollfd_valid = false;
+	ptp_clk.pollfd_valid = false;
 }
 
 void ptp_clock_signal_timeout(void)
 {
-	eventfd_write(clock.pollfd[0].fd, 1);
+	eventfd_write(ptp_clk.pollfd[0].fd, 1);
 }
 
 void ptp_clock_state_decision_req(void)
 {
-	clock.state_decision_event = true;
+	ptp_clk.state_decision_event = true;
 }
 
 void ptp_clock_port_add(struct ptp_port *port)
 {
-	clock.default_ds.n_ports++;
-	sys_slist_append(&clock.ports_list, &port->node);
+	ptp_clk.default_ds.n_ports++;
+	sys_slist_append(&ptp_clk.ports_list, &port->node);
 }
 
 const struct ptp_foreign_tt_clock *ptp_clock_best_time_transmitter(void)
 {
-	return clock.best;
+	return ptp_clk.best;
 }
 
 bool ptp_clock_id_eq(const ptp_clk_id *c1, const ptp_clk_id *c2)

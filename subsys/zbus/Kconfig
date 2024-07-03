@@ -37,6 +37,10 @@ config ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
 
 endchoice
 
+config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION
+	default n
+	bool "Use isolated pools instead of only using the global pool."
+
 config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE
 	default 16
 	int "The count of net_buf available to be used simutaneously."

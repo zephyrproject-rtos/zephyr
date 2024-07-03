@@ -15,6 +15,9 @@
 
 	/* Enable as wakeup source */
 	wakeup-source;
+
+	/* Enable FIFO to avoid losing chars on device wakeup */
+	fifo-enable;
 };
 
 &clk_lse {

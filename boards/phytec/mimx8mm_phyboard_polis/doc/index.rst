@@ -220,10 +220,10 @@ This should output something like this:
 
 .. code-block:: console
 
-   u-boot=> tftp 0x48000000 192.168.3.10:zyphr.bin
+   u-boot=> tftp 0x48000000 192.168.3.10:zephyr.bin
    Using ethernet@30be0000 device
    TFTP from server 192.168.3.10; our IP address is 192.168.3.11
-   Filename 'zepyhr.bin'.
+   Filename 'zephyr.bin'.
    Load address: 0x48000000
    Loading: ##
             2 KiB/s
@@ -249,7 +249,7 @@ And finaly starting the M4-Core at the right memory address:
 Starting the M4-Core via remoteproc
 ===================================
 
-Copy the zepyhr.elf to ``/lib/firmware`` on the target. Maybe a Zephyr sample
+Copy the zephyr.elf to ``/lib/firmware`` on the target. Maybe a Zephyr sample
 will be included in a future BSP release.
 
 .. note::
@@ -265,12 +265,12 @@ To load and start a firmware use this commands:
 
 .. code-block:: console
 
-   target$ echo /lib/firmware/zepyhr.elf > /sys/class/remoteproc/remoteproc0/firmware
+   target$ echo /lib/firmware/zephyr.elf > /sys/class/remoteproc/remoteproc0/firmware
    target$ echo start > /sys/class/remoteproc/remoteproc0/state
    [   90.700611] remoteproc remoteproc0: powering up imx-rproc
-   [   90.706114] remoteproc remoteproc0: Direct firmware load for /lib/firmware/zepyhr.elf failed w2
-   [   90.716571] remoteproc remoteproc0: Falling back to sysfs fallback for: /lib/firmware/zepyhr.elf
-   [   90.739280] remoteproc remoteproc0: Booting fw image /lib/firmware/zepyhr.elf, size 599356
+   [   90.706114] remoteproc remoteproc0: Direct firmware load for /lib/firmware/zephyr.elf failed w2
+   [   90.716571] remoteproc remoteproc0: Falling back to sysfs fallback for: /lib/firmware/zephyr.elf
+   [   90.739280] remoteproc remoteproc0: Booting fw image /lib/firmware/zephyr.elf, size 599356
    [   90.804448] remoteproc remoteproc0: remote processor imx-rproc is now up
 
 

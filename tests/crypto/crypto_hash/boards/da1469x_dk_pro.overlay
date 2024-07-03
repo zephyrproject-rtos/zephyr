@@ -5,5 +5,5 @@
  */
 
 &crypto {
-    status = "okay";
+	status = "okay";
 };

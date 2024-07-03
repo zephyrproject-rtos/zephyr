@@ -388,7 +388,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	return c_data->priv;
 }
 
-#define USBD_DEVICE_DEFINE(device_name, uhc_dev, vid, pid)		\
+#define USBD_DEVICE_DEFINE(device_name, udc_dev, vid, pid)		\
 	static struct usb_device_descriptor				\
 	fs_desc_##device_name = {					\
 		.bLength = sizeof(struct usb_device_descriptor),	\
@@ -425,7 +425,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	};								\
 	static STRUCT_SECTION_ITERABLE(usbd_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
-		.dev = uhc_dev,						\
+		.dev = udc_dev,						\
 		.fs_desc = &fs_desc_##device_name,			\
 		.hs_desc = &hs_desc_##device_name,			\
 	}

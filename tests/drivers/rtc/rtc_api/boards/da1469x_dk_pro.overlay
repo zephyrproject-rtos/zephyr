@@ -5,11 +5,11 @@
  */
 
 / {
-    aliases {
-        rtc = &rtc;
-    };
+	aliases {
+		rtc = &rtc;
+	};
 };
 
 &rtc {
-    status = "okay";
+	status = "okay";
 };

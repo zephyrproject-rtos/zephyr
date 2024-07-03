@@ -7,6 +7,5 @@ config MIPI_DBI_SMARTBOND
 	bool "Smartbond MIPI DBI host controller driver"
 	depends on DT_HAS_RENESAS_SMARTBOND_MIPI_DBI_ENABLED
 	default y
-	select SPI
 	help
 	  Enable Smartbond MIPI DBI host controller.

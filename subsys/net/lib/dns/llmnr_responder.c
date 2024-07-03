@@ -503,7 +503,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	struct net_buf *dns_data = NULL;
 	struct dns_addrinfo info = { 0 };
 	size_t addrlen = sizeof(addr);
-	int ret, family, sock_error, len;
+	int ret, family = AF_UNSPEC, sock_error, len;
 	socklen_t optlen;
 
 	if ((pev->event.revents & ZSOCK_POLLERR) ||

@@ -80,7 +80,7 @@ Alternatively, a pipe can be defined and initialized at compile time by
 calling :c:macro:`K_PIPE_DEFINE`.
 
 The following code has the same effect as the code segment above. Observe
-that that macro defines both the pipe and its ring buffer.
+that macro defines both the pipe and its ring buffer.
 
 .. code-block:: c
 

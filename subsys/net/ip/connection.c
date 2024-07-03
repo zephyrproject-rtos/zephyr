@@ -592,7 +592,7 @@ static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 
 	/*
 	 * After l2 processed only deliver protocol matched pkt,
-	 * unless the connetion protocol is all packets
+	 * unless the connection protocol is all packets
 	 */
 	if (type == SOCK_DGRAM && net_pkt_is_l2_processed(pkt) &&
 	    conn->proto != ETH_P_ALL &&
@@ -745,7 +745,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			/* We might have a match for v4-to-v6 mapping, check more */
 		}
 
-		/* Is the candidate connection matching the packet's protocol wihin the family? */
+		/* Is the candidate connection matching the packet's protocol within the family? */
 		if (conn->proto != proto) {
 			/* For packet socket data, the proto is set to ETH_P_ALL
 			 * or IPPROTO_RAW but the listener might have a specific

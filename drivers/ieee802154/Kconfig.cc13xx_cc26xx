@@ -88,12 +88,6 @@ config IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO
 	help
 	  Set the initialization priority number.
 
-config IEEE802154_CC13XX_CC26XX_SUB_GHZ_RADIO_TX_RETRIES
-	bool
-	select DEPRECATED
-	help
-	  DEPRECATED - use NET_L2_IEEE802154_RADIO_TX_RETRIES instead
-
 config IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_RADIO_SETUP
 	bool "Use custom radio setup structures (advanced)"
 	default n

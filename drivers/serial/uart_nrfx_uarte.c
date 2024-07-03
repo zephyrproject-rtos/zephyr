@@ -1158,7 +1158,7 @@ static void endrx_isr(const struct device *dev)
 	data->async->rx_flush_cnt = 0;
 
 	/* The 'rx_offset' can be bigger than 'rx_amount', so it the length
-	 * of data we report back the the user may need to be clipped.
+	 * of data we report back the user may need to be clipped.
 	 * This can happen because the 'rx_offset' count derives from RXRDY
 	 * events, which can occur already for the next buffer before we are
 	 * here to handle this buffer. (The next buffer is now already active

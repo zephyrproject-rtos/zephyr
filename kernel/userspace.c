@@ -82,7 +82,7 @@ static void clear_perms_cb(struct k_object *ko, void *ctx_ptr);
 const char *otype_to_str(enum k_objects otype)
 {
 	const char *ret;
-	/* -fdata-sections doesn't work right except in very very recent
+	/* -fdata-sections doesn't work right except in very recent
 	 * GCC and these literal strings would appear in the binary even if
 	 * otype_to_str was omitted by the linker
 	 */
@@ -134,7 +134,7 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 /*
  * Note that dyn_obj->data is where the kernel object resides
  * so it is the one that actually needs to be aligned.
- * Due to the need to get the the fields inside struct dyn_obj
+ * Due to the need to get the fields inside struct dyn_obj
  * from kernel object pointers (i.e. from data[]), the offset
  * from data[] needs to be fixed at build time. Therefore,
  * data[] is declared with __aligned(), such that when dyn_obj

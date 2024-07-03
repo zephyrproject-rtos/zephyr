@@ -21,7 +21,7 @@
 	};
 
 	sram0: memory@20000000 {
-	       compatible = "mmio-sram";
+		compatible = "mmio-sram";
 	};
 
 	soc {
@@ -144,17 +144,17 @@
 				 * control in a distributed way (GPIO registers and PSEL
 				 * registers on each peripheral).
 				 */
-				 compatible = "silabs,gecko-pinctrl";
+				compatible = "silabs,gecko-pinctrl";
 			};
 		};
 
-                wdog0: wdog@40052000 {
-                        compatible = "silabs,gecko-wdog";
-                        reg = <0x40052000 0x400>;
-                        peripheral-id = <0>;
-                        interrupts = <2 0>;
-                        status = "disabled";
-                };
+		wdog0: wdog@40052000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x40052000 0x400>;
+			peripheral-id = <0>;
+			interrupts = <2 0>;
+			status = "disabled";
+		};
 	};
 };
 

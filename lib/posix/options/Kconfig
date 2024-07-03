@@ -33,4 +33,6 @@ rsource "Kconfig.compat"
 
 rsource "Kconfig.deprecated"
 
+rsource "Kconfig.toolchain"
+
 endmenu # "POSIX Options"

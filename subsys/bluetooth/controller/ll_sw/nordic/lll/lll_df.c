@@ -134,7 +134,7 @@ struct lll_df_sync_cfg *lll_df_sync_cfg_alloc(struct lll_df_sync *df_cfg,
 	uint8_t first, last;
 
 	/* TODO: Make this unique mechanism to update last element in double
-	 *       buffer a re-usable utility function.
+	 *       buffer a reusable utility function.
 	 */
 	first = df_cfg->first;
 	last = df_cfg->last;
@@ -294,7 +294,7 @@ int lll_df_iq_report_no_resources_prepare(struct lll_sync *sync_lll)
 			err = 0;
 		}
 
-		/* Do actual allocation and store the node for futher processing after a PDU
+		/* Do actual allocation and store the node for further processing after a PDU
 		 * reception,
 		 */
 		ull_df_iq_report_alloc();

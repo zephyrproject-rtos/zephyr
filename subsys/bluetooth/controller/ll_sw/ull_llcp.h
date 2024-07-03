@@ -156,7 +156,7 @@ uint8_t ull_cp_remote_cpr_pending(struct ll_conn *conn);
 bool ull_cp_remote_cpr_apm_awaiting_reply(struct ll_conn *conn);
 
 /**
- * @brief Repsond to anchor point move of remote connection
+ * @brief Respond to anchor point move of remote connection
  *        param reg.
  */
 void ull_cp_remote_cpr_apm_reply(struct ll_conn *conn, uint16_t *offsets);

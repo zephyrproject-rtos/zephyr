@@ -6,7 +6,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 # Test a node re-provisioning through Remote Provisioning models. Procedure:
 # 1. Device (prov_device_pb_remote_client_server_same_dev) provisions it self
-#    and start scanning for an upprovisioned device, and provisions the the
+#    and start scanning for an upprovisioned device, and provisions the
 #    second device (prov_device_pb_remote_server_same_dev) with local RPR server.
 # 2. The first device (prov_device_pb_remote_client_server_same_dev) execute
 #    device key refresh procedure the second device (prov_device_pb_remote_server_same_dev).

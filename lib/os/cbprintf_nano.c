@@ -73,7 +73,7 @@ static inline int convert_value(uint_value_type num, unsigned int base,
  *
  * @return printed byte count if CONFIG_CBPRINTF_LIBC_SUBSTS is set
  */
-int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fmt,
+int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fmt,
 		     va_list ap, uint32_t flags)
 {
 	size_t count = 0;
@@ -81,6 +81,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fmt,
 	char *prefix, *data;
 	int min_width, precision, data_len;
 	char padding_mode, length_mod, special;
+	cbprintf_cb_local out = __out;
 
 	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
 			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;

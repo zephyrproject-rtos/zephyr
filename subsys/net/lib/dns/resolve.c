@@ -275,10 +275,6 @@ quit:
 	release_query(&ctx->queries[i]);
 
 free_buf:
-	if (dns_data) {
-		net_buf_unref(dns_data);
-	}
-
 	if (dns_cname) {
 		net_buf_unref(dns_cname);
 	}
@@ -436,7 +432,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		ret = zsock_socket(ctx->servers[i].dns_server.sa_family,
 				   SOCK_DGRAM, IPPROTO_UDP);
 		if (ret < 0) {
-			NET_DBG("Cannot get socket (%d)", ret);
+			ret = -errno;
+			NET_ERR("Cannot get socket (%d)", ret);
 			goto fail;
 		}
 

@@ -100,8 +100,8 @@ void z_x86_irq_connect_on_vector(unsigned int irq,
  */
 
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*func)(const void *arg),
-			     const void *arg, uint32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	uint32_t key;
 	int vector;
@@ -124,7 +124,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
 		z_irq_controller_irq_config(vector, irq, flags);
-		z_x86_irq_connect_on_vector(irq, vector, func, arg);
+		z_x86_irq_connect_on_vector(irq, vector, routine, parameter);
 	}
 
 	irq_unlock(key);

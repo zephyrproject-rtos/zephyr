@@ -506,6 +506,11 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 	switch (type) {
 	case BT_L2CAP_INFO_FEAT_MASK:
+		if (buf->len < sizeof(uint32_t)) {
+			LOG_ERR("Invalid remote info feat mask");
+			err = -EINVAL;
+			break;
+		}
 		l2cap->info_feat_mask = net_buf_pull_le32(buf);
 		LOG_DBG("remote info mask 0x%08x", l2cap->info_feat_mask);
 
@@ -516,6 +521,11 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		l2cap_br_get_info(l2cap, BT_L2CAP_INFO_FIXED_CHAN);
 		return 0;
 	case BT_L2CAP_INFO_FIXED_CHAN:
+		if (buf->len < sizeof(uint8_t)) {
+			LOG_ERR("Invalid remote info fixed chan");
+			err = -EINVAL;
+			break;
+		}
 		l2cap->info_fixed_chan = net_buf_pull_u8(buf);
 		LOG_DBG("remote fixed channel mask 0x%02x", l2cap->info_fixed_chan);
 

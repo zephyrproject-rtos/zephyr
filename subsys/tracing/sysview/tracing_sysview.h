@@ -675,6 +675,9 @@ void sys_trace_k_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_DISABLE,	       \
 					(uint32_t)ret)
 
+#define sys_trace_sys_init_enter(...)
+#define sys_trace_sys_init_exit(...)
+
 #ifdef __cplusplus
 }
 #endif

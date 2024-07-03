@@ -715,7 +715,7 @@ static const struct clock_control_driver_api clock_control_infineon_cat1_api = {
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_imo), okay)
 DEVICE_DT_DEFINE(DT_NODELABEL(clk_imo),
-		 &clock_control_infineon_cat1_init,
+		 clock_control_infineon_cat1_init,
 		 NULL,
 		 NULL,
 		 NULL,
@@ -725,7 +725,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(clk_imo),
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_iho), okay)
 DEVICE_DT_DEFINE(DT_NODELABEL(clk_iho),
-		 &clock_control_infineon_cat1_init,
+		 clock_control_infineon_cat1_init,
 		 NULL,
 		 NULL,
 		 NULL,

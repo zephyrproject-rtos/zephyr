@@ -105,3 +105,9 @@ class GdbStub_ARM_CortexM(GdbStub):
         # other than the general ones (e.g. eax, ebx)
         # so we can safely reply "xxxxxxxx" here.
         self.put_gdb_packet(b'x' * 8)
+
+    def handle_register_single_write_packet(self, pkt):
+        pkt_str = pkt.decode("ascii")
+        reg = int(pkt_str[1:pkt_str.index('=')], 16)
+        self.registers[reg] = int.from_bytes(binascii.unhexlify(pkt[3:]), byteorder = 'little')
+        self.put_gdb_packet(b'+')

@@ -113,7 +113,7 @@ config CTR_DRBG_CSPRNG_GENERATOR
 	help
 	  Enables the CTR-DRBG pseudo-random number generator. This CSPRNG
 	  shall use the entropy API for an initialization seed. The CTR-DRBG
-	  is a a FIPS140-2 recommended cryptographically secure random number
+	  is a FIPS140-2 recommended cryptographically secure random number
 	  generator.
 
 endchoice # CSPRNG_GENERATOR_CHOICE

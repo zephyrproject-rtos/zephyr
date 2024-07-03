@@ -358,6 +358,12 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		plen = 0;
 	}
 
+	if (plen > Z_LOG_MSG_MAX_PACKAGE) {
+		LOG_WRN("Message dropped because it exceeds size limitation (%u)",
+			(uint32_t)Z_LOG_MSG_MAX_PACKAGE);
+		return;
+	}
+
 	size_t msg_wlen = Z_LOG_MSG_ALIGNED_WLEN(plen, dlen);
 	struct log_msg *msg;
 	uint8_t *pkg;

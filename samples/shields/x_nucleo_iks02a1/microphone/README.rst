@@ -54,7 +54,7 @@ To build the sample you can use following command:
    have a dependency on HSE/HSI:
    :zephyr_file:`boards/shields/x_nucleo_iks02a1/boards/nucleo_f411re.overlay`
 
-   The user is invited to to verify which osci is configured on the used host board
+   The user is invited to verify which osci is configured on the used host board
    defconfig file and calculate the final I2SClk frequency, e.g.
    :zephyr_file:`boards/st/nucleo_f411re/nucleo_f411re.dts`
 

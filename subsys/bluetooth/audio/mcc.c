@@ -1109,7 +1109,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
 
 	} else if (handle == mcs_inst->cp_handle) {
-		/* The control point is is a special case - only */
+		/* The control point is a special case - only */
 		/* writable and notifiable.  Handle directly here. */
 		struct mpl_cmd_ntf ntf = {0};
 		int cb_err = 0;

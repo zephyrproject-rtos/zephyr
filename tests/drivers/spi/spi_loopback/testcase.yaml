@@ -33,7 +33,6 @@ tests:
     platform_allow:
       - robokit1
       - mimxrt1170_evk/mimxrt1176/cm7
-      - vmu_rt1170/mimxrt1176/cm7
   drivers.spi.mcux_dspi_dma.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"

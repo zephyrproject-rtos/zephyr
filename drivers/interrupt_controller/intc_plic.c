@@ -357,7 +357,7 @@ static void plic_irq_handler(const struct device *dev)
 		z_irq_spurious(NULL);
 	}
 
-#if IS_ENABLED(PLIC_DRV_HAS_COMPAT(andestech_nceplic100))
+#if PLIC_DRV_HAS_COMPAT(andestech_nceplic100)
 	trig_val = riscv_plic_irq_trig_val(dev, local_irq);
 	/*
 	 * Edge-triggered interrupts on Andes NCEPLIC100 have to be acknowledged first before
@@ -377,7 +377,7 @@ static void plic_irq_handler(const struct device *dev)
 	 * PLIC controller that the IRQ has been handled
 	 * for level triggered interrupts.
 	 */
-#if IS_ENABLED(PLIC_DRV_HAS_COMPAT(andestech_nceplic100))
+#if PLIC_DRV_HAS_COMPAT(andestech_nceplic100)
 	/* For NCEPLIC100, handle only if level-triggered */
 	if (trig_val == PLIC_TRIG_LEVEL) {
 		sys_write32(local_irq, claim_complete_addr);

@@ -65,6 +65,7 @@ BT_A2DP_EP_INIT(BT_AVDTP_SOURCE, _codec, _capability)
  * SBC is mandatory as a2dp specification, BT_A2DP_SBC_SINK_EP_DEFAULT
  * is more convenient for user to register SBC endpoint.
  *
+ *  @param _name unique structure name postfix.
  *  @param _freq sbc codec frequency.
  *               for example: A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000
  *  @param _ch_mode sbc codec channel mode.
@@ -151,6 +152,7 @@ static struct bt_a2dp_ep _name = BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC,\
 
 /** @brief define the SBC default configuration.
  *
+ *  @param _name unique structure name postfix.
  *  @param _freq_cfg sbc codec frequency.
  *               for example: A2DP_SBC_SAMP_FREQ_44100
  *  @param _ch_mode_cfg sbc codec channel mode.
@@ -173,6 +175,7 @@ struct bt_a2dp_codec_cfg _name = {.codec_config = &bt_a2dp_codec_ie##_name,}
 
 /** @brief define the SBC default configuration.
  *
+ *  @param _name unique structure name postfix.
  *  @param _freq_cfg the frequency to configure the remote same codec type endpoint.
  */
 #define BT_A2DP_SBC_EP_CFG_DEFAULT(_name, _freq_cfg)\

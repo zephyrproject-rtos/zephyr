@@ -108,7 +108,7 @@ void sys_track_k_mbox_init(struct k_mbox *mbox);
 void sys_track_k_pipe_init(struct k_pipe *pipe);
 void sys_track_k_queue_init(struct k_queue *queue);
 void sys_track_k_event_init(struct k_event *event);
-void sys_track_socket_init(int sock);
+void sys_track_socket_init(int sock, int family, int type, int proto);
 
 /** @endcond */
 

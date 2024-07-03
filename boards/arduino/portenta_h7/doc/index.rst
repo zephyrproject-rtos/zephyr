@@ -15,6 +15,7 @@ with 2MBytes of Flash memory, 1MB RAM, 480 MHz CPU, Art Accelerator, L1 cache, e
 large set of peripherals, SMPS, and MIPI-DSI.
 
 Additionally, the board features:
+
 - USB OTG FS
 - 3 color user LEDs
 

@@ -33,21 +33,24 @@ if(CONFIG_CMSIS_NN)
   endif()
 
   if(CONFIG_CMSIS_NN_CONVOLUTION)
-    file(GLOB SRC "${CMSIS_NN_DIR}/Source/ConvolutionFunctions/*_s8*.c")
+    file(GLOB SRC_S4 "${CMSIS_NN_DIR}/Source/ConvolutionFunctions/*_s4*.c")
+    file(GLOB SRC_S8 "${CMSIS_NN_DIR}/Source/ConvolutionFunctions/*_s8*.c")
     file(GLOB SRC_S16 "${CMSIS_NN_DIR}/Source/ConvolutionFunctions/*_s16*.c")
-    zephyr_library_sources(${SRC} ${SRC_S16})
+    zephyr_library_sources(${SRC_S4} ${SRC_S8} ${SRC_S16})
   endif()
 
   if(CONFIG_CMSIS_NN_FULLYCONNECTED)
-    file(GLOB SRC "${CMSIS_NN_DIR}/Source/FullyConnectedFunctions/*_s8.c")
+    file(GLOB SRC_S4 "${CMSIS_NN_DIR}/Source/FullyConnectedFunctions/*_s4.c")
+    file(GLOB SRC_S8 "${CMSIS_NN_DIR}/Source/FullyConnectedFunctions/*_s8.c")
     file(GLOB SRC_S16 "${CMSIS_NN_DIR}/Source/FullyConnectedFunctions/*_s16*.c")
-    zephyr_library_sources(${SRC} ${SRC_S16})
+    zephyr_library_sources(${SRC_S4} ${SRC_S8} ${SRC_S16})
   endif()
 
   if(CONFIG_CMSIS_NN_NNSUPPORT)
-    file(GLOB SRC "${CMSIS_NN_DIR}/Source/NNSupportFunctions/*_s8*.c")
+    file(GLOB SRC_S4 "${CMSIS_NN_DIR}/Source/NNSupportFunctions/*_s4*.c")
+    file(GLOB SRC_S8 "${CMSIS_NN_DIR}/Source/NNSupportFunctions/*_s8*.c")
     file(GLOB SRC_S16 "${CMSIS_NN_DIR}/Source/NNSupportFunctions/*_s16*.c")
-    zephyr_library_sources(${SRC} ${SRC_S16}
+    zephyr_library_sources(${SRC_S4} ${SRC_S8} ${SRC_S16}
       ${CMSIS_NN_DIR}/Source/NNSupportFunctions/arm_nntables.c
       ${CMSIS_NN_DIR}/Source/NNSupportFunctions/arm_q7_to_q15_with_offset.c
       ${CMSIS_NN_DIR}/Source/NNSupportFunctions/arm_s8_to_s16_unordered_with_offset.c)

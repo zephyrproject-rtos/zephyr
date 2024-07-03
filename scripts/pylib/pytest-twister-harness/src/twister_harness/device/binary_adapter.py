@@ -28,6 +28,7 @@ class BinaryAdapterBase(DeviceAdapter, abc.ABC):
             'stderr': subprocess.STDOUT,
             'stdin': subprocess.PIPE,
             'env': self.env,
+            'cwd': device_config.app_build_dir,
         }
 
     @abc.abstractmethod

@@ -338,7 +338,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		/* NOTE: latest PDU was not consumed by LLL and as
 		 * ull_adv_sync_pdu_alloc() has reverted back the double buffer
 		 * with the first PDU, and returned the latest PDU as the new
-		 * PDU, we need to enqueue back the new PDU which is infact
+		 * PDU, we need to enqueue back the new PDU which is in fact
 		 * the latest PDU.
 		 */
 		if (pdu_prev == pdu) {
@@ -1032,7 +1032,7 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
 	if (extra_data_flag == ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS ||
 	    (extra_data_flag == ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST && ed_prev)) {
 		/* If there was an extra data in past PDU data or it is required
-		 * by the hdr_add_fields then allocate memmory for it.
+		 * by the hdr_add_fields then allocate memory for it.
 		 */
 		pdu_new = lll_adv_sync_data_alloc(lll_sync, &ed_new,
 						  ter_idx);
@@ -2407,7 +2407,7 @@ static uint32_t sync_time_get(const struct ll_adv_sync_set *sync,
 	/* Calculate the PDU Tx Time and hence the radio event length,
 	 * Always use maximum length for common extended header format so that
 	 * ACAD could be update when periodic advertising is active and the
-	 * time reservation need not be updated everytime avoiding overlapping
+	 * time reservation need not be updated every time avoiding overlapping
 	 * with other active states/roles.
 	 */
 	len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -

@@ -34,4 +34,18 @@ config FLASH_BASE_ADDRESS
 config FLASH_LOAD_OFFSET
 	default 0x2400 if !USE_DT_CODE_PARTITION
 
+# Enable sleep and voltage rails manager so that
+# the device consumes the lowest possible current
+config PM
+	default y
+
+config PM_DEVICE
+	default y
+
+config REGULATOR
+	default y
+
+config PM_DEVICE_RUNTIME_EXCLUSIVE
+	default n if PM_DEVICE_RUNTIME
+
 endif # SOC_SERIES_DA1469X

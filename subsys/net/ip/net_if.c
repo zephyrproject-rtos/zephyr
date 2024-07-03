@@ -23,6 +23,9 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ethernet.h>
+#ifdef CONFIG_WIFI_NM
+#include <zephyr/net/wifi_nm.h>
+#endif
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/socket.h>
@@ -2092,7 +2095,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 	}
 
 	if (net_if_ipv6_maddr_lookup(addr, &iface)) {
-		NET_WARN("Multicast address %s is is already registered.",
+		NET_WARN("Multicast address %s is already registered.",
 			net_sprint_ipv6_addr(addr));
 		goto out;
 	}
@@ -5681,6 +5684,34 @@ struct net_if *net_if_get_first_wifi(void)
 	return NULL;
 }
 
+struct net_if *net_if_get_wifi_sta(void)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (net_if_is_wifi(iface)
+#ifdef CONFIG_WIFI_NM
+			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_STA))
+#endif
+			) {
+			return iface;
+		}
+	}
+	return NULL;
+}
+
+struct net_if *net_if_get_wifi_sap(void)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (net_if_is_wifi(iface)
+#ifdef CONFIG_WIFI_NM
+			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_SAP))
+#endif
+			) {
+			return iface;
+		}
+	}
+	return NULL;
+}
+
 int net_if_get_name(struct net_if *iface, char *buf, int len)
 {
 #if defined(CONFIG_NET_INTERFACE_NAME)
@@ -5817,6 +5848,16 @@ static void set_default_name(struct net_if *iface)
 			snprintk(name, sizeof(name) - 1, "ppp%d", count++);
 		}
 #endif /* CONFIG_NET_L2_PPP */
+	}
+
+	if (IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD)) {
+			static int count;
+
+			snprintk(name, sizeof(name) - 1, "thread%d", count++);
+		}
+#endif /* CONFIG_NET_L2_OPENTHREAD */
 	}
 
 	if (name[0] == '\0') {

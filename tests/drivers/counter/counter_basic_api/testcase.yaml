@@ -25,7 +25,10 @@ tests:
       - drivers
       - counter
     depends_on: counter
-    platform_allow: nucleo_f429zi nucleo_wba52cg
+    platform_allow:
+      - nucleo_f429zi
+      - nucleo_wba52cg
+      - google_dragonclaw
     timeout: 600
     extra_configs:
       - CONFIG_COUNTER_RTC_STM32_SUBSECONDS=y

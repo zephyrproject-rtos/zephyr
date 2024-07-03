@@ -127,6 +127,14 @@ Trusted Firmware-M
 zcbor
 =====
 
+LVGL
+====
+
+* :kconfig:option:`CONFIG_LV_Z_POINTER_KSCAN` was removed, you need to convert your kscan based
+  driver to the input subsystem and use a :dtcompatible:`zephyr,lvgl-pointer-input` in your
+  devicetree instead. (:github:`73800`)
+
+
 Device Drivers and Devicetree
 *****************************
 
@@ -229,6 +237,9 @@ Device Drivers and Devicetree
             #pwm-cells = <2>;
         };
     };
+
+* `st,lis2mdl` property `spi-full-duplex` changed to `duplex =
+  SPI_FULL_DUPLEX`. Full duplex is now the default.
 
 Analog-to-Digital Converter (ADC)
 =================================
@@ -523,6 +534,11 @@ Display
         };
     };
 
+* The ``orientation-flipped`` property has been removed from the SSD16XX
+  display driver, as the driver now supports display rotation. Users should
+  drop this property from their devicetree, and set orientation at runtime
+  via :c:func:`display_set_orientation` (:github:`73360`)
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
@@ -739,6 +755,22 @@ Bluetooth Host
 * The field :code:`init_credits` in :c:type:`bt_l2cap_le_endpoint` has been removed as it was no
   longer used in Zephyr 3.4.0 and later. Any references to this field should be removed. No further
   action is needed.
+
+* :c:macro:`BT_LE_ADV_PARAM` now returns a :code:`const` pointer.
+  Any place where the result is stored in a local variable such as
+  :code:`struct bt_le_adv_param *param = BT_LE_ADV_CONN;` will need to
+  be updated to :code:`const struct bt_le_adv_param *param = BT_LE_ADV_CONN;` or use it for
+  initialization like :code:`struct bt_le_adv_param param = *BT_LE_ADV_CONN;`
+
+  The change to :c:macro:`BT_LE_ADV_PARAM` also affects all of its derivatives, including but not
+  limited to:
+
+  * :c:macro:`BT_LE_ADV_CONN`
+  * :c:macro:`BT_LE_ADV_NCONN`
+  * :c:macro:`BT_LE_EXT_ADV_SCAN`
+  * :c:macro:`BT_LE_EXT_ADV_CODED_NCONN_NAME`
+
+  (:github:`75065`)
 
 Bluetooth Crypto
 ================

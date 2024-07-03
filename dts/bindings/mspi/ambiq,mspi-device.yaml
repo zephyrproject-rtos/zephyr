@@ -3,6 +3,8 @@
 
 description: Ambiq MSPI device
 
+compatible: "ambiq,mspi-device"
+
 include: [mspi-device.yaml, "jedec,jesd216.yaml"]
 
 properties:

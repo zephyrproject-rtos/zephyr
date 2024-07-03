@@ -125,9 +125,9 @@ static const struct sensor_driver_api qdec_sam_driver_api = {
 #define QDEC_SAM_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
 	static const struct qdec_sam_dev_cfg qdec##n##_sam_config = {	\
-		.regs = (Tc *)DT_INST_REG_ADDR(n),			\
+		.regs = (Tc *)DT_REG_ADDR(DT_INST_PARENT(n)),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.clock_cfg = SAM_DT_INST_CLOCKS_PMC_CFG(n),		\
+		.clock_cfg = SAM_DT_CLOCKS_PMC_CFG(DT_INST_PARENT(n)),	\
 	};								\
 									\
 	static struct qdec_sam_dev_data qdec##n##_sam_data;		\

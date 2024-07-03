@@ -590,7 +590,7 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 	}
 
 	query_class = dns_unpack_query_qclass(end_of_label);
-	if (query_class != DNS_CLASS_IN) {
+	if ((query_class & DNS_CLASS_IN) != DNS_CLASS_IN) {
 		return -EINVAL;
 	}
 

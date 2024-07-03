@@ -181,7 +181,7 @@ static int nsos_socket_create(int family, int type, int proto)
 		return -1;
 	}
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
@@ -202,7 +202,7 @@ static int nsos_socket_create(int family, int type, int proto)
 		goto free_sock;
 	}
 
-	z_finalize_typed_fd(fd, sock, &nsos_socket_fd_op_vtable.fd_vtable, ZVFS_MODE_IFSOCK);
+	zvfs_finalize_typed_fd(fd, sock, &nsos_socket_fd_op_vtable.fd_vtable, ZVFS_MODE_IFSOCK);
 
 	return fd;
 
@@ -210,7 +210,7 @@ free_sock:
 	k_free(sock);
 
 free_fd:
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 
 	return -1;
 }
@@ -703,7 +703,7 @@ static int nsos_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 		goto close_adapt_fd;
 	}
 
-	zephyr_fd = z_reserve_fd();
+	zephyr_fd = zvfs_reserve_fd();
 	if (zephyr_fd < 0) {
 		ret = -errno_to_nsos_mid(-zephyr_fd);
 		goto close_adapt_fd;
@@ -718,13 +718,13 @@ static int nsos_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 	conn_sock->fd = zephyr_fd;
 	conn_sock->poll.mid.fd = adapt_fd;
 
-	z_finalize_typed_fd(zephyr_fd, conn_sock, &nsos_socket_fd_op_vtable.fd_vtable,
-			    ZVFS_MODE_IFSOCK);
+	zvfs_finalize_typed_fd(zephyr_fd, conn_sock, &nsos_socket_fd_op_vtable.fd_vtable,
+			       ZVFS_MODE_IFSOCK);
 
 	return zephyr_fd;
 
 free_zephyr_fd:
-	z_free_fd(zephyr_fd);
+	zvfs_free_fd(zephyr_fd);
 
 close_adapt_fd:
 	nsi_host_close(adapt_fd);

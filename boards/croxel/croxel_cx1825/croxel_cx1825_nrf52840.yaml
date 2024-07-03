@@ -9,8 +9,6 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
-  - arduino_gpio
-  - arduino_i2c
   - ble
   - counter
   - gpio

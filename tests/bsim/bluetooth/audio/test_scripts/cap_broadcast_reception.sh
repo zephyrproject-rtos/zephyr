@@ -7,6 +7,7 @@
 SIMULATION_ID="cap_broadcast_reception"
 VERBOSITY_LEVEL=2
 NR_OF_DEVICES=3
+EXECUTE_TIMEOUT=180
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 

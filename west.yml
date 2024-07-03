@@ -124,7 +124,7 @@ manifest:
       revision: 6489e771e9c405f1763b52d64a3f17a1ec488ace
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
-      revision: 0c8669d81381ccf3b1a01d699f3b68b50134a99f
+      revision: ea987c1ca661be723de83bd159aed815d6cbd430
       path: modules/lib/cmsis-nn
     - name: edtt
       revision: 8d7b543d4d2f2be0f78481e4e1d8d73a88024803
@@ -137,7 +137,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: 2858da5ab4a7a01cde48a41818a1a6693529f68d
+      revision: dee9a7b1eff13a9da0560daf8842d61657f9d61e
       path: modules/hal/adi
       groups:
         - hal
@@ -147,17 +147,17 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 367ae6a0396e3074bebbd55ef72f8e577168e567
+      revision: e25327f026df1ee08f1bf01a4bbfeb5e5f4026f1
       path: modules/hal/ambiq
       groups:
         - hal
     - name: hal_atmel
-      revision: d6221e73d76a4a31d802e0657342fcbda77e21ae
+      revision: 56d60ebc909ad065bf6554cee73487969857614b
       path: modules/hal/atmel
       groups:
         - hal
     - name: hal_espressif
-      revision: 99dce9490ef4a84ddffe75c9d8853b30008c64bc
+      revision: 826077a9d9c762ea7033f137b992b1b36b4aeacb
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: bee15c31e19ff1982583d9b750ef844d64320160
+      revision: 862e001504bd6e0a4feade6a718e9f973116849c
       path: modules/hal/nxp
       groups:
         - hal
@@ -215,7 +215,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: a8cd5ed480a31982a86dab8952ac8baaf646c3cb
+      revision: af77d7cdfeeff290593e7e99f54f0c1e2a3f91e6
       groups:
         - hal
     - name: hal_rpi_pico
@@ -234,7 +234,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 6443e5c4d391c3e9e283c5728cd07d855e663965
+      revision: 855f195793df094644ce8b8617c01275408bbf58
       path: modules/hal/stm32
       groups:
         - hal
@@ -327,12 +327,12 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-m
-      revision: bdc4df1734b870de43237d56eb1b2a7af016ee95
+      revision: 8df9cc8baf46252fd188bba1d87333a8daa9a5e8
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
     - name: trusted-firmware-a
-      revision: 421dc050278287839f5c70019bd6aec617f2bbdb
+      revision: 713ffbf96c5bcbdeab757423f10f73eb304eff07
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee

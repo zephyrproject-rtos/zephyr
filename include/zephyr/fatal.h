@@ -68,7 +68,7 @@ FUNC_NORETURN void k_fatal_halt(unsigned int reason);
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf);
 
 /**
- * Called by architecture code upon a fatal error.
+ * @brief Called by architecture code upon a fatal error.
  *
  * This function dumps out architecture-agnostic information about the error
  * and then makes a policy decision on what to do by invoking

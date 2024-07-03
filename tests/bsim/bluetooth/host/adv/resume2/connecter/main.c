@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(connecter, LOG_LEVEL_INF);
  * before starting over.
  *
  * This app is added to the simulation simply to exercise the
- * the DUT's connectable advertiser.
+ * DUT's connectable advertiser.
  *
  * Multiple instances of this app are added to the simulation,
  * to exercise BT_MAX_CONN of the DUT.

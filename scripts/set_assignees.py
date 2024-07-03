@@ -122,8 +122,7 @@ def process_pr(gh, maintainer_file, number):
     log(f"Submitted by: {pr.user.login}")
     log(f"candidate maintainers: {_all_maintainers}")
 
-    maintainers = list(_all_maintainers.keys())
-    assignee = None
+    assignees = []
 
     # we start with areas with most files changed and pick the maintainer from the first one.
     # if the first area is an implementation, i.e. driver or platform, we
@@ -132,26 +131,14 @@ def process_pr(gh, maintainer_file, number):
         if count == 0:
             continue
         if len(area.maintainers) > 0:
-            assignee = area.maintainers[0]
+            assignees = area.maintainers
 
             if 'Platform' not in area.name:
                 break
 
-    # if the submitter is the same as the maintainer, check if we have
-    # multiple maintainers
-    if len(maintainers) > 1 and pr.user.login == assignee:
-        log("Submitter is same as Assignee, trying to find another assignee...")
-        aff = list(area_counter.keys())[0]
-        for area in all_areas:
-            if area == aff:
-                if len(area.maintainers) > 1:
-                    assignee = area.maintainers[1]
-                else:
-                    log(f"This area has only one maintainer, keeping assignee as {assignee}")
-
-    if assignee:
-        prop = (found_maintainers[assignee] / num_files) * 100
-        log(f"Picked assignee: {assignee} ({prop:.2f}% ownership)")
+    if assignees:
+        prop = (found_maintainers[assignees[0]] / num_files) * 100
+        log(f"Picked assignees: {assignees} ({prop:.2f}% ownership)")
         log("+++++++++++++++++++++++++")
 
     # Set labels
@@ -217,10 +204,11 @@ def process_pr(gh, maintainer_file, number):
 
     ms = []
     # assignees
-    if assignee and not pr.assignee:
+    if assignees and not pr.assignee:
         try:
-            u = gh.get_user(assignee)
-            ms.append(u)
+            for assignee in assignees:
+                u = gh.get_user(assignee)
+                ms.append(u)
         except GithubException:
             log(f"Error: Unknown user")
 

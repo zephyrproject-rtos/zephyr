@@ -72,9 +72,9 @@ int stream_flash_callback(uint8_t *buf, size_t len, size_t offset)
 
 static void erase_flash(void)
 {
-#if IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	int rc;
-#if IS_ENABLED(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
 	const struct flash_parameters *fparam = flash_get_parameters(fdev);
 
 	if (!(flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT)) {

@@ -3729,7 +3729,7 @@ class Kconfig(object):
 
         if node.is_configdefault:
             # Store any defaults for later application after the complete tree
-            # is known. The current length of of the default array is stored so
+            # is known. The current length of the default array is stored so
             # the configdefaults can be inserted in the order they originally
             # appeared.
             sym.configdefaults.append((len(sym.defaults), node.defaults))

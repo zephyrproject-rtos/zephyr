@@ -5,10 +5,10 @@
  */
  #include "pcie_ivshmem.dtsi"
 
- / {
-     ipm_ivshmem0: ipm_ivshmem {
-         compatible = "linaro,ivshmem-ipm";
-         ivshmem = <&ivshmem0>;
-         status = "okay";
-     };
- };
+/ {
+	ipm_ivshmem0: ipm_ivshmem {
+		compatible = "linaro,ivshmem-ipm";
+		ivshmem = <&ivshmem0>;
+		status = "okay";
+	};
+};

@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "eth.h"
 #include "eth_stm32_hal_priv.h"
 
-#if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC) || DT_INST_PROP(0, zephyr_random_mac_address)
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 #define ETH_STM32_RANDOM_MAC
 #endif
 
@@ -1043,7 +1043,6 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 static void generate_mac(uint8_t *mac_addr)
 {
 #if defined(ETH_STM32_RANDOM_MAC)
-	/* Either CONFIG_ETH_STM32_HAL_RANDOM_MAC or device tree property */
 	/* "zephyr,random-mac-address" is set, generate a random mac address */
 	gen_random_mac(mac_addr, ST_OUI_B0, ST_OUI_B1, ST_OUI_B2);
 #else /* Use user defined mac address */
@@ -1054,10 +1053,6 @@ static void generate_mac(uint8_t *mac_addr)
 	mac_addr[3] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 3);
 	mac_addr[4] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 4);
 	mac_addr[5] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 5);
-#elif defined(CONFIG_ETH_STM32_HAL_USER_STATIC_MAC)
-	mac_addr[3] = CONFIG_ETH_STM32_HAL_MAC3;
-	mac_addr[4] = CONFIG_ETH_STM32_HAL_MAC4;
-	mac_addr[5] = CONFIG_ETH_STM32_HAL_MAC5;
 #else
 	uint8_t unique_device_ID_12_bytes[12];
 	uint32_t result_mac_32_bits;
@@ -1239,20 +1234,6 @@ static int eth_initialize(const struct device *dev)
 }
 
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
-static uint32_t reverse(uint32_t val)
-{
-	uint32_t res = 0;
-	int i;
-
-	for (i = 0; i < 32; i++) {
-		if (val & BIT(i)) {
-			res |= BIT(31 - i);
-		}
-	}
-
-	return res;
-}
-
 static void eth_stm32_mcast_filter(const struct device *dev, const struct ethernet_filter *filter)
 {
 	struct eth_stm32_hal_dev_data *dev_data = (struct eth_stm32_hal_dev_data *)dev->data;
@@ -1263,7 +1244,7 @@ static void eth_stm32_mcast_filter(const struct device *dev, const struct ethern
 
 	heth = &dev_data->heth;
 
-	crc = reverse(crc32_ieee(filter->mac_address.addr, sizeof(struct net_eth_addr)));
+	crc = __RBIT(crc32_ieee(filter->mac_address.addr, sizeof(struct net_eth_addr)));
 	hash_index = (crc >> 26) & 0x3f;
 
 	__ASSERT_NO_MSG(hash_index < ARRAY_SIZE(dev_data->hash_index_cnt));

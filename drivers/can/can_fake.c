@@ -61,7 +61,7 @@ static int fake_can_get_core_clock_delegate(const struct device *dev, uint32_t *
 {
 	ARG_UNUSED(dev);
 
-	/* Recommended CAN clock from from CiA 601-3 */
+	/* Recommended CAN clock from CiA 601-3 */
 	*rate = MHZ(80);
 
 	return 0;

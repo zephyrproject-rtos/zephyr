@@ -1750,6 +1750,11 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	switch (hdr->op_code) {
 	case BT_SDP_SVC_SEARCH_ATTR_RSP:
+		/* Check the buffer len for the length field */
+		if (buf->len < sizeof(uint16_t)) {
+			LOG_ERR("Invalid frame payload length");
+			return 0;
+		}
 		/* Get number of attributes in this frame. */
 		frame_len = net_buf_pull_be16(buf);
 		/* Check valid buf len for attribute list and cont state */

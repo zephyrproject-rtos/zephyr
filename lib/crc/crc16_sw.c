@@ -54,7 +54,8 @@ uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len)
 	for (; len > 0; len--) {
 		uint8_t e, f;
 
-		e = seed ^ *src++;
+		e = seed ^ *src;
+		++src;
 		f = e ^ (e << 4);
 		seed = (seed >> 8) ^ ((uint16_t)f << 8) ^ ((uint16_t)f << 3) ^ ((uint16_t)f >> 4);
 	}
@@ -66,7 +67,8 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len)
 {
 	for (; len > 0; len--) {
 		seed = (seed >> 8U) | (seed << 8U);
-		seed ^= *src++;
+		seed ^= *src;
+		++src;
 		seed ^= (seed & 0xffU) >> 4U;
 		seed ^= seed << 12U;
 		seed ^= (seed & 0xffU) << 5U;

@@ -2596,7 +2596,7 @@ struct net_if *net_if_select_src_iface(const struct sockaddr *dst);
  * @typedef net_if_link_callback_t
  * @brief Define callback that is called after a network packet
  *        has been sent.
- * @param iface A pointer to a struct net_if to which the the net_pkt was sent to.
+ * @param iface A pointer to a struct net_if to which the net_pkt was sent to.
  * @param dst Link layer address of the destination where the network packet was sent.
  * @param status Send status, 0 is ok, < 0 error.
  */
@@ -2765,7 +2765,7 @@ void net_if_foreach(net_if_cb_t cb, void *user_data);
 int net_if_up(struct net_if *iface);
 
 /**
- * @brief Check if interface is is up and running.
+ * @brief Check if interface is up and running.
  *
  * @param iface Pointer to network interface
  *
@@ -2985,7 +2985,7 @@ static inline void net_if_unset_promisc(struct net_if *iface)
  * @param iface Pointer to network interface
  *
  * @return True if interface is in promisc mode,
- *         False if interface is not in in promiscuous mode.
+ *         False if interface is not in promiscuous mode.
  */
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 bool net_if_is_promisc(struct net_if *iface);
@@ -3062,6 +3062,20 @@ bool net_if_is_wifi(struct net_if *iface);
  * @return Pointer to network interface, NULL if not found.
  */
 struct net_if *net_if_get_first_wifi(void);
+
+/**
+ * @brief Get Wi-Fi network station interface.
+ *
+ * @return Pointer to network interface, NULL if not found.
+ */
+struct net_if *net_if_get_wifi_sta(void);
+
+/**
+ * @brief Get first Wi-Fi network Soft-AP interface.
+ *
+ * @return Pointer to network interface, NULL if not found.
+ */
+struct net_if *net_if_get_wifi_sap(void);
 
 /**
  * @brief Get network interface name.

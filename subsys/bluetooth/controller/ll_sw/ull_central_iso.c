@@ -1155,7 +1155,7 @@ static void mfy_cis_offset_get(void *param)
 	}
 
 	/* Decrement event_count to compensate for offset_min_us greater than
-	 * CIG interval due to offset being atleast PDU_CIS_OFFSET_MIN_US.
+	 * CIG interval due to offset being at least PDU_CIS_OFFSET_MIN_US.
 	 */
 	if (offset_min_us > cig_interval_us) {
 		cis->lll.event_count--;
