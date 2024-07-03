@@ -72,21 +72,6 @@ const char *wifi_band_txt(enum wifi_frequency_bands band)
 	}
 }
 
-const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth)
-{
-	switch (bandwidth) {
-	case WIFI_FREQ_BANDWIDTH_20MHZ:
-		return "20 MHz";
-	case WIFI_FREQ_BANDWIDTH_40MHZ:
-		return "40 MHz";
-	case WIFI_FREQ_BANDWIDTH_80MHZ:
-		return "80 MHz";
-	case WIFI_FREQ_BANDWIDTH_UNKNOWN:
-	default:
-		return "UNKNOWN";
-	}
-}
-
 const char *wifi_state_txt(enum wifi_iface_state state)
 {
 	switch (state) {
@@ -410,21 +395,6 @@ static int wifi_ap_enable(uint32_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_ENABLE, wifi_ap_enable);
-
-static int wifi_ap_bandwidth(uint32_t mgmt_request, struct net_if *iface, void *data, size_t len)
-{
-	struct wifi_ap_config_params *params = (struct wifi_ap_config_params *)data;
-	const struct device *dev = net_if_get_device(iface);
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
-
-	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_bandwidth == NULL) {
-		return -ENOTSUP;
-	}
-
-	return wifi_mgmt_api->ap_bandwidth(dev, params);
-}
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_BANDWIDTH, wifi_ap_bandwidth);
 
 static int wifi_ap_disable(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
