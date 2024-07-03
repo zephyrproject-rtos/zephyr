@@ -2007,7 +2007,8 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
  *  called from the BT RX thread, as this would cause a deadlock.
  *
  *  @param conn Connection object.
- *  @param params Subscribe parameters.
+ *  @param params Subscribe parameters. The parameters shall be a @ref bt_gatt_subscribe_params from
+ *                a previous call to bt_gatt_subscribe().
  *
  *  @retval 0 Successfully queued request. Will call @p params->write on
  *  resolution.
