@@ -282,8 +282,3 @@ zephyr_udc0: &usb_otg {
 	status = "okay";
 	wakeup-source;
 };
-
-&imu {
-	status = "okay";
-	wakeup-source;
-};
