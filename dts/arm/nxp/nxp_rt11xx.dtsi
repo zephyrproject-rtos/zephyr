@@ -831,6 +831,18 @@
 			status = "disabled";
 		};
 
+		usbphy1: usbphy@0x40434000 {
+			compatible = "nxp,usbphy";
+			reg = <0x40434000 0x1000>;
+			status = "disabled";
+		};
+
+		usbphy2: usbphy@0x40438000 {
+			compatible = "nxp,usbphy";
+			reg = <0x40438000 0x1000>;
+			status = "disabled";
+		};
+
 		usdhc1: usdhc@40418000 {
 			compatible = "nxp,imx-usdhc";
 			reg = <0x40418000 0x4000>;
