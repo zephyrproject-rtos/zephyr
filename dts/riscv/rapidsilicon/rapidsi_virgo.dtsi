@@ -161,7 +161,7 @@
 		 };
  
 		 dma0: dma@A0600000 {
-			 compatible = "andestech,atcdmac300";
+			 compatible = "andestech,atcdmac100";
 			 reg = <0xA0600000 0xFFFF>;
 			 interrupts = <27 9>;
 			 interrupt-parent = <&eclic>;
