@@ -134,6 +134,28 @@ tests:
       regex:
         - "End of files"
         - "The device is put in USB mass storage mode."
+  sample.usb_device_next.mass_sdhc_fatfs:
+    min_ram: 32
+    modules:
+      - fatfs
+    depends_on:
+      - usbd
+      - sdhc
+    extra_configs:
+      - CONFIG_LOG_DEFAULT_LEVEL=3
+      - CONFIG_APP_MSC_STORAGE_SDCARD=y
+    extra_args: CONF_FILE="usbd_next_prj.conf"
+    tags:
+      - msd
+      - usb
+    harness: console
+    harness_config:
+      fixture: fixture_sdcard
+      type: multi_line
+      ordered: true
+      regex:
+        - "End of files"
+        - "The device is put in USB mass storage mode."
   sample.usb.mass_flash_littlefs:
     modules:
       - littlefs
