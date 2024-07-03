@@ -441,6 +441,9 @@ static int handle_http_request(struct http_client_ctx *client)
 		case HTTP_SERVER_FRAME_PRIORITY_STATE:
 			ret = handle_http_frame_priority(client);
 			break;
+		case HTTP_SERVER_FRAME_PADDING_STATE:
+			ret = handle_http_frame_padding(client);
+			break;
 		case HTTP_SERVER_DONE_STATE:
 			ret = handle_http_done(client);
 			break;

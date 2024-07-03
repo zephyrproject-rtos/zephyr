@@ -47,6 +47,7 @@ enum http2_frame_type {
 #define HTTP2_FLAG_SETTINGS_ACK 0x1
 #define HTTP2_FLAG_END_HEADERS  0x4
 #define HTTP2_FLAG_END_STREAM   0x1
+#define HTTP2_FLAG_PADDED       0x8
 
 #define HTTP2_FRAME_HEADER_SIZE      9
 #define HTTP2_FRAME_LENGTH_OFFSET    0
