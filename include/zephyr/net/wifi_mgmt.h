@@ -971,7 +971,7 @@ struct net_wifi_mgmt_offload {
 
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT) || defined(__DOXYGEN__)
 	/** Wi-Fi supplicant driver API */
-	const void *wifi_drv_ops;
+	void *wifi_drv_ops;
 #endif
 };
 
