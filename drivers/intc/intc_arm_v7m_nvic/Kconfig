@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config INTC_ARM_V7M_NVIC
+	bool "Arm V7M Nested Vector Interrupt Controller"
+	default y
+	depends on DT_HAS_ARM_V7M_NVIC_ENABLED
