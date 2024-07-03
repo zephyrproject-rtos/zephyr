@@ -59,24 +59,32 @@ static void iso_timer_timeout(struct k_work *work)
 		data_initialized = true;
 	}
 
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
+	if (buf != NULL) {
+		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
-	net_buf_add_mem(buf, buf_data, len_to_send);
+		net_buf_add_mem(buf, buf_data, len_to_send);
 
-	ret = bt_iso_chan_send(&iso_chan, buf, seq_num++);
+		ret = bt_iso_chan_send(&iso_chan, buf, seq_num);
 
-	if (ret < 0) {
-		printk("Failed to send ISO data (%d)\n", ret);
-		net_buf_unref(buf);
+		if (ret < 0) {
+			printk("Failed to send ISO data (%d)\n", ret);
+			net_buf_unref(buf);
+		}
+
+		len_to_send++;
+		if (len_to_send > ARRAY_SIZE(buf_data)) {
+			len_to_send = 1;
+		}
+	} else {
+		printk("Failed to allocate buffer, retrying in next interval (%u us)\n",
+		       interval_us);
 	}
+
+	/* Sequence number shall be incremented for each SDU interval */
+	seq_num++;
 
 	k_work_schedule(&iso_send_work, K_USEC(interval_us));
-
-	len_to_send++;
-	if (len_to_send > ARRAY_SIZE(buf_data)) {
-		len_to_send = 1;
-	}
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
