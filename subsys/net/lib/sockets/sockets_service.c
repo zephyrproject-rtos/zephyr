@@ -29,7 +29,7 @@ STRUCT_SECTION_START_EXTERN(net_socket_service_desc);
 STRUCT_SECTION_END_EXTERN(net_socket_service_desc);
 
 static struct service {
-	struct zsock_pollfd events[CONFIG_NET_SOCKETS_POLL_MAX];
+	struct zsock_pollfd events[CONFIG_ZVFS_POLL_MAX];
 	int count;
 } ctx;
 
@@ -198,7 +198,7 @@ static void socket_service_thread(void)
 			"%zd poll entries configured.",
 			count + 1, ARRAY_SIZE(ctx.events));
 		NET_ERR("Please increase value of %s to at least %d",
-			"CONFIG_NET_SOCKETS_POLL_MAX", count + 1);
+			"CONFIG_ZVFS_POLL_MAX", count + 1);
 		goto fail;
 	}
 

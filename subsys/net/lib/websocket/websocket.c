@@ -458,7 +458,7 @@ static int websocket_close_vmeth(void *obj)
 static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 					 int timeout)
 {
-	int fd_backup[CONFIG_NET_SOCKETS_POLL_MAX];
+	int fd_backup[CONFIG_ZVFS_POLL_MAX];
 	const struct fd_op_vtable *vtable;
 	void *ctx;
 	int ret = 0;
