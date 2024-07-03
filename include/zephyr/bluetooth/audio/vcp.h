@@ -1,5 +1,10 @@
+/**
+ * @file
+ * @brief Bluetooth Volume Control Profile (VCP) APIs.
+ */
+
 /*
- * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +22,9 @@
  *
  * @ingroup bluetooth
  * @{
+ *
+ * The Volume Control Profile (VCP) provides procedures to control the volume level and mute state
+ * on audio devices.
  */
 
 #include <stdint.h>
@@ -30,21 +38,48 @@
 extern "C" {
 #endif
 
+/**
+ * Defines the maximum number of Volume Offset Control service instances for the
+ * Volume Control Profile Volume Renderer
+ */
 #if defined(CONFIG_BT_VCP_VOL_REND)
 #define BT_VCP_VOL_REND_VOCS_CNT CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT
-#define BT_VCP_VOL_REND_AICS_CNT CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT
 #else
 #define BT_VCP_VOL_REND_VOCS_CNT 0
+#endif /* CONFIG_BT_VCP_VOL_REND */
+
+/**
+ * Defines the maximum number of Audio Input Control service instances for the
+ * Volume Control Profile Volume Renderer
+ */
+#if defined(CONFIG_BT_VCP_VOL_REND)
+#define BT_VCP_VOL_REND_AICS_CNT CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT
+#else
 #define BT_VCP_VOL_REND_AICS_CNT 0
 #endif /* CONFIG_BT_VCP_VOL_REND */
 
-/** Volume Control Service Error codes */
+/**
+ * @name Volume Control Service Error codes
+ * @{
+ */
+/**
+ * The Change_Counter operand value does not match the Change_Counter field value of the Volume
+ * State characteristic.
+ */
 #define BT_VCP_ERR_INVALID_COUNTER             0x80
+/** An invalid opcode has been used in a control point procedure. */
 #define BT_VCP_ERR_OP_NOT_SUPPORTED            0x81
+/** @} */
 
-/** Volume Control Service Mute Values */
+/**
+ * @name Volume Control Service Mute Values
+ * @{
+ */
+/** The volume state is unmuted */
 #define BT_VCP_STATE_UNMUTED                   0x00
+/** The volume state is muted */
 #define BT_VCP_STATE_MUTED                     0x01
+/** @} */
 
 /** @brief Opaque Volume Control Service instance. */
 struct bt_vcp_vol_ctlr;
@@ -115,6 +150,11 @@ int bt_vcp_vol_rend_included_get(struct bt_vcp_included *included);
  */
 int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param);
 
+/**
+ * @brief Struct to hold the Volume Renderer callbacks
+ *
+ * These can be registered for usage with bt_vcp_vol_rend_register().
+ */
 struct bt_vcp_vol_rend_cb {
 	/**
 	 * @brief Callback function for Volume Control Service volume state.
@@ -223,6 +263,11 @@ int bt_vcp_vol_rend_unmute(void);
  */
 int bt_vcp_vol_rend_mute(void);
 
+/**
+ * @brief Struct to hold the Volume Controller callbacks
+ *
+ * These can be registered for usage with bt_vcp_vol_ctlr_cb_register().
+ */
 struct bt_vcp_vol_ctlr_cb {
 	/**
 	 * @brief Callback function for Volume Control Profile volume state.
@@ -350,13 +395,13 @@ struct bt_vcp_vol_ctlr_cb {
 	 */
 	void (*vol_set)(struct bt_vcp_vol_ctlr *vol_ctlr, int err);
 
-	/* Volume Offset Control Service callbacks */
+	/** Volume Offset Control Service callbacks */
 	struct bt_vocs_cb             vocs_cb;
 
-	/* Audio Input Control Service callbacks */
+	/** Audio Input Control Service callbacks */
 	struct bt_aics_cb             aics_cb;
 
-	/** Internally used field for list handling */
+	/** @internal Internally used field for list handling */
 	sys_snode_t _node;
 };
 
