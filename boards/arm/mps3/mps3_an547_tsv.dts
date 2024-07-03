@@ -25,8 +25,8 @@
 	};
 
 	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &jtag_uart;
+		zephyr,shell-uart = &jtag_uart;
 		zephyr,sram = &ram;
 		zephyr,flash = &code;
 	};
@@ -60,7 +60,7 @@
         jtag_uart: uart@95003000 {
                 compatible = "altr,jtag-uart";
                 reg = <0x95003000 0x8>;
-                status = "disabled";
+                status = "enabled";
         };
 	cpus {
 		#address-cells = <1>;
