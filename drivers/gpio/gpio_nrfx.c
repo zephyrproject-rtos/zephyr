@@ -10,7 +10,7 @@
 #include <string.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
-#include <zephyr/irq.h>
+#include <zephyr/sys/irq.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -385,10 +385,6 @@ static void nrfx_gpio_handler(nrfx_gpiote_pin_t abs_pin,
 }
 #endif /* CONFIG_GPIO_NRFX_INTERRUPT */
 
-#define GPIOTE_IRQ_HANDLER_CONNECT(node_id) \
-	IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority), nrfx_isr, \
-		    NRFX_CONCAT(nrfx_gpiote_, DT_PROP(node_id, instance), _irq_handler), 0);
-
 static int gpio_nrfx_init(const struct device *port)
 {
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
@@ -409,7 +405,6 @@ static int gpio_nrfx_init(const struct device *port)
 
 #ifdef CONFIG_GPIO_NRFX_INTERRUPT
 	nrfx_gpiote_global_callback_set(&cfg->gpiote, nrfx_gpio_handler, NULL);
-	DT_FOREACH_STATUS_OKAY(nordic_nrf_gpiote, GPIOTE_IRQ_HANDLER_CONNECT);
 #endif /* CONFIG_GPIO_NRFX_INTERRUPT */
 
 	return 0;
@@ -474,3 +469,34 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 			 &gpio_nrfx_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NRF_DEVICE)
+
+#define GPIOTE_NRF_ISR_SYM(node_id)					\
+	NRFX_CONCAT(							\
+		nrfx_gpiote_,						\
+		DT_PROP(node_id, instance),				\
+		_irq_handler						\
+	)
+
+#define GPIOTE_NRF_ISR_WRAP_SYM(node_id)				\
+	_CONCAT_3(							\
+		gpiote_nrf_,						\
+		DT_PROP(node_id, instance),				\
+		_isr_wrapper						\
+	)
+
+#define GPIOTE_NRF_DEFINE_IRQ_HANDLER(node_id)				\
+	static int GPIOTE_NRF_ISR_WRAP_SYM(node_id)(const void *data)	\
+	{								\
+		GPIOTE_NRF_ISR_SYM(node_id)();				\
+		return SYS_IRQ_HANDLED;					\
+	}								\
+									\
+	SYS_DT_DEFINE_IRQ_HANDLER(					\
+		node_id,						\
+		GPIOTE_NRF_ISR_WRAP_SYM(node_id),			\
+		NULL							\
+	)
+
+#ifdef CONFIG_GPIO_NRFX_INTERRUPT
+DT_FOREACH_STATUS_OKAY(nordic_nrf_gpiote, GPIOTE_NRF_DEFINE_IRQ_HANDLER);
+#endif /* CONFIG_GPIO_NRFX_INTERRUPT */
