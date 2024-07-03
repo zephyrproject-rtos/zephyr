@@ -896,8 +896,7 @@ enum wifi_dpp_op {
 	WIFI_DPP_BOOTSTRAP_GEN,
 	WIFI_DPP_BOOTSTRAP_GET_URI,
 	WIFI_DPP_SET_CONF_PARAM,
-	WIFI_DPP_SET_WAIT_RESP_TIME,
-	WIFI_DPP_RECONFIG
+	WIFI_DPP_SET_WAIT_RESP_TIME
 };
 
 enum wifi_dpp_curves {
@@ -979,8 +978,6 @@ struct wifi_dpp_params {
 		int dpp_resp_wait_time;
 		/* dpp QR-CODE, max for SHA512 */
 		uint8_t dpp_qr_code[WIFI_DPP_QRCODE_MAX_LEN + 1];
-		/** network id for reconfig */
-		int network_id;
 		/** request response
 		 *
 		 * in union to save runtime stack,
