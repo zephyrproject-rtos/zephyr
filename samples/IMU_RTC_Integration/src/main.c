@@ -54,7 +54,6 @@ void vibration_motor()
 	gpio_pin_set_dt(&vPin,1);
 	k_msleep(1000);
 	gpio_pin_set_dt(&vPin,0);
-	k_yield();
 }
 
 uint8_t cmp_time(Time *time1,Time *time2)
