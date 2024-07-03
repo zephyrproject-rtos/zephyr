@@ -905,32 +905,6 @@ int supplicant_channel(const struct device *dev, struct wifi_channel_info *chann
 	return wifi_mgmt_api->channel(dev, channel);
 }
 
-int supplicant_btm_query(const struct device *dev, uint8_t reason)
-{
-    struct wpa_supplicant *wpa_s;
-    int ret = -1;
-
-    k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-
-    wpa_s = get_wpa_s_handle(dev);
-    if (!wpa_s) {
-        ret = -1;
-        wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
-        goto out;
-    }
-
-    if (!wpa_cli_cmd_v("wnm_bss_query %d", reason)) {
-        goto out;
-    }
-
-    ret = 0;
-
-out:
-    k_mutex_unlock(&wpa_supplicant_mutex);
-
-    return ret;
-}
-
 #ifdef CONFIG_AP
 int supplicant_ap_enable(const struct device *dev,
 			 struct wifi_connect_req_params *params)

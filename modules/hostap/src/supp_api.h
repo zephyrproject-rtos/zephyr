@@ -137,15 +137,6 @@ int supplicant_filter(const struct device *dev, struct wifi_filter_info *filter)
  */
 int supplicant_channel(const struct device *dev, struct wifi_channel_info *channel);
 
-/** Send bss transition query
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param reason query reason
- *
- * @return 0 if ok, < 0 if error
- */
-int supplicant_btm_query(const struct device *dev, uint8_t reason);
-
 #ifdef CONFIG_AP
 /**
  * @brief Set Wi-Fi AP configuration
