@@ -421,6 +421,7 @@ int nsos_adapt_accept(int fd, struct nsos_mid_sockaddr *addr_mid, size_t *addrle
 
 	err = sockaddr_to_nsos_mid(addr, addrlen, addr_mid, addrlen_mid);
 	if (err) {
+		close(ret);
 		return err;
 	}
 
