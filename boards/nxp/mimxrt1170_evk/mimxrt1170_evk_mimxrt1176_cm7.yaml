@@ -29,4 +29,5 @@ supported:
   - usb_device
   - watchdog
   - video
+  - usbd
 vendor: nxp
