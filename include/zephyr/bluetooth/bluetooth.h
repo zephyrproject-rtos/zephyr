@@ -2283,6 +2283,11 @@ BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
  *       In order to enable directed advertiser reports then
  *       @kconfig{CONFIG_BT_SCAN_WITH_IDENTITY} must be enabled.
  *
+ * @note Setting the `param.timeout` parameter is not supported when
+ *       @kconfig{CONFIG_BT_PRIVACY} is enabled, when the param.type is @ref
+ *       BT_LE_SCAN_TYPE_ACTIVE. Supplying a non-zero timeout will result in an
+ *       -EINVAL error code.
+ *
  * @param param Scan parameters.
  * @param cb Callback to notify scan results. May be NULL if callback
  *           registration through @ref bt_le_scan_cb_register is preferred.
