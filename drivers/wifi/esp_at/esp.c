@@ -246,9 +246,13 @@ MODEM_CMD_DEFINE(on_cmd_cipstamac)
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 	char *mac;
+	int err;
 
 	mac = str_unquote(argv[0]);
-	net_bytes_from_str(dev->mac_addr, sizeof(dev->mac_addr), mac);
+	err = net_bytes_from_str(dev->mac_addr, sizeof(dev->mac_addr), mac);
+	if (err) {
+		LOG_ERR("Failed to parse MAC address");
+	}
 
 	return 0;
 }
