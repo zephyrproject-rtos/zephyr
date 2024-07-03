@@ -414,11 +414,11 @@ zephyr_udc0: &usbhs {
 				label = "image-0";
 				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(98 * 4))>;
 			};
-			slot1_partition: partition@322000 {
+			slot1_partition: partition@382000 {
 				label = "image-1";
 				reg = <0x00382000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@622000 {
+			storage_partition: partition@682000 {
 				label = "storage";
 				reg = <0x00682000 (DT_SIZE_M(58) - DT_SIZE_K(520))>;
 			};
