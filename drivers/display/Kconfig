@@ -21,6 +21,8 @@ module-str = display
 source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/display/Kconfig.mcux_elcdif"
+source "drivers/display/Kconfig.tft"
+
 source "drivers/display/Kconfig.microbit"
 source "drivers/display/Kconfig.nrf_led_matrix"
 source "drivers/display/Kconfig.ili9xxx"

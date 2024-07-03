@@ -28,6 +28,10 @@ config ILI9341
 	help
 	  Enable driver for ILI9341 display driver.
 
+config TFT
+	bool "TFT display driver"
+	default y
+
 config ILI9342C
 	bool "ILI9342C display driver"
 	default y
