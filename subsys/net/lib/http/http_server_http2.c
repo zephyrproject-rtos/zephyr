@@ -31,6 +31,11 @@ static bool is_header_flag_set(uint8_t flags, uint8_t mask)
 	return (flags & mask) != 0;
 }
 
+static void clear_header_flag(uint8_t *flags, uint8_t mask)
+{
+	*flags &= ~mask;
+}
+
 static void print_http_frames(struct http_client_ctx *client)
 {
 #if defined(PRINT_COLOR)
@@ -846,6 +851,37 @@ error:
 	return ret;
 }
 
+static int parse_http_frame_padded_field(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+
+	if (client->data_len == 0) {
+		return -EAGAIN;
+	}
+
+	frame->padding_len = *client->cursor;
+	client->cursor++;
+	client->data_len--;
+	frame->length--;
+
+	if (frame->length <= frame->padding_len) {
+		return -EBADMSG;
+	}
+
+	/* Subtract the padding length from frame length now to simplify
+	 * payload processing. Padding will be handled based on
+	 * frame->padding_len in a separate state.
+	 */
+	frame->length -= frame->padding_len;
+
+	/* Clear the padded flag, this indicates that padding field was
+	 * already parsed.
+	 */
+	clear_header_flag(&frame->flags, HTTP2_FLAG_PADDED);
+
+	return 0;
+}
+
 int handle_http_frame_data(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
@@ -860,6 +896,13 @@ int handle_http_frame_data(struct http_client_ctx *client)
 		LOG_DBG("No dynamic handler found.");
 		(void)send_http2_404(client, frame);
 		return -ENOENT;
+	}
+
+	if (is_header_flag_set(frame->flags, HTTP2_FLAG_PADDED)) {
+		ret = parse_http_frame_padded_field(client);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	ret = dynamic_post_req_v2(
@@ -893,12 +936,16 @@ int handle_http_frame_data(struct http_client_ctx *client)
 			return ret;
 		}
 
-		/* Whole frame consumed, expect next one. */
-		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
-
 		if (is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 			client->current_detail = NULL;
 			release_http_stream_context(client, frame->stream_identifier);
+		}
+
+		/* Whole frame consumed, expect next one. */
+		if (frame->padding_len > 0) {
+			client->server_state = HTTP_SERVER_FRAME_PADDING_STATE;
+		} else {
+			client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 		}
 	}
 
@@ -972,6 +1019,13 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 
 	print_http_frames(client);
 
+	if (is_header_flag_set(frame->flags, HTTP2_FLAG_PADDED)) {
+		ret = parse_http_frame_padded_field(client);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	while (frame->length > 0) {
 		struct http_hpack_header_buf *header = &client->header_field;
 
@@ -1040,7 +1094,11 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		release_http_stream_context(client, frame->stream_identifier);
 	}
 
-	client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+	if (frame->padding_len > 0) {
+		client->server_state = HTTP_SERVER_FRAME_PADDING_STATE;
+	} else {
+		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+	}
 
 	return 0;
 }
@@ -1175,6 +1233,27 @@ int handle_http_frame_continuation(struct http_client_ctx *client)
 	return 0;
 }
 
+int handle_http_frame_padding(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+	size_t bytes_consumed;
+
+	if (client->data_len == 0) {
+		return -EAGAIN;
+	}
+
+	bytes_consumed = MIN(client->data_len, frame->padding_len);
+	client->data_len -= bytes_consumed;
+	client->cursor += bytes_consumed;
+	frame->padding_len -= bytes_consumed;
+
+	if (frame->padding_len == 0) {
+		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+	}
+
+	return 0;
+}
+
 const char *get_frame_type_name(enum http2_frame_type type)
 {
 	switch (type) {
@@ -1221,6 +1300,7 @@ int parse_http_frame_header(struct http_client_ctx *client)
 	frame->stream_identifier = sys_get_be32(
 				&buffer[HTTP2_FRAME_STREAM_ID_OFFSET]);
 	frame->stream_identifier &= HTTP2_FRAME_STREAM_ID_MASK;
+	frame->padding_len = 0;
 
 	LOG_DBG("Frame len %d type 0x%02x flags 0x%02x id %d",
 		frame->length, frame->type, frame->flags, frame->stream_identifier);
