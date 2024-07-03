@@ -1314,7 +1314,7 @@ static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc, char *
 static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_wifi_sap();
-	struct wifi_connect_req_params cnx_params;
+	static struct wifi_connect_req_params cnx_params;
 	int ret;
 
 	context.sh = sh;
@@ -2487,7 +2487,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  "[-K, --key-passwd]: Private key passwd for enterprise mode.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
-		  2, 13),
+		  2, 7),
 	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP.\n",
 		  cmd_wifi_disconnect,
 		  1, 0),
