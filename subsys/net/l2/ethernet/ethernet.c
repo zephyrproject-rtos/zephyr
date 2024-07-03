@@ -402,9 +402,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		return net_gptp_recv(iface, pkt);
 	}
 
-	if (type != NET_ETH_PTYPE_EAPOL) {
-		ethernet_update_length(iface, pkt);
-	}
+	ethernet_update_length(iface, pkt);
 
 	return NET_CONTINUE;
 drop:
