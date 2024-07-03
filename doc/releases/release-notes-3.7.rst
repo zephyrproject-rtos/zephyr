@@ -289,6 +289,10 @@ Bluetooth
     with the buffer pools for HCI fragments and L2CAP segments. All communication with the
     Controller is now exclusively done in the system workqueue context.
 
+  * :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER` and
+    :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER` now depend on
+    :kconfig:option:`CONFIG_BT_CONN` as they do not work without connections.
+
 * HCI Driver
 
   * Added support for Ambiq Apollo3 Blue series.
