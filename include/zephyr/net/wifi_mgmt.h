@@ -933,13 +933,6 @@ struct wifi_dpp_params {
 		int dpp_resp_wait_time;
 		/* dpp QR-CODE, max for SHA512 */
 		uint8_t dpp_qr_code[WIFI_DPP_QRCODE_MAX_LEN + 1];
-		/** request response
-		 *
-		 * in union to save runtime stack,
-		 * when resp is fulfilled, request params should
-		 * no longer be used
-		 */
-		char resp[WIFI_DPP_QRCODE_MAX_LEN + 1];
 	};
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
