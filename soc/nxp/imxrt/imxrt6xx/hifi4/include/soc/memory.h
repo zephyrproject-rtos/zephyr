@@ -10,11 +10,11 @@
 
 #include <autoconf.h>
 
-#define IRAM_BASE (CONFIG_RT685_ADSP_TEXT_MEM_ADDR)
-#define IRAM_SIZE (CONFIG_RT685_ADSP_TEXT_MEM_SIZE)
+#define TEXT_BASE (CONFIG_RT685_ADSP_TEXT_MEM_ADDR)
+#define TEXT_SIZE (CONFIG_RT685_ADSP_TEXT_MEM_SIZE)
 
-#define SDRAM0_BASE (CONFIG_RT685_ADSP_DATA_MEM_ADDR)
-#define SDRAM0_SIZE (CONFIG_RT685_ADSP_DATA_MEM_SIZE - CONFIG_RT685_ADSP_STACK_SIZE)
+#define DATA_BASE (CONFIG_RT685_ADSP_DATA_MEM_ADDR)
+#define DATA_SIZE (CONFIG_RT685_ADSP_DATA_MEM_SIZE - CONFIG_RT685_ADSP_STACK_SIZE)
 
 /* The reset vector address in SRAM and its size. */
 #define XCHAL_RESET_VECTOR0_PADDR_IRAM (CONFIG_RT685_ADSP_RESET_MEM_ADDR)
@@ -22,7 +22,7 @@
 #define MEM_RESET_LIT_SIZE             (0x120)
 
 /* Base address of all interrupt vectors in IRAM. */
-#define XCHAL_VECBASE_RESET_PADDR_IRAM (IRAM_BASE)
+#define XCHAL_VECBASE_RESET_PADDR_IRAM (TEXT_BASE)
 #define MEM_VECBASE_LIT_SIZE           (0x178)
 
 /* Vector and literal sizes. */
@@ -39,13 +39,13 @@
 #define XCHAL_USER_VECTOR_PADDR_IRAM      (XCHAL_INT_VECTOR_ADDR(0x21C))
 #define XCHAL_DOUBLEEXC_VECTOR_PADDR_IRAM (XCHAL_INT_VECTOR_ADDR(0x23C))
 
-/* Location for the intList section which is later used to construct the
- * Interrupt Descriptor Table (IDT). This is a bogus address as this
- * section will be stripped off in the final image.
- */
-#define IDT_BASE (IRAM_BASE + IRAM_SIZE)
 
-/* Size of the Interrupt Descriptor Table (IDT). */
+/* Size and location of the intList section. Later used to construct the
+ * Interrupt Descriptor Table (IDT). This is a bogus address as this
+ * section will be stripped off in the final image. Situated before the DSP's
+ * ITCM - prevents memory region inflation in zephyr_pre0.elf.
+ */
 #define IDT_SIZE (0x2000)
+#define IDT_BASE (CONFIG_RT685_ADSP_RESET_MEM_ADDR - IDT_SIZE)
 
 #endif
