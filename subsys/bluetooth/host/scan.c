@@ -1377,7 +1377,22 @@ void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 	per_adv_sync_terminated(per_adv_sync, BT_HCI_ERR_UNSPECIFIED);
 }
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
+static uint8_t conn_past_modes[CONFIG_BT_MAX_CONN];
+static uint8_t default_past_mode;
+
+static void past_disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	/* The core spec does not explicit state that the mode of a connection handle is cleared on
+	 * disconnect, but let's assume it is.
+	 */
+	conn_past_modes[bt_conn_index(conn)] = BT_HCI_LE_PAST_MODE_NO_SYNC;
+}
+
+BT_CONN_CB_DEFINE(past_conn_callbacks) = {
+	.disconnected = past_disconnected_cb,
+};
+
 static void bt_hci_le_past_received_common(struct net_buf *buf)
 {
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
@@ -1445,7 +1460,18 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 	sync_info.addr = &per_adv_sync->addr;
 	sync_info.sid = per_adv_sync->sid;
 	sync_info.service_data = sys_le16_to_cpu(evt->service_data);
-	sync_info.recv_enabled = true;
+
+	const uint8_t mode = conn_past_modes[bt_conn_index(sync_info.conn)];
+
+	if (mode == BT_HCI_LE_PAST_MODE_NO_SYNC) {
+		/* Use the default parameter mode as the conn specific mode is not set */
+		sync_info.recv_enabled =
+			default_past_mode == BT_HCI_LE_PAST_MODE_SYNC ||
+			default_past_mode == BT_HCI_LE_PAST_MODE_SYNC_FILTER_DUPLICATES;
+	} else {
+		sync_info.recv_enabled = mode == BT_HCI_LE_PAST_MODE_SYNC ||
+					 mode == BT_HCI_LE_PAST_MODE_SYNC_FILTER_DUPLICATES;
+	}
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 	sync_info.num_subevents =  per_adv_sync->num_subevents;
@@ -1480,7 +1506,7 @@ void bt_hci_le_past_received_v2(struct net_buf *buf)
 	bt_hci_le_past_received_common(buf);
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 void bt_hci_le_per_adv_sync_established_v2(struct net_buf *buf)
@@ -2175,6 +2201,7 @@ int bt_le_per_adv_sync_transfer_subscribe(
 {
 	uint8_t cte_type = 0;
 	uint8_t mode = BT_HCI_LE_PAST_MODE_SYNC;
+	int err;
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
@@ -2209,14 +2236,35 @@ int bt_le_per_adv_sync_transfer_subscribe(
 	}
 
 	if (conn) {
-		return past_param_set(conn, mode, param->skip, param->timeout, cte_type);
+		const uint8_t conn_idx = bt_conn_index(conn);
+		const uint8_t old_mode = conn_past_modes[conn_idx];
+
+		conn_past_modes[conn_idx] = mode;
+
+		err = past_param_set(conn, mode, param->skip, param->timeout, cte_type);
+		if (err != 0) {
+			/* Restore old mode */
+			conn_past_modes[conn_idx] = old_mode;
+		}
 	} else {
-		return default_past_param_set(mode, param->skip, param->timeout, cte_type);
+		const uint8_t old_mode = default_past_mode;
+
+		default_past_mode = mode;
+
+		err = default_past_param_set(mode, param->skip, param->timeout, cte_type);
+		if (err != 0) {
+			/* Restore old mode */
+			default_past_mode = old_mode;
+		}
 	}
+
+	return err;
 }
 
 int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn)
 {
+	int err;
+
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
 	} else if (!BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
@@ -2224,12 +2272,28 @@ int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn)
 	}
 
 	if (conn) {
-		return past_param_set(conn, BT_HCI_LE_PAST_MODE_NO_SYNC, 0,
-				      0x0a, 0);
+		const uint8_t conn_idx = bt_conn_index(conn);
+		const uint8_t old_mode = conn_past_modes[conn_idx];
+
+		conn_past_modes[conn_idx] = BT_HCI_LE_PAST_MODE_NO_SYNC;
+
+		err = past_param_set(conn, BT_HCI_LE_PAST_MODE_NO_SYNC, 0, 0x0a, 0);
+		if (err != 0) {
+			/* Restore old mode */
+			conn_past_modes[conn_idx] = old_mode;
+		}
 	} else {
-		return default_past_param_set(BT_HCI_LE_PAST_MODE_NO_SYNC, 0,
-					      0x0a, 0);
+		const uint8_t old_mode = default_past_mode;
+
+		default_past_mode = BT_HCI_LE_PAST_MODE_NO_SYNC;
+		err = default_past_param_set(BT_HCI_LE_PAST_MODE_NO_SYNC, 0, 0x0a, 0);
+		if (err != 0) {
+			/* Restore old mode */
+			default_past_mode = old_mode;
+		}
 	}
+
+	return err;
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
 
