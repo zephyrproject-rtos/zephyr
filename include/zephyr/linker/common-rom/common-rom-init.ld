@@ -60,7 +60,7 @@
 		__zephyr_init_array_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#elif defined(CONFIG_TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU)
+#elif defined(CONFIG_TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU) && !defined(CONFIG_NATIVE_APPLICATION)
 	/*
 	 * If the code to invoke constructors is not enabled,
 	 * make sure there aren't any in the application
