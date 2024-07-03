@@ -569,9 +569,9 @@
 		min-bus-freq = <400000>;
 	};
 
-	lpadc0: lpadc@13A0000 {
+	lpadc0: lpadc@13a000 {
 		compatible = "nxp,lpc-lpadc";
-		reg = <0x13A000 0x304>;
+		reg = <0x13a000 0x304>;
 		interrupts = <22 0>;
 		status = "disabled";
 		clk-divider = <1>;
