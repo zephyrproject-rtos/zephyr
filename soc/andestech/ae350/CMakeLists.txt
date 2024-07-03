@@ -24,6 +24,6 @@ if(CONFIG_SOC_ANDES_V5_EXECIT)
   zephyr_ld_options(-Wl,--mexecit)
 endif()
 
-if(CONFIG_SOC_ANDES_AE350)
+if(CONFIG_SOC_SERIES_ANDES_AE350)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
 endif()
