@@ -725,7 +725,7 @@ int bt_a2dp_stream_establish(struct bt_a2dp_stream *stream)
 
 	a2dp = stream->a2dp;
 	a2dp->open_param.req.func = bt_a2dp_open_cb;
-	a2dp->open_param.acp_stream_ep_id = stream->remote_ep == NULL ?
+	a2dp->open_param.acp_stream_ep_id = stream->remote_ep != NULL ?
 		stream->remote_ep->sep.sep_info.id : stream->remote_ep_id;
 	a2dp->open_param.sep = a2dp->set_config_param.sep;
 	return bt_avdtp_open(&a2dp->session, &a2dp->open_param);
