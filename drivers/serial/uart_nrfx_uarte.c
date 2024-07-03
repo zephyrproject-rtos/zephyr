@@ -17,7 +17,7 @@
 #include <soc.h>
 #include <helpers/nrfx_gppi.h>
 #include <zephyr/linker/devicetree_regions.h>
-#include <zephyr/irq.h>
+#include <zephyr/sys/irq.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
@@ -2008,12 +2008,38 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-#define UARTE_IRQ_CONFIGURE(idx, isr_handler)				       \
-	do {								       \
-		IRQ_CONNECT(DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority), \
-			    isr_handler, DEVICE_DT_GET(UARTE(idx)), 0);	       \
-		irq_enable(DT_IRQN(UARTE(idx)));			       \
-	} while (false)
+#ifdef UARTE_ANY_ASYNC
+static int uarte_nrfx_isr_async_wrapper(const void *data)
+{
+	uarte_nrfx_isr_async(data);
+	return SYS_IRQ_HANDLED;
+}
+#endif /* UARTE_ANY_ASYNC */
+
+#define UARTE_DEFINE_ASYNC_IRQ_HANDLER(idx)				       \
+	SYS_DT_DEFINE_IRQ_HANDLER(					       \
+		UARTE(idx),						       \
+		uarte_nrfx_isr_async_wrapper,				       \
+		DEVICE_DT_GET(UARTE(idx))				       \
+	)
+
+static int uarte_nrfx_isr_int_wrapper(const void *data)
+{
+	uarte_nrfx_isr_int(data);
+	return SYS_IRQ_HANDLED;
+}
+
+#define UARTE_DEFINE_INT_IRQ_HANDLER(idx)				       \
+	SYS_DT_DEFINE_IRQ_HANDLER(					       \
+		UARTE(idx),						       \
+		uarte_nrfx_isr_int_wrapper,				       \
+		DEVICE_DT_GET(UARTE(idx))				       \
+	)
+
+#define UARTE_IRQ_CONFIGURE(idx)					       \
+	sys_irq_configure(SYS_DT_IRQN(UARTE(idx)),			       \
+			  SYS_DT_IRQ_FLAGS(UARTE(idx)));		       \
+	sys_irq_enable(SYS_DT_IRQN(UARTE(idx)));
 
 /* Low power mode is used when disable_rx is not defined or in async mode if
  * kconfig option is enabled.
@@ -2114,9 +2140,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 	};								       \
 	static int uarte_##idx##_init(const struct device *dev)		       \
 	{								       \
-		COND_CODE_1(CONFIG_UART_##idx##_ASYNC,			       \
-			   (UARTE_IRQ_CONFIGURE(idx, uarte_nrfx_isr_async);),  \
-			   (UARTE_IRQ_CONFIGURE(idx, uarte_nrfx_isr_int);))    \
+		UARTE_IRQ_CONFIGURE(idx)				       \
 		return uarte_instance_init(				       \
 			dev,						       \
 			IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN));     \
@@ -2131,7 +2155,11 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		      &uarte_##idx##z_config,				       \
 		      PRE_KERNEL_1,					       \
 		      CONFIG_SERIAL_INIT_PRIORITY,			       \
-		      &uart_nrfx_uarte_driver_api)
+		      &uart_nrfx_uarte_driver_api);			       \
+									       \
+	COND_CODE_1(CONFIG_UART_##idx##_ASYNC,				       \
+		    (UARTE_DEFINE_ASYNC_IRQ_HANDLER(idx);),		       \
+		    (UARTE_DEFINE_INT_IRQ_HANDLER(idx);))
 
 #define UARTE_INT_DRIVEN(idx)						       \
 	IF_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,		       \
