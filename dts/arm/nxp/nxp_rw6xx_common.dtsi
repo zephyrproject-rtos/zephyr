@@ -112,6 +112,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	flexspi: spi@134000 {
+		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+	};
+
 	clkctl0: clkctl@1000 {
 		/* FIXME This chip does NOT have a syscon */
 		compatible = "nxp,lpc-syscon";
