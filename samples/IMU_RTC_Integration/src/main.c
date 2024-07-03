@@ -34,11 +34,28 @@ typedef struct{
 	uint8_t hour;
 	uint8_t minutes;
 }Time;
-
+volatile Time time;
+volatile Time p_time;
+volatile Date date;
+char num_str[5];
+uint16_t steps;
+const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+const struct device * dev1 = DEVICE_DT_GET(DT_NODELABEL(i2c1));
+const struct device * dev2 = DEVICE_DT_GET(DT_NODELABEL(gpio0));
+const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+struct gpio_dt_spec vPin;
 void num_to_string(char *str,uint16_t num);
 void update_time_in_screen(lv_ui *ui,Time const *time,Date const *date);
 void update_stepcount_in_screen(lv_ui *ui,uint32_t steps);
 void vibration_motor();
+
+void vibration_motor()
+{
+	gpio_pin_set_dt(&vPin,1);
+	k_msleep(1000);
+	gpio_pin_set_dt(&vPin,0);
+	k_yield();
+}
 
 uint8_t cmp_time(Time *time1,Time *time2)
 {
@@ -57,15 +74,7 @@ void k_busy_wait_ms(uint32_t ms)
 	}
 }
 
-volatile Time time;
-volatile Time p_time;
-volatile Date date;
-char num_str[5];
-uint16_t steps;
-const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
-const struct device * dev1 = DEVICE_DT_GET(DT_NODELABEL(i2c1));
-const struct device * dev2 = DEVICE_DT_GET(DT_NODELABEL(gpio0));
-const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+
 void num_to_string(char *str,uint16_t num)
 {
     uint16_t digits = 1;
@@ -115,6 +124,8 @@ void main_task_handler(void)
 		return 0;
 	}
     // configure the mpu9250 for accelerometer and gyroscope
+	vPin.port = dev2;
+	vPin.pin = 6;
     mpu9250_config(ACC_GYRO);
 	// DS3231_getHours(dev,DS3231_ADDR);
 	setup_ui(&guider_ui);
@@ -133,6 +144,7 @@ void main_task_handler(void)
 		date.month = 07;
 		date.year =24;
 		if(cmp_time(&time,&p_time)){
+			vibration_motor();
 			update_time_in_screen(&guider_ui,&time,&date);
 			lv_task_handler();
 		}
