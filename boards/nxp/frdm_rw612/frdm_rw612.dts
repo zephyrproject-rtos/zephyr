@@ -136,6 +136,11 @@
 	status = "okay";
 };
 
+&imu {
+	status = "okay";
+	wakeup-source;
+};
+
 zephyr_udc0: &usb_otg {
 	status = "okay";
 };
