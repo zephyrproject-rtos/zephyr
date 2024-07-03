@@ -1095,6 +1095,7 @@ static int nsos_getsockopt(void *obj, int level, int optname,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_KEEPALIVE,
 						   optval, optlen);
 		}
+		break;
 
 	case IPPROTO_TCP:
 		switch (optname) {
@@ -1115,6 +1116,7 @@ static int nsos_getsockopt(void *obj, int level, int optname,
 						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPCNT,
 						   optval, optlen);
 		}
+		break;
 
 	case IPPROTO_IPV6:
 		switch (optname) {
@@ -1123,6 +1125,7 @@ static int nsos_getsockopt(void *obj, int level, int optname,
 						   NSOS_MID_IPPROTO_IPV6, NSOS_MID_IPV6_V6ONLY,
 						   optval, optlen);
 		}
+		break;
 	}
 
 	errno = EOPNOTSUPP;
@@ -1261,6 +1264,7 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_KEEPALIVE,
 						   optval, optlen);
 		}
+		break;
 
 	case IPPROTO_TCP:
 		switch (optname) {
@@ -1281,6 +1285,7 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPCNT,
 						   optval, optlen);
 		}
+		break;
 
 	case IPPROTO_IPV6:
 		switch (optname) {
@@ -1289,6 +1294,7 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 						   NSOS_MID_IPPROTO_IPV6, NSOS_MID_IPV6_V6ONLY,
 						   optval, optlen);
 		}
+		break;
 	}
 
 	errno = EOPNOTSUPP;
