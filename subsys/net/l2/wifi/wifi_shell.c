@@ -1321,7 +1321,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc, char *argv[])
 	struct net_if *iface = net_if_get_wifi_sap();
 	struct wifi_connect_req_params cnx_params;
 	int ret;
-	memset(&cnx_params, 0, sizeof(struct wifi_connect_req_params));
+
 	context.sh = sh;
 	if (__wifi_args_to_params(sh, argc, &argv[0], &cnx_params, WIFI_MODE_AP)) {
 		shell_help(sh);
