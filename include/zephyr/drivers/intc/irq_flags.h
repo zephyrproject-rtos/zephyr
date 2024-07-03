@@ -15,6 +15,7 @@
  * @{
  */
 
+#include <zephyr/drivers/intc/irq_flags/arm_v7m_nvic.h>
 #include <zephyr/drivers/intc/irq_flags/arm_v8m_nvic.h>
 
 /** @} */
