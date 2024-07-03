@@ -38,8 +38,10 @@ def process_logs(dut: DeviceAdapter, build_dir):
     logger.info(f'Dictionary JSON: {dictionary_json}')
 
     # Read the encoded logs and save them to a file
-    # as the log parser requires file as input
-    handler_output = dut.readlines_until(regex = '.*##ZLOGV1##[0-9]+', timeout = 10.0)
+    # as the log parser requires file as input.
+    # Timeout is intentionally long. Twister will
+    # timeout earlier with per-test timeout.
+    handler_output = dut.readlines_until(regex = '.*##ZLOGV1##[0-9]+', timeout = 600.0)
 
     encoded_logs = handler_output[-1]
 
