@@ -991,7 +991,7 @@ config TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
 
 config STATIC_INIT_GNU
 	bool "Support GNU-compatible initializers and constructors"
-	default y if CPP || NATIVE_BUILD || COVERAGE
+	default y if CPP || NATIVE_LIBRARY || COVERAGE
 	depends on TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
 	depends on !CMAKE_LINKER_GENERATOR
 	help
