@@ -409,7 +409,7 @@ for the FRDM-K64F as follows:
       :board: frdm_k64f
       :goals: build
       :west-args: --sysbuild
-      :gen-args: -Dcanopennode_CONF_FILE=prj_img_mgmt.conf
+      :gen-args: -Dcanopennode_CONF_FILE=prj_img_mgmt.conf -DSB_CONFIG_BOOTLOADER_MCUBOOT=y
       :compact:
 
 #. Flash the newly built MCUboot and CANopen sample binaries using west:
