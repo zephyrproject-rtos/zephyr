@@ -250,20 +250,6 @@ if (CONFIG_BUILD_WITH_TFM)
     if(TFM_PSA_TEST_SUITE)
       list(APPEND TFM_CMAKE_ARGS -DWATCHDOG_AVAILABLE=OFF)
     endif()
-
-    # Platform specific TF-M cmake flags
-    set(TFM_CMAKE_OPTIONS_PLATFORM_FLAG
-      USE_TFM_EL2GO_DATA_IMPORT_REGION
-      USE_TFM_WIFI_FLASH_REGION
-    )
-    foreach(option ${TFM_CMAKE_OPTIONS_PLATFORM_FLAG})
-      if (CONFIG_${option})
-        set(val "ON")
-      else()
-        set(val "OFF")
-      endif()
-      list(APPEND TFM_CMAKE_ARGS -D${option}=${val})
-    endforeach()
   endif()
 
   if(CONFIG_TFM_BL2 AND CONFIG_TFM_MCUBOOT_PATH_LOCAL)
