@@ -21,7 +21,7 @@
 #include <dmm.h>
 #include <helpers/nrfx_gppi.h>
 #include <zephyr/linker/devicetree_regions.h>
-#include <zephyr/irq.h>
+#include <zephyr/sys/irq.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
@@ -382,8 +382,8 @@ struct uarte_nrfx_config {
 #ifdef UARTE_ANY_ASYNC
 #ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
 	NRF_TIMER_Type * timer_regs;
-	IRQn_Type timer_irqn;
-	IRQn_Type uarte_irqn;
+	uint16_t timer_irqn;
+	uint16_t uarte_irqn;
 	uint8_t *bounce_buf[2];
 	size_t bounce_buf_len;
 	size_t bounce_buf_swap_len;
@@ -1052,7 +1052,7 @@ static bool notify_rx_rdy(const struct device *dev)
 		/* Check if CC is already in the past. In that case trigger CC handling.*/
 		if (cbwt_data->cc_usr <= get_byte_cnt(cfg->timer_regs)) {
 			atomic_or(&data->flags, UARTE_FLAG_LATE_CC);
-			NRFX_IRQ_PENDING_SET(cfg->timer_irqn);
+			sys_irq_trigger(cfg->timer_irqn);
 		} else {
 			atomic_and(&data->flags, ~UARTE_FLAG_LATE_CC);
 		}
@@ -1394,16 +1394,16 @@ static void cbwt_rx_timeout(struct k_timer *timer)
 					k_timer_start(timer, async_rx->timeout, K_NO_WAIT);
 					return;
 				}
-				irq_disable(cfg->uarte_irqn);
-				irq_disable(cfg->timer_irqn);
+				sys_irq_disable(cfg->uarte_irqn);
+				sys_irq_disable(cfg->timer_irqn);
 			}
 
 			nrf_uarte_int_enable(cfg->uarte_regs, NRF_UARTE_INT_RXDRDY_MASK);
 			notify_new_data(dev, true);
 
 			if (cfg->flags & UARTE_CFG_FLAG_VAR_IRQ) {
-				irq_enable(cfg->uarte_irqn);
-				irq_enable(cfg->timer_irqn);
+				sys_irq_enable(cfg->uarte_irqn);
+				sys_irq_enable(cfg->timer_irqn);
 			}
 			return;
 		}
@@ -1558,7 +1558,7 @@ static void cbwt_rx_enable(const struct device *dev, bool with_timeout)
 
 	if (rem_data >= len) {
 		atomic_or(&data->flags, UARTE_FLAG_TRIG_RXTO);
-		NRFX_IRQ_PENDING_SET(cfg->timer_irqn);
+		sys_irq_trigger(cfg->timer_irqn);
 		return;
 	} else if (rem_data) {
 		(void)update_usr_buf(dev, rem_data, false, true);
@@ -1594,7 +1594,7 @@ static void cbwt_rx_enable(const struct device *dev, bool with_timeout)
 
 	atomic_or(&data->flags, UARTE_FLAG_RX_BUF_REQ);
 	nrf_uarte_task_trigger(cfg->uarte_regs, NRF_UARTE_TASK_STARTRX);
-	NRFX_IRQ_PENDING_SET(cfg->timer_irqn);
+	sys_irq_trigger(cfg->timer_irqn);
 }
 
 static int cbwt_uarte_async_init(const struct device *dev)
@@ -1926,7 +1926,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 								   async_rx->flush_cnt);
 				}
 				atomic_or(&data->flags, UARTE_FLAG_TRIG_RXTO);
-				NRFX_IRQ_PENDING_SET(nrfx_get_irq_number(uarte));
+				sys_irq_trigger(cfg->uarte_irqn);
 				return 0;
 			} else {
 #ifdef CONFIG_UART_NRFX_UARTE_ENHANCED_RX
@@ -3244,15 +3244,17 @@ static int uarte_instance_deinit(const struct device *dev)
 
 #define UARTE_TIMER_REG(idx) (NRF_TIMER_Type *)DT_REG_ADDR(DT_PHANDLE(UARTE(idx), timer))
 
-#define UARTE_TIMER_IRQN(idx) DT_IRQN(DT_PHANDLE(UARTE(idx), timer))
+#define UARTE_TIMER_IRQN(idx) SYS_DT_IRQN(DT_PHANDLE(UARTE(idx), timer))
 
 #define UARTE_TIMER_IRQ_PRIO(idx) DT_IRQ(DT_PHANDLE(UARTE(idx), timer), priority)
+
+#define UARTE_TIMER_IRQ_FLAGS(idx) SYS_DT_IRQ_FLAGS(DT_PHANDLE(UARTE(idx), timer))
 
 #define UARTE_COUNT_BYTES_WITH_TIMER_CONFIG(idx)					\
 	IF_ENABLED(UARTE_HAS_PROP(idx, timer),						\
 		(.timer_regs = UARTE_TIMER_REG(idx),					\
 		 .timer_irqn = UARTE_TIMER_IRQN(idx),					\
-		 .uarte_irqn = DT_IRQN(UARTE(idx)),					\
+		 .uarte_irqn = SYS_DT_IRQN(UARTE(idx)),					\
 		 .bounce_buf = {							\
 			uart##idx##_bounce_buf,						\
 			&uart##idx##_bounce_buf[sizeof(uart##idx##_bounce_buf) / 2]	\
@@ -3265,14 +3267,6 @@ static int uarte_instance_deinit(const struct device *dev)
 #define UARTE_COUNT_BYTES_WITH_TIMER_VALIDATE_CONFIG(idx) \
 	__ASSERT_NO_MSG(UARTE_TIMER_IRQ_PRIO(idx) == DT_IRQ(UARTE(idx), priority))
 
-#define UARTE_TIMER_IRQ_CONNECT(idx, func)						\
-	IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER),	\
-			    UARTE_HAS_PROP(idx, timer)),				\
-		(UARTE_COUNT_BYTES_WITH_TIMER_VALIDATE_CONFIG(idx);			\
-		 IRQ_CONNECT(UARTE_TIMER_IRQN(idx), UARTE_TIMER_IRQ_PRIO(idx), func,	\
-			     DEVICE_DT_GET(UARTE(idx)), 0);				\
-		 irq_enable(UARTE_TIMER_IRQN(idx));))
-
 /* Macro sets flag to indicate that uart use different interrupt priority than the system clock. */
 #define UARTE_HAS_VAR_PRIO(idx)									\
 	COND_CODE_1(UTIL_AND(IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER),	\
@@ -3280,14 +3274,13 @@ static int uarte_instance_deinit(const struct device *dev)
 		   ((DT_IRQ(UARTE(idx), priority) != DT_IRQ(DT_NODELABEL(grtc), priority)) ?	\
 		    UARTE_CFG_FLAG_VAR_IRQ : 0), (0))
 
-
 #define UARTE_GET_ISR(idx) \
 	COND_CODE_1(CONFIG_UART_##idx##_ASYNC, (uarte_nrfx_isr_async), (uarte_nrfx_isr_int))
 
 /* Declare interrupt handler for direct ISR. */
 #define UARTE_DIRECT_ISR_DECLARE(idx)					       \
 	IF_ENABLED(CONFIG_UART_NRFX_UARTE_DIRECT_ISR, (			       \
-		ISR_DIRECT_DECLARE(uarte_##idx##_direct_isr)		       \
+		INTC_DT_DEFINE_IRQ_VECTOR(UARTE(idx))			       \
 		{							       \
 			ISR_DIRECT_PM();				       \
 			UARTE_GET_ISR(idx)(DEVICE_DT_GET(UARTE(idx)));	       \
@@ -3295,20 +3288,48 @@ static int uarte_instance_deinit(const struct device *dev)
 		}							       \
 		))
 
-/* Depending on configuration standard or direct IRQ is connected. */
-#define UARTE_IRQ_CONNECT(idx, irqn, prio)						\
-	COND_CODE_1(CONFIG_UART_NRFX_UARTE_NO_IRQ, (),					\
-		(COND_CODE_1(CONFIG_UART_NRFX_UARTE_DIRECT_ISR,				\
-		    (IRQ_DIRECT_CONNECT(irqn, prio, uarte_##idx##_direct_isr, 0)),	\
-		    (IRQ_CONNECT(irqn, prio, UARTE_GET_ISR(idx),			\
-				 DEVICE_DT_GET(UARTE(idx)), 0)))))
+#ifdef UARTE_ANY_ASYNC
+static int uarte_nrfx_isr_async_wrapper(const void *data)
+{
+	uarte_nrfx_isr_async(data);
+	return SYS_IRQ_HANDLED;
+}
+#endif /* UARTE_ANY_ASYNC */
 
-#define UARTE_IRQ_CONFIGURE(idx)							   \
-	do {										   \
-		UARTE_IRQ_CONNECT(idx, DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority)); \
-		irq_enable(DT_IRQN(UARTE(idx)));					   \
-		UARTE_TIMER_IRQ_CONNECT(idx, timer_isr)					   \
-	} while (false)
+#define UARTE_DEFINE_ASYNC_IRQ_HANDLER(idx)							\
+	SYS_DT_DEFINE_IRQ_HANDLER(								\
+		UARTE(idx),									\
+		uarte_nrfx_isr_async_wrapper,							\
+		DEVICE_DT_GET(UARTE(idx))							\
+	)
+
+static int uarte_nrfx_isr_int_wrapper(const void *data)
+{
+	uarte_nrfx_isr_int(data);
+	return SYS_IRQ_HANDLED;
+}
+
+#define UARTE_DEFINE_INT_IRQ_HANDLER(idx)							\
+	SYS_DT_DEFINE_IRQ_HANDLER(								\
+		UARTE(idx),									\
+		uarte_nrfx_isr_int_wrapper,							\
+		DEVICE_DT_GET(UARTE(idx))							\
+	)
+
+#define UARTE_IRQ_CONFIGURE(idx)								\
+	sys_irq_configure(SYS_DT_IRQN(UARTE(idx)), SYS_DT_IRQ_FLAGS(UARTE(idx)));		\
+	sys_irq_enable(SYS_DT_IRQN(UARTE(idx)));						\
+	IF_ENABLED(										\
+		UTIL_AND(									\
+			IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER),		\
+			UARTE_HAS_PROP(idx, timer)						\
+		),										\
+		(										\
+			UARTE_COUNT_BYTES_WITH_TIMER_VALIDATE_CONFIG(idx);			\
+			sys_irq_configure(UARTE_TIMER_IRQN(idx), UARTE_TIMER_IRQ_FLAGS(idx));	\
+			sys_irq_enable(UARTE_TIMER_IRQN(idx));					\
+		)										\
+	)
 
 /* Low power mode is used when disable_rx is not defined or in async mode if
  * kconfig option is enabled.
@@ -3475,7 +3496,11 @@ static int uarte_instance_deinit(const struct device *dev)
 		      &uarte_##idx##z_config,				       \
 		      PRE_KERNEL_1,					       \
 		      CONFIG_SERIAL_INIT_PRIORITY,			       \
-		      &uart_nrfx_uarte_driver_api)
+		      &uart_nrfx_uarte_driver_api);			       \
+									       \
+	COND_CODE_1(CONFIG_UART_##idx##_ASYNC,				       \
+		    (UARTE_DEFINE_ASYNC_IRQ_HANDLER(idx);),		       \
+		    (UARTE_DEFINE_INT_IRQ_HANDLER(idx);))
 
 #define UARTE_INT_DRIVEN(idx)						       \
 	IF_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,		       \
