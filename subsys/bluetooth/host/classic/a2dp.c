@@ -195,11 +195,10 @@ static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 	int err;
 
 	*errcode = 0;
+
+	__ASSERT(sep, "Invalid sep");
+
 	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
-	if (ep == NULL) {
-		*errcode = BT_AVDTP_BAD_ACP_SEID;
-		return -1;
-	}
 
 	/* parse the configuration */
 	codec_info_element_len = 4U;
