@@ -278,3 +278,17 @@ zephyr_udc0: &usbotg_hs {
 };
 
 arduino_spi: &spi5 {};
+
+/* alias used by display shields with touch control */
+qsh_030_i2c: &i2c4 {
+	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+/* alias used by display shields */
+zephyr_mipi_dsi: &mipi_dsi {};
+
+/* alias used by LCD display shields */
+zephyr_lcd_controller: &ltdc {};
