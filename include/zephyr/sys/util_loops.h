@@ -1079,6 +1079,265 @@
 
 #define Z_BYPASS(x) x
 
+/* Will result in compile-time errors */
+#define Z_PAIRWISE_ERROR(z_call, sep, fixed_arg0, fixed_arg1, ...) \
+	Odd number of arguments to pairwise function
+
+#define Z_PAIRWISE_FOR_LOOP_0(z_call, sep, fixed_arg0, fixed_arg1, ...)
+
+#define Z_PAIRWISE_FOR_LOOP_2(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_0(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	z_call(0, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_4(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_2(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(1, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_6(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_4(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(2, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_8(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_6(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(3, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_10(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_8(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(4, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_12(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_10(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(5, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_14(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_12(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(6, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_16(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_14(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(7, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_18(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_16(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(8, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_20(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_18(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(9, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_22(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_20(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(10, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_24(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_22(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(11, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_26(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_24(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(12, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_28(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_26(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(13, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_30(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_28(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(14, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_32(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_30(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(15, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_34(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_32(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(16, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_36(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_34(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(17, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_38(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_36(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(18, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_40(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_38(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(19, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_42(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_40(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(20, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_44(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_42(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(21, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_46(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_44(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(22, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_48(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_46(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(23, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_50(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_48(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(24, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_52(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_50(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(25, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_54(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_52(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(26, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_56(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_54(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(27, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_58(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_56(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(28, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_60(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_58(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(29, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_62(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_60(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(30, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_LOOP_64(z_call, sep, fixed_arg0, fixed_arg1, y, x, ...) \
+	Z_PAIRWISE_FOR_LOOP_62(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__) \
+	__DEBRACKET sep \
+	z_call(31, x, y, fixed_arg0, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_EACH_ENGINE(x, sep, fixed_arg0, fixed_arg1, ...) \
+	Z_FOR_LOOP_GET_ARG(__VA_ARGS__, \
+		Z_PAIRWISE_FOR_LOOP_64, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_62, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_60, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_58, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_56, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_54, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_52, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_50, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_48, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_46, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_44, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_42, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_40, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_38, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_36, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_34, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_32, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_30, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_28, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_26, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_24, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_22, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_20, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_18, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_16, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_14, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_12, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_10, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_8, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_6, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_4, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_2, \
+		Z_PAIRWISE_ERROR, \
+		Z_PAIRWISE_FOR_LOOP_0)(x, sep, fixed_arg0, fixed_arg1, __VA_ARGS__)
+
+#define Z_PAIRWISE_FOR_EACH_IDX_FIXED_ARG_EXEC(idx, x, y, fixed_arg0, fixed_arg1) \
+	fixed_arg0(idx, x, y, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_EACH_IDX_FIXED_ARG(F, sep, fixed_arg, ...) \
+	Z_PAIRWISE_FOR_EACH_ENGINE(Z_PAIRWISE_FOR_EACH_IDX_FIXED_ARG_EXEC, sep, \
+				   F, fixed_arg, __VA_ARGS__)
+
+#define Z_PAIRWISE_FOR_EACH_FIXED_ARG_EXEC(idx, x, y, fixed_arg0, fixed_arg1) \
+	fixed_arg0(x, y, fixed_arg1)
+
+#define Z_PAIRWISE_FOR_EACH_FIXED_ARG(F, sep, fixed_arg, ...) \
+	Z_PAIRWISE_FOR_EACH_ENGINE(Z_PAIRWISE_FOR_EACH_FIXED_ARG_EXEC, sep, \
+				   F, fixed_arg, __VA_ARGS__)
+
+#define Z_PAIRWISE_FOR_EACH_IDX_EXEC(idx, x, y, fixed_arg0, fixed_arg1) \
+	fixed_arg0(idx, x, y)
+
+#define Z_PAIRWISE_FOR_EACH_IDX(F, sep, ...) \
+	Z_PAIRWISE_FOR_EACH_ENGINE(Z_PAIRWISE_FOR_EACH_IDX_EXEC, sep, F, _, __VA_ARGS__)
+
+#define Z_PAIRWISE_FOR_EACH_EXEC(idx, x, y, fixed_arg0, fixed_arg1) \
+	fixed_arg0(x, y)
+
+#define Z_PAIRWISE_FOR_EACH(F, sep, ...) \
+	Z_PAIRWISE_FOR_EACH_ENGINE(Z_PAIRWISE_FOR_EACH_EXEC, sep, F, _, __VA_ARGS__)
+
 /* Set of UTIL_LISTIFY particles */
 #include "util_listify.h"
 

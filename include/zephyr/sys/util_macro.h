@@ -613,6 +613,118 @@ extern "C" {
 #define FOR_EACH_IDX_FIXED_ARG(F, sep, fixed_arg, ...) \
 	Z_FOR_EACH_IDX_FIXED_ARG(F, sep, fixed_arg, REVERSE_ARGS(__VA_ARGS__))
 
+/**
+ * @brief Call a macro @p F on each pair of arguments with a given
+ *        separator between each call.
+ *
+ * Example:
+ *
+ *     #define F(x, y) {x, y}
+ *     PAIRWISE_FOR_EACH(F, (,), 4, 5, 6, 7);
+ *
+ * This expands to:
+ *
+ *     {4, 5},{6, 7};
+ *
+ * @warning Variable argument list must be of even length.
+ *
+ * @param F Macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... Variable argument list. The macro @p F is invoked as
+ *            <tt>F(index, pair[0], pair[1])</tt> for each pair of
+ *            elements in the list.
+ */
+#define PAIRWISE_FOR_EACH(F, sep, ...) \
+	Z_PAIRWISE_FOR_EACH(F, sep, REVERSE_ARGS(__VA_ARGS__))
+
+/**
+ * @brief Call macro @p F on each pair of arguments, with the pairs's index
+ *        as an additional parameter.
+ *
+ * This is like PAIRWISE_FOR_EACH(), except @p F should be a macro which takes
+ * three arguments: <tt>F(index, variable_arg0, variable_arg1)</tt>.
+ *
+ * Example:
+ *
+ *     #define F(idx, x, y) int a##idx = {x, y}
+ *     PAIRWISE_FOR_EACH_IDX(F, (;), 4, 5, 6, 7);
+ *
+ * This expands to:
+ *
+ *     int a0 = {4, 5};
+ *     int a1 = {6, 7};
+ *
+ * @warning Variable argument list must be of even length.
+ *
+ * @param F Macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... Variable argument list. The macro @p F is invoked as
+ *            <tt>F(index, pair[0], pair[1])</tt> for each pair of
+ *            elements in the list.
+ */
+#define PAIRWISE_FOR_EACH_IDX(F, sep, ...) \
+	Z_PAIRWISE_FOR_EACH_IDX(F, sep, REVERSE_ARGS(__VA_ARGS__))
+
+/**
+ * @brief Call macro @p F on each pair of arguments, with an additional fixed
+ *	  argument as a parameter.
+ *
+ * This is like PAIRWISE_FOR_EACH(), except @p F should be a macro which takes two
+ * arguments: <tt>F(x, y, fixed_arg)</tt>.
+ *
+ * Example:
+ *
+ *     static void func(int val1, int val2, void *dev);
+ *     PAIRWISE_FOR_EACH_FIXED_ARG(func, (;), dev, 4, 5, 6, 7);
+ *
+ * This expands to:
+ *
+ *     func(4, 5, dev);
+ *     func(5, 6, dev);
+ *
+ * @warning Variable argument list must be of even length.
+ *
+ * @param F Macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param fixed_arg Fixed argument passed to @p F as the second macro parameter.
+ * @param ... Variable argument list. The macro @p F is invoked as
+ *            <tt>F(pair[0], pair[1], fixed_arg)</tt> for each pair of
+ *            elements in the list.
+ */
+#define PAIRWISE_FOR_EACH_FIXED_ARG(F, sep, fixed_arg, ...) \
+	Z_PAIRWISE_FOR_EACH_FIXED_ARG(F, sep, fixed_arg, REVERSE_ARGS(__VA_ARGS__))
+
+/**
+ * @brief Calls macro @p F for each each pair of arguments with an index and
+ *        fixed argument
+ *
+ * This is like the combination of PAIRWISE_FOR_EACH_IDX() with
+ * PAIRWISE_FOR_EACH_FIXED_ARG().
+ *
+ * Example:
+ *
+ *     #define F(idx, x, y, fixed_arg) int fixed_arg##idx = {x, y}
+ *     FOR_EACH_IDX_FIXED_ARG(F, (;), a, 4, 5, 6, 7);
+ *
+ * This expands to:
+ *
+ *     int a0 = {4, 5};
+ *     int a1 = {6, 7};
+ *
+ * @param F Macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            This is required to enable providing a comma as separator.
+ * @param fixed_arg Fixed argument passed to @p F as the third macro parameter.
+ * @param ... Variable list of arguments. The macro @p F is invoked as
+ *            <tt>F(index, pair[0], pair[1], fixed_arg)</tt> for each pair of
+ *            elements in the list.
+ */
+#define PAIRWISE_FOR_EACH_IDX_FIXED_ARG(F, sep, fixed_arg, ...) \
+	Z_PAIRWISE_FOR_EACH_IDX_FIXED_ARG(F, sep, fixed_arg, REVERSE_ARGS(__VA_ARGS__))
+
 /** @brief Reverse arguments order.
  *
  * @param ... Variable argument list.

@@ -379,6 +379,90 @@ ZTEST(util, test_FOR_EACH_IDX_FIXED_ARG) {
 	zassert_equal(a2, 3, "Unexpected value %d", a2);
 }
 
+ZTEST(util, test_PAIRWISE_FOR_EACH) {
+	#undef FOO
+	#define FOO(x, y) {x, y}
+
+	struct paired_struct {
+		int x;
+		int y;
+	} test[] = {PAIRWISE_FOR_EACH(FOO, (,), 4, 5, 6, 7)};
+
+	zassert_equal(2, ARRAY_SIZE(test));
+	zassert_equal(4, test[0].x);
+	zassert_equal(5, test[0].y);
+	zassert_equal(6, test[1].x);
+	zassert_equal(7, test[1].y);
+}
+
+
+ZTEST(util, test_PAIRWISE_FOR_EACH_IDX) {
+	#undef FOO
+	#define FOO(idx, x, y) {idx, x, y}
+
+	struct paired_struct {
+		int idx;
+		int x;
+		int y;
+	} test[] = {PAIRWISE_FOR_EACH_IDX(FOO, (,), 4, 5, 6, 7)};
+
+	zassert_equal(2, ARRAY_SIZE(test));
+	zassert_equal(0, test[0].idx);
+	zassert_equal(1, test[1].idx);
+	zassert_equal(4, test[0].x);
+	zassert_equal(5, test[0].y);
+	zassert_equal(6, test[1].x);
+	zassert_equal(7, test[1].y);
+}
+
+ZTEST(util, test_PAIRWISE_FOR_EACH_FIXED_ARG) {
+	#undef FOO
+	#define FOO(x, y, fixed) {x, y, fixed}
+
+	struct paired_struct {
+		int x;
+		int y;
+		int fixed;
+	} test[] = {PAIRWISE_FOR_EACH_FIXED_ARG(FOO, (,), 100, 4, 5, 6, 7, 8, 9)};
+
+	zassert_equal(3, ARRAY_SIZE(test));
+	zassert_equal(4, test[0].x);
+	zassert_equal(5, test[0].y);
+	zassert_equal(6, test[1].x);
+	zassert_equal(7, test[1].y);
+	zassert_equal(8, test[2].x);
+	zassert_equal(9, test[2].y);
+	zassert_equal(100, test[0].fixed);
+	zassert_equal(100, test[1].fixed);
+	zassert_equal(100, test[2].fixed);
+}
+
+ZTEST(util, test_PAIRWISE_FOR_EACH_IDX_FIXED_ARG) {
+	#undef FOO
+	#define FOO(idx, x, y, fixed) {idx, x, y, fixed}
+
+	struct paired_struct {
+		int idx;
+		int x;
+		int y;
+		int fixed;
+	} test[] = {PAIRWISE_FOR_EACH_IDX_FIXED_ARG(FOO, (,), 150, 4, 5, 6, 7, 8, 9)};
+
+	zassert_equal(3, ARRAY_SIZE(test));
+	zassert_equal(0, test[0].idx);
+	zassert_equal(1, test[1].idx);
+	zassert_equal(2, test[2].idx);
+	zassert_equal(4, test[0].x);
+	zassert_equal(5, test[0].y);
+	zassert_equal(6, test[1].x);
+	zassert_equal(7, test[1].y);
+	zassert_equal(8, test[2].x);
+	zassert_equal(9, test[2].y);
+	zassert_equal(150, test[0].fixed);
+	zassert_equal(150, test[1].fixed);
+	zassert_equal(150, test[2].fixed);
+}
+
 ZTEST(util, test_IS_EMPTY) {
 	#define test_IS_EMPTY_REAL_EMPTY
 	#define test_IS_EMPTY_NOT_EMPTY XXX_DO_NOT_REPLACE_XXX
