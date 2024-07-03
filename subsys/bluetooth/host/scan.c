@@ -1461,6 +1461,24 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 {
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+	    param->type == BT_LE_SCAN_TYPE_ACTIVE &&
+	    param->timeout != 0) {
+		/* This is marked as not supported as a stopgap until the (scan,
+		 * adv, init) roles are reworked into proper state machines.
+		 *
+		 * Having proper state machines is necessary to be able to
+		 * suspend all roles that use the (resolvable) private address,
+		 * update the RPA and resume them again with the right
+		 * parameters.
+		 *
+		 * Else we lower the privacy of the device as either the RPA
+		 * update will fail or the scanner will not use the newly
+		 * generated RPA.
+		 */
+		return false;
+	}
+
 	if (param->type != BT_LE_SCAN_TYPE_PASSIVE &&
 	    param->type != BT_LE_SCAN_TYPE_ACTIVE) {
 		return false;
@@ -1528,7 +1546,6 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-
 		if (IS_ENABLED(CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL) && param->timeout) {
 			atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
 			return -ENOTSUP;
