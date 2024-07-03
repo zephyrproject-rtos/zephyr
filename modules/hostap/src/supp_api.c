@@ -787,27 +787,6 @@ out:
 	return ret;
 }
 
-int supplicant_wpa_state(const struct device *dev, int *state)
-{
-	struct wpa_supplicant *wpa_s;
-	int ret = 0;
-
-	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-
-	wpa_s = get_wpa_s_handle(dev);
-	if (!wpa_s) {
-		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
-		ret = -1;
-		goto out;
-	}
-
-	*state = wpa_s->wpa_state; /* 1-1 Mapping */
-
-out:
-	k_mutex_unlock(&wpa_supplicant_mutex);
-	return ret;
-}
-
 /* Below APIs are not natively supported by WPA supplicant, so,
  * these are just wrappers around driver offload APIs. But it is
  * transparent to the user.
