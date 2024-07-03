@@ -4,7 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&mipi_dsi {
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
+		invert-y;
+	};
+
+	chosen {
+		zephyr,display = &zephyr_lcd_controller;
+	};
+};
+
+&zephyr_mipi_dsi {
+	status = "okay";
 	otm8009a: otm8009a@0 {
 		status = "okay";
 		compatible = "orisetech,otm8009a";
@@ -16,5 +31,35 @@
 		data-lanes = <2>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
 		rotation = <90>;
+	};
+};
+
+&zephyr_lcd_controller {
+	status = "okay";
+	width = <800>;
+	height = <480>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	/* orisetech, otm8009a */
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-len = <2>;
+		vsync-len = <1>;
+		hback-porch = <34>;
+		vback-porch = <15>;
+		hfront-porch = <34>;
+		vfront-porch = <16>;
+	};
+};
+
+&qsh_030_i2c {
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&dsi_lcd_qsh_030 4 0>;
+		status = "okay";
 	};
 };
