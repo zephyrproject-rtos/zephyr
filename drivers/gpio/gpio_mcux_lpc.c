@@ -17,7 +17,6 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <fsl_common.h>
@@ -415,26 +414,6 @@ static int gpio_mcux_lpc_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
-static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		break;
-	case PM_DEVICE_ACTION_TURN_OFF:
-		break;
-	case PM_DEVICE_ACTION_TURN_ON:
-		gpio_mcux_lpc_init(dev);
-		break;
-	default:
-		return -ENOTSUP;
-	}
-	return 0;
-}
-#endif /*CONFIG_PM_DEVICE*/
-
 static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 	.pin_configure = gpio_mcux_lpc_configure,
 	.port_get_raw = gpio_mcux_lpc_port_get_raw,
@@ -486,10 +465,7 @@ static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 											\
 	static struct gpio_mcux_lpc_data gpio_mcux_lpc_data_##n;			\
 											\
-	PM_DEVICE_DT_INST_DEFINE(n, gpio_mcux_lpc_pm_action);				\
-											\
-	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n,					\
-		    PM_DEVICE_DT_INST_GET(n),						\
+	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n, NULL,				\
 		    &gpio_mcux_lpc_data_##n,						\
 		    &gpio_mcux_lpc_config_##n, PRE_KERNEL_1,				\
 		    CONFIG_GPIO_INIT_PRIORITY,						\
