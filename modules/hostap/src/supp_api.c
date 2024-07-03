@@ -22,7 +22,6 @@
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 #include "hostapd.h"
 #include "hostapd_cli_zephyr.h"
-#include "ap_drv_ops.h"
 #endif
 #include "supp_events.h"
 
@@ -1194,8 +1193,6 @@ int supplicant_ap_enable(const struct device *dev,
 {
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 	struct hostapd_iface *iface;
-	struct hostapd_data *hapd;
-	struct wpa_driver_capa capa;
 #else
 	struct wpa_supplicant *wpa_s;
 #endif
@@ -1228,26 +1225,6 @@ int supplicant_ap_enable(const struct device *dev,
 	if (ret) {
 		wpa_printf(MSG_ERROR, "Failed to configure network for AP: %d", ret);
 		goto out;
-	}
-
-	hapd = iface->bss[0];
-	if (!iface->extended_capa || !iface->extended_capa_mask) {
-		if (hapd->driver->get_capa && hapd->driver->get_capa(hapd->drv_priv, &capa) == 0) {
-			iface->extended_capa         = capa.extended_capa;
-			iface->extended_capa_mask    = capa.extended_capa_mask;
-			iface->extended_capa_len     = capa.extended_capa_len;
-			iface->drv_max_acl_mac_addrs = capa.max_acl_mac_addrs;
-
-			/*
-			 * Override extended capa with per-interface type (AP), if
-			 * available from the driver.
-			 */
-			hostapd_get_ext_capa(iface);
-		} else {
-			ret = -1;
-			wpa_printf(MSG_ERROR, "Failed to get capability for AP: %d", ret);
-			goto out;
-		}
 	}
 
 	if (!hostapd_cli_cmd_v("enable")) {
