@@ -45,7 +45,6 @@ static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "wpa_cli_zephyr.h"
 
 static const struct wifi_mgmt_ops mgmt_ops = {
-	.get_version = supplicant_get_version,
 	.scan = supplicant_scan,
 	.connect = supplicant_connect,
 	.disconnect = supplicant_disconnect,

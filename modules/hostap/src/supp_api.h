@@ -20,16 +20,6 @@
 #define CHAN_NUM_LEN 6 /* for space-separated channel numbers string */
 
 /**
- * @brief Get version
- *
- * @param dev: Wi-Fi interface name to use
- * @param params: version to fill
- *
- * @return: 0 for OK; <0 for ERROR
- */
-int supplicant_get_version(const struct device *dev, struct wifi_version *params);
-
-/**
  * @brief Request a connection
  *
  * @param dev: Wi-Fi interface name to use

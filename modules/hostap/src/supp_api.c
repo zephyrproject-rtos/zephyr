@@ -792,18 +792,6 @@ static const struct wifi_mgmt_ops *const get_wifi_mgmt_api(const struct device *
 	return api ? api->wifi_mgmt_api : NULL;
 }
 
-int supplicant_get_version(const struct device *dev, struct wifi_version *params)
-{
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
-
-	if (!wifi_mgmt_api || !wifi_mgmt_api->get_version) {
-		wpa_printf(MSG_ERROR, "get_version not supported");
-		return -ENOTSUP;
-	}
-
-	return wifi_mgmt_api->get_version(dev, params);
-}
-
 int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
 		    scan_result_cb_t cb)
 {
