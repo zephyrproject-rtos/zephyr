@@ -693,14 +693,6 @@ static int hostapd_disable_iface_cb(struct hostapd_iface *hapd_iface)
 					    WIFI_STATUS_AP_SUCCESS);
 	hostapd_config_free(hapd_iface->conf);
 	hapd_iface->conf = hapd_iface->interfaces->config_read_cb(hapd_iface->config_fname);
-	for (j = 0; j < hapd_iface->num_bss; j++)
-	{
-		hapd = hapd_iface->bss[j];
-		hapd->iconf = hapd_iface->conf;
-		hapd->conf = hapd_iface->conf->bss[j];
-		hapd->driver = hapd_iface->conf->driver;
-	}
-
 	return 0;
 }
 
