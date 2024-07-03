@@ -9,7 +9,6 @@
 #include <fsl_clock.h>
 #include <fsl_inputmux.h>
 
-
 #define BOARD_XTAL_SYS_CLK_HZ 24000000U
 
 __weak void mimxrt685s_hifi4_irq_init(void)
@@ -53,16 +52,16 @@ __weak void mimxrt685s_hifi4_irq_init(void)
 
 	INPUTMUX_Init(INPUTMUX);
 
-	INPUTMUX_AttachSignal(INPUTMUX, 0,  kINPUTMUX_Flexcomm0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 1,  kINPUTMUX_I3c0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 2,  kINPUTMUX_GpioInt0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 3,  kINPUTMUX_GpioInt1ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 4,  kINPUTMUX_GpioInt2ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 5,  kINPUTMUX_GpioInt3ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 6,  kINPUTMUX_GpioInt4ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 7,  kINPUTMUX_GpioInt5ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 8,  kINPUTMUX_GpioInt6ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 9,  kINPUTMUX_GpioInt7ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 0, kINPUTMUX_Flexcomm0ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 1, kINPUTMUX_I3c0ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 2, kINPUTMUX_GpioInt0ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 3, kINPUTMUX_GpioInt1ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 4, kINPUTMUX_GpioInt2ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 5, kINPUTMUX_GpioInt3ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 6, kINPUTMUX_GpioInt4ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 7, kINPUTMUX_GpioInt5ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 8, kINPUTMUX_GpioInt6ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 9, kINPUTMUX_GpioInt7ToDspInterrupt);
 	INPUTMUX_AttachSignal(INPUTMUX, 10, kINPUTMUX_NsHsGpioInt0ToDspInterrupt);
 
 	INPUTMUX_AttachSignal(INPUTMUX, 11, kINPUTMUX_Mrt0ToDspInterrupt);
