@@ -20,8 +20,6 @@
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-#define CYC_PER_US ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
-			      / (uint64_t)USEC_PER_SEC))
 #define MAX_CYC INT_MAX
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
@@ -37,12 +35,7 @@ static OSTIMER_Type *base;
  */
 static uint64_t cyc_sys_compensated;
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay) && CONFIG_PM
-/* This is the counter device used when OS timer is not available in
- * standby mode.
- */
 static const struct device *counter_dev;
-/* Indicates if the counter is running. */
-bool counter_running;
 #endif
 
 static uint64_t mcux_lpc_ostick_get_compensated_timer_value(void)
@@ -91,7 +84,8 @@ static uint32_t mcux_lpc_ostick_set_counter_timeout(int32_t curr_timeout)
 		uint32_t timeout;
 		int32_t ticks;
 		struct counter_top_cfg top_cfg = { 0 };
-		timeout = k_ticks_to_us_near32(curr_timeout);
+
+		timeout = k_ticks_to_us_ceil32(curr_timeout);
 
 		ticks = counter_us_to_ticks(counter_dev, timeout);
 		ticks = CLAMP(ticks, 1, counter_get_max_top_value(counter_dev));
@@ -115,17 +109,17 @@ static uint32_t mcux_lpc_ostick_set_counter_timeout(int32_t curr_timeout)
 			}
 		}
 
-		/* Counter is set to wakeup the system after the requested time */
-		if (counter_start(counter_dev) != 0) {
-			ret = 1;
-		}
-		counter_running = true;
 #if CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF
 		/* Capture the current timer value for cases where it loses its state
 		 * in low power modes.
 		 */
 		cyc_sys_compensated += OSTIMER_GetCurrentTimerValue(base);
 #endif
+
+		/* Counter is set to wakeup the system after the requested time */
+		if (counter_start(counter_dev) != 0) {
+			ret = 1;
+		}
 	} else {
 		ret = 1;
 	}
@@ -147,26 +141,23 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 		uint32_t slept_time_ticks;
 		uint32_t slept_time_us;
 
-		if (counter_running) {
-			counter_stop(counter_dev);
-			counter_running = false;
-			counter_get_value(counter_dev, &slept_time_ticks);
+		counter_stop(counter_dev);
 
-			if (!(counter_is_counting_up(counter_dev))) {
-				slept_time_ticks = counter_get_top_value(counter_dev) -
-						   slept_time_ticks;
-			}
-			slept_time_us = counter_ticks_to_us(counter_dev, slept_time_ticks);
-			cyc_sys_compensated += CYC_PER_US * slept_time_us;
-#if CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF
-			/* Reset the OS Timer to a known state */
-			RESET_PeripheralReset(kOSEVENT_TIMER_RST_SHIFT_RSTn);
-			/* Reactivate os_timer for cases where it loses its state */
-			OSTIMER_Init(base);
-#endif
-			/* Announce the time slept to the kernel*/
-			mcux_lpc_ostick_isr(NULL);
+		counter_get_value(counter_dev, &slept_time_ticks);
+
+		if (!(counter_is_counting_up(counter_dev))) {
+			slept_time_ticks = counter_get_top_value(counter_dev) - slept_time_ticks;
 		}
+		slept_time_us = counter_ticks_to_us(counter_dev, slept_time_ticks);
+		cyc_sys_compensated += (k_us_to_ticks_floor32(slept_time_us) * CYC_PER_TICK);
+
+#if CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF
+		/* Reactivate os_timer for cases where it loses its state */
+		OSTIMER_Init(base);
+#endif
+
+		/* Announce the time slept to the kernel*/
+		mcux_lpc_ostick_isr(NULL);
 	} else {
 		ret = 1;
 	}
