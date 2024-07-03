@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,8 @@ OUTPUT_ARCH(xtensa)
 #include <zephyr/linker/linker-tool.h>
 #include <zephyr/linker/sections.h>
 
-#define RAMABLE_REGION sdram0 :sdram0_phdr
-#define ROMABLE_REGION sdram0 :sdram0_phdr
+#define RAMABLE_REGION adsp_data :adsp_data_phdr
+#define ROMABLE_REGION adsp_data :adsp_data_phdr
 
 MEMORY
 {
@@ -69,12 +69,12 @@ MEMORY
   vector_double_text :
     org = XCHAL_DOUBLEEXC_VECTOR_PADDR_IRAM,
     len = MEM_VECT_TEXT_SIZE
-  iram_text_start :
+  adsp_text :
     org = XCHAL_DOUBLEEXC_VECTOR_PADDR_IRAM + MEM_VECT_TEXT_SIZE,
-    len = (IRAM_BASE + IRAM_SIZE) - (XCHAL_DOUBLEEXC_VECTOR_PADDR + MEM_VECT_TEXT_SIZE)
-  sdram0 :
-    org = SDRAM0_BASE,
-    len = SDRAM0_SIZE
+    len = TEXT_SIZE - MEM_VECT_TEXT_SIZE
+  adsp_data :
+    org = DATA_BASE,
+    len = DATA_SIZE
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
     org = IDT_BASE,
@@ -102,8 +102,8 @@ PHDRS
   vector_user_lit_phdr PT_LOAD;
   vector_double_text_phdr PT_LOAD;
   vector_double_lit_phdr PT_LOAD;
-  iram_text_start_phdr PT_LOAD;
-  sdram0_phdr PT_LOAD;
+  adsp_text_phdr PT_LOAD;
+  adsp_data_phdr PT_LOAD;
 }
 
 PROVIDE(_memmap_reset_vector = XCHAL_RESET_VECTOR0_PADDR_IRAM);
@@ -259,7 +259,7 @@ SECTIONS
     _iram_text_start = ABSOLUTE(.);
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     _iram_text_end = ABSOLUTE(.);
-  } >iram_text_start :iram_text_start_phdr
+  } >adsp_text :adsp_text_phdr
 
   .rodata : ALIGN(4)
   {
@@ -295,14 +295,14 @@ SECTIONS
     LONG(_bss_end)
     _bss_table_end = ABSOLUTE(.);
     __rodata_region_end = ABSOLUTE(.);
-  } >sdram0 :sdram0_phdr
+  } >adsp_data :adsp_data_phdr
 
   .module_init : ALIGN(4)
   {
    _module_init_start = ABSOLUTE(.);
     *(*.initcall)
     _module_init_end = ABSOLUTE(.);
-  } >sdram0 :sdram0_phdr
+  } >adsp_data :adsp_data_phdr
 
   .text : ALIGN(4)
   {
@@ -319,7 +319,7 @@ SECTIONS
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
     _etext = .;
-  } >iram_text_start :iram_text_start_phdr
+  } >adsp_text :adsp_text_phdr
 
 #include <zephyr/linker/common-rom.ld>
 
@@ -327,13 +327,13 @@ SECTIONS
   {
     KEEP(*(".fw_ready"));
     KEEP (*(.fw_ready_metadata))
-  } >sdram0 :sdram0_phdr
+  } >adsp_data :adsp_data_phdr
 
   .noinit : ALIGN(4)
   {
     *(.noinit)
     *(.noinit.*)
-  } >sdram0 :sdram0_phdr
+  } >adsp_data :adsp_data_phdr
 
   .data : ALIGN(4)
   {
@@ -357,7 +357,7 @@ SECTIONS
     *(.gna_model)
     __data_end = ABSOLUTE(.);
     . = ALIGN(4096);
-  } >sdram0 :sdram0_phdr
+  } >adsp_data :adsp_data_phdr
 
   .lit4 : ALIGN(4)
   {
@@ -366,7 +366,7 @@ SECTIONS
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
-  } >sdram0 :sdram0_phdr
+  } >adsp_data :adsp_data_phdr
 
 #include <zephyr/linker/common-ram.ld>
 
@@ -389,7 +389,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
-  } >sdram0 :sdram0_phdr
+  } >adsp_data :adsp_data_phdr
 
   .heap_mem (NOLOAD) : ALIGN(8)
   {
@@ -398,14 +398,14 @@ SECTIONS
     *(*.heap_mem)
     _heap_mem_end = ABSOLUTE(.);
 
-  } >sdram0 :sdram0_phdr
+  } >adsp_data :adsp_data_phdr
 
   /* stack */
   _end = ALIGN (8);
 
   /DISCARD/ : { *(.note.GNU-stack) }
-  _heap_sentry = SDRAM0_BASE + SDRAM0_SIZE;
-  __stack = SDRAM0_BASE + SDRAM0_SIZE;
+  _heap_sentry = DATA_BASE + DATA_SIZE;
+  __stack = DATA_BASE + DATA_SIZE;
   .comment  0 :  { *(.comment) }
   .debug  0 :  { *(.debug) }
   .line  0 :  { *(.line) }

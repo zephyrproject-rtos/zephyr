@@ -60,19 +60,19 @@
 
 			status = "disabled";
 
-			region@24000000 {
-				reg = <0x24000000 DT_SIZE_K(64)>;
-				type = <NXP_RTXXX_ADSP_REGION_DATA>;
-			};
-
 			region@24020000 {
 				reg = <0x24020000 DT_SIZE_K(1)>;
 				type = <NXP_RTXXX_ADSP_REGION_RESET>;
 			};
 
-			region@24020400 {
-				reg = <0x24020400 DT_SIZE_K(63)>;
+			region@20400000 {
+				reg = <0x20400000 DT_SIZE_K(256)>;
 				type = <NXP_RTXXX_ADSP_REGION_TEXT>;
+			};
+
+			region@20440000 {
+				reg = <0x20440000 DT_SIZE_K(256)>;
+				type = <NXP_RTXXX_ADSP_REGION_DATA>;
 			};
 		};
 	};
@@ -98,7 +98,7 @@
 
 	sram0: memory@180000 {
 		compatible = "mmio-sram";
-		reg = <0x180000 DT_SIZE_K(3072)>;
+		reg = <0x180000 DT_SIZE_K(2560)>;
 	};
 
 	sram1: memory@40140000 {
