@@ -658,9 +658,19 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				key_mgmt = "WPA-EAP-SUITE-B";
 				openssl_ciphers = "SUITEB128";
 
-			} else if (params->suiteb_type == WIFI_SUITEB_192){
+			} else if (params->suiteb_type == WIFI_SUITEB_192) {
 				key_mgmt = "WPA-EAP-SUITE-B-192";
 				openssl_ciphers = "SUITEB192";
+				if (params->TLS_cipher == WIFI_EAP_TLS_ECC_P384) {
+					if (!wpa_cli_cmd_v("set_network %d openssl_ciphers \"%s\"",
+							resp.network_id, openssl_ciphers))
+						goto out;
+				} else if (params->TLS_cipher == WIFI_EAP_TLS_RSA_3K) {
+					snprintf(phase1, sizeof(phase1), "tls_suiteb=1");
+					if (!wpa_cli_cmd_v("set_network %d phase1 \"%s\"",
+							resp.network_id, &phase1[0]))
+						goto out;
+				}
 
 			} else {
 				key_mgmt = "WPA-EAP";
@@ -669,7 +679,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			if (!wpa_cli_cmd_v("set_network %d key_mgmt %s", resp.network_id, key_mgmt))
 				goto out;
 
-			if (!wpa_cli_cmd_v("set openssl_ciphers %s", openssl_ciphers))
+			if (!wpa_cli_cmd_v("set openssl_ciphers \"%s\"", openssl_ciphers))
 				goto out;
 
 			if (!wpa_cli_cmd_v("set_network %d group %s", resp.network_id, group_ciphers))
@@ -694,7 +704,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 				params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
 				snprintf(phase1, sizeof(phase1), "peapver=%d peaplabel=0 crypto_binding=0", params->eap_ver);
-
 				if (!wpa_cli_cmd_v("set_network %d phase1 \"%s\"", resp.network_id, &phase1[0]))
 					goto out;
 			}
