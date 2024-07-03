@@ -176,6 +176,7 @@ config RISCV_HAS_PLIC
 config RISCV_HAS_CLIC
 	bool
 	depends on RISCV_PRIVILEGED
+	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL if MULTITHREADING
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
