@@ -1011,6 +1011,15 @@ config NET_PKT_TXTIME_STATS_DETAIL
 	  The extra statistics can be seen in net-shell using "net stats"
 	  command.
 
+config NET_PKT_ALLOC_STATS
+	bool "Get net_pkt allocation statistics"
+	help
+	  Collect net_pkt allocation statistics, like number of allocations,
+	  average allocation size, average allocation time in usec, for both
+	  succeeded and failed allocations.
+	  The extra statistics can be seen in net-shell using "net mem"
+	  command.
+
 config NET_PROMISCUOUS_MODE
 	bool "Promiscuous mode support"
 	select NET_MGMT
