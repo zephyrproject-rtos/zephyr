@@ -73,9 +73,9 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	sram_data: memory@20000000 {
+	sram_data: memory@40000 {
 		compatible = "mmio-sram";
-		reg = <0x20040000 DT_SIZE_K(960)>;
+		reg = <0x40000 DT_SIZE_K(960)>;
 	};
 
 	sram_code: memory@0 {
