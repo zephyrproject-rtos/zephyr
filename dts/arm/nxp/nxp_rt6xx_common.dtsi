@@ -60,8 +60,13 @@
 
 			status = "disabled";
 
-			region@24000000 {
+			/*region@24000000 {
 				reg = <0x24000000 DT_SIZE_K(64)>;
+				type = <NXP_RTXXX_ADSP_REGION_DATA>;
+			};*/
+
+			region@30200000 {
+				reg = <0x30200000 0x27D000>;
 				type = <NXP_RTXXX_ADSP_REGION_DATA>;
 			};
 
