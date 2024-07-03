@@ -747,7 +747,7 @@ int bt_a2dp_stream_start(struct bt_a2dp_stream *stream)
 
 	a2dp = stream->a2dp;
 	a2dp->start_param.req.func = bt_a2dp_start_cb;
-	a2dp->start_param.acp_stream_ep_id = stream->remote_ep == NULL ?
+	a2dp->start_param.acp_stream_ep_id = stream->remote_ep != NULL ?
 		stream->remote_ep->sep.sep_info.id : stream->remote_ep_id;
 	a2dp->start_param.sep = &stream->local_ep->sep;
 	return bt_avdtp_start(&a2dp->session, &a2dp->start_param);
