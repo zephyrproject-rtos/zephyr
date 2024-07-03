@@ -474,6 +474,9 @@ Networking
 * The ``work_q`` parameter to ``NET_SOCKET_SERVICE_SYNC_DEFINE`` and
   ``NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC`` has been removed as it was always ignored. (:github:`79446`)
 
+* Deprecated the :kconfig:option:`CONFIG_NET_SOCKETS_POLL_MAX` option in favour of
+  :kconfig:option:`CONFIG_ZVFS_POLL_MAX`.
+
 Other Subsystems
 ****************
 
