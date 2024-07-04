@@ -18,10 +18,10 @@ extern "C" {
 typedef struct
 {
   
-	lv_obj_t *screen_1;
-	bool screen_1_del;
-	lv_obj_t *screen_1_label_1;
-	lv_obj_t *screen_1_label_2;
+	lv_obj_t *screen_2;
+	bool screen_2_del;
+	lv_obj_t *screen_2_senderName;
+	lv_obj_t *screen_2_messageBox;
 }lv_ui;
 
 typedef void (*ui_setup_scr_t)(lv_ui * ui);
@@ -55,7 +55,7 @@ void setup_ui(lv_ui *ui);
 extern lv_ui guider_ui;
 
 
-void setup_scr_screen_1(lv_ui *ui);
+void setup_scr_screen_2(lv_ui *ui);
 
 LV_FONT_DECLARE(lv_font_montserratMedium_15)
 LV_FONT_DECLARE(lv_font_montserratMedium_16)

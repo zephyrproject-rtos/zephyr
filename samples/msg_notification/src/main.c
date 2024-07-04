@@ -33,11 +33,11 @@ int main(void)
 	setup_ui(&guider_ui);
    	events_init(&guider_ui);
 
-	// lv_task_handler();
+	lv_task_handler();
 	display_blanking_off(display_dev);
 
 	while (1) {
 		lv_task_handler();
-		// k_sleep(K_MSEC(10));
+		k_sleep(K_MSEC(10));
 	}
 }

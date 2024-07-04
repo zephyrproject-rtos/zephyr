@@ -37,7 +37,9 @@ int main(void)
 	display_blanking_off(display_dev);
 
 	while (1) {
+		// lv_scr_load(guider_ui.screen_1);
+		// lv_task_handler();
+		lv_scr_load(guider_ui.screen_2);
 		lv_task_handler();
-		// k_sleep(K_MSEC(10));
 	}
 }

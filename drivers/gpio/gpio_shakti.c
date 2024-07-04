@@ -87,7 +87,7 @@ static int gpio_shakti_pin_configure (const struct device *dev,
         // printk("GPIO Output Mode.\n");
     }
     else{
-        gpio->direction |= (0 << pin);
+        gpio->direction&=~(1 << pin);
         // printk("GPIO Input Mode.\n");
     }
 
