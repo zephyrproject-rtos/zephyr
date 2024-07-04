@@ -82,6 +82,7 @@ struct driver_data {
 	struct adc_context ctx;
 
 	uint8_t positive_inputs[SAADC_CH_NUM];
+	uint8_t single_ended_channels;
 
 #if defined(ADC_BUFFER_IN_RAM)
 	void *samples_buffer;
@@ -262,8 +263,16 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	config.mode = (channel_cfg->differential ?
-		NRF_SAADC_MODE_DIFFERENTIAL : NRF_SAADC_MODE_SINGLE_ENDED);
+	/* Store channel mode to allow correcting negative readings in single-ended mode
+	 * after ADC sequence ends.
+	 */
+	if (channel_cfg->differential) {
+		config.mode = NRF_SAADC_MODE_DIFFERENTIAL;
+		m_data.single_ended_channels &= ~BIT(channel_cfg->channel_id);
+	} else {
+		config.mode = NRF_SAADC_MODE_SINGLE_ENDED;
+		m_data.single_ended_channels |= BIT(channel_cfg->channel_id);
+	}
 
 	/* Keep the channel disabled in hardware (set positive input to
 	 * NRF_SAADC_INPUT_DISABLED) until it is selected to be included
@@ -432,11 +441,37 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	return 0;
 }
 
+static bool has_single_ended(const struct adc_sequence *sequence)
+{
+	return sequence->channels & m_data.single_ended_channels;
+}
+
+static void correct_single_ended(const struct adc_sequence *sequence)
+{
+	uint16_t channel_bit = BIT(0);
+	uint8_t selected_channels = sequence->channels;
+	uint8_t single_ended_channels = m_data.single_ended_channels;
+	int16_t *sample = nrf_saadc_buffer_pointer_get(NRF_SAADC);
+
+	while (channel_bit <= single_ended_channels) {
+		if (channel_bit & selected_channels) {
+			if ((channel_bit & single_ended_channels) && (*sample < 0)) {
+				*sample = 0;
+			}
+
+			sample++;
+		}
+
+		channel_bit <<= 1;
+	}
+}
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
 	int error;
 	uint32_t selected_channels = sequence->channels;
+	uint8_t resolution = sequence->resolution;
 	uint8_t active_channels;
 	uint8_t channel_id;
 
@@ -463,6 +498,22 @@ static int start_read(const struct device *dev,
 			if (m_data.positive_inputs[channel_id] == 0U) {
 				LOG_ERR("Channel %u not configured",
 					    channel_id);
+				return -EINVAL;
+			}
+			/* Signal an error if the channel is configured as
+			 * single ended with a resolution which is identical
+			 * to the sample bit size. The SAADC's "single ended"
+			 * mode is really differential mode with the
+			 * negative input tied to ground. We can therefore
+			 * observe negative values if the positive input falls
+			 * below ground. If the sample bitsize is larger than
+			 * the resolution, we can detect negative values and
+			 * correct them to 0 after the sequencen has ended.
+			 */
+			if ((m_data.single_ended_channels & BIT(channel_id)) &&
+			    (NRF_SAADC_8BIT_SAMPLE_WIDTH == 8 && resolution == 8)) {
+				LOG_ERR("Channel %u invalid single ended resolution",
+					channel_id);
 				return -EINVAL;
 			}
 			/* When oversampling is used, the burst mode needs to
@@ -566,6 +617,10 @@ static void saadc_irq_handler(const struct device *dev)
 
 		nrf_saadc_task_trigger(NRF_SAADC, NRF_SAADC_TASK_STOP);
 		nrf_saadc_disable(NRF_SAADC);
+
+		if (has_single_ended(&m_data.ctx.sequence)) {
+			correct_single_ended(&m_data.ctx.sequence);
+		}
 
 #if defined(ADC_BUFFER_IN_RAM)
 		memcpy(m_data.user_buffer, m_data.samples_buffer,
