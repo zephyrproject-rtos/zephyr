@@ -3493,7 +3493,14 @@ static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
 					BT_GAP_SCAN_FAST_INTERVAL,
 					BT_GAP_SCAN_FAST_INTERVAL);
 
-	err = bt_conn_le_create(&addr, create_params, &conn_param, &conn);
+	if (CONFIG_BT_MAX_CONN >= 8) {
+		err = bt_conn_le_create(&addr, create_params, BT_LE_CONN_PARAM_MUL_LINK,
+					&conn);
+	} else {
+		err = bt_conn_le_create(&addr, create_params, &conn_param,
+					&conn);
+	}
+
 	if (err) {
 		*ercd = err;
 		return -ENOEXEC;
