@@ -73,7 +73,7 @@ int lvgl_input_register_driver(lv_indev_type_t indev_type, const struct device *
 		if (ret) {                                                                         \
 			return ret;                                                                \
 		}                                                                                  \
-	} while (0)
+	} while (0);
 
 int lvgl_init_input_devices(void)
 {
