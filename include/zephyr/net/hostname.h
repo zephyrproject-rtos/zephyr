@@ -94,11 +94,12 @@ static inline void net_hostname_init(void)
 /**
  * @brief Set the device hostname postfix
  *
- * @details Set the device hostname to some value. This is only used if
+ * @details Convert the hostname postfix to hexadecimal value and set the
+ * device hostname with the converted value. This is only used if
  * CONFIG_NET_HOSTNAME_UNIQUE is set.
  *
  * @param hostname_postfix Usually link address. The function will convert this
- * to a string.
+ * to a hexadecimal string.
  * @param postfix_len Length of the hostname_postfix array.
  *
  * @return 0 if ok, <0 if error
@@ -108,6 +109,33 @@ int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 			      int postfix_len);
 #else
 static inline int net_hostname_set_postfix(const uint8_t *hostname_postfix,
+					   int postfix_len)
+{
+	ARG_UNUSED(hostname_postfix);
+	ARG_UNUSED(postfix_len);
+	return -EMSGSIZE;
+}
+#endif /* CONFIG_NET_HOSTNAME_UNIQUE */
+
+/**
+ * @brief Set the postfix string for the network hostname.
+ *
+ * @details Set the hostname postfix string for the network hostname as is, without any conversion.
+ * This is only used if CONFIG_NET_HOSTNAME_UNIQUE is set. The function checks if the combined
+ * length of the default hostname (defined by CONFIG_NET_HOSTNAME) and the postfix does not exceed
+ * NET_HOSTNAME_MAX_LEN. If the postfix is too long, the function returns an
+ * error.
+ *
+ * @param hostname_postfix Pointer to the postfix string to be appended to the network hostname.
+ * @param postfix_len Length of the hostname_postfix array.
+ *
+ * @return 0 if ok, <0 if error
+ */
+#if defined(CONFIG_NET_HOSTNAME_UNIQUE)
+int net_hostname_set_postfix_str(const uint8_t *hostname_postfix,
+			     int postfix_len);
+#else
+static inline int net_hostname_set_postfix_str(const uint8_t *hostname_postfix,
 					   int postfix_len)
 {
 	ARG_UNUSED(hostname_postfix);
