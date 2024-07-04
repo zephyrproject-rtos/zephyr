@@ -1160,22 +1160,42 @@ int handle_http_frame_priority(struct http_client_ctx *client)
 	return 0;
 }
 
-int handle_http_frame_rst_frame(struct http_client_ctx *client)
+int handle_http_frame_rst_stream(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
-	int bytes_consumed;
+	struct http2_stream_ctx *stream_ctx;
+	uint32_t error_code;
 
 	LOG_DBG("FRAME_RST_STREAM");
 
 	print_http_frames(client);
 
+	if (frame->length != HTTP2_RST_STREAM_FRAME_LEN) {
+		return -EBADMSG;
+	}
+
 	if (client->data_len < frame->length) {
 		return -EAGAIN;
 	}
 
-	bytes_consumed = client->current_frame.length;
-	client->data_len -= bytes_consumed;
-	client->cursor += bytes_consumed;
+	if (frame->stream_identifier == 0) {
+		return -EBADMSG;
+	}
+
+	stream_ctx = find_http_stream_context(client, frame->stream_identifier);
+	if (stream_ctx == NULL) {
+		return -EBADMSG;
+	}
+
+	error_code = sys_get_be32(client->cursor);
+
+	LOG_DBG("Stream %u reset with error code %u", stream_ctx->stream_id,
+		error_code);
+
+	release_http_stream_context(client, stream_ctx->stream_id);
+
+	client->data_len -= HTTP2_RST_STREAM_FRAME_LEN;
+	client->cursor += HTTP2_RST_STREAM_FRAME_LEN;
 
 	client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 

@@ -433,7 +433,7 @@ static int handle_http_request(struct http_client_ctx *client)
 			ret = handle_http_frame_window_update(client);
 			break;
 		case HTTP_SERVER_FRAME_RST_STREAM_STATE:
-			ret = handle_http_frame_rst_frame(client);
+			ret = handle_http_frame_rst_stream(client);
 			break;
 		case HTTP_SERVER_FRAME_GOAWAY_STATE:
 			ret = handle_http_frame_goaway(client);
