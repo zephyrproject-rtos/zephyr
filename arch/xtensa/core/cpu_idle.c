@@ -14,6 +14,7 @@ void arch_cpu_idle(void)
 }
 #endif
 
+#ifndef CONFIG_ARCH_CPU_ATOMIC_IDLE_CUSTOM
 void arch_cpu_atomic_idle(unsigned int key)
 {
 	sys_trace_idle();
@@ -21,3 +22,4 @@ void arch_cpu_atomic_idle(unsigned int key)
 			  "wsr.ps %0\n\t"
 			  "rsync" :: "a"(key));
 }
+#endif
