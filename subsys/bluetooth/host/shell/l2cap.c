@@ -59,6 +59,10 @@ struct l2ch {
 
 static bool metrics;
 
+static int32_t g_l2cap_send_count;
+static uint8_t g_l2cap_send_length;
+struct k_timer g_l2cap_send_timer;
+
 static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	static uint32_t len;
@@ -410,6 +414,49 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static void g_l2cap_send_timer_cb(struct k_timer *timer)
+{
+	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
+	int ret, len = DATA_MTU;
+	struct net_buf *buf;
+
+	len = MIN(l2ch_chan.ch.tx.mtu, g_l2cap_send_length);
+
+	buf = net_buf_alloc(&data_tx_pool, K_NO_WAIT);
+	if (buf) {
+		net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
+		net_buf_add_mem(buf, buf_data, len);
+
+		ret = bt_l2cap_chan_send(&l2ch_chan.ch.chan, buf);
+		if (ret >= 0) {
+			g_l2cap_send_count--;
+			if (g_l2cap_send_count == 0) {
+				k_timer_stop(&g_l2cap_send_timer);
+			}
+		}
+	}
+}
+
+K_TIMER_DEFINE(g_l2cap_send_timer, g_l2cap_send_timer_cb, NULL);
+
+static int cmd_unblock_send(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (argc > 1) {
+		g_l2cap_send_count = strtoul(argv[1], NULL, 10);
+	}
+	if (argc > 2) {
+		g_l2cap_send_length = strtoul(argv[2], NULL, 10);
+		if (g_l2cap_send_length > DATA_MTU) {
+			shell_print(sh,
+			"Length exceeds TX MTU for the channel");
+			return -ENOEXEC;
+		}
+	}
+
+	k_timer_start(&g_l2cap_send_timer, K_MSEC(30), K_MSEC(30));
+	return 0;
+}
+
 static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
 	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
@@ -550,6 +597,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 	SHELL_CMD_ARG(ecred-reconfigure, NULL, "<mtu (dec)>",
 		cmd_ecred_reconfigure, 1, 1),
 #endif /* CONFIG_BT_L2CAP_ECRED */
+	SHELL_CMD_ARG(unblock_send, NULL, "[number of packets] [length of packet(s)]",
+		      cmd_unblock_send, 1, 2),
 	SHELL_SUBCMD_SET_END
 );
 
