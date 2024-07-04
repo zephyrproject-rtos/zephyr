@@ -3,7 +3,7 @@
 
 description: LiteX Ethernet
 
-compatible: "litex,eth0"
+compatible: "litex,liteeth"
 
 include: ethernet-controller.yaml
 

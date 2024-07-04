@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT litex_eth0
+#define DT_DRV_COMPAT litex_liteeth
 
 #define LOG_MODULE_NAME eth_litex_liteeth
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
