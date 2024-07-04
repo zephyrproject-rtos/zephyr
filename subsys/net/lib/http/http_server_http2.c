@@ -729,6 +729,8 @@ int handle_http_frame_header(struct http_client_ctx *client)
 	client->cursor += bytes_consumed;
 	client->data_len -= bytes_consumed;
 
+	print_http_frames(client);
+
 	switch (client->current_frame.type) {
 	case HTTP2_DATA_FRAME:
 		return enter_http_frame_data_state(client);
@@ -912,8 +914,6 @@ int handle_http_frame_data(struct http_client_ctx *client)
 
 	LOG_DBG("HTTP_SERVER_FRAME_DATA_STATE");
 
-	print_http_frames(client);
-
 	if (client->current_detail == NULL) {
 		/* There is no handler */
 		LOG_DBG("No dynamic handler found.");
@@ -1040,8 +1040,6 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 
 	LOG_DBG("HTTP_SERVER_FRAME_HEADERS");
 
-	print_http_frames(client);
-
 	if (is_header_flag_set(frame->flags, HTTP2_FLAG_PADDED)) {
 		ret = parse_http_frame_padded_field(client);
 		if (ret < 0) {
@@ -1139,8 +1137,6 @@ int handle_http_frame_priority(struct http_client_ctx *client)
 
 	LOG_DBG("HTTP_SERVER_FRAME_PRIORITY_STATE");
 
-	print_http_frames(client);
-
 	if (frame->length != HTTP2_PRIORITY_FRAME_LEN) {
 		return -EBADMSG;
 	}
@@ -1167,8 +1163,6 @@ int handle_http_frame_rst_stream(struct http_client_ctx *client)
 	uint32_t error_code;
 
 	LOG_DBG("FRAME_RST_STREAM");
-
-	print_http_frames(client);
 
 	if (frame->length != HTTP2_RST_STREAM_FRAME_LEN) {
 		return -EBADMSG;
@@ -1209,8 +1203,6 @@ int handle_http_frame_settings(struct http_client_ctx *client)
 
 	LOG_DBG("HTTP_SERVER_FRAME_SETTINGS");
 
-	print_http_frames(client);
-
 	if (client->data_len < frame->length) {
 		return -EAGAIN;
 	}
@@ -1241,8 +1233,6 @@ int handle_http_frame_goaway(struct http_client_ctx *client)
 
 	LOG_DBG("HTTP_SERVER_FRAME_GOAWAY");
 
-	print_http_frames(client);
-
 	if (client->data_len < frame->length) {
 		return -EAGAIN;
 	}
@@ -1262,8 +1252,6 @@ int handle_http_frame_window_update(struct http_client_ctx *client)
 	int bytes_consumed;
 
 	LOG_DBG("HTTP_SERVER_FRAME_WINDOW_UPDATE");
-
-	print_http_frames(client);
 
 	/* TODO Implement flow control, for now just ignore. */
 
