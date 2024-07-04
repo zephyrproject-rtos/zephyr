@@ -882,6 +882,29 @@ static int parse_http_frame_padded_field(struct http_client_ctx *client)
 	return 0;
 }
 
+static int parse_http_frame_priority_field(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+
+	if (client->data_len < HTTP2_HEADERS_FRAME_PRIORITY_LEN) {
+		return -EAGAIN;
+	}
+
+	/* Priority signalling is deprecated by RFC 9113, however it still
+	 * should be expected to receive, just drop the bytes.
+	 */
+	client->cursor += HTTP2_HEADERS_FRAME_PRIORITY_LEN;
+	client->data_len -= HTTP2_HEADERS_FRAME_PRIORITY_LEN;
+	frame->length -= HTTP2_HEADERS_FRAME_PRIORITY_LEN;
+
+	/* Clear the priority flag, this indicates that priority field was
+	 * already parsed.
+	 */
+	clear_header_flag(&frame->flags, HTTP2_FLAG_PRIORITY);
+
+	return 0;
+}
+
 int handle_http_frame_data(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
@@ -1026,6 +1049,13 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		}
 	}
 
+	if (is_header_flag_set(frame->flags, HTTP2_FLAG_PRIORITY)) {
+		ret = parse_http_frame_priority_field(client);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	while (frame->length > 0) {
 		struct http_hpack_header_buf *header = &client->header_field;
 
@@ -1106,19 +1136,24 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 int handle_http_frame_priority(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
-	int bytes_consumed;
 
 	LOG_DBG("HTTP_SERVER_FRAME_PRIORITY_STATE");
 
 	print_http_frames(client);
 
+	if (frame->length != HTTP2_PRIORITY_FRAME_LEN) {
+		return -EBADMSG;
+	}
+
 	if (client->data_len < frame->length) {
 		return -EAGAIN;
 	}
 
-	bytes_consumed = client->current_frame.length;
-	client->data_len -= bytes_consumed;
-	client->cursor += bytes_consumed;
+	/* Priority signalling is deprecated by RFC 9113, however it still
+	 * should be expected to receive, just drop the bytes.
+	 */
+	client->data_len -= HTTP2_PRIORITY_FRAME_LEN;
+	client->cursor += HTTP2_PRIORITY_FRAME_LEN;
 
 	client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
