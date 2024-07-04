@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 #include <string.h>
 
-#include <zephyr/toolchain.h>
+#include <zephyr/sys/reboot.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -423,6 +423,13 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_FAILED;
 }
 
+static uint8_t reset_handler(const void *cmd, uint16_t cmd_len, void *rsp,
+							uint16_t *rsp_len)
+{
+	sys_reboot(SYS_REBOOT_COLD);
+	return BTP_STATUS_SUCCESS;
+}
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_CORE_READ_SUPPORTED_COMMANDS,
@@ -447,6 +454,18 @@ static const struct btp_handler handlers[] = {
 		.index = BTP_INDEX_NONE,
 		.expect_len = sizeof(struct btp_core_unregister_service_cmd),
 		.func = unregister_service,
+	},
+	{
+		.opcode = RSFU,
+		.index = BTP_INDEX_NONE,
+		.expect_len = 0,
+		.func = NULL,
+	},
+	{
+		.opcode = CORE_RESET_BOARD,
+		.index = BTP_INDEX_NONE,
+		.expect_len = 0,
+		.func = reset_handler,
 	},
 };
 
