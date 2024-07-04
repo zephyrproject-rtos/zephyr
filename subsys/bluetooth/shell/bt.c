@@ -741,8 +741,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	conn_addr_str(conn, addr, sizeof(addr));
 
 	if (err) {
-		shell_error(ctx_shell, "Failed to connect to %s (0x%02x)", addr,
-			     err);
+		shell_error(ctx_shell, "Failed to connect to %s 0x%02x %s", addr,
+			    err, bt_hci_err_to_str(err));
 		goto done;
 	}
 
