@@ -4,4 +4,4 @@
 config ETH_LITEX_LITEETH
 	bool "LiteX LiteEth Ethernet core driver"
 	default y
-	depends on DT_HAS_LITEX_ETH0_ENABLED
+	depends on DT_HAS_LITEX_LITEETH_ENABLED

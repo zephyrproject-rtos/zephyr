@@ -121,7 +121,7 @@
 			status = "disabled";
 		};
 		eth0: ethernet@e0009800 {
-			compatible = "litex,eth0";
+			compatible = "litex,liteeth";
 			interrupt-parent = <&intc0>;
 			interrupts = <3 0>;
 			reg = <0xe0009800 0x4
