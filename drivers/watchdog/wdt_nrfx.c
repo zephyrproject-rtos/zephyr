@@ -96,6 +96,10 @@ static int wdt_nrf_install_timeout(const struct device *dev,
 	nrfx_err_t err_code;
 	nrfx_wdt_channel_id channel_id;
 
+	if (data->enabled) {
+		return -EBUSY;
+	}
+
 	if (cfg->flags != WDT_FLAG_RESET_SOC) {
 		return -ENOTSUP;
 	}
