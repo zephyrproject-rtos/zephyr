@@ -15,6 +15,8 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/random/random.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(test, 0);
 /* RX and TX pins have to be connected together*/
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))
@@ -71,6 +73,7 @@ static const struct device *const uart_dev =
 
 static bool async;
 static bool int_driven;
+static volatile bool error_found;
 static volatile bool async_rx_enabled;
 static struct k_sem async_tx_sem;
 
@@ -84,6 +87,10 @@ static void process_byte(uint8_t b)
 	struct rx_source *src = &source[base];
 	bool ok;
 
+	if (error_found) {
+		return;
+	}
+
 	b &= 0x0F;
 	src->cnt++;
 
@@ -93,6 +100,12 @@ static void process_byte(uint8_t b)
 	}
 
 	ok = ((b - src->prev) == 1) || (!b && (src->prev == 0x0F));
+
+	if (!ok) {
+		error_found = true;
+		LOG_ERR("Unexpected byte received:0x%02x, prev:0x%02x",
+			(base << 4) | b, (base << 4) | src->prev);
+	};
 
 	zassert_true(ok, "Unexpected byte received:0x%02x, prev:0x%02x",
 			(base << 4) | b, (base << 4) | src->prev);
@@ -224,6 +237,10 @@ static void bulk_poll_out(struct test_data *data, int wait_base, int wait_range)
 {
 	for (int i = 0; i < data->max; i++) {
 
+		if (error_found) {
+			goto bail;
+		}
+
 		data->cnt++;
 		uart_poll_out(uart_dev, data->buf[i % BUF_SIZE]);
 		if (wait_base) {
@@ -232,7 +249,7 @@ static void bulk_poll_out(struct test_data *data, int wait_base, int wait_range)
 			k_sleep(K_USEC(wait_base + (r % wait_range)));
 		}
 	}
-
+bail:
 	k_sem_give(&data->sem);
 }
 
@@ -241,10 +258,10 @@ static void poll_out_thread(void *data, void *unused0, void *unused1)
 	bulk_poll_out((struct test_data *)data, 200, 600);
 }
 
-K_THREAD_STACK_DEFINE(high_poll_out_thread_stack, 1024);
+K_THREAD_STACK_DEFINE(high_poll_out_thread_stack, 2048);
 static struct k_thread high_poll_out_thread;
 
-K_THREAD_STACK_DEFINE(int_async_thread_stack, 1024);
+K_THREAD_STACK_DEFINE(int_async_thread_stack, 2048);
 static struct k_thread int_async_thread;
 
 static void int_async_thread_func(void *p_data, void *base, void *range)
@@ -255,7 +272,7 @@ static void int_async_thread_func(void *p_data, void *base, void *range)
 
 	k_sem_init(&async_tx_sem, 1, 1);
 
-	while (data->cnt < data->max) {
+	while (!error_found && (data->cnt < data->max)) {
 		if (async) {
 			int err;
 
@@ -287,7 +304,9 @@ static void poll_out_timer_handler(struct k_timer *timer)
 {
 	struct test_data *data = k_timer_user_data_get(timer);
 
-	uart_poll_out(uart_dev, data->buf[data->cnt % BUF_SIZE]);
+	if (!error_found) {
+		uart_poll_out(uart_dev, data->buf[data->cnt % BUF_SIZE]);
+	}
 
 	data->cnt++;
 	if (data->cnt == data->max) {
