@@ -117,18 +117,20 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 	struct net_pkt *pkt;
 
 	if (esp32_wifi_iface == NULL) {
+		esp_wifi_internal_free_rx_buffer(eb);
 		LOG_ERR("network interface unavailable");
 		return -EIO;
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface, len, AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
-		LOG_ERR("Failed to get net buffer");
+		LOG_ERR("Failed to allocate net buffer");
+		esp_wifi_internal_free_rx_buffer(eb);
 		return -EIO;
 	}
 
 	if (net_pkt_write(pkt, buffer, len) < 0) {
-		LOG_ERR("Failed to write pkt");
+		LOG_ERR("Failed to write to net buffer");
 		goto pkt_unref;
 	}
 
@@ -146,6 +148,7 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 	return 0;
 
 pkt_unref:
+	esp_wifi_internal_free_rx_buffer(eb);
 	net_pkt_unref(pkt);
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
