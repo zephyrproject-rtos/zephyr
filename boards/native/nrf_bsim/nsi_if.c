@@ -14,6 +14,7 @@
 #include "phy_sync_ctrl.h"
 #include "nsi_hw_scheduler.h"
 #include "nsi_cpu_ctrl.h"
+#include "nsi_host_trampolines.h"
 
 /*
  * These hooks are to be named nsif_cpu<cpu_number>_<hook_name>, for example nsif_cpu0_boot
@@ -55,8 +56,8 @@ NATIVE_SIMULATOR_IF void nsif_cpun_save_test_arg(char *argv)
 {
 	if (test_args.test_case_argc >= test_args.allocated_size) {
 		test_args.allocated_size += TESTCASAE_ARGV_ALLOCSIZE;
-		test_args.test_case_argv = realloc(test_args.test_case_argv,
-						   test_args.allocated_size * sizeof(char *));
+		test_args.test_case_argv = nsi_host_realloc(test_args.test_case_argv,
+						test_args.allocated_size * sizeof(char *));
 		if (test_args.test_case_argv == NULL) { /* LCOV_EXCL_BR_LINE */
 			bs_trace_error_line("Can't allocate memory\n"); /* LCOV_EXCL_LINE */
 		}
@@ -70,7 +71,7 @@ NATIVE_SIMULATOR_IF void nsif_cpun_save_test_arg(char *argv)
 static void test_args_free(void)
 {
 	if (test_args.test_case_argv) {
-		free(test_args.test_case_argv);
+		nsi_host_free(test_args.test_case_argv);
 		test_args.test_case_argv = NULL;
 	}
 }
