@@ -522,7 +522,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 
 	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	LOG_INF("Disconnected: %s (reason 0x%02x)", addr, reason);
+	LOG_INF("Disconnected: %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(peer.conn);
 	peer.conn = NULL;
@@ -537,7 +537,8 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 		LOG_INF("Security changed: %u", level);
 		k_sem_give(&sem_security_changed);
 	} else {
-		LOG_ERR("Failed to set security level: %d", sec_err);
+		LOG_ERR("Failed to set security level: %s(%d)",
+			bt_security_err_to_str(sec_err), sec_err);
 
 		if (sec_err == BT_SECURITY_ERR_PIN_OR_KEY_MISSING) {
 			int err;
