@@ -22,10 +22,12 @@ tests:
   sample.usb_device_next.mass_ram_none:
     min_ram: 128
     depends_on: usbd
-    platform_allow:
+    integration_platforms:
       - nrf52840dk/nrf52840
       - nrf54h20dk/nrf54h20/cpuapp
       - frdm_k64f
+      - stm32f723e_disco
+      - nucleo_f413zh
       - mimxrt685_evk/mimxrt685s/cm33
       - mimxrt1060_evk
     extra_args:
