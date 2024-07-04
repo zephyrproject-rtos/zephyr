@@ -13,6 +13,7 @@ family:
     - name: mcxc141
     - name: mcxc142
     - name: mcxc242
+    - name: mcxc444
   - name: mcxa
     socs:
     - name: mcxa156
