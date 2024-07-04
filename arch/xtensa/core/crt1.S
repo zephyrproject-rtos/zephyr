@@ -4,7 +4,7 @@
  */
 
 /*
- * Control arrives here at _start from the reset vector or from crt0-app.S.
+ * Control arrives here at _start from the reset vector.
  */
 
 #include <xtensa/coreasm.h>
@@ -52,7 +52,7 @@ _start:
 	/*
 	 *  _start is typically NOT at the beginning of the text segment --
 	 *  it is always called from either the reset vector (__start) or other
-	 *  code that does equivalent initialization (such as crt0-app.S).
+	 *  code that does equivalent initialization.
 	 *
 	 *  Assumptions on entry to _start:
 	 *	- low (level-one) and medium priority interrupts are disabled
