@@ -269,7 +269,7 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-		if (ring_buf_is_empty(data->tx_fifo.rb)) {
+		if (ring_buf_space_get(data->tx_fifo.rb)) {
 			/* Raise TX ready interrupt */
 			cdc_acm_work_submit(&data->irq_cb_work);
 		} else {
@@ -613,7 +613,7 @@ static void cdc_acm_irq_tx_enable(const struct device *dev)
 
 	atomic_set_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED);
 
-	if (ring_buf_is_empty(data->tx_fifo.rb)) {
+	if (ring_buf_space_get(data->tx_fifo.rb)) {
 		LOG_INF("tx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -707,7 +707,9 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (check_wq_ctx(dev)) {
-		return ring_buf_space_get(data->tx_fifo.rb);
+		if (data->tx_fifo.irq) {
+			return ring_buf_space_get(data->tx_fifo.rb);
+		}
 	} else {
 		LOG_WRN("Invoked by inappropriate context");
 		__ASSERT_NO_MSG(false);
@@ -721,7 +723,7 @@ static int cdc_acm_irq_rx_ready(const struct device *dev)
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (check_wq_ctx(dev)) {
-		if (!ring_buf_is_empty(data->rx_fifo.rb)) {
+		if (data->rx_fifo.irq) {
 			return 1;
 		}
 	} else {
@@ -767,7 +769,7 @@ static int cdc_acm_irq_update(const struct device *dev)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_is_empty(data->tx_fifo.rb)) {
+	    ring_buf_space_get(data->tx_fifo.rb)) {
 		data->tx_fifo.irq = true;
 	} else {
 		data->tx_fifo.irq = false;
@@ -834,7 +836,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_is_empty(data->tx_fifo.rb)) {
+	    ring_buf_space_get(data->tx_fifo.rb)) {
 		LOG_DBG("tx irq pending, submit irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
