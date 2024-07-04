@@ -17,7 +17,7 @@
 #include <zephyr/net/http/frame.h>
 
 /* HTTP1/HTTP2 state handling */
-int handle_http_frame_rst_frame(struct http_client_ctx *client);
+int handle_http_frame_rst_stream(struct http_client_ctx *client);
 int handle_http_frame_goaway(struct http_client_ctx *client);
 int handle_http_frame_settings(struct http_client_ctx *client);
 int handle_http_frame_priority(struct http_client_ctx *client);
