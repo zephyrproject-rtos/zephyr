@@ -790,7 +790,7 @@ static void z_ztest_shuffle(bool shuffle, void *dest[], intptr_t start,
 #endif
 
 static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite,
-				      bool shuffle, int suite_iter, int case_iter)
+				      bool shuffle, int suite_iter, int case_iter, void *param)
 {
 	struct ztest_unit_test *test = NULL;
 	void *data = NULL;
@@ -828,6 +828,9 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite,
 #endif
 	if (test_result != ZTEST_RESULT_SUITE_FAIL && suite->setup != NULL) {
 		data = suite->setup();
+	}
+	if (param != NULL) {
+		data = param;
 	}
 
 	for (int i = 0; i < case_iter; i++) {
@@ -900,10 +903,11 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite,
 	return fail;
 }
 
-int z_ztest_run_test_suite(const char *name, bool shuffle, int suite_iter, int case_iter)
+int z_ztest_run_test_suite(const char *name, bool shuffle,
+	int suite_iter, int case_iter, void *param)
 {
 	return z_ztest_run_test_suite_ptr(ztest_find_test_suite(name),
-					shuffle, suite_iter, case_iter);
+					shuffle, suite_iter, case_iter, param);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1058,14 +1062,15 @@ static void __ztest_show_suite_summary(void)
 }
 
 static int __ztest_run_test_suite(struct ztest_suite_node *ptr,
-			const void *state, bool shuffle, int suite_iter, int case_iter)
+			const void *state, bool shuffle, int suite_iter, int case_iter, void *param)
 {
 	struct ztest_suite_stats *stats = ptr->stats;
 	int count = 0;
 
 	for (int i = 0; i < suite_iter; i++) {
 		if (ztest_api.should_suite_run(state, ptr)) {
-			int fail = z_ztest_run_test_suite_ptr(ptr, shuffle, suite_iter, case_iter);
+			int fail = z_ztest_run_test_suite_ptr(ptr, shuffle,
+							suite_iter, case_iter, param);
 
 			count++;
 			stats->run_count++;
@@ -1081,7 +1086,7 @@ static int __ztest_run_test_suite(struct ztest_suite_node *ptr,
 int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter, int case_iter)
 {
 	int count = 0;
-
+	void *param = NULL;
 	if (test_status == ZTEST_STATUS_CRITICAL_ERROR) {
 		return count;
 	}
@@ -1101,7 +1106,7 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 	}
 	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
 		count += __ztest_run_test_suite(suites_to_run[i],
-				state, shuffle, suite_iter, case_iter);
+				state, shuffle, suite_iter, case_iter, param);
 		/* Stop running tests if we have a critical error or if we have a failure and
 		 * FAIL_FAST was set
 		 */
@@ -1114,7 +1119,7 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 			ptr < _ztest_suite_node_list_end; ++ptr) {
 		__ztest_init_unit_test_result_for_suite(ptr);
-		count += __ztest_run_test_suite(ptr, state, shuffle, suite_iter, case_iter);
+		count += __ztest_run_test_suite(ptr, state, shuffle, suite_iter, case_iter, param);
 		/* Stop running tests if we have a critical error or if we have a failure and
 		 * FAIL_FAST was set
 		 */
@@ -1328,10 +1333,10 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 	int opt_index = 0;
 	int val;
 	int opt_num = 0;
-
+	void *param = NULL;
 	int repeat_iter = 1;
 
-	while ((opt = getopt_long(argc, argv, "r:", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "r:p:", long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'r':
@@ -1342,6 +1347,10 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 				return -ENOEXEC;
 			}
 			repeat_iter = val;
+			opt_num++;
+			break;
+		case 'p':
+			param = state->optarg;
 			opt_num++;
 			break;
 		default:
@@ -1355,10 +1364,10 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 	const char *shell_command = argv[0];
 
 	/*
-	* This if statement sets the appropriate test argument for ztest_set_test_args.
-	* If the optional argument is used (opt_num == 1), it sets the test argument to the third element (argv[3]).
-	* If the optional argument is not used, it sets the test argument to the first element (argv[1]).
-	*/
+	 * This if statement determines which argv contains the test name.
+	 * If the optional argument is used, the test name is in the third
+	 * argv instead of the first.
+	 */
 	if (opt_num == 1) {
 		ztest_set_test_args(argv[3]);
 	} else {
@@ -1369,9 +1378,9 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 			ptr < _ztest_suite_node_list_end; ++ptr) {
 		__ztest_init_unit_test_result_for_suite(ptr);
 		if (strcmp(shell_command, "run-testcase") == 0) {
-			count += __ztest_run_test_suite(ptr, NULL, shuffle, 1, repeat_iter);
+			count += __ztest_run_test_suite(ptr, NULL, shuffle, 1, repeat_iter, param);
 		} else if (strcmp(shell_command, "run-testsuite") == 0) {
-			count += __ztest_run_test_suite(ptr, NULL, shuffle, repeat_iter, 1);
+			count += __ztest_run_test_suite(ptr, NULL, shuffle, repeat_iter, 1, NULL);
 		}
 		if (test_status == ZTEST_STATUS_CRITICAL_ERROR ||
 				(test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
