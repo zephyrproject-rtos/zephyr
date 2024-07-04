@@ -514,8 +514,4 @@
 #include CONFIG_MBEDTLS_USER_CONFIG_FILE
 #endif
 
-#if defined(CONFIG_BUILD_WITH_TFM)
-#undef MBEDTLS_PSA_CRYPTO_C
-#endif
-
 #endif /* MBEDTLS_CONFIG_H */
