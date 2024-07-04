@@ -8,6 +8,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/util.h>
 
 #define NAME_LEN 30
@@ -175,7 +176,7 @@ BT_GATT_SERVICE_DEFINE(pawr_svc, BT_GATT_PRIMARY_SERVICE(&pawr_svc_uuid.uuid),
 
 void connected(struct bt_conn *conn, uint8_t err)
 {
-	printk("Connected (err 0x%02X)\n", err);
+	printk("Connected, err 0x%02X %s\n", err, bt_hci_err_to_str(err));
 
 	if (err) {
 		default_conn = NULL;
@@ -191,7 +192,7 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
-	printk("Disconnected (reason 0x%02X)\n", reason);
+	printk("Disconnected, reason 0x%02X %s\n", reason, bt_hci_err_to_str(reason));
 }
 
 BT_CONN_CB_DEFINE(conn_cb) = {

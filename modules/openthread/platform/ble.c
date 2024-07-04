@@ -322,7 +322,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	ot_plat_ble_connection = bt_conn_ref(conn);
 
 	if (err) {
-		LOG_WRN("Connection failed (err %u)", err);
+		LOG_WRN("Connection failed err %u %s",
+			err, bt_hci_err_to_str(err));
 		return;
 	} else if (bt_conn_get_info(conn, &info)) {
 		LOG_WRN("Could not parse connection info");
@@ -342,7 +343,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	otError error = OT_ERROR_NONE;
 
-	LOG_INF("Disconnected (reason %" PRIu8 ")", reason);
+	LOG_INF("Disconnected, reason 0x%02x %s", reason, bt_hci_err_to_str(reason));
 
 	if (ot_plat_ble_connection) {
 		bt_conn_unref(ot_plat_ble_connection);
