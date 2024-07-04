@@ -209,10 +209,7 @@ static void wdt_event_handler(const struct device *dev, nrf_wdt_event_t event_ty
 		}							       \
 		return 0;						       \
 	}								       \
-	static struct wdt_nrfx_data wdt_##idx##_data = {		       \
-		.m_timeout = 0,						       \
-		.m_allocated_channels = 0,				       \
-	};								       \
+	static struct wdt_nrfx_data wdt_##idx##_data;			       \
 	static const struct wdt_nrfx_config wdt_##idx##z_config = {	       \
 		.wdt = NRFX_WDT_INSTANCE(idx),				       \
 	};								       \
