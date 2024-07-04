@@ -371,9 +371,10 @@ ZTEST(server_function_tests, test_parse_http_frames)
 	ctx_client2.data_len = ARRAY_SIZE(buffer2);
 
 	/* Test: Buffer with the first frame */
-	int parser1 = parse_http_frame_header(&ctx_client1);
+	int parser1 = parse_http_frame_header(&ctx_client1, ctx_client1.cursor,
+					      ctx_client1.data_len);
 
-	zassert_equal(parser1, 1, "Failed to parse the first frame");
+	zassert_equal(parser1, 0, "Failed to parse the first frame");
 
 	frame = &ctx_client1.current_frame;
 
@@ -385,9 +386,10 @@ ZTEST(server_function_tests, test_parse_http_frames)
 		      "Expected stream_identifier for the 1st frame doesn't match");
 
 	/* Test: Buffer with the second frame */
-	int parser2 = parse_http_frame_header(&ctx_client2);
+	int parser2 = parse_http_frame_header(&ctx_client2, ctx_client2.cursor,
+					      ctx_client2.data_len);
 
-	zassert_equal(parser2, 1, "Failed to parse the second frame");
+	zassert_equal(parser2, 0, "Failed to parse the second frame");
 
 	frame = &ctx_client2.current_frame;
 

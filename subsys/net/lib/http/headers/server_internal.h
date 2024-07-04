@@ -42,7 +42,8 @@ int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t 
 void http_client_timer_restart(struct http_client_ctx *client);
 
 /* TODO Could be static, but currently used in tests. */
-int parse_http_frame_header(struct http_client_ctx *client);
+int parse_http_frame_header(struct http_client_ctx *client, const uint8_t *buffer,
+			    size_t buflen);
 const char *get_frame_type_name(enum http2_frame_type type);
 
 #endif /* HTTP_SERVER_INTERNAL_H_ */

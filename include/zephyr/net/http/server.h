@@ -377,6 +377,9 @@ struct http_client_ctx {
 
 	/** Flag indicating Websocket key is being processed. */
 	bool websocket_sec_key_next : 1;
+
+	/** The next frame on the stream is expectd to be a continuation frame. */
+	bool expect_continuation : 1;
 };
 
 /** @brief Start the HTTP2 server.

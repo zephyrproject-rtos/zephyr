@@ -670,6 +670,12 @@ static int enter_http_frame_headers_state(struct http_client_ctx *client)
 		}
 	}
 
+	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
+		client->expect_continuation = true;
+	} else {
+		client->expect_continuation = false;
+	}
+
 	client->server_state = HTTP_SERVER_FRAME_HEADERS_STATE;
 
 	return 0;
@@ -677,6 +683,14 @@ static int enter_http_frame_headers_state(struct http_client_ctx *client)
 
 static int enter_http_frame_continuation_state(struct http_client_ctx *client)
 {
+	struct http2_frame *frame = &client->current_frame;
+
+	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
+		client->expect_continuation = true;
+	} else {
+		client->expect_continuation = false;
+	}
+
 	client->server_state = HTTP_SERVER_FRAME_CONTINUATION_STATE;
 
 	return 0;
@@ -712,24 +726,25 @@ static int enter_http_frame_goaway_state(struct http_client_ctx *client)
 
 int handle_http_frame_header(struct http_client_ctx *client)
 {
-	int bytes_consumed;
-	int parse_result;
+	int ret;
 
 	LOG_DBG("HTTP_SERVER_FRAME_HEADER");
 
-	parse_result = parse_http_frame_header(client);
-	if (parse_result == 0) {
-		return -EAGAIN;
-	} else if (parse_result < 0) {
-		return parse_result;
+	ret = parse_http_frame_header(client, client->cursor, client->data_len);
+	if (ret < 0) {
+		return ret;
 	}
 
-	bytes_consumed = HTTP2_FRAME_HEADER_SIZE;
-
-	client->cursor += bytes_consumed;
-	client->data_len -= bytes_consumed;
+	client->cursor += HTTP2_FRAME_HEADER_SIZE;
+	client->data_len -= HTTP2_FRAME_HEADER_SIZE;
 
 	print_http_frames(client);
+
+	if (client->expect_continuation &&
+	    client->current_frame.type != HTTP2_CONTINUATION_FRAME) {
+		LOG_ERR("Continuation frame expected");
+		return -EBADMSG;
+	}
 
 	switch (client->current_frame.type) {
 	case HTTP2_DATA_FRAME:
@@ -1032,6 +1047,61 @@ static int process_header(struct http_client_ctx *client,
 	return 0;
 }
 
+static int handle_incomplete_http_header(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+	size_t extra_len, prev_frame_len;
+	int ret;
+
+	if (client->data_len < frame->length) {
+		/* Still did not receive entire frame content */
+		return -EAGAIN;
+	}
+
+	if (!client->expect_continuation) {
+		/* Failed to parse header field while the frame is complete
+		 * and no continuation frame is expected - report protocol
+		 * error.
+		 */
+		LOG_ERR("Incomplete header field");
+		return -EBADMSG;
+	}
+
+	/* A header field can be split between two frames, i. e. header and
+	 * continuation or two continuation frames. Because of this, the
+	 * continuation frame header can be present in the stream in between
+	 * header field data, so in such case we need to check for header here
+	 * and remove it from the stream to unblock further processing of the
+	 * header field.
+	 */
+	prev_frame_len = frame->length;
+	extra_len = client->data_len - frame->length;
+	ret = parse_http_frame_header(client, client->cursor + prev_frame_len,
+				      extra_len);
+	if (ret < 0) {
+		return -EAGAIN;
+	}
+
+	/* Continuation frame expected. */
+	if (frame->type != HTTP2_CONTINUATION_FRAME) {
+		LOG_ERR("Continuation frame expected");
+		return -EBADMSG;
+	}
+
+	print_http_frames(client);
+	/* Now remove continuation frame header from the stream, and proceed
+	 * with processing.
+	 */
+	extra_len -= HTTP2_FRAME_HEADER_SIZE;
+	client->data_len -= HTTP2_FRAME_HEADER_SIZE;
+	frame->length += prev_frame_len;
+	memmove(client->cursor + prev_frame_len,
+		client->cursor + prev_frame_len + HTTP2_FRAME_HEADER_SIZE,
+		extra_len);
+
+	return enter_http_frame_continuation_state(client);
+}
+
 int handle_http_frame_headers(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
@@ -1056,11 +1126,16 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 
 	while (frame->length > 0) {
 		struct http_hpack_header_buf *header = &client->header_field;
+		size_t datalen = MIN(client->data_len, frame->length);
 
-		ret = http_hpack_decode_header(client->cursor, client->data_len,
-					       header);
+		ret = http_hpack_decode_header(client->cursor, datalen, header);
 		if (ret <= 0) {
-			ret = (ret == 0) ? -EBADMSG : ret;
+			if (ret == -EAGAIN) {
+				ret = handle_incomplete_http_header(client);
+			} else if (ret == 0) {
+				ret = -EBADMSG;
+			}
+
 			return ret;
 		}
 
@@ -1082,12 +1157,9 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		}
 	}
 
-	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
+	if (client->expect_continuation) {
 		/* More headers to come in the continuation frame. */
 		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
-
-		/* TODO Implement continuation frame processing. */
-
 		return 0;
 	}
 
@@ -1325,16 +1397,13 @@ const char *get_frame_type_name(enum http2_frame_type type)
 	}
 }
 
-int parse_http_frame_header(struct http_client_ctx *client)
+int parse_http_frame_header(struct http_client_ctx *client, const uint8_t *buffer,
+			    size_t buflen)
 {
-	uint8_t *buffer = client->cursor;
 	struct http2_frame *frame = &client->current_frame;
 
-	frame->length = 0;
-	frame->stream_identifier = 0;
-
-	if (client->data_len < HTTP2_FRAME_HEADER_SIZE) {
-		return 0;
+	if (buflen < HTTP2_FRAME_HEADER_SIZE) {
+		return -EAGAIN;
 	}
 
 	frame->length = sys_get_be24(&buffer[HTTP2_FRAME_LENGTH_OFFSET]);
@@ -1348,5 +1417,5 @@ int parse_http_frame_header(struct http_client_ctx *client)
 	LOG_DBG("Frame len %d type 0x%02x flags 0x%02x id %d",
 		frame->length, frame->type, frame->flags, frame->stream_identifier);
 
-	return 1;
+	return 0;
 }
