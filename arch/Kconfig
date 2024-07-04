@@ -1084,3 +1084,10 @@ config ARCH_CPU_IDLE_CUSTOM
 	help
 	  This options allows applications to override the default arch idle implementation with
 	  a custom one.
+
+config ARCH_CPU_ATOMIC_IDLE_CUSTOM
+	bool "Custom arch_cpu_atomic_idle implementation"
+	default n
+	help
+	  This options allows applications to override the default arch idle implementation with
+	  a custom one.
