@@ -143,6 +143,7 @@ REDIRECTS = [
     ('guides/west/workspaces', 'develop/west/workspaces'),
     ('guides/west/zephyr-cmds', 'develop/west/zephyr-cmds'),
     ('guides/zephyr_cmake_package', 'build/zephyr_cmake_package'),
+    ('hardware/peripherals/eeprom', 'hardware/peripherals/eeprom/index'),
     ('hardware/peripherals/sensor', 'hardware/peripherals/sensor/index'),
     ('reference/api/api_lifecycle', 'develop/api/api_lifecycle'),
     ('reference/api/index', 'develop/api/index'),
