@@ -610,17 +610,17 @@ uint64_t net_buf_simple_pull_be64(struct net_buf_simple *buf)
 	return sys_be64_to_cpu(val);
 }
 
-size_t net_buf_simple_headroom(struct net_buf_simple *buf)
+size_t net_buf_simple_headroom(const struct net_buf_simple *buf)
 {
 	return buf->data - buf->__buf;
 }
 
-size_t net_buf_simple_tailroom(struct net_buf_simple *buf)
+size_t net_buf_simple_tailroom(const struct net_buf_simple *buf)
 {
 	return buf->size - net_buf_simple_headroom(buf) - buf->len;
 }
 
-uint16_t net_buf_simple_max_len(struct net_buf_simple *buf)
+uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf)
 {
 	return buf->size - net_buf_simple_headroom(buf);
 }
