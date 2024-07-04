@@ -58,6 +58,9 @@
 #define LPC11U6X_UARTX_CFG_STOP_1BIT             (0x0 << 6)
 #define LPC11U6X_UARTX_CFG_STOP_2BIT             (0x1 << 6)
 
+#define LPC11U6X_UARTX_CFG_RXPOL(x)              (((x) & 0x1) << 22)
+#define LPC11U6X_UARTX_CFG_TXPOL(x)              (((x) & 0x1) << 23)
+
 #define LPC11U6X_UARTX_CFG_MASK                  (0x00FCDAFD)
 
 #define LPC11U6X_UARTX_STAT_RXRDY                (1 << 0)
@@ -170,6 +173,8 @@ struct lpc11u6x_uartx_config {
 	const struct device *clock_dev;
 	uint32_t baudrate;
 	uint32_t clkid;
+	bool rx_invert;
+	bool tx_invert;
 	const struct pinctrl_dev_config *pincfg;
 };
 
