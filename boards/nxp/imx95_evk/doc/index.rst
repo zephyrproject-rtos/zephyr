@@ -76,28 +76,92 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr imx95_evk board configuration supports the following hardware features:
+The Zephyr imx95_evk_m7 board configuration supports the following hardware features:
 
-+-----------+------------+-------------------------------------+-----------+
-| Interface | Controller | Driver/Component                    | Core      |
-+===========+============+=====================================+===========+
-| NVIC      | on-chip    | interrupt controller                | M7        |
-+-----------+------------+-------------------------------------+-----------+
-| SYSTICK   | on-chip    | systick                             | M7        |
-+-----------+------------+-------------------------------------+-----------+
-| UART      | on-chip    | serial port                         | M7        |
-+-----------+------------+-------------------------------------+-----------+
++-----------+------------+-------------------------------------+
+| Interface | Controller | Driver/Component                    |
++===========+============+=====================================+
+| NVIC      | on-chip    | interrupt controller                |
++-----------+------------+-------------------------------------+
+| SYSTICK   | on-chip    | systick                             |
++-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
+
+The Zephyr imx95_evk_a55 board configuration supports the following hardware features:
+
++-----------+------------+-------------------------------------+
+| Interface | Controller | Driver/Component                    |
++===========+============+=====================================+
+| GIC-v4    | on-chip    | interrupt controller                |
++-----------+------------+-------------------------------------+
+| ARM TIMER | on-chip    | system clock                        |
++-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
 
 System Clock
 ------------
 
+This board configuration uses a system clock frequency of 24 MHz for Cortex-A55.
+Cortex-A55 Core runs up to 1.8 GHz.
 Cortex-M7 Core runs up to 800MHz in which SYSTICK runs on same frequency.
 
 Serial Port
 -----------
 
 This board configuration uses a single serial communication channel with the
-CPU's UART3 for Cortex-M7.
+CPU's UART1 for Cortex-A55, UART3 for Cortex-M7.
+
+Programming and Debugging (A55)
+*******************************
+
+Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
+plug the SD card into the board. Power it up and stop the u-boot execution at
+prompt.
+
+Use U-Boot to load and kick zephyr.bin to Cortex-A55 Core1:
+
+.. code-block:: console
+
+    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu 1 release 0xd0000000
+
+
+Or use the following command to kick zephyr.bin to Cortex-A55 Core0:
+
+.. code-block:: console
+
+    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0xd0000000
+
+
+Use this configuration to run basic Zephyr applications and kernel tests,
+for example, with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: imx95_evk/mimx9596/a55
+   :goals: run
+
+This will build an image with the synchronization sample app, boot it and
+display the following ram console output:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build v3.6.0-4569-g483c01ca11a7 ***
+    thread_a: Hello World from cpu 0 on imx95_evk!
+    thread_b: Hello World from cpu 0 on imx95_evk!
+    thread_a: Hello World from cpu 0 on imx95_evk!
+    thread_b: Hello World from cpu 0 on imx95_evk!
+    thread_a: Hello World from cpu 0 on imx95_evk!
 
 Programming and Debugging (M7)
 ******************************
