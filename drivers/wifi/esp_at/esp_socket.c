@@ -32,6 +32,8 @@ struct esp_socket *esp_socket_get(struct esp_data *data,
 
 			sock->connect_cb = NULL;
 			sock->recv_cb = NULL;
+			memset(&sock->src, 0x0, sizeof(sock->src));
+			memset(&sock->dst, 0x0, sizeof(sock->dst));
 
 			atomic_inc(&sock->refcount);
 
@@ -142,7 +144,7 @@ static struct net_pkt *esp_socket_prepare_pkt(struct esp_socket *sock,
 
 #if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
 	memcpy(&pkt->remote, &sock->context->remote, sizeof(pkt->remote));
-	pkt->family = sock->dst.sa_family;
+	pkt->family = sock->src.sa_family;
 #endif
 
 	return pkt;
