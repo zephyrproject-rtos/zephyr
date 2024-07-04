@@ -349,6 +349,8 @@ static int handle_http2_static_resource(
 		goto out;
 	}
 
+	client->headers_sent = true;
+
 	ret = send_data_frame(client, content_200, content_len,
 			      frame->stream_identifier,
 			      HTTP2_FLAG_END_STREAM);
@@ -356,6 +358,8 @@ static int handle_http2_static_resource(
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		goto out;
 	}
+
+	client->end_stream_sent = true;
 
 out:
 	return ret;
@@ -374,6 +378,8 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		return ret;
 	}
+
+	client->headers_sent = true;
 
 	remaining = strlen(&client->url_buffer[dynamic_detail->common.path_len]);
 
@@ -421,6 +427,8 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 		if (ret < 0) {
 			LOG_DBG("Cannot send last frame (%d)", ret);
 		}
+
+		client->end_stream_sent = true;
 
 		dynamic_detail->holder = NULL;
 
@@ -491,6 +499,7 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 			if (frame->length == 0 &&
 			    is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 				flags = HTTP2_FLAG_END_STREAM;
+				client->end_stream_sent = true;
 			}
 
 			ret = send_data_frame(client,
@@ -523,6 +532,7 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 			}
 
 			client->headers_sent = true;
+			client->end_stream_sent = true;
 		}
 
 		dynamic_detail->holder = NULL;
@@ -1102,6 +1112,75 @@ static int handle_incomplete_http_header(struct http_client_ctx *client)
 	return enter_http_frame_continuation_state(client);
 }
 
+static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+	int ret = 0;
+
+	if (client->current_detail == NULL) {
+		goto out;
+	}
+
+	if (client->current_detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
+		struct http_resource_detail_dynamic *dynamic_detail =
+			(struct http_resource_detail_dynamic *)client->current_detail;
+		int send_len;
+
+		send_len = dynamic_detail->cb(client, HTTP_SERVER_DATA_FINAL,
+					      dynamic_detail->data_buffer, 0,
+					      dynamic_detail->user_data);
+		if (send_len > 0) {
+			if (!client->headers_sent) {
+				ret = send_headers_frame(
+					client, HTTP_200_OK, frame->stream_identifier,
+					client->current_detail, 0);
+				if (ret < 0) {
+					LOG_DBG("Cannot write to socket (%d)", ret);
+					goto out;
+				}
+
+				client->headers_sent = true;
+			}
+
+			ret = send_data_frame(client,
+					      dynamic_detail->data_buffer,
+					      send_len, frame->stream_identifier,
+					      HTTP2_FLAG_END_STREAM);
+			if (ret < 0) {
+				LOG_DBG("Cannot send data frame (%d)", ret);
+				goto out;
+			}
+
+			client->end_stream_sent = true;
+		}
+
+		dynamic_detail->holder = NULL;
+	}
+
+	if (!client->headers_sent) {
+		ret = send_headers_frame(
+			client, HTTP_200_OK, frame->stream_identifier,
+			client->current_detail, HTTP2_FLAG_END_STREAM);
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+			goto out;
+		}
+	} else if (!client->end_stream_sent) {
+		ret = send_data_frame(client, NULL, 0, frame->stream_identifier,
+				      HTTP2_FLAG_END_STREAM);
+		if (ret < 0) {
+			LOG_DBG("Cannot send last frame (%d)", ret);
+		}
+	}
+
+	client->current_detail = NULL;
+
+out:
+	release_http_stream_context(client, frame->stream_identifier);
+
+	return ret;
+}
+
 int handle_http_frame_headers(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
@@ -1191,7 +1270,10 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 	}
 
 	if (is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
-		release_http_stream_context(client, frame->stream_identifier);
+		ret = handle_http_frame_headers_end_stream(client);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (frame->padding_len > 0) {
