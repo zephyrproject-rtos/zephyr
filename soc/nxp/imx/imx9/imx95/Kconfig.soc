@@ -11,6 +11,12 @@ config SOC_MIMX9596_M7
 	help
 	  NXP i.MX95 M7
 
+config SOC_MIMX9596_A55
+	bool
+	select SOC_MIMX9596
+	help
+	  NXP i.MX95 A55
+
 config SOC
 	default "mimx9596" if SOC_MIMX9596
 
