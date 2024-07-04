@@ -652,8 +652,14 @@ static void set_phy_conn_param(const struct bt_conn *conn,
 	phy->conn_latency = sys_cpu_to_le16(conn->le.latency);
 	phy->supervision_timeout = sys_cpu_to_le16(conn->le.timeout);
 
-	phy->min_ce_len = 0;
-	phy->max_ce_len = 0;
+	if (CONFIG_BT_MAX_CONN >= 8)
+	{
+		phy->min_ce_len = 2;
+		phy->max_ce_len = 2;
+	} else {
+		phy->min_ce_len = 0;
+		phy->max_ce_len = 0;
+	}
 }
 
 int bt_le_create_conn_ext(const struct bt_conn *conn)
