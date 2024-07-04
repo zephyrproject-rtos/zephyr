@@ -181,6 +181,11 @@ At compilation time you have to choose which RAM will be used. This
 configuration is done based on board name (imx8mp_evk/mimx8ml8/m7 for ITCM and
 imx8mp_evk/mimx8ml8/m7/ddr for DDR).
 
+There are two methods to load M7 Core images: U-Boot command and Linux remoteproc.
+
+Load and Run M7 Zephyr Image from U-Boot
+========================================
+
 Load and run Zephyr on M7 from A53 using u-boot by copying the compiled
 ``zephyr.bin`` to the first FAT partition of the SD card and plug the SD
 card into the board. Power it up and stop the u-boot execution at prompt.
@@ -188,7 +193,7 @@ card into the board. Power it up and stop the u-boot execution at prompt.
 Load the M7 binary onto the desired memory and start its execution using:
 
 ITCM
-===
+====
 
 .. code-block:: console
 
@@ -204,6 +209,86 @@ DDR
    fatload mmc 0:1 0x80000000 zephyr.bin
    dcache flush
    bootaux 0x80000000
+
+Load and Run M7 Zephyr Image by using Linux remoteproc
+======================================================
+
+Prepare device tree:
+
+The device tree must inlcude CM7 dts node with compatible string "fsl,imx8mn-cm7",
+and also need to reserve M4 DDR memory if using DDR code and sys address, and also
+need to put "m4_reserved" in the list of memory-region property of the cm7 node.
+
+.. code-block:: console
+
+   reserved-memory {
+            #address-cells = <2>;
+            #size-cells = <2>;
+            ranges;
+
+            m7_reserved: m4@80000000 {
+                  no-map;
+                  reg = <0 0x80000000 0 0x1000000>;
+            };
+            ...
+   }
+
+
+   imx8mp-cm7 {
+            compatible = "fsl,imx8mn-cm7";
+            rsc-da = <0x55000000>;
+            clocks = <&clk IMX8MP_CLK_M7_DIV>,
+                     <&audio_blk_ctrl IMX8MP_CLK_AUDIO_BLK_CTRL_AUDPLL_ROOT>;
+            clock-names = "core", "audio";
+            mbox-names = "tx", "rx", "rxdb";
+            mboxes = <&mu 0 1
+                     &mu 1 1
+                     &mu 3 1>;
+            memory-region = <&vdevbuffer>, <&vdev0vring0>, <&vdev0vring1>, <&rsc_table>, <&m7_reserved>;
+            status = "okay";
+            fsl,startup-delay-ms = <500>;
+   };
+
+Extra Zephyr Kernel configure item for DDR Image:
+
+If use remotepoc to boot DDR board (imx8mp_evk/mimx8ml8/m7/ddr), also need to enable
+"CONFIG_ROMSTART_RELOCATION_ROM" in order to put romstart memory section into ITCM because
+M7 Core will get the first instruction from zero address of ITCM, but romstart relocation
+will make the storage size of zephyr.bin too large, so we don't enable it by default in
+board defconfig.
+
+.. code-block:: console
+
+   diff --git a/boards/nxp/imx8mp_evk/imx8mp_evk_mimx8ml8_m7_ddr_defconfig b/boards/nxp/imx8mp_evk/imx8mp_evk_mimx8ml8_m7_ddr_defconfig
+   index 17542cb4eec..8c30c5b6fa3 100644
+   --- a/boards/nxp/imx8mp_evk/imx8mp_evk_mimx8ml8_m7_ddr_defconfig
+   +++ b/boards/nxp/imx8mp_evk/imx8mp_evk_mimx8ml8_m7_ddr_defconfig
+   @@ -12,3 +12,4 @@ CONFIG_CONSOLE=y
+   CONFIG_XIP=y
+   CONFIG_CODE_DDR=y
+   CONFIG_PINCTRL=y
+   +CONFIG_ROMSTART_RELOCATION_ROM=y
+
+Then use the following steps to boot Zephyr kernel:
+
+1. In U-Boot command line execute prepare script:
+
+.. code-block:: console
+
+   u-boot=> run prepare_mcore
+
+2. Boot Linux kernel with specified dtb and then boot Zephyr by using remoteproc:
+
+.. code-block:: console
+
+   root@imx8mp-lpddr4-evk:~# echo zephyr.elf > /sys/devices/platform/imx8mp-cm7/remoteproc/remoteproc0/firmware
+   root@imx8mp-lpddr4-evk:~# echo start  > /sys/devices/platform/imx8mp-cm7/remoteproc/remoteproc0/state
+   [   39.195651] remoteproc remoteproc0: powering up imx-rproc
+   [   39.203345] remoteproc remoteproc0: Booting fw image zephyr.elf, size 503992
+   [   39.203388] remoteproc remoteproc0: No resource table in elf
+   root@imx8mp-lpddr4-evk:~# [   39.711380] remoteproc remoteproc0: remote processor imx-rproc is now up
+
+   root@imx8mp-lpddr4-evk:~#
 
 Debugging
 =========
