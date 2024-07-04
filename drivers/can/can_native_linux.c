@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <cmdline.h>
+#include <posix_native_task.h>
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/kernel.h>
@@ -45,6 +47,8 @@ struct can_native_linux_config {
 	const struct can_driver_config common;
 	const char *if_name;
 };
+
+static const char *if_name_cmd_opt;
 
 static void dispatch_frame(const struct device *dev, struct can_frame *frame)
 {
@@ -445,13 +449,21 @@ static int can_native_linux_init(const struct device *dev)
 {
 	const struct can_native_linux_config *cfg = dev->config;
 	struct can_native_linux_data *data = dev->data;
+	const char *if_name;
 
 	k_mutex_init(&data->filter_mutex);
 	k_sem_init(&data->tx_idle, 1, 1);
 
-	data->dev_fd = linux_socketcan_iface_open(cfg->if_name);
+	if (if_name_cmd_opt != NULL) {
+		if_name = if_name_cmd_opt;
+	} else {
+		if_name = cfg->if_name;
+	}
+
+	LOG_DBG("Opening %s", if_name);
+	data->dev_fd = linux_socketcan_iface_open(if_name);
 	if (data->dev_fd < 0) {
-		LOG_ERR("Cannot open %s (%d)", cfg->if_name, data->dev_fd);
+		LOG_ERR("Cannot open %s (%d)", if_name, data->dev_fd);
 		return -ENODEV;
 	}
 
@@ -482,3 +494,22 @@ CAN_DEVICE_DT_INST_DEFINE(inst, can_native_linux_init, NULL,			\
 			  &can_native_linux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_NATIVE_LINUX_INIT)
+
+static void add_native_posix_options(void)
+{
+	static struct args_struct_t can_native_posix_options[] = {
+		{
+			.is_mandatory = false,
+			.option = "can-if",
+			.name = "name",
+			.type = 's',
+			.dest = (void *)&if_name_cmd_opt,
+			.descript = "Name of the host CAN interface to use",
+		},
+		ARG_TABLE_ENDMARKER,
+	};
+
+	native_add_command_line_opts(can_native_posix_options);
+}
+
+NATIVE_TASK(add_native_posix_options, PRE_BOOT_1, 10);
