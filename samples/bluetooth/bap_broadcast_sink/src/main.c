@@ -849,8 +849,6 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 	k_sem_give(&sem_syncable);
 
 	if (!biginfo->encryption) {
-		/* Use the semaphore as a boolean */
-		k_sem_reset(&sem_broadcast_code_received);
 		k_sem_give(&sem_broadcast_code_received);
 	}
 }
@@ -1010,8 +1008,6 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 	(void)memcpy(sink_broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
 
-	/* Use the semaphore as a boolean */
-	k_sem_reset(&sem_broadcast_code_received);
 	k_sem_give(&sem_broadcast_code_received);
 }
 
