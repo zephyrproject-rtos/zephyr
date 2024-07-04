@@ -525,7 +525,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 	}
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE    
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	if (params->suiteb_type == WIFI_SUITEB) {
 		cipher_capa = WPA_CAPA_ENC_GCMP;
 		gropu_mgmt_cipher_capa =WPA_CAPA_ENC_BIP_GMAC_128;
@@ -680,7 +680,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 			if (!wpa_cli_cmd_v("set_network %d group_mgmt %s", resp.network_id, group_mgmt_cipher))
 				goto out;
-            
+
 			if (!wpa_cli_cmd_v("set_network %d proto RSN",
 						resp.network_id)) {
 				goto out;
@@ -1625,6 +1625,61 @@ int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_config_para
 
 	return wifi_mgmt_api->ap_bandwidth(dev, params);
 }
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
+{
+	struct hostapd_iface *iface;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+	int ret = 0;
+
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY) {
+		if (!wifi_mgmt_api || !wifi_mgmt_api->ap_config_params) {
+			wpa_printf(MSG_ERROR, "ap_config_params not supported");
+			return -ENOTSUP;
+		}
+
+		ret = wifi_mgmt_api->ap_config_params(dev, params);
+		if (ret) {
+			wpa_printf(MSG_ERROR,
+					   "Failed to set maximum inactivity duration for stations");
+		} else {
+			wpa_printf(MSG_INFO,
+					   "Set maximum inactivity duration for stations: %d (s)",
+					   params->max_inactivity);
+		}
+	}
+
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
+		k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+		iface = get_hostapd_handle(dev);
+		if (!iface) {
+			ret = -1;
+			wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+			goto out;
+		}
+
+		if (iface->state > HAPD_IFACE_DISABLED) {
+			ret = -EBUSY;
+			wpa_printf(MSG_ERROR, "Interface %s is not in disable state", dev->name);
+			goto out;
+		}
+
+		if (!hostapd_cli_cmd_v("set max_num_sta %d", params->max_num_sta)) {
+			ret = -1;
+			wpa_printf(MSG_ERROR, "Failed to set maximum number of stations");
+			goto out;
+		}
+		wpa_printf(MSG_INFO, "Set maximum number of stations: %d", params->max_num_sta);
+
+out:
+		k_mutex_unlock(&wpa_supplicant_mutex);
+	}
+
+	return ret;
+}
+#endif
 #endif
 
 int supplicant_ap_enable(const struct device *dev,
