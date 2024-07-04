@@ -335,6 +335,15 @@ config BT_CTLR_ADV_AUX_SET
 	help
 	  Maximum supported advertising auxiliary channel sets.
 
+config BT_CTLR_ADV_USE_MAX_SECONDARY_INTERVAL
+	bool "Use the maximum possible interval between ADV_AUX_INDs"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	default n
+	help
+	  Use the value of Secondary_Advertising_Max_Skip to only send
+	  ADV_AUX_IND when required - ie. skip as many as allowed by the
+	  parameters set by the host.
+
 config BT_CTLR_ADV_SYNC_SET
 	int "LE Periodic Advertising Sets"
 	depends on BT_CTLR_ADV_PERIODIC
