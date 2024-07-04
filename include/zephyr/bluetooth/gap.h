@@ -82,6 +82,8 @@ extern "C" {
 #define BT_GAP_INIT_CONN_INT_MIN                0x0018
 /** Recommended maximum initial connection interval. 50 ms. */
 #define BT_GAP_INIT_CONN_INT_MAX                0x0028
+#define BT_GAP_INIT_CONN_MUL_LINK_MIN           0x0054  /* 105 ms   */
+#define BT_GAP_INIT_CONN_MUL_LINK_MAX           0x0054  /* 105 ms   */
 /**
  * @}
  */
