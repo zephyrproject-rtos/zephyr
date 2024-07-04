@@ -484,6 +484,7 @@ endchoice
 
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
+	depends on !BUILD_WITH_TFM
 	default y if UOSCORE || UEDHOC
 
 config MBEDTLS_USE_PSA_CRYPTO
