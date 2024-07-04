@@ -1206,7 +1206,7 @@ Release Notes:
     - samples/drivers/eeprom/
     - tests/drivers/eeprom/
     - tests/drivers/*/eeprom/
-    - doc/hardware/peripherals/eeprom.rst
+    - doc/hardware/peripherals/eeprom/
   labels:
     - "area: EEPROM"
   tests:
