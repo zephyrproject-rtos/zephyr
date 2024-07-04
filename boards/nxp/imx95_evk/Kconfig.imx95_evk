@@ -1,0 +1,6 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_IMX95_EVK
+	select SOC_MIMX9596_M7 if BOARD_IMX95_EVK_MIMX9596_M7
+	select SOC_PART_NUMBER_MIMX9596AVZXN

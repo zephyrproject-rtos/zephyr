@@ -1,0 +1,5 @@
+board:
+  name: imx95_evk
+  vendor: nxp
+  socs:
+  - name: mimx9596
