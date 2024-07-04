@@ -279,11 +279,43 @@ BT_IAS_CB_DEFINE(ias_callbacks) = {
 	.high_alert = alert_high_start,
 };
 
+static int read_controller_info(void)
+{
+	struct net_buf *rsp;
+	int err;
+
+	/* Read Local Version Information */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_VERSION_INFO, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+
+	struct bt_hci_rp_read_local_version_info *ctlr_info = (void *)rsp->data;
+
+	printk("Controller information:\n");
+	printk("  status: 0x%02x\n", ctlr_info->status);
+	printk("  manufacturer: 0x%04x\n", sys_le16_to_cpu(ctlr_info->manufacturer));
+	printk("  hci_version: 0x%02x\n", ctlr_info->hci_version);
+	printk("  hci_revision: 0x%04x\n", sys_le16_to_cpu(ctlr_info->hci_revision));
+	printk("  lmp_version: 0x%02x\n", ctlr_info->lmp_version);
+	printk("  lmp_subversion: 0x%04x\n", sys_le16_to_cpu(ctlr_info->lmp_subversion));
+
+	net_buf_unref(rsp);
+
+	return 0;
+}
+
 static void bt_ready(void)
 {
 	int err;
 
 	printk("Bluetooth initialized\n");
+
+	err = read_controller_info();
+	if (err) {
+		printk("Failed to read controller info (err %d)\n", err);
+		return;
+	}
 
 	cts_init();
 
