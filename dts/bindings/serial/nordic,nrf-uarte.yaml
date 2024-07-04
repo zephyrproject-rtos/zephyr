@@ -13,3 +13,12 @@ properties:
     type: boolean
     description: |
       UARTE has RX frame timeout HW feature.
+  base-frequency:
+    type: int
+    description: |
+      Frequency that UARTE is clocked in MHz. If not provided then assuming 16MHz.
+      Baudrate value is recalculated by the ratio between that frequency and 16MHz.
+    enum:
+      - 16
+      - 128
+      - 320

@@ -137,6 +137,7 @@
 				status = "disabled";
 				short-endtx-stoptx;
 				frame-timeout;
+				base-frequency = <128>;
 			};
 
 			cpuflpr_vpr: vpr@4c000 {
