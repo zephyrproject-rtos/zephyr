@@ -333,7 +333,7 @@ static int itds_init(const struct device *dev)
 
 	if (rval != ITDS_DEVICE_ID) {
 		LOG_ERR("device ID mismatch: %x", rval);
-		return ret;
+		return -EIO;
 	}
 
 	ret = i2c_reg_update_byte_dt(&cfg->i2c, ITDS_REG_CTRL2,
