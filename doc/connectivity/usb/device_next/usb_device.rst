@@ -23,31 +23,6 @@ classes and provides an API to implement custom USB functions.
 The new USB device support is considered experimental and will replace
 :ref:`usb_device_stack`.
 
-Built-in functions
-==================
-
-The USB device stack has built-in USB functions. Some can be used directly in
-the user application through a special API, such as HID or Audio class devices,
-while others use a general Zephyr RTOS driver API, such as MSC and CDC class
-implementations. The *Identification string* identifies a class or function
-instance (``n``) and is used as an argument to the :c:func:`usbd_register_class`.
-
-+-----------------------------------+-------------------------+-------------------------+
-| Class or function                 | User API (if any)       | Identification string   |
-+===================================+=========================+=========================+
-| USB Audio 2 class                 | :ref:`uac2_device`      | :samp:`uac2_{n}`        |
-+-----------------------------------+-------------------------+-------------------------+
-| USB CDC ACM class                 | :ref:`uart_api`         | :samp:`cdc_acm_{n}`     |
-+-----------------------------------+-------------------------+-------------------------+
-| USB CDC ECM class                 | Ethernet device         | :samp:`cdc_ecm_{n}`     |
-+-----------------------------------+-------------------------+-------------------------+
-| USB Mass Storage Class (MSC)      | :ref:`usbd_msc_device`  | :samp:`msc_{n}`         |
-+-----------------------------------+-------------------------+-------------------------+
-| USB Human Interface Devices (HID) | :ref:`usbd_hid_device`  | :samp:`hid_{n}`         |
-+-----------------------------------+-------------------------+-------------------------+
-| Bluetooth HCI USB transport layer | :ref:`bt_hci_raw`       | :samp:`bt_hci_{n}`      |
-+-----------------------------------+-------------------------+-------------------------+
-
 Samples
 =======
 
@@ -223,3 +198,28 @@ for this capability.
    :dedent:
    :start-after: doc device msg-cb start
    :end-before: doc device msg-cb end
+
+Built-in functions
+******************
+
+The USB device stack has built-in USB functions. Some can be used directly in
+the user application through a special API, such as HID or Audio class devices,
+while others use a general Zephyr RTOS driver API, such as MSC and CDC class
+implementations. The *Identification string* identifies a class or function
+instance (``n``) and is used as an argument to the :c:func:`usbd_register_class`.
+
++-----------------------------------+-------------------------+-------------------------+
+| Class or function                 | User API (if any)       | Identification string   |
++===================================+=========================+=========================+
+| USB Audio 2 class                 | :ref:`uac2_device`      | :samp:`uac2_{n}`        |
++-----------------------------------+-------------------------+-------------------------+
+| USB CDC ACM class                 | :ref:`uart_api`         | :samp:`cdc_acm_{n}`     |
++-----------------------------------+-------------------------+-------------------------+
+| USB CDC ECM class                 | Ethernet device         | :samp:`cdc_ecm_{n}`     |
++-----------------------------------+-------------------------+-------------------------+
+| USB Mass Storage Class (MSC)      | :ref:`usbd_msc_device`  | :samp:`msc_{n}`         |
++-----------------------------------+-------------------------+-------------------------+
+| USB Human Interface Devices (HID) | :ref:`usbd_hid_device`  | :samp:`hid_{n}`         |
++-----------------------------------+-------------------------+-------------------------+
+| Bluetooth HCI USB transport layer | :ref:`bt_hci_raw`       | :samp:`bt_hci_{n}`      |
++-----------------------------------+-------------------------+-------------------------+
