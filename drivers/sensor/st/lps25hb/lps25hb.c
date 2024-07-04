@@ -107,9 +107,47 @@ static int lps25hb_channel_get(const struct device *dev,
 	return 0;
 }
 
+static int lps25hb_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
+{
+	const struct lps25hb_config *config = dev->config;
+
+	switch (attr) {
+	case SENSOR_ATTR_CALIBRATION:
+		int16_t data = -sensor_value_to_double(val);
+		return i2c_reg_write_byte_dt(&config->i2c, LPS25HB_REG_RPDS_L, data & 0xFF) |
+		       i2c_reg_write_byte_dt(&config->i2c, LPS25HB_REG_RPDS_H, data >> 8);
+	default:
+		LOG_ERR("LPS25HB attribute not supported.");
+		return -ENOTSUP;
+	}
+}
+
+static int lps25hb_attr_get(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, struct sensor_value *val)
+{
+	const struct lps25hb_config *config = dev->config;
+
+	switch (attr) {
+	case SENSOR_ATTR_CALIBRATION:
+		uint8_t buf;
+		int16_t data;
+		i2c_reg_read_byte_dt(&config->i2c, LPS25HB_REG_RPDS_H, &buf);
+		data = buf << 8;
+		i2c_reg_read_byte_dt(&config->i2c, LPS25HB_REG_RPDS_L, &buf);
+		data = data | buf;
+		sensor_value_from_double(val, -data);
+	default:
+		LOG_ERR("LPS25HB attribute not supported.");
+		return -ENOTSUP;
+	}
+}
+
 static const struct sensor_driver_api lps25hb_api_funcs = {
 	.sample_fetch = lps25hb_sample_fetch,
 	.channel_get = lps25hb_channel_get,
+	.attr_set = lps25hb_attr_set,
+	.attr_get = lps25hb_attr_get,
 };
 
 static int lps25hb_init_chip(const struct device *dev)
