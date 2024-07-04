@@ -59,6 +59,7 @@ enum http2_frame_type {
 
 #define HTTP2_HEADERS_FRAME_PRIORITY_LEN 5
 #define HTTP2_PRIORITY_FRAME_LEN 5
+#define HTTP2_RST_STREAM_FRAME_LEN 4
 
 /** @endcond */
 
