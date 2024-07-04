@@ -360,8 +360,12 @@ struct http_client_ctx {
 	IF_ENABLED(CONFIG_WEBSOCKET, (uint8_t ws_sec_key[HTTP_SERVER_WS_MAX_SEC_KEY_LEN]));
 /** @endcond */
 
+	/* TODO those two are stream-specific, move them. */
 	/** Flag indicating that headers were sent in the reply. */
 	bool headers_sent : 1;
+
+	/** Flag indicating that END_STREAM flag was sent. */
+	bool end_stream_sent : 1;
 
 	/** Flag indicating that HTTP2 preface was sent. */
 	bool preface_sent : 1;
