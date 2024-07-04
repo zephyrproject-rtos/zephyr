@@ -1315,15 +1315,58 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 {
+	struct getopt_state *state;
+	int opt;
+	static struct option long_options[] = {{"repeat_iter", required_argument, NULL, 'r'},
+		{NULL, 0, NULL, 0}};
+	int opt_index = 0;
+	int val;
+	int opt_num = 0;
+
+	int repeat_iter = 1;
+
+	while ((opt = getopt_long(argc, argv, "r:", long_options, &opt_index)) != -1) {
+		state = getopt_state_get();
+		switch (opt) {
+		case 'r':
+			val = atoi(state->optarg);
+			if (val < 1) {
+				shell_fprintf(sh, SHELL_ERROR,
+					"Invalid number of suite interations\n");
+				return -ENOEXEC;
+			}
+			repeat_iter = val;
+			opt_num++;
+			break;
+		default:
+			shell_fprintf(sh, SHELL_ERROR,
+				"Invalid option or option usage: %s\n", argv[opt_index + 1]);
+			return -ENOEXEC;
+		}
+	}
 	int count = 0;
 	bool shuffle = false;
+	const char *shell_command = argv[0];
 
-	ztest_set_test_args(argv[1]);
+	/*
+	* This if statement sets the appropriate test argument for ztest_set_test_args.
+	* If the optional argument is used (opt_num == 1), it sets the test argument to the third element (argv[3]).
+	* If the optional argument is not used, it sets the test argument to the first element (argv[1]).
+	*/
+	if (opt_num == 1) {
+		ztest_set_test_args(argv[3]);
+	} else {
+		ztest_set_test_args(argv[1]);
+	}
 
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 	     ptr < _ztest_suite_node_list_end; ++ptr) {
 		__ztest_init_unit_test_result_for_suite(ptr);
-		count += __ztest_run_test_suite(ptr, NULL, shuffle, 1, 1);
+		if (strcmp(shell_command, "run-testcase") == 0) {
+			count += __ztest_run_test_suite(ptr, NULL, shuffle, 1, repeat_iter);
+		} else if (strcmp(shell_command, "run-testsuite") == 0) {
+			count += __ztest_run_test_suite(ptr, NULL, shuffle, repeat_iter, 1);
+		}
 		if (test_status == ZTEST_STATUS_CRITICAL_ERROR ||
 		    (test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
 			break;
@@ -1386,8 +1429,8 @@ static void testsuite_list_get(size_t idx, struct shell_static_entry *entry)
 		SHELL_CMD_ARG(list-testcases, NULL,
 			"List all test cases", cmd_list_cases, 0, 0),
 		SHELL_CMD_ARG(run-testsuite, &testsuite_names,
-			"Run test suite", cmd_run_suite, 2, 0),
-		SHELL_CMD_ARG(run-testcase, NULL, "Run testcase", cmd_run_suite, 2, 0),
+			"Run test suite", cmd_run_suite, 2, 2),
+		SHELL_CMD_ARG(run-testcase, NULL, "Run testcase", cmd_run_suite, 2, 2),
 		SHELL_SUBCMD_SET_END /* Array terminated. */
 	);
 /* clang-format on */
