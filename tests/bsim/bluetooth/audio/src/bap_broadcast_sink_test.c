@@ -30,6 +30,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#include "bap_common.h"
 #include "bstests.h"
 #include "common.h"
 
@@ -766,12 +767,13 @@ static void test_broadcast_sink_create_inval(void)
 	}
 }
 
-static void test_broadcast_sync(void)
+static void test_broadcast_sync(bool encryption)
 {
 	int err;
 
 	printk("Syncing the sink\n");
-	err = bt_bap_broadcast_sink_sync(g_sink, bis_index_bitfield, streams, NULL);
+	err = bt_bap_broadcast_sink_sync(g_sink, bis_index_bitfield, streams,
+					 encryption ? BROADCAST_CODE : NULL);
 	if (err != 0) {
 		FAIL("Unable to sync the sink: %d\n", err);
 		return;
@@ -952,7 +954,7 @@ static void test_common(void)
 	WAIT_FOR_FLAG(flag_syncable);
 
 	test_broadcast_sync_inval();
-	test_broadcast_sync();
+	test_broadcast_sync(false);
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
@@ -994,7 +996,7 @@ static void test_sink_disconnect(void)
 	test_broadcast_stop();
 
 	/* Retry sync*/
-	test_broadcast_sync();
+	test_broadcast_sync(false);
 	test_broadcast_stop();
 
 	test_broadcast_delete_inval();
@@ -1003,6 +1005,51 @@ static void test_sink_disconnect(void)
 	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
 
 	PASS("Broadcast sink disconnect passed\n");
+}
+
+static void test_sink_encrypted(void)
+{
+	int err;
+
+	err = init();
+	if (err) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
+	test_scan_and_pa_sync();
+
+	test_broadcast_sink_create();
+
+	printk("Broadcast source PA synced, waiting for BASE\n");
+	WAIT_FOR_FLAG(flag_base_received);
+	printk("BASE received\n");
+
+	printk("Waiting for BIG syncable\n");
+	WAIT_FOR_FLAG(flag_syncable);
+
+	test_broadcast_sync(true);
+
+	printk("Waiting for data\n");
+	WAIT_FOR_FLAG(flag_received);
+
+	backchannel_sync_send_all(); /* let other devices know we have received data */
+
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
+
+	/* The order of PA sync lost and BIG Sync lost is irrelevant
+	 * and depend on timeout parameters. We just wait for PA first, but
+	 * either way will work.
+	 */
+	printk("Waiting for PA disconnected\n");
+	WAIT_FOR_FLAG(flag_pa_sync_lost);
+
+	printk("Waiting for streams to be stopped\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		k_sem_take(&sem_stopped, K_FOREVER);
+	}
+
+	PASS("Broadcast sink passed\n");
 }
 
 static void broadcast_sink_with_assistant(void)
@@ -1033,7 +1080,7 @@ static void broadcast_sink_with_assistant(void)
 
 	printk("Waiting for BIG sync request\n");
 	WAIT_FOR_FLAG(flag_bis_sync_requested);
-	test_broadcast_sync();
+	test_broadcast_sync(false);
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
@@ -1070,6 +1117,12 @@ static const struct bst_test_instance test_broadcast_sink[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_sink_disconnect,
+	},
+	{
+		.test_id = "broadcast_sink_encrypted",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_sink_encrypted,
 	},
 	{
 		.test_id = "broadcast_sink_with_assistant",
