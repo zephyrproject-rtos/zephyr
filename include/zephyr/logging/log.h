@@ -318,8 +318,19 @@ void z_log_vprintk(const char *fmt, va_list ap);
 /* Return first argument */
 #define _LOG_ARG1(arg1, ...) arg1
 
+/* Log module name shall not be placed in the section that is stripped if runtime
+ * filtering is used because then those names may be accessed at runtime when
+ * changing the log levels.
+ *
+ * Value is the result of the following logical operation
+ * CONFIG_LOG_FMT_SECTION & !(CONFIG_LOG_FMT_SECTION_STRIP & CONFIG_LOG_RUNTIME_FILTERING)
+ */
+#define LOG_MODULE_NAME_IN_SECTION \
+	COND_CODE_1(UTIL_AND(CONFIG_LOG_FMT_SECTION_STRIP, CONFIG_LOG_RUNTIME_FILTERING), \
+		(0), (CONFIG_LOG_FMT_SECTION))
+
 #define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)						\
-	IF_ENABLED(CONFIG_LOG_FMT_SECTION, (							\
+	IF_ENABLED(LOG_MODULE_NAME_IN_SECTION, (						\
 		static const char UTIL_CAT(_name, _str)[]					\
 		     __in_section(_log_strings, static, _CONCAT(_name, _)) __used __noasan =	\
 		     STRINGIFY(_name);))							\
@@ -328,8 +339,7 @@ void z_log_vprintk(const char *fmt, va_list ap);
 		log_source_const_data,								\
 		Z_LOG_ITEM_CONST_DATA(_name)) =							\
 	{											\
-		.name = IS_ENABLED(CONFIG_LOG_FMT_SECTION_STRIP) ? NULL :			\
-			COND_CODE_1(CONFIG_LOG_FMT_SECTION,					\
+		.name = COND_CODE_1(LOG_MODULE_NAME_IN_SECTION,					\
 				(UTIL_CAT(_name, _str)), (STRINGIFY(_name))),			\
 		.level = (_level)								\
 	}

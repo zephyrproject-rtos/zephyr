@@ -243,6 +243,15 @@ static const char *link_source_name_get(uint8_t domain_id, uint32_t source_id)
 const char *log_source_name_get(uint32_t domain_id, uint32_t source_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
+		/* If logging strings are removed from binary then source names are
+		 * also removed and name pointers in the source data structure are
+		 * invalid unless runtime filtering is enabled.
+		 */
+		if (IS_ENABLED(CONFIG_LOG_FMT_SECTION_STRIP) &&
+		    !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
+			return NULL;
+		}
+
 		if (source_id < log_src_cnt_get(domain_id)) {
 			return TYPE_SECTION_START(log_const)[source_id].name;
 		} else {
