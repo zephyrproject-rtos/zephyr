@@ -282,3 +282,10 @@ connected to the host. If there is space in the TX FIFO, and the TX interrupt
 is enabled, :c:func:`uart_irq_tx_ready()` will succeed. If there is data in the
 RX FIFO, and the RX interrupt is enabled, :c:func:`uart_irq_rx_ready()` will
 succeed. Function :c:func:`uart_irq_tx_complete()` is not implemented yet.
+
+Polling UART API
+----------------
+
+The CDC ACM poll out implementation follows :ref:`uart_polling_api` and
+blocks when the TX FIFO is full only if the hw-flow-control property is enabled
+and called from a non-ISR context.
