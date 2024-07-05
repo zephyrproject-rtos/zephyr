@@ -39,7 +39,7 @@ extern "C" {
  * This is returned by the driver when either BC1.2 detection fails, or the
  * attached partner is a SDP (standard downstream port).
  *
- * The application may increase the current draw after determing the USB device
+ * The application may increase the current draw after determining the USB device
  * state of suspended/unconfigured/configured.
  *   Suspended: 2.5 mA
  *   Unconfigured: 100 mA
