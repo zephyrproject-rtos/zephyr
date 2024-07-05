@@ -25,6 +25,9 @@ DEFINE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_discovery_complete_cb, struct b
 DEFINE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_start_complete_cb, int, struct bt_conn *);
 DEFINE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_update_complete_cb, int, struct bt_conn *);
 DEFINE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_stop_complete_cb, int, struct bt_conn *);
+DEFINE_FAKE_VOID_FUNC(mock_cap_initiator_broadcast_started_cb, struct bt_cap_broadcast_source *);
+DEFINE_FAKE_VOID_FUNC(mock_cap_initiator_broadcast_stopped_cb, struct bt_cap_broadcast_source *,
+		      uint8_t);
 
 const struct bt_cap_initiator_cb mock_cap_initiator_cb = {
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
@@ -33,6 +36,10 @@ const struct bt_cap_initiator_cb mock_cap_initiator_cb = {
 	.unicast_update_complete = mock_cap_initiator_unicast_update_complete_cb,
 	.unicast_stop_complete = mock_cap_initiator_unicast_stop_complete_cb,
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	.broadcast_started = mock_cap_initiator_broadcast_started_cb,
+	.broadcast_stopped = mock_cap_initiator_broadcast_stopped_cb,
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 };
 
 void mock_cap_initiator_init(void)
