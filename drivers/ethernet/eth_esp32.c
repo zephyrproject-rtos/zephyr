@@ -113,14 +113,14 @@ static struct net_pkt *eth_esp32_rx(
 	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(
 		dev_data->iface, receive_len, AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == NULL) {
-		eth_stats_update_errors_rx(ctx->iface);
+		eth_stats_update_errors_rx(dev_data->iface);
 		LOG_ERR("Could not allocate rx buffer");
 		return NULL;
 	}
 
 	if (net_pkt_write(pkt, dev_data->rxb, receive_len) != 0) {
 		LOG_ERR("Unable to write frame into the pkt");
-		eth_stats_update_errors_rx(ctx->iface);
+		eth_stats_update_errors_rx(dev_data->iface);
 		net_pkt_unref(pkt);
 		return NULL;
 	}
