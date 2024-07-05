@@ -180,6 +180,15 @@ int supplicant_set_twt(const struct device *dev, struct wifi_twt_params *params)
  */
 int supplicant_set_btwt(const struct device *dev, struct wifi_twt_params *params);
 
+/** Set rts threshold
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param rts_threshold rts threshold to set
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_set_rts_threshold(const struct device *dev, unsigned int rts_threshold);
+
 /**
  * @brief Get Wi-Fi power save configuration
  *
