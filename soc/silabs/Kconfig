@@ -2,9 +2,9 @@
 # Copyright (c) 2018 Gil Benkoe
 # SPDX-License-Identifier: Apache-2.0
 
-rsource "*/*/Kconfig"
-
 if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+
+rsource "*/Kconfig"
 
 config SOC_GECKO_SDID
 	int
