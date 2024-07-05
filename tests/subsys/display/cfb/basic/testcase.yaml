@@ -8,6 +8,37 @@ common:
   filter: dt_chosen_enabled("zephyr,display")
   build_only: true # The CI environment has no display device
 tests:
+  cfb.basic.argb_8888:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_TEST_TRANSFER_BUF_SIZE=307200
+  cfb.basic.argb_8888.msbfirst_font:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_TEST_TRANSFER_BUF_SIZE=307200
+      - CONFIG_TEST_MSB_FIRST_FONT=y
+  cfb.basic.rgb_888:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_TEST_TRANSFER_BUF_SIZE=230400
+  cfb.basic.rgb_565:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_TEST_TRANSFER_BUF_SIZE=153600
+  cfb.basic.bgr_565:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_TEST_TRANSFER_BUF_SIZE=153600
   cfb.basic.mono01:
     filter: dt_compat_enabled("zephyr,sdl-dc")
     extra_configs:
