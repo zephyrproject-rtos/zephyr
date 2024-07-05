@@ -1626,7 +1626,6 @@ int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_config_para
 	return wifi_mgmt_api->ap_bandwidth(dev, params);
 }
 
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
 {
 	struct hostapd_iface *iface;
@@ -1676,6 +1675,91 @@ int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_
 out:
 		k_mutex_unlock(&wpa_supplicant_mutex);
 	}
+
+	return ret;
+}
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
+int supplicant_ap_wps_pbc(const struct device *dev)
+{
+	struct hostapd_iface *iface;
+	int ret = -1;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	iface = get_hostapd_handle(dev);
+	if (!iface) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	if (iface->state != HAPD_IFACE_ENABLED) {
+		ret = -EBUSY;
+		wpa_printf(MSG_ERROR, "Interface %s is not in enable state", dev->name);
+		goto out;
+	}
+
+	if (!hostapd_cli_cmd_v("wps_pbc")) {
+		goto out;
+	}
+
+	wpas_api_ctrl.dev = dev;
+	wpas_api_ctrl.requested_op = WPS_PBC;
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
+}
+
+int supplicant_ap_wps_pin(const struct device *dev, struct wifi_wps_pin_params *params)
+{
+	struct hostapd_iface *iface;
+	char *get_pin_cmd = "WPS_AP_PIN random";
+	int ret  = 0;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	iface = get_hostapd_handle(dev);
+	if (!iface) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	if (iface->state != HAPD_IFACE_ENABLED) {
+		ret = -EBUSY;
+		wpa_printf(MSG_ERROR, "Interface %s is not in enable state", dev->name);
+		goto out;
+	}
+
+	if (params->oper == WIFI_WPS_PIN_GET) {
+		if (zephyr_hostapd_cli_cmd_resp(get_pin_cmd, params->get_pin)) {
+			goto out;
+		}
+	} else if (params->oper == WIFI_WPS_PIN_SET) {
+		if (!hostapd_cli_cmd_v("wps_check_pin %s", params->set_pin)) {
+			goto out;
+		}
+
+		if (!hostapd_cli_cmd_v("wps_pin any %s", params->set_pin)) {
+			goto out;
+		}
+
+		wpas_api_ctrl.dev = dev;
+		wpas_api_ctrl.requested_op = WPS_PIN;
+	} else {
+		wpa_printf(MSG_ERROR, "Error wps pin operation : %d", params->oper);
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
 
 	return ret;
 }
