@@ -1127,6 +1127,16 @@ config NXP_WIFI_FW_VDLL_DEBUG
 endmenu # Wifi extra debug options
 endmenu # Development and Debugging
 
+if BUILD_WITH_TFM && WIFI_NM_WPA_SUPPLICANT
+config NXP_WIFI_TFM_MBEDTLS_USER_CONFIG_FILE
+	string "TFM secure world Mbedtls user config file with path"
+	default ""
+	help
+	  Configure TFM secure world Mbedtls user config file and
+	  relative path from west top directory,
+	  to customise secure world crypto options.
+endif
+
 # Create hidden config options that are used in NXP Wi-Fi driver.
 # This way we do not need to mark them as allowed for CI checks.
 # And also someone else cannot use the same name options.
