@@ -259,6 +259,7 @@ struct zbus_channel_observation {
 /** @endcond */
 
 /* clang-format off */
+
 /**
  * @brief Add a static channel observervation.
  *
@@ -321,6 +322,7 @@ struct zbus_channel_observation {
 #define ZBUS_OBSERVERS(...) __VA_ARGS__
 
 /* clang-format off */
+
 /**
  * @brief Zbus channel definition.
  *
@@ -383,6 +385,7 @@ struct zbus_channel_observation {
 	}
 
 /* clang-format off */
+
 /**
  * @brief Define and initialize a subscriber.
  *
@@ -428,6 +431,7 @@ struct zbus_channel_observation {
 	ZBUS_SUBSCRIBER_DEFINE_WITH_ENABLE(_name, _queue_size, true)
 
 /* clang-format off */
+
 /**
  * @brief Define and initialize a listener.
  *
@@ -467,6 +471,7 @@ struct zbus_channel_observation {
 #define ZBUS_LISTENER_DEFINE(_name, _cb) ZBUS_LISTENER_DEFINE_WITH_ENABLE(_name, _cb, true)
 
 /* clang-format off */
+
 /**
  * @brief Define and initialize a message subscriber.
  *
