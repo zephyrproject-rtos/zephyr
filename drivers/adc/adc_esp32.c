@@ -46,9 +46,6 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP
 #endif
 
-/* Convert resolution in bits to esp32 enum values */
-#define WIDTH_MASK(r) ((((r) - 9) < ADC_WIDTH_MAX) ? ((r) - 9) : (ADC_WIDTH_MAX - 1))
-
 /* Validate if resolution in bits is within allowed values */
 #define VALID_RESOLUTION(r) ((r) >= ADC_RESOLUTION_MIN && (r) <= ADC_RESOLUTION_MAX)
 #define INVALID_RESOLUTION(r) (!VALID_RESOLUTION(r))
@@ -127,6 +124,22 @@ static void atten_to_gain(adc_atten_t atten, uint32_t *val_mv)
 	}
 }
 #endif /* !defined(CONFIG_ADC_ESP32_DMA) */
+
+static void adc_hw_calibration(adc_unit_t unit)
+{
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+	adc_hal_calibration_init(unit);
+	for (int j = 0; j < SOC_ADC_ATTEN_NUM; j++) {
+		adc_calc_hw_calibration_code(unit, j);
+#if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+		/* Load the channel compensation from efuse */
+		for (int k = 0; k < SOC_ADC_CHANNEL_NUM(unit); k++) {
+			adc_load_hw_calibration_chan_compens(unit, k, j);
+		}
+#endif /* SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED */
+	}
+#endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
+}
 
 static bool adc_calibration_init(const struct device *dev)
 {
@@ -423,7 +436,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		adc1_config_width(ADC_WIDTH_BIT_DEFAULT);
 	}
 #else
-	adc_set_data_width(conf->unit, WIDTH_MASK(data->resolution[channel_id]));
+	adc_set_data_width(conf->unit, data->resolution[channel_id]);
 #endif /* CONFIG_SOC_SERIES_ESP32C3 */
 
 #if !defined(CONFIG_ADC_ESP32_DMA)
@@ -440,7 +453,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 
 	/* Calibration scheme is available */
 	if (data->calibrate) {
-		data->chars[channel_id].bit_width = WIDTH_MASK(data->resolution[channel_id]);
+		data->chars[channel_id].bit_width = data->resolution[channel_id];
 		/* Get corrected voltage output */
 		cal = cal_mv = esp_adc_cal_raw_to_voltage(reading, &data->chars[channel_id]);
 
@@ -593,7 +606,7 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 	if (data->calibrate) {
 		esp_adc_cal_value_t cal = esp_adc_cal_characterize(conf->unit,
 						data->attenuation[cfg->channel_id],
-						WIDTH_MASK(data->resolution[cfg->channel_id]),
+						data->resolution[cfg->channel_id],
 						data->meas_ref_internal,
 						&data->chars[cfg->channel_id]);
 		if (cal >= ESP_ADC_CAL_VAL_NOT_SUPPORTED) {
@@ -637,10 +650,11 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 static int adc_esp32_init(const struct device *dev)
 {
 	struct adc_esp32_data *data = (struct adc_esp32_data *) dev->data;
+	const struct adc_esp32_conf *conf = (struct adc_esp32_conf *) dev->config;
+
+	adc_hw_calibration(conf->unit);
 
 #if defined(CONFIG_ADC_ESP32_DMA)
-	struct adc_esp32_conf *conf = (struct adc_esp32_conf *) dev->config;
-
 	if (!device_is_ready(conf->gpio_port)) {
 		LOG_ERR("gpio0 port not ready");
 		return -ENODEV;
