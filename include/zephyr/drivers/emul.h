@@ -182,7 +182,7 @@ struct emul {
 /**
  * @brief Utility macro to obtain an optional reference to an emulator
  *
- * If the node identifier referes to a node with status `okay`, this returns `EMUL_DT_GET(node_id)`.
+ * If the node identifier refers to a node with status `okay`, this returns `EMUL_DT_GET(node_id)`.
  * Otherwise, it returns `NULL`.
  *
  * @param node_id A devicetree node identifier
