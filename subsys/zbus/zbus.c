@@ -76,13 +76,7 @@ int _zbus_init(void)
 
 		++(curr->data->observers_end_idx);
 	}
-	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
-		k_sem_init(&chan->data->sem, 1, 1);
 
-#if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS)
-		sys_slist_init(&chan->data->observers);
-#endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
-	}
 	return 0;
 }
 SYS_INIT(_zbus_init, APPLICATION, CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY);
