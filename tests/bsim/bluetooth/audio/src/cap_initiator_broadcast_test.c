@@ -33,6 +33,8 @@
 #include "common.h"
 
 #if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+CREATE_FLAG(flag_source_started);
+
 /* Zephyr Controller works best while Extended Advertising interval to be a multiple
  * of the ISO Interval minus 10 ms (max. advertising random delay). This is
  * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
@@ -75,8 +77,8 @@ static struct bt_bap_lc3_preset broadcast_preset_16_2_1 =
 	BT_BAP_LC3_BROADCAST_PRESET_16_2_1(LOCATION, CONTEXT);
 static size_t stream_count;
 
-static K_SEM_DEFINE(sem_broadcast_started, 0U, ARRAY_SIZE(broadcast_streams));
-static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));
+static K_SEM_DEFINE(sem_broadcast_stream_started, 0U, ARRAY_SIZE(broadcast_streams));
+static K_SEM_DEFINE(sem_broadcast_stream_stopped, 0U, ARRAY_SIZE(broadcast_streams));
 
 static const struct named_lc3_preset lc3_broadcast_presets[] = {
 	{"8_1_1", BT_BAP_LC3_BROADCAST_PRESET_8_1_1(LOCATION, CONTEXT)},
@@ -114,7 +116,7 @@ static const struct named_lc3_preset lc3_broadcast_presets[] = {
 	{"48_6_2", BT_BAP_LC3_BROADCAST_PRESET_48_6_2(LOCATION, CONTEXT)},
 };
 
-static void broadcast_started_cb(struct bt_bap_stream *stream)
+static void broadcast_stream_started_cb(struct bt_bap_stream *stream)
 {
 	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 
@@ -122,16 +124,16 @@ static void broadcast_started_cb(struct bt_bap_stream *stream)
 	test_stream->tx_cnt = 0U;
 
 	printk("Stream %p started\n", stream);
-	k_sem_give(&sem_broadcast_started);
+	k_sem_give(&sem_broadcast_stream_started);
 }
 
-static void broadcast_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
+static void broadcast_stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
-	k_sem_give(&sem_broadcast_stopped);
+	k_sem_give(&sem_broadcast_stream_stopped);
 }
 
-static void broadcast_sent_cb(struct bt_bap_stream *bap_stream)
+static void broadcast_stream_sent_cb(struct bt_bap_stream *bap_stream)
 {
 	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(bap_stream);
 	struct bt_cap_stream *cap_stream = cap_stream_from_audio_test_stream(test_stream);
@@ -178,13 +180,30 @@ static void broadcast_sent_cb(struct bt_bap_stream *bap_stream)
 }
 
 static struct bt_bap_stream_ops broadcast_stream_ops = {
-	.started = broadcast_started_cb,
-	.stopped = broadcast_stopped_cb,
-	.sent = broadcast_sent_cb,
+	.started = broadcast_stream_started_cb,
+	.stopped = broadcast_stream_stopped_cb,
+	.sent = broadcast_stream_sent_cb,
 };
+
+static void broadcast_source_started_cb(struct bt_cap_broadcast_source *broadcast_source)
+{
+	printk("Broadcast source %p started\n", broadcast_source);
+	SET_FLAG(flag_source_started);
+}
+
+static void broadcast_source_stopped_cb(struct bt_cap_broadcast_source *broadcast_source,
+					uint8_t reason)
+{
+	printk("Broadcast source %p stopped with reason 0x%02X\n", broadcast_source, reason);
+	UNSET_FLAG(flag_source_started);
+}
 
 static void init(void)
 {
+	static struct bt_cap_initiator_cb broadcast_cbs = {
+		.broadcast_started = broadcast_source_started_cb,
+		.broadcast_stopped = broadcast_source_stopped_cb,
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -220,6 +239,12 @@ static void init(void)
 		}
 
 		printk("Registered GTBS\n");
+	}
+
+	err = bt_cap_initiator_register_cb(&broadcast_cbs);
+	if (err != 0) {
+		FAIL("Failed to register broadcast callbacks: %d\n", err);
+		return;
 	}
 }
 
@@ -605,8 +630,10 @@ static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_
 	/* Wait for all to be stopped */
 	printk("Waiting for broadcast_streams to be stopped\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
+		k_sem_take(&sem_broadcast_stream_stopped, K_FOREVER);
 	}
+
+	WAIT_FOR_UNSET_FLAG(flag_source_started);
 
 	printk("Broadcast source stopped\n");
 
@@ -679,8 +706,10 @@ static void test_main_cap_initiator_broadcast(void)
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_started, K_FOREVER);
+		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
 	}
+
+	WAIT_FOR_FLAG(flag_source_started);
 
 	/* Initialize sending */
 	for (size_t i = 0U; i < stream_count; i++) {
@@ -689,7 +718,7 @@ static void test_main_cap_initiator_broadcast(void)
 		test_stream->tx_active = true;
 
 		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
-			broadcast_sent_cb(bap_stream_from_audio_test_stream(test_stream));
+			broadcast_stream_sent_cb(bap_stream_from_audio_test_stream(test_stream));
 		}
 	}
 
@@ -785,8 +814,10 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_started, K_FOREVER);
+		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
 	}
+
+	WAIT_FOR_FLAG(flag_source_started);
 
 	/* Initialize sending */
 	for (size_t i = 0U; i < stream_count; i++) {
@@ -795,7 +826,7 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 		test_stream->tx_active = true;
 
 		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
-			broadcast_sent_cb(bap_stream_from_audio_test_stream(test_stream));
+			broadcast_stream_sent_cb(bap_stream_from_audio_test_stream(test_stream));
 		}
 	}
 
