@@ -2001,6 +2001,53 @@ int bt_bap_base_subgroup_bis_codec_to_codec_cfg(const struct bt_bap_base_subgrou
  * @{
  */
 
+/**
+ * @brief Struct to hold the Broadcast Source callbacks
+ *
+ * These can be registered for usage with bt_bap_broadcast_source_register_cb().
+ */
+struct bt_bap_broadcast_source_cb {
+	/**
+	 * @brief The Broadcast Source has started and all of the streams are ready for audio data
+	 *
+	 * @param source The started Broadcast Source
+	 */
+	void (*started)(struct bt_bap_broadcast_source *source);
+
+	/**
+	 * @brief The Broadcast Source has stopped and none of the streams are ready for audio data
+	 *
+	 * @param source The stopped Broadcast Source
+	 * @param reason The reason why the Broadcast Source stopped (see the BT_HCI_ERR_* values)
+	 */
+	void (*stopped)(struct bt_bap_broadcast_source *source, uint8_t reason);
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+
+/**
+ * @brief Registers callbacks for Broadcast Sources
+ *
+ * @param cb Pointer to the callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EEXIST if @p cb is already registered
+ */
+int bt_bap_broadcast_source_register_cb(struct bt_bap_broadcast_source_cb *cb);
+
+/**
+ * @brief Unregisters callbacks for Broadcast Sources
+ *
+ * @param cb Pointer to the callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -ENOENT if @p cb is not registered
+ */
+int bt_bap_broadcast_source_unregister_cb(struct bt_bap_broadcast_source_cb *cb);
+
 /** Broadcast Source stream parameters */
 struct bt_bap_broadcast_source_stream_param {
 	/** Audio stream */
