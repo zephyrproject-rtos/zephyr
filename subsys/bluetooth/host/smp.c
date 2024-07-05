@@ -475,6 +475,7 @@ static enum bt_security_err security_err_get(uint8_t smp_err)
 	}
 }
 
+#if defined(CONFIG_BT_SECURITY_ERR_TO_STR)
 const char *bt_security_err_to_str(enum bt_security_err err)
 {
 	#define SEC_ERR(err) [err] = #err
@@ -500,7 +501,7 @@ const char *bt_security_err_to_str(enum bt_security_err err)
 
 	#undef SEC_ERR
 }
-
+#endif /* CONFIG_BT_SECURITY_ERR_TO_STR */
 
 static uint8_t smp_err_get(enum bt_security_err auth_err)
 {
@@ -527,6 +528,7 @@ static uint8_t smp_err_get(enum bt_security_err auth_err)
 	}
 }
 
+#if defined(CONFIG_BT_SMP_ERR_TO_STR)
 const char *bt_smp_err_to_str(uint8_t smp_err)
 {
 	#define SMP_ERR(err) [err] = #err
@@ -558,6 +560,7 @@ const char *bt_smp_err_to_str(uint8_t smp_err)
 
 	#undef SMP_ERR
 }
+#endif /* CONFIG_BT_SMP_ERR_TO_STR */
 
 static struct net_buf *smp_create_pdu(struct bt_smp *smp, uint8_t op, size_t len)
 {

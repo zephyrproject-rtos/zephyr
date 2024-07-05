@@ -114,8 +114,19 @@ extern "C" {
  * See also the defined BT_ATT_ERR_* macros.
  *
  * @return The string representation of the ATT error code.
+ *         If @kconfig{CONFIG_BT_ATT_ERR_TO_STR} is not enabled,
+ *         this just returns the empty string
  */
+#if defined(CONFIG_BT_ATT_ERR_TO_STR)
 const char *bt_att_err_to_str(uint8_t att_err);
+#else
+static inline const char *bt_att_err_to_str(uint8_t att_err)
+{
+	ARG_UNUSED(att_err);
+
+	return "";
+}
+#endif
 
 #if defined(CONFIG_BT_EATT)
 #if defined(CONFIG_BT_TESTING)

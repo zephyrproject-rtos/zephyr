@@ -413,6 +413,8 @@ struct bt_gatt_cpf {
  * See also the defined BT_ATT_ERR_* macros.
  *
  * @return The string representation of the GATT error code.
+ *         If @kconfig{CONFIG_BT_ATT_ERR_TO_STR} is not enabled,
+ *         this just returns the empty string.
  */
 static inline const char *bt_gatt_err_to_str(int gatt_err)
 {
