@@ -153,8 +153,8 @@ static int16_t send_pcm_data[MAX_NUM_SAMPLES];
 static uint16_t seq_num;
 static bool stopping;
 
-static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
-static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
+static K_SEM_DEFINE(sem_started, 0U, 1U);
+static K_SEM_DEFINE(sem_stopped, 0U, 1U);
 
 #define BROADCAST_SOURCE_LIFETIME 120U /* seconds */
 
@@ -365,12 +365,6 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 
 	source_stream->seq_num = 0U;
 	source_stream->sent_cnt = 0U;
-	k_sem_give(&sem_started);
-}
-
-static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
-{
-	k_sem_give(&sem_stopped);
 }
 
 static void stream_sent_cb(struct bt_bap_stream *stream)
@@ -387,7 +381,9 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 }
 
 static struct bt_bap_stream_ops stream_ops = {
-	.started = stream_started_cb, .stopped = stream_stopped_cb, .sent = stream_sent_cb};
+	.started = stream_started_cb,
+	.sent = stream_sent_cb,
+};
 
 static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 {
@@ -439,8 +435,24 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	return 0;
 }
 
+static void source_started_cb(struct bt_bap_broadcast_source *source)
+{
+	printk("Broadcast source %p started\n", source);
+	k_sem_give(&sem_started);
+}
+
+static void source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t reason)
+{
+	printk("Broadcast source %p stopped with reason 0x%02X\n", source, reason);
+	k_sem_give(&sem_stopped);
+}
+
 int main(void)
 {
+	static struct bt_bap_broadcast_source_cb broadcast_source_cb = {
+		.started = source_started_cb,
+		.stopped = source_stopped_cb,
+	};
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -450,6 +462,12 @@ int main(void)
 		return 0;
 	}
 	printk("Bluetooth initialized\n");
+
+	err = bt_bap_broadcast_source_register_cb(&broadcast_source_cb);
+	if (err != 0) {
+		printk("Failed to register broadcast source callbacks (err %d)\n", err);
+		return 0;
+	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(send_pcm_data); i++) {
 		/* Initialize mock data */
@@ -581,10 +599,8 @@ int main(void)
 			return 0;
 		}
 
-		/* Wait for all to be started */
-		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-			k_sem_take(&sem_started, K_FOREVER);
-		}
+		/* Wait for broadcast source to be started */
+		k_sem_take(&sem_started, K_FOREVER);
 		printk("Broadcast source started\n");
 
 		/* Initialize sending */
@@ -608,10 +624,8 @@ int main(void)
 			return 0;
 		}
 
-		/* Wait for all to be stopped */
-		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-			k_sem_take(&sem_stopped, K_FOREVER);
-		}
+		/* Wait for broadcast source to be stopped */
+		k_sem_take(&sem_stopped, K_FOREVER);
 		printk("Broadcast source stopped\n");
 
 		printk("Deleting broadcast source\n");
