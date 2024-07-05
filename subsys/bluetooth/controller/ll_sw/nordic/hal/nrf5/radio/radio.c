@@ -823,17 +823,12 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
-		uint8_t ppi_en =
-			HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(sw_tifs_toggle);
-		uint8_t ppi_dis =
-			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(sw_tifs_toggle);
+		uint8_t ppi_en = HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(sw_tifs_toggle);
+		uint8_t ppi_dis = HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(sw_tifs_toggle);
+		uint8_t cc_s2 = SW_SWITCH_TIMER_S2_EVTS_COMP(sw_tifs_toggle);
 
 		if (dir_curr == SW_SWITCH_RX && (phy_curr & PHY_CODED)) {
 			/* Switching to TX after RX on LE Coded PHY. */
-
-			uint8_t cc_s2 =
-			    SW_SWITCH_TIMER_S2_EVTS_COMP(sw_tifs_toggle);
-
 			uint32_t delay_s2;
 			uint32_t new_cc_s2_value;
 
@@ -874,7 +869,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			 *       because the code is very fragile and hard to debug.
 			 */
 			if (end_evt_delay_en != END_EVT_DELAY_ENABLED) {
-				hal_radio_sw_switch_coded_config_clear(ppi_en, ppi_dis, cc,
+				hal_radio_sw_switch_coded_config_clear(ppi_en, ppi_dis, cc_s2,
 								       sw_tifs_toggle);
 			}
 
@@ -915,13 +910,12 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 		if (1) {
-			uint8_t ppi_en = HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(
-						sw_tifs_toggle);
-			uint8_t ppi_dis = HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(
-						sw_tifs_toggle);
+			uint8_t ppi_en = HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(sw_tifs_toggle);
+			uint8_t ppi_dis = HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(sw_tifs_toggle);
+			uint8_t cc_s2 = SW_SWITCH_TIMER_S2_EVTS_COMP(sw_tifs_toggle);
 
-			hal_radio_sw_switch_coded_config_clear(ppi_en,
-				ppi_dis, cc, sw_tifs_toggle);
+			hal_radio_sw_switch_coded_config_clear(ppi_en, ppi_dis, cc_s2,
+							       sw_tifs_toggle);
 			hal_radio_sw_switch_disable_group_clear(ppi_dis, cc, sw_tifs_toggle);
 		}
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
