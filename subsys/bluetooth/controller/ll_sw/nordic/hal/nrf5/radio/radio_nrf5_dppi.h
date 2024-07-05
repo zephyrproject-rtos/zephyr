@@ -150,6 +150,10 @@ static inline void hal_trigger_aar_ppi_config(void)
 	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
 }
 
+/* When hardware does not support Coded PHY we still allow the Controller
+ * implementation to accept Coded PHY flags, but the Controller will use 1M
+ * PHY on air. This is implementation specific feature.
+ */
 #if defined(CONFIG_BT_CTLR_PHY_CODED) && defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 /*******************************************************************************
  * Trigger Radio Rate override upon Rateboost event.
@@ -457,6 +461,11 @@ static inline void hal_radio_sw_switch_disable(void)
 		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(0)));
 	nrf_dppi_subscribe_clear(NRF_DPPIC,
 		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(1)));
+
+	/* Invalidation of subscription of S2 timer Compare used when
+	 * RXing on LE Coded PHY is not needed, as other DPPI subscription
+	 * is disable on each sw_switch call already.
+	 */
 }
 
 static inline void hal_radio_sw_switch_b2b_tx_disable(uint8_t compare_reg_index)
@@ -514,16 +523,20 @@ static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_EVT =
 		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT;
 	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
-				nrf_timer_capture_task_get(SW_SWITCH_TIMER_EVTS_COMP(group_index)),
+				nrf_timer_capture_task_get(cc_s2),
 				HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI);
 
 	nrf_dppi_channels_enable(NRF_DPPIC,
 				 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
 }
 
+/* When hardware does not support Coded PHY we still allow the Controller
+ * implementation to accept Coded PHY flags, but the Controller will use 1M
+ * PHY on air. This is implementation specific feature.
+ */
 #if defined(CONFIG_BT_CTLR_PHY_CODED) && defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,
-	uint8_t ppi_dis, uint8_t cc_reg, uint8_t group_index)
+	uint8_t ppi_dis, uint8_t cc_s2, uint8_t group_index)
 {
 	/* Invalidate subscription of S2 timer Compare used when
 	 * RXing on LE Coded PHY.
@@ -531,8 +544,7 @@ static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,
 	 * Note: we do not un-subscribe the Radio enable task because
 	 * we use the same PPI for both SW Switch Timer compare events.
 	 */
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(
-		SW_SWITCH_TIMER_S2_EVTS_COMP(group_index)) = 0;
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(cc_s2) = 0U;
 }
 #endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
@@ -575,6 +587,32 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 		HAL_SW_DPPI_TASK_DIS_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(1)));
 
 	/* Include the appropriate PPI channels in the two PPI Groups. */
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	nrf_dppi_group_clear(NRF_DPPIC,
+		SW_SWITCH_TIMER_TASK_GROUP(0));
+	nrf_dppi_channels_include_in_group(NRF_DPPIC,
+		BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(0)) |
+		BIT(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(0)) |
+		BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(0)),
+		SW_SWITCH_TIMER_TASK_GROUP(0));
+	nrf_dppi_group_clear(NRF_DPPIC,
+		SW_SWITCH_TIMER_TASK_GROUP(1));
+	nrf_dppi_channels_include_in_group(NRF_DPPIC,
+		BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1)) |
+		BIT(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(1)) |
+		BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(1)),
+		SW_SWITCH_TIMER_TASK_GROUP(1));
+
+	/* NOTE: HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE is equal to
+	 *       HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE.
+	 */
+	BUILD_ASSERT(
+		!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) ||
+		(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE ==
+		 HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE),
+		"Radio enable and Group disable not on the same PPI channels.");
+
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
 	nrf_dppi_group_clear(NRF_DPPIC,
 		SW_SWITCH_TIMER_TASK_GROUP(0));
 	nrf_dppi_channels_include_in_group(NRF_DPPIC,
@@ -587,6 +625,7 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 		BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1)) |
 		BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(1)),
 		SW_SWITCH_TIMER_TASK_GROUP(1));
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
 	/* Sanity build-time check that RADIO Enable and Group Disable
 	 * tasks are going to be subscribed on the same PPIs.
