@@ -1898,7 +1898,6 @@ if (CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
     ${ZEPHYR_BASE}/scripts/build/llext_prepare_exptab.py
     --elf-file ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
     --slid-listing ${PROJECT_BINARY_DIR}/slid_listing.txt
-    -vvv
   )
 
 endif()
