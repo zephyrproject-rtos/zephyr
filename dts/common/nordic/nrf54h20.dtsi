@@ -500,6 +500,7 @@
 				reg = <0x8e6000 0x1000>;
 				status = "disabled";
 				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
 			};
 
 			spi121: spi@8e7000 {
