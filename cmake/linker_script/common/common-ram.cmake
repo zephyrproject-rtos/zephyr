@@ -97,8 +97,7 @@ if(CONFIG_ZTEST)
 endif()
 
 if(CONFIG_ZBUS)
-  zephyr_iterable_section(NAME zbus_observer GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
-  zephyr_iterable_section(NAME zbus_channel_observation_mask GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+  zephyr_iterable_section(NAME zbus_channel_observation_mask GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 1)
 endif()
 
 if(CONFIG_UVB)
