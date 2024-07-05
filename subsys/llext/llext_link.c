@@ -52,6 +52,33 @@ static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
 	return offset;
 }
 
+struct llext_extension_sym {
+	const char *sym;
+	const void *addr;
+};
+
+static int llext_find_extension_sym_iterate(struct llext *ext, void *arg)
+{
+	struct llext_extension_sym *se = arg;
+	const void *addr = llext_find_sym(&ext->exp_tab, se->sym);
+
+	if (addr) {
+		se->addr = addr;
+		return 1;
+	}
+
+	return 0;
+}
+
+static const void *llext_find_extension_sym(const char *sym_name)
+{
+	struct llext_extension_sym se = {.sym = sym_name};
+
+	llext_iterate(llext_find_extension_sym_iterate, &se);
+
+	return se.addr;
+}
+
 static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 			   elf_shdr_t *shdr, bool do_local, elf_shdr_t *tgt)
 {
@@ -146,6 +173,10 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 
 			if (!link_addr) {
 				link_addr = llext_find_sym(&ext->sym_tab, name);
+			}
+
+			if (!link_addr) {
+				link_addr = llext_find_extension_sym(name);
 			}
 
 			if (!link_addr) {
