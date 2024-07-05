@@ -131,9 +131,15 @@ static void mgmt_event_work_handler(struct k_work *work)
 static inline void mgmt_push_event(uint32_t event, struct net_if *iface,
 				   const void *info, size_t length)
 {
+#ifndef CONFIG_NET_MGMT_EVENT_INFO
+	ARG_UNUSED(info);
+	ARG_UNUSED(length);
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 	const struct mgmt_event_entry mgmt_event = {
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
 		.info = info,
 		.info_length = length,
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 		.event = event,
 		.iface = iface,
 	};
