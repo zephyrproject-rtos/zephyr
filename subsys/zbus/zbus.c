@@ -75,9 +75,52 @@ int _zbus_init(void)
 		++(curr->data->observers_end_idx);
 	}
 
+#if defined(CONFIG_ZBUS_CHANNEL_ID)
+	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
+		/* Check for duplicate channel IDs */
+		if (chan->id == ZBUS_CHAN_ID_INVALID) {
+			continue;
+		}
+		/* Iterate over all previous channels */
+		STRUCT_SECTION_FOREACH(zbus_channel, chan_prev) {
+			if (chan_prev == chan) {
+				break;
+			}
+			if (chan->id == chan_prev->id) {
+#if defined(CONFIG_ZBUS_CHANNEL_NAME)
+				LOG_WRN("Channels %s and %s have matching IDs (%d)", chan->name,
+					chan_prev->name, chan->id);
+#else
+				LOG_WRN("Channels %p and %p have matching IDs (%d)", chan,
+					chan_prev, chan->id);
+#endif /* CONFIG_ZBUS_CHANNEL_NAME */
+			}
+		}
+	}
+#endif /* CONFIG_ZBUS_CHANNEL_ID */
+
 	return 0;
 }
 SYS_INIT(_zbus_init, APPLICATION, CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY);
+
+#if defined(CONFIG_ZBUS_CHANNEL_ID)
+
+const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id)
+{
+	if (channel_id == ZBUS_CHAN_ID_INVALID) {
+		return NULL;
+	}
+	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
+		if (chan->id == channel_id) {
+			/* Found matching channel */
+			return chan;
+		}
+	}
+	/* No matching channel exists */
+	return NULL;
+}
+
+#endif /* CONFIG_ZBUS_CHANNEL_ID */
 
 static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 					const struct zbus_observer *obs, k_timepoint_t end_time,
