@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Broadcast Sink */
 
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -402,11 +402,6 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 		if (!sys_slist_find_and_remove(&sink->streams, &stream->_node)) {
 			LOG_DBG("Could not find and remove stream %p from sink %p", stream, sink);
 		}
-
-		/* Clear sink->big if not already cleared */
-		if (sys_slist_is_empty(&sink->streams) && sink->big) {
-			broadcast_sink_clear_big(sink, reason);
-		}
 	}
 
 	if (ops != NULL && ops->stopped != NULL) {
@@ -442,6 +437,17 @@ static struct bt_bap_broadcast_sink *broadcast_sink_get_by_pa(struct bt_le_per_a
 {
 	for (int i = 0; i < ARRAY_SIZE(broadcast_sinks); i++) {
 		if (broadcast_sinks[i].pa_sync == sync) {
+			return &broadcast_sinks[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_bap_broadcast_sink *broadcast_sink_get_by_big(const struct bt_iso_big *big)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sinks); i++) {
+		if (broadcast_sinks[i].big == big) {
 			return &broadcast_sinks[i];
 		}
 	}
@@ -966,11 +972,70 @@ static uint16_t interval_to_sync_timeout(uint16_t interval)
 	return (uint16_t)timeout;
 }
 
+static void big_started_cb(struct bt_iso_big *big)
+{
+	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_big(big);
+	struct bt_bap_broadcast_sink_cb *listener;
+
+	if (sink == NULL) {
+		/* Not one of ours */
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
+		if (listener->started != NULL) {
+			listener->started(sink);
+		}
+	}
+}
+
+static void big_stopped_cb(struct bt_iso_big *big, uint8_t reason)
+{
+	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_big(big);
+	struct bt_bap_broadcast_sink_cb *listener;
+
+	if (sink == NULL) {
+		/* Not one of ours */
+		return;
+	}
+
+	broadcast_sink_clear_big(sink, reason);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
+		if (listener->stopped != NULL) {
+			listener->stopped(sink, reason);
+		}
+	}
+}
+
 int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb)
 {
+	static bool iso_big_cb_registered;
+
 	CHECKIF(cb == NULL) {
 		LOG_DBG("cb is NULL");
+
 		return -EINVAL;
+	}
+
+	if (sys_slist_find(&sink_cbs, &cb->_node, NULL)) {
+		LOG_DBG("cb %p is already registered", cb);
+
+		return -EEXIST;
+	}
+
+	if (!iso_big_cb_registered) {
+		static struct bt_iso_big_cb big_cb = {
+			.started = big_started_cb,
+			.stopped = big_stopped_cb,
+		};
+		const int err = bt_iso_big_register_cb(&big_cb);
+
+		if (err != 0) {
+			__ASSERT(false, "Failed to register ISO BIG callbacks: %d", err);
+		}
+
+		iso_big_cb_registered = true;
 	}
 
 	sys_slist_append(&sink_cbs, &cb->_node);
@@ -1313,9 +1378,6 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 		LOG_DBG("Failed to terminate BIG (err %d)", err);
 		return err;
 	}
-
-	broadcast_sink_clear_big(sink, BT_HCI_ERR_LOCALHOST_TERM_CONN);
-	/* Channel states will be updated in the broadcast_sink_iso_disconnected function */
 
 	return 0;
 }
