@@ -44,10 +44,16 @@ const struct device * dev1 = DEVICE_DT_GET(DT_NODELABEL(i2c1));
 const struct device * dev2 = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 struct gpio_dt_spec vPin;
-void num_to_string(char *str,uint16_t num);
+void num_to_string(char *str,uint16_t num,uint8_t padd);
 void update_time_in_screen(lv_ui *ui,Time const *time,Date const *date);
 void update_stepcount_in_screen(lv_ui *ui,uint32_t steps);
 void vibration_motor();
+typedef struct{
+	char sender[15];
+	char message[30];
+}msg_data;
+
+K_MSGQ_DEFINE(sms_msg_q, sizeof(msg_data), 5, 1);
 
 void vibration_motor()
 {
@@ -74,15 +80,21 @@ void k_busy_wait_ms(uint32_t ms)
 }
 
 
-void num_to_string(char *str,uint16_t num)
+void num_to_string(char *str,uint16_t num,uint8_t padd)
 {
     uint16_t digits = 1;
     uint16_t copy = num;
+    if(padd){
+        for(uint8_t i = 1;i<padd;i++)
+        digits*=10;
+    }
+    else{
     while(copy){
         copy/=10;
         digits*=10;
     }
     digits/=10;
+    }
     uint8_t i = 0;
     while(digits)
     {
@@ -93,23 +105,22 @@ void num_to_string(char *str,uint16_t num)
     str[i] = '\0';
 }
 
-
 void update_time_in_screen(lv_ui *ui,Time const *time,Date const *date)
 {
-	num_to_string(num_str,date->day);
+	num_to_string(num_str,date->day,2);
 	lv_label_set_text(ui->screen_1_date, num_str);
-	num_to_string(num_str,date->month);
+	num_to_string(num_str,date->month,2);
 	lv_label_set_text(ui->screen_1_month, num_str);
-	num_to_string(num_str,date->year);
+	num_to_string(num_str,date->year,2);
 	lv_label_set_text(ui->screen_1_year, num_str);
-	num_to_string(num_str,time->hour);
+	num_to_string(num_str,time->hour,2);
 	lv_label_set_text(ui->screen_1_hour, num_str);
-	num_to_string(num_str,time->minutes);
+	num_to_string(num_str,time->minutes,2);
 	lv_label_set_text(ui->screen_1_mins, num_str);
 }
 void update_stepcount_in_screen(lv_ui *ui,uint32_t steps)
 {
-	num_to_string(num_str,steps);
+	num_to_string(num_str,steps,0);
 	lv_label_set_text(ui->screen_1_step_count, num_str);
 }
 void main_task_handler(void)
@@ -200,6 +211,23 @@ void lcd_display_blank_task_handler(void){
 	}
 
 }
+
+void process_message_notification_handler(void)
+{
+	msg_data data_recv;
+	while(1){
+		k_msgq_get(&sms_msg_q, &data_recv, K_FOREVER);
+		lv_label_set_text_fmt(guider_ui.screen_2_senderName, "" LV_SYMBOL_ENVELOPE " %s",data_recv.sender);
+		lv_label_set_text(guider_ui.screen_2_messageBox, data_recv.message);
+		lv_scr_load(guider_ui.screen_2);
+		lv_task_handler();
+		k_msleep(30000);
+		lv_scr_load(guider_ui.screen_1);
+		lv_task_handler();
+	}
+}
+
+
 K_THREAD_DEFINE(main_task, MY_STACK_SIZE,
                 main_task_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
@@ -207,5 +235,8 @@ K_THREAD_DEFINE(step_count_task, MY_STACK_SIZE,
                 step_count_task_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
 K_THREAD_DEFINE(lcd_display_blank_task, MY_STACK_SIZE,
+                lcd_display_blank_task_handler, NULL, NULL, NULL,
+                MY_PRIORITY, 0, 0);
+K_THREAD_DEFINE(process_message_notification, MY_STACK_SIZE,
                 lcd_display_blank_task_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
