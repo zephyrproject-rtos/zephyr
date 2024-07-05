@@ -752,13 +752,6 @@ endif # KERNEL_MEM_POOL
 
 endmenu
 
-config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	bool
-	help
-	  It's possible that an architecture port cannot use _Swap() to swap to
-	  the _main() thread, but instead must do something custom. It must
-	  enable this option in that case.
-
 config SWAP_NONATOMIC
 	bool
 	help
@@ -770,13 +763,6 @@ config SWAP_NONATOMIC
 	  enabled when this is true.  Currently, this only happens on
 	  ARM when the PendSV exception priority sits below that of
 	  Zephyr-handled interrupts.
-
-config ARCH_HAS_CUSTOM_BUSY_WAIT
-	bool
-	help
-	  It's possible that an architecture port cannot or does not want to use
-	  the provided k_busy_wait(), but instead must do something custom. It must
-	  enable this option in that case.
 
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"
