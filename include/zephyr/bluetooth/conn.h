@@ -234,7 +234,7 @@ void bt_conn_unref(struct bt_conn *conn);
 
 /** @brief Iterate through all bt_conn objects.
  *
- * Iterates trough all bt_conn objects that are alive in the Host allocator.
+ * Iterates through all bt_conn objects that are alive in the Host allocator.
  *
  * To find established connections, combine this with @ref bt_conn_get_info.
  * Check that @ref bt_conn_info.state is @ref BT_CONN_STATE_CONNECTED.
