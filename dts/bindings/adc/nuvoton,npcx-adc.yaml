@@ -44,9 +44,5 @@ properties:
     type: boolean
     description: |
         This option enables the ADC support for NPCXn V3.
-  support-npckn-v1:
-    type: boolean
-    description: |
-        This option enables the ADC support for NPCKn V1.
 io-channel-cells:
   - input
