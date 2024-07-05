@@ -22,7 +22,7 @@
 #define NUMAKER_SCC_SUBSYS_ID_PCC 1
 
 struct numaker_scc_subsys {
-	uint32_t subsys_id; /* SCC sybsystem ID */
+	uint32_t subsys_id; /* SCC subsystem ID */
 
 	/* Peripheral clock control configuration structure
 	 * clk_modidx is same as u32ModuleIdx in BSP CLK_SetModuleClock().

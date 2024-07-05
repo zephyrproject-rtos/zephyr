@@ -133,7 +133,7 @@ static inline void pcie_ep_conf_write(const struct device *dev,
  *		      lowmem outbound region
  *
  * @return Mapped size : If mapped size is less than requested size,
- *	   then requestor has to call the same API again to map
+ *	   then requester has to call the same API again to map
  *	   the unmapped host buffer after data transfer is done with
  *	   mapped size. This situation may arise because of the
  *	   mapping alignment requirements.

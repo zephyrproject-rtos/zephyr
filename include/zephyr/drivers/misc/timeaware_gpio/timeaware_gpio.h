@@ -86,7 +86,7 @@ static inline int z_impl_tgpio_port_get_time(const struct device *dev, uint64_t 
  * @brief Get current running rate
  *
  * @param dev TGPIO device
- * @param cycles pointer to store current running requency
+ * @param cycles pointer to store current running frequency
  *
  * @return 0 if successful, negative errno code on failure.
  */
