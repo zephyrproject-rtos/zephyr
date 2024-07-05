@@ -1,10 +1,13 @@
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdlib.h>
+
 #include <zephyr/bluetooth/iso.h>
 
 #include "conn.h"
@@ -123,6 +126,19 @@ int mock_bt_iso_disconnected(struct bt_iso_chan *chan, uint8_t err)
 }
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+static struct bt_iso_big_cb *iso_cb;
+
+int bt_iso_big_register_cb(struct bt_iso_big_cb *cb)
+{
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	iso_cb = cb;
+
+	return 0;
+}
+
 int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param *param,
 		      struct bt_iso_big **out_big)
 {
@@ -153,6 +169,10 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 
 	*out_big = big;
 
+	if (iso_cb != NULL && iso_cb->started != NULL) {
+		iso_cb->started(big);
+	}
+
 	return 0;
 }
 
@@ -167,6 +187,10 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 		zassert_not_null(bis, "big %p", big);
 
 		mock_bt_iso_disconnected(bis, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+	}
+
+	if (iso_cb != NULL && iso_cb->stopped != NULL) {
+		iso_cb->stopped(big, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 	}
 
 	free(big);
