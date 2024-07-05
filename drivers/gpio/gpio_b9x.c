@@ -110,7 +110,7 @@
 #define INTR_FALLING_EDGE        ((uint8_t)1u)
 
 /* Supported IRQ numbers */
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
+#if CONFIG_SOC_RISCV_TELINK_B91
 #define IRQ_GPIO                 ((uint8_t)25u)
 #endif
 #define IRQ_GPIO2_RISC0          ((uint8_t)26u)

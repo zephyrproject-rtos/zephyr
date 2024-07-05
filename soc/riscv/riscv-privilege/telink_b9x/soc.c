@@ -322,7 +322,30 @@ void soc_b9x_restore(void)
 	}
 }
 
-#if CONFIG_SOC_RISCV_TELINK_B95
+#if CONFIG_SOC_RISCV_TELINK_B92
+
+#include "flash/flash_common.h"
+#include "flash_base.h"
+
+/**
+ * @brief       This function is used to set the use of four lines when reading and writing flash.
+ * @param[in]   flash_mid   - the mid of flash.
+ * @return      1: success, 0: error, 2: mid is not supported.
+ */
+unsigned char flash_set_4line_read_write(unsigned int flash_mid)
+{
+
+	unsigned char status = flash_4line_en(flash_mid);
+
+	if (status == 1) {
+		flash_read_page = flash_4read;
+		flash_set_xip_config(FLASH_X4READ_CMD);
+		flash_write_page = flash_quad_page_program;
+	}
+
+	return status;
+}
+#elif CONFIG_SOC_RISCV_TELINK_B95
 
 #include "flash/flash_common.h"
 #include "flash_base.h"
@@ -379,7 +402,14 @@ static int soc_b9x_check_flash(void)
 	const flash_capacity_e hw_flash_cap =
 		(mid & FLASH_MID_SIZE_MASK) >> FLASH_MID_SIZE_OFFSET;
 
-#if CONFIG_SOC_RISCV_TELINK_B95
+#if CONFIG_SOC_RISCV_TELINK_B92
+	/* Enable 4x SPI read and write */
+
+	if (flash_set_4line_read_write(mid) != 1) {
+
+	}
+
+#elif CONFIG_SOC_RISCV_TELINK_B95
 	/* Enable 4x SPI read and write */
 
 	if (flash_set_4line_read_write(SLAVE0, mid) != 1) {

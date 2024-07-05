@@ -37,7 +37,7 @@ entry:
 #if defined(CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE
 	.word (0x3b0097a9)              #/ 2 - wire SPI interface
 #else
-	.word (0xeb0095ba)              #/ 4 - wire SPI interface
+	.word (0x3b0097a9)              #/ 4 - wire SPI interface set in soc_b9x_check_flash
 #endif
 
 #elif CONFIG_SOC_RISCV_TELINK_B95
