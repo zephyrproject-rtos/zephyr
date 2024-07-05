@@ -551,7 +551,7 @@ int zbus_obs_is_chan_notification_masked(const struct zbus_observer *obs,
 	return err;
 }
 
-int zbus_obs_set_enable(struct zbus_observer *obs, bool enabled)
+int zbus_obs_set_enable(const struct zbus_observer *obs, bool enabled)
 {
 	_ZBUS_ASSERT(obs != NULL, "obs is required");
 
