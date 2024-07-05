@@ -60,7 +60,7 @@ bool bt_mesh_op_agg_cli_seq_is_started(void);
 
 /** @brief Get Opcodes Aggregator context tailroom.
  *
- *  @return Remaning tailroom of Opcodes Aggregator SDU.
+ *  @return Remaining tailroom of Opcodes Aggregator SDU.
  */
 size_t bt_mesh_op_agg_cli_seq_tailroom(void);
 

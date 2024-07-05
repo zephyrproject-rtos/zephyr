@@ -3954,7 +3954,7 @@ static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
-/* 31 is a unit separater - without t the tab is seemingly ignored*/
+/* 31 is a unit separator - without t the tab is seemingly ignored*/
 #define HELP_SEP "\n\31\t"
 
 #define HELP_CFG_DATA                                                                              \

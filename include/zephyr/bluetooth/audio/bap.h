@@ -1086,7 +1086,7 @@ struct bt_bap_unicast_group_stream_pair_param {
 	/** Pointer to a receiving stream parameters. */
 	struct bt_bap_unicast_group_stream_param *rx_param;
 
-	/** Pointer to a transmiting stream parameters. */
+	/** Pointer to a transmitting stream parameters. */
 	struct bt_bap_unicast_group_stream_param *tx_param;
 };
 
@@ -1164,7 +1164,7 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
  *
  * @param unicast_group  Pointer to the unicast group
  * @param params         Array of stream parameters with streams being added to the group.
- * @param num_param      Number of paramers in @p params.
+ * @param num_param      Number of parameters in @p params.
  *
  * @return 0 in case of success or negative value in case of error.
  */
@@ -1342,7 +1342,7 @@ struct bt_bap_unicast_client_cb {
 			   const struct bt_audio_codec_cap *codec_cap);
 
 	/**
-	 * @brief Remote Audio Stream Endoint (ASE) discovered
+	 * @brief Remote Audio Stream Endpoint (ASE) discovered
 	 *
 	 * Called when an ASE has been discovered as part of the discovery procedure.
 	 *
@@ -2034,7 +2034,7 @@ struct bt_bap_scan_delegator_mod_src_param {
  * to modify and even remove it.
  *
  * If @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} is enabled, any Broadcast Sink
- * sources are autonomously modifed.
+ * sources are autonomously modified.
  *
  * @param param The parameters for adding the new source
  *

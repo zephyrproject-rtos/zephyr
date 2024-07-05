@@ -2902,7 +2902,7 @@ static int cmd_read_local_tx_power(const struct shell *sh, size_t argc, char *ar
 		}
 		err = bt_conn_le_get_tx_power_level(default_conn, &tx_power_level);
 		if (err) {
-			shell_print(sh, "Command returned error error %d", err);
+			shell_print(sh, "Command returned error %d", err);
 			return err;
 		}
 		if (tx_power_level.current_level == unachievable_current_level) {
@@ -4493,7 +4493,7 @@ static int cmd_encrypted_ad_add_ad(const struct shell *sh, size_t argc, char *ar
 	 */
 	if (len != ad_len + 2) {
 		shell_error(sh,
-			    "Failed to add data. Data need to be formated as specified in the "
+			    "Failed to add data. Data need to be formatted as specified in the "
 			    "Core Spec. Only one non-encrypted AD payload can be added at a time.");
 		return -ENOEXEC;
 	}
