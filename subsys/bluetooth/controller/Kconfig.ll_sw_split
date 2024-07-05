@@ -196,9 +196,9 @@ if BT_CTLR_ADV_EXT
 config BT_CTLR_ADV_EXT_RX_PDU_LEN_MAX
 	int "Maximum Advertising Extensions Receive PDU Length"
 	depends on BT_OBSERVER
-	range 255 255 if BT_HCI_RAW
-	range 31 255
-	default 255
+	range $(UINT8_MAX) $(UINT8_MAX) if BT_HCI_RAW
+	range 31 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  Maximum Advertising Extensions Receive PDU Length.
 
@@ -714,7 +714,7 @@ config BT_CTLR_CENTRAL_SPACING
 	int "Central Connection Spacing"
 	depends on BT_CTLR_SCHED_ADVANCED
 	default 0
-	range 0 65535
+	range 0 $(UINT16_MAX)
 	help
 	  The preferred connection spacing between multiple simultaneous central
 	  roles in microseconds. The Controller will calculate the required time
@@ -895,7 +895,7 @@ config BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM
 config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
 	int "Number of tx control buffers to be available across all connections"
 	default 0
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Set the number control buffers that is to be available for tx.
 	  This defines the size of the pool of tx buffers available
@@ -908,7 +908,7 @@ config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
 	default 6 if (BT_AUTO_PHY_UPDATE=y || BT_AUTO_DATA_LEN_UPDATE=y) && BT_CTLR_LLCP_CONN < 4
 	default 2 if BT_CTLR_LLCP_CONN = 1
 	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1
-	range 2 255
+	range 2 $(UINT8_MAX)
 	help
 	  Set the number control procedure contexts that is to be available.
 	  This defines the size of the pool of control procedure contexts available
@@ -918,7 +918,7 @@ config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
 config BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM
 	int "Number of remote control procedure contexts to be available across all connections"
 	default BT_CTLR_LLCP_CONN
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Set the number control procedure contexts that is to be available.
 	  This defines the size of the pool of control procedure contexts available
@@ -952,7 +952,7 @@ config BT_CTLR_THROUGHPUT
 config BT_CTLR_FORCE_MD_COUNT
 	int "Forced MD bit count" if !BT_CTLR_FORCE_MD_AUTO
 	depends on !BT_CTLR_LOW_LAT_ULL
-	range 0 255
+	range 0 $(UINT8_MAX)
 	default 1 if BT_CTLR_FORCE_MD_AUTO
 	default 0
 	help
@@ -1226,7 +1226,7 @@ config BT_RX_USER_PDU_LEN
 	int "Maximum supported proprietary PDU buffer length"
 	depends on BT_CTLR_USER_EXT
 	default 2
-	range 2 255
+	range 2 $(UINT8_MAX)
 	help
 	  Maximum data size for each proprietary PDU. This size includes link layer
 	  header and payload. It does not account for HCI event headers as these
