@@ -5,6 +5,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+/* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
+ * SW_SWITCH_TIMER-based auto-switch for TIFS, when receiving in LE Coded PHY.
+ *  'index' must be 0 or 1.
+ */
+#define SW_SWITCH_TIMER_S2_EVTS_COMP(index) \
+	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + (index))
+
+/* Wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
+ * to RADIO TASKS_TXEN/RXEN task.
+ */
+#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
+	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + (index))
+
+static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,
+	uint8_t ppi_dis, uint8_t cc_s2, uint8_t group_index);
+#endif
+
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {
 	nrf_ppi_channels_enable(NRF_PPI, mask);
@@ -441,6 +459,11 @@ static inline void hal_radio_sw_switch_disable(void)
 		NRF_PPI,
 		BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
 		BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
+
+	/* Invalidation of subscription of S2 timer Compare used when
+	 * RXing on LE Coded PHY is not needed, as other DPPI subscription
+	 * is disable on each sw_switch call already.
+	 */
 }
 
 static inline void hal_radio_sw_switch_b2b_tx_disable(uint8_t compare_reg_index)
@@ -462,19 +485,6 @@ static inline void hal_radio_sw_switch_cleanup(void)
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED) && \
 	defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
-/* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
- * SW_SWITCH_TIMER-based auto-switch for TIFS, when receiving in LE Coded PHY.
- *  'index' must be 0 or 1.
- */
-#define SW_SWITCH_TIMER_S2_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + (index))
-
-/* Wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
- * to RADIO TASKS_TXEN/RXEN task.
- */
-#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + (index))
-
 /* Cancel the SW switch timer running considering S8 timing:
  * wire the RADIO EVENTS_RATEBOOST event to SW_SWITCH_TIMER TASKS_CAPTURE task.
  */
@@ -507,15 +517,26 @@ static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 	nrf_ppi_event_endpoint_setup(NRF_PPI, HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI,
 				     HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT);
 	nrf_ppi_task_endpoint_setup(NRF_PPI, HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI,
-				    HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(group_index));
+				    HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(cc_s2));
 
 	nrf_ppi_channels_enable(
 		NRF_PPI,
 		BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
+
+	/* Note: below code is not absolutely needed, as other DPPI subscription
+	 *       is disable on each sw_switch call already.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) && false) {
+		/* We need to clear the other group S2 PPI */
+		group_index = (group_index + 1) & 0x01;
+		hal_radio_sw_switch_coded_config_clear(
+				HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(group_index),
+				0U, 0U, 0U);
+	}
 }
 
 static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,
-	uint8_t ppi_dis, uint8_t cc_reg, uint8_t group_index)
+	uint8_t ppi_dis, uint8_t cc_s2, uint8_t group_index)
 {
 	/* Invalidate PPI used when RXing on LE Coded PHY. */
 	nrf_ppi_event_endpoint_setup(NRF_PPI, ppi_en, 0);
