@@ -8,7 +8,7 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
-#ifndef CONFIG_BOARD_QEMU_CORTEX_M0
+#if !defined(CONFIG_SOC_SERIES_NRF54HX) && !defined(CONFIG_BOARD_QEMU_CORTEX_M0)
 #include <helpers/nrfx_reset_reason.h>
 #endif
 
@@ -25,17 +25,34 @@ struct nrf_uid {
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct nrf_uid dev_id;
-	uint32_t deviceid[2];
+	uint32_t buf[2];
 
+#if NRF_FICR_HAS_DEVICE_ID || NRF_FICR_HAS_INFO_DEVICE_ID
+	/* DEVICEID is accessible, use this */
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && defined(NRF_FICR_S)
-	soc_secure_read_deviceid(deviceid);
+	soc_secure_read_deviceid(buf);
 #else
-	deviceid[0] = nrf_ficr_deviceid_get(NRF_FICR, 0);
-	deviceid[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
+	buf[0] = nrf_ficr_deviceid_get(NRF_FICR, 0);
+	buf[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
+#endif
+#elif NRF_FICR_HAS_DEVICE_ADDR || NRF_FICR_HAS_BLE_ADDR
+	/* DEVICEID is not accessible, use device/ble address instead.
+	 * Assume that it is always accessible from the non-secure image.
+	 */
+	buf[0] = nrf_ficr_deviceaddr_get(NRF_FICR, 0);
+	buf[1] = nrf_ficr_deviceaddr_get(NRF_FICR, 1);
+
+	/* Assume that ER and IR are available whenever deviceaddr is.
+	 * Use the LSBytes from ER and IR to complete the device id.
+	 */
+	buf[1] |= (nrf_ficr_er_get(NRF_FICR, 0) & 0xFF) << 16;
+	buf[1] |= (nrf_ficr_ir_get(NRF_FICR, 0) & 0xFF) << 24;
+#else
+#error "No suitable source for hwinfo device_id generation"
 #endif
 
-	dev_id.id[0] = sys_cpu_to_be32(deviceid[1]);
-	dev_id.id[1] = sys_cpu_to_be32(deviceid[0]);
+	dev_id.id[0] = sys_cpu_to_be32(buf[1]);
+	dev_id.id[1] = sys_cpu_to_be32(buf[0]);
 
 	if (length > sizeof(dev_id.id)) {
 		length = sizeof(dev_id.id);
@@ -46,7 +63,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	return length;
 }
 
-#ifndef CONFIG_BOARD_QEMU_CORTEX_M0
+#if !defined(CONFIG_SOC_SERIES_NRF54HX) && !defined(CONFIG_BOARD_QEMU_CORTEX_M0)
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
 	uint32_t flags = 0;

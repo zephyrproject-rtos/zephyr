@@ -67,7 +67,7 @@ config HWINFO_NRF
 	bool "NRF device ID"
 	default y
 	depends on SOC_FAMILY_NORDIC_NRF
-	depends on NRF_SOC_SECURE_SUPPORTED
+	depends on SOC_SERIES_NRF54HX || NRF_SOC_SECURE_SUPPORTED
 	help
 	  Enable Nordic NRF hwinfo driver.
 
