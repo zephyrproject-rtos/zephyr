@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2022-2024 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+description: Intel SEDI I3C
+
+compatible: "intel,sedi-i3c"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    ibi_pins:
+      type: int
+      description: IBI internal pin number.
+      required: true
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      required: true
+...

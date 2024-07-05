@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2024 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+module = I3C_SEDI
+module-str = i3c-sedi
+source "subsys/logging/Kconfig.template.log_config"
+
+config I3C_SEDI
+	bool "Design Ware I3C based on SEDI"
+	default n
+	help
+	  Include I3C drivers in the system configuration.
+
+if I3C_SEDI
+
+config GPIO_DEV
+	string "GPIO instance name"
+	depends on GPIO_SEDI
+	default "GPIO0"
+	help
+	  GPIO instance name
+
+config ISH_STATIC_I3C_MODE
+	bool "Enable ISH static sensor mode"
+	default y
+
+endif #I3C_SEDI

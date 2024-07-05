@@ -42,6 +42,20 @@
 	status = "okay";
 };
 
+&i3c0 {
+	interrupts = <21 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+	ibi_pins = <30>;
+
+	status = "okay";
+};
+
+&i3c1 {
+	interrupts = <22 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+	ibi_pins = <31>;
+
+	status = "okay";
+};
+
 &spi0 {
 	interrupts = <23 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 

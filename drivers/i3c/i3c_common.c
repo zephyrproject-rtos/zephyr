@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation
+ * Copyright (c) 2022-2024 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -171,6 +171,30 @@ uint8_t i3c_addr_slots_next_free_find(struct i3c_addr_slots *slots, uint8_t star
 	}
 
 	return 0;
+}
+
+struct i3c_device_desc *i3c_register_device(struct device *bus,
+					    uint64_t pid,
+					    uint8_t static_addr,
+					    uint8_t init_dynamic_addr,
+					    i3c_target_ibi_cb_t ibi_cb,
+					    void *controller_priv)
+{
+	int i;
+	struct i3c_device_desc *ret = NULL;
+	struct i3c_driver_config *config = (struct i3c_driver_config *)bus->config;
+
+	i = config->dev_list.num_i3c;
+	ret = &config->dev_list.i3c[i];
+	config->dev_list.num_i3c++;
+
+	ret->bus = bus;
+	ret->pid = pid;
+	ret->static_addr = static_addr;
+	ret->ibi_cb = ibi_cb;
+	ret->controller_priv = controller_priv;
+
+	return ret;
 }
 
 struct i3c_device_desc *i3c_dev_list_find(const struct i3c_dev_list *dev_list,

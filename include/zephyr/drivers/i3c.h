@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Intel Corporation
+ * Copyright 2022-2024 Intel Corporation
  * Copyright 2023 Meta Platforms, Inc. and its affiliates
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -923,13 +923,13 @@ struct i3c_device_desc {
 	/** @endcond */
 
 	/** I3C bus to which this target device is attached */
-	const struct device * const bus;
+	struct device *bus;
 
 	/** Device driver instance of the I3C device */
 	const struct device * const dev;
 
 	/** Device Provisioned ID */
-	const uint64_t pid:48;
+	uint64_t pid:48;
 
 	/**
 	 * Static address for this target device.
@@ -943,7 +943,7 @@ struct i3c_device_desc {
 	 * device (as both are to tell target device to use static
 	 * address as dynamic address).
 	 */
-	const uint8_t static_addr;
+	uint8_t static_addr;
 
 	/**
 	 * Initial dynamic address.
@@ -1216,12 +1216,12 @@ struct i3c_dev_list {
 	/**
 	 * Number of I3C devices in array.
 	 */
-	const uint8_t num_i3c;
+	uint8_t num_i3c;
 
 	/**
 	 * Number of I2C devices in array.
 	 */
-	const uint8_t num_i2c;
+	uint8_t num_i2c;
 };
 
 /**
@@ -1245,6 +1245,13 @@ struct i3c_driver_data {
 	/** Attached I3C/I2C devices and addresses */
 	struct i3c_dev_attached_list attached_dev;
 };
+
+struct i3c_device_desc *i3c_register_device(struct device *bus,
+					    uint64_t pid,
+					    uint8_t static_addr,
+					    uint8_t init_dynamic_addr,
+					    i3c_target_ibi_cb_t ibi_cb,
+					    void *controller_priv);
 
 /**
  * @brief Find a I3C target device descriptor by ID.
