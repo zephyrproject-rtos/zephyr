@@ -193,13 +193,17 @@ static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 		return -ENOENT;
 	}
 
-	if (!client->headers_sent) {
+	if (client->current_stream == NULL) {
+		return -ENOENT;
+	}
+
+	if (!client->current_stream->headers_sent) {
 		ret = SEND_RESPONSE(RESPONSE_TEMPLATE_CHUNKED,
 				    dynamic_detail->common.content_type);
 		if (ret < 0) {
 			return ret;
 		}
-		client->headers_sent = true;
+		client->current_stream->headers_sent = true;
 	}
 
 	copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
