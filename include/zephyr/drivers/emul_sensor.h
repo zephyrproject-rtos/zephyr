@@ -32,7 +32,7 @@ __subsystem struct emul_sensor_driver_api {
 	/** Retrieve a range of sensor values to use with test. */
 	int (*get_sample_range)(const struct emul *target, struct sensor_chan_spec ch, q31_t *lower,
 				q31_t *upper, q31_t *epsilon, int8_t *shift);
-	/** Set the attribute value(s) of a given chanel. */
+	/** Set the attribute value(s) of a given channel. */
 	int (*set_attribute)(const struct emul *target, struct sensor_chan_spec ch,
 			     enum sensor_attribute attribute, const void *value);
 	/** Get metadata about an attribute. */
@@ -156,7 +156,7 @@ static inline int emul_sensor_backend_set_attribute(const struct emul *target,
  *   '-ENOTSUP'
  * @param[out] min The minimum value the attribute can be set to
  * @param[out] max The maximum value the attribute can be set to
- * @param[out] increment The value that the attribute increses by for every LSB
+ * @param[out] increment The value that the attribute increases by for every LSB
  * @param[out] shift The shift for \p min, \p max, and \p increment
  * @return 0 on SUCCESS
  * @return < 0 on error

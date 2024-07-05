@@ -598,7 +598,7 @@ struct can_device_state {
  * transmit either a dominant or a recessive bit.
  *
  * @note This error counter should only be incremented if the CAN controller is unable to
- * distinquish between failure to transmit a dominant versus failure to transmit a recessive bit. If
+ * distinguish between failure to transmit a dominant versus failure to transmit a recessive bit. If
  * the CAN controller supports distinguishing between the two, the `bit0` or `bit1` error counter
  * shall be incremented instead.
  *
@@ -703,7 +703,7 @@ struct can_device_state {
 /**
  * @brief Zero all statistics for a CAN device
  *
- * The driver is reponsible for resetting the statistics before starting the CAN
+ * The driver is responsible for resetting the statistics before starting the CAN
  * controller.
  *
  * @param dev_ Pointer to the device structure for the driver instance.
@@ -1170,7 +1170,7 @@ static const struct device *z_impl_can_get_transceiver(const struct device *dev)
  * @brief Start the CAN controller
  *
  * Bring the CAN controller out of `CAN_STATE_STOPPED`. This will reset the RX/TX error counters,
- * enable the CAN controller to participate in CAN communication, and enable the CAN tranceiver, if
+ * enable the CAN controller to participate in CAN communication, and enable the CAN transceiver, if
  * supported.
  *
  * Starting the CAN controller resets all the CAN controller statistics.

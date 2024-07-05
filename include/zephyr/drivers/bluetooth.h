@@ -209,7 +209,7 @@ int bt_hci_transport_setup(const struct device *dev);
  *
  * @param dev The device structure for the bus connecting to the IC
  *
- * @return 0 on success, negative error value on faulure
+ * @return 0 on success, negative error value on failure
  */
 int bt_hci_transport_teardown(const struct device *dev);
 

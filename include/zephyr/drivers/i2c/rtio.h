@@ -34,7 +34,7 @@ struct i2c_rtio {
  *
  * @param _name Symbolic name of the context
  * @param _sq_sz Submission queue entry pool size
- * @param _cq_sz Completeion queue entry pool size
+ * @param _cq_sz Completion queue entry pool size
  */
 #define I2C_RTIO_DEFINE(_name, _sq_sz, _cq_sz)		\
 	RTIO_DEFINE(CONCAT(_name, _r), _sq_sz, _cq_sz);	\

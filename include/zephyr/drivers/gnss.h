@@ -123,9 +123,9 @@ typedef int (*gnss_get_supported_systems_t)(const struct device *dev, gnss_syste
 
 /** GNSS fix status */
 enum gnss_fix_status {
-	/** No GNSS fix aqcuired */
+	/** No GNSS fix acquired */
 	GNSS_FIX_STATUS_NO_FIX = 0,
-	/** GNSS fix aqcuired */
+	/** GNSS fix acquired */
 	GNSS_FIX_STATUS_GNSS_FIX = 1,
 	/** Differential GNSS fix acquired */
 	GNSS_FIX_STATUS_DGNSS_FIX = 2,
