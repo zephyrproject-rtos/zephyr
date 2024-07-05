@@ -105,6 +105,10 @@ struct cdc_acm_uart_data {
 	struct k_work irq_cb_work;
 	struct cdc_acm_uart_fifo rx_fifo;
 	struct cdc_acm_uart_fifo tx_fifo;
+	/* When flow_ctrl is set, poll out is blocked when the buffer is full,
+	 * roughly emulating flow control.
+	 */
+	bool flow_ctrl;
 	/* USBD CDC ACM TX fifo work */
 	struct k_work tx_fifo_work;
 	/* USBD CDC ACM RX fifo work */
@@ -373,7 +377,8 @@ static void cdc_acm_update_uart_cfg(struct cdc_acm_uart_data *const data)
 		break;
 	};
 
-	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	cfg->flow_ctrl = data->flow_ctrl ? UART_CFG_FLOW_CTRL_RTS_CTS :
+					   UART_CFG_FLOW_CTRL_NONE;
 }
 
 static void cdc_acm_update_linestate(struct cdc_acm_uart_data *const data)
@@ -884,24 +889,27 @@ poll_in_exit:
 static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
+	uint32_t wrote;
 
 	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
 		LOG_ERR("IRQ callback is used");
 		return;
 	}
 
-	if (ring_buf_put(data->tx_fifo.rb, &c, 1)) {
-		goto poll_out_exit;
+	while (true) {
+		wrote = ring_buf_put(data->tx_fifo.rb, &c, 1);
+		if (wrote == 1) {
+			break;
+		}
+
+		if (k_is_in_isr() || !data->flow_ctrl) {
+			LOG_WRN_ONCE("Ring buffer full, discard data");
+			break;
+		}
+
+		k_msleep(1);
 	}
 
-	LOG_DBG("Ring buffer full, drain buffer");
-	if (!ring_buf_get(data->tx_fifo.rb, NULL, 1) ||
-	    !ring_buf_put(data->tx_fifo.rb, &c, 1)) {
-		LOG_ERR("Failed to drain buffer");
-		__ASSERT_NO_MSG(false);
-	}
-
-poll_out_exit:
 	atomic_clear_bit(&data->state, CDC_ACM_LOCK);
 	cdc_acm_work_submit(&data->tx_fifo_work);
 }
@@ -976,17 +984,18 @@ static int cdc_acm_line_ctrl_get(const struct device *dev,
 static int cdc_acm_configure(const struct device *dev,
 			     const struct uart_config *const cfg)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cfg);
-	/*
-	 * We cannot implement configure API because there is
-	 * no notification of configuration changes provided
-	 * for the Abstract Control Model and the UART controller
-	 * is only emulated.
-	 * However, it allows us to use CDC ACM UART together with
-	 * subsystems like Modbus which require configure API for
-	 * real controllers.
-	 */
+	struct cdc_acm_uart_data *const data = dev->data;
+
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		data->flow_ctrl = false;
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		data->flow_ctrl = true;
+		break;
+	default:
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
@@ -1240,6 +1249,7 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 		.c_data = &cdc_acm_##n,						\
 		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
 		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
+		.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
 		.desc = &cdc_acm_desc_##n,					\
 		.fs_desc = cdc_acm_fs_desc_##n,					\
