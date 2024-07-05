@@ -82,14 +82,13 @@ struct llext *llext_by_name(const char *name)
 int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg)
 {
 	sys_snode_t *node;
-	unsigned int i;
 	int ret = 0;
 
 	k_mutex_lock(&llext_lock, K_FOREVER);
 
-	for (node = sys_slist_peek_head(&_llext_list), i = 0;
+	for (node = sys_slist_peek_head(&_llext_list);
 	     node;
-	     node = sys_slist_peek_next(node), i++) {
+	     node = sys_slist_peek_next(node)) {
 		struct llext *ext = CONTAINER_OF(node, struct llext, _llext_list);
 
 		ret = fn(ext, arg);
