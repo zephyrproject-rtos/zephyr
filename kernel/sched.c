@@ -685,7 +685,7 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	/* We do a "lock swap" prior to calling z_swap(), such that
 	 * the caller's lock gets released as desired.  But we ensure
 	 * that we hold the scheduler lock and leave local interrupts
-	 * masked until we reach the context swich.  z_swap() itself
+	 * masked until we reach the context switch.  z_swap() itself
 	 * has similar code; the duplication is because it's a legacy
 	 * API that doesn't expect to be called with scheduler lock
 	 * held.
