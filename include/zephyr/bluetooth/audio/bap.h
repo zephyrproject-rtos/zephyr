@@ -2292,6 +2292,22 @@ struct bt_bap_broadcast_sink_cb {
 	 */
 	void (*syncable)(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo);
 
+	/**
+	 * @brief The Broadcast Sink has started and audio data may be received from all of the
+	 * streams
+	 *
+	 * @param sink The started Broadcast Sink
+	 */
+	void (*started)(struct bt_bap_broadcast_sink *sink);
+
+	/**
+	 * @brief The Broadcast Sink has stopped and none of the streams will receive audio data
+	 *
+	 * @param sink The stopped Broadcast Sink
+	 * @param reason The reason why the Broadcast Sink stopped (see the BT_HCI_ERR_* values)
+	 */
+	void (*stopped)(struct bt_bap_broadcast_sink *sink, uint8_t reason);
+
 	/** @internal Internally used list node */
 	sys_snode_t _node;
 };
@@ -2302,11 +2318,12 @@ struct bt_bap_broadcast_sink_cb {
  * It is possible to register multiple struct of callbacks, but a single struct can only be
  * registered once.
  * Registering the same callback multiple times is undefined behavior and may break the stack.
- *
+
  * @param cb  Broadcast sink callback structure.
  *
- * @retval 0 in case of success
+ * @retval 0 on success
  * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was already registered
  */
 int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb);
 
