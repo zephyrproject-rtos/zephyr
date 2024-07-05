@@ -608,6 +608,16 @@ Drivers and Sensors
 
 * MFD
 
+  * New driver :dtcompatible:`nxp,lp-flexcomm`.
+  * New driver :dtcompatible:`rohm,bd8lb600fs`.
+  * New driver :dtcompatible:`maxim,max31790`.
+  * New driver :dtcompatible:`infineon,tle9104`
+  * New driver :dtcompatible:`adi,ad559x`
+  * Added option to disable N_VBUSEN for :dtcompatible:`x-powers,axp192`.
+  * Added GPIO input edge events for :dtcompatible:`nordic,npm1300`.
+  * Added long press reset configuration for :dtcompatible:`nordic,npm1300`.
+  * Fixed initialisation of hysteretic mode for :dtcompatible:`nordic,npm6001`.
+
 * Modem
 
   * Removed deprecated ``GSM_PPP`` driver along with its dts compatible ``zephyr,gsm-ppp``.
@@ -655,6 +665,20 @@ Drivers and Sensors
   * Added support for STM32H7R/S series.
 
 * Regulators
+
+  * New driver :dtcompatible:`cirrus,cp9314`.
+  * Added ``regulator-boot-off`` property to common regulator driver.
+    Updated :dtcompatible:`adi,adp5360-regulator`, :dtcompatible:`nordic,npm1300-regulator`,
+    :dtcompatible:`nordic,npm6001-regulator` and :dtcompatible:`x-powers,axp192-regulator`
+    to use this new property.
+  * Added power management for :dtcompatible:`renesas,smartbond-regulator`.
+  * Added ``is_enabled`` shell command.
+  * Removed use of busy wait for single threaded systems.
+  * Fixed control of DCDC2 output for :dtcompatible:`x-powers,axp192-regulator`.
+  * Fixed current and voltage get functions for :dtcompatible:`renesas,smartbond-regulator`.
+  * Fixed NXP VREF Kconfig leakage.
+  * Fixed display of micro values in shell.
+  * Fixed strcmp usage bug in ``adset`` shell command.
 
 * Reset
 
