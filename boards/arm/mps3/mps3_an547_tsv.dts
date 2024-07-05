@@ -16,6 +16,7 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	/*
 	aliases {
 		led0 = &led_0;
 		led1 = &led_1;
@@ -23,14 +24,14 @@
 		sw1 = &user_button_1;
                 uart-0 = &jtag_uart;
 	};
-
+	*/
 	chosen {
 		zephyr,console = &jtag_uart;
 		zephyr,shell-uart = &jtag_uart;
 		zephyr,sram = &ram;
 		zephyr,flash = &code;
 	};
-
+	/*
 	leds {
 		compatible = "gpio-leds";
 		led_0: led_0 {
@@ -43,6 +44,9 @@
 		};
 	};
 
+	*/
+
+	/*
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_button_0: button_0 {
@@ -57,11 +61,14 @@
 		};
 	};
 
+	*/
+
         jtag_uart: uart@95003000 {
                 compatible = "altr,jtag-uart";
                 reg = <0x95003000 0x8>;
                 status = "enabled";
         };
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -101,9 +108,9 @@
 		zephyr,memory-region = "DTCM";
 	};
 
-	isram: sram@61000000 {
+	isram: sram@60600000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x61000000 DT_SIZE_M(4)>;
+		reg = <0x60600000 DT_SIZE_M(1)>;
 		zephyr,memory-region = "ISRAM";
 	};
 
@@ -111,7 +118,8 @@
 	ddr4: memory@64000000 {
 		device_type = "memory";
 		compatible = "zephyr,memory-region";
-		reg = <0x64000000 DT_SIZE_M(256)
+		reg = <0x60700000 DT_SIZE_M(1)>;
+		/*
 		       0x70000000 DT_SIZE_M(256)
 		       0x80000000 DT_SIZE_M(256)
 		       0x90000000 DT_SIZE_M(256)
@@ -119,6 +127,7 @@
 		       0xb0000000 DT_SIZE_M(256)
 		       0xc0000000 DT_SIZE_M(256)
 		       0xd0000000 DT_SIZE_M(256)>;
+		*/
 		zephyr,memory-region = "DDR4";
 	};
 
@@ -138,24 +147,26 @@
 		};
 
 		ram: memory@60008000 {
-			reg = <0x60008000 DT_SIZE_K(2032)>;
+			reg = <0x60008000 DT_SIZE_K(1008)>;
 		};
 	};
 
 	soc {
-		peripheral@40000000 {
+		peripheral@81000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x40000000 0x10000000>;
+			ranges = <0x0 0x81000000 0x1effffff>;
 
-			#include "mps3_an547-common.dtsi"
+			#include "mps3_an547-common-tsv.dtsi"
 		};
 	};
 };
+
 &jtag_uart {
 	status = "okay";
 	current-speed = <115200>;
 };
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
