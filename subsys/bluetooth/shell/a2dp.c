@@ -40,6 +40,8 @@ static struct bt_a2dp_ep *found_peer_sbc_endpoint;
 static struct bt_a2dp_ep *registered_sbc_endpoint;
 static struct bt_a2dp_stream sbc_stream;
 static struct bt_a2dp_stream_ops stream_ops;
+
+#if defined(CONFIG_BT_A2DP_SOURCE)
 static uint8_t media_data[] = {
 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
@@ -52,6 +54,7 @@ static uint8_t media_data[] = {
 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
 };
+#endif
 
 NET_BUF_POOL_DEFINE(a2dp_tx_pool, CONFIG_BT_MAX_CONN,
 		BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
@@ -538,8 +541,12 @@ static struct bt_a2dp_stream_ops stream_ops = {
 	.started = stream_started,
 	.suspended = NULL,
 	.reconfigured = NULL,
+#if defined(CONFIG_BT_A2DP_SINK)
 	.recv = stream_recv,
+#endif
+#if defined(CONFIG_BT_A2DP_SOURCE)
 	.sent = NULL,
+#endif
 };
 
 BT_A2DP_SBC_EP_CFG_DEFAULT(sbc_cfg_default, A2DP_SBC_SAMP_FREQ_44100);
@@ -647,6 +654,7 @@ static int cmd_start(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 {
+#if defined(CONFIG_BT_A2DP_SOURCE)
 	struct net_buf *buf;
 	int ret;
 
@@ -670,7 +678,7 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 		printk("  Failed to send SBC audio data on streams(%d)\n", ret);
 		net_buf_unref(buf);
 	}
-
+#endif
 	return 0;
 }
 
