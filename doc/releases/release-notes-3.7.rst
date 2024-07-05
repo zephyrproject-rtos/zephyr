@@ -396,6 +396,10 @@ Drivers and Sensors
     ``nxp,references`` in ``nxp,lpc-lpadc`` binding. The NXP LPADC driver now supports passing
     the reference voltage value by using ``nxp,references``.
 
+  * Fixed issue which allowed negative ADC readings in single-ended mode using the ``adc_nrfx_saadc.c``
+    device driver. Note that this fix prevents the nRF54H and nRF54L series from performing
+    8-bit resolution single-ended readings due to hardware limitations.
+
 * Auxiliary Display
 
 * Audio
