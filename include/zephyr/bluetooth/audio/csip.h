@@ -448,7 +448,7 @@ typedef bool (*bt_csip_set_coordinator_ordered_access_t)(
  * (if present). Once this procedure is finished or an error occurs,
  * @ref bt_csip_set_coordinator_cb.ordered_access will be called.
  *
- * This procedure only works if all the members have the lock characterstic,
+ * This procedure only works if all the members have the lock characteristic,
  * and all either has rank = 0 or unique ranks.
  *
  * If any of the members are in the locked state, the procedure will be

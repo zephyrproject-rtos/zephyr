@@ -299,7 +299,7 @@ static inline char *context_bit_to_str(enum bt_audio_context context)
 	case BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED:
 		return "Unspecified";
 	case BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL:
-		return "Converstation";
+		return "Conversational";
 	case BT_AUDIO_CONTEXT_TYPE_MEDIA:
 		return "Media";
 	case BT_AUDIO_CONTEXT_TYPE_GAME:
