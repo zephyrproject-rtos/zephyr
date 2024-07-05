@@ -13,7 +13,7 @@
 #include <zephyr/arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
-#ifndef CONFIG_ARCH_CPU_IDLE_CUSTOM
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 GTEXT(arch_cpu_idle)
 SECTION_FUNC(TEXT, arch_cpu_idle)
 #ifdef CONFIG_TRACING
@@ -27,7 +27,7 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 	ret
 #endif
 
-#ifndef CONFIG_ARCH_CPU_ATOMIC_IDLE_CUSTOM
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 GTEXT(arch_cpu_atomic_idle)
 SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 #ifdef CONFIG_TRACING

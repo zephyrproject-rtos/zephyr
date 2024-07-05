@@ -19,14 +19,14 @@ static ALWAYS_INLINE void mips_idle(unsigned int key)
 	__asm__ volatile("wait");
 }
 
-#ifndef CONFIG_ARCH_CPU_IDLE_CUSTOM
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 void arch_cpu_idle(void)
 {
 	mips_idle(1);
 }
 #endif
 
-#ifndef CONFIG_ARCH_CPU_ATOMIC_IDLE_CUSTOM
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 void arch_cpu_atomic_idle(unsigned int key)
 {
 	mips_idle(key);
