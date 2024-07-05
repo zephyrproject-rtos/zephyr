@@ -192,4 +192,13 @@ int bt_smp_irk_get(uint8_t *ir, uint8_t *irk);
  *
  * @return The string representation of the SMP error code.
  */
+#if defined(CONFIG_BT_SMP_ERR_TO_STR)
 const char *bt_smp_err_to_str(uint8_t smp_err);
+#else
+static inline const char *bt_smp_err_to_str(uint8_t smp_err)
+{
+	ARG_UNUSED(smp_err);
+
+	return "";
+}
+#endif
