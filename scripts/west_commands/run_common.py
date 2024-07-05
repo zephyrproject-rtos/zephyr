@@ -628,7 +628,8 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
                         filetype('file_type'),
                         config('gdb'),
                         config('openocd'),
-                        config('openocd_search', []))
+                        config('openocd_search', []),
+                        config('rtt_address'))
 
 def dump_traceback():
     # Save the current exception to a file and return its path.
