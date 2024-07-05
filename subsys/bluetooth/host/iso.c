@@ -2525,6 +2525,8 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 #endif /* CONFIG_BT_ISO_UNICAST */
 
 #if defined(CONFIG_BT_ISO_BROADCAST)
+static sys_slist_t iso_big_cbs = SYS_SLIST_STATIC_INIT(&iso_big_cbs);
+
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle)
 {
 	return &bigs[big_handle];
@@ -2587,6 +2589,16 @@ static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 
 		bt_iso_chan_disconnected(bis, reason);
 	}
+
+	if (!sys_slist_is_empty(&iso_big_cbs)) {
+		struct bt_iso_big_cb *listener;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&iso_big_cbs, listener, _node) {
+			if (listener->stopped != NULL) {
+				listener->stopped(big, reason);
+			}
+		}
+	}
 }
 
 static int big_init_bis(struct bt_iso_big *big, struct bt_iso_chan **bis_channels, uint8_t num_bis,
@@ -2613,6 +2625,25 @@ static int big_init_bis(struct bt_iso_big *big, struct bt_iso_chan **bis_channel
 
 		sys_slist_append(&big->bis_channels, &bis->node);
 	}
+
+	return 0;
+}
+
+int bt_iso_big_register_cb(struct bt_iso_big_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&iso_big_cbs, &cb->_node, NULL)) {
+		LOG_DBG("cb %p is already registered", cb);
+
+		return -EEXIST;
+	}
+
+	sys_slist_append(&iso_big_cbs, &cb->_node);
 
 	return 0;
 }
@@ -3006,6 +3037,16 @@ void hci_le_big_complete(struct net_buf *buf)
 		store_bis_broadcaster_info(evt, &iso_conn->iso.info);
 		bt_conn_set_state(iso_conn, BT_CONN_CONNECTED);
 	}
+
+	if (!sys_slist_is_empty(&iso_big_cbs)) {
+		struct bt_iso_big_cb *listener;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&iso_big_cbs, listener, _node) {
+			if (listener->started != NULL) {
+				listener->started(big);
+			}
+		}
+	}
 }
 
 void hci_le_big_terminate(struct net_buf *buf)
@@ -3185,6 +3226,16 @@ void hci_le_big_sync_established(struct net_buf *buf)
 		iso_conn->handle = sys_le16_to_cpu(handle);
 		store_bis_sync_receiver_info(evt, &iso_conn->iso.info);
 		bt_conn_set_state(iso_conn, BT_CONN_CONNECTED);
+	}
+
+	if (!sys_slist_is_empty(&iso_big_cbs)) {
+		struct bt_iso_big_cb *listener;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&iso_big_cbs, listener, _node) {
+			if (listener->started != NULL) {
+				listener->started(big);
+			}
+		}
 	}
 }
 
