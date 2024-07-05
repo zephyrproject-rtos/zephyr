@@ -1078,16 +1078,14 @@ config TOOLCHAIN_HAS_BUILTIN_FFS
 	help
 	  Hidden option to signal that toolchain has __builtin_ffs*().
 
-config ARCH_CPU_IDLE_CUSTOM
-	bool "Custom arch_cpu_idle implementation"
-	default n
+config ARCH_HAS_CUSTOM_CPU_IDLE
+	bool
 	help
 	  This options allows applications to override the default arch idle implementation with
 	  a custom one.
 
-config ARCH_CPU_ATOMIC_IDLE_CUSTOM
-	bool "Custom arch_cpu_atomic_idle implementation"
-	default n
+config ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+	bool
 	help
 	  This options allows applications to override the default arch idle implementation with
 	  a custom one.
