@@ -4,6 +4,14 @@ tests:
     tags: zbus
     integration_platforms:
       - native_sim
+  message_bus.zbus.general_unittests.linker_generator:
+    tags:
+      - linker_generator
+      - zbus
+    platform_allow:
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
   message_bus.zbus.general_unittests_without_priority_boost:
     platform_exclude: fvp_base_revc_2xaemv8a//smp/ns
     tags: zbus
