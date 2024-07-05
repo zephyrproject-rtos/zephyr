@@ -99,6 +99,13 @@
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
 		};
+
+		hsfll120: hsfll120 {
+			compatible = "fixed-clock";
+			clocks = <&fll16m>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(320)>;
+		};
 	};
 
 	soc {
