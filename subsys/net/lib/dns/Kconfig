@@ -63,8 +63,8 @@ config DNS_RESOLVER_MAX_SERVERS
 
 config DNS_RESOLVER_MAX_QUERY_LEN
 	int "Max length of a DNS query"
-	range 1 255
-	default 255
+	range 1 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  Max length of a DNS query that should be looked up including the
 	  trailing 0. So e.g. "example.com" would have a query len of 12.
