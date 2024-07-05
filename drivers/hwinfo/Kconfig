@@ -211,4 +211,12 @@ config HWINFO_AMBIQ
 	help
 	  Enable AMBIQ hwinfo driver
 
+config HWINFO_NUMAKER
+	bool "NuMaker hwinfo"
+	default y
+	depends on SOC_SERIES_M46X
+	select HAS_NUMAKER_FMC
+	help
+	  Enable Nuvoton NuMaker hwinfo driver
+
 endif
