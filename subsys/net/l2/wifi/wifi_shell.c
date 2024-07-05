@@ -1784,7 +1784,7 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_first_wifi();
+	struct net_if *iface = net_if_get_wifi_sta();
 	struct wifi_wps_config_params params = {0};
 
 	context.sh = sh;
@@ -1806,7 +1806,7 @@ static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_wifi_wps_pin(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_first_wifi();
+	struct net_if *iface = net_if_get_wifi_sta();
 	struct wifi_wps_config_params params = {0};
 
 	context.sh = sh;
@@ -1823,6 +1823,57 @@ static int cmd_wifi_wps_pin(const struct shell *sh, size_t argc, char *argv[])
 
 	if (net_mgmt(NET_REQUEST_WIFI_WPS_CONFIG, iface, &params, sizeof(params))) {
 		PR_WARNING("Start wps pin connection failed\n");
+		return -ENOEXEC;
+	}
+
+	if (params.oper == WIFI_WPS_PIN_GET) {
+		PR("WPS PIN is: %s\n", params.pin);
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_ap_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_wifi_sap();
+	struct wifi_wps_config_params params = {0};
+
+	context.sh = sh;
+
+	if (argc == 1) {
+		params.oper = WIFI_WPS_PBC;
+	} else {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_AP_WPS_CONFIG, iface, &params, sizeof(params))) {
+		PR_WARNING("Start AP WPS PBC failed\n");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_ap_wps_pin(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_wifi_sap();
+	struct wifi_wps_config_params params = {0};
+
+	context.sh = sh;
+
+	if (argc == 1) {
+		params.oper = WIFI_WPS_PIN_GET;
+	} else if (argc == 2) {
+		params.oper = WIFI_WPS_PIN_SET;
+		strncpy(params.pin, argv[1], WIFI_WPS_PIN_MAX_LEN);
+	} else {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_AP_WPS_CONFIG, iface, &params, sizeof(params))) {
+		PR_WARNING("Start AP WPS PIN failed\n");
 		return -ENOEXEC;
 	}
 
@@ -2837,6 +2888,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "-h --help (prints help)",
 		  cmd_wifi_ap_config_params,
 		  2, 5),
+	SHELL_CMD_ARG(wps_pbc, NULL,
+		  "Start AP WPS PBC session.\n",
+		  cmd_wifi_ap_wps_pbc, 1, 0),
+	SHELL_CMD_ARG(wps_pin, NULL,
+		  "Get or Set AP WPS PIN.\n"
+		  "[pin] Only applicable for set.\n",
+		  cmd_wifi_ap_wps_pin, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 
