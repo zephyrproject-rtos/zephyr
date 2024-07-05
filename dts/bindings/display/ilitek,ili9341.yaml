@@ -157,3 +157,17 @@ properties:
     ]
     description:
       Negative gamma correction (NGAMCTRL) register values.
+
+  cmd-data-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Data/Command pin of the GC9X01X is to be configured
+      high(1) for data, low(0) for command.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESET pin of the GC9X01X.
+      If connected directly the MCU pin should be configured
+      as active low.

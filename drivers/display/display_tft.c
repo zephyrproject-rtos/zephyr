@@ -12,7 +12,7 @@
 
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(display_ili9341, CONFIG_DISPLAY_LOG_LEVEL);
+LOG_MODULE_REGISTER(display_ili9341x, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define ILI9341_DC_PIN 5
 #define ILI9341_CS_PIN 0

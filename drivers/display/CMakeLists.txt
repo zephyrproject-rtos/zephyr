@@ -10,6 +10,9 @@ zephyr_library_sources_ifdef(CONFIG_UC81XX		uc81xx.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9XXX		display_ili9xxx.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9340		display_ili9340.c)
 zephyr_library_sources_ifdef(CONFIG_TFT			display_tft.c)
+
+zephyr_library_sources_ifdef(CONFIG_ILI9341TFT			ili9341_driver.c)
+
 zephyr_library_sources_ifdef(CONFIG_ILI9341		display_ili9341.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9342C	display_ili9342c.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9488		display_ili9488.c)
