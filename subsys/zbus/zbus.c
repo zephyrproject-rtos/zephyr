@@ -230,15 +230,7 @@ static inline void chan_update_hop(const struct zbus_channel *chan)
 
 static inline void update_all_channels_hop(const struct zbus_observer *obs)
 {
-	struct zbus_channel_observation *observation;
-
-	int count;
-
-	STRUCT_SECTION_COUNT(zbus_channel_observation, &count);
-
-	for (int16_t i = 0; i < count; ++i) {
-		STRUCT_SECTION_GET(zbus_channel_observation, i, &observation);
-
+	STRUCT_SECTION_FOREACH(zbus_channel_observation, observation) {
 		if (obs != observation->obs) {
 			continue;
 		}
