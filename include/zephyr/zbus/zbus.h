@@ -358,7 +358,7 @@ struct zbus_channel_observation {
 		.user_data = _user_data,                                                  \
 		.validator = _validator,                                                  \
 		.data = &_CONCAT(_zbus_chan_data_, _name),                                \
-		IF_ENABLED(ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION, (                   \
+		IF_ENABLED(ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION, (                  \
 			.msg_subscriber_pool = &_zbus_msg_subscribers_pool,               \
 		))                                                                        \
 	};                                                                                \
