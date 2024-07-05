@@ -3228,7 +3228,7 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return err;
 	}
 
-	/* the OR operation evaluated by "if" statement bellow seems redundant
+	/* the OR operation evaluated by "if" statement below seems redundant
 	 * when CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY is enabled, because in
 	 * that case the SMP_FLAG_SC will always be set to false. But it's
 	 * needed in order to inform the compiler that the inside of the "if"
