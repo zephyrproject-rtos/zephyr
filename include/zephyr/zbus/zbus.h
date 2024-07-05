@@ -341,6 +341,11 @@ struct zbus_channel_observation {
 	static struct zbus_channel_data _CONCAT(_zbus_chan_data_, _name) = {              \
 		.observers_start_idx = -1,                                                \
 		.observers_end_idx = -1,                                                  \
+		.sem = Z_SEM_INITIALIZER(_CONCAT(_zbus_chan_data_, _name).sem, 1, 1),     \
+		IF_ENABLED(CONFIG_ZBUS_RUNTIME_OBSERVERS, (                               \
+			.observers = SYS_SLIST_STATIC_INIT(                               \
+				&_CONCAT(_zbus_chan_data_, _name).observers),             \
+		))                                                                        \
 		IF_ENABLED(CONFIG_ZBUS_PRIORITY_BOOST, (                                  \
 			.highest_observer_priority = ZBUS_MIN_THREAD_PRIORITY,            \
 		))                                                                        \
