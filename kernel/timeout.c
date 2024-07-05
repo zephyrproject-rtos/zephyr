@@ -213,7 +213,7 @@ void sys_clock_announce(int32_t ticks)
 
 	/* We release the lock around the callbacks below, so on SMP
 	 * systems someone might be already running the loop.  Don't
-	 * race (which will cause paralllel execution of "sequential"
+	 * race (which will cause parallel execution of "sequential"
 	 * timeouts and confuse apps), just increment the tick count
 	 * and return.
 	 */

@@ -615,7 +615,7 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	dst += CONFIG_MMU_PAGE_SIZE;
 
 	if (is_anon) {
-		/* Mapping from annoymous memory */
+		/* Mapping from anonymous memory */
 		VIRT_FOREACH(dst, size, pos) {
 			ret = map_anon_page(pos, flags);
 
