@@ -76,9 +76,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
                           dev_id=True, flash_addr=True, erase=True,
-                          tool_opt=True)
+                          tool_opt=True, rtt=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -142,7 +142,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require(self.pyocd)
-        if command == 'flash':
+        if command == 'rtt':
+            self.rtt(**kwargs)
+        elif command == 'flash':
             self.flash(**kwargs)
         else:
             self.debug_debugserver(command, **kwargs)
@@ -214,3 +216,23 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             self.require(client_cmd[0])
             self.log_gdbserver_message()
             self.run_server_and_client(server_cmd, client_cmd)
+
+
+    def rtt(self):
+        rtt_addr = self.get_rtt_address()
+        if rtt_addr is None:
+            raise ValueError('RTT control block not found')
+
+        self.logger.debug(f'rtt address: 0x{rtt_addr:x}')
+
+        cmd = ([self.pyocd] +
+               ['rtt'] +
+               self.pyocd_config_args +
+               self.daparg_args +
+               self.target_args +
+               self.board_args +
+               self.frequency_args +
+               self.tool_opt_args +
+               ['-a', f'0x{rtt_addr:x}'])
+
+        self.check_call(cmd)
