@@ -3619,6 +3619,10 @@ Renesas RA Platforms:
   status: maintained
   maintainers:
     - soburi
+    - KhiemNguyenT
+  collaborators:
+    - duynguyenxa
+    - thaoluonguw
   files:
     - boards/arduino/uno_r4/
     - drivers/*/*renesas_ra*
@@ -4500,6 +4504,9 @@ West:
     - blauret
     - andrzej-kaczmarek
     - ydamigos
+    - soburi
+    - duynguyenxa
+    - thaoluonguw
   files: []
   labels:
     - "platform: Renesas"
