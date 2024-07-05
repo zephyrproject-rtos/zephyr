@@ -276,6 +276,12 @@ struct http2_stream_ctx {
 	int stream_id; /**< Stream identifier. */
 	enum http2_stream_state stream_state; /**< Stream state. */
 	int window_size; /**< Stream-level window size. */
+
+	/** Flag indicating that headers were sent in the reply. */
+	bool headers_sent : 1;
+
+	/** Flag indicating that END_STREAM flag was sent. */
+	bool end_stream_sent : 1;
 };
 
 /** @brief HTTP/2 frame representation. */
@@ -314,6 +320,9 @@ struct http_client_ctx {
 
 	/** Currently processed resource detail. */
 	struct http_resource_detail *current_detail;
+
+	/** Currently processed stream. */
+	struct http2_stream_ctx *current_stream;
 
 	/** HTTP/2 header parser context. */
 	struct http_hpack_header_buf header_field;
@@ -359,13 +368,6 @@ struct http_client_ctx {
 	/** Websocket security key. */
 	IF_ENABLED(CONFIG_WEBSOCKET, (uint8_t ws_sec_key[HTTP_SERVER_WS_MAX_SEC_KEY_LEN]));
 /** @endcond */
-
-	/* TODO those two are stream-specific, move them. */
-	/** Flag indicating that headers were sent in the reply. */
-	bool headers_sent : 1;
-
-	/** Flag indicating that END_STREAM flag was sent. */
-	bool end_stream_sent : 1;
 
 	/** Flag indicating that HTTP2 preface was sent. */
 	bool preface_sent : 1;

@@ -364,6 +364,8 @@ static void init_client_ctx(struct http_client_ctx *client, int new_socket)
 		client->streams[i].stream_state = HTTP2_STREAM_IDLE;
 		client->streams[i].stream_id = 0;
 	}
+
+	client->current_stream = NULL;
 }
 
 static int handle_http_preface(struct http_client_ctx *client)
