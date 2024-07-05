@@ -5,6 +5,14 @@
 
 menu "ATT and GATT Options"
 
+config BT_ATT_ERR_TO_STR
+	bool "Print ATT error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of ATT error
+	  codes represented as strings.
+	  See bt_att_err_to_str() for more details.
+
 config BT_ATT_TX_COUNT
 	int "Number of ATT buffers"
 	default BT_BUF_ACL_TX_COUNT

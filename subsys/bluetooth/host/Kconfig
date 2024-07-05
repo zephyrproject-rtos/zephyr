@@ -363,6 +363,23 @@ config BT_SMP
 	  (SMP), making it possible to pair devices over LE.
 
 if BT_SMP
+
+config BT_SECURITY_ERR_TO_STR
+	bool "Print security error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of security error
+	  codes represented as strings.
+	  See bt_security_err_to_str() for more details.
+
+config BT_SMP_ERR_TO_STR
+	bool "Print SMP error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of SMP error
+	  codes represented as strings.
+	  See bt_smp_err_to_str() for more details.
+
 config BT_PASSKEY_KEYPRESS
 	bool "Passkey Keypress Notification support [EXPERIMENTAL]"
 	select EXPERIMENTAL

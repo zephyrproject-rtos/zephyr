@@ -185,7 +185,7 @@ static struct bt_att_tx_meta_data tx_meta_data_storage[CONFIG_BT_ATT_TX_COUNT];
 struct bt_att_tx_meta_data *bt_att_get_tx_meta_data(const struct net_buf *buf);
 static void att_on_sent_cb(struct bt_att_tx_meta_data *meta);
 
-
+#if defined(CONFIG_BT_ATT_ERR_TO_STR)
 const char *bt_att_err_to_str(uint8_t att_err)
 {
 	/* To mapping tables are used to avoid a big gap with NULL-entries. */
@@ -239,6 +239,7 @@ const char *bt_att_err_to_str(uint8_t att_err)
 	#undef ATT_ERR
 	#undef ATT_ERR_SECOND
 }
+#endif /* CONFIG_BT_ATT_ERR_TO_STR */
 
 static void att_tx_destroy(struct net_buf *buf)
 {
