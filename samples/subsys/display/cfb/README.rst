@@ -1,20 +1,20 @@
-.. zephyr:code-sample:: character-frame-buffer
-   :name: Character frame buffer
-   :relevant-api: monochrome_character_framebuffer
+.. zephyr:code-sample:: cfb-sample
+   :name: Compact Framebuffer subsystem sample
+   :relevant-api: compact_framebuffer_subsystem
 
-   Display character strings using the Character Frame Buffer (CFB).
+   Display character strings using the Compact Framebuffer (CFB) subsystem.
 
 Overview
 ********
 
-This sample displays character strings using the Character Frame Buffer
-(CFB) subsystem framework.
+This sample displays character strings using the Compact Framebuffer
+(CFB) subsystem.
 
 Requirements
 ************
 
-This sample requires a supported board and CFB-supporting
-display, such as the :ref:`reel_board`.
+This sample requires a board that have a display,
+such as the :ref:`reel_board`.
 
 Building and Running
 ********************

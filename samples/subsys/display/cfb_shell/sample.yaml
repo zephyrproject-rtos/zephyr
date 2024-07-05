@@ -2,8 +2,8 @@ common:
   harness: display
   tags: display
 sample:
-  description: Character framebuffer shell test
-  name: cfb shell sample
+  description: Compact Framebuffer subsystem shell test
+  name: CFB shell sample
 tests:
   sample.display.cfb_shell.ssd1306:
     platform_allow: frdm_k64f
