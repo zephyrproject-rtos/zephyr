@@ -398,6 +398,22 @@ is_kernel_syscall:
 	bne t0, t1, skip_schedule
 	lr a0, __struct_arch_esf_a0_OFFSET(sp)
 	lr a1, __struct_arch_esf_a1_OFFSET(sp)
+
+#ifdef CONFIG_FPU_SHARING
+	/*
+	 * When an ECALL is used for a context-switch, the current thread has
+	 * been updated to the next thread.
+	 * Add the exception_depth back to the previous thread.
+	 */
+	lb t1, _thread_offset_to_exception_depth(a0)
+	add t1, t1, -1
+	sb t1, _thread_offset_to_exception_depth(a0)
+
+	lb t1, _thread_offset_to_exception_depth(a1)
+	add t1, t1, 1
+	sb t1, _thread_offset_to_exception_depth(a1)
+#endif
+
 	j reschedule
 skip_schedule:
 #endif
