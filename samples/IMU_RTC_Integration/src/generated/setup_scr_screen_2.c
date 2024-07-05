@@ -30,7 +30,7 @@ void setup_scr_screen_2(lv_ui *ui)
 
 	//Write codes screen_2_senderName
 	ui->screen_2_senderName = lv_label_create(ui->screen_2);
-	lv_label_set_text(ui->screen_2_senderName, "" LV_SYMBOL_ENVELOPE " Suneeth MG");
+	lv_label_set_text(ui->screen_2_senderName, "" LV_SYMBOL_ENVELOPE "");
 	lv_label_set_long_mode(ui->screen_2_senderName, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_2_senderName, 56, 63);
 	lv_obj_set_size(ui->screen_2_senderName, 141, 21);
@@ -53,7 +53,7 @@ void setup_scr_screen_2(lv_ui *ui)
 
 	//Write codes screen_2_messageBox
 	ui->screen_2_messageBox = lv_label_create(ui->screen_2);
-	lv_label_set_text(ui->screen_2_messageBox, "This a message from Suneeth MG.Welcome to mindgrove");
+	lv_label_set_text(ui->screen_2_messageBox, "No messages");
 	lv_label_set_long_mode(ui->screen_2_messageBox, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_2_messageBox, 46, 103);
 	lv_obj_set_size(ui->screen_2_messageBox, 160, 70);

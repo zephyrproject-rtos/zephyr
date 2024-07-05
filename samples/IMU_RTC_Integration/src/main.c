@@ -17,6 +17,7 @@
 #include <zephyr/drivers/gpio.h>
 #include "RTC.h"
 #include "acc_gyro.h"
+#include "cst816s.h"
 LOG_MODULE_REGISTER(app);
 
 #define MY_STACK_SIZE 2048
@@ -54,7 +55,7 @@ typedef struct{
 }msg_data;
 
 K_MSGQ_DEFINE(sms_msg_q, sizeof(msg_data), 5, 1);
-
+K_MSGQ_DEFINE(touch_input_q, sizeof(msg_data), 5, 1);
 void vibration_motor()
 {
 	gpio_pin_set_dt(&vPin,1);
@@ -226,7 +227,22 @@ void process_message_notification_handler(void)
 		lv_task_handler();
 	}
 }
-
+void gesture_control_handler(void)
+{
+	data_struct touch_data;
+	while(1){
+		k_msgq_get(&touch_input_q, &touch_data, K_FOREVER);
+		if(touch_data.gesture == SWIPE_LEFT)
+		{
+			lv_scr_load(guider_ui.screen_2);
+		}
+		else if (touch_data.gesture == SWIPE_RIGHT)
+		{
+			lv_scr_load(guider_ui.screen_1);
+		}
+		lv_task_handler();
+	}
+}
 
 K_THREAD_DEFINE(main_task, MY_STACK_SIZE,
                 main_task_handler, NULL, NULL, NULL,
@@ -238,5 +254,8 @@ K_THREAD_DEFINE(lcd_display_blank_task, MY_STACK_SIZE,
                 lcd_display_blank_task_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
 K_THREAD_DEFINE(process_message_notification, MY_STACK_SIZE,
-                lcd_display_blank_task_handler, NULL, NULL, NULL,
+                process_message_notification_handler, NULL, NULL, NULL,
+                MY_PRIORITY, 0, 0);
+K_THREAD_DEFINE(process_message_notification, MY_STACK_SIZE,
+                gesture_control_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
