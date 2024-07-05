@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Broadcast Source */
 
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
@@ -54,6 +55,7 @@ static struct bt_bap_broadcast_subgroup
 	broadcast_source_subgroups[CONFIG_BT_BAP_BROADCAST_SRC_COUNT]
 				  [CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
 static struct bt_bap_broadcast_source broadcast_sources[CONFIG_BT_BAP_BROADCAST_SRC_COUNT];
+static sys_slist_t bap_broadcast_source_cbs = SYS_SLIST_STATIC_INIT(&bap_broadcast_source_cbs);
 
 /**
  * 2 octets UUID
@@ -1168,8 +1170,6 @@ int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 		return err;
 	}
 
-	source->big = NULL;
-
 	return 0;
 }
 
@@ -1247,6 +1247,105 @@ int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 		LOG_DBG("base_buf %p with size %u not large enough", base_buf, base_buf->size);
 
 		return -EMSGSIZE;
+	}
+
+	return 0;
+}
+
+static struct bt_bap_broadcast_source *get_broadcast_source_by_big(const struct bt_iso_big *big)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sources); i++) {
+		if (broadcast_sources[i].big == big) {
+			return &broadcast_sources[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void big_started_cb(struct bt_iso_big *big)
+{
+	struct bt_bap_broadcast_source *source = get_broadcast_source_by_big(big);
+	struct bt_bap_broadcast_source_cb *listener;
+
+	if (source == NULL) {
+		/* Not one of ours */
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bap_broadcast_source_cbs, listener, _node) {
+		if (listener->started) {
+			listener->started(source);
+		}
+	}
+}
+
+static void big_stopped_cb(struct bt_iso_big *big, uint8_t reason)
+{
+	struct bt_bap_broadcast_source *source = get_broadcast_source_by_big(big);
+	struct bt_bap_broadcast_source_cb *listener;
+
+	if (source == NULL) {
+		/* Not one of ours */
+		return;
+	}
+
+	source->big = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bap_broadcast_source_cbs, listener, _node) {
+		if (listener->stopped) {
+			listener->stopped(source, reason);
+		}
+	}
+}
+
+int bt_bap_broadcast_source_register_cb(struct bt_bap_broadcast_source_cb *cb)
+{
+	static bool iso_big_cb_registered;
+
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&bap_broadcast_source_cbs, &cb->_node, NULL)) {
+		LOG_DBG("cb %p is already registered", cb);
+
+		return -EEXIST;
+	}
+
+	if (!iso_big_cb_registered) {
+		static struct bt_iso_big_cb big_cb = {
+			.started = big_started_cb,
+			.stopped = big_stopped_cb,
+		};
+		const int err = bt_iso_big_register_cb(&big_cb);
+
+		if (err != 0) {
+			__ASSERT(false, "Failed to register ISO BIG callbacks: %d", err);
+		}
+
+		iso_big_cb_registered = true;
+	}
+
+	sys_slist_append(&bap_broadcast_source_cbs, &cb->_node);
+
+	return 0;
+}
+
+int bt_bap_broadcast_source_unregister_cb(struct bt_bap_broadcast_source_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&bap_broadcast_source_cbs, &cb->_node)) {
+		LOG_DBG("cb %p is not registered", cb);
+
+		return -ENOENT;
 	}
 
 	return 0;
