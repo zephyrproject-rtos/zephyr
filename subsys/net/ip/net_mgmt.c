@@ -116,7 +116,7 @@ static void mgmt_event_work_handler(struct k_work *work)
 
 	ARG_UNUSED(work);
 
-	while (k_msgq_get(&event_msgq, &mgmt_event, K_FOREVER) == 0) {
+	while (k_msgq_get(&event_msgq, &mgmt_event, K_NO_WAIT) == 0) {
 		NET_DBG("Handling events, forwarding it relevantly");
 
 		mgmt_run_callbacks(&mgmt_event);
