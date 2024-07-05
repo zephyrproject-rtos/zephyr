@@ -49,7 +49,7 @@ config NET_IPV6_MTU
 config NET_INITIAL_HOP_LIMIT
 	int "Initial IPv6 hop limit value for unicast packets"
 	default 64
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  The value should normally be > 0. The device receiving the IPv6
 	  packet will decrement the value and will drop the packet if the hop
@@ -59,7 +59,7 @@ config NET_INITIAL_HOP_LIMIT
 config NET_INITIAL_MCAST_HOP_LIMIT
 	int "Initial IPv6 hop limit value for multicast packets"
 	default 1
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  The value should normally be > 0. The device receiving the IPv6
 	  packet will decrement the value and will drop the packet if the hop

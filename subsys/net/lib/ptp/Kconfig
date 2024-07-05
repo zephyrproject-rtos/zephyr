@@ -171,12 +171,12 @@ config PTP_CLOCK_ACCURACY
 config PTP_PRIORITY1
 	int "Value used in the Best TimeTransmitter Clock Algorithm (BTCA)"
 	default 128
-	range 0 255
+	range 0 $(UINT8_MAX)
 
 config PTP_PRIORITY2
 	int "Value used in the Best TimeTransmitter Clock Algorithm (BTCA)"
 	default 128
-	range 0 255
+	range 0 $(UINT8_MAX)
 
 config PTP_TIME_RECEIVER_ONLY
 	bool "Configure Clock as timeReceiver PTP Instance"

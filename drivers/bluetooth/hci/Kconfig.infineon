@@ -199,7 +199,7 @@ config AIROC_CUSTOM_FIRMWARE_HCD_BLOB
 # Change size of command lengths. It for vendor commands related to
 # firmware downloading.
 config BT_BUF_CMD_TX_SIZE
-	default 255
+	default $(UINT8_MAX)
 
 endif # BT_AIROC
 

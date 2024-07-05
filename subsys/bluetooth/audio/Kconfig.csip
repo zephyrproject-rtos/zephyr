@@ -37,7 +37,7 @@ config BT_CSIP_SET_MEMBER_ENC_SIRK_SUPPORT
 config BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
 	int "Coordinated Set Identification Profle max service instance count"
 	default 1
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  This option sets the maximum number of instances of Coordinated Set
 	  Identification Services. If the service is declared as primary service

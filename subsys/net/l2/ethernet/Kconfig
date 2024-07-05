@@ -33,7 +33,7 @@ config NET_VLAN
 config NET_VLAN_COUNT
 	int "Max VLAN tags supported in the system"
 	default 1
-	range 1 255
+	range 1 $(UINT8_MAX)
 	depends on NET_VLAN
 	help
 	  How many VLAN tags can be configured.

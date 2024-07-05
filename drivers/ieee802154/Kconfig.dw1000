@@ -22,7 +22,7 @@ config IEEE802154_DW1000_SNIFF_ONT
 config IEEE802154_DW1000_SNIFF_OFFT
 	int "SNIFF off time"
 	default 16
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  SNIFF off time in unit of approximate 1 microsecond.
 

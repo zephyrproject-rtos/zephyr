@@ -66,7 +66,7 @@ config OPENTHREAD_MAX_CHILDREN
 
 config OPENTHREAD_MAX_IP_ADDR_PER_CHILD
 	int "The maximum number of IPv6 address registrations per child"
-	range 4 255
+	range 4 $(UINT8_MAX)
 	default 6
 
 config OPENTHREAD_CONFIG_PLATFORM_INFO
@@ -99,8 +99,8 @@ config OPENTHREAD_MIN_RECEIVE_ON_AFTER
 
 config OPENTHREAD_PLATFORM_CSL_UNCERT
 	int "CSL uncertainty"
-	default 255
-	range 0 255
+	default $(UINT8_MAX)
+	range 0 $(UINT8_MAX)
 	help
 	  The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
 

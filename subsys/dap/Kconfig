@@ -13,7 +13,7 @@ if DAP
 config CMSIS_DAP_PACKET_COUNT
 	int "Maximum packet buffers for request and response data."
 	default 4
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Maximum packet buffers for request and response data.
 

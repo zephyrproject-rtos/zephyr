@@ -216,7 +216,7 @@ config NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH
 config NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE
 	int "Intermediate buffer size for DTLS sendmsg()"
 	depends on NET_SOCKETS_ENABLE_DTLS
-	range 0 65535
+	range 0 $(UINT16_MAX)
 	default 0
 	help
 	  Size of the intermediate buffer for DTLS sendmsg() function. The

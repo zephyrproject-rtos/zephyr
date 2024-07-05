@@ -5,7 +5,7 @@ if BOARD_XIAO_ESP32S3_ESP32S3_PROCPU
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
-	default 65535 if WIFI && BT
+	default $(UINT16_MAX) if WIFI && BT
 	default 51200 if WIFI
 	default 40960 if BT
 	default 4096
