@@ -53,7 +53,7 @@ void z_arm_cpu_idle_init(void)
 } while (false)
 #endif
 
-#ifndef CONFIG_ARCH_CPU_IDLE_CUSTOM
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 void arch_cpu_idle(void)
 {
 #if defined(CONFIG_TRACING)
@@ -99,7 +99,7 @@ void arch_cpu_idle(void)
 }
 #endif
 
-#ifndef CONFIG_ARCH_CPU_ATOMIC_IDLE_CUSTOM
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 void arch_cpu_atomic_idle(unsigned int key)
 {
 #if defined(CONFIG_TRACING)

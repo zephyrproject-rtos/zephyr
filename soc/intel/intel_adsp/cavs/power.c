@@ -194,7 +194,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 #endif /* CONFIG_PM */
 
-#ifdef CONFIG_ARCH_CPU_IDLE_CUSTOM
+#ifdef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 /* xt-clang removes any NOPs more than 8. So we need to set
  * no optimization to avoid those NOPs from being removed.
  *

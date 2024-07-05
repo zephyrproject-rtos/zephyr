@@ -26,7 +26,7 @@ SECTION_VAR(BSS, z_arc_cpu_sleep_mode)
 	.align 4
 	.word 0
 
-#ifndef CONFIG_ARCH_CPU_IDLE_CUSTOM
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 /*
  * @brief Put the CPU in low-power mode
  *
@@ -51,7 +51,7 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 	nop
 #endif
 
-#ifndef CONFIG_ARCH_CPU_ATOMIC_IDLE_CUSTOM
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 /*
  * @brief Put the CPU in low-power mode, entered with IRQs locked
  *

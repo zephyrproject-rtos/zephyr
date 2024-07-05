@@ -7,7 +7,7 @@
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/arch/cpu.h>
 
-#ifndef CONFIG_ARCH_CPU_IDLE_CUSTOM
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 __pinned_func
 void arch_cpu_idle(void)
 {
@@ -18,7 +18,7 @@ void arch_cpu_idle(void)
 }
 #endif
 
-#ifndef CONFIG_ARCH_CPU_ATOMIC_IDLE_CUSTOM
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 __pinned_func
 void arch_cpu_atomic_idle(unsigned int key)
 {
