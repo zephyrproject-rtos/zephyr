@@ -42,13 +42,13 @@ config X86_EXCEPTION_STACK_TRACE
 config SCHED_IPI_VECTOR
 	int "IDT vector to use for scheduler IPI"
 	default 34
-	range 33 255
+	range 33 $(UINT8_MAX)
 	depends on SMP
 
 config TLB_IPI_VECTOR
 	int "IDT vector to use for TLB shootdown IPI"
 	default 35
-	range 33 255
+	range 33 $(UINT8_MAX)
 	depends on SMP
 
 # We should really only have to provide one of the following two values,

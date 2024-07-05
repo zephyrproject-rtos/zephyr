@@ -94,7 +94,7 @@ config CLOCK_CONTROL_NRF_CALIBRATION_PERIOD
 config CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP
 	int "Maximum number of calibration skips"
 	default 1
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Calibration is skipped when temperature change since last calibration
 	  was less than configured threshold. If number of consecutive skips

@@ -214,7 +214,7 @@ config BT_CTLR_ISO_RX_BUFFERS
 config BT_CTLR_ISO_TX_BUFFERS
 	int "Number of Isochronous Tx buffers"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
-	range 1 255
+	range 1 $(UINT8_MAX)
 	default BT_ISO_TX_BUF_COUNT if BT_ISO
 	default 3
 	help
@@ -225,7 +225,7 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	int "Isochronous Tx buffer size"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 9 4103 if BT_LL_SW_SPLIT
-	range 1 65535
+	range 1 $(UINT16_MAX)
 	default 9 if BT_LL_SW_SPLIT
 	default 1
 	help
@@ -750,7 +750,7 @@ config BT_CTLR_SYNC_PERIODIC_ADV_LIST
 config BT_CTLR_SYNC_PERIODIC_ADV_LIST_SIZE
 	int "LE Periodic Advertiser List size"
 	depends on BT_CTLR_SYNC_PERIODIC_ADV_LIST
-	range 1 255
+	range 1 $(UINT8_MAX)
 	default 8
 	help
 	  Set Periodic Advertiser List size, this will be return in the HCI LE
@@ -987,8 +987,8 @@ config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 config BT_CTLR_CONN_ISO_STREAMS_MAX_FT
 	int "LE Connected Isochronous Streams max flush timeout"
 	depends on BT_CTLR_CONN_ISO
-	range 1 255
-	default 255
+	range 1 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  Maximum number of CIS flush timeout events.
 
