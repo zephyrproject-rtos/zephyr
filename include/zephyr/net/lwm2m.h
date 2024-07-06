@@ -211,7 +211,7 @@ struct lwm2m_ctx {
 #endif
 	/** Custom socket options.
 	 * Client can override default socket options by providing
-	 * a callback that is called afer a socket is created and before
+	 * a callback that is called after a socket is created and before
 	 * connect.
 	 */
 	int (*set_socketoptions)(struct lwm2m_ctx *client_ctx);

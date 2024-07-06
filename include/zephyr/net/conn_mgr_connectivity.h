@@ -121,7 +121,7 @@ int conn_mgr_if_connect(struct net_if *iface);
 /**
  * @brief Disconnect interface
  *
- * If the provided iface has been bound to a connectivity implementation, disconnect/dissassociate
+ * If the provided iface has been bound to a connectivity implementation, disconnect/disassociate
  * it from the network, and cancel any pending attempts to connect/associate.
  *
  * Does nothing if the iface is currently admin-down.
