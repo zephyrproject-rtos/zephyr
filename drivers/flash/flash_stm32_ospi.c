@@ -437,7 +437,7 @@ static int ospi_read_jedec_id(const struct device *dev,  uint8_t *id)
  * Read Serial Flash Discovery Parameter from the octoFlash at init :
  * perform a read access over SPI bus for SDFP (DataMode is already set)
  */
-static int stm32_ospi_read_sfdp(const struct device *dev, off_t addr,
+static int stm32_ospi_read_sfdp(const struct device *dev, k_off_t addr,
 				void *data,
 				size_t size)
 {
@@ -487,7 +487,7 @@ static int stm32_ospi_read_sfdp(const struct device *dev, off_t addr,
  * perform a read access over SPI bus for SDFP (DataMode is already set)
  * or get it from the sdfp table (in the DTS)
  */
-static int ospi_read_sfdp(const struct device *dev, off_t addr, void *data,
+static int ospi_read_sfdp(const struct device *dev, k_off_t addr, void *data,
 			  size_t size)
 {
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), sfdp_bfp)
@@ -516,7 +516,7 @@ static int ospi_read_sfdp(const struct device *dev, off_t addr, void *data,
 #endif /* sfdp_bfp */
 }
 
-static bool ospi_address_is_valid(const struct device *dev, off_t addr,
+static bool ospi_address_is_valid(const struct device *dev, k_off_t addr,
 				  size_t size)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
@@ -1124,7 +1124,7 @@ static int stm32_ospi_abort(const struct device *dev)
  *   set addr = 0
  * NOTE: cannot erase in MemoryMapped mode
  */
-static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
+static int flash_stm32_ospi_erase(const struct device *dev, k_off_t addr,
 				  size_t size)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
@@ -1296,7 +1296,7 @@ end_erase:
 }
 
 /* Function to read the flash with possible OSPI/SPI and STR/DTR */
-static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
+static int flash_stm32_ospi_read(const struct device *dev, k_off_t addr,
 				 void *data, size_t size)
 {
 	int ret = 0;
@@ -1404,7 +1404,7 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
  * Function to write the flash (page program) : with possible OSPI/SPI and STR/DTR
  * NOTE: writing  in MemoryMapped mode is not guaranted
  */
-static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
+static int flash_stm32_ospi_write(const struct device *dev, k_off_t addr,
 				  const void *data, size_t size)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;

@@ -32,15 +32,15 @@ typedef void (*sam_flash_irq_init_fn_ptr)(void);
 struct sam_flash_config {
 	Efc *regs;
 	sam_flash_irq_init_fn_ptr irq_init;
-	off_t area_address;
-	off_t area_size;
+	k_off_t area_address;
+	k_off_t area_size;
 	struct flash_parameters parameters;
 	struct flash_pages_layout *pages_layouts;
 	size_t pages_layouts_size;
 };
 
 struct sam_flash_erase_data {
-	off_t section_start;
+	k_off_t section_start;
 	size_t section_end;
 	bool succeeded;
 };
@@ -52,7 +52,7 @@ struct sam_flash_data {
 	struct k_sem ready_sem;
 };
 
-static bool sam_flash_validate_offset_len(off_t offset, size_t len)
+static bool sam_flash_validate_offset_len(k_off_t offset, size_t len)
 {
 	if (offset < 0) {
 		return false;
@@ -70,7 +70,7 @@ static bool sam_flash_aligned(size_t value, size_t alignment)
 	return (value & (alignment - 1)) == 0;
 }
 
-static bool sam_flash_offset_is_on_write_page_boundary(off_t offset)
+static bool sam_flash_offset_is_on_write_page_boundary(k_off_t offset)
 {
 	return sam_flash_aligned(offset, SAM_FLASH_WRITE_PAGE_SIZE);
 }
@@ -134,11 +134,11 @@ static int sam_flash_section_wait_until_ready(const struct device *dev)
 	return 0;
 }
 
-static bool sam_flash_section_is_within_area(const struct device *dev, off_t offset, size_t len)
+static bool sam_flash_section_is_within_area(const struct device *dev, k_off_t offset, size_t len)
 {
 	const struct sam_flash_config *config = dev->config;
 
-	if ((offset + ((off_t)len)) < offset) {
+	if ((offset + ((k_off_t)len)) < offset) {
 		return false;
 	}
 
@@ -153,7 +153,7 @@ static bool sam_flash_section_is_within_area(const struct device *dev, off_t off
 }
 
 static bool sam_flash_section_is_aligned_with_write_block_size(const struct device *dev,
-							       off_t offset, size_t len)
+							       k_off_t offset, size_t len)
 {
 	const struct sam_flash_config *config = dev->config;
 
@@ -168,7 +168,7 @@ static bool sam_flash_section_is_aligned_with_write_block_size(const struct devi
 	return false;
 }
 
-static bool sam_flash_section_is_aligned_with_pages(const struct device *dev, off_t offset,
+static bool sam_flash_section_is_aligned_with_pages(const struct device *dev, k_off_t offset,
 						    size_t len)
 {
 	const struct sam_flash_config *config = dev->config;
@@ -202,7 +202,7 @@ static bool sam_flash_section_is_aligned_with_pages(const struct device *dev, of
 	return true;
 }
 
-static int sam_flash_read(const struct device *dev, off_t offset, void *data, size_t len)
+static int sam_flash_read(const struct device *dev, k_off_t offset, void *data, size_t len)
 {
 	struct sam_flash_data *sam_data = dev->data;
 	const struct sam_flash_config *sam_config = dev->config;
@@ -221,12 +221,12 @@ static int sam_flash_read(const struct device *dev, off_t offset, void *data, si
 	}
 
 	key = k_spin_lock(&sam_data->lock);
-	memcpy(data, (uint8_t *)(sam_config->area_address + offset), len);
+	memcpy(data, (uint8_t *)(uintptr_t)(sam_config->area_address + offset), len);
 	k_spin_unlock(&sam_data->lock, key);
 	return 0;
 }
 
-static int sam_flash_write_latch_buffer_to_page(const struct device *dev, off_t offset)
+static int sam_flash_write_latch_buffer_to_page(const struct device *dev, k_off_t offset)
 {
 	const struct sam_flash_config *sam_config = dev->config;
 	Efc *regs = sam_config->regs;
@@ -237,18 +237,18 @@ static int sam_flash_write_latch_buffer_to_page(const struct device *dev, off_t 
 	return 0;
 }
 
-static int sam_flash_write_latch_buffer_to_previous_page(const struct device *dev, off_t offset)
+static int sam_flash_write_latch_buffer_to_previous_page(const struct device *dev, k_off_t offset)
 {
 	return sam_flash_write_latch_buffer_to_page(dev, offset - SAM_FLASH_WRITE_PAGE_SIZE);
 }
 
-static void sam_flash_write_dword_to_latch_buffer(off_t offset, uint32_t dword)
+static void sam_flash_write_dword_to_latch_buffer(k_off_t offset, uint32_t dword)
 {
-	*((uint32_t *)offset) = dword;
+	*((uint32_t *)(uintptr_t)offset) = dword;
 	barrier_dsync_fence_full();
 }
 
-static int sam_flash_write_dwords_to_flash(const struct device *dev, off_t offset,
+static int sam_flash_write_dwords_to_flash(const struct device *dev, k_off_t offset,
 					   const uint32_t *dwords, size_t size)
 {
 	for (size_t i = 0; i < size; i++) {
@@ -266,7 +266,7 @@ static int sam_flash_write_dwords_to_flash(const struct device *dev, off_t offse
 	return 0;
 }
 
-static int sam_flash_write(const struct device *dev, off_t offset, const void *data, size_t len)
+static int sam_flash_write(const struct device *dev, k_off_t offset, const void *data, size_t len)
 {
 	struct sam_flash_data *sam_data = dev->data;
 	k_spinlock_key_t key;
@@ -414,7 +414,7 @@ static bool sam_flash_erase_foreach_page(const struct flash_pages_info *info, vo
 	return true;
 }
 
-static int sam_flash_erase(const struct device *dev, off_t offset, size_t size)
+static int sam_flash_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	struct sam_flash_data *sam_data = dev->data;
 	k_spinlock_key_t key;

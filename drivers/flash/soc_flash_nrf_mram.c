@@ -37,7 +37,7 @@ BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
  * @return Absolute address in MRAM, or NULL if @p offset or @p len are not
  *         within bounds or appropriately aligned.
  */
-static uintptr_t validate_and_map_addr(off_t offset, size_t len, bool must_align)
+static uintptr_t validate_and_map_addr(k_off_t offset, size_t len, bool must_align)
 {
 	if (unlikely(offset < 0 || offset >= MRAM_SIZE || len > MRAM_SIZE - offset)) {
 		LOG_ERR("invalid offset: %ld:%zu", offset, len);
@@ -82,7 +82,7 @@ static void commit_changes(uintptr_t addr_end)
 	sys_write8(sys_read8(addr_end), addr_end);
 }
 
-static int nrf_mram_read(const struct device *dev, off_t offset, void *data, size_t len)
+static int nrf_mram_read(const struct device *dev, k_off_t offset, void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -99,7 +99,7 @@ static int nrf_mram_read(const struct device *dev, off_t offset, void *data, siz
 	return 0;
 }
 
-static int nrf_mram_write(const struct device *dev, off_t offset, const void *data, size_t len)
+static int nrf_mram_write(const struct device *dev, k_off_t offset, const void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -117,7 +117,7 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 	return 0;
 }
 
-static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
+static int nrf_mram_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	ARG_UNUSED(dev);
 

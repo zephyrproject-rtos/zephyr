@@ -61,8 +61,8 @@ BUILD_ASSERT(FIXED_PARTITION_EXISTS(SLOT4_PARTITION) &&
 static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa)
 {
 	uint32_t data[16];
-	off_t addr;
-	off_t end;
+	k_off_t addr;
+	k_off_t end;
 	int bytes_to_read;
 	int rc;
 	int i;
@@ -462,7 +462,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		goto end_fa;
 	}
 	struct flash_pages_info page;
-	off_t page_offset = fa->fa_off + num_bytes - 1;
+	k_off_t page_offset = fa->fa_off + num_bytes - 1;
 
 	rc = flash_get_page_info_by_offs(dev, page_offset, &page);
 	if (rc != 0) {

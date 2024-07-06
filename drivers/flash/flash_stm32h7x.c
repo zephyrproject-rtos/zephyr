@@ -85,7 +85,7 @@ static inline void _flash_stm32_sem_give(const struct device *dev)
 #define flash_stm32_sem_give(dev)
 #endif
 
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
+bool flash_stm32_valid_range(const struct device *dev, k_off_t offset,
 			     uint32_t len,
 			     bool write)
 {
@@ -219,7 +219,7 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 }
 
 static struct flash_stm32_sector_t get_sector(const struct device *dev,
-					      off_t offset)
+					      k_off_t offset)
 {
 	struct flash_stm32_sector_t sector;
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
@@ -337,11 +337,10 @@ static int wait_write_queue(const struct flash_stm32_sector_t *sector)
 }
 
 static int write_ndwords(const struct device *dev,
-			 off_t offset, const uint64_t *data,
+			 k_off_t offset, const uint64_t *data,
 			 uint8_t n)
 {
-	volatile uint64_t *flash = (uint64_t *)(offset
-						+ FLASH_STM32_BASE_ADDRESS);
+	volatile uint64_t *flash = (uint64_t *)((uintptr_t)offset + FLASH_STM32_BASE_ADDRESS);
 	int rc;
 	int i;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
@@ -477,7 +476,7 @@ static int flash_stm32h7_write_protection(const struct device *dev, bool enable)
 
 #ifdef CONFIG_CPU_CORTEX_M7
 static void flash_stm32h7_flush_caches(const struct device *dev,
-				       off_t offset, size_t len)
+				       k_off_t offset, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -486,18 +485,18 @@ static void flash_stm32h7_flush_caches(const struct device *dev,
 	}
 
 	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS
-						  + offset), len);
+						  + (uintptr_t)offset), len);
 }
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
-static int flash_stm32h7_erase(const struct device *dev, off_t offset,
+static int flash_stm32h7_erase(const struct device *dev, k_off_t offset,
 			       size_t len)
 {
 	int rc, rc2;
 
 #ifdef CONFIG_CPU_CORTEX_M7
 	/* Flush whole sectors */
-	off_t flush_offset = ROUND_DOWN(offset, FLASH_SECTOR_SIZE);
+	k_off_t flush_offset = ROUND_DOWN(offset, FLASH_SECTOR_SIZE);
 	size_t flush_len = ROUND_UP(offset + len - 1, FLASH_SECTOR_SIZE)
 		 - flush_offset;
 #endif /* CONFIG_CPU_CORTEX_M7 */
@@ -545,7 +544,7 @@ done:
 }
 
 
-static int flash_stm32h7_write(const struct device *dev, off_t offset,
+static int flash_stm32h7_write(const struct device *dev, k_off_t offset,
 			       const void *data, size_t len)
 {
 	int rc;
@@ -580,7 +579,7 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_stm32h7_read(const struct device *dev, off_t offset,
+static int flash_stm32h7_read(const struct device *dev, k_off_t offset,
 			      void *data,
 			      size_t len)
 {

@@ -163,7 +163,7 @@ static bool   bAuthorized;
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v10(struct bt_conn *conn,
+static k_ssize_t read_value_v10(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
@@ -185,7 +185,7 @@ static ssize_t read_value_v10(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_str_value(struct bt_conn *conn,
+static k_ssize_t read_str_value(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
@@ -208,7 +208,7 @@ static ssize_t read_str_value(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v2(struct bt_conn *conn,
+static k_ssize_t write_value_v2(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
 			      uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -236,7 +236,7 @@ static ssize_t write_value_v2(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_long_des_v2d1(struct bt_conn *conn,
+static k_ssize_t read_long_des_v2d1(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
@@ -259,7 +259,7 @@ static ssize_t read_long_des_v2d1(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_long_des_v2d1(struct bt_conn *conn,
+static k_ssize_t write_long_des_v2d1(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
@@ -289,7 +289,7 @@ static ssize_t write_long_des_v2d1(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v2_1(struct bt_conn *conn,
+static k_ssize_t write_value_v2_1(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)
@@ -318,7 +318,7 @@ static ssize_t write_value_v2_1(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_long_des_v2d2(struct bt_conn *conn,
+static k_ssize_t read_long_des_v2d2(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
@@ -341,7 +341,7 @@ static ssize_t read_long_des_v2d2(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_long_des_v2d2(struct bt_conn *conn,
+static k_ssize_t write_long_des_v2d2(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
@@ -371,7 +371,7 @@ static ssize_t write_long_des_v2d2(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v2_2(struct bt_conn *conn,
+static k_ssize_t write_value_v2_2(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)
@@ -400,7 +400,7 @@ static ssize_t write_value_v2_2(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_long_des_v2d3(struct bt_conn *conn,
+static k_ssize_t read_long_des_v2d3(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
@@ -423,7 +423,7 @@ static ssize_t read_long_des_v2d3(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_long_des_v2d3(struct bt_conn *conn,
+static k_ssize_t write_long_des_v2d3(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
@@ -452,7 +452,7 @@ static ssize_t write_long_des_v2d3(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v2_3(struct bt_conn *conn,
+static k_ssize_t read_value_v2_3(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
@@ -475,7 +475,7 @@ static ssize_t read_value_v2_3(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v2_3(struct bt_conn *conn,
+static k_ssize_t write_value_v2_3(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)
@@ -504,7 +504,7 @@ static ssize_t write_value_v2_3(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_long_des_v2d1_1(struct bt_conn *conn,
+static k_ssize_t read_long_des_v2d1_1(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
@@ -527,7 +527,7 @@ static ssize_t read_long_des_v2d1_1(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_long_des_v2d1_1(struct bt_conn *conn,
+static k_ssize_t write_long_des_v2d1_1(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     const void *buf, uint16_t len, uint16_t offset,
 				     uint8_t flags)
@@ -556,7 +556,7 @@ static ssize_t write_long_des_v2d1_1(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v2_4(struct bt_conn *conn,
+static k_ssize_t read_value_v2_4(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
@@ -579,7 +579,7 @@ static ssize_t read_value_v2_4(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v2_4(struct bt_conn *conn,
+static k_ssize_t write_value_v2_4(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)
@@ -608,7 +608,7 @@ static ssize_t write_value_v2_4(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_long_des_v2d2_1(struct bt_conn *conn,
+static k_ssize_t read_long_des_v2d2_1(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
@@ -631,7 +631,7 @@ static ssize_t read_long_des_v2d2_1(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_long_des_v2d2_1(struct bt_conn *conn,
+static k_ssize_t write_long_des_v2d2_1(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     const void *buf, uint16_t len, uint16_t offset,
 				     uint8_t flags)
@@ -660,7 +660,7 @@ static ssize_t write_long_des_v2d2_1(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v2_5(struct bt_conn *conn,
+static k_ssize_t read_value_v2_5(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
@@ -683,7 +683,7 @@ static ssize_t read_value_v2_5(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v2_5(struct bt_conn *conn,
+static k_ssize_t write_value_v2_5(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)
@@ -712,7 +712,7 @@ static ssize_t write_value_v2_5(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_long_des_v2d3_1(struct bt_conn *conn,
+static k_ssize_t read_long_des_v2d3_1(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
@@ -735,7 +735,7 @@ static ssize_t read_long_des_v2d3_1(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_long_des_v2d3_1(struct bt_conn *conn,
+static k_ssize_t write_long_des_v2d3_1(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     const void *buf, uint16_t len, uint16_t offset,
 				     uint8_t flags)
@@ -765,7 +765,7 @@ static ssize_t write_long_des_v2d3_1(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v2_6(struct bt_conn *conn,
+static k_ssize_t write_value_v2_6(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)
@@ -794,7 +794,7 @@ static ssize_t write_value_v2_6(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_long_des_v2d1_2(struct bt_conn *conn,
+static k_ssize_t read_long_des_v2d1_2(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
@@ -817,7 +817,7 @@ static ssize_t read_long_des_v2d1_2(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_long_des_v2d1_2(struct bt_conn *conn,
+static k_ssize_t write_long_des_v2d1_2(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     const void *buf, uint16_t len, uint16_t offset,
 				     uint8_t flags)
@@ -846,7 +846,7 @@ static ssize_t write_long_des_v2d1_2(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_str_auth_value(struct bt_conn *conn,
+static k_ssize_t read_str_auth_value(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
@@ -871,7 +871,7 @@ static ssize_t read_str_auth_value(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v2_7(struct bt_conn *conn,
+static k_ssize_t write_value_v2_7(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)
@@ -902,7 +902,7 @@ static ssize_t write_value_v2_7(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_long_des_v2d2_2(struct bt_conn *conn,
+static k_ssize_t read_long_des_v2d2_2(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
@@ -928,7 +928,7 @@ static ssize_t read_long_des_v2d2_2(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_long_des_v2d2_2(struct bt_conn *conn,
+static k_ssize_t write_long_des_v2d2_2(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     const void *buf, uint16_t len, uint16_t offset,
 				     uint8_t flags)
@@ -960,7 +960,7 @@ static ssize_t write_long_des_v2d2_2(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v2_8(struct bt_conn *conn,
+static k_ssize_t write_value_v2_8(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)
@@ -989,7 +989,7 @@ static ssize_t write_value_v2_8(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_long_des_v2d3_2(struct bt_conn *conn,
+static k_ssize_t read_long_des_v2d3_2(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
@@ -1012,7 +1012,7 @@ static ssize_t read_long_des_v2d3_2(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_long_des_v2d3_2(struct bt_conn *conn,
+static k_ssize_t write_long_des_v2d3_2(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     const void *buf, uint16_t len, uint16_t offset,
 				     uint8_t flags)

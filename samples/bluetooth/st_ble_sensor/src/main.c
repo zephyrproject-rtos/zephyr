@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(main);
 static uint16_t but_val;
 
 /* Prototype */
-static ssize_t recv(struct bt_conn *conn,
+static k_ssize_t recv(struct bt_conn *conn,
 		    const struct bt_gatt_attr *attr, const void *buf,
 		    uint16_t len, uint16_t offset, uint8_t flags);
 
@@ -101,7 +101,7 @@ BT_GATT_CHARACTERISTIC(&but_notif_uuid.uuid, BT_GATT_CHRC_NOTIFY,
 BT_GATT_CCC(mpu_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 );
 
-static ssize_t recv(struct bt_conn *conn,
+static k_ssize_t recv(struct bt_conn *conn,
 		    const struct bt_gatt_attr *attr, const void *buf,
 		    uint16_t len, uint16_t offset, uint8_t flags)
 {

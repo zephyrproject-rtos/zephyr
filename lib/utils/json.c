@@ -842,7 +842,7 @@ size_t json_calc_escaped_len(const char *str, size_t len)
 	return escaped_len;
 }
 
-ssize_t json_escape(char *str, size_t *len, size_t buf_size)
+k_ssize_t json_escape(char *str, size_t *len, size_t buf_size)
 {
 	char *next; /* Points after next character to escape. */
 	char *dest; /* Points after next place to write escaped character. */
@@ -1144,19 +1144,19 @@ int json_arr_encode_buf(const struct json_obj_descr *descr, const void *val,
 
 static int measure_bytes(const char *bytes, size_t len, void *data)
 {
-	ssize_t *total = data;
+	k_ssize_t *total = data;
 
-	*total += (ssize_t)len;
+	*total += (k_ssize_t)len;
 
 	ARG_UNUSED(bytes);
 
 	return 0;
 }
 
-ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
-			      size_t descr_len, const void *val)
+k_ssize_t json_calc_encoded_len(const struct json_obj_descr *descr, size_t descr_len,
+				const void *val)
 {
-	ssize_t total = 0;
+	k_ssize_t total = 0;
 	int ret;
 
 	ret = json_obj_encode(descr, descr_len, val, measure_bytes, &total);
@@ -1167,10 +1167,9 @@ ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
 	return total;
 }
 
-ssize_t json_calc_encoded_arr_len(const struct json_obj_descr *descr,
-				  const void *val)
+k_ssize_t json_calc_encoded_arr_len(const struct json_obj_descr *descr, const void *val)
 {
-	ssize_t total = 0;
+	k_ssize_t total = 0;
 	int ret;
 
 	ret = json_arr_encode(descr, val, measure_bytes, &total);

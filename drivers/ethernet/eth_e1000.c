@@ -11,7 +11,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
@@ -134,7 +133,7 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 {
 	struct net_pkt *pkt = NULL;
 	void *buf;
-	ssize_t len;
+	k_ssize_t len;
 
 	LOG_DBG("rx.sta: 0x%02hx", dev->rx.sta);
 

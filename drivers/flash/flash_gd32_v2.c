@@ -93,7 +93,7 @@ static int gd32_fmc_v2_bank0_wait_idle(void)
 	return 0;
 }
 
-static int gd32_fmc_v2_bank0_write(off_t offset, const void *data, size_t len)
+static int gd32_fmc_v2_bank0_write(k_off_t offset, const void *data, size_t len)
 {
 	flash_prg_t *prg_flash = (flash_prg_t *)((uint8_t *)SOC_NV_FLASH_ADDR + offset);
 	flash_prg_t *prg_data = (flash_prg_t *)data;
@@ -165,7 +165,7 @@ expired_out:
 	return ret;
 }
 
-static int gd32_fmc_v2_bank0_erase_block(off_t offset, size_t size)
+static int gd32_fmc_v2_bank0_erase_block(k_off_t offset, size_t size)
 {
 	uint32_t page_addr = SOC_NV_FLASH_ADDR + offset;
 	int ret = 0;
@@ -208,7 +208,7 @@ static int gd32_fmc_v2_bank1_wait_idle(void)
 	return 0;
 }
 
-static int gd32_fmc_v2_bank1_write(off_t offset, const void *data, size_t len)
+static int gd32_fmc_v2_bank1_write(k_off_t offset, const void *data, size_t len)
 {
 	flash_prg_t *prg_flash = (flash_prg_t *)((uint8_t *)SOC_NV_FLASH_ADDR + offset);
 	flash_prg_t *prg_data = (flash_prg_t *)data;
@@ -280,7 +280,7 @@ expired_out:
 	return ret;
 }
 
-static int gd32_fmc_v2_bank1_erase_block(off_t offset, size_t size)
+static int gd32_fmc_v2_bank1_erase_block(k_off_t offset, size_t size)
 {
 	uint32_t page_addr = SOC_NV_FLASH_ADDR + offset;
 	int ret = 0;
@@ -299,7 +299,7 @@ static int gd32_fmc_v2_bank1_erase_block(off_t offset, size_t size)
 }
 #endif /* GD32_NV_FLASH_V2_BANK1_SIZE */
 
-bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write)
+bool flash_gd32_valid_range(k_off_t offset, uint32_t len, bool write)
 {
 	if ((offset > SOC_NV_FLASH_SIZE) ||
 	    ((offset + len) > SOC_NV_FLASH_SIZE)) {
@@ -345,7 +345,7 @@ bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write)
 	return true;
 }
 
-int flash_gd32_write_range(off_t offset, const void *data, size_t len)
+int flash_gd32_write_range(k_off_t offset, const void *data, size_t len)
 {
 	size_t len0 = 0U;
 	int ret = 0;
@@ -384,7 +384,7 @@ int flash_gd32_write_range(off_t offset, const void *data, size_t len)
 	return 0;
 }
 
-int flash_gd32_erase_block(off_t offset, size_t size)
+int flash_gd32_erase_block(k_off_t offset, size_t size)
 {
 	size_t size0 = 0U;
 	int ret = 0;

@@ -12,7 +12,6 @@
 #include <string.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/posix/sys/stat.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/fs/fs.h>
 
 int zvfs_fstat(int fd, struct stat *buf);
@@ -61,18 +60,18 @@ static inline void posix_fs_free_obj(struct posix_fs_desc *ptr)
 
 static int posix_mode_to_zephyr(int mf)
 {
-	int mode = (mf & O_CREAT) ? FS_O_CREATE : 0;
+	int mode = (mf & ZVFS_O_CREAT) ? FS_O_CREATE : 0;
 
-	mode |= (mf & O_APPEND) ? FS_O_APPEND : 0;
+	mode |= (mf & ZVFS_O_APPEND) ? FS_O_APPEND : 0;
 
-	switch (mf & O_ACCMODE) {
-	case O_RDONLY:
+	switch (mf & ZVFS_O_ACCMODE) {
+	case ZVFS_O_RDONLY:
 		mode |= FS_O_READ;
 		break;
-	case O_WRONLY:
+	case ZVFS_O_WRONLY:
 		mode |= FS_O_WRITE;
 		break;
-	case O_RDWR:
+	case ZVFS_O_RDWR:
 		mode |= FS_O_RDWR;
 		break;
 	default:
@@ -142,13 +141,13 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		break;
 	}
 	case ZFD_IOCTL_LSEEK: {
-		off_t offset;
+		k_off_t offset;
 		int whence;
 
-		offset = va_arg(args, off_t);
+		offset = va_arg(args, k_off_t);
 		whence = va_arg(args, int);
 
-		rc = fs_seek(&ptr->file, offset, whence);
+		rc = (int)fs_seek(&ptr->file, offset, whence);
 		if (rc == 0) {
 			rc = fs_tell(&ptr->file);
 		}
@@ -159,7 +158,7 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 
 		length = va_arg(args, off_t);
 
-		rc = fs_truncate(&ptr->file, length);
+		rc = (int)fs_truncate(&ptr->file, length);
 		if (rc < 0) {
 			errno = -rc;
 			return -1;
@@ -184,9 +183,9 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
  *
  * See IEEE 1003.1
  */
-static ssize_t fs_write_vmeth(void *obj, const void *buffer, size_t count)
+static k_ssize_t fs_write_vmeth(void *obj, const void *buffer, size_t count)
 {
-	ssize_t rc;
+	k_ssize_t rc;
 	struct posix_fs_desc *ptr = obj;
 
 	rc = fs_write(&ptr->file, buffer, count);
@@ -203,9 +202,9 @@ static ssize_t fs_write_vmeth(void *obj, const void *buffer, size_t count)
  *
  * See IEEE 1003.1
  */
-static ssize_t fs_read_vmeth(void *obj, void *buffer, size_t count)
+static k_ssize_t fs_read_vmeth(void *obj, void *buffer, size_t count)
 {
-	ssize_t rc;
+	k_ssize_t rc;
 	struct posix_fs_desc *ptr = obj;
 
 	rc = fs_read(&ptr->file, buffer, count);

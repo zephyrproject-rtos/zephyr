@@ -20,8 +20,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include <sys/types.h>
-
+#include <zephyr/types.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/conn.h>
@@ -142,10 +141,8 @@ struct bt_gatt_attr;
  *  @return Number of bytes read, or in case of an error
  *          ``BT_GATT_ERR()`` with a specific ``BT_ATT_ERR_*`` error code.
  */
-typedef ssize_t (*bt_gatt_attr_read_func_t)(struct bt_conn *conn,
-					    const struct bt_gatt_attr *attr,
-					    void *buf, uint16_t len,
-					    uint16_t offset);
+typedef k_ssize_t (*bt_gatt_attr_read_func_t)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+					      void *buf, uint16_t len, uint16_t offset);
 
 /** @typedef bt_gatt_attr_write_func_t
  *  @brief Attribute write callback
@@ -160,10 +157,9 @@ typedef ssize_t (*bt_gatt_attr_read_func_t)(struct bt_conn *conn,
  *  @return Number of bytes written, or in case of an error
  *          ``BT_GATT_ERR()`` with a specific ``BT_ATT_ERR_*`` error code.
  */
-typedef ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
-					     const struct bt_gatt_attr *attr,
-					     const void *buf, uint16_t len,
-					     uint16_t offset, uint8_t flags);
+typedef k_ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
+					       const struct bt_gatt_attr *attr, const void *buf,
+					       uint16_t len, uint16_t offset, uint8_t flags);
 
 /** @brief GATT Attribute structure. */
 struct bt_gatt_attr {
@@ -612,9 +608,9 @@ uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr);
  *  @return number of bytes read in case of success or negative values in
  *          case of error.
  */
-ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			  void *buf, uint16_t buf_len, uint16_t offset,
-			  const void *value, uint16_t value_len);
+k_ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+			    uint16_t buf_len, uint16_t offset, const void *value,
+			    uint16_t value_len);
 
 /** @brief Read Service Attribute helper.
  *
@@ -631,9 +627,8 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
  *  @return number of bytes read in case of success or negative values in
  *          case of error.
  */
-ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
-				  const struct bt_gatt_attr *attr,
-				  void *buf, uint16_t len, uint16_t offset);
+k_ssize_t bt_gatt_attr_read_service(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				    void *buf, uint16_t len, uint16_t offset);
 
 /**
  *  @brief Statically define and register a service.
@@ -730,9 +725,8 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  *  @return number of bytes read in case of success or negative values in
  *          case of error.
  */
-ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
-				   const struct bt_gatt_attr *attr,
-				   void *buf, uint16_t len, uint16_t offset);
+k_ssize_t bt_gatt_attr_read_included(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				     void *buf, uint16_t len, uint16_t offset);
 
 /**
  *  @brief Include Service Declaration Macro.
@@ -760,9 +754,8 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
  *  @return number of bytes read in case of success or negative values in
  *          case of error.
  */
-ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr, void *buf,
-			       uint16_t len, uint16_t offset);
+k_ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				 uint16_t len, uint16_t offset);
 
 #define BT_GATT_CHRC_INIT(_uuid, _handle, _props) \
 {                                                 \
@@ -838,8 +831,8 @@ struct _bt_gatt_ccc {
 	 *  @return Number of bytes to write, or in case of an error
 	 *          BT_GATT_ERR() with a specific error code.
 	 */
-	ssize_t (*cfg_write)(struct bt_conn *conn,
-			     const struct bt_gatt_attr *attr, uint16_t value);
+	k_ssize_t (*cfg_write)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			       uint16_t value);
 
 	/** @brief CCC attribute match handler
 	 *
@@ -872,9 +865,8 @@ struct _bt_gatt_ccc {
  *  @return number of bytes read in case of success or negative values in
  *          case of error.
  */
-ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
-			      const struct bt_gatt_attr *attr, void *buf,
-			      uint16_t len, uint16_t offset);
+k_ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				uint16_t len, uint16_t offset);
 
 /** @brief Write Client Characteristic Configuration Attribute helper.
  *
@@ -892,10 +884,8 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
  *  @return number of bytes written in case of success or negative values in
  *          case of error.
  */
-ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr, const void *buf,
-			       uint16_t len, uint16_t offset, uint8_t flags);
-
+k_ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				 const void *buf, uint16_t len, uint16_t offset, uint8_t flags);
 
 /**
  *  @brief Initialize Client Characteristic Configuration Declaration Macro.
@@ -957,9 +947,8 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @return number of bytes read in case of success or negative values in
  *          case of error.
  */
-ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
-			      const struct bt_gatt_attr *attr, void *buf,
-			      uint16_t len, uint16_t offset);
+k_ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				uint16_t len, uint16_t offset);
 
 /**
  *  @brief Characteristic Extended Properties Declaration Macro.
@@ -989,9 +978,8 @@ ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
  *  @return number of bytes read in case of success or negative values in
  *          case of error.
  */
-ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
-			      const struct bt_gatt_attr *attr, void *buf,
-			      uint16_t len, uint16_t offset);
+k_ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				uint16_t len, uint16_t offset);
 
 /**
  *  @brief Characteristic User Format Descriptor Declaration Macro.
@@ -1022,9 +1010,8 @@ ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
  *  @return number of bytes read in case of success or negative values in
  *          case of error.
  */
-ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
-			      const struct bt_gatt_attr *attr, void *buf,
-			      uint16_t len, uint16_t offset);
+k_ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				uint16_t len, uint16_t offset);
 
 /**
  *  @brief Characteristic Presentation Format Descriptor Declaration Macro.

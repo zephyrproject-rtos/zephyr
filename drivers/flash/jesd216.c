@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include "jesd216.h"
 #include "spi_nor.h"

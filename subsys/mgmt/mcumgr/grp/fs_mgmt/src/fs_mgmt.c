@@ -206,7 +206,7 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	uint8_t file_data[MCUMGR_GRP_FS_DL_CHUNK_SIZE];
 	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 	uint64_t off = ULLONG_MAX;
-	ssize_t bytes_read = 0;
+	k_ssize_t bytes_read = 0;
 	int rc;
 	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
@@ -359,7 +359,7 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 	struct zcbor_string name = { 0 };
 	struct zcbor_string file_data = { 0 };
 	size_t decoded = 0;
-	ssize_t existing_file_size = 0;
+	k_ssize_t existing_file_size = 0;
 
 	struct zcbor_map_decode_key_val fs_upload_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("off", zcbor_uint64_decode, &off),

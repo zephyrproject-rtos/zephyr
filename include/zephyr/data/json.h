@@ -9,9 +9,9 @@
 
 #include <zephyr/sys/util.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -682,7 +682,7 @@ int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_
  * @return 0 if string has been escaped properly, or -ENOMEM if there
  * was not enough space to escape the buffer
  */
-ssize_t json_escape(char *str, size_t *len, size_t buf_size);
+k_ssize_t json_escape(char *str, size_t *len, size_t buf_size);
 
 /**
  * @brief Calculates the JSON-escaped string length
@@ -704,8 +704,8 @@ size_t json_calc_escaped_len(const char *str, size_t len);
  * @return Number of bytes necessary to encode the values if >0,
  * an error code is returned.
  */
-ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
-			      size_t descr_len, const void *val);
+k_ssize_t json_calc_encoded_len(const struct json_obj_descr *descr, size_t descr_len,
+				const void *val);
 
 /**
  * @brief Calculates the string length to fully encode an array
@@ -716,8 +716,7 @@ ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
  * @return Number of bytes necessary to encode the values if >0,
  * an error code is returned.
  */
-ssize_t json_calc_encoded_arr_len(const struct json_obj_descr *descr,
-				  const void *val);
+k_ssize_t json_calc_encoded_arr_len(const struct json_obj_descr *descr, const void *val);
 
 /**
  * @brief Encodes an object in a contiguous memory location

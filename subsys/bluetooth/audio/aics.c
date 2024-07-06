@@ -43,12 +43,12 @@ LOG_MODULE_REGISTER(bt_aics);
 #define AICS_CP_SET_GAIN_LEN        0x03
 
 
-static ssize_t write_description(struct bt_conn *conn,
+static k_ssize_t write_description(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 const void *buf, uint16_t len, uint16_t offset,
 				 uint8_t flags);
 
-static ssize_t write_aics_control(struct bt_conn *conn,
+static k_ssize_t write_aics_control(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  const void *buf, uint16_t len,
 				  uint16_t offset, uint8_t flags);
@@ -56,23 +56,23 @@ static ssize_t write_aics_control(struct bt_conn *conn,
 #if defined(CONFIG_BT_AICS)
 static void aics_state_cfg_changed(const struct bt_gatt_attr *attr,
 				   uint16_t value);
-static ssize_t read_aics_state(struct bt_conn *conn,
+static k_ssize_t read_aics_state(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
 			       void *buf, uint16_t len, uint16_t offset);
-static ssize_t read_aics_gain_settings(struct bt_conn *conn,
+static k_ssize_t read_aics_gain_settings(struct bt_conn *conn,
 				       const struct bt_gatt_attr *attr,
 				       void *buf, uint16_t len,
 				       uint16_t offset);
-static ssize_t read_type(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_type(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset);
 static void aics_input_status_cfg_changed(const struct bt_gatt_attr *attr,
 					  uint16_t value);
-static ssize_t read_input_status(struct bt_conn *conn,
+static k_ssize_t read_input_status(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 void *buf, uint16_t len, uint16_t offset);
 static void aics_description_cfg_changed(const struct bt_gatt_attr *attr,
 					 uint16_t value);
-static ssize_t read_description(struct bt_conn *conn,
+static k_ssize_t read_description(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset);
 
@@ -120,7 +120,7 @@ static void aics_state_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_aics_state(struct bt_conn *conn,
+static k_ssize_t read_aics_state(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
@@ -133,7 +133,7 @@ static ssize_t read_aics_state(struct bt_conn *conn,
 				 sizeof(inst->srv.state));
 }
 
-static ssize_t read_aics_gain_settings(struct bt_conn *conn,
+static k_ssize_t read_aics_gain_settings(struct bt_conn *conn,
 				       const struct bt_gatt_attr *attr,
 				       void *buf, uint16_t len, uint16_t offset)
 {
@@ -147,7 +147,7 @@ static ssize_t read_aics_gain_settings(struct bt_conn *conn,
 				 sizeof(inst->srv.gain_settings));
 }
 
-static ssize_t read_type(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_type(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
@@ -164,7 +164,7 @@ static void aics_input_status_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_input_status(struct bt_conn *conn,
+static k_ssize_t read_input_status(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {
@@ -246,7 +246,7 @@ static void value_changed(struct bt_aics *inst, enum bt_aics_notify notify)
 #define value_changed(...)
 #endif /* CONFIG_BT_AICS */
 
-static ssize_t write_aics_control(struct bt_conn *conn,
+static k_ssize_t write_aics_control(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  const void *buf, uint16_t len,
 				  uint16_t offset, uint8_t flags)
@@ -366,7 +366,7 @@ static void aics_description_cfg_changed(const struct bt_gatt_attr *attr,
 }
 #endif /* CONFIG_BT_AICS */
 
-static ssize_t write_description(struct bt_conn *conn,
+static k_ssize_t write_description(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 const void *buf, uint16_t len, uint16_t offset,
 				 uint8_t flags)
@@ -400,7 +400,7 @@ static ssize_t write_description(struct bt_conn *conn,
 }
 
 static int aics_write(struct bt_aics *inst,
-		      ssize_t (*write)(struct bt_conn *conn,
+		      k_ssize_t (*write)(struct bt_conn *conn,
 				       const struct bt_gatt_attr *attr,
 				       const void *buf, uint16_t len,
 				       uint16_t offset, uint8_t flags),
@@ -423,7 +423,7 @@ static int aics_write(struct bt_aics *inst,
 }
 
 #if defined(CONFIG_BT_AICS)
-static ssize_t read_description(struct bt_conn *conn,
+static k_ssize_t read_description(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {

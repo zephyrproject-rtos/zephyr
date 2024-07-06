@@ -11,7 +11,6 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/utils.h>
 #include <zephyr/sys/cbprintf.h>
-#include <sys/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>

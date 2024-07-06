@@ -13,7 +13,7 @@
 static int cmd_get_device_id(const struct shell *sh, size_t argc, char **argv)
 {
 	uint8_t dev_id[16];
-	ssize_t length;
+	int length;
 	int i;
 
 	length = hwinfo_get_device_id(dev_id, sizeof(dev_id));

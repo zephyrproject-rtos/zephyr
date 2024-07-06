@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/fdtable.h>
@@ -399,7 +398,7 @@ out:
  * @return on success, a number > 0 representing the number of bytes written
  * @return -1 on error, with @ref errno set appropriately.
  */
-static ssize_t spair_write(void *obj, const void *buffer, size_t count)
+static k_ssize_t spair_write(void *obj, const void *buffer, size_t count)
 {
 	int res;
 	size_t avail;
@@ -609,7 +608,7 @@ out:
  * @return on success, a number > 0 representing the number of bytes written
  * @return -1 on error, with @ref errno set appropriately.
  */
-static ssize_t spair_read(void *obj, void *buffer, size_t count)
+static k_ssize_t spair_read(void *obj, void *buffer, size_t count)
 {
 	int res;
 	bool is_connected;
@@ -935,27 +934,27 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 	have_local_sem = true;
 
 	switch (request) {
-		case F_GETFL: {
-			if (sock_is_nonblock(spair)) {
-				flags |= O_NONBLOCK;
-			}
-
-			res = flags;
-			goto out;
+	case ZVFS_F_GETFL: {
+		if (sock_is_nonblock(spair)) {
+			flags |= ZVFS_O_NONBLOCK;
 		}
 
-		case F_SETFL: {
-			flags = va_arg(args, int);
+		res = flags;
+		goto out;
+	}
 
-			if (flags & O_NONBLOCK) {
-				spair->flags |= SPAIR_FLAG_NONBLOCK;
-			} else {
-				spair->flags &= ~SPAIR_FLAG_NONBLOCK;
-			}
+	case ZVFS_F_SETFL: {
+		flags = va_arg(args, int);
 
-			res = 0;
-			goto out;
+		if (flags & ZVFS_O_NONBLOCK) {
+			spair->flags |= SPAIR_FLAG_NONBLOCK;
+		} else {
+			spair->flags &= ~SPAIR_FLAG_NONBLOCK;
 		}
+
+		res = 0;
+		goto out;
+	}
 
 		case ZFD_IOCTL_FIONBIO: {
 			spair->flags |= SPAIR_FLAG_NONBLOCK;
@@ -1047,9 +1046,8 @@ static int spair_accept(void *obj, struct sockaddr *addr,
 	return -1;
 }
 
-static ssize_t spair_sendto(void *obj, const void *buf, size_t len,
-			    int flags, const struct sockaddr *dest_addr,
-				 socklen_t addrlen)
+static k_ssize_t spair_sendto(void *obj, const void *buf, size_t len, int flags,
+				 const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	ARG_UNUSED(flags);
 	ARG_UNUSED(dest_addr);
@@ -1058,8 +1056,7 @@ static ssize_t spair_sendto(void *obj, const void *buf, size_t len,
 	return spair_write(obj, buf, len);
 }
 
-static ssize_t spair_sendmsg(void *obj, const struct msghdr *msg,
-			     int flags)
+static k_ssize_t spair_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
 	ARG_UNUSED(flags);
 
@@ -1117,9 +1114,8 @@ out:
 	return res;
 }
 
-static ssize_t spair_recvfrom(void *obj, void *buf, size_t max_len,
-			      int flags, struct sockaddr *src_addr,
-				   socklen_t *addrlen)
+static k_ssize_t spair_recvfrom(void *obj, void *buf, size_t max_len, int flags,
+				   struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	(void)flags;
 	(void)src_addr;

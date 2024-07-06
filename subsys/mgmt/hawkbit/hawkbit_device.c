@@ -20,7 +20,7 @@ bool hawkbit_get_device_identity(char *id, int id_max_len)
 static bool hawkbit_get_device_identity_default(char *id, int id_max_len)
 {
 	uint8_t hwinfo_id[DEVICE_ID_BIN_MAX_SIZE];
-	ssize_t length;
+	k_ssize_t length;
 
 	length = hwinfo_get_device_id(hwinfo_id, DEVICE_ID_BIN_MAX_SIZE);
 	if (length <= 0) {

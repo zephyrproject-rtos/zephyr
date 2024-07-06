@@ -159,7 +159,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 	struct bt_cap_unicast_audio_start_param start_param = {0};
 	struct bt_bap_unicast_group_param group_param = {0};
 	size_t source_cnt = 1U;
-	ssize_t conn_cnt = 1U;
+	k_ssize_t conn_cnt = 1U;
 	size_t sink_cnt = 1U;
 	size_t pair_cnt = 0U;
 	int err = 0;
@@ -1436,7 +1436,8 @@ SHELL_CMD_ARG_REGISTER(cap_initiator, &cap_initiator_cmds,
 		       "Bluetooth CAP initiator shell commands",
 		       cmd_cap_initiator, 1, 1);
 
-static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_t data_array_size)
+static k_ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
+					    const size_t data_array_size)
 {
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	if (default_source.cap_source != NULL && default_source.is_cap) {

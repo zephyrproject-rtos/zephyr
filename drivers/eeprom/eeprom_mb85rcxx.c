@@ -12,6 +12,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(EEPROM_MB85RCXX, CONFIG_EEPROM_LOG_LEVEL);
@@ -40,11 +41,11 @@ static int mb85rcxx_write_protect_set(const struct device *dev, int value)
 	return gpio_pin_set_dt(&cfg->wp_gpio, value);
 }
 
-static uint16_t mb85rcxx_translate_address(const struct device *dev, off_t offset, uint8_t *addr)
+static uint16_t mb85rcxx_translate_address(const struct device *dev, k_off_t offset, uint8_t *addr)
 {
 	const struct mb85rcxx_config *cfg = dev->config;
 
-	off_t page_offset = offset % cfg->pagesize;
+	k_off_t page_offset = offset % cfg->pagesize;
 
 	if (cfg->addr_width > 8) {
 		sys_put_be16(page_offset, addr);
@@ -56,10 +57,10 @@ static uint16_t mb85rcxx_translate_address(const struct device *dev, off_t offse
 	return cfg->i2c.addr + (offset >> cfg->addr_width);
 }
 
-static size_t mb85rcxx_remaining_len_in_page(const struct device *dev, off_t offset, size_t len)
+static size_t mb85rcxx_remaining_len_in_page(const struct device *dev, k_off_t offset, size_t len)
 {
 	const struct mb85rcxx_config *cfg = dev->config;
-	off_t page_offset = offset % cfg->pagesize;
+	k_off_t page_offset = offset % cfg->pagesize;
 	size_t rem = cfg->pagesize - page_offset;
 
 	if (rem > len) {
@@ -97,7 +98,7 @@ static int mb85rcxx_init(const struct device *dev)
 	return 0;
 }
 
-static int mb85rcxx_read(const struct device *dev, off_t offset, void *buf, size_t len)
+static int mb85rcxx_read(const struct device *dev, k_off_t offset, void *buf, size_t len)
 {
 	const struct mb85rcxx_config *cfg = dev->config;
 	struct mb85rcxx_data *data = dev->data;
@@ -151,7 +152,7 @@ static int mb85rcxx_i2c_write(const struct device *dev, uint16_t i2c_addr, uint8
 	return i2c_transfer(cfg->i2c.bus, &msgs[0], 2, i2c_addr);
 }
 
-static int mb85rcxx_write(const struct device *dev, off_t offset, const void *buf, size_t len)
+static int mb85rcxx_write(const struct device *dev, k_off_t offset, const void *buf, size_t len)
 {
 	const struct mb85rcxx_config *cfg = dev->config;
 	struct mb85rcxx_data *data = dev->data;

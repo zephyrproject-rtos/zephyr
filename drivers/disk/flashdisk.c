@@ -28,13 +28,13 @@ struct flashdisk_data {
 	struct disk_info info;
 	struct k_mutex lock;
 	const unsigned int area_id;
-	const off_t offset;
+	const k_off_t offset;
 	uint8_t *const cache;
 	const size_t cache_size;
 	const size_t size;
 	const size_t sector_size;
 	size_t page_size;
-	off_t cached_addr;
+	k_off_t cached_addr;
 	bool cache_valid;
 	bool cache_dirty;
 	bool erase_required;
@@ -89,7 +89,7 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 {
 	int rc;
 	struct flash_pages_info page;
-	off_t offset;
+	k_off_t offset;
 
 	flashdisk_probe_erase(ctx);
 
@@ -126,7 +126,8 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 		while (offset < ctx->offset + ctx->size) {
 			rc = flash_get_page_info_by_offs(ctx->info.dev, offset, &page);
 			if (rc < 0) {
-				LOG_ERR("Error %d getting page info at offset %lx", rc, offset);
+				LOG_ERR("Error %d getting page info at offset %lx", rc,
+					(long)offset);
 				return rc;
 			}
 			if (page.size != ctx->page_size) {
@@ -200,7 +201,7 @@ static int disk_flash_access_read(struct disk_info *disk, uint8_t *buff,
 				uint32_t start_sector, uint32_t sector_count)
 {
 	struct flashdisk_data *ctx;
-	off_t fl_addr;
+	k_off_t fl_addr;
 	uint32_t remaining;
 	uint32_t offset;
 	uint32_t len;
@@ -272,7 +273,7 @@ static int flashdisk_cache_commit(struct flashdisk_data *ctx)
 	return 0;
 }
 
-static int flashdisk_cache_load(struct flashdisk_data *ctx, off_t fl_addr)
+static int flashdisk_cache_load(struct flashdisk_data *ctx, k_off_t fl_addr)
 {
 	int rc;
 
@@ -308,11 +309,11 @@ static int flashdisk_cache_load(struct flashdisk_data *ctx, off_t fl_addr)
 /* input size is either less or equal to a block size (ctx->page_size)
  * and write data never spans across adjacent blocks.
  */
-static int flashdisk_cache_write(struct flashdisk_data *ctx, off_t start_addr,
-				uint32_t size, const void *buff)
+static int flashdisk_cache_write(struct flashdisk_data *ctx, k_off_t start_addr, uint32_t size,
+				 const void *buff)
 {
 	int rc;
-	off_t fl_addr;
+	k_off_t fl_addr;
 	uint32_t offset;
 
 	/* adjust offset if starting address is not erase-aligned address */
@@ -347,7 +348,7 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 				 uint32_t start_sector, uint32_t sector_count)
 {
 	struct flashdisk_data *ctx;
-	off_t fl_addr;
+	k_off_t fl_addr;
 	uint32_t remaining;
 	uint32_t size;
 	int rc = 0;
@@ -369,7 +370,7 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 
 	/* check if start address is erased-aligned address  */
 	if (fl_addr & (ctx->page_size - 1)) {
-		off_t block_bnd;
+		k_off_t block_bnd;
 
 		/* not aligned */
 		/* check if the size goes over flash block boundary */

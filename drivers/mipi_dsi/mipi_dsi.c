@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/mipi_dsi.h>
 
-ssize_t mipi_dsi_generic_read(const struct device *dev, uint8_t channel,
+k_ssize_t mipi_dsi_generic_read(const struct device *dev, uint8_t channel,
 			      const void *params, size_t nparams,
 			      void *buf, size_t len)
 {
@@ -39,7 +39,7 @@ ssize_t mipi_dsi_generic_read(const struct device *dev, uint8_t channel,
 	return mipi_dsi_transfer(dev, channel, &msg);
 }
 
-ssize_t mipi_dsi_generic_write(const struct device *dev, uint8_t channel,
+k_ssize_t mipi_dsi_generic_write(const struct device *dev, uint8_t channel,
 			       const void *buf, size_t len)
 {
 	struct mipi_dsi_msg msg = {
@@ -68,7 +68,7 @@ ssize_t mipi_dsi_generic_write(const struct device *dev, uint8_t channel,
 	return mipi_dsi_transfer(dev, channel, &msg);
 }
 
-ssize_t mipi_dsi_dcs_read(const struct device *dev, uint8_t channel,
+k_ssize_t mipi_dsi_dcs_read(const struct device *dev, uint8_t channel,
 			  uint8_t cmd, void *buf, size_t len)
 {
 	struct mipi_dsi_msg msg = {
@@ -81,7 +81,7 @@ ssize_t mipi_dsi_dcs_read(const struct device *dev, uint8_t channel,
 	return mipi_dsi_transfer(dev, channel, &msg);
 }
 
-ssize_t mipi_dsi_dcs_write(const struct device *dev, uint8_t channel,
+k_ssize_t mipi_dsi_dcs_write(const struct device *dev, uint8_t channel,
 			   uint8_t cmd, const void *buf, size_t len)
 {
 	struct mipi_dsi_msg msg = {

@@ -57,7 +57,7 @@ void FM_BackgroundProcess_Entry(struct k_work *work)
 	FM_BackgroundProcess();
 }
 
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
+bool flash_stm32_valid_range(const struct device *dev, k_off_t offset,
 				    uint32_t len, bool write)
 {
 	if (write && !flash_stm32_valid_write(offset, len)) {
@@ -77,7 +77,7 @@ static inline void flash_stm32_sem_give(const struct device *dev)
 	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
 }
 
-static int flash_stm32_read(const struct device *dev, off_t offset,
+static int flash_stm32_read(const struct device *dev, k_off_t offset,
 			    void *data,
 			    size_t len)
 {
@@ -100,7 +100,7 @@ static int flash_stm32_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_stm32_erase(const struct device *dev, off_t offset,
+static int flash_stm32_erase(const struct device *dev, k_off_t offset,
 			     size_t len)
 {
 	int rc;
@@ -133,7 +133,7 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_stm32_write(const struct device *dev, off_t offset,
+static int flash_stm32_write(const struct device *dev, k_off_t offset,
 			     const void *data, size_t len)
 {
 	int rc;
@@ -150,11 +150,10 @@ static int flash_stm32_write(const struct device *dev, off_t offset,
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Write offset: %p, len: %zu", (void *)offset, len);
+	LOG_DBG("Write offset: %p, len: %zu", (void *)(uintptr_t)offset, len);
 
-	rc = FM_Write((uint32_t *)data,
-		      (uint32_t *)(FLASH_STM32_BASE_ADDRESS + offset),
-		      (int32_t)len/4, &cb_ptr);
+	rc = FM_Write((uint32_t *)data, (uint32_t *)(FLASH_STM32_BASE_ADDRESS + (uintptr_t)offset),
+		      (int32_t)len / 4, &cb_ptr);
 	if (rc == 0) {
 		k_sem_take(&flash_busy, K_FOREVER);
 	} else {

@@ -58,7 +58,7 @@ struct test_chrc_ctx {
 	uint8_t data[CHRC_SIZE];
 };
 
-static ssize_t read_test_chrc(struct test_chrc_ctx *chrc_ctx,
+static k_ssize_t read_test_chrc(struct test_chrc_ctx *chrc_ctx,
 			      struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      void *buf, uint16_t len, uint16_t offset)
@@ -70,7 +70,7 @@ static ssize_t read_test_chrc(struct test_chrc_ctx *chrc_ctx,
 				 sizeof(chrc_ctx->data));
 }
 
-static ssize_t write_test_chrc(struct test_chrc_ctx *chrc_ctx,
+static k_ssize_t write_test_chrc(struct test_chrc_ctx *chrc_ctx,
 			       const void *buf, uint16_t len,
 			       uint16_t offset, uint8_t flags)
 {
@@ -98,14 +98,14 @@ static ssize_t write_test_chrc(struct test_chrc_ctx *chrc_ctx,
 
 static struct test_chrc_ctx unhandled_chrc_ctx;
 
-static ssize_t read_test_unhandled_chrc(struct bt_conn *conn,
+static k_ssize_t read_test_unhandled_chrc(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 void *buf, uint16_t len, uint16_t offset)
 {
 	return read_test_chrc(&unhandled_chrc_ctx, conn, attr, buf, len, offset);
 }
 
-static ssize_t write_test_unhandled_chrc(struct bt_conn *conn,
+static k_ssize_t write_test_unhandled_chrc(struct bt_conn *conn,
 					  const struct bt_gatt_attr *attr,
 					  const void *buf, uint16_t len,
 					  uint16_t offset, uint8_t flags)
@@ -117,14 +117,14 @@ static ssize_t write_test_unhandled_chrc(struct bt_conn *conn,
 
 static struct test_chrc_ctx unauthorized_chrc_ctx;
 
-static ssize_t read_test_unauthorized_chrc(struct bt_conn *conn,
+static k_ssize_t read_test_unauthorized_chrc(struct bt_conn *conn,
 					   const struct bt_gatt_attr *attr,
 					   void *buf, uint16_t len, uint16_t offset)
 {
 	return read_test_chrc(&unauthorized_chrc_ctx, conn, attr, buf, len, offset);
 }
 
-static ssize_t write_test_unauthorized_chrc(struct bt_conn *conn,
+static k_ssize_t write_test_unauthorized_chrc(struct bt_conn *conn,
 					    const struct bt_gatt_attr *attr,
 					    const void *buf, uint16_t len,
 					    uint16_t offset, uint8_t flags)
@@ -136,14 +136,14 @@ static ssize_t write_test_unauthorized_chrc(struct bt_conn *conn,
 
 static struct test_chrc_ctx authorized_chrc_ctx;
 
-static ssize_t read_test_authorized_chrc(struct bt_conn *conn,
+static k_ssize_t read_test_authorized_chrc(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 void *buf, uint16_t len, uint16_t offset)
 {
 	return read_test_chrc(&authorized_chrc_ctx, conn, attr, buf, len, offset);
 }
 
-static ssize_t write_test_authorized_chrc(struct bt_conn *conn,
+static k_ssize_t write_test_authorized_chrc(struct bt_conn *conn,
 					  const struct bt_gatt_attr *attr,
 					  const void *buf, uint16_t len,
 					  uint16_t offset, uint8_t flags)
@@ -221,7 +221,7 @@ static bool authorized_chrc_operation_validate(void)
 	return true;
 }
 
-static ssize_t write_cp_chrc(struct bt_conn *conn,
+static k_ssize_t write_cp_chrc(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     const void *buf, uint16_t len,
 			     uint16_t offset, uint8_t flags)

@@ -93,7 +93,7 @@
 #define ESS_DESC_APP_EXTERNAL					0x20
 #define ESS_DESC_APP_SOLAR					0x21
 
-static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
 	const uint16_t *u16 = attr->user_data;
@@ -186,7 +186,7 @@ struct read_es_measurement_rp {
 	uint8_t measurement_uncertainty;
 } __packed;
 
-static ssize_t read_es_measurement(struct bt_conn *conn,
+static k_ssize_t read_es_measurement(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
@@ -204,7 +204,7 @@ static ssize_t read_es_measurement(struct bt_conn *conn,
 				 sizeof(rsp));
 }
 
-static ssize_t read_temp_valid_range(struct bt_conn *conn,
+static k_ssize_t read_temp_valid_range(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr, void *buf,
 				     uint16_t len, uint16_t offset)
 {
@@ -226,7 +226,7 @@ struct es_trigger_setting_reference {
 	int16_t ref_val;
 } __packed;
 
-static ssize_t read_temp_trigger_setting(struct bt_conn *conn,
+static k_ssize_t read_temp_trigger_setting(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 void *buf, uint16_t len,
 					 uint16_t offset)

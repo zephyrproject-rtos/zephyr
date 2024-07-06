@@ -467,7 +467,7 @@ static void beacon_create(struct net_buf_simple *buf, const uint8_t net_key[16],
 
 /* Test reception of invalid beacons. */
 static void corrupted_beacon_test(const uint8_t *offsets,
-				  ssize_t field_count,
+				  k_ssize_t field_count,
 				  struct net_buf_simple *buf)
 {
 	/* Send corrupted beacons  */

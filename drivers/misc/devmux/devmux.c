@@ -72,9 +72,9 @@ struct devmux_data *devmux_data_get(const struct device *dev)
 	return NULL;
 }
 
-ssize_t z_impl_devmux_select_get(const struct device *dev)
+int z_impl_devmux_select_get(const struct device *dev)
 {
-	ssize_t index;
+	int index;
 	struct devmux_data *const data = devmux_data_get(dev);
 
 	if (!devmux_device_is_valid(dev)) {
@@ -83,14 +83,14 @@ ssize_t z_impl_devmux_select_get(const struct device *dev)
 
 	K_SPINLOCK(&data->lock)
 	{
-		index = data->selected;
+		index = (int)data->selected;
 	}
 
 	return index;
 }
 
 #ifdef CONFIG_USERSPACE
-ssize_t z_vrfy_devmux_select_get(const struct device *dev)
+int z_vrfy_devmux_select_get(const struct device *dev)
 {
 	return z_impl_devmux_select_get(dev);
 }

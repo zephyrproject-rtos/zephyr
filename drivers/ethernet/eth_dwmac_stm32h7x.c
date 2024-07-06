@@ -17,7 +17,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* be compatible with the HAL-based driver here */
 #define DT_DRV_COMPAT st_stm32_ethernet
 
-#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth.h>

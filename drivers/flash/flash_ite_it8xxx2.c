@@ -340,7 +340,7 @@ void __soc_ram_code ramcode_flash_erase(int addr, int cmd)
 }
 
 /* Read data from flash */
-static int __soc_ram_code flash_it8xxx2_read(const struct device *dev, off_t offset, void *data,
+static int __soc_ram_code flash_it8xxx2_read(const struct device *dev, k_off_t offset, void *data,
 					     size_t len)
 {
 	struct smfi_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
@@ -366,7 +366,7 @@ static int __soc_ram_code flash_it8xxx2_read(const struct device *dev, off_t off
 }
 
 /* Write data to the flash, page by page */
-static int __soc_ram_code flash_it8xxx2_write(const struct device *dev, off_t offset,
+static int __soc_ram_code flash_it8xxx2_write(const struct device *dev, k_off_t offset,
 					      const void *src_data, size_t len)
 {
 	struct flash_it8xxx2_dev_data *data = dev->data;
@@ -409,7 +409,7 @@ static int __soc_ram_code flash_it8xxx2_write(const struct device *dev, off_t of
 }
 
 /* Erase multiple blocks */
-static int __soc_ram_code flash_it8xxx2_erase(const struct device *dev, off_t offset, size_t len)
+static int __soc_ram_code flash_it8xxx2_erase(const struct device *dev, k_off_t offset, size_t len)
 {
 	struct flash_it8xxx2_dev_data *data = dev->data;
 	int v_size = len, v_addr = offset, ret = -EINVAL;

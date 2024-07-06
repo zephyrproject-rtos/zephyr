@@ -22,10 +22,11 @@
  * @{
  */
 
-#include <zephyr/types.h>
-#include <sys/types.h>
-#include <stddef.h>
 #include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/types.h>
 #include <zephyr/kernel.h>
 
 #ifdef __cplusplus
@@ -91,9 +92,9 @@ extern "C" {
  * @retval -ENOSYS if there is no implementation for the particular device.
  * @retval any negative value on driver specific errors.
  */
-__syscall ssize_t hwinfo_get_device_id(uint8_t *buffer, size_t length);
+__syscall int hwinfo_get_device_id(uint8_t *buffer, size_t length);
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length);
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length);
 
 /**
  * @brief Copy the device EUI64 to a buffer

@@ -93,7 +93,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
  * of attribute configuration changes.
  * Functions for notifications are placed after the service definition.
  */
-static ssize_t read_player_name(struct bt_conn *conn,
+static k_ssize_t read_player_name(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
@@ -122,7 +122,7 @@ static void player_name_cfg_changed(const struct bt_gatt_attr *attr,
 }
 
 #ifdef CONFIG_BT_OTS
-static ssize_t read_icon_id(struct bt_conn *conn,
+static k_ssize_t read_icon_id(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
 {
@@ -138,7 +138,7 @@ static ssize_t read_icon_id(struct bt_conn *conn,
 }
 #endif /* CONFIG_BT_OTS */
 
-static ssize_t read_icon_url(struct bt_conn *conn,
+static k_ssize_t read_icon_url(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
@@ -165,7 +165,7 @@ static void track_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_track_title(struct bt_conn *conn,
+static k_ssize_t read_track_title(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				void *buf, uint16_t len, uint16_t offset)
 {
@@ -193,7 +193,7 @@ static void track_title_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_track_duration(struct bt_conn *conn,
+static k_ssize_t read_track_duration(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
@@ -216,8 +216,8 @@ static void track_duration_cfg_changed(const struct bt_gatt_attr *attr, uint16_t
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_track_position(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
-				   uint16_t len, uint16_t offset)
+static k_ssize_t read_track_position(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				     void *buf, uint16_t len, uint16_t offset)
 {
 	int32_t position = media_proxy_sctrl_get_track_position();
 	int32_t position_le = sys_cpu_to_le32(position);
@@ -234,7 +234,7 @@ static ssize_t read_track_position(struct bt_conn *conn, const struct bt_gatt_at
 				 sizeof(position_le));
 }
 
-static ssize_t write_track_position(struct bt_conn *conn,
+static k_ssize_t write_track_position(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr,
 				    const void *buf, uint16_t len,
 				    uint16_t offset, uint8_t flags)
@@ -264,7 +264,7 @@ static void track_position_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_playback_speed(struct bt_conn *conn,
+static k_ssize_t read_playback_speed(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
@@ -281,8 +281,8 @@ static ssize_t read_playback_speed(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &speed, sizeof(speed));
 }
 
-static ssize_t write_playback_speed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				    const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+static k_ssize_t write_playback_speed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				      const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	int8_t speed;
 
@@ -307,8 +307,8 @@ static void playback_speed_cfg_changed(const struct bt_gatt_attr *attr, uint16_t
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_seeking_speed(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
-				  uint16_t len, uint16_t offset)
+static k_ssize_t read_seeking_speed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				    void *buf, uint16_t len, uint16_t offset)
 {
 	int8_t speed = media_proxy_sctrl_get_seeking_speed();
 
@@ -331,7 +331,7 @@ static void seeking_speed_cfg_changed(const struct bt_gatt_attr *attr,
 }
 
 #ifdef CONFIG_BT_OTS
-static ssize_t read_track_segments_id(struct bt_conn *conn,
+static k_ssize_t read_track_segments_id(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
@@ -346,7 +346,7 @@ static ssize_t read_track_segments_id(struct bt_conn *conn,
 				 track_segments_id_le, sizeof(track_segments_id_le));
 }
 
-static ssize_t read_current_track_id(struct bt_conn *conn,
+static k_ssize_t read_current_track_id(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr, void *buf,
 				     uint16_t len, uint16_t offset)
 {
@@ -367,7 +367,7 @@ static ssize_t read_current_track_id(struct bt_conn *conn,
 				 sizeof(track_id_le));
 }
 
-static ssize_t write_current_track_id(struct bt_conn *conn,
+static k_ssize_t write_current_track_id(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      const void *buf, uint16_t len, uint16_t offset,
 				      uint8_t flags)
@@ -403,7 +403,7 @@ static void current_track_id_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_next_track_id(struct bt_conn *conn,
+static k_ssize_t read_next_track_id(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
@@ -430,7 +430,7 @@ static ssize_t read_next_track_id(struct bt_conn *conn,
 				 track_id_le, sizeof(track_id_le));
 }
 
-static ssize_t write_next_track_id(struct bt_conn *conn,
+static k_ssize_t write_next_track_id(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
@@ -466,7 +466,7 @@ static void next_track_id_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_parent_group_id(struct bt_conn *conn,
+static k_ssize_t read_parent_group_id(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
@@ -493,7 +493,7 @@ static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_current_group_id(struct bt_conn *conn,
+static k_ssize_t read_current_group_id(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr, void *buf,
 				     uint16_t len, uint16_t offset)
 {
@@ -514,7 +514,7 @@ static ssize_t read_current_group_id(struct bt_conn *conn,
 				 sizeof(group_id_le));
 }
 
-static ssize_t write_current_group_id(struct bt_conn *conn,
+static k_ssize_t write_current_group_id(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      const void *buf, uint16_t len, uint16_t offset,
 				      uint8_t flags)
@@ -551,7 +551,7 @@ static void current_group_id_cfg_changed(const struct bt_gatt_attr *attr, uint16
 }
 #endif /* CONFIG_BT_OTS */
 
-static ssize_t read_playing_order(struct bt_conn *conn,
+static k_ssize_t read_playing_order(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
@@ -568,7 +568,7 @@ static ssize_t read_playing_order(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &order, sizeof(order));
 }
 
-static ssize_t write_playing_order(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_playing_order(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	LOG_DBG("Playing order write");
@@ -596,8 +596,9 @@ static void playing_order_cfg_changed(const struct bt_gatt_attr *attr, uint16_t 
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_playing_orders_supported(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-					     void *buf, uint16_t len, uint16_t offset)
+static k_ssize_t read_playing_orders_supported(struct bt_conn *conn,
+					       const struct bt_gatt_attr *attr, void *buf,
+					       uint16_t len, uint16_t offset)
 {
 	uint16_t orders = media_proxy_sctrl_get_playing_orders_supported();
 	uint16_t orders_le = sys_cpu_to_le16(orders);
@@ -607,7 +608,7 @@ static ssize_t read_playing_orders_supported(struct bt_conn *conn, const struct 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &orders_le, sizeof(orders_le));
 }
 
-static ssize_t read_media_state(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+static k_ssize_t read_media_state(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
 	uint8_t state = media_proxy_sctrl_get_media_state();
@@ -630,7 +631,7 @@ static void media_state_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t write_control_point(struct bt_conn *conn,
+static k_ssize_t write_control_point(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
@@ -699,7 +700,7 @@ static void control_point_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_opcodes_supported(struct bt_conn *conn,
+static k_ssize_t read_opcodes_supported(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
@@ -723,7 +724,7 @@ static void opcodes_supported_cfg_changed(const struct bt_gatt_attr *attr, uint1
 }
 
 #ifdef CONFIG_BT_OTS
-static ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 					  const void *buf, uint16_t len, uint16_t offset,
 					  uint8_t flags)
 {
@@ -767,7 +768,7 @@ static void search_control_point_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_search_results_id(struct bt_conn *conn,
+static k_ssize_t read_search_results_id(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
@@ -810,7 +811,7 @@ static void search_results_id_cfg_changed(const struct bt_gatt_attr *attr,
 }
 #endif /* CONFIG_BT_OTS */
 
-static ssize_t read_content_ctrl_id(struct bt_conn *conn,
+static k_ssize_t read_content_ctrl_id(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {

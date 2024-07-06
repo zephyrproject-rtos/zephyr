@@ -137,7 +137,7 @@ static int sock_dispatch_default(struct dispatcher_context *ctx)
 	return sock_dispatch_socket(ctx, sock_family->handler);
 }
 
-static ssize_t sock_dispatch_read_vmeth(void *obj, void *buffer, size_t count)
+static k_ssize_t sock_dispatch_read_vmeth(void *obj, void *buffer, size_t count)
 {
 	int fd;
 	const struct fd_op_vtable *vtable;
@@ -156,8 +156,7 @@ static ssize_t sock_dispatch_read_vmeth(void *obj, void *buffer, size_t count)
 	return vtable->read(new_obj, buffer, count);
 }
 
-static ssize_t sock_dispatch_write_vmeth(void *obj, const void *buffer,
-					 size_t count)
+static k_ssize_t sock_dispatch_write_vmeth(void *obj, const void *buffer, size_t count)
 {
 	int fd;
 	const struct fd_op_vtable *vtable;
@@ -259,10 +258,8 @@ static int sock_dispatch_accept_vmeth(void *obj, struct sockaddr *addr,
 	return zsock_accept(fd, addr, addrlen);
 }
 
-static ssize_t sock_dispatch_sendto_vmeth(void *obj, const void *buf,
-					  size_t len, int flags,
-					  const struct sockaddr *addr,
-					  socklen_t addrlen)
+static k_ssize_t sock_dispatch_sendto_vmeth(void *obj, const void *buf, size_t len, int flags,
+					       const struct sockaddr *addr, socklen_t addrlen)
 {
 	int fd = sock_dispatch_default(obj);
 
@@ -273,8 +270,7 @@ static ssize_t sock_dispatch_sendto_vmeth(void *obj, const void *buf,
 	return zsock_sendto(fd, buf, len, flags, addr, addrlen);
 }
 
-static ssize_t sock_dispatch_sendmsg_vmeth(void *obj, const struct msghdr *msg,
-					   int flags)
+static k_ssize_t sock_dispatch_sendmsg_vmeth(void *obj, const struct msghdr *msg, int flags)
 {
 	int fd = sock_dispatch_default(obj);
 
@@ -285,10 +281,8 @@ static ssize_t sock_dispatch_sendmsg_vmeth(void *obj, const struct msghdr *msg,
 	return zsock_sendmsg(fd, msg, flags);
 }
 
-static ssize_t sock_dispatch_recvfrom_vmeth(void *obj, void *buf,
-					    size_t max_len, int flags,
-					    struct sockaddr *addr,
-					    socklen_t *addrlen)
+static k_ssize_t sock_dispatch_recvfrom_vmeth(void *obj, void *buf, size_t max_len, int flags,
+						 struct sockaddr *addr, socklen_t *addrlen)
 {
 	int fd = sock_dispatch_default(obj);
 

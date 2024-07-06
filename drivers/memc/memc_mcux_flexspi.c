@@ -251,7 +251,7 @@ int memc_flexspi_transfer(const struct device *dev,
 }
 
 void *memc_flexspi_get_ahb_address(const struct device *dev,
-		flexspi_port_t port, off_t offset)
+		flexspi_port_t port, k_off_t offset)
 {
 	struct memc_flexspi_data *data = dev->data;
 	int i;

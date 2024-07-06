@@ -727,7 +727,7 @@ static int qspi_read_jedec_id(const struct device *dev, uint8_t *id)
 	return rc;
 }
 
-static int qspi_sfdp_read(const struct device *dev, off_t offset,
+static int qspi_sfdp_read(const struct device *dev, k_off_t offset,
 			  void *data, size_t len)
 {
 	__ASSERT(data != NULL, "null destination");
@@ -775,27 +775,27 @@ out:
 #endif /* CONFIG_FLASH_JESD216_API */
 
 static inline nrfx_err_t read_non_aligned(const struct device *dev,
-					  off_t addr,
+					  k_off_t addr,
 					  void *dest, size_t size)
 {
 	uint8_t __aligned(WORD_SIZE) buf[WORD_SIZE * 2];
 	uint8_t *dptr = dest;
 
-	off_t flash_prefix = (WORD_SIZE - (addr % WORD_SIZE)) % WORD_SIZE;
+	k_off_t flash_prefix = (WORD_SIZE - (addr % WORD_SIZE)) % WORD_SIZE;
 
 	if (flash_prefix > size) {
 		flash_prefix = size;
 	}
 
-	off_t dest_prefix = (WORD_SIZE - (off_t)dptr % WORD_SIZE) % WORD_SIZE;
+	k_off_t dest_prefix = (WORD_SIZE - (uintptr_t)dptr % WORD_SIZE) % WORD_SIZE;
 
 	if (dest_prefix > size) {
 		dest_prefix = size;
 	}
 
-	off_t flash_suffix = (size - flash_prefix) % WORD_SIZE;
-	off_t flash_middle = size - flash_prefix - flash_suffix;
-	off_t dest_middle = size - dest_prefix -
+	k_off_t flash_suffix = (size - flash_prefix) % WORD_SIZE;
+	k_off_t flash_middle = size - flash_prefix - flash_suffix;
+	k_off_t dest_middle = size - dest_prefix -
 			    (size - dest_prefix) % WORD_SIZE;
 
 	if (flash_middle > dest_middle) {
@@ -845,7 +845,7 @@ static inline nrfx_err_t read_non_aligned(const struct device *dev,
 	return res;
 }
 
-static int qspi_nor_read(const struct device *dev, off_t addr, void *dest,
+static int qspi_nor_read(const struct device *dev, k_off_t addr, void *dest,
 			 size_t size)
 {
 	const struct qspi_nor_config *params = dev->config;
@@ -879,7 +879,7 @@ static int qspi_nor_read(const struct device *dev, off_t addr, void *dest,
 }
 
 /* addr aligned, sptr not null, slen less than 4 */
-static inline nrfx_err_t write_sub_word(const struct device *dev, off_t addr,
+static inline nrfx_err_t write_sub_word(const struct device *dev, k_off_t addr,
 					const void *sptr, size_t slen)
 {
 	uint8_t __aligned(4) buf[4];
@@ -908,7 +908,7 @@ BUILD_ASSERT((CONFIG_NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE % 4) == 0,
  *
  * If not enabled return the error the peripheral would have produced.
  */
-static nrfx_err_t write_through_buffer(const struct device *dev, off_t addr,
+static nrfx_err_t write_through_buffer(const struct device *dev, k_off_t addr,
 				       const void *sptr, size_t slen)
 {
 	nrfx_err_t res = NRFX_SUCCESS;
@@ -936,7 +936,7 @@ static nrfx_err_t write_through_buffer(const struct device *dev, off_t addr,
 	return res;
 }
 
-static int qspi_nor_write(const struct device *dev, off_t addr,
+static int qspi_nor_write(const struct device *dev, k_off_t addr,
 			  const void *src,
 			  size_t size)
 {
@@ -992,7 +992,7 @@ static int qspi_nor_write(const struct device *dev, off_t addr,
 	return rc != 0 ? rc : rc2;
 }
 
-static int qspi_nor_erase(const struct device *dev, off_t addr, size_t size)
+static int qspi_nor_erase(const struct device *dev, k_off_t addr, size_t size)
 {
 	const struct qspi_nor_config *params = dev->config;
 	int rc;

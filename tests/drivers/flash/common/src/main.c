@@ -103,7 +103,7 @@ static void *flash_driver_setup(void)
 	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
 		bool is_buf_clear = true;
 
-		for (off_t i = 0; i < EXPECTED_SIZE; i++) {
+		for (k_off_t i = 0; i < EXPECTED_SIZE; i++) {
 			if (buf[i] != erase_value) {
 				is_buf_clear = false;
 				break;
@@ -150,11 +150,11 @@ ZTEST(flash_driver, test_read_unaligned_address)
 	zassert_equal(rc, 0, "Cannot write to flash");
 
 	/* read buffer length*/
-	for (off_t len = 0; len < 25; len++) {
+	for (k_off_t len = 0; len < 25; len++) {
 		/* address offset */
-		for (off_t ad_o = 0; ad_o < 4; ad_o++) {
+		for (k_off_t ad_o = 0; ad_o < 4; ad_o++) {
 			/* buffer offset; leave space for buffer guard */
-			for (off_t buf_o = 1; buf_o < 5; buf_o++) {
+			for (k_off_t buf_o = 1; buf_o < 5; buf_o++) {
 				/* buffer overflow protection */
 				buf[buf_o - 1] = canary;
 				buf[buf_o + len] = canary;
@@ -184,7 +184,7 @@ ZTEST(flash_driver, test_flash_fill)
 {
 	uint8_t buf[EXPECTED_SIZE];
 	int rc;
-	off_t i;
+	k_off_t i;
 
 	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
 		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
@@ -225,7 +225,7 @@ ZTEST(flash_driver, test_flash_flatten)
 {
 	uint8_t buf[EXPECTED_SIZE];
 	int rc;
-	off_t i;
+	k_off_t i;
 
 	rc = flash_flatten(flash_dev, page_info.start_offset,
 			   (page_info.size *

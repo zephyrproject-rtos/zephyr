@@ -217,7 +217,7 @@ static int dsi_mcux_attach(const struct device *dev,
 	return 0;
 }
 
-static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
+static k_ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 				 struct mipi_dsi_msg *msg)
 {
 	const struct display_mcux_mipi_dsi_config *config = dev->config;

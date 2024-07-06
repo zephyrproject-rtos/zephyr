@@ -170,7 +170,7 @@ static const struct flash_parameters flash_sim_parameters = {
 	},
 };
 
-static int flash_range_is_valid(const struct device *dev, off_t offset,
+static int flash_range_is_valid(const struct device *dev, k_off_t offset,
 				size_t len)
 {
 	ARG_UNUSED(dev);
@@ -183,7 +183,7 @@ static int flash_range_is_valid(const struct device *dev, off_t offset,
 	return 1;
 }
 
-static int flash_sim_read(const struct device *dev, const off_t offset,
+static int flash_sim_read(const struct device *dev, const k_off_t offset,
 			  void *data,
 			  const size_t len)
 {
@@ -214,7 +214,7 @@ static int flash_sim_read(const struct device *dev, const off_t offset,
 	return 0;
 }
 
-static int flash_sim_write(const struct device *dev, const off_t offset,
+static int flash_sim_write(const struct device *dev, const k_off_t offset,
 			   const void *data, const size_t len)
 {
 	uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
@@ -299,7 +299,7 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 
 static void unit_erase(const uint32_t unit)
 {
-	const off_t unit_addr = FLASH_SIMULATOR_BASE_OFFSET +
+	const k_off_t unit_addr = FLASH_SIMULATOR_BASE_OFFSET +
 				(unit * FLASH_SIMULATOR_ERASE_UNIT);
 
 	/* erase the memory unit by setting it to erase value */
@@ -307,7 +307,7 @@ static void unit_erase(const uint32_t unit)
 	       FLASH_SIMULATOR_ERASE_UNIT);
 }
 
-static int flash_sim_erase(const struct device *dev, const off_t offset,
+static int flash_sim_erase(const struct device *dev, const k_off_t offset,
 			   const size_t len)
 {
 	ARG_UNUSED(dev);

@@ -261,14 +261,14 @@ int boot_erase_img_bank(uint8_t area_id)
 
 ssize_t boot_get_trailer_status_offset(size_t area_size)
 {
-	return (ssize_t)area_size - BOOT_MAGIC_SZ - BOOT_MAX_ALIGN * 2;
+	return (k_ssize_t)area_size - BOOT_MAGIC_SZ - BOOT_MAX_ALIGN * 2;
 }
 
 ssize_t boot_get_area_trailer_status_offset(uint8_t area_id)
 {
 	int rc;
 	const struct flash_area *fa;
-	ssize_t offset;
+	k_ssize_t offset;
 
 	rc = flash_area_open(area_id, &fa);
 	if (rc) {

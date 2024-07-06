@@ -27,7 +27,7 @@ static const struct flash_parameters *flash_params;
 static uint32_t sector_mask;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
 
-static int sector_mask_from_offset(const struct device *dev, off_t offset,
+static int sector_mask_from_offset(const struct device *dev, k_off_t offset,
 				   size_t size, uint32_t *mask)
 {
 	struct flash_pages_info start_page, end_page;
@@ -92,7 +92,7 @@ static void *flash_stm32_setup(void)
 	zassert_equal(rc, 0, "Cannot read flash");
 
 	/* Check if flash is cleared. */
-	for (off_t i = 0; i < EXPECTED_SIZE; i++) {
+	for (k_off_t i = 0; i < EXPECTED_SIZE; i++) {
 		if (buf[i] != flash_params->erase_value) {
 			is_buf_clear = false;
 			break;
@@ -137,7 +137,7 @@ ZTEST(flash_stm32, test_stm32_write_protection)
 	rc = flash_read(flash_dev, TEST_AREA_OFFSET, buf, EXPECTED_SIZE);
 	zassert_equal(rc, 0, "Cannot read flash");
 
-	for (off_t i = 0; i < EXPECTED_SIZE; i++) {
+	for (k_off_t i = 0; i < EXPECTED_SIZE; i++) {
 		zassert_true(buf[i] == flash_params->erase_value,
 			     "Buffer is not empty after write with protected "
 			     "sectors");

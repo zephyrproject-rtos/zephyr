@@ -39,8 +39,8 @@ static void test1_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t valu
 	nfy_enabled = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static ssize_t read_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, uint16_t len, uint16_t offset)
+static k_ssize_t read_test(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+			   uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -48,9 +48,8 @@ static ssize_t read_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(value));
 }
 
-static ssize_t write_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 const void *buf, uint16_t len, uint16_t offset,
-			 uint8_t flags)
+static k_ssize_t write_test(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
+			    uint16_t len, uint16_t offset, uint8_t flags)
 {
 	uint8_t *value = attr->user_data;
 
@@ -234,7 +233,7 @@ ZTEST(test_gatt, test_gatt_read)
 {
 	const struct bt_gatt_attr *attr;
 	uint8_t buf[256];
-	ssize_t ret;
+	k_ssize_t ret;
 
 	/* Find attribute by UUID */
 	attr = NULL;
@@ -256,7 +255,7 @@ ZTEST(test_gatt, test_gatt_write)
 {
 	const struct bt_gatt_attr *attr;
 	char *value = "    ";
-	ssize_t ret;
+	k_ssize_t ret;
 
 	/* Need our service to be registered */
 	zassert_false(bt_gatt_service_register(&test_svc),

@@ -95,7 +95,7 @@ static void ctrl_point_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 	ctrl_point_configured = value == BT_GATT_CCC_INDICATE;
 }
 
-static ssize_t read_location(struct bt_conn *conn,
+static k_ssize_t read_location(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
@@ -105,7 +105,7 @@ static ssize_t read_location(struct bt_conn *conn,
 				 sizeof(*value));
 }
 
-static ssize_t read_csc_feature(struct bt_conn *conn,
+static k_ssize_t read_csc_feature(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
@@ -126,7 +126,7 @@ struct write_sc_ctrl_point_req {
 	};
 } __packed;
 
-static ssize_t write_ctrl_point(struct bt_conn *conn,
+static k_ssize_t write_ctrl_point(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)

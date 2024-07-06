@@ -9,7 +9,7 @@
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 
 	struct ambiq_hwinfo {

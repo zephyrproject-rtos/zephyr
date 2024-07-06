@@ -13,7 +13,7 @@
 
 #include "flash_stm32.h"
 
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
+bool flash_stm32_valid_range(const struct device *dev, k_off_t offset,
 			     uint32_t len,
 			     bool write)
 {
@@ -52,7 +52,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 	}
 }
 
-static int write_byte(const struct device *dev, off_t offset, uint8_t val)
+static int write_byte(const struct device *dev, k_off_t offset, uint8_t val)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	uint32_t tmp;
@@ -76,7 +76,7 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 	/* flush the register write */
 	tmp = regs->CR;
 
-	*((uint8_t *) offset + FLASH_STM32_BASE_ADDRESS) = val;
+	*((uint8_t *)((uintptr_t)offset + FLASH_STM32_BASE_ADDRESS)) = val;
 
 	/* Wait until the BSY bit is cleared */
 	rc = flash_stm32_wait_flash_idle(dev);

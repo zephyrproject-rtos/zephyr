@@ -300,7 +300,7 @@ ZTEST(llext, test_find_section)
 	 */
 
 	int res;
-	ssize_t section_ofs;
+	k_ssize_t section_ofs;
 
 	struct llext_buf_loader buf_loader =
 		LLEXT_BUF_LOADER(find_section_ext, ARRAY_SIZE(find_section_ext));

@@ -99,7 +99,7 @@ enum gatt_global_flags {
 
 static ATOMIC_DEFINE(gatt_flags, GATT_NUM_FLAGS);
 
-static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	const char *name = bt_get_name();
@@ -110,7 +110,7 @@ static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 #if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
 
-static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags)
 {
@@ -133,7 +133,7 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 #endif /* CONFIG_BT_DEVICE_NAME_GATT_WRITABLE */
 
-static ssize_t read_appearance(struct bt_conn *conn,
+static k_ssize_t read_appearance(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
@@ -144,7 +144,7 @@ static ssize_t read_appearance(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE)
-static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags)
 {
@@ -199,7 +199,7 @@ BUILD_ASSERT((CONFIG_BT_PERIPHERAL_PREF_TIMEOUT * 4U) >
 	     ((1U + CONFIG_BT_PERIPHERAL_PREF_LATENCY) *
 	      CONFIG_BT_PERIPHERAL_PREF_MAX_INT));
 
-static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	struct __packed {
@@ -220,7 +220,7 @@ static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 #endif
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
-static ssize_t read_central_addr_res(struct bt_conn *conn,
+static k_ssize_t read_central_addr_res(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr, void *buf,
 				     uint16_t len, uint16_t offset)
 {
@@ -470,7 +470,7 @@ done:
 	}
 }
 
-static ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
+static k_ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("value 0x%04x", value);
@@ -618,7 +618,7 @@ static struct gatt_cf_cfg *find_cf_cfg(struct bt_conn *conn)
 	return NULL;
 }
 
-static ssize_t cf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t cf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		       void *buf, uint16_t len, uint16_t offset)
 {
 	struct gatt_cf_cfg *cfg;
@@ -660,7 +660,7 @@ static bool cf_set_value(struct gatt_cf_cfg *cfg, const uint8_t *value, uint16_t
 	return true;
 }
 
-static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct gatt_cf_cfg *cfg;
@@ -825,7 +825,7 @@ static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 	struct gen_hash_state *state = user_data;
 	struct bt_uuid_16 *u16;
 	uint8_t data[sizeof(union hash_attr_value)];
-	ssize_t len;
+	k_ssize_t len;
 	uint16_t value;
 
 	if (attr->uuid->type != BT_UUID_TYPE_16)
@@ -1010,7 +1010,7 @@ static void db_hash_process(struct k_work *work)
 	do_db_hash();
 }
 
-static ssize_t db_hash_read(struct bt_conn *conn,
+static k_ssize_t db_hash_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr,
 			    void *buf, uint16_t len, uint16_t offset)
 {
@@ -1072,7 +1072,7 @@ static void remove_cf_cfg(struct bt_conn *conn)
 #define SF_BIT_EATT	0
 #define SF_BIT_LAST	SF_BIT_EATT
 
-static ssize_t sf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t sf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		       void *buf, uint16_t len, uint16_t offset)
 {
 	uint8_t value = BIT(SF_BIT_EATT);
@@ -1822,7 +1822,7 @@ bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc)
 }
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 
-ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+k_ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, uint16_t buf_len, uint16_t offset,
 			  const void *value, uint16_t value_len)
 {
@@ -1841,7 +1841,7 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
+k_ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  void *buf, uint16_t len, uint16_t offset)
 {
@@ -1910,7 +1910,7 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 	return 0;
 }
 
-ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
+k_ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   void *buf, uint16_t len, uint16_t offset)
 {
@@ -1966,7 +1966,7 @@ uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr)
 	return handle;
 }
 
-ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
+k_ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
@@ -2152,7 +2152,7 @@ static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
 	return NULL;
 }
 
-ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
+k_ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
@@ -2194,7 +2194,7 @@ static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
 	}
 }
 
-ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
+k_ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -2239,7 +2239,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 
 	/* Confirm write if cfg is managed by application */
 	if (ccc->cfg_write) {
-		ssize_t write = ccc->cfg_write(conn, attr, value);
+		k_ssize_t write = ccc->cfg_write(conn, attr, value);
 
 		if (write < 0) {
 			return write;
@@ -2276,7 +2276,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	return len;
 }
 
-ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
+k_ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
@@ -2287,7 +2287,7 @@ ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
 				 sizeof(props));
 }
 
-ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
+k_ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
@@ -2305,7 +2305,7 @@ struct gatt_cpf {
 	uint16_t description;
 } __packed;
 
-ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
+k_ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
@@ -5784,7 +5784,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		struct ccc_store ccc_store[CCC_STORE_MAX];
 		struct ccc_load load;
 		bt_addr_le_t addr;
-		ssize_t len;
+		k_ssize_t len;
 		int err;
 		const char *next;
 
@@ -6132,7 +6132,7 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	struct gatt_sc_cfg *cfg;
 	uint8_t id;
 	bt_addr_le_t addr;
-	ssize_t len;
+	k_ssize_t len;
 	int err;
 	const char *next;
 
@@ -6218,7 +6218,7 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	struct gatt_cf_cfg *cfg;
 	bt_addr_le_t addr;
 	const char *next;
-	ssize_t len;
+	k_ssize_t len;
 	int err;
 	uint8_t id;
 
@@ -6303,7 +6303,7 @@ BT_SETTINGS_DEFINE(cf, "cf", cf_set, NULL);
 static int db_hash_set(const char *name, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
-	ssize_t len;
+	k_ssize_t len;
 
 	len = read_cb(cb_arg, db_hash.stored_hash, sizeof(db_hash.stored_hash));
 	if (len < 0) {

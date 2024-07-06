@@ -20,7 +20,7 @@
 #define CC13XX_CC26XX_DEVID_SIZE	8
 #endif
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	uint8_t *mac;
 

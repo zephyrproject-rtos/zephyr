@@ -19,11 +19,11 @@
 /** @brief LE Audio Attribute User Data. */
 struct bt_audio_attr_user_data {
 	/** Attribute read callback */
-	ssize_t (*read)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+	k_ssize_t (*read)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset);
 
 	/** Attribute write callback */
-	ssize_t	(*write)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+	k_ssize_t	(*write)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags);
 

@@ -60,14 +60,14 @@ static int zephyr_retained_mem_ram_init(const struct device *dev)
 	return 0;
 }
 
-static ssize_t zephyr_retained_mem_ram_size(const struct device *dev)
+static k_ssize_t zephyr_retained_mem_ram_size(const struct device *dev)
 {
 	const struct zephyr_retained_mem_ram_config *config = dev->config;
 
-	return (ssize_t)config->size;
+	return (k_ssize_t)config->size;
 }
 
-static int zephyr_retained_mem_ram_read(const struct device *dev, off_t offset, uint8_t *buffer,
+static int zephyr_retained_mem_ram_read(const struct device *dev, k_off_t offset, uint8_t *buffer,
 					size_t size)
 {
 	const struct zephyr_retained_mem_ram_config *config = dev->config;
@@ -81,7 +81,7 @@ static int zephyr_retained_mem_ram_read(const struct device *dev, off_t offset, 
 	return 0;
 }
 
-static int zephyr_retained_mem_ram_write(const struct device *dev, off_t offset,
+static int zephyr_retained_mem_ram_write(const struct device *dev, k_off_t offset,
 					 const uint8_t *buffer, size_t size)
 {
 	const struct zephyr_retained_mem_ram_config *config = dev->config;

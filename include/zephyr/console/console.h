@@ -7,7 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_CONSOLE_CONSOLE_H_
 #define ZEPHYR_INCLUDE_CONSOLE_CONSOLE_H_
 
-#include <sys/types.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 
@@ -45,7 +44,7 @@ int console_init(void);
  *         <0, in case of error (e.g. -EAGAIN if timeout expired). errno
  *             variable is also set.
  */
-ssize_t console_read(void *dummy, void *buf, size_t size);
+k_ssize_t console_read(void *dummy, void *buf, size_t size);
 
 /**
  * @brief Write data to console.
@@ -57,7 +56,7 @@ ssize_t console_read(void *dummy, void *buf, size_t size);
  *         <0, in case of error (e.g. -EAGAIN if timeout expired). errno
  *             variable is also set.
  */
-ssize_t console_write(void *dummy, const void *buf, size_t size);
+k_ssize_t console_write(void *dummy, const void *buf, size_t size);
 
 /** @brief Get next char from console input buffer.
  *

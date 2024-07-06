@@ -15,7 +15,7 @@ struct read_cb_arg {
 	size_t len;
 };
 
-static ssize_t settings_runtime_read_cb(void *cb_arg, void *data, size_t len)
+static k_ssize_t settings_runtime_read_cb(void *cb_arg, void *data, size_t len)
 {
 	struct read_cb_arg *arg = (struct read_cb_arg *)cb_arg;
 

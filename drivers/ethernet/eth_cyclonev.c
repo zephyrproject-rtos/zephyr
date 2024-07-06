@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "phy_cyclonev.c"
 #include <ethernet/eth_stats.h>
-#include <sys/types.h>
 #include <zephyr/irq.h>
 #define TX_AVAIL_WAIT	    K_MSEC(1)
 #define INC_WRAP(idx, size) ({ idx = (idx + 1) % size; })

@@ -30,7 +30,7 @@
 static const struct device *const syscon_dev =
 			DEVICE_DT_GET(DT_NODELABEL(syscon));
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	int ret = 0;
 	uint8_t id[3];

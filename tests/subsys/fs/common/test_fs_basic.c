@@ -143,7 +143,7 @@ static int seek_within_hello(const struct fs_mount_t *mp)
 	zassert_equal(stat.size, TESTFS_BUFFER_SIZE,
 		      "stat old hello bad size");
 
-	off_t pos = stat.size / 4;
+	k_off_t pos = stat.size / 4;
 
 	zassert_equal(fs_seek(&file, pos, FS_SEEK_SET),
 		      0,
@@ -159,24 +159,21 @@ static int seek_within_hello(const struct fs_mount_t *mp)
 	zassert_equal(fs_tell(&file), stat.size,
 		      "verify hello read middle tell failed");
 
-	zassert_equal(fs_seek(&file, -stat.size, FS_SEEK_CUR),
-		      0,
+	zassert_equal(fs_seek(&file, -(k_off_t)stat.size, FS_SEEK_CUR), 0,
 		      "verify hello seek back from cur failed");
 
 	zassert_equal(fs_tell(&file), 0U,
 		      "verify hello tell back from cur failed");
 
-	zassert_equal(fs_seek(&file, -pos, FS_SEEK_END),
-		      0,
+	zassert_equal(fs_seek(&file, -(k_off_t)pos, FS_SEEK_END), 0,
 		      "verify hello seek from end failed");
 
-	zassert_equal(fs_tell(&file), stat.size - pos,
+	zassert_equal(fs_tell(&file), (k_off_t)stat.size - pos,
 		      "verify hello tell from end failed");
 
-	zassert_equal(testfs_verify_incrementing(&file, stat.size - pos,
-						 TESTFS_BUFFER_SIZE),
-		      pos,
-		      "verify hello at post middle failed");
+	zassert_equal(
+		testfs_verify_incrementing(&file, (k_off_t)stat.size - pos, TESTFS_BUFFER_SIZE),
+		pos, "verify hello at post middle failed");
 
 	zassert_equal(fs_close(&file), 0,
 		      "verify close hello failed");
@@ -208,7 +205,7 @@ static int truncate_hello(const struct fs_mount_t *mp)
 	zassert_equal(stat.size, TESTFS_BUFFER_SIZE,
 		      "stat old hello bad size");
 
-	off_t pos = 3 * stat.size / 4;
+	k_off_t pos = 3 * stat.size / 4;
 
 	zassert_equal(fs_tell(&file), 0U,
 		      "truncate initial tell failed");

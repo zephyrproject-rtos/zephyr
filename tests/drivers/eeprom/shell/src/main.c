@@ -4,12 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/eeprom/eeprom_fake.h>
 #include <zephyr/fff.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_dummy.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 #include <zephyr/ztest.h>
 
 #define FAKE_EEPROM_NAME DEVICE_DT_NAME(DT_NODELABEL(fake_eeprom))
@@ -19,7 +23,7 @@ static const struct device *const fake_eeprom_dev = DEVICE_DT_GET(DT_NODELABEL(f
 static uint8_t data_capture[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
 DEFINE_FFF_GLOBALS;
 
-static int eeprom_shell_test_write_capture_data(const struct device *dev, off_t offset,
+static int eeprom_shell_test_write_capture_data(const struct device *dev, k_off_t offset,
 						const void *data, size_t len)
 {
 	ARG_UNUSED(dev);
@@ -31,8 +35,8 @@ static int eeprom_shell_test_write_capture_data(const struct device *dev, off_t 
 	return 0;
 }
 
-static int eeprom_shell_test_read_captured_data(const struct device *dev, off_t offset,
-					void *data, size_t len)
+static int eeprom_shell_test_read_captured_data(const struct device *dev, k_off_t offset,
+						void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);

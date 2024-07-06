@@ -19,9 +19,10 @@ struct fake_eeprom_config {
 	size_t size;
 };
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_eeprom_read, const struct device *, off_t, void *, size_t);
+DEFINE_FAKE_VALUE_FUNC(int, fake_eeprom_read, const struct device *, k_off_t, void *, size_t);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_eeprom_write, const struct device *, off_t, const void *, size_t);
+DEFINE_FAKE_VALUE_FUNC(int, fake_eeprom_write, const struct device *, k_off_t, const void *,
+		       size_t);
 
 DEFINE_FAKE_VALUE_FUNC(size_t, fake_eeprom_size, const struct device *);
 

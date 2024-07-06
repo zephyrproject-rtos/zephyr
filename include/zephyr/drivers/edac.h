@@ -13,8 +13,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_EDAC_H_
 
 #include <errno.h>
-
-#include <sys/types.h>
+#include <stdint.h>
 
 /**
  * @defgroup edac EDAC API

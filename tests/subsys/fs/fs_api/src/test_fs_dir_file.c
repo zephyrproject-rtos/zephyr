@@ -531,7 +531,7 @@ void test_file_open(void)
 
 static int _test_file_write(void)
 {
-	ssize_t brw;
+	k_ssize_t brw;
 	int ret;
 
 	TC_PRINT("\nWrite tests:\n");
@@ -597,7 +597,7 @@ void test_file_write(void)
 static int _test_file_sync(void)
 {
 	int ret;
-	ssize_t brw;
+	k_ssize_t brw;
 
 	TC_PRINT("\nSync tests:\n");
 
@@ -674,7 +674,7 @@ ZTEST(fs_api_dir_file, test_file_sync)
  */
 void test_file_read(void)
 {
-	ssize_t brw;
+	k_ssize_t brw;
 	char read_buff[80];
 	size_t sz = strlen(test_str);
 
@@ -733,9 +733,9 @@ void test_file_seek(void)
 static int _test_file_truncate(void)
 {
 	int ret;
-	off_t orig_pos;
+	k_off_t orig_pos;
 	char read_buff[80];
-	ssize_t brw;
+	k_ssize_t brw;
 
 	TC_PRINT("\nTruncate tests: max file size is 128byte\n");
 

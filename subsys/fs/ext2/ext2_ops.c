@@ -132,7 +132,7 @@ out:
 	return rc;
 }
 
-static ssize_t ext2_read(struct fs_file_t *filp, void *dest, size_t nbytes)
+static k_ssize_t ext2_read(struct fs_file_t *filp, void *dest, size_t nbytes)
 {
 	struct ext2_file *f = filp->filep;
 
@@ -140,7 +140,7 @@ static ssize_t ext2_read(struct fs_file_t *filp, void *dest, size_t nbytes)
 		return -EACCES;
 	}
 
-	ssize_t r = ext2_inode_read(f->f_inode, dest, f->f_off, nbytes);
+	k_ssize_t r = ext2_inode_read(f->f_inode, dest, f->f_off, nbytes);
 
 	if (r < 0) {
 		return r;
@@ -149,7 +149,7 @@ static ssize_t ext2_read(struct fs_file_t *filp, void *dest, size_t nbytes)
 	return r;
 }
 
-static ssize_t ext2_write(struct fs_file_t *filp, const void *src, size_t nbytes)
+static k_ssize_t ext2_write(struct fs_file_t *filp, const void *src, size_t nbytes)
 {
 	struct ext2_file *f = filp->filep;
 
@@ -161,7 +161,7 @@ static ssize_t ext2_write(struct fs_file_t *filp, const void *src, size_t nbytes
 		f->f_off = f->f_inode->i_size;
 	}
 
-	ssize_t r = ext2_inode_write(f->f_inode, src, f->f_off, nbytes);
+	k_ssize_t r = ext2_inode_write(f->f_inode, src, f->f_off, nbytes);
 
 	if (r < 0) {
 		return r;
@@ -171,10 +171,10 @@ static ssize_t ext2_write(struct fs_file_t *filp, const void *src, size_t nbytes
 	return r;
 }
 
-static int ext2_lseek(struct fs_file_t *filp, off_t off, int whence)
+static int ext2_lseek(struct fs_file_t *filp, k_off_t off, int whence)
 {
 	struct ext2_file *f = filp->filep;
-	off_t new_off = 0;
+	k_off_t new_off = 0;
 
 	switch (whence) {
 	case FS_SEEK_SET:
@@ -190,6 +190,7 @@ static int ext2_lseek(struct fs_file_t *filp, off_t off, int whence)
 		break;
 
 	default:
+		printk("invalid value for 'whence': %d\n", whence);
 		return -EINVAL;
 	}
 
@@ -197,18 +198,19 @@ static int ext2_lseek(struct fs_file_t *filp, off_t off, int whence)
 	if (new_off < 0 || new_off > f->f_inode->i_size) {
 		return -EINVAL;
 	}
+
 	f->f_off = new_off;
 	return 0;
 }
 
-static off_t ext2_tell(struct fs_file_t *filp)
+static k_off_t ext2_tell(struct fs_file_t *filp)
 {
 	struct ext2_file *f = filp->filep;
 
 	return f->f_off;
 }
 
-static int ext2_truncate(struct fs_file_t *filp, off_t length)
+static int ext2_truncate(struct fs_file_t *filp, k_off_t length)
 {
 	struct ext2_file *f = filp->filep;
 

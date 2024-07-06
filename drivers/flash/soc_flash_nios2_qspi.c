@@ -71,7 +71,7 @@ static const struct flash_parameters flash_nios2_qspi_parameters = {
 static int flash_nios2_qspi_write_protection(const struct device *dev,
 					     bool enable);
 
-static int flash_nios2_qspi_erase(const struct device *dev, off_t offset,
+static int flash_nios2_qspi_erase(const struct device *dev, k_off_t offset,
 				  size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->data;
@@ -276,7 +276,7 @@ qspi_write_block_err:
 	return rc;
 }
 
-static int flash_nios2_qspi_write(const struct device *dev, off_t offset,
+static int flash_nios2_qspi_write(const struct device *dev, k_off_t offset,
 				  const void *data, size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->data;
@@ -353,7 +353,7 @@ qspi_write_err:
 	return rc;
 }
 
-static int flash_nios2_qspi_read(const struct device *dev, off_t offset,
+static int flash_nios2_qspi_read(const struct device *dev, k_off_t offset,
 				 void *data, size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->data;

@@ -40,7 +40,7 @@ static int analog_axis_calibration_load(const char *key, size_t len_rd,
 	char dev_name[ANALOG_AXIS_SETTINGS_PATH_MAX];
 	const char *next;
 	int nlen;
-	ssize_t len;
+	k_ssize_t len;
 
 	nlen = settings_name_next(key, &next);
 	if (nlen + 1 > sizeof(dev_name)) {

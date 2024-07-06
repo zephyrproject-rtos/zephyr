@@ -21,7 +21,7 @@ struct eeprom_stm32_config {
 	size_t size;
 };
 
-static int eeprom_stm32_read(const struct device *dev, off_t offset,
+static int eeprom_stm32_read(const struct device *dev, k_off_t offset,
 				void *buf,
 				size_t len)
 {
@@ -52,7 +52,7 @@ static int eeprom_stm32_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int eeprom_stm32_write(const struct device *dev, off_t offset,
+static int eeprom_stm32_write(const struct device *dev, k_off_t offset,
 				const void *buf, size_t len)
 {
 	const struct eeprom_stm32_config *config = dev->config;

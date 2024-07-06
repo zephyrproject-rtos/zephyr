@@ -65,7 +65,8 @@ void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)
 	if (fd > 0) {
 		/* non-anonymous mapping */
 		virt = NULL;
-		if (zvfs_ioctl_wrap(fd, ZFD_IOCTL_MMAP, addr, len, prot, flags, off, &virt) < 0) {
+		if (zvfs_ioctl_wrap(fd, ZFD_IOCTL_MMAP, addr, len, prot, flags, (k_off_t)off,
+				    &virt) < 0) {
 			return MAP_FAILED;
 		}
 

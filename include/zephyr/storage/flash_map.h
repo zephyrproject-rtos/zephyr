@@ -37,7 +37,8 @@
  */
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <sys/types.h>
+#include <stdint.h>
+
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 
@@ -61,7 +62,7 @@ struct flash_area {
 	uint8_t fa_id;
 	uint16_t pad16;
 	/** Start offset from the beginning of the flash device */
-	off_t fa_off;
+	k_off_t fa_off;
 	/** Total size */
 	size_t fa_size;
 	/** Backing flash device */
@@ -80,7 +81,7 @@ struct flash_area {
  */
 struct flash_sector {
 	/** Sector offset from the beginning of the flash device */
-	off_t fs_off;
+	k_off_t fs_off;
 	/** Sector size in bytes */
 	size_t fs_size;
 };
@@ -152,8 +153,7 @@ void flash_area_close(const struct flash_area *fa);
  *
  * @return  0 on success, negative errno code on fail.
  */
-int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
-		    size_t len);
+int flash_area_read(const struct flash_area *fa, k_off_t off, void *dst, size_t len);
 
 /**
  * @brief Write data to flash area
@@ -169,8 +169,7 @@ int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
  *
  * @return  0 on success, negative errno code on fail.
  */
-int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
-		     size_t len);
+int flash_area_write(const struct flash_area *fa, k_off_t off, const void *src, size_t len);
 
 /**
  * @brief Erase flash area
@@ -185,7 +184,7 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
  *
  * @return  0 on success, negative errno code on fail.
  */
-int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
+int flash_area_erase(const struct flash_area *fa, k_off_t off, size_t len);
 
 /**
  * @brief Erase flash area or fill with erase-value
@@ -208,7 +207,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
  *
  * @return  0 on success, negative errno code on fail.
  */
-int flash_area_flatten(const struct flash_area *fa, off_t off, size_t len);
+int flash_area_flatten(const struct flash_area *fa, k_off_t off, size_t len);
 
 /**
  * @brief Get write block size of the flash area

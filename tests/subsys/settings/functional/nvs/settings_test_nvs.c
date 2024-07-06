@@ -12,7 +12,7 @@ ZTEST(settings_functional, test_setting_storage_get)
 	int rc;
 	void *storage;
 	uint16_t data = 0x5a5a;
-	ssize_t nvs_rc;
+	k_ssize_t nvs_rc;
 
 	rc = settings_storage_get(&storage);
 	zassert_equal(0, rc, "Can't fetch storage reference (err=%d)", rc);

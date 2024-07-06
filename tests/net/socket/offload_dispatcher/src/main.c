@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_if.h>
@@ -43,7 +42,7 @@ static struct test_socket_calls {
 
 static int test_sock = -1;
 
-static ssize_t offload_read(void *obj, void *buffer, size_t count)
+static k_ssize_t offload_read(void *obj, void *buffer, size_t count)
 {
 	ARG_UNUSED(obj);
 	ARG_UNUSED(buffer);
@@ -52,7 +51,7 @@ static ssize_t offload_read(void *obj, void *buffer, size_t count)
 	return 0;
 }
 
-static ssize_t offload_write(void *obj, const void *buffer, size_t count)
+static k_ssize_t offload_write(void *obj, const void *buffer, size_t count)
 {
 	ARG_UNUSED(obj);
 	ARG_UNUSED(buffer);
@@ -142,9 +141,8 @@ static int offload_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 	return 0;
 }
 
-static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
-			      int flags, const struct sockaddr *dest_addr,
-			      socklen_t addrlen)
+static k_ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
+				   const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -159,7 +157,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 	return len;
 }
 
-static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static k_ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -171,9 +169,8 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 	return 0;
 }
 
-static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len,
-				int flags, struct sockaddr *src_addr,
-				socklen_t *addrlen)
+static k_ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
+				     struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -471,7 +468,7 @@ ZTEST(net_socket_offload_udp, test_fcntl_not_bound)
 {
 	int ret;
 
-	ret = zsock_fcntl(test_sock, F_SETFL, 0);
+	ret = zsock_fcntl(test_sock, ZVFS_F_SETFL, 0);
 	zassert_equal(0, ret, "fcntl() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_1].socket_called,
 		     "Socket should've been dispatched");

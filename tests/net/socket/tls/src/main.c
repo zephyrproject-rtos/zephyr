@@ -8,7 +8,6 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/ztest_assert.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/net/loopback.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
@@ -1047,7 +1046,7 @@ ZTEST(net_socket_tls, test_accept_non_block)
 			    IPPROTO_TLS_1_2);
 
 	test_config_psk(s_sock, -1);
-	test_fcntl(s_sock, F_SETFL, O_NONBLOCK);
+	test_fcntl(s_sock, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 	test_listen(s_sock);
 
@@ -1098,8 +1097,8 @@ ZTEST(net_socket_tls, test_recv_non_block)
 	zassert_equal(ret, -1, "recv()) should've failed");
 	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
 
-	/* Verify fcntl and O_NONBLOCK */
-	test_fcntl(new_sock, F_SETFL, O_NONBLOCK);
+	/* Verify fcntl and ZVFS_O_NONBLOCK */
+	test_fcntl(new_sock, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), 0);
 	zassert_equal(ret, -1, "recv() should've failed");
 	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
@@ -1195,8 +1194,8 @@ ZTEST(net_socket_tls, test_send_non_block)
 	zassert_equal(ret, -1, "send() should've failed");
 	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
 
-	/* Verify fcntl and O_NONBLOCK */
-	test_fcntl(c_sock, F_SETFL, O_NONBLOCK);
+	/* Verify fcntl and ZVFS_O_NONBLOCK */
+	test_fcntl(c_sock, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 	ret = zsock_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
 	zassert_equal(ret, -1, "send() should've failed");
 	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);

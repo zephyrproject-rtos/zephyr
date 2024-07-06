@@ -168,7 +168,7 @@ static void eeprom_xec_wait_write_compl(struct eeprom_xec_regs * const regs)
 }
 
 static void eeprom_xec_data_read_32_bytes(struct eeprom_xec_regs * const regs,
-							uint8_t *buf, size_t len, off_t offset)
+							uint8_t *buf, size_t len, k_off_t offset)
 {
 	/* Issue the READ command to transfer buffer to EEPROM memory */
 	eeprom_xec_execute_reg_set(regs, len, XEC_EEPROM_EXC_CMD_READ, offset);
@@ -181,7 +181,7 @@ static void eeprom_xec_data_read_32_bytes(struct eeprom_xec_regs * const regs,
 }
 
 static void eeprom_xec_data_write_32_bytes(struct eeprom_xec_regs * const regs,
-							uint8_t *buf, size_t len, off_t offset)
+							uint8_t *buf, size_t len, k_off_t offset)
 {
 	uint16_t sz;
 	uint16_t rem_bytes;
@@ -220,7 +220,7 @@ static void eeprom_xec_data_write_32_bytes(struct eeprom_xec_regs * const regs,
 	eeprom_xec_wait_write_compl(regs);
 }
 
-static int eeprom_xec_read(const struct device *dev, off_t offset,
+static int eeprom_xec_read(const struct device *dev, k_off_t offset,
 				void *buf,
 				size_t len)
 {
@@ -257,7 +257,7 @@ static int eeprom_xec_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int eeprom_xec_write(const struct device *dev, off_t offset,
+static int eeprom_xec_write(const struct device *dev, k_off_t offset,
 				const void *buf, size_t len)
 {
 	const struct eeprom_xec_config *config = dev->config;

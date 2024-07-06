@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,8 +28,7 @@ struct bt_mesh_blob_io_flash {
 	/** Active stream mode. */
 	enum bt_mesh_blob_io_mode mode;
 	/** Offset into the flash area to place the BLOB at (in bytes). */
-	off_t offset;
-
+	k_off_t offset;
 
 	/* Internal flash area pointer. */
 	const struct flash_area *area;
@@ -43,8 +44,8 @@ struct bt_mesh_blob_io_flash {
  *
  *  @return 0 on success or (negative) error code otherwise.
  */
-int bt_mesh_blob_io_flash_init(struct bt_mesh_blob_io_flash *flash,
-			       uint8_t area_id, off_t offset);
+int bt_mesh_blob_io_flash_init(struct bt_mesh_blob_io_flash *flash, uint8_t area_id,
+			       k_off_t offset);
 
 /** @} */
 

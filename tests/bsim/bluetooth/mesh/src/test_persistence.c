@@ -343,7 +343,7 @@ int test_model_settings_set(const struct bt_mesh_model *model,
 			    settings_read_cb read_cb, void *cb_arg)
 {
 	uint8_t data[sizeof(test_mod_data)];
-	ssize_t result;
+	k_ssize_t result;
 
 	ASSERT_TRUE(name != NULL);
 	if (strncmp(name, TEST_MOD_DATA_NAME, strlen(TEST_MOD_DATA_NAME))) {
@@ -374,7 +374,7 @@ int test_vnd_model_settings_set(const struct bt_mesh_model *model,
 				settings_read_cb read_cb, void *cb_arg)
 {
 	uint8_t data[sizeof(vnd_test_mod_data)];
-	ssize_t result;
+	k_ssize_t result;
 
 	ASSERT_TRUE(name != NULL);
 	if (strncmp(name, TEST_VND_MOD_DATA_NAME, strlen(TEST_VND_MOD_DATA_NAME))) {

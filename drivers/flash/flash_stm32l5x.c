@@ -133,7 +133,7 @@ static int icache_wait_for_invalidate_complete(void)
  * offset and len must be aligned on write-block-size for write,
  * positive and not beyond end of flash
  */
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
+bool flash_stm32_valid_range(const struct device *dev, k_off_t offset,
 			     uint32_t len,
 			     bool write)
 {
@@ -157,11 +157,10 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 	return flash_stm32_range_exists(dev, offset, len);
 }
 
-static int write_nwords(const struct device *dev, off_t offset, const uint32_t *buff, size_t n)
+static int write_nwords(const struct device *dev, k_off_t offset, const uint32_t *buff, size_t n)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	volatile uint32_t *flash = (uint32_t *)(offset
-						+ FLASH_STM32_BASE_ADDRESS);
+	volatile uint32_t *flash = (uint32_t *)((uintptr_t)offset + FLASH_STM32_BASE_ADDRESS);
 	bool full_zero = true;
 	uint32_t tmp;
 	int rc;

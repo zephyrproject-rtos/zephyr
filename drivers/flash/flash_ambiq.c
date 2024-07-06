@@ -55,7 +55,7 @@ static const struct flash_parameters flash_ambiq_parameters = {
 #endif
 };
 
-static bool flash_ambiq_valid_range(off_t offset, size_t len)
+static bool flash_ambiq_valid_range(k_off_t offset, size_t len)
 {
 	if ((offset < 0) || offset >= SOC_NV_FLASH_SIZE || (SOC_NV_FLASH_SIZE - offset) < len) {
 		return false;
@@ -64,7 +64,7 @@ static bool flash_ambiq_valid_range(off_t offset, size_t len)
 	return true;
 }
 
-static int flash_ambiq_read(const struct device *dev, off_t offset, void *data, size_t len)
+static int flash_ambiq_read(const struct device *dev, k_off_t offset, void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -76,12 +76,12 @@ static int flash_ambiq_read(const struct device *dev, off_t offset, void *data, 
 		return 0;
 	}
 
-	memcpy(data, (uint8_t *)(SOC_NV_FLASH_ADDR + offset), len);
+	memcpy(data, (uint8_t *)(SOC_NV_FLASH_ADDR + (uintptr_t)offset), len);
 
 	return 0;
 }
 
-static int flash_ambiq_write(const struct device *dev, off_t offset, const void *data, size_t len)
+static int flash_ambiq_write(const struct device *dev, k_off_t offset, const void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -114,15 +114,15 @@ static int flash_ambiq_write(const struct device *dev, off_t offset, const void 
 			src++;
 		}
 #if (CONFIG_SOC_SERIES_APOLLO4X)
-		ret = am_hal_mram_main_program(
-			AM_HAL_MRAM_PROGRAM_KEY, aligned,
-			(uint32_t *)(SOC_NV_FLASH_ADDR + offset + i * FLASH_WRITE_BLOCK_SIZE),
-			FLASH_WRITE_BLOCK_SIZE / sizeof(uint32_t));
+		ret = am_hal_mram_main_program(AM_HAL_MRAM_PROGRAM_KEY, aligned,
+					       (uint32_t *)(SOC_NV_FLASH_ADDR + (uintptr_t)offset +
+							    i * FLASH_WRITE_BLOCK_SIZE),
+					       FLASH_WRITE_BLOCK_SIZE / sizeof(uint32_t));
 #elif (CONFIG_SOC_SERIES_APOLLO3X)
-		ret = am_hal_flash_program_main(
-			AM_HAL_FLASH_PROGRAM_KEY, aligned,
-			(uint32_t *)(SOC_NV_FLASH_ADDR + offset + i * FLASH_WRITE_BLOCK_SIZE),
-			FLASH_WRITE_BLOCK_SIZE / sizeof(uint32_t));
+		ret = am_hal_flash_program_main(AM_HAL_FLASH_PROGRAM_KEY, aligned,
+						(uint32_t *)(SOC_NV_FLASH_ADDR + (uintptr_t)offset +
+							     i * FLASH_WRITE_BLOCK_SIZE),
+						FLASH_WRITE_BLOCK_SIZE / sizeof(uint32_t));
 #endif /* CONFIG_SOC_SERIES_APOLLO4X */
 		if (ret) {
 			break;
@@ -136,7 +136,7 @@ static int flash_ambiq_write(const struct device *dev, off_t offset, const void 
 	return ret;
 }
 
-static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
+static int flash_ambiq_erase(const struct device *dev, k_off_t offset, size_t len)
 {
 	ARG_UNUSED(dev);
 

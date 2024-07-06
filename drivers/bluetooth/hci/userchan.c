@@ -188,7 +188,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf;
 		size_t buf_tailroom;
 		size_t buf_add_len;
-		ssize_t len;
+		k_ssize_t len;
 		const uint8_t *frame_start = frame;
 
 		if (!uc_ready(uc->fd)) {

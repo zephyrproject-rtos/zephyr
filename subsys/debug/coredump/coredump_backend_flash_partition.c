@@ -163,11 +163,11 @@ static void partition_close(void)
  * @param cb_arg argument passed to callback
  * @return 0 if successful, error otherwise.
  */
-static int data_read(off_t off, uint8_t *dst, size_t len,
+static int data_read(k_off_t off, uint8_t *dst, size_t len,
 		     data_read_cb_t cb, void *cb_arg)
 {
 	int ret = 0;
-	off_t offset = off;
+	k_off_t offset = off;
 	size_t remaining = len;
 	size_t copy_sz;
 	uint8_t *ptr = dst;
@@ -247,7 +247,7 @@ static int process_stored_dump(data_read_cb_t cb, void *cb_arg)
 {
 	int ret;
 	struct flash_hdr_t hdr;
-	off_t offset;
+	k_off_t offset;
 
 	ret = partition_open();
 	if (ret != 0) {
@@ -299,7 +299,7 @@ out:
  * @return dump size if successful; 0 if stored coredump is not found
  *         or is not valid; error otherwise
  */
-static int get_stored_dump(off_t off, uint8_t *dst, size_t len)
+static int get_stored_dump(k_off_t off, uint8_t *dst, size_t len)
 {
 	int ret;
 	struct flash_hdr_t hdr;
@@ -640,7 +640,7 @@ struct coredump_backend_api coredump_backend_flash_partition = {
 
 /* Print buffer */
 static char print_buf[PRINT_BUF_SZ_RAW];
-static off_t print_buf_ptr;
+static k_off_t print_buf_ptr;
 
 /**
  * @brief Shell command to get backend error.

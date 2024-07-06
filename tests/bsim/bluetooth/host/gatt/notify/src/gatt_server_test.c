@@ -58,16 +58,16 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-static ssize_t read_test_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
-			      uint16_t len, uint16_t offset)
+static k_ssize_t read_test_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				uint16_t len, uint16_t offset)
 {
 	printk("Read short\n");
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, (void *)chrc_data,
 				 sizeof(chrc_data));
 }
 
-static ssize_t read_long_test_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
-				   uint16_t len, uint16_t offset)
+static k_ssize_t read_long_test_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				     void *buf, uint16_t len, uint16_t offset)
 {
 	printk("Read long\n");
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, (void *)long_chrc_data,

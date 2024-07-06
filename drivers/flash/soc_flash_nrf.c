@@ -47,7 +47,7 @@ LOG_MODULE_REGISTER(flash_nrf);
 #endif /* CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE */
 
 static int write_op(void *context); /* instance of flash_op_handler_t */
-static int write_synchronously(off_t addr, const void *data, size_t len);
+static int write_synchronously(k_off_t addr, const void *data, size_t len);
 
 static int erase_op(void *context); /* instance of flash_op_handler_t */
 static int erase_synchronously(uint32_t addr, uint32_t size);
@@ -86,7 +86,7 @@ static void restore_pofwarn(void);
 #define RESUME_POFWARN()
 #endif /* NRF52_ERRATA_242_PRESENT */
 
-static int write(off_t addr, const void *data, size_t len);
+static int write(k_off_t addr, const void *data, size_t len);
 static int erase(uint32_t addr, uint32_t size);
 
 static inline bool is_aligned_32(uint32_t data)
@@ -94,7 +94,7 @@ static inline bool is_aligned_32(uint32_t data)
 	return (data & 0x3) ? false : true;
 }
 
-static inline bool is_within_bounds(off_t addr, size_t len, off_t boundary_start,
+static inline bool is_within_bounds(k_off_t addr, size_t len, k_off_t boundary_start,
 				    size_t boundary_size)
 {
 	return (addr >= boundary_start &&
@@ -102,15 +102,15 @@ static inline bool is_within_bounds(off_t addr, size_t len, off_t boundary_start
 			(len <= (boundary_start + boundary_size - addr)));
 }
 
-static inline bool is_regular_addr_valid(off_t addr, size_t len)
+static inline bool is_regular_addr_valid(k_off_t addr, size_t len)
 {
 	return is_within_bounds(addr, len, 0, nrfx_nvmc_flash_size_get());
 }
 
-static inline bool is_uicr_addr_valid(off_t addr, size_t len)
+static inline bool is_uicr_addr_valid(k_off_t addr, size_t len)
 {
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
-	return is_within_bounds(addr, len, (off_t)NRF_UICR, sizeof(*NRF_UICR));
+	return is_within_bounds(addr, len, (k_off_t)NRF_UICR, sizeof(*NRF_UICR));
 #else
 	return false;
 #endif /* CONFIG_SOC_FLASH_NRF_UICR */
@@ -128,7 +128,7 @@ static inline void nrf91_errata_7_exit(void)
 	__enable_irq();
 }
 
-static void nrf_buffer_read_91_uicr(void *data, off_t addr, size_t len)
+static void nrf_buffer_read_91_uicr(void *data, k_off_t addr, size_t len)
 {
 	nrf91_errata_7_enter();
 	nrf_nvmc_buffer_read(data, (uint32_t)addr, len);
@@ -142,7 +142,7 @@ static void nvmc_wait_ready(void)
 	}
 }
 
-static int flash_nrf_read(const struct device *dev, off_t addr,
+static int flash_nrf_read(const struct device *dev, k_off_t addr,
 			    void *data, size_t len)
 {
 	const bool within_uicr = is_uicr_addr_valid(addr, len);
@@ -171,7 +171,7 @@ static int flash_nrf_read(const struct device *dev, off_t addr,
 	return 0;
 }
 
-static int flash_nrf_write(const struct device *dev, off_t addr,
+static int flash_nrf_write(const struct device *dev, k_off_t addr,
 			     const void *data, size_t len)
 {
 	int ret;
@@ -212,7 +212,7 @@ static int flash_nrf_write(const struct device *dev, off_t addr,
 	return ret;
 }
 
-static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
+static int flash_nrf_erase(const struct device *dev, k_off_t addr, size_t size)
 {
 	uint32_t pg_size = nrfx_nvmc_flash_page_size_get();
 	uint32_t n_pages = size / pg_size;
@@ -232,7 +232,7 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 
 		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
-	} else if (addr != (off_t)NRF_UICR || size != sizeof(*NRF_UICR)) {
+	} else if (addr != (k_off_t)NRF_UICR || size != sizeof(*NRF_UICR)) {
 		LOG_ERR("invalid address: 0x%08lx:%zu",
 				(unsigned long)addr, size);
 		return -EINVAL;
@@ -334,7 +334,7 @@ static int erase_synchronously(uint32_t addr, uint32_t size)
 	return nrf_flash_sync_exe(&flash_op_desc);
 }
 
-static int write_synchronously(off_t addr, const void *data, size_t len)
+static int write_synchronously(k_off_t addr, const void *data, size_t len)
 {
 	struct flash_context context = {
 		.data_addr = (uint32_t) data,
@@ -368,7 +368,7 @@ static int erase_op(void *context)
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
-	if (e_ctx->flash_addr == (off_t)NRF_UICR) {
+	if (e_ctx->flash_addr == (k_off_t)NRF_UICR) {
 		if (SUSPEND_POFWARN()) {
 			return -ECANCELED;
 		}
@@ -524,7 +524,7 @@ static int erase(uint32_t addr, uint32_t size)
 	return	erase_op(&context);
 }
 
-static int write(off_t addr, const void *data, size_t len)
+static int write(k_off_t addr, const void *data, size_t len)
 {
 	struct flash_context context = {
 		.data_addr = (uint32_t) data,

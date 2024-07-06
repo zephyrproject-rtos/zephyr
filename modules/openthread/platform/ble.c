@@ -72,7 +72,7 @@ static otInstance *ble_openthread_instance;
 /* BLE service Objects */
 
 /* forward declaration for callback functions */
-static ssize_t on_receive(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
+static k_ssize_t on_receive(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
 			  uint16_t len, uint16_t offset, uint8_t flags);
 static void on_cccd_changed(const struct bt_gatt_attr *attr, uint16_t value);
 
@@ -188,7 +188,7 @@ static void ot_plat_ble_thread(void *unused1, void *unused2, void *unused3)
 /* Zephyr BLE service callbacks */
 
 /* This function is called whenever the RX Characteristic has been written to by a Client */
-static ssize_t on_receive(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
+static k_ssize_t on_receive(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
 			  uint16_t len, uint16_t offset, uint8_t flags)
 {
 	LOG_DBG("Received data, handle %" PRIu16 ", len %" PRIu16, attr->handle, len);

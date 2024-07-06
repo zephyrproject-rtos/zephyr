@@ -134,9 +134,8 @@ static void ots_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 	printk("Object with %s ID has been selected\n", id_str);
 }
 
-static ssize_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
-			    uint64_t id, void **data, size_t len,
-			    off_t offset)
+static k_ssize_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn, uint64_t id, void **data,
+			      size_t len, k_off_t offset)
 {
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 	uint32_t obj_index = OTS_OBJ_ID_TO_OBJ_IDX(id);
@@ -166,9 +165,8 @@ static ssize_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
 	return len;
 }
 
-static ssize_t ots_obj_write(struct bt_ots *ots, struct bt_conn *conn,
-			     uint64_t id, const void *data, size_t len,
-			     off_t offset, size_t rem)
+static k_ssize_t ots_obj_write(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
+			       const void *data, size_t len, k_off_t offset, size_t rem)
 {
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 	uint32_t obj_index = OTS_OBJ_ID_TO_OBJ_IDX(id);
@@ -196,7 +194,7 @@ static void ots_obj_name_written(struct bt_ots *ots, struct bt_conn *conn,
 }
 
 static int ots_obj_cal_checksum(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
-				off_t offset, size_t len, void **data)
+				k_off_t offset, size_t len, void **data)
 {
 	uint32_t obj_index = OTS_OBJ_ID_TO_OBJ_IDX(id);
 

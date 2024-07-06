@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_types.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/math_extras.h>
@@ -834,7 +833,7 @@ out:
 	return -1;
 }
 
-ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
+k_ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 int flags,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
 {
@@ -891,7 +890,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	return status;
 }
 
-ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
+k_ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 			   const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	int bytes_sent;
@@ -910,7 +909,7 @@ ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 }
 
 #ifdef CONFIG_USERSPACE
-ssize_t z_vrfy_zsock_sendto(int sock, const void *buf, size_t len, int flags,
+k_ssize_t z_vrfy_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 			   const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	struct sockaddr_storage dest_addr_copy;
@@ -942,7 +941,7 @@ size_t msghdr_non_empty_iov_count(const struct msghdr *msg)
 	return non_empty_iov_count;
 }
 
-ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
+k_ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 			  int flags)
 {
 	k_timeout_t timeout = K_FOREVER;
@@ -981,7 +980,7 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 	return status;
 }
 
-ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
+k_ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
 {
 	int bytes_sent;
 
@@ -998,7 +997,7 @@ ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
+static inline k_ssize_t z_vrfy_zsock_sendmsg(int sock,
 					   const struct msghdr *msg,
 					   int flags)
 {
@@ -1426,7 +1425,7 @@ out:
 	return ret;
 }
 
-static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
+static inline k_ssize_t zsock_recv_dgram(struct net_context *ctx,
 				       struct msghdr *msg,
 				       void *buf,
 				       size_t max_len,
@@ -1696,7 +1695,7 @@ static int zsock_fionread_ctx(struct net_context *ctx)
 	return MIN(ret, INT_MAX);
 }
 
-static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct msghdr *msg,
+static k_ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct msghdr *msg,
 				       uint8_t *buf, size_t max_len,
 				       int flags, k_timeout_t timeout)
 {
@@ -1786,10 +1785,10 @@ again:
 	return recv_len;
 }
 
-static ssize_t zsock_recv_stream(struct net_context *ctx, struct msghdr *msg,
+static k_ssize_t zsock_recv_stream(struct net_context *ctx, struct msghdr *msg,
 				 void *buf, size_t max_len, int flags)
 {
-	ssize_t res;
+	k_ssize_t res;
 	size_t recv_len = 0;
 	k_timeout_t timeout = K_FOREVER;
 
@@ -1829,7 +1828,7 @@ static ssize_t zsock_recv_stream(struct net_context *ctx, struct msghdr *msg,
 	return recv_len;
 }
 
-ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
+k_ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 			   int flags,
 			   struct sockaddr *src_addr, socklen_t *addrlen)
 {
@@ -1852,7 +1851,7 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 	return -1;
 }
 
-ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
+k_ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 			     struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	int bytes_received;
@@ -1871,11 +1870,11 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 }
 
 #ifdef CONFIG_USERSPACE
-ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
+k_ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 			      struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	socklen_t addrlen_copy;
-	ssize_t ret;
+	k_ssize_t ret;
 
 	if (K_SYSCALL_MEMORY_WRITE(buf, max_len)) {
 		errno = EFAULT;
@@ -1902,7 +1901,7 @@ ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 #include <zephyr/syscalls/zsock_recvfrom_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-ssize_t zsock_recvmsg_ctx(struct net_context *ctx, struct msghdr *msg,
+k_ssize_t zsock_recvmsg_ctx(struct net_context *ctx, struct msghdr *msg,
 			  int flags)
 {
 	enum net_sock_type sock_type = net_context_get_type(ctx);
@@ -1936,7 +1935,7 @@ ssize_t zsock_recvmsg_ctx(struct net_context *ctx, struct msghdr *msg,
 	return -1;
 }
 
-ssize_t z_impl_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
+k_ssize_t z_impl_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
 {
 	int bytes_received;
 
@@ -1953,7 +1952,7 @@ ssize_t z_impl_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
 }
 
 #ifdef CONFIG_USERSPACE
-ssize_t z_vrfy_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
+k_ssize_t z_vrfy_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
 {
 	struct msghdr msg_copy;
 	size_t iovlen;
@@ -3752,12 +3751,12 @@ static inline int z_vrfy_zsock_getsockname(int sock, struct sockaddr *addr,
 #include <zephyr/syscalls/zsock_getsockname_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-static ssize_t sock_read_vmeth(void *obj, void *buffer, size_t count)
+static k_ssize_t sock_read_vmeth(void *obj, void *buffer, size_t count)
 {
 	return zsock_recvfrom_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t sock_write_vmeth(void *obj, const void *buffer, size_t count)
+static k_ssize_t sock_write_vmeth(void *obj, const void *buffer, size_t count)
 {
 	return zsock_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
@@ -3772,19 +3771,19 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	switch (request) {
 
 	/* In Zephyr, fcntl() is just an alias of ioctl(). */
-	case F_GETFL:
+	case ZVFS_F_GETFL:
 		if (sock_is_nonblock(obj)) {
-		    return O_NONBLOCK;
+			return ZVFS_O_NONBLOCK;
 		}
 
 		return 0;
 
-	case F_SETFL: {
+	case ZVFS_F_SETFL: {
 		int flags;
 
 		flags = va_arg(args, int);
 
-		if (flags & O_NONBLOCK) {
+		if (flags & ZVFS_O_NONBLOCK) {
 			sock_set_flag(obj, SOCK_NONBLOCK, SOCK_NONBLOCK);
 		} else {
 			sock_set_flag(obj, SOCK_NONBLOCK, 0);
@@ -3869,25 +3868,25 @@ static int sock_accept_vmeth(void *obj, struct sockaddr *addr,
 	return zsock_accept_ctx(obj, addr, addrlen);
 }
 
-static ssize_t sock_sendto_vmeth(void *obj, const void *buf, size_t len,
+static k_ssize_t sock_sendto_vmeth(void *obj, const void *buf, size_t len,
 				 int flags, const struct sockaddr *dest_addr,
 				 socklen_t addrlen)
 {
 	return zsock_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
 }
 
-static ssize_t sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
+static k_ssize_t sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
 				  int flags)
 {
 	return zsock_sendmsg_ctx(obj, msg, flags);
 }
 
-static ssize_t sock_recvmsg_vmeth(void *obj, struct msghdr *msg, int flags)
+static k_ssize_t sock_recvmsg_vmeth(void *obj, struct msghdr *msg, int flags)
 {
 	return zsock_recvmsg_ctx(obj, msg, flags);
 }
 
-static ssize_t sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
+static k_ssize_t sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
 				   int flags, struct sockaddr *src_addr,
 				   socklen_t *addrlen)
 {

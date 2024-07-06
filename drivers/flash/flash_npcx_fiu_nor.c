@@ -60,7 +60,7 @@ static const struct flash_parameters flash_npcx_parameters = {
 		     DT_INST_STRING_TOKEN(inst, quad_enable_requirements))),	\
 		    ((JESD216_DW15_QER_VAL_NONE)))
 
-static inline bool is_within_region(off_t addr, size_t size, off_t region_start,
+static inline bool is_within_region(k_off_t addr, size_t size, k_off_t region_start,
 				    size_t region_size)
 {
 	return (addr >= region_start &&
@@ -196,7 +196,7 @@ static int flash_npcx_nor_read_jedec_id(const struct device *dev, uint8_t *id)
 	return flash_npcx_uma_read(dev, SPI_NOR_CMD_RDID, id, SPI_NOR_MAX_ID_LEN);
 }
 
-static int flash_npcx_nor_read_sfdp(const struct device *dev, off_t addr,
+static int flash_npcx_nor_read_sfdp(const struct device *dev, k_off_t addr,
 				    void *data, size_t size)
 {
 	uint8_t sfdp_addr[4];
@@ -231,7 +231,7 @@ static void flash_npcx_nor_pages_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static int flash_npcx_nor_read(const struct device *dev, off_t addr,
+static int flash_npcx_nor_read(const struct device *dev, k_off_t addr,
 				 void *data, size_t size)
 {
 	const struct flash_npcx_nor_config *config = dev->config;
@@ -254,7 +254,7 @@ static int flash_npcx_nor_read(const struct device *dev, off_t addr,
 	return 0;
 }
 
-static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t size)
+static int flash_npcx_nor_erase(const struct device *dev, k_off_t addr, size_t size)
 {
 	const struct flash_npcx_nor_config *config = dev->config;
 	int ret = 0;
@@ -306,7 +306,7 @@ static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t siz
 	return ret;
 }
 
-static int flash_npcx_nor_write(const struct device *dev, off_t addr,
+static int flash_npcx_nor_write(const struct device *dev, k_off_t addr,
 				  const void *data, size_t size)
 {
 	const struct flash_npcx_nor_config *config = dev->config;

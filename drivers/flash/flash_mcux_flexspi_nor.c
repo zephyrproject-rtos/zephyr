@@ -208,7 +208,7 @@ static int flash_flexspi_nor_write_enable(struct flash_flexspi_nor_data *data)
 }
 
 static int flash_flexspi_nor_erase_sector(struct flash_flexspi_nor_data *data,
-	off_t offset)
+	k_off_t offset)
 {
 	flexspi_transfer_t transfer = {
 		.deviceAddress = offset,
@@ -220,13 +220,13 @@ static int flash_flexspi_nor_erase_sector(struct flash_flexspi_nor_data *data,
 		.dataSize = 0,
 	};
 
-	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t) offset);
+	LOG_DBG("Erasing sector at 0x%08zx", (k_ssize_t) offset);
 
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
 
 static int flash_flexspi_nor_erase_block(struct flash_flexspi_nor_data *data,
-					  off_t offset)
+					  k_off_t offset)
 {
 	flexspi_transfer_t transfer = {
 		.deviceAddress = offset,
@@ -238,7 +238,7 @@ static int flash_flexspi_nor_erase_block(struct flash_flexspi_nor_data *data,
 		.dataSize = 0,
 	};
 
-	LOG_DBG("Erasing block at 0x%08zx", (ssize_t) offset);
+	LOG_DBG("Erasing block at 0x%08zx", (k_ssize_t) offset);
 
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
@@ -261,7 +261,7 @@ static int flash_flexspi_nor_erase_chip(struct flash_flexspi_nor_data *data)
 }
 
 static int flash_flexspi_nor_page_program(struct flash_flexspi_nor_data *data,
-		off_t offset, const void *buffer, size_t len)
+		k_off_t offset, const void *buffer, size_t len)
 {
 	flexspi_transfer_t transfer = {
 		.deviceAddress = offset,
@@ -273,7 +273,7 @@ static int flash_flexspi_nor_page_program(struct flash_flexspi_nor_data *data,
 		.dataSize = len,
 	};
 
-	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (ssize_t) offset);
+	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (k_ssize_t) offset);
 
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
@@ -305,7 +305,7 @@ static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
 	return 0;
 }
 
-static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
+static int flash_flexspi_nor_read(const struct device *dev, k_off_t offset,
 		void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
@@ -318,7 +318,7 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
+static int flash_flexspi_nor_write(const struct device *dev, k_off_t offset,
 		const void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
@@ -374,7 +374,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
+static int flash_flexspi_nor_erase(const struct device *dev, k_off_t offset,
 		size_t size)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
@@ -843,7 +843,7 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 
 /* Helper so we can avoid flash access while performing SFDP probe */
 static int flash_flexspi_nor_sfdp_read_helper(struct flash_flexspi_nor_data *dev_data,
-		off_t offset, void *data, size_t len)
+		k_off_t offset, void *data, size_t len)
 {
 	flexspi_transfer_t transfer = {
 		.deviceAddress = offset,
@@ -863,7 +863,7 @@ static int flash_flexspi_nor_sfdp_read_helper(struct flash_flexspi_nor_data *dev
 #if defined(CONFIG_FLASH_JESD216_API)
 
 static int flash_flexspi_nor_sfdp_read(const struct device *dev,
-		off_t offset, void *data, size_t len)
+		k_off_t offset, void *data, size_t len)
 {
 	struct flash_flexspi_nor_data *dev_data = dev->data;
 

@@ -22,8 +22,8 @@
 
 #else
 
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/kernel.h>
 
 #ifdef CONFIG_NET_IPV6

@@ -10,8 +10,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <zephyr/sys/cbprintf.h>
-#include <sys/types.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #ifdef CONFIG_CBPRINTF_FULL_INTEGRAL
 typedef intmax_t int_value_type;
@@ -195,7 +195,7 @@ start:
 				if (*fmt == 'u') {
 					d = va_arg(ap, size_t);
 				} else {
-					d = va_arg(ap, ssize_t);
+					d = va_arg(ap, k_ssize_t);
 				}
 			} else if (length_mod == 'l') {
 				if (*fmt == 'u') {

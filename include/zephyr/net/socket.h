@@ -455,9 +455,8 @@ __syscall int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-__syscall ssize_t zsock_sendto(int sock, const void *buf, size_t len,
-			       int flags, const struct sockaddr *dest_addr,
-			       socklen_t addrlen);
+__syscall k_ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
+				 const struct sockaddr *dest_addr, socklen_t addrlen);
 
 /**
  * @brief Send data to a connected peer
@@ -471,8 +470,7 @@ __syscall ssize_t zsock_sendto(int sock, const void *buf, size_t len,
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-static inline ssize_t zsock_send(int sock, const void *buf, size_t len,
-				 int flags)
+static inline k_ssize_t zsock_send(int sock, const void *buf, size_t len, int flags)
 {
 	return zsock_sendto(sock, buf, len, flags, NULL, 0);
 }
@@ -489,8 +487,7 @@ static inline ssize_t zsock_send(int sock, const void *buf, size_t len,
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-__syscall ssize_t zsock_sendmsg(int sock, const struct msghdr *msg,
-				int flags);
+__syscall k_ssize_t zsock_sendmsg(int sock, const struct msghdr *msg, int flags);
 
 /**
  * @brief Receive data from an arbitrary network address
@@ -504,9 +501,8 @@ __syscall ssize_t zsock_sendmsg(int sock, const struct msghdr *msg,
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-__syscall ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len,
-				 int flags, struct sockaddr *src_addr,
-				 socklen_t *addrlen);
+__syscall k_ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
+				   struct sockaddr *src_addr, socklen_t *addrlen);
 
 /**
  * @brief Receive a message from an arbitrary network address
@@ -520,7 +516,7 @@ __syscall ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len,
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-__syscall ssize_t zsock_recvmsg(int sock, struct msghdr *msg, int flags);
+__syscall k_ssize_t zsock_recvmsg(int sock, struct msghdr *msg, int flags);
 
 /**
  * @brief Receive data from a connected peer
@@ -534,8 +530,7 @@ __syscall ssize_t zsock_recvmsg(int sock, struct msghdr *msg, int flags);
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-static inline ssize_t zsock_recv(int sock, void *buf, size_t max_len,
-				 int flags)
+static inline k_ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags)
 {
 	return zsock_recvfrom(sock, buf, max_len, flags, NULL, NULL);
 }

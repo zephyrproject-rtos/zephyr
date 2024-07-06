@@ -31,7 +31,7 @@ static inline struct flash_area const *get_flash_area_from_id(int idx)
 
 
 static inline bool is_in_flash_area_bounds(const struct flash_area *fa,
-					   off_t off, size_t len)
+					   k_off_t off, size_t len)
 {
 	return (off >= 0) && ((off + len) <= fa->fa_size);
 }

@@ -7,7 +7,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/eeprom.h>
 
-static inline int z_vrfy_eeprom_read(const struct device *dev, off_t offset,
+static inline int z_vrfy_eeprom_read(const struct device *dev, k_off_t offset,
 				     void *data, size_t len)
 {
 	K_OOPS(K_SYSCALL_DRIVER_EEPROM(dev, read));
@@ -18,7 +18,7 @@ static inline int z_vrfy_eeprom_read(const struct device *dev, off_t offset,
 }
 #include <zephyr/syscalls/eeprom_read_mrsh.c>
 
-static inline int z_vrfy_eeprom_write(const struct device *dev, off_t offset,
+static inline int z_vrfy_eeprom_write(const struct device *dev, k_off_t offset,
 				      const void *data, size_t len)
 {
 	K_OOPS(K_SYSCALL_DRIVER_EEPROM(dev, write));

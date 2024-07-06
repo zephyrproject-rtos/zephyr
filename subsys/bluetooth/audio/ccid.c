@@ -43,7 +43,7 @@ static uint8_t ccid_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle, vo
 
 	if (attr->read != NULL) {
 		uint8_t ccid = 0U;
-		ssize_t res;
+		k_ssize_t res;
 
 		res = attr->read(NULL, attr, &ccid, sizeof(ccid), 0);
 

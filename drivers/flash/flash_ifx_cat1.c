@@ -50,7 +50,8 @@ static inline void flash_ifx_sem_give(const struct device *dev)
 	k_sem_give(&data->sem);
 }
 
-static int ifx_cat1_flash_read(const struct device *dev, off_t offset, void *data, size_t data_len)
+static int ifx_cat1_flash_read(const struct device *dev, k_off_t offset, void *data,
+			       size_t data_len)
 {
 	struct ifx_cat1_flash_data *dev_data = dev->data;
 	const struct ifx_cat1_flash_config *dev_config = dev->config;
@@ -72,7 +73,7 @@ out:
 	return ret;
 }
 
-static int ifx_cat1_flash_write(const struct device *dev, off_t offset, const void *data,
+static int ifx_cat1_flash_write(const struct device *dev, k_off_t offset, const void *data,
 				size_t data_len)
 {
 	struct ifx_cat1_flash_data *dev_data = dev->data;
@@ -111,7 +112,7 @@ out:
 	return ret;
 }
 
-static int ifx_cat1_flash_erase(const struct device *dev, off_t offset, size_t size)
+static int ifx_cat1_flash_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	struct ifx_cat1_flash_data *data = dev->data;
 	const struct ifx_cat1_flash_config *config = dev->config;

@@ -18,7 +18,6 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include <sys/types.h>
 
 #include <zephyr/types.h>
 
@@ -269,7 +268,7 @@ int boot_erase_img_bank(uint8_t area_id);
  * @param area_id flash_area ID of image bank to get the status offset
  * @return a positive offset on success, negative errno code on fail
  */
-ssize_t boot_get_area_trailer_status_offset(uint8_t area_id);
+k_ssize_t boot_get_area_trailer_status_offset(uint8_t area_id);
 
 /**
  * @brief Get the offset of the status from an image bank size
@@ -278,7 +277,7 @@ ssize_t boot_get_area_trailer_status_offset(uint8_t area_id);
  * @return offset of the status. When negative the status will not fit
  * the given size
  */
-ssize_t boot_get_trailer_status_offset(size_t area_size);
+k_ssize_t boot_get_trailer_status_offset(size_t area_size);
 
 #ifdef __cplusplus
 }

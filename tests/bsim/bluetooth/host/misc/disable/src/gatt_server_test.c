@@ -47,7 +47,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 static uint8_t chrc_data[CHRC_SIZE];
 static uint8_t long_chrc_data[LONG_CHRC_SIZE];
 
-static ssize_t read_test_chrc(struct bt_conn *conn,
+static k_ssize_t read_test_chrc(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      void *buf, uint16_t len, uint16_t offset)
 {
@@ -55,7 +55,7 @@ static ssize_t read_test_chrc(struct bt_conn *conn,
 				 (void *)chrc_data, sizeof(chrc_data));
 }
 
-static ssize_t write_test_chrc(struct bt_conn *conn,
+static k_ssize_t write_test_chrc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
 			       const void *buf, uint16_t len,
 			       uint16_t offset, uint8_t flags)
@@ -80,7 +80,7 @@ static ssize_t write_test_chrc(struct bt_conn *conn,
 	return len;
 }
 
-static ssize_t read_long_test_chrc(struct bt_conn *conn,
+static k_ssize_t read_long_test_chrc(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   void *buf, uint16_t len, uint16_t offset)
 {
@@ -88,7 +88,7 @@ static ssize_t read_long_test_chrc(struct bt_conn *conn,
 				 (void *)long_chrc_data, sizeof(long_chrc_data));
 }
 
-static ssize_t write_long_test_chrc(struct bt_conn *conn,
+static k_ssize_t write_long_test_chrc(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr,
 				    const void *buf, uint16_t len,
 				    uint16_t offset, uint8_t flags)

@@ -122,7 +122,7 @@ int fcb_elem_info(struct fcb *_fcb, struct fcb_entry *loc)
 	int rc;
 	uint8_t em;
 	uint8_t fl_em;
-	off_t off;
+	size_t off;
 
 	rc = fcb_elem_endmarker(_fcb, loc, &em);
 	if (rc) {

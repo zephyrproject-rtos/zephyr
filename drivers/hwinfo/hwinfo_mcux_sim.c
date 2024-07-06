@@ -25,7 +25,7 @@
 				       HWINFO_DEVICE_ID_LENGTH_M + \
 				       HWINFO_DEVICE_ID_LENGTH_H)
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	uint32_t id[HWINFO_DEVICE_ID_LENGTH_TOTAL];
 	uint32_t *idp = id;

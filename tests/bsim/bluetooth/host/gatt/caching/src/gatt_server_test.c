@@ -66,7 +66,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 #define ARRAY_ITEM(i, _) i
 static const uint8_t chrc_data[] = { LISTIFY(CHRC_SIZE, ARRAY_ITEM, (,)) }; /* 1, 2, 3 ... */
 
-static ssize_t read_test_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+static k_ssize_t read_test_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
 	printk("Characteristic read\n");

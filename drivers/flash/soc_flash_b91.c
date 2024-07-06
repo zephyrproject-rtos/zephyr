@@ -36,7 +36,7 @@ static const struct flash_parameters flash_b91_parameters = {
 
 
 /* Check for correct offset and length */
-static bool flash_b91_is_range_valid(off_t offset, size_t len)
+static bool flash_b91_is_range_valid(k_off_t offset, size_t len)
 {
 	/* check for min value */
 	if ((offset < 0) || (len < 1)) {
@@ -62,7 +62,7 @@ static int flash_b91_init(const struct device *dev)
 }
 
 /* API implementation: erase */
-static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
+static int flash_b91_erase(const struct device *dev, k_off_t offset, size_t len)
 {
 	int page_nums = len / PAGE_SIZE;
 	struct flash_b91_data *dev_data = dev->data;
@@ -119,7 +119,7 @@ static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
 }
 
 /* API implementation: write */
-static int flash_b91_write(const struct device *dev, off_t offset,
+static int flash_b91_write(const struct device *dev, k_off_t offset,
 			   const void *data, size_t len)
 {
 	void *buf = NULL;
@@ -172,7 +172,7 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 }
 
 /* API implementation: read */
-static int flash_b91_read(const struct device *dev, off_t offset,
+static int flash_b91_read(const struct device *dev, k_off_t offset,
 			  void *data, size_t len)
 {
 	ARG_UNUSED(dev);

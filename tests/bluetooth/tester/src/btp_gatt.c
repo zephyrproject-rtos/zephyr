@@ -352,7 +352,7 @@ enum {
 	GATT_VALUE_WRITE_AUTHOR_FLAG,
 };
 
-static ssize_t read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, uint16_t len, uint16_t offset)
 {
 	const struct gatt_value *value = attr->user_data;
@@ -383,7 +383,7 @@ static void attr_value_changed_ev(uint16_t handle, const uint8_t *value, uint16_
 		    buf, sizeof(buf));
 }
 
-static ssize_t write_value(struct bt_conn *conn,
+static k_ssize_t write_value(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, const void *buf,
 			   uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -2266,7 +2266,7 @@ static uint8_t get_attr_val_rp(const struct bt_gatt_attr *attr, uint16_t handle,
 	struct net_buf_simple *buf = u_data->buf;
 	struct bt_conn *conn = u_data->conn;
 	struct btp_gatt_get_attribute_value_rp *rp;
-	ssize_t read, to_read;
+	k_ssize_t read, to_read;
 
 	rp = net_buf_simple_add(buf, sizeof(*rp));
 	rp->value_length = 0x0000;

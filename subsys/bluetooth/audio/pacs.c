@@ -243,7 +243,7 @@ static enum bt_audio_context pacs_get_available_contexts_for_conn(struct bt_conn
 	return bt_pacs_get_available_contexts(dir);
 }
 
-static ssize_t available_contexts_read(struct bt_conn *conn,
+static k_ssize_t available_contexts_read(struct bt_conn *conn,
 				       const struct bt_gatt_attr *attr, void *buf,
 				       uint16_t len, uint16_t offset)
 {
@@ -286,7 +286,7 @@ static uint16_t supported_context_get(enum bt_audio_dir dir)
 	return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 }
 
-static ssize_t supported_context_read(struct bt_conn *conn,
+static k_ssize_t supported_context_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
@@ -356,10 +356,10 @@ static int set_supported_contexts(uint16_t contexts, uint16_t *supported,
 }
 
 #if defined(CONFIG_BT_PAC_SNK)
-static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
-	ssize_t ret_val;
+	k_ssize_t ret_val;
 	int err;
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
@@ -392,7 +392,7 @@ static void snk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SNK_LOC)
-static ssize_t snk_loc_read(struct bt_conn *conn,
+static k_ssize_t snk_loc_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
 {
@@ -434,7 +434,7 @@ static void set_snk_location(enum bt_audio_location location)
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 
 #if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE)
-static ssize_t snk_loc_write(struct bt_conn *conn,
+static k_ssize_t snk_loc_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
 			     uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -461,10 +461,10 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 #endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE */
 
 #if defined(CONFIG_BT_PAC_SRC)
-static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
-	ssize_t ret_val;
+	k_ssize_t ret_val;
 	int err;
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
@@ -497,7 +497,7 @@ static void src_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 #endif /* CONFIG_BT_PAC_SRC */
 
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-static ssize_t src_loc_read(struct bt_conn *conn,
+static k_ssize_t src_loc_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
 {
@@ -539,7 +539,7 @@ static void set_src_location(enum bt_audio_location location)
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 
 #if defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
-static ssize_t src_loc_write(struct bt_conn *conn,
+static k_ssize_t src_loc_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
 			     uint16_t len, uint16_t offset, uint8_t flags)
 {

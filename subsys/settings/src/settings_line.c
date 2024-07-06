@@ -15,14 +15,14 @@
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 struct settings_io_cb_s {
-	int (*read_cb)(void *ctx, off_t off, char *buf, size_t *len);
-	int (*write_cb)(void *ctx, off_t off, char const *buf, size_t len);
+	int (*read_cb)(void *ctx, k_off_t off, char *buf, size_t *len);
+	int (*write_cb)(void *ctx, k_off_t off, char const *buf, size_t len);
 	size_t (*get_len_cb)(void *ctx);
 	uint8_t rwbs;
 } static settings_io_cb;
 
 int settings_line_write(const char *name, const char *value, size_t val_len,
-			off_t w_loc, void *cb_arg)
+			k_off_t w_loc, void *cb_arg)
 {
 	size_t w_size, rem, add;
 
@@ -169,7 +169,7 @@ int settings_line_len_calc(const char *name, size_t val_len)
  * @retval 0 on success,
  * -ERCODE on storage errors
  */
-static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
+static int settings_line_raw_read_until(k_off_t seek, char *out, size_t len_req,
 				 size_t *len_read, char const *until_char,
 				 void *cb_arg)
 {
@@ -177,7 +177,7 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 	char temp_buf[32]; /* buffer for fit read-block-size requirements */
 	size_t exp_size, read_size;
 	uint8_t rbs = settings_io_cb.rwbs;
-	off_t off;
+	k_off_t off;
 	int rc = -EINVAL;
 
 	if (len_req == 0) {
@@ -231,7 +231,7 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 	return 0;
 }
 
-int settings_line_raw_read(off_t seek, char *out, size_t len_req,
+int settings_line_raw_read(k_off_t seek, char *out, size_t len_req,
 			   size_t *len_read, void *cb_arg)
 {
 	return settings_line_raw_read_until(seek, out, len_req, len_read,
@@ -239,14 +239,14 @@ int settings_line_raw_read(off_t seek, char *out, size_t len_req,
 }
 
 /* off from value begin */
-int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
+int settings_line_val_read(k_off_t val_off, k_off_t off, char *out, size_t len_req,
 			   size_t *len_read, void *cb_arg)
 {
 	return settings_line_raw_read(val_off + off, out, len_req, len_read,
 				      cb_arg);
 }
 
-size_t settings_line_val_get_len(off_t val_off, void *read_cb_ctx)
+size_t settings_line_val_get_len(k_off_t val_off, void *read_cb_ctx)
 {
 	size_t len;
 
@@ -272,8 +272,8 @@ int settings_line_name_read(char *out, size_t len_req, size_t *len_read,
 }
 
 
-int settings_line_entry_copy(void *dst_ctx, off_t dst_off, void *src_ctx,
-			     off_t src_off, size_t len)
+int settings_line_entry_copy(void *dst_ctx, k_off_t dst_off, void *src_ctx,
+			     k_off_t src_off, size_t len)
 {
 	int rc = -EINVAL;
 	char buf[16];
@@ -308,9 +308,9 @@ int settings_line_entry_copy(void *dst_ctx, off_t dst_off, void *src_ctx,
 	return rc;
 }
 
-void settings_line_io_init(int (*read_cb)(void *ctx, off_t off, char *buf,
+void settings_line_io_init(int (*read_cb)(void *ctx, k_off_t off, char *buf,
 					  size_t *len),
-			  int (*write_cb)(void *ctx, off_t off, char const *buf,
+			  int (*write_cb)(void *ctx, k_off_t off, char const *buf,
 					  size_t len),
 			  size_t (*get_len_cb)(void *ctx),
 			  uint8_t io_rwbs)
@@ -324,13 +324,13 @@ void settings_line_io_init(int (*read_cb)(void *ctx, off_t off, char *buf,
 
 /* val_off - offset of value-string within line entries */
 static int settings_line_cmp(char const *val, size_t val_len,
-			     void *val_read_cb_ctx, off_t val_off)
+			     void *val_read_cb_ctx, k_off_t val_off)
 {
 	size_t len_read, exp_len;
 	size_t rem;
 	char buf[16];
 	int rc = -EINVAL;
-	off_t off = 0;
+	k_off_t off = 0;
 
 	if (val_len == 0) {
 		return -EINVAL;
@@ -361,7 +361,7 @@ static int settings_line_cmp(char const *val, size_t val_len,
 }
 
 int settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
-				off_t off, void *cb_arg)
+				k_off_t off, void *cb_arg)
 {
 	struct settings_line_dup_check_arg *cdca;
 	size_t len_read;
@@ -387,7 +387,7 @@ int settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
 	return 0;
 }
 
-static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
+static k_ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
 {
 	struct settings_line_read_value_cb_ctx *value_context = cb_arg;
 	size_t len_read;
@@ -404,7 +404,7 @@ static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
 	return -1;
 }
 
-int settings_line_load_cb(const char *name, void *val_read_cb_ctx, off_t off,
+int settings_line_load_cb(const char *name, void *val_read_cb_ctx, k_off_t off,
 			  void *cb_arg)
 {
 	size_t len;

@@ -16,7 +16,6 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap_link_format.h>
 #include <zephyr/net/coap_mgmt.h>
 #include <zephyr/net/coap_service.h>
-#include <zephyr/posix/fcntl.h>
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
@@ -429,7 +428,7 @@ int coap_service_start(const struct coap_service *service)
 		goto end;
 	}
 
-	ret = zsock_fcntl(service->data->sock_fd, F_SETFL, O_NONBLOCK);
+	ret = zsock_fcntl(service->data->sock_fd, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 	if (ret < 0) {
 		ret = -errno;
 		goto close;
@@ -732,7 +731,7 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 	}
 
 	for (int i = 0; i < 2; ++i) {
-		ret = zsock_fcntl(control_socks[i], F_SETFL, O_NONBLOCK);
+		ret = zsock_fcntl(control_socks[i], ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 
 		if (ret < 0) {
 			zsock_close(control_socks[0]);

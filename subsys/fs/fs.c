@@ -15,7 +15,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/sys/check.h>
-
+#include <zephyr/sys/fdtable.h>
 
 #define LOG_LEVEL CONFIG_FS_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -221,7 +221,7 @@ int fs_close(struct fs_file_t *zfp)
 	return rc;
 }
 
-ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size)
+k_ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 {
 	int rc = -EINVAL;
 
@@ -241,7 +241,7 @@ ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 	return rc;
 }
 
-ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
+k_ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 {
 	int rc = -EINVAL;
 
@@ -261,7 +261,7 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 	return rc;
 }
 
-int fs_seek(struct fs_file_t *zfp, off_t offset, int whence)
+int fs_seek(struct fs_file_t *zfp, k_off_t offset, int whence)
 {
 	int rc = -ENOTSUP;
 
@@ -281,7 +281,7 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 	return rc;
 }
 
-off_t fs_tell(struct fs_file_t *zfp)
+k_off_t fs_tell(struct fs_file_t *zfp)
 {
 	int rc = -ENOTSUP;
 
@@ -301,7 +301,7 @@ off_t fs_tell(struct fs_file_t *zfp)
 	return rc;
 }
 
-int fs_truncate(struct fs_file_t *zfp, off_t length)
+int fs_truncate(struct fs_file_t *zfp, k_off_t length)
 {
 	int rc = -EINVAL;
 

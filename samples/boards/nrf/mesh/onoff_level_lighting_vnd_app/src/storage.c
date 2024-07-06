@@ -115,7 +115,7 @@ void save_on_flash(uint8_t id)
 static int ps_set(const char *key, size_t len_rd,
 		  settings_read_cb read_cb, void *cb_arg)
 {
-	ssize_t len = 0;
+	k_ssize_t len = 0;
 	int key_len;
 	const char *next;
 

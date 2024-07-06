@@ -32,7 +32,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
-#include <zephyr/posix/fcntl.h>
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #include <zephyr/net/tls_credentials.h>
@@ -1185,13 +1184,13 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		goto error;
 	}
 
-	flags = zsock_fcntl(client_ctx->sock_fd, F_GETFL, 0);
+	flags = zsock_fcntl(client_ctx->sock_fd, ZVFS_F_GETFL, 0);
 	if (flags == -1) {
 		ret = -errno;
 		LOG_ERR("zsock_fcntl(F_GETFL) failed (%d)", ret);
 		goto error;
 	}
-	ret = zsock_fcntl(client_ctx->sock_fd, F_SETFL, flags | O_NONBLOCK);
+	ret = zsock_fcntl(client_ctx->sock_fd, ZVFS_F_SETFL, flags | ZVFS_O_NONBLOCK);
 	if (ret == -1) {
 		ret = -errno;
 		LOG_ERR("zsock_fcntl(F_SETFL) failed (%d)", ret);
@@ -1307,14 +1306,14 @@ static int lwm2m_engine_init(void)
 		/* Last poll-handle is reserved for control socket */
 		sock_fds[MAX_POLL_FD - 1].fd = s[0];
 		control_sock = s[1];
-		ret = zsock_fcntl(s[0], F_SETFL, O_NONBLOCK);
+		ret = zsock_fcntl(s[0], ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 		if (ret) {
 			LOG_ERR("zsock_fcntl() %d", ret);
 			zsock_close(s[0]);
 			zsock_close(s[1]);
 			return ret;
 		}
-		ret = zsock_fcntl(s[1], F_SETFL, O_NONBLOCK);
+		ret = zsock_fcntl(s[1], ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 		if (ret) {
 			LOG_ERR("zsock_fcntl() %d", ret);
 			zsock_close(s[0]);

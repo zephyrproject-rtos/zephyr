@@ -37,9 +37,8 @@ static void blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_INF("BAS Notifications %s", notif_enabled ? "enabled" : "disabled");
 }
 
-static ssize_t read_blvl(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr, void *buf,
-			       uint16_t len, uint16_t offset)
+static k_ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+			   uint16_t len, uint16_t offset)
 {
 	uint8_t lvl8 = battery_level;
 

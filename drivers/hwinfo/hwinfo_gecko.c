@@ -19,7 +19,7 @@
 #define HAS_BROWNOUT 1
 #endif
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	uint64_t unique_id = sys_cpu_to_be64(SYSTEM_GetUnique());
 

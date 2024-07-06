@@ -239,7 +239,7 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 	return res;
 }
 
-static ssize_t read_sirk(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+static k_ssize_t read_sirk(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			 uint16_t len, uint16_t offset)
 {
 	struct bt_csip_sirk enc_sirk;
@@ -247,7 +247,7 @@ static ssize_t read_sirk(struct bt_conn *conn, const struct bt_gatt_attr *attr, 
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	if (svc_inst->cb != NULL && svc_inst->cb->sirk_read_req != NULL) {
-		ssize_t gatt_err = BT_GATT_ERR(BT_ATT_ERR_SUCCESS);
+		k_ssize_t gatt_err = BT_GATT_ERR(BT_ATT_ERR_SUCCESS);
 		uint8_t cb_rsp;
 
 		/* Ask higher layer for what SIRK to return, if any */
@@ -298,7 +298,7 @@ static void sirk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 }
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE */
 
-static ssize_t read_set_size(struct bt_conn *conn,
+static k_ssize_t read_set_size(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
@@ -317,7 +317,7 @@ static void set_size_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_set_lock(struct bt_conn *conn,
+static k_ssize_t read_set_lock(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
@@ -398,12 +398,12 @@ static uint8_t set_lock(struct bt_conn *conn,
 	return 0;
 }
 
-static ssize_t write_set_lock(struct bt_conn *conn,
+static k_ssize_t write_set_lock(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      const void *buf, uint16_t len,
 			      uint16_t offset, uint8_t flags)
 {
-	ssize_t res;
+	k_ssize_t res;
 	uint8_t val;
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
@@ -429,7 +429,7 @@ static void set_lock_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_rank(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_rank(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);

@@ -768,7 +768,7 @@ static void ascs_ep_get_status_enable(struct bt_bap_ep *ep, struct net_buf_simpl
 		bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
 }
 
-static ssize_t ascs_ase_read_status_idle(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t ascs_ase_read_status_idle(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 					 void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_ascs_ase_status status = {
@@ -1438,13 +1438,13 @@ static struct bt_ascs_ase *ase_find(struct bt_conn *conn, uint8_t id)
 	return NULL;
 }
 
-static ssize_t ascs_ase_read(struct bt_conn *conn,
+static k_ssize_t ascs_ase_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
 	uint8_t ase_id = POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr));
 	struct bt_ascs_ase *ase = NULL;
-	ssize_t ret_val;
+	k_ssize_t ret_val;
 	int err;
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
@@ -1842,7 +1842,7 @@ static bool is_valid_config_len(struct bt_conn *conn, struct net_buf_simple *buf
 	return true;
 }
 
-static ssize_t ascs_config(struct bt_conn *conn, struct net_buf_simple *buf)
+static k_ssize_t ascs_config(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_config_op *req;
 	const struct bt_ascs_config *cfg;
@@ -2051,7 +2051,7 @@ static bool is_valid_qos_len(struct bt_conn *conn, struct net_buf_simple *buf)
 	return true;
 }
 
-static ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
+static k_ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_qos_op *req;
 
@@ -2440,7 +2440,7 @@ static bool is_valid_enable_len(struct bt_conn *conn, struct net_buf_simple *buf
 	return true;
 }
 
-static ssize_t ascs_enable(struct bt_conn *conn, struct net_buf_simple *buf)
+static k_ssize_t ascs_enable(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_enable_op *req;
 	struct bt_ascs_metadata *meta;
@@ -2567,7 +2567,7 @@ static bool is_valid_start_len(struct bt_conn *conn, struct net_buf_simple *buf)
 	return true;
 }
 
-static ssize_t ascs_start(struct bt_conn *conn, struct net_buf_simple *buf)
+static k_ssize_t ascs_start(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_start_op *req;
 	int i;
@@ -2649,7 +2649,7 @@ static bool is_valid_disable_len(struct bt_conn *conn, struct net_buf_simple *bu
 	return true;
 }
 
-static ssize_t ascs_disable(struct bt_conn *conn, struct net_buf_simple *buf)
+static k_ssize_t ascs_disable(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_disable_op *req;
 
@@ -2779,7 +2779,7 @@ static bool is_valid_stop_len(struct bt_conn *conn, struct net_buf_simple *buf)
 	return true;
 }
 
-static ssize_t ascs_stop(struct bt_conn *conn, struct net_buf_simple *buf)
+static k_ssize_t ascs_stop(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_start_op *req;
 	int i;
@@ -2878,7 +2878,7 @@ static bool is_valid_metadata_len(struct bt_conn *conn, struct net_buf_simple *b
 	return true;
 }
 
-static ssize_t ascs_metadata(struct bt_conn *conn, struct net_buf_simple *buf)
+static k_ssize_t ascs_metadata(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_metadata_op *req;
 	struct bt_ascs_metadata *meta;
@@ -2954,7 +2954,7 @@ static bool is_valid_release_len(struct bt_conn *conn, struct net_buf_simple *bu
 	return true;
 }
 
-static ssize_t ascs_release(struct bt_conn *conn, struct net_buf_simple *buf)
+static k_ssize_t ascs_release(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_release_op *req;
 	int i;
@@ -2999,13 +2999,13 @@ static ssize_t ascs_release(struct bt_conn *conn, struct net_buf_simple *buf)
 	return buf->size;
 }
 
-static ssize_t ascs_cp_write(struct bt_conn *conn,
+static k_ssize_t ascs_cp_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
 			     uint16_t len, uint16_t offset, uint8_t flags)
 {
 	const struct bt_ascs_ase_cp *req;
 	struct net_buf_simple buf;
-	ssize_t ret;
+	k_ssize_t ret;
 
 	if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
 		/* Return 0 to allow long writes */

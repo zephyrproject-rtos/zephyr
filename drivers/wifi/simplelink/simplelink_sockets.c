@@ -869,7 +869,7 @@ exit:
  */
 static int handle_recv_flags(int sd, int flags, bool set, int *nb_enabled)
 {
-	ssize_t retval = 0;
+	k_ssize_t retval = 0;
 	SlSocklen_t optlen = sizeof(SlSockNonblocking_t);
 	SlSockNonblocking_t enableOption;
 
@@ -902,11 +902,11 @@ static int handle_recv_flags(int sd, int flags, bool set, int *nb_enabled)
 	return retval;
 }
 
-static ssize_t simplelink_recvfrom(void *obj, void *buf, size_t len, int flags,
+static k_ssize_t simplelink_recvfrom(void *obj, void *buf, size_t len, int flags,
 				   struct sockaddr *from, socklen_t *fromlen)
 {
 	int sd = OBJ_TO_SD(obj);
-	ssize_t retval;
+	k_ssize_t retval;
 	SlSockAddr_t *sl_addr;
 	SlSockAddrIn_t sl_addr_in;
 	SlSockAddrIn6_t sl_addr_in6;
@@ -922,10 +922,10 @@ static ssize_t simplelink_recvfrom(void *obj, void *buf, size_t len, int flags,
 							    &sl_addr_in,
 							    &sl_addr_in6,
 							    &sl_addrlen);
-			retval = (ssize_t)sl_RecvFrom(sd, buf, len, 0, sl_addr,
+			retval = (k_ssize_t)sl_RecvFrom(sd, buf, len, 0, sl_addr,
 						      &sl_addrlen);
 		} else {
-			retval = (ssize_t)sl_Recv(sd, buf, len, 0);
+			retval = (k_ssize_t)sl_Recv(sd, buf, len, 0);
 		}
 
 		handle_recv_flags(sd, flags, FALSE, &nb_enabled);
@@ -948,12 +948,12 @@ static ssize_t simplelink_recvfrom(void *obj, void *buf, size_t len, int flags,
 	return retval;
 }
 
-static ssize_t simplelink_sendto(void *obj, const void *buf, size_t len,
+static k_ssize_t simplelink_sendto(void *obj, const void *buf, size_t len,
 				 int flags, const struct sockaddr *to,
 				 socklen_t tolen)
 {
 	int sd = OBJ_TO_SD(obj);
-	ssize_t retval;
+	k_ssize_t retval;
 	SlSockAddr_t *sl_addr;
 	SlSockAddrIn_t sl_addr_in;
 	SlSockAddrIn6_t sl_addr_in6;
@@ -972,7 +972,7 @@ static ssize_t simplelink_sendto(void *obj, const void *buf, size_t len,
 		retval = sl_SendTo(sd, buf, (uint16_t)len, flags,
 				   sl_addr, sl_addrlen);
 	} else {
-		retval = (ssize_t)sl_Send(sd, buf, len, flags);
+		retval = (k_ssize_t)sl_Send(sd, buf, len, flags);
 	}
 
 exit:
@@ -983,7 +983,7 @@ exit:
 	return retval;
 }
 
-static ssize_t simplelink_sendmsg(void *obj, const struct msghdr *msg,
+static k_ssize_t simplelink_sendmsg(void *obj, const struct msghdr *msg,
 				  int flags)
 {
 	errno = -ENOTSUP;
@@ -1143,7 +1143,7 @@ static int simplelink_fcntl(int sd, int cmd, va_list args)
 	SlSocklen_t optlen = sizeof(SlSockNonblocking_t);
 
 	switch (cmd) {
-	case F_GETFL:
+	case ZVFS_F_GETFL:
 		retval = sl_GetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
 			(_u8 *)&enableOption, &optlen);
 		if (retval == 0) {
@@ -1152,7 +1152,7 @@ static int simplelink_fcntl(int sd, int cmd, va_list args)
 			}
 		}
 		break;
-	case F_SETFL:
+	case ZVFS_F_SETFL:
 		if ((va_arg(args, int) & O_NONBLOCK) != 0) {
 			enableOption.NonBlockingEnabled = 1;
 		} else {
@@ -1206,12 +1206,12 @@ static int simplelink_ioctl(void *obj, unsigned int request, va_list args)
 	}
 }
 
-static ssize_t simplelink_read(void *obj, void *buffer, size_t count)
+static k_ssize_t simplelink_read(void *obj, void *buffer, size_t count)
 {
 	return simplelink_recvfrom(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t simplelink_write(void *obj, const void *buffer,
+static k_ssize_t simplelink_write(void *obj, const void *buffer,
 					  size_t count)
 {
 	return simplelink_sendto(obj, buffer, count, 0, NULL, 0);

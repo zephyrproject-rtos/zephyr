@@ -81,6 +81,7 @@ ZTEST(libc_common, test_limits)
 	zassert_true((long_max + long_one == LONG_MIN));
 }
 
+/* FIXME: ssize_t is a POSIX type, not a C type */
 static ssize_t foobar(void)
 {
 	return -1;

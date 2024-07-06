@@ -29,11 +29,11 @@ typedef uint8_t flash_prg_t;
 /* Helper for conditional compilation directives, KB cannot be used because it has type casting. */
 #define PRE_KB(x) ((x) << 10)
 
-bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write);
+bool flash_gd32_valid_range(k_off_t offset, uint32_t len, bool write);
 
-int flash_gd32_write_range(off_t offset, const void *data, size_t len);
+int flash_gd32_write_range(k_off_t offset, const void *data, size_t len);
 
-int flash_gd32_erase_block(off_t offset, size_t size);
+int flash_gd32_erase_block(k_off_t offset, size_t size);
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 void flash_gd32_pages_layout(const struct device *dev,

@@ -142,7 +142,7 @@ static void connect(void)
 	/* No security support on the tinyhost unfortunately */
 }
 
-static ssize_t written_to(struct bt_conn *conn,
+static k_ssize_t written_to(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr,
 			  const void *buf,
 			  uint16_t len,

@@ -95,8 +95,7 @@ static const char default_eeprom_file_path[] = "eeprom.bin";
 static uint8_t mock_eeprom[DT_INST_PROP(0, size)];
 #endif /* CONFIG_ARCH_POSIX */
 
-static int eeprom_range_is_valid(const struct device *dev, off_t offset,
-				 size_t len)
+static int eeprom_range_is_valid(const struct device *dev, k_off_t offset, size_t len)
 {
 	const struct eeprom_sim_config *config = dev->config;
 
@@ -107,8 +106,7 @@ static int eeprom_range_is_valid(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int eeprom_sim_read(const struct device *dev, off_t offset, void *data,
-			   size_t len)
+static int eeprom_sim_read(const struct device *dev, k_off_t offset, void *data, size_t len)
 {
 	if (!len) {
 		return 0;
@@ -136,9 +134,7 @@ static int eeprom_sim_read(const struct device *dev, off_t offset, void *data,
 	return 0;
 }
 
-static int eeprom_sim_write(const struct device *dev, off_t offset,
-			    const void *data,
-			    size_t len)
+static int eeprom_sim_write(const struct device *dev, k_off_t offset, const void *data, size_t len)
 {
 	const struct eeprom_sim_config *config = dev->config;
 

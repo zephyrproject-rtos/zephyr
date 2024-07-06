@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(nsos_sockets);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket_offload.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/dlist.h>
 
@@ -220,7 +219,7 @@ static int nsos_adapt_get_zephyr_errno(void)
 	return errno_from_nsos_mid(nsos_adapt_get_errno());
 }
 
-static ssize_t nsos_read(void *obj, void *buf, size_t sz)
+static k_ssize_t nsos_read(void *obj, void *buf, size_t sz)
 {
 	struct nsos_socket *sock = obj;
 	int ret;
@@ -233,7 +232,7 @@ static ssize_t nsos_read(void *obj, void *buf, size_t sz)
 	return ret;
 }
 
-static ssize_t nsos_write(void *obj, const void *buf, size_t sz)
+static k_ssize_t nsos_write(void *obj, const void *buf, size_t sz)
 {
 	struct nsos_socket *sock = obj;
 	int ret;
@@ -362,7 +361,7 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 	case ZFD_IOCTL_POLL_OFFLOAD:
 		return -EOPNOTSUPP;
 
-	case F_GETFL: {
+	case ZVFS_F_GETFL: {
 		int flags;
 
 		flags = nsos_adapt_fcntl_getfl(sock->poll.mid.fd);
@@ -370,7 +369,7 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 		return fl_from_nsos_mid(flags);
 	}
 
-	case F_SETFL: {
+	case ZVFS_F_SETFL: {
 		int flags = va_arg(args, int);
 		int ret;
 
@@ -734,8 +733,8 @@ return_ret:
 	return -1;
 }
 
-static ssize_t nsos_sendto(void *obj, const void *buf, size_t len, int flags,
-			   const struct sockaddr *addr, socklen_t addrlen)
+static k_ssize_t nsos_sendto(void *obj, const void *buf, size_t len, int flags,
+			     const struct sockaddr *addr, socklen_t addrlen)
 {
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
@@ -773,7 +772,7 @@ return_ret:
 	return ret;
 }
 
-static ssize_t nsos_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static k_ssize_t nsos_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
@@ -834,8 +833,9 @@ return_ret:
 	return ret;
 }
 
-static ssize_t nsos_recvfrom(void *obj, void *buf, size_t len, int flags,
-			     struct sockaddr *addr, socklen_t *addrlen)
+static k_ssize_t nsos_recvfrom(void *obj, void *buf, size_t len, int flags, struct sockaddr *addr,
+			       socklen_t *addrlen)
+
 {
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
@@ -873,7 +873,7 @@ return_ret:
 	return ret;
 }
 
-static ssize_t nsos_recvmsg(void *obj, struct msghdr *msg, int flags)
+static k_ssize_t nsos_recvmsg(void *obj, struct msghdr *msg, int flags)
 {
 	errno = ENOTSUP;
 	return -1;

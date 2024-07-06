@@ -7,7 +7,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/flash.h>
 
-static inline int z_vrfy_flash_read(const struct device *dev, off_t offset,
+static inline int z_vrfy_flash_read(const struct device *dev, k_off_t offset,
 				    void *data, size_t len)
 {
 	K_OOPS(K_SYSCALL_DRIVER_FLASH(dev, read));
@@ -18,7 +18,7 @@ static inline int z_vrfy_flash_read(const struct device *dev, off_t offset,
 }
 #include <zephyr/syscalls/flash_read_mrsh.c>
 
-static inline int z_vrfy_flash_write(const struct device *dev, off_t offset,
+static inline int z_vrfy_flash_write(const struct device *dev, k_off_t offset,
 				     const void *data, size_t len)
 {
 	K_OOPS(K_SYSCALL_DRIVER_FLASH(dev, write));
@@ -28,7 +28,7 @@ static inline int z_vrfy_flash_write(const struct device *dev, off_t offset,
 }
 #include <zephyr/syscalls/flash_write_mrsh.c>
 
-static inline int z_vrfy_flash_erase(const struct device *dev, off_t offset,
+static inline int z_vrfy_flash_erase(const struct device *dev, k_off_t offset,
 				     size_t size)
 {
 	K_OOPS(K_SYSCALL_DRIVER_FLASH(dev, erase));
@@ -50,7 +50,7 @@ static inline const struct flash_parameters *z_vrfy_flash_get_parameters(const s
 }
 #include <zephyr/syscalls/flash_get_parameters_mrsh.c>
 
-int z_vrfy_flash_fill(const struct device *dev, uint8_t val, off_t offset,
+int z_vrfy_flash_fill(const struct device *dev, uint8_t val, k_off_t offset,
 		      size_t size)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
@@ -58,7 +58,7 @@ int z_vrfy_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 }
 #include <zephyr/syscalls/flash_fill_mrsh.c>
 
-int z_vrfy_flash_flatten(const struct device *dev, off_t offset, size_t size)
+int z_vrfy_flash_flatten(const struct device *dev, k_off_t offset, size_t size)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
 	return z_impl_flash_flatten(dev, offset, size);
@@ -68,7 +68,7 @@ int z_vrfy_flash_flatten(const struct device *dev, off_t offset, size_t size)
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline int z_vrfy_flash_get_page_info_by_offs(const struct device *dev,
-						     off_t offs,
+						     k_off_t offs,
 						     struct flash_pages_info *info)
 {
 	K_OOPS(K_SYSCALL_DRIVER_FLASH(dev, page_layout));
@@ -103,7 +103,7 @@ static inline size_t z_vrfy_flash_get_page_count(const struct device *dev)
 #ifdef CONFIG_FLASH_JESD216_API
 
 static inline int z_vrfy_flash_sfdp_read(const struct device *dev,
-					 off_t offset,
+					 k_off_t offset,
 					 void *data, size_t len)
 {
 	K_OOPS(K_SYSCALL_DRIVER_FLASH(dev, sfdp_read));

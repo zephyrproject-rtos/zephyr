@@ -47,7 +47,7 @@ BUILD_ASSERT((FLASH_WRITE_BLK_SZ % sizeof(uint32_t)) == 0, "unsupported write-bl
 
 #define PAGES_PER_ROW (ROW_SIZE / FLASH_PAGE_SIZE)
 
-#define FLASH_MEM(_a) ((uint32_t *)((uint8_t *)((_a) + CONFIG_FLASH_BASE_ADDRESS)))
+#define FLASH_MEM(_a) ((uint32_t *)((uint8_t *)((uintptr_t)(_a) + CONFIG_FLASH_BASE_ADDRESS)))
 
 struct flash_sam0_data {
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
@@ -96,7 +96,7 @@ static inline void flash_sam0_sem_give(const struct device *dev)
 #endif
 }
 
-static int flash_sam0_valid_range(off_t offset, size_t len)
+static int flash_sam0_valid_range(k_off_t offset, size_t len)
 {
 	if (offset < 0) {
 		LOG_WRN("0x%lx: before start of flash", (long)offset);
@@ -121,7 +121,7 @@ static void flash_sam0_wait_ready(void)
 #endif
 }
 
-static int flash_sam0_check_status(off_t offset)
+static int flash_sam0_check_status(k_off_t offset)
 {
 	flash_sam0_wait_ready();
 
@@ -158,7 +158,7 @@ static int flash_sam0_check_status(off_t offset)
  * be 16 or 32 bits. 8-bit writes to the page buffer are not allowed and
  * will cause a system exception
  */
-static int flash_sam0_write_page(const struct device *dev, off_t offset,
+static int flash_sam0_write_page(const struct device *dev, k_off_t offset,
 				 const void *data, size_t len)
 {
 	const uint32_t *src = data;
@@ -197,7 +197,7 @@ static int flash_sam0_write_page(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_sam0_erase_row(const struct device *dev, off_t offset)
+static int flash_sam0_erase_row(const struct device *dev, k_off_t offset)
 {
 	*FLASH_MEM(offset) = 0U;
 #ifdef NVMCTRL_CTRLA_CMD_ER
@@ -210,7 +210,7 @@ static int flash_sam0_erase_row(const struct device *dev, off_t offset)
 
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
 
-static int flash_sam0_commit(const struct device *dev, off_t base)
+static int flash_sam0_commit(const struct device *dev, k_off_t base)
 {
 	struct flash_sam0_data *ctx = dev->data;
 	int err;
@@ -233,7 +233,7 @@ static int flash_sam0_commit(const struct device *dev, off_t base)
 	return 0;
 }
 
-static int flash_sam0_write(const struct device *dev, off_t offset,
+static int flash_sam0_write(const struct device *dev, k_off_t offset,
 			    const void *data, size_t len)
 {
 	struct flash_sam0_data *ctx = dev->data;
@@ -258,8 +258,8 @@ static int flash_sam0_write(const struct device *dev, off_t offset,
 	size_t pos = 0;
 
 	while ((err == 0) && (pos < len)) {
-		off_t  start    = offset % sizeof(ctx->buf);
-		off_t  base     = offset - start;
+		k_off_t  start    = offset % sizeof(ctx->buf);
+		k_off_t  base     = offset - start;
 		size_t len_step = sizeof(ctx->buf) - start;
 		size_t len_copy = MIN(len - pos, len_step);
 
@@ -286,7 +286,7 @@ static int flash_sam0_write(const struct device *dev, off_t offset,
 
 #else /* CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES */
 
-static int flash_sam0_write(const struct device *dev, off_t offset,
+static int flash_sam0_write(const struct device *dev, k_off_t offset,
 			    const void *data, size_t len)
 {
 	const uint8_t *pdata = data;
@@ -341,7 +341,7 @@ static int flash_sam0_write(const struct device *dev, off_t offset,
 
 #endif
 
-static int flash_sam0_read(const struct device *dev, off_t offset, void *data,
+static int flash_sam0_read(const struct device *dev, k_off_t offset, void *data,
 			   size_t len)
 {
 	int err;
@@ -356,7 +356,7 @@ static int flash_sam0_read(const struct device *dev, off_t offset, void *data,
 	return 0;
 }
 
-static int flash_sam0_erase(const struct device *dev, off_t offset,
+static int flash_sam0_erase(const struct device *dev, k_off_t offset,
 			    size_t size)
 {
 	int err;
@@ -402,7 +402,7 @@ static int flash_sam0_erase(const struct device *dev, off_t offset,
 
 static int flash_sam0_write_protection(const struct device *dev, bool enable)
 {
-	off_t offset;
+	k_off_t offset;
 	int err;
 
 	for (offset = 0; offset < CONFIG_FLASH_SIZE * 1024;

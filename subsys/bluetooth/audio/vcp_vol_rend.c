@@ -78,7 +78,7 @@ static void volume_state_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_vol_state(struct bt_conn *conn,
+static k_ssize_t read_vol_state(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
@@ -152,7 +152,7 @@ static void value_changed(struct bt_vcp_vol_rend *inst, enum vol_rend_notify not
 	notify_work_reschedule(inst, notify, K_NO_WAIT);
 }
 
-static ssize_t write_vcs_control(struct bt_conn *conn,
+static k_ssize_t write_vcs_control(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 const void *buf, uint16_t len, uint16_t offset,
 				 uint8_t flags)
@@ -295,7 +295,7 @@ static void flags_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 }
 #endif /* CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE */
 
-static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, uint16_t len, uint16_t offset)
 {
 	LOG_DBG("0x%02x", vol_rend.flags);

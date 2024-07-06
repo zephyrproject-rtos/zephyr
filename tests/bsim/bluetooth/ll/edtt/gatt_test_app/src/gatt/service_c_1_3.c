@@ -61,7 +61,7 @@ static uint8_t   des_v9d3__128_bit_uuid_value = 0x33;
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v9__128_bit_uuid(struct bt_conn *conn,
+static k_ssize_t read_value_v9__128_bit_uuid(struct bt_conn *conn,
 					   const struct bt_gatt_attr *attr,
 					   void *buf, uint16_t len, uint16_t offset)
 {
@@ -84,7 +84,7 @@ static ssize_t read_value_v9__128_bit_uuid(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v9__128_bit_uuid(struct bt_conn *conn,
+static k_ssize_t write_value_v9__128_bit_uuid(struct bt_conn *conn,
 					    const struct bt_gatt_attr *attr,
 					    const void *buf, uint16_t len,
 					    uint16_t offset, uint8_t flags)
@@ -114,7 +114,7 @@ static ssize_t write_value_v9__128_bit_uuid(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_des_v9d2__128_bit_uuid(struct bt_conn *conn,
+static k_ssize_t read_des_v9d2__128_bit_uuid(struct bt_conn *conn,
 					   const struct bt_gatt_attr *attr,
 					   void *buf, uint16_t len, uint16_t offset)
 {
@@ -138,7 +138,7 @@ static ssize_t read_des_v9d2__128_bit_uuid(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_des_v9d2__128_bit_uuid(struct bt_conn *conn,
+static k_ssize_t write_des_v9d2__128_bit_uuid(struct bt_conn *conn,
 					    const struct bt_gatt_attr *attr,
 					    const void *buf, uint16_t len,
 					    uint16_t offset, uint8_t flags)
@@ -169,7 +169,7 @@ static ssize_t write_des_v9d2__128_bit_uuid(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_des_v9d3__128_bit_uuid(struct bt_conn *conn,
+static k_ssize_t write_des_v9d3__128_bit_uuid(struct bt_conn *conn,
 					    const struct bt_gatt_attr *attr,
 					    const void *buf, uint16_t len,
 					    uint16_t offset, uint8_t flags)

@@ -40,7 +40,7 @@ ZTEST(flash_map, test_flash_area_get_sectors)
 	uint32_t sec_cnt;
 	int i;
 	int rc;
-	off_t off;
+	k_off_t off;
 	uint8_t wd[512];
 	uint8_t rd[512];
 	const struct device *flash_dev;

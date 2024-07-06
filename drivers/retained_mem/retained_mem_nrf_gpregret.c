@@ -60,14 +60,14 @@ static int nrf_gpregret_init(const struct device *dev)
 	return 0;
 }
 
-static ssize_t nrf_gpregret_size(const struct device *dev)
+static k_ssize_t nrf_gpregret_size(const struct device *dev)
 {
 	const struct nrf_gpregret_config *config = dev->config;
 
-	return (ssize_t)config->size;
+	return (k_ssize_t)config->size;
 }
 
-static int nrf_gpregret_read(const struct device *dev, off_t offset, uint8_t *buffer, size_t size)
+static int nrf_gpregret_read(const struct device *dev, k_off_t offset, uint8_t *buffer, size_t size)
 {
 	const struct nrf_gpregret_config *config = dev->config;
 
@@ -80,7 +80,7 @@ static int nrf_gpregret_read(const struct device *dev, off_t offset, uint8_t *bu
 	return 0;
 }
 
-static int nrf_gpregret_write(const struct device *dev, off_t offset, const uint8_t *buffer,
+static int nrf_gpregret_write(const struct device *dev, k_off_t offset, const uint8_t *buffer,
 			      size_t size)
 {
 	const struct nrf_gpregret_config *config = dev->config;

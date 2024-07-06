@@ -168,7 +168,7 @@ static struct eds_slot eds_slots[NUMBER_OF_SLOTS] = {
 	},
 };
 
-static ssize_t read_caps(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_caps(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	const struct eds_capabilities *caps = attr->user_data;
@@ -177,14 +177,14 @@ static ssize_t read_caps(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(*caps));
 }
 
-static ssize_t read_slot(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_slot(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &eds_active_slot, sizeof(eds_active_slot));
 }
 
-static ssize_t write_slot(struct bt_conn *conn,
+static k_ssize_t write_slot(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, const void *buf,
 			  uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -205,7 +205,7 @@ static ssize_t write_slot(struct bt_conn *conn,
 	return len;
 }
 
-static ssize_t read_tx_power(struct bt_conn *conn,
+static k_ssize_t read_tx_power(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
@@ -219,7 +219,7 @@ static ssize_t read_tx_power(struct bt_conn *conn,
 				 sizeof(slot->tx_power));
 }
 
-static ssize_t write_tx_power(struct bt_conn *conn,
+static k_ssize_t write_tx_power(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      const void *buf, uint16_t len, uint16_t offset,
 			      uint8_t flags)
@@ -239,7 +239,7 @@ static ssize_t write_tx_power(struct bt_conn *conn,
 	return len;
 }
 
-static ssize_t read_adv_tx_power(struct bt_conn *conn,
+static k_ssize_t read_adv_tx_power(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 void *buf, uint16_t len, uint16_t offset)
 {
@@ -253,7 +253,7 @@ static ssize_t read_adv_tx_power(struct bt_conn *conn,
 				 sizeof(slot->tx_power));
 }
 
-static ssize_t write_adv_tx_power(struct bt_conn *conn,
+static k_ssize_t write_adv_tx_power(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  const void *buf, uint16_t len,
 				  uint16_t offset,
@@ -274,7 +274,7 @@ static ssize_t write_adv_tx_power(struct bt_conn *conn,
 	return len;
 }
 
-static ssize_t read_interval(struct bt_conn *conn,
+static k_ssize_t read_interval(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
@@ -288,7 +288,7 @@ static ssize_t read_interval(struct bt_conn *conn,
 				 sizeof(slot->interval));
 }
 
-static ssize_t read_lock(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_lock(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
@@ -297,7 +297,7 @@ static ssize_t read_lock(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(slot->state));
 }
 
-static ssize_t write_lock(struct bt_conn *conn,
+static k_ssize_t write_lock(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, const void *buf,
 			  uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -332,7 +332,7 @@ static ssize_t write_lock(struct bt_conn *conn,
 	return len;
 }
 
-static ssize_t read_unlock(struct bt_conn *conn,
+static k_ssize_t read_unlock(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr,
 			   void *buf, uint16_t len, uint16_t offset)
 {
@@ -353,7 +353,7 @@ static ssize_t read_unlock(struct bt_conn *conn,
 				 sizeof(slot->challenge));
 }
 
-static ssize_t write_unlock(struct bt_conn *conn,
+static k_ssize_t write_unlock(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, const void *buf,
 			    uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -372,7 +372,7 @@ static ssize_t write_unlock(struct bt_conn *conn,
 
 static uint8_t eds_ecdh[32] = {}; /* TODO: Add ECDH key */
 
-static ssize_t read_ecdh(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_ecdh(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	uint8_t *value = attr->user_data;
@@ -383,7 +383,7 @@ static ssize_t read_ecdh(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 static uint8_t eds_eid[16] = {}; /* TODO: Add EID key */
 
-static ssize_t read_eid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_eid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
 	uint8_t *value = attr->user_data;
@@ -392,7 +392,7 @@ static ssize_t read_eid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(eds_eid));
 }
 
-static ssize_t read_adv_data(struct bt_conn *conn,
+static k_ssize_t read_adv_data(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
@@ -453,7 +453,7 @@ static int eds_slot_restart(struct eds_slot *slot, uint8_t type)
 	return 0;
 }
 
-static ssize_t write_adv_data(struct bt_conn *conn,
+static k_ssize_t write_adv_data(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      const void *buf, uint16_t len, uint16_t offset,
 			      uint8_t flags)
@@ -511,7 +511,7 @@ static ssize_t write_adv_data(struct bt_conn *conn,
 	}
 }
 
-static ssize_t write_reset(struct bt_conn *conn,
+static k_ssize_t write_reset(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr,
 			   const void *buf, uint16_t len, uint16_t offset,
 			   uint8_t flags)
@@ -520,7 +520,7 @@ static ssize_t write_reset(struct bt_conn *conn,
 	return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
 }
 
-static ssize_t read_connectable(struct bt_conn *conn,
+static k_ssize_t read_connectable(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
@@ -533,7 +533,7 @@ static ssize_t read_connectable(struct bt_conn *conn,
 				 &connectable, sizeof(connectable));
 }
 
-static ssize_t write_connectable(struct bt_conn *conn,
+static k_ssize_t write_connectable(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 const void *buf, uint16_t len, uint16_t offset,
 				 uint8_t flags)

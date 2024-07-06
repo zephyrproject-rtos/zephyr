@@ -170,7 +170,7 @@ static int link_key_set(const char *name, size_t len_rd,
 			settings_read_cb read_cb, void *cb_arg)
 {
 	int err;
-	ssize_t len;
+	k_ssize_t len;
 	bt_addr_le_t le_addr;
 	struct bt_keys_link_key *link_key;
 	char val[BT_KEYS_LINK_KEY_STORAGE_LEN];

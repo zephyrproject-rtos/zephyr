@@ -12,6 +12,8 @@
  */
 #include <inttypes.h>
 #include <limits.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/util_macro.h>
@@ -325,7 +327,7 @@ int fcb_clear(struct fcb *fcbp);
  *
  * @return  0 on success, negative errno code on fail.
  */
-int fcb_flash_read(const struct fcb *fcbp, const struct flash_sector *sector, off_t off,
+int fcb_flash_read(const struct fcb *fcbp, const struct flash_sector *sector, k_off_t off,
 		   void *dst, size_t len);
 
 /**
@@ -339,7 +341,7 @@ int fcb_flash_read(const struct fcb *fcbp, const struct flash_sector *sector, of
  *
  * @return  0 on success, negative errno code on fail.
  */
-int fcb_flash_write(const struct fcb *fcbp, const struct flash_sector *sector, off_t off,
+int fcb_flash_write(const struct fcb *fcbp, const struct flash_sector *sector, k_off_t off,
 		    const void *src, size_t len);
 
 /**

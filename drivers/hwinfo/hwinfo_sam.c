@@ -12,7 +12,7 @@
 
 static uint8_t sam_uid[16];
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	if (length > sizeof(sam_uid)) {
 		length = sizeof(sam_uid);

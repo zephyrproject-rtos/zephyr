@@ -69,7 +69,7 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 
 #endif /* CONFIG_MULTITHREADING */
 
-static int flash_esp32_read(const struct device *dev, off_t address, void *buffer, size_t length)
+static int flash_esp32_read(const struct device *dev, k_off_t address, void *buffer, size_t length)
 {
 	int ret = 0;
 
@@ -88,7 +88,7 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 }
 
 static int flash_esp32_write(const struct device *dev,
-			     off_t address,
+			     k_off_t address,
 			     const void *buffer,
 			     size_t length)
 {
@@ -109,7 +109,7 @@ static int flash_esp32_write(const struct device *dev,
 	return 0;
 }
 
-static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
+static int flash_esp32_erase(const struct device *dev, k_off_t start, size_t len)
 {
 	flash_esp32_sem_take(dev);
 	int ret = esp_flash_erase_region(NULL, start, len);

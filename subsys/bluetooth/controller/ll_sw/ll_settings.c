@@ -44,7 +44,7 @@ bool ll_settings_smi_tx(void)
 static int ctlr_set(const char *name, size_t len_rd,
 		    settings_read_cb read_cb, void *store)
 {
-	ssize_t len;
+	k_ssize_t len;
 	int nlen;
 	const char *next;
 

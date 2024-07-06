@@ -343,7 +343,7 @@ static int qspi_read_jedec_id(const struct device *dev, uint8_t *id)
 /*
  * Read Serial Flash Discovery Parameter
  */
-static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
+static int qspi_read_sfdp(const struct device *dev, k_off_t addr, void *data,
 			  size_t size)
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
@@ -383,7 +383,7 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 	return 0;
 }
 
-static bool qspi_address_is_valid(const struct device *dev, off_t addr,
+static bool qspi_address_is_valid(const struct device *dev, k_off_t addr,
 				  size_t size)
 {
 	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
@@ -452,7 +452,7 @@ static int stm32_qspi_abort(const struct device *dev)
 }
 #endif
 
-static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
+static int flash_stm32_qspi_read(const struct device *dev, k_off_t addr,
 				 void *data, size_t size)
 {
 	int ret;
@@ -535,7 +535,7 @@ static int qspi_wait_until_ready(const struct device *dev)
 	return ret;
 }
 
-static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
+static int flash_stm32_qspi_write(const struct device *dev, k_off_t addr,
 				  const void *data, size_t size)
 {
 	int ret = 0;
@@ -622,7 +622,7 @@ end:
 	return ret;
 }
 
-static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
+static int flash_stm32_qspi_erase(const struct device *dev, k_off_t addr,
 				  size_t size)
 {
 	const struct flash_stm32_qspi_config *dev_cfg = dev->config;

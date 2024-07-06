@@ -62,7 +62,7 @@ static int gd32_fmc_v1_wait_idle(void)
 	return 0;
 }
 
-bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write)
+bool flash_gd32_valid_range(k_off_t offset, uint32_t len, bool write)
 {
 	if ((offset > SOC_NV_FLASH_SIZE) ||
 	    ((offset + len) > SOC_NV_FLASH_SIZE)) {
@@ -94,7 +94,7 @@ bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write)
 	return true;
 }
 
-int flash_gd32_write_range(off_t offset, const void *data, size_t len)
+int flash_gd32_write_range(k_off_t offset, const void *data, size_t len)
 {
 	flash_prg_t *prg_flash = (flash_prg_t *)((uint8_t *)SOC_NV_FLASH_ADDR + offset);
 	flash_prg_t *prg_data = (flash_prg_t *)data;
@@ -166,7 +166,7 @@ expired_out:
 	return ret;
 }
 
-int flash_gd32_erase_block(off_t offset, size_t size)
+int flash_gd32_erase_block(k_off_t offset, size_t size)
 {
 	uint32_t page_addr = SOC_NV_FLASH_ADDR + offset;
 	int ret = 0;

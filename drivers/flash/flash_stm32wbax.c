@@ -105,11 +105,10 @@ static int icache_wait_for_invalidate_complete(void)
 	return status;
 }
 
-static int write_qword(const struct device *dev, off_t offset, const uint32_t *buff)
+static int write_qword(const struct device *dev, k_off_t offset, const uint32_t *buff)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	volatile uint32_t *flash = (uint32_t *)(offset
-						+ FLASH_STM32_BASE_ADDRESS);
+	volatile uint32_t *flash = (uint32_t *)((uintptr_t)offset + FLASH_STM32_BASE_ADDRESS);
 	uint32_t tmp;
 	int rc;
 

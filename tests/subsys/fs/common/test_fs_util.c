@@ -100,7 +100,7 @@ int testfs_write_constant(struct fs_file_t *fp,
 			count = rem;
 		}
 
-		ssize_t rc = fs_write(fp, buffer, count);
+		k_ssize_t rc = fs_write(fp, buffer, count);
 
 		if (rc < 0) {
 			return rc;
@@ -170,7 +170,7 @@ int testfs_write_incrementing(struct fs_file_t *fp,
 			buffer[i] = value++;
 		}
 
-		ssize_t rc = fs_write(fp, buffer, count);
+		k_ssize_t rc = fs_write(fp, buffer, count);
 
 		if (rc < 0) {
 			return rc;

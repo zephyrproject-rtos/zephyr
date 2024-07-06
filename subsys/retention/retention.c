@@ -129,7 +129,7 @@ static int retention_init(const struct device *dev)
 #ifdef CONFIG_RETENTION_MUTEXES
 	struct retention_data *data = dev->data;
 #endif
-	ssize_t area_size;
+	k_ssize_t area_size;
 
 	if (!device_is_ready(config->parent)) {
 		LOG_ERR("Parent device is not ready");
@@ -185,7 +185,7 @@ int retention_is_valid(const struct device *dev)
 		/* Check magic header is present at the start of the section */
 		struct retention_data *data = dev->data;
 		uint8_t buffer[CONFIG_RETENTION_BUFFER_SIZE];
-		off_t pos = 0;
+		k_off_t pos = 0;
 
 		while (pos < config->prefix_len) {
 			uint16_t read_size = MIN((config->prefix_len - pos), sizeof(buffer));
@@ -219,7 +219,7 @@ int retention_is_valid(const struct device *dev)
 		/* Check the checksum validity, for this all the data must be read out */
 		uint32_t checksum = 0;
 		uint32_t expected_checksum = 0;
-		ssize_t data_size = config->size - config->checksum_size;
+		k_ssize_t data_size = config->size - config->checksum_size;
 
 		rc = retention_checksum(dev, &checksum);
 
@@ -264,7 +264,7 @@ finish:
 	return rc;
 }
 
-int retention_read(const struct device *dev, off_t offset, uint8_t *buffer, size_t size)
+int retention_read(const struct device *dev, k_off_t offset, uint8_t *buffer, size_t size)
 {
 	const struct retention_config *config = dev->config;
 	int rc;
@@ -284,7 +284,7 @@ int retention_read(const struct device *dev, off_t offset, uint8_t *buffer, size
 	return rc;
 }
 
-int retention_write(const struct device *dev, off_t offset, const uint8_t *buffer, size_t size)
+int retention_write(const struct device *dev, k_off_t offset, const uint8_t *buffer, size_t size)
 {
 	const struct retention_config *config = dev->config;
 	int rc;
@@ -367,7 +367,7 @@ int retention_clear(const struct device *dev)
 	struct retention_data *data = dev->data;
 	int rc = 0;
 	uint8_t buffer[CONFIG_RETENTION_BUFFER_SIZE];
-	off_t pos = 0;
+	k_off_t pos = 0;
 
 	memset(buffer, 0, sizeof(buffer));
 

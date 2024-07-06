@@ -98,7 +98,7 @@ static uint8_t   value_v17_value = 0x12;
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_str_value(struct bt_conn *conn,
+static k_ssize_t read_str_value(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
@@ -120,7 +120,7 @@ static ssize_t read_str_value(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v15(struct bt_conn *conn,
+static k_ssize_t read_value_v15(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
@@ -143,7 +143,7 @@ static ssize_t read_value_v15(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v15(struct bt_conn *conn,
+static k_ssize_t write_value_v15(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -171,7 +171,7 @@ static ssize_t write_value_v15(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v6(struct bt_conn *conn,
+static k_ssize_t read_value_v6(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
@@ -195,7 +195,7 @@ static ssize_t read_value_v6(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v6(struct bt_conn *conn,
+static k_ssize_t write_value_v6(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
 			      uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -226,7 +226,7 @@ static ssize_t write_value_v6(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v7(struct bt_conn *conn,
+static k_ssize_t read_value_v7(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
@@ -250,7 +250,7 @@ static ssize_t read_value_v7(struct bt_conn *conn,
  * @return       Number of bytes written, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t write_value_v7(struct bt_conn *conn,
+static k_ssize_t write_value_v7(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
 			      uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -281,7 +281,7 @@ static ssize_t write_value_v7(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v16(struct bt_conn *conn,
+static k_ssize_t read_value_v16(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
@@ -308,7 +308,7 @@ static ssize_t read_value_v16(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_agg_format(struct bt_conn *conn,
+static k_ssize_t read_agg_format(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
@@ -335,7 +335,7 @@ static ssize_t read_agg_format(struct bt_conn *conn,
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v17(struct bt_conn *conn,
+static k_ssize_t read_value_v17(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {

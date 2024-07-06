@@ -30,8 +30,8 @@ LOG_MODULE_REGISTER(bt_gmap_server, CONFIG_BT_GMAP_LOG_LEVEL);
 static uint8_t gmap_role;
 static struct bt_gmap_feat gmap_features;
 
-static ssize_t read_gmap_role(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
-			      uint16_t len, uint16_t offset)
+static k_ssize_t read_gmap_role(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				uint16_t len, uint16_t offset)
 {
 	LOG_DBG("role 0x%02X", gmap_role);
 
@@ -39,8 +39,8 @@ static ssize_t read_gmap_role(struct bt_conn *conn, const struct bt_gatt_attr *a
 }
 
 #if defined(CONFIG_BT_GMAP_UGG_SUPPORTED)
-static ssize_t read_gmap_ugg_feat(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
-				  uint16_t len, uint16_t offset)
+static k_ssize_t read_gmap_ugg_feat(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				    void *buf, uint16_t len, uint16_t offset)
 {
 	const uint8_t feat = (uint8_t)gmap_features.ugg_feat;
 
@@ -56,8 +56,8 @@ static const struct bt_gatt_attr ugg_feat_chrc[] = {
 #endif /* CONFIG_BT_GMAP_UGG_SUPPORTED */
 
 #if defined(CONFIG_BT_GMAP_UGT_SUPPORTED)
-static ssize_t read_gmap_ugt_feat(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
-				  uint16_t len, uint16_t offset)
+static k_ssize_t read_gmap_ugt_feat(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				    void *buf, uint16_t len, uint16_t offset)
 {
 	const uint8_t feat = (uint8_t)gmap_features.ugt_feat;
 
@@ -74,8 +74,8 @@ static const struct bt_gatt_attr ugt_feat_chrc[] = {
 #endif /* CONFIG_BT_GMAP_UGT_SUPPORTED */
 
 #if defined(CONFIG_BT_GMAP_BGS_SUPPORTED)
-static ssize_t read_gmap_bgs_feat(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
-				  uint16_t len, uint16_t offset)
+static k_ssize_t read_gmap_bgs_feat(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				    void *buf, uint16_t len, uint16_t offset)
 {
 	const uint8_t feat = (uint8_t)gmap_features.bgs_feat;
 
@@ -91,8 +91,8 @@ static const struct bt_gatt_attr bgs_feat_chrc[] = {
 #endif /* CONFIG_BT_GMAP_BGS_SUPPORTED */
 
 #if defined(CONFIG_BT_GMAP_BGR_SUPPORTED)
-static ssize_t read_gmap_bgr_feat(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
-				  uint16_t len, uint16_t offset)
+static k_ssize_t read_gmap_bgr_feat(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				    void *buf, uint16_t len, uint16_t offset)
 {
 	const uint8_t feat = (uint8_t)gmap_features.bgr_feat;
 

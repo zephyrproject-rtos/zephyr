@@ -157,7 +157,7 @@ static lv_fs_res_t lvgl_fs_seek(struct _lv_fs_drv_t *drv, void *file, uint32_t p
 
 static lv_fs_res_t lvgl_fs_tell(struct _lv_fs_drv_t *drv, void *file, uint32_t *pos_p)
 {
-	off_t pos;
+	k_off_t pos;
 
 	pos = fs_tell((struct fs_file_t *)file);
 	if (pos < 0) {

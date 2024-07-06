@@ -286,7 +286,7 @@ static CO_SDO_abortCode_t canopen_odf_1f51(CO_ODF_arg_t *odf_arg)
  * @return 0 if successful, negative errno on failure
  */
 static int flash_crc(const struct flash_area *flash_area,
-		off_t offset, size_t size, uint32_t *pcrc)
+		k_off_t offset, size_t size, uint32_t *pcrc)
 {
 	uint32_t crc = 0;
 	uint8_t buffer[32];
@@ -315,7 +315,7 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 {
 	const struct flash_area *flash_area;
 	struct mcuboot_img_header header;
-	off_t offset = 0;
+	k_off_t offset = 0;
 	uint32_t crc = 0;
 	uint8_t fa_id;
 	uint32_t len;

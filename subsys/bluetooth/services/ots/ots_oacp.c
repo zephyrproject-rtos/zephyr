@@ -27,7 +27,7 @@ LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 #define OACP_PROC_TYPE_SIZE	1
 
 #if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)
-static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
+static k_ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn, struct net_buf *buf);
 
 static void oacp_l2cap_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -449,8 +449,8 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 {
 	int err;
 	void *obj_chunk;
-	off_t offset;
-	ssize_t len;
+	k_off_t offset;
+	k_ssize_t len;
 	struct bt_ots *ots;
 	struct bt_gatt_ots_object_read_op *read_op;
 
@@ -534,15 +534,15 @@ static void oacp_read_proc_execute(struct bt_ots *ots,
 }
 
 #if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)
-static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
+static k_ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn, struct net_buf *buf)
 {
 	struct bt_gatt_ots_object_write_op *write_op;
 	struct bt_ots *ots;
-	off_t offset;
+	k_off_t offset;
 	size_t rem;
 	size_t len;
-	ssize_t rc;
+	k_ssize_t rc;
 
 	ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
 

@@ -18,8 +18,7 @@
  * @{
  */
 
-#include <sys/types.h>
-
+#include <zephyr/types.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
@@ -422,8 +421,8 @@ struct bt_l2cap_chan_ops {
 	 *  @param seg_offset The byte offset of this segment in the SDU.
 	 *  @param seg The segment payload.
 	 */
-	void (*seg_recv)(struct bt_l2cap_chan *chan, size_t sdu_len,
-			 off_t seg_offset, struct net_buf_simple *seg);
+	void (*seg_recv)(struct bt_l2cap_chan *chan, size_t sdu_len, k_off_t seg_offset,
+			 struct net_buf_simple *seg);
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
 };
 

@@ -866,7 +866,7 @@ static int blob_srv_settings_set(const struct bt_mesh_model *mod, const char *na
 				 void *cb_arg)
 {
 	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
-	ssize_t len;
+	k_ssize_t len;
 
 	if (len_rd < offsetof(struct bt_mesh_blob_srv_state, blocks)) {
 		return -EINVAL;

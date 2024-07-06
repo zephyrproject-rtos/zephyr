@@ -28,7 +28,7 @@ static int settings_direct_loader(const char *key, size_t len,
 	/* Handle the subtree if it is an exact key match. */
 	if (settings_name_next(key, NULL) == 0) {
 		size_t bytes_written = 0;
-		ssize_t cb_len = read_cb(cb_arg, &bytes_written,
+		k_ssize_t cb_len = read_cb(cb_arg, &bytes_written,
 				      sizeof(bytes_written));
 
 		if (cb_len != sizeof(ctx->bytes_written)) {
@@ -48,7 +48,7 @@ static int settings_direct_loader(const char *key, size_t len,
 #ifdef CONFIG_STREAM_FLASH_ERASE
 		int rc;
 		struct flash_pages_info page;
-		off_t offset = (off_t) (ctx->offset + ctx->bytes_written) - 1;
+		k_off_t offset = (k_off_t) (ctx->offset + ctx->bytes_written) - 1;
 
 		/* Update the last erased page to avoid deleting already
 		 * written data.
@@ -74,7 +74,7 @@ static int settings_direct_loader(const char *key, size_t len,
 
 #ifdef CONFIG_STREAM_FLASH_ERASE
 
-int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
+int stream_flash_erase_page(struct stream_flash_ctx *ctx, k_off_t off)
 {
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	int rc;

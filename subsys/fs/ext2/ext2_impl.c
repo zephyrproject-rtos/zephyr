@@ -606,10 +606,10 @@ success:
 
 /* Inode operations --------------------------------------------------------- */
 
-ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, size_t nbytes)
+k_ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, size_t nbytes)
 {
 	int rc = 0;
-	ssize_t read = 0;
+	k_ssize_t read = 0;
 	uint32_t block_size = inode->i_fs->block_size;
 
 	while (read < nbytes && offset < inode->i_size) {
@@ -638,10 +638,11 @@ ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, si
 	return read;
 }
 
-ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t offset, size_t nbytes)
+k_ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t offset,
+			      size_t nbytes)
 {
 	int rc = 0;
-	ssize_t written = 0;
+	k_ssize_t written = 0;
 	uint32_t block_size = inode->i_fs->block_size;
 
 	while (written < nbytes) {
@@ -686,7 +687,7 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 	return written;
 }
 
-int ext2_inode_trunc(struct ext2_inode *inode, off_t length)
+int ext2_inode_trunc(struct ext2_inode *inode, k_off_t length)
 {
 	if (length > UINT32_MAX) {
 		return -ENOTSUP;

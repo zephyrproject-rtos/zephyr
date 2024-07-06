@@ -18,11 +18,11 @@ ZTEST_USER_F(net_socketpair, test_write_nonblock)
 			zassert_equal(res, 1, "send() failed: %d", errno);
 		}
 
-		/* then set the O_NONBLOCK flag */
-		res = zsock_fcntl(fixture->sv[i], F_GETFL, 0);
+		/* then set the ZVFS_O_NONBLOCK flag */
+		res = zsock_fcntl(fixture->sv[i], ZVFS_F_GETFL, 0);
 		zassert_not_equal(res, -1, "fcntl() failed: %d", i, errno);
 
-		res = zsock_fcntl(fixture->sv[i], F_SETFL, res | O_NONBLOCK);
+		res = zsock_fcntl(fixture->sv[i], ZVFS_F_SETFL, res | ZVFS_O_NONBLOCK);
 		zassert_not_equal(res, -1, "fcntl() failed: %d", i, errno);
 
 		/* then, try to write one more byte */
@@ -39,11 +39,11 @@ ZTEST_USER_F(net_socketpair, test_read_nonblock)
 	char c;
 
 	for (size_t i = 0; i < 2; ++i) {
-		/* set the O_NONBLOCK flag */
-		res = zsock_fcntl(fixture->sv[i], F_GETFL, 0);
+		/* set the ZVFS_O_NONBLOCK flag */
+		res = zsock_fcntl(fixture->sv[i], ZVFS_F_GETFL, 0);
 		zassert_not_equal(res, -1, "fcntl() failed: %d", i, errno);
 
-		res = zsock_fcntl(fixture->sv[i], F_SETFL, res | O_NONBLOCK);
+		res = zsock_fcntl(fixture->sv[i], ZVFS_F_SETFL, res | ZVFS_O_NONBLOCK);
 		zassert_not_equal(res, -1, "fcntl() failed: %d", i, errno);
 
 		/* then, try to read one byte */

@@ -22,7 +22,7 @@ struct nrf_uid {
 	uint32_t id[2];
 };
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct nrf_uid dev_id;
 	uint32_t deviceid[2];

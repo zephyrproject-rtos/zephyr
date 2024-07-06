@@ -101,8 +101,9 @@ int bt_ias_local_alert_stop(void)
 	return 0;
 }
 
-static ssize_t bt_ias_write_alert_lvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				      const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+static k_ssize_t bt_ias_write_alert_lvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+					const void *buf, uint16_t len, uint16_t offset,
+					uint8_t flags)
 {
 	struct net_buf_simple data;
 	enum bt_ias_alert_lvl alert_val;

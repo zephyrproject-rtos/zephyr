@@ -21,7 +21,8 @@
  * @{
  */
 #include <errno.h>
-#include <sys/types.h>
+#include <stdint.h>
+
 #include <zephyr/device.h>
 #include <zephyr/display/mipi_display.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
@@ -122,8 +123,7 @@ struct mipi_dsi_msg {
 __subsystem struct mipi_dsi_driver_api {
 	int (*attach)(const struct device *dev, uint8_t channel,
 		      const struct mipi_dsi_device *mdev);
-	ssize_t (*transfer)(const struct device *dev, uint8_t channel,
-			    struct mipi_dsi_msg *msg);
+	k_ssize_t (*transfer)(const struct device *dev, uint8_t channel, struct mipi_dsi_msg *msg);
 	int (*detach)(const struct device *dev, uint8_t channel,
 		      const struct mipi_dsi_device *mdev);
 };
@@ -155,9 +155,8 @@ static inline int mipi_dsi_attach(const struct device *dev,
  *
  * @return Size of the transferred data on success, negative on error.
  */
-static inline ssize_t mipi_dsi_transfer(const struct device *dev,
-					uint8_t channel,
-					struct mipi_dsi_msg *msg)
+static inline k_ssize_t mipi_dsi_transfer(const struct device *dev, uint8_t channel,
+					  struct mipi_dsi_msg *msg)
 {
 	const struct mipi_dsi_driver_api *api = (const struct mipi_dsi_driver_api *)dev->api;
 
@@ -176,9 +175,8 @@ static inline ssize_t mipi_dsi_transfer(const struct device *dev,
  *
  * @return Size of the read data on success, negative on error.
  */
-ssize_t mipi_dsi_generic_read(const struct device *dev, uint8_t channel,
-			      const void *params, size_t nparams,
-			      void *buf, size_t len);
+k_ssize_t mipi_dsi_generic_read(const struct device *dev, uint8_t channel, const void *params,
+				size_t nparams, void *buf, size_t len);
 
 /**
  * @brief MIPI-DSI generic write.
@@ -190,8 +188,8 @@ ssize_t mipi_dsi_generic_read(const struct device *dev, uint8_t channel,
  *
  * @return Size of the written data on success, negative on error.
  */
-ssize_t mipi_dsi_generic_write(const struct device *dev, uint8_t channel,
-			       const void *buf, size_t len);
+k_ssize_t mipi_dsi_generic_write(const struct device *dev, uint8_t channel, const void *buf,
+				 size_t len);
 
 /**
  * @brief MIPI-DSI DCS read.
@@ -204,8 +202,8 @@ ssize_t mipi_dsi_generic_write(const struct device *dev, uint8_t channel,
  *
  * @return Size of the read data on success, negative on error.
  */
-ssize_t mipi_dsi_dcs_read(const struct device *dev, uint8_t channel,
-			  uint8_t cmd, void *buf, size_t len);
+k_ssize_t mipi_dsi_dcs_read(const struct device *dev, uint8_t channel, uint8_t cmd, void *buf,
+			    size_t len);
 
 /**
  * @brief MIPI-DSI DCS write.
@@ -218,9 +216,8 @@ ssize_t mipi_dsi_dcs_read(const struct device *dev, uint8_t channel,
  *
  * @return Size of the written data on success, negative on error.
  */
-ssize_t mipi_dsi_dcs_write(const struct device *dev, uint8_t channel,
-			   uint8_t cmd, const void *buf, size_t len);
-
+k_ssize_t mipi_dsi_dcs_write(const struct device *dev, uint8_t channel, uint8_t cmd,
+			     const void *buf, size_t len);
 
 /**
  * @brief Detach a device from the MIPI-DSI bus

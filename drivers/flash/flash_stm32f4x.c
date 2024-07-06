@@ -36,7 +36,7 @@ typedef uint8_t flash_prg_t;
 #error Write block size must be a power of 2, from 1 to 8
 #endif
 
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
+bool flash_stm32_valid_range(const struct device *dev, k_off_t offset,
 			     uint32_t len,
 			     bool write)
 {
@@ -80,7 +80,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 	}
 }
 
-static int write_value(const struct device *dev, off_t offset, flash_prg_t val)
+static int write_value(const struct device *dev, k_off_t offset, flash_prg_t val)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 #if defined(FLASH_OPTCR_DB1M)
@@ -117,7 +117,7 @@ static int write_value(const struct device *dev, off_t offset, flash_prg_t val)
 	/* flush the register write */
 	tmp = regs->CR;
 
-	*((flash_prg_t *)(offset + FLASH_STM32_BASE_ADDRESS)) = val;
+	*((flash_prg_t *)((uintptr_t)offset + FLASH_STM32_BASE_ADDRESS)) = val;
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	regs->CR &= (~FLASH_CR_PG);

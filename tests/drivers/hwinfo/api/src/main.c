@@ -3,10 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/types.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/ztest.h>
-#include <strings.h>
-#include <errno.h>
 
 /*
  * @addtogroup t_hwinfo_get_device_id_api
@@ -30,7 +33,7 @@ ZTEST(hwinfo_device_id_api, test_device_id_get)
 {
 	uint8_t buffer_1[BUFFER_LENGTH];
 	uint8_t buffer_2[BUFFER_LENGTH];
-	ssize_t length_read_1, length_read_2;
+	int length_read_1, length_read_2;
 	int i;
 
 	length_read_1 = hwinfo_get_device_id(buffer_1, 1);
@@ -85,8 +88,8 @@ ZTEST(hwinfo_device_id_api, test_device_id_get)
 
 ZTEST(hwinfo_device_id_api, test_get_reset_cause)
 {
+	int ret;
 	uint32_t cause;
-	ssize_t ret;
 
 	/* Set `cause` to a known value prior to call. */
 	cause = 0xDEADBEEF;
@@ -123,8 +126,8 @@ ZTEST(hwinfo_device_id_api, test_get_reset_cause)
  */
 ZTEST(hwinfo_device_id_api, test_clear_reset_cause)
 {
+	int ret;
 	uint32_t cause_1, cause_2;
-	ssize_t ret;
 
 	ret = hwinfo_get_reset_cause(&cause_1);
 	if (ret == -ENOSYS) {
@@ -174,8 +177,8 @@ ZTEST(hwinfo_device_id_api, test_clear_reset_cause)
  */
 ZTEST(hwinfo_device_id_api, test_get_supported_reset_cause)
 {
+	int ret;
 	uint32_t supported;
-	ssize_t ret;
 
 	/* Set `supported` to a known value prior to call. */
 	supported = 0xDEADBEEF;

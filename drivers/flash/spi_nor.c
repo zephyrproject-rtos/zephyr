@@ -368,7 +368,7 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
  */
 static int spi_nor_access(const struct device *const dev,
 			  uint8_t opcode, unsigned int access,
-			  off_t addr, void *data, size_t length)
+			  k_off_t addr, void *data, size_t length)
 {
 	const struct spi_nor_config *const driver_cfg = dev->config;
 	struct spi_nor_data *const driver_data = dev->data;
@@ -486,7 +486,7 @@ static int spi_nor_wait_until_ready(const struct device *dev, k_timeout_t poll_d
  * @return 0 on success, negative errno code otherwise
  */
 static int read_sfdp(const struct device *const dev,
-		     off_t addr, void *data, size_t length)
+		     k_off_t addr, void *data, size_t length)
 {
 	/* READ_SFDP requires a 24-bit address followed by a single
 	 * byte for a wait state.  This is effected by using 32-bit
@@ -772,7 +772,7 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 
 #endif /* ANY_INST_HAS_MXICY_MX25R_POWER_MODE */
 
-static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
+static int spi_nor_read(const struct device *dev, k_off_t addr, void *dest,
 			size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
@@ -819,7 +819,7 @@ static int flash_spi_nor_ex_op(const struct device *dev, uint16_t code,
 }
 #endif
 
-static int spi_nor_write(const struct device *dev, off_t addr,
+static int spi_nor_write(const struct device *dev, k_off_t addr,
 			 const void *src,
 			 size_t size)
 {
@@ -882,7 +882,7 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 	return ret;
 }
 
-static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
+static int spi_nor_erase(const struct device *dev, k_off_t addr, size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
 	int ret;
@@ -995,7 +995,7 @@ static int spi_nor_write_protection_set(const struct device *dev,
 
 #if defined(CONFIG_FLASH_JESD216_API) || defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
-static int spi_nor_sfdp_read(const struct device *dev, off_t addr,
+static int spi_nor_sfdp_read(const struct device *dev, k_off_t addr,
 			     void *dest, size_t size)
 {
 	acquire_device(dev);

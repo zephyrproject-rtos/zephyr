@@ -279,7 +279,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	struct fs_dirent dirent;
 	struct fs_file_t file;
 	int count;
-	off_t offset;
+	k_off_t offset;
 	int err;
 
 	create_abs_path(argv[1], path, sizeof(path));
@@ -331,7 +331,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	while (count > 0) {
-		ssize_t read;
+		k_ssize_t read;
 		uint8_t buf[16];
 		int i;
 
@@ -374,7 +374,7 @@ static int cmd_cat(const struct shell *sh, size_t argc, char **argv)
 	struct fs_dirent dirent;
 	struct fs_file_t file;
 	int err;
-	ssize_t read;
+	k_ssize_t read;
 
 	fs_file_t_init(&file);
 
@@ -449,7 +449,7 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	uint8_t buf_len;
 	int arg_offset;
 	struct fs_file_t file;
-	off_t offset = -1;
+	k_off_t offset = -1;
 	int err;
 
 	create_abs_path(argv[1], path, sizeof(path));

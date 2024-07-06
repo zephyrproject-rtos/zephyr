@@ -97,7 +97,7 @@ struct otc_btn_work_info {
 
 struct otc_checksum_work_info {
 	struct k_work_delayable work;
-	off_t offset;
+	k_off_t offset;
 	size_t len;
 } otc_checksum_work;
 

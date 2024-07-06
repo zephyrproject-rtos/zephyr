@@ -103,7 +103,7 @@ static bool settings_file_check_duplicate(
 	return false;
 }
 
-static int read_entry_len(const struct line_entry_ctx *entry_ctx, off_t off)
+static int read_entry_len(const struct line_entry_ctx *entry_ctx, k_off_t off)
 {
 	if (off >= entry_ctx->len) {
 		return 0;
@@ -443,11 +443,11 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 	return settings_file_save_priv(cs, name, value, val_len);
 }
 
-static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
+static int read_handler(void *ctx, k_off_t off, char *buf, size_t *len)
 {
 	struct line_entry_ctx *entry_ctx = ctx;
 	struct fs_file_t *file = entry_ctx->stor_ctx;
-	ssize_t r_len;
+	k_ssize_t r_len;
 	int rc;
 
 	/* 0 is reserved for reading the length-field only */
@@ -486,7 +486,7 @@ static size_t get_len_cb(void *ctx)
 	return entry_ctx->len;
 }
 
-static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
+static int write_handler(void *ctx, k_off_t off, char const *buf, size_t len)
 {
 	struct line_entry_ctx *entry_ctx = ctx;
 	struct fs_file_t *file = entry_ctx->stor_ctx;

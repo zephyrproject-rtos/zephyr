@@ -28,7 +28,7 @@ static const struct flash_parameters flash_gd32_parameters = {
 	.erase_value = 0xff,
 };
 
-static int flash_gd32_read(const struct device *dev, off_t offset,
+static int flash_gd32_read(const struct device *dev, k_off_t offset,
 			   void *data, size_t len)
 {
 	if ((offset > SOC_NV_FLASH_SIZE) ||
@@ -45,7 +45,7 @@ static int flash_gd32_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_gd32_write(const struct device *dev, off_t offset,
+static int flash_gd32_write(const struct device *dev, k_off_t offset,
 			    const void *data, size_t len)
 {
 	struct flash_gd32_data *dev_data = dev->data;
@@ -68,7 +68,7 @@ static int flash_gd32_write(const struct device *dev, off_t offset,
 	return ret;
 }
 
-static int flash_gd32_erase(const struct device *dev, off_t offset, size_t size)
+static int flash_gd32_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	struct flash_gd32_data *data = dev->data;
 	int ret = 0;

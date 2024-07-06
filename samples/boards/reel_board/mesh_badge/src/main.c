@@ -26,8 +26,8 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
-static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
+static k_ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+			   uint16_t len, uint16_t offset)
 {
 	const char *value = bt_get_name();
 
@@ -35,9 +35,8 @@ static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(value));
 }
 
-static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			  const void *buf, uint16_t len, uint16_t offset,
-			  uint8_t flags)
+static k_ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
+			    uint16_t len, uint16_t offset, uint8_t flags)
 {
 	char name[CONFIG_BT_DEVICE_NAME_MAX];
 	int err;

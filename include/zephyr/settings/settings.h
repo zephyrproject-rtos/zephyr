@@ -8,7 +8,6 @@
 #ifndef ZEPHYR_INCLUDE_SETTINGS_SETTINGS_H_
 #define ZEPHYR_INCLUDE_SETTINGS_SETTINGS_H_
 
-#include <sys/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/iterable_sections.h>
@@ -58,7 +57,7 @@ extern "C" {
  * @return positive: Number of bytes read, 0: key-value pair is deleted.
  *                   On error returns -ERRNO code.
  */
-typedef ssize_t (*settings_read_cb)(void *cb_arg, void *data, size_t len);
+typedef k_ssize_t (*settings_read_cb)(void *cb_arg, void *data, size_t len);
 
 /**
  * @struct settings_handler

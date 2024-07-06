@@ -35,7 +35,7 @@ static const struct flash_parameters flash_cad_parameters = {
 #define DEV_DATA(dev)	((struct flash_cad_priv *)((dev)->data))
 #define DEV_CFG(dev)	((struct flash_cad_config *)((dev)->config))
 
-static int flash_cad_read(const struct device *dev, off_t offset,
+static int flash_cad_read(const struct device *dev, k_off_t offset,
 				void *data, size_t len)
 {
 	struct flash_cad_priv *priv = dev->data;
@@ -57,7 +57,7 @@ static int flash_cad_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_cad_erase(const struct device *dev, off_t offset,
+static int flash_cad_erase(const struct device *dev, k_off_t offset,
 				size_t len)
 {
 	struct flash_cad_priv *priv = dev->data;
@@ -79,7 +79,7 @@ static int flash_cad_erase(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_cad_write(const struct device *dev, off_t offset,
+static int flash_cad_write(const struct device *dev, k_off_t offset,
 				const void *data, size_t len)
 {
 	struct flash_cad_priv *priv = dev->data;

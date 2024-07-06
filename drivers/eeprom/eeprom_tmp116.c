@@ -26,7 +26,7 @@ static size_t eeprom_tmp116_size(const struct device *dev)
 	return EEPROM_TMP116_SIZE;
 }
 
-static int eeprom_tmp116_write(const struct device *dev, off_t offset,
+static int eeprom_tmp116_write(const struct device *dev, k_off_t offset,
 			       const void *data, size_t len)
 {
 	const struct eeprom_tmp116_config *config = dev->config;
@@ -34,7 +34,7 @@ static int eeprom_tmp116_write(const struct device *dev, off_t offset,
 	return tmp116_eeprom_write(config->parent, offset, data, len);
 }
 
-static int eeprom_tmp116_read(const struct device *dev, off_t offset, void *data,
+static int eeprom_tmp116_read(const struct device *dev, k_off_t offset, void *data,
 			      size_t len)
 {
 	const struct eeprom_tmp116_config *config = dev->config;

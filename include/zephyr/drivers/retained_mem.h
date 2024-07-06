@@ -14,7 +14,6 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/types.h>
@@ -24,8 +23,12 @@
 extern "C" {
 #endif
 
-BUILD_ASSERT(!(sizeof(off_t) > sizeof(size_t)),
-	     "Size of off_t must be equal or less than size of size_t");
+/*
+ * Without the assert condition described this way, doxygen fails
+ * with the error "retained_mem.h:187: unbalanced grouping commands".
+ */
+BUILD_ASSERT(!(sizeof(size_t) > sizeof(k_off_t)),
+	     "Size of size_t must be equal or less than size of k_off_t");
 
 /**
  * @brief Retained memory driver interface
@@ -41,14 +44,14 @@ BUILD_ASSERT(!(sizeof(off_t) > sizeof(size_t)),
  * @brief	Callback API to get size of retained memory area.
  * See retained_mem_size() for argument description.
  */
-typedef ssize_t (*retained_mem_size_api)(const struct device *dev);
+typedef k_ssize_t (*retained_mem_size_api)(const struct device *dev);
 
 /**
  * @typedef	retained_mem_read_api
  * @brief	Callback API to read from retained memory area.
  * See retained_mem_read() for argument description.
  */
-typedef int (*retained_mem_read_api)(const struct device *dev, off_t offset, uint8_t *buffer,
+typedef int (*retained_mem_read_api)(const struct device *dev, k_off_t offset, uint8_t *buffer,
 				     size_t size);
 
 /**
@@ -56,7 +59,7 @@ typedef int (*retained_mem_read_api)(const struct device *dev, off_t offset, uin
  * @brief	Callback API to write to retained memory area.
  * See retained_mem_write() for argument description.
  */
-typedef int (*retained_mem_write_api)(const struct device *dev, off_t offset,
+typedef int (*retained_mem_write_api)(const struct device *dev, k_off_t offset,
 				      const uint8_t *buffer, size_t size);
 
 /**
@@ -92,9 +95,9 @@ __subsystem struct retained_mem_driver_api {
  * @retval		Positive value indicating size in bytes on success, else negative errno
  *			code.
  */
-__syscall ssize_t retained_mem_size(const struct device *dev);
+__syscall k_ssize_t retained_mem_size(const struct device *dev);
 
-static inline ssize_t z_impl_retained_mem_size(const struct device *dev)
+static inline k_ssize_t z_impl_retained_mem_size(const struct device *dev)
 {
 	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;
 
@@ -111,10 +114,10 @@ static inline ssize_t z_impl_retained_mem_size(const struct device *dev)
  *
  * @retval		0 on success else negative errno code.
  */
-__syscall int retained_mem_read(const struct device *dev, off_t offset, uint8_t *buffer,
+__syscall int retained_mem_read(const struct device *dev, k_off_t offset, uint8_t *buffer,
 				size_t size);
 
-static inline int z_impl_retained_mem_read(const struct device *dev, off_t offset,
+static inline int z_impl_retained_mem_read(const struct device *dev, k_off_t offset,
 					   uint8_t *buffer, size_t size)
 {
 	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;
@@ -145,10 +148,10 @@ static inline int z_impl_retained_mem_read(const struct device *dev, off_t offse
  *
  * @retval		0 on success else negative errno code.
  */
-__syscall int retained_mem_write(const struct device *dev, off_t offset, const uint8_t *buffer,
+__syscall int retained_mem_write(const struct device *dev, k_off_t offset, const uint8_t *buffer,
 				 size_t size);
 
-static inline int z_impl_retained_mem_write(const struct device *dev, off_t offset,
+static inline int z_impl_retained_mem_write(const struct device *dev, k_off_t offset,
 					    const uint8_t *buffer, size_t size)
 {
 	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;

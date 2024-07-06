@@ -65,7 +65,7 @@ static bool test_flash_mem_is_set_to(const uint8_t *data, uint8_t to, size_t siz
 	return true;
 }
 
-static bool test_flash_is_erased(off_t offset, size_t size)
+static bool test_flash_is_erased(k_off_t offset, size_t size)
 {
 	static uint8_t test_erase_buffer[99];
 	const struct flash_parameters *parameters = flash_get_parameters(flash_controller);
@@ -85,7 +85,7 @@ static bool test_flash_is_erased(off_t offset, size_t size)
 			return false;
 		}
 
-		offset += (off_t)readsize;
+		offset += (k_off_t)readsize;
 	}
 
 	return true;
@@ -116,7 +116,7 @@ static void test_flash_before(void *f)
 		 "Failed to erase partition");
 }
 
-static void test_flash_write_block_at_offset(off_t offset, size_t size)
+static void test_flash_write_block_at_offset(k_off_t offset, size_t size)
 {
 	zassert_ok(flash_write(flash_controller, offset, test_write_block, size),
 		   "Failed to write block at offset %zu, of size %zu", (size_t)offset, size);
@@ -130,10 +130,10 @@ static void test_flash_write_block_at_offset(off_t offset, size_t size)
 static void test_flash_write_across_page_boundary(const struct flash_pages_info *info,
 						  size_t write_block_size)
 {
-	off_t page_boundary = info->start_offset;
+	k_off_t page_boundary = info->start_offset;
 	uint32_t page0_index = info->index - 1;
 	uint32_t page1_index = info->index;
-	off_t cross_write_start_offset = page_boundary - (off_t)write_block_size;
+	k_off_t cross_write_start_offset = page_boundary - (k_off_t)write_block_size;
 	size_t cross_write_size = write_block_size * 2;
 
 	LOG_INF("Writing across page boundary at %zu, between page index %u and %u",
@@ -174,7 +174,7 @@ ZTEST(flash_page_layout, test_write_across_page_boundaries_in_part)
 
 static void test_flash_erase_page(const struct flash_pages_info *info)
 {
-	off_t page_offset = info->start_offset;
+	k_off_t page_offset = info->start_offset;
 	size_t page_size = info->size;
 	size_t page_index = info->index;
 

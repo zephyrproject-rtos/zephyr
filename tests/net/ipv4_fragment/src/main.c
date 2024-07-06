@@ -20,7 +20,6 @@ LOG_MODULE_REGISTER(net_ipv4_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/net/socket.h>
 #include <net_private.h>
 #include <ipv4.h>

@@ -7,7 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_CONSOLE_TTY_H_
 #define ZEPHYR_INCLUDE_CONSOLE_TTY_H_
 
-#include <sys/types.h>
+#include <stdint.h>
+
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 
@@ -118,7 +119,7 @@ int tty_set_tx_buf(struct tty_serial *tty, void *buf, size_t size);
  *         <0, in case of error (e.g. -EAGAIN if timeout expired). errno
  *             variable is also set.
  */
-ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size);
+k_ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size);
 
 /**
  * @brief Write data to tty device.
@@ -130,7 +131,7 @@ ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size);
  *         <0, in case of error (e.g. -EAGAIN if timeout expired). errno
  *             variable is also set.
  */
-ssize_t tty_write(struct tty_serial *tty, const void *buf, size_t size);
+k_ssize_t tty_write(struct tty_serial *tty, const void *buf, size_t size);
 
 #ifdef __cplusplus
 }

@@ -40,7 +40,7 @@ static uint8_t   value_v13_value = 0x0D;
  * @return       Number of bytes read, or in case of an error - BT_GATT_ERR()
  *               with a specific ATT error code.
  */
-static ssize_t read_value_v13(struct bt_conn *conn,
+static k_ssize_t read_value_v13(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {

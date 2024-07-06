@@ -132,7 +132,7 @@ static void bt_ots_dir_list_reset_anchor(struct bt_ots_dir_list *dir_list, void 
 }
 
 static int bt_ots_dir_list_search_forward(struct bt_ots_dir_list *dir_list, void *obj_manager,
-					  off_t offset)
+					  k_off_t offset)
 {
 	int err;
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
@@ -160,7 +160,7 @@ static int bt_ots_dir_list_search_forward(struct bt_ots_dir_list *dir_list, void
 }
 
 static int bt_ots_dir_list_search_backward(struct bt_ots_dir_list *dir_list, void *obj_manager,
-					   off_t offset)
+					   k_off_t offset)
 {
 	int err;
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
@@ -184,7 +184,8 @@ static int bt_ots_dir_list_search_backward(struct bt_ots_dir_list *dir_list, voi
 	return 0;
 }
 
-static int bt_ots_dir_list_search(struct bt_ots_dir_list *dir_list, void *obj_manager, off_t offset)
+static int bt_ots_dir_list_search(struct bt_ots_dir_list *dir_list, void *obj_manager,
+				  k_off_t offset)
 {
 	int err = 0;
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
@@ -306,12 +307,12 @@ void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
 }
 
 ssize_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void *obj_manager,
-				    void **data, size_t len, off_t offset)
+				    void **data, size_t len, k_off_t offset)
 {
 	int err;
 	size_t last_rec_len;
 	size_t rec_len;
-	off_t rec_offset;
+	k_off_t rec_offset;
 	struct bt_gatt_ots_object *obj;
 
 	err = bt_ots_dir_list_search(dir_list, obj_manager, offset);

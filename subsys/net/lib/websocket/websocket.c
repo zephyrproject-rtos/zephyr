@@ -1116,21 +1116,18 @@ static int websocket_recv(struct websocket_context *ctx, uint8_t *buf,
 	return ret;
 }
 
-static ssize_t websocket_read_vmeth(void *obj, void *buffer, size_t count)
+static k_ssize_t websocket_read_vmeth(void *obj, void *buffer, size_t count)
 {
-	return (ssize_t)websocket_recv(obj, buffer, count, SYS_FOREVER_MS);
+	return (k_ssize_t)websocket_recv(obj, buffer, count, SYS_FOREVER_MS);
 }
 
-static ssize_t websocket_write_vmeth(void *obj, const void *buffer,
-				     size_t count)
+static k_ssize_t websocket_write_vmeth(void *obj, const void *buffer, size_t count)
 {
-	return (ssize_t)websocket_send(obj, buffer, count, SYS_FOREVER_MS);
+	return (k_ssize_t)websocket_send(obj, buffer, count, SYS_FOREVER_MS);
 }
 
-static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
-				    int flags,
-				    const struct sockaddr *dest_addr,
-				    socklen_t addrlen)
+static k_ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len, int flags,
+					 const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	struct websocket_context *ctx = obj;
 	int32_t timeout = SYS_FOREVER_MS;
@@ -1142,12 +1139,11 @@ static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
 	ARG_UNUSED(dest_addr);
 	ARG_UNUSED(addrlen);
 
-	return (ssize_t)websocket_send(ctx, buf, len, timeout);
+	return (k_ssize_t)websocket_send(ctx, buf, len, timeout);
 }
 
-static ssize_t websocket_recvfrom_ctx(void *obj, void *buf, size_t max_len,
-				      int flags, struct sockaddr *src_addr,
-				      socklen_t *addrlen)
+static k_ssize_t websocket_recvfrom_ctx(void *obj, void *buf, size_t max_len, int flags,
+					   struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	struct websocket_context *ctx = obj;
 	int32_t timeout = SYS_FOREVER_MS;
@@ -1159,7 +1155,7 @@ static ssize_t websocket_recvfrom_ctx(void *obj, void *buf, size_t max_len,
 	ARG_UNUSED(src_addr);
 	ARG_UNUSED(addrlen);
 
-	return (ssize_t)websocket_recv(ctx, buf, max_len, timeout);
+	return (k_ssize_t)websocket_recv(ctx, buf, max_len, timeout);
 }
 
 int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)

@@ -214,8 +214,8 @@ error:
  * As terminating byte a STRG+Z (0x1A) is sent. The module will
  * then send a OK or ERROR.
  */
-static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
-			      const struct sockaddr *dest_addr, socklen_t addrlen)
+static k_ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
+				   const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	int ret;
 	struct modem_socket *sock = (struct modem_socket *)obj;
@@ -372,8 +372,8 @@ MODEM_CMD_DEFINE(on_cmd_carecv)
 /*
  * Read data from a given socket.
  */
-static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
-				struct sockaddr *src_addr, socklen_t *addrlen)
+static k_ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
+				     struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char sendbuf[sizeof("AT+CARECV=##,####")];
@@ -446,10 +446,10 @@ exit:
 /*
  * Sends messages to the modem.
  */
-static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static k_ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
 	struct modem_socket *sock = obj;
-	ssize_t sent = 0;
+	k_ssize_t sent = 0;
 	const char *buf;
 	size_t len;
 	int ret;
@@ -516,7 +516,7 @@ static void socket_close(struct modem_socket *sock)
 /*
  * Offloads read by reading from a given socket.
  */
-static ssize_t offload_read(void *obj, void *buffer, size_t count)
+static k_ssize_t offload_read(void *obj, void *buffer, size_t count)
 {
 	return offload_recvfrom(obj, buffer, count, 0, NULL, 0);
 }
@@ -524,7 +524,7 @@ static ssize_t offload_read(void *obj, void *buffer, size_t count)
 /*
  * Offloads write by writing to a given socket.
  */
-static ssize_t offload_write(void *obj, const void *buffer, size_t count)
+static k_ssize_t offload_write(void *obj, const void *buffer, size_t count)
 {
 	return offload_sendto(obj, buffer, count, 0, NULL, 0);
 }

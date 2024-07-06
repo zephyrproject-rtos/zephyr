@@ -63,7 +63,7 @@ struct stream_flash_ctx {
 	size_t available; /* Available bytes in write area */
 	stream_flash_callback_t callback; /* Callback invoked after write op */
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	off_t last_erased_page_start_offset; /* Last erased offset */
+	k_off_t last_erased_page_start_offset; /* Last erased offset */
 #endif
 	uint8_t erase_value;
 	uint8_t write_block_size;	/* Offset/size device write alignment */
@@ -135,7 +135,7 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off);
+int stream_flash_erase_page(struct stream_flash_ctx *ctx, k_off_t off);
 
 /**
  * @brief Load persistent stream write progress stored with key

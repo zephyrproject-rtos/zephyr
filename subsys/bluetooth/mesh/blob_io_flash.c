@@ -119,7 +119,7 @@ static int wr_chunk(const struct bt_mesh_blob_io *io,
 
 	uint8_t buf[ROUND_UP(BLOB_CHUNK_SIZE_MAX(BT_MESH_RX_SDU_MAX),
 			  WRITE_BLOCK_SIZE)];
-	off_t area_offset = flash->offset + block->offset + chunk->offset;
+	k_off_t area_offset = flash->offset + block->offset + chunk->offset;
 	int i = 0;
 
 	/* Write block align the chunk data */
@@ -138,7 +138,7 @@ static int wr_chunk(const struct bt_mesh_blob_io *io,
 }
 
 int bt_mesh_blob_io_flash_init(struct bt_mesh_blob_io_flash *flash,
-			       uint8_t area_id, off_t offset)
+			       uint8_t area_id, k_off_t offset)
 {
 	int err;
 

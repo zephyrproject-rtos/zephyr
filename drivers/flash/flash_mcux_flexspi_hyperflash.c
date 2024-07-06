@@ -370,7 +370,7 @@ static int flash_flexspi_hyperflash_check_vendor_id(const struct device *dev)
 	return ret;
 }
 
-static int flash_flexspi_hyperflash_page_program(const struct device *dev, off_t
+static int flash_flexspi_hyperflash_page_program(const struct device *dev, k_off_t
 		offset, const void *buffer, size_t len)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
@@ -390,7 +390,7 @@ static int flash_flexspi_hyperflash_page_program(const struct device *dev, off_t
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
 
-static int flash_flexspi_hyperflash_read(const struct device *dev, off_t offset,
+static int flash_flexspi_hyperflash_read(const struct device *dev, k_off_t offset,
 		void *buffer, size_t len)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
@@ -407,7 +407,7 @@ static int flash_flexspi_hyperflash_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset,
+static int flash_flexspi_hyperflash_write(const struct device *dev, k_off_t offset,
 		const void *buffer, size_t len)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
@@ -494,7 +494,7 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 	return ret;
 }
 
-static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset, size_t size)
+static int flash_flexspi_hyperflash_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
 	flexspi_transfer_t transfer;

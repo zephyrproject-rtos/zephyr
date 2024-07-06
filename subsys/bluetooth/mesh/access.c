@@ -1859,7 +1859,7 @@ bool bt_mesh_model_is_extended(const struct bt_mesh_model *model)
 static int mod_set_bind(const struct bt_mesh_model *mod, size_t len_rd,
 			settings_read_cb read_cb, void *cb_arg)
 {
-	ssize_t len;
+	k_ssize_t len;
 	int i;
 
 	/* Start with empty array regardless of cleared or set value */
@@ -1888,7 +1888,7 @@ static int mod_set_sub(const struct bt_mesh_model *mod, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
 	size_t size = mod->groups_cnt * sizeof(mod->groups[0]);
-	ssize_t len;
+	k_ssize_t len;
 
 	/* Start with empty array regardless of cleared or set value */
 	(void)memset(mod->groups, 0, size);
@@ -1916,7 +1916,7 @@ static int mod_set_sub_va(const struct bt_mesh_model *mod, size_t len_rd,
 {
 #if CONFIG_BT_MESH_LABEL_COUNT > 0
 	uint16_t uuidxs[CONFIG_BT_MESH_LABEL_COUNT];
-	ssize_t len;
+	k_ssize_t len;
 	int i;
 	int count;
 

@@ -8,9 +8,8 @@
 #ifndef ZEPHYR_INCLUDE_FS_FS_H_
 #define ZEPHYR_INCLUDE_FS_FS_H_
 
-#include <sys/types.h>
-
 #include <zephyr/sys/dlist.h>
+#include <zephyr/sys/fdtable.h>
 #include <zephyr/fs/fs_interface.h>
 
 #ifdef __cplusplus
@@ -365,7 +364,7 @@ int fs_rename(const char *from, const char *to);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
-ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
+k_ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
 
 /**
  * @brief Write file
@@ -386,7 +385,7 @@ ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
+k_ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
 
 /**
  * @brief Seek file
@@ -406,7 +405,7 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
  * @retval -ENOTSUP if not supported by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
+int fs_seek(struct fs_file_t *zfp, k_off_t offset, int whence);
 
 /**
  * @brief Get current file position.
@@ -422,7 +421,7 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
  *
  * The current revision does not validate the file object.
  */
-off_t fs_tell(struct fs_file_t *zfp);
+k_off_t fs_tell(struct fs_file_t *zfp);
 
 /**
  * @brief Truncate or extend an open file to a given size
@@ -444,7 +443,7 @@ off_t fs_tell(struct fs_file_t *zfp);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-int fs_truncate(struct fs_file_t *zfp, off_t length);
+int fs_truncate(struct fs_file_t *zfp, k_off_t length);
 
 /**
  * @brief Flush cached write data buffers of an open file

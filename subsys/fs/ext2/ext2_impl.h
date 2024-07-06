@@ -184,8 +184,7 @@ int ext2_lookup_inode(struct ext2_data *fs, struct ext2_lookup_args *args);
  * @retval >=0 number of bytes read on success
  * @retval <0 error code
  */
-ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset,
-			size_t nbytes);
+k_ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, size_t nbytes);
 
 /**
  * @brief Write to inode at given offset
@@ -198,8 +197,8 @@ ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset,
  * @retval >=0 number of bytes read on success
  * @retval <0 error code
  */
-ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf,
-			 uint32_t offset, size_t nbytes);
+k_ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t offset,
+			      size_t nbytes);
 
 /**
  * @brief Truncate the inode
@@ -211,7 +210,7 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf,
  * @retval -ENOTSUP when requested size is too big
  * @retval <0 other error
  */
-int ext2_inode_trunc(struct ext2_inode *inode, off_t size);
+int ext2_inode_trunc(struct ext2_inode *inode, k_off_t size);
 
 /**
  * @brief Sync currently fetched blocks

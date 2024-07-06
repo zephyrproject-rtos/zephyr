@@ -72,7 +72,7 @@ static void hrmc_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value
 	}
 }
 
-static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &hrs_blsc,

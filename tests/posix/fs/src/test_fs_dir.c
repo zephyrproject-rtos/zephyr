@@ -5,9 +5,9 @@
  */
 
 #include <stdio.h>
-#include <fcntl.h>
-#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/posix/dirent.h>
+#include <zephyr/posix/unistd.h>
 #include "test_fs.h"
 
 extern int test_file_write(void);

@@ -88,7 +88,7 @@ void sent_cb(struct bt_l2cap_chan *chan)
 	continue_sending(&test_ctx);
 }
 
-void recv_cb(struct bt_l2cap_chan *l2cap_chan, size_t sdu_len, off_t seg_offset,
+void recv_cb(struct bt_l2cap_chan *l2cap_chan, size_t sdu_len, k_off_t seg_offset,
 	     struct net_buf_simple *seg)
 {
 	LOG_DBG("sdu len %u frag offset %u frag len %u", sdu_len, seg_offset, seg->len);

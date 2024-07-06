@@ -91,7 +91,7 @@ static void ZUNLINK(struct test_state *ts, int line)
 }
 
 /* Check file position; expected is a position file should be at. */
-static void ZCHKPOS(struct test_state *ts, off_t expected, int line)
+static void ZCHKPOS(struct test_state *ts, k_off_t expected, int line)
 {
 	TC_PRINT("# %d: CHKPOS\n", line);
 	ZEQ(fs_tell(&ts->file), expected);

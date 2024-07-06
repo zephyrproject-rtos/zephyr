@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/device.h>
-#include <sys/types.h>
 
 #include <Qspi_Ip.h>
 

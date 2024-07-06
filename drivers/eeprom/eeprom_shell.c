@@ -11,6 +11,7 @@
  */
 
 #include <zephyr/shell/shell.h>
+#include <zephyr/types.h>
 #include <zephyr/drivers/eeprom.h>
 #include <stdlib.h>
 
@@ -75,7 +76,7 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	uint8_t rd_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
 	const struct device *eeprom;
 	unsigned long byte;
-	off_t offset;
+	k_off_t offset;
 	size_t len;
 	int err;
 	int i;

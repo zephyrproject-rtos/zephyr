@@ -13,11 +13,10 @@
 /* According to default Cyclone V DevKit Bootstrap Encoding Scheme */
 #include "eth_cyclonev_priv.h"
 
+#include <stdint.h>
 #include <stdio.h>
 
 #include <zephyr/kernel.h>
-
-#include <sys/types.h>
 
 #define PHY_ADDR (4)
 

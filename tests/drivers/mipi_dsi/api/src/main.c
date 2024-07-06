@@ -23,7 +23,7 @@ ZTEST(mipi_dsi_api, test_generic)
 {
 	uint8_t rx_buf[2];
 	uint8_t param[2];
-	ssize_t ret;
+	k_ssize_t ret;
 
 	param[0] = MIPI_DCS_SET_DISPLAY_ON;
 	ret = mipi_dsi_generic_write(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL, param, 1);
@@ -52,7 +52,7 @@ ZTEST(mipi_dsi_api, test_dcs)
 {
 	uint8_t rx_buf[2];
 	uint8_t param[2];
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = mipi_dsi_dcs_write(mipi_dev, CONFIG_MIPI_DSI_TEST_CHANNEL,
 				 MIPI_DCS_SET_DISPLAY_ON, NULL, 0);

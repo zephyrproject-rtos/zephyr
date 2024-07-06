@@ -14,7 +14,7 @@
 
 #include <cy_syslib.h>
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	uint8_t *uid_addr = (uint8_t *) DT_INST_REG_ADDR(0);
 

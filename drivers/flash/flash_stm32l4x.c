@@ -62,14 +62,14 @@ static inline void flush_cache(FLASH_TypeDef *regs)
  *
  * STM32L4R/Sxx devices can have up to 512 4K pages on two 256x4K pages banks
  */
-static unsigned int get_page(off_t offset)
+static unsigned int get_page(k_off_t offset)
 {
 	return offset >> STM32L4X_PAGE_SHIFT;
 }
 
-static int write_dword(const struct device *dev, off_t offset, uint64_t val)
+static int write_dword(const struct device *dev, k_off_t offset, uint64_t val)
 {
-	volatile uint32_t *flash = (uint32_t *)(offset + FLASH_STM32_BASE_ADDRESS);
+	volatile uint32_t *flash = (uint32_t *)((uintptr_t)offset + FLASH_STM32_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 #ifdef CONTROL_DCACHE
 	bool dcache_enabled = false;

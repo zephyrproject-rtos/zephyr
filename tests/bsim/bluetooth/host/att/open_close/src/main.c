@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 	BT_UUID_DECLARE_128(0x3f, 0xa4, 0x7f, 0x44, 0x2e, 0x2a, 0x43, 0x05, 0xab, 0x38, 0x07,      \
 			    0x8d, 0x16, 0xbf, 0x99, 0xf1)
 
-static ssize_t read_mtu_validation_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_mtu_validation_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 					void *buf, uint16_t buf_len, uint16_t offset)
 {
 

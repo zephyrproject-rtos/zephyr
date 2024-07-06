@@ -370,25 +370,25 @@ static int littlefs_rename(struct fs_mount_t *mountp, const char *from,
 	return lfs_to_errno(ret);
 }
 
-static ssize_t littlefs_read(struct fs_file_t *fp, void *ptr, size_t len)
+static k_ssize_t littlefs_read(struct fs_file_t *fp, void *ptr, size_t len)
 {
 	struct fs_littlefs *fs = fp->mp->fs_data;
 
 	fs_lock(fs);
 
-	ssize_t ret = lfs_file_read(&fs->lfs, LFS_FILEP(fp), ptr, len);
+	k_ssize_t ret = lfs_file_read(&fs->lfs, LFS_FILEP(fp), ptr, len);
 
 	fs_unlock(fs);
 	return lfs_to_errno(ret);
 }
 
-static ssize_t littlefs_write(struct fs_file_t *fp, const void *ptr, size_t len)
+static k_ssize_t littlefs_write(struct fs_file_t *fp, const void *ptr, size_t len)
 {
 	struct fs_littlefs *fs = fp->mp->fs_data;
 
 	fs_lock(fs);
 
-	ssize_t ret = lfs_file_write(&fs->lfs, LFS_FILEP(fp), ptr, len);
+	k_ssize_t ret = lfs_file_write(&fs->lfs, LFS_FILEP(fp), ptr, len);
 
 	fs_unlock(fs);
 	return lfs_to_errno(ret);
@@ -398,13 +398,13 @@ BUILD_ASSERT((FS_SEEK_SET == LFS_SEEK_SET)
 	     && (FS_SEEK_CUR == LFS_SEEK_CUR)
 	     && (FS_SEEK_END == LFS_SEEK_END));
 
-static int littlefs_seek(struct fs_file_t *fp, off_t off, int whence)
+static int littlefs_seek(struct fs_file_t *fp, k_off_t off, int whence)
 {
 	struct fs_littlefs *fs = fp->mp->fs_data;
 
 	fs_lock(fs);
 
-	off_t ret = lfs_file_seek(&fs->lfs, LFS_FILEP(fp), off, whence);
+	k_off_t ret = lfs_file_seek(&fs->lfs, LFS_FILEP(fp), off, whence);
 
 	fs_unlock(fs);
 
@@ -415,19 +415,19 @@ static int littlefs_seek(struct fs_file_t *fp, off_t off, int whence)
 	return lfs_to_errno(ret);
 }
 
-static off_t littlefs_tell(struct fs_file_t *fp)
+static k_off_t littlefs_tell(struct fs_file_t *fp)
 {
 	struct fs_littlefs *fs = fp->mp->fs_data;
 
 	fs_lock(fs);
 
-	off_t ret = lfs_file_tell(&fs->lfs, LFS_FILEP(fp));
+	k_off_t ret = lfs_file_tell(&fs->lfs, LFS_FILEP(fp));
 
 	fs_unlock(fs);
 	return ret;
 }
 
-static int littlefs_truncate(struct fs_file_t *fp, off_t length)
+static int littlefs_truncate(struct fs_file_t *fp, k_off_t length)
 {
 	struct fs_littlefs *fs = fp->mp->fs_data;
 
@@ -570,7 +570,7 @@ static int littlefs_statvfs(struct fs_mount_t *mountp,
 
 	fs_lock(fs);
 
-	ssize_t ret = lfs_fs_size(lfs);
+	k_ssize_t ret = lfs_fs_size(lfs);
 
 	fs_unlock(fs);
 

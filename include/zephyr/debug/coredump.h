@@ -9,7 +9,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <sys/types.h>
+
+#include <zephyr/types.h>
 
 /*
  * Define COREDUMP_*_STR as public to allow coredump_backend_other to re-use
@@ -127,7 +128,7 @@ enum coredump_cmd_id {
 /** Coredump copy command (@ref COREDUMP_CMD_COPY_STORED_DUMP) argument definition */
 struct coredump_cmd_copy_arg {
 	/** Copy offset */
-	off_t offset;
+	k_off_t offset;
 
 	/** Copy destination buffer */
 	uint8_t *buffer;

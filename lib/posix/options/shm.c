@@ -10,7 +10,6 @@
 #include <kernel_arch_interface.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/mm.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/posix/sys/mman.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/sys/dlist.h>
@@ -101,7 +100,7 @@ static int shm_fstat(struct shm_obj *shm, struct stat *st)
 	return 0;
 }
 
-static int shm_ftruncate(struct shm_obj *shm, off_t length)
+static int shm_ftruncate(struct shm_obj *shm, k_off_t length)
 {
 	void *virt;
 
@@ -137,9 +136,9 @@ static int shm_ftruncate(struct shm_obj *shm, off_t length)
 	return 0;
 }
 
-static off_t shm_lseek(struct shm_obj *shm, off_t offset, int whence, size_t cur)
+static k_off_t shm_lseek(struct shm_obj *shm, k_off_t offset, int whence, k_off_t cur)
 {
-	size_t addend;
+	k_off_t addend;
 
 	switch (whence) {
 	case SEEK_SET:
@@ -170,7 +169,7 @@ static off_t shm_lseek(struct shm_obj *shm, off_t offset, int whence, size_t cur
 	return offset;
 }
 
-static int shm_mmap(struct shm_obj *shm, void *addr, size_t len, int prot, int flags, off_t off,
+static int shm_mmap(struct shm_obj *shm, void *addr, size_t len, int prot, int flags, k_off_t off,
 		    void **virt)
 {
 	ARG_UNUSED(addr);
@@ -203,7 +202,7 @@ static int shm_mmap(struct shm_obj *shm, void *addr, size_t len, int prot, int f
 	return 0;
 }
 
-static ssize_t shm_rw(struct shm_obj *shm, void *buf, size_t size, bool is_write, size_t offset)
+static k_ssize_t shm_rw(struct shm_obj *shm, void *buf, size_t size, bool is_write, k_off_t offset)
 {
 	if (offset >= shm->size) {
 		size = 0;
@@ -222,12 +221,12 @@ static ssize_t shm_rw(struct shm_obj *shm, void *buf, size_t size, bool is_write
 	return size;
 }
 
-static ssize_t shm_read(void *obj, void *buf, size_t sz, size_t offset)
+static k_ssize_t shm_read(void *obj, void *buf, size_t sz, k_off_t offset)
 {
 	return shm_rw((struct shm_obj *)obj, buf, sz, false, offset);
 }
 
-static ssize_t shm_write(void *obj, const void *buf, size_t sz, size_t offset)
+static k_ssize_t shm_write(void *obj, const void *buf, size_t sz, k_off_t offset)
 {
 	return shm_rw((struct shm_obj *)obj, (void *)buf, sz, true, offset);
 }
@@ -250,21 +249,21 @@ static int shm_ioctl(void *obj, unsigned int request, va_list args)
 
 	switch (request) {
 	case ZFD_IOCTL_LSEEK: {
-		off_t offset = va_arg(args, off_t);
+		k_off_t offset = va_arg(args, k_off_t);
 		int whence = va_arg(args, int);
-		size_t cur = va_arg(args, size_t);
+		k_off_t cur = va_arg(args, k_off_t);
 
-		return shm_lseek(shm, offset, whence, cur);
+		return shm_lseek(shm, (k_off_t)offset, whence, cur);
 	} break;
 	case ZFD_IOCTL_MMAP: {
 		void *addr = va_arg(args, void *);
 		size_t len = va_arg(args, size_t);
 		int prot = va_arg(args, int);
 		int flags = va_arg(args, int);
-		off_t off = va_arg(args, off_t);
+		k_off_t off = va_arg(args, k_off_t);
 		void **maddr = va_arg(args, void **);
 
-		return shm_mmap(shm, addr, len, prot, flags, off, maddr);
+		return shm_mmap(shm, addr, len, prot, flags, (k_off_t)off, maddr);
 	} break;
 	case ZFD_IOCTL_SET_LOCK:
 		break;
@@ -274,7 +273,7 @@ static int shm_ioctl(void *obj, unsigned int request, va_list args)
 		return shm_fstat(shm, st);
 	} break;
 	case ZFD_IOCTL_TRUNCATE: {
-		off_t length = va_arg(args, off_t);
+		k_off_t length = va_arg(args, k_off_t);
 
 		return shm_ftruncate(shm, length);
 	} break;
@@ -298,10 +297,10 @@ int shm_open(const char *name, int oflag, mode_t mode)
 	int fd;
 	uint32_t key;
 	struct shm_obj *shm;
-	bool rd = (oflag & O_RDONLY) != 0;
-	bool rw = (oflag & O_RDWR) != 0;
-	bool creat = (oflag & O_CREAT) != 0;
-	bool excl = (oflag & O_EXCL) != 0;
+	bool rd = (oflag & ZVFS_O_RDONLY) != 0;
+	bool rw = (oflag & ZVFS_O_RDWR) != 0;
+	bool creat = (oflag & ZVFS_O_CREAT) != 0;
+	bool excl = (oflag & ZVFS_O_EXCL) != 0;
 	bool trunc = false; /* (oflag & O_TRUNC) != 0 */
 	size_t name_len = (name == NULL) ? 0 : strnlen(name, PATH_MAX);
 

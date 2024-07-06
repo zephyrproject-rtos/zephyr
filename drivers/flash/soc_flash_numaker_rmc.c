@@ -35,7 +35,7 @@ static const struct flash_parameters flash_numaker_parameters = {
 };
 
 /* Validate offset and length */
-static bool flash_numaker_is_range_valid(off_t offset, size_t len)
+static bool flash_numaker_is_range_valid(k_off_t offset, size_t len)
 {
 	uint32_t aprom_size = RMC_APROM_END - RMC_APROM_BASE;
 
@@ -62,7 +62,7 @@ static bool flash_numaker_is_range_valid(off_t offset, size_t len)
  * return -EINVAL erroneous code
  */
 
-static int flash_numaker_erase(const struct device *dev, off_t offset, size_t len)
+static int flash_numaker_erase(const struct device *dev, k_off_t offset, size_t len)
 {
 	struct flash_numaker_data *dev_data = dev->data;
 	uint32_t rc = 0;
@@ -122,7 +122,7 @@ done:
  * return 0       on success,
  * return -EIO     erroneous code
  */
-static int flash_numaker_read(const struct device *dev, off_t offset, void *data, size_t len)
+static int flash_numaker_read(const struct device *dev, k_off_t offset, void *data, size_t len)
 {
 	struct flash_numaker_data *dev_data = dev->data;
 	uint32_t addr = dev_data->flash_block_base + offset;
@@ -162,7 +162,8 @@ static int32_t flash_numaker_block_write(uint32_t u32_addr, const uint8_t *pu8_d
 	return retval;
 }
 
-static int flash_numaker_write(const struct device *dev, off_t offset, const void *data, size_t len)
+static int flash_numaker_write(const struct device *dev, k_off_t offset, const void *data,
+			       size_t len)
 {
 	struct flash_numaker_data *dev_data = dev->data;
 	uint32_t rc = 0;

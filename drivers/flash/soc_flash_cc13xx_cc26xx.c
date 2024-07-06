@@ -73,9 +73,9 @@ static uint32_t flash_cc13xx_cc26xx_cache_disable(void)
 	return vims_mode;
 }
 
-static bool flash_cc13xx_cc26xx_range_protected(off_t offs, size_t size)
+static bool flash_cc13xx_cc26xx_range_protected(k_off_t offs, size_t size)
 {
-	off_t sector, end;
+	k_off_t sector, end;
 
 	sector = (offs / FLASH_ERASE_SIZE) * FLASH_ERASE_SIZE;
 	end = offs + size;
@@ -99,7 +99,7 @@ static bool flash_cc13xx_cc26xx_range_protected(off_t offs, size_t size)
 	return false;
 }
 
-static int flash_cc13xx_cc26xx_erase(const struct device *dev, off_t offs,
+static int flash_cc13xx_cc26xx_erase(const struct device *dev, k_off_t offs,
 				     size_t size)
 {
 	struct flash_priv *priv = dev->data;
@@ -158,7 +158,7 @@ static int flash_cc13xx_cc26xx_erase(const struct device *dev, off_t offs,
 	return rc;
 }
 
-static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
+static int flash_cc13xx_cc26xx_write(const struct device *dev, k_off_t offs,
 				     const void *data, size_t size)
 {
 	struct flash_priv *priv = dev->data;
@@ -216,7 +216,7 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 	return rc;
 }
 
-static int flash_cc13xx_cc26xx_read(const struct device *dev, off_t offs,
+static int flash_cc13xx_cc26xx_read(const struct device *dev, k_off_t offs,
 				    void *data, size_t size)
 {
 	ARG_UNUSED(dev);

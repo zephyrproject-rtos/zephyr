@@ -89,7 +89,7 @@ static uint8_t report_map[] = {
 };
 
 
-static ssize_t read_info(struct bt_conn *conn,
+static k_ssize_t read_info(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint16_t len, uint16_t offset)
 {
@@ -97,7 +97,7 @@ static ssize_t read_info(struct bt_conn *conn,
 				 sizeof(struct hids_info));
 }
 
-static ssize_t read_report_map(struct bt_conn *conn,
+static k_ssize_t read_report_map(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
@@ -105,7 +105,7 @@ static ssize_t read_report_map(struct bt_conn *conn,
 				 sizeof(report_map));
 }
 
-static ssize_t read_report(struct bt_conn *conn,
+static k_ssize_t read_report(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
 			   uint16_t len, uint16_t offset)
 {
@@ -118,14 +118,14 @@ static void input_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	simulate_input = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static ssize_t read_input_report(struct bt_conn *conn,
+static k_ssize_t read_input_report(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
 }
 
-static ssize_t write_ctrl_point(struct bt_conn *conn,
+static k_ssize_t write_ctrl_point(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)

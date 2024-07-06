@@ -135,7 +135,7 @@ static bool settings_fcb_check_duplicate(struct settings_fcb *cf,
 	return false;
 }
 
-static int read_entry_len(const struct fcb_entry_ctx *entry_ctx, off_t off)
+static int read_entry_len(const struct fcb_entry_ctx *entry_ctx, k_off_t off)
 {
 	if (off >= entry_ctx->loc.fe_data_len) {
 		return 0;
@@ -196,7 +196,7 @@ static int settings_fcb_load(struct settings_store *cs,
 		true);
 }
 
-static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
+static int read_handler(void *ctx, k_off_t off, char *buf, size_t *len)
 {
 	struct fcb_entry_ctx *entry_ctx = ctx;
 
@@ -311,7 +311,7 @@ static size_t get_len_cb(void *ctx)
 	return entry_ctx->loc.fe_data_len;
 }
 
-static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
+static int write_handler(void *ctx, k_off_t off, char const *buf, size_t len)
 {
 	struct fcb_entry_ctx *entry_ctx = ctx;
 

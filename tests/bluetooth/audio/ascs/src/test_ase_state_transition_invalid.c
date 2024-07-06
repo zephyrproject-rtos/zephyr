@@ -336,7 +336,7 @@ ZTEST_F(test_ase_state_transition_invalid, test_sink_client_state_streaming)
 static void expect_ase_state_releasing(struct bt_conn *conn, const struct bt_gatt_attr *ase)
 {
 	struct test_ase_chrc_value_hdr hdr = { 0xff };
-	ssize_t ret;
+	k_ssize_t ret;
 
 	zexpect_not_null(conn);
 	zexpect_not_null(ase);

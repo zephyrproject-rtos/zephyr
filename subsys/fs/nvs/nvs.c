@@ -104,7 +104,7 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 {
 	const uint8_t *data8 = (const uint8_t *)data;
 	int rc = 0;
-	off_t offset;
+	k_off_t offset;
 	size_t blen;
 	uint8_t buf[NVS_BLOCK_SIZE];
 
@@ -146,7 +146,7 @@ static int nvs_flash_rd(struct nvs_fs *fs, uint32_t addr, void *data,
 			 size_t len)
 {
 	int rc;
-	off_t offset;
+	k_off_t offset;
 
 	offset = fs->offset;
 	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
@@ -331,7 +331,7 @@ static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, size_t len)
 static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 {
 	int rc;
-	off_t offset;
+	k_off_t offset;
 
 	addr &= ADDR_SECT_MASK;
 
@@ -1054,7 +1054,7 @@ int nvs_mount(struct nvs_fs *fs)
 	return 0;
 }
 
-ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
+k_ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 {
 	int rc, gc_count;
 	size_t ate_size, data_size;
@@ -1191,7 +1191,7 @@ int nvs_delete(struct nvs_fs *fs, uint16_t id)
 	return nvs_write(fs, id, NULL, 0);
 }
 
-ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
+k_ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 		      uint16_t cnt)
 {
 	int rc;
@@ -1286,7 +1286,7 @@ err:
 	return rc;
 }
 
-ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len)
+k_ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len)
 {
 	int rc;
 
@@ -1294,7 +1294,7 @@ ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len)
 	return rc;
 }
 
-ssize_t nvs_calc_free_space(struct nvs_fs *fs)
+k_ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 {
 
 	int rc;

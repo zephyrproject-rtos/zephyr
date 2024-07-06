@@ -321,7 +321,7 @@ static ALWAYS_INLINE Qspi_Ip_MemoryConfigType *get_memory_config(const struct de
 #endif
 }
 
-static ALWAYS_INLINE bool area_is_subregion(const struct device *dev, off_t offset, size_t size)
+static ALWAYS_INLINE bool area_is_subregion(const struct device *dev, k_off_t offset, size_t size)
 {
 	Qspi_Ip_MemoryConfigType *memory_cfg = get_memory_config(dev);
 
@@ -567,7 +567,7 @@ static int nxp_s32_qspi_set_quad_mode(const struct device *dev, bool enabled)
 }
 #endif /* !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME) */
 
-static int nxp_s32_qspi_read(const struct device *dev, off_t offset, void *dest, size_t size)
+static int nxp_s32_qspi_read(const struct device *dev, k_off_t offset, void *dest, size_t size)
 {
 	struct nxp_s32_qspi_data *data = dev->data;
 	Qspi_Ip_StatusType status;
@@ -587,8 +587,8 @@ static int nxp_s32_qspi_read(const struct device *dev, off_t offset, void *dest,
 		status = Qspi_Ip_Read(data->instance, (uint32_t)offset, (uint8_t *)dest,
 				      (uint32_t)size);
 		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to read %zu bytes at 0x%lx (%d)",
-				size, offset, status);
+			LOG_ERR("Failed to read %zu bytes at 0x%x (%d)", size, (uint32_t)offset,
+				status);
 			ret = -EIO;
 		}
 
@@ -598,7 +598,8 @@ static int nxp_s32_qspi_read(const struct device *dev, off_t offset, void *dest,
 	return ret;
 }
 
-static int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void *src, size_t size)
+static int nxp_s32_qspi_write(const struct device *dev, k_off_t offset, const void *src,
+			      size_t size)
 {
 	struct nxp_s32_qspi_data *data = dev->data;
 	Qspi_Ip_MemoryConfigType *memory_cfg = get_memory_config(dev);
@@ -622,8 +623,8 @@ static int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void
 		status = Qspi_Ip_Program(data->instance, (uint32_t)offset,
 					(const uint8_t *)src, (uint32_t)len);
 		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to write %zu bytes at 0x%lx (%d)",
-				len, offset, status);
+			LOG_ERR("Failed to write %zu bytes at 0x%lx (%d)", len, (long)offset,
+				status);
 			ret = -EIO;
 			break;
 		}
@@ -637,8 +638,8 @@ static int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void
 			status = Qspi_Ip_ProgramVerify(data->instance, (uint32_t)offset,
 						       (const uint8_t *)src, (uint32_t)len);
 			if (status != STATUS_QSPI_IP_SUCCESS) {
-				LOG_ERR("Write verification failed at 0x%lx (%d)",
-					offset, status);
+				LOG_ERR("Write verification failed at 0x%lx (%d)", (long)offset,
+					status);
 				ret = -EIO;
 				break;
 			}
@@ -654,7 +655,7 @@ static int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void
 	return ret;
 }
 
-static int nxp_s32_qspi_erase_block(const struct device *dev, off_t offset,
+static int nxp_s32_qspi_erase_block(const struct device *dev, k_off_t offset,
 				    size_t size, size_t *erase_size)
 {
 	struct nxp_s32_qspi_data *data = dev->data;
@@ -694,7 +695,7 @@ static int nxp_s32_qspi_erase_block(const struct device *dev, off_t offset,
 	return ret;
 }
 
-static int nxp_s32_qspi_erase(const struct device *dev, off_t offset, size_t size)
+static int nxp_s32_qspi_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	struct nxp_s32_qspi_data *data = dev->data;
 	Qspi_Ip_MemoryConfigType *memory_cfg = get_memory_config(dev);
@@ -733,7 +734,7 @@ static int nxp_s32_qspi_erase(const struct device *dev, off_t offset, size_t siz
 							erase_size);
 				if (status != STATUS_QSPI_IP_SUCCESS) {
 					LOG_ERR("Erase verification failed at 0x%lx (%d)",
-						offset, status);
+						(long)offset, status);
 					ret = -EIO;
 					break;
 				}
@@ -771,7 +772,7 @@ static int nxp_s32_qspi_read_id(const struct device *dev, uint8_t *id)
 #endif /* CONFIG_FLASH_JESD216_API || !CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME */
 
 #if defined(CONFIG_FLASH_JESD216_API)
-static int nxp_s32_qspi_sfdp_read(const struct device *dev, off_t offset, void *buf, size_t len)
+static int nxp_s32_qspi_sfdp_read(const struct device *dev, k_off_t offset, void *buf, size_t len)
 {
 	struct nxp_s32_qspi_data *data = dev->data;
 	Qspi_Ip_StatusType status;

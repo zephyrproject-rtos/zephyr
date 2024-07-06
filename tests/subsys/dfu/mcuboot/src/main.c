@@ -27,7 +27,7 @@ ZTEST(mcuboot_interface, test_bank_erase)
 	const struct flash_area *fa;
 	uint32_t temp;
 	uint32_t temp2 = 0x5a5a5a5a;
-	off_t offs;
+	k_off_t offs;
 	int ret;
 
 	ret = flash_area_open(SLOT1_PARTITION_ID, &fa);

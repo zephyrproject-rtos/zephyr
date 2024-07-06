@@ -1743,7 +1743,7 @@ static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_BT_BAP_UNICAST */
 
 #if IS_BAP_INITIATOR
-static ssize_t parse_config_data_args(const struct shell *sh, size_t argn, size_t argc,
+static k_ssize_t parse_config_data_args(const struct shell *sh, size_t argn, size_t argc,
 				      char *argv[], struct bt_audio_codec_cfg *codec_cfg)
 {
 	for (; argn < argc; argn++) {
@@ -1907,7 +1907,7 @@ static ssize_t parse_config_data_args(const struct shell *sh, size_t argn, size_
 	return argn;
 }
 
-static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_t argc,
+static k_ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_t argc,
 				      char *argv[], struct bt_audio_codec_cfg *codec_cfg)
 {
 	for (; argn < argc; argn++) {
@@ -2248,7 +2248,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 				const char *arg = argv[argn];
 
 				if (strcmp(arg, "config") == 0) {
-					ssize_t ret;
+					k_ssize_t ret;
 
 					if (++argn == argc) {
 						shell_help(sh);
@@ -2270,7 +2270,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 					argn = ret;
 				} else if (strcmp(arg, "meta") == 0) {
-					ssize_t ret;
+					k_ssize_t ret;
 
 					if (++argn == argc) {
 						shell_help(sh);
@@ -4053,7 +4053,7 @@ static int cmd_bap(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_CMD_ARG_REGISTER(bap, &bap_cmds, "Bluetooth BAP shell commands", cmd_bap, 1, 1);
 
-static ssize_t connectable_ad_data_add(struct bt_data *data_array,
+static k_ssize_t connectable_ad_data_add(struct bt_data *data_array,
 				       size_t data_array_size)
 {
 	static const uint8_t ad_ext_uuid16[] = {
@@ -4136,7 +4136,7 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 	return ad_len;
 }
 
-static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
+static k_ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 					  const size_t data_array_size)
 {
 	static const uint8_t ad_ext_uuid16[] = {
@@ -4199,7 +4199,7 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
 			  const bool discoverable, const bool connectable)
 {
-	ssize_t ad_len = 0;
+	k_ssize_t ad_len = 0;
 
 	if (!discoverable) {
 		return 0;

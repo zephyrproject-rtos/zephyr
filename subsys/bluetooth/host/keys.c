@@ -352,7 +352,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	struct bt_keys *keys;
 	bt_addr_le_t addr;
 	uint8_t id;
-	ssize_t len;
+	k_ssize_t len;
 	int err;
 	char val[BT_KEYS_STORAGE_LEN];
 	const char *next;

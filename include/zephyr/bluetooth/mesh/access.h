@@ -10,8 +10,13 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/sys/util.h>
 #include <zephyr/settings/settings.h>
+#include <zephyr/types.h>
 #include <zephyr/bluetooth/mesh/msg.h>
 
 /* Internal macros used to initialize array members */
@@ -366,7 +371,7 @@ struct bt_mesh_model_op {
 	 *  message. If the message has fixed length then this value should
 	 *  be negative. Use BT_MESH_LEN_* macros when defining this value.
 	 */
-	const ssize_t len;
+	const k_ssize_t len;
 
 	/** @brief Handler function for this opcode.
 	 *

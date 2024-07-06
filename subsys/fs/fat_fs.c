@@ -189,7 +189,7 @@ static int fatfs_rename(struct fs_mount_t *mountp, const char *from,
 	return res;
 }
 
-static ssize_t fatfs_read(struct fs_file_t *zfp, void *ptr, size_t size)
+static k_ssize_t fatfs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 {
 	FRESULT res;
 	unsigned int br;
@@ -202,13 +202,13 @@ static ssize_t fatfs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 	return br;
 }
 
-static ssize_t fatfs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
+static k_ssize_t fatfs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 {
 	int res = -ENOTSUP;
 
 #if !defined(CONFIG_FS_FATFS_READ_ONLY)
 	unsigned int bw;
-	off_t pos = f_size((FIL *)zfp->filep);
+	k_off_t pos = f_size((FIL *)zfp->filep);
 	res = FR_OK;
 
 	/* FA_APPEND flag means that file has been opened for append.
@@ -234,10 +234,10 @@ static ssize_t fatfs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 	return res;
 }
 
-static int fatfs_seek(struct fs_file_t *zfp, off_t offset, int whence)
+static int fatfs_seek(struct fs_file_t *zfp, k_off_t offset, int whence)
 {
 	FRESULT res = FR_OK;
-	off_t pos;
+	k_off_t pos;
 
 	switch (whence) {
 	case FS_SEEK_SET:
@@ -262,17 +262,17 @@ static int fatfs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 	return translate_error(res);
 }
 
-static off_t fatfs_tell(struct fs_file_t *zfp)
+static k_off_t fatfs_tell(struct fs_file_t *zfp)
 {
 	return f_tell((FIL *)zfp->filep);
 }
 
-static int fatfs_truncate(struct fs_file_t *zfp, off_t length)
+static int fatfs_truncate(struct fs_file_t *zfp, k_off_t length)
 {
 	int res = -ENOTSUP;
 
 #if !defined(CONFIG_FS_FATFS_READ_ONLY)
-	off_t cur_length = f_size((FIL *)zfp->filep);
+	k_off_t cur_length = f_size((FIL *)zfp->filep);
 
 	/* f_lseek expands file if new position is larger than file size */
 	res = f_lseek(zfp->filep, length);

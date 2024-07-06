@@ -53,7 +53,7 @@ static void flash_xmc4xxx_page_layout(const struct device *dev,
 }
 #endif
 
-static int flash_xmc4xxx_read(const struct device *dev, off_t offset, void *data, size_t len)
+static int flash_xmc4xxx_read(const struct device *dev, k_off_t offset, void *data, size_t len)
 {
 	const struct flash_xmc4xxx_config *dev_config = dev->config;
 
@@ -67,7 +67,8 @@ static int flash_xmc4xxx_read(const struct device *dev, off_t offset, void *data
 static __aligned(4) uint8_t
 	aligned_page[DT_PROP(DT_INST(0, infineon_xmc4xxx_nv_flash), write_block_size)];
 
-static int flash_xmc4xxx_write(const struct device *dev, off_t offset, const void *data, size_t len)
+static int flash_xmc4xxx_write(const struct device *dev, k_off_t offset, const void *data,
+			       size_t len)
 {
 	struct flash_xmc4xxx_data *dev_data = dev->data;
 	const struct flash_xmc4xxx_config *dev_config = dev->config;
@@ -114,7 +115,7 @@ static int flash_xmc4xxx_write(const struct device *dev, off_t offset, const voi
 }
 
 #if CONFIG_FLASH_PAGE_LAYOUT
-static int flash_xmc4xxx_erase(const struct device *dev, off_t offset, size_t size)
+static int flash_xmc4xxx_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	struct flash_xmc4xxx_data *dev_data = dev->data;
 	const struct flash_xmc4xxx_config *dev_config = dev->config;
@@ -163,7 +164,7 @@ finish:
 	return ret;
 }
 #else
-static int flash_xmc4xxx_erase(const struct device *dev, off_t offset, size_t size)
+static int flash_xmc4xxx_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);

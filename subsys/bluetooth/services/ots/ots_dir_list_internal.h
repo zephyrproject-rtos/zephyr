@@ -33,7 +33,7 @@ extern "C" {
 struct bt_ots_dir_list {
 	struct net_buf_simple net_buf;
 	struct bt_gatt_ots_object *dir_list_obj;
-	off_t anchor_offset;
+	k_off_t anchor_offset;
 	struct bt_gatt_ots_object *anchor_object;
 	uint8_t _content[OTS_DIR_LIST_BUFFER_SIZE];
 };
@@ -160,7 +160,7 @@ void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manage
 			      struct bt_gatt_ots_object *cur_obj);
 void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager);
 ssize_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void *obj_manager,
-				    void **data, size_t len, off_t offset);
+				    void **data, size_t len, k_off_t offset);
 bool bt_ots_dir_list_is_idle(const struct bt_ots_dir_list *dir_list);
 
 #ifdef __cplusplus

@@ -623,7 +623,7 @@ static int cmd_load(const struct shell *sh, size_t argc, char *argv[])
 	int result;
 	uint32_t addr;
 	uint32_t size;
-	ssize_t write_block_size;
+	k_ssize_t write_block_size;
 
 	result = parse_helper(sh, &argc, &argv, &flash_dev, &addr);
 	if (result) {
@@ -691,8 +691,8 @@ static int cmd_page_info(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	shell_print(sh, "Page for address 0x%x:\nstart offset: 0x%lx\nsize: %zu\nindex: %d",
-			addr, info.start_offset, info.size, info.index);
+	shell_print(sh, "Page for address 0x%x:\nstart offset: 0x%lx\nsize: %zu\nindex: %d", addr,
+		    (long)info.start_offset, info.size, info.index);
 	return 0;
 }
 

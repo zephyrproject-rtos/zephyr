@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <zephyr/types.h>
+
 #include "settings_test.h"
 #include "settings_priv.h"
 
@@ -142,12 +144,11 @@ void config_wipe_srcs(void)
 	settings_save_dst = NULL;
 }
 
-int fsutil_read_file(const char *path, off_t offset, size_t len, void *dst,
-		     size_t *out_len)
+int fsutil_read_file(const char *path, k_off_t offset, size_t len, void *dst, size_t *out_len)
 {
 	struct fs_file_t file;
 	int rc;
-	ssize_t r_len = 0;
+	k_ssize_t r_len = 0;
 
 	fs_file_t_init(&file);
 

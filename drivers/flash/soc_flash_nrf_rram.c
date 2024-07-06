@@ -97,11 +97,11 @@ BUILD_ASSERT((PAGE_SIZE % (WRITE_LINE_SIZE) == 0),
 #endif
 
 static int write_op(void *context); /* instance of flash_op_handler_t */
-static int write_synchronously(off_t addr, const void *data, size_t len);
+static int write_synchronously(k_off_t addr, const void *data, size_t len);
 
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
-static inline bool is_within_bounds(off_t addr, size_t len, off_t boundary_start,
+static inline bool is_within_bounds(k_off_t addr, size_t len, k_off_t boundary_start,
 				    size_t boundary_size)
 {
 	return (addr >= boundary_start && (addr < (boundary_start + boundary_size)) &&
@@ -109,7 +109,7 @@ static inline bool is_within_bounds(off_t addr, size_t len, off_t boundary_start
 }
 
 #if WRITE_BUFFER_ENABLE
-static void commit_changes(off_t addr, size_t len)
+static void commit_changes(k_off_t addr, size_t len)
 {
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	if (nrf_rramc_empty_buffer_check(NRF_RRAMC)) {
@@ -151,7 +151,7 @@ static void commit_changes(off_t addr, size_t len)
 }
 #endif
 
-static void rram_write(off_t addr, const void *data, size_t len)
+static void rram_write(k_off_t addr, const void *data, size_t len)
 {
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
@@ -160,9 +160,9 @@ static void rram_write(off_t addr, const void *data, size_t len)
 #endif
 
 	if (data) {
-		memcpy((void *)addr, data, len);
+		memcpy((void *)(uintptr_t)addr, data, len);
 	} else {
-		memset((void *)addr, ERASE_VALUE, len);
+		memset((void *)(uintptr_t)addr, ERASE_VALUE, len);
 	}
 
 	barrier_dmem_fence_full(); /* Barrier following our last write. */
@@ -222,7 +222,7 @@ static int write_op(void *context)
 	return FLASH_OP_DONE;
 }
 
-static int write_synchronously(off_t addr, const void *data, size_t len)
+static int write_synchronously(k_off_t addr, const void *data, size_t len)
 {
 	struct flash_context context = {
 		.data_addr = (uint32_t)data,
@@ -239,7 +239,7 @@ static int write_synchronously(off_t addr, const void *data, size_t len)
 
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
-static int nrf_write(off_t addr, const void *data, size_t len)
+static int nrf_write(k_off_t addr, const void *data, size_t len)
 {
 	int ret = 0;
 
@@ -252,7 +252,7 @@ static int nrf_write(off_t addr, const void *data, size_t len)
 		return 0;
 	}
 
-	LOG_DBG("Write: %p:%zu", (void *)addr, len);
+	LOG_DBG("Write: %p:%zu", (void *)(uintptr_t)addr, len);
 
 	SYNC_LOCK();
 
@@ -270,7 +270,7 @@ static int nrf_write(off_t addr, const void *data, size_t len)
 	return ret;
 }
 
-static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_t len)
+static int nrf_rram_read(const struct device *dev, k_off_t addr, void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -279,12 +279,12 @@ static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_
 	}
 	addr += RRAM_START;
 
-	memcpy(data, (void *)addr, len);
+	memcpy(data, (void *)(uintptr_t)addr, len);
 
 	return 0;
 }
 
-static int nrf_rram_write(const struct device *dev, off_t addr, const void *data, size_t len)
+static int nrf_rram_write(const struct device *dev, k_off_t addr, const void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -295,7 +295,7 @@ static int nrf_rram_write(const struct device *dev, off_t addr, const void *data
 	return nrf_write(addr, data, len);
 }
 
-static int nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
+static int nrf_rram_erase(const struct device *dev, k_off_t addr, size_t len)
 {
 	ARG_UNUSED(dev);
 

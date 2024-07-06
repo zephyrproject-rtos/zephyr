@@ -263,7 +263,7 @@ static int allocate_new_file(struct fs_file_t *file)
 	int curr_file_num;
 	struct fs_dirent ent;
 	char fname[MAX_PATH_LEN];
-	off_t file_size;
+	k_off_t file_size;
 
 	assert(file);
 

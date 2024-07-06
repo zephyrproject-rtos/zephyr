@@ -12,7 +12,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/net/ethernet.h>

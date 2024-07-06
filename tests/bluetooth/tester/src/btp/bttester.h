@@ -44,7 +44,7 @@ void tester_rsp_buffer_allocate(size_t len, uint8_t **data);
 struct btp_handler {
 	uint8_t opcode;
 	uint8_t index;
-	ssize_t expect_len;
+	k_ssize_t expect_len;
 	uint8_t (*func)(const void *cmd, uint16_t cmd_len,
 			void *rsp, uint16_t *rsp_len);
 };

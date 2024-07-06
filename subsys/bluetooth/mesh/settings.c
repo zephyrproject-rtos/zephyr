@@ -63,7 +63,7 @@ static ATOMIC_DEFINE(pending_flags, BT_MESH_SETTINGS_FLAG_COUNT);
 int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
 			 void *out, size_t read_len)
 {
-	ssize_t len;
+	k_ssize_t len;
 
 	len = read_cb(cb_arg, out, read_len);
 	if (len < 0) {

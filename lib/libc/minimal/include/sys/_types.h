@@ -12,6 +12,10 @@
 
 #include <stdint.h>
 
+#include <zephyr/types.h>
+
+typedef k_off_t _OFF_T_;
+typedef k_ssize_t _SSIZE_T_;
 typedef int64_t _TIME_T_;
 typedef int32_t _SUSECONDS_T_;
 

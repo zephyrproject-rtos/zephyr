@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_offload.h>
@@ -286,9 +285,7 @@ int modem_detect_apn(const char *imsi)
 MODEM_CMD_DEFINE(on_cmd_sockwrite);
 
 /* send binary data via the +USO[ST/WR] commands */
-static ssize_t send_socket_data(void *obj,
-				const struct msghdr *msg,
-				k_timeout_t timeout)
+static k_ssize_t send_socket_data(void *obj, const struct msghdr *msg, k_timeout_t timeout)
 {
 	int ret;
 	char send_buf[sizeof("AT+USO**=###,"
@@ -446,11 +443,9 @@ exit:
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 /* send binary data via the +USO[ST/WR] commands */
-static ssize_t send_cert(struct modem_socket *sock,
-			 struct modem_cmd *handler_cmds,
-			 size_t handler_cmds_len,
-			 const char *cert_data, size_t cert_len,
-			 int cert_type)
+static k_ssize_t send_cert(struct modem_socket *sock, struct modem_cmd *handler_cmds,
+			      size_t handler_cmds_len, const char *cert_data, size_t cert_len,
+			      int cert_type)
 {
 	int ret;
 	char *filename = "ca";
@@ -1599,9 +1594,8 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	return 0;
 }
 
-static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
-				int flags, struct sockaddr *from,
-				socklen_t *fromlen)
+static k_ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags,
+				     struct sockaddr *from, socklen_t *fromlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret, next_packet_size;
@@ -1684,9 +1678,8 @@ exit:
 	return ret;
 }
 
-static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
-			      int flags, const struct sockaddr *to,
-			      socklen_t tolen)
+static k_ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
+				   const struct sockaddr *to, socklen_t tolen)
 {
 	struct iovec msg_iov = {
 		.iov_base = (void *)buf,
@@ -1733,7 +1726,7 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 		return modem_socket_poll_update(obj, pfd, pev);
 	}
 
-	case F_GETFL:
+	case ZVFS_F_GETFL:
 		return 0;
 
 	default:
@@ -1742,19 +1735,19 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 	}
 }
 
-static ssize_t offload_read(void *obj, void *buffer, size_t count)
+static k_ssize_t offload_read(void *obj, void *buffer, size_t count)
 {
 	return offload_recvfrom(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t offload_write(void *obj, const void *buffer, size_t count)
+static k_ssize_t offload_write(void *obj, const void *buffer, size_t count)
 {
 	return offload_sendto(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static k_ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
-	ssize_t sent = 0;
+	k_ssize_t sent = 0;
 	int bkp_iovec_idx;
 	struct iovec bkp_iovec = {0};
 	struct msghdr crafted_msg = {
@@ -1830,7 +1823,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 		sent += ret;
 	}
 
-	return (ssize_t)sent;
+	return (k_ssize_t)sent;
 }
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)

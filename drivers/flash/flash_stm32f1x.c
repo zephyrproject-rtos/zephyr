@@ -39,7 +39,7 @@ typedef uint8_t flash_prg_t;
 #error Unknown erase value
 #endif
 
-static unsigned int get_page(off_t offset)
+static unsigned int get_page(k_off_t offset)
 {
 	return offset / FLASH_PAGE_SIZE;
 }
@@ -121,11 +121,10 @@ static void erase_page_end(FLASH_TypeDef *regs)
 }
 #endif
 
-static int write_value(const struct device *dev, off_t offset,
+static int write_value(const struct device *dev, k_off_t offset,
 		       flash_prg_t val)
 {
-	volatile flash_prg_t *flash = (flash_prg_t *)(
-		offset + FLASH_STM32_BASE_ADDRESS);
+	volatile flash_prg_t *flash = (flash_prg_t *)((uintptr_t)offset + FLASH_STM32_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
 

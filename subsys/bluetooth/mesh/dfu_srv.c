@@ -463,7 +463,7 @@ static int dfu_srv_settings_set(const struct bt_mesh_model *mod, const char *nam
 				void *cb_arg)
 {
 	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
-	ssize_t len;
+	k_ssize_t len;
 
 	if (len_rd < sizeof(srv->update)) {
 		return -EINVAL;

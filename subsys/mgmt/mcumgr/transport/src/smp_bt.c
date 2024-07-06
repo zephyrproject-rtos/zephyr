@@ -233,10 +233,8 @@ static void conn_param_smp_enable(struct bt_conn *conn)
 /**
  * Write handler for the SMP characteristic; processes an incoming SMP request.
  */
-static ssize_t smp_bt_chr_write(struct bt_conn *conn,
-				const struct bt_gatt_attr *attr,
-				const void *buf, uint16_t len, uint16_t offset,
-				uint8_t flags)
+static k_ssize_t smp_bt_chr_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				  const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct conn_param_data *cpd = conn_param_data_get(conn);
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY

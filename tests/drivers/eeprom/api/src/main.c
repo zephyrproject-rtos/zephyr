@@ -3,9 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stddef.h>
+#include <stdint.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/eeprom.h>
+#include <zephyr/types.h>
 #include <zephyr/ztest.h>
 
 /* There is no obvious way to pass this to tests, so use a global */
@@ -40,7 +43,7 @@ ZTEST_USER(eeprom, test_write_rewrite)
 	const uint8_t wr_buf2[sizeof(wr_buf1)] = { 0xAA, 0xBB, 0xCC, 0xDD };
 	uint8_t rd_buf[sizeof(wr_buf1)];
 	size_t size;
-	off_t address;
+	k_off_t address;
 	int rc;
 
 	size = eeprom_get_size(eeprom);
@@ -80,7 +83,7 @@ ZTEST_USER(eeprom, test_write_at_fixed_address)
 	const uint8_t wr_buf1[4] = { 0xFF, 0xEE, 0xDD, 0xCC };
 	uint8_t rd_buf[sizeof(wr_buf1)];
 	size_t size;
-	const off_t address = 0;
+	const k_off_t address = 0;
 	int rc;
 
 	size = eeprom_get_size(eeprom);
@@ -104,7 +107,7 @@ ZTEST_USER(eeprom, test_write_byte)
 	uint8_t rd = 0xff;
 	int rc;
 
-	for (off_t address = 0; address < 16; address++) {
+	for (k_off_t address = 0; address < 16; address++) {
 		rc = eeprom_write(eeprom, address, &wr, 1);
 		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
 
@@ -123,7 +126,7 @@ ZTEST_USER(eeprom, test_write_at_increasing_address)
 	uint8_t rd_buf[sizeof(wr_buf1)];
 	int rc;
 
-	for (off_t address = 0; address < 4; address++) {
+	for (k_off_t address = 0; address < 4; address++) {
 		rc = eeprom_write(eeprom, address, wr_buf1, sizeof(wr_buf1));
 		zassert_equal(0, rc, "Unexpected error code (%d)", rc);
 

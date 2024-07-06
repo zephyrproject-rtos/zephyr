@@ -43,7 +43,7 @@ static const struct flash_parameters flash_lpc_parameters = {
 	.erase_value = 0xff,
 };
 
-static inline void prepare_erase_write(off_t offset, size_t len,
+static inline void prepare_erase_write(k_off_t offset, size_t len,
 						uint32_t sector_size)
 {
 	uint32_t start;
@@ -54,7 +54,7 @@ static inline void prepare_erase_write(off_t offset, size_t len,
 	FLASHIAP_PrepareSectorForWrite(start, stop);
 }
 
-static int flash_lpc_erase(const struct device *dev, off_t offset, size_t len)
+static int flash_lpc_erase(const struct device *dev, k_off_t offset, size_t len)
 {
 	struct flash_priv *priv = dev->data;
 	status_t rc;
@@ -81,7 +81,7 @@ static int flash_lpc_erase(const struct device *dev, off_t offset, size_t len)
 	return (rc == kStatus_FLASHIAP_Success) ? 0 : -EINVAL;
 }
 
-static int flash_lpc_read(const struct device *dev, off_t offset,
+static int flash_lpc_read(const struct device *dev, k_off_t offset,
 				void *data, size_t len)
 {
 	struct flash_priv *priv = dev->data;
@@ -94,7 +94,7 @@ static int flash_lpc_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_lpc_write(const struct device *dev, off_t offset,
+static int flash_lpc_write(const struct device *dev, k_off_t offset,
 				const void *data, size_t len)
 {
 	struct flash_priv *priv = dev->data;

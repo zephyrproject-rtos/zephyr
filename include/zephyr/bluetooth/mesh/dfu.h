@@ -7,7 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_H__
 
-#include <sys/types.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/mesh/blob.h>

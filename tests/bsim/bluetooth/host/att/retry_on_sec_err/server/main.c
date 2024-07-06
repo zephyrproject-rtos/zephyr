@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(server, LOG_LEVEL_DBG);
 
-static ssize_t read_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+static k_ssize_t read_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			 uint16_t buf_len, uint16_t offset)
 {
 	return 0;

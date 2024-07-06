@@ -12,7 +12,6 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <sys/types.h>
 #include <zephyr/device.h>
 #include <zephyr/storage/flash_map.h>
 #include "flash_map_priv.h"
@@ -53,8 +52,7 @@ void flash_area_close(const struct flash_area *fa)
 	/* nothing to do for now */
 }
 
-int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
-		    size_t len)
+int flash_area_read(const struct flash_area *fa, k_off_t off, void *dst, size_t len)
 {
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;
@@ -63,8 +61,7 @@ int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
 	return flash_read(fa->fa_dev, fa->fa_off + off, dst, len);
 }
 
-int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
-		     size_t len)
+int flash_area_write(const struct flash_area *fa, k_off_t off, const void *src, size_t len)
 {
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;
@@ -73,7 +70,7 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 	return flash_write(fa->fa_dev, fa->fa_off + off, (void *)src, len);
 }
 
-int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
+int flash_area_erase(const struct flash_area *fa, k_off_t off, size_t len)
 {
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;
@@ -82,7 +79,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 	return flash_erase(fa->fa_dev, fa->fa_off + off, len);
 }
 
-int flash_area_flatten(const struct flash_area *fa, off_t off, size_t len)
+int flash_area_flatten(const struct flash_area *fa, k_off_t off, size_t len)
 {
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;

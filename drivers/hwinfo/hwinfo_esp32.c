@@ -13,7 +13,7 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 #if !defined(CONFIG_SOC_SERIES_ESP32)
 	uint32_t rdata1 = sys_read32(EFUSE_RD_MAC_SPI_SYS_0_REG);

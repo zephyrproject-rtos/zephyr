@@ -122,7 +122,7 @@ fcb_append_finish(struct fcb *fcb, struct fcb_entry *loc)
 {
 	int rc;
 	uint8_t em[fcb->f_align];
-	off_t off;
+	k_off_t off;
 
 	(void)memset(em, 0xFF, sizeof(em));
 

@@ -74,7 +74,7 @@ static int read_preset_response(struct has_client *client);
 static int preset_list_changed(struct has_client *client);
 static int preset_list_changed_generic_update_tail(struct has_client *client);
 static int preset_list_changed_record_deleted_last(struct has_client *client);
-static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				   const void *data, uint16_t len, uint16_t offset, uint8_t flags);
 
 static void preset_cp_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -82,7 +82,7 @@ static void preset_cp_cfg_changed(const struct bt_gatt_attr *attr, uint16_t valu
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
 
-static ssize_t read_active_preset_index(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_active_preset_index(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 					void *buf, uint16_t len, uint16_t offset)
 {
 	uint8_t active_index;
@@ -106,7 +106,7 @@ static void features_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value
 }
 #endif /* CONFIG_BT_HAS_FEATURES_NOTIFIABLE */
 
-static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+static k_ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
 	LOG_DBG("conn %p attr %p offset %d", (void *)conn, attr, offset);
@@ -895,7 +895,7 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 	struct client_context_store store;
 	struct client_context *context;
 	bt_addr_le_t addr;
-	ssize_t len;
+	k_ssize_t len;
 	int err;
 
 	if (!name) {
@@ -1447,7 +1447,7 @@ static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simp
 	return BT_HAS_ERR_INVALID_OPCODE;
 }
 
-static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				   const void *data, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct net_buf_simple buf;

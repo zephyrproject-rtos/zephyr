@@ -46,7 +46,7 @@ static uint8_t vnd_value[VND_MAX_LEN + 1] = { 'V', 'e', 'n', 'd', 'o', 'r'};
 static uint8_t vnd_auth_value[VND_MAX_LEN + 1] = { 'V', 'e', 'n', 'd', 'o', 'r'};
 static uint8_t vnd_wwr_value[VND_MAX_LEN + 1] = { 'V', 'e', 'n', 'd', 'o', 'r' };
 
-static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
@@ -55,7 +55,7 @@ static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(value));
 }
 
-static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags)
 {
@@ -102,7 +102,7 @@ static uint8_t vnd_long_value[VND_LONG_MAX_LEN + 1] = {
 		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '6',
 		  '.', ' ' };
 
-static ssize_t write_long_vnd(struct bt_conn *conn,
+static k_ssize_t write_long_vnd(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
 			      uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -131,7 +131,7 @@ static struct bt_gatt_cep vnd_long_cep = {
 
 static int signed_value;
 
-static ssize_t read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			   void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
@@ -140,7 +140,7 @@ static ssize_t read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr
 				 sizeof(signed_value));
 }
 
-static ssize_t write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			    const void *buf, uint16_t len, uint16_t offset,
 			    uint8_t flags)
 {
@@ -161,7 +161,7 @@ static const struct bt_uuid_128 vnd_signed_uuid = BT_UUID_INIT_128(
 static const struct bt_uuid_128 vnd_write_cmd_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef4));
 
-static ssize_t write_without_rsp_vnd(struct bt_conn *conn,
+static k_ssize_t write_without_rsp_vnd(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     const void *buf, uint16_t len, uint16_t offset,
 				     uint8_t flags)

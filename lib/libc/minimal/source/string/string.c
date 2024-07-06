@@ -7,8 +7,10 @@
  */
 
 #include <string.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <sys/types.h>
+
+#include <zephyr/toolchain.h>
 
 /**
  *
@@ -284,7 +286,7 @@ void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
 	const unsigned char *s_byte = (const unsigned char *)s;
 
 #if !defined(CONFIG_MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE)
-	const uintptr_t mask = sizeof(mem_word_t) - 1;
+	const uintptr_t mask = sizeof(uintptr_t) - 1;
 
 	if ((((uintptr_t)d ^ (uintptr_t)s_byte) & mask) == 0) {
 
@@ -300,12 +302,12 @@ void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
 
 		/* do word-sized copying as long as possible */
 
-		mem_word_t *d_word = (mem_word_t *)d_byte;
-		const mem_word_t *s_word = (const mem_word_t *)s_byte;
+		uintptr_t *d_word = (uintptr_t *)d_byte;
+		const uintptr_t *s_word = (const uintptr_t *)s_byte;
 
-		while (n >= sizeof(mem_word_t)) {
+		while (n >= sizeof(uintptr_t)) {
 			*(d_word++) = *(s_word++);
-			n -= sizeof(mem_word_t);
+			n -= sizeof(uintptr_t);
 		}
 
 		d_byte = (unsigned char *)d_word;
@@ -338,7 +340,7 @@ void *memset(void *buf, int c, size_t n)
 	unsigned char c_byte = (unsigned char)c;
 
 #if !defined(CONFIG_MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE)
-	while (((uintptr_t)d_byte) & (sizeof(mem_word_t) - 1)) {
+	while (((uintptr_t)d_byte) & (sizeof(uintptr_t) - 1)) {
 		if (n == 0) {
 			return buf;
 		}
@@ -348,8 +350,8 @@ void *memset(void *buf, int c, size_t n)
 
 	/* do word-sized initialization as long as possible */
 
-	mem_word_t *d_word = (mem_word_t *)d_byte;
-	mem_word_t c_word = (mem_word_t)c_byte;
+	uintptr_t *d_word = (uintptr_t *)d_byte;
+	uintptr_t c_word = (uintptr_t)c_byte;
 
 	c_word |= c_word << 8;
 	c_word |= c_word << 16;
@@ -357,9 +359,9 @@ void *memset(void *buf, int c, size_t n)
 	c_word |= c_word << 32;
 #endif
 
-	while (n >= sizeof(mem_word_t)) {
+	while (n >= sizeof(uintptr_t)) {
 		*(d_word++) = c_word;
-		n -= sizeof(mem_word_t);
+		n -= sizeof(uintptr_t);
 	}
 
 	/* do byte-sized initialization until finished */

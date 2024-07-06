@@ -34,7 +34,7 @@ static struct bt_conn *default_conn;
 static struct k_poll_signal disconn_signal;
 static struct k_poll_signal passkey_enter_signal;
 
-static ssize_t read_key_material(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+static k_ssize_t read_key_material(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, attr->user_data,

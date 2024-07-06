@@ -30,12 +30,12 @@ static const struct flash_parameters flash_gecko_parameters = {
 	.erase_value = 0xff,
 };
 
-static bool write_range_is_valid(off_t offset, uint32_t size);
-static bool read_range_is_valid(off_t offset, uint32_t size);
-static int erase_flash_block(off_t offset, size_t size);
+static bool write_range_is_valid(k_off_t offset, uint32_t size);
+static bool read_range_is_valid(k_off_t offset, uint32_t size);
+static int erase_flash_block(k_off_t offset, size_t size);
 static void flash_gecko_write_protection(bool enable);
 
-static int flash_gecko_read(const struct device *dev, off_t offset,
+static int flash_gecko_read(const struct device *dev, k_off_t offset,
 			    void *data,
 			    size_t size)
 {
@@ -52,7 +52,7 @@ static int flash_gecko_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_gecko_write(const struct device *dev, off_t offset,
+static int flash_gecko_write(const struct device *dev, k_off_t offset,
 			     const void *data, size_t size)
 {
 	struct flash_gecko_data *const dev_data = dev->data;
@@ -83,7 +83,7 @@ static int flash_gecko_write(const struct device *dev, off_t offset,
 	return ret;
 }
 
-static int flash_gecko_erase(const struct device *dev, off_t offset,
+static int flash_gecko_erase(const struct device *dev, k_off_t offset,
 			     size_t size)
 {
 	struct flash_gecko_data *const dev_data = dev->data;
@@ -137,25 +137,25 @@ static void flash_gecko_write_protection(bool enable)
  * - A flash address to write to must be aligned to words.
  * - Number of bytes to write must be divisible by 4.
  */
-static bool write_range_is_valid(off_t offset, uint32_t size)
+static bool write_range_is_valid(k_off_t offset, uint32_t size)
 {
 	return read_range_is_valid(offset, size)
 		&& (offset % sizeof(uint32_t) == 0)
 		&& (size % 4 == 0U);
 }
 
-static bool read_range_is_valid(off_t offset, uint32_t size)
+static bool read_range_is_valid(k_off_t offset, uint32_t size)
 {
 	return (offset + size) <= (CONFIG_FLASH_SIZE * 1024);
 }
 
-static int erase_flash_block(off_t offset, size_t size)
+static int erase_flash_block(k_off_t offset, size_t size)
 {
 	MSC_Status_TypeDef msc_ret;
 	void *address;
 	int ret = 0;
 
-	for (off_t tmp = offset; tmp < offset + size; tmp += FLASH_PAGE_SIZE) {
+	for (k_off_t tmp = offset; tmp < offset + size; tmp += FLASH_PAGE_SIZE) {
 		address = (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + tmp;
 		msc_ret = MSC_ErasePage(address);
 		if (msc_ret < 0) {

@@ -15,7 +15,7 @@
 #define HAD_PSM_RESTART_BIT BIT(VREG_AND_CHIP_RESET_CHIP_RESET_HAD_PSM_RESTART_LSB)
 #define HAD_POR_BIT BIT(VREG_AND_CHIP_RESET_CHIP_RESET_HAD_POR_LSB)
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	uint8_t id[FLASH_RUID_DATA_BYTES];
 	uint32_t key;

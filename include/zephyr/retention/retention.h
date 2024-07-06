@@ -14,7 +14,6 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/types.h>
@@ -32,12 +31,12 @@ extern "C" {
  * @{
  */
 
-typedef ssize_t (*retention_size_api)(const struct device *dev);
+typedef k_ssize_t (*retention_size_api)(const struct device *dev);
 typedef int (*retention_is_valid_api)(const struct device *dev);
-typedef int (*retention_read_api)(const struct device *dev, off_t offset, uint8_t *buffer,
+typedef int (*retention_read_api)(const struct device *dev, k_off_t offset, uint8_t *buffer,
 				  size_t size);
-typedef int (*retention_write_api)(const struct device *dev, off_t offset,
-				   const uint8_t *buffer, size_t size);
+typedef int (*retention_write_api)(const struct device *dev, k_off_t offset, const uint8_t *buffer,
+				   size_t size);
 typedef int (*retention_clear_api)(const struct device *dev);
 
 struct retention_api {
@@ -56,7 +55,7 @@ struct retention_api {
  * @retval		Positive value indicating size in bytes on success, else negative errno
  *			code.
  */
-ssize_t retention_size(const struct device *dev);
+k_ssize_t retention_size(const struct device *dev);
 
 /**
  * @brief		Checks if the underlying data in the retention area is valid or not.
@@ -81,7 +80,7 @@ int retention_is_valid(const struct device *dev);
  * @retval 0		If successful.
  * @retval -errno	Error code code.
  */
-int retention_read(const struct device *dev, off_t offset, uint8_t *buffer, size_t size);
+int retention_read(const struct device *dev, k_off_t offset, uint8_t *buffer, size_t size);
 
 /**
  * @brief		Writes data to the retention area (underlying data does not need to be
@@ -95,7 +94,7 @@ int retention_read(const struct device *dev, off_t offset, uint8_t *buffer, size
  *
  * @retval		0 on success else negative errno code.
  */
-int retention_write(const struct device *dev, off_t offset, const uint8_t *buffer, size_t size);
+int retention_write(const struct device *dev, k_off_t offset, const uint8_t *buffer, size_t size);
 
 /**
  * @brief		Clears all data in the retention area (sets it to 0)

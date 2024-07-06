@@ -286,17 +286,17 @@ ZTEST(lib_stream_flash, test_stream_flash_buf_size_greater_than_page_size)
 	zassert_true(rc < 0, "expected failure");
 }
 
-static int bad_read(const struct device *dev, off_t off, void *data, size_t len)
+static int bad_read(const struct device *dev, k_off_t off, void *data, size_t len)
 {
 	return -EINVAL;
 }
 
-static int fake_write(const struct device *dev, off_t off, const void *data, size_t len)
+static int fake_write(const struct device *dev, k_off_t off, const void *data, size_t len)
 {
 	return 0;
 }
 
-static int bad_write(const struct device *dev, off_t off, const void *data, size_t len)
+static int bad_write(const struct device *dev, k_off_t off, const void *data, size_t len)
 {
 	return -EINVAL;
 }
@@ -423,7 +423,7 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_whole_page)
 }
 
 /* Erase that never completes successfully */
-static int bad_erase(const struct device *dev, off_t offset, size_t size)
+static int bad_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	return -EINVAL;
 }
@@ -558,8 +558,8 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_resume)
 	size_t bytes_written_old;
 	size_t bytes_written;
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	off_t erase_offset_old;
-	off_t erase_offset;
+	k_off_t erase_offset_old;
+	k_off_t erase_offset;
 #endif
 
 	clear_all_progress();
@@ -624,8 +624,8 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_clear)
 	size_t bytes_written_old;
 	size_t bytes_written;
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	off_t erase_offset_old;
-	off_t erase_offset;
+	k_off_t erase_offset_old;
+	k_off_t erase_offset;
 #endif
 
 	clear_all_progress();

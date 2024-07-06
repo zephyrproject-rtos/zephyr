@@ -29,7 +29,7 @@ static const struct flash_parameters flash_smartbond_parameters = {
 	.erase_value = 0xff,
 };
 
-static bool range_is_valid(off_t offset, uint32_t size)
+static bool range_is_valid(k_off_t offset, uint32_t size)
 {
 	return (offset + size) <= (CONFIG_FLASH_SIZE * 1024);
 }
@@ -145,7 +145,7 @@ static __ramfunc void qspic_write(uint32_t address, const uint8_t *data, size_t 
 	}
 }
 
-static int flash_smartbond_read(const struct device *dev, off_t offset,
+static int flash_smartbond_read(const struct device *dev, k_off_t offset,
 			      void *data, size_t size)
 {
 	const struct flash_smartbond_config *config = dev->config;
@@ -164,7 +164,7 @@ static int flash_smartbond_read(const struct device *dev, off_t offset,
 }
 
 static __ramfunc int flash_smartbond_write(const struct device *dev,
-					 off_t offset, const void *data,
+					 k_off_t offset, const void *data,
 					 size_t size)
 {
 	unsigned int key;
@@ -194,7 +194,7 @@ static __ramfunc int flash_smartbond_write(const struct device *dev,
 	return 0;
 }
 
-static __ramfunc int flash_smartbond_erase(const struct device *dev, off_t offset,
+static __ramfunc int flash_smartbond_erase(const struct device *dev, k_off_t offset,
 					 size_t size)
 {
 	unsigned int key;

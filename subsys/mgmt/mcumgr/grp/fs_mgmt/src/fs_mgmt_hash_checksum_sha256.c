@@ -37,7 +37,7 @@ static int fs_mgmt_hash_checksum_sha256(struct fs_file_t *file, uint8_t *output,
 					size_t *out_len, size_t len)
 {
 	int rc = MGMT_ERR_EUNKNOWN;
-	ssize_t bytes_read = 0;
+	k_ssize_t bytes_read = 0;
 	size_t read_size = CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE;
 	uint8_t buffer[CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE];
 	hash_ctx_t hash_ctx;

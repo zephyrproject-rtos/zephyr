@@ -1012,7 +1012,7 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 	return 0;
 }
 
-static ssize_t write_control_point(struct bt_conn *conn,
+static k_ssize_t write_control_point(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   const void *data, uint16_t len,
 				   uint16_t offset, uint8_t flags)
@@ -1117,7 +1117,7 @@ static void recv_state_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_recv_state(struct bt_conn *conn,
+static k_ssize_t read_recv_state(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
@@ -1126,7 +1126,7 @@ static ssize_t read_recv_state(struct bt_conn *conn,
 	struct bt_bap_scan_delegator_recv_state *state = &recv_state->state;
 
 	if (recv_state->active) {
-		ssize_t ret_val;
+		k_ssize_t ret_val;
 		int err;
 
 		LOG_DBG("Index %u: Source ID 0x%02x", idx, state->src_id);

@@ -8,7 +8,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/zvfs/eventfd.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/fdtable.h>
@@ -25,8 +24,8 @@ struct zvfs_eventfd {
 	int flags;
 };
 
-static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
-			     int (*op)(struct zvfs_eventfd *efd, zvfs_eventfd_t *value));
+static k_ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
+				       int (*op)(struct zvfs_eventfd *efd, zvfs_eventfd_t *value));
 
 SYS_BITARRAY_DEFINE_STATIC(efds_bitarray, CONFIG_ZVFS_EVENTFD_MAX);
 static struct zvfs_eventfd efds[CONFIG_ZVFS_EVENTFD_MAX];
@@ -159,12 +158,12 @@ static int zvfs_eventfd_write_locked(struct zvfs_eventfd *efd, zvfs_eventfd_t *v
 	return 0;
 }
 
-static ssize_t zvfs_eventfd_read_op(void *obj, void *buf, size_t sz)
+static k_ssize_t zvfs_eventfd_read_op(void *obj, void *buf, size_t sz)
 {
 	return zvfs_eventfd_rw_op(obj, buf, sz, zvfs_eventfd_read_locked);
 }
 
-static ssize_t zvfs_eventfd_write_op(void *obj, const void *buf, size_t sz)
+static k_ssize_t zvfs_eventfd_write_op(void *obj, const void *buf, size_t sz)
 {
 	return zvfs_eventfd_rw_op(obj, (zvfs_eventfd_t *)buf, sz, zvfs_eventfd_write_locked);
 }
@@ -235,11 +234,11 @@ static int zvfs_eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 	}
 
 	switch (request) {
-	case F_GETFL:
+	case ZVFS_F_GETFL:
 		ret = efd->flags & ZVFS_EFD_FLAGS_SET;
 		break;
 
-	case F_SETFL: {
+	case ZVFS_F_SETFL: {
 		int flags;
 
 		flags = va_arg(args, int);
@@ -297,11 +296,11 @@ static const struct fd_op_vtable zvfs_eventfd_fd_vtable = {
 };
 
 /* common to both zvfs_eventfd_read_op() and zvfs_eventfd_write_op() */
-static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
-			     int (*op)(struct zvfs_eventfd *efd, zvfs_eventfd_t *value))
+static k_ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
+				       int (*op)(struct zvfs_eventfd *efd, zvfs_eventfd_t *value))
 {
 	int err;
-	ssize_t ret;
+	k_ssize_t ret;
 	k_spinlock_key_t key;
 	struct zvfs_eventfd *efd = obj;
 	struct k_mutex *lock = NULL;

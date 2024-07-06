@@ -381,7 +381,7 @@ static int app_key_get(const struct bt_mesh_model *model,
 	uint16_t app_idx[CONFIG_BT_MESH_APP_KEY_COUNT];
 	uint16_t get_idx;
 	uint8_t status;
-	ssize_t count;
+	k_ssize_t count;
 
 	get_idx = net_buf_simple_pull_le16(buf);
 	if (get_idx > 0xfff) {
@@ -1726,7 +1726,7 @@ static int net_key_get(const struct bt_mesh_model *model,
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_LIST,
 				 IDX_LEN(CONFIG_BT_MESH_SUBNET_COUNT));
 	uint16_t net_idx[CONFIG_BT_MESH_SUBNET_COUNT];
-	ssize_t count;
+	k_ssize_t count;
 
 	bt_mesh_model_msg_init(&msg, OP_NET_KEY_LIST);
 

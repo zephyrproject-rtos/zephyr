@@ -1323,8 +1323,7 @@ struct read_type_data {
 	uint8_t err;
 };
 
-typedef bool (*attr_read_cb)(struct net_buf *buf, ssize_t read,
-			     void *user_data);
+typedef bool (*attr_read_cb)(struct net_buf *buf, k_ssize_t read, void *user_data);
 
 static bool attr_read_authorize(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr)
@@ -1340,8 +1339,7 @@ static bool attr_read_authorize(struct bt_conn *conn,
 	return authorization_cb->read_authorize(conn, attr);
 }
 
-static bool attr_read_type_cb(struct net_buf *frag, ssize_t read,
-			      void *user_data)
+static bool attr_read_type_cb(struct net_buf *frag, k_ssize_t read, void *user_data)
 {
 	struct read_type_data *data = user_data;
 
@@ -1358,13 +1356,12 @@ static bool attr_read_type_cb(struct net_buf *frag, ssize_t read,
 	return true;
 }
 
-static ssize_t att_chan_read(struct bt_att_chan *chan,
-			     const struct bt_gatt_attr *attr,
-			     struct net_buf *buf, uint16_t offset,
-			     attr_read_cb cb, void *user_data)
+static k_ssize_t att_chan_read(struct bt_att_chan *chan, const struct bt_gatt_attr *attr,
+			       struct net_buf *buf, uint16_t offset, attr_read_cb cb,
+			       void *user_data)
 {
 	struct bt_conn *conn = chan->chan.chan.conn;
-	ssize_t read;
+	k_ssize_t read;
 	struct net_buf *frag;
 	size_t len, total = 0;
 
@@ -1422,7 +1419,7 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	struct read_type_data *data = user_data;
 	struct bt_att_chan *chan = data->chan;
 	struct bt_conn *conn = chan->chan.chan.conn;
-	ssize_t read;
+	k_ssize_t read;
 
 	/* Skip if doesn't match */
 	if (bt_uuid_cmp(attr->uuid, data->uuid)) {
@@ -1836,8 +1833,7 @@ struct read_group_data {
 	struct bt_att_group_data *group;
 };
 
-static bool attr_read_group_cb(struct net_buf *frag, ssize_t read,
-			       void *user_data)
+static bool attr_read_group_cb(struct net_buf *frag, k_ssize_t read, void *user_data)
 {
 	struct read_group_data *data = user_data;
 

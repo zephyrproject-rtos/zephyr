@@ -25,9 +25,10 @@
  * @{
  */
 
-#include <zephyr/types.h>
 #include <stddef.h>
-#include <sys/types.h>
+#include <stdint.h>
+
+#include <zephyr/types.h>
 #include <zephyr/device.h>
 
 #ifdef __cplusplus
@@ -44,16 +45,14 @@ extern "C" {
  * @brief Callback API upon reading from the EEPROM.
  * See @a eeprom_read() for argument description
  */
-typedef int (*eeprom_api_read)(const struct device *dev, off_t offset,
-			       void *data,
-			       size_t len);
+typedef int (*eeprom_api_read)(const struct device *dev, k_off_t offset, void *data, size_t len);
 
 /**
  * @brief Callback API upon writing to the EEPROM.
  * See @a eeprom_write() for argument description
  */
-typedef int (*eeprom_api_write)(const struct device *dev, off_t offset,
-				const void *data, size_t len);
+typedef int (*eeprom_api_write)(const struct device *dev, k_off_t offset, const void *data,
+				size_t len);
 
 /**
  * @brief Callback API upon getting the EEPROM size.
@@ -79,14 +78,12 @@ __subsystem struct eeprom_driver_api {
  *
  *  @return 0 on success, negative errno code on failure.
  */
-__syscall int eeprom_read(const struct device *dev, off_t offset, void *data,
-			  size_t len);
+__syscall int eeprom_read(const struct device *dev, k_off_t offset, void *data, size_t len);
 
-static inline int z_impl_eeprom_read(const struct device *dev, off_t offset,
-				     void *data, size_t len)
+static inline int z_impl_eeprom_read(const struct device *dev, k_off_t offset, void *data,
+				     size_t len)
 {
-	const struct eeprom_driver_api *api =
-		(const struct eeprom_driver_api *)dev->api;
+	const struct eeprom_driver_api *api = (const struct eeprom_driver_api *)dev->api;
 
 	return api->read(dev, offset, data, len);
 }
@@ -101,12 +98,10 @@ static inline int z_impl_eeprom_read(const struct device *dev, off_t offset,
  *
  *  @return 0 on success, negative errno code on failure.
  */
-__syscall int eeprom_write(const struct device *dev, off_t offset,
-			   const void *data,
-			   size_t len);
+__syscall int eeprom_write(const struct device *dev, k_off_t offset, const void *data, size_t len);
 
-static inline int z_impl_eeprom_write(const struct device *dev, off_t offset,
-				      const void *data, size_t len)
+static inline int z_impl_eeprom_write(const struct device *dev, k_off_t offset, const void *data,
+				      size_t len)
 {
 	const struct eeprom_driver_api *api =
 		(const struct eeprom_driver_api *)dev->api;

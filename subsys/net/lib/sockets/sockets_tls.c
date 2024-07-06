@@ -6,7 +6,6 @@
  */
 
 #include <stdbool.h>
-#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -793,13 +792,13 @@ static int wait_for_reason(int sock, int timeout, int reason)
 
 static bool is_blocking(int sock, int flags)
 {
-	int sock_flags = zsock_fcntl(sock, F_GETFL, 0);
+	int sock_flags = zsock_fcntl(sock, ZVFS_F_GETFL, 0);
 
 	if (sock_flags == -1) {
 		return false;
 	}
 
-	return !((flags & ZSOCK_MSG_DONTWAIT) || (sock_flags & O_NONBLOCK));
+	return !((flags & ZSOCK_MSG_DONTWAIT) || (sock_flags & ZVFS_O_NONBLOCK));
 }
 
 static int timeout_to_ms(k_timeout_t *timeout)
@@ -853,7 +852,7 @@ static void dtls_peer_address_get(struct tls_context *context,
 static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
-	ssize_t sent;
+	k_ssize_t sent;
 
 	sent = zsock_sendto(tls_ctx->sock, buf, len, ZSOCK_MSG_DONTWAIT,
 			    &tls_ctx->dtls_peer_addr,
@@ -875,7 +874,7 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len)
 	socklen_t addrlen = sizeof(struct sockaddr);
 	struct sockaddr addr;
 	int err;
-	ssize_t received;
+	k_ssize_t received;
 
 	received = zsock_recvfrom(tls_ctx->sock, buf, len,
 				  ZSOCK_MSG_DONTWAIT, &addr, &addrlen);
@@ -915,7 +914,7 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len)
 static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
-	ssize_t sent;
+	k_ssize_t sent;
 
 	sent = zsock_sendto(tls_ctx->sock, buf, len,
 			    ZSOCK_MSG_DONTWAIT, NULL, 0);
@@ -933,7 +932,7 @@ static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
-	ssize_t received;
+	k_ssize_t received;
 
 	received = zsock_recvfrom(tls_ctx->sock, buf, len,
 				  ZSOCK_MSG_DONTWAIT, NULL, 0);
@@ -2134,14 +2133,13 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 	int ret;
 	int sock_flags;
 
-	sock_flags = zsock_fcntl(ctx->sock, F_GETFL, 0);
+	sock_flags = zsock_fcntl(ctx->sock, ZVFS_F_GETFL, 0);
 	if (sock_flags < 0) {
 		return -EIO;
 	}
 
-	if (sock_flags & O_NONBLOCK) {
-		(void)zsock_fcntl(ctx->sock, F_SETFL,
-				  sock_flags & ~O_NONBLOCK);
+	if (sock_flags & ZVFS_O_NONBLOCK) {
+		(void)zsock_fcntl(ctx->sock, ZVFS_F_SETFL, sock_flags & ~ZVFS_O_NONBLOCK);
 	}
 
 	ret = zsock_connect(ctx->sock, addr, addrlen);
@@ -2149,8 +2147,8 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		return ret;
 	}
 
-	if (sock_flags & O_NONBLOCK) {
-		(void)zsock_fcntl(ctx->sock, F_SETFL, sock_flags);
+	if (sock_flags & ZVFS_O_NONBLOCK) {
+		(void)zsock_fcntl(ctx->sock, ZVFS_F_SETFL, sock_flags);
 	}
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -2258,7 +2256,7 @@ error:
 	return -1;
 }
 
-static ssize_t send_tls(struct tls_context *ctx, const void *buf,
+static k_ssize_t send_tls(struct tls_context *ctx, const void *buf,
 			size_t len, int flags)
 {
 	const bool is_block = is_blocking(ctx->sock, flags);
@@ -2338,7 +2336,7 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 }
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
+static k_ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 				  size_t len, int flags,
 				  const struct sockaddr *dest_addr,
 				  socklen_t addrlen)
@@ -2395,7 +2393,7 @@ error:
 	return -1;
 }
 
-static ssize_t sendto_dtls_server(struct tls_context *ctx, const void *buf,
+static k_ssize_t sendto_dtls_server(struct tls_context *ctx, const void *buf,
 				  size_t len, int flags,
 				  const struct sockaddr *dest_addr,
 				  socklen_t addrlen)
@@ -2419,7 +2417,7 @@ static ssize_t sendto_dtls_server(struct tls_context *ctx, const void *buf,
 }
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
-ssize_t ztls_sendto_ctx(struct tls_context *ctx, const void *buf, size_t len,
+k_ssize_t ztls_sendto_ctx(struct tls_context *ctx, const void *buf, size_t len,
 			int flags, const struct sockaddr *dest_addr,
 			socklen_t addrlen)
 {
@@ -2444,13 +2442,13 @@ ssize_t ztls_sendto_ctx(struct tls_context *ctx, const void *buf, size_t len,
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
-static ssize_t dtls_sendmsg_merge_and_send(struct tls_context *ctx,
+static k_ssize_t dtls_sendmsg_merge_and_send(struct tls_context *ctx,
 					   const struct msghdr *msg,
 					   int flags)
 {
 	static K_MUTEX_DEFINE(sendmsg_lock);
 	static uint8_t sendmsg_buf[DTLS_SENDMSG_BUF_SIZE];
-	ssize_t len = 0;
+	k_ssize_t len = 0;
 
 	k_mutex_lock(&sendmsg_lock, K_FOREVER);
 
@@ -2479,12 +2477,12 @@ static ssize_t dtls_sendmsg_merge_and_send(struct tls_context *ctx,
 	return len;
 }
 
-static ssize_t tls_sendmsg_loop_and_send(struct tls_context *ctx,
+static k_ssize_t tls_sendmsg_loop_and_send(struct tls_context *ctx,
 					 const struct msghdr *msg,
 					 int flags)
 {
-	ssize_t len = 0;
-	ssize_t ret;
+	k_ssize_t len = 0;
+	k_ssize_t ret;
 
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		struct iovec *vec = msg->msg_iov + i;
@@ -2511,7 +2509,7 @@ static ssize_t tls_sendmsg_loop_and_send(struct tls_context *ctx,
 	return len;
 }
 
-ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
+k_ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 			 int flags)
 {
 	if (msg == NULL) {
@@ -2547,7 +2545,7 @@ send_loop:
 	return tls_sendmsg_loop_and_send(ctx, msg, flags);
 }
 
-static ssize_t recv_tls(struct tls_context *ctx, void *buf,
+static k_ssize_t recv_tls(struct tls_context *ctx, void *buf,
 			size_t max_len, int flags)
 {
 	size_t recv_len = 0;
@@ -2647,7 +2645,7 @@ err:
 }
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-static ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
+static k_ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
 				    size_t max_len, int flags,
 				    struct sockaddr *src_addr,
 				    socklen_t *addrlen)
@@ -2754,7 +2752,7 @@ static ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
 	return ret;
 }
 
-static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
+static k_ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 				    size_t max_len, int flags,
 				    struct sockaddr *src_addr,
 				    socklen_t *addrlen)
@@ -2820,7 +2818,7 @@ error:
 	return -1;
 }
 
-static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
+static k_ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 				    size_t max_len, int flags,
 				    struct sockaddr *src_addr,
 				    socklen_t *addrlen)
@@ -2922,7 +2920,7 @@ error:
 }
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
-ssize_t ztls_recvfrom_ctx(struct tls_context *ctx, void *buf, size_t max_len,
+k_ssize_t ztls_recvfrom_ctx(struct tls_context *ctx, void *buf, size_t max_len,
 			  int flags, struct sockaddr *src_addr,
 			  socklen_t *addrlen)
 {
@@ -3653,12 +3651,12 @@ mbedtls_ssl_context *ztls_get_mbedtls_ssl_context(int fd)
 }
 #endif /* CONFIG_NET_TEST */
 
-static ssize_t tls_sock_read_vmeth(void *obj, void *buffer, size_t count)
+static k_ssize_t tls_sock_read_vmeth(void *obj, void *buffer, size_t count)
 {
 	return ztls_recvfrom_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t tls_sock_write_vmeth(void *obj, const void *buffer,
+static k_ssize_t tls_sock_write_vmeth(void *obj, const void *buffer,
 				    size_t count)
 {
 	return ztls_sendto_ctx(obj, buffer, count, 0, NULL, 0);
@@ -3670,8 +3668,8 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 
 	switch (request) {
 	/* fcntl() commands */
-	case F_GETFL:
-	case F_SETFL: {
+	case ZVFS_F_GETFL:
+	case ZVFS_F_SETFL: {
 		const struct fd_op_vtable *vtable;
 		struct k_mutex *lock;
 		void *fd_obj;
@@ -3780,7 +3778,7 @@ static int tls_sock_accept_vmeth(void *obj, struct sockaddr *addr,
 	return ztls_accept_ctx(obj, addr, addrlen);
 }
 
-static ssize_t tls_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
+static k_ssize_t tls_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
 				     int flags,
 				     const struct sockaddr *dest_addr,
 				     socklen_t addrlen)
@@ -3788,13 +3786,13 @@ static ssize_t tls_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
 	return ztls_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
 }
 
-static ssize_t tls_sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
+static k_ssize_t tls_sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
 				      int flags)
 {
 	return ztls_sendmsg_ctx(obj, msg, flags);
 }
 
-static ssize_t tls_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
+static k_ssize_t tls_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
 				       int flags, struct sockaddr *src_addr,
 				       socklen_t *addrlen)
 {

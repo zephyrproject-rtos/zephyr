@@ -118,7 +118,7 @@ uint8_t test_ase_get(const struct bt_uuid *uuid, int num_ase, ...)
 uint8_t test_ase_id_get(const struct bt_gatt_attr *ase)
 {
 	struct test_ase_chrc_value_hdr hdr = { 0 };
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = ase->read(NULL, ase, &hdr, sizeof(hdr), 0);
 	zassert_false(ret < 0, "ase->read returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
@@ -162,7 +162,7 @@ void test_ase_control_client_config_codec(struct bt_conn *conn, uint8_t ase_id,
 		0x00,           /* Codec_Specific_Configuration_Length[0] */
 	};
 
-	ssize_t ret;
+	k_ssize_t ret;
 
 	stream_allocated = stream;
 	mock_bap_unicast_server_cb_config_fake.custom_fake = unicast_server_cb_config_custom_fake;
@@ -190,7 +190,7 @@ void test_ase_control_client_config_qos(struct bt_conn *conn, uint8_t ase_id)
 		0x0A, 0x00,             /* Max_Transport_Latency[0] */
 		0x40, 0x9C, 0x00,       /* Presentation_Delay[0] */
 	};
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
 	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
@@ -205,7 +205,7 @@ void test_ase_control_client_enable(struct bt_conn *conn, uint8_t ase_id)
 		ase_id,                 /* ASE_ID[0] */
 		0x00,                   /* Metadata_Length[0] */
 	};
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
 	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
@@ -219,7 +219,7 @@ void test_ase_control_client_disable(struct bt_conn *conn, uint8_t ase_id)
 		0x01,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
 	};
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
 	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
@@ -233,7 +233,7 @@ void test_ase_control_client_release(struct bt_conn *conn, uint8_t ase_id)
 		0x01,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
 	};
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
 	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
@@ -249,7 +249,7 @@ void test_ase_control_client_update_metadata(struct bt_conn *conn, uint8_t ase_i
 		0x04,                   /* Metadata_Length[0] */
 		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
 	};
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
 	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
@@ -263,7 +263,7 @@ void test_ase_control_client_receiver_start_ready(struct bt_conn *conn, uint8_t 
 		0x01,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
 	};
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
 	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
@@ -277,7 +277,7 @@ void test_ase_control_client_receiver_stop_ready(struct bt_conn *conn, uint8_t a
 		0x01,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
 	};
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
 	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));

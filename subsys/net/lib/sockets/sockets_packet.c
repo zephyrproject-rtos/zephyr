@@ -6,7 +6,6 @@
  */
 
 #include <stdbool.h>
-#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_packet, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -234,9 +233,8 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 	*addrlen = sizeof(struct sockaddr_ll);
 }
 
-ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
-			   int flags, const struct sockaddr *dest_addr,
-			   socklen_t addrlen)
+k_ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len, int flags,
+				const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	k_timeout_t timeout = K_FOREVER;
 	int status;
@@ -273,8 +271,7 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	return status;
 }
 
-ssize_t zpacket_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
-			    int flags)
+k_ssize_t zpacket_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg, int flags)
 {
 	k_timeout_t timeout = K_FOREVER;
 	int status;
@@ -294,9 +291,8 @@ ssize_t zpacket_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 	return status;
 }
 
-ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
-			     int flags, struct sockaddr *src_addr,
-			     socklen_t *addrlen)
+k_ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len, int flags,
+				  struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	size_t recv_len = 0;
 	k_timeout_t timeout = K_FOREVER;
@@ -378,13 +374,12 @@ int zpacket_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 					    optval, optlen);
 }
 
-static ssize_t packet_sock_read_vmeth(void *obj, void *buffer, size_t count)
+static k_ssize_t packet_sock_read_vmeth(void *obj, void *buffer, size_t count)
 {
 	return zpacket_recvfrom_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t packet_sock_write_vmeth(void *obj, const void *buffer,
-				       size_t count)
+static k_ssize_t packet_sock_write_vmeth(void *obj, const void *buffer, size_t count)
 {
 	return zpacket_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
@@ -427,23 +422,19 @@ static int packet_sock_accept_vmeth(void *obj, struct sockaddr *addr,
 	return -EOPNOTSUPP;
 }
 
-static ssize_t packet_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
-					int flags,
-					const struct sockaddr *dest_addr,
-					socklen_t addrlen)
+static k_ssize_t packet_sock_sendto_vmeth(void *obj, const void *buf, size_t len, int flags,
+					     const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	return zpacket_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
 }
 
-static ssize_t packet_sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
-					 int flags)
+static k_ssize_t packet_sock_sendmsg_vmeth(void *obj, const struct msghdr *msg, int flags)
 {
 	return zpacket_sendmsg_ctx(obj, msg, flags);
 }
 
-static ssize_t packet_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
-					  int flags, struct sockaddr *src_addr,
-					  socklen_t *addrlen)
+static k_ssize_t packet_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len, int flags,
+					       struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	return zpacket_recvfrom_ctx(obj, buf, max_len, flags,
 				    src_addr, addrlen);

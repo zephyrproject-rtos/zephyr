@@ -30,7 +30,7 @@ static uint8_t test_value[] = { 'T', 'e', 's', 't', '\0' };
 
 DEFINE_FLAG(flag_client_read);
 
-static ssize_t read_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
@@ -47,7 +47,7 @@ void wait_for_client_read(void)
 	WAIT_FOR_FLAG(flag_client_read);
 }
 
-static ssize_t write_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags)
 {

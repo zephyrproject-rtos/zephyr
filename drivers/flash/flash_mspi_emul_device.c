@@ -140,7 +140,7 @@ static int emul_mspi_device_transceive(const struct emul *target,
 	return 0;
 }
 
-static int flash_mspi_emul_erase(const struct device *flash, off_t offset, size_t size)
+static int flash_mspi_emul_erase(const struct device *flash, k_off_t offset, size_t size)
 {
 	const struct flash_mspi_emul_device_config *cfg = flash->config;
 	struct flash_mspi_emul_device_data *data = flash->data;
@@ -196,7 +196,7 @@ static int flash_mspi_emul_erase(const struct device *flash, off_t offset, size_
  * @retval 0 if successful.
  * @retval -Error flash read fail.
  */
-static int flash_mspi_emul_write(const struct device *flash, off_t offset,
+static int flash_mspi_emul_write(const struct device *flash, k_off_t offset,
 				 const void *wdata, size_t len)
 {
 	const struct flash_mspi_emul_device_config *cfg = flash->config;
@@ -232,7 +232,7 @@ static int flash_mspi_emul_write(const struct device *flash, off_t offset,
 		data->packet.data_buf          = src;
 		data->packet.num_bytes         = i;
 
-		LOG_DBG("Write %d bytes to 0x%08zx", i, (ssize_t)offset);
+		LOG_DBG("Write %d bytes to 0x%08zx", i, (k_ssize_t)offset);
 
 		ret = mspi_transceive(data->bus, &cfg->dev_id,
 				      (const struct mspi_xfer *)&data->xfer);
@@ -265,7 +265,7 @@ static int flash_mspi_emul_write(const struct device *flash, off_t offset,
  * @retval 0 if successful.
  * @retval -Error flash read fail.
  */
-static int flash_mspi_emul_read(const struct device *flash, off_t offset,
+static int flash_mspi_emul_read(const struct device *flash, k_off_t offset,
 				void *rdata, size_t len)
 {
 	const struct flash_mspi_emul_device_config *cfg = flash->config;
@@ -292,7 +292,7 @@ static int flash_mspi_emul_read(const struct device *flash, off_t offset,
 	data->xfer.num_packet          = 1;
 	data->xfer.timeout             = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
 
-	LOG_DBG("Read %d bytes from 0x%08zx", len, (ssize_t)offset);
+	LOG_DBG("Read %d bytes from 0x%08zx", len, (k_ssize_t)offset);
 
 	ret = mspi_transceive(data->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->xfer);
 	if (ret) {

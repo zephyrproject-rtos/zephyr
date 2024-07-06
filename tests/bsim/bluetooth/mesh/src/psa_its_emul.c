@@ -50,7 +50,7 @@ static psa_its_item_t *get_item_by_uid(psa_storage_uid_t uid)
 
 static int itsemul_set(const char *name, size_t len_rd, settings_read_cb read_cb, void *cb_arg)
 {
-	ssize_t len;
+	k_ssize_t len;
 	uint64_t uid;
 	psa_its_item_t *p_item;
 

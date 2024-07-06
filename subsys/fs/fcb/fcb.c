@@ -29,7 +29,7 @@ uint8_t fcb_get_align(const struct fcb *fcbp)
 	return align;
 }
 
-int fcb_flash_read(const struct fcb *fcbp, const struct flash_sector *sector, off_t off,
+int fcb_flash_read(const struct fcb *fcbp, const struct flash_sector *sector, k_off_t off,
 		   void *dst, size_t len)
 {
 	int rc;
@@ -51,7 +51,7 @@ int fcb_flash_read(const struct fcb *fcbp, const struct flash_sector *sector, of
 	return 0;
 }
 
-int fcb_flash_write(const struct fcb *fcbp, const struct flash_sector *sector, off_t off,
+int fcb_flash_write(const struct fcb *fcbp, const struct flash_sector *sector, k_off_t off,
 		    const void *src, size_t len)
 {
 	int rc;

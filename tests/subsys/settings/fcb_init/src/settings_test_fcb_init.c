@@ -120,8 +120,7 @@ void test_prepare_storage(void)
 
 		(void)memset(new_val, (~ERASED_VAL) & 0xFF,
 			     FLASH_WRITE_BLOCK_SIZE);
-		err = flash_write(dev, (off_t)&prepared_mark, &new_val,
-				  sizeof(new_val));
+		err = flash_write(dev, (uintptr_t)&prepared_mark, &new_val, sizeof(new_val));
 		zassert_true(err == 0, "can't write prepared_mark");
 	}
 #else

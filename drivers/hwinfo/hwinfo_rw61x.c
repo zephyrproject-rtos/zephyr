@@ -16,7 +16,7 @@
  */
 static bool reset_cleared;
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+int z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	uint32_t id_length = length;
 
@@ -24,7 +24,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 		return -EINVAL;
 	}
 
-	return (ssize_t)id_length;
+	return (int)id_length;
 }
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)

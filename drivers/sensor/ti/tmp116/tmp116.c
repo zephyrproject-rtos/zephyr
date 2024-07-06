@@ -48,8 +48,7 @@ static int tmp116_reg_write(const struct device *dev, uint8_t reg,
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
-static bool check_eeprom_bounds(const struct device *dev, off_t offset,
-			       size_t len)
+static bool check_eeprom_bounds(const struct device *dev, k_off_t offset, size_t len)
 {
 	struct tmp116_data *drv_data = dev->data;
 
@@ -69,8 +68,7 @@ static bool check_eeprom_bounds(const struct device *dev, off_t offset,
 	return true;
 }
 
-int tmp116_eeprom_write(const struct device *dev, off_t offset,
-			const void *data, size_t len)
+int tmp116_eeprom_write(const struct device *dev, k_off_t offset, const void *data, size_t len)
 {
 	uint8_t reg;
 	const uint16_t *src = data;
@@ -113,8 +111,7 @@ int tmp116_eeprom_write(const struct device *dev, off_t offset,
 	return res;
 }
 
-int tmp116_eeprom_read(const struct device *dev, off_t offset, void *data,
-		       size_t len)
+int tmp116_eeprom_read(const struct device *dev, k_off_t offset, void *data, size_t len)
 {
 	uint8_t reg;
 	uint16_t *dst = data;

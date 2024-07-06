@@ -78,7 +78,7 @@ static void sh_mqtt_rx_rb_flush(void)
 bool __weak shell_mqtt_get_devid(char *id, int id_max_len)
 {
 	uint8_t hwinfo_id[DEVICE_ID_BIN_MAX_SIZE];
-	ssize_t length;
+	k_ssize_t length;
 
 	length = hwinfo_get_device_id(hwinfo_id, DEVICE_ID_BIN_MAX_SIZE);
 	if (length <= 0) {

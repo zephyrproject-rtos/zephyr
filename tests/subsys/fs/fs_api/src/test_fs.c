@@ -86,7 +86,7 @@ static int temp_rename(struct fs_mount_t *mountp, const char *from,
 	return 0;
 }
 
-static ssize_t temp_read(struct fs_file_t *zfp, void *ptr, size_t size)
+static k_ssize_t temp_read(struct fs_file_t *zfp, void *ptr, size_t size)
 {
 	unsigned int br;
 
@@ -105,7 +105,7 @@ static ssize_t temp_read(struct fs_file_t *zfp, void *ptr, size_t size)
 	return br;
 }
 
-static ssize_t temp_write(struct fs_file_t *zfp, const void *ptr, size_t size)
+static k_ssize_t temp_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 {
 	unsigned int bw;
 
@@ -130,7 +130,7 @@ static ssize_t temp_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 	return bw;
 }
 
-static int temp_seek(struct fs_file_t *zfp, off_t offset, int whence)
+static int temp_seek(struct fs_file_t *zfp, k_off_t offset, int whence)
 {
 
 	if (!zfp) {
@@ -158,7 +158,7 @@ static int temp_seek(struct fs_file_t *zfp, off_t offset, int whence)
 	return 0;
 }
 
-static off_t temp_tell(struct fs_file_t *zfp)
+static k_off_t temp_tell(struct fs_file_t *zfp)
 {
 	if (!zfp) {
 		return -EINVAL;
@@ -171,7 +171,7 @@ static off_t temp_tell(struct fs_file_t *zfp)
 	return cur - buffer;
 }
 
-static int temp_truncate(struct fs_file_t *zfp, off_t length)
+static int temp_truncate(struct fs_file_t *zfp, k_off_t length)
 {
 	if (!zfp) {
 		return -EINVAL;

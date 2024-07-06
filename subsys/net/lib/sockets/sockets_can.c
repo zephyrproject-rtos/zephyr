@@ -6,7 +6,6 @@
  */
 
 #include <stdbool.h>
-#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_can, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -222,9 +221,8 @@ static int zcan_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
 	return 0;
 }
 
-ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
-			int flags, const struct sockaddr *dest_addr,
-			socklen_t addrlen)
+k_ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len, int flags,
+			     const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	struct sockaddr_can can_addr;
 	struct can_frame zframe;
@@ -272,10 +270,8 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	return len;
 }
 
-static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
-				 size_t max_len, int flags,
-				 struct sockaddr *src_addr,
-				 socklen_t *addrlen)
+static k_ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len, int flags,
+				      struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	struct can_frame zframe;
 	size_t recv_len = 0;
@@ -363,13 +359,12 @@ static int zcan_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 					    optval, optlen);
 }
 
-static ssize_t can_sock_read_vmeth(void *obj, void *buffer, size_t count)
+static k_ssize_t can_sock_read_vmeth(void *obj, void *buffer, size_t count)
 {
 	return zcan_recvfrom_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t can_sock_write_vmeth(void *obj, const void *buffer,
-				    size_t count)
+static k_ssize_t can_sock_write_vmeth(void *obj, const void *buffer, size_t count)
 {
 	return zcan_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
@@ -495,17 +490,14 @@ static int can_sock_accept_vmeth(void *obj, struct sockaddr *addr,
 	return 0;
 }
 
-static ssize_t can_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
-				     int flags,
-				     const struct sockaddr *dest_addr,
-				     socklen_t addrlen)
+static k_ssize_t can_sock_sendto_vmeth(void *obj, const void *buf, size_t len, int flags,
+					  const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	return zcan_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
 }
 
-static ssize_t can_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
-				       int flags, struct sockaddr *src_addr,
-				       socklen_t *addrlen)
+static k_ssize_t can_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len, int flags,
+					    struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	return zcan_recvfrom_ctx(obj, buf, max_len, flags,
 				 src_addr, addrlen);

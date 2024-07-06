@@ -88,8 +88,7 @@ static inline int eeprom_at2x_write_enable(const struct device *dev)
 }
 #endif /* ANY_INST_HAS_WP_GPIOS */
 
-static int eeprom_at2x_read(const struct device *dev, off_t offset, void *buf,
-			    size_t len)
+static int eeprom_at2x_read(const struct device *dev, k_off_t offset, void *buf, size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->data;
@@ -124,13 +123,11 @@ static int eeprom_at2x_read(const struct device *dev, off_t offset, void *buf,
 	return 0;
 }
 
-static size_t eeprom_at2x_limit_write_count(const struct device *dev,
-					    off_t offset,
-					    size_t len)
+static size_t eeprom_at2x_limit_write_count(const struct device *dev, k_off_t offset, size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	size_t count = len;
-	off_t page_boundary;
+	k_off_t page_boundary;
 
 	/* We can at most write one page at a time */
 	if (count > config->pagesize) {
@@ -146,9 +143,7 @@ static size_t eeprom_at2x_limit_write_count(const struct device *dev,
 	return count;
 }
 
-static int eeprom_at2x_write(const struct device *dev, off_t offset,
-			     const void *buf,
-			     size_t len)
+static int eeprom_at2x_write(const struct device *dev, k_off_t offset, const void *buf, size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->data;
@@ -233,8 +228,7 @@ static bool eeprom_at24_bus_is_ready(const struct device *dev)
  * but also to address higher part of eeprom for chips
  * with more than 2^(addr_width) adressable word.
  */
-static uint16_t eeprom_at24_translate_offset(const struct device *dev,
-					     off_t *offset)
+static uint16_t eeprom_at24_translate_offset(const struct device *dev, k_off_t *offset)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 
@@ -244,8 +238,7 @@ static uint16_t eeprom_at24_translate_offset(const struct device *dev,
 	return config->bus.i2c.addr + addr_incr;
 }
 
-static size_t eeprom_at24_adjust_read_count(const struct device *dev,
-					    off_t offset, size_t len)
+static size_t eeprom_at24_adjust_read_count(const struct device *dev, k_off_t offset, size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	const size_t remainder = BIT(config->addr_width) - offset;
@@ -257,8 +250,7 @@ static size_t eeprom_at24_adjust_read_count(const struct device *dev,
 	return len;
 }
 
-static int eeprom_at24_read(const struct device *dev, off_t offset, void *buf,
-			    size_t len)
+static int eeprom_at24_read(const struct device *dev, k_off_t offset, void *buf, size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	int64_t timeout;
@@ -299,8 +291,7 @@ static int eeprom_at24_read(const struct device *dev, off_t offset, void *buf,
 	return len;
 }
 
-static int eeprom_at24_write(const struct device *dev, off_t offset,
-			     const void *buf, size_t len)
+static int eeprom_at24_write(const struct device *dev, k_off_t offset, const void *buf, size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	int count = eeprom_at2x_limit_write_count(dev, offset, len);
@@ -415,8 +406,7 @@ static int eeprom_at25_wait_for_idle(const struct device *dev)
 	return -EBUSY;
 }
 
-static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
-			    size_t len)
+static int eeprom_at25_read(const struct device *dev, k_off_t offset, void *buf, size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->data;
@@ -502,8 +492,7 @@ static int eeprom_at25_wren(const struct device *dev)
 	return spi_write_dt(&config->bus.spi, &tx);
 }
 
-static int eeprom_at25_write(const struct device *dev, off_t offset,
-			     const void *buf, size_t len)
+static int eeprom_at25_write(const struct device *dev, k_off_t offset, const void *buf, size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	int count = eeprom_at2x_limit_write_count(dev, offset, len);

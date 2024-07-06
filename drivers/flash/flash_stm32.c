@@ -45,7 +45,7 @@ static const struct flash_parameters flash_stm32_parameters = {
 
 static int flash_stm32_write_protection(const struct device *dev, bool enable);
 
-bool __weak flash_stm32_valid_range(const struct device *dev, off_t offset,
+bool __weak flash_stm32_valid_range(const struct device *dev, k_off_t offset,
 				    uint32_t len, bool write)
 {
 	if (write && !flash_stm32_valid_write(offset, len)) {
@@ -133,7 +133,7 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 }
 
 static void flash_stm32_flush_caches(const struct device *dev,
-				     off_t offset, size_t len)
+				     k_off_t offset, size_t len)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
@@ -162,7 +162,7 @@ static void flash_stm32_flush_caches(const struct device *dev,
 #endif
 }
 
-static int flash_stm32_read(const struct device *dev, off_t offset,
+static int flash_stm32_read(const struct device *dev, k_off_t offset,
 			    void *data,
 			    size_t len)
 {
@@ -183,7 +183,7 @@ static int flash_stm32_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_stm32_erase(const struct device *dev, off_t offset,
+static int flash_stm32_erase(const struct device *dev, k_off_t offset,
 			     size_t len)
 {
 	int rc;
@@ -220,7 +220,7 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_stm32_write(const struct device *dev, off_t offset,
+static int flash_stm32_write(const struct device *dev, k_off_t offset,
 			     const void *data, size_t len)
 {
 	int rc;

@@ -406,7 +406,7 @@ const uint8_t hx8394_cmd3[] = {0xC6U, 0xEDU};
 
 const uint8_t tear_config[] = {HX8394_SET_TEAR, HX8394_TEAR_VBLANK};
 
-static ssize_t hx8394_mipi_tx(const struct device *mipi_dev, uint8_t channel,
+static k_ssize_t hx8394_mipi_tx(const struct device *mipi_dev, uint8_t channel,
 			      const void *buf, size_t len)
 {
 	/* Send MIPI transfers using low power mode */

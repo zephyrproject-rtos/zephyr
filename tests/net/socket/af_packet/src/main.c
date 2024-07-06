@@ -11,7 +11,6 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/sys/mutex.h>
 #include <zephyr/ztest_assert.h>
 
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
 
@@ -157,16 +156,16 @@ static void setblocking(int fd, bool val)
 {
 	int fl, res;
 
-	fl = zsock_fcntl(fd, F_GETFL, 0);
+	fl = zsock_fcntl(fd, ZVFS_F_GETFL, 0);
 	zassert_not_equal(fl, -1, "Fail to set fcntl");
 
 	if (val) {
-		fl &= ~O_NONBLOCK;
+		fl &= ~ZVFS_O_NONBLOCK;
 	} else {
-		fl |= O_NONBLOCK;
+		fl |= ZVFS_O_NONBLOCK;
 	}
 
-	res = zsock_fcntl(fd, F_SETFL, fl);
+	res = zsock_fcntl(fd, ZVFS_F_SETFL, fl);
 	zassert_not_equal(res, -1, "Fail to set fcntl");
 }
 

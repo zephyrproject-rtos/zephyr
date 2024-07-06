@@ -8,7 +8,6 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/ztest_assert.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/loopback.h>
@@ -1088,7 +1087,7 @@ ZTEST(net_socket_tcp, test_async_connect_timeout)
 	loopback_set_packet_drop_ratio(1.0f);
 
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
-	test_fcntl(c_sock, F_SETFL, O_NONBLOCK);
+	test_fcntl(c_sock, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 	s_saddr.sin_family = AF_INET;
 	s_saddr.sin_port = htons(SERVER_PORT);
 	rv = zsock_inet_pton(AF_INET, MY_IPV4_ADDR, &s_saddr.sin_addr);
@@ -1129,7 +1128,7 @@ ZTEST(net_socket_tcp, test_async_connect)
 
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
-	test_fcntl(c_sock, F_SETFL, O_NONBLOCK);
+	test_fcntl(c_sock, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 
 	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 	test_listen(s_sock);
@@ -1247,7 +1246,7 @@ ZTEST_USER(net_socket_tcp, test_v4_accept_timeout)
 	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 	test_listen(s_sock);
 
-	test_fcntl(s_sock, F_SETFL, O_NONBLOCK);
+	test_fcntl(s_sock, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 
 	tstamp = k_uptime_get_32();
 	test_accept_timeout(s_sock, &new_sock, &addr, &addrlen);
@@ -2215,8 +2214,8 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_select)
 
 	fd = zsock_socket(AF_INET, SOCK_STREAM, 0);
 
-	flags = zsock_fcntl(fd, F_GETFL, 0);
-	zsock_fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+	flags = zsock_fcntl(fd, ZVFS_F_GETFL, 0);
+	zsock_fcntl(fd, ZVFS_F_SETFL, flags | ZVFS_O_NONBLOCK);
 
 	zsock_inet_pton(AF_INET, "127.0.0.1", (void *)&v4addr);
 
@@ -2284,8 +2283,8 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 
 	fd = zsock_socket(AF_INET, SOCK_STREAM, 0);
 
-	flags = zsock_fcntl(fd, F_GETFL, 0);
-	zsock_fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+	flags = zsock_fcntl(fd, ZVFS_F_GETFL, 0);
+	zsock_fcntl(fd, ZVFS_F_SETFL, flags | ZVFS_O_NONBLOCK);
 
 	zsock_inet_pton(AF_INET, "127.0.0.1", (void *)&v4addr);
 

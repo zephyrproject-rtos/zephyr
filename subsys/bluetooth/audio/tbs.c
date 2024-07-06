@@ -510,7 +510,7 @@ static int notify_calls(const struct tbs_service_inst *inst)
 	return inst_notify_calls(&inst->inst);
 }
 
-static ssize_t read_provider_name(struct bt_conn *conn,
+static k_ssize_t read_provider_name(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  void *buf, uint16_t len, uint16_t offset)
 {
@@ -532,7 +532,7 @@ static void provider_name_cfg_changed(const struct bt_gatt_attr *attr,
 	}
 }
 
-static ssize_t read_uci(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_uci(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
 	const struct service_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
@@ -542,7 +542,7 @@ static ssize_t read_uci(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, inst->uci, strlen(inst->uci));
 }
 
-static ssize_t read_technology(struct bt_conn *conn,
+static k_ssize_t read_technology(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
 			       void *buf, uint16_t len, uint16_t offset)
 {
@@ -564,7 +564,7 @@ static void technology_cfg_changed(const struct bt_gatt_attr *attr,
 	}
 }
 
-static ssize_t read_uri_scheme_list(struct bt_conn *conn,
+static k_ssize_t read_uri_scheme_list(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr,
 				    void *buf, uint16_t len, uint16_t offset)
 {
@@ -615,7 +615,7 @@ static void uri_scheme_list_cfg_changed(const struct bt_gatt_attr *attr,
 	}
 }
 
-static ssize_t read_signal_strength(struct bt_conn *conn,
+static k_ssize_t read_signal_strength(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr,
 				    void *buf, uint16_t len, uint16_t offset)
 {
@@ -637,7 +637,7 @@ static void signal_strength_cfg_changed(const struct bt_gatt_attr *attr,
 	}
 }
 
-static ssize_t read_signal_strength_interval(struct bt_conn *conn,
+static k_ssize_t read_signal_strength_interval(struct bt_conn *conn,
 					     const struct bt_gatt_attr *attr,
 					     void *buf, uint16_t len,
 					     uint16_t offset)
@@ -656,7 +656,7 @@ static ssize_t read_signal_strength_interval(struct bt_conn *conn,
 				 sizeof(inst->signal_strength_interval));
 }
 
-static ssize_t write_signal_strength_interval(struct bt_conn *conn,
+static k_ssize_t write_signal_strength_interval(struct bt_conn *conn,
 					      const struct bt_gatt_attr *attr,
 					      const void *buf, uint16_t len,
 					      uint16_t offset, uint8_t flags)
@@ -697,7 +697,7 @@ static void current_calls_cfg_changed(const struct bt_gatt_attr *attr,
 	}
 }
 
-static ssize_t read_current_calls(struct bt_conn *conn,
+static k_ssize_t read_current_calls(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  void *buf, uint16_t len, uint16_t offset)
 {
@@ -715,7 +715,7 @@ static ssize_t read_current_calls(struct bt_conn *conn,
 				 read_buf.data, read_buf.len);
 }
 
-static ssize_t read_ccid(struct bt_conn *conn,
+static k_ssize_t read_ccid(struct bt_conn *conn,
 			 const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
@@ -726,7 +726,7 @@ static ssize_t read_ccid(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->ccid, sizeof(inst->ccid));
 }
 
-static ssize_t read_status_flags(struct bt_conn *conn,
+static k_ssize_t read_status_flags(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 void *buf, uint16_t len, uint16_t offset)
 {
@@ -748,7 +748,7 @@ static void status_flags_cfg_changed(const struct bt_gatt_attr *attr,
 	}
 }
 
-static ssize_t read_incoming_uri(struct bt_conn *conn,
+static k_ssize_t read_incoming_uri(struct bt_conn *conn,
 					    const struct bt_gatt_attr *attr,
 					    void *buf, uint16_t len,
 					    uint16_t offset)
@@ -785,7 +785,7 @@ static void incoming_uri_cfg_changed(const struct bt_gatt_attr *attr,
 	}
 }
 
-static ssize_t read_call_state(struct bt_conn *conn,
+static k_ssize_t read_call_state(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
 			       void *buf, uint16_t len, uint16_t offset)
 {
@@ -1143,7 +1143,7 @@ static void notify_app(struct bt_conn *conn, struct tbs_service_inst *inst, uint
 	}
 }
 
-static ssize_t write_call_cp(struct bt_conn *conn,
+static k_ssize_t write_call_cp(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     const void *buf, uint16_t len,
 			     uint16_t offset, uint8_t flags)
@@ -1343,7 +1343,7 @@ static void call_cp_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	}
 }
 
-static ssize_t read_optional_opcodes(struct bt_conn *conn,
+static k_ssize_t read_optional_opcodes(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     void *buf, uint16_t len, uint16_t offset)
 {
@@ -1365,7 +1365,7 @@ static void terminate_reason_cfg_changed(const struct bt_gatt_attr *attr,
 	}
 }
 
-static ssize_t read_friendly_name(struct bt_conn *conn,
+static k_ssize_t read_friendly_name(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     void *buf, uint16_t len, uint16_t offset)
 {
@@ -1398,7 +1398,7 @@ static void friendly_name_cfg_changed(const struct bt_gatt_attr *attr,
 	}
 }
 
-static ssize_t read_incoming_call(struct bt_conn *conn,
+static k_ssize_t read_incoming_call(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  void *buf, uint16_t len, uint16_t offset)
 {

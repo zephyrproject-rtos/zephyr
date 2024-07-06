@@ -12,8 +12,9 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
-#include <sys/types.h>
+#include <zephyr/types.h>
 
 /**
  * @brief Runtime Configuration
@@ -500,7 +501,7 @@ uint8_t bt_mesh_subnet_priv_node_id_get(uint16_t net_idx,
  *  @return The number of indexes added to the @c net_idxs array, or @c -ENOMEM
  *          if the number of known Subnets exceeds the @c max parameter.
  */
-ssize_t bt_mesh_subnets_get(uint16_t net_idxs[], size_t max, off_t skip);
+k_ssize_t bt_mesh_subnets_get(uint16_t net_idxs[], size_t max, k_off_t skip);
 
 /**
  * @}
@@ -611,8 +612,7 @@ bool bt_mesh_app_key_exists(uint16_t app_idx);
  *  @return The number of indexes added to the @c app_idxs array, or @c -ENOMEM
  *          if the number of known Applications exceeds the @c max parameter.
  */
-ssize_t bt_mesh_app_keys_get(uint16_t net_idx, uint16_t app_idxs[], size_t max,
-			     off_t skip);
+k_ssize_t bt_mesh_app_keys_get(uint16_t net_idx, uint16_t app_idxs[], size_t max, k_off_t skip);
 
 /**
  * @}

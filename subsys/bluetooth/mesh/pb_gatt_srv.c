@@ -62,7 +62,7 @@ static void proxy_msg_recv(struct bt_mesh_proxy_role *role)
 	}
 }
 
-static ssize_t gatt_recv(struct bt_conn *conn,
+static k_ssize_t gatt_recv(struct bt_conn *conn,
 			 const struct bt_gatt_attr *attr, const void *buf,
 			 uint16_t len, uint16_t offset, uint8_t flags)
 {
@@ -128,7 +128,7 @@ static void prov_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t prov_ccc_write(struct bt_conn *conn,
+static k_ssize_t prov_ccc_write(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, uint16_t value)
 {
 	if (cli->conn != conn) {

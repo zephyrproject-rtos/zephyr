@@ -52,7 +52,7 @@ ZTEST(blob_io_flash, test_chunk_read)
 	struct bt_mesh_blob_block block = { 0 };
 	struct bt_mesh_blob_chunk chunk = { 0 };
 	size_t remaining = SLOT1_PARTITION_SIZE;
-	off_t block_idx = 0;
+	k_off_t block_idx = 0;
 	uint16_t chunk_idx = 0;
 	uint8_t chunk_data[CHUNK_SIZE];
 	uint8_t test_data[SLOT1_PARTITION_SIZE];
@@ -162,7 +162,7 @@ ZTEST(blob_io_flash, test_chunk_write)
 	struct bt_mesh_blob_block block = { 0 };
 	struct bt_mesh_blob_chunk chunk = { 0 };
 	size_t remaining = SLOT1_PARTITION_SIZE;
-	off_t block_idx = 0;
+	k_off_t block_idx = 0;
 	uint16_t chunk_idx = 0;
 	uint8_t chunk_data[CHUNK_SIZE];
 	/* 3 is maximum length of padding at the end of written chunk */

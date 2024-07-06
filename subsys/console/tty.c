@@ -159,7 +159,7 @@ static int tty_getchar(struct tty_serial *tty)
 	return c;
 }
 
-static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
+static k_ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
 {
 	uint8_t *p = buf;
 	size_t out_size = 0;

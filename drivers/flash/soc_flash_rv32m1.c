@@ -42,7 +42,7 @@ static const struct flash_parameters flash_mcux_parameters = {
  *
  */
 
-static int flash_mcux_erase(const struct device *dev, off_t offset,
+static int flash_mcux_erase(const struct device *dev, k_off_t offset,
 			    size_t len)
 {
 	struct flash_priv *priv = dev->data;
@@ -65,7 +65,7 @@ static int flash_mcux_erase(const struct device *dev, off_t offset,
 	return (rc == kStatus_Success) ? 0 : -EINVAL;
 }
 
-static int flash_mcux_read(const struct device *dev, off_t offset,
+static int flash_mcux_read(const struct device *dev, k_off_t offset,
 				void *data, size_t len)
 {
 	struct flash_priv *priv = dev->data;
@@ -83,7 +83,7 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_mcux_write(const struct device *dev, off_t offset,
+static int flash_mcux_write(const struct device *dev, k_off_t offset,
 				const void *data, size_t len)
 {
 	struct flash_priv *priv = dev->data;

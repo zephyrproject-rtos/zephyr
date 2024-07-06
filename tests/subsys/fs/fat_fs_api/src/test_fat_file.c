@@ -38,7 +38,7 @@ static int test_file_open(void)
 
 int test_file_write(void)
 {
-	ssize_t brw;
+	k_ssize_t brw;
 	int res;
 
 	TC_PRINT("\nWrite tests:\n");
@@ -91,7 +91,7 @@ static int test_file_sync(void)
 
 static int test_file_read(void)
 {
-	ssize_t brw;
+	k_ssize_t brw;
 	int res;
 	char read_buff[80];
 	size_t sz = strlen(test_str);
@@ -131,9 +131,9 @@ static int test_file_read(void)
 static int test_file_truncate(void)
 {
 	int res;
-	off_t orig_pos;
+	k_off_t orig_pos;
 	char read_buff[80];
-	ssize_t brw;
+	k_ssize_t brw;
 
 	TC_PRINT("\nTruncate tests:\n");
 

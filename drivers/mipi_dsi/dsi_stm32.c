@@ -310,13 +310,13 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 	return 0;
 }
 
-static ssize_t mipi_dsi_stm32_transfer(const struct device *dev, uint8_t channel,
+static k_ssize_t mipi_dsi_stm32_transfer(const struct device *dev, uint8_t channel,
 				       struct mipi_dsi_msg *msg)
 {
 	struct mipi_dsi_stm32_data *data = dev->data;
 	uint32_t param1 = 0;
 	uint32_t param2 = 0;
-	ssize_t len;
+	k_ssize_t len;
 	int ret;
 
 	switch (msg->type) {

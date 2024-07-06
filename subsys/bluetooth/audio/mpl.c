@@ -837,9 +837,9 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 }
 
 
-static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
+static k_ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 			      uint64_t id, void **data, size_t len,
-			      off_t offset)
+			      k_off_t offset)
 {
 	if (obj.busy) {
 		/* TODO: Can there be a collision between select and internal */

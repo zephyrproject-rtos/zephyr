@@ -707,7 +707,7 @@ enum bt_mesh_subnets_node_id_state bt_mesh_subnets_node_id_state_get(void)
 	return BT_MESH_SUBNETS_NODE_ID_STATE_NONE;
 }
 
-ssize_t bt_mesh_subnets_get(uint16_t net_idxs[], size_t max, off_t skip)
+ssize_t bt_mesh_subnets_get(uint16_t net_idxs[], size_t max, k_off_t skip)
 {
 	size_t count = 0;
 

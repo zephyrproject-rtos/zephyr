@@ -4,9 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/device.h>
+#include <zephyr/types.h>
 
 /* Warning: The test has been written for testing boards with single
  * instance of Flash Simulator device only.
@@ -60,10 +64,9 @@ static uint32_t pattern32_flat(void)
 	return p32_inc;
 }
 
-static void test_check_pattern32(off_t start, uint32_t (*pattern_gen)(void),
-				 size_t size)
+static void test_check_pattern32(k_off_t start, uint32_t (*pattern_gen)(void), size_t size)
 {
-	off_t off;
+	k_off_t off;
 	uint32_t val32, r_val32;
 	int rc;
 
@@ -80,7 +83,7 @@ static void test_check_pattern32(off_t start, uint32_t (*pattern_gen)(void),
 }
 
 /* ret < 0 is errno; ret == 1 is bad value in flash */
-static int test_check_erase(const struct device *dev, off_t offset, size_t size)
+static int test_check_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
 	int rc;
@@ -126,7 +129,7 @@ static void test_init(void)
 
 ZTEST(flash_sim_api, test_read)
 {
-	off_t i;
+	k_off_t i;
 	int rc;
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
@@ -148,7 +151,7 @@ ZTEST(flash_sim_api, test_read)
 
 static void test_write_read(void)
 {
-	off_t off;
+	k_off_t off;
 	uint32_t val32 = 0, r_val32;
 	int rc;
 
@@ -454,7 +457,7 @@ ZTEST(flash_sim_api, test_get_erase_value)
 
 ZTEST(flash_sim_api, test_flash_fill)
 {
-	off_t i;
+	k_off_t i;
 	int rc;
 	uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
 #if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)

@@ -264,33 +264,33 @@ static int flash_mspi_atxp032_get_vendor_id(const struct device *flash, uint8_t 
 	return ret;
 }
 
-static int flash_mspi_atxp032_unprotect_sector(const struct device *flash, off_t addr)
+static int flash_mspi_atxp032_unprotect_sector(const struct device *flash, k_off_t addr)
 {
 	int ret;
 
-	LOG_DBG("unprotect sector at 0x%08zx", (ssize_t)addr);
+	LOG_DBG("unprotect sector at 0x%08zx", (k_ssize_t)addr);
 
 	ret = flash_mspi_atxp032_command_write(flash, 0x39, addr, 4, 0, NULL, 0);
 
 	return ret;
 }
 
-static int flash_mspi_atxp032_erase_sector(const struct device *flash, off_t addr)
+static int flash_mspi_atxp032_erase_sector(const struct device *flash, k_off_t addr)
 {
 	int ret;
 
-	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t)addr);
+	LOG_DBG("Erasing sector at 0x%08zx", (k_ssize_t)addr);
 
 	ret = flash_mspi_atxp032_command_write(flash, SPI_NOR_CMD_SE, addr, 4, 0, NULL, 0);
 
 	return ret;
 }
 
-static int flash_mspi_atxp032_erase_block(const struct device *flash, off_t addr)
+static int flash_mspi_atxp032_erase_block(const struct device *flash, k_off_t addr)
 {
 	int ret;
 
-	LOG_DBG("Erasing block at 0x%08zx", (ssize_t)addr);
+	LOG_DBG("Erasing block at 0x%08zx", (k_ssize_t)addr);
 
 	ret = flash_mspi_atxp032_command_write(flash, SPI_NOR_CMD_BE, addr, 4, 0, NULL, 0);
 
@@ -308,7 +308,7 @@ static int flash_mspi_atxp032_erase_chip(const struct device *flash)
 	return ret;
 }
 
-static int flash_mspi_atxp032_page_program(const struct device *flash, off_t offset, void *wdata,
+static int flash_mspi_atxp032_page_program(const struct device *flash, k_off_t offset, void *wdata,
 					   size_t len)
 {
 	const struct flash_mspi_atxp032_config *cfg = flash->config;
@@ -332,7 +332,7 @@ static int flash_mspi_atxp032_page_program(const struct device *flash, off_t off
 	data->trans.num_packet        = 1;
 	data->trans.timeout           = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
 
-	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (ssize_t)offset);
+	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (k_ssize_t)offset);
 
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 	if (ret) {
@@ -387,7 +387,7 @@ static int flash_mspi_atxp032_busy_wait(const struct device *flash)
 	return ret;
 }
 
-static int flash_mspi_atxp032_read(const struct device *flash, off_t offset, void *rdata,
+static int flash_mspi_atxp032_read(const struct device *flash, k_off_t offset, void *rdata,
 				   size_t len)
 {
 	const struct flash_mspi_atxp032_config *cfg = flash->config;
@@ -414,7 +414,7 @@ static int flash_mspi_atxp032_read(const struct device *flash, off_t offset, voi
 	data->trans.num_packet        = 1;
 	data->trans.timeout           = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
 
-	LOG_DBG("Read %d bytes from 0x%08zx", len, (ssize_t)offset);
+	LOG_DBG("Read %d bytes from 0x%08zx", len, (k_ssize_t)offset);
 
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 	if (ret) {
@@ -427,7 +427,7 @@ static int flash_mspi_atxp032_read(const struct device *flash, off_t offset, voi
 	return ret;
 }
 
-static int flash_mspi_atxp032_write(const struct device *flash, off_t offset, const void *wdata,
+static int flash_mspi_atxp032_write(const struct device *flash, k_off_t offset, const void *wdata,
 				    size_t len)
 {
 	int ret;
@@ -473,7 +473,7 @@ static int flash_mspi_atxp032_write(const struct device *flash, off_t offset, co
 	return ret;
 }
 
-static int flash_mspi_atxp032_erase(const struct device *flash, off_t offset, size_t size)
+static int flash_mspi_atxp032_erase(const struct device *flash, k_off_t offset, size_t size)
 {
 	const struct flash_mspi_atxp032_config *cfg = flash->config;
 	int ret = 0;
@@ -701,7 +701,7 @@ static int flash_mspi_atxp032_init(const struct device *flash)
 }
 
 #if defined(CONFIG_FLASH_JESD216_API)
-static int flash_mspi_atxp032_read_sfdp(const struct device *flash, off_t addr, void *rdata,
+static int flash_mspi_atxp032_read_sfdp(const struct device *flash, k_off_t addr, void *rdata,
 					size_t size)
 {
 	const struct flash_mspi_atxp032_config *cfg = flash->config;
@@ -727,7 +727,7 @@ static int flash_mspi_atxp032_read_sfdp(const struct device *flash, off_t addr, 
 	data->trans.num_packet        = 1;
 	data->trans.timeout           = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
 
-	LOG_DBG("Read %d bytes from 0x%08zx", size, (ssize_t)addr);
+	LOG_DBG("Read %d bytes from 0x%08zx", size, (k_ssize_t)addr);
 
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 

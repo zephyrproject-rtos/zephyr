@@ -36,7 +36,7 @@ static int signed_value;
 static struct bt_le_adv_param adv_param;
 static bt_addr_le_t bond_addr;
 
-static ssize_t read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			   void *buf, uint16_t len, uint16_t offset)
 {
 	int *value = &signed_value;
@@ -45,7 +45,7 @@ static ssize_t read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr
 				 sizeof(signed_value));
 }
 
-static ssize_t write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			    const void *buf, uint16_t len, uint16_t offset,
 			    uint8_t flags)
 {

@@ -74,7 +74,7 @@ static int settings_read_callback(const char *key,
 				  void            *param)
 {
 	uint8_t buffer[SETTINGS_MAX_VAL_LEN];
-	ssize_t num_read_bytes = MIN(len, SETTINGS_MAX_VAL_LEN);
+	k_ssize_t num_read_bytes = MIN(len, SETTINGS_MAX_VAL_LEN);
 	struct settings_read_callback_params *params = param;
 
 	/* Process only the exact match and ignore descendants of the searched name */

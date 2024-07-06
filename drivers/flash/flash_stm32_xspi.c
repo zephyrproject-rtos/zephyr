@@ -301,7 +301,7 @@ static int xspi_read_jedec_id(const struct device *dev,  uint8_t *id)
  * perform a read access over SPI bus for SDFP (DataMode is already set)
  * The SFDP table is not given by a DTS property
  */
-static int stm32_xspi_read_sfdp(const struct device *dev, off_t addr,
+static int stm32_xspi_read_sfdp(const struct device *dev, k_off_t addr,
 				void *data,
 				size_t size)
 {
@@ -349,7 +349,7 @@ static int stm32_xspi_read_sfdp(const struct device *dev, off_t addr,
  * Read Serial Flash Discovery Parameter :
  * perform a read access over SPI bus for SDFP (DataMode is already set)
  */
-static int xspi_read_sfdp(const struct device *dev, off_t addr, void *data,
+static int xspi_read_sfdp(const struct device *dev, k_off_t addr, void *data,
 			  size_t size)
 {
 	LOG_INF("Read SFDP from externalFlash");
@@ -362,7 +362,7 @@ static int xspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 	return -EINVAL;
 }
 
-static bool xspi_address_is_valid(const struct device *dev, off_t addr,
+static bool xspi_address_is_valid(const struct device *dev, k_off_t addr,
 				  size_t size)
 {
 	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
@@ -974,7 +974,7 @@ static int stm32_xspi_abort(const struct device *dev)
  *   set size >= flash size
  *   set addr = 0
  */
-static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
+static int flash_stm32_xspi_erase(const struct device *dev, k_off_t addr,
 				  size_t size)
 {
 	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
@@ -1144,7 +1144,7 @@ erase_end:
 }
 
 /* Function to read the flash with possible OCTO/SPI and STR/DTR */
-static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
+static int flash_stm32_xspi_read(const struct device *dev, k_off_t addr,
 				 void *data, size_t size)
 {
 	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
@@ -1244,9 +1244,7 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 		}
 	}
 
-	LOG_DBG("XSPI: read %zu data at 0x%lx",
-		size,
-		(long)(STM32_XSPI_BASE_ADDRESS + addr));
+	LOG_DBG("XSPI: read %zu data at 0x%lx", size, STM32_XSPI_BASE_ADDRESS + (long)addr);
 	xspi_lock_thread(dev);
 
 	ret = xspi_read_access(dev, &cmd, data, size);
@@ -1260,7 +1258,7 @@ read_end:
 }
 
 /* Function to write the flash (page program) : with possible OCTO/SPI and STR/DTR */
-static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
+static int flash_stm32_xspi_write(const struct device *dev, k_off_t addr,
 				  const void *data, size_t size)
 {
 	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
@@ -1335,9 +1333,7 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 	cmd_pp.AddressWidth = stm32_xspi_hal_address_size(dev);
 	cmd_pp.DummyCycles = 0U;
 
-	LOG_DBG("XSPI: write %zu data at 0x%lx",
-		size,
-		(long)(STM32_XSPI_BASE_ADDRESS + addr));
+	LOG_DBG("XSPI: write %zu data at 0x%lx", size, STM32_XSPI_BASE_ADDRESS + (long)addr);
 
 	ret = stm32_xspi_mem_ready(dev,
 				   dev_cfg->data_mode, dev_cfg->data_rate);

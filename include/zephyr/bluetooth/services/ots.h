@@ -20,8 +20,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <sys/types.h>
-
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/crc.h>
@@ -680,9 +678,8 @@ struct bt_ots_cb {
 	 *          shall be smaller or equal to the len parameter.
 	 *  @return Negative value in case of an error.
 	 */
-	ssize_t (*obj_read)(struct bt_ots *ots, struct bt_conn *conn,
-			   uint64_t id, void **data, size_t len,
-			   off_t offset);
+	k_ssize_t (*obj_read)(struct bt_ots *ots, struct bt_conn *conn, uint64_t id, void **data,
+			      size_t len, k_off_t offset);
 
 	/** @brief Object write callback
 	 *
@@ -710,9 +707,8 @@ struct bt_ots_cb {
 	 *  @return -EINPROGRESS has a special meaning and is unsupported at
 	 *          the moment. It should not be returned.
 	 */
-	ssize_t (*obj_write)(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
-			     const void *data, size_t len, off_t offset,
-			     size_t rem);
+	k_ssize_t (*obj_write)(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
+			       const void *data, size_t len, k_off_t offset, size_t rem);
 
 	/** @brief Object name written callback
 	 *
@@ -745,7 +741,7 @@ struct bt_ots_cb {
 	 *  @return 0 to accept, or any negative value to reject.
 	 */
 	int (*obj_cal_checksum)(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
-				off_t offset, size_t len, void **data);
+				k_off_t offset, size_t len, void **data);
 };
 
 /** @brief Descriptor for OTS initialization. */
@@ -1072,7 +1068,7 @@ int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
  *  @return int         0 if success, ERRNO on failure.
  */
 int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst, struct bt_conn *conn,
-				    const void *buf, size_t len, off_t offset,
+				    const void *buf, size_t len, k_off_t offset,
 				    enum bt_ots_oacp_write_op_mode mode);
 
 /** @brief Get the checksum of the current selected object.
@@ -1091,7 +1087,7 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst, struct bt_co
  *  @return int         0 if success, ERRNO on failure.
  */
 int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_conn *conn,
-				      off_t offset, size_t len);
+				      k_off_t offset, size_t len);
 
 /** @brief Directory listing object metadata callback
  *

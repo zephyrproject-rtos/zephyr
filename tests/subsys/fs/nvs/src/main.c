@@ -308,7 +308,7 @@ static void write_content(uint16_t max_id, uint16_t begin, uint16_t end,
 			     struct nvs_fs *fs)
 {
 	uint8_t buf[32];
-	ssize_t len;
+	k_ssize_t len;
 
 	for (uint16_t i = begin; i < end; i++) {
 		uint8_t id = (i % max_id);
@@ -325,7 +325,7 @@ static void check_content(uint16_t max_id, struct nvs_fs *fs)
 {
 	uint8_t rd_buf[32];
 	uint8_t buf[32];
-	ssize_t len;
+	k_ssize_t len;
 
 	for (uint16_t id = 0; id < max_id; id++) {
 		len = nvs_read(fs, id, rd_buf, sizeof(buf));
@@ -532,7 +532,7 @@ ZTEST_F(nvs, test_nvs_corrupted_sector_close_operation)
 ZTEST_F(nvs, test_nvs_full_sector)
 {
 	int err;
-	ssize_t len;
+	k_ssize_t len;
 	uint16_t filling_id = 0;
 	uint16_t i, data_read;
 
@@ -584,7 +584,7 @@ ZTEST_F(nvs, test_nvs_full_sector)
 ZTEST_F(nvs, test_delete)
 {
 	int err;
-	ssize_t len;
+	k_ssize_t len;
 	uint16_t filling_id, data_read;
 	uint32_t ate_wra, data_wra;
 
@@ -650,7 +650,7 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 {
 	struct nvs_ate ate, close_ate;
 	uint32_t data;
-	ssize_t len;
+	k_ssize_t len;
 	int err;
 #ifdef CONFIG_NVS_DATA_CRC
 	uint32_t data_crc;

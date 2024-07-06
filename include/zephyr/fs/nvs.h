@@ -7,7 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_FS_NVS_H_
 #define ZEPHYR_INCLUDE_FS_NVS_H_
 
-#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/toolchain.h>
@@ -37,8 +36,8 @@ extern "C" {
  * @brief Non-volatile Storage File system structure
  */
 struct nvs_fs {
-	 /** File system offset in flash **/
-	off_t offset;
+	/** File system offset in flash **/
+	k_off_t offset;
 	/** Allocation table entry write address.
 	 * Addresses are stored as uint32_t:
 	 * - high 2 bytes correspond to the sector
@@ -110,7 +109,7 @@ int nvs_clear(struct nvs_fs *fs);
  * to be written. When a rewrite of the same data already stored is attempted, nothing is written
  * to flash, thus 0 is returned. On error, returns negative value of errno.h defined error codes.
  */
-ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len);
+k_ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len);
 
 /**
  * @brief Delete an entry from the file system
@@ -135,7 +134,7 @@ int nvs_delete(struct nvs_fs *fs, uint16_t id);
  * indicates not all bytes were read, and more data is available. On error, returns negative
  * value of errno.h defined error codes.
  */
-ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len);
+k_ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len);
 
 /**
  * @brief Read a history entry from the file system.
@@ -151,7 +150,7 @@ ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len);
  * indicates not all bytes were read, and more data is available. On error, returns negative
  * value of errno.h defined error codes.
  */
-ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len, uint16_t cnt);
+k_ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len, uint16_t cnt);
 
 /**
  * @brief Calculate the available free space in the file system.
@@ -162,7 +161,7 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len, ui
  * still be written to the file system. Calculating the free space is a time consuming operation,
  * especially on spi flash. On error, returns negative value of errno.h defined error codes.
  */
-ssize_t nvs_calc_free_space(struct nvs_fs *fs);
+k_ssize_t nvs_calc_free_space(struct nvs_fs *fs);
 
 /**
  * @}

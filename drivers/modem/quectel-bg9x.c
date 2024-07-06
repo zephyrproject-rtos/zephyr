@@ -437,12 +437,9 @@ MODEM_CMD_DEFINE(on_cmd_unsol_rdy)
 /* Func: send_socket_data
  * Desc: This function will send "binary" data over the socket object.
  */
-static ssize_t send_socket_data(struct modem_socket *sock,
-				const struct sockaddr *dst_addr,
-				struct modem_cmd *handler_cmds,
-				size_t handler_cmds_len,
-				const char *buf, size_t buf_len,
-				k_timeout_t timeout)
+static k_ssize_t send_socket_data(struct modem_socket *sock, const struct sockaddr *dst_addr,
+				     struct modem_cmd *handler_cmds, size_t handler_cmds_len,
+				     const char *buf, size_t buf_len, k_timeout_t timeout)
 {
 	int  ret;
 	char send_buf[sizeof("AT+QISEND=##,####")] = {0};
@@ -517,9 +514,8 @@ exit:
 /* Func: offload_sendto
  * Desc: This function will send data on the socket object.
  */
-static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
-			      int flags, const struct sockaddr *to,
-			      socklen_t tolen)
+static k_ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
+				   const struct sockaddr *to, socklen_t tolen)
 {
 	int ret;
 	struct modem_socket *sock = (struct modem_socket *) obj;
@@ -574,9 +570,8 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 /* Func: offload_recvfrom
  * Desc: This function will receive data on the socket object.
  */
-static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
-				int flags, struct sockaddr *from,
-				socklen_t *fromlen)
+static k_ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags,
+				     struct sockaddr *from, socklen_t *fromlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char   sendbuf[sizeof("AT+QIRD=##,####")] = {0};
@@ -635,7 +630,7 @@ exit:
 /* Func: offload_read
  * Desc: This function reads data from the given socket object.
  */
-static ssize_t offload_read(void *obj, void *buffer, size_t count)
+static k_ssize_t offload_read(void *obj, void *buffer, size_t count)
 {
 	return offload_recvfrom(obj, buffer, count, 0, NULL, 0);
 }
@@ -643,7 +638,7 @@ static ssize_t offload_read(void *obj, void *buffer, size_t count)
 /* Func: offload_write
  * Desc: This function writes data to the given socket object.
  */
-static ssize_t offload_write(void *obj, const void *buffer, size_t count)
+static k_ssize_t offload_write(void *obj, const void *buffer, size_t count)
 {
 	return offload_sendto(obj, buffer, count, 0, NULL, 0);
 }
@@ -811,9 +806,9 @@ static int offload_close(void *obj)
 /* Func: offload_sendmsg
  * Desc: This function sends messages to the modem.
  */
-static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static k_ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
-	ssize_t sent = 0;
+	k_ssize_t sent = 0;
 	int rc;
 
 	LOG_DBG("msg_iovlen:%zd flags:%d", msg->msg_iovlen, flags);
@@ -840,7 +835,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 		}
 	}
 
-	return (ssize_t) sent;
+	return (k_ssize_t)sent;
 }
 
 /* Func: modem_rx

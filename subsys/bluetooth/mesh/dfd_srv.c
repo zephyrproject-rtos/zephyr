@@ -50,7 +50,7 @@ BUILD_ASSERT((DFD_RECEIVERS_ADD_MSG_MAXLEN + BT_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP
 	     "incoming SDU size.");
 
 struct slot_search_ctx {
-	off_t offset;
+	k_off_t offset;
 	size_t size;
 	bool failed;
 };

@@ -21,7 +21,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/cbprintf.h>
 #include <zephyr/llext/symbol.h>
-#include <sys/types.h>
 
 /* Option present only when CONFIG_USERSPACE enabled. */
 #ifndef CONFIG_PRINTK_BUFFER_SIZE

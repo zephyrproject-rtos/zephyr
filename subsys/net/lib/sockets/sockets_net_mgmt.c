@@ -5,7 +5,6 @@
  */
 
 #include <stdbool.h>
-#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_mgmt, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -119,10 +118,8 @@ static int znet_mgmt_bind(struct net_mgmt_socket *mgmt,
 	return 0;
 }
 
-ssize_t znet_mgmt_sendto(struct net_mgmt_socket *mgmt,
-			 const void *buf, size_t len,
-			 int flags, const struct sockaddr *dest_addr,
-			 socklen_t addrlen)
+k_ssize_t znet_mgmt_sendto(struct net_mgmt_socket *mgmt, const void *buf, size_t len, int flags,
+			      const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	if (mgmt->proto == NET_MGMT_EVENT_PROTO) {
 		/* For net_mgmt events, we only listen and never send */
@@ -138,10 +135,8 @@ ssize_t znet_mgmt_sendto(struct net_mgmt_socket *mgmt,
 	return -1;
 }
 
-static ssize_t znet_mgmt_recvfrom(struct net_mgmt_socket *mgmt, void *buf,
-				  size_t max_len, int flags,
-				  struct sockaddr *src_addr,
-				  socklen_t *addrlen)
+static k_ssize_t znet_mgmt_recvfrom(struct net_mgmt_socket *mgmt, void *buf, size_t max_len,
+				       int flags, struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	struct sockaddr_nm *nm_addr = (struct sockaddr_nm *)src_addr;
 	k_timeout_t timeout = mgmt->wait_timeout;
@@ -295,13 +290,12 @@ static int znet_mgmt_setsockopt(struct net_mgmt_socket *mgmt, int level,
 	return -1;
 }
 
-static ssize_t net_mgmt_sock_read(void *obj, void *buffer, size_t count)
+static k_ssize_t net_mgmt_sock_read(void *obj, void *buffer, size_t count)
 {
 	return znet_mgmt_recvfrom(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t net_mgmt_sock_write(void *obj, const void *buffer,
-				   size_t count)
+static k_ssize_t net_mgmt_sock_write(void *obj, const void *buffer, size_t count)
 {
 	return znet_mgmt_sendto(obj, buffer, count, 0, NULL, 0);
 }
@@ -340,18 +334,14 @@ static int net_mgmt_sock_accept(void *obj, struct sockaddr *addr,
 	return 0;
 }
 
-static ssize_t net_mgmt_sock_sendto(void *obj, const void *buf,
-				    size_t len, int flags,
-				    const struct sockaddr *dest_addr,
-				    socklen_t addrlen)
+static k_ssize_t net_mgmt_sock_sendto(void *obj, const void *buf, size_t len, int flags,
+					 const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	return znet_mgmt_sendto(obj, buf, len, flags, dest_addr, addrlen);
 }
 
-static ssize_t net_mgmt_sock_recvfrom(void *obj, void *buf,
-				      size_t max_len, int flags,
-				      struct sockaddr *src_addr,
-				      socklen_t *addrlen)
+static k_ssize_t net_mgmt_sock_recvfrom(void *obj, void *buf, size_t max_len, int flags,
+					   struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	return znet_mgmt_recvfrom(obj, buf, max_len, flags,
 				  src_addr, addrlen);

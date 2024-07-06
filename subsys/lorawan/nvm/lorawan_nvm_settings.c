@@ -18,7 +18,7 @@ struct lorawan_nvm_setting_descr {
 	const char *name;
 	const char *setting_name;
 	size_t size;
-	off_t offset;
+	k_off_t offset;
 	uint16_t flag;
 };
 

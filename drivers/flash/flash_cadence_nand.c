@@ -81,7 +81,7 @@ void flash_cdns_page_layout(const struct device *nand_dev, const struct flash_pa
 
 #endif
 
-static int flash_cdns_nand_erase(const struct device *nand_dev, off_t offset, size_t len)
+static int flash_cdns_nand_erase(const struct device *nand_dev, k_off_t offset, size_t len)
 {
 	struct flash_cadence_nand_data *const nand_data = DEV_DATA(nand_dev);
 	struct cadence_nand_params *nand_param = &nand_data->params;
@@ -96,7 +96,7 @@ static int flash_cdns_nand_erase(const struct device *nand_dev, off_t offset, si
 	return ret;
 }
 
-static int flash_cdns_nand_write(const struct device *nand_dev, off_t offset, const void *data,
+static int flash_cdns_nand_write(const struct device *nand_dev, k_off_t offset, const void *data,
 				 size_t len)
 {
 	struct flash_cadence_nand_data *const nand_data = DEV_DATA(nand_dev);
@@ -117,7 +117,8 @@ static int flash_cdns_nand_write(const struct device *nand_dev, off_t offset, co
 	return ret;
 }
 
-static int flash_cdns_nand_read(const struct device *nand_dev, off_t offset, void *data, size_t len)
+static int flash_cdns_nand_read(const struct device *nand_dev, k_off_t offset, void *data,
+				size_t len)
 {
 	struct flash_cadence_nand_data *const nand_data = DEV_DATA(nand_dev);
 	struct cadence_nand_params *nand_param = &nand_data->params;

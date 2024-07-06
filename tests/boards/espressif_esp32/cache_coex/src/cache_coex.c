@@ -74,7 +74,7 @@ static void check_flash(void)
 	unfinished_tasks = false;
 }
 
-static int do_erase(off_t offset, size_t size)
+static int do_erase(k_off_t offset, size_t size)
 {
 	int rc;
 

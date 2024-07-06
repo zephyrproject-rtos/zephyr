@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_H__
 
-#include <sys/types.h>
+#include <stdint.h>
 
 #include <zephyr/kernel.h>
 
@@ -99,7 +99,7 @@ struct bt_mesh_blob_block {
 	/** Block size in bytes */
 	size_t size;
 	/** Offset in bytes from the start of the BLOB. */
-	off_t offset;
+	k_off_t offset;
 	/** Block number */
 	uint16_t number;
 	/** Number of chunks in block. */
@@ -112,7 +112,7 @@ struct bt_mesh_blob_block {
 /** BLOB data chunk. */
 struct bt_mesh_blob_chunk {
 	/** Offset of the chunk data from the start of the block. */
-	off_t offset;
+	k_off_t offset;
 	/** Chunk data size. */
 	size_t size;
 	/** Chunk data. */

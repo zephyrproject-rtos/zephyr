@@ -41,7 +41,7 @@ static const char default_fuse_mountpoint[] = "flash";
 
 static const char *fuse_mountpoint;
 
-static ssize_t get_new_file_handle(void)
+static k_ssize_t get_new_file_handle(void)
 {
 	size_t idx;
 
@@ -161,7 +161,7 @@ static int fuse_fs_access_readmount(void *buf, fuse_fill_dir_t filler)
 }
 
 static int fuse_fs_access_readdir(const char *path, void *buf,
-			      fuse_fill_dir_t filler, off_t off,
+			      fuse_fill_dir_t filler, k_off_t off,
 			      struct fuse_file_info *fi)
 {
 	struct fs_dir_t dir;
@@ -252,7 +252,7 @@ static int fuse_fs_access_create(const char *path, mode_t mode,
 			     struct fuse_file_info *fi)
 {
 	int err;
-	ssize_t handle;
+	k_ssize_t handle;
 
 	ARG_UNUSED(mode);
 
@@ -298,7 +298,7 @@ static int fuse_fs_access_release(const char *path, struct fuse_file_info *fi)
 }
 
 static int fuse_fs_access_read(const char *path, char *buf, size_t size,
-		off_t off, struct fuse_file_info *fi)
+		k_off_t off, struct fuse_file_info *fi)
 {
 	int err;
 
@@ -319,7 +319,7 @@ static int fuse_fs_access_read(const char *path, char *buf, size_t size,
 }
 
 static int fuse_fs_access_write(const char *path, const char *buf, size_t size,
-		off_t off, struct fuse_file_info *fi)
+		k_off_t off, struct fuse_file_info *fi)
 {
 	int err;
 
@@ -339,7 +339,7 @@ static int fuse_fs_access_write(const char *path, const char *buf, size_t size,
 	return err;
 }
 
-static int fuse_fs_access_ftruncate(const char *path, off_t size,
+static int fuse_fs_access_ftruncate(const char *path, k_off_t size,
 				struct fuse_file_info *fi)
 {
 	int err;
@@ -355,7 +355,7 @@ static int fuse_fs_access_ftruncate(const char *path, off_t size,
 	return err;
 }
 
-static int fuse_fs_access_truncate(const char *path, off_t size)
+static int fuse_fs_access_truncate(const char *path, k_off_t size)
 {
 	int err;
 	static struct fs_file_t file;

@@ -262,8 +262,7 @@ static int eswifi_socket_setsockopt(void *obj, int level, int optname,
 	return ret;
 }
 
-static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
-				  int flags)
+static k_ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len, int flags)
 {
 	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
@@ -305,9 +304,8 @@ static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 	return ret;
 }
 
-static ssize_t eswifi_socket_sendto(void *obj, const void *buf, size_t len,
-				    int flags, const struct sockaddr *to,
-				    socklen_t tolen)
+static k_ssize_t eswifi_socket_sendto(void *obj, const void *buf, size_t len, int flags,
+					 const struct sockaddr *to, socklen_t tolen)
 {
 	if (to != NULL) {
 		errno = EOPNOTSUPP;
@@ -317,8 +315,7 @@ static ssize_t eswifi_socket_sendto(void *obj, const void *buf, size_t len,
 	return eswifi_socket_send(obj, buf, len, flags);
 }
 
-static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
-				  int flags)
+static k_ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len, int flags)
 {
 	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
@@ -386,9 +383,8 @@ done:
 	return len;
 }
 
-static ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len,
-				      int flags, struct sockaddr *from,
-				      socklen_t *fromlen)
+static k_ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len, int flags,
+					   struct sockaddr *from, socklen_t *fromlen)
 {
 	if (fromlen != NULL) {
 		errno = EOPNOTSUPP;
@@ -628,13 +624,12 @@ static int eswifi_socket_ioctl(void *obj, unsigned int request, va_list args)
 	}
 }
 
-static ssize_t eswifi_socket_read(void *obj, void *buffer, size_t count)
+static k_ssize_t eswifi_socket_read(void *obj, void *buffer, size_t count)
 {
 	return eswifi_socket_recvfrom(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t eswifi_socket_write(void *obj, const void *buffer,
-				   size_t count)
+static k_ssize_t eswifi_socket_write(void *obj, const void *buffer, size_t count)
 {
 	return eswifi_socket_sendto(obj, buffer, count, 0, NULL, 0);
 }

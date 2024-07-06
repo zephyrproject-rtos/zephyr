@@ -228,7 +228,7 @@ ZTEST(lib_json_test, test_json_encoding)
 		"}";
 	char buffer[sizeof(encoded)];
 	int ret;
-	ssize_t len;
+	k_ssize_t len;
 
 	len = json_calc_encoded_len(test_descr, ARRAY_SIZE(test_descr), &ts);
 	zassert_equal(len, strlen(encoded), "encoded size mismatch");
@@ -518,7 +518,7 @@ ZTEST(lib_json_test, test_json_arr_obj_encoding)
 		"]";
 	char buffer[sizeof(encoded)];
 	int ret;
-	ssize_t len;
+	k_ssize_t len;
 
 	len = json_calc_encoded_arr_len(obj_array_descr, &oa);
 	zassert_equal(len, strlen(encoded), "encoded size mismatch");
@@ -1049,7 +1049,7 @@ ZTEST(lib_json_test, test_json_escape)
 			       "\\rquux"
 			       "\\tfred\\\"";
 	size_t len;
-	ssize_t ret;
+	k_ssize_t ret;
 
 	strncpy(buf, string, sizeof(buf) - 1);
 	len = strlen(buf);
@@ -1067,7 +1067,7 @@ ZTEST(lib_json_test, test_json_escape_one)
 	char buf[3] = {'\t', '\0', '\0'};
 	const char *expected = "\\t";
 	size_t len = strlen(buf);
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = json_escape(buf, &len, sizeof(buf));
 	zassert_equal(ret, 0,
@@ -1081,7 +1081,7 @@ ZTEST(lib_json_test, test_json_escape_empty)
 {
 	char empty[] = "";
 	size_t len = sizeof(empty) - 1;
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = json_escape(empty, &len, sizeof(empty));
 	zassert_equal(ret, 0, "Escaping empty string not successful");
@@ -1094,7 +1094,7 @@ ZTEST(lib_json_test, test_json_escape_no_op)
 	char nothing_to_escape[] = "hello,world:!";
 	const char *expected = "hello,world:!";
 	size_t len = sizeof(nothing_to_escape) - 1;
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = json_escape(nothing_to_escape, &len, sizeof(nothing_to_escape));
 	zassert_equal(ret, 0, "Escape no-op not handled correctly");
@@ -1108,7 +1108,7 @@ ZTEST(lib_json_test, test_json_escape_bounds_check)
 {
 	char not_enough_memory[] = "\tfoo";
 	size_t len = sizeof(not_enough_memory) - 1;
-	ssize_t ret;
+	k_ssize_t ret;
 
 	ret = json_escape(not_enough_memory, &len, sizeof(not_enough_memory));
 	zassert_equal(ret, -ENOMEM, "Bounds check failed");
@@ -1124,8 +1124,7 @@ ZTEST(lib_json_test, test_json_encode_bounds_check)
 	};
 	/* Encodes to {"val":0}\0 for a total of 10 bytes */
 	uint8_t buf[10];
-	ssize_t ret = json_obj_encode_buf(descr, ARRAY_SIZE(descr),
-					  &str, buf, 10);
+	k_ssize_t ret = json_obj_encode_buf(descr, ARRAY_SIZE(descr), &str, buf, 10);
 	zassert_equal(ret, 0, "Encoding failed despite large enough buffer");
 	zassert_equal(strlen(buf), 9, "Encoded string length mismatch");
 

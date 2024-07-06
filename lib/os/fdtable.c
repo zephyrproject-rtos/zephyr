@@ -16,7 +16,6 @@
 #include <errno.h>
 #include <string.h>
 
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/speculation.h>
@@ -31,7 +30,7 @@ struct fd_entry {
 	atomic_t refcount;
 	struct k_mutex lock;
 	struct k_condvar cond;
-	size_t offset;
+	k_off_t offset;
 	uint32_t mode;
 };
 
@@ -301,9 +300,9 @@ int zvfs_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
 	return fd;
 }
 
-ssize_t zvfs_read(int fd, void *buf, size_t sz)
+k_ssize_t zvfs_read(int fd, void *buf, size_t sz)
 {
-	ssize_t res;
+	k_ssize_t res;
 
 	if (_check_fd(fd) < 0) {
 		return -1;
@@ -328,9 +327,9 @@ ssize_t zvfs_read(int fd, void *buf, size_t sz)
 	return res;
 }
 
-ssize_t zvfs_write(int fd, const void *buf, size_t sz)
+k_ssize_t zvfs_write(int fd, const void *buf, size_t sz)
 {
-	ssize_t res;
+	k_ssize_t res;
 
 	if (_check_fd(fd) < 0) {
 		return -1;
@@ -392,9 +391,9 @@ int zvfs_fsync(int fd)
 	return zvfs_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
 }
 
-static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
+static inline k_off_t zvfs_lseek_wrap(int fd, int cmd, ...)
 {
-	off_t res;
+	k_off_t res;
 	va_list args;
 
 	__ASSERT_NO_MSG(fd < ARRAY_SIZE(fdtable));
@@ -405,12 +404,15 @@ static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
 	va_end(args);
 	if (res >= 0) {
 		switch (fdtable[fd].mode & ZVFS_MODE_IFMT) {
-		case ZVFS_MODE_IFDIR:
-		case ZVFS_MODE_IFBLK:
 		case ZVFS_MODE_IFSHM:
-		case ZVFS_MODE_IFREG:
 			fdtable[fd].offset = res;
 			break;
+		case ZVFS_MODE_IFDIR:
+			__fallthrough;
+		case ZVFS_MODE_IFBLK:
+			__fallthrough;
+		case ZVFS_MODE_IFREG:
+			__fallthrough;
 		default:
 			break;
 		}
@@ -420,13 +422,13 @@ static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
 	return res;
 }
 
-off_t zvfs_lseek(int fd, off_t offset, int whence)
+k_off_t zvfs_lseek(int fd, k_off_t offset, int whence)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
-	return zvfs_lseek_wrap(fd, ZFD_IOCTL_LSEEK, offset, whence, fdtable[fd].offset);
+	return zvfs_lseek_wrap(fd, ZFD_IOCTL_LSEEK, offset, whence, &fdtable[fd].offset);
 }
 
 int zvfs_fcntl(int fd, int cmd, va_list args)
@@ -459,7 +461,7 @@ static inline int zvfs_ftruncate_wrap(int fd, int cmd, ...)
 	return res;
 }
 
-int zvfs_ftruncate(int fd, off_t length)
+int zvfs_ftruncate(int fd, k_off_t length)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
@@ -485,12 +487,12 @@ int zvfs_ioctl(int fd, unsigned long request, va_list args)
 
 int z_impl_zephyr_write_stdout(const char *buf, int nbytes);
 
-static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
+static k_ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 {
 	return 0;
 }
 
-static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
+static k_ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 {
 #if defined(CONFIG_BOARD_NATIVE_POSIX)
 	return zvfs_write(1, buffer, count);

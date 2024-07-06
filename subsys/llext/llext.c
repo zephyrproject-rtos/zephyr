@@ -23,7 +23,7 @@ static sys_slist_t _llext_list = SYS_SLIST_STATIC_INIT(&_llext_list);
 
 static struct k_mutex llext_lock = Z_MUTEX_INITIALIZER(llext_lock);
 
-ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
+k_ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 {
 	/* Note that this API is used after llext_load(), so the ldr->sect_hdrs
 	 * cache is already freed. A direct search covers all situations.

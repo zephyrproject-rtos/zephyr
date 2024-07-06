@@ -117,7 +117,7 @@ static bool ots_obj_validate_prop_against_oacp(uint32_t prop, uint32_t oacp)
 	return true;
 }
 
-static ssize_t ots_feature_read(struct bt_conn *conn,
+static k_ssize_t ots_feature_read(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
@@ -129,7 +129,7 @@ static ssize_t ots_feature_read(struct bt_conn *conn,
 		sizeof(ots->features));
 }
 
-static ssize_t ots_obj_name_read(struct bt_conn *conn,
+static k_ssize_t ots_obj_name_read(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {
@@ -206,7 +206,7 @@ ssize_t ots_obj_name_write(struct bt_conn *conn,
 }
 #endif
 
-static ssize_t ots_obj_type_read(struct bt_conn *conn,
+static k_ssize_t ots_obj_type_read(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {
@@ -235,7 +235,7 @@ static ssize_t ots_obj_type_read(struct bt_conn *conn,
 	}
 }
 
-static ssize_t ots_obj_size_read(struct bt_conn *conn,
+static k_ssize_t ots_obj_size_read(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {
@@ -253,7 +253,7 @@ static ssize_t ots_obj_size_read(struct bt_conn *conn,
 				 sizeof(ots->cur_obj->metadata.size));
 }
 
-static ssize_t ots_obj_id_read(struct bt_conn *conn,
+static k_ssize_t ots_obj_id_read(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
@@ -277,7 +277,7 @@ static ssize_t ots_obj_id_read(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, id, sizeof(id));
 }
 
-static ssize_t ots_obj_prop_read(struct bt_conn *conn,
+static k_ssize_t ots_obj_prop_read(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {

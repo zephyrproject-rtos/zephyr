@@ -439,7 +439,7 @@ bool bt_mesh_app_key_exists(uint16_t app_idx)
 }
 
 ssize_t bt_mesh_app_keys_get(uint16_t net_idx, uint16_t app_idxs[], size_t max,
-			     off_t skip)
+			     k_off_t skip)
 {
 	size_t count = 0;
 

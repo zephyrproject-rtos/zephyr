@@ -119,7 +119,7 @@ int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb,
 	       void *cb_arg)
 {
-	ssize_t len;
+	k_ssize_t len;
 	const char *next;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {

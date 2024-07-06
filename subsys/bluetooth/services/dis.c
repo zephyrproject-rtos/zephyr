@@ -83,7 +83,7 @@ static uint8_t dis_sw_rev[CONFIG_BT_DIS_STR_MAX] =
 
 #endif /* CONFIG_BT_DIS_SETTINGS */
 
-static ssize_t read_str(struct bt_conn *conn,
+static k_ssize_t read_str(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint16_t len, uint16_t offset)
 {
@@ -92,7 +92,7 @@ static ssize_t read_str(struct bt_conn *conn,
 }
 
 #if CONFIG_BT_DIS_PNP
-static ssize_t read_pnp_id(struct bt_conn *conn,
+static k_ssize_t read_pnp_id(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
 			   uint16_t len, uint16_t offset)
 {
@@ -145,7 +145,7 @@ BT_GATT_SERVICE_DEFINE(dis_svc,
 static int dis_set(const char *name, size_t len_rd,
 		   settings_read_cb read_cb, void *store)
 {
-	ssize_t len;
+	k_ssize_t len;
 	int nlen;
 	const char *next;
 

@@ -267,7 +267,7 @@ static int flash_flexspi_nor_write_enable(const struct device *dev,
 }
 
 static int flash_flexspi_nor_erase_sector(const struct device *dev,
-		off_t offset)
+		k_off_t offset)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
@@ -281,7 +281,7 @@ static int flash_flexspi_nor_erase_sector(const struct device *dev,
 		.dataSize = 0,
 	};
 
-	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t) offset);
+	LOG_DBG("Erasing sector at 0x%08zx", (k_ssize_t) offset);
 
 	return memc_flexspi_transfer(data->controller, &transfer);
 }
@@ -306,7 +306,7 @@ static int flash_flexspi_nor_erase_chip(const struct device *dev)
 }
 
 static int flash_flexspi_nor_page_program(const struct device *dev,
-		off_t offset, const void *buffer, size_t len)
+		k_off_t offset, const void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
@@ -320,7 +320,7 @@ static int flash_flexspi_nor_page_program(const struct device *dev,
 		.dataSize = len,
 	};
 
-	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (ssize_t) offset);
+	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (k_ssize_t) offset);
 
 	return memc_flexspi_transfer(data->controller, &transfer);
 }
@@ -356,7 +356,7 @@ static int flash_flexspi_enable_octal_mode(const struct device *dev)
 	return 0;
 }
 
-static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
+static int flash_flexspi_nor_read(const struct device *dev, k_off_t offset,
 		void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
@@ -369,7 +369,7 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
+static int flash_flexspi_nor_write(const struct device *dev, k_off_t offset,
 		const void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
@@ -431,7 +431,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
+static int flash_flexspi_nor_erase(const struct device *dev, k_off_t offset,
 		size_t size)
 {
 	struct flash_flexspi_nor_data *data = dev->data;

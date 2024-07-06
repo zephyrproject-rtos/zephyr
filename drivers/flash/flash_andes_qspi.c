@@ -129,7 +129,7 @@ static inline uint16_t dev_page_size(const struct device *dev)
  * @return 0 on success
  */
 static int flash_andes_qspi_access(const struct device *const dev,
-				   uint8_t opcode, uint8_t access, off_t addr,
+				   uint8_t opcode, uint8_t access, k_off_t addr,
 				   void *data, size_t length)
 {
 	struct flash_andes_qspi_data *dev_data = dev->data;
@@ -262,7 +262,7 @@ static int flash_andes_qspi_wait_until_ready(const struct device *dev)
  * @return 0 on success, negative errno code otherwise
  */
 static int read_sfdp(const struct device *const dev,
-		     off_t addr, void *data, size_t length)
+		     k_off_t addr, void *data, size_t length)
 {
 	/* READ_SFDP requires a 24-bit address followed by a single
 	 * byte for a wait state.  This is effected by using 32-bit
@@ -301,7 +301,7 @@ static int flash_andes_qspi_wrsr(const struct device *dev,
 }
 
 static int flash_andes_qspi_read(const struct device *dev,
-				 off_t addr, void *dest, size_t size)
+				 k_off_t addr, void *dest, size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
 	int ret;
@@ -324,7 +324,7 @@ static int flash_andes_qspi_read(const struct device *dev,
 	return ret;
 }
 
-static int flash_andes_qspi_write(const struct device *dev, off_t addr,
+static int flash_andes_qspi_write(const struct device *dev, k_off_t addr,
 				  const void *src, size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
@@ -380,7 +380,7 @@ out:
 }
 
 static int flash_andes_qspi_erase(const struct device *dev,
-				  off_t addr, size_t size)
+				  k_off_t addr, size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
 	int ret = 0;
@@ -472,7 +472,7 @@ static int flash_andes_qspi_write_protection_set(const struct device *dev,
 
 #if defined(CONFIG_FLASH_JESD216_API)
 
-static int flash_andes_qspi_sfdp_read(const struct device *dev, off_t addr,
+static int flash_andes_qspi_sfdp_read(const struct device *dev, k_off_t addr,
 				      void *dest, size_t size)
 {
 	acquire_device(dev);

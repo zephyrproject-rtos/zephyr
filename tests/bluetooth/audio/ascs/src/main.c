@@ -126,7 +126,7 @@ ZTEST_F(ascs_test_suite, test_sink_ase_read_state_idle)
 	const struct bt_gatt_attr *ase = fixture->ase_snk.attr;
 	struct bt_conn *conn = &fixture->conn;
 	struct test_ase_chrc_value_hdr hdr = { 0xff };
-	ssize_t ret;
+	k_ssize_t ret;
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
 	zexpect_not_null(fixture->ase_snk.attr);

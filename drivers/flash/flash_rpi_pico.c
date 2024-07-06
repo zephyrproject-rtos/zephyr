@@ -183,12 +183,12 @@ void __no_inline_not_in_flash_func(flash_write_partial)(uint32_t flash_offs, con
 	flash_enable_xip_via_boot2();
 }
 
-static bool is_valid_range(off_t offset, uint32_t size)
+static bool is_valid_range(k_off_t offset, uint32_t size)
 {
 	return (offset >= 0) && ((offset + size) <= FLASH_SIZE);
 }
 
-static int flash_rpi_read(const struct device *dev, off_t offset, void *data, size_t size)
+static int flash_rpi_read(const struct device *dev, k_off_t offset, void *data, size_t size)
 {
 	if (size == 0) {
 		return 0;
@@ -204,7 +204,7 @@ static int flash_rpi_read(const struct device *dev, off_t offset, void *data, si
 	return 0;
 }
 
-static int flash_rpi_write(const struct device *dev, off_t offset, const void *data, size_t size)
+static int flash_rpi_write(const struct device *dev, k_off_t offset, const void *data, size_t size)
 {
 	uint32_t key;
 	size_t bytes_to_write;
@@ -250,7 +250,7 @@ static int flash_rpi_write(const struct device *dev, off_t offset, const void *d
 	return 0;
 }
 
-static int flash_rpi_erase(const struct device *dev, off_t offset, size_t size)
+static int flash_rpi_erase(const struct device *dev, k_off_t offset, size_t size)
 {
 	uint32_t key;
 

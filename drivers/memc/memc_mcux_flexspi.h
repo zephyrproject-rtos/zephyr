@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/device.h>
-#include <sys/types.h>
 #include <fsl_flexspi.h>
 
 /* Size of a command in the LUT table */
@@ -99,5 +98,4 @@ int memc_flexspi_transfer(const struct device *dev,
  * @param offset: byte offset from start of device to get AHB address for
  * @return 0 on success, negative value on failure
  */
-void *memc_flexspi_get_ahb_address(const struct device *dev,
-		flexspi_port_t port, off_t offset);
+void *memc_flexspi_get_ahb_address(const struct device *dev, flexspi_port_t port, k_off_t offset);

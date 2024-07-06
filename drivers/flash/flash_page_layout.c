@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/flash.h>
 
-static int flash_get_page_info(const struct device *dev, off_t offs,
+static int flash_get_page_info(const struct device *dev, k_off_t offs,
 			       uint32_t index, struct flash_pages_info *info)
 {
 	const struct flash_driver_api *api = dev->api;
@@ -42,7 +42,7 @@ static int flash_get_page_info(const struct device *dev, off_t offs,
 	return -EINVAL; /* page at offs or idx doesn't exist */
 }
 
-int z_impl_flash_get_page_info_by_offs(const struct device *dev, off_t offs,
+int z_impl_flash_get_page_info_by_offs(const struct device *dev, k_off_t offs,
 				       struct flash_pages_info *info)
 {
 	return flash_get_page_info(dev, offs, 0U, info);
@@ -79,7 +79,7 @@ void flash_page_foreach(const struct device *dev, flash_page_cb cb,
 	const struct flash_pages_layout *layout;
 	struct flash_pages_info page_info;
 	size_t block, num_blocks, page = 0, i;
-	off_t off = 0;
+	k_off_t off = 0;
 
 	api->page_layout(dev, &layout, &num_blocks);
 

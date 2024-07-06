@@ -1714,7 +1714,7 @@ static int cmd_scan_filter_clear_addr(const struct shell *sh, size_t argc,
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_BROADCASTER)
-static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
+static k_ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		       const atomic_t *adv_options)
 {
 	const bool discoverable = atomic_test_bit(adv_options, SHELL_ADV_OPT_DISCOVERABLE);
@@ -1760,7 +1760,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER)) {
-		ssize_t csis_ad_len;
+		k_ssize_t csis_ad_len;
 
 		csis_ad_len = csis_ad_data_add(&data_array[ad_len],
 					       data_array_size - ad_len, discoverable);
@@ -1774,7 +1774,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO) && IS_ENABLED(CONFIG_BT_EXT_ADV) && adv_ext) {
 		const bool connectable = atomic_test_bit(adv_options, SHELL_ADV_OPT_CONNECTABLE);
-		ssize_t audio_ad_len;
+		k_ssize_t audio_ad_len;
 
 		audio_ad_len = audio_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
 						 discoverable, connectable);
@@ -1809,8 +1809,8 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 	struct bt_data sd[4];
 	bool discoverable = true;
 	bool appearance = false;
-	ssize_t ad_len = 0;
-	ssize_t sd_len = 0;
+	k_ssize_t ad_len = 0;
+	k_ssize_t sd_len = 0;
 	int err;
 	bool with_name = true;
 	bool name_ad = false;
@@ -2114,7 +2114,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	size_t hex_data_len;
 	size_t ad_len = 0;
 	size_t sd_len = 0;
-	ssize_t len = 0;
+	k_ssize_t len = 0;
 	bool discoverable = false;
 	size_t *data_len;
 	int err;
@@ -2501,13 +2501,13 @@ static int cmd_per_adv_param(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static ssize_t pa_ad_init(struct bt_data *data_array,
+static k_ssize_t pa_ad_init(struct bt_data *data_array,
 			  const size_t data_array_size)
 {
 	size_t ad_len = 0;
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO)) {
-		ssize_t audio_pa_ad_len;
+		k_ssize_t audio_pa_ad_len;
 
 		audio_pa_ad_len = audio_pa_data_add(&data_array[ad_len],
 						    data_array_size - ad_len);
@@ -2527,7 +2527,7 @@ static int cmd_per_adv_data(const struct shell *sh, size_t argc,
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
 	static uint8_t hex_data[256];
 	static struct bt_data ad[2U];
-	ssize_t stack_ad_len;
+	k_ssize_t stack_ad_len;
 	uint8_t ad_len = 0;
 	int err;
 

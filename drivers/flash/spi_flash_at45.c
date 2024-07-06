@@ -236,12 +236,12 @@ static int configure_page_size(const struct device *dev)
 	return (err != 0) ? -EIO : 0;
 }
 
-static bool is_valid_request(off_t addr, size_t size, size_t chip_size)
+static bool is_valid_request(k_off_t addr, size_t size, size_t chip_size)
 {
 	return (addr >= 0 && (addr + size) <= chip_size);
 }
 
-static int spi_flash_at45_read(const struct device *dev, off_t offset,
+static int spi_flash_at45_read(const struct device *dev, k_off_t offset,
 			       void *data, size_t len)
 {
 	const struct spi_flash_at45_config *cfg = dev->config;
@@ -287,7 +287,7 @@ static int spi_flash_at45_read(const struct device *dev, off_t offset,
 	return (err != 0) ? -EIO : 0;
 }
 
-static int perform_write(const struct device *dev, off_t offset,
+static int perform_write(const struct device *dev, k_off_t offset,
 			 const void *data, size_t len)
 {
 	const struct spi_flash_at45_config *cfg = dev->config;
@@ -323,7 +323,7 @@ static int perform_write(const struct device *dev, off_t offset,
 	return (err != 0) ? -EIO : 0;
 }
 
-static int spi_flash_at45_write(const struct device *dev, off_t offset,
+static int spi_flash_at45_write(const struct device *dev, k_off_t offset,
 				const void *data, size_t len)
 {
 	const struct spi_flash_at45_config *cfg = dev->config;
@@ -343,9 +343,9 @@ static int spi_flash_at45_write(const struct device *dev, off_t offset,
 
 	while (len) {
 		size_t chunk_len = len;
-		off_t current_page_start =
+		k_off_t current_page_start =
 			offset - (offset & (cfg->page_size - 1));
-		off_t current_page_end = current_page_start + cfg->page_size;
+		k_off_t current_page_end = current_page_start + cfg->page_size;
 
 		if (chunk_len > (current_page_end - offset)) {
 			chunk_len = (current_page_end - offset);
@@ -397,14 +397,14 @@ static int perform_chip_erase(const struct device *dev)
 }
 
 static bool is_erase_possible(size_t entity_size,
-			      off_t offset, size_t requested_size)
+			      k_off_t offset, size_t requested_size)
 {
 	return (requested_size >= entity_size &&
 		(offset & (entity_size - 1)) == 0);
 }
 
 static int perform_erase_op(const struct device *dev, uint8_t opcode,
-			    off_t offset)
+			    k_off_t offset)
 {
 	const struct spi_flash_at45_config *cfg = dev->config;
 	int err;
@@ -433,7 +433,7 @@ static int perform_erase_op(const struct device *dev, uint8_t opcode,
 	return (err != 0) ? -EIO : 0;
 }
 
-static int spi_flash_at45_erase(const struct device *dev, off_t offset,
+static int spi_flash_at45_erase(const struct device *dev, k_off_t offset,
 				size_t size)
 {
 	const struct spi_flash_at45_config *cfg = dev->config;

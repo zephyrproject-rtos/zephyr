@@ -527,11 +527,11 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 #define USBD_HWID_SN_MAX 32U
 
 /* Generate valid USB device serial number from hwid */
-static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_HWID_SN_MAX])
+static k_ssize_t get_sn_from_hwid(uint8_t sn[static USBD_HWID_SN_MAX])
 {
 	static const char hex[] = "0123456789ABCDEF";
 	uint8_t hwid[USBD_HWID_SN_MAX / 2U];
-	ssize_t hwid_len = -ENOSYS;
+	k_ssize_t hwid_len = -ENOSYS;
 
 	if (IS_ENABLED(CONFIG_HWINFO)) {
 		hwid_len = hwinfo_get_device_id(hwid, sizeof(hwid));
@@ -545,7 +545,7 @@ static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_HWID_SN_MAX])
 		return hwid_len;
 	}
 
-	for (ssize_t i = 0; i < hwid_len; i++) {
+	for (k_ssize_t i = 0; i < hwid_len; i++) {
 		sn[i * 2] = hex[hwid[i] >> 4];
 		sn[i * 2 + 1] = hex[hwid[i] & 0xF];
 	}
@@ -566,7 +566,7 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 	size_t i;
 
 	if (dn->str.utype == USBD_DUT_STRING_SERIAL_NUMBER && dn->str.use_hwinfo) {
-		ssize_t hwid_len = get_sn_from_hwid(hwid_sn);
+		k_ssize_t hwid_len = get_sn_from_hwid(hwid_sn);
 
 		if (hwid_len < 0) {
 			errno = -ENOTSUP;

@@ -35,7 +35,7 @@ int test_file_open(struct fs_file_t *filep, const char *file_path)
 
 int test_file_write(struct fs_file_t *filep, const char *test_str)
 {
-	ssize_t brw;
+	k_ssize_t brw;
 	int res;
 
 	TC_PRINT("\nWrite tests:\n");
@@ -72,7 +72,7 @@ int test_file_write(struct fs_file_t *filep, const char *test_str)
 
 int test_file_read(struct fs_file_t *filep, const char *test_str)
 {
-	ssize_t brw;
+	k_ssize_t brw;
 	int res;
 	char read_buff[80];
 	size_t sz = strlen(test_str);

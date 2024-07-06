@@ -21,7 +21,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tps);
 
-static ssize_t read_tx_power_level(struct bt_conn *conn,
+static k_ssize_t read_tx_power_level(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {

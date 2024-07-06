@@ -47,7 +47,7 @@ static void offset_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t v
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t read_offset_state(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_offset_state(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_vocs_server *inst = BT_AUDIO_CHRC_USER_DATA(attr);
@@ -131,7 +131,7 @@ static void value_changed(struct bt_vocs_server *inst, enum bt_vocs_notify notif
 #define value_changed(...)
 #endif /* CONFIG_BT_VOCS */
 
-static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			      const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct bt_vocs_server *inst = BT_AUDIO_CHRC_USER_DATA(attr);
@@ -166,7 +166,7 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 }
 
 #if defined(CONFIG_BT_VOCS)
-static ssize_t read_location(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_location(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_vocs_server *inst = BT_AUDIO_CHRC_USER_DATA(attr);
@@ -177,7 +177,7 @@ static ssize_t read_location(struct bt_conn *conn, const struct bt_gatt_attr *at
 }
 #endif /* CONFIG_BT_VOCS */
 
-static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				  const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct bt_vocs_server *inst = BT_AUDIO_CHRC_USER_DATA(attr);
@@ -248,7 +248,7 @@ static void output_desc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t va
 }
 #endif /* CONFIG_BT_VOCS */
 
-static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct bt_vocs_server *inst = BT_AUDIO_CHRC_USER_DATA(attr);
@@ -281,7 +281,7 @@ static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr
 }
 
 static int vocs_write(struct bt_vocs_server *inst,
-		      ssize_t (*write)(struct bt_conn *conn,
+		      k_ssize_t (*write)(struct bt_conn *conn,
 				       const struct bt_gatt_attr *attr,
 				       const void *buf, uint16_t len,
 				       uint16_t offset, uint8_t flags),
@@ -304,7 +304,7 @@ static int vocs_write(struct bt_vocs_server *inst,
 }
 
 #if defined(CONFIG_BT_VOCS)
-static ssize_t read_output_desc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_output_desc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_vocs_server *inst = BT_AUDIO_CHRC_USER_DATA(attr);

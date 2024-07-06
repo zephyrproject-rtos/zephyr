@@ -167,7 +167,7 @@ static struct bt_conn *connect(void)
 	return conn;
 }
 
-static ssize_t read_from(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static k_ssize_t read_from(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t buf_len, uint16_t offset)
 {
 	static uint16_t counter;
@@ -183,7 +183,7 @@ static ssize_t read_from(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return sizeof(uint16_t);
 }
 
-static ssize_t written_to(struct bt_conn *conn,
+static k_ssize_t written_to(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr,
 			  const void *buf,
 			  uint16_t len,

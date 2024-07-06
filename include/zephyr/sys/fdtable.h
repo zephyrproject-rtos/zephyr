@@ -7,9 +7,10 @@
 #define ZEPHYR_INCLUDE_SYS_FDTABLE_H_
 
 #include <stdarg.h>
-#include <sys/types.h>
-/* FIXME: For native_posix ssize_t, off_t. */
-#include <zephyr/fs/fs.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
@@ -27,6 +28,24 @@
 #define ZVFS_MODE_IFLNK  0120000
 #define ZVFS_MODE_IFSOCK 0140000
 
+/* fcntl.h constants */
+
+#define ZVFS_O_CREAT COND_CODE_1(CONFIG_PICOLIBC, (0x0040), (0x0200))
+
+#define ZVFS_O_ACCMODE (ZVFS_O_RDONLY | ZVFS_O_WRONLY | ZVFS_O_RDWR)
+
+#define ZVFS_O_RDONLY 00
+#define ZVFS_O_WRONLY 01
+#define ZVFS_O_RDWR   02
+
+#define ZVFS_O_APPEND   0x0400
+#define ZVFS_O_EXCL     0x0800
+#define ZVFS_O_NONBLOCK 0x4000
+
+#define ZVFS_F_DUPFD 0
+#define ZVFS_F_GETFL 3
+#define ZVFS_F_SETFL 4
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,12 +56,12 @@ extern "C" {
  */
 struct fd_op_vtable {
 	union {
-		ssize_t (*read)(void *obj, void *buf, size_t sz);
-		ssize_t (*read_offs)(void *obj, void *buf, size_t sz, size_t offset);
+		k_ssize_t (*read)(void *obj, void *buf, size_t sz);
+		k_ssize_t (*read_offs)(void *obj, void *buf, size_t sz, k_off_t offset);
 	};
 	union {
-		ssize_t (*write)(void *obj, const void *buf, size_t sz);
-		ssize_t (*write_offs)(void *obj, const void *buf, size_t sz, size_t offset);
+		k_ssize_t (*write)(void *obj, const void *buf, size_t sz);
+		k_ssize_t (*write_offs)(void *obj, const void *buf, size_t sz, k_off_t offset);
 	};
 	int (*close)(void *obj);
 	int (*ioctl)(void *obj, unsigned int request, va_list args);

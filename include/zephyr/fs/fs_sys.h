@@ -42,7 +42,7 @@ struct fs_file_system_t {
 	 * @param nbytes Number of bytes to read.
 	 * @return Number of bytes read on success, negative errno code on fail.
 	 */
-	ssize_t (*read)(struct fs_file_t *filp, void *dest, size_t nbytes);
+	k_ssize_t (*read)(struct fs_file_t *filp, void *dest, size_t nbytes);
 	/**
 	 * Writes nbytes number of bytes.
 	 *
@@ -51,8 +51,7 @@ struct fs_file_system_t {
 	 * @param nbytes Number of bytes to write.
 	 * @return Number of bytes written on success, negative errno code on fail.
 	 */
-	ssize_t (*write)(struct fs_file_t *filp,
-					const void *src, size_t nbytes);
+	k_ssize_t (*write)(struct fs_file_t *filp, const void *src, size_t nbytes);
 	/**
 	 * Moves the file position to a new location in the file.
 	 *
@@ -61,14 +60,14 @@ struct fs_file_system_t {
 	 * @param whence Position in the file. Possible values: SEEK_CUR, SEEK_SET, SEEK_END.
 	 * @return New position in the file or negative errno code on fail.
 	 */
-	int (*lseek)(struct fs_file_t *filp, off_t off, int whence);
+	int (*lseek)(struct fs_file_t *filp, k_off_t off, int whence);
 	/**
 	 * Retrieves the current position in the file.
 	 *
 	 * @param filp File to get the current position from.
 	 * @return Current position in the file or negative errno code on fail.
 	 */
-	off_t (*tell)(struct fs_file_t *filp);
+	k_off_t (*tell)(struct fs_file_t *filp);
 	/**
 	 * Truncates/expands the file to the new length.
 	 *
@@ -76,7 +75,7 @@ struct fs_file_system_t {
 	 * @param length New length of the file.
 	 * @return 0 on success, negative errno code on fail.
 	 */
-	int (*truncate)(struct fs_file_t *filp, off_t length);
+	int (*truncate)(struct fs_file_t *filp, k_off_t length);
 	/**
 	 * Flushes the cache of an open file.
 	 *

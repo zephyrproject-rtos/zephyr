@@ -54,7 +54,7 @@ static int entry_check_and_copy(FILE *fin, FILE *fout, const char *name)
 	return 0;
 }
 
-static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
+static k_ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
 {
 	struct line_read_ctx *valctx = (struct line_read_ctx *)cb_arg;
 

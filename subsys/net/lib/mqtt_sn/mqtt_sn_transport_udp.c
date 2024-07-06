@@ -15,8 +15,6 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 
-#include <zephyr/posix/fcntl.h>
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 

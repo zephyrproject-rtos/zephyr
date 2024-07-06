@@ -17,8 +17,6 @@
 
 #include <stdint.h>
 
-#include <sys/types.h>
-
 #include <zephyr/kernel.h>
 
 #ifdef __cplusplus

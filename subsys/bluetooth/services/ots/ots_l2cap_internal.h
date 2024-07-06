@@ -29,7 +29,7 @@ struct bt_gatt_ots_l2cap {
 	struct bt_gatt_ots_l2cap_tx tx;
 	void (*tx_done)(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn);
-	ssize_t (*rx_done)(struct bt_gatt_ots_l2cap *l2cap_ctx,
+	k_ssize_t (*rx_done)(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			   struct bt_conn *conn, struct net_buf *buf);
 	void (*closed)(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn);

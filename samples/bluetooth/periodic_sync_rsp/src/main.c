@@ -127,8 +127,8 @@ static const struct bt_uuid_128 pawr_svc_uuid =
 static const struct bt_uuid_128 pawr_char_uuid =
 	BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef1));
 
-static ssize_t write_timing(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
-			    uint16_t len, uint16_t offset, uint8_t flags)
+static k_ssize_t write_timing(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			      const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	if (offset) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);

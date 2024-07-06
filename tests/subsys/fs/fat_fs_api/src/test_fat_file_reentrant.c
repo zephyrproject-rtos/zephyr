@@ -135,7 +135,7 @@ void tlock_mutex(void *p1, void *p2, void *p3)
 void tfile2_access(void *p1, void *p2, void *p3)
 {
 	int res;
-	ssize_t brw;
+	k_ssize_t brw;
 	struct fs_file_t filep2;
 
 	TC_PRINT("File 2 access thread started\n");
