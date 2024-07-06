@@ -192,7 +192,7 @@ extern "C" {
 #define TLS_SESSION_CACHE_PURGE 13
 /** Write-only socket option to control DTLS CID.
  *  The option accepts an integer, indicating the setting.
- *  Accepted vaules for the option are: 0, 1 and 2.
+ *  Accepted values for the option are: 0, 1 and 2.
  *  Effective when set before connecting to the socket.
  *  - 0 - DTLS CID will be disabled.
  *  - 1 - DTLS CID will be enabled, and a 0 length CID value to be sent to the
@@ -205,7 +205,7 @@ extern "C" {
 /** Read-only socket option to get DTLS CID status.
  *  The option accepts a pointer to an integer, indicating the setting upon
  *  return.
- *  Returned vaules for the option are:
+ *  Returned values for the option are:
  *  - 0 - DTLS CID is disabled.
  *  - 1 - DTLS CID is received on the downlink.
  *  - 2 - DTLS CID is sent to the uplink.
