@@ -81,7 +81,7 @@ extern void z_arm_interrupt_init(void);
  * is 1 it has a fixed hardware priority level (discarding what was supplied
  * in the interrupt's priority argument). If CONFIG_ZERO_LATENCY_LEVELS is
  * greater 1 it has the priority level assigned by the argument.
- * The interrupt wil run even if irq_lock() is active. Be careful!
+ * The interrupt will run even if irq_lock() is active. Be careful!
  */
 #define IRQ_ZERO_LATENCY	BIT(0)
 
