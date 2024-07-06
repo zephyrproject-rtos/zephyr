@@ -53,7 +53,7 @@ enum mcumgr_group_t {
 	/** Image management group, used for uploading firmware images */
 	MGMT_GROUP_ID_IMAGE,
 
-	/** Statistic management group, used for retieving statistics */
+	/** Statistic management group, used for retrieving statistics */
 	MGMT_GROUP_ID_STAT,
 
 	/** Settings management (config) group, used for reading/writing settings */
