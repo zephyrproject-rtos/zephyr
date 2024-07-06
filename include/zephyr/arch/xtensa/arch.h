@@ -228,7 +228,7 @@ static inline bool arch_mem_coherent(void *ptr)
 
 #if defined(CONFIG_XTENSA_MMU) || defined(__DOXYGEN__)
 /**
- * @brief Peform additional steps after MMU initialization.
+ * @brief Perform additional steps after MMU initialization.
  *
  * This performs additional steps related to memory management
  * after the main MMU initialization code. This needs to defined
