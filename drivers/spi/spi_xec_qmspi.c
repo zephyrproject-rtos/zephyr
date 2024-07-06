@@ -700,7 +700,7 @@ static struct spi_qmspi_data spi_qmspi_0_dev_data = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &qmspi_init, NULL, &spi_qmspi_0_dev_data,
+		    qmspi_init, NULL, &spi_qmspi_0_dev_data,
 		    &spi_qmspi_0_config, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_qmspi_driver_api);
 

@@ -590,7 +590,7 @@ static const struct spi_driver_api mss_qspi_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(mss_qspi_data_##n, ctx),	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &mss_qspi_init,			\
+	DEVICE_DT_INST_DEFINE(n, mss_qspi_init,				\
 			    NULL,					\
 			    &mss_qspi_data_##n,			\
 			    &mss_qspi_config_##n, POST_KERNEL,	\
