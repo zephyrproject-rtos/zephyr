@@ -757,7 +757,7 @@ done by passing a command to Renode, using an argument provided by the runner:
   west simulate --runner=renode --renode-command start
 
 To pass an argument to Renode itself, for example to start Renode in console mode
-intead of a separate window:
+instead of a separate window:
 
   west simulate --runner=renode --renode-arg="--console"
 

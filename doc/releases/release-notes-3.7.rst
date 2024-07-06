@@ -332,7 +332,7 @@ Boards & SoC Support
 
   * On :ref:`ST STM32H7B3I Discovery Kit <stm32h7b3i_dk_board>`: ``stm32h7b3i_dk_board``,
     enabled full cache management, Chrom-ART, double frame buffer and full refresh for
-    optimal LVGL perfomances.
+    optimal LVGL performance.
   * On ST STM32 boards, stm32cubeprogrammer runner can now be used to program external
     flash using ``--extload`` option.
 
@@ -871,7 +871,7 @@ Networking
   * Implemented IPv6 Privacy Extensions according to RFC 8981.
   * Added :c:func:`net_ipv6_is_private_addr` API function.
   * Implemented reachability hint for IPv6. Upper layers can use
-    c:func:`net_if_nbr_reachability_hint` to report Neigbor reachability and
+    c:func:`net_if_nbr_reachability_hint` to report Neighbor reachability and
     avoid unnecessary Neighbor Discovery solicitations.
   * Added :kconfig:option:`CONFIG_NET_IPV6_MTU` allowing to set custom IPv6 MTU.
   * Added :kconfig:option:`CONFIG_NET_MCAST_ROUTE_MAX_IFACES` which allows to set

@@ -309,7 +309,7 @@ characteristics representing remote endpoints.
          Supported max codec frames per SDU: 1
       Codec capabilities metadata:
          Preferred audio contexts:
-            Converstation (0x0002)
+            Conversational (0x0002)
             Media (0x0004)
    ep 0x81754e0
    ep 0x81755d4
