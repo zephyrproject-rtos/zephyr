@@ -22,7 +22,7 @@
  */
 
 .global __start
-.type	z_cstart, @function
+.type	z_prep_c, @function
 
 
 /* Macros to abstract away ABI differences */
@@ -189,6 +189,6 @@ _start:
 #endif /* !XCHAL_HAVE_BOOTLOADER */
 
 	/* Enter C domain, never returns from here */
-	CALL	z_cstart
+	CALL	z_prep_c
 
 	.size	_start, . - _start
