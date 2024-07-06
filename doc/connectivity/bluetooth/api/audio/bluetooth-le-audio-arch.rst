@@ -884,10 +884,10 @@ MTU requirements
 The Basic Audio Profile (BAP) has a requirement that both sides shall support a minimum ATT_MTU of
 at least 64 on the unenhanced ATT bearer or at least one enhanced ATT bearer.
 The requirement comes from the preferred (or sometimes mandatory) use of GATT Write Without
-Response, and where support for Write Long Characterstic Value is optional in most cases.
+Response, and where support for Write Long Characteristic Value is optional in most cases.
 
-If a ASCS device supports values larger than the minimum ATT_MTU of 64 octets, then it shall supoort
-Read long Characterstic Value by setting :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT` to a
+If a ASCS device supports values larger than the minimum ATT_MTU of 64 octets, then it shall support
+Read long Characteristic Value by setting :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT` to a
 non-zero value.
 
 LE Audio resources
@@ -923,7 +923,7 @@ The project is mostly automated,
 and the LE Audio contributors almost only rely on the automated workflows
 to present the state of development.
 Anyone is able to pick any of the open issues and work on it.
-If you cannot assign the issue to youself,
+If you cannot assign the issue to yourself,
 please leave a comment in the issue itself or ping the Discord channel for help.
 
 Bluetooth SIG errata for LE Audio

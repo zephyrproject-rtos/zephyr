@@ -24,7 +24,7 @@ Zephyr's implementation of PTP stack consist following items:
 * Integration with ptp_clock driver
 * PTP stack initialization executed during system init
 
-The implementation automatically creates PTP Ports (each PTP Port coresponds to unique interface).
+The implementation automatically creates PTP Ports (each PTP Port corresponds to unique interface).
 
 Supported features
 ******************
@@ -61,7 +61,7 @@ Based on Table 59 from section 15.5.2.3 of the IEEE 1588-2019 following manageme
 are supported:
 
 .. csv-table:: Supported management message's IDs
-   :header: Management_ID, Management_ID name, Allowed acctions
+   :header: Management_ID, Management_ID name, Allowed actions
    :widths: 10,40,25
 
     0x0000, NULL_PTP_MANAGEMENT, GET SET COMMAND
