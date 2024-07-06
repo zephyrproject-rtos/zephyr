@@ -9,7 +9,7 @@
 /**
  * @name XSPI definition for the xSPI peripherals
  * Note that
- *  SPI mode inpossible in STR transfer rate only
+ *  SPI mode impossible in STR transfer rate only
  */
 
 /* XSPI mode operating on 1 line, 2 lines, 4 lines or 8 lines */
