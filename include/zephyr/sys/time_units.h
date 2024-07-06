@@ -195,7 +195,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 					     __round_up, __round_off)) / \
 	z_tmcvt_divisor(__from_hz, __to_hz))
 
-/* Integer multiplcation 64-bit conversion */
+/* Integer multiplication 64-bit conversion */
 #define z_tmcvt_int_mul_64(__t, __from_hz, __to_hz)	\
 	(uint64_t) (__t)*((__to_hz) / (__from_hz))
 

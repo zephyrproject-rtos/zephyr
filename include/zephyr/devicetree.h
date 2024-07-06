@@ -4316,7 +4316,7 @@
  * @param name lowercase-and-underscores property name
  * @param default_value a fallback value to expand to
  * @return if @p prop exists, its value as a token, i.e. without any quotes and
- *         with special characters converted to underscores. Othewise
+ *         with special characters converted to underscores. Otherwise
  *         @p default_value
  */
 #define DT_INST_STRING_TOKEN_OR(inst, name, default_value) \
@@ -4620,7 +4620,7 @@
 
 /**
  * @brief Invokes @p fn for each element of property @p prop for
- *        a `DT_DRV_COMPAT` instance with multiple arguments and a sepatator.
+ *        a `DT_DRV_COMPAT` instance with multiple arguments and a separator.
  *
  * Equivalent to
  *      DT_FOREACH_PROP_ELEM_SEP_VARGS(DT_DRV_INST(inst), prop, fn, sep,

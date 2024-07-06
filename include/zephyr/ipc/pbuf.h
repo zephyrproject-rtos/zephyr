@@ -60,7 +60,7 @@ struct pbuf_cfg {
  * @brief Data block of the packed buffer.
  *
  * The structure contains local copies of wr and rd indexes used by writer and
- * reader respecitvely.
+ * reader respectively.
  */
 struct pbuf_data {
 	volatile uint32_t wr_idx;	/* Index of the first holding first
