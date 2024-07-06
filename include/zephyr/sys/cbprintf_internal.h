@@ -490,7 +490,7 @@ extern "C" {
 	(Z_CBPRINTF_NONE_CHAR_PTR_COUNT(__VA_ARGS__) == \
 	 Z_CBPRINTF_P_COUNT(GET_ARG_N(1, __VA_ARGS__)))
 
-/* @brief Check if argument is a certain type of char pointer. What exectly is checked
+/* @brief Check if argument is a certain type of char pointer. What exactly is checked
  * depends on @p flags. If flags is 0 then 1 is returned if @p x is a char pointer.
  *
  * @param idx Argument index.

@@ -722,7 +722,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  * @brief Determine if a buffer exceeds highest address
  *
  * This macro determines if a buffer identified by a starting address @a addr
- * and length @a buflen spans a region of memory that goes beond the highest
+ * and length @a buflen spans a region of memory that goes beyond the highest
  * possible address (thereby resulting in a pointer overflow).
  *
  * @param addr Buffer starting address

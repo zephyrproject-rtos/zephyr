@@ -61,7 +61,7 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
  *  - If we have an MPU that requires power of two alignment, the heap bounds
  *    must be specified in Kconfig via CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE.
  *  - Otherwise, the heap arena on most arches starts at a suitably
- *    aligned base addreess after the `_end` linker symbol, through to the end
+ *    aligned base address after the `_end` linker symbol, through to the end
  *    of system RAM.
  */
 #if (!defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) || \
