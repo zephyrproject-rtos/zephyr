@@ -86,6 +86,7 @@ void radio_status_reset(void);
 uint32_t radio_is_ready(void);
 uint32_t radio_is_address(void);
 uint32_t radio_is_done(void);
+uint32_t radio_is_tx_done(void);
 uint32_t radio_has_disabled(void);
 uint32_t radio_is_idle(void);
 
