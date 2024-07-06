@@ -1337,6 +1337,21 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 {
 	hal_ticker_remove_jitter(&ticks_start, &remainder);
 
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* When using single timer for software tIFS switching, ensure that
+	 * the timer compare value is large enough to consider radio ISR
+	 * latency so that the ISR is able to disable the PPI/DPPI that again
+	 * could trigger the TXEN/RXEN task.
+	 * The timer is cleared on Radio End and if the PPI/DPPI is not disabled
+	 * by the Radio ISR, the compare will trigger again.
+	 */
+	uint32_t latency_ticks;
+
+	latency_ticks = HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US);
+	ticks_start -= latency_ticks;
+	remainder += HAL_TICKER_TICKS_TO_US(latency_ticks);
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 	EVENT_TIMER->MODE = 0;
 	EVENT_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
@@ -1388,11 +1403,27 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
 {
 	uint32_t remainder_us;
 
+	/* Setup compare event with min. 1 us offset */
+	remainder_us = 1;
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* When using single timer for software tIFS switching, ensure that
+	 * the timer compare value is large enough to consider radio ISR
+	 * latency so that the ISR is able to disable the PPI/DPPI that again
+	 * could trigger the TXEN/RXEN task.
+	 * The timer is cleared on Radio End and if the PPI/DPPI is not disabled
+	 * by the Radio ISR, the compare will trigger again.
+	 */
+	uint32_t latency_ticks;
+
+	latency_ticks = HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US);
+	ticks_start -= latency_ticks;
+	remainder_us += HAL_TICKER_TICKS_TO_US(latency_ticks);
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_STOP);
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 
-	/* Setup compare event with min. 1 us offset */
-	remainder_us = 1;
 	nrf_timer_cc_set(EVENT_TIMER, 0, remainder_us);
 
 	nrf_rtc_cc_set(NRF_RTC, 2, tick);
@@ -1452,6 +1483,7 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 
 	/* start_us could be the current count in the timer */
 	uint32_t now_us = start_us;
+	uint32_t actual_us;
 
 	/* Setup PPI while determining the latency in doing so */
 	do {
@@ -1459,8 +1491,24 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 		start_us = (now_us << 1) - start_us;
 
 		/* Setup compare event with min. 1 us offset */
+		actual_us = start_us + 1U;
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+		/* When using single timer for software tIFS switching, ensure that
+		 * the timer compare value is large enough to consider radio ISR
+		 * latency so that the ISR is able to disable the PPI/DPPI that again
+		 * could trigger the TXEN/RXEN task.
+		 * The timer is cleared on Radio End and if the PPI/DPPI is not disabled
+		 * by the Radio ISR, the compare will trigger again.
+		 */
+		uint32_t latency_ticks;
+
+		latency_ticks = HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US);
+		actual_us += HAL_TICKER_TICKS_TO_US(latency_ticks);
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
 		nrf_timer_event_clear(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE0);
-		nrf_timer_cc_set(EVENT_TIMER, 0, start_us + 1U);
+		nrf_timer_cc_set(EVENT_TIMER, 0, actual_us);
 
 		/* Capture the current time */
 		nrf_timer_task_trigger(EVENT_TIMER,
@@ -1469,7 +1517,7 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 		now_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 	} while ((now_us > start_us) && (EVENT_TIMER->EVENTS_COMPARE[0] == 0U));
 
-	return start_us + 1U;
+	return actual_us;
 }
 
 uint32_t radio_tmr_start_now(uint8_t trx)
