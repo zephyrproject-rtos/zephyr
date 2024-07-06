@@ -63,11 +63,12 @@ tests:
       - qemu_cortex_a53
     extra_configs:
       - CONFIG_FRAME_POINTER=y
+      - CONFIG_EXCEPTION_STACK_TRACE_SYMTAB=y
     harness_config:
       type: multi_line
       regex:
-        - "[func1+\\w+]"
-        - "[func2+\\w+]"
-        - "[func1+\\w+]"
-        - "[func2+\\w+]"
-        - "[func1+\\w+]"
+        - "\\[func1\\+0x\\w+\\]"
+        - "\\[func2\\+0x\\w+\\]"
+        - "\\[func1\\+0x\\w+\\]"
+        - "\\[func2\\+0x\\w+\\]"
+        - "\\[func1\\+0x\\w+\\]"
