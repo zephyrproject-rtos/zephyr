@@ -39,6 +39,7 @@
 
 extern void rtc_clk_cpu_freq_set_xtal(void);
 extern void esp_reset_reason_init(void);
+extern void z_prep_c(void);
 
 #if CONFIG_ESP_SPIRAM
 extern int _ext_ram_bss_start;
@@ -143,7 +144,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 
 	esp_intr_initialize();
 	/* Start Zephyr */
-	z_cstart();
+	z_prep_c();
 
 	CODE_UNREACHABLE;
 }
