@@ -44,7 +44,7 @@ typedef uint8_t kbd_row_t;
  * @brief Enables or disables a specific row, column combination in the actual
  * key mask.
  *
- * This allows enabling or disabling spcific row, column combination in the
+ * This allows enabling or disabling specific row, column combination in the
  * actual key mask in runtime. It can be useful if some of the keys are not
  * present in some configuration, and the specific configuration is determined
  * in runtime. Requires @kconfig{CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC} to
@@ -53,7 +53,7 @@ typedef uint8_t kbd_row_t;
  * @param dev Pointer to the keyboard matrix device.
  * @param row The matrix row to enable or disable.
  * @param col The matrix column to enable or disable.
- * @param enabled Whether the specificied row, col has to be enabled or disabled.
+ * @param enabled Whether the specified row, col has to be enabled or disabled.
  *
  * @retval 0 If the change is successful.
  * @retval -errno Negative errno if row or col are out of range for the device.
