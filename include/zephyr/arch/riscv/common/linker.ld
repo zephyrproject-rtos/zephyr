@@ -231,7 +231,7 @@ SECTIONS
 		/*
 		 * QEMU doesn't vet each instruction fetch individually.
 		 * Instead, it grabs a whole page and perform dynamic
-		 * transation on it in a batch. It therefore validates
+		 * translation on it in a batch. It therefore validates
 		 * PMP permissions using page-sized and -aligned chunks.
 		 */
 		. = ALIGN(0x1000);
