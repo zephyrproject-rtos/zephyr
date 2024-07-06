@@ -64,7 +64,7 @@ void z_log_runtime_filters_init(void);
 void z_log_links_initiate(void);
 
 /* Activate links.
- * Attemp to activate links,
+ * Attempt to activate links,
  *
  * @param active_mask     Mask with links to activate. N bit set indicates that Nth
  * link should be activated.

@@ -128,7 +128,7 @@ struct log_backend {
  * @brief Initialize or initiate the logging backend.
  *
  * If backend initialization takes longer time it could block logging thread
- * if backend is autostarted. That is because all backends are initilized in
+ * if backend is autostarted. That is because all backends are initialized in
  * the context of the logging thread. In that case, backend shall provide
  * function for polling for readiness (@ref log_backend_is_ready).
  *
