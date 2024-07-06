@@ -197,8 +197,10 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 	printk("Successfully sent and received %u of %u packets\n", packets_sent,
 	       SAMPLE_TEST_ECHO_PACKETS);
 
-	printk("Average time per successful echo: %u ms\n",
-	       accumulated_ms / packets_sent);
+	if (packets_sent > 0) {
+		printk("Average time per successful echo: %u ms\n",
+		accumulated_ms / packets_sent);
+	}
 
 	printk("Close UDP socket\n");
 
