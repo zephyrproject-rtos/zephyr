@@ -445,7 +445,7 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 	PM_DEVICE_DT_INST_DEFINE(n, uart_mcux_pm_action);\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &uart_mcux_init,				\
+			    uart_mcux_init,				\
 			    PM_DEVICE_DT_INST_GET(n),			\
 			    &uart_mcux_##n##_data,			\
 			    &uart_mcux_##n##_config,			\

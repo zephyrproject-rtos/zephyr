@@ -668,7 +668,7 @@ void pl011_isr(const struct device *dev)
 			(DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),    \
 	};							\
 								\
-	DEVICE_DT_INST_DEFINE(n, &pl011_init,			\
+	DEVICE_DT_INST_DEFINE(n, pl011_init,			\
 			NULL,					\
 			&pl011_data_port_##n,			\
 			&pl011_cfg_port_##n,			\
@@ -709,7 +709,7 @@ DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
 		.sbsa = true,					\
 	};							\
 								\
-	DEVICE_DT_INST_DEFINE(n, &pl011_init,			\
+	DEVICE_DT_INST_DEFINE(n, pl011_init,			\
 			NULL,					\
 			&pl011_data_sbsa_##n,			\
 			&pl011_cfg_sbsa_##n,			\

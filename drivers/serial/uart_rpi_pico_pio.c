@@ -192,7 +192,7 @@ static const struct uart_driver_api pio_uart_driver_api = {
 	};											\
 	static struct pio_uart_data pio_uart##idx##_data;					\
 												\
-	DEVICE_DT_INST_DEFINE(idx, &pio_uart_init, NULL, &pio_uart##idx##_data,			\
+	DEVICE_DT_INST_DEFINE(idx, pio_uart_init, NULL, &pio_uart##idx##_data,			\
 			      &pio_uart##idx##_config, POST_KERNEL,				\
 			      CONFIG_SERIAL_INIT_PRIORITY,					\
 			      &pio_uart_driver_api);

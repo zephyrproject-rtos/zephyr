@@ -331,7 +331,7 @@ static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {	\
 	static const struct mcux_lpsci_config mcux_lpsci_##n##_config;	\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &mcux_lpsci_init,				\
+			    mcux_lpsci_init,				\
 			    NULL,					\
 			    &mcux_lpsci_##n##_data,			\
 			    &mcux_lpsci_##n##_config,			\

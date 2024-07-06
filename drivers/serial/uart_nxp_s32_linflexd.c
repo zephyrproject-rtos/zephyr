@@ -379,7 +379,7 @@ static const struct uart_driver_api uart_nxp_s32_driver_api = {
 		return uart_nxp_s32_init(dev);					\
 	}									\
 	DEVICE_DT_INST_DEFINE(n,						\
-			&uart_nxp_s32_init_##n,					\
+			uart_nxp_s32_init_##n,					\
 			NULL,							\
 			COND_CODE_1(CONFIG_UART_INTERRUPT_DRIVEN,		\
 				   (&uart_nxp_s32_data_##n), (NULL)),		\

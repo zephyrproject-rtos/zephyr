@@ -274,6 +274,6 @@ static const DRAM_ATTR struct serial_esp32_usb_config serial_esp32_usb_cfg = {
 
 static struct serial_esp32_usb_data serial_esp32_usb_data_0;
 
-DEVICE_DT_INST_DEFINE(0, &serial_esp32_usb_init, NULL, &serial_esp32_usb_data_0,
+DEVICE_DT_INST_DEFINE(0, serial_esp32_usb_init, NULL, &serial_esp32_usb_data_0,
 		      &serial_esp32_usb_cfg, PRE_KERNEL_1,
 		      CONFIG_SERIAL_INIT_PRIORITY, &serial_esp32_usb_api);
