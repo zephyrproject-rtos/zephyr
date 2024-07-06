@@ -1303,6 +1303,11 @@ static void isr_done(void *param)
 {
 	struct lll_adv *lll;
 
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
+
 	/* Clear radio status and events */
 	lll_isr_status_reset();
 
