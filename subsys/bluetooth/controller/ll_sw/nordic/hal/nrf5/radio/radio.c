@@ -641,6 +641,15 @@ uint32_t radio_is_done(void)
 }
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
+uint32_t radio_is_tx_done(void)
+{
+	if (IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		return radio_is_done();
+	} else {
+		return 1U;
+	}
+}
+
 uint32_t radio_has_disabled(void)
 {
 	return (NRF_RADIO->EVENTS_DISABLED != 0);
