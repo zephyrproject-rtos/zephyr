@@ -1067,7 +1067,7 @@ static const struct spi_driver_api spi_qmspi_xec_driver_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),		\
 	};								\
 	PM_DEVICE_DT_INST_DEFINE(i, qmspi_xec_pm_action);		\
-	DEVICE_DT_INST_DEFINE(i, &qmspi_xec_init,			\
+	DEVICE_DT_INST_DEFINE(i, qmspi_xec_init,			\
 		PM_DEVICE_DT_INST_GET(i),				\
 		&qmspi_xec_data_##i, &qmspi_xec_config_##i,		\
 		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,			\

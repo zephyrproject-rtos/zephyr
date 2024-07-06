@@ -356,7 +356,7 @@ done:
 		.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &spi_numaker_init, NULL, &spi_numaker_data_##inst,             \
+	DEVICE_DT_INST_DEFINE(inst, spi_numaker_init, NULL, &spi_numaker_data_##inst,              \
 			      &spi_numaker_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,   \
 			      &spi_numaker_driver_api);
 
