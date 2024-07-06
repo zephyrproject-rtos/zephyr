@@ -866,6 +866,23 @@ config XIP
 	  supply a linker command file when building your image. Enabling this
 	  option increases both the code and data footprint of the image.
 
+config OFFSET_64BIT
+	bool "Use 64-bit offsets"
+	help
+	  Select 'y' here to ensure k_off_t is always 64-bits. This may be
+	  useful on platforms with files, disks, and memories larger than 2 GiB.
+
+	  If this option is not selected (the default), then the size of k_off_t
+	  will match the architecture word size (like size_t does currently).
+
+	  On 32-bit platforms, enabling this feature trades space and speed for
+	  flexibiltity, since using 64-bit offsets may require more instructions
+	  for a given operation. For example, a 64-bit load may require two 32-bit
+	  loads, and a 64-bit divide may need to be completed with several
+	  32-bit instructions (the operation is emulated via a compiler built-in
+	  function).
+
+	  Note: offsets have a signed integer representation.
 
 menu "Security Options"
 
