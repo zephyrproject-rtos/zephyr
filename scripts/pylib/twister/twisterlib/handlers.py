@@ -755,7 +755,8 @@ class DeviceHandler(Handler):
                 logger.debug(f"Attach serial device {serial_device} @ {hardware.baud} baud")
                 ser.port = serial_device
                 ser.open()
-            except serial.SerialException:
+            except serial.SerialException as e:
+                self._handle_serial_exception(e, hardware, serial_pty, ser_pty_process)
                 return
 
         if not flash_error:
