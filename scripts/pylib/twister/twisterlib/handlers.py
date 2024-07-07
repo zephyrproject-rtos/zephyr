@@ -460,14 +460,20 @@ class DeviceHandler(Handler):
     def device_is_available(self, instance):
         device = instance.platform.name
         fixture = instance.testsuite.harness_config.get("fixture")
-        dut_found = False
+        duts_found = []
 
         for d in self.duts:
             if fixture and fixture not in map(lambda f: f.split(sep=':')[0], d.fixtures):
                 continue
             if d.platform != device or (d.serial is None and d.serial_pty is None):
                 continue
-            dut_found = True
+            duts_found.append(d)
+
+        if not duts_found:
+            raise TwisterException(f"No device to serve as {device} platform.")
+
+        # Select an available DUT with less failures
+        for d in sorted(duts_found, key=lambda _dut: _dut.failures):
             d.lock.acquire()
             avail = False
             if d.available:
@@ -479,9 +485,6 @@ class DeviceHandler(Handler):
             d.lock.release()
             if avail:
                 return d
-
-        if not dut_found:
-            raise TwisterException(f"No device to serve as {device} platform.")
 
         return None
 

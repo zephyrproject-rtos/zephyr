@@ -738,6 +738,7 @@ TESTDATA_10 = [
                 fixtures=[],
                 platform='dummy_platform',
                 available=1,
+                failures=0,
                 counter_increment=mock.Mock(),
                 counter=0
             ),
@@ -745,6 +746,7 @@ TESTDATA_10 = [
                 fixtures=['dummy fixture'],
                 platform='another_platform',
                 available=1,
+                failures=0,
                 counter_increment=mock.Mock(),
                 counter=0
             ),
@@ -754,6 +756,7 @@ TESTDATA_10 = [
                 serial_pty=None,
                 serial=None,
                 available=1,
+                failures=0,
                 counter_increment=mock.Mock(),
                 counter=0
             ),
@@ -762,11 +765,72 @@ TESTDATA_10 = [
                 platform='dummy_platform',
                 serial_pty=mock.Mock(),
                 available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=0,
                 counter_increment=mock.Mock(),
                 counter=0
             )
         ],
         3
+    ),
+    (
+        'dummy_platform',
+        'dummy fixture',
+        [
+            mock.Mock(
+                fixtures=[],
+                platform='dummy_platform',
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='another_platform',
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=None,
+                serial=None,
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=1,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            )
+        ],
+        4
     ),
     (
         'dummy_platform',
@@ -783,6 +847,7 @@ TESTDATA_10 = [
                 platform='dummy_platform',
                 serial_pty=mock.Mock(),
                 counter_increment=mock.Mock(),
+                failures=0,
                 available=0
             ),
             mock.Mock(
@@ -790,6 +855,7 @@ TESTDATA_10 = [
                 platform='dummy_platform',
                 serial_pty=mock.Mock(),
                 counter_increment=mock.Mock(),
+                failures=0,
                 available=0
             ),
             mock.Mock(
@@ -797,6 +863,7 @@ TESTDATA_10 = [
                 platform='dummy_platform',
                 serial=mock.Mock(),
                 counter_increment=mock.Mock(),
+                failures=0,
                 available=0
             ),
             mock.Mock(
@@ -804,6 +871,7 @@ TESTDATA_10 = [
                 platform='dummy_platform',
                 serial=mock.Mock(),
                 counter_increment=mock.Mock(),
+                failures=0,
                 available=0
             )
         ],
@@ -814,7 +882,9 @@ TESTDATA_10 = [
 @pytest.mark.parametrize(
     'platform_name, fixture, duts, expected',
     TESTDATA_10,
-    ids=['one good dut', 'exception - no duts', 'no available duts']
+    ids=['two good duts, select the first one',
+         'two duts, the first was failed once, select the second not failed',
+         'exception - no duts', 'no available duts']
 )
 def test_devicehandler_device_is_available(
     mocked_instance,
