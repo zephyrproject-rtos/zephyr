@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Codecoup
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,6 +80,17 @@ void mock_bt_iso_init(void)
 void mock_bt_iso_cleanup(void)
 {
 
+}
+
+int bt_iso_setup_data_path(const struct bt_iso_chan *chan, uint8_t dir,
+			   const struct bt_iso_chan_path *path)
+{
+	return 0;
+}
+
+int bt_iso_remove_data_path(const struct bt_iso_chan *chan, uint8_t dir)
+{
+	return 0;
 }
 
 void mock_bt_iso_connected(struct bt_conn *iso)

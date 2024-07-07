@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor
+ * Copyright (c) 2024-2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/iso.h>
@@ -58,6 +59,15 @@ static int send_data(struct bt_iso_chan *chan, bool ts)
 
 static void iso_connected_cb(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	TEST_ASSERT(err == 0, "Unable to setup ISO TX path: %d", err);
+
 	LOG_INF("ISO Channel %p connected", chan);
 
 	SET_FLAG(iso_connected);
@@ -155,7 +165,6 @@ static void init(void)
 		.sdu = CONFIG_BT_ISO_TX_MTU,
 		.phy = BT_GAP_LE_PHY_2M,
 		.rtn = 1,
-		.path = NULL,
 	};
 	static struct bt_iso_chan_qos iso_qos = {
 		.tx = &iso_tx,
