@@ -1189,6 +1189,7 @@ def test_devicehandler_create_serial_connection(
 
     dut = DUT()
     dut.available = 0
+    dut.failures = 0
 
     hardware_baud = 14400
     flash_timeout = 60
@@ -1203,11 +1204,13 @@ def test_devicehandler_create_serial_connection(
 
     if expected_result:
         assert result is not None
+        assert dut.failures == 0
 
     if expected_exception:
         assert handler.instance.status == TwisterStatus.FAIL
         assert handler.instance.reason == 'Serial Device Error'
         assert dut.available == 1
+        assert dut.failures == 1
         missing_mock.assert_called_once_with('blocked', 'Serial Device Error')
 
     if terminate_ser_pty_process:
