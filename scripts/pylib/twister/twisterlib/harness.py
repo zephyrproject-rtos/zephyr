@@ -350,10 +350,10 @@ class Pytest(Harness):
             self.state = 'failed'
             self.instance.reason = str(pytest_exception)
         finally:
+            self.instance.record(self.recording)
+            self._update_test_status()
             if self.reserved_dut:
                 self.instance.handler.make_dut_available(self.reserved_dut)
-        self.instance.record(self.recording)
-        self._update_test_status()
 
     def generate_command(self):
         config = self.instance.testsuite.harness_config
