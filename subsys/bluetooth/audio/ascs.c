@@ -3,7 +3,7 @@
  */
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -384,6 +384,11 @@ static void ase_enter_state_streaming(struct bt_ascs_ase *ase)
 
 	__ASSERT_NO_MSG(stream != NULL);
 
+	/* Setup the ISO data path when the stream is started. We could do it earlier when the CIS
+	 * is connected, but then we would just receive audio data that we would then just discard
+	 */
+	bt_bap_setup_iso_data_path(stream);
+
 	ops = stream->ops;
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
@@ -415,6 +420,14 @@ static void ase_exit_state_streaming(struct bt_ascs_ase *ase)
 	if (reason == BT_HCI_ERR_SUCCESS) {
 		/* Default to BT_HCI_ERR_UNSPECIFIED if no other reason is set */
 		reason = BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	if (ase->ep.iso != NULL && ase->ep.iso->chan.state == BT_ISO_STATE_CONNECTED) {
+		/* Remove the ISO data path as we no longer want to process any ISO data for this
+		 * stream, but only if the CIS is still connected. If the CIS disconnected, then the
+		 * data path is automatically removed by the controller
+		 */
+		bt_bap_remove_iso_data_path(stream);
 	}
 
 	ops = stream->ops;
@@ -1995,12 +2008,6 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 	/* Store the QoS once accepted */
 	ep->qos = *qos;
 	stream->qos = &ep->qos;
-
-	/* We setup the data path here, as this is the earliest where
-	 * we have the ISO <-> EP coupling completed (due to setting
-	 * the CIS ID in the QoS procedure).
-	 */
-	bt_bap_iso_configure_data_path(ep, stream->codec_cfg);
 
 	ep->cig_id = cig_id;
 	ep->cis_id = cis_id;
