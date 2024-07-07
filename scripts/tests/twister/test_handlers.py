@@ -735,12 +735,14 @@ TESTDATA_10 = [
                 fixtures=[],
                 platform='dummy_platform',
                 available=1,
+                counter_increment=mock.Mock(),
                 counter=0
             ),
             mock.Mock(
                 fixtures=['dummy fixture'],
                 platform='another_platform',
                 available=1,
+                counter_increment=mock.Mock(),
                 counter=0
             ),
             mock.Mock(
@@ -749,6 +751,7 @@ TESTDATA_10 = [
                 serial_pty=None,
                 serial=None,
                 available=1,
+                counter_increment=mock.Mock(),
                 counter=0
             ),
             mock.Mock(
@@ -756,6 +759,7 @@ TESTDATA_10 = [
                 platform='dummy_platform',
                 serial_pty=mock.Mock(),
                 available=1,
+                counter_increment=mock.Mock(),
                 counter=0
             )
         ],
@@ -775,24 +779,28 @@ TESTDATA_10 = [
                 fixtures=['dummy fixture'],
                 platform='dummy_platform',
                 serial_pty=mock.Mock(),
+                counter_increment=mock.Mock(),
                 available=0
             ),
             mock.Mock(
                 fixtures=['another fixture'],
                 platform='dummy_platform',
                 serial_pty=mock.Mock(),
+                counter_increment=mock.Mock(),
                 available=0
             ),
             mock.Mock(
                 fixtures=['dummy fixture'],
                 platform='dummy_platform',
                 serial=mock.Mock(),
+                counter_increment=mock.Mock(),
                 available=0
             ),
             mock.Mock(
                 fixtures=['another fixture'],
                 platform='dummy_platform',
                 serial=mock.Mock(),
+                counter_increment=mock.Mock(),
                 available=0
             )
         ],
@@ -823,7 +831,7 @@ def test_devicehandler_device_is_available(
 
         assert device == duts[expected]
         assert device.available == 0
-        assert device.counter == 1
+        device.counter_increment.assert_called_once()
     elif expected is None:
         device = handler.device_is_available(mocked_instance)
 
