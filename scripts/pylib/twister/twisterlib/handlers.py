@@ -472,8 +472,10 @@ class DeviceHandler(Handler):
             avail = False
             if d.available:
                 d.available = 0
-                d.counter += 1
+                d.counter_increment()
                 avail = True
+                logger.debug(f"Retain DUT:{d.platform}, Id:{d.id}, "
+                             f"counter:{d.counter}")
             d.lock.release()
             if avail:
                 return d

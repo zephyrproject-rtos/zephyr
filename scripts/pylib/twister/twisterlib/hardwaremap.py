@@ -96,6 +96,10 @@ class DUT(object):
         with self._counter.get_lock():
             self._counter.value = value
 
+    def counter_increment(self, value=1):
+        with self._counter.get_lock():
+            self._counter.value += value
+
     def to_dict(self):
         d = {}
         exclude = ['_available', '_counter', 'match']
