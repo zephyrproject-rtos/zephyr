@@ -354,7 +354,7 @@ class Pytest(Harness):
         self.source_dir = instance.testsuite.source_dir
         self.report_file = os.path.join(self.running_dir, 'report.xml')
         self.pytest_log_file_path = os.path.join(self.running_dir, 'twister_harness.log')
-        self.reserved_serial = None
+        self.reserved_dut = None
         self._output = []
 
     def pytest_run(self, timeout):
@@ -366,8 +366,8 @@ class Pytest(Harness):
             self.status = TwisterStatus.FAIL
             self.instance.reason = str(pytest_exception)
         finally:
-            if self.reserved_serial:
-                self.instance.handler.make_device_available(self.reserved_serial)
+            if self.reserved_dut:
+                self.instance.handler.make_dut_available(self.reserved_dut)
         self.instance.record(self.recording)
         self._update_test_status()
 
@@ -438,7 +438,7 @@ class Pytest(Harness):
         # update the instance with the device id to have it in the summary report
         self.instance.dut = hardware.id
 
-        self.reserved_serial = hardware.serial_pty or hardware.serial
+        self.reserved_dut = hardware
         if hardware.serial_pty:
             command.append(f'--device-serial-pty={hardware.serial_pty}')
         else:
