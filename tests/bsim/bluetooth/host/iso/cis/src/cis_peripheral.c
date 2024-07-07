@@ -1,20 +1,30 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor
+ * Copyright (c) 2023-2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
+#include <testlib/conn.h>
 
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
+#include "bstests.h"
 #include "common.h"
-
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/iso.h>
-#include <zephyr/sys/printk.h>
-
-#include <testlib/conn.h>
 
 extern enum bst_result_t bst_result;
 
@@ -74,7 +84,16 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
 	printk("ISO Channel %p connected\n", chan);
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
+	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
@@ -101,7 +120,6 @@ static void init(void)
 {
 	static struct bt_iso_chan_io_qos iso_rx = {
 		.sdu = CONFIG_BT_ISO_TX_MTU,
-		.path = NULL,
 	};
 	static struct bt_iso_server iso_server = {
 #if defined(CONFIG_BT_SMP)

@@ -1,16 +1,30 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor
+ * Copyright (c) 2023-2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
+
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
+#include "bstests.h"
 #include "common.h"
-
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/iso.h>
-#include <zephyr/sys/printk.h>
 
 #define ENQUEUE_COUNT 2
 
@@ -104,6 +118,12 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
 	printk("ISO Channel %p connected\n", chan);
 
 	seq_num = 0U;
@@ -115,10 +135,15 @@ static void iso_connected(struct bt_iso_chan *chan)
 
 		SET_FLAG(flag_iso_connected);
 	}
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
+	int err;
+
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
 
 	if (chan == default_chan) {
@@ -126,6 +151,9 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 		UNSET_FLAG(flag_iso_connected);
 	}
+
+	err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+	TEST_ASSERT(err == 0, "Failed to remove ISO data path: %d", err);
 }
 
 static void sdu_sent_cb(struct bt_iso_chan *chan)
@@ -156,7 +184,6 @@ static void init(void)
 		.sdu = CONFIG_BT_ISO_TX_MTU,
 		.phy = BT_GAP_LE_PHY_2M,
 		.rtn = 1,
-		.path = NULL,
 	};
 	static struct bt_iso_chan_qos iso_qos = {
 		.tx = &iso_tx,
