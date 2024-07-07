@@ -146,18 +146,8 @@ static int call_work(struct zsock_pollfd *pev, struct k_work_q *work_q,
 	 */
 	pev->fd = -1;
 
-	if (work->handler == NULL) {
-		/* Synchronous call */
-		net_socket_service_callback(work);
-	} else {
-		if (work_q != NULL) {
-			ret = k_work_submit_to_queue(work_q, work);
-		} else {
-			ret = k_work_submit(work);
-		}
-
-		k_yield();
-	}
+	/* Synchronous call */
+	net_socket_service_callback(work);
 
 	return ret;
 
