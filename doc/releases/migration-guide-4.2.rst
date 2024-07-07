@@ -112,6 +112,15 @@ Bluetooth Host
   :zephyr_file:`include/zephyr/bluetooth/conn.h` have been renamed
   to ``BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A<NUMBER>_B<NUMBER>``.
 
+* The ISO data paths are not longer setup automatically, and shall explicitly be setup and removed
+  by the application by calling :c:func:`bt_iso_setup_data_path` and
+  :c:func:`bt_iso_remove_data_path` respectively. (:github:`75549`)
+
+* ``BT_ISO_CHAN_TYPE_CONNECTED`` has been split into ``BT_ISO_CHAN_TYPE_CENTRAL`` and
+  ``BT_ISO_CHAN_TYPE_PERIPHERAL`` to better describe the type of the ISO channel, as behavior for
+  each role may be different. Any existing uses/checks for ``BT_ISO_CHAN_TYPE_CONNECTED``
+  can be replaced with an ``||`` of the two. (:github:`75549`)
+
 Networking
 **********
 
