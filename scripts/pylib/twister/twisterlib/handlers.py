@@ -481,10 +481,10 @@ class DeviceHandler(Handler):
 
         return None
 
-    def make_device_available(self, serial):
-        for d in self.duts:
-            if serial in [d.serial_pty, d.serial]:
-                d.available = 1
+    def make_dut_available(self, dut):
+        logger.debug(f"Release DUT:{dut.platform}, Id:{dut.id}, "
+                     f"counter:{dut.counter}")
+        dut.available = 1
 
     @staticmethod
     def run_custom_script(script, timeout):
@@ -584,7 +584,7 @@ class DeviceHandler(Handler):
             logger.debug(f"Terminated serial-pty:'{ser_pty}'")
     #
 
-    def _create_serial_connection(self, serial_device, hardware_baud,
+    def _create_serial_connection(self, dut, serial_device, hardware_baud,
                                   flash_timeout, serial_pty, ser_pty_process):
         try:
             ser = serial.Serial(
@@ -597,28 +597,33 @@ class DeviceHandler(Handler):
                 timeout=max(flash_timeout, self.get_test_timeout())
             )
         except serial.SerialException as e:
-            self.instance.status = "failed"
-            self.instance.reason = "Serial Device Error"
-            logger.error("Serial device error: %s" % (str(e)))
-
-            self.instance.add_missing_case_status("blocked", "Serial Device Error")
-            if serial_pty and ser_pty_process:
-                self._terminate_pty(serial_pty, ser_pty_process)
-
-            if serial_pty:
-                self.make_device_available(serial_pty)
-            else:
-                self.make_device_available(serial_device)
+            self._handle_serial_exception(e, dut, serial_pty, ser_pty_process)
             raise
 
         return ser
+
+
+    def _handle_serial_exception(self, exception, dut, serial_pty, ser_pty_process):
+        self.instance.status = "failed"
+        self.instance.reason = "Serial Device Error"
+        logger.error("Serial device error: %s" % (str(exception)))
+
+        self.instance.add_missing_case_status("blocked", "Serial Device Error")
+        if serial_pty and ser_pty_process:
+            self._terminate_pty(serial_pty, ser_pty_process)
+
+        self.make_dut_available(dut)
 
     def get_hardware(self):
         hardware = None
         try:
             hardware = self.device_is_available(self.instance)
+            in_waiting = 0
             while not hardware:
                 time.sleep(1)
+                in_waiting += 1
+                if in_waiting%60 == 0:
+                    logger.debug(f"Waiting for a DUT to run {self.instance.name}")
                 hardware = self.device_is_available(self.instance)
         except TwisterException as error:
             self.instance.status = "failed"
@@ -657,7 +662,7 @@ class DeviceHandler(Handler):
         hardware = self.get_hardware()
         if hardware:
             self.instance.dut = hardware.id
-        if not hardware:
+        else:
             return
 
         runner = hardware.runner or self.options.west_runner
@@ -686,6 +691,7 @@ class DeviceHandler(Handler):
 
         try:
             ser = self._create_serial_connection(
+                hardware,
                 serial_port,
                 hardware.baud,
                 flash_timeout,
@@ -778,10 +784,7 @@ class DeviceHandler(Handler):
         if post_script:
             self.run_custom_script(post_script, 30)
 
-        if serial_pty:
-            self.make_device_available(serial_pty)
-        else:
-            self.make_device_available(serial_device)
+        self.make_dut_available(hardware)
 
 
 class QEMUHandler(Handler):
