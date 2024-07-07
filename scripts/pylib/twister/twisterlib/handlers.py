@@ -475,7 +475,7 @@ class DeviceHandler(Handler):
                 d.counter_increment()
                 avail = True
                 logger.debug(f"Retain DUT:{d.platform}, Id:{d.id}, "
-                             f"counter:{d.counter}")
+                             f"counter:{d.counter}, failures:{d.failures}")
             d.lock.release()
             if avail:
                 return d
@@ -486,8 +486,10 @@ class DeviceHandler(Handler):
         return None
 
     def make_dut_available(self, dut):
+        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+            dut.failures_increment()
         logger.debug(f"Release DUT:{dut.platform}, Id:{dut.id}, "
-                     f"counter:{dut.counter}")
+                     f"counter:{dut.counter}, failures:{dut.failures}")
         dut.available = 1
 
     @staticmethod
