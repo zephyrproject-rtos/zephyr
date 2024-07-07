@@ -1,0 +1,6 @@
+# Copyright 2024 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MT8188_ADSP
+	bool "Mediatek MT8188 Audio DSP"
+	select SOC_MT8188_ADSP

@@ -21,8 +21,6 @@ import elftools.elf.sections
 
 FILE_MAGIC = 0xe463be95
 
-SRAM_START = 0x40000000
-SRAM_END   = 0x40040000
 DRAM_START = 0x60000000
 DRAM_END   = 0x61100000
 
@@ -34,12 +32,31 @@ ef = elftools.elf.elffile.ELFFile(open(elf_file, "rb"))
 sram = bytearray()
 dram = bytearray()
 
+
+# Returns the offset of a segment within the sram region, or -1 if it
+# doesn't appear to be SRAM.  SRAM is mapped differently for different
+# SOCs, but it's always a <=1M region in 0x4xxxxxxx.  Just use what we
+# get, but validate that it fits.
+sram_block = 0
+def sram_off(addr):
+    global sram_block
+    if addr < 0x40000000 or addr >= 0x50000000:
+        return -1
+    block = addr & ~0xfffff
+    assert sram_block in (0, block)
+
+    sram_block = block
+    off = addr - sram_block
+    assert off < 0x100000
+    return off
+
 for seg in ef.iter_segments():
     h = seg.header
     if h.p_type == "PT_LOAD":
-        if h.p_paddr in range(SRAM_START, SRAM_END):
+        soff = sram_off(h.p_paddr)
+        if soff >= 0:
             buf = sram
-            off = h.p_paddr - SRAM_START
+            off = soff
         elif h.p_paddr in range(DRAM_START, DRAM_END):
             buf = dram
             off = h.p_paddr - DRAM_START
@@ -52,6 +69,7 @@ for seg in ef.iter_segments():
         if end > len(buf):
             buf.extend(b'\x00' * (end - len(buf)))
 
+        # pylint: disable=consider-using-enumerate
         for i in range(len(dat)):
             buf[i + off] = dat[i]
 
@@ -61,9 +79,8 @@ for sec in ef.iter_sections():
             if sym.name == "mtk_adsp_boot_entry":
                 boot_vector = sym.entry['st_value']
 
-assert len(sram) < SRAM_END - SRAM_START
 assert len(dram) < DRAM_END - DRAM_START
-assert (SRAM_START <= boot_vector < SRAM_END) or (DRAM_START <= boot_vector < DRAM_END)
+assert (sram_off(boot_vector) >= 0) or (DRAM_START <= boot_vector < DRAM_END)
 
 of = open(out_file, "wb")
 of.write(struct.pack("<III", FILE_MAGIC, len(sram), boot_vector))

@@ -1,6 +1,10 @@
 family:
   - name: mtk_adsp
     series:
-      - name: mtk_adsp
+      - name: mt8195_adsp
         socs:
           - name: mt8195_adsp
+      - name: mt818x_adsp
+        socs:
+          - name: mt8186_adsp
+          - name: mt8188_adsp

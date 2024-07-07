@@ -1,7 +1,9 @@
 # Copyright 2023 The ChromiumOS Authors
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library_sources(soc.c irq.c cpuclk.c mbox.c)
+zephyr_library_sources(soc.c irq.c mbox.c)
+
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_MT8195_ADSP cpuclk.c)
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/${CONFIG_SOC}/linker.ld CACHE INTERNAL "")
 
