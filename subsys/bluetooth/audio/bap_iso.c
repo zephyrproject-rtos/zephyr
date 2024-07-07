@@ -170,43 +170,68 @@ static struct bt_bap_iso_dir *bap_iso_get_iso_dir(bool unicast_client, struct bt
 	}
 }
 
-void bt_bap_iso_configure_data_path(struct bt_bap_ep *ep, struct bt_audio_codec_cfg *codec_cfg)
+void bt_bap_setup_iso_data_path(struct bt_bap_stream *stream)
 {
+	struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
+	struct bt_bap_ep *ep = stream->ep;
 	struct bt_bap_iso *bap_iso = ep->iso;
-	struct bt_iso_chan_qos *qos = bap_iso->chan.qos;
 	const bool is_unicast_client =
 		IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_ep_is_unicast_client(ep);
 	struct bt_bap_iso_dir *iso_dir = bap_iso_get_iso_dir(is_unicast_client, bap_iso, ep->dir);
-	struct bt_iso_chan_path *path = &iso_dir->path;
+	struct bt_iso_chan_path path = {0};
+	uint8_t dir;
+	int err;
 
-	/* Setup the data path objects */
 	if (iso_dir == &bap_iso->rx) {
-		qos->rx->path = path;
+		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
 	} else {
-		qos->tx->path = path;
+		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
 	}
+
+	path.pid = codec_cfg->path_id;
 
 	/* Configure the data path to either use the controller for transcoding, or set the path to
 	 * be transparent to indicate that the transcoding happens somewhere else
 	 */
-	path->pid = codec_cfg->path_id;
-
 	if (codec_cfg->ctlr_transcode) {
-		path->format = codec_cfg->id;
-		path->cid = codec_cfg->cid;
-		path->vid = codec_cfg->vid;
-		path->delay = 0;
-		path->cc_len = codec_cfg->data_len;
-		path->cc = codec_cfg->data;
+		path.format = codec_cfg->id;
+		path.cid = codec_cfg->cid;
+		path.vid = codec_cfg->vid;
+		path.cc_len = codec_cfg->data_len;
+		path.cc = codec_cfg->data;
 	} else {
-		path->format = BT_HCI_CODING_FORMAT_TRANSPARENT;
-		path->cid = 0;
-		path->vid = 0;
-		path->delay = 0;
-		path->cc_len = 0;
-		path->cc = NULL;
+		path.format = BT_HCI_CODING_FORMAT_TRANSPARENT;
+	}
+
+	err = bt_iso_setup_data_path(&bap_iso->chan, dir, &path);
+	if (err != 0) {
+		LOG_ERR("Failed to set ISO data path for ep %p and codec_cfg %p: %d", ep, codec_cfg,
+			err);
 	}
 }
+
+void bt_bap_remove_iso_data_path(struct bt_bap_stream *stream)
+{
+	struct bt_bap_ep *ep = stream->ep;
+	struct bt_bap_iso *bap_iso = ep->iso;
+	const bool is_unicast_client =
+		IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_ep_is_unicast_client(ep);
+	struct bt_bap_iso_dir *iso_dir = bap_iso_get_iso_dir(is_unicast_client, bap_iso, ep->dir);
+	uint8_t dir;
+	int err;
+
+	if (iso_dir == &bap_iso->rx) {
+		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+	} else {
+		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+	}
+
+	err = bt_iso_remove_data_path(&bap_iso->chan, dir);
+	if (err != 0) {
+		LOG_ERR("Failed to remove ISO data path for ep %p: %d", ep, err);
+	}
+}
+
 static bool is_unicast_client_ep(struct bt_bap_ep *ep)
 {
 	return IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_ep_is_unicast_client(ep);
