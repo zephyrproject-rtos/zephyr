@@ -60,7 +60,7 @@
 	w25q512jvfiq: w25q512jvfiq@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		reg = <0>;
-		size = <(DT_SIZE_M(512) / 8)>;
+		size = <DT_SIZE_M(64 * 8)>;
 		status = "okay";
 		erase-block-size = <4096>;
 		write-block-size = <1>;
