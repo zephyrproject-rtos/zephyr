@@ -227,7 +227,7 @@ def ast_expr(ast, env, edt):
     elif ast[0] == "dt_compat_enabled":
         compat = ast[1][0]
         for node in edt.nodes:
-            if compat in node.compats and node.status == "okay":
+            if (node.matching_compat == compat or compat in node.compats) and node.status == "okay":
                 return True
         return False
     elif ast[0] == "dt_alias_exists":
@@ -247,7 +247,8 @@ def ast_expr(ast, env, edt):
             parent = node.parent
             if parent is None:
                 continue
-            if node.status == "okay" and alias in node.aliases and parent.matching_compat == compat:
+            if node.status == "okay" and alias in node.aliases and \
+                    (parent.matching_compat == compat or compat in parent.compats):
                 return True
         return False
     elif ast[0] == "dt_label_with_parent_compat_enabled":
@@ -258,7 +259,8 @@ def ast_expr(ast, env, edt):
             parent = node.parent
         else:
             return False
-        return parent is not None and parent.status == 'okay' and parent.matching_compat == compat
+        return parent is not None and parent.status == 'okay' and \
+            (parent.matching_compat == compat or compat in parent.compats)
     elif ast[0] == "dt_chosen_enabled":
         chosen = ast[1][0]
         node = edt.chosen_node(chosen)
