@@ -13,5 +13,6 @@ supported:
   - trng
   - i2c
   - dma
+  - watchdog
 ram: 160
 flash: 384
