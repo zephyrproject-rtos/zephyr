@@ -523,13 +523,24 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 	/* If diff is too big, ptp_clk needs to be set first. */
 	if ((offset > (int64_t)NSEC_PER_SEC) || (offset < -(int64_t)NSEC_PER_SEC)) {
 		struct net_ptp_time current;
+		int32_t dest_nsec;
 
 		LOG_WRN("Clock offset exceeds 1 second.");
 
 		ptp_clock_get(ptp_clk.phc, &current);
 
 		current.second -= (uint64_t)(offset / NSEC_PER_SEC);
-		current.nanosecond -= (uint32_t)(offset % NSEC_PER_SEC);
+		dest_nsec = (int32_t)(current.nanosecond - (uint32_t)(offset % NSEC_PER_SEC));
+
+		if (dest_nsec < 0) {
+			current.second--;
+			dest_nsec += NSEC_PER_SEC;
+		} else if (dest_nsec >= NSEC_PER_SEC) {
+			current.second++;
+			dest_nsec -= NSEC_PER_SEC;
+		}
+
+		current.nanosecond = (uint32_t)dest_nsec;
 
 		ptp_clock_set(ptp_clk.phc, &current);
 		return;
