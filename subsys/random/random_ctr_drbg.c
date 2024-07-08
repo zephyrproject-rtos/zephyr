@@ -24,6 +24,11 @@
 #include <tinycrypt/aes.h>
 #include <tinycrypt/constants.h>
 
+#elif defined(CONFIG_WOLFSSL)
+#include <user_settings.h>
+#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/random.h>
+
 #endif /* CONFIG_MBEDTLS */
 
 /*
@@ -47,6 +52,15 @@ static int ctr_drbg_entropy_func(void *ctx, unsigned char *buf, size_t len)
 #elif defined(CONFIG_TINYCRYPT)
 
 static TCCtrPrng_t ctr_ctx;
+
+#elif defined(CONFIG_WOLFSSL)
+
+static WC_RNG ctr_ctx;
+
+static int ctr_drbg_entropy_cb(OS_Seed* os, byte* seed, word32 sz)
+{
+	return entropy_get_entropy(entropy_dev, (void *)seed, (size_t)sz);
+}
 
 #endif /* CONFIG_MBEDTLS */
 
@@ -97,6 +111,14 @@ static int ctr_drbg_initialize(void)
 		return -EIO;
 	}
 
+#elif defined(CONFIG_WOLFSSL)
+	ret = wc_SetSeed_Cb(ctr_drbg_entropy_cb);
+	if (ret != 0)
+		return -EIO;
+
+	ret = wc_InitRngNonce_ex(&ctr_ctx, (byte *)drbg_seed, sizeof(drbg_seed), NULL, 0);
+	if (ret != 0)
+		return -EIO;
 #endif
 	ctr_initialised = true;
 	return 0;
@@ -151,7 +173,13 @@ int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
 	} else {
 		ret = -EIO;
 	}
+
+#elif defined(CONFIG_WOLFSSL)
+
+	ret = wc_RNG_GenerateBlock(&ctr_ctx, (byte *)dst, (word32)outlen);
+
 #endif
+
 end:
 	k_mutex_unlock(&ctr_lock);
 

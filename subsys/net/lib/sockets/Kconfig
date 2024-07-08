@@ -145,7 +145,7 @@ config NET_SOCKETS_SERVICE_STACK_SIZE
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "TCP TLS socket option support"
 	imply TLS_CREDENTIALS
-	select MBEDTLS if NET_NATIVE
+	select MBEDTLS if NET_NATIVE && !WOLFSSL
 	imply MBEDTLS_TLS_VERSION_1_2 if !NET_L2_OPENTHREAD
 	imply MBEDTLS_KEY_EXCHANGE_RSA_ENABLED if !NET_L2_OPENTHREAD
 	imply MBEDTLS_CIPHER_AES_ENABLED if !NET_L2_OPENTHREAD
@@ -166,15 +166,18 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	bool "Set Maximum Fragment Length (MFL)"
 	default y
 	help
-	  Call mbedtls_ssl_conf_max_frag_len() on created TLS context
-	  configuration, so that Maximum Fragment Length (MFL) will be sent to
-	  peer using RFC 6066 max_fragment_length extension.
+	  Configure the created TLS context so that Maximum Fragment Length (MFL) 
+	  will be sent to peer using RFC 6066 max_fragment_length extension.
 
-	  Maximum Fragment Length (MFL) value is automatically chosen based on
-	  MBEDTLS_SSL_OUT_CONTENT_LEN and MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS
-	  macros (which are configured by CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN in
-	  case of default mbed TLS config). With DTLS, MFL value may be further
-	  limited with NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH.
+	  For MbedTLS, Maximum Fragment Length (MFL) value is automatically 
+	  chosen based on MBEDTLS_SSL_OUT_CONTENT_LEN and 
+	  MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS macros (which are configured by 
+	  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN in case of default mbed TLS config). 
+	  With DTLS, MFL value may be further limited with 
+	  NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH.
+	  
+	  For WolfSSL, Maximum Fragment Length (MFL) value is set by the
+	  configuration option WOLFSSL_MAX_FRAGMENT_LEN.
 
 	  This is mostly useful for TLS client side to tell TLS server what is
 	  the maximum supported receive record length.
@@ -182,7 +185,7 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 config NET_SOCKETS_ENABLE_DTLS
 	bool "DTLS socket support"
 	depends on NET_SOCKETS_SOCKOPT_TLS
-	select MBEDTLS_DTLS if NET_NATIVE
+	select MBEDTLS_DTLS if NET_NATIVE && !WOLFSSL
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 
@@ -256,7 +259,7 @@ config NET_SOCKETS_TLS_MAX_CIPHERSUITES
 config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
 	int "Maximum number of supported application layer protocols"
 	default 2
-	depends on NET_SOCKETS_SOCKOPT_TLS && MBEDTLS_SSL_ALPN
+	depends on NET_SOCKETS_SOCKOPT_TLS && (MBEDTLS_SSL_ALPN || WOLFSSL_ALPN)
 	help
 	  This variable sets maximum number of supported application layer
 	  protocols over TLS/DTLS that can be set explicitly by a socket option.

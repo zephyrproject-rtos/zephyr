@@ -167,7 +167,9 @@ extern "C" {
 
 /** Socket option for preventing certificates from being copied to the mbedTLS
  *  heap if possible. The option is only effective for DER certificates and is
- *  ignored for PEM certificates.
+ *  ignored for PEM certificates. This option has no effect when using wolfSSL
+ *  as the underlying TLS implementation, the cert data is always copied to the
+ *  heap in that case.
  */
 #define TLS_CERT_NOCOPY	       10
 /** TLS socket option to use with offloading. The option instructs the network

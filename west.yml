@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: wolfssl
+      url-base: https://github.com/wolfssl
 
   group-filter: [-babblesim, -optional]
 
@@ -324,6 +326,12 @@ manifest:
     - name: tinycrypt
       revision: 1012a3ebee18c15ede5efc8332ee2fc37817670f
       path: modules/crypto/tinycrypt
+      groups:
+        - crypto
+    - name: wolfssl
+      path: modules/crypto/wolfssl
+      revision: master
+      remote: wolfssl
       groups:
         - crypto
     - name: trusted-firmware-m

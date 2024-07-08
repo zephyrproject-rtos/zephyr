@@ -12,14 +12,41 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/loopback.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
+#include <zephyr/net/tls_ciphersuites.h>
+
+#if defined(CONFIG_MBEDTLS)
 #include <mbedtls/ssl.h>
+#endif
+
+#if defined(CONFIG_WOLFSSL)
+#include <wolfssl/ssl.h>
+#endif
 
 #include "../../socket_helpers.h"
+
+static const int cipher_list_psk[] = {
+	TLS_PSK_WITH_AES_128_CBC_SHA,
+    TLS_PSK_WITH_AES_256_CBC_SHA
+};
+
+/* Test test_set_ciphersuites() assumes [0] of this list is the
+ * cipher that will be negotiated */
+static const int cipher_list_psk2[] = {
+	TLS_PSK_WITH_AES_128_CBC_SHA,
+};
+
+static const int cipher_list_psk3[] = {
+	TLS_PSK_WITH_AES_256_CBC_SHA,
+};
 
 #define TEST_STR_SMALL "test"
 
 #define MY_IPV4_ADDR "127.0.0.1"
 #define MY_IPV6_ADDR "::1"
+
+#ifndef MY_DEFLT_HOSTNAME
+#define MY_DEFLT_HOSTNAME "localhost"
+#endif
 
 #define ANY_PORT 0
 #define SERVER_PORT 4242
@@ -118,6 +145,20 @@ static void test_connect(int sock, struct sockaddr *addr, socklen_t addrlen)
 	}
 }
 
+static void test_connect_err(int sock, struct sockaddr *addr, socklen_t addrlen)
+{
+    k_yield();
+
+    zassert_equal(zsock_connect(sock, addr, addrlen),
+              -1,
+              "connect expected to fail but succeeded");
+
+    if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+        /* Let the connection proceed */
+        k_yield();
+    }
+}
+
 static void test_send(int sock, const void *buf, size_t len, int flags)
 {
 	zassert_equal(zsock_send(sock, buf, len, flags),
@@ -147,6 +188,15 @@ static void test_accept(int sock, int *new_sock, struct sockaddr *addr,
 
 	*new_sock = zsock_accept(sock, addr, addrlen);
 	zassert_true(*new_sock >= 0, "accept failed");
+}
+
+static void test_accept_err(int sock, int *new_sock, struct sockaddr *addr,
+            socklen_t *addrlen)
+{
+    zassert_not_null(new_sock, "null newsock");
+
+    *new_sock = zsock_accept(sock, addr, addrlen);
+    zassert_true(*new_sock < 0, "accept expected to fail but succeeded");
 }
 
 static void test_shutdown(int sock, int how)
@@ -290,6 +340,16 @@ static void client_connect_work_handler(struct k_work *work)
 		     sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
 }
 
+static void client_connect_work_handler_err(struct k_work *work)
+{
+    struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+    struct connect_data *data =
+        CONTAINER_OF(dwork, struct connect_data, work);
+
+    test_connect_err(data->sock, data->addr, data->addr->sa_family == AF_INET ?
+             sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
+}
+
 static void dtls_client_connect_send_work_handler(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -397,7 +457,7 @@ static void test_prepare_dtls_connection(sa_family_t family)
 	 */
 	fds[0].fd = s_sock;
 	fds[0].events = ZSOCK_POLLIN;
-	ret = zsock_poll(fds, 1, 1000);
+	ret = zsock_poll(fds, 1, 3000);
 	zassert_equal(ret, 1, "poll() did not report data ready");
 
 	/* Flush the dummy byte. */
@@ -405,6 +465,70 @@ static void test_prepare_dtls_connection(sa_family_t family)
 	zassert_equal(ret, sizeof(rx_buf), "recv() failed");
 
 	test_work_wait(&test_data.work);
+}
+
+
+typedef void (*tls_cb)(void);
+typedef void (*client_work_func)(struct k_work *work);
+
+static void test_prepare_tls_connection_ex(sa_family_t family, bool accept_err, tls_cb cb, client_work_func cw)
+{
+    struct sockaddr c_saddr;
+    struct sockaddr s_saddr;
+    socklen_t exp_addrlen = family == AF_INET6 ?
+                sizeof(struct sockaddr_in6) :
+                sizeof(struct sockaddr_in);
+    struct sockaddr addr;
+    socklen_t addrlen = sizeof(addr);
+    struct connect_data test_data;
+
+    if (family == AF_INET6) {
+        prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock,
+                    (struct sockaddr_in6 *)&c_saddr,
+                    IPPROTO_TLS_1_2);
+        prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock,
+                    (struct sockaddr_in6 *)&s_saddr,
+                    IPPROTO_TLS_1_2);
+    } else {
+        prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock,
+                    (struct sockaddr_in *)&c_saddr,
+                    IPPROTO_TLS_1_2);
+        prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &s_sock,
+                    (struct sockaddr_in *)&s_saddr,
+                    IPPROTO_TLS_1_2);
+    }
+
+    if (NULL != cb) {
+        cb();
+    }
+
+    test_config_psk(s_sock, c_sock);
+
+    test_bind(s_sock, &s_saddr, exp_addrlen);
+    test_listen(s_sock);
+
+    /* Helper work for the connect operation - need to handle client/server
+     * in parallel due to handshake.
+     */
+    test_data.sock = c_sock;
+    test_data.addr = &s_saddr;
+    if (cw != NULL) {
+        k_work_init_delayable(&test_data.work, cw);
+    }
+    else {
+        k_work_init_delayable(&test_data.work, client_connect_work_handler);
+    }
+    test_work_reschedule(&test_data.work, K_NO_WAIT);
+
+    if (accept_err == true) {
+        test_accept_err(s_sock, &new_sock, &addr, &addrlen);
+    }
+    else {
+        test_accept(s_sock, &new_sock, &addr, &addrlen);
+        zassert_equal(addrlen, exp_addrlen, "Wrong addrlen");
+
+        test_work_wait(&test_data.work);
+    }
 }
 
 ZTEST(net_socket_tls, test_v4_msg_waitall)
@@ -537,6 +661,7 @@ static void send_work_handler(struct k_work *work)
 
 void test_msg_trunc(sa_family_t family)
 {
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	int rv;
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
 	struct send_data test_data = {
@@ -571,6 +696,9 @@ void test_msg_trunc(sa_family_t family)
 
 	/* Small delay for the final alert exchange */
 	k_msleep(10);
+#else
+    ztest_test_skip();
+#endif
 }
 
 ZTEST(net_socket_tls, test_v4_msg_trunc)
@@ -665,18 +793,26 @@ static void test_dtls_sendmsg_no_buf(sa_family_t family)
 
 ZTEST(net_socket_tls, test_v4_dtls_sendmsg_no_buf)
 {
-	if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE > 0) {
-		ztest_test_skip();
-	}
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+    if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE > 0) {
+        ztest_test_skip();
+    }
+#else
+    ztest_test_skip();
+#endif
 
 	test_dtls_sendmsg_no_buf(AF_INET);
 }
 
 ZTEST(net_socket_tls, test_v6_dtls_sendmsg_no_buf)
 {
-	if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE > 0) {
-		ztest_test_skip();
-	}
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+    if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE > 0) {
+        ztest_test_skip();
+    }
+#else
+    ztest_test_skip();
+#endif
 
 	test_dtls_sendmsg_no_buf(AF_INET6);
 }
@@ -785,18 +921,26 @@ static void test_dtls_sendmsg(sa_family_t family)
 
 ZTEST(net_socket_tls, test_v4_dtls_sendmsg)
 {
-	if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE == 0) {
-		ztest_test_skip();
-	}
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+    if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE <= 0) {
+        ztest_test_skip();
+    }
+#else
+    ztest_test_skip();
+#endif
 
 	test_dtls_sendmsg(AF_INET);
 }
 
 ZTEST(net_socket_tls, test_v6_dtls_sendmsg)
 {
-	if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE == 0) {
-		ztest_test_skip();
-	}
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+    if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE <= 0) {
+        ztest_test_skip();
+    }
+#else
+    ztest_test_skip();
+#endif
 
 	test_dtls_sendmsg(AF_INET6);
 }
@@ -1165,7 +1309,11 @@ ZTEST(net_socket_tls, test_recv_eof_on_close)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+#if defined(CONFIG_WOLFSSL)
+#define TLS_RECORD_OVERHEAD 29
+#else
 #define TLS_RECORD_OVERHEAD 81
+#endif
 
 ZTEST(net_socket_tls, test_send_non_block)
 {
@@ -1316,7 +1464,7 @@ ZTEST(net_socket_tls, test_send_on_close)
 	new_sock = -1;
 
 	/* Small delay for packets to propagate. */
-	k_msleep(10);
+	k_msleep(20);
 
 	/* Verify send() reports an error after connection is closed. */
 	ret = zsock_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
@@ -1338,7 +1486,7 @@ ZTEST(net_socket_tls, test_send_on_close)
 	new_sock = -1;
 
 	/* Small delay for packets to propagate. */
-	k_msleep(10);
+	k_msleep(20);
 
 	/* Graceful connection close should be reported first. */
 	ret = zsock_recv(c_sock, rx_buf, sizeof(rx_buf), 0);
@@ -1542,6 +1690,243 @@ ZTEST(net_socket_tls, test_send_while_recv)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+
+void tls_set_cs_cb()
+{
+    int ret = zsock_setsockopt(s_sock, SOL_TLS, TLS_CIPHERSUITE_LIST,
+                            (void*)cipher_list_psk, sizeof(cipher_list_psk));
+    zassert_equal(ret, 0, "Unable to set ciphersuites on server");
+    ret = zsock_setsockopt(c_sock, SOL_TLS, TLS_CIPHERSUITE_LIST,
+                            (void*)cipher_list_psk2, sizeof(cipher_list_psk2));
+    zassert_equal(ret, 0, "Unable to set ciphersuites on client");
+}
+
+void tls_set_cs_mismatch_cb()
+{
+    /* Set mismatched ciphersuites, should not connect */
+    int ret = zsock_setsockopt(c_sock, SOL_TLS, TLS_CIPHERSUITE_LIST,
+                            (void*)cipher_list_psk2, sizeof(cipher_list_psk2));
+    zassert_equal(ret, 0, "Unable to set ciphersuites on client");
+    ret = zsock_setsockopt(s_sock, SOL_TLS, TLS_CIPHERSUITE_LIST,
+                            (void*)cipher_list_psk3, sizeof(cipher_list_psk3));
+    zassert_equal(ret, 0, "Unable to set ciphersuites on server");
+}
+
+ZTEST(net_socket_tls, test_set_ciphersuites)
+{
+#define TLS_CS_TEST_MAX_CS_NUM 3
+    int ret;
+    uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
+    struct send_data test_data = {
+        .data = TEST_STR_SMALL,
+        .datalen = sizeof(TEST_STR_SMALL) - 1
+    };
+    int ciphersuites[TLS_CS_TEST_MAX_CS_NUM];
+    int cs_len = sizeof(ciphersuites);
+    int curr_cipher = 0;
+    int cc_len = sizeof(int);
+    int i;
+
+    for (i = 0; i < TLS_CS_TEST_MAX_CS_NUM; i++) {
+        ciphersuites[i] = 0;
+    }
+
+    test_prepare_tls_connection_ex(AF_INET, false, tls_set_cs_cb, NULL);
+
+    /* Verify the ciphersuite list is what we set for server */
+    ret = zsock_getsockopt(s_sock, SOL_TLS, TLS_CIPHERSUITE_LIST,
+            (void *)ciphersuites, &cs_len);
+    zassert_equal(ret, 0, "Unable to get ciphersuites for server");
+    zassert_equal(cs_len, sizeof(cipher_list_psk), "Incorrect get ciphersuite len");
+
+    for (i = 0; i < cs_len / sizeof(int); i++) {
+        zassert_equal(ciphersuites[i], cipher_list_psk[i], "Retrieved ciphersuite list element does not match set value");
+    }
+
+    /* Same for client */
+    for (i = 0; i < TLS_CS_TEST_MAX_CS_NUM; i++) {
+        ciphersuites[i] = 0;
+    }
+
+    cs_len = sizeof(ciphersuites);
+    ret = zsock_getsockopt(c_sock, SOL_TLS, TLS_CIPHERSUITE_LIST,
+            (void *)ciphersuites, &cs_len);
+    zassert_equal(ret, 0, "Unable to get ciphersuites for client");
+    zassert_equal(cs_len, sizeof(cipher_list_psk2), "Incorrect get ciphersuite len");
+
+    for (i = 0; i < cs_len / sizeof(int); i++) {
+        zassert_equal(ciphersuites[i], cipher_list_psk2[i], "Retrieved ciphersuite list element does not match set value");
+    }
+
+    /* Check that the actual negotiated cipher is correct for server */
+    ret = zsock_getsockopt(new_sock, SOL_TLS, TLS_CIPHERSUITE_USED,
+            (void *)&curr_cipher, &cc_len);
+    zassert_equal(ret, 0, "Unable to get current ciphersuite for server");
+    zassert_equal(curr_cipher, cipher_list_psk2[0]);
+
+    /* Same for the client */
+    curr_cipher = 0;
+    ret = zsock_getsockopt(c_sock, SOL_TLS, TLS_CIPHERSUITE_USED,
+            (void *)&curr_cipher, &cc_len);
+    zassert_equal(ret, 0, "Unable to get current ciphersuite for client");
+    zassert_equal(curr_cipher, cipher_list_psk2[0]);
+
+    test_data.sock = c_sock;
+    k_work_init_delayable(&test_data.tx_work, send_work_handler);
+    test_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+    /* recv() shall block until send work sends the data. */
+    ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), 0);
+    zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "recv() failed");
+    zassert_mem_equal(rx_buf, TEST_STR_SMALL, ret, "Invalid data received");
+
+    test_sockets_close();
+
+    k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_set_ciphersuites_err)
+{
+    /* Expect failure to connect and accept due to mismatched ciphersuites */
+    test_prepare_tls_connection_ex(AF_INET, true,
+        tls_set_cs_mismatch_cb, client_connect_work_handler_err);
+
+    test_sockets_close();
+
+    k_sleep(TCP_TEARDOWN_TIMEOUT);
+
+#if defined(CONFIG_BOARD_NATIVE_POSIX)
+    /* Native simulator isnt quite done yet, wait a bit more */
+    k_sleep(TCP_TEARDOWN_TIMEOUT);
+#endif
+}
+
+void tls_set_hostname_cb()
+{
+    int ret = zsock_setsockopt(c_sock, SOL_TLS, TLS_HOSTNAME,
+                            (void*)MY_DEFLT_HOSTNAME, strlen(MY_DEFLT_HOSTNAME));
+    zassert_equal(ret, 0, "Unable to set hostname on client");
+}
+
+ZTEST(net_socket_tls, test_set_hostname)
+{
+    int ret;
+    uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
+    struct send_data test_data = {
+        .data = TEST_STR_SMALL,
+        .datalen = sizeof(TEST_STR_SMALL) - 1
+    };
+
+    test_prepare_tls_connection_ex(AF_INET, false, tls_set_hostname_cb, NULL);
+
+    test_data.sock = c_sock;
+    k_work_init_delayable(&test_data.tx_work, send_work_handler);
+    test_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+    /* recv() shall block until send work sends the data. */
+    ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), 0);
+    zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "recv() failed");
+    zassert_mem_equal(rx_buf, TEST_STR_SMALL, ret, "Invalid data received");
+
+    test_sockets_close();
+
+    k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+void tls_set_session_cache_cb()
+{
+    int t = TLS_SESSION_CACHE_ENABLED;
+    int l = sizeof(int);
+    int ret = zsock_setsockopt(s_sock, SOL_TLS, TLS_SESSION_CACHE,
+                            (void*)&t, l);
+    zassert_equal(ret, 0, "Unable to set session cache on server");
+}
+
+ZTEST(net_socket_tls, test_session_cache)
+{
+    int ret;
+    int enabled = 0;
+    int len = sizeof(int);
+    uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
+    struct send_data test_data = {
+        .data = TEST_STR_SMALL,
+        .datalen = sizeof(TEST_STR_SMALL) - 1
+    };
+
+    test_prepare_tls_connection_ex(AF_INET, false, tls_set_session_cache_cb, NULL);
+
+    /* Check that the session cache is enabled */
+    ret = zsock_getsockopt(s_sock, SOL_TLS, TLS_SESSION_CACHE,
+            (void *)&enabled, &len);
+    zassert_equal(ret, 0, "Unable to get session cache enabled status");
+    zassert_equal(enabled, TLS_SESSION_CACHE_ENABLED, "Session cache value does not match what was set");
+
+    test_data.sock = c_sock;
+    k_work_init_delayable(&test_data.tx_work, send_work_handler);
+    test_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+    /* recv() shall block until send work sends the data. */
+    ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), 0);
+    zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "recv() failed");
+    zassert_mem_equal(rx_buf, TEST_STR_SMALL, ret, "Invalid data received");
+
+    test_sockets_close();
+
+    k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+const char *alpn_list[] = {
+    "http/1.0",
+    "http/1.1"
+};
+
+void tls_set_alpn_cb()
+{
+    socklen_t len = sizeof(alpn_list);
+    int ret = zsock_setsockopt(s_sock, SOL_TLS, TLS_ALPN_LIST,
+                            (void*)alpn_list, len);
+    zassert_equal(ret, 0, "Unable to set alpn on server");
+}
+
+ZTEST(net_socket_tls, test_alpn)
+{
+    int ret;
+    uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
+    struct send_data test_data = {
+        .data = TEST_STR_SMALL,
+        .datalen = sizeof(TEST_STR_SMALL) - 1
+    };
+    const char *alpn_buf[2];
+    int alpn_len = sizeof(alpn_buf);
+    alpn_buf[0] = NULL;
+    alpn_buf[1] = NULL;
+
+    test_prepare_tls_connection_ex(AF_INET, false, tls_set_alpn_cb, NULL);
+
+    /* Check that the ALPN list is the one we set */
+    ret = zsock_getsockopt(s_sock, SOL_TLS, TLS_ALPN_LIST,
+            (void *)alpn_buf, &alpn_len);
+    zassert_equal(ret, 0, "Unable to get alpn list");
+    zassert_equal(alpn_len, sizeof(alpn_list), "Retrieved ALPN list length incorrect");
+    zassert_equal(strlen(alpn_buf[0]), strlen(alpn_list[0]), "Retrieved ALPN list element length incorrect");
+    zassert_mem_equal(alpn_buf[0], alpn_list[0], strlen(alpn_list[0]), "Retrieved ALPN element does not match what was set");
+    zassert_equal(strlen(alpn_buf[1]), strlen(alpn_list[1]), "Retrieved ALPN list element length incorrect");
+    zassert_mem_equal(alpn_buf[1], alpn_list[1], strlen(alpn_list[1]), "Retrieved ALPN element does not match what was set");
+
+    test_data.sock = c_sock;
+    k_work_init_delayable(&test_data.tx_work, send_work_handler);
+    test_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+    /* recv() shall block until send work sends the data. */
+    ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), 0);
+    zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "recv() failed");
+    zassert_mem_equal(rx_buf, TEST_STR_SMALL, ret, "Invalid data received");
+
+    test_sockets_close();
+
+    k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
 ZTEST(net_socket_tls, test_poll_tls_pollin)
 {
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
@@ -1575,6 +1960,7 @@ ZTEST(net_socket_tls, test_poll_tls_pollin)
 
 ZTEST(net_socket_tls, test_poll_dtls_pollin)
 {
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
 	struct send_data test_data = {
 		.data = TEST_STR_SMALL,
@@ -1608,6 +1994,9 @@ ZTEST(net_socket_tls, test_poll_dtls_pollin)
 
 	/* Small delay for the final alert exchange */
 	k_msleep(10);
+#else
+    ztest_test_skip();
+#endif
 }
 
 ZTEST(net_socket_tls, test_poll_tls_pollout)
@@ -1660,6 +2049,7 @@ ZTEST(net_socket_tls, test_poll_tls_pollout)
 
 ZTEST(net_socket_tls, test_poll_dtls_pollout)
 {
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	struct zsock_pollfd fds[1];
 	int ret;
 
@@ -1677,6 +2067,9 @@ ZTEST(net_socket_tls, test_poll_dtls_pollout)
 
 	/* Small delay for the final alert exchange */
 	k_msleep(10);
+#else
+    ztest_test_skip();
+#endif
 }
 
 ZTEST(net_socket_tls, test_poll_tls_pollhup)
@@ -1709,6 +2102,7 @@ ZTEST(net_socket_tls, test_poll_tls_pollhup)
 
 ZTEST(net_socket_tls, test_poll_dtls_pollhup)
 {
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	struct zsock_pollfd fds[1];
 	uint8_t rx_buf;
 	int ret;
@@ -1734,9 +2128,18 @@ ZTEST(net_socket_tls, test_poll_dtls_pollhup)
 
 	/* Small delay for the final alert exchange */
 	k_msleep(10);
+#else
+    ztest_test_skip();
+#endif
 }
 
+#if defined(CONFIG_WOLFSSL)
+int SendAlert(WOLFSSL* ssl, int severity, int type);
+WOLFSSL *ztls_get_wolfssl_context(int fd);
+#endif
+#if defined(CONFIG_MBEDTLS)
 mbedtls_ssl_context *ztls_get_mbedtls_ssl_context(int fd);
+#endif
 
 ZTEST(net_socket_tls, test_poll_tls_pollerr)
 {
@@ -1745,17 +2148,26 @@ ZTEST(net_socket_tls, test_poll_tls_pollerr)
 	struct zsock_pollfd fds[1];
 	int optval;
 	socklen_t optlen = sizeof(optval);
-	mbedtls_ssl_context *ssl_ctx;
+#if defined(CONFIG_WOLFSSL)
+    WOLFSSL *ssl_ctx = NULL;
+#else
+    mbedtls_ssl_context *ssl_ctx;
+#endif
 
 	test_prepare_tls_connection(AF_INET6);
 
 	fds[0].fd = new_sock;
 	fds[0].events = ZSOCK_POLLIN;
 
+#if defined(CONFIG_WOLFSSL)
+    ssl_ctx = ztls_get_wolfssl_context(c_sock);
+    SendAlert(ssl_ctx, alert_fatal, wolfssl_alert_protocol_version);
+#else
 	/* Get access to the underlying ssl context, and send alert. */
 	ssl_ctx = ztls_get_mbedtls_ssl_context(c_sock);
 	mbedtls_ssl_send_alert_message(ssl_ctx, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
 				       MBEDTLS_SSL_ALERT_MSG_INTERNAL_ERROR);
+#endif
 
 	ret = zsock_poll(fds, 1, 100);
 	zassert_equal(ret, 1, "poll() should've report event");
@@ -1777,22 +2189,32 @@ ZTEST(net_socket_tls, test_poll_tls_pollerr)
 
 ZTEST(net_socket_tls, test_poll_dtls_pollerr)
 {
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	uint8_t rx_buf;
 	int ret;
 	struct zsock_pollfd fds[1];
 	int optval;
 	socklen_t optlen = sizeof(optval);
-	mbedtls_ssl_context *ssl_ctx;
+#if defined(CONFIG_WOLFSSL)
+    WOLFSSL *ssl_ctx = NULL;
+#else
+    mbedtls_ssl_context *ssl_ctx;
+#endif
 
 	test_prepare_dtls_connection(AF_INET6);
 
 	fds[0].fd = s_sock;
 	fds[0].events = ZSOCK_POLLIN;
 
+#if defined(CONFIG_WOLFSSL)
+    ssl_ctx = ztls_get_wolfssl_context(c_sock);
+    SendAlert(ssl_ctx, alert_fatal, wolfssl_alert_protocol_version);
+#else
 	/* Get access to the underlying ssl context, and send alert. */
 	ssl_ctx = ztls_get_mbedtls_ssl_context(c_sock);
 	mbedtls_ssl_send_alert_message(ssl_ctx, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
 				       MBEDTLS_SSL_ALERT_MSG_INTERNAL_ERROR);
+#endif
 
 	ret = zsock_poll(fds, 1, 100);
 	zassert_equal(ret, 1, "poll() should've report event");
@@ -1812,6 +2234,9 @@ ZTEST(net_socket_tls, test_poll_dtls_pollerr)
 
 	/* Small delay for the final alert exchange */
 	k_msleep(10);
+#else
+    ztest_test_skip();
+#endif
 }
 
 static void *tls_tests_setup(void)
