@@ -4,11 +4,11 @@
  */
 
 &pinctrl {
-	sci0_default: sci0_default {
+	sci9_default: sci9_default {
 		group1 {
 			/* tx rx */
-			psels = <RA_PSEL(RA_PSEL_SCI_0, 1, 1)>,
-			<RA_PSEL(RA_PSEL_SCI_0, 1, 0)>;
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 3)>,
+			<RA_PSEL(RA_PSEL_SCI_9, 2, 2)>;
 		};
 	};
 };

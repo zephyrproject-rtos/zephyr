@@ -7,8 +7,8 @@
 	sci0_default: sci0_default {
 		group1 {
 			/* tx rx */
-			psels = <RA_PSEL(RA_PSEL_SCI_0, 1, 1)>,
-			<RA_PSEL(RA_PSEL_SCI_0, 1, 0)>;
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>,
+			<RA_PSEL(RA_PSEL_SCI_0, 2, 4)>;
 		};
 	};
 };

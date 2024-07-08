@@ -17,3 +17,8 @@ config USE_RA_FSP_DTC
 	bool
 	help
 	  Enable RA FSP DTC driver
+
+config USE_RA_FSP_SCI_UART
+	bool
+	help
+	  Enable RA FSP SCI UART driver

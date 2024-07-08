@@ -17,8 +17,8 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &sci7;
-		zephyr,shell-uart = &sci7;
+		zephyr,console = &uart7;
+		zephyr,shell-uart = &uart7;
 	};
 
 	leds {
@@ -35,13 +35,13 @@
 };
 
 &sci7 {
-	compatible = "renesas,ra6-uart-sci";
-	status = "okay";
-	current-speed = <115200>;
 	pinctrl-0 = <&sci7_default>;
 	pinctrl-names = "default";
-	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
-	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+	uart7: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
 };
 
 &ioport1 {

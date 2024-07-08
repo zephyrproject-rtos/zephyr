@@ -6,13 +6,9 @@
 &pinctrl {
 	sci8_default: sci8_default {
 		group1 {
-			/* tx */
-			psels = <RA_PSEL(RA_PSEL_SCI_8, 1, 5)>;
-			drive-strength = "medium";
-		};
-		group2 {
-			/* rx */
-			psels = <RA_PSEL(RA_PSEL_SCI_8, 1, 4)>;
+			/* tx rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_8, 1, 5)>,
+			<RA_PSEL(RA_PSEL_SCI_8, 1, 4)>;
 		};
 	};
 };

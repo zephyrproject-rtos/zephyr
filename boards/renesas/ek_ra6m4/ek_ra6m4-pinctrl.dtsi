@@ -6,13 +6,9 @@
 &pinctrl {
 	sci0_default: sci0_default {
 		group1 {
-			/* tx */
-			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>;
-			drive-strength = "medium";
-		};
-		group2 {
-			/* rx */
-			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
+			/* tx rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>,
+			<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
 		};
 	};
 };

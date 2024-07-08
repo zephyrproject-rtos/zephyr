@@ -30,6 +30,8 @@
 	};
 
 	soc {
+		interrupt-parent = <&nvic>;
+
 		system: system@4001e000 {
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x1000>;
@@ -103,63 +105,31 @@
 		};
 
 		sci0: sci0@40118000 {
-			channel = <0>;
+			compatible = "renesas,ra-sci";
+			interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40118000 0x100>;
+			clocks = <&pclka MSTPB 31>;
 			status = "disabled";
-		};
-
-		sci1: sci1@40118100 {
-			channel = <1>;
-			reg = <0x40118100 0x100>;
-			status = "disabled";
-		};
-
-		sci2: sci2@40118200 {
-			channel = <2>;
-			reg = <0x40118200 0x100>;
-			status = "disabled";
-		};
-
-		sci3: sci3@40118300 {
-			channel = <3>;
-			reg = <0x40118300 0x100>;
-			status = "disabled";
-		};
-
-		sci4: sci4@40118400 {
-			channel = <4>;
-			reg = <0x40118400 0x100>;
-			status = "disabled";
-		};
-
-		sci5: sci5@40118500 {
-			channel = <5>;
-			reg = <0x40118500 0x100>;
-			status = "disabled";
-		};
-
-		sci6: sci6@40118600 {
-			channel = <6>;
-			reg = <0x40118600 0x100>;
-			status = "disabled";
-		};
-
-		sci7: sci7@40118700 {
-			channel = <7>;
-			reg = <0x40118700 0x100>;
-			status = "disabled";
-		};
-
-		sci8: sci8@40118800 {
-			channel = <8>;
-			reg = <0x40118800 0x100>;
-			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <0>;
+				status = "disabled";
+			};
 		};
 
 		sci9: sci9@40118900 {
-			channel = <9>;
+			compatible = "renesas,ra-sci";
+			interrupts = <36 1>, <37 1>, <38 1>, <39 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40118900 0x100>;
+			clocks = <&pclka MSTPB 22>;
 			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <9>;
+				status = "disabled";
+			};
 		};
 
 		option_setting_ofs: option_setting_ofs@100a100 {
