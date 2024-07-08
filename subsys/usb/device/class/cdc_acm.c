@@ -625,13 +625,9 @@ static void cdc_acm_irq_tx_disable(const struct device *dev)
  */
 static int cdc_acm_irq_tx_ready(const struct device *dev)
 {
-	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+	struct cdc_acm_dev_data_t *const data = dev->data;
 
-	if (dev_data->tx_irq_ena && dev_data->tx_ready) {
-		return 1;
-	}
-
-	return 0;
+	return data->tx_irq_ena && data->configured && data->tx_ready && !data->suspended;
 }
 
 /**
@@ -671,13 +667,9 @@ static void cdc_acm_irq_rx_disable(const struct device *dev)
  */
 static int cdc_acm_irq_rx_ready(const struct device *dev)
 {
-	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+	struct cdc_acm_dev_data_t *const data = dev->data;
 
-	if (dev_data->rx_ready) {
-		return 1;
-	}
-
-	return 0;
+	return data->rx_irq_ena && data->rx_ready;
 }
 
 /**
@@ -689,15 +681,7 @@ static int cdc_acm_irq_rx_ready(const struct device *dev)
  */
 static int cdc_acm_irq_is_pending(const struct device *dev)
 {
-	struct cdc_acm_dev_data_t * const dev_data = dev->data;
-
-	if (dev_data->tx_ready && dev_data->tx_irq_ena) {
-		return 1;
-	} else if (dev_data->rx_ready && dev_data->rx_irq_ena) {
-		return 1;
-	} else {
-		return 0;
-	}
+	return cdc_acm_irq_rx_ready(dev) || cdc_acm_irq_tx_ready(dev);
 }
 
 /**
