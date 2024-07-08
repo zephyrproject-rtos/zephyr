@@ -606,7 +606,7 @@ config NXP_WIFI_MAX_PRIO
 config NXP_WIFI_SOFTAP_SUPPORT
 	bool "Wi-Fi SoftAP Support"
 	select NET_DHCPV4_SERVER
-	select WIFI_NM_WPA_SUPPLICANT_AP if WIFI_NM_WPA_SUPPLICANT
+	select WIFI_NM_HOSTAPD_AP if WIFI_NM_WPA_SUPPLICANT
 	default y
 	help
 	  Option to enable Wi-Fi SoftAP functions in the Wi-Fi driver.
