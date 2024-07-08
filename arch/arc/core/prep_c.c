@@ -116,6 +116,7 @@ static void dev_state_zero(void)
 
 extern FUNC_NORETURN void z_cstart(void);
 extern void arc_mpu_init(void);
+extern void arc_secureshield_init(void);
 
 /**
  * @brief Prepare to and run C code
@@ -143,6 +144,9 @@ void z_prep_c(void)
 #endif
 #ifdef CONFIG_ARC_MPU
 	arc_mpu_init();
+#endif
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	arc_secureshield_init();
 #endif
 	z_cstart();
 	CODE_UNREACHABLE;
