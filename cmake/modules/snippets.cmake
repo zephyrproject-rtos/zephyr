@@ -59,7 +59,6 @@ function(zephyr_process_snippets)
   # Set SNIPPET_ROOT.
   list(APPEND SNIPPET_ROOT ${APPLICATION_SOURCE_DIR})
   list(APPEND SNIPPET_ROOT ${ZEPHYR_BASE})
-  list(APPEND SNIPPET_ROOT ${ZEPHYR_NRF_MODULE_DIR})
   unset(real_snippet_root)
   foreach(snippet_dir ${SNIPPET_ROOT})
     # The user might have put a symbolic link in here, for example.
