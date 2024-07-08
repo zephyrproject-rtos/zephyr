@@ -397,3 +397,12 @@ tests:
       - CONFIG_RING_BUFFER=n
       - CONFIG_USB_DEVICE_STACK=n
       - CONFIG_USB_DEVICE_AUDIO=n
+  bluetooth.native_shell:
+    build_only: true
+    extra_args:
+      - EXTRA_CONF_FILE=snippets/xterm-native-shell/xterm-native-shell.conf
+      - EXTRA_DTC_OVERLAY_FILE=snippets/xterm-native-shell/xterm-native-shell.overlay
+    platform_allow:
+      - nrf52_bsim
+    integration_platforms:
+      - nrf52_bsim
