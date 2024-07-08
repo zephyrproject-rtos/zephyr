@@ -306,6 +306,39 @@
 			status = "disabled";
 			#io-channel-cells = <2>;
 		};
+
+		lpspi0: spi@4002c000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002c000 0x1000>;
+			interrupts = <10 0>;
+			clocks = <&pcc 0xb0 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		lpspi1: spi@4002d000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002d000 0x1000>;
+			interrupts = <11 0>;
+			clocks = <&pcc 0xb4 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		edma: dma-controller@40008000 {
+			compatible = "nxp,mcux-edma";
+			dma-channels = <8>;
+			dma-requests = <64>;
+			nxp,mem2mem;
+			reg = <0x40008000 0x1000>, <0x40021000 0x1000>;
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
+				     <4 0>;
+			status = "disabled";
+			#dma-cells = <2>;
+			irq-shared-offset = <4>;
+		};
 	};
 };
 
