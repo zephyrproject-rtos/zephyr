@@ -13,6 +13,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
 
 /*
  * The unpacked structs below are used inside __packed structures that reflect
@@ -59,3 +60,27 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE), "Immediate logging "
 	     "on selected backend(s) not "
 	     "supported with the software Link Layer");
 #endif
+
+#if defined(CONFIG_BT_CONN) && defined(CONFIG_BT_HCI_HOST)
+/* The host needs more ACL buffers than maximum ACL links. This is because of
+ * the way we re-assemble ACL packets into L2CAP PDUs.
+ *
+ * We keep around the first buffer (that comes from the driver) to do
+ * re-assembly into, and if all links are re-assembling, there will be no buffer
+ * available for the HCI driver to allocate from.
+ *
+ * Fixing it properly involves a re-design of the HCI driver interface.
+ */
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+BUILD_ASSERT(CONFIG_BT_BUF_ACL_RX_COUNT > CONFIG_BT_MAX_CONN);
+
+#else /* !CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+/* BT_BUF_RX_COUNT is defined in include/zephyr/bluetooth/buf.h */
+BUILD_ASSERT(BT_BUF_RX_COUNT > CONFIG_BT_MAX_CONN,
+	     "BT_BUF_RX_COUNT needs to be greater than CONFIG_BT_MAX_CONN. "
+	     "In order to do that, increase CONFIG_BT_BUF_ACL_RX_COUNT.");
+
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+#endif /* CONFIG_BT_CONN */
