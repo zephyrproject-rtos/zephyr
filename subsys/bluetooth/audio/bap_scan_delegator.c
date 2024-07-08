@@ -36,6 +36,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(bt_bap_scan_delegator, CONFIG_BT_BAP_SCAN_DELEGATOR_LOG_LEVEL);
 
@@ -448,14 +449,18 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
 
 static bool supports_past(struct bt_conn *conn, uint8_t pa_sync_val)
 {
-	LOG_DBG("%p remote %s PAST, local %s PAST (req %u)", (void *)conn,
-		BT_FEAT_LE_PAST_SEND(conn->le.features) ? "supports" : "does not support",
-		BT_FEAT_LE_PAST_RECV(bt_dev.le.features) ? "supports" : "does not support",
-		pa_sync_val);
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)) {
+		LOG_DBG("%p remote %s PAST, local %s PAST (req %u)", (void *)conn,
+			BT_FEAT_LE_PAST_SEND(conn->le.features) ? "supports" : "does not support",
+			BT_FEAT_LE_PAST_RECV(bt_dev.le.features) ? "supports" : "does not support",
+			pa_sync_val);
 
-	return pa_sync_val == BT_BAP_BASS_PA_REQ_SYNC_PAST &&
-	       BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-	       BT_FEAT_LE_PAST_RECV(bt_dev.le.features);
+		return pa_sync_val == BT_BAP_BASS_PA_REQ_SYNC_PAST &&
+		       BT_FEAT_LE_PAST_SEND(conn->le.features) &&
+		       BT_FEAT_LE_PAST_RECV(bt_dev.le.features);
+	} else {
+		return false;
+	}
 }
 
 static int pa_sync_request(struct bt_conn *conn,
