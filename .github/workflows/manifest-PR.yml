@@ -1,0 +1,39 @@
+name: handle manifest PR
+on:
+  pull_request_target:
+    types: [opened, synchronize, closed, reopened]
+    branches:
+      - main
+      - ncs-v*-branch
+
+permissions:
+  contents: read
+
+jobs:
+  call-manifest-pr-action:
+    runs-on: ubuntu-latest
+    outputs:
+      base-branch: ${{ steps.set-base-branch.outputs.base_branch }}
+    steps:
+      #      Determine the base branch:
+      #        * sdk-zephyr/main -> sdk-nrf/main
+      #        * sdk-zephyr/ncs-vX.Y-branch -> sdk-nrf/vX.Y-branch
+      - name: Set base branch
+        id: set-base-branch
+        run: |
+          if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+            echo "base_branch=main" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event.pull_request.base.ref }}" =~ ^ncs-(v[0-9]+\.[0-9]+-branch)$ ]]; then
+            branch_name="${{ github.event.pull_request.base.ref }}"
+            branch_name="${branch_name#ncs-}"
+            echo "base_branch=${branch_name}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Error: Unsupported base branch: ${{ github.event.pull_request.base.ref }}" >&2
+            exit 1
+          fi
+      - name: handle manifest PR
+        uses: nrfconnect/action-manifest-pr@main
+        with:
+          token: ${{ secrets.NCS_GITHUB_TOKEN }}
+          manifest-pr-title-details: ${{ github.event.pull_request.title }}
+          base-branch: ${{ steps.set-base-branch.outputs.base_branch }}
