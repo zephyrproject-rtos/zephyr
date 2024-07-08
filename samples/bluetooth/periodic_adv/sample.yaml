@@ -8,7 +8,6 @@ tests:
       - qemu_x86
       - nrf52_bsim
       - nrf52dk/nrf52832
-      - cyw920829m2evk_02
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3

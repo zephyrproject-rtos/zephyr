@@ -7,7 +7,6 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
-      - cyw920829m2evk_02
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
