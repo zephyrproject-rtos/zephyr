@@ -87,7 +87,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/arm/verdin_imx8mm_m4/verdin_imx8mm_m4_defconfig`.
+:zephyr_file:`boards/toradex/verdin_imx8mm/verdin_imx8mm_mimx8mm6_m4_defconfig`.
 
 It is recommended to disable peripherals used by the M4 core on the Linux host.
 
@@ -106,7 +106,7 @@ chip. Therefore, if UART4 is used, WiFI/BT will not work properly.
 
 If the WiFi/BT is needed, then another UART should be used for Zephyr (UART2 for
 example). You can change the UART by changing the ``zephyr,console`` and
-``zephyr,shell-uart`` in the :zephyr_file:`boards/arm/verdin_imx8mm_m4.dts` file.
+``zephyr,shell-uart`` in the :zephyr_file:`boards/toradex/verdin_imx8mm/verdin_imx8mm_mimx8mm6_m4.dts` file.
 
 +---------------+-----------------+---------------------------+
 | Board Name    | SoC Name        | Usage                     |
@@ -129,7 +129,7 @@ LED:
 There is no LED in the module itself, this is dependent on the carrier board that
 is being used with the module. The device tree is configured to use the GPIO3_IO1,
 which can be connected to the LED of the Verdin Development Board or changed in the
-:zephyr_file:`boards/arm/verdin_imx8mm_m4.dts` if needed.
+:zephyr_file:`boards/toradex/verdin_imx8mm/verdin_imx8mm_mimx8mm6_m4.dts` if needed.
 
 System Clock
 ============
@@ -163,7 +163,7 @@ For more information about memory mapping see the
 `i.MX 8M Applications Processor Reference Manual`_  (section 2.1.2 and 2.1.3)
 
 At compilation time you have to choose which RAM will be used. This
-configuration is done in the file ``boards/arm/verdin_imx8mm_m4/verdin_imx8mm_m4.dts``
+configuration is done in the file :zephyr_file:`boards/toradex/verdin_imx8mm/verdin_imx8mm_mimx8mm6_m4.dts`
 with "zephyr,flash" (when CONFIG_XIP=y) and "zephyr,sram" properties.
 The available configurations are:
 
