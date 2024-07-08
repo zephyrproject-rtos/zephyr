@@ -297,6 +297,15 @@
 			clocks = <&pcc 0x19c KINETIS_PCC_SRC_FIRC_ASYNC>;
 			status = "disabled";
 		};
+
+		cmp0: cmp@40073000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x40073000 0x1000>;
+			interrupts = <16 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
 	};
 };
 
