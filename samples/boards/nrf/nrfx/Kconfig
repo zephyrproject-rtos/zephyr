@@ -1,6 +1,8 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+source "Kconfig.zephyr"
+
 config NRFX_DPPI
 	default $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_DPPIC))
 
@@ -16,5 +18,3 @@ config NRFX_GPIOTE0
 config NRFX_GPIOTE1
 	default y if (SOC_SERIES_NRF53X && TRUSTED_EXECUTION_NONSECURE) || \
 		     (SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE)
-
-source "Kconfig.zephyr"
