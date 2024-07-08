@@ -24,7 +24,7 @@ config WIFI_NM_WPA_SUPPLICANT
 if WIFI_NM_WPA_SUPPLICANT
 
 config COMMON_LIBC_MALLOC_ARENA_SIZE
-	default 40000 if WIFI_NM_WPA_SUPPLICANT_AP
+	default 40000 if WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
 	# 8192 for MbedTLS heap
 	default 21808 if MBEDTLS_ENABLE_HEAP
 	# 30K is mandatory, but might need more for long duration use cases
@@ -291,8 +291,8 @@ config TESTING_OPTIONS
 
 config AP
 	bool
-	depends on WIFI_NM_WPA_SUPPLICANT_AP
-	default y if WIFI_NM_WPA_SUPPLICANT_AP
+	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
+	default y if WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
 
 config NO_RADIUS
 	bool
