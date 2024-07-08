@@ -161,7 +161,8 @@ zephyr_library_sources_ifdef(CONFIG_WPA_CLI
 	src/wpa_cli.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP OR CONFIG_WIFI_NM_HOSTAPD_AP)
+zephyr_library_sources(
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/ap.c
 	${HOSTAP_SRC_BASE}/ap/ap_config.c
 	${HOSTAP_SRC_BASE}/ap/ap_drv_ops.c
@@ -208,7 +209,7 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	${HOSTAP_SRC_BASE}/utils/crc32.c
 )
 
-zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
+zephyr_library_compile_definitions(
 	CONFIG_AP
 	CONFIG_NO_RADIUS
 	CONFIG_NO_VLAN
@@ -219,6 +220,7 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	EAP_SERVER
 	EAP_SERVER_IDENTITY
 )
+endif()
 
 zephyr_include_directories_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
 	${WIFI_NM_HOSTAPD_BASE}/
