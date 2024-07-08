@@ -8,14 +8,19 @@ identifier: mps3/an547/tsv
 name: Arm MPS3-AN547_TSV
 type: mcu
 arch: arm
-ram: 2048
-flash: 4
+ram: 767
+flash: 16
 simulation: qemu
 toolchain:
   - gnuarmemb
   - zephyr
   - xtools
+supported:
+  - gpio
 testing:
-  default: true
-  only_tags:
-    - trusted-firmware-m
+  ignore_tags:
+    - drivers
+    - bluetooth
+    - net
+    - timer
+vendor: arm
