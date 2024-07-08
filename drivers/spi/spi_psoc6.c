@@ -13,6 +13,7 @@
 LOG_MODULE_REGISTER(spi_psoc6);
 
 #include <errno.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
 #include <soc.h>
 
@@ -379,8 +380,8 @@ static int spi_psoc6_init(const struct device *dev)
 
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		return ret;
+	if (err < 0) {
+		return err;
 	}
 
 	Cy_SysClk_PeriphAssignDivider(config->periph_id,
