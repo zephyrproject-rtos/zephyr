@@ -159,7 +159,7 @@ static int temp_kinetis_init(const struct device *dev)
 		},
 	};
 
-	memset(&data->buffer, 0, ARRAY_SIZE(data->buffer));
+	memset(&data->buffer, 0, sizeof(data->buffer));
 
 	if (!device_is_ready(config->adc)) {
 		LOG_ERR("ADC device is not ready");

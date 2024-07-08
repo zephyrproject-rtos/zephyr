@@ -847,19 +847,31 @@ enum updatehub_response z_impl_updatehub_probe(void)
 				   recv_probe_sh_string_descr,
 				   ARRAY_SIZE(recv_probe_sh_string_descr),
 				   &metadata_any_boards) < 0) {
-			LOG_ERR("Could not parse json");
+			LOG_ERR("Could not parse the json");
 			ctx.code_status = UPDATEHUB_METADATA_ERROR;
 			goto cleanup;
 		}
 
+		LOG_DBG("elements: %d", metadata_any_boards.objects_len);
+		for (size_t i = 0; i < metadata_any_boards.objects_len; ++i) {
+			LOG_DBG("obj[%d].elements: %d",
+				i, metadata_any_boards.objects[i].objects_len);
+			for (size_t j = 0; j < metadata_any_boards.objects[i].objects_len; ++j) {
+				struct resp_probe_objects *obj =
+					&metadata_any_boards.objects[i].objects[j].objects;
+				LOG_DBG("\tMode: %s\n\tSHA: %s\n\tSize: %d",
+					obj->mode, obj->sha256sum, obj->size);
+			}
+		}
+
 		if (metadata_any_boards.objects_len != 2) {
-			LOG_ERR("Could not parse json");
+			LOG_ERR("Object length of type 'any metadata' is incorrect");
 			ctx.code_status = UPDATEHUB_METADATA_ERROR;
 			goto cleanup;
 		}
 
 		sha256size = strlen(
-			metadata_any_boards.objects[1].objects.sha256sum) + 1;
+			metadata_any_boards.objects[1].objects[0].objects.sha256sum) + 1;
 
 		if (sha256size != SHA256_HEX_DIGEST_SIZE) {
 			LOG_ERR("SHA256 size is invalid");
@@ -868,14 +880,26 @@ enum updatehub_response z_impl_updatehub_probe(void)
 		}
 
 		memcpy(update_info.sha256sum_image,
-		       metadata_any_boards.objects[1].objects.sha256sum,
+		       metadata_any_boards.objects[1].objects[0].objects.sha256sum,
 		       SHA256_HEX_DIGEST_SIZE);
-		update_info.image_size = metadata_any_boards.objects[1].objects.size;
+		update_info.image_size = metadata_any_boards.objects[1].objects[0].objects.size;
 		LOG_DBG("metadata_any: %s",
 			update_info.sha256sum_image);
 	} else {
+		LOG_DBG("elements: %d\n", metadata_some_boards.objects_len);
+		for (size_t i = 0; i < metadata_some_boards.objects_len; ++i) {
+			LOG_DBG("obj[%d].elements: %d\n",
+				i, metadata_some_boards.objects[i].objects_len);
+			for (size_t j = 0; j < metadata_some_boards.objects[i].objects_len; ++j) {
+				struct resp_probe_objects *obj =
+					&metadata_some_boards.objects[i].objects[j].objects;
+				LOG_DBG("\tMode: %s\n\tSHA: %s\n\tSize: %d\n",
+					obj->mode, obj->sha256sum, obj->size);
+			}
+		}
+
 		if (metadata_some_boards.objects_len != 2) {
-			LOG_ERR("Could not parse json");
+			LOG_ERR("Object length of type 'some metadata' is incorrect");
 			ctx.code_status = UPDATEHUB_METADATA_ERROR;
 			goto cleanup;
 		}
@@ -888,7 +912,7 @@ enum updatehub_response z_impl_updatehub_probe(void)
 		}
 
 		sha256size = strlen(
-			metadata_some_boards.objects[1].objects.sha256sum) + 1;
+			metadata_some_boards.objects[1].objects[0].objects.sha256sum) + 1;
 
 		if (sha256size != SHA256_HEX_DIGEST_SIZE) {
 			LOG_ERR("SHA256 size is invalid");
@@ -897,10 +921,10 @@ enum updatehub_response z_impl_updatehub_probe(void)
 		}
 
 		memcpy(update_info.sha256sum_image,
-		       metadata_some_boards.objects[1].objects.sha256sum,
+		       metadata_some_boards.objects[1].objects[0].objects.sha256sum,
 		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size =
-			metadata_some_boards.objects[1].objects.size;
+			metadata_some_boards.objects[1].objects[0].objects.size;
 		LOG_DBG("metadata_some: %s",
 			update_info.sha256sum_image);
 	}
@@ -942,7 +966,7 @@ enum updatehub_response z_impl_updatehub_update(void)
 
 	if (updatehub_storage_mark_partition_to_upgrade(&ctx.storage_ctx,
 							UPDATEHUB_SLOT_PARTITION_1)) {
-		LOG_ERR("Could not reporting downloaded state");
+		LOG_ERR("Could not mark partition to upgrade");
 		ctx.code_status = UPDATEHUB_INSTALL_ERROR;
 		goto error;
 	}

@@ -64,7 +64,7 @@ static int dac_esp32_init(const struct device *dev)
 	}
 
 	if (clock_control_on(cfg->clock_dev,
-		(clock_control_subsys_t) &cfg->clock_subsys) != 0) {
+		(clock_control_subsys_t) cfg->clock_subsys) != 0) {
 		LOG_ERR("DAC clock setup failed (%d)", -EIO);
 		return -EIO;
 	}
