@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include <stdio.h>
 
 #include <kernel_arch_interface.h>
 #include <zephyr/kernel.h>
