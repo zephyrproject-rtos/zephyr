@@ -217,3 +217,7 @@ int arch_icache_flush_and_invd_range(void *start_addr, size_t size)
 }
 
 #endif
+
+void arch_cache_init(void)
+{
+}
