@@ -193,6 +193,10 @@ void z_prep_c(void)
 #else
 	z_arm_interrupt_init();
 #endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+
+#ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT
+	z_arm_debug_enable_null_pointer_detection();
+#endif
 	z_cstart();
 	CODE_UNREACHABLE;
 }
