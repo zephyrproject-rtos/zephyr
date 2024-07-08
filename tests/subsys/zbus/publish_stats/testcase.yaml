@@ -1,0 +1,5 @@
+tests:
+  message_bus.zbus.publish_stats:
+    tags: zbus
+    integration_platforms:
+      - native_sim
