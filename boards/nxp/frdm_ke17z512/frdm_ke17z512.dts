@@ -61,6 +61,8 @@
 };
 
 &lpuart2 {
+	dmas = <&edma 5 6>, <&edma 6 7>;
+	dma-names = "rx", "tx";
 	status = "okay";
 	pinctrl-0 = <&lpuart2_default>;
 	pinctrl-names = "default";
@@ -114,4 +116,16 @@
 			reg = <0x00076000 DT_SIZE_K(40)>;
 		};
 	};
+};
+
+&lpspi0 {
+	dmas = <&edma 0 14>, <&edma 1 15>;
+	dma-names = "rx", "tx";
+	status = "okay";
+	pinctrl-0 = <&lpspi0_default>;
+	pinctrl-names = "default";
+};
+
+&edma {
+	status = "okay";
 };
