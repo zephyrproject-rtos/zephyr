@@ -74,8 +74,8 @@ int max17048_adc(const struct device *i2c_dev, uint16_t *response)
  */
 int max17048_voltage(const struct device *i2c_dev, uint32_t *response)
 {
-    	uint16_t raw_voltage;
-    	int rc = max17048_adc(i2c_dev, &raw_voltage);
+	uint16_t raw_voltage;
+	int rc = max17048_adc(i2c_dev, &raw_voltage);
 
 	if (rc < 0) {
 		return rc;
