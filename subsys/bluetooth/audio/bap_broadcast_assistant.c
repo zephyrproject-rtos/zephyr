@@ -37,6 +37,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
@@ -182,13 +183,17 @@ static bool past_available(const struct bt_conn *conn,
 			   const bt_addr_le_t *adv_addr,
 			   uint8_t sid)
 {
-	LOG_DBG("%p remote %s PAST, local %s PAST", (void *)conn,
-		BT_FEAT_LE_PAST_RECV(conn->le.features) ? "supports" : "does not support",
-		BT_FEAT_LE_PAST_SEND(bt_dev.le.features) ? "supports" : "does not support");
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)) {
+		LOG_DBG("%p remote %s PAST, local %s PAST", (void *)conn,
+			BT_FEAT_LE_PAST_RECV(conn->le.features) ? "supports" : "does not support",
+			BT_FEAT_LE_PAST_SEND(bt_dev.le.features) ? "supports" : "does not support");
 
-	return BT_FEAT_LE_PAST_RECV(conn->le.features) &&
-	       BT_FEAT_LE_PAST_SEND(bt_dev.le.features) &&
-	       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
+		return BT_FEAT_LE_PAST_RECV(conn->le.features) &&
+		       BT_FEAT_LE_PAST_SEND(bt_dev.le.features) &&
+		       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
+	} else {
+		return false;
+	}
 }
 
 static int parse_recv_state(const void *data, uint16_t length,
