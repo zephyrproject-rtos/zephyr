@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include <zephyr/kernel.h>
 #include <string.h>
+#include <stdio.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
