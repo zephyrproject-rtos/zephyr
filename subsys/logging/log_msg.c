@@ -57,8 +57,10 @@ static bool frontend_runtime_filtering(const void *source, uint32_t level)
 		return true;
 	}
 
-	/* If only frontend is used and log got here it means that it was accepted. */
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+	/* If only frontend is used and log got here it means that it was accepted
+	 * unless userspace is enabled then runtime filtering is done here.
+	 */
+	if (!IS_ENABLED(CONFIG_USERSPACE) && IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
 		return true;
 	}
 
