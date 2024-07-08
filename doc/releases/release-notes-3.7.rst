@@ -116,6 +116,9 @@ Removed APIs in this release
 
  * Removed deprecated ``CONFIG_EMUL_EEPROM_AT2X`` Kconfig option.
 
+ * Removed ``pm_device_state_lock``, ``pm_device_state_is_locked`` and ``pm_device_state_unlock``
+   functions from the Device PM APIs.
+
 Deprecated in this release
 ==========================
 
@@ -143,6 +146,11 @@ Deprecated in this release
     favor of :c:func:`can_get_bitrate_min` and :c:func:`can_get_bitrate_max`.
   * Deprecated the :c:macro:`CAN_MAX_STD_ID` and :c:macro:`CAN_MAX_EXT_ID` macros in favor of
     :c:macro:`CAN_STD_ID_MASK` and :c:macro:`CAN_EXT_ID_MASK`.
+
+* PM
+
+  * Deprecated :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE`. Similar behavior can be achieved
+    using :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
 
 .. _zephyr_3.7_posix_api_deprecations:
 
@@ -1310,6 +1318,23 @@ Libraries / Subsystems
 * Picolibc
 
 * Power management
+
+  * Devices can now declare which system power states cause power loss.
+    This information can be used to set and release power state
+    constraints when it is needed by the device. This feature is enabled with
+    :kconfig:option:`CONFIG_PM_POLICY_DEVICE_CONSTRAINTS`. Use functions
+    :c:func:`pm_policy_device_power_lock_get` and :c:func:`pm_policy_device_power_lock_put`
+    to lock and unlock all power states that cause power loss in a device.
+
+  * Added shell support for device power management.
+
+  * Device power management was de-coupled from system power management. The new
+    :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED` option is used to enable
+    whether or not devices must be suspended when the system sleeps.
+
+  * Make it possible to disable system device power management individually per
+    power state using ``zephyr,pm-device-disabled``. This allows targets tuning which
+    states should (and which should not) trigger device power management.
 
 * Crypto
 
