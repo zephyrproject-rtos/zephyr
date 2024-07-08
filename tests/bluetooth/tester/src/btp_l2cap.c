@@ -278,6 +278,33 @@ static uint8_t _connect(const void *cmd, uint16_t cmd_len, void *rsp,
 			if (sec) {
 				br_chan->br.required_sec_level = sec_level;
 			}
+
+			if (cp->options & BTP_L2CAP_CONNECT_OPT_RET) {
+#if defined(CONFIG_BT_L2CAP_RET)
+				br_chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_RET;
+				br_chan->br.rx.transmit = 3;
+				br_chan->br.rx.window = 3;
+#endif /* CONFIG_BT_L2CAP_RET */
+			} else if (cp->options & BTP_L2CAP_CONNECT_OPT_FC) {
+#if defined(CONFIG_BT_L2CAP_FC)
+				br_chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_FC;
+				br_chan->br.rx.transmit = 3;
+				br_chan->br.rx.window = 2;
+#endif /* CONFIG_BT_L2CAP_FC */
+			} else if (cp->options & BTP_L2CAP_CONNECT_OPT_ERET) {
+#if defined(CONFIG_BT_L2CAP_ENH_RET)
+				br_chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_ERET;
+				br_chan->br.rx.transmit = 3;
+				br_chan->br.rx.window = 3;
+#endif /* CONFIG_BT_L2CAP_ENH_RET */
+			} else if (cp->options & BTP_L2CAP_CONNECT_OPT_STREAM) {
+#if defined(CONFIG_BT_L2CAP_STREAM)
+				br_chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_STREAM;
+				br_chan->br.rx.transmit = 1;
+				br_chan->br.rx.window = 3;
+#endif /* CONFIG_BT_L2CAP_STREAM */
+			}
+
 			rp->chan_id[i] = br_chan->chan_id;
 			allocated_channels[i] = &br_chan->br.chan;
 			br_chan->hold_credit = cp->options & BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT;

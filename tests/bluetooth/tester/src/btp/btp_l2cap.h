@@ -19,6 +19,10 @@ struct btp_l2cap_read_supported_commands_rp {
 
 #define BTP_L2CAP_CONNECT_OPT_ECFC			0x01
 #define BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT		0x02
+#define BTP_L2CAP_CONNECT_OPT_RET			0x04
+#define BTP_L2CAP_CONNECT_OPT_FC			0x08
+#define BTP_L2CAP_CONNECT_OPT_ERET			0x10
+#define BTP_L2CAP_CONNECT_OPT_STREAM		0x20
 
 #define BTP_L2CAP_CONNECT				0x02
 struct btp_l2cap_connect_cmd {
