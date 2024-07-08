@@ -27,4 +27,16 @@
 			slew-rate = "slow";
 		};
 	};
+
+	lpspi0_default: lpspi0_default {
+		group0 {
+			pinmux = <LPSPI0_SCK_PTB2>,
+				<LPSPI0_SIN_PTB3>,
+				<LPSPI0_SOUT_PTB4>,
+				<LPSPI0_PCS1_PTB5>;
+			bias-pull-up;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 };
