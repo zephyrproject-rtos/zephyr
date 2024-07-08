@@ -5,6 +5,7 @@
  */
 #include "thingy53_nrf5340_common-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/battery/battery.h>
 
 / {
 	chosen {
@@ -91,6 +92,8 @@
 
 	vbatt: vbatt {
 		compatible = "voltage-divider";
+		device-chemistry = "lithium-ion-polymer";
+		ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
 		io-channels = <&adc 2>;
 		output-ohms = <180000>;
 		full-ohms = <(1500000 + 180000)>;
