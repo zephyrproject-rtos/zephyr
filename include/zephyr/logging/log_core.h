@@ -251,7 +251,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	} \
 	\
 	bool is_user_context = k_is_user_context(); \
-	if (!IS_ENABLED(CONFIG_LOG_FRONTEND) && IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
 	    !is_user_context && _level > Z_LOG_RUNTIME_FILTER((_dsource)->filters)) { \
 		break; \
 	} \
@@ -335,7 +335,7 @@ static inline char z_log_minimal_level_to_char(int level)
 					    (const char *)(_data), (_len));\
 		break; \
 	} \
-	if (!IS_ENABLED(CONFIG_LOG_FRONTEND) && IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
 	    !is_user_context && (_level) > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
