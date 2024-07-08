@@ -246,6 +246,7 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 
 config WPA_CLI
 	bool "WPA CLI support"
+	default y if WIFI_NM_WPA_SUPPLICANT_CLI
 	help
 	  Enable WPA CLI support for wpa_supplicant.
 
