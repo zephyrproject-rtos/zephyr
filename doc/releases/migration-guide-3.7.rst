@@ -806,6 +806,12 @@ Bluetooth Host
 
   (:github:`75065`)
 
+* :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` now needs to be larger than
+  :kconfig:option:`CONFIG_BT_MAX_CONN`. This was always the case due to the design of the HCI
+  interface. It is now being enforced through a build-time assertion.
+
+  (:github:`75592`)
+
 Bluetooth Crypto
 ================
 
