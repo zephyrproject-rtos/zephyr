@@ -84,7 +84,7 @@ void icm42688_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	if (!cfg->is_streaming) {
 		icm42688_submit_one_shot(dev, iodev_sqe);
 	} else if (IS_ENABLED(CONFIG_ICM42688_STREAM)) {
-		icm42688_submit_stream(dev, iodev_sqe);
+		(void) icm42688_submit_stream(dev, iodev_sqe);
 	} else {
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}

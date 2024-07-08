@@ -12,7 +12,7 @@
 
 void icm42688_submit(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe);
 
-void icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe);
+int icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe);
 
 void icm42688_fifo_event(const struct device *dev);
 
