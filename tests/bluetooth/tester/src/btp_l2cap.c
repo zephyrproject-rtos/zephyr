@@ -910,6 +910,120 @@ static int accept_br(struct bt_conn *conn, struct bt_l2cap_server *server,
 
 	return 0;
 }
+
+static int accept_br_mode_ret(struct bt_conn *conn, struct bt_l2cap_server *server,
+		  struct bt_l2cap_chan **l2cap_chan)
+{
+	struct br_channel *chan;
+
+	if (bt_conn_enc_key_size(conn) < req_keysize) {
+		return -EPERM;
+	}
+
+	if (authorize_flag) {
+		return -EACCES;
+	}
+
+	chan = get_free_br_channel();
+	if (!chan) {
+		return -ENOMEM;
+	}
+
+	chan->br.chan.ops = &l2cap_br_ops;
+	chan->br.rx.mtu = DATA_MTU_INITIAL;
+	chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_RET;
+
+	*l2cap_chan = &chan->br.chan;
+
+	return 0;
+}
+
+static int accept_br_mode_fc(struct bt_conn *conn, struct bt_l2cap_server *server,
+		  struct bt_l2cap_chan **l2cap_chan)
+{
+	struct br_channel *chan;
+
+	if (bt_conn_enc_key_size(conn) < req_keysize) {
+		return -EPERM;
+	}
+
+	if (authorize_flag) {
+		return -EACCES;
+	}
+
+	chan = get_free_br_channel();
+	if (!chan) {
+		return -ENOMEM;
+	}
+
+	chan->br.chan.ops = &l2cap_br_ops;
+	chan->br.rx.mtu = DATA_MTU_INITIAL;
+	chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_FC;
+	chan->br.rx.window = 3;
+	chan->br.rx.transmit = 3;
+
+	*l2cap_chan = &chan->br.chan;
+
+	return 0;
+}
+
+static int accept_br_mode_eret(struct bt_conn *conn, struct bt_l2cap_server *server,
+		  struct bt_l2cap_chan **l2cap_chan)
+{
+	struct br_channel *chan;
+
+	if (bt_conn_enc_key_size(conn) < req_keysize) {
+		return -EPERM;
+	}
+
+	if (authorize_flag) {
+		return -EACCES;
+	}
+
+	chan = get_free_br_channel();
+	if (!chan) {
+		return -ENOMEM;
+	}
+
+	chan->br.chan.ops = &l2cap_br_ops;
+	chan->br.rx.mtu = DATA_MTU_INITIAL;
+	chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_ERET;
+	chan->br.rx.window = 3;
+	chan->br.rx.transmit = 3;
+
+	*l2cap_chan = &chan->br.chan;
+
+	return 0;
+}
+
+static int accept_br_mode_stream(struct bt_conn *conn, struct bt_l2cap_server *server,
+		  struct bt_l2cap_chan **l2cap_chan)
+{
+	struct br_channel *chan;
+
+	if (bt_conn_enc_key_size(conn) < req_keysize) {
+		return -EPERM;
+	}
+
+	if (authorize_flag) {
+		return -EACCES;
+	}
+
+	chan = get_free_br_channel();
+	if (!chan) {
+		return -ENOMEM;
+	}
+
+	chan->br.chan.ops = &l2cap_br_ops;
+	chan->br.rx.mtu = DATA_MTU_INITIAL;
+	chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_STREAM;
+	chan->br.rx.window = 3;
+	chan->br.rx.transmit = 1;
+
+	*l2cap_chan = &chan->br.chan;
+
+	return 0;
+}
 #endif /* CONFIG_BT_CLASSIC */
 
 static uint8_t listen(const void *cmd, uint16_t cmd_len,
@@ -999,6 +1113,84 @@ static uint8_t credits(const void *cmd, uint16_t cmd_len,
 
 		chan->pending_credit = NULL;
 	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t listen_with_mode(const void *cmd, uint16_t cmd_len,
+		      void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_listen_with_mode_cmd *cp = cmd;
+	struct bt_l2cap_server *server;
+	uint16_t psm = sys_le16_to_cpu(cp->psm);
+
+	if (cp->transport != BTP_L2CAP_TRANSPORT_BREDR) {
+		return BTP_STATUS_FAILED;
+	}
+
+#ifndef CONFIG_BT_CLASSIC
+	LOG_WRN("BR/EDR not supported");
+	return BTP_STATUS_FAILED;
+#endif /* defined(CONFIG_BT_CLASSIC) */
+
+	if (psm == 0 || !is_free_psm(psm)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	server = get_free_server();
+	if (!server) {
+		return BTP_STATUS_FAILED;
+	}
+
+	server->psm = psm;
+
+	switch (cp->response) {
+	case BTP_L2CAP_CONNECTION_RESPONSE_SUCCESS:
+		break;
+	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY:
+		/* TSPX_psm_encryption_key_size_required */
+		req_keysize = 16;
+		break;
+	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR:
+		authorize_flag = true;
+		break;
+	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHEN:
+		server->sec_level = BT_SECURITY_L3;
+		break;
+	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENCRYPTION:
+		server->sec_level = BT_SECURITY_L2;
+		break;
+	default:
+		return BTP_STATUS_FAILED;
+	}
+
+
+#if defined(CONFIG_BT_CLASSIC)
+	switch (cp->mode)
+	{
+	case BTP_L2CAP_MODE_RET:
+		server->accept = accept_br_mode_ret;
+		break;
+	case BTP_L2CAP_MODE_FC:
+		server->accept = accept_br_mode_fc;
+		break;
+	case BTP_L2CAP_MODE_ERET:
+		server->accept = accept_br_mode_eret;
+		break;
+	case BTP_L2CAP_MODE_STREAM:
+		server->accept = accept_br_mode_stream;
+		break;
+	default:
+		server->accept = accept_br;
+		break;
+	}
+
+	if (bt_l2cap_br_server_register(server) < 0) {
+		server->psm = 0U;
+		LOG_ERR("Fail to register the BR/EDR server");
+		return BTP_STATUS_FAILED;
+	}
+#endif /* defined(CONFIG_BT_CLASSIC) */
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -1105,6 +1297,11 @@ static const struct btp_handler handlers[] = {
 		.func = cls_send,
 	},
 #endif /* defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_L2CAP_CLS) */
+	{
+		.opcode = BTP_L2CAP_LISTEN_WITH_MODE,
+		.expect_len = sizeof(struct btp_l2cap_listen_with_mode_cmd),
+		.func = listen_with_mode,
+	},
 };
 
 uint8_t tester_init_l2cap(void)

@@ -119,6 +119,21 @@ struct btp_l2cap_cls_send_cmd {
 	uint8_t data[];
 } __packed;
 
+#define BTP_L2CAP_MODE_BASIC 0x00
+#define BTP_L2CAP_MODE_RET 0x01
+#define BTP_L2CAP_MODE_FC 0x02
+#define BTP_L2CAP_MODE_ERET 0x03
+#define BTP_L2CAP_MODE_STREAM 0x04
+
+#define BTP_L2CAP_LISTEN_WITH_MODE				0x0e
+struct btp_l2cap_listen_with_mode_cmd {
+	uint16_t psm;
+	uint8_t transport;
+	uint8_t mode;
+	uint16_t mtu;
+	uint16_t response;
+} __packed;
+
 /* events */
 #define BTP_L2CAP_EV_CONNECTION_REQ			0x80
 struct btp_l2cap_connection_req_ev {
