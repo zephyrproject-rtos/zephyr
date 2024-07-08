@@ -204,6 +204,34 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	return ok;
 }
 
+static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
+					 unsigned long *pmp_addr, unsigned long *pmp_cfg,
+					 unsigned int index_limit)
+{
+	/*
+	 * We'll be using MPRV. Make a fallback entry with everything
+	 * accessible as if no PMP entries were matched which is otherwise
+	 * the default behavior for m-mode without MPRV.
+	 */
+	bool ok = set_pmp_entry(index_p, PMP_R | PMP_W | PMP_X,
+				0, 0, pmp_addr, pmp_cfg, index_limit);
+
+#ifdef CONFIG_QEMU_TARGET
+	if (ok) {
+		/*
+		 * Workaround: The above produced 0x1fffffff which is correct.
+		 * But there is a QEMU bug that prevents it from interpreting
+		 * this value correctly. Hardcode the special case used by
+		 * QEMU to bypass this bug for now. The QEMU fix is here:
+		 * https://lists.gnu.org/archive/html/qemu-devel/2022-04/msg00961.html
+		 */
+		pmp_addr[*index_p - 1] = -1L;
+	}
+#endif
+
+	return ok;
+}
+
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
  *
@@ -429,24 +457,7 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 	set_pmp_entry(&index, PMP_NONE,
 		      stack_bottom, Z_RISCV_STACK_GUARD_SIZE,
 		      PMP_M_MODE(thread));
-
-	/*
-	 * We'll be using MPRV. Make a fallback entry with everything
-	 * accessible as if no PMP entries were matched which is otherwise
-	 * the default behavior for m-mode without MPRV.
-	 */
-	set_pmp_entry(&index, PMP_R | PMP_W | PMP_X,
-		      0, 0, PMP_M_MODE(thread));
-#ifdef CONFIG_QEMU_TARGET
-	/*
-	 * Workaround: The above produced 0x1fffffff which is correct.
-	 * But there is a QEMU bug that prevents it from interpreting this
-	 * value correctly. Hardcode the special case used by QEMU to
-	 * bypass this bug for now. The QEMU fix is here:
-	 * https://lists.gnu.org/archive/html/qemu-devel/2022-04/msg00961.html
-	 */
-	thread->arch.m_mode_pmpaddr_regs[index-1] = -1L;
-#endif
+	set_pmp_mprv_catchall(&index, PMP_M_MODE(thread));
 
 	/* remember how many entries we use */
 	thread->arch.m_mode_pmp_end_index = index;
