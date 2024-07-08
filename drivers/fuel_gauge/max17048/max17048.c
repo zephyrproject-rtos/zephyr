@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(MAX17048);
 struct max17048_data {
 	/* Charge as percentage */
 	uint8_t charge;
-	/* Voltage as mV */
+ 	/* Voltage as uV */
 	uint32_t voltage;
 
 	/* Time in minutes */
