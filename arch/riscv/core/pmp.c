@@ -348,8 +348,8 @@ static unsigned int global_pmp_end_index;
  */
 void z_riscv_pmp_init(void)
 {
-	unsigned long pmp_addr[4];
-	unsigned long pmp_cfg[1];
+	unsigned long pmp_addr[5];
+	unsigned long pmp_cfg[2];
 	unsigned int index = 0;
 
 	/* The read-only area is always there for every mode */
@@ -379,9 +379,27 @@ void z_riscv_pmp_init(void)
 		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-#endif
 
+	/*
+	 * This early, the kernel init code uses the IRQ stack and we want to
+	 * safeguard it as soon as possible. But we need a temporary default
+	 * "catch all" PMP entry for MPRV to work. Later on, this entry will
+	 * be set for each thread by z_riscv_pmp_stackguard_prepare().
+	 */
+	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+
+	 /* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+
+	/* Activate our non-locked PMP entries for m-mode */
+	csr_set(mstatus, MSTATUS_MPRV);
+
+	/* And forget about that last entry as we won't need it later */
+	index--;
+#else
+	 /* Write those entries to PMP regs. */
+	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+#endif
 
 #ifdef CONFIG_SMP
 #ifdef CONFIG_PMP_STACK_GUARD
@@ -401,6 +419,7 @@ void z_riscv_pmp_init(void)
 	}
 #endif
 
+	__ASSERT(index <= PMPCFG_STRIDE, "provision for one global word only");
 	global_pmp_cfg[0] = pmp_cfg[0];
 	global_pmp_last_addr = pmp_addr[index - 1];
 	global_pmp_end_index = index;
