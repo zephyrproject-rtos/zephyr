@@ -44,11 +44,7 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 	arch_irq_unlock(key);
 }
 
-int irq_offload_init(void)
+void arch_irq_offload_init(void)
 {
 	x86_irq_funcs[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = dispatcher;
-
-	return 0;
 }
-
-SYS_INIT(irq_offload_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
