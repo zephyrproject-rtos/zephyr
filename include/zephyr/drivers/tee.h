@@ -667,6 +667,6 @@ static inline int z_impl_tee_suppl_send(const struct device *dev, unsigned int r
  * @}
  */
 
-#include <syscalls/tee.h>
+#include <zephyr/syscalls/tee.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_TEE_H_ */
