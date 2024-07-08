@@ -43,7 +43,12 @@ def process_logs(dut: DeviceAdapter, build_dir):
     # timeout earlier with per-test timeout.
     handler_output = dut.readlines_until(regex = '.*##ZLOGV1##[0-9]+', timeout = 600.0)
 
-    encoded_logs = handler_output[-1]
+    # Join all the output lines together
+    handler_output = ''.join(ho.strip() for ho in handler_output)
+
+    # Find the last dictionary logging block and extract it
+    ridx = handler_output.rfind("##ZLOGV1##")
+    encoded_logs = handler_output[ridx:]
 
     encoded_log_file = os.path.join(build_dir, "encoded.log")
     with open(encoded_log_file, 'w', encoding='utf-8') as fp:
