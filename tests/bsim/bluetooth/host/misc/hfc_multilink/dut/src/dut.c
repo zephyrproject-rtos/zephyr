@@ -23,8 +23,8 @@ LOG_MODULE_REGISTER(dut, CONFIG_APP_LOG_LEVEL);
 
 #define NUM_TESTERS CONFIG_BT_MAX_CONN
 
-/* This test will fail when CONFIG_BT_MAX_CONN == CONFIG_BT_BUF_ACL_RX_COUNT */
-BUILD_ASSERT(CONFIG_BT_BUF_ACL_RX_COUNT == CONFIG_BT_MAX_CONN);
+/* Build with the minimum possible amount of RX buffers */
+BUILD_ASSERT(CONFIG_BT_BUF_ACL_RX_COUNT == (CONFIG_BT_MAX_CONN + 1));
 
 struct tester {
 	size_t sdu_count;
@@ -151,7 +151,7 @@ void entrypoint_dut(void)
 	 * Test purpose:
 	 *
 	 * Verifies that we are able to do L2CAP recombination on multiple links
-	 * when we only have as many buffers as links.
+	 * when we have the smallest possible amount of ACL buffers.
 	 *
 	 * Devices:
 	 * - `dut`: receives L2CAP PDUs from testers
