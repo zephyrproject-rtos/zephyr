@@ -28,8 +28,13 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+extern void xen_enlighten_init(void);
+
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_XEN
+	xen_enlighten_init();
+#endif
 }
 
 static inline void arch_switch(void *switch_to, void **switched_from)
