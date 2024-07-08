@@ -804,5 +804,5 @@ static inline int mspi_register_callback(const struct device *controller,
 /**
  * @}
  */
-#include <syscalls/mspi.h>
+#include <zephyr/syscalls/mspi.h>
 #endif /* ZEPHYR_INCLUDE_MSPI_H_ */
