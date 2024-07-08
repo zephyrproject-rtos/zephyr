@@ -19,7 +19,8 @@
  *
  * Standard (S) or High (H) drive modes can be applied to both pin levels, 0 or
  * 1. High drive mode will increase current capabilities of the pin (refer to
- * each SoC reference manual).
+ * each SoC reference manual). Extra high (E) drive mode can be used in SoCs
+ * that support it. It has to be applied to both pin levels.
  *
  * When the pin is configured to operate in open-drain mode (wired-and), the
  * drive mode can only be selected for the 0 level (1 is disconnected).
@@ -30,25 +31,30 @@
  * The drive flags are encoded in the 8 upper bits of @ref gpio_dt_flags_t as
  * follows:
  *
- * - Bit 8: Drive mode for '0' (0=Standard, 1=High)
- * - Bit 9: Drive mode for '1' (0=Standard, 1=High)
+ * - Bits 8-9:   Drive mode for '0' (0=Standard, 1=High, 2=Extra high, 3=reserved)
+ * - Bits 10-11: Drive mode for '1' (0=Standard, 1=High, 2=Extra high, 3=reserved)
  *
  * @{
  */
 
 /** @cond INTERNAL_HIDDEN */
 /** Drive mode field mask */
-#define NRF_GPIO_DRIVE_MSK	0x0300U
+#define NRF_GPIO_DRIVE_MSK	0x0F00U
 /** @endcond */
 
 /** Standard drive for '0' (default, used with GPIO_OPEN_DRAIN) */
 #define NRF_GPIO_DRIVE_S0	(0U << 8U)
 /** High drive for '0' (used with GPIO_OPEN_DRAIN) */
 #define NRF_GPIO_DRIVE_H0	(1U << 8U)
+/** Extra high drive for '0' */
+#define NRF_GPIO_DRIVE_E0	(2U << 8U)
 /** Standard drive for '1' (default, used with GPIO_OPEN_SOURCE) */
-#define NRF_GPIO_DRIVE_S1	(0U << 9U)
+#define NRF_GPIO_DRIVE_S1	(0U << 10U)
 /** High drive for '1' (used with GPIO_OPEN_SOURCE) */
-#define NRF_GPIO_DRIVE_H1	(1U << 9U)
+#define NRF_GPIO_DRIVE_H1	(1U << 10U)
+/** Extra high drive for '1' */
+#define NRF_GPIO_DRIVE_E1	(2U << 10U)
+
 /** Standard drive for '0' and '1' (default) */
 #define NRF_GPIO_DRIVE_S0S1	(NRF_GPIO_DRIVE_S0 | NRF_GPIO_DRIVE_S1)
 /** Standard drive for '0' and high for '1' */
@@ -57,6 +63,8 @@
 #define NRF_GPIO_DRIVE_H0S1	(NRF_GPIO_DRIVE_H0 | NRF_GPIO_DRIVE_S1)
 /** High drive for '0' and '1' */
 #define NRF_GPIO_DRIVE_H0H1	(NRF_GPIO_DRIVE_H0 | NRF_GPIO_DRIVE_H1)
+/** Extra high drive for '0' and '1' */
+#define NRF_GPIO_DRIVE_E0E1	(NRF_GPIO_DRIVE_E0 | NRF_GPIO_DRIVE_E1)
 
 /** @} */
 

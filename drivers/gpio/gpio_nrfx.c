@@ -79,6 +79,11 @@ static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 	case NRF_GPIO_DRIVE_H0H1:
 		drive = NRF_GPIO_PIN_H0H1;
 		break;
+#if defined(GPIO_PIN_CNF_DRIVE_E0E1) || defined(GPIO_PIN_CNF_DRIVE0_E0)
+	case NRF_GPIO_DRIVE_E0E1:
+		drive = NRF_GPIO_PIN_E0E1;
+		break;
+#endif
 	case NRF_GPIO_DRIVE_S0 | GPIO_OPEN_DRAIN:
 		drive = NRF_GPIO_PIN_S0D1;
 		break;
