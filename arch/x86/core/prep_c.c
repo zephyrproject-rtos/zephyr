@@ -19,6 +19,10 @@ extern void x86_64_irq_init(void);
 __pinned_data x86_boot_arg_t x86_cpu_boot_arg;
 #endif
 
+
+
+extern int spec_ctrl_init(void);
+
 /* Early global initialization functions, C domain. This runs only on the first
  * CPU for SMP systems.
  */
@@ -79,6 +83,9 @@ FUNC_NORETURN void z_prep_c(void *arg)
 #endif
 #if CONFIG_ARCH_CACHE
 	arch_cache_init();
+#endif
+#if defined(CONFIG_X86_DISABLE_SSBD) || defined(CONFIG_X86_ENABLE_EXTENDED_IBRS)
+	spec_ctrl_init();
 #endif
 
 	z_cstart();
