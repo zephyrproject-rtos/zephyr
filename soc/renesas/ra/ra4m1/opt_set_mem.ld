@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2024 Ian Morris
+ * Copyright (c) 2024 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
- *
  */
 
+/* ROM Registers start at address 0x00000400 */
 . = 0x400;
-FILL(0xFF)
-KEEP(*(.opt_set_mem*))
+KEEP(*(.rom_registers*))
+/* Reserving 0x100 bytes of space for ROM registers. */
 . = 0x500;
