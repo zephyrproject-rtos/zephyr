@@ -51,6 +51,9 @@
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
+		dht0 = &hts221;
+		accel0 = &lis3dh;
+		prox-sensor0 = &apds9960;
 	};
 };
 
