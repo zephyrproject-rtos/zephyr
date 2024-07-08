@@ -256,6 +256,7 @@ static void tx_work_handler(struct k_work *work)
 	uint8_t ep = cfg->endpoint[ACM_IN_EP_IDX].ep_addr;
 	uint8_t *data;
 	size_t len;
+	int ret;
 
 	if (usb_transfer_is_busy(ep)) {
 		LOG_DBG("Transfer is ongoing");
@@ -274,8 +275,6 @@ static void tx_work_handler(struct k_work *work)
 		return;
 	}
 
-	dev_data->tx_ready = false;
-
 	/*
 	 * Transfer less data to avoid zero-length packet. The application
 	 * running on the host may conclude that there is no more data to be
@@ -288,10 +287,15 @@ static void tx_work_handler(struct k_work *work)
 
 	LOG_DBG("Got %zd bytes from ringbuffer send to ep %x", len, ep);
 
-	usb_transfer(ep, data, len, USB_TRANS_WRITE,
-		     cdc_acm_write_cb, dev_data);
+	ret = usb_transfer(ep, data, len, USB_TRANS_WRITE,
+			   cdc_acm_write_cb, dev_data);
+	if (ret != 0) {
+		(void)ring_buf_get_finish(dev_data->tx_ringbuf, 0);
+		return;
+	}
 
-	ring_buf_get_finish(dev_data->tx_ringbuf, len);
+	dev_data->tx_ready = false;
+	(void)ring_buf_get_finish(dev_data->tx_ringbuf, len);
 }
 
 static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
