@@ -112,6 +112,8 @@ Below interfaces are supported by Zephyr on MAX32670EVKIT.
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma controller                      |
 +-----------+------------+-------------------------------------+
+| Watchdog  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
 
 Connections and IOs
 ===================
