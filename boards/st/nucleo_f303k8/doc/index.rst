@@ -40,7 +40,7 @@ The Nucleo F303K8 provides the following hardware components:
 - ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
 - 72 MHz max CPU frequency
 - VDD from 2.0 V to 3.6 V
-- 64 MB Flash
+- 64 KB Flash
 - 12 KB SRAM
 - RTC
 - Advanced-control Timer
@@ -118,7 +118,7 @@ The Nucleo F303K8 board features an Arduino Zero V3 connector. Board is configur
 
 - UART_2 TX/RX : PA2/PA15 (ST-Link Virtual Port Com)
 - I2C1 SCL/SDA : PB7/PB6
-- SPI1 CS/SCK/MISO/MOSI : PA_4/PA_5/PB_4/PA_7
+- SPI1 CS/SCK/MISO/MOSI : PA_4/PA_5/PA_6/PA_7
 - LD2       : PB3
 
 System Clock
