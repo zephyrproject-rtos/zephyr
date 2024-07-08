@@ -113,6 +113,8 @@ static void dev_state_zero(void)
 #endif
 
 extern FUNC_NORETURN void z_cstart(void);
+extern int arc_mpu_init(void);
+
 /**
  * @brief Prepare to and run C code
  *
@@ -130,6 +132,9 @@ void z_prep_c(void)
 	dev_state_zero();
 #endif
 	z_data_copy();
+#ifdef CONFIG_ARC_MPU
+	arc_mpu_init();
+#endif
 	z_cstart();
 	CODE_UNREACHABLE;
 }
