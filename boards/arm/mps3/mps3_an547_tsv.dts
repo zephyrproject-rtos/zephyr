@@ -27,7 +27,13 @@
 	*/
 	chosen {
 		zephyr,console = &jtag_uart;
+		/*
+		zephyr,console = &uart0;
+		*/
 		zephyr,shell-uart = &jtag_uart;
+		/*
+		zephyr,shell-uart = &uart0;
+		*/
 		zephyr,sram = &ram;
 		zephyr,flash = &code;
 	};
@@ -96,9 +102,9 @@
 		zephyr,memory-region = "ITCM";
 	};
 
-	sram: sram@60000000 {
+	sram: sram@60010000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x60000000 DT_SIZE_M(2)>;
+		reg = <0x60010000 DT_SIZE_K(1024)>;
 		zephyr,memory-region = "SRAM";
 	};
 
@@ -115,7 +121,7 @@
 	};
 
 	/* DDR4 - 2G, alternates non-secure/secure every 256M */
-	ddr4: memory@64000000 {
+	ddr4: memory@60700000 {
 		device_type = "memory";
 		compatible = "zephyr,memory-region";
 		reg = <0x60700000 DT_SIZE_M(1)>;
@@ -146,8 +152,8 @@
 			reg = <0x60000000 DT_SIZE_K(16)>;
 		};
 
-		ram: memory@60008000 {
-			reg = <0x60008000 DT_SIZE_K(1008)>;
+		ram: memory@60010000 {
+			reg = <0x60010000 DT_SIZE_K(1024)>;
 		};
 	};
 
