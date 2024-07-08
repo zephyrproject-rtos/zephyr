@@ -486,6 +486,8 @@ static void xlnx_quadspi_isr(const struct device *dev)
 		 * work in the ISR, so just post the event.
 		 */
 #ifdef CONFIG_SPI_ASYNC
+		struct spi_context *ctx = &data->ctx;
+
 		if (ctx->asynchronous) {
 			xlnx_quadspi_read_fifo(dev);
 			xlnx_quadspi_start_tx(dev);
