@@ -125,7 +125,7 @@ static inline const struct device *z_vrfy_device_get_by_dt_nodelabel(const char 
 
 	return z_impl_device_get_by_dt_nodelabel(nl_copy);
 }
-#include <syscalls/device_get_by_dt_nodelabel_mrsh.c>
+#include <zephyr/syscalls/device_get_by_dt_nodelabel_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_DEVICE_DT_METADATA */
 
