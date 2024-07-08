@@ -63,12 +63,5 @@
 	source = <RA_PLL_SOURCE_MAIN_OSC>;
 	div = <RA_PLL_DIV_1>;
 	mul = <20 0>;
-	freq = <DT_FREQ_M(240)>;
-	status = "okay";
-};
-
-&pclka {
-	clk_src = <RA_CLOCK_SOURCE_PLL>;
-	clk_div = <RA_SYS_CLOCK_DIV_2>;
 	status = "okay";
 };

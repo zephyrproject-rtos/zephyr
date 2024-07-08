@@ -87,6 +87,8 @@ The below features are currently supported on Zephyr OS for EK-RA4E2 board:
 +-----------+------------+----------------------+
 | UART      | on-chip    | serial               |
 +-----------+------------+----------------------+
+| CLOCK     | on-chip    | clock control        |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 

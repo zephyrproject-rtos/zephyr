@@ -13,4 +13,4 @@
 
 #include <bsp_api.h>
 
-#endif /* ZEPHYR_SOC_RENESAS_RA4_SOC_H_ */
+#endif /* ZEPHYR_SOC_RENESAS_RA4E2_SOC_H_ */

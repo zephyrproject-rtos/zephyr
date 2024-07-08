@@ -77,7 +77,6 @@
 			source = <RA_PLL_SOURCE_MAIN_OSC>;
 			div = <RA_PLL_DIV_2>;
 			mul = <12 0>;
-			freq = <DT_FREQ_M(48)>;
 			status = "disabled";
 		};
 

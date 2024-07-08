@@ -65,9 +65,3 @@
 	mul = <20 0>;
 	status = "okay";
 };
-
-&pclka {
-	clk_src = <RA_CLOCK_SOURCE_PLL>;
-	clk_div = <RA_SCI_CLOCK_DIV_2>;
-	status = "okay";
-};

@@ -60,7 +60,6 @@
 	source = <RA_PLL_SOURCE_HOCO>;
 	div = <RA_PLL_DIV_2>;
 	mul = <20 0>;
-	freq = <DT_FREQ_M(200)>;
 	status = "okay";
 };
 

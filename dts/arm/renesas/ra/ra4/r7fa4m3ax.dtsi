@@ -143,7 +143,6 @@
 			div = <RA_PLL_DIV_3>;
 			mul = <25 0>;
 			status = "disabled";
-			freq = <DT_FREQ_M(200)>;
 		};
 
 		pll2: pll2 {

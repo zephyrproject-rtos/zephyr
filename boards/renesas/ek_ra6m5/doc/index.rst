@@ -97,6 +97,8 @@ The below features are currently supported on Zephyr OS for EK-RA6M5 board:
 +-----------+------------+----------------------+
 | UART      | on-chip    | serial               |
 +-----------+------------+----------------------+
+| CLOCK     | on-chip    | clock control        |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 

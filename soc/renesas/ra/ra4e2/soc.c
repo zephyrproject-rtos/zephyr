@@ -45,7 +45,6 @@ static int renesas_ra4e2_init(void)
 	R_BSP_SecurityInit();
 	SystemCoreClock = BSP_MOCO_HZ;
 	g_protect_pfswe_counter = 0;
-	bsp_clock_init();
 
 	return 0;
 }
