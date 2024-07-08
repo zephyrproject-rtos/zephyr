@@ -1100,8 +1100,6 @@ class Node:
         # Public, some of which are initialized properly later:
         self.edt: 'EDT' = edt
         self.dep_ordinal: int = -1
-        self.matching_compat: Optional[str] = None
-        self.binding_path: Optional[str] = None
         self.compats: List[str] = compats
         self.ranges: List[Range] = []
         self.regs: List[Register] = []
@@ -1221,6 +1219,20 @@ class Node:
         return "read-only" in self._node.props
 
     @property
+    def matching_compat(self) -> Optional[str]:
+        "See the class docstring"
+        if self._binding:
+            return self._binding.compatible
+        return None
+
+    @property
+    def binding_path(self) -> Optional[str]:
+        "See the class docstring"
+        if self._binding:
+            return self._binding.path
+        return None
+
+    @property
     def aliases(self) -> List[str]:
         "See the class docstring"
         return [alias for alias, node in self._node.dt.alias2node.items()
@@ -1331,12 +1343,9 @@ class Node:
         return f"<Node {self.path} in '{self.edt.dts_path}', {binding}>"
 
     def _init_binding(self) -> None:
-        # Initializes Node.matching_compat, Node._binding, and
-        # Node.binding_path.
-        #
-        # Node._binding holds the data from the node's binding file, in the
-        # format returned by PyYAML (plain Python lists, dicts, etc.), or None
-        # if the node has no binding.
+        # Initializes Node._binding. It holds data from the node's binding file,
+        # in the format returned by PyYAML (plain Python lists, dicts, etc.), or
+        # None if the node has no binding.
 
         # This relies on the parent of the node having already been
         # initialized, which is guaranteed by going through the nodes in
@@ -1368,8 +1377,6 @@ class Node:
                     else:
                         continue
 
-                self.binding_path = binding.path
-                self.matching_compat = compat
                 self._binding = binding
                 return
         else:
@@ -1380,13 +1387,10 @@ class Node:
             binding_from_parent = self._binding_from_parent()
             if binding_from_parent:
                 self._binding = binding_from_parent
-                self.binding_path = self._binding.path
-                self.matching_compat = self._binding.compatible
-
                 return
 
         # No binding found
-        self._binding = self.binding_path = self.matching_compat = None
+        self._binding = None
 
     def _binding_from_properties(self) -> None:
         # Sets up a Binding object synthesized from the properties in the node.
@@ -1427,8 +1431,6 @@ class Node:
             raw['properties'][name] = pp
 
         # Set up Node state.
-        self.binding_path = None
-        self.matching_compat = None
         self.compats = []
         self._binding = Binding(None, {}, raw=raw, require_compatible=False)
 
