@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017, 2024 NXP
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -73,6 +73,7 @@ FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT
 		return -ENOTSUP;
 	}
 
+#if defined(FSL_FEATURE_UART_HAS_MODEM_SUPPORT) && FSL_FEATURE_UART_HAS_MODEM_SUPPORT
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
 		uart_config.enableRxRTS = false;
@@ -85,6 +86,7 @@ FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT
 	default:
 		return -ENOTSUP;
 	}
+#endif
 
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
@@ -404,18 +406,23 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 #define UART_MCUX_CONFIG_FUNC(n)					\
 	static void uart_mcux_config_func_##n(const struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, status, irq),	\
-			    DT_INST_IRQ_BY_NAME(n, status, priority),	\
-			    uart_mcux_isr, DEVICE_DT_INST_GET(n), 0);	\
-									\
-		irq_enable(DT_INST_IRQ_BY_NAME(n, status, irq));	\
-									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, error, irq),		\
-			    DT_INST_IRQ_BY_NAME(n, error, priority),	\
-			    uart_mcux_isr, DEVICE_DT_INST_GET(n), 0);	\
-									\
-		irq_enable(DT_INST_IRQ_BY_NAME(n, error, irq));		\
+		UART_MCUX_IRQ(n, status);	\
+		UART_MCUX_IRQ(n, error);	\
 	}
+
+#define UART_MCUX_IRQ_INIT(n, name)					\
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),	\
+			    DT_INST_IRQ_BY_NAME(n, name, priority),	\
+			    uart_mcux_isr, DEVICE_DT_INST_GET(n), 0);	\
+									\
+		irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq));	\
+	} while (false)
+
+#define UART_MCUX_IRQ(n, name)						\
+	COND_CODE_1(DT_INST_IRQ_HAS_NAME(n, name),		\
+		    (UART_MCUX_IRQ_INIT(n, name)), ())
+
 #define UART_MCUX_IRQ_CFG_FUNC_INIT(n)					\
 	.irq_config_func = uart_mcux_config_func_##n
 #define UART_MCUX_INIT_CFG(n)						\
