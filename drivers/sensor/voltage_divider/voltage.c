@@ -59,9 +59,6 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 
 	if (config->voltage.port.channel_cfg.differential) {
 		raw_val = (int16_t)data->raw;
-	} else if (config->voltage.port.resolution < 16) {
-		/* Can be removed when issue #71119 is resolved */
-		raw_val = (int16_t)data->raw;
 	} else {
 		raw_val = data->raw;
 	}
