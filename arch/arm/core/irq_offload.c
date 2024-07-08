@@ -42,3 +42,7 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 	offload_routine = NULL;
 	k_sched_unlock();
 }
+
+void arch_irq_offload_init(void)
+{
+}

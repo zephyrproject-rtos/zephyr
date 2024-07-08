@@ -428,6 +428,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_MMU */
 	z_sys_post_kernel = true;
 
+#if CONFIG_IRQ_OFFLOAD
+	arch_irq_offload_init();
+#endif
 	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	z_stack_adjust_initialized = 1;
