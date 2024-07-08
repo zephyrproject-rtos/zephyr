@@ -202,6 +202,10 @@ void z_prep_c(void)
 #if CONFIG_ARCH_CACHE
 	arch_cache_init();
 #endif
+
+#ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT
+	z_arm_debug_enable_null_pointer_detection();
+#endif
 	z_cstart();
 	CODE_UNREACHABLE;
 }
