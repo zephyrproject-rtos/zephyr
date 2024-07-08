@@ -61,6 +61,8 @@
 };
 
 &lpuart0 {
+	dmas = <&edma 1 2>, <&edma 2 3>;
+	dma-names = "rx", "tx";
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart0_default>;
@@ -107,4 +109,16 @@
 			reg = <0x3d000 DT_SIZE_K(12)>;
 		};
 	};
+};
+
+&lpspi0 {
+	dmas = <&edma 0 14>, <&edma 1 15>;
+	dma-names = "rx", "tx";
+	status = "okay";
+	pinctrl-0 = <&lpspi0_default>;
+	pinctrl-names = "default";
+};
+
+&edma {
+	status = "okay";
 };
