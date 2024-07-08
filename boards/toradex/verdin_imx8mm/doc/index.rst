@@ -247,7 +247,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: verdin_imx8mm_m4
+   :board: verdin_imx8mm/mimx8mm6/m4
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
