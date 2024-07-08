@@ -23,18 +23,23 @@ extern "C" {
 
 /** @cond INTERNAL_HIDDEN */
 
-/* Determine if memory region for the peripheral is cacheable. */
-#define DMM_IS_REG_CACHEABLE(node_id)								   \
-	COND_CODE_1(CONFIG_DCACHE,								   \
-	   (COND_CODE_1(DT_NODE_HAS_PROP(DT_PHANDLE(node_id, memory_regions), zephyr_memory_attr), \
-	    (DT_PROP(DT_PHANDLE(node_id, memory_regions), zephyr_memory_attr) & DT_MEM_CACHEABLE), \
+/* Determine if memory region is cacheable. */
+#define DMM_IS_REG_CACHEABLE(node_id)					 \
+	COND_CODE_1(CONFIG_DCACHE,					 \
+	   (COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_memory_attr),	 \
+	    ((DT_PROP(node_id, zephyr_memory_attr) & DT_MEM_CACHEABLE)), \
 	    (0))), (0))
 
-/* Determine required alignment of the static buffers in memory regions. Cache line alignment is
- * required if region is cacheable and data cache is enabled.
+/* Determine required alignment of the data buffers in specified memory region.
+ * Cache line alignment is required if region is cacheable and data cache is enabled.
  */
-#define DMM_ALIGN_SIZE(node_id) \
+#define DMM_REG_ALIGN_SIZE(node_id) \
 	(DMM_IS_REG_CACHEABLE(node_id) ? CONFIG_DCACHE_LINE_SIZE : sizeof(uint8_t))
+
+/* Determine required alignment of the data buffers in memory region
+ * associated with specified device node.
+ */
+#define DMM_ALIGN_SIZE(node_id) DMM_REG_ALIGN_SIZE(DT_PHANDLE(node_id, memory_regions))
 
 /**
  * @brief Get reference to memory region associated with the specified device node
@@ -46,6 +51,7 @@ extern "C" {
 #define DMM_DEV_TO_REG(node_id)					\
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, memory_regions),	\
 		((void *)DT_REG_ADDR(DT_PHANDLE(node_id, memory_regions))), (NULL))
+
 /**
  * @brief Preallocate buffer in memory region associated with the specified device node
  *
@@ -55,7 +61,7 @@ extern "C" {
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, memory_regions),		\
 		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	\
 			DT_PHANDLE(node_id, memory_regions)))))		\
-			__aligned(DMM_ALIGN_SIZE(node_id))),	\
+			__aligned(DMM_ALIGN_SIZE(node_id))),		\
 		())
 
 #ifdef CONFIG_HAS_NORDIC_DMM
