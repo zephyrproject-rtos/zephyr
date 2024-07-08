@@ -677,6 +677,32 @@ config NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS
 config NET_MGMT_EVENT_QUEUE_SIZE
 	# Doing interface down and up even with delay puts a lot of events in the queue
 	default 16
+
+config NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS
+	int "RPU recovery propagation delay in milliseconds"
+	default 10
+	help
+	  Propagation delay in milliseconds to wait after RPU is powered down
+	  before powering it up. This delay is required to ensure that the recovery
+	  is propagated to all the applications and stack and have enough time to
+	  clean up the resources.
+
+config NRF_WIFI_RPU_RECOVERY_PS_ACTIVE_TIMEOUT_MS
+	int "RPU recovery power save active timeout in milliseconds"
+	default 10000
+	help
+	  Power save active timeout in milliseconds after which RPU recovery
+	  mechanism will be triggered. This timeout is used to ensure that the
+	  RPU attempts to enter power save mode in case of inactivity.
+
+config NRF_WIFI_RPU_MIN_TIME_TO_ENTER_SLEEP_MS
+	int "Minimum idle time to enter sleep in milliseconds"
+	range 100 5000
+	default 1000
+	help
+	  Minimum time the host should de-assert WAKEUP_NOW and let RPU enter
+	  sleep mode, assuming there is no activity.
+
 endif # NRF_WIFI_RPU_RECOVERY
 
 config NRF_WIFI_FEAT_WMM
