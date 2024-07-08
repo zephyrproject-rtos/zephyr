@@ -30,7 +30,6 @@ config RISCV_GP
 config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	bool "Do not use mret outside a trap handler context"
 	depends on MULTITHREADING
-	depends on !RISCV_PMP
 	help
 	  Use mret instruction only when in a trap handler.
 	  This is for RISC-V implementations that require every mret to be
