@@ -23,6 +23,11 @@
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, memory_regions),	\
 		    (DT_REG_SIZE(DT_PHANDLE(node_id, memory_regions))), (0))
 
+#if CONFIG_DCACHE
+BUILD_ASSERT(DMM_ALIGN_SIZE(DUT_CACHE) == CONFIG_DCACHE_LINE_SIZE);
+BUILD_ASSERT(DMM_ALIGN_SIZE(DUT_NOCACHE) == 1);
+#endif
+
 struct dmm_test_region {
 	void *mem_reg;
 	uintptr_t start;

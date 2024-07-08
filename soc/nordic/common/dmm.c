@@ -23,7 +23,7 @@
 	{.dt_addr = DT_REG_ADDR(node_id),                                                          \
 	 .dt_size = DT_REG_SIZE(node_id),                                                          \
 	 .dt_attr = DT_PROP(node_id, zephyr_memory_attr),                                          \
-	 .dt_align = DMM_ALIGN_SIZE(node_id),                                                      \
+	 .dt_align = DMM_REG_ALIGN_SIZE(node_id),                                                  \
 	 .dt_allc = &_BUILD_LINKER_END_VAR(node_id)},
 
 /* Generate declarations of linker variables used to determine size of preallocated variables
