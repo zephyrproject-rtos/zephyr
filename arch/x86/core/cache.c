@@ -119,3 +119,8 @@ int arch_dcache_flush_and_invd_range(void *start_addr, size_t size)
 {
 	return arch_dcache_flush_range(start_addr, size);
 }
+
+int arch_cache_init(void)
+{
+	return 0;
+}

@@ -19,6 +19,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/kernel_structs.h>
+#include <zephyr/arch/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
@@ -630,6 +631,9 @@ void __weak z_early_rand_get(uint8_t *buf, size_t length)
 	}
 }
 
+
+extern int arch_cache_init(void);
+
 /**
  *
  * @brief Initialize kernel
@@ -660,6 +664,9 @@ FUNC_NORETURN void z_cstart(void)
 #endif /* CONFIG_MULTITHREADING */
 	/* do any necessary initialization of static devices */
 	z_device_state_init();
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
+#endif
 
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
