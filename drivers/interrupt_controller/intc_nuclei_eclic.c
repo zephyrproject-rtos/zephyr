@@ -83,9 +83,6 @@ struct CLICCTRL {
 	volatile uint8_t INTCTRL;
 };
 
-/** ECLIC Mode mask for MTVT CSR Register */
-#define ECLIC_MODE_MTVEC_Msk   3U
-
 /** CLIC INTATTR: TRIG Mask */
 #define CLIC_INTATTR_TRIG_Msk  0x3U
 
@@ -177,8 +174,6 @@ static int nuclei_eclic_init(const struct device *dev)
 	for (int i = 0; i < ECLIC_CTRL_SIZE; i++) {
 		ECLIC_CTRL[i] = (struct CLICCTRL) { 0 };
 	}
-
-	csr_write(mtvec, ((csr_read(mtvec) & 0xFFFFFFC0) | ECLIC_MODE_MTVEC_Msk));
 
 	nlbits = ECLIC_CFG.b.nlbits;
 	intctlbits = ECLIC_INFO.b.intctlbits;
