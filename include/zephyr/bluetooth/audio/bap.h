@@ -320,17 +320,12 @@ struct bt_bap_scan_delegator_cb {
 	 * denoted by the @p recv_state. To notify the Broadcast Assistant about
 	 * any pending sync
 	 *
-	 * @param[in]  conn        Pointer to the connection requesting the
-	 *                         periodic advertising sync.
-	 * @param[in]  recv_state  Pointer to the receive state that is being
-	 *                         requested for periodic advertising sync.
-	 * @param[in]  past_avail  True if periodic advertising sync transfer is
-	 *                         available.
-	 * @param[in]  pa_interval The periodic advertising interval.
-	 * @param[out] past_sync   Set to true if syncing via periodic
-	 *                         advertising sync transfer, false otherwise.
-	 *                         If @p past_avail is false, this value is
-	 *                         ignored.
+	 * @param conn        Pointer to the connection requesting the
+	 *                    periodic advertising sync.
+	 * @param recv_state  Pointer to the receive state that is being
+	 *                    requested for periodic advertising sync.
+	 * @param past_avail  True if periodic advertising sync transfer is available.
+	 * @param pa_interval The periodic advertising interval.
 	 *
 	 * @return 0 in case of accept, or other value to reject.
 	 */
