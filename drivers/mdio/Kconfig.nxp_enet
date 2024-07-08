@@ -13,9 +13,9 @@ if MDIO_NXP_ENET
 
 config MDIO_NXP_ENET_TIMEOUT
 	int "NXP ENET MDIO Timeout time"
-	default 1
+	default 250
 	help
-	  Time in milliseconds before an MDIO transaction that has not
+	  Time in microseconds before an MDIO transaction that has not
 	  finished is considered to have timed out.
 
 endif # MDIO_NXP_ENET
