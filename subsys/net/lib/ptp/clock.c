@@ -538,7 +538,7 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 	LOG_DBG("Offset %lldns", offset);
 	ptp_clk.current_ds.offset_from_tt = clock_ns_to_timeinterval(offset);
 
-	ptp_clock_adjust(ptp_clk.phc, offset);
+	ptp_clock_adjust(ptp_clk.phc, -offset);
 }
 
 void ptp_clock_delay(uint64_t egress, uint64_t ingress)
