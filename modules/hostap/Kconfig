@@ -25,7 +25,7 @@ if WIFI_NM_WPA_SUPPLICANT
 
 config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
 	def_int 85000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && !MBEDTLS_ENABLE_HEAP
-	def_int 40000 if WIFI_NM_WPA_SUPPLICANT_AP
+	def_int 40000 if WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
 	# 8192 for MbedTLS heap
 	def_int 21808 if MBEDTLS_ENABLE_HEAP
 	# 30K is mandatory, but might need more for long duration use cases
@@ -312,8 +312,8 @@ config TESTING_OPTIONS
 
 config AP
 	bool
-	depends on WIFI_NM_WPA_SUPPLICANT_AP
-	default y if WIFI_NM_WPA_SUPPLICANT_AP
+	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
+	default y if WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
 
 config NO_RADIUS
 	bool
