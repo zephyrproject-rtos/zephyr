@@ -17,6 +17,7 @@
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/platform/hooks.h>
+#include <zephyr/arch/cache.h>
 
 extern void z_arm64_mm_init(bool is_primary_core);
 
@@ -57,6 +58,9 @@ extern FUNC_NORETURN void arch_secondary_cpu_init(void);
 void z_arm64_secondary_prep_c(void)
 {
 	arch_secondary_cpu_init();
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
+#endif
 
 	CODE_UNREACHABLE;
 }

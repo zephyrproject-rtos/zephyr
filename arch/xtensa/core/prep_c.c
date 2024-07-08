@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/platform/hooks.h>
+#include <zephyr/arch/cache.h>
 
 extern FUNC_NORETURN void z_cstart(void);
 
@@ -70,6 +71,9 @@ void z_prep_c(void)
 	    ((uintptr_t)sp >= (uintptr_t)stack_end)) {
 		memset(stack_start, 0xAA, stack_sz);
 	}
+#endif
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
 #endif
 
 #ifdef CONFIG_XTENSA_MMU
