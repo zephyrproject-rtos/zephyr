@@ -46,40 +46,6 @@ class Systems:
         except (yaml.YAMLError, pykwalify.errors.SchemaError) as e:
             sys.exit(f'ERROR: Malformed yaml {soc_yaml.as_posix()}', e)
 
-        # Ensure that any runner configuration matches socs and cpuclusters declared in the same
-        # soc.yml file
-        if 'runners' in data and 'run_once' in data['runners']:
-            for grp in data['runners']['run_once']:
-                for item_data in data['runners']['run_once'][grp]:
-                    for group in item_data['groups']:
-                        for qualifiers in group['qualifiers']:
-                            components = qualifiers.split('/')
-                            soc = components.pop(0)
-                            found_match = False
-
-                            # Allow 'ns' as final qualifier until "virtual" CPUs are ported to soc.yml
-                            # https://github.com/zephyrproject-rtos/zephyr/issues/70721
-                            if len(components) > 0 and components[len(components)-1] == 'ns':
-                                components.pop(len(components)-1)
-
-                            for f in data.get('family', []):
-                                for s in f.get('series', []):
-                                    for socs in s.get('socs', []):
-                                        if re.match(fr'^{soc}$', socs.get('name')) is not None:
-                                            if 'cpuclusters' in socs and len(components) > 0:
-                                                check_string = '/'.join(components)
-                                                for cpucluster in socs.get('cpuclusters', []):
-                                                    if re.match(fr'^{check_string}$', cpucluster.get('name')) is not None:
-                                                        found_match = True
-                                                        break
-                                            elif 'cpuclusters' not in socs and len(components) == 0:
-                                                found_match = True
-                                                break
-
-
-                            if found_match is False:
-                                sys.exit(f'ERROR: SoC qualifier match unresolved: {qualifiers}')
-
         for f in data.get('family', []):
             family = Family(f['name'], folder, [], [])
             for s in f.get('series', []):
@@ -115,6 +81,36 @@ class Systems:
                      folder, '', ''))
                 for soc in data.get('socs', [])]
         self._socs.extend(socs)
+
+        # Ensure that any runner configuration matches socs and cpuclusters declared in the same
+        # soc.yml file
+        if 'runners' in data and 'run_once' in data['runners']:
+            for grp in data['runners']['run_once']:
+                for item_data in data['runners']['run_once'][grp]:
+                    for group in item_data['groups']:
+                        for qualifiers in group['qualifiers']:
+                            soc_name, *components = qualifiers.split('/')
+                            found_match = False
+
+                            # Allow 'ns' as final qualifier until "virtual" CPUs are ported to soc.yml
+                            # https://github.com/zephyrproject-rtos/zephyr/issues/70721
+                            if components and components[-1] == 'ns':
+                                components.pop()
+
+                            for soc in self._socs:
+                                if re.match(fr'^{soc_name}$', soc.name) is not None:
+                                    if soc.cpuclusters and components:
+                                        check_string = '/'.join(components)
+                                        for cpucluster in soc.cpuclusters:
+                                            if re.match(fr'^{check_string}$', cpucluster) is not None:
+                                                found_match = True
+                                                break
+                                    elif not soc.cpuclusters and not components:
+                                        found_match = True
+                                        break
+
+                            if found_match is False:
+                                sys.exit(f'ERROR: SoC qualifier match unresolved: {qualifiers}')
 
     @staticmethod
     def from_file(socs_file):
