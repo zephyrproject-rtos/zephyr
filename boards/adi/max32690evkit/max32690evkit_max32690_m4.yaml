@@ -10,6 +10,7 @@ toolchain:
 supported:
   - gpio
   - serial
+  - rtc
   - spi
   - i2c
   - trng
