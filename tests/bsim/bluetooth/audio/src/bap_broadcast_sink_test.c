@@ -804,7 +804,7 @@ static void test_broadcast_sync_inval(void)
 		return;
 	}
 
-	bis_index = BIT(0);
+	bis_index = BT_ISO_BIS_INDEX_BIT(BT_ISO_BIS_INDEX_MAX + 1);
 	err = bt_bap_broadcast_sink_sync(g_sink, bis_index, streams, NULL);
 	if (err == 0) {
 		FAIL("bt_bap_broadcast_sink_sync did not fail with invalid BIS indexes: 0x%08X\n",
@@ -821,7 +821,7 @@ static void test_broadcast_sync_inval(void)
 	memcpy(tmp_streams, streams, sizeof(streams));
 	bis_index = 0U;
 	for (size_t i = 0U; i < ARRAY_SIZE(tmp_streams); i++) {
-		bis_index |= BIT(i + BT_ISO_BIS_INDEX_MIN);
+		bis_index |= BT_ISO_BIS_INDEX_BIT(i);
 	}
 
 	err = bt_bap_broadcast_sink_sync(g_sink, bis_index, tmp_streams, NULL);
@@ -833,7 +833,7 @@ static void test_broadcast_sync_inval(void)
 
 	bis_index = 0U;
 	for (size_t i = 0U; i < CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT + 1; i++) {
-		bis_index |= BIT(i + BT_ISO_BIS_INDEX_MIN);
+		bis_index |= BT_ISO_BIS_INDEX_BIT(i);
 	}
 
 	err = bt_bap_broadcast_sink_sync(g_sink, bis_index, tmp_streams, NULL);

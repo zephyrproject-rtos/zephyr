@@ -609,7 +609,7 @@ static bool base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis, voi
 	struct bt_audio_codec_cfg *codec_cfg = &parse_data->codec_cfg;
 	struct btp_bap_broadcast_remote_source *broadcaster = parse_data->broadcaster;
 
-	parse_data->bis_bitfield |= BIT(bis->index);
+	parse_data->bis_bitfield |= BT_ISO_BIS_INDEX_BIT(bis->index);
 
 	if (parse_data->stream_cnt < ARRAY_SIZE(broadcaster->streams)) {
 		struct btp_bap_broadcast_stream *stream =
