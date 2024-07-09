@@ -144,8 +144,6 @@ static inline const char *bt_tbs_technology_str(uint8_t status)
 		return "2G";
 	case BT_TBS_TECHNOLOGY_WCDMA:
 		return "WCDMA";
-	case BT_TBS_TECHNOLOGY_IP:
-		return "IP";
 	default:
 		return "unknown technology";
 	}

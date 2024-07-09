@@ -64,7 +64,6 @@
 #define BT_TBS_TECHNOLOGY_CDMA                     0x07
 #define BT_TBS_TECHNOLOGY_2G                       0x08
 #define BT_TBS_TECHNOLOGY_WCDMA                    0x09
-#define BT_TBS_TECHNOLOGY_IP                       0x0a
 
 /**
  * @brief The GTBS index denotes whenever a callback is from a
