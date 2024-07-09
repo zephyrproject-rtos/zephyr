@@ -772,7 +772,36 @@ static int set_up_plls(void)
 		stm32_clock_switch_to_hsi();
 		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 	}
+
+#if defined(CONFIG_STM32_MEMMAP) && defined(CONFIG_BOOTLOADER_MCUBOOT)
+	/*
+	 * Don't disable PLL during application initialization
+	 * that runs in memmap mode when (Q/O)SPI uses PLL
+	 * as its clock source.
+	 */
+#if defined(OCTOSPI1) || defined(OCTOSPI2)
+	if (LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) != LL_RCC_OSPI_CLKSOURCE_PLL1Q) {
+		LL_RCC_PLL1_Disable();
+	}
+	if (LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) != LL_RCC_OSPI_CLKSOURCE_PLL2R) {
+		LL_RCC_PLL2_Disable();
+	}
+#elif defined(QUADSPI)
+	if (LL_RCC_GetQSPIClockSource(LL_RCC_QSPI_CLKSOURCE) != LL_RCC_QSPI_CLKSOURCE_PLL1Q) {
+		LL_RCC_PLL1_Disable();
+	}
+	if (LL_RCC_GetQSPIClockSource(LL_RCC_QSPI_CLKSOURCE) != LL_RCC_QSPI_CLKSOURCE_PLL2R) {
+		LL_RCC_PLL2_Disable();
+	}
+#else
 	LL_RCC_PLL1_Disable();
+	LL_RCC_PLL2_Disable();
+#endif
+#else
+	LL_RCC_PLL1_Disable();
+	LL_RCC_PLL2_Disable();
+#endif
+	LL_RCC_PLL3_Disable();
 
 	/* Configure PLL source */
 
