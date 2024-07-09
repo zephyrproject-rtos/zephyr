@@ -104,6 +104,11 @@ struct mgmt_group {
 	/** Should be true when using user defined payload */
 	bool custom_payload;
 #endif
+
+#if IS_ENABLED(CONFIG_MCUMGR_GRP_ENUM_DETAILS_NAME)
+	/** NULL-terminated name of group */
+	const char *mg_group_name;
+#endif
 };
 
 /**
