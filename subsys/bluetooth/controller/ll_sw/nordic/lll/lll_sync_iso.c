@@ -646,6 +646,8 @@ isr_rx_done:
 		lll_prof_cputime_capture();
 	}
 
+	uint8_t bis_idx_old = bis_idx;
+
 	new_burst = 0U;
 	skipped = 0U;
 
@@ -895,7 +897,7 @@ isr_rx_next_subevent:
 		/* Initialise to avoid compile error */
 		data_chan_use = 0U;
 
-		if (bis_idx != bis_idx_new) {
+		if (bis_idx_old != bis_idx_new) {
 			const uint16_t event_counter =
 				(lll->payload_count / lll->bn) - 1U;
 
@@ -907,7 +909,7 @@ isr_rx_next_subevent:
 						&lll->data_chan_prn_s,
 						&lll->data_chan_remap_idx);
 
-			skipped -= (bis_idx_new - bis_idx) *
+			skipped -= (bis_idx_new - bis_idx_old) *
 				   ((lll->bn * lll->irc) + lll->ptc);
 		}
 
