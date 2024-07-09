@@ -802,14 +802,14 @@ int nrf_wifi_if_stop_zep(const struct device *dev)
 	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to lock vif_lock", __func__);
-		goto out;
+		goto unlock;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL",
 			__func__);
-		goto out;
+		goto unlock;
 	}
 
 #ifdef CONFIG_NRF70_STA_MODE
@@ -821,7 +821,6 @@ int nrf_wifi_if_stop_zep(const struct device *dev)
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_fmac_set_power_save failed",
 			__func__);
-		goto unlock;
 	}
 #endif /* CONFIG_NRF_WIFI_LOW_POWER */
 #endif /* CONFIG_NRF70_STA_MODE */
@@ -840,7 +839,6 @@ int nrf_wifi_if_stop_zep(const struct device *dev)
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_fmac_chg_vif_state failed",
 			__func__);
-		goto unlock;
 	}
 
 	status = nrf_wifi_fmac_del_vif(rpu_ctx_zep->rpu_ctx,
@@ -849,10 +847,7 @@ int nrf_wifi_if_stop_zep(const struct device *dev)
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_fmac_del_vif failed",
 			__func__);
-		goto unlock;
 	}
-
-	vif_ctx_zep->if_op_state = NRF_WIFI_FMAC_IF_OP_STATE_DOWN;
 
 	if (nrf_wifi_fmac_get_num_vifs(rpu_ctx_zep->rpu_ctx) == 0) {
 		nrf_wifi_fmac_dev_rem_zep(&rpu_drv_priv_zep);
