@@ -391,6 +391,10 @@ module = BT_AVCTP
 module-str = "Bluetooth AVCTP"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
+module = BT_AVRCP
+module-str = "Bluetooth AVRCP"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 module = BT_SDP
 module-str = "Bluetooth Service Discovery Protocol (SDP)"
 source "subsys/logging/Kconfig.template.log_config_inherit"
