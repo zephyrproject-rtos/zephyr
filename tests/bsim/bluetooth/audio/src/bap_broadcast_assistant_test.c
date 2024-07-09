@@ -452,7 +452,7 @@ static void test_bass_mod_source(void)
 	mod_src_param.pa_sync = true;
 	mod_src_param.subgroups = &subgroup;
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
-	subgroup.bis_sync = BIT(1) | BIT(2); /* Indexes 1 and 2 */
+	subgroup.bis_sync = BT_ISO_BIS_INDEX_BIT(1) | BT_ISO_BIS_INDEX_BIT(2); /* Indexes 1 and 2 */
 	subgroup.metadata_len = 0;
 
 	err = bt_bap_broadcast_assistant_mod_src(default_conn, &mod_src_param);
@@ -482,7 +482,7 @@ static void test_bass_mod_source_long_meta(void)
 	mod_src_param.pa_sync = true;
 	mod_src_param.subgroups = &subgroup;
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
-	subgroup.bis_sync = BIT(1) | BIT(2);
+	subgroup.bis_sync = BT_ISO_BIS_INDEX_BIT(1) | BT_ISO_BIS_INDEX_BIT(2);
 
 	subgroup.metadata_len = sizeof(metadata);
 	memcpy(subgroup.metadata, metadata, sizeof(metadata));

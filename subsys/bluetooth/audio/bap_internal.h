@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
@@ -135,7 +136,7 @@ static inline bool valid_bis_syncs(uint32_t bis_sync)
 		return true;
 	}
 
-	if (bis_sync > BIT_MASK(31)) { /* Max BIS index */
+	if (bis_sync > BIT_MASK(BT_ISO_MAX_GROUP_ISO_COUNT)) {
 		return false;
 	}
 

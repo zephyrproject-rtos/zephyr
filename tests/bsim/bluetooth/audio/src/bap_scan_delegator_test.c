@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/buf.h>
@@ -650,7 +651,7 @@ static int sync_broadcast(struct sync_state *state)
 
 	/* We don't actually need to sync to the BIG/BISes */
 	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id,
-						       (uint32_t []){ BIT(1) });
+						       (uint32_t[]){BT_ISO_BIS_INDEX_BIT(1)});
 	if (err) {
 		return err;
 	}
