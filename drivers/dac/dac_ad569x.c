@@ -99,7 +99,7 @@ static int ad569x_sw_reset(const struct device *dev)
 
 	if (reg != 0) {
 		LOG_ERR("failed to reset DAC output");
-		ret = -EIO;
+		return -EIO;
 	}
 
 	return 0;
