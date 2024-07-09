@@ -22,6 +22,8 @@
 #include "esp_flash.h"
 #include "esp_log.h"
 #include "bootloader_init.h"
+#include "bootloader_random.h"
+#include "bootloader_soc.h"
 
 #define TAG "boot"
 
@@ -248,5 +250,12 @@ void __start(void)
 	map_rom_segments(_app_drom_start, _app_drom_vaddr, _app_drom_size,
 			 _app_irom_start, _app_irom_vaddr, _app_irom_size);
 #endif
+
+	/* Disable RNG entropy source as it was already used */
+	bootloader_random_disable();
+
+	/* Disable glitch detection as it can be falsely triggered by EMI interference */
+	bootloader_ana_clock_glitch_reset_config(false);
+
 	__esp_platform_start();
 }
