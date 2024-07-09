@@ -25,7 +25,9 @@
 #include <tinycrypt/constants.h>
 
 #elif defined(CONFIG_WOLFSSL)
+#ifndef WOLFSSL_USER_SETTINGS
 #include <user_settings.h>
+#endif
 #include <wolfssl/wolfcrypt/settings.h>
 #include <wolfssl/wolfcrypt/random.h>
 
