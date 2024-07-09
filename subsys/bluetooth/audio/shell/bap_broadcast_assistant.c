@@ -879,7 +879,7 @@ static inline bool add_pa_sync_base_subgroup_bis_cb(const struct bt_bap_base_sub
 {
 	struct bt_bap_bass_subgroup *subgroup_param = user_data;
 
-	subgroup_param->bis_sync |= BIT(bis->index);
+	subgroup_param->bis_sync |= BT_ISO_BIS_INDEX_BIT(bis->index);
 
 	return true;
 }
@@ -995,7 +995,7 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		bis_bitfield_req |= BIT(index);
+		bis_bitfield_req |= BT_ISO_BIS_INDEX_BIT(index);
 	}
 
 	param.subgroups = subgroup_params;

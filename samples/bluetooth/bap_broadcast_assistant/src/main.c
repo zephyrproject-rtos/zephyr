@@ -181,7 +181,7 @@ static bool add_pa_sync_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_b
 {
 	struct bt_bap_bass_subgroup *subgroup_param = user_data;
 
-	subgroup_param->bis_sync |= BIT(bis->index);
+	subgroup_param->bis_sync |= BT_ISO_BIS_INDEX_BIT(bis->index);
 
 	return true;
 }
