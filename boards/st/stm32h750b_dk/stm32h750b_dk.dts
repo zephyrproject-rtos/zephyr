@@ -208,7 +208,7 @@
 		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
-		mode-register = <0x220>;
+		mode-register = <0x230>;
 		refresh-rate = <0x603>;
 		bank@1 {
 			reg = <1>;
@@ -219,7 +219,7 @@
 				STM32_FMC_SDRAM_CAS_3
 				STM32_FMC_SDRAM_SDCLK_PERIOD_2
 				STM32_FMC_SDRAM_RBURST_ENABLE
-				STM32_FMC_SDRAM_RPIPE_0>;
+				STM32_FMC_SDRAM_RPIPE_1>;
 			st,sdram-timing = <2 7 4 7 2 2 2>;
 		};
 	};
