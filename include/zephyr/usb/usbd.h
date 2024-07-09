@@ -67,6 +67,7 @@ enum usbd_str_desc_utype {
 	USBD_DUT_STRING_MANUFACTURER,
 	USBD_DUT_STRING_PRODUCT,
 	USBD_DUT_STRING_SERIAL_NUMBER,
+	USBD_DUT_STRING_CONFIG,
 	USBD_DUT_STRING_INTERFACE,
 };
 
@@ -131,6 +132,8 @@ struct usbd_config_node {
 	sys_snode_t node;
 	/** Pointer to configuration descriptor */
 	void *desc;
+	/** Optional pointer to string descriptor node */
+	struct usbd_desc_node *str_desc_nd;
 	/** List of registered classes (functions) */
 	sys_slist_t class_list;
 };
@@ -463,8 +466,11 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  *               with usbd_config_attrib_rwup() and usbd_config_attrib_self()
  * @param power  bMaxPower value in 2 mA units. This value can also be set with
  *               usbd_config_maxpower()
+ * @param desc_nd Address of the string descriptor node used to describe the
+ *                configuration, see USBD_DESC_CONFIG_DEFINE().
+ *                String descriptors are optional and the parameter can be NULL.
  */
-#define USBD_CONFIGURATION_DEFINE(name, attrib, power)			\
+#define USBD_CONFIGURATION_DEFINE(name, attrib, power, desc_nd)		\
 	static struct usb_cfg_descriptor				\
 	cfg_desc_##name = {						\
 		.bLength = sizeof(struct usb_cfg_descriptor),		\
@@ -479,6 +485,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	BUILD_ASSERT((power) < 256, "Too much power");			\
 	static struct usbd_config_node name = {				\
 		.desc = &cfg_desc_##name,				\
+		.str_desc_nd = desc_nd,					\
 	}
 
 /**
@@ -576,6 +583,18 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		},								\
 		.bDescriptorType = USB_DESC_STRING,				\
 	}
+
+/**
+ * @brief Create a string descriptor node for configuration descriptor
+ *
+ * This macro defines a descriptor node whose address can be used as an
+ * argument for the USBD_CONFIGURATION_DEFINE() macro.
+ *
+ * @param d_name   String descriptor node identifier.
+ * @param d_string ASCII7 encoded configuration description string literal
+ */
+#define USBD_DESC_CONFIG_DEFINE(d_name, d_string)			\
+	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_CONFIG)
 
 /**
  * @brief Define BOS Device Capability descriptor node
