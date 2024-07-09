@@ -480,9 +480,7 @@ static int i2s_stm32_write(const struct device *dev, void *mem_block,
 	}
 
 	/* Add data to the end of the TX queue */
-	queue_put(&dev_data->tx.mem_block_queue, mem_block, size);
-
-	return 0;
+	return queue_put(&dev_data->tx.mem_block_queue, mem_block, size);
 }
 
 static const struct i2s_driver_api i2s_stm32_driver_api = {
