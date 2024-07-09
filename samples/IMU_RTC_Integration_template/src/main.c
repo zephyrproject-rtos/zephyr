@@ -35,10 +35,10 @@ int main(void)
 
 	// lv_task_handler();
 	display_blanking_off(display_dev);
-
+		lv_scr_load(guider_ui.screen_1);
+		lv_task_handler();
 	while (1) {
-		// lv_scr_load(guider_ui.screen_1);
-		// lv_task_handler();
+		printf("looping\n");
 		lv_scr_load(guider_ui.screen_2);
 		lv_task_handler();
 	}

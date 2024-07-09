@@ -157,7 +157,7 @@ void main_task_handler(void)
 		if(cmp_time(&time,&p_time)){
 			vibration_motor();
 			update_time_in_screen(&guider_ui,&time,&date);
-			lv_task_handler();
+			
 		}
 		p_time = time;
 		k_msleep(60000);
@@ -178,7 +178,7 @@ void step_count_task_handler(void){
 		{
 			update_stepcount_in_screen(&guider_ui,steps);
 			printf("Steps :%d\n",steps);
-			lv_task_handler();
+			
 		}
 		prev_step = steps;
 		k_yield();
@@ -221,10 +221,10 @@ void process_message_notification_handler(void)
 		lv_label_set_text_fmt(guider_ui.screen_2_senderName, "" LV_SYMBOL_ENVELOPE " %s",data_recv.sender);
 		lv_label_set_text(guider_ui.screen_2_messageBox, data_recv.message);
 		lv_scr_load(guider_ui.screen_2);
-		lv_task_handler();
+		
 		k_msleep(30000);
 		lv_scr_load(guider_ui.screen_1);
-		lv_task_handler();
+		
 	}
 }
 void gesture_control_handler(void)
@@ -232,18 +232,25 @@ void gesture_control_handler(void)
 	data_struct touch_data;
 	while(1){
 		k_msgq_get(&touch_input_q, &touch_data, K_FOREVER);
-		if(touch_data.gesture == SWIPE_LEFT)
+		if(touch_data.gestureID == SWIPE_LEFT)
 		{
 			lv_scr_load(guider_ui.screen_2);
 		}
-		else if (touch_data.gesture == SWIPE_RIGHT)
+		else if (touch_data.gestureID == SWIPE_RIGHT)
 		{
 			lv_scr_load(guider_ui.screen_1);
 		}
-		lv_task_handler();
+	
 	}
 }
-
+void screen_refresh_task_handler(void)
+{
+	while(1)
+	{
+		lv_task_handler();
+		k_yield();
+	}
+}
 K_THREAD_DEFINE(main_task, MY_STACK_SIZE,
                 main_task_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
@@ -256,6 +263,9 @@ K_THREAD_DEFINE(lcd_display_blank_task, MY_STACK_SIZE,
 K_THREAD_DEFINE(process_message_notification, MY_STACK_SIZE,
                 process_message_notification_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
-K_THREAD_DEFINE(process_message_notification, MY_STACK_SIZE,
+K_THREAD_DEFINE(gesture_control_task, MY_STACK_SIZE,
                 gesture_control_handler, NULL, NULL, NULL,
+                MY_PRIORITY, 0, 0);
+K_THREAD_DEFINE(screen_refresh_task, MY_STACK_SIZE,
+                screen_refresh_task_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);

@@ -77,7 +77,7 @@ void setup_scr_screen_1(lv_ui *ui)
 
 	//Write codes screen_1_hour
 	ui->screen_1_hour = lv_label_create(ui->screen_1);
-	lv_label_set_text(ui->screen_1_hour, "17");
+	lv_label_set_text(ui->screen_1_hour, "04");
 	lv_label_set_long_mode(ui->screen_1_hour, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_1_hour, 70, 98);
 	lv_obj_set_size(ui->screen_1_hour, 43, 32);
