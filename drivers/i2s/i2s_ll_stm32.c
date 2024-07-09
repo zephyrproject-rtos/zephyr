@@ -191,8 +191,10 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	 * When I2S data format is selected parameter channels is ignored,
 	 * number of words in a frame is always 2.
 	 */
-	const uint32_t num_channels = i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK
-				      ? 2U : i2s_cfg->channels;
+	const uint32_t num_channels =
+		((i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) == I2S_FMT_DATA_FORMAT_I2S)
+			? 2U
+			: i2s_cfg->channels;
 	struct stream *stream;
 	uint32_t bit_clk_freq;
 	bool enable_mck;
