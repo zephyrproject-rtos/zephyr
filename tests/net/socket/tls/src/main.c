@@ -530,9 +530,8 @@ static void test_prepare_tls_connection_ex(sa_family_t family, bool accept_err,
     else {
         test_accept(s_sock, &new_sock, &addr, &addrlen);
         zassert_equal(addrlen, exp_addrlen, "Wrong addrlen");
-
-        test_work_wait(&test_data.work);
     }
+	test_work_wait(&test_data.work);
 }
 
 ZTEST(net_socket_tls, test_v4_msg_waitall)
@@ -1797,8 +1796,6 @@ ZTEST(net_socket_tls, test_set_ciphersuites_err)
 
     test_sockets_close();
 
-	/* Wait a bit longer to ensure everything is closed up before we exit */
-	k_sleep(K_MSEC(150));
     k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
