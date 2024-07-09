@@ -106,7 +106,7 @@ static int ad56xx_write_value(const struct device *dev, uint8_t channel, uint32_
 		return -EINVAL;
 	}
 
-	if (channel > config->channel_count) {
+	if (channel >= config->channel_count) {
 		LOG_ERR("invalid channel %i", channel);
 		return -EINVAL;
 	}
