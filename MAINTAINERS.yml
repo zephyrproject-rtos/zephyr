@@ -4073,7 +4073,6 @@ USB:
     - tests/drivers/usb/
     - tests/drivers/udc/
     - doc/connectivity/usb/
-    - scripts/generate_usb_vif/
   labels:
     - "area: USB"
   tests:
@@ -4095,6 +4094,7 @@ USB-C:
     - subsys/usb/usb_c/
     - doc/connectivity/usb/pd/
     - doc/hardware/peripherals/usbc_vbus.rst
+    - scripts/generate_usb_vif/
   labels:
     - "area: USB-C"
   tests:
