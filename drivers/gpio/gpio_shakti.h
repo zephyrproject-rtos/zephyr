@@ -20,8 +20,6 @@ extern "C" {
 typedef uint8_t gpio_pin_t;
 typedef uint32_t gpio_flags_t;
 
-#define GPIO_OUTPUT 1
-
 
 #define GPIO_START 0x40200 //GPIO Start Address 
 #define GPIO_OFFSET 0x08 /*!Generic offset used to access GPIO registers*/

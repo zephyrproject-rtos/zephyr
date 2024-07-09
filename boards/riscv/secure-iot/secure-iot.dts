@@ -63,6 +63,7 @@ chosen {
           height = <240>;
         };
 };
+
 &gpio0 {
 	status = "okay";
 };

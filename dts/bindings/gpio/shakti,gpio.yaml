@@ -13,8 +13,8 @@ properties:
     required: true
 
   interrupts:
-    type: int
-    required: false
+    type: array
+    required: true
 
   "#gpio-cells":
     type: int
