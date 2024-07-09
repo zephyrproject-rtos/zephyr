@@ -81,6 +81,15 @@
 	};
 };
 
+&idle {
+	min-residency-us = <1>;
+};
+
+&stop {
+	min-residency-us = <20000>;
+	exit-latency-us = <13>;
+};
+
 &lpuart2 {
 	dmas = <&edma 5 6>, <&edma 6 7>;
 	dma-names = "rx", "tx";
