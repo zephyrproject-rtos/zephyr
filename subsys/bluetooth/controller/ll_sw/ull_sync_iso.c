@@ -66,6 +66,7 @@ static void ticker_update_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_iso_disable(void *param);
 static void disabled_cb(void *param);
+static void lll_flush(void *param);
 
 static memq_link_t link_lll_prepare;
 static struct mayfly mfy_lll_prepare = {0U, 0U, &link_lll_prepare, NULL, NULL};
@@ -228,11 +229,16 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 {
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_flush};
+
 	struct ll_sync_iso_set *sync_iso;
 	memq_link_t *link_sync_estab;
 	struct node_rx_pdu *node_rx;
 	memq_link_t *link_sync_lost;
 	struct ll_sync_set *sync;
+	struct k_sem sem;
+	uint32_t ret;
 	int err;
 
 	sync_iso = sync_iso_get(big_handle);
@@ -284,6 +290,19 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	/* Do a blocking mayfly call to LLL context for flushing any outstanding
+	 * operations.
+	 */
+	sync_iso->flush_sem = &sem;
+	k_sem_init(&sem, 0, 1);
+	mfy.param = &sync_iso->lll;
+
+	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0, &mfy);
+	LL_ASSERT(!ret);
+	k_sem_take(&sem, K_FOREVER);
+	sync_iso->flush_sem = NULL;
+
+	/* Release resources */
 	ull_sync_iso_stream_release(sync_iso);
 
 	link_sync_lost = sync_iso->node_rx_lost.rx.hdr.link;
@@ -1021,11 +1040,30 @@ static void sync_iso_disable(void *param)
 	}
 }
 
+static void lll_flush(void *param)
+{
+	struct ll_sync_iso_set *sync_iso;
+	uint8_t handle;
+
+	/* Get reference to ULL context */
+	sync_iso = HDR_LLL2ULL(param);
+	handle = sync_iso_handle_get(sync_iso);
+
+	lll_sync_iso_flush(handle, param);
+
+	if (sync_iso->flush_sem) {
+		k_sem_give(sync_iso->flush_sem);
+	}
+}
+
 static void disabled_cb(void *param)
 {
+	static memq_link_t mfy_link;
+	static struct mayfly mfy = {0U, 0U, &mfy_link, NULL, lll_flush};
 	struct ll_sync_iso_set *sync_iso;
 	struct node_rx_pdu *rx;
 	memq_link_t *link;
+	uint32_t ret;
 
 	/* Get reference to ULL context */
 	sync_iso = HDR_LLL2ULL(param);
@@ -1038,4 +1076,9 @@ static void disabled_cb(void *param)
 
 	/* Enqueue the BIG sync lost towards ULL context */
 	ll_rx_put_sched(link, rx);
+
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+			     TICKER_USER_ID_LLL, 0U, &mfy);
+	LL_ASSERT(!ret);
 }

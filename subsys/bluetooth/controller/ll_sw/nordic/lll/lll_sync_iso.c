@@ -101,6 +101,12 @@ void lll_sync_iso_prepare(void *param)
 	prepare_bh(param);
 }
 
+void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll)
+{
+	ARG_UNUSED(handle);
+	ARG_UNUSED(lll);
+}
+
 static int init_reset(void)
 {
 	return 0;
