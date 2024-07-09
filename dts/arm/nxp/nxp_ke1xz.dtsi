@@ -24,6 +24,32 @@
 			compatible = "arm,cortex-m0+";
 			clock-frequency = <48000000>;
 			reg = <0>;
+			cpu-power-states = <&idle &stop &pstop1 &pstop2>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <0>;
+			};
+
+			pstop1: pstop1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+			};
+
+			pstop2: pstop2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+			};
 		};
 	};
 
@@ -136,6 +162,16 @@
 			interrupts = <14 0>;
 			clocks = <&pcc 0x1b0 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			status = "disabled";
+		};
+
+		lptmr0: lptmr@40040000 {
+			compatible = "nxp,lptmr";
+			reg = <0x40040000 0x1000>;
+			interrupts = <29 0>;
+			clock-frequency = <128000>;
+			prescaler = <1>;
+			clk-source = <1>;
+			resolution = <16>;
 		};
 
 		porta: pinmux@40049000 {
