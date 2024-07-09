@@ -1077,6 +1077,9 @@ static struct mgmt_group os_mgmt_group = {
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	.mg_translate_error = os_mgmt_translate_error_code,
 #endif
+#ifdef CONFIG_MCUMGR_GRP_ENUM_DETAILS_NAME
+	.mg_group_name = "os mgmt",
+#endif
 };
 
 static void os_mgmt_register_group(void)
