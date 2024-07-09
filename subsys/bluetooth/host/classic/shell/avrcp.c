@@ -29,7 +29,16 @@
 #include "host/shell/bt.h"
 
 struct bt_avrcp *default_avrcp;
-static uint8_t avrcp_registered;
+static bool avrcp_registered;
+
+#define CHECK_REGISTER_CALLBACKS(_sh, _errno) \
+	do { \
+		if (!avrcp_registered) { \
+			if (register_cb(_sh) != 0) \
+				return _errno; \
+		} \
+	} while (0)
+
 static void avrcp_connected(struct bt_avrcp *avrcp)
 {
 	default_avrcp = avrcp;
@@ -56,7 +65,7 @@ static int register_cb(const struct shell *sh)
 
 	err = bt_avrcp_register_cb(&avrcp_cb);
 	if (!err) {
-		avrcp_registered = 1;
+		avrcp_registered = true;
 		shell_print(sh, "AVRCP callbacks registered");
 	} else {
 		shell_print(sh, "failed to register callbacks");
@@ -79,11 +88,7 @@ static int cmd_register_cb(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_connect(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (avrcp_registered == 0) {
-		if (register_cb(sh) != 0) {
-			return -ENOEXEC;
-		}
-	}
+	CHECK_REGISTER_CALLBACKS(sh, -ENOEXEC);
 
 	if (!default_conn) {
 		shell_error(sh, "BR/EDR not connected");
@@ -100,15 +105,24 @@ static int cmd_connect(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_disconnect(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (avrcp_registered == 0) {
-		if (register_cb(sh) != 0) {
-			return -ENOEXEC;
-		}
-	}
+	CHECK_REGISTER_CALLBACKS(sh, -ENOEXEC);
 
 	if (default_avrcp != NULL) {
 		bt_avrcp_disconnect(default_avrcp);
 		default_avrcp = NULL;
+	} else {
+		shell_error(sh, "AVRCP is not connected");
+	}
+
+	return 0;
+}
+
+static int cmd_get_unit_info(const struct shell *sh, int32_t argc, char *argv[])
+{
+	CHECK_REGISTER_CALLBACKS(sh, -ENOEXEC);
+
+	if (default_avrcp != NULL) {
+		bt_avrcp_get_unit_info(default_avrcp);
 	} else {
 		shell_error(sh, "AVRCP is not connected");
 	}
@@ -121,6 +135,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(avrcp_cmds,
 		cmd_register_cb, 1, 0),
 	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, "<address>", cmd_disconnect, 2, 0),
+	SHELL_CMD_ARG(get_unit, NULL, "<address>", cmd_get_unit_info, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 static int cmd_avrcp(const struct shell *sh, size_t argc, char **argv)
