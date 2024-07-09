@@ -638,15 +638,16 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 		arch_mem_map(dst, phys, size, flags);
 	}
 
-	if (!uninit) {
+out:
+	k_spin_unlock(&z_mm_lock, key);
+
+	if (dst != NULL && !uninit) {
 		/* If we later implement mappings to a copy-on-write
 		 * zero page, won't need this step
 		 */
 		memset(dst, 0, size);
 	}
 
-out:
-	k_spin_unlock(&z_mm_lock, key);
 	return dst;
 }
 
@@ -1167,14 +1168,16 @@ static inline void do_backing_store_page_out(uintptr_t location)
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 }
 
-/* Current implementation relies on interrupt locking to any prevent page table
- * access, which falls over if other CPUs are active. Addressing this is not
- * as simple as using spinlocks as regular memory reads/writes constitute
- * "access" in this sense.
- *
- * Current needs for demand paging are on uniprocessor systems.
+#if defined(CONFIG_SMP) && defined(CONFIG_DEMAND_PAGING_ALLOW_IRQ)
+/*
+ * SMP support is embryonic at this point. Some resources such as the
+ * scratch page would need to be per CPU, backing store driver execution
+ * would have to be confined to the faulting CPU, statistics would need
+ * to cope with access concurrency, etc. For now let's simply enforce global
+ * serialization across all CPUs with a mutex.
  */
-BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP));
+static struct k_mutex z_mm_paging_lock;
+#endif
 
 static void virt_region_foreach(void *addr, size_t size,
 				void (*func)(void *))
@@ -1264,16 +1267,20 @@ static int do_mem_evict(void *addr)
 	bool dirty;
 	struct k_mem_page_frame *pf;
 	uintptr_t location;
-	int key, ret;
+	k_spinlock_key_t key;
 	uintptr_t flags, phys;
+	int ret;
 
 #if CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	__ASSERT(!k_is_in_isr(),
 		 "%s is unavailable in ISRs with CONFIG_DEMAND_PAGING_ALLOW_IRQ",
 		 __func__);
 	k_sched_lock();
+#ifdef CONFIG_SMP
+	k_mutex_lock(&z_mm_paging_lock, K_FOREVER);
+#endif
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
 	flags = arch_page_info_get(addr, &phys, false);
 	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
 		 "address %p isn't mapped", addr);
@@ -1293,18 +1300,21 @@ static int do_mem_evict(void *addr)
 
 	__ASSERT(ret == 0, "failed to prepare page frame");
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	if (dirty) {
 		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	page_frame_free_locked(pf);
 out:
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+#ifdef CONFIG_SMP
+	k_mutex_unlock(&z_mm_paging_lock);
+#endif
 	k_sched_unlock();
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	return ret;
@@ -1331,11 +1341,12 @@ int k_mem_page_out(void *addr, size_t size)
 
 int k_mem_page_frame_evict(uintptr_t phys)
 {
-	int key, ret;
+	k_spinlock_key_t key;
 	struct k_mem_page_frame *pf;
 	bool dirty;
 	uintptr_t flags;
 	uintptr_t location;
+	int ret;
 
 	__ASSERT(page_frames_initialized, "%s called on 0x%lx too early",
 		 __func__, phys);
@@ -1349,8 +1360,11 @@ int k_mem_page_frame_evict(uintptr_t phys)
 		 "%s is unavailable in ISRs with CONFIG_DEMAND_PAGING_ALLOW_IRQ",
 		 __func__);
 	k_sched_lock();
+#ifdef CONFIG_SMP
+	k_mutex_lock(&z_mm_paging_lock, K_FOREVER);
+#endif
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
 	pf = k_mem_phys_to_page_frame(phys);
 	if (!k_mem_page_frame_is_mapped(pf)) {
 		/* Nothing to do, free page */
@@ -1367,18 +1381,21 @@ int k_mem_page_frame_evict(uintptr_t phys)
 	}
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	if (dirty) {
 		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	key = irq_lock();
+	k_spin_unlock(&z_mm_lock, key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	page_frame_free_locked(pf);
 out:
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+#ifdef CONFIG_SMP
+	k_mutex_unlock(&z_mm_paging_lock);
+#endif
 	k_sched_unlock();
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	return ret;
@@ -1480,12 +1497,13 @@ static inline struct k_mem_page_frame *do_eviction_select(bool *dirty)
 static bool do_page_fault(void *addr, bool pin)
 {
 	struct k_mem_page_frame *pf;
-	int key, ret;
+	k_spinlock_key_t key;
 	uintptr_t page_in_location, page_out_location;
 	enum arch_page_location status;
 	bool result;
 	bool dirty = false;
-	struct k_thread *faulting_thread = _current_cpu->current;
+	struct k_thread *faulting_thread;
+	int ret;
 
 	__ASSERT(page_frames_initialized, "page fault at %p happened too early",
 		 addr);
@@ -1524,11 +1542,16 @@ static bool do_page_fault(void *addr, bool pin)
 	 * assumptions of cooperative threads or threads that implement
 	 * crticial sections with spinlocks or disabling IRQs.
 	 */
-	k_sched_lock();
 	__ASSERT(!k_is_in_isr(), "ISR page faults are forbidden");
+	k_sched_lock();
+#ifdef CONFIG_SMP
+	k_mutex_lock(&z_mm_paging_lock, K_FOREVER);
+#endif
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
+	faulting_thread = _current_cpu->current;
+
 	status = arch_page_location_get(addr, &page_in_location);
 	if (status == ARCH_PAGE_LOCATION_BAD) {
 		/* Return false to treat as a fatal error */
@@ -1559,7 +1582,7 @@ static bool do_page_fault(void *addr, bool pin)
 	__ASSERT(status == ARCH_PAGE_LOCATION_PAGED_OUT,
 		 "unexpected status value %d", status);
 
-	paging_stats_faults_inc(faulting_thread, key);
+	paging_stats_faults_inc(faulting_thread, key.key);
 
 	pf = free_page_frame_list_get();
 	if (pf == NULL) {
@@ -1576,7 +1599,7 @@ static bool do_page_fault(void *addr, bool pin)
 	__ASSERT(ret == 0, "failed to prepare page frame");
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 	/* Interrupts are now unlocked if they were not locked when we entered
 	 * this function, and we may service ISRs. The scheduler is still
 	 * locked.
@@ -1588,7 +1611,7 @@ static bool do_page_fault(void *addr, bool pin)
 	do_backing_store_page_in(page_in_location);
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
 	k_mem_page_frame_clear(pf, K_MEM_PAGE_FRAME_BUSY);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	k_mem_page_frame_clear(pf, K_MEM_PAGE_FRAME_MAPPED);
@@ -1603,8 +1626,11 @@ static bool do_page_fault(void *addr, bool pin)
 		k_mem_paging_eviction_add(pf);
 	}
 out:
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+#ifdef CONFIG_SMP
+	k_mutex_unlock(&z_mm_paging_lock);
+#endif
 	k_sched_unlock();
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 
@@ -1653,10 +1679,10 @@ bool k_mem_page_fault(void *addr)
 static void do_mem_unpin(void *addr)
 {
 	struct k_mem_page_frame *pf;
-	unsigned int key;
+	k_spinlock_key_t key;
 	uintptr_t flags, phys;
 
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
 	flags = arch_page_info_get(addr, &phys, false);
 	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
 		 "invalid data page at %p", addr);
@@ -1667,7 +1693,7 @@ static void do_mem_unpin(void *addr)
 			k_mem_paging_eviction_add(pf);
 		}
 	}
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 }
 
 void k_mem_unpin(void *addr, size_t size)
