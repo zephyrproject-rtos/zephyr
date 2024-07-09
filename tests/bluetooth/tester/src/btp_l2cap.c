@@ -227,6 +227,118 @@ static struct br_channel *get_free_br_channel(void)
 
 extern struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
 
+static int recv_br_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
+{
+	struct btp_l2cap_data_received_ev *ev = (void *) recv_cb_buf;
+	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_br_chan, chan);
+	struct br_channel *br_chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
+
+	ev->chan_id = br_chan->chan_id;
+	ev->data_length = sys_cpu_to_le16(buf->len);
+	memcpy(ev->data, buf->data, buf->len);
+
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DATA_RECEIVED,
+		     recv_cb_buf, sizeof(*ev) + buf->len);
+
+	if (br_chan->hold_credit && !br_chan->pending_credit) {
+		/* no need for extra ref, as when returning EINPROGRESS user
+		 * becomes owner of the netbuf
+		 */
+		br_chan->pending_credit = buf;
+		return -EINPROGRESS;
+	}
+
+	return 0;
+}
+
+static void connected_br_cb(struct bt_l2cap_chan *l2cap_chan)
+{
+	struct btp_l2cap_connected_ev ev;
+	struct bt_conn_info info;
+	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_br_chan, chan);
+	struct br_channel *br_chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
+
+	/* TODO: ev.psm */
+	if (!bt_conn_get_info(l2cap_chan->conn, &info)) {
+		switch (info.type) {
+		case BT_CONN_TYPE_BR:
+			ev.chan_id = br_chan->chan_id;
+			ev.mtu_remote = sys_cpu_to_le16(br_chan->br.tx.mtu);
+			ev.mps_remote = 0;
+			ev.mtu_local = sys_cpu_to_le16(br_chan->br.rx.mtu);
+			ev.mps_local = 0;
+			ev.address.type = BT_ADDR_LE_PUBLIC;
+			bt_addr_copy(&ev.address.a, info.br.dst);
+			break;
+		default:
+			/* TODO figure out how (if) want to handle BR/EDR */
+			return;
+		}
+	}
+
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_CONNECTED, &ev, sizeof(ev));
+}
+
+static void disconnected_br_cb(struct bt_l2cap_chan *l2cap_chan)
+{
+	struct btp_l2cap_disconnected_ev ev;
+	struct bt_conn_info info;
+	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_br_chan, chan);
+	struct br_channel *br_chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
+
+	(void)memset(&ev, 0, sizeof(struct btp_l2cap_disconnected_ev));
+
+	/* TODO: ev.psm */
+	if (!bt_conn_get_info(l2cap_chan->conn, &info)) {
+		switch (info.type) {
+		case BT_CONN_TYPE_BR:
+			ev.chan_id = br_chan->chan_id;
+			br_chan->in_use = false;
+			ev.address.type = BT_ADDR_LE_PUBLIC;
+			bt_addr_copy(&ev.address.a, info.br.dst);
+			break;
+		default:
+			/* TODO figure out how (if) want to handle BR/EDR */
+			return;
+		}
+	}
+
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DISCONNECTED, &ev, sizeof(ev));
+}
+
+#if defined(CONFIG_BT_L2CAP_ECRED)
+static void reconfigured_br_cb(struct bt_l2cap_chan *l2cap_chan)
+{
+	struct btp_l2cap_reconfigured_ev ev;
+	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_br_chan, chan);
+	struct br_channel *br_chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
+
+	(void)memset(&ev, 0, sizeof(ev));
+
+	ev.chan_id = br_chan->chan_id;
+	ev.mtu_remote = sys_cpu_to_le16(br_chan->br.tx.mtu);
+	ev.mps_remote = sys_cpu_to_le16(br_chan->br.tx.mtu);
+	ev.mtu_local = sys_cpu_to_le16(br_chan->br.rx.mtu);
+	ev.mps_local = sys_cpu_to_le16(br_chan->br.rx.mtu);
+
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_RECONFIGURED, &ev, sizeof(ev));
+}
+#endif
+
+static const struct bt_l2cap_chan_ops l2cap_br_ops = {
+	.alloc_buf	= alloc_buf_cb,
+	.recv		= recv_br_cb,
+	.connected	= connected_br_cb,
+	.disconnected	= disconnected_br_cb,
+#if defined(CONFIG_BT_L2CAP_ECRED)
+	.reconfigured	= reconfigured_br_cb,
+#endif
+};
+
 #endif /* defined(CONFIG_BT_CLASSIC) */
 
 static uint8_t _connect(const void *cmd, uint16_t cmd_len, void *rsp,
@@ -273,7 +385,7 @@ static uint8_t _connect(const void *cmd, uint16_t cmd_len, void *rsp,
 			if (!br_chan) {
 				goto fail;
 			}
-			br_chan->br.chan.ops = &l2cap_ops;
+			br_chan->br.chan.ops = &l2cap_br_ops;
 			br_chan->br.rx.mtu = mtu;
 			if (sec) {
 				br_chan->br.required_sec_level = sec_level;
@@ -799,119 +911,6 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 }
 
 #if defined(CONFIG_BT_CLASSIC)
-
-static int recv_br_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
-{
-	struct btp_l2cap_data_received_ev *ev = (void *) recv_cb_buf;
-	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
-			l2cap_chan, struct bt_l2cap_br_chan, chan);
-	struct br_channel *br_chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
-
-	ev->chan_id = br_chan->chan_id;
-	ev->data_length = sys_cpu_to_le16(buf->len);
-	memcpy(ev->data, buf->data, buf->len);
-
-	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DATA_RECEIVED,
-		     recv_cb_buf, sizeof(*ev) + buf->len);
-
-	if (br_chan->hold_credit && !br_chan->pending_credit) {
-		/* no need for extra ref, as when returning EINPROGRESS user
-		 * becomes owner of the netbuf
-		 */
-		br_chan->pending_credit = buf;
-		return -EINPROGRESS;
-	}
-
-	return 0;
-}
-
-static void connected_br_cb(struct bt_l2cap_chan *l2cap_chan)
-{
-	struct btp_l2cap_connected_ev ev;
-	struct bt_conn_info info;
-	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
-			l2cap_chan, struct bt_l2cap_br_chan, chan);
-	struct br_channel *br_chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
-
-	/* TODO: ev.psm */
-	if (!bt_conn_get_info(l2cap_chan->conn, &info)) {
-		switch (info.type) {
-		case BT_CONN_TYPE_BR:
-			ev.chan_id = br_chan->chan_id;
-			ev.mtu_remote = sys_cpu_to_le16(br_chan->br.tx.mtu);
-			ev.mps_remote = 0;
-			ev.mtu_local = sys_cpu_to_le16(br_chan->br.rx.mtu);
-			ev.mps_local = 0;
-			ev.address.type = BT_ADDR_LE_PUBLIC;
-			bt_addr_copy(&ev.address.a, info.br.dst);
-			break;
-		default:
-			/* TODO figure out how (if) want to handle BR/EDR */
-			return;
-		}
-	}
-
-	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_CONNECTED, &ev, sizeof(ev));
-}
-
-static void disconnected_br_cb(struct bt_l2cap_chan *l2cap_chan)
-{
-	struct btp_l2cap_disconnected_ev ev;
-	struct bt_conn_info info;
-	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
-			l2cap_chan, struct bt_l2cap_br_chan, chan);
-	struct br_channel *br_chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
-
-	(void)memset(&ev, 0, sizeof(struct btp_l2cap_disconnected_ev));
-
-	/* TODO: ev.psm */
-	if (!bt_conn_get_info(l2cap_chan->conn, &info)) {
-		switch (info.type) {
-		case BT_CONN_TYPE_BR:
-			ev.chan_id = br_chan->chan_id;
-			br_chan->in_use = false;
-			ev.address.type = BT_ADDR_LE_PUBLIC;
-			bt_addr_copy(&ev.address.a, info.br.dst);
-			break;
-		default:
-			/* TODO figure out how (if) want to handle BR/EDR */
-			return;
-		}
-	}
-
-	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DISCONNECTED, &ev, sizeof(ev));
-}
-
-#if defined(CONFIG_BT_L2CAP_ECRED)
-static void reconfigured_br_cb(struct bt_l2cap_chan *l2cap_chan)
-{
-	struct btp_l2cap_reconfigured_ev ev;
-	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
-			l2cap_chan, struct bt_l2cap_br_chan, chan);
-	struct br_channel *br_chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
-
-	(void)memset(&ev, 0, sizeof(ev));
-
-	ev.chan_id = br_chan->chan_id;
-	ev.mtu_remote = sys_cpu_to_le16(br_chan->br.tx.mtu);
-	ev.mps_remote = sys_cpu_to_le16(br_chan->br.tx.mtu);
-	ev.mtu_local = sys_cpu_to_le16(br_chan->br.rx.mtu);
-	ev.mps_local = sys_cpu_to_le16(br_chan->br.rx.mtu);
-
-	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_RECONFIGURED, &ev, sizeof(ev));
-}
-#endif
-
-static const struct bt_l2cap_chan_ops l2cap_br_ops = {
-	.alloc_buf	= alloc_buf_cb,
-	.recv		= recv_br_cb,
-	.connected	= connected_br_cb,
-	.disconnected	= disconnected_br_cb,
-#if defined(CONFIG_BT_L2CAP_ECRED)
-	.reconfigured	= reconfigured_br_cb,
-#endif
-};
-
 static int accept_br(struct bt_conn *conn, struct bt_l2cap_server *server,
 		  struct bt_l2cap_chan **l2cap_chan)
 {
