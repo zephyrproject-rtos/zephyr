@@ -19,7 +19,7 @@ lpc_checksum
 Pillow>=10.0
 
 # can be used to sign a Zephyr application binary for consumption by a bootloader
-imgtool>=2.0.0
+imgtool>=2.1.0
 
 # used by nanopb module to generate sources from .proto files
 grpcio-tools>=1.47.0
