@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/clock/imx95_clock.h>
+#include <zephyr/dt-bindings/power/imx95_power.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <mem.h>
 
@@ -48,6 +49,12 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			scmi_devpd: protocol@11 {
+				compatible = "arm,scmi-power";
+				reg = <0x11>;
+				#power-domain-cells = <1>;
+			};
 
 			scmi_clk: protocol@14 {
 				compatible = "arm,scmi-clock";
