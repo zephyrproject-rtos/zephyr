@@ -2935,7 +2935,13 @@ Open AMP:
     - carlocaione
   files:
     - lib/open-amp/
-
+    - samples/subsys/ipc/openamp/
+    - samples/subsys/ipc/openamp_rsc_table/
+    - samples/subsys/ipc/rpmsg_service/
+  labels:
+    - "area: Open AMP"
+  tests:
+    - sample.ipc.openamp
 
 POSIX API layer:
   status: maintained
