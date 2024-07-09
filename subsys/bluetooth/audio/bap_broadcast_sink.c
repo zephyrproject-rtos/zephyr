@@ -602,7 +602,7 @@ static bool base_subgroup_bis_index_cb(const struct bt_bap_base_subgroup_bis *bi
 	sink_subgroup = &data->subgroups[data->subgroup_count];
 
 	sink_bis->index = bis->index;
-	sink_subgroup->bis_indexes |= BIT(bis->index);
+	sink_subgroup->bis_indexes |= BT_ISO_BIS_INDEX_BIT(bis->index);
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 
@@ -1169,13 +1169,8 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 		return -EINVAL;
 	}
 
-	CHECKIF(indexes_bitfield == 0) {
-		LOG_DBG("indexes_bitfield is 0");
-		return -EINVAL;
-	}
-
-	CHECKIF(indexes_bitfield & BIT(0)) {
-		LOG_DBG("BIT(0) is not a valid BIS index");
+	CHECKIF(indexes_bitfield == 0U || indexes_bitfield > BIT_MASK(BT_ISO_BIS_INDEX_MAX)) {
+		LOG_DBG("Invalid indexes_bitfield: 0x%08X", indexes_bitfield);
 		return -EINVAL;
 	}
 
@@ -1217,7 +1212,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 
 	stream_count = 0;
 	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
-		if ((indexes_bitfield & BIT(i)) != 0) {
+		if ((indexes_bitfield & BT_ISO_BIS_INDEX_BIT(i)) != 0) {
 			struct bt_audio_codec_cfg *codec_cfg =
 				codec_cfg_from_base_by_index(sink, i);
 
