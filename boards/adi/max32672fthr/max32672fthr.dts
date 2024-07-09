@@ -55,6 +55,7 @@
 		led2 = &led3;
 		sw0 = &pb1;
 		watchdog0 = &wdt0;
+		rtc = &rtc;
 	};
 
 	/* Used for accessing other pins */
@@ -97,6 +98,13 @@
 };
 
 &clk_ipo {
+	status = "okay";
+};
+
+/*
+ * ERTCO requires for RTC
+ */
+&clk_ertco {
 	status = "okay";
 };
 
@@ -147,4 +155,9 @@
 	status = "okay";
 	pinctrl-0 = <&spi1a_mosi_p0_15 &spi1a_miso_p0_14 &spi1a_sck_p0_16 &spi1a_ss0_p0_17>;
 	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
+	alarms-count = <1>;
 };
