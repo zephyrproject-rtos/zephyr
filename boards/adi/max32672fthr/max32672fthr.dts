@@ -54,6 +54,7 @@
 		led1 = &led2;
 		led2 = &led3;
 		sw0 = &pb1;
+		watchdog0 = &wdt0;
 	};
 
 	/* Used for accessing other pins */
@@ -135,5 +136,9 @@
 };
 
 &dma0 {
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };
