@@ -1,0 +1,17 @@
+common:
+  tags:
+    - drivers
+    - flash
+tests:
+  drivers.flash.suspend_resume.nrf_spi_nor:
+    platform_allow: nrf52840dk/nrf52840
+    extra_args:
+      - OVERLAY_CONFIG=boards/nrf52840dk_spi_nor.conf
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor.overlay
+      - CONFIG_SPI_NOR_SFDP_RUNTIME=y
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    harness_config:
+      fixture: external_flash_mx25v1635f
+  drivers.flash.suspend_resume.spi_nor:
+    filter: dt_compat_enabled("jedec,spi-nor")
