@@ -355,11 +355,11 @@ static int spi_b9x_config(const struct device *dev,
 	if (((config->operation & SPI_MODE_CPHA) == 0) &&
 	    ((config->operation & SPI_MODE_CPOL) == 0)) {
 		mode = SPI_MODE0;
-	} else if (((config->operation & SPI_MODE_CPHA) == 0) &&
-		   ((config->operation & SPI_MODE_CPOL) == SPI_MODE_CPOL)) {
-		mode = SPI_MODE1;
 	} else if (((config->operation & SPI_MODE_CPHA) == SPI_MODE_CPHA) &&
 		   ((config->operation & SPI_MODE_CPOL) == 0)) {
+		mode = SPI_MODE1;
+	} else if (((config->operation & SPI_MODE_CPHA) == 0) &&
+		   ((config->operation & SPI_MODE_CPOL) == SPI_MODE_CPOL)) {
 		mode = SPI_MODE2;
 	} else if (((config->operation & SPI_MODE_CPHA) == SPI_MODE_CPHA) &&
 		   ((config->operation & SPI_MODE_CPOL) == SPI_MODE_CPOL)) {
