@@ -1398,7 +1398,7 @@ static void endrx_isr(const struct device *dev)
 static uint8_t rx_flush(const struct device *dev, uint8_t *buf)
 {
 	/* Flushing RX fifo requires buffer bigger than 4 bytes to empty fifo*/
-	static const uint8_t dirty = 0xAA;
+	static const uint8_t dirty = CONFIG_UART_NRFX_UARTE_RX_FLUSH_MAGIC_BYTE;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	const struct uarte_nrfx_config *config = dev->config;
 	uint32_t prev_rx_amount;
