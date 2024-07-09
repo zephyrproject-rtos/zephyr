@@ -594,6 +594,22 @@ CMSIS API layer:
     - portability.cmsis_rtos_v1
     - portability.cmsis_rtos_v2
 
+DAP:
+  status: maintained
+  maintainers:
+    - jfischer-no
+  collaborators:
+    - maxd-nordic
+  files:
+    - include/zephyr/drivers/swdp.h
+    - drivers/dp/
+    - subsys/dap/
+    - samples/subsys/dap/
+  description: >-
+    Debug Access Port controller
+  labels:
+    - "area: dap"
+
 DSP subsystem:
   status: maintained
   maintainers:
