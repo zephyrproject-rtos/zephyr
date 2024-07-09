@@ -353,7 +353,6 @@ Bluetooth HCI:
     - samples/bluetooth/hci_*/
   labels:
     - "area: Bluetooth Host"
-    - "area: Bluetooth"
   tests:
     - bluetooth
 
@@ -375,7 +374,6 @@ Bluetooth controller:
     - tests/bsim/bluetooth/ll/
   labels:
     - "area: Bluetooth Controller"
-    - "area: Bluetooth"
   tests:
     - bluetooth.controller
 
@@ -398,7 +396,6 @@ Bluetooth Host:
     - tests/bsim/bluetooth/host/
   labels:
     - "area: Bluetooth Host"
-    - "area: Bluetooth"
 
 Bluetooth Mesh:
   status: maintained
@@ -420,7 +417,6 @@ Bluetooth Mesh:
     - samples/bluetooth/mesh/
   labels:
     - "area: Bluetooth Mesh"
-    - "area: Bluetooth"
   tests:
     - bluetooth.mesh
 
@@ -457,7 +453,6 @@ Bluetooth Audio:
     - samples/bluetooth/tmap*/
   labels:
     - "area: Bluetooth Audio"
-    - "area: Bluetooth"
   tests:
     - bluetooth.audio
 
