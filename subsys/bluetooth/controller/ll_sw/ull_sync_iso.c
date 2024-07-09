@@ -183,7 +183,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	lll->cssn_next = 0U;
 	lll->term_reason = 0U;
 
-	if (encryption) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) && encryption) {
 		const uint8_t BIG1[16] = {0x31, 0x47, 0x49, 0x42, };
 		const uint8_t BIG2[4]  = {0x32, 0x47, 0x49, 0x42};
 		uint8_t igltk[16];
