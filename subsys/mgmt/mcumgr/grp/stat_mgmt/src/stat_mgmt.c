@@ -272,6 +272,9 @@ static struct mgmt_group stat_mgmt_group = {
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	.mg_translate_error = stat_mgmt_translate_error_code,
 #endif
+#ifdef CONFIG_MCUMGR_GRP_ENUM_DETAILS_NAME
+	.mg_group_name = "stat mgmt",
+#endif
 };
 
 static void stat_mgmt_register_group(void)
