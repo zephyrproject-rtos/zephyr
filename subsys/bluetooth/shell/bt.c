@@ -1971,6 +1971,9 @@ static bool adv_param_parse(size_t argc, char *argv[],
 {
 	memset(param, 0, sizeof(struct bt_le_adv_param));
 
+	param->interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
+	param->interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
+
 	if (!strcmp(argv[1], "conn-scan")) {
 		param->options |= BT_LE_ADV_OPT_CONNECTABLE;
 		param->options |= BT_LE_ADV_OPT_SCANNABLE;
@@ -2032,6 +2035,16 @@ static bool adv_param_parse(size_t argc, char *argv[],
 
 			param->peer = &addr;
 			argn += 2;
+		} else if (!strcmp(arg, "interval")) {
+			if ((argn + 2) >= argc) {
+				return false;
+			}
+			param->interval_min = strtol(argv[argn + 1], NULL, 16);
+			param->interval_max = strtol(argv[argn + 2], NULL, 16);
+			if (param->interval_min > param->interval_max) {
+				return false;
+			}
+			argn += 2;
 		} else {
 			return false;
 		}
@@ -2043,9 +2056,6 @@ static bool adv_param_parse(size_t argc, char *argv[],
 	    !(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
 		param->interval_min = 0;
 		param->interval_max = 0;
-	} else {
-		param->interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
-		param->interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 	}
 
 	return true;
@@ -4634,7 +4644,8 @@ static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 	"[ext-adv] [no-2m] [coded] [anon] [tx-power] [scan-reports] "                              \
 	"[filter-accept-list: fal, fal-scan, fal-conn] [identity] "                                \
 	"[directed " HELP_ADDR_LE "] [mode: low] [dir-rpa] "                                       \
-	"[disable-37] [disable-38] [disable-39]"
+	"[disable-37] [disable-38] [disable-39] "                                                  \
+	"[interval interval-min interval-max]"
 #else
 #define EXT_ADV_SCAN_OPT ""
 #endif /* defined(CONFIG_BT_EXT_ADV) */
@@ -4729,8 +4740,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_directed_adv, 3, 6),
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_EXT_ADV)
-	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 11),
-	SHELL_CMD_ARG(adv-param, NULL, EXT_ADV_PARAM, cmd_adv_param, 2, 11),
+	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 14),
+	SHELL_CMD_ARG(adv-param, NULL, EXT_ADV_PARAM, cmd_adv_param, 2, 14),
 	SHELL_CMD_ARG(adv-data, NULL, "<data> [scan-response <data>] "
 				      "<type: discov, hex> [appearance] "
 				      "[name <str>] [dev-name]",
