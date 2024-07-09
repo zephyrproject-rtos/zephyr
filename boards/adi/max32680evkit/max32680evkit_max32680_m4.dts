@@ -54,6 +54,7 @@
 		led1 = &led2;
 		sw0 = &pb1;
 		sw1 = &pb2;
+		watchdog0 = &wdt0;
 	 };
 };
 
@@ -99,5 +100,9 @@
 };
 
 &dma0 {
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };
