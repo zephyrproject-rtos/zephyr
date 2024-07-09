@@ -63,7 +63,9 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #endif
 
 #if defined(CONFIG_WOLFSSL)
+#ifndef WOLFSSL_USER_SETTINGS
 #include <user_settings.h>
+#endif
 #include <wolfssl/ssl.h>
 #include <wolfssl/error-ssl.h>
 
