@@ -56,6 +56,8 @@ static struct http_server_ctx server_ctx;
 static K_SEM_DEFINE(server_start, 0, 1);
 static bool server_running;
 
+static void close_client_connection(struct http_client_ctx *client);
+
 int http_server_init(struct http_server_ctx *ctx)
 {
 	int proto;
@@ -241,7 +243,7 @@ static int accept_new_client(int server_fd)
 	return new_socket;
 }
 
-static int close_all_sockets(struct http_server_ctx *ctx)
+static void close_all_sockets(struct http_server_ctx *ctx)
 {
 	zsock_close(ctx->fds[0].fd); /* close eventfd */
 	ctx->fds[0].fd = -1;
@@ -251,11 +253,17 @@ static int close_all_sockets(struct http_server_ctx *ctx)
 			continue;
 		}
 
-		zsock_close(ctx->fds[i].fd);
+		if (i < ctx->listen_fds) {
+			zsock_close(ctx->fds[i].fd);
+		} else {
+			struct http_client_ctx *client =
+				&server_ctx.clients[i - ctx->listen_fds];
+
+			close_client_connection(client);
+		}
+
 		ctx->fds[i].fd = -1;
 	}
-
-	return 0;
 }
 
 static void client_release_resources(struct http_client_ctx *client)
@@ -484,7 +492,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 		if (ret < 0) {
 			ret = -errno;
 			LOG_DBG("poll failed (%d)", ret);
-			return ret;
+			goto closing;
 		}
 
 		if (ret == 0) {
@@ -495,6 +503,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 		if (ret == 1 && ctx->fds[0].revents) {
 			eventfd_read(ctx->fds[0].fd, &value);
 			LOG_DBG("Received stop event. exiting ..");
+			ret = 0;
 			goto closing;
 		}
 
@@ -528,7 +537,8 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 				/* Listening socket error, abort. */
 				LOG_ERR("Listening socket error, aborting.");
-				return -sock_error;
+				ret = -sock_error;
+				goto closing;
 
 			}
 
@@ -619,7 +629,8 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 closing:
 	/* Close all client connections and the server socket */
-	return close_all_sockets(ctx);
+	close_all_sockets(ctx);
+	return ret;
 }
 
 /* Compare two strings where the terminator is either "\0" or "?" */
