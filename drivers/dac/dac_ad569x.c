@@ -119,6 +119,8 @@ static int ad569x_write_value(const struct device *dev, uint8_t channel, uint32_
 		return -EINVAL;
 	}
 
+	value <<= 16 - config->resolution;
+
 	return ad569x_write(dev, AD569X_CMD_WRITE_AND_UPDATE, value);
 }
 
