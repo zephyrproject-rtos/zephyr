@@ -457,7 +457,7 @@ static void test_prepare_dtls_connection(sa_family_t family)
 	 */
 	fds[0].fd = s_sock;
 	fds[0].events = ZSOCK_POLLIN;
-	ret = zsock_poll(fds, 1, 3000);
+	ret = zsock_poll(fds, 1, 1000);
 	zassert_equal(ret, 1, "poll() did not report data ready");
 
 	/* Flush the dummy byte. */
@@ -467,11 +467,15 @@ static void test_prepare_dtls_connection(sa_family_t family)
 	test_work_wait(&test_data.work);
 }
 
-
-typedef void (*tls_cb)(void);
+/* Function pointer type for function to be called after socket creation but
+ * before any bind/listen/connect operations */
+typedef void (*tls_pre_cb)(void);
+/* Function pointer type for function to be used to perform client work
+ * instead of client_connect_work_handler() */
 typedef void (*client_work_func)(struct k_work *work);
 
-static void test_prepare_tls_connection_ex(sa_family_t family, bool accept_err, tls_cb cb, client_work_func cw)
+static void test_prepare_tls_connection_ex(sa_family_t family, bool accept_err,
+										   tls_pre_cb cb, client_work_func cw)
 {
     struct sockaddr c_saddr;
     struct sockaddr s_saddr;
@@ -1735,7 +1739,7 @@ ZTEST(net_socket_tls, test_set_ciphersuites)
 
     /* Verify the ciphersuite list is what we set for server */
     ret = zsock_getsockopt(s_sock, SOL_TLS, TLS_CIPHERSUITE_LIST,
-            (void *)ciphersuites, &cs_len);
+            (void *)ciphersuites, (socklen_t *)&cs_len);
     zassert_equal(ret, 0, "Unable to get ciphersuites for server");
     zassert_equal(cs_len, sizeof(cipher_list_psk), "Incorrect get ciphersuite len");
 
@@ -1750,7 +1754,7 @@ ZTEST(net_socket_tls, test_set_ciphersuites)
 
     cs_len = sizeof(ciphersuites);
     ret = zsock_getsockopt(c_sock, SOL_TLS, TLS_CIPHERSUITE_LIST,
-            (void *)ciphersuites, &cs_len);
+            (void *)ciphersuites, (socklen_t *)&cs_len);
     zassert_equal(ret, 0, "Unable to get ciphersuites for client");
     zassert_equal(cs_len, sizeof(cipher_list_psk2), "Incorrect get ciphersuite len");
 
@@ -1760,14 +1764,14 @@ ZTEST(net_socket_tls, test_set_ciphersuites)
 
     /* Check that the actual negotiated cipher is correct for server */
     ret = zsock_getsockopt(new_sock, SOL_TLS, TLS_CIPHERSUITE_USED,
-            (void *)&curr_cipher, &cc_len);
+            (void *)&curr_cipher, (socklen_t *)&cc_len);
     zassert_equal(ret, 0, "Unable to get current ciphersuite for server");
     zassert_equal(curr_cipher, cipher_list_psk2[0]);
 
     /* Same for the client */
     curr_cipher = 0;
     ret = zsock_getsockopt(c_sock, SOL_TLS, TLS_CIPHERSUITE_USED,
-            (void *)&curr_cipher, &cc_len);
+            (void *)&curr_cipher, (socklen_t *)&cc_len);
     zassert_equal(ret, 0, "Unable to get current ciphersuite for client");
     zassert_equal(curr_cipher, cipher_list_psk2[0]);
 
@@ -1793,12 +1797,9 @@ ZTEST(net_socket_tls, test_set_ciphersuites_err)
 
     test_sockets_close();
 
+	/* Wait a bit longer to ensure everything is closed up before we exit */
+	k_sleep(K_MSEC(150));
     k_sleep(TCP_TEARDOWN_TIMEOUT);
-
-#if defined(CONFIG_BOARD_NATIVE_POSIX)
-    /* Native simulator isnt quite done yet, wait a bit more */
-    k_sleep(TCP_TEARDOWN_TIMEOUT);
-#endif
 }
 
 void tls_set_hostname_cb()
@@ -1857,7 +1858,7 @@ ZTEST(net_socket_tls, test_session_cache)
 
     /* Check that the session cache is enabled */
     ret = zsock_getsockopt(s_sock, SOL_TLS, TLS_SESSION_CACHE,
-            (void *)&enabled, &len);
+            (void *)&enabled, (socklen_t *)&len);
     zassert_equal(ret, 0, "Unable to get session cache enabled status");
     zassert_equal(enabled, TLS_SESSION_CACHE_ENABLED, "Session cache value does not match what was set");
 
@@ -1890,6 +1891,7 @@ void tls_set_alpn_cb()
 
 ZTEST(net_socket_tls, test_alpn)
 {
+#if CONFIG_NET_SOCKETS_TLS_MAX_APP_PROTOCOLS > 0
     int ret;
     uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
     struct send_data test_data = {
@@ -1905,7 +1907,7 @@ ZTEST(net_socket_tls, test_alpn)
 
     /* Check that the ALPN list is the one we set */
     ret = zsock_getsockopt(s_sock, SOL_TLS, TLS_ALPN_LIST,
-            (void *)alpn_buf, &alpn_len);
+            (void *)alpn_buf, (socklen_t *)&alpn_len);
     zassert_equal(ret, 0, "Unable to get alpn list");
     zassert_equal(alpn_len, sizeof(alpn_list), "Retrieved ALPN list length incorrect");
     zassert_equal(strlen(alpn_buf[0]), strlen(alpn_list[0]), "Retrieved ALPN list element length incorrect");
@@ -1925,6 +1927,9 @@ ZTEST(net_socket_tls, test_alpn)
     test_sockets_close();
 
     k_sleep(TCP_TEARDOWN_TIMEOUT);
+#else
+    ztest_test_skip();
+#endif
 }
 
 ZTEST(net_socket_tls, test_poll_tls_pollin)

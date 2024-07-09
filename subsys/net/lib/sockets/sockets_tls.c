@@ -66,7 +66,6 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <user_settings.h>
 #include <wolfssl/ssl.h>
 #include <wolfssl/error-ssl.h>
-#include <wolfssl/internal.h>
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS) && !defined(WOLFSSL_DTLS)
 #error "DTLS sockets enabled but wolfssl DTLS not enabled"
@@ -2049,6 +2048,19 @@ static int tls_wolfssl_connect(struct tls_context *context, k_timeout_t timeout)
                 break;
             }
 
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+			if (context->type == SOCK_DGRAM) {
+                ret = wolfSSL_dtls_got_timeout(context->wssl);
+                if (ret != WOLFSSL_SUCCESS) {
+                    err = wolfSSL_get_error(context->wssl, ret);
+                    if (err != WOLFSSL_ERROR_WANT_READ &&
+                        err != WOLFSSL_ERROR_WANT_WRITE) {
+                        break;
+                    }
+                }
+            }
+#endif
+
             continue;
         } else {
             NET_ERR("TLS handshake error: %x", err);
@@ -2118,6 +2130,19 @@ static int tls_wolfssl_accept(struct tls_context *context, k_timeout_t timeout)
             if (ret != 0) {
                 break;
             }
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+			if (context->type == SOCK_DGRAM) {
+                ret = wolfSSL_dtls_got_timeout(context->wssl);
+                if (ret != WOLFSSL_SUCCESS) {
+                    err = wolfSSL_get_error(context->wssl, ret);
+                    if (err != WOLFSSL_ERROR_WANT_READ &&
+                        err != WOLFSSL_ERROR_WANT_WRITE) {
+                        break;
+                    }
+                }
+            }
+#endif
 
             continue;
         } else {
@@ -2520,8 +2545,6 @@ static int tls_wolfssl_init(struct tls_context *context, bool is_server)
     if (NULL != context->psk) {
         if (is_server) {
             wolfSSL_CTX_set_psk_server_callback(context->ctx, tls_psk_server_cb);
-            /* TODO: review psk hint */
-            wolfSSL_CTX_use_psk_identity_hint(context->ctx, "zephyr wolfssl TLS server");
         }
         else {
             wolfSSL_CTX_set_psk_client_callback(context->ctx, tls_psk_client_cb);
@@ -2741,24 +2764,36 @@ static int tls_opt_ciphersuite_list_get(struct tls_context *context,
 #if defined(CONFIG_WOLFSSL)
         byte arr[2];
         uint16_t sh = 0;
-        byte *cs_bytes = XMALLOC(GetCipherNamesSize() * 2, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        byte *cs_bytes = NULL;
+        int cs_bytes_len = 0;
+
+        if (wolfSSL_get_cipher_list_bytes(NULL, &cs_bytes_len) \
+                != WOLFSSL_SUCCESS) {
+            return -EINVAL;
+        }
+
+        if (cs_bytes_len == 0)
+            return -EINVAL;
+
+        cs_bytes = XMALLOC(cs_bytes_len, NULL, DYNAMIC_TYPE_TMP_BUFFER);
         if (cs_bytes == NULL) {
             return -ENOMEM;
         }
-        if (wolfSSL_get_cipher_list_bytes(cs_bytes, GetCipherNamesSize() * 2) \
+
+        if (wolfSSL_get_cipher_list_bytes(cs_bytes, &cs_bytes_len) \
                 != WOLFSSL_SUCCESS) {
             XFREE(cs_bytes, NULL, DYNAMIC_TYPE_TMP_BUFFER)
             return -EINVAL;
         }
 
-        selected_buf = XMALLOC(GetCipherNamesSize() * sizeof(int), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        selected_buf = XMALLOC(((cs_bytes_len / 2) * sizeof(int)), NULL, DYNAMIC_TYPE_TMP_BUFFER);
         if (selected_buf == NULL) {
             XFREE(cs_bytes, NULL, DYNAMIC_TYPE_TMP_BUFFER)
             return -EINVAL;
         }
 
         selected_ciphers = (const int *)selected_buf;
-        while(i < GetCipherNamesSize() * 2) {
+        while(i < cs_bytes_len - 1) {
             arr[0] = cs_bytes[i];
             arr[1] = cs_bytes[i+1];
             sh = sys_get_be16(arr);
