@@ -15,10 +15,10 @@
 #include <zephyr/sys/iterable_sections.h>
 
 /* Default configurations used in the shell context. */
-USBD_CONFIGURATION_DEFINE(config_1_fs, USB_SCD_REMOTE_WAKEUP, 200);
-USBD_CONFIGURATION_DEFINE(config_1_hs, USB_SCD_REMOTE_WAKEUP, 200);
-USBD_CONFIGURATION_DEFINE(config_2_fs, USB_SCD_SELF_POWERED, 200);
-USBD_CONFIGURATION_DEFINE(config_2_hs, USB_SCD_SELF_POWERED, 200);
+USBD_CONFIGURATION_DEFINE(config_1_fs, USB_SCD_REMOTE_WAKEUP, 200, NULL);
+USBD_CONFIGURATION_DEFINE(config_1_hs, USB_SCD_REMOTE_WAKEUP, 200, NULL);
+USBD_CONFIGURATION_DEFINE(config_2_fs, USB_SCD_SELF_POWERED, 200, NULL);
+USBD_CONFIGURATION_DEFINE(config_2_hs, USB_SCD_SELF_POWERED, 200, NULL);
 
 static struct usbd_shell_config {
 	struct usbd_config_node *cfg_nd;
