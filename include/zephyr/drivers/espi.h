@@ -556,15 +556,6 @@ __subsystem struct espi_driver_api {
  */
 __syscall int espi_config(const struct device *dev, struct espi_cfg *cfg);
 
-static inline int z_impl_espi_config(const struct device *dev,
-				     struct espi_cfg *cfg)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->config(dev, cfg);
-}
-
 /**
  * @brief Query to see if it a channel is ready.
  *
@@ -579,15 +570,6 @@ static inline int z_impl_espi_config(const struct device *dev,
  */
 __syscall bool espi_get_channel_status(const struct device *dev,
 				       enum espi_channel ch);
-
-static inline bool z_impl_espi_get_channel_status(const struct device *dev,
-						  enum espi_channel ch)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->get_channel_status(dev, ch);
-}
 
 /**
  * @brief Sends memory, I/O or message read request over eSPI.
@@ -606,19 +588,6 @@ static inline bool z_impl_espi_get_channel_status(const struct device *dev,
 __syscall int espi_read_request(const struct device *dev,
 				struct espi_request_packet *req);
 
-static inline int z_impl_espi_read_request(const struct device *dev,
-					   struct espi_request_packet *req)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	if (!api->read_request) {
-		return -ENOTSUP;
-	}
-
-	return api->read_request(dev, req);
-}
-
 /**
  * @brief Sends memory, I/O or message write request over eSPI.
  *
@@ -635,19 +604,6 @@ static inline int z_impl_espi_read_request(const struct device *dev,
  */
 __syscall int espi_write_request(const struct device *dev,
 				 struct espi_request_packet *req);
-
-static inline int z_impl_espi_write_request(const struct device *dev,
-					    struct espi_request_packet *req)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	if (!api->write_request) {
-		return -ENOTSUP;
-	}
-
-	return api->write_request(dev, req);
-}
 
 /**
  * @brief Reads SOC data from a LPC peripheral with information
@@ -669,20 +625,6 @@ __syscall int espi_read_lpc_request(const struct device *dev,
 				    enum lpc_peripheral_opcode op,
 				    uint32_t *data);
 
-static inline int z_impl_espi_read_lpc_request(const struct device *dev,
-					       enum lpc_peripheral_opcode op,
-					       uint32_t *data)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	if (!api->read_lpc_request) {
-		return -ENOTSUP;
-	}
-
-	return api->read_lpc_request(dev, op, data);
-}
-
 /**
  * @brief Writes data to a LPC peripheral which generates an eSPI transaction.
  *
@@ -702,20 +644,6 @@ __syscall int espi_write_lpc_request(const struct device *dev,
 				     enum lpc_peripheral_opcode op,
 				     uint32_t *data);
 
-static inline int z_impl_espi_write_lpc_request(const struct device *dev,
-						enum lpc_peripheral_opcode op,
-						uint32_t *data)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	if (!api->write_lpc_request) {
-		return -ENOTSUP;
-	}
-
-	return api->write_lpc_request(dev, op, data);
-}
-
 /**
  * @brief Sends system/platform signal as a virtual wire packet.
  *
@@ -733,16 +661,6 @@ __syscall int espi_send_vwire(const struct device *dev,
 			      enum espi_vwire_signal signal,
 			      uint8_t level);
 
-static inline int z_impl_espi_send_vwire(const struct device *dev,
-					 enum espi_vwire_signal signal,
-					 uint8_t level)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->send_vwire(dev, signal, level);
-}
-
 /**
  * @brief Retrieves level status for a signal encapsulated in a virtual wire.
  *
@@ -759,16 +677,6 @@ __syscall int espi_receive_vwire(const struct device *dev,
 				 enum espi_vwire_signal signal,
 				 uint8_t *level);
 
-static inline int z_impl_espi_receive_vwire(const struct device *dev,
-					    enum espi_vwire_signal signal,
-					    uint8_t *level)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->receive_vwire(dev, signal, level);
-}
-
 /**
  * @brief Sends SMBus transaction (out-of-band) packet over eSPI bus.
  *
@@ -783,19 +691,6 @@ static inline int z_impl_espi_receive_vwire(const struct device *dev,
 __syscall int espi_send_oob(const struct device *dev,
 			    struct espi_oob_packet *pckt);
 
-static inline int z_impl_espi_send_oob(const struct device *dev,
-				       struct espi_oob_packet *pckt)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	if (!api->send_oob) {
-		return -ENOTSUP;
-	}
-
-	return api->send_oob(dev, pckt);
-}
-
 /**
  * @brief Receives SMBus transaction (out-of-band) packet from eSPI bus.
  *
@@ -809,19 +704,6 @@ static inline int z_impl_espi_send_oob(const struct device *dev,
  */
 __syscall int espi_receive_oob(const struct device *dev,
 			       struct espi_oob_packet *pckt);
-
-static inline int z_impl_espi_receive_oob(const struct device *dev,
-					  struct espi_oob_packet *pckt)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	if (!api->receive_oob) {
-		return -ENOTSUP;
-	}
-
-	return api->receive_oob(dev, pckt);
-}
 
 /**
  * @brief Sends a read request packet for shared flash.
@@ -839,19 +721,6 @@ static inline int z_impl_espi_receive_oob(const struct device *dev,
 __syscall int espi_read_flash(const struct device *dev,
 			      struct espi_flash_packet *pckt);
 
-static inline int z_impl_espi_read_flash(const struct device *dev,
-					 struct espi_flash_packet *pckt)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	if (!api->flash_read) {
-		return -ENOTSUP;
-	}
-
-	return api->flash_read(dev, pckt);
-}
-
 /**
  * @brief Sends a write request packet for shared flash.
  *
@@ -868,19 +737,6 @@ static inline int z_impl_espi_read_flash(const struct device *dev,
 __syscall int espi_write_flash(const struct device *dev,
 			       struct espi_flash_packet *pckt);
 
-static inline int z_impl_espi_write_flash(const struct device *dev,
-					  struct espi_flash_packet *pckt)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	if (!api->flash_write) {
-		return -ENOTSUP;
-	}
-
-	return api->flash_write(dev, pckt);
-}
-
 /**
  * @brief Sends a write request packet for shared flash.
  *
@@ -896,19 +752,6 @@ static inline int z_impl_espi_write_flash(const struct device *dev,
  */
 __syscall int espi_flash_erase(const struct device *dev,
 			       struct espi_flash_packet *pckt);
-
-static inline int z_impl_espi_flash_erase(const struct device *dev,
-					  struct espi_flash_packet *pckt)
-{
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	if (!api->flash_erase) {
-		return -ENOTSUP;
-	}
-
-	return api->flash_erase(dev, pckt);
-}
 
 /**
  * Callback model
@@ -1051,5 +894,7 @@ static inline int espi_remove_callback(const struct device *dev,
 /**
  * @}
  */
+
+#include <zephyr/drivers/espi/internal/espi_impl.h>
 #include <zephyr/syscalls/espi.h>
 #endif /* ZEPHYR_INCLUDE_ESPI_H_ */

@@ -219,15 +219,6 @@ __subsystem struct espi_saf_driver_api {
 __syscall int espi_saf_config(const struct device *dev,
 			      const struct espi_saf_cfg *cfg);
 
-static inline int z_impl_espi_saf_config(const struct device *dev,
-					 const struct espi_saf_cfg *cfg)
-{
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	return api->config(dev, cfg);
-}
-
 /**
  * @brief Set one or more SAF protection regions
  *
@@ -246,16 +237,6 @@ __syscall int espi_saf_set_protection_regions(
 				const struct device *dev,
 				const struct espi_saf_protection *pr);
 
-static inline int z_impl_espi_saf_set_protection_regions(
-					const struct device *dev,
-					const struct espi_saf_protection *pr)
-{
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	return api->set_protection_regions(dev, pr);
-}
-
 /**
  * @brief Activate SAF block
  *
@@ -270,14 +251,6 @@ static inline int z_impl_espi_saf_set_protection_regions(
  */
 __syscall int espi_saf_activate(const struct device *dev);
 
-static inline int z_impl_espi_saf_activate(const struct device *dev)
-{
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	return api->activate(dev);
-}
-
 /**
  * @brief Query to see if SAF is ready
  *
@@ -289,15 +262,6 @@ static inline int z_impl_espi_saf_activate(const struct device *dev)
  * @retval false otherwise.
  */
 __syscall bool espi_saf_get_channel_status(const struct device *dev);
-
-static inline bool z_impl_espi_saf_get_channel_status(
-					const struct device *dev)
-{
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	return api->get_channel_status(dev);
-}
 
 /**
  * @brief Sends a read request packet for slave attached flash.
@@ -315,19 +279,6 @@ static inline bool z_impl_espi_saf_get_channel_status(
 __syscall int espi_saf_flash_read(const struct device *dev,
 				  struct espi_saf_packet *pckt);
 
-static inline int z_impl_espi_saf_flash_read(const struct device *dev,
-					     struct espi_saf_packet *pckt)
-{
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	if (!api->flash_read) {
-		return -ENOTSUP;
-	}
-
-	return api->flash_read(dev, pckt);
-}
-
 /**
  * @brief Sends a write request packet for slave attached flash.
  *
@@ -343,19 +294,6 @@ static inline int z_impl_espi_saf_flash_read(const struct device *dev,
  */
 __syscall int espi_saf_flash_write(const struct device *dev,
 				   struct espi_saf_packet *pckt);
-
-static inline int z_impl_espi_saf_flash_write(const struct device *dev,
-					      struct espi_saf_packet *pckt)
-{
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	if (!api->flash_write) {
-		return -ENOTSUP;
-	}
-
-	return api->flash_write(dev, pckt);
-}
 
 /**
  * @brief Sends a write request packet for slave attached flash.
@@ -373,19 +311,6 @@ static inline int z_impl_espi_saf_flash_write(const struct device *dev,
 __syscall int espi_saf_flash_erase(const struct device *dev,
 				   struct espi_saf_packet *pckt);
 
-static inline int z_impl_espi_saf_flash_erase(const struct device *dev,
-					      struct espi_saf_packet *pckt)
-{
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	if (!api->flash_erase) {
-		return -ENOTSUP;
-	}
-
-	return api->flash_erase(dev, pckt);
-}
-
 /**
  * @brief Response unsuccessful completion for slave attached flash.
  *
@@ -401,19 +326,6 @@ static inline int z_impl_espi_saf_flash_erase(const struct device *dev,
  */
 __syscall int espi_saf_flash_unsuccess(const struct device *dev,
 				       struct espi_saf_packet *pckt);
-
-static inline int z_impl_espi_saf_flash_unsuccess(const struct device *dev,
-						  struct espi_saf_packet *pckt)
-{
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	if (!api->flash_unsuccess) {
-		return -ENOTSUP;
-	}
-
-	return api->flash_unsuccess(dev, pckt);
-}
 
 /**
  * Callback model
@@ -557,5 +469,7 @@ static inline int espi_saf_remove_callback(const struct device *dev,
 /**
  * @}
  */
+
+#include <zephyr/drivers/espi/internal/espi_saf_impl.h>
 #include <zephyr/syscalls/espi_saf.h>
 #endif /* ZEPHYR_INCLUDE_ESPI_SAF_H_ */
