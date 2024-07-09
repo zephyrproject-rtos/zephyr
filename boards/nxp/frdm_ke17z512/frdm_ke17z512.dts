@@ -60,6 +60,15 @@
 	};
 };
 
+&idle {
+	min-residency-us = <1>;
+};
+
+&stop {
+	min-residency-us = <20000>;
+	exit-latency-us = <13>;
+};
+
 &lpuart2 {
 	status = "okay";
 	pinctrl-0 = <&lpuart2_default>;

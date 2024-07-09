@@ -60,6 +60,15 @@
 	};
 };
 
+&idle {
+	min-residency-us = <1>;
+};
+
+&stop {
+	min-residency-us = <20000>;
+	exit-latency-us = <13>;
+};
+
 &lpuart0 {
 	status = "okay";
 	current-speed = <115200>;
