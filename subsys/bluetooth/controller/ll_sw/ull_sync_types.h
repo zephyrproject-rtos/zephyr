@@ -111,6 +111,9 @@ struct ll_sync_iso_set {
 	/* Periodic Advertising Sync that contained the BIGInfo */
 	struct ll_sync_set *sync;
 
+	/* Pointer to semaphore used for LLL flushing */
+	struct k_sem *flush_sem;
+
 	/* Periodic Advertising Sync timeout */
 	uint16_t timeout;
 	uint16_t volatile timeout_reload; /* Non-zero when sync established */

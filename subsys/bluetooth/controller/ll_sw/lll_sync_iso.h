@@ -90,6 +90,7 @@ int lll_sync_iso_init(void);
 int lll_sync_iso_reset(void);
 void lll_sync_iso_create_prepare(void *param);
 void lll_sync_iso_prepare(void *param);
+void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll);
 
 extern uint8_t ull_sync_iso_lll_index_get(struct lll_sync_iso *lll);
 extern struct lll_sync_iso_stream *ull_sync_iso_lll_stream_get(uint16_t handle);
