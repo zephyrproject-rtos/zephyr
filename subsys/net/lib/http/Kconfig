@@ -123,6 +123,16 @@ config HTTP_SERVER_RESOURCE_WILDCARD
 	  This means that instead of specifying multiple resources with exact
 	  string matches, one resource handler could handle multiple URLs.
 
+config HTTP_SERVER_RESTART_DELAY
+	int "Delay before re-initialization when restarting server"
+	default 1000
+	range 1 60000
+	help
+	  In case server restarts for any reason, the server re-initialization
+	  will be delayed by this value (miliseconds). The delay is needed to
+	  allow any existing connections to finalize to avoid binding errors
+	  during initialization.
+
 endif
 
 # Hidden option to avoid having multiple individual options that are ORed together

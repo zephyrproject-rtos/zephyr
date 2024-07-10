@@ -211,6 +211,8 @@ int http_server_init(struct http_server_ctx *ctx)
 
 	if (failed >= svc_count) {
 		LOG_ERR("All services failed (%d)", failed);
+		/* Close eventfd socket */
+		zsock_close(ctx->fds[0].fd);
 		return -ESRCH;
 	}
 
@@ -766,13 +768,17 @@ static void http_server_thread(void *p1, void *p2, void *p3)
 			ret = http_server_init(&server_ctx);
 			if (ret < 0) {
 				LOG_ERR("Failed to initialize HTTP2 server");
-				return;
+				goto again;
 			}
 
 			ret = http_server_run(&server_ctx);
-			if (server_running) {
-				LOG_INF("Re-starting server (%d)", ret);
+			if (!server_running) {
+				continue;
 			}
+
+again:
+			LOG_INF("Re-starting server (%d)", ret);
+			k_sleep(K_MSEC(CONFIG_HTTP_SERVER_RESTART_DELAY));
 		}
 	}
 }
