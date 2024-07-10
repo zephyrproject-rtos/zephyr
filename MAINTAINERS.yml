@@ -4743,6 +4743,17 @@ West:
   labels:
     - "platform: Intel"
 
+"West project: libmctp":
+  status: maintained
+  maintainers:
+    - teburd
+  collaborators:
+    - nashif
+  files:
+    - modules/libmctp/
+  labels:
+    - "area: MCTP"
+
 "West project: libmetal":
   status: odd fixes
   collaborators:
