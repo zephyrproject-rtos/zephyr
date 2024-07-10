@@ -1,0 +1,21 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: RA2 High-speed on-chip oscillator
+
+compatible: "renesas,ra2-hoco-osc"
+
+include: ["renesas,ra2-root-osc.yaml"]
+
+properties:
+  clock-frequency:
+    enum:
+      - 24000000
+      - 32000000
+      - 48000000
+      - 64000000
+
+  enable-after-reset:
+    type: boolean
+    description: |
+      Enable HOCO oscillation after a reset

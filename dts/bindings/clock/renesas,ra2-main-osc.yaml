@@ -1,0 +1,33 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: RA2 Main Clock Oscillator
+
+compatible: "renesas,ra2-main-osc"
+
+include: ["renesas,ra2-root-osc.yaml"]
+
+properties:
+  stabilisation-time:
+    required: true
+    description: Stabilisation time (ns)
+    enum:
+      - 250
+      - 128000
+      - 256000
+      - 512000
+      - 1024000
+      - 2048000
+      - 4096000
+      - 8192000
+      - 16384000
+      - 32768000
+
+  clock-type:
+    type: string
+    required: true
+    enum:
+      - "xtal"
+      - "external"
+    description: |
+      Defines whether the clock source is a xtal or an external clock
