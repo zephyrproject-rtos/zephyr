@@ -1,0 +1,14 @@
+# Copyright (c) 2014, Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic on-chip Memory
+
+compatible: "rapidsi,ocm"
+
+include: base.yaml
+
+bus: simple_bus
+
+properties:
+  reg:
+    required: false

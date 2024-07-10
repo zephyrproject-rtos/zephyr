@@ -16,7 +16,7 @@
 	 chosen {
 		 zephyr,console = &uart0;
 		 zephyr,shell-uart = &uart0;
-		 zephyr,sram = &sram;
+		 zephyr,sram = &dlm;
 		 zephyr,flash = &ilm;
 	 };
  };
@@ -37,6 +37,24 @@
  };
  
  &cpu0 {
-	 clock-frequency = <26666667>;
+	clock-frequency = <26666667>;
+ };
+
+ &spi0 {
+	status = "okay";
+	clock-frequency = <26666667>;
+	m25p32: qspi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
+		size = <16777216>;
+		spi-max-frequency = <13333333>;
+		jedec-id = [20 20 16]; // ID of flash on soc protoype
+		status = "okay";
+		reg = <0>;
+		sfdp-bfp = [
+			e5 D8 f1 ff  ff ff ff 00  44 eb 08 6b  08 3b 04 bb
+			fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c D8 0f 52
+			10 d8 00 ff
+		];
+	};
  };
  

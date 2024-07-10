@@ -40,19 +40,26 @@
 			 0xE2001000 0x1000>;
 	 };
 	 
-	 sram: memory@A0300000 {
-		 compatible = "rapidsi,dlm";
-		 device_type = "memory";
-		 reg = <0xA0300000 DT_SIZE_K(32)>;
-		 status = "okay";
-	 };
-	 
-	 ilm: ilm@A0200060 {
-		 compatible = "rapidsi,ilm";
-		 device_type = "memory";
-		 reg = <0xA0200060 (DT_SIZE_K(64)-0x00000060)>;
-		 status = "okay";
-	 };
+	 memory: memory {
+		compatible = "rapidsi,ocm";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		dlm: memory@A0300000 {
+			compatible = "rapidsi,dlm";
+			device_type = "memory";
+			reg = <0xA0300000 DT_SIZE_K(32)>;
+			status = "okay";
+		};
+		
+		ilm: memory@A0200060 {
+			compatible = "rapidsi,ilm";
+			device_type = "memory";
+			reg = <0xA0200060 (DT_SIZE_K(64)-0x00000060)>;
+			status = "okay";
+		};
+	};
  
 	 soc {
 		 compatible = "rapidsi,virgo";
@@ -97,12 +104,6 @@
 					pin-names = "CONFIG_ERROR";
 				};
 			};
-		 };
-
-		 flash: flash@B0000000 {
-			 compatible = "micron,m25p32";
-			 reg = <0xB0000000 DT_SIZE_M(16)>;
-			 status = "disabled";
 		 };
  
 		 uart0: serial@a0420020 {
