@@ -325,6 +325,12 @@ tests:
     extra_configs:
       - CONFIG_BT_TBS=n
     tags: bluetooth
+  bluetooth.shell.audio.only_gtbs:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_TBS_BEARER_COUNT=0
+    tags: bluetooth
   bluetooth.shell.audio.no_tbs_client:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
