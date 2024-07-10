@@ -138,13 +138,13 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 		return false;
 	}
 
-	ret = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation, false);
+	ret = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation, true);
 	if (ret == 0) {
 		chan_cnt = bt_audio_get_chan_count(chan_allocation);
 	} else {
-		printk("Could not get subgroup channel allocation: %d\n", ret);
-		/* Channel allocation is an optional field, and omitting it implicitly means mono */
-		chan_cnt = 1U;
+		FAIL("Could not get subgroup channel allocation: %d\n", ret);
+
+		return false;
 	}
 
 	if (chan_cnt == 0 || (BIT(chan_cnt - 1) & SUPPORTED_CHAN_COUNTS) == 0) {
@@ -169,13 +169,13 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 		return false;
 	}
 
-	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&codec_cfg, false);
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&codec_cfg, true);
 	if (ret > 0) {
 		frames_blocks_per_sdu = (uint8_t)ret;
 	} else {
-		printk("Could not get subgroup octets per frame: %d\n", ret);
-		/* Frame blocks per SDU is optional and is implicitly 1 */
-		frames_blocks_per_sdu = 1U;
+		FAIL("Could not get frame blocks per SDU: %d\n", ret);
+
+		return false;
 	}
 
 	/* An SDU can consist of X frame blocks, each with Y frames (one per channel) of size Z in
@@ -460,7 +460,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 	/* The broadcast source sets the channel allocation in the BIS to
 	 * BT_AUDIO_LOCATION_FRONT_LEFT
 	 */
-	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, true);
 	if (ret == 0) {
 		if (chan_allocation != BT_AUDIO_LOCATION_FRONT_CENTER) {
 			FAIL("Unexpected channel allocation: 0x%08X", chan_allocation);
@@ -497,13 +497,12 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 		return;
 	}
 
-	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, false);
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
 	if (ret > 0) {
 		frames_blocks_per_sdu = (uint8_t)ret;
 	} else {
-		printk("Could not get octets per frame: %d\n", ret);
-		/* Frame blocks per SDU is optional and is implicitly 1 */
-		frames_blocks_per_sdu = 1U;
+		FAIL("Could not get frame blocks per SDU: %d\n", ret);
+		return;
 	}
 
 	/* An SDU can consist of X frame blocks, each with Y frames (one per channel) of size Z in
