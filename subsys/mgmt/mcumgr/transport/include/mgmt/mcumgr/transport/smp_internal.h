@@ -32,7 +32,7 @@ struct smp_hdr {
 	uint16_t nh_group;		/* MGMT_GROUP_ID_[...] */
 	uint8_t  nh_seq;		/* Sequence number */
 	uint8_t  nh_id;			/* Message ID within group */
-};
+} __packed;
 
 struct smp_transport;
 struct zephyr_smp_transport;
