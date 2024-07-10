@@ -81,18 +81,6 @@ __syscall int entropy_get_entropy(const struct device *dev,
 				  uint8_t *buffer,
 				  uint16_t length);
 
-static inline int z_impl_entropy_get_entropy(const struct device *dev,
-					     uint8_t *buffer,
-					     uint16_t length)
-{
-	const struct entropy_driver_api *api =
-		(const struct entropy_driver_api *)dev->api;
-
-	__ASSERT(api->get_entropy != NULL,
-		"Callback pointer should not be NULL");
-	return api->get_entropy(dev, buffer, length);
-}
-
 /**
  * @brief Fills a buffer with entropy in a non-blocking or busy-wait manner.
  * 	  Callable from ISRs.
@@ -127,6 +115,7 @@ static inline int entropy_get_entropy_isr(const struct device *dev,
  * @}
  */
 
+#include <zephyr/drivers/entropy/internal/entropy_impl.h>
 #include <zephyr/syscalls/entropy.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ENTROPY_H_ */
