@@ -94,13 +94,6 @@ __subsystem struct retained_mem_driver_api {
  */
 __syscall ssize_t retained_mem_size(const struct device *dev);
 
-static inline ssize_t z_impl_retained_mem_size(const struct device *dev)
-{
-	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;
-
-	return api->size(dev);
-}
-
 /**
  * @brief		Reads data from the Retained memory area.
  *
@@ -113,26 +106,6 @@ static inline ssize_t z_impl_retained_mem_size(const struct device *dev)
  */
 __syscall int retained_mem_read(const struct device *dev, off_t offset, uint8_t *buffer,
 				size_t size);
-
-static inline int z_impl_retained_mem_read(const struct device *dev, off_t offset,
-					   uint8_t *buffer, size_t size)
-{
-	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;
-	size_t area_size;
-
-	/* Validate user-supplied parameters */
-	if (size == 0) {
-		return 0;
-	}
-
-	area_size = api->size(dev);
-
-	if (offset < 0 || size > area_size || (area_size - size) < (size_t)offset) {
-		return -EINVAL;
-	}
-
-	return api->read(dev, offset, buffer, size);
-}
 
 /**
  * @brief		Writes data to the Retained memory area - underlying data does not need to
@@ -148,26 +121,6 @@ static inline int z_impl_retained_mem_read(const struct device *dev, off_t offse
 __syscall int retained_mem_write(const struct device *dev, off_t offset, const uint8_t *buffer,
 				 size_t size);
 
-static inline int z_impl_retained_mem_write(const struct device *dev, off_t offset,
-					    const uint8_t *buffer, size_t size)
-{
-	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;
-	size_t area_size;
-
-	/* Validate user-supplied parameters */
-	if (size == 0) {
-		return 0;
-	}
-
-	area_size = api->size(dev);
-
-	if (offset < 0 || size > area_size || (area_size - size) < (size_t)offset) {
-		return -EINVAL;
-	}
-
-	return api->write(dev, offset, buffer, size);
-}
-
 /**
  * @brief		Clears data in the retained memory area by setting it to 0x00.
  *
@@ -177,13 +130,6 @@ static inline int z_impl_retained_mem_write(const struct device *dev, off_t offs
  */
 __syscall int retained_mem_clear(const struct device *dev);
 
-static inline int z_impl_retained_mem_clear(const struct device *dev)
-{
-	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;
-
-	return api->clear(dev);
-}
-
 /**
  * @}
  */
@@ -192,6 +138,7 @@ static inline int z_impl_retained_mem_clear(const struct device *dev)
 }
 #endif
 
+#include <zephyr/drivers/retained_mem/internal/retained_mem_impl.h>
 #include <zephyr/syscalls/retained_mem.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_ */
