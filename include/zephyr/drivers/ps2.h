@@ -76,15 +76,6 @@ __subsystem struct ps2_driver_api {
 __syscall int ps2_config(const struct device *dev,
 			 ps2_callback_t callback_isr);
 
-static inline int z_impl_ps2_config(const struct device *dev,
-				    ps2_callback_t callback_isr)
-{
-	const struct ps2_driver_api *api =
-				(struct ps2_driver_api *)dev->api;
-
-	return api->config(dev, callback_isr);
-}
-
 /**
  * @brief Write to PS/2 device.
  *
@@ -96,14 +87,6 @@ static inline int z_impl_ps2_config(const struct device *dev,
  */
 __syscall int ps2_write(const struct device *dev, uint8_t value);
 
-static inline int z_impl_ps2_write(const struct device *dev, uint8_t value)
-{
-	const struct ps2_driver_api *api =
-			(const struct ps2_driver_api *)dev->api;
-
-	return api->write(dev, value);
-}
-
 /**
  * @brief Read slave-to-host values from PS/2 device.
  * @param dev Pointer to the device structure for the driver instance.
@@ -114,14 +97,6 @@ static inline int z_impl_ps2_write(const struct device *dev, uint8_t value)
  */
 __syscall int ps2_read(const struct device *dev,  uint8_t *value);
 
-static inline int z_impl_ps2_read(const struct device *dev, uint8_t *value)
-{
-	const struct ps2_driver_api *api =
-			(const struct ps2_driver_api *)dev->api;
-
-	return api->read(dev, value);
-}
-
 /**
  * @brief Enables callback.
  * @param dev Pointer to the device structure for the driver instance.
@@ -130,18 +105,6 @@ static inline int z_impl_ps2_read(const struct device *dev, uint8_t *value)
  * @retval Negative errno code if failure.
  */
 __syscall int ps2_enable_callback(const struct device *dev);
-
-static inline int z_impl_ps2_enable_callback(const struct device *dev)
-{
-	const struct ps2_driver_api *api =
-			(const struct ps2_driver_api *)dev->api;
-
-	if (api->enable_callback == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->enable_callback(dev);
-}
 
 /**
  * @brief Disables callback.
@@ -152,18 +115,6 @@ static inline int z_impl_ps2_enable_callback(const struct device *dev)
  */
 __syscall int ps2_disable_callback(const struct device *dev);
 
-static inline int z_impl_ps2_disable_callback(const struct device *dev)
-{
-	const struct ps2_driver_api *api =
-			(const struct ps2_driver_api *)dev->api;
-
-	if (api->disable_callback == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->disable_callback(dev);
-}
-
 #ifdef __cplusplus
 }
 #endif
@@ -172,6 +123,7 @@ static inline int z_impl_ps2_disable_callback(const struct device *dev)
  * @}
  */
 
+#include <zephyr/drivers/ps2/internal/ps2_impl.h>
 #include <zephyr/syscalls/ps2.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PS2_H_ */
