@@ -61,6 +61,7 @@ config DEBUG_COREDUMP_MEMORY_DUMP_MIN
 config DEBUG_COREDUMP_MEMORY_DUMP_THREADS
 	bool "Threads"
 	depends on !SMP
+	depends on ARCH_SUPPORTS_COREDUMP_THREADS
 	select THREAD_STACK_INFO
 	select DEBUG_THREAD_INFO
 	select DEBUG_COREDUMP_THREADS_METADATA
@@ -88,6 +89,7 @@ config DEBUG_COREDUMP_SHELL
 config DEBUG_COREDUMP_THREADS_METADATA
 	bool "Threads metadata"
 	depends on !SMP
+	depends on ARCH_SUPPORTS_COREDUMP_THREADS
 	select DEBUG_THREAD_INFO
 	help
 	  Core dump will contain the threads metadata section containing
