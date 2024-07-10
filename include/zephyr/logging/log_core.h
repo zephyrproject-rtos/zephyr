@@ -157,19 +157,12 @@ extern "C" {
 /****************** Definitions used by minimal logging *********************/
 /*****************************************************************************/
 void z_log_minimal_hexdump_print(int level, const void *data, size_t size);
-void z_log_minimal_vprintk(const char *fmt, va_list ap);
 void z_log_minimal_printk(const char *fmt, ...);
 
 #define Z_LOG_TO_PRINTK(_level, fmt, ...) do { \
 	z_log_minimal_printk("%c: " fmt "\n", \
 			     z_log_minimal_level_to_char(_level), \
 			     ##__VA_ARGS__); \
-} while (false)
-
-#define Z_LOG_TO_VPRINTK(_level, fmt, valist) do { \
-	z_log_minimal_printk("%c: ", z_log_minimal_level_to_char(_level)); \
-	z_log_minimal_vprintk(fmt, valist); \
-	z_log_minimal_printk("\n"); \
 } while (false)
 
 static inline char z_log_minimal_level_to_char(int level)

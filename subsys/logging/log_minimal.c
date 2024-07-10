@@ -22,11 +22,6 @@ void z_log_minimal_printk(const char *fmt, ...)
 }
 EXPORT_SYMBOL(z_log_minimal_printk);
 
-void z_log_minimal_vprintk(const char *fmt, va_list ap)
-{
-	vprintk(fmt, ap);
-}
-
 static void minimal_hexdump_line_print(const char *data, size_t length)
 {
 	for (size_t i = 0U; i < HEXDUMP_BYTES_IN_LINE; i++) {
