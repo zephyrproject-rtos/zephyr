@@ -700,6 +700,7 @@ static int tls_release(struct tls_context *tls)
 	return 0;
 }
 
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 static bool peer_addr_cmp(const struct sockaddr *addr,
 			  const struct sockaddr *peer_addr)
 {
@@ -723,6 +724,7 @@ static bool peer_addr_cmp(const struct sockaddr *addr,
 
 	return false;
 }
+#endif
 
 #if defined(CONFIG_MBEDTLS)
 static int tls_session_save(const struct sockaddr *peer_addr,
@@ -4155,7 +4157,7 @@ static ssize_t recvfrom_dtls_common_wolfssl(struct tls_context *ctx, void *buf,
         }
 
         for (int i = 0; i < remaining; i++) {
-            uint8_t b;
+            uint8_t b[10];
             int err;
 
             err = wolfSSL_read(ctx->wssl, &b, sizeof(b));
@@ -4165,6 +4167,7 @@ static ssize_t recvfrom_dtls_common_wolfssl(struct tls_context *ctx, void *buf,
                 ret = -1;
                 break;
             }
+			i += err;
         }
 
         break;
