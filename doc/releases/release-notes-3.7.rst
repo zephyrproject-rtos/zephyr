@@ -1257,6 +1257,18 @@ MCUboot
 
   * Added defines for ``SOC_FLASH_0_ID`` and ``SPI_FLASH_0_ID``
 
+  * Fixed ASN.1 support for mbedtls version >= 3.1
+
+  * Fixed bootutil signed/unsigned comparison in ``boot_read_enc_key``
+
+  * Updated imgtool version.py to take command line arguments
+
+  * Added imgtool improvements to dumpinfo
+
+  * Fixed various imgtool dumpinfo issues
+
+  * Fixed imgtool verify command for edcsa-p384 signed images
+
   * The MCUboot version in this release is version ``2.1.0+0-dev``.
 
 Trusted Firmware-M
