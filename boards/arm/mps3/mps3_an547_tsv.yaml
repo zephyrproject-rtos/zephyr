@@ -8,8 +8,8 @@ identifier: mps3/an547/tsv
 name: Arm MPS3-AN547_TSV
 type: mcu
 arch: arm
-ram: 2016
-flash: 32
+ram: 1792
+flash: 256
 simulation: qemu
 toolchain:
   - gnuarmemb
