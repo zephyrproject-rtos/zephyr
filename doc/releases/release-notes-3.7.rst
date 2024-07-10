@@ -411,10 +411,6 @@ Drivers and Sensors
 
 * CAN
 
-  * Added :c:func:`can_get_bitrate_min` and :c:func:`can_get_bitrate_max` for retrieving the minimum
-    and maximum supported bitrate for a given CAN controller/CAN transceiver combination, reflecting
-    that retrieving the bitrate limits can no longer fail. Deprecated the existing
-    :c:func:`can_get_min_bitrate` and :c:func:`can_get_max_bitrate` API functions.
   * Extended support for automatic sample point location to also cover :c:func:`can_calc_timing` and
     :c:func:`can_calc_timing_data`.
   * Added optional ``min-bitrate`` devicetree property for CAN transceivers.
@@ -423,8 +419,10 @@ Drivers and Sensors
     transceiver.
   * Added support for specifying the minimum bitrate supported by a CAN controller in the internal
     ``CAN_DT_DRIVER_CONFIG_GET`` and ``CAN_DT_DRIVER_CONFIG_INST_GET`` macros.
-  * Added a new CAN controller API function :c:func:`can_get_bitrate_min` for getting the minimum
-    supported bitrate of a CAN controller/transceiver combination.
+  * Added :c:func:`can_get_bitrate_min` and :c:func:`can_get_bitrate_max` for retrieving the minimum
+    and maximum supported bitrate for a given CAN controller/CAN transceiver combination, reflecting
+    that retrieving the bitrate limits can no longer fail. Deprecated the existing
+    :c:func:`can_get_max_bitrate` API function.
   * Updated the CAN timing functions to take the minimum supported bitrate into consideration when
     validating the bitrate.
   * Made the ``sample-point`` and ``sample-point-data`` devicetree properties optional.
