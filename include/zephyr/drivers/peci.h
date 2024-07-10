@@ -273,15 +273,6 @@ __subsystem struct peci_driver_api {
  */
 __syscall int peci_config(const struct device *dev, uint32_t bitrate);
 
-static inline int z_impl_peci_config(const struct device *dev,
-				     uint32_t bitrate)
-{
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->config(dev, bitrate);
-}
-
 /**
  * @brief Enable PECI interface.
  *
@@ -292,14 +283,6 @@ static inline int z_impl_peci_config(const struct device *dev,
  */
 __syscall int peci_enable(const struct device *dev);
 
-static inline int z_impl_peci_enable(const struct device *dev)
-{
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->enable(dev);
-}
-
 /**
  * @brief Disable PECI interface.
  *
@@ -309,14 +292,6 @@ static inline int z_impl_peci_enable(const struct device *dev)
  * @retval Negative errno code if failure.
  */
 __syscall int peci_disable(const struct device *dev);
-
-static inline int z_impl_peci_disable(const struct device *dev)
-{
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->disable(dev);
-}
 
 /**
  * @brief Performs a PECI transaction.
@@ -330,16 +305,6 @@ static inline int z_impl_peci_disable(const struct device *dev)
 
 __syscall int peci_transfer(const struct device *dev, struct peci_msg *msg);
 
-static inline int z_impl_peci_transfer(const struct device *dev,
-				       struct peci_msg *msg)
-{
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->transfer(dev, msg);
-}
-
-
 #ifdef __cplusplus
 }
 #endif
@@ -348,6 +313,7 @@ static inline int z_impl_peci_transfer(const struct device *dev,
  * @}
  */
 
+#include <zephyr/drivers/peci/internal/peci_impl.h>
 #include <zephyr/syscalls/peci.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PECI_H_ */
