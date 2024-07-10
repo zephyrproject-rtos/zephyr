@@ -93,7 +93,7 @@ endif # MCUMGR_TRASNPORT_BT_CONN_PARAM_CONTROL
 
 config MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
 	bool "Register SMP service at runtime"
-	select BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_DYNAMIC_DB
 	default y
 	help
 	  When enabled, the SMP service will be automatically registered at boot time
