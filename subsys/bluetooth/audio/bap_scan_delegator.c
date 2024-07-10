@@ -249,6 +249,8 @@ static void bis_sync_request_updated(struct bt_conn *conn,
 	    scan_delegator_cbs->bis_sync_req != NULL) {
 		scan_delegator_cbs->bis_sync_req(conn, &internal_state->state,
 						 internal_state->requested_bis_sync);
+	} else {
+		LOG_WRN("bis_sync_req callback is missing");
 	}
 }
 
@@ -469,6 +471,8 @@ static int pa_sync_request(struct bt_conn *conn,
 		err = scan_delegator_cbs->pa_sync_req(conn, state,
 						      past_supported,
 						      pa_interval);
+	} else {
+		LOG_WRN("pa_sync_req callback is missing, rejecting PA sync request");
 	}
 
 	return err;
@@ -482,6 +486,8 @@ static int pa_sync_term_request(struct bt_conn *conn,
 	if (scan_delegator_cbs != NULL &&
 	    scan_delegator_cbs->pa_sync_req != NULL) {
 		err = scan_delegator_cbs->pa_sync_term_req(conn, state);
+	} else {
+		LOG_WRN("pa_sync_term_req callback is missing, rejecting PA sync term request");
 	}
 
 	return err;
