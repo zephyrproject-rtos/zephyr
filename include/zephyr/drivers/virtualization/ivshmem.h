@@ -98,15 +98,6 @@ __subsystem struct ivshmem_driver_api {
 __syscall size_t ivshmem_get_mem(const struct device *dev,
 				 uintptr_t *memmap);
 
-static inline size_t z_impl_ivshmem_get_mem(const struct device *dev,
-					    uintptr_t *memmap)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_mem(dev, memmap);
-}
-
 /**
  * @brief Get our VM ID
  *
@@ -116,14 +107,6 @@ static inline size_t z_impl_ivshmem_get_mem(const struct device *dev,
  */
 __syscall uint32_t ivshmem_get_id(const struct device *dev);
 
-static inline uint32_t z_impl_ivshmem_get_id(const struct device *dev)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_id(dev);
-}
-
 /**
  * @brief Get the number of interrupt vectors we can use
  *
@@ -132,14 +115,6 @@ static inline uint32_t z_impl_ivshmem_get_id(const struct device *dev)
  * @return the number of available interrupt vectors
  */
 __syscall uint16_t ivshmem_get_vectors(const struct device *dev);
-
-static inline uint16_t z_impl_ivshmem_get_vectors(const struct device *dev)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_vectors(dev);
-}
 
 /**
  * @brief Interrupt another VM
@@ -152,15 +127,6 @@ static inline uint16_t z_impl_ivshmem_get_vectors(const struct device *dev)
  */
 __syscall int ivshmem_int_peer(const struct device *dev,
 			       uint32_t peer_id, uint16_t vector);
-
-static inline int z_impl_ivshmem_int_peer(const struct device *dev,
-					  uint32_t peer_id, uint16_t vector)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->int_peer(dev, peer_id, vector);
-}
 
 /**
  * @brief Register a vector notification (interrupt) handler
@@ -181,16 +147,6 @@ __syscall int ivshmem_register_handler(const struct device *dev,
 				       struct k_poll_signal *signal,
 				       uint16_t vector);
 
-static inline int z_impl_ivshmem_register_handler(const struct device *dev,
-						  struct k_poll_signal *signal,
-						  uint16_t vector)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->register_handler(dev, signal, vector);
-}
-
 #ifdef CONFIG_IVSHMEM_V2
 
 /**
@@ -203,15 +159,6 @@ static inline int z_impl_ivshmem_register_handler(const struct device *dev,
  */
 __syscall size_t ivshmem_get_rw_mem_section(const struct device *dev,
 					    uintptr_t *memmap);
-
-static inline size_t z_impl_ivshmem_get_rw_mem_section(const struct device *dev,
-						       uintptr_t *memmap)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_rw_mem_section(dev, memmap);
-}
 
 /**
  * @brief Get the ivshmem output section for a peer (ivshmem-v2 only)
@@ -226,16 +173,6 @@ __syscall size_t ivshmem_get_output_mem_section(const struct device *dev,
 						uint32_t peer_id,
 						uintptr_t *memmap);
 
-static inline size_t z_impl_ivshmem_get_output_mem_section(const struct device *dev,
-							   uint32_t peer_id,
-							   uintptr_t *memmap)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_output_mem_section(dev, peer_id, memmap);
-}
-
 /**
  * @brief Get the state value of a peer (ivshmem-v2 only)
  *
@@ -246,15 +183,6 @@ static inline size_t z_impl_ivshmem_get_output_mem_section(const struct device *
  */
 __syscall uint32_t ivshmem_get_state(const struct device *dev,
 				     uint32_t peer_id);
-
-static inline uint32_t z_impl_ivshmem_get_state(const struct device *dev,
-						uint32_t peer_id)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_state(dev, peer_id);
-}
 
 /**
  * @brief Set our state (ivshmem-v2 only)
@@ -267,15 +195,6 @@ static inline uint32_t z_impl_ivshmem_get_state(const struct device *dev,
 __syscall int ivshmem_set_state(const struct device *dev,
 				uint32_t state);
 
-static inline int z_impl_ivshmem_set_state(const struct device *dev,
-					   uint32_t state)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->set_state(dev, state);
-}
-
 /**
  * @brief Get the maximum number of peers supported (ivshmem-v2 only)
  *
@@ -285,14 +204,6 @@ static inline int z_impl_ivshmem_set_state(const struct device *dev,
  */
 __syscall uint32_t ivshmem_get_max_peers(const struct device *dev);
 
-static inline uint32_t z_impl_ivshmem_get_max_peers(const struct device *dev)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_max_peers(dev);
-}
-
 /**
  * @brief Get the protocol used by this ivshmem instance (ivshmem-v2 only)
  *
@@ -301,14 +212,6 @@ static inline uint32_t z_impl_ivshmem_get_max_peers(const struct device *dev)
  * @return the protocol
  */
 __syscall uint16_t ivshmem_get_protocol(const struct device *dev);
-
-static inline uint16_t z_impl_ivshmem_get_protocol(const struct device *dev)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->get_protocol(dev);
-}
 
 /**
  * @brief Set the interrupt enablement for our VM (ivshmem-v2 only)
@@ -321,15 +224,6 @@ static inline uint16_t z_impl_ivshmem_get_protocol(const struct device *dev)
 __syscall int ivshmem_enable_interrupts(const struct device *dev,
 					bool enable);
 
-static inline int z_impl_ivshmem_enable_interrupts(const struct device *dev,
-						   bool enable)
-{
-	const struct ivshmem_driver_api *api =
-		(const struct ivshmem_driver_api *)dev->api;
-
-	return api->enable_interrupts(dev, enable);
-}
-
 #endif /* CONFIG_IVSHMEM_V2 */
 
 #ifdef __cplusplus
@@ -340,6 +234,7 @@ static inline int z_impl_ivshmem_enable_interrupts(const struct device *dev,
  * @}
  */
 
+#include <zephyr/drivers/virtualization/internal/ivshmem_impl.h>
 #include <zephyr/syscalls/ivshmem.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_VIRTUALIZATION_IVSHMEM_H_ */
