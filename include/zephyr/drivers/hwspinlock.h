@@ -73,17 +73,6 @@ __subsystem struct hwspinlock_driver_api {
  */
 __syscall int hwspinlock_trylock(const struct device *dev, uint32_t id);
 
-static inline int z_impl_hwspinlock_trylock(const struct device *dev, uint32_t id)
-{
-	const struct hwspinlock_driver_api *api =
-		(const struct hwspinlock_driver_api *)dev->api;
-
-	if (api->trylock == NULL)
-		return -ENOSYS;
-
-	return api->trylock(dev, id);
-}
-
 /**
  * @brief Lock HW spinlock
  *
@@ -95,15 +84,6 @@ static inline int z_impl_hwspinlock_trylock(const struct device *dev, uint32_t i
  */
 __syscall void hwspinlock_lock(const struct device *dev, uint32_t id);
 
-static inline void z_impl_hwspinlock_lock(const struct device *dev, uint32_t id)
-{
-	const struct hwspinlock_driver_api *api =
-		(const struct hwspinlock_driver_api *)dev->api;
-
-	if (api->lock != NULL)
-		api->lock(dev, id);
-}
-
 /**
  * @brief Try to unlock HW spinlock
  *
@@ -114,15 +94,6 @@ static inline void z_impl_hwspinlock_lock(const struct device *dev, uint32_t id)
  * @param id  Spinlock identifier.
  */
 __syscall void hwspinlock_unlock(const struct device *dev, uint32_t id);
-
-static inline void z_impl_hwspinlock_unlock(const struct device *dev, uint32_t id)
-{
-	const struct hwspinlock_driver_api *api =
-		(const struct hwspinlock_driver_api *)dev->api;
-
-	if (api->unlock != NULL)
-		api->unlock(dev, id);
-}
 
 /**
  * @brief Get HW spinlock max ID
@@ -137,23 +108,13 @@ static inline void z_impl_hwspinlock_unlock(const struct device *dev, uint32_t i
  */
 __syscall uint32_t hwspinlock_get_max_id(const struct device *dev);
 
-static inline uint32_t z_impl_hwspinlock_get_max_id(const struct device *dev)
-{
-	const struct hwspinlock_driver_api *api =
-		(const struct hwspinlock_driver_api *)dev->api;
-
-	if (api->get_max_id == NULL)
-		return 0;
-
-	return api->get_max_id(dev);
-}
-
 #ifdef __cplusplus
 }
 #endif
 
 /** @} */
 
+#include <zephyr/drivers/hwspinlock/internal/hwspinlock_impl.h>
 #include <zephyr/syscalls/hwspinlock.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_HWSPINLOCK_H_ */
