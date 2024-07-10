@@ -209,7 +209,7 @@ static int cmd_tbs_originate(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 	} else {
-		service_index = 0U;
+		service_index = BT_TBS_GTBS_INDEX;
 	}
 
 	result = bt_tbs_originate((uint8_t)service_index, argv[argc - 1],
@@ -402,7 +402,7 @@ static int cmd_tbs_incoming(const struct shell *sh, size_t argc, char *argv[])
 			}
 		}
 	} else {
-		service_index = 0U;
+		service_index = BT_TBS_GTBS_INDEX;
 	}
 
 	result = bt_tbs_remote_incoming((uint8_t)service_index,
@@ -445,7 +445,7 @@ static int cmd_tbs_set_bearer_provider_name(const struct shell *sh, size_t argc,
 			}
 		}
 	} else {
-		service_index = 0U;
+		service_index = BT_TBS_GTBS_INDEX;
 	}
 
 	result = bt_tbs_set_bearer_provider_name((uint8_t)service_index,
@@ -485,7 +485,7 @@ static int cmd_tbs_set_bearer_technology(const struct shell *sh, size_t argc,
 			}
 		}
 	} else {
-		service_index = 0U;
+		service_index = BT_TBS_GTBS_INDEX;
 	}
 
 	technology = shell_strtoul(argv[argc - 1], 0, &result);
@@ -538,7 +538,7 @@ static int cmd_tbs_set_bearer_signal_strength(const struct shell *sh,
 			}
 		}
 	} else {
-		service_index = 0U;
+		service_index = BT_TBS_GTBS_INDEX;
 	}
 
 	signal_strength = shell_strtoul(argv[argc - 1], 0, &result);
@@ -592,7 +592,7 @@ static int cmd_tbs_set_status_flags(const struct shell *sh, size_t argc,
 			}
 		}
 	} else {
-		service_index = 0U;
+		service_index = BT_TBS_GTBS_INDEX;
 	}
 
 	status_flags = shell_strtoul(argv[argc - 1], 0, &result);
@@ -644,7 +644,7 @@ static int cmd_tbs_set_uri_scheme_list(const struct shell *sh, size_t argc,
 			}
 		}
 	} else {
-		service_index = 0U;
+		service_index = BT_TBS_GTBS_INDEX;
 	}
 
 	result = bt_tbs_set_uri_scheme_list((uint8_t)service_index,
