@@ -149,13 +149,6 @@ __subsystem struct bc12_driver_api {
  */
 __syscall int bc12_set_role(const struct device *dev, enum bc12_role role);
 
-static inline int z_impl_bc12_set_role(const struct device *dev, enum bc12_role role)
-{
-	const struct bc12_driver_api *api = (const struct bc12_driver_api *)dev->api;
-
-	return api->set_role(dev, role);
-}
-
 /**
  * @brief Register a callback for BC1.2 results.
  *
@@ -168,14 +161,6 @@ static inline int z_impl_bc12_set_role(const struct device *dev, enum bc12_role 
  */
 __syscall int bc12_set_result_cb(const struct device *dev, bc12_callback_t cb, void *user_data);
 
-static inline int z_impl_bc12_set_result_cb(const struct device *dev, bc12_callback_t cb,
-					    void *user_data)
-{
-	const struct bc12_driver_api *api = (const struct bc12_driver_api *)dev->api;
-
-	return api->set_result_cb(dev, cb, user_data);
-}
-
 #ifdef __cplusplus
 }
 #endif
@@ -184,6 +169,7 @@ static inline int z_impl_bc12_set_result_cb(const struct device *dev, bc12_callb
  * @}
  */
 
+#include <zephyr/drivers/usb/internal/usb_bc12_impl.h>
 #include <zephyr/syscalls/usb_bc12.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_USB_USB_BC12_H_ */
