@@ -93,8 +93,6 @@ extern "C" {
  */
 __syscall ssize_t hwinfo_get_device_id(uint8_t *buffer, size_t length);
 
-ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length);
-
 /**
  * @brief Copy the device EUI64 to a buffer
  *
@@ -108,8 +106,6 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length);
  * @retval any negative value on driver specific errors.
  */
 __syscall int hwinfo_get_device_eui64(uint8_t *buffer);
-
-int z_impl_hwinfo_get_device_eui64(uint8_t *buffer);
 
 /**
  * @brief      Retrieve cause of device reset.
@@ -133,8 +129,6 @@ int z_impl_hwinfo_get_device_eui64(uint8_t *buffer);
  */
 __syscall int hwinfo_get_reset_cause(uint32_t *cause);
 
-int z_impl_hwinfo_get_reset_cause(uint32_t *cause);
-
 /**
  * @brief      Clear cause of device reset.
  *
@@ -145,8 +139,6 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause);
  * @retval any negative value on driver specific errors.
  */
 __syscall int hwinfo_clear_reset_cause(void);
-
-int z_impl_hwinfo_clear_reset_cause(void);
 
 /**
  * @brief      Get supported reset cause flags
@@ -160,8 +152,6 @@ int z_impl_hwinfo_clear_reset_cause(void);
  * @retval any negative value on driver specific errors.
  */
 __syscall int hwinfo_get_supported_reset_cause(uint32_t *supported);
-
-int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported);
 
 /**
  * @}
