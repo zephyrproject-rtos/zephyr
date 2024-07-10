@@ -603,6 +603,7 @@ class TestPlan:
                                 # scan it only once per testsuite
                                 subcases, ztest_suite_names = scan_testsuite_path(suite_path)
                             suite.add_subcases(suite_dict, subcases, ztest_suite_names)
+                            suite.name = suite.name.replace('\\','/')
                         else:
                             suite.add_subcases(suite_dict)
 
