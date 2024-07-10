@@ -69,6 +69,18 @@ config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 
 endchoice
 
+if DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
+
+config DEBUG_COREDUMP_FLASH_CHUNK_SIZE
+	int "Chunk size for flash write operations"
+	default 64
+	help
+	  Larger values can speed up writing due to fewer write operations
+	  being performed in total, but consume more memory.
+
+
+endif # DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
+
 config DEBUG_COREDUMP_SHELL
 	bool "Coredump shell"
 	depends on SHELL
