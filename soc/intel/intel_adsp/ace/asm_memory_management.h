@@ -13,7 +13,7 @@
 
 /* These definitions should be placed elsewhere, but I can't find a good place for them. */
 #define LSPGCTL				0x71D80
-#define LSPGCTL_HIGH			(LSPGCTL >> 12)
+#define LSPGCTL_HIGH			((LSPGCTL >> 4) & 0xff00)
 #define LSPGCTL_LOW			((LSPGCTL >> 4) & 0xff)
 #define MAX_MEMORY_SEGMENTS		1
 #define EBB_SEGMENT_SIZE		32
@@ -38,7 +38,7 @@
 	movi \az, 0x2f5
 	slli \az, \az, 0xb
 	/* 8 * (\segment_index << 5) == (\segment_index << 5) << 3 == \segment_index << 8 */
-	addmi \az, \az, \segment_index
+	addmi \az, \az, \segment_index << 8
 
 	movi \au, i_end - 1     /* au = banks count in segment */
 2 :
