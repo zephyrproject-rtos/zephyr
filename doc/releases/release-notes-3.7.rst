@@ -1064,6 +1064,25 @@ USB
 Devicetree
 **********
 
+* Added :c:macro:`DT_INST_NODE_HAS_COMPAT` to check if a node has a compatible.
+  This is useful for nodes that have multiple compatibles.
+* Added :c:macro:`DT_CHILD_NUM` and variants to count the number of children of a node.
+* Added :c:macro:`DT_FOREACH_NODELABEL` and variants, which can be used to iterate over the
+  node labels of a devicetree node.
+* Added :c:macro:`DT_NODELABEL_STRING_ARRAY` and :c:macro:`DT_NUM_NODELABELS` and their variants.
+* Added :c:macro:`DT_REG_HAS_NAME` and variants.
+* Reworked :c:macro:`DT_ANY_INST_HAS_PROP_STATUS_OKAY` so that the result can
+  be used with macros like :c:macro:`IS_ENABLED`, IF_ENABLED, or COND_CODE_x.
+* Reworked :c:macro:`DT_NODE_HAS_COMPAT_STATUS` so that it can be evaluated at preprocessor time.
+* Updated PyYaml version used in dts scripts to 6.0 to remove supply chain vulnerabilities.
+
+Kconfig
+*******
+
+* Added a `substring` kconfig preprocessor function.
+* Added a `dt_node_ph_prop_path` kconfig preprocessor function.
+* Added a `dt_compat_any_has_prop` kconfig preprocessor function.
+
 Libraries / Subsystems
 **********************
 
