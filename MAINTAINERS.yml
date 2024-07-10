@@ -119,6 +119,7 @@ ACPI:
     - lib/acpi/
     - include/zephyr/acpi/
     - tests/lib/acpi/
+    - dts/bindings/acpi/
   labels:
     - "area: ACPI"
   tests:
@@ -136,6 +137,7 @@ ARC arch:
     - include/zephyr/arch/arc/
     - tests/arch/arc/
     - dts/arc/synopsys/
+    - dts/bindings/arc/
     - doc/hardware/arch/arc-support-status.rst
   labels:
     - "area: ARC"
@@ -199,6 +201,7 @@ ARM Platforms:
     - soc/arm/designstart/
     - soc/arm/fvp_aemv8*/
     - dts/arm/armv*.dtsi
+    - dts/bindings/arm/arm*.yaml
   labels:
     - "platform: ARM"
 
@@ -823,7 +826,6 @@ Devicetree Bindings:
     - decsny
     - galak
   files:
-    - dts/bindings/
     - include/zephyr/dt-bindings/
     - dts/binding-template.yaml
   labels:
@@ -947,6 +949,7 @@ Release Notes:
     - doc/hardware/peripherals/adc.rst
     - tests/drivers/build_all/adc/
     - include/zephyr/dt-bindings/adc/
+    - dts/bindings/adc/
   labels:
     - "area: ADC"
   tests:
@@ -1505,6 +1508,7 @@ Release Notes:
     - drivers/mdio/
     - include/zephyr/drivers/mdio.h
     - tests/drivers/build_all/mdio/
+    - dts/bindings/mdio/
   labels:
     - "area: MDIO"
   tests:
@@ -1552,6 +1556,7 @@ Release Notes:
   files:
     - drivers/reset/
     - include/zephyr/drivers/reset.h
+    - dts/bindings/reset/
 
 "Interrupt Handling":
   status: odd fixes
@@ -1621,6 +1626,7 @@ Release Notes:
     - tests/drivers/led/
     - doc/hardware/peripherals/led.rst
     - tests/drivers/build_all/led/
+    - dts/bindings/led/
   labels:
     - "area: LED"
   tests:
@@ -1689,6 +1695,7 @@ Release Notes:
     - tests/drivers/regulator/
     - tests/drivers/build_all/regulator/
     - doc/hardware/peripherals/regulators.rst
+    - dts/bindings/regulator/
   labels:
     - "area: Regulators"
   tests:
@@ -1704,6 +1711,7 @@ Release Notes:
     - include/zephyr/drivers/retained_mem.h
     - tests/drivers/retained_mem/
     - doc/hardware/peripherals/retained_mem.rst
+    - dts/bindings/retained_mem/
   labels:
     - "area: Retained Memory"
   tests:
@@ -1720,6 +1728,7 @@ Release Notes:
     - doc/hardware/peripherals/rtc.rst
     - include/zephyr/drivers/rtc.h
     - tests/drivers/build_all/rtc/
+    - dts/bindings/rtc/
   labels:
     - "area: RTC"
   tests:
@@ -1733,6 +1742,7 @@ Release Notes:
     - drivers/pcie/
     - include/zephyr/drivers/pcie/
     - doc/hardware/peripherals/pcie.rst
+    - dts/bindings/pcie/
   labels:
     - "area: PCI"
 
@@ -1747,6 +1757,7 @@ Release Notes:
     - include/zephyr/drivers/peci.h
     - samples/drivers/peci/
     - doc/hardware/peripherals/peci.rst
+    - dts/bindings/peci/
   labels:
     - "area: PECI"
   tests:
@@ -1804,6 +1815,7 @@ Release Notes:
     - include/zephyr/drivers/pm_cpu_ops/
     - include/zephyr/drivers/pm_cpu_ops.h
     - include/zephyr/arch/arm64/arm-smccc.h
+    - dts/bindings/pm_cpu_ops/
   labels:
     - "area: PM CPU ops"
 
@@ -1915,6 +1927,7 @@ Release Notes:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
     - tests/drivers/spi/
+    - dts/bindings/spi/
     - doc/hardware/peripherals/spi.rst
   labels:
     - "area: SPI"
@@ -1930,6 +1943,7 @@ Release Notes:
   files:
     - drivers/timer/
     - include/zephyr/drivers/timer/
+    - dts/bindings/timer/
   labels:
     - "area: Timer"
 
@@ -1943,6 +1957,7 @@ Release Notes:
     - include/zephyr/drivers/video-controls.h
     - doc/hardware/peripherals/video.rst
     - tests/drivers/*/video/
+    - dts/bindings/video/
   labels:
     - "area: Video"
   tests:
@@ -1995,6 +2010,7 @@ Release Notes:
     - krish2718
   files:
     - drivers/wifi/
+    - dts/bindings/wifi/
   labels:
     - "area: Wi-Fi"
 
@@ -2080,6 +2096,7 @@ Xen Platform:
     - arch/arm64/core/xen/
     - soc/xen/
     - boards/xen/
+    - dts/bindings/xen/
   labels:
     - "area: Xen Platform"
 
@@ -2095,6 +2112,7 @@ Filesystems:
     - samples/subsys/fs/
     - subsys/fs/
     - tests/subsys/fs/
+    - dts/bindings/fs/
   labels:
     - "area: File System"
   tests:
@@ -2193,6 +2211,7 @@ IPC:
     - subsys/ipc/
     - tests/subsys/ipc/
     - doc/services/ipc/
+    - dts/bindings/ipc/
   description: >-
     Inter-Processor Communication
   labels:
