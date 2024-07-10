@@ -512,17 +512,15 @@ config MBEDTLS_PSA_P256M_DRIVER_ENABLED
 	imply PSA_WANT_ALG_SHA_256
 	help
 	  Enable support for the optimized sofware implementation of the secp256r1
-	  curve through the standard PSA API interface.
+	  curve through the standard PSA API.
 
 config MBEDTLS_PSA_P256M_DRIVER_RAW
 	bool "Access p256-m driver directly (without PSA interface)"
-	select MBEDTLS_PSA_P256M_DRIVER_ENABLED
+	depends on MBEDTLS_PSA_P256M_DRIVER_ENABLED
 	help
-	  Allow access to p256-m driver directly without using the PSA interface.
-	  Warning: usage of this kconfig is prohibited in Zephyr's code base. Users
-			   can make optionally enable it in case very memory constrained
-			   devices, but please be aware that the p256-m interface is
-			   absolutely not guaranted to remain stable over time.
+	  Allow direct access to the p256-m driver interface.
+	  Warning: Usage of this Kconfig option is prohibited in Zephyr's codebase.
+	           Users can enable it in case of very memory-constrained devices, but be aware that the p256-m interface is absolutely not guaranted to remain stable over time.
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"
