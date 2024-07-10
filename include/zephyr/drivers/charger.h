@@ -349,14 +349,6 @@ __subsystem struct charger_driver_api {
 __syscall int charger_get_prop(const struct device *dev, const charger_prop_t prop,
 			       union charger_propval *val);
 
-static inline int z_impl_charger_get_prop(const struct device *dev, const charger_prop_t prop,
-					  union charger_propval *val)
-{
-	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
-
-	return api->get_property(dev, prop, val);
-}
-
 /**
  * @brief Set a battery charger property
  *
@@ -370,14 +362,6 @@ static inline int z_impl_charger_get_prop(const struct device *dev, const charge
 __syscall int charger_set_prop(const struct device *dev, const charger_prop_t prop,
 			       const union charger_propval *val);
 
-static inline int z_impl_charger_set_prop(const struct device *dev, const charger_prop_t prop,
-					  const union charger_propval *val)
-{
-	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
-
-	return api->set_property(dev, prop, val);
-}
-
 /**
  * @brief Enable or disable a charge cycle
  *
@@ -390,13 +374,6 @@ static inline int z_impl_charger_set_prop(const struct device *dev, const charge
  */
 __syscall int charger_charge_enable(const struct device *dev, const bool enable);
 
-static inline int z_impl_charger_charge_enable(const struct device *dev, const bool enable)
-{
-	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
-
-	return api->charge_enable(dev, enable);
-}
-
 /**
  * @}
  */
@@ -405,6 +382,7 @@ static inline int z_impl_charger_charge_enable(const struct device *dev, const b
 }
 #endif /* __cplusplus */
 
+#include <zephyr/drivers/charger/internal/charger_impl.h>
 #include <zephyr/syscalls/charger.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CHARGER_H_ */
