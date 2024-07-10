@@ -14,7 +14,7 @@
 #define ATTR_RST	"\x1b[37;1m" // ANSI_COLOR_RESET
 
 #define FLASH_RW_SIZE 255
-#define FLASH_BASE_ADDR (uint32_t*)0xB0000000
+#define FLASH_BASE_ADDR 0xB0000000
 
 void Flash_Test(const struct device *flash, uint32_t FLASH_ADDR, uint8_t EVEN_ODD_MUL, uint8_t FORMATTER) {
 	int errorcode = 0;
@@ -60,7 +60,7 @@ void Flash_Test(const struct device *flash, uint32_t FLASH_ADDR, uint8_t EVEN_OD
 	if(errorcode == 0) {
 		printf("%s Writing the following data After Erasing Flash%s\n", ATTR_INF,ATTR_RST);
 		for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) { 
-			flash_data_write[i] = (rand() % (FLASH_RW_SIZE - 1 + 1)) + 1;
+			flash_data_write[i] = ((rand() % (FLASH_RW_SIZE - 1 + 1)) + 1)*2;
 			printf("%s %d%s", ATTR_INF, flash_data_write[i],i%FORMATTER==0?"\n":"");
 		} printf("\n");
 		errorcode = flash_write(flash, FLASH_ADDR, flash_data_write, FLASH_RW_SIZE);
@@ -91,11 +91,20 @@ void Flash_Test(const struct device *flash, uint32_t FLASH_ADDR, uint8_t EVEN_OD
 		}
 	}
 
-	uint8_t *MemMapReadAddr = (uint8_t*)(FLASH_BASE_ADDR+FLASH_ADDR);
-	printf("Memory Mapped Reading Test\n");
+	uint8_t *MemMapReadAddr = (uint8_t*)(FLASH_BASE_ADDR + FLASH_ADDR);
+	printf("Memory Mapped Reading Test from address:%p\n", MemMapReadAddr);
+	bool memmaptestfail = false;
 	for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) { 
-		printf("%s %d%s", ATTR_INF, MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
+		if(MemMapReadAddr[i] != flash_data_write[i]) {
+			printf("%s %d%s Mismatch in memory mapped read", ATTR_ERR, MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
+			memmaptestfail = true; break;
+		} 
 	} printf("\n");
+	if(memmaptestfail) {
+		printf("%s Memory mapped read failed\n", ATTR_ERR);	
+	} else {
+		printf("%s Memory mapped read passed\n", ATTR_INF);	
+	}
 }
 
 int main(void)
@@ -104,7 +113,6 @@ int main(void)
 	struct sensor_value lvTemp = {0}, lvVolt = {0};
 	uint8_t chip_id = 0, vendor_id = 0;
 	int errorcode = 0;
-
 
 	soc_get_id(&chip_id, &vendor_id);
 
@@ -132,6 +140,15 @@ int main(void)
 		printf("%s flash has status disabled or driver is not initialized...%s\n", ATTR_ERR,ATTR_RST);
 	} else {
 		printf("%s flash Object is Created. Test Via DMA\n", ATTR_INF);
+		scu_irq_map(IRQ_ID_SPI, SCU_IRQ_MAP_TO_BCPU);
+		scu_irq_map(IRQ_ID_SYSTEM_DMA, SCU_IRQ_MAP_TO_BCPU);
+		scu_irq_enable(IRQ_ID_SPI);
+		scu_irq_enable(IRQ_ID_SYSTEM_DMA);
+		printf(
+			    "%s SPI_(%d)_IRQ_Reg_Val:[0x%08x]; DMA_(%d)_IRQ_Reg_Val:[0x%08x]\n", ATTR_RST, \
+				IRQ_ID_SPI, scu_get_irq_reg_val(IRQ_ID_SPI), \
+				IRQ_ID_SYSTEM_DMA, scu_get_irq_reg_val(IRQ_ID_SYSTEM_DMA)
+			  );
 		Flash_Test(flash, 0x1000, 0, 20);
 	}
 

@@ -47,3 +47,8 @@ void scu_irq_disable(enum map_mask_control_irq_id IRQn)
 {
     s_scu_regs->irq_map_mask[IRQn] &= ~(SCU_MASK_IRQ_ENABLE << SCU_IRQ_MASK_OFFSET);
 }
+
+uint32_t scu_get_irq_reg_val(enum map_mask_control_irq_id IRQn)
+{
+    return s_scu_regs->irq_map_mask[IRQn];
+}
