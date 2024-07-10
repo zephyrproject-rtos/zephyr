@@ -489,6 +489,7 @@ int enter_http1_request(struct http_client_ctx *client)
 	client->parser_state = HTTP1_INIT_HEADER_STATE;
 
 	memset(client->header_buffer, 0, sizeof(client->header_buffer));
+	memset(client->url_buffer, 0, sizeof(client->url_buffer));
 
 	return 0;
 }
@@ -632,8 +633,13 @@ not_found: ; /* Add extra semicolon to make clang to compile when using label */
 	client->data_len -= parsed;
 
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
-		LOG_DBG("Connection closed client %p", client);
-		enter_http_done_state(client);
+		if ((client->parser.flags & F_CONNECTION_CLOSE) == 0) {
+			LOG_DBG("Waiting for another request, client %p", client);
+			client->server_state = HTTP_SERVER_PREFACE_STATE;
+		} else {
+			LOG_DBG("Connection closed, client %p", client);
+			enter_http_done_state(client);
+		}
 	}
 
 	return 0;
