@@ -92,9 +92,6 @@ static void response_cb(struct bt_le_ext_adv *adv, struct bt_le_per_adv_response
 	if (buf) {
 		printk("Response: subevent %d, slot %d\n", info->subevent, info->response_slot);
 		bt_data_parse(buf, print_ad_field, NULL);
-	} else {
-		printk("Failed to receive response: subevent %d, slot %d\n", info->subevent,
-		       info->response_slot);
 	}
 }
 
