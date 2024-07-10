@@ -211,8 +211,6 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 	struct dma_block_config *cfg_blocks;
 	k_spinlock_key_t key;
 
-	LOG_DBG("JATW %s(%d) channel:%d\n", __func__, __LINE__, channel);
-
 	if (channel >= ATCDMAC100_MAX_CHAN) {
 		return -EINVAL;
 	}
@@ -246,6 +244,7 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 		case MEMORY_TO_MEMORY:
 			break;
 		case MEMORY_TO_PERIPHERAL: {
+				LOG_DBG("JATW %s(%d) MEMORY_TO_PERIPHERAL\n", __func__, __LINE__);
 				if(cfg->dest_handshake) {
 					ch_ctrl |= DMA_CH_CTRL_DSTREQ(cfg->dma_slot);
 					ch_ctrl |= DMA_CH_CTRL_DMODE_HANDSHAKE;
@@ -253,6 +252,7 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 			}
 			break;
 		case PERIPHERAL_TO_MEMORY: {
+				LOG_DBG("JATW %s(%d) PERIPHERAL_TO_MEMORY\n", __func__, __LINE__);
 				if(cfg->source_handshake) {
 					ch_ctrl |= DMA_CH_CTRL_SRCREQ(cfg->dma_slot);
 					ch_ctrl |= DMA_CH_CTRL_SMODE_HANDSHAKE;
@@ -280,6 +280,8 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 			goto end;
 	}
 
+	LOG_DBG("JATW %s(%d) cfg_blocks->source_addr_adj:%d\n", __func__, __LINE__, cfg_blocks->source_addr_adj);
+
 	switch (cfg_blocks->dest_addr_adj) {
 		case DMA_ADDR_ADJ_INCREMENT:
 			ch_ctrl |= DMA_CH_CTRL_DSTADDR_INC;
@@ -294,6 +296,8 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 			ret = -EINVAL;
 			goto end;
 	}
+
+	LOG_DBG("JATW %s(%d) cfg_blocks->dest_addr_adj:%d\n", __func__, __LINE__, cfg_blocks->dest_addr_adj);
 
 	ch_ctrl |= DMA_CH_CTRL_INTABT;
 
@@ -340,6 +344,9 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 					DMA_CH_SRC_ADDR_L(dev, channel));
 	sys_write32(cfg_blocks->dest_address,
 					DMA_CH_DST_ADDR_L(dev, channel));
+
+	LOG_DBG("JATW %s(%d) cfg_blocks->source_address:0x%08x\n", __func__, __LINE__, cfg_blocks->source_address);
+	LOG_DBG("JATW %s(%d) cfg_blocks->dest_address:0x%08x\n", __func__, __LINE__, cfg_blocks->dest_address);
 
 	if (cfg->dest_chaining_en == 1 && cfg_blocks->next_block) {
 		uint32_t current_block_idx = 0;
@@ -411,6 +418,7 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 	}
 
 end:
+	LOG_DBG("JATW %s(%d) channel:%d ret:%d\n", __func__, __LINE__, channel, ret);
 	return ret;
 }
 

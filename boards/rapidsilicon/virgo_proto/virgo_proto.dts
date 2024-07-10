@@ -41,7 +41,7 @@
  };
 
  &dma0 {
-	status = "disabled";
+	status = "okay";
  };
 
  &spi0 {
