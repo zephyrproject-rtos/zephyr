@@ -1315,3 +1315,11 @@ Tests and Samples
     based on the ``MODEM_CELLULAR`` device driver.
 
   * BT LE Coded PHY is now runtime tested in CI with the nrf5x bsim targets.
+
+Issue Related Items
+*******************
+
+Known Issues
+============
+
+- :github:`74345` - Bluetooth: Non functional on nRF51 with fault
