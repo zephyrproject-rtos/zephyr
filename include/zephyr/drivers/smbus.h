@@ -560,15 +560,6 @@ static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
  */
 __syscall int smbus_configure(const struct device *dev, uint32_t dev_config);
 
-static inline int z_impl_smbus_configure(const struct device *dev,
-					 uint32_t dev_config)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	return api->configure(dev, dev_config);
-}
-
 /**
  * @brief Get configuration of a SMBus host controller.
  *
@@ -590,19 +581,6 @@ static inline int z_impl_smbus_configure(const struct device *dev,
  * by the driver.
  */
 __syscall int smbus_get_config(const struct device *dev, uint32_t *dev_config);
-
-static inline int z_impl_smbus_get_config(const struct device *dev,
-					  uint32_t *dev_config)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->get_config == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_config(dev, dev_config);
-}
 
 /**
  * @brief Add SMBUSALERT callback for a SMBus host controller.
@@ -642,19 +620,6 @@ static inline int smbus_smbalert_set_cb(const struct device *dev,
 __syscall int smbus_smbalert_remove_cb(const struct device *dev,
 				       struct smbus_callback *cb);
 
-static inline int z_impl_smbus_smbalert_remove_cb(const struct device *dev,
-						  struct smbus_callback *cb)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_smbalert_remove_cb == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->smbus_smbalert_remove_cb(dev, cb);
-}
-
 /**
  * @brief Add Host Notify callback for a SMBus host controller.
  *
@@ -693,19 +658,6 @@ static inline int smbus_host_notify_set_cb(const struct device *dev,
 __syscall int smbus_host_notify_remove_cb(const struct device *dev,
 					  struct smbus_callback *cb);
 
-static inline int z_impl_smbus_host_notify_remove_cb(const struct device *dev,
-						     struct smbus_callback *cb)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_host_notify_remove_cb == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->smbus_host_notify_remove_cb(dev, cb);
-}
-
 /**
  * @brief Perform SMBus Quick operation
  *
@@ -725,23 +677,6 @@ static inline int z_impl_smbus_host_notify_remove_cb(const struct device *dev,
 __syscall int smbus_quick(const struct device *dev, uint16_t addr,
 			  enum smbus_direction direction);
 
-static inline int z_impl_smbus_quick(const struct device *dev, uint16_t addr,
-				     enum smbus_direction direction)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_quick == NULL) {
-		return -ENOSYS;
-	}
-
-	if (direction != SMBUS_MSG_READ && direction != SMBUS_MSG_WRITE) {
-		return -EINVAL;
-	}
-
-	return  api->smbus_quick(dev, addr, direction);
-}
-
 /**
  * @brief Perform SMBus Byte Write operation
  *
@@ -760,19 +695,6 @@ static inline int z_impl_smbus_quick(const struct device *dev, uint16_t addr,
 __syscall int smbus_byte_write(const struct device *dev, uint16_t addr,
 			       uint8_t byte);
 
-static inline int z_impl_smbus_byte_write(const struct device *dev,
-					  uint16_t addr, uint8_t byte)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_byte_write == NULL) {
-		return -ENOSYS;
-	}
-
-	return  api->smbus_byte_write(dev, addr, byte);
-}
-
 /**
  * @brief Perform SMBus Byte Read operation
  *
@@ -790,19 +712,6 @@ static inline int z_impl_smbus_byte_write(const struct device *dev,
  */
 __syscall int smbus_byte_read(const struct device *dev, uint16_t addr,
 			      uint8_t *byte);
-
-static inline int z_impl_smbus_byte_read(const struct device *dev,
-					 uint16_t addr, uint8_t *byte)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_byte_read == NULL) {
-		return -ENOSYS;
-	}
-
-	return  api->smbus_byte_read(dev, addr, byte);
-}
 
 /**
  * @brief Perform SMBus Byte Data Write operation
@@ -823,20 +732,6 @@ static inline int z_impl_smbus_byte_read(const struct device *dev,
 __syscall int smbus_byte_data_write(const struct device *dev, uint16_t addr,
 				    uint8_t cmd, uint8_t byte);
 
-static inline int z_impl_smbus_byte_data_write(const struct device *dev,
-					       uint16_t addr, uint8_t cmd,
-					       uint8_t byte)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_byte_data_write == NULL) {
-		return -ENOSYS;
-	}
-
-	return  api->smbus_byte_data_write(dev, addr, cmd, byte);
-}
-
 /**
  * @brief Perform SMBus Byte Data Read operation
  *
@@ -855,20 +750,6 @@ static inline int z_impl_smbus_byte_data_write(const struct device *dev,
  */
 __syscall int smbus_byte_data_read(const struct device *dev, uint16_t addr,
 				   uint8_t cmd, uint8_t *byte);
-
-static inline int z_impl_smbus_byte_data_read(const struct device *dev,
-					      uint16_t addr, uint8_t cmd,
-					      uint8_t *byte)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_byte_data_read == NULL) {
-		return -ENOSYS;
-	}
-
-	return  api->smbus_byte_data_read(dev, addr, cmd, byte);
-}
 
 /**
  * @brief Perform SMBus Word Data Write operation
@@ -889,20 +770,6 @@ static inline int z_impl_smbus_byte_data_read(const struct device *dev,
 __syscall int smbus_word_data_write(const struct device *dev, uint16_t addr,
 				    uint8_t cmd, uint16_t word);
 
-static inline int z_impl_smbus_word_data_write(const struct device *dev,
-					       uint16_t addr, uint8_t cmd,
-					       uint16_t word)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_word_data_write == NULL) {
-		return -ENOSYS;
-	}
-
-	return  api->smbus_word_data_write(dev, addr, cmd, word);
-}
-
 /**
  * @brief Perform SMBus Word Data Read operation
  *
@@ -921,20 +788,6 @@ static inline int z_impl_smbus_word_data_write(const struct device *dev,
  */
 __syscall int smbus_word_data_read(const struct device *dev, uint16_t addr,
 				   uint8_t cmd, uint16_t *word);
-
-static inline int z_impl_smbus_word_data_read(const struct device *dev,
-					      uint16_t addr, uint8_t cmd,
-					      uint16_t *word)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_word_data_read == NULL) {
-		return -ENOSYS;
-	}
-
-	return  api->smbus_word_data_read(dev, addr, cmd, word);
-}
 
 /**
  * @brief Perform SMBus Process Call operation
@@ -957,20 +810,6 @@ static inline int z_impl_smbus_word_data_read(const struct device *dev,
 __syscall int smbus_pcall(const struct device *dev, uint16_t addr,
 			  uint8_t cmd, uint16_t send_word, uint16_t *recv_word);
 
-static inline int z_impl_smbus_pcall(const struct device *dev,
-				     uint16_t addr, uint8_t cmd,
-				     uint16_t send_word, uint16_t *recv_word)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_pcall == NULL) {
-		return -ENOSYS;
-	}
-
-	return  api->smbus_pcall(dev, addr, cmd, send_word, recv_word);
-}
-
 /**
  * @brief Perform SMBus Block Write operation
  *
@@ -991,24 +830,6 @@ static inline int z_impl_smbus_pcall(const struct device *dev,
 __syscall int smbus_block_write(const struct device *dev, uint16_t addr,
 				uint8_t cmd, uint8_t count, uint8_t *buf);
 
-static inline int z_impl_smbus_block_write(const struct device *dev,
-					   uint16_t addr, uint8_t cmd,
-					   uint8_t count, uint8_t *buf)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_block_write == NULL) {
-		return -ENOSYS;
-	}
-
-	if (count < 1 || count > SMBUS_BLOCK_BYTES_MAX) {
-		return -EINVAL;
-	}
-
-	return  api->smbus_block_write(dev, addr, cmd, count, buf);
-}
-
 /**
  * @brief Perform SMBus Block Read operation
  *
@@ -1028,20 +849,6 @@ static inline int z_impl_smbus_block_write(const struct device *dev,
  */
 __syscall int smbus_block_read(const struct device *dev, uint16_t addr,
 			       uint8_t cmd, uint8_t *count, uint8_t *buf);
-
-static inline int z_impl_smbus_block_read(const struct device *dev,
-					  uint16_t addr, uint8_t cmd,
-					  uint8_t *count, uint8_t *buf)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_block_read == NULL) {
-		return -ENOSYS;
-	}
-
-	return  api->smbus_block_read(dev, addr, cmd, count, buf);
-}
 
 /**
  * @brief Perform SMBus Block Process Call operation
@@ -1068,22 +875,6 @@ __syscall int smbus_block_pcall(const struct device *dev,
 				uint8_t snd_count, uint8_t *snd_buf,
 				uint8_t *rcv_count, uint8_t *rcv_buf);
 
-static inline int z_impl_smbus_block_pcall(const struct device *dev,
-					   uint16_t addr, uint8_t cmd,
-					   uint8_t snd_count, uint8_t *snd_buf,
-					   uint8_t *rcv_count, uint8_t *rcv_buf)
-{
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	if (api->smbus_block_pcall == NULL) {
-		return -ENOSYS;
-	}
-
-	return  api->smbus_block_pcall(dev, addr, cmd, snd_count, snd_buf,
-				       rcv_count, rcv_buf);
-}
-
 #ifdef __cplusplus
 }
 #endif
@@ -1092,6 +883,7 @@ static inline int z_impl_smbus_block_pcall(const struct device *dev,
  * @}
  */
 
+#include <zephyr/drivers/smbus/internal/smbus_impl.h>
 #include <zephyr/syscalls/smbus.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SMBUS_H_ */
