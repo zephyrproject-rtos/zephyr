@@ -364,17 +364,6 @@ __subsystem struct tee_driver_api {
  */
 __syscall int tee_get_version(const struct device *dev, struct tee_version_info *info);
 
-static inline int z_impl_tee_get_version(const struct device *dev, struct tee_version_info *info)
-{
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
-
-	if (!api->get_version) {
-		return -ENOSYS;
-	}
-
-	return api->get_version(dev, info);
-}
-
 /**
  * @brief Open session for Trusted Environment
  *
@@ -394,20 +383,6 @@ __syscall int tee_open_session(const struct device *dev, struct tee_open_session
 			       unsigned int num_param, struct tee_param *param,
 			       uint32_t *session_id);
 
-static inline int z_impl_tee_open_session(const struct device *dev,
-					  struct tee_open_session_arg *arg,
-					  unsigned int num_param, struct tee_param *param,
-					  uint32_t *session_id)
-{
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
-
-	if (!api->open_session) {
-		return -ENOSYS;
-	}
-
-	return api->open_session(dev, arg, num_param, param, session_id);
-}
-
 /**
  * @brief Close session for Trusted Environment
  *
@@ -421,17 +396,6 @@ static inline int z_impl_tee_open_session(const struct device *dev,
  * @retval 0       On success, negative on error
  */
 __syscall int tee_close_session(const struct device *dev, uint32_t session_id);
-
-static inline int z_impl_tee_close_session(const struct device *dev, uint32_t session_id)
-{
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
-
-	if (!api->close_session) {
-		return -ENOSYS;
-	}
-
-	return api->close_session(dev, session_id);
-}
 
 /**
  * @brief Cancel session or invoke function for Trusted Environment
@@ -447,18 +411,6 @@ static inline int z_impl_tee_close_session(const struct device *dev, uint32_t se
  * @retval 0       On success, negative on error
  */
 __syscall int tee_cancel(const struct device *dev, uint32_t session_id, uint32_t cancel_id);
-
-static inline int z_impl_tee_cancel(const struct device *dev, uint32_t session_id,
-				    uint32_t cancel_id)
-{
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
-
-	if (!api->cancel) {
-		return -ENOSYS;
-	}
-
-	return api->cancel(dev, session_id, cancel_id);
-}
 
 /**
  * @brief Invoke function for Trusted Environment Application
@@ -476,18 +428,6 @@ static inline int z_impl_tee_cancel(const struct device *dev, uint32_t session_i
  */
 __syscall int tee_invoke_func(const struct device *dev, struct tee_invoke_func_arg *arg,
 			      unsigned int num_param, struct tee_param *param);
-
-static inline int z_impl_tee_invoke_func(const struct device *dev, struct tee_invoke_func_arg *arg,
-					 unsigned int num_param, struct tee_param *param)
-{
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
-
-	if (!api->invoke_func) {
-		return -ENOSYS;
-	}
-
-	return api->invoke_func(dev, arg, num_param, param);
-}
 
 /**
  * @brief Helper function to allocate and register shared memory
@@ -536,13 +476,6 @@ int tee_rm_shm(const struct device *dev, struct tee_shm *shm);
 __syscall int tee_shm_register(const struct device *dev, void *addr, size_t size,
 			       uint32_t flags, struct tee_shm **shm);
 
-static inline int z_impl_tee_shm_register(const struct device *dev, void *addr, size_t size,
-					  uint32_t flags, struct tee_shm **shm)
-{
-	flags &= ~TEE_SHM_ALLOC;
-	return tee_add_shm(dev, addr, 0, size, flags | TEE_SHM_REGISTER, shm);
-}
-
 /**
  * @brief Unregister shared memory for Trusted Environment
  *
@@ -556,11 +489,6 @@ static inline int z_impl_tee_shm_register(const struct device *dev, void *addr, 
  * @retval 0       On success, negative on error
  */
 __syscall int tee_shm_unregister(const struct device *dev, struct tee_shm *shm);
-
-static inline int z_impl_tee_shm_unregister(const struct device *dev, struct tee_shm *shm)
-{
-	return tee_rm_shm(dev, shm);
-}
 
 /**
  * @brief Allocate shared memory region for Trusted Environment
@@ -579,12 +507,6 @@ static inline int z_impl_tee_shm_unregister(const struct device *dev, struct tee
 __syscall int tee_shm_alloc(const struct device *dev, size_t size, uint32_t flags,
 			    struct tee_shm **shm);
 
-static inline int z_impl_tee_shm_alloc(const struct device *dev, size_t size, uint32_t flags,
-				       struct tee_shm **shm)
-{
-	return tee_add_shm(dev, NULL, 0, size, flags | TEE_SHM_ALLOC | TEE_SHM_REGISTER, shm);
-}
-
 /**
  * @brief Free shared memory region for Trusted Environment
  *
@@ -598,11 +520,6 @@ static inline int z_impl_tee_shm_alloc(const struct device *dev, size_t size, ui
  * @retval 0       On success, negative on error
  */
 __syscall int tee_shm_free(const struct device *dev, struct tee_shm *shm);
-
-static inline int z_impl_tee_shm_free(const struct device *dev, struct tee_shm *shm)
-{
-	return tee_rm_shm(dev, shm);
-}
 
 /**
  * @brief Receive a request for TEE Supplicant
@@ -618,18 +535,6 @@ static inline int z_impl_tee_shm_free(const struct device *dev, struct tee_shm *
  */
 __syscall int tee_suppl_recv(const struct device *dev, uint32_t *func, unsigned int *num_params,
 			     struct tee_param *param);
-
-static inline int z_impl_tee_suppl_recv(const struct device *dev, uint32_t *func,
-					unsigned int *num_params, struct tee_param *param)
-{
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
-
-	if (!api->suppl_recv) {
-		return -ENOSYS;
-	}
-
-	return api->suppl_recv(dev, func, num_params, param);
-}
 
 /**
  * @brief Send a request for TEE Supplicant function
@@ -647,18 +552,6 @@ static inline int z_impl_tee_suppl_recv(const struct device *dev, uint32_t *func
 __syscall int tee_suppl_send(const struct device *dev, unsigned int ret, unsigned int num_params,
 			     struct tee_param *param);
 
-static inline int z_impl_tee_suppl_send(const struct device *dev, unsigned int ret,
-					unsigned int num_params, struct tee_param *param)
-{
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
-
-	if (!api->suppl_send) {
-		return -ENOSYS;
-	}
-
-	return api->suppl_send(dev, ret, num_params, param);
-}
-
 #ifdef __cplusplus
 }
 #endif
@@ -667,6 +560,7 @@ static inline int z_impl_tee_suppl_send(const struct device *dev, unsigned int r
  * @}
  */
 
+#include <zephyr/drivers/tee/internal/tee_impl.h>
 #include <zephyr/syscalls/tee.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_TEE_H_ */
