@@ -328,7 +328,7 @@ static uint64_t litex_clk_calc_global_frequency(uint32_t mul, uint32_t div)
 {
 	uint64_t f;
 
-	f = (uint64_t)ldev->sys_clk_freq * (uint64_t)mul;
+	f = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * (uint64_t)mul;
 	f /= div;
 
 	return f;
@@ -1318,7 +1318,7 @@ static int litex_clk_calc_all_params(void)
 								 mul--) {
 			int below, above, all_valid = true;
 
-			vco_freq = (uint64_t)ldev->sys_clk_freq * (uint64_t)mul;
+			vco_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * (uint64_t)mul;
 			vco_freq /= div;
 			below = vco_freq < (ldev->vco.min
 					     * (1 + ldev->vco_margin));
@@ -1354,12 +1354,12 @@ int litex_clk_check_rate_range(struct litex_clk_clkout *lcko, uint32_t rate)
 		margin = litex_clk_pow(10, lcko->margin.exp);
 	}
 
-	max = (uint64_t)ldev->sys_clk_freq * (uint64_t)ldev->clkfbout.max;
+	max = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * (uint64_t)ldev->clkfbout.max;
 	div = ldev->divclk.min * lcko->clkout_div.min;
 	max /= div;
 	max += m;
 
-	min = ldev->sys_clk_freq * ldev->clkfbout.min;
+	min = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * ldev->clkfbout.min;
 	div = ldev->divclk.max * lcko->clkout_div.max;
 	min /= div;
 
@@ -1702,8 +1702,6 @@ static int litex_clk_dts_global_read(void)
 {
 	int ret;
 
-	ldev->sys_clk_freq = SYS_CLOCK_FREQUENCY;
-
 	ldev->nclkout = litex_clk_dts_cnt_clocks();
 
 	clkouts = k_malloc(sizeof(struct litex_clk_clkout) * ldev->nclkout);
@@ -1789,7 +1787,6 @@ static const struct litex_clk_device ldev_init = {
 	.divclk = {DIVCLK_DIVIDE_MIN, DIVCLK_DIVIDE_MAX},
 	.clkfbout = {CLKFBOUT_MULT_MIN, CLKFBOUT_MULT_MAX},
 	.vco = {VCO_FREQ_MIN, VCO_FREQ_MAX},
-	.sys_clk_freq = SYS_CLOCK_FREQUENCY,
 	.vco_margin = VCO_MARGIN,
 	.nclkout = NCLKOUT
 };
