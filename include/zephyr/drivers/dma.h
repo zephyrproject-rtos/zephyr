@@ -439,14 +439,6 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
  */
 __syscall int dma_start(const struct device *dev, uint32_t channel);
 
-static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
-
-	return api->start(dev, channel);
-}
-
 /**
  * @brief Stops the DMA transfer and disables the channel.
  *
@@ -467,15 +459,6 @@ static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
  */
 __syscall int dma_stop(const struct device *dev, uint32_t channel);
 
-static inline int z_impl_dma_stop(const struct device *dev, uint32_t channel)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
-
-	return api->stop(dev, channel);
-}
-
-
 /**
  * @brief Suspend a DMA channel transfer
  *
@@ -493,16 +476,6 @@ static inline int z_impl_dma_stop(const struct device *dev, uint32_t channel)
  * @retval -errno Other negative errno code failure.
  */
 __syscall int dma_suspend(const struct device *dev, uint32_t channel);
-
-static inline int z_impl_dma_suspend(const struct device *dev, uint32_t channel)
-{
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
-
-	if (api->suspend == NULL) {
-		return -ENOSYS;
-	}
-	return api->suspend(dev, channel);
-}
 
 /**
  * @brief Resume a DMA channel transfer
@@ -522,16 +495,6 @@ static inline int z_impl_dma_suspend(const struct device *dev, uint32_t channel)
  */
 __syscall int dma_resume(const struct device *dev, uint32_t channel);
 
-static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
-{
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
-
-	if (api->resume == NULL) {
-		return -ENOSYS;
-	}
-	return api->resume(dev, channel);
-}
-
 /**
  * @brief request DMA channel.
  *
@@ -549,35 +512,6 @@ static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
 __syscall int dma_request_channel(const struct device *dev,
 				  void *filter_param);
 
-static inline int z_impl_dma_request_channel(const struct device *dev,
-					     void *filter_param)
-{
-	int i = 0;
-	int channel = -EINVAL;
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
-	/* dma_context shall be the first one in dev data */
-	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
-
-	if (dma_ctx->magic != DMA_MAGIC) {
-		return channel;
-	}
-
-	for (i = 0; i < dma_ctx->dma_channels; i++) {
-		if (!atomic_test_and_set_bit(dma_ctx->atomic, i)) {
-			if (api->chan_filter &&
-			    !api->chan_filter(dev, i, filter_param)) {
-				atomic_clear_bit(dma_ctx->atomic, i);
-				continue;
-			}
-			channel = i;
-			break;
-		}
-	}
-
-	return channel;
-}
-
 /**
  * @brief release DMA channel.
  *
@@ -591,21 +525,6 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
  */
 __syscall void dma_release_channel(const struct device *dev,
 				   uint32_t channel);
-
-static inline void z_impl_dma_release_channel(const struct device *dev,
-					      uint32_t channel)
-{
-	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
-
-	if (dma_ctx->magic != DMA_MAGIC) {
-		return;
-	}
-
-	if ((int)channel < dma_ctx->dma_channels) {
-		atomic_clear_bit(dma_ctx->atomic, channel);
-	}
-
-}
 
 /**
  * @brief DMA channel filter.
@@ -621,19 +540,6 @@ static inline void z_impl_dma_release_channel(const struct device *dev,
  */
 __syscall int dma_chan_filter(const struct device *dev,
 				   int channel, void *filter_param);
-
-static inline int z_impl_dma_chan_filter(const struct device *dev,
-					      int channel, void *filter_param)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
-
-	if (api->chan_filter) {
-		return api->chan_filter(dev, channel, filter_param);
-	}
-
-	return -ENOSYS;
-}
 
 /**
  * @brief get current runtime status of DMA transfer
@@ -788,6 +694,7 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 }
 #endif
 
+#include <zephyr/drivers/dma/internal/dma_impl.h>
 #include <zephyr/syscalls/dma.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_H_ */
