@@ -346,7 +346,8 @@ static int enable(const struct shell_transport *transport, bool blocking_tx)
 {
 	struct shell_uart_common *sh_uart = (struct shell_uart_common *)transport->ctx;
 
-	sh_uart->blocking_tx = blocking_tx;
+	sh_uart->blocking_tx =
+		blocking_tx || IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_FORCE_TX_BLOCKING_MODE);
 
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_API_INTERRUPT_DRIVEN) && blocking_tx) {
 		uart_irq_tx_disable(sh_uart->dev);
