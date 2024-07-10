@@ -901,6 +901,7 @@ Documentation:
   files-exclude:
     - doc/releases/migration-guide-*
     - doc/releases/release-notes-*
+    - doc/develop/test/
   labels:
     - "area: Documentation"
 
@@ -5019,7 +5020,7 @@ Test Framework (Ztest):
     - tests/unit/util/
     - tests/subsys/testsuite/
     - samples/subsys/testsuite/
-    - doc/develop/test/ztest.rst
+    - doc/develop/test/
   labels:
     - "area: Testsuite"
   tests:
