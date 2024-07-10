@@ -639,11 +639,6 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	struct net_pkt *last_pkt;
 	int fd, ret;
 
-	fd = zvfs_reserve_fd();
-	if (fd < 0) {
-		return -1;
-	}
-
 	if (!sock_is_nonblock(parent)) {
 		k_timeout_t timeout = K_FOREVER;
 
@@ -652,7 +647,6 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		 */
 		ret = zsock_wait_data(parent, &timeout);
 		if (ret < 0) {
-			zvfs_free_fd(fd);
 			errno = -ret;
 			return -1;
 		}
@@ -660,8 +654,14 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 
 	ctx = k_fifo_get(&parent->accept_q, K_NO_WAIT);
 	if (ctx == NULL) {
-		zvfs_free_fd(fd);
 		errno = EAGAIN;
+		return -1;
+	}
+
+	fd = zvfs_reserve_fd();
+	if (fd < 0) {
+		zsock_flush_queue(ctx);
+		net_context_put(ctx);
 		return -1;
 	}
 
