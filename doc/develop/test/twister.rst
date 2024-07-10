@@ -408,6 +408,24 @@ platform_allow: <list of platforms>
     constraints, this option should only be used if the test or sample can
     only be run on the allowed platform and nothing else.
 
+    .. warning::
+
+      Boards can enable testing by default in their board definition file (``<boardname>.yaml``),
+      using the ``testing`` keyword. All tests will be run for those platforms if the test scenario
+      doesn't specify a list of allowed platforms with ``platform_allow``.
+
+      Note that:
+
+         1. The list of allowed platforms acts as an AND-style filter **only** if it contains at
+            least one of the boards that has enabled testing by default. In that case, Twister will
+            **not** run the test on other platforms in that list that haven't enabled testing by
+            default.
+         #. When none of the boards in the list of allowed platforms have enabled testing by
+            default, then Twister will run the test scenario on all of the platforms in the list.
+
+      In the first case, to force running on all the platforms specified in the allowed platform
+      list, use the ``--platform`` option.
+
 integration_platforms: <YML list of platforms/boards>
     This option limits the scope to the listed platforms when twister is
     invoked with the ``--integration`` option. Use this instead of
