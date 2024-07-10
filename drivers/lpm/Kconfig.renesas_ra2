@@ -1,0 +1,9 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+config LPM_RA2
+	bool
+	depends on DT_HAS_RENESAS_RA2_LPM_ENABLED
+	default y
+	help
+	  Enable low power mode controller for RA2 family.

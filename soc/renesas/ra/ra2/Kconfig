@@ -10,5 +10,6 @@ config SOC_SERIES_RA2
 	select HAS_PM
 	select PLATFORM_SPECIFIC_INIT
 	select CLOCK_CONTROL
+	select LPM
 	help
 	  Enable support for Renesas RA2 MCU series
