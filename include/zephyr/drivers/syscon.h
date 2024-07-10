@@ -75,18 +75,6 @@ __subsystem struct syscon_driver_api {
  */
 __syscall int syscon_get_base(const struct device *dev, uintptr_t *addr);
 
-static inline int z_impl_syscon_get_base(const struct device *dev, uintptr_t *addr)
-{
-	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
-
-	if (api == NULL) {
-		return -ENOTSUP;
-	}
-
-	return api->get_base(dev, addr);
-}
-
-
 /**
  * @brief Read from syscon register
  *
@@ -99,18 +87,6 @@ static inline int z_impl_syscon_get_base(const struct device *dev, uintptr_t *ad
  * @return 0 on success, negative on error
  */
 __syscall int syscon_read_reg(const struct device *dev, uint16_t reg, uint32_t *val);
-
-static inline int z_impl_syscon_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
-{
-	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
-
-	if (api == NULL) {
-		return -ENOTSUP;
-	}
-
-	return api->read(dev, reg, val);
-}
-
 
 /**
  * @brief Write to syscon register
@@ -125,17 +101,6 @@ static inline int z_impl_syscon_read_reg(const struct device *dev, uint16_t reg,
  */
 __syscall int syscon_write_reg(const struct device *dev, uint16_t reg, uint32_t val);
 
-static inline int z_impl_syscon_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
-{
-	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
-
-	if (api == NULL) {
-		return -ENOTSUP;
-	}
-
-	return api->write(dev, reg, val);
-}
-
 /**
  * Get the size of the syscon register in bytes.
  *
@@ -145,13 +110,6 @@ static inline int z_impl_syscon_write_reg(const struct device *dev, uint16_t reg
  */
 __syscall int syscon_get_size(const struct device *dev, size_t *size);
 
-static inline int z_impl_syscon_get_size(const struct device *dev, size_t *size)
-{
-	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
-
-	return api->get_size(dev, size);
-}
-
 /**
  * @}
  */
@@ -160,6 +118,7 @@ static inline int z_impl_syscon_get_size(const struct device *dev, size_t *size)
 }
 #endif
 
+#include <zephyr/drivers/syscon/internal/syscon_impl.h>
 #include <zephyr/syscalls/syscon.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SYSCON_H_ */
