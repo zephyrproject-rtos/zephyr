@@ -92,18 +92,6 @@ __subsystem struct bbram_driver_api {
  */
 __syscall int bbram_check_invalid(const struct device *dev);
 
-static inline int z_impl_bbram_check_invalid(const struct device *dev)
-{
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
-
-	if (!api->check_invalid) {
-		return -ENOTSUP;
-	}
-
-	return api->check_invalid(dev);
-}
-
 /**
  * @brief Check for standby (Volt SBY) power failure.
  *
@@ -113,18 +101,6 @@ static inline int z_impl_bbram_check_invalid(const struct device *dev)
  * @return 0 if V SBY power domain is in normal operation.
  */
 __syscall int bbram_check_standby_power(const struct device *dev);
-
-static inline int z_impl_bbram_check_standby_power(const struct device *dev)
-{
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
-
-	if (!api->check_standby_power) {
-		return -ENOTSUP;
-	}
-
-	return api->check_standby_power(dev);
-}
 
 /**
  * @brief Check for V CC1 power failure.
@@ -137,18 +113,6 @@ static inline int z_impl_bbram_check_standby_power(const struct device *dev)
  */
 __syscall int bbram_check_power(const struct device *dev);
 
-static inline int z_impl_bbram_check_power(const struct device *dev)
-{
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
-
-	if (!api->check_power) {
-		return -ENOTSUP;
-	}
-
-	return api->check_power(dev);
-}
-
 /**
  * @brief Get the size of the BBRAM (in bytes).
  *
@@ -157,18 +121,6 @@ static inline int z_impl_bbram_check_power(const struct device *dev)
  * @return 0 for success, -EFAULT otherwise.
  */
 __syscall int bbram_get_size(const struct device *dev, size_t *size);
-
-static inline int z_impl_bbram_get_size(const struct device *dev, size_t *size)
-{
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
-
-	if (!api->get_size) {
-		return -ENOTSUP;
-	}
-
-	return api->get_size(dev, size);
-}
 
 /**
  * @brief Read bytes from BBRAM.
@@ -182,19 +134,6 @@ static inline int z_impl_bbram_get_size(const struct device *dev, size_t *size)
 __syscall int bbram_read(const struct device *dev, size_t offset, size_t size,
 			 uint8_t *data);
 
-static inline int z_impl_bbram_read(const struct device *dev, size_t offset,
-				    size_t size, uint8_t *data)
-{
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
-
-	if (!api->read) {
-		return -ENOTSUP;
-	}
-
-	return api->read(dev, offset, size, data);
-}
-
 /**
  * @brief Write bytes to BBRAM.
  *
@@ -206,19 +145,6 @@ static inline int z_impl_bbram_read(const struct device *dev, size_t offset,
  */
 __syscall int bbram_write(const struct device *dev, size_t offset, size_t size,
 			  const uint8_t *data);
-
-static inline int z_impl_bbram_write(const struct device *dev, size_t offset,
-				     size_t size, const uint8_t *data)
-{
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
-
-	if (!api->write) {
-		return -ENOTSUP;
-	}
-
-	return api->write(dev, offset, size, data);
-}
 
 /**
  * @brief Set the emulated BBRAM driver's invalid state
@@ -261,6 +187,7 @@ int bbram_emul_set_power_state(const struct device *dev, bool failure);
  * @}
  */
 
+#include <zephyr/drivers/bbram/internal/bbram_impl.h>
 #include <zephyr/syscalls/bbram.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_BBRAM_H */
