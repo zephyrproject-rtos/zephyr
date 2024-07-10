@@ -684,22 +684,6 @@ static int uarte_nrfx_init(const struct device *dev)
 			     NRF_UARTE_INT_RXTO_MASK);
 	nrf_uarte_enable(uarte);
 
-	/**
-	 * Stop any currently running RX operations. This can occur when a
-	 * bootloader sets up the UART hardware and does not clean it up
-	 * before jumping to the next application.
-	 */
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
-		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
-		while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO) &&
-		       !nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ERROR)) {
-			/* Busy wait for event to register */
-		}
-		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
-		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
-		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
-	}
-
 	k_timer_init(&data->async->rx_timeout_timer, rx_timeout, NULL);
 	k_timer_user_data_set(&data->async->rx_timeout_timer, data);
 	k_timer_init(&data->async->tx_timeout_timer, tx_timeout, NULL);
@@ -1966,16 +1950,14 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 			}
 #endif
 			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
-			while (!nrf_uarte_event_check(uarte,
-						      NRF_UARTE_EVENT_RXTO) &&
-			       !nrf_uarte_event_check(uarte,
-						      NRF_UARTE_EVENT_ERROR)) {
+			while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
 				/* Busy wait for event to register */
 				Z_SPIN_DELAY(2);
 			}
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
+			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ERROR);
 		}
 
 		wait_for_tx_stopped(dev);
