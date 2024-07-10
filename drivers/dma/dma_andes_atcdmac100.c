@@ -211,6 +211,8 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 	struct dma_block_config *cfg_blocks;
 	k_spinlock_key_t key;
 
+	LOG_DBG("JATW %s(%d) channel:%d\n", __func__, __LINE__, channel);
+
 	if (channel >= ATCDMAC100_MAX_CHAN) {
 		return -EINVAL;
 	}

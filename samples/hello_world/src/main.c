@@ -14,6 +14,7 @@
 #define ATTR_RST	"\x1b[37;1m" // ANSI_COLOR_RESET
 
 #define FLASH_RW_SIZE 255
+#define FLASH_BASE_ADDR (uint32_t*)0xB0000000
 
 void Flash_Test(const struct device *flash, uint32_t FLASH_ADDR, uint8_t EVEN_ODD_MUL, uint8_t FORMATTER) {
 	int errorcode = 0;
@@ -89,6 +90,12 @@ void Flash_Test(const struct device *flash, uint32_t FLASH_ADDR, uint8_t EVEN_OD
 			}
 		}
 	}
+
+	uint8_t *MemMapReadAddr = (uint8_t*)(FLASH_BASE_ADDR+FLASH_ADDR);
+	printf("Memory Mapped Reading Test\n");
+	for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) { 
+		printf("%s %d%s", ATTR_INF, MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
+	} printf("\n");
 }
 
 int main(void)
@@ -124,7 +131,7 @@ int main(void)
 	if((flash == NULL) || (!device_is_ready(flash))) {
 		printf("%s flash has status disabled or driver is not initialized...%s\n", ATTR_ERR,ATTR_RST);
 	} else {
-		printf("%s flash Object is Created\n", ATTR_INF);
+		printf("%s flash Object is Created. Test Via DMA\n", ATTR_INF);
 		Flash_Test(flash, 0x1000, 0, 20);
 	}
 

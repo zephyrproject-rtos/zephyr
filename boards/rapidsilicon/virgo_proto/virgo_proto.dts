@@ -40,6 +40,10 @@
 	clock-frequency = <26666667>;
  };
 
+ &dma0 {
+	status = "disabled";
+ };
+
  &spi0 {
 	status = "okay";
 	clock-frequency = <26666667>;
