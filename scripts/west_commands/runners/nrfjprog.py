@@ -33,7 +33,7 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
 
     @classmethod
     def tool_opt_help(cls) -> str:
-        return 'Additional options for nrfjprog, e.g. "--recover"'
+        return 'Additional options for nrfjprog, e.g. "--clockspeed"'
 
     @classmethod
     def do_create(cls, cfg, args):
