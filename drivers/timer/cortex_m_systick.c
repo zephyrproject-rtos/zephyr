@@ -31,16 +31,14 @@
  */
 #define MIN_DELAY MAX(1024U, ((uint32_t)CYC_PER_TICK/16U))
 
-#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
-
 static struct k_spinlock lock;
 
 static uint32_t last_load;
 
 #ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
-#define cycle_t uint64_t
+typedef uint64_t cycle_t;
 #else
-#define cycle_t uint32_t
+typedef uint32_t cycle_t;
 #endif
 
 /*
@@ -193,7 +191,7 @@ void sys_clock_isr(void *arg)
 	}
 #endif /* CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER */
 
-	if (TICKLESS) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* In TICKLESS mode, the SysTick.LOAD is re-programmed
 		 * in sys_clock_set_timeout(), followed by resetting of
 		 * the counter (VAL = 0).
@@ -329,7 +327,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 uint32_t sys_clock_elapsed(void)
 {
-	if (!TICKLESS) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
