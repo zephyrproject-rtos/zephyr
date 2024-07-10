@@ -2139,7 +2139,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.power_pulse_duration_ms = 1500,                                                   \
 		.reset_pulse_duration_ms = 100,                                                    \
 		.startup_time_ms = 10000,                                                          \
