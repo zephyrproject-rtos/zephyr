@@ -667,7 +667,7 @@ if NRF_WIFI_RPU_RECOVERY
 
 config NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS
 	int "RPU recovery propagation delay in milliseconds"
-	default 10
+	default 2000
 	help
 		Propagation delay in milliseconds to wait after RPU is powered down
 		before powering it up. This delay is required to ensure that the recovery
