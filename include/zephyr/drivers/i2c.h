@@ -63,7 +63,7 @@ extern "C" {
 						>> I2C_SPEED_SHIFT)
 
 /** Use 10-bit addressing. DEPRECATED - Use I2C_MSG_ADDR_10_BITS instead. */
-#define I2C_ADDR_10_BITS		BIT(0)
+#define I2C_ADDR_10_BITS		BIT(0) __DEPRECATED_MACRO
 
 /** Peripheral to act as Controller. */
 #define I2C_MODE_CONTROLLER		BIT(4)
