@@ -192,3 +192,23 @@
 	phys = <&can_phy1>;
 	status = "okay";
 };
+
+&adc0 {
+	interrupts = <39 0>;
+	pinctrl-0 = <&adc0_default>;
+	clk-source = <0>;
+	clk-divider = <1>;
+	sample-time = <65>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc1 {
+	interrupts = <40 0>;
+	pinctrl-0 = <&adc1_default>;
+	clk-source = <0>;
+	clk-divider = <1>;
+	sample-time = <65>;
+	pinctrl-names = "default";
+	status = "okay";
+};
