@@ -187,7 +187,12 @@ struct acl_data {
 	struct bt_buf_data buf_data;
 
 	/* Index into the bt_conn storage array */
-	uint8_t  index;
+	uint8_t index;
+
+	/** Host has already sent a Host Number of Completed Packets
+	 *  for this buffer.
+	 */
+	bool host_ncp_sent;
 
 	/** ACL connection handle */
 	uint16_t handle;
