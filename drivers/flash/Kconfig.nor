@@ -90,4 +90,13 @@ config SPI_NOR_IDLE_IN_DPD
 	  long periods, and when used the impact of waiting for mode
 	  enter and exit delays is acceptable.
 
+config SPI_NOR_SUSPEND_RESUME
+	bool "Use suspend/resume featuere if nor flash supports it"
+	help
+	  When CONFIG_SPI_NOR_SUSPEND_RESUME is used the driver can suspend
+	  ongoing program/erase operation to read data from flash. After read
+	  operation is completed the suspended operation is resumed.
+	  The feature will be used only when NOR Flash supports it. This information
+	  can be retrieved from SFDP.
+
 endif # SPI_NOR

@@ -79,6 +79,11 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define JEDEC_MACRONIX_ID   0xc2
 #define JEDEC_MX25R_TYPE_ID 0x28
 
+#define SPI_NOR_READ  BIT(3)
+#define SPI_NOR_WRITE BIT(2)
+#define SPI_NOR_ERASE BIT(1)
+#define SPI_NOR_IO    BIT(0)
+
 /* Build-time data associated with the device. */
 struct spi_nor_config {
 	/* Devicetree SPI configuration */
@@ -166,7 +171,13 @@ struct spi_nor_config {
  * @sem: The semaphore to access to the flash
  */
 struct spi_nor_data {
+#ifdef CONFIG_SPI_NOR_SUSPEND_RESUME
+	struct k_sem read_sem;
+	struct k_sem write_erase_sem;
+	struct k_mutex ownership;
+#else
 	struct k_sem sem;
+#endif
 #if ANY_INST_HAS_DPD
 	/* Low 32-bits of uptime counter at which device last entered
 	 * deep power-down.
@@ -183,6 +194,20 @@ struct spi_nor_data {
 	 * explicitly specifies 24-bit or 32-bit addressing.
 	 */
 	bool flag_access_32bit: 1;
+
+#ifdef CONFIG_SPI_NOR_SUSPEND_RESUME
+	bool suspend_resume_support: 1;
+	bool suspended: 1;
+	bool ok_to_suspend: 1;
+
+	uint8_t operation;
+
+	/* Operation codes fro suspend/resume feature. */
+	uint8_t susp_instr;
+	uint8_t resm_instr;
+	uint8_t psusp_instr;
+	uint8_t presm_instr;
+#endif
 
 	/* Minimal SFDP stores no dynamic configuration.  Runtime and
 	 * devicetree store page size and erase_types; runtime also
@@ -226,6 +251,8 @@ static const struct jesd216_erase_type minimal_erase_types[JESD216_NUM_ERASE_TYP
 #define WAIT_READY_WRITE K_TICKS(1)
 /* Erases can range from 45ms to 240sec */
 #define WAIT_READY_ERASE K_MSEC(50)
+/* Suspend/resume operation can range from 10ms to 50ms */
+#define WAIT_READY_SUSPEND_RESUME K_MSEC(10)
 
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect);
@@ -449,13 +476,18 @@ static int spi_nor_access(const struct device *const dev,
  *
  * @param dev The device structure
  * @param poll_delay Duration between polls of status register
+ * @param may_be_suspended Flag indicating is ongoing operation can be suspended
  * @return 0 on success, negative errno code otherwise
  */
-static int spi_nor_wait_until_ready(const struct device *dev, k_timeout_t poll_delay)
+static int spi_nor_wait_until_ready(const struct device *dev,
+				    k_timeout_t poll_delay,
+				    bool may_be_suspended)
 {
 	int ret;
 	uint8_t reg;
+	struct spi_nor_data *driver_data = dev->data;
 
+	ARG_UNUSED(driver_data);
 	ARG_UNUSED(poll_delay);
 
 	while (true) {
@@ -466,9 +498,26 @@ static int spi_nor_wait_until_ready(const struct device *dev, k_timeout_t poll_d
 		}
 #ifdef CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 		/* Don't monopolise the CPU while waiting for ready */
+#ifdef CONFIG_SPI_NOR_SUSPEND_RESUME
+		if (may_be_suspended && driver_data->suspend_resume_support) {
+			driver_data->ok_to_suspend = true;
+			k_mutex_unlock(&driver_data->ownership);
+		}
+#endif /* CONFIG_SPI_NOR_SUSPEND_RESUME */
+
 		k_sleep(poll_delay);
+
+#ifdef CONFIG_SPI_NOR_SUSPEND_RESUME
+		if (may_be_suspended && driver_data->suspend_resume_support) {
+			k_mutex_lock(&driver_data->ownership, K_FOREVER);
+		}
+#endif /* CONFIG_SPI_NOR_SUSPEND_RESUME */
 #endif /* CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY */
 	}
+
+#ifdef CONFIG_SPI_NOR_SUSPEND_RESUME
+	driver_data->ok_to_suspend = false;
+#endif
 	return ret;
 }
 
@@ -552,17 +601,70 @@ static int exit_dpd(const struct device *const dev)
 	return ret;
 }
 
+#ifdef CONFIG_SPI_NOR_SUSPEND_RESUME
+static int spi_nor_suspend_resume(const struct device *dev)
+{
+	struct spi_nor_data *const driver_data = dev->data;
+	uint8_t opcode;
+	int ret;
+
+	if (driver_data->suspended) {
+		opcode = driver_data->operation & SPI_NOR_ERASE ?
+			 driver_data->resm_instr : driver_data->presm_instr;
+	} else {
+		opcode = driver_data->operation & SPI_NOR_ERASE ?
+			 driver_data->susp_instr : driver_data->psusp_instr;
+	}
+
+	ret = spi_nor_cmd_write(dev, opcode);
+	if (ret != 0) {
+		return ret;
+	}
+
+	while (true) {
+		uint8_t reg;
+
+		ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
+		/* Exit on error or no longer WIP */
+		if (ret || !(reg & SPI_NOR_WIP_BIT)) {
+			break;
+		}
+
+		k_sleep(WAIT_READY_SUSPEND_RESUME);
+	}
+
+	return ret;
+}
+#endif
+
 /* Everything necessary to acquire owning access to the device.
  *
  * This means taking the lock and, if necessary, waking the device
  * from deep power-down mode.
  */
-static void acquire_device(const struct device *dev)
+static void acquire_device(const struct device *dev, uint8_t operation)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
+#ifndef CONFIG_SPI_NOR_SUSPEND_RESUME
 		k_sem_take(&driver_data->sem, K_FOREVER);
+#else
+		struct k_sem *sem = operation == SPI_NOR_READ ?
+				    &driver_data->read_sem : &driver_data->write_erase_sem;
+
+		k_sem_take(sem, K_FOREVER);
+		k_mutex_lock(&driver_data->ownership, K_FOREVER);
+
+		driver_data->operation |= operation;
+
+		if (driver_data->ok_to_suspend && operation == SPI_NOR_READ) {
+
+			spi_nor_suspend_resume(dev);
+			driver_data->suspended = true;
+			return;
+		}
+#endif
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)) {
@@ -577,14 +679,37 @@ static void acquire_device(const struct device *dev)
  */
 static void release_device(const struct device *dev)
 {
+	struct spi_nor_data *const driver_data = dev->data;
+
+#ifdef CONFIG_SPI_NOR_SUSPEND_RESUME
+	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD) && !driver_data->suspended) {
+#else
 	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)) {
+#endif
 		enter_dpd(dev);
 	}
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		struct spi_nor_data *const driver_data = dev->data;
+#ifdef CONFIG_SPI_NOR_SUSPEND_RESUME
+		struct k_sem *sem = !(driver_data->operation & SPI_NOR_READ) ?
+				    &driver_data->write_erase_sem : &driver_data->read_sem;
 
-		k_sem_give(&driver_data->sem);
+		if (driver_data->suspended) {
+			spi_nor_suspend_resume(dev);
+			driver_data->suspended = false;
+
+			/* If device was suspended it is called from read context */
+			driver_data->operation &= ~SPI_NOR_READ;
+		} else {
+			driver_data->operation = 0;
+		}
+
+		k_mutex_unlock(&driver_data->ownership);
+#else
+		struct k_sem *sem = &driver_data->sem;
+#endif
+
+		k_sem_give(sem);
 	}
 }
 
@@ -634,7 +759,7 @@ static int spi_nor_wrsr(const struct device *dev,
 	if (ret != 0) {
 		return ret;
 	}
-	return spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
+	return spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER, false);
 }
 
 #if ANY_INST_HAS_MXICY_MX25R_POWER_MODE
@@ -712,7 +837,7 @@ static int mxicy_wrcr(const struct device *dev,
 			return ret;
 		}
 
-		ret = spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
+		ret = spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER, false);
 	}
 
 	return ret;
@@ -740,7 +865,7 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 			return 0;
 		}
 
-		acquire_device(dev);
+		acquire_device(dev, SPI_NOR_IO);
 
 		/* Read current configuration register */
 
@@ -783,7 +908,7 @@ static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	acquire_device(dev, SPI_NOR_READ);
 
 	ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
 
@@ -800,7 +925,7 @@ static int flash_spi_nor_ex_op(const struct device *dev, uint16_t code,
 	ARG_UNUSED(in);
 	ARG_UNUSED(out);
 
-	acquire_device(dev);
+	acquire_device(dev, SPI_NOR_IO);
 
 	switch (code) {
 	case FLASH_EX_OP_RESET:
@@ -832,7 +957,7 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	acquire_device(dev, SPI_NOR_WRITE);
 	ret = spi_nor_write_protection_set(dev, false);
 	if (ret == 0) {
 		while (size > 0) {
@@ -865,7 +990,7 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 			src = (const uint8_t *)src + to_write;
 			addr += to_write;
 
-			ret = spi_nor_wait_until_ready(dev, WAIT_READY_WRITE);
+			ret = spi_nor_wait_until_ready(dev, WAIT_READY_WRITE, true);
 			if (ret != 0) {
 				break;
 			}
@@ -902,7 +1027,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	acquire_device(dev, SPI_NOR_ERASE);
 	ret = spi_nor_write_protection_set(dev, false);
 
 	while ((size > 0) && (ret == 0)) {
@@ -946,7 +1071,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 			break;
 		}
 
-		ret = spi_nor_wait_until_ready(dev, WAIT_READY_ERASE);
+		ret = spi_nor_wait_until_ready(dev, WAIT_READY_ERASE, true);
 	}
 
 	int ret2 = spi_nor_write_protection_set(dev, true);
@@ -998,7 +1123,7 @@ static int spi_nor_write_protection_set(const struct device *dev,
 static int spi_nor_sfdp_read(const struct device *dev, off_t addr,
 			     void *dest, size_t size)
 {
-	acquire_device(dev);
+	acquire_device(dev, SPI_NOR_IO);
 
 	int ret = read_sfdp(dev, addr, dest, size);
 
@@ -1016,7 +1141,7 @@ static int spi_nor_read_jedec_id(const struct device *dev,
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	acquire_device(dev, SPI_NOR_IO);
 
 	int ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDID, id, SPI_NOR_MAX_ID_LEN);
 
@@ -1065,7 +1190,7 @@ static int spi_nor_set_address_mode(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	acquire_device(dev);
+	acquire_device(dev, SPI_NOR_IO);
 
 	if ((enter_4byte_addr & 0x02) != 0) {
 		/* Enter after WREN. */
@@ -1121,6 +1246,23 @@ static int spi_nor_process_bfp(const struct device *dev,
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
 	LOG_DBG("Page size %u bytes", data->page_size);
+
+#ifdef CONFIG_SPI_NOR_SUSPEND_RESUME
+	if (php->len_dw >= 13) {
+		uint32_t dw12 = sys_le32_to_cpu(bfp->dw10[2]);
+		uint32_t dw13 = sys_le32_to_cpu(bfp->dw10[3]);
+
+		/* Inverted logic flag: 1 means not supported */
+		if ((dw12 & JESD216_SFDP_BFP_DW12_SUSPRESSUP_FLG) == 0) {
+			data->susp_instr = (dw13 >> 24) & 0xFF;
+			data->resm_instr = (dw13 >> 16) & 0xFF;
+			data->psusp_instr = (dw13 >> 8) & 0xFF;
+			data->presm_instr = (dw13 >> 0) & 0xFF;
+
+			data->suspend_resume_support = true;
+		}
+	}
+#endif
 
 	/* If 4-byte addressing is supported, switch to it. */
 	if (jesd216_bfp_addrbytes(bfp) != JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B) {
@@ -1322,7 +1464,7 @@ static int spi_nor_configure(const struct device *dev)
 	/* After a soft-reset the flash might be in DPD or busy writing/erasing.
 	 * Exit DPD and wait until flash is ready.
 	 */
-	acquire_device(dev);
+	acquire_device(dev, SPI_NOR_IO);
 
 	rc = exit_dpd(dev);
 	if (rc < 0) {
@@ -1334,7 +1476,7 @@ static int spi_nor_configure(const struct device *dev)
 	rc = spi_nor_rdsr(dev);
 	if (rc > 0 && (rc & SPI_NOR_WIP_BIT)) {
 		LOG_WRN("Waiting until flash is ready");
-		rc = spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
+		rc = spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER, false);
 	}
 	release_device(dev);
 	if (rc < 0) {
@@ -1372,7 +1514,7 @@ static int spi_nor_configure(const struct device *dev)
 	 * that powers up with block protect enabled.
 	 */
 	if (cfg->has_lock != 0) {
-		acquire_device(dev);
+		acquire_device(dev, SPI_NOR_IO);
 
 		rc = spi_nor_rdsr(dev);
 
@@ -1442,12 +1584,12 @@ static int spi_nor_pm_control(const struct device *dev, enum pm_device_action ac
 		break;
 #else
 	case PM_DEVICE_ACTION_SUSPEND:
-		acquire_device(dev);
+		acquire_device(dev, SPI_NOR_IO);
 		rc = enter_dpd(dev);
 		release_device(dev);
 		break;
 	case PM_DEVICE_ACTION_RESUME:
-		acquire_device(dev);
+		acquire_device(dev, SPI_NOR_IO);
 		rc = exit_dpd(dev);
 		release_device(dev);
 		break;
@@ -1460,7 +1602,7 @@ static int spi_nor_pm_control(const struct device *dev, enum pm_device_action ac
 			/* Move to DPD, the correct device state
 			 * for PM_DEVICE_STATE_SUSPENDED
 			 */
-			acquire_device(dev);
+			acquire_device(dev, SPI_NOR_IO);
 			rc = enter_dpd(dev);
 			release_device(dev);
 		}
@@ -1486,7 +1628,13 @@ static int spi_nor_init(const struct device *dev)
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
+#ifdef CONFIG_SPI_NOR_SUSPEND_RESUME
+		k_mutex_init(&driver_data->ownership);
+		k_sem_init(&driver_data->write_erase_sem, 1, K_SEM_MAX_LIMIT);
+		k_sem_init(&driver_data->read_sem, 1, K_SEM_MAX_LIMIT);
+#else
 		k_sem_init(&driver_data->sem, 1, K_SEM_MAX_LIMIT);
+#endif
 	}
 
 #if ANY_INST_HAS_WP_GPIOS
