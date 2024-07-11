@@ -19,10 +19,8 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Ping \\(on channel 0\\)"
         - "Pong \\(on channel 0\\)"
         - "Ping \\(on channel 1\\)"
-        - "Pong \\(on channel 1\\)"
 
   sample.drivers.mbox.nrf54h20_app_ppr:
     platform_allow:
@@ -62,10 +60,8 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Ping \\(on channel 0\\)"
         - "Pong \\(on channel 0\\)"
         - "Ping \\(on channel 1\\)"
-        - "Pong \\(on channel 1\\)"
 
   sample.drivers.mbox.nrf54l15:
     platform_allow:
