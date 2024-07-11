@@ -4999,6 +4999,7 @@ Continuous Integration:
   files:
     - .github/
     - scripts/ci/
+    - scripts/make_bugs_pickle.py
     - .checkpatch.conf
     - scripts/gitlint/
     - scripts/set_assignees.py
