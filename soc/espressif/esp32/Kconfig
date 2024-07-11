@@ -76,18 +76,6 @@ config ESP32_DEEP_SLEEP_WAKEUP_DELAY
 	  If you are seeing "flash read err, 1000" message printed to the
 	  console after deep sleep reset, try increasing this value.
 
-config ESP32_PHY_MAX_WIFI_TX_POWER
-	int "Max WiFi/BLE TX power (dBm)"
-	range 10 20
-	default 20
-	help
-	  Set maximum transmit power for WiFi radio. Actual transmit power for high
-	  data rates may be lower than this setting.
-
-config ESP32_PHY_MAX_TX_POWER
-	int
-	default ESP32_PHY_MAX_WIFI_TX_POWER
-
 config ESP32_EMAC
 	bool
 	default y if ETH_ESP32
