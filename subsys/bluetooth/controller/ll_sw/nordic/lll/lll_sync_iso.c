@@ -328,6 +328,35 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	crc_init[0] = lll->bis_curr;
 	(void)memcpy(&crc_init[1], lll->base_crc_init, sizeof(uint16_t));
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	if (p->ticks_drift) {
+		uint32_t drift_us;
+		uint8_t skipped;
+
+		drift_us = HAL_TICKER_TICKS_TO_US(p->ticks_drift);
+
+		skipped = DIV_ROUND_UP(drift_us, lll->sub_interval);
+		if (skipped >= lll->irc) {
+			skipped = lll->irc;
+		}
+
+		lll->irc_curr += skipped;
+
+		while (skipped--) {
+			/* Calculate the radio channel to use for subevent */
+			data_chan_use = lll_chan_iso_subevent(data_chan_id,
+						lll->data_chan_map,
+						lll->data_chan_count,
+						&lll->data_chan.prn_s,
+						&lll->data_chan.remap_idx);
+		}
+
+		drift_us %= lll->sub_interval;
+		drift_us = lll->sub_interval - drift_us;
+		p->ticks_at_expire += HAL_TICKER_US_TO_TICKS(drift_us);
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	/* Start setting up of Radio h/w */
 	radio_reset();
 

@@ -573,6 +573,17 @@ config BT_CTLR_SYNC_ISO_RESERVE_MAX
 	  disabled, then time reservation does not include the pre-transmissions
 	  and any Control subevents.
 
+config BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap ISO Synchronized Receiver event around overlapping roles"
+	depends on BT_TICKER_EXT && \
+		   BT_CTLR_SYNC_ISO && \
+		   !BT_CTLR_SYNC_ISO_RESERVE_MAX
+	help
+	  Wrap ISO Synchronized Receiver event around overlapping roles using
+	  ticker ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drifts value to determine the
+	  correct subevents to setup for reception.
+
 config BT_CTLR_ADV_ENABLE_STRICT
 	bool "Enforce Strict Advertising Enable/Disable"
 	depends on BT_BROADCASTER
