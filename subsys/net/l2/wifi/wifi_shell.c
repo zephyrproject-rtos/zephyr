@@ -886,10 +886,30 @@ static int cmd_wifi_stats(const struct shell *sh, size_t argc, char *argv[])
 	struct net_stats_wifi stats = { 0 };
 	int ret;
 
-	ret = net_mgmt(NET_REQUEST_STATS_GET_WIFI, iface,
-				&stats, sizeof(stats));
-	if (!ret) {
-		print_wifi_stats(iface, &stats, sh);
+	context.sh = sh;
+
+	if (argc == 1) {
+		ret = net_mgmt(NET_REQUEST_STATS_GET_WIFI, iface,
+			&stats, sizeof(stats));
+		if (!ret) {
+			print_wifi_stats(iface, &stats, sh);
+		}
+	}
+
+	if (argc > 1) {
+		if (!strncasecmp(argv[1], "reset", 5)) {
+			ret = net_mgmt(NET_REQUEST_STATS_RESET_WIFI, iface,
+					&stats, sizeof(stats));
+			if (!ret) {
+				PR("Wi-Fi interface statistics have been reset.\n");
+			}
+		} else if (!strncasecmp(argv[1], "help", 4)) {
+			shell_help(sh);
+		} else {
+			PR_WARNING("Invalid argument\n");
+			shell_help(sh);
+			return -ENOEXEC;
+		}
 	}
 #else
 	ARG_UNUSED(argc);
@@ -2041,7 +2061,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		    "[-h, --help] : Print out the help for the scan command.\n",
 		  cmd_wifi_scan,
 		  1, 8),
-	SHELL_CMD_ARG(statistics, NULL, "Wi-Fi interface statistics.\n", cmd_wifi_stats, 1, 0),
+	SHELL_CMD_ARG(statistics, NULL, "Wi-Fi interface statistics.\n"
+					"[reset] : Reset Wi-Fi interface statistics\n"
+					"[help] :  Print out the help for the statistics command.",
+					cmd_wifi_stats,
+					1, 1),
 	SHELL_CMD_ARG(status, NULL, "Status of the Wi-Fi interface.\n", cmd_wifi_status, 1, 0),
 	SHELL_CMD(twt, &wifi_twt_ops, "Manage TWT flows.\n", NULL),
 	SHELL_CMD_ARG(reg_domain, NULL,
