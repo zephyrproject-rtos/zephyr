@@ -18,6 +18,7 @@ config SOC_SERIES_S32K1
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_WDOG32
 	select HAS_MCUX_RTC
+	select HAS_MCUX_ADC12
 
 config SOC_S32K116
 	select CPU_CORTEX_M0PLUS
