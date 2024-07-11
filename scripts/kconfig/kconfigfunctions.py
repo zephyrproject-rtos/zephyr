@@ -752,7 +752,7 @@ def dt_compat_on_bus(kconf, _, compat, bus):
 def dt_compat_any_has_prop(kconf, _, compat, prop):
     """
     This function takes a 'compat' and a 'prop' and returns "y" if any
-    node with compatible 'compat' also has a valid property 'prop'.
+    "enabled" node with compatible 'compat' also has a valid property 'prop'.
     It returns "n" otherwise.
     """
     if doc_mode or edt is None:
@@ -764,6 +764,24 @@ def dt_compat_any_has_prop(kconf, _, compat, prop):
                 return "y"
 
     return "n"
+
+def dt_compat_any_has_prop_val(kconf, _, compat, prop, value):
+    """
+    This function takes a 'compat', a 'prop', and a 'value'
+    and returns "y" if any "enabled" node with compatible 'compat'
+    also has a valid property 'prop' with value 'value'.
+    It returns "n" otherwise.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    if compat in edt.compat2okay:
+        for node in edt.compat2okay[compat]:
+            if prop in node.props:
+                if str(node.props[prop].val) == value:
+                    return "y"
+    return "n"
+
 
 def dt_nodelabel_has_compat(kconf, _, label, compat):
     """
@@ -932,6 +950,7 @@ functions = {
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
         "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 2),
+        "dt_compat_any_has_prop_val": (dt_compat_any_has_prop_val, 3, 3),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_chosen_path": (dt_chosen_path, 1, 1),
