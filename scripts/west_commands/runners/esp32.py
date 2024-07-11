@@ -105,14 +105,15 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         # Add Python interpreter
         cmd_flash = [sys.executable, self.espidf, '--chip', 'auto']
 
+        if self.device is not None:
+            cmd_flash.extend(['--port', self.device])
+
         if self.erase is True:
             cmd_erase = cmd_flash + ['erase_flash']
             self.check_call(cmd_erase)
 
         if self.no_stub is True:
             cmd_flash.extend(['--no-stub'])
-        if self.device is not None:
-            cmd_flash.extend(['--port', self.device])
         cmd_flash.extend(['--baud', self.baud])
         cmd_flash.extend(['--before', 'default_reset'])
         if self.reset:
