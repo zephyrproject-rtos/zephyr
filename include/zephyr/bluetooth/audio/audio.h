@@ -978,13 +978,22 @@ struct bt_audio_codec_qos_pref {
 	 */
 	bool unframed_supported;
 
-	/** Preferred PHY */
+	/**
+	 * @brief Preferred PHY bitfield
+	 *
+	 * Bitfield consisting of one or more of @ref BT_GAP_LE_PHY_1M, @ref BT_GAP_LE_PHY_2M and
+	 * @ref BT_GAP_LE_PHY_CODED.
+	 */
 	uint8_t phy;
 
 	/** Preferred Retransmission Number */
 	uint8_t rtn;
 
-	/** Preferred Transport Latency */
+	/**
+	 * Preferred Transport Latency
+	 *
+	 * Value range @ref BT_ISO_LATENCY_MIN to @ref BT_ISO_LATENCY_MAX
+	 */
 	uint16_t latency;
 
 	/**
@@ -1010,14 +1019,15 @@ struct bt_audio_codec_qos_pref {
 	/**
 	 * @brief Preferred minimum Presentation Delay
 	 *
-	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
+	 * Value range @ref bt_audio_codec_qos_pref.pd_min to @ref bt_audio_codec_qos_pref.pd_max.
 	 */
 	uint32_t pref_pd_min;
 
 	/**
 	 * @brief Preferred maximum Presentation Delay
 	 *
-	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
+	 * Value range @ref bt_audio_codec_qos_pref.pd_min to @ref bt_audio_codec_qos_pref.pd_max,
+	 * and higher than @ref bt_audio_codec_qos_pref.pref_pd_min
 	 */
 	uint32_t pref_pd_max;
 };
