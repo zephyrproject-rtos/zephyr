@@ -812,6 +812,7 @@ Devicetree:
     - doc/build/dts/
     - include/zephyr/devicetree/
     - scripts/kconfig/kconfigfunctions.py
+    - doc/build/kconfig/preprocessor-functions.rst
     - include/zephyr/devicetree.h
   files-exclude:
     - dts/common/nordic/
