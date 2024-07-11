@@ -407,6 +407,13 @@ config LWM2M_COMPOSITE_PATH_LIST_SIZE
 	help
 	  Define path list size for Composite Read and send operation.
 
+config LWM2M_DEVICE_OBJ_MAX_INSTANCE_COUNT
+	int "Maximum # of LwM2M Device object instances"
+	default 1
+	help
+	  This setting establishes the total count of LwM2M Device instances
+	  available to the client.
+
 config LWM2M_DEVICE_ERROR_CODE_SETTINGS
 	bool "Use settings to store error codes across device resets"
 	depends on SETTINGS

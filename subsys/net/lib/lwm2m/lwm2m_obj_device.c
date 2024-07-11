@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DEVICE_VERSION_MAJOR 1
 #define DEVICE_VERSION_MINOR 0
 
+#define MAX_INSTANCE_COUNT CONFIG_LWM2M_DEVICE_OBJ_MAX_INSTANCE_COUNT
+
 /* Device resource IDs */
 #define DEVICE_MANUFACTURER_ID			0
 #define DEVICE_MODEL_NUMBER_ID			1
@@ -124,9 +126,9 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(DEVICE_EXT_DEV_INFO_ID, R_OPT, OBJLNK)
 };
 
-static struct lwm2m_engine_obj_inst inst;
-static struct lwm2m_engine_res res[DEVICE_MAX_ID];
-static struct lwm2m_engine_res_inst res_inst[RESOURCE_INSTANCE_COUNT];
+static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
+static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][DEVICE_MAX_ID];
+static struct lwm2m_engine_res_inst res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 
 /* save error code resource instance point so we can easily clear later */
 static struct lwm2m_engine_res_inst *error_code_ri;
@@ -300,51 +302,71 @@ static struct settings_handler lwm2m_obj_device_settings_handler = {
 
 static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
 {
-	int i = 0, j = 0;
+	int index, i = 0, j = 0;
 
-	init_res_instance(res_inst, ARRAY_SIZE(res_inst));
+	/* Check that there is no other instance with this ID */
+	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
+		if (inst[index].obj && inst[index].obj_inst_id == obj_inst_id) {
+			LOG_ERR("Can not create instance - "
+				"already existing: %u",
+				obj_inst_id);
+			return NULL;
+		}
+	}
 
-	/* initialize instance resource data */
-	INIT_OBJ_RES_OPTDATA(DEVICE_MANUFACTURER_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_OPTDATA(DEVICE_MODEL_NUMBER_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_OPTDATA(DEVICE_SERIAL_NUMBER_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_OPTDATA(DEVICE_FIRMWARE_VERSION_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_EXECUTE(DEVICE_REBOOT_ID, res, i, NULL);
-	INIT_OBJ_RES_EXECUTE(DEVICE_FACTORY_DEFAULT_ID, res, i, NULL);
-	INIT_OBJ_RES_MULTI_OPTDATA(DEVICE_AVAILABLE_POWER_SOURCES_ID, res, i,
-				   res_inst, j, DEVICE_PWRSRC_MAX, false);
-	INIT_OBJ_RES_MULTI_OPTDATA(DEVICE_POWER_SOURCE_VOLTAGE_ID, res, i,
-				   res_inst, j, DEVICE_PWRSRC_MAX, false);
-	INIT_OBJ_RES_MULTI_OPTDATA(DEVICE_POWER_SOURCE_CURRENT_ID, res, i,
-				   res_inst, j, DEVICE_PWRSRC_MAX, false);
-	INIT_OBJ_RES_OPTDATA(DEVICE_BATTERY_LEVEL_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_OPTDATA(DEVICE_MEMORY_FREE_ID, res, i, res_inst, j);
-	error_code_ri = &res_inst[j];
-	INIT_OBJ_RES_MULTI_DATA(DEVICE_ERROR_CODE_ID, res, i,
-				res_inst, j, DEVICE_ERROR_CODE_MAX, false,
+	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
+		if (!inst[index].obj) {
+			break;
+		}
+	}
+
+	if (index >= MAX_INSTANCE_COUNT) {
+		LOG_ERR("Can not create instance - no more room: %u", obj_inst_id);
+		return NULL;
+	}
+
+	init_res_instance(res_inst[index], ARRAY_SIZE(res_inst[index]));
+
+	INIT_OBJ_RES_OPTDATA(DEVICE_MANUFACTURER_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_MODEL_NUMBER_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_SERIAL_NUMBER_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_FIRMWARE_VERSION_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_EXECUTE(DEVICE_REBOOT_ID, res[index], i, NULL);
+	INIT_OBJ_RES_EXECUTE(DEVICE_FACTORY_DEFAULT_ID, res[index], i, NULL);
+	INIT_OBJ_RES_MULTI_OPTDATA(DEVICE_AVAILABLE_POWER_SOURCES_ID, res[index], i,
+				   res_inst[index], j, DEVICE_PWRSRC_MAX, false);
+	INIT_OBJ_RES_MULTI_OPTDATA(DEVICE_POWER_SOURCE_VOLTAGE_ID, res[index], i,
+				   res_inst[index], j, DEVICE_PWRSRC_MAX, false);
+	INIT_OBJ_RES_MULTI_OPTDATA(DEVICE_POWER_SOURCE_CURRENT_ID, res[index], i,
+				   res_inst[index], j, DEVICE_PWRSRC_MAX, false);
+	INIT_OBJ_RES_OPTDATA(DEVICE_BATTERY_LEVEL_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_MEMORY_FREE_ID, res[index], i, res_inst[index], j);
+	error_code_ri = &res_inst[index][j];
+	INIT_OBJ_RES_MULTI_DATA(DEVICE_ERROR_CODE_ID, res[index], i,
+				res_inst[index], j, DEVICE_ERROR_CODE_MAX, false,
 				error_code_list, sizeof(*error_code_list));
-	INIT_OBJ_RES_EXECUTE(DEVICE_RESET_ERROR_CODE_ID, res, i,
+	INIT_OBJ_RES_EXECUTE(DEVICE_RESET_ERROR_CODE_ID, res[index], i,
 			     reset_error_list_cb);
-	INIT_OBJ_RES_OPT(DEVICE_CURRENT_TIME_ID, res, i, res_inst, j, 1, false,
+	INIT_OBJ_RES_OPT(DEVICE_CURRENT_TIME_ID, res[index], i, res_inst[index], j, 1, false,
 			 true, current_time_read_cb, current_time_pre_write_cb,
 			 NULL, current_time_post_write_cb, NULL);
-	INIT_OBJ_RES_OPTDATA(DEVICE_UTC_OFFSET_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_OPTDATA(DEVICE_TIMEZONE_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_DATA_LEN(DEVICE_SUPPORTED_BINDING_MODES_ID, res, i,
-			  res_inst, j, binding_mode, DEVICE_STRING_SHORT, strlen(binding_mode) + 1);
-	INIT_OBJ_RES_OPTDATA(DEVICE_TYPE_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_OPTDATA(DEVICE_HARDWARE_VERSION_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_OPTDATA(DEVICE_SOFTWARE_VERSION_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_OPTDATA(DEVICE_BATTERY_STATUS_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_OPTDATA(DEVICE_MEMORY_TOTAL_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_MULTI_OPTDATA(DEVICE_EXT_DEV_INFO_ID, res, i, res_inst, j,
+	INIT_OBJ_RES_OPTDATA(DEVICE_UTC_OFFSET_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_TIMEZONE_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_DATA_LEN(DEVICE_SUPPORTED_BINDING_MODES_ID, res[index], i,
+			  res_inst[index], j, binding_mode, DEVICE_STRING_SHORT, strlen(binding_mode) + 1);
+	INIT_OBJ_RES_OPTDATA(DEVICE_TYPE_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_HARDWARE_VERSION_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_SOFTWARE_VERSION_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_BATTERY_STATUS_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_MEMORY_TOTAL_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_MULTI_OPTDATA(DEVICE_EXT_DEV_INFO_ID, res[index], i, res_inst[index], j,
 				   DEVICE_EXT_DEV_INFO_MAX, false);
 
-	inst.resources = res;
-	inst.resource_count = i;
+	inst[index].resources = res[index];
+	inst[index].resource_count = i;
 
 	LOG_DBG("Create LWM2M device instance: %d", obj_inst_id);
-	return &inst;
+	return &inst[index];
 }
 
 static int lwm2m_device_init(void)
@@ -363,7 +385,7 @@ static int lwm2m_device_init(void)
 	device.is_core = true;
 	device.fields = fields;
 	device.field_count = ARRAY_SIZE(fields);
-	device.max_instance_count = 1U;
+	device.max_instance_count = MAX_INSTANCE_COUNT;
 	device.create_cb = device_create;
 	lwm2m_register_obj(&device);
 
