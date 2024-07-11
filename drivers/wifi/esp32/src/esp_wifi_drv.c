@@ -350,10 +350,35 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 
 	LOG_DBG("Station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
 
+	wifi_sta_list_t sta_list;
 	struct wifi_ap_sta_info sta_info;
 
+	sta_info.link_mode = WIFI_LINK_MODE_UNKNOWN;
+	sta_info.twt_capable = false; /* Only support in 802.11ax */
 	sta_info.mac_length = WIFI_MAC_ADDR_LEN;
 	memcpy(sta_info.mac, event->mac, WIFI_MAC_ADDR_LEN);
+
+	/* Expect the return value to always be ESP_OK,
+	 * since it is called in esp_wifi_event_handler()
+	 */
+	(void)esp_wifi_ap_get_sta_list(&sta_list);
+	for (int i = 0; i < sta_list.num; i++) {
+		wifi_sta_info_t *sta = &sta_list.sta[i];
+
+		if (memcmp(event->mac, sta->mac, 6) == 0) {
+			if (sta->phy_11n) {
+				sta_info.link_mode = WIFI_4;
+			} else if (sta->phy_11g) {
+				sta_info.link_mode = WIFI_3;
+			} else if (sta->phy_11b) {
+				sta_info.link_mode = WIFI_1;
+			} else {
+				sta_info.link_mode = WIFI_LINK_MODE_UNKNOWN;
+			}
+			break;
+		}
+	}
+
 	wifi_mgmt_raise_ap_sta_connected_event(iface, &sta_info);
 
 	if (!(esp32_data.ap_connection_cnt++)) {
@@ -373,6 +398,8 @@ static void esp_wifi_handle_ap_disconnect_event(void *event_data)
 	LOG_DBG("station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
 	struct wifi_ap_sta_info sta_info;
 
+	sta_info.link_mode = WIFI_LINK_MODE_UNKNOWN;
+	sta_info.twt_capable = false; /* Only support in 802.11ax */
 	sta_info.mac_length = WIFI_MAC_ADDR_LEN;
 	memcpy(sta_info.mac, event->mac, WIFI_MAC_ADDR_LEN);
 	wifi_mgmt_raise_ap_sta_disconnected_event(iface, &sta_info);
