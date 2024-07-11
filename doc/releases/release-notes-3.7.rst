@@ -826,6 +826,7 @@ Networking
   * Added :kconfig:option:`CONFIG_NET_DHCPV4_SERVER_NAK_UNRECOGNIZED_REQUESTS` which
     allows to override RFC-defined behavior, and NAK requests from unrecognized
     clients.
+  * Fixed client ID generation in DHCPv4 server.
   * Other minor fixes in DHCPv4 client and server implementations.
 
 * DHCPv6:
@@ -861,6 +862,7 @@ Networking
   * Added HTTP shell component.
   * Improved HTTP client error reporting.
   * Moved HTTP client library out of experimental.
+  * Added POLLOUT monitoring when sending response in HTTP client.
 
 * IPSP:
 
@@ -941,11 +943,14 @@ Networking
   * Added new driver for Native Simulator offloaded sockets.
   * Overhauled VLAN support to use Virtual network interfaces.
   * Added statistics collection for Virtual network interfaces.
+  * Fixed system workqueue block in :c:func:`mgmt_event_work_handler`
+    when :kconfig:option:`CONFIG_NET_MGMT_EVENT_SYSTEM_WORKQUEUE` is enabled.
 
 * MQTT:
 
   * Added ALPN support for MQTT TLS backend.
   * Added user data field in :c:struct:`mqtt_client` context structure.
+  * Fixed a potential socket leak in MQTT Websockets transport.
 
 * Network Interface:
 
@@ -957,6 +962,7 @@ Networking
   * Improved debug logging in the network interface code.
   * Added reference counter to the :c:struct:`net_if_addr` structure.
   * Fixed IPv6 DAD and MLDv2 operation when interface goes up.
+  * Added unique default name for OpenThread interfaces.
   * Other minor fixes.
 
 * OpenThread
@@ -993,6 +999,12 @@ Networking
   * Fixed the protocol field endianness for ``AF_PACKET`` type sockets.
   * Fixed :c:func:`getsockname` for TCP.
   * Improve :c:func:`sendmsg` support when using DTLS sockets.
+  * Fixed :c:func:`net_socket_service_register` function stall in case socket
+    services thread stopped.
+  * Fixed potential socket services thread stoppage when deregistering service.
+  * Removed support for asynchronous timeouts in socket services library.
+  * Fixed potential busy looping when using :c:func:`zsock_accept` in case of
+    file descriptors shortage.
 
 * Syslog:
 
@@ -1015,6 +1027,7 @@ Networking
   * Improved debug logs, so that they're easier to follow under heavy load.
   * ISN generation now uses SHA-256 instead of MD5. Moreover it now relies on PSA APIs
     instead of legacy Mbed TLS functions for hash computation.
+  * Improved ACK reply logic in case no PSH flag is present to reduce redundant ACKs.
 
 * Websocket:
 
@@ -1025,6 +1038,7 @@ Networking
 
   * Converted Websocket library to use ``zsock_*`` API.
   * Added Object Core support to Websocket sockets.
+  * Added POLLOUT monitoring when sending.
 
 * Wi-Fi:
 
@@ -1057,6 +1071,7 @@ Networking
   * Added a new ``ZPERF_SESSION_PERIODIC_RESULT`` event for periodic updates
     during TCP upload sessions.
   * Fixed possible socket leak in case of errors during zperf session.
+  * Improved performance in the default configuration for the zperf sample.
 
 USB
 ***
