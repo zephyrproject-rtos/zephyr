@@ -18,6 +18,7 @@ tests:
         - "host: Sent"
         - "host: Received"
         - "host: IPC-service HOST demo ended"
+
   sample.ipc.icmsg.nrf54l15:
     platform_allow: nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
@@ -26,4 +27,60 @@ tests:
     extra_args:
       icmsg_SNIPPET=nordic-flpr
     sysbuild: true
-    harness: remote
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "host: IPC-service HOST demo started"
+        - "host: Ep bounded"
+        - "host: Perform sends for"
+        - "host: Sent"
+        - "host: Received"
+        - "host: IPC-service HOST demo ended"
+
+  sample.ipc.icmsg.nrf54l15_no_multithreading:
+    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15pdk/nrf54l15/cpuapp
+    tags: ipc
+    extra_args:
+      icmsg_SNIPPET=nordic-flpr
+      icmsg_CONFIG_MULTITHREADING=n
+      icmsg_CONFIG_LOG_MODE_MINIMAL=y
+      remote_CONFIG_MULTITHREADING=n
+      remote_CONFIG_LOG_MODE_MINIMAL=y
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "I: IPC-service HOST demo started"
+        - "I: Ep bounded"
+        - "I: Perform sends for"
+        - "I: Sent"
+        - "I: Received"
+        - "I: IPC-service HOST demo ended"
+
+  sample.ipc.icmsg.nrf54l15_remote_no_multithreading:
+    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15pdk/nrf54l15/cpuapp
+    tags: ipc
+    extra_args:
+      icmsg_SNIPPET=nordic-flpr
+      remote_CONFIG_MULTITHREADING=n
+      remote_CONFIG_LOG_MODE_MINIMAL=y
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "host: IPC-service HOST demo started"
+        - "host: Ep bounded"
+        - "host: Perform sends for"
+        - "host: Sent"
+        - "host: Received"
+        - "host: IPC-service HOST demo ended"
