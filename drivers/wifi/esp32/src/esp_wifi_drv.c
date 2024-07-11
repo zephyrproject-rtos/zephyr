@@ -67,8 +67,6 @@ static struct net_mgmt_event_callback esp32_dhcp_cb;
 static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
 			       struct net_if *iface)
 {
-	const struct wifi_status *status = (const struct wifi_status *)cb->info;
-
 	switch (mgmt_event) {
 	case NET_EVENT_IPV4_DHCP_BOUND:
 		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
@@ -349,7 +347,6 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 
 static int esp32_wifi_disconnect(const struct device *dev)
 {
-	struct esp32_wifi_runtime *data = dev->data;
 	int ret = esp_wifi_disconnect();
 
 	if (ret != ESP_OK) {

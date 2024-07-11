@@ -142,16 +142,12 @@ static int dma_esp32_disable_interrupt(const struct device *dev,
 static int dma_esp32_enable_interrupt(const struct device *dev,
 				      struct dma_esp32_channel *dma_channel)
 {
-	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-
 	return esp_intr_enable(dma_channel->intr_handle);
 }
 
 static int dma_esp32_disable_interrupt(const struct device *dev,
 				       struct dma_esp32_channel *dma_channel)
 {
-	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-
 	return esp_intr_disable(dma_channel->intr_handle);
 }
 
@@ -177,7 +173,6 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
-	struct dma_block_config *block = config_dma->head_block;
 
 	dma_channel->dir = DMA_RX;
 
@@ -232,10 +227,6 @@ static int dma_esp32_config_tx_descriptor(struct dma_esp32_channel *dma_channel,
 static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channel *dma_channel,
 				struct dma_config *config_dma)
 {
-	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
-	struct dma_block_config *block = config_dma->head_block;
-
 	dma_channel->dir = DMA_TX;
 
 	gdma_ll_tx_reset_channel(data->hal.dev, dma_channel->channel_id);
@@ -493,7 +484,6 @@ static int dma_esp32_configure_irq(const struct device *dev)
 static int dma_esp32_configure_irq(const struct device *dev)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-	struct dma_esp32_data *data = (struct dma_esp32_data *)dev->data;
 	struct dma_esp32_channel *dma_channel;
 
 	for (uint8_t i = 0; i < config->irq_size; i++) {

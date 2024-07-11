@@ -130,8 +130,6 @@ static void atten_to_gain(adc_atten_t atten, uint32_t *val_mv)
 
 static bool adc_calibration_init(const struct device *dev)
 {
-	struct adc_esp32_data *data = dev->data;
-
 	switch (esp_adc_cal_check_efuse(ADC_CALI_SCHEME)) {
 	case ESP_ERR_NOT_SUPPORTED:
 		LOG_WRN("Skip software calibration - Not supported!");
@@ -555,7 +553,6 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 {
 	const struct adc_esp32_conf *conf = (const struct adc_esp32_conf *)dev->config;
 	struct adc_esp32_data *data = (struct adc_esp32_data *) dev->data;
-	int err;
 
 	if (cfg->channel_id >= conf->channel_count) {
 		LOG_ERR("Unsupported channel id '%d'", cfg->channel_id);
@@ -623,7 +620,8 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 		.pin = io_num,
 	};
 
-	err = gpio_pin_configure_dt(&gpio, GPIO_DISCONNECTED);
+	int err = gpio_pin_configure_dt(&gpio, GPIO_DISCONNECTED);
+
 	if (err) {
 		LOG_ERR("Error disconnecting io (%d)", io_num);
 		return err;

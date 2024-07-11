@@ -60,8 +60,6 @@ static void serial_esp32_usb_isr(void *arg);
 
 static int serial_esp32_usb_poll_in(const struct device *dev, unsigned char *p_char)
 {
-	struct serial_esp32_usb_data *data = dev->data;
-
 	if (!usb_serial_jtag_ll_rxfifo_data_available()) {
 		return -1;
 	}
@@ -99,7 +97,6 @@ static int serial_esp32_usb_err_check(const struct device *dev)
 static int serial_esp32_usb_init(const struct device *dev)
 {
 	const struct serial_esp32_usb_config *config = dev->config;
-	struct serial_esp32_usb_data *data = dev->data;
 
 	if (!device_is_ready(config->clock_dev)) {
 		return -ENODEV;
@@ -108,6 +105,8 @@ static int serial_esp32_usb_init(const struct device *dev)
 	int ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	struct serial_esp32_usb_data *data = dev->data;
+
 	data->irq_line = esp_intr_alloc(config->irq_source, 0, (ISR_HANDLER)serial_esp32_usb_isr,
 					(void *)dev, NULL);
 #endif
