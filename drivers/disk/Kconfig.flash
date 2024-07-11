@@ -3,6 +3,8 @@
 
 config DISK_DRIVER_FLASH
 	bool "Flash"
+	depends on DT_HAS_ZEPHYR_FLASH_DISK_ENABLED
+	default y
 	select FLASH
 	select FLASH_MAP
 	help
