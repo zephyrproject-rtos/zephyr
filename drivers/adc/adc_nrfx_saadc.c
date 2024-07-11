@@ -97,8 +97,6 @@ static struct driver_data m_data = {
 	ADC_CONTEXT_INIT_SYNC(m_data, ctx),
 #if defined(ADC_BUFFER_IN_RAM)
 	.samples_buffer = adc_samples_buffer,
-	.user_buffer = NULL,
-	.active_channels = 0,
 #endif
 };
 
@@ -576,9 +574,7 @@ static int start_read(const struct device *dev,
 
 	adc_context_start_read(&m_data.ctx, sequence);
 
-	error = adc_context_wait_for_completion(&m_data.ctx);
-
-	return error;
+	return adc_context_wait_for_completion(&m_data.ctx);
 }
 
 /* Implementation of the ADC driver API function: adc_read. */
