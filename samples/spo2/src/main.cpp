@@ -158,6 +158,17 @@ MAX30100::MAX30100()
 {
 }
 
+/**
+ * The begin function initializes the MAX30100 sensor by setting various parameters and enabling
+ * high-resolution mode.
+ * 
+ * @param dev The `dev` parameter in the `begin` function is a pointer to a structure of type `device`.
+ * This structure likely contains information or configurations related to the device being used with
+ * the MAX30100 sensor. The function uses this parameter to interact with the device through I2C
+ * communication and configure various
+ * 
+ * @return True if the initialization is successful, false otherwise.
+ */
 /** 
  * @fn begin
  * 
@@ -239,8 +250,8 @@ bool MAX30100::getRawValues(uint16_t *ir, uint16_t *red)
 		uint16_t pop_ir = buffer_ir.pop();
 		uint16_t pop_red = buffer_red.pop();
 		// printf("\nm	%u",millis(get_mcycle_stop()));
-		printf("\nIR:%u",pop_ir);
-		printf("\nRed:%u",pop_red);
+		printf("\nIR	%u",pop_ir);
+		printf("\nRed	%u",pop_red);
 		*ir = pop_ir;
 		*red = pop_red;
 		return true;
@@ -1064,6 +1075,7 @@ int main()
 		{
 			uint8_t spo2 = pox.getSpO2();
 			uint8_t heartrate = pox.getHeartRate();
+			// printf("	SPO2 : %u%",spo2);
 
 			tsLastReport = millis(total_cycles);
 		}
