@@ -244,8 +244,6 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Initialize stream current */
 	lll->stream_curr = 0U;
 
-	const bool is_sequential_packing = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
-
 	/* Skip subevents until first selected BIS */
 	stream_handle = lll->stream_handle[lll->stream_curr];
 	stream = ull_sync_iso_lll_stream_get(stream_handle);
@@ -253,7 +251,81 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	    (stream->bis_index <= lll->num_bis)) {
 		/* First selected BIS */
 		lll->bis_curr = stream->bis_index;
+	}
 
+	const bool is_sequential_packing = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	uint8_t skipped;
+
+	if (p->ticks_drift != 0U) {
+		uint8_t skipped_bis;
+		uint32_t drift_us;
+
+		/* FIXME: Add implementation to support interleaved packing BIG event drift and
+		 *        resume.
+		 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED) && !is_sequential_packing) {
+			radio_isr_set(lll_isr_early_abort, lll);
+			radio_disable();
+
+			return -EOVERFLOW;
+		}
+
+		drift_us = HAL_TICKER_TICKS_TO_US(p->ticks_drift);
+
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
+		uint32_t ticks_at_expire;
+
+		ticks_at_expire = p->ticks_at_expire;
+		remainder_us = p->remainder;
+		hal_ticker_remove_jitter(&ticks_at_expire, &remainder_us);
+		drift_us += HAL_TICKER_TICKS_TO_US(p->ticks_at_expire - ticks_at_expire) -
+			    remainder_us;
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
+
+		/* Skipped subevents in sequential packing since anchor point */
+		skipped = DIV_ROUND_UP(drift_us, lll->sub_interval);
+		skipped_bis = skipped / lll->nse;
+		if (skipped_bis > 0U) {
+			lll->stream_curr += skipped_bis;
+			if (lll->stream_curr >= lll->stream_count) {
+				radio_isr_set(lll_isr_early_abort, lll);
+				radio_disable();
+
+				return 0;
+			}
+
+			lll->bis_curr += skipped_bis;
+			LL_ASSERT(lll->bis_curr <= lll->num_bis);
+
+			lll->bn_curr = 1U;
+			lll->irc_curr = 1U;
+			lll->ptc_curr = 0U;
+		}
+
+		skipped %= lll->nse;
+
+		/* Calculate the remainder drift for the current BIS subevent */
+		drift_us %= lll->sub_interval;
+
+		/* Calculate the offset to next BIS subevent for reception */
+		if (drift_us != 0U) {
+			drift_us = lll->sub_interval - drift_us;
+		}
+
+		/* Drift to next BIS subevent */
+		p->ticks_at_expire += HAL_TICKER_US_TO_TICKS(drift_us);
+
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
+		p->remainder = HAL_TICKER_REMAINDER(drift_us);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
+	} else {
+		skipped = 0U;
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+	if (lll->bis_curr != 1U) {
 		/* Calculate the Access Address for the current BIS */
 		util_bis_aa_le32(lll->bis_curr, lll->seed_access_addr,
 				 access_addr);
@@ -291,6 +363,40 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 			LL_ASSERT_DBG(false);
 		}
 	}
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	if (skipped != 0U) {
+		/* Skipped subevents since last subevent reception */
+		if (skipped < lll->irc) {
+			uint8_t irc_prev;
+
+			irc_prev = lll->irc_curr;
+			lll->irc_curr = skipped + 1U;
+			skipped = lll->irc_curr - irc_prev;
+		} else {
+			uint8_t ptc_prev;
+
+			lll->irc_curr = lll->irc;
+			ptc_prev = lll->ptc_curr;
+			lll->ptc_curr = skipped - lll->irc;
+			if (ptc_prev) {
+				skipped = lll->ptc_curr - ptc_prev;
+			}
+			lll->ptc_curr++;
+		}
+
+		/* Calculate the radio channel to use for subevent */
+		while (skipped != 0U) {
+			skipped--;
+
+			data_chan_use = lll_chan_iso_subevent(data_chan_id,
+						lll->data_chan_map,
+						lll->data_chan_count,
+						&lll->data_chan.prn_s,
+						&lll->data_chan.remap_idx);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 	/* Calculate the CRC init value for the BIS event,
 	 * preset with the BaseCRCInit value from the BIGInfo data the most
@@ -1213,8 +1319,10 @@ isr_rx_next_subevent:
 				   ((lll->bn * lll->irc) + lll->ptc);
 		}
 
-		while (skipped--) {
-			/* Calculate the radio channel to use for subevent */
+		/* Calculate the radio channel to use for subevent */
+		while (skipped != 0U) {
+			skipped--;
+
 			data_chan_use = lll_chan_iso_subevent(data_chan_id,
 						lll->data_chan_map,
 						lll->data_chan_count,
