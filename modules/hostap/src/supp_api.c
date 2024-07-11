@@ -359,7 +359,6 @@ static inline enum wifi_frequency_bands wpas_band_to_zephyr(enum wpa_radio_work_
 static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int proto)
 {
 	switch (key_mgmt) {
-	switch (key_mgmt) {
 	case WPA_KEY_MGMT_IEEE8021X:
 	case WPA_KEY_MGMT_IEEE8021X_SUITE_B:
 	case WPA_KEY_MGMT_IEEE8021X_SUITE_B_192:
