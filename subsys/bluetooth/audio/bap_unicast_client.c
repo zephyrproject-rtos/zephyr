@@ -740,6 +740,16 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 		pref->latency, pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max,
 		stream->codec_cfg->id);
 
+	if (!bt_audio_valid_qos_pref(pref)) {
+		LOG_DBG("Invalid QoS preferences");
+		memset(pref, 0, sizeof(*pref));
+
+		/* If the sever provide an invalid QoS preferences we treat it as an error and do
+		 * nothing
+		 */
+		return;
+	}
+
 	unicast_client_ep_set_codec_cfg(ep, cfg->codec.id, sys_le16_to_cpu(cfg->codec.cid),
 					sys_le16_to_cpu(cfg->codec.vid), cc, cfg->cc_len, NULL);
 
