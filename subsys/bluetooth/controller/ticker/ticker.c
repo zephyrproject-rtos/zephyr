@@ -946,11 +946,13 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 			 * the ticks_slot_window.
 			 */
 			uint8_t next_not_ticks_slot_window =
-					(!TICKER_HAS_SLOT_WINDOW(ticker_next) ||
-					 ((acc_ticks_to_expire +
-					   ticker_next->ext_data->ticks_slot_window -
-					   ticker_next->ticks_slot) <
-					  ticker->ticks_slot));
+					!TICKER_HAS_SLOT_WINDOW(ticker_next) ||
+					(ticker_next->ext_data->is_drift_in_window &&
+					 TICKER_HAS_SLOT_WINDOW(ticker)) ||
+					((acc_ticks_to_expire +
+					  ticker_next->ext_data->ticks_slot_window -
+					  ticker_next->ticks_slot) <
+					 ticker->ticks_slot);
 
 			/* Can the current ticker with ticks_slot_window be
 			 * scheduled after the colliding ticker?
@@ -2553,7 +2555,8 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			     ticks_slot_window) &&
 			    (window_end_ticks >= (ticks_start_offset +
 						 ticks_slot))) {
-				if (!ticker_resched->ticks_slot) {
+				if (!ticker_resched->ticks_slot ||
+				    ext_data->is_drift_in_window) {
 					/* Place at start of window */
 					ticks_to_expire = window_start_ticks;
 				} else {
@@ -2603,9 +2606,14 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 					      ticker_next->ticks_slot;
 			ticks_to_expire_offset = 0U;
 
-			if (!ticker_resched->ticks_slot) {
-				/* Try at the end of the next node */
-				ticks_to_expire = window_start_ticks;
+			if (!ticker_resched->ticks_slot ||
+			    ext_data->is_drift_in_window) {
+				if (!ticker_resched->ticks_slot ||
+				    (window_start_ticks <= (ticks_slot_window -
+							   ticks_slot))) {
+					/* Try at the end of the next node */
+					ticks_to_expire = window_start_ticks;
+				}
 			} else if (IS_ENABLED(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD) &&
 				   (ticker_resched->ticks_periodic <
 				    ticker_next->ticks_periodic)) {
