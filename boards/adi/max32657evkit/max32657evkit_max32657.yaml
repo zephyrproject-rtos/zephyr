@@ -14,5 +14,6 @@ supported:
   - dma
   - counter
   - pwm
+  - spi
 ram: 256
 flash: 960
