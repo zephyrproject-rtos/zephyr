@@ -4311,7 +4311,7 @@ West:
   files:
     - modules/cmsis/
   labels:
-    - "area: ARM"
+    - "area: CMSIS-Core"
 
 "West project: cmsis-dsp":
   status: maintained
@@ -4428,7 +4428,7 @@ West:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
   labels:
-    - "area: ARM"
+    - "platform: ARM"
 
 "West project: hal_gigadevice":
   status: maintained
