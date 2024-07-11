@@ -57,6 +57,13 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 		bool more_msgs = ((i < (num_msgs - 1)) &&
 				  !(msgs[i + 1].flags & I2C_MSG_RESTART));
 
+		if (i == (num_msgs - 1)) {
+			/* Enforce STOP after last message in the
+			 * scatter/gather transaction.
+			 */
+			msgs[i].flags |= I2C_MSG_STOP;
+		}
+
 		ret = i2c_nrfx_twi_msg_transfer(dev, msgs[i].flags,
 						msgs[i].buf,
 						msgs[i].len, addr,
