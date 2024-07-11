@@ -139,7 +139,8 @@ struct emul {
 		Z_EMUL_REG_BUS_IDENTIFIER(node_id) = {                                             \
 			.api = bus_api,                                                            \
 			.Z_EMUL_BUS(node_id, addr, chipsel, chipsel, dev_idx, addr) =              \
-				DT_REG_ADDR(node_id),                                              \
+				COND_CODE_1(DT_NODE_HAS_PROP(node_id, reg),                        \
+					    (DT_REG_ADDR(node_id)), (0)),                          \
 	};                                                                                         \
 	const STRUCT_SECTION_ITERABLE(emul, EMUL_DT_NAME_GET(node_id)) __used = {                  \
 		.init = (init_fn),                                                                 \
