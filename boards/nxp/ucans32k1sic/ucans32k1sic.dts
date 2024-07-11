@@ -192,3 +192,15 @@
 	phys = <&can_phy1>;
 	status = "okay";
 };
+
+&adc0 {
+	sample-time = <65>;
+	vref-mv = <3300>;
+	status = "okay";
+};
+
+&adc1 {
+	sample-time = <65>;
+	vref-mv = <3300>;
+	status = "okay";
+};

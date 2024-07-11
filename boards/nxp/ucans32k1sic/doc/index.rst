@@ -53,6 +53,7 @@ FTM           on-chip     pwm
 FlexCAN       on-chip     can
 Watchdog      on-chip     watchdog
 RTC           on-chip     counter
+ADC           on-chip     adc
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
