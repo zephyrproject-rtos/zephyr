@@ -42,8 +42,6 @@ static int edtt_autoshutdown;
 static int fifo[2] = { -1, -1 };
 static char *fifo_path[2] = {NULL, NULL};
 
-extern unsigned int global_device_nbr;
-
 static void edttd_clean_up(void);
 static void edptd_create_fifo_if(void);
 static int fifo_low_level_read(uint8_t *bufptr, int size);
@@ -191,9 +189,9 @@ static void edptd_create_fifo_if(void)
 	fifo_path[TO_EDTT] = (char *)bs_calloc(pb_com_path_length + 30,
 						 sizeof(char));
 	sprintf(fifo_path[TO_DEVICE], "%s/Device%i.PTTin",
-		pb_com_path, global_device_nbr);
+		pb_com_path, bsim_args_get_global_device_nbr());
 	sprintf(fifo_path[TO_EDTT], "%s/Device%i.PTTout",
-		pb_com_path, global_device_nbr);
+		pb_com_path, bsim_args_get_global_device_nbr());
 
 	if ((pb_create_fifo_if_not_there(fifo_path[TO_DEVICE]) != 0)
 		|| (pb_create_fifo_if_not_there(fifo_path[TO_EDTT]) != 0)) {
