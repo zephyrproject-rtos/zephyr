@@ -383,7 +383,8 @@ class Pytest(Harness):
             f'--junit-xml={self.report_file}',
             '--log-file-level=DEBUG',
             '--log-file-format=%(asctime)s.%(msecs)d:%(levelname)s:%(name)s: %(message)s',
-            f'--log-file={self.pytest_log_file_path}'
+            f'--log-file={self.pytest_log_file_path}',
+            f'--platform={self.instance.platform.name}'
         ]
         command.extend([os.path.normpath(os.path.join(
             self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
