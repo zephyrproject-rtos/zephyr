@@ -258,6 +258,9 @@ struct ticker_ext {
 					* to be placed after or before an
 					* overlapping ticker
 					*/
+	uint8_t is_jitter_in_window:1; /* Jitter in slot window, maintaining
+					* the average periodic interval
+					*/
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
