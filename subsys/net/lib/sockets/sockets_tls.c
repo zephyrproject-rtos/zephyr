@@ -2752,9 +2752,6 @@ static int tls_opt_ciphersuite_list_set(struct tls_context *context,
 static int tls_opt_ciphersuite_list_get(struct tls_context *context,
 					void *optval, socklen_t *optlen)
 {
-#if defined(CONFIG_WOLFSSL)
-    byte *selected_buf = NULL;
-#endif
 	const int *selected_ciphers;
 	int cipher_cnt, i = 0;
 	int *ciphers = optval;
@@ -2766,44 +2763,41 @@ static int tls_opt_ciphersuite_list_get(struct tls_context *context,
 	if (context->options.ciphersuites[0] == 0) {
 		/* No specific ciphersuites configured, return all available. */
 #if defined(CONFIG_WOLFSSL)
-        byte arr[2];
+        unsigned char arr[2];
         uint16_t sh = 0;
-        byte *cs_bytes = NULL;
-        int cs_bytes_len = 0;
+		char *current = NULL;
+		int numCipherSuites = 0;
+		int ret = 0;
+		int flags = 0;
+		unsigned char cipherSuite0, cipherSuite;
 
-        if (wolfSSL_get_cipher_list_bytes(NULL, &cs_bytes_len) \
-                != WOLFSSL_SUCCESS) {
-            return -EINVAL;
-        }
+		cipher_cnt = *optlen / sizeof(int);
+		if (cipher_cnt == 0)
+			return -EINVAL;
 
-        if (cs_bytes_len == 0)
-            return -EINVAL;
+		while (current != NULL) {
+			current = wolfSSL_get_cipher_list(numCipherSuites);
+			if (current == NULL)
+				break;
 
-        cs_bytes = XMALLOC(cs_bytes_len, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-        if (cs_bytes == NULL) {
-            return -ENOMEM;
-        }
+			numCipherSuites++;
+        	ret = wolfSSL_get_cipher_suite_from_name(current, &cipherSuite0,
+                &cipherSuite, &flags);
+			if (ret != WOLFSSL_SUCCESS)
+				return -EINVAL;
 
-        if (wolfSSL_get_cipher_list_bytes(cs_bytes, &cs_bytes_len) \
-                != WOLFSSL_SUCCESS) {
-            XFREE(cs_bytes, NULL, DYNAMIC_TYPE_TMP_BUFFER)
-            return -EINVAL;
-        }
-
-        selected_buf = XMALLOC(((cs_bytes_len / 2) * sizeof(int)), NULL, DYNAMIC_TYPE_TMP_BUFFER);
-        if (selected_buf == NULL) {
-            XFREE(cs_bytes, NULL, DYNAMIC_TYPE_TMP_BUFFER)
-            return -EINVAL;
-        }
-
-        selected_ciphers = (const int *)selected_buf;
-        while(i < cs_bytes_len - 1) {
-            arr[0] = cs_bytes[i];
-            arr[1] = cs_bytes[i+1];
+			arr[0] = cipherSuite0;
+            arr[1] = cipherSuite;
             sh = sys_get_be16(arr);
-            *selected_buf++ = (int)(sh);
-            i += 2;
-        }
+			ciphers[i++] = (int)(sh);
+
+			if (i == cipher_cnt)
+				break;
+		}
+
+		*optlen = i * sizeof(int);
+		return 0;
+
 #else
         selected_ciphers = mbedtls_ssl_list_ciphersuites();
 #endif
@@ -2821,12 +2815,6 @@ static int tls_opt_ciphersuite_list_get(struct tls_context *context,
 	}
 
 	*optlen = i * sizeof(int);
-
-#if defined(CONFIG_WOLFSSL)
-    if (NULL != selected_buf) {
-        XFREE(selected_buf, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    }
-#endif
 
 	return 0;
 }
