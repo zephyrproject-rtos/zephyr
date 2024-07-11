@@ -785,6 +785,12 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->api;
 
+	if (!num_msgs) {
+		return 0;
+	}
+
+	msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
+
 	int res =  api->transfer(dev, msgs, num_msgs, addr);
 
 	i2c_xfer_stats(dev, msgs, num_msgs);
@@ -821,13 +827,14 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
  * @retval -EWOULDBLOCK If the device is temporarily busy doing another transfer
  */
 static inline int i2c_transfer_cb(const struct device *dev,
-				 struct i2c_msg *msgs,
-				 uint8_t num_msgs,
-				 uint16_t addr,
-				 i2c_callback_t cb,
-				 void *userdata)
+				  struct i2c_msg *msgs,
+				  uint8_t num_msgs,
+				  uint16_t addr,
+				  i2c_callback_t cb,
+				  void *userdata)
 {
-	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->api;
 
 	if (api->transfer_cb == NULL) {
 		return -ENOSYS;
