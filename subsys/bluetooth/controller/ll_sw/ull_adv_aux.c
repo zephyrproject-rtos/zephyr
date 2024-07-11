@@ -71,11 +71,18 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *adv_aux_free;
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW) || \
+	(defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	 defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO))
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 static void ticker_update_op_cb(uint32_t status, void *param);
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 static struct ticker_ext ll_adv_aux_ticker_ext[CONFIG_BT_CTLR_ADV_AUX_SET];
-#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW ||
+	* (CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 static uint16_t did_unique[PDU_ADV_SID_COUNT];
@@ -2600,6 +2607,12 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	aux_handle = ull_adv_aux_handle_get(aux);
 	interval_us = aux->interval * PERIODIC_INT_UNIT_US;
 
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW)
+	ll_adv_aux_ticker_ext[aux_handle].ticks_slot_window =
+		ULL_ADV_RANDOM_DELAY + aux->ull.ticks_slot;
+	ll_adv_aux_ticker_ext[aux_handle].is_drift_in_window = 1U;
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW */
+
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	if (aux->lll.adv->sync) {
 		const struct ll_adv_sync_set *sync = HDR_LLL2ULL(aux->lll.adv->sync);
@@ -2612,14 +2625,22 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	}
 
 	ll_adv_aux_ticker_ext[aux_handle].ext_timeout_func = ticker_cb;
+#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC || !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW) || \
+	(defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	 defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO))
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start_ext(
-#else /* !CONFIG_BT_CTLR_ADV_PERIODIC || !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+#else  /* !CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW &&
+	* !(CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(
-#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC || !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+#endif /* !CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW &&
+	* !(CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
 			   TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
 			   ticks_anchor, 0U,
@@ -2628,10 +2649,14 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, aux,
 			   ull_ticker_status_give, (void *)&ret_cb
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW) || \
+	(defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	 defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO))
 			   ,
 			   &ll_adv_aux_ticker_ext[aux_handle]
-#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC || !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW ||
+	* (CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
 			   );
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
