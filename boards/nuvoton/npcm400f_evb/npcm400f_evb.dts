@@ -174,3 +174,9 @@
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
+
+&usbd0 {
+	status = "okay";
+	pinctrl-0 = <&usbdphy_en &usbdphy_clk_external>;
+	pinctrl-names = "default";
+};

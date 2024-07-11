@@ -401,6 +401,15 @@
 			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 5>;
 			status = "disabled";
 		};
+
+		usbd0: usbd@4001b000 {
+			compatible = "nuvoton,npcm-usbd";
+			reg = <0x4001b000 0x1000>;
+			interrupts = <13 3>;
+			num-bidir-endpoints = <13>;
+			usbd-ram-size = <4096>;
+			status = "disabled";
+		};
 	};
 
 	soc-id {
