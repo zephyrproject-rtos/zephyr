@@ -221,7 +221,7 @@ ZTEST(uart_elementary, test_uart_basic_transmission)
 	uart_irq_err_disable(uart_dev);
 	for (int index = 0; index < TEST_BUFFER_LEN; index++) {
 		zassert_equal(test_buffer[index], test_pattern[index],
-			      "Recieived data byte %d does not match pattern 0x%x != 0x%x", index,
+			      "Received data byte %d does not match pattern 0x%x != 0x%x", index,
 			      test_buffer[index], test_pattern[index]);
 	}
 }
@@ -295,10 +295,10 @@ ZTEST(uart_elementary, test_uart_dual_port_transmission)
 #else
 	for (int index = 0; index < TEST_BUFFER_LEN; index++) {
 		zassert_equal(test_buffer[index], test_pattern[index],
-			      "UART0 recieived data byte %d does not match pattern 0x%x != 0x%x",
+			      "UART0 received data byte %d does not match pattern 0x%x != 0x%x",
 			      index, test_buffer[index], test_pattern[index]);
 		zassert_equal(test_buffer_aux[index], test_pattern[index],
-			      "UART1 recieived data byte %d does not match pattern 0x%x != 0x%x",
+			      "UART1 received data byte %d does not match pattern 0x%x != 0x%x",
 			      index, test_buffer_aux[index], test_pattern[index]);
 	}
 #endif /* CONFIG_SETUP_MISMATCH_TEST */
