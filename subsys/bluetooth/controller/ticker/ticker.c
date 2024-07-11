@@ -2575,6 +2575,14 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 					    ticks_start_offset +
 					    ticks_to_expire_offset -
 					    HAL_TICKER_RESCHEDULE_MARGIN);
+
+			} else if ((ticker_resched->ticks_slot == 0U) ||
+				   ext_data->is_drift_in_window) {
+				/* Next expiry is too close - hop over after
+				 * next node
+				 */
+				goto reschedule_in_window_hop_over;
+
 			} else {
 				/* Next expiry is too close - try the next
 				 * node
@@ -2632,6 +2640,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 				continue;
 			}
 
+reschedule_in_window_hop_over:
 			/* We din't find a valid slot for re-scheduling - try
 			 * the next node
 			 */
