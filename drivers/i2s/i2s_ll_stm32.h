@@ -63,12 +63,33 @@ struct i2s_stm32_data {
 static inline uint32_t ll_func_i2s_dma_busy(SPI_TypeDef *i2s)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
-	return LL_SPI_IsActiveFlag_TXC(i2s) == 0;
+	return (LL_SPI_IsActiveFlag_TXC(i2s) == 0);
 #else
 	/* the I2S Tx empty and busy flags are needed */
 	return (LL_SPI_IsActiveFlag_TXE(i2s) &&
 		!LL_SPI_IsActiveFlag_BSY(i2s));
-#endif
+#endif /* st_stm32h7_i2s */
 }
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
+/* Define this LL function to set the I2SMOD on I2SCFGR when SPE is 0 */
+__STATIC_INLINE void LL_I2S_EnableMode(SPI_TypeDef *SPIx)
+{
+  SET_BIT(SPIx->I2SCFGR, SPI_I2SCFGR_I2SMOD);
+}
+
+/* Define this LL function to set the SPE only */
+__STATIC_INLINE void LL_I2S_EnableI2S(SPI_TypeDef *SPIx)
+{
+  SET_BIT(SPIx->CR1, SPI_CR1_SPE);
+}
+/* Define this LL function to reset the SPE only */
+__STATIC_INLINE void LL_I2S_DisableI2S(SPI_TypeDef *SPIx)
+{
+  CLEAR_BIT(SPIx->CR1, SPI_CR1_SPE);
+}
+#else
+#define LL_I2S_EnableMode(x) void(x)
+#endif /* st_stm32h7_i2s */
 
 #endif	/* _STM32_I2S_H_ */
