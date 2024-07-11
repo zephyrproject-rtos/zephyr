@@ -89,7 +89,11 @@
 #define FF_FS_TINY 1
 
 #undef FF_FS_NORTC
+#if defined(CONFIG_FS_FATFS_HAS_RTC)
+#define FF_FS_NORTC 0
+#else
 #define FF_FS_NORTC 1
+#endif /* defined(CONFIG_FS_FATFS_HAS_RTC) */
 
 /* Zephyr uses FF_VOLUME_STRS */
 #undef FF_STR_VOLUME_ID
@@ -103,6 +107,15 @@
  */
 #undef FF_VOLUMES
 #define FF_VOLUMES 8
+
+#if defined(CONFIG_FS_FATFS_EXTRA_NATIVE_API)
+#undef FF_USE_LABEL
+#undef FF_USE_EXPAND
+#undef FF_USE_FIND
+#define FF_USE_LABEL 1
+#define FF_USE_EXPAND 1
+#define FF_USE_FIND 1
+#endif /* defined(CONFIG_FS_FATFS_EXTRA_NATIVE_API) */
 
 /*
  * Options provided below have been added to ELM FAT source code to
