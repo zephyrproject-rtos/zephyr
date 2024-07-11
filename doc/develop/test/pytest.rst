@@ -166,6 +166,22 @@ a fixture ``mcumgr``
       mcumgr.reset_device()
       # continue test scenario, check version etc.
 
+
+unlauched_dut
+=============
+
+Similar to the ``dut`` fixture, but it does not initialize the device. It can be used when a finer
+control over the build process is needed. It becomes responsibility of the test to initialize the
+device.
+
+.. code-block:: python
+
+   from twister_harness import DeviceAdapter
+
+   def test_sample(unlauched_dut: DeviceAdapter):
+      unlaunched_dut.launch()
+      unlaunched_dut.readlines_until('Hello world')
+
 Classes
 *******
 
