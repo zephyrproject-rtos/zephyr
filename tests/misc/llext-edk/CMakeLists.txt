@@ -6,4 +6,4 @@ project(llext_edk_test LANGUAGES C)
 
 target_sources(app PRIVATE src/main.c)
 zephyr_include_directories(include)
-zephyr_include_directories($ENV{ZEPHYR_BASE}/boards/native/common)
+zephyr_include_directories(${ZEPHYR_BASE}/boards/native/common)
