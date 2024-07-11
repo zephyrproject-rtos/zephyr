@@ -863,6 +863,13 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*get_stats)(const struct device *dev, struct net_stats_wifi *stats);
+	/** Reset  Wi-Fi statistics
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*reset_stats)(const struct device *dev);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 	/** Set power save status
 	 *
