@@ -335,14 +335,17 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 
 		__ASSERT_NO_MSG(stream->mem_block == NULL);
 
+		key = irq_lock();
 		ret = stream->stream_start(stream, dev);
 		if (ret < 0) {
+			irq_unlock(key);
 			LOG_ERR("START trigger failed %d", ret);
 			return ret;
 		}
 
 		stream->state = I2S_STATE_RUNNING;
 		stream->last_block = false;
+		irq_unlock(key);
 		break;
 
 	case I2S_TRIGGER_STOP:
@@ -353,7 +356,8 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 			return -EIO;
 		}
 do_trigger_stop:
-		if (ll_func_i2s_dma_busy(cfg->i2s)) {
+		if (ll_func_i2s_dma_busy(cfg->i2s) &&
+			(queue_is_empty(&stream->mem_block_queue) == false)) {
 			stream->state = I2S_STATE_STOPPING;
 			/*
 			 * Indicate that the transition to I2S_STATE_STOPPING

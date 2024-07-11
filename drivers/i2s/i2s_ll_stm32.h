@@ -75,18 +75,19 @@ static inline uint32_t ll_func_i2s_dma_busy(SPI_TypeDef *i2s)
 /* Define this LL function to set the I2SMOD on I2SCFGR when SPE is 0 */
 __STATIC_INLINE void LL_I2S_EnableMode(SPI_TypeDef *SPIx)
 {
-  SET_BIT(SPIx->I2SCFGR, SPI_I2SCFGR_I2SMOD);
+	SET_BIT(SPIx->I2SCFGR, SPI_I2SCFGR_I2SMOD);
 }
 
 /* Define this LL function to set the SPE only */
 __STATIC_INLINE void LL_I2S_EnableI2S(SPI_TypeDef *SPIx)
 {
-  SET_BIT(SPIx->CR1, SPI_CR1_SPE);
+	SET_BIT(SPIx->CR1, SPI_CR1_SPE);
 }
+
 /* Define this LL function to reset the SPE only */
 __STATIC_INLINE void LL_I2S_DisableI2S(SPI_TypeDef *SPIx)
 {
-  CLEAR_BIT(SPIx->CR1, SPI_CR1_SPE);
+	CLEAR_BIT(SPIx->CR1, SPI_CR1_SPE);
 }
 #else
 #define LL_I2S_EnableMode(x) void(x)
