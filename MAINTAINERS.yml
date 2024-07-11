@@ -3444,6 +3444,9 @@ NXP Drivers:
     - manuargue
     - dbaluta
     - MarkWangChinese
+  files-regex:
+    - ^drivers/.*nxp.*
+    - ^drivers/.*mcux.*
   files:
     - drivers/*/*imx*
     - drivers/*/*lpc*.c
