@@ -59,7 +59,7 @@ NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT,
 			  NULL);
 #else
 NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT,
-			  BT_BUF_RX_SIZE, sizeof(struct bt_buf_data),
+			  BT_BUF_RX_SIZE, sizeof(struct acl_data),
 			  NULL);
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
