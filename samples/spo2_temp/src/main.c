@@ -58,79 +58,6 @@ uint8_t spo2_read(const struct device *dev, uint8_t i2c_number, uint8_t slave_ad
 }
 
 /** 
- * @fn spo2_burstread
- * 
- * @brief Reads multiple registers from the MAX30100 sensor in burst mode.
- * 
- * @details This function reads multiple registers from the MAX30100 sensor in burst mode via I2C communication.
- * 
- * @param i2c_number The I2C number used for communication
- * @param slave_address The address of the module MAX30100
- * @param reg_addr The address of the register to read.
- * @param buffer Pointer to a buffer to store the read data.
- * @param toRead The number of registers to read.
- */
-void spo2_burstread(const struct device *dev, uint8_t i2c_number, uint8_t slave_address, uint8_t reg_addr, uint8_t *buffer, uint8_t toRead)
-{
-	// uint64_t check;
-	// while(1)
-	// check = 0;
-	for (uint8_t i=0; i< toRead*4; i++)
-	{
-		buffer[i] = spo2_read(dev, I2C0, 0X57, MAX30100_REG_FIFO_DATA);
-	}
-}
-
-/** 
- * @fn readFifoData
- * 
- * @brief Reads data from the FIFO buffer of the MAX30100 sensor.
- * 
- * @details This function reads data from the FIFO buffer of the MAX30100 sensor.
- * It calculates the number of data points available in the FIFO buffer, then reads 
- * the data from the sensor in burst mode. The read data is then parsed and stored 
- * in the buffer for further processing.
- */
-void readFifoData(const struct device *dev)
-{
-	// Buffer to store FIFO data
-	uint8_t buffer[MAX30100_FIFO_DEPTH*4];
-	// Number of data points to read from FIFO
-	uint8_t toRead;
-
-	// Calculate the number of data points available in the FIFO buffer
-	uint8_t x = spo2_read(dev, I2C0, 0X57, MAX30100_REG_FIFO_WRITE_POINTER);
-	uint8_t y = spo2_read(dev, I2C0, 0X57, MAX30100_REG_FIFO_READ_POINTER);
-
-	toRead = (x - y) & (MAX30100_FIFO_DEPTH-1);
-	// printf("\nx %u",x);
-	// printf("\ny %u",y);
-	if(x == y)
-	{
-		toRead = x;
-	}
-	if(toRead == 0)
-	{
-		toRead = 1;
-	}
-	// printf("\n %u",toRead);
-
-	// Read data from the FIFO buffer in burst mode
-	spo2_burstread(dev, I2C0, 0X57,MAX30100_REG_FIFO_DATA ,buffer,toRead);
-
-	// Parse and store the read data in the buffer
-	for(int j=0; j<toRead ; ++j)
-	{
-		uint16_t push_ir = ((buffer[j*4] << 8) | buffer[j*4 + 1]);
-		uint16_t push_red = ((buffer[j*4 + 2] << 8) | buffer[j*4 + 3]);
-		printf("\nIR	%u",push_ir);
-		printf("	Red	%u",push_red);
-		// buffer_ir.push(push_ir);
-		// buffer_red.push(push_red);
-	}
-}
-
-/** 
  * @fn getPartId
  * 
  * @brief Retrieves the part ID of the MAX30100 sensor.
@@ -174,7 +101,8 @@ bool hrm_begin(const struct device *dev)
 	uint8_t modeConfig = MAX30100_MC_TEMP_EN | DEFAULT_MODE;	// To initialise temperature detection
 	// uint8_t modeConfig = DEFAULT_MODE;	// Default mode
 	spo2_write(dev, I2C0, 0X57, MAX30100_REG_MODE_CONFIGURATION, modeConfig);
-	uint8_t x = spo2_read(dev, I2C0, 0X57, MAX30100_REG_MODE_CONFIGURATION);
+
+	// uint8_t x = spo2_read(dev, I2C0, 0X57, MAX30100_REG_MODE_CONFIGURATION);
 
 	// Set LedsPulseWidth
 	uint8_t previous = spo2_read(dev, I2C0, 0X57, MAX30100_REG_SPO2_CONFIGURATION);
@@ -207,8 +135,12 @@ bool hrm_begin(const struct device *dev)
  */
 bool begin(const struct device *dev)
 {
+	// debuggingMode = debuggingMode_;
+
 	bool ready = hrm_begin(dev);
+	
 	spo2_write(dev, I2C0, 0x57, MAX30100_REG_MODE_CONFIGURATION, MAX30100_MODE_SPO2_HR);
+
 	return true;
 }
 
@@ -236,7 +168,8 @@ float retrieveTemperature(const struct device *dev)
 
 int main()
 {
-	const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+   const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+
 	spo2_write(dev, I2C0, 0X57, MAX30100_REG_FIFO_DATA, DEFAULT_MODE);
 
 	// Initialize the PulseOximeter instance
@@ -251,8 +184,6 @@ int main()
 	{
 		printf("\nSUCCESS");
 	}
-	while(1)
-	{
-		readFifoData(dev);
-	}
+
+	printf("\nTemp %.0f",retrieveTemperature(dev));
 }
