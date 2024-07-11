@@ -228,6 +228,11 @@ static void handle_vs_event(uint8_t event, struct net_buf *buf,
 	/* Other possible errors are handled by handle_event_common function */
 }
 
+void bt_acl_set_ncp_sent(struct net_buf *packet, bool value)
+{
+	acl(packet)->host_ncp_sent = value;
+}
+
 void bt_send_one_host_num_completed_packets(uint16_t handle)
 {
 	if (!IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL)) {
@@ -265,6 +270,10 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	uint8_t index = acl(buf)->index;
 
 	net_buf_destroy(buf);
+
+	if (acl(buf)->host_ncp_sent) {
+		return;
+	}
 
 	/* Do nothing if controller to host flow control is not supported */
 	if (!BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
