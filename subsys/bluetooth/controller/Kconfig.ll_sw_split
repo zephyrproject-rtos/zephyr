@@ -437,6 +437,14 @@ config BT_CTLR_ADV_RESERVE_MAX
 	  corresponding to the Advertising Data present at the time of the
 	  start/enable of Advertising is used.
 
+config BT_CTLR_ADV_AUX_SLOT_WINDOW
+	bool "Reschedule Extended Advertising Auxiliary PDUs"
+	depends on BT_TICKER_EXT && \
+		   BT_BROADCASTER && \
+		   BT_CTLR_ADV_EXT
+	help
+	  Reschedule Extended Advertising Auxiliary PDUs.
+
 config BT_CTLR_ADV_ISO_RESERVE_MAX
 	bool "Use maximum Broadcast ISO event time reservation"
 	depends on BT_CTLR_ADV_ISO
