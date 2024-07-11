@@ -77,6 +77,10 @@ static struct ll_iso_rx_test_mode
 			test_mode[CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT];
 static void *stream_free;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+static struct ticker_ext ll_sync_iso_ticker_ext[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 			   uint8_t encryption, uint8_t *bcode, uint8_t mse,
 			   uint16_t sync_timeout, uint8_t num_bis,
@@ -390,14 +394,15 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	uint32_t ready_delay_us;
 	uint32_t ticks_expire;
 	uint32_t ctrl_spacing;
-	uint32_t pdu_spacing;
 	uint32_t interval_us;
 	uint32_t ticks_diff;
 	struct pdu_adv *pdu;
+	uint32_t jitter_us;
 	uint32_t slot_us;
 	uint8_t num_bis;
 	uint8_t bi_size;
 	uint8_t handle;
+	uint8_t index;
 	uint32_t ret;
 	uint8_t sca;
 
@@ -552,10 +557,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	interval_us -= lll->window_widening_periodic_us;
 
-	/* Calculate ISO Receiver BIG event timings */
-	pdu_spacing = PDU_BIS_US(lll->max_pdu, lll->enc, lll->phy,
-				 PHY_FLAGS_S8) +
-		      EVENT_MSS_US;
+	/* Calculate ISO Receiver BIG control subevent timings */
 	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), lll->enc,
 				  lll->phy, PHY_FLAGS_S8);
 
@@ -577,22 +579,42 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	 */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_RESERVE_MAX)) {
-		/* Maximum time reservation for both sequential and interleaved
+		/* Maximum time reservation for sequential and interleaved
 		 * packing.
 		 */
-		slot_us = (pdu_spacing * lll->nse * num_bis) + ctrl_spacing;
+		if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
+			slot_us = lll->sub_interval * lll->nse * num_bis + ctrl_spacing;
+		} else {
+			slot_us = lll->bis_spacing * num_bis * lll->nse + ctrl_spacing;
+		}
+
+		jitter_us = 0U;
 
 	} else if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
 		/* Time reservation omitting PTC subevents in sequential
 		 * packing.
 		 */
-		slot_us = pdu_spacing * ((lll->nse * num_bis) - lll->ptc);
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)) {
+			slot_us = lll->sub_interval * lll->bn;
+			jitter_us = lll->sub_interval * lll->bn * (lll->irc - 1U);
+		} else {
+			slot_us = lll->sub_interval * ((lll->nse * num_bis) - lll->ptc);
+			jitter_us = 0U;
+		}
 
 	} else {
 		/* Time reservation omitting PTC subevents in interleaved
 		 * packing.
 		 */
-		slot_us = pdu_spacing * ((lll->nse - lll->ptc) * num_bis);
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)) {
+			jitter_us = lll->bis_spacing * num_bis * lll->bn * (lll->irc - 1U);
+			slot_us = lll->bis_spacing * num_bis * lll->bn;
+		} else {
+			slot_us = lll->bis_spacing * (lll->nse - lll->ptc) * num_bis;
+			jitter_us = 0U;
+		}
 	}
 
 	/* Add radio ready delay */
@@ -640,9 +662,21 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	mfy_lll_prepare.fp = lll_sync_iso_create_prepare;
 
 	handle = sync_iso_handle_get(sync_iso);
-	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			   (TICKER_ID_SCAN_SYNC_ISO_BASE +
-			    sync_iso_handle_to_index(handle)),
+	index = sync_iso_handle_to_index(handle);
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	ll_sync_iso_ticker_ext[index].ticks_slot_window =
+		HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
+	ll_sync_iso_ticker_ext[index].is_jitter_in_window = 1U;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+	ret = ticker_start_ext(
+#else /* !CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+	ret = ticker_start(
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+			   TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			   (TICKER_ID_SCAN_SYNC_ISO_BASE + index),
 			   ftr->ticks_anchor - ticks_slot_offset,
 			   HAL_TICKER_US_TO_TICKS(sync_iso_offset_us),
 			   HAL_TICKER_US_TO_TICKS(interval_us),
@@ -655,7 +689,12 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 #endif /* !CONFIG_BT_TICKER_LOW_LAT && !CONFIG_BT_CTLR_LOW_LAT */
 			   (sync_iso->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync_iso,
-			   ticker_start_op_cb, (void *)__LINE__);
+			   ticker_start_op_cb, (void *)__LINE__
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+			   ,
+			   &ll_sync_iso_ticker_ext[index]
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+			   );
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
@@ -947,6 +986,9 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	p.ticks_drift = ticks_drift;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 	p.remainder = remainder;
 	p.lazy = lazy;
 	p.force = force;
