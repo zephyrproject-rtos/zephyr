@@ -49,10 +49,12 @@ static int lis3mdl_channel_get(const struct device *dev,
 	} else if (chan == SENSOR_CHAN_MAGN_Z) {
 		lis3mdl_convert(val, drv_data->z_sample,
 				lis3mdl_magn_gain[LIS3MDL_FS_IDX]);
+	#ifdef CONFIG_LIS3MDL_DIE_TEMP_EN
 	} else if (chan == SENSOR_CHAN_DIE_TEMP) {
 		/* temp_val = 25 + sample / 8 */
 		lis3mdl_convert(val, drv_data->temp_sample, 8);
 		val->val1 += 25;
+	#endif /*CONFIG_LIS3MDL_DIE_TEMP_EN*/
 	} else {
 		return -ENOTSUP;
 	}
@@ -63,18 +65,22 @@ static int lis3mdl_channel_get(const struct device *dev,
 int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct lis3mdl_data *drv_data = dev->data;
-	const struct lis3mdl_config *config = dev->config;
+	#ifdef CONFIG_LIS3MDL_DIE_TEMP_EN
 	int16_t buf[4];
+	#else /*CONFIG_LIS3MDL_DIE_TEMP_EN*/
+	int16_t buf[3];
+	#endif /*CONFIG_LIS3MDL_DIE_TEMP_EN*/
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* fetch magnetometer sample */
 	if (i2c_burst_read_dt(&config->i2c, LIS3MDL_REG_SAMPLE_START,
-			      (uint8_t *)buf, 8) < 0) {
+			      (uint8_t *)buf, 6) < 0) {
 		LOG_DBG("Failed to fetch magnetometer sample.");
 		return -EIO;
 	}
 
+	#ifdef CONFIG_LIS3MDL_DIE_TEMP_EN
 	/*
 	 * the chip doesn't allow fetching temperature data in
 	 * the same read as magnetometer data, so do another
@@ -85,11 +91,12 @@ int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 		LOG_DBG("Failed to fetch temperature sample.");
 		return -EIO;
 	}
+	drv_data->temp_sample = sys_le16_to_cpu(buf[3]);
+	#endif /*CONFIG_LIS3MDL_DIE_TEMP_EN*/
 
 	drv_data->x_sample = sys_le16_to_cpu(buf[0]);
 	drv_data->y_sample = sys_le16_to_cpu(buf[1]);
 	drv_data->z_sample = sys_le16_to_cpu(buf[2]);
-	drv_data->temp_sample = sys_le16_to_cpu(buf[3]);
 
 	return 0;
 }
@@ -138,7 +145,10 @@ int lis3mdl_init(const struct device *dev)
 
 	/* Configure sensor */
 	chip_cfg[0] = LIS3MDL_REG_CTRL1;
-	chip_cfg[1] = LIS3MDL_TEMP_EN_MASK | lis3mdl_odr_bits[idx];
+	chip_cfg[1] = lis3mdl_odr_bits[idx];
+	#ifdef CONFIG_LIS3MDL_DIE_TEMP_EN
+	chip_cfg[1] |= LIS3MDL_TEMP_EN_MASK;
+	#endif /*LIS3MDL_DIE_TEMP_EN*/
 	chip_cfg[2] = LIS3MDL_FS_IDX << LIS3MDL_FS_SHIFT;
 	chip_cfg[3] = LIS3MDL_MD_CONTINUOUS;
 	chip_cfg[4] = ((lis3mdl_odr_bits[idx] & LIS3MDL_OM_MASK) >>
