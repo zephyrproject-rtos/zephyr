@@ -18,6 +18,32 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+#define MAX_NEIGHBOR_AP_LIMIT 6U
+
+struct wifi_rrm_neighbor_ap_t {
+	char ssid[WIFI_SSID_MAX_LEN];
+	uint8_t bssid[WIFI_SSID_MAX_LEN];
+	uint8_t bssid_info[WIFI_SSID_MAX_LEN];
+	int op_class;
+	int channel;
+	int phy_type;
+};
+
+struct wifi_rrm_neighbor_report_t {
+	struct wifi_rrm_neighbor_ap_t neighbor_ap[MAX_NEIGHBOR_AP_LIMIT];
+	int neighbor_cnt;
+};
+
+struct wifi_roaming_params {
+	uint8_t is_11r_used;
+	uint8_t is_11k_enabled;
+	struct wifi_rrm_neighbor_report_t neighbor_rep;
+};
+
+static struct wifi_roaming_params roaming_params;
+#endif
+
 const char *wifi_security_txt(enum wifi_security_type security)
 {
 	switch (security) {
@@ -41,6 +67,14 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "WAPI";
 	case WIFI_SECURITY_TYPE_EAP_TLS:
 		return "EAP";
+	case WIFI_SECURITY_TYPE_FT_PSK:
+		return "FT-PSK";
+	case WIFI_SECURITY_TYPE_FT_SAE:
+		return "FT-SAE";
+	case WIFI_SECURITY_TYPE_FT_EAP:
+		return "FT-EAP";
+	case WIFI_SECURITY_TYPE_FT_EAP_SHA384:
+		return "FT-EAP-SHA384";
 	case WIFI_SECURITY_TYPE_UNKNOWN:
 	default:
 		return "UNKNOWN";
@@ -295,6 +329,11 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	memset(&roaming_params, 0x0, sizeof(roaming_params));
+	roaming_params.is_11r_used = params->ft_used;
+#endif
+
 	return wifi_mgmt_api->connect(dev, params);
 }
 
@@ -385,6 +424,123 @@ void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status)
 					iface, &cnx_status,
 					sizeof(struct wifi_status));
 }
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+static int wifi_start_roaming(uint32_t mgmt_request, struct net_if *iface,
+			      void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+
+	if (roaming_params.is_11r_used) {
+		if (wifi_mgmt_api == NULL ||
+		    wifi_mgmt_api->start_11r_roaming == NULL) {
+			return -ENOTSUP;
+		}
+
+		return wifi_mgmt_api->start_11r_roaming(dev);
+	} else if (roaming_params.is_11k_enabled) {
+		memset(&roaming_params.neighbor_rep, 0x0, sizeof(roaming_params.neighbor_rep));
+		if (wifi_mgmt_api == NULL
+		    || wifi_mgmt_api->send_11k_neighbor_request == NULL) {
+			return -ENOTSUP;
+		}
+
+		return wifi_mgmt_api->send_11k_neighbor_request(dev, NULL);
+	} else if (wifi_mgmt_api == NULL || wifi_mgmt_api->btm_query == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->btm_query(dev, 0x10);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING, wifi_start_roaming);
+
+static int wifi_neighbor_rep_complete(uint32_t mgmt_request, struct net_if *iface,
+				      void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_scan_params params = {0};
+	int i = 0;
+
+	for (i = 0; i < roaming_params.neighbor_rep.neighbor_cnt; i++) {
+		params.band_chan[i].channel = roaming_params.neighbor_rep.neighbor_ap[i].channel;
+		if (params.band_chan[i].channel > 14) {
+			params.band_chan[i].band = WIFI_FREQ_BAND_5_GHZ;
+		} else {
+			params.band_chan[i].band = WIFI_FREQ_BAND_2_4_GHZ;
+		}
+	}
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->spec_scan == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->spec_scan(dev, &params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE,
+								  wifi_neighbor_rep_complete);
+
+void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, size_t buf_len)
+{
+	const uint8_t *buf = inbuf;
+	char event[32] = {0};
+	char bssid[WIFI_SSID_MAX_LEN] = {0};
+	char bssid_info[WIFI_SSID_MAX_LEN]  = {0};
+	int op_class, channel, phy_type;
+	int idx = roaming_params.neighbor_rep.neighbor_cnt;
+
+	if (!buf || buf[0] == '\0') {
+		return;
+	}
+	if (sscanf(buf, "%s bssid=%s info=%s op_class=%d chan=%d phy_type=%d",
+		   event, bssid, bssid_info, &op_class, &channel, &phy_type) == 6) {
+		int i;
+		int match  = 0;
+		size_t len = 0;
+
+		for (i = 0; i < roaming_params.neighbor_rep.neighbor_cnt; i++) {
+			if (strncmp((const char *)roaming_params.neighbor_rep.neighbor_ap[i].bssid,
+				    bssid, 32) == 0) {
+				match = 1;
+				break;
+			}
+
+			if (roaming_params.neighbor_rep.neighbor_ap[i].channel == channel) {
+				match = 1;
+				break;
+			}
+		}
+		if (!match && (roaming_params.neighbor_rep.neighbor_cnt < MAX_NEIGHBOR_AP_LIMIT)) {
+			strncpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid,
+				bssid, sizeof(roaming_params.neighbor_rep.neighbor_ap[idx].bssid));
+			len = strlen(bssid);
+			roaming_params.neighbor_rep.neighbor_ap[idx].bssid[len] = (uint8_t)'\0';
+
+			strncpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info,
+				(bssid_info),
+				sizeof(roaming_params.neighbor_rep.neighbor_ap->bssid_info));
+			len = strlen(bssid_info);
+			roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info[len] =
+				(uint8_t)'\0';
+
+			roaming_params.neighbor_rep.neighbor_ap[idx].channel  = channel;
+			roaming_params.neighbor_rep.neighbor_ap[idx].op_class = op_class;
+			roaming_params.neighbor_rep.neighbor_ap[idx].phy_type = phy_type;
+
+			roaming_params.neighbor_rep.neighbor_cnt += 1;
+		} else if (match) {
+			LOG_INF("BSSID already present in neighbor list, Skipping %s ",
+				bssid);
+		} else {
+			LOG_INF("Maximum neighbors added to list, Skipping.");
+		}
+	} else {
+		LOG_INF("Failed to Parse Neighbor Report - Skipping entry\n");
+	}
+}
+#endif
 
 static int wifi_ap_enable(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
