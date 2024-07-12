@@ -101,6 +101,20 @@ config BT_STM32WBA
 	help
 	  ST STM32WBA HCI Bluetooth interface
 
+config BT_STM32WB0
+	bool "STM32WB0 HCI driver"
+	default y
+	depends on DT_HAS_ST_HCI_STM32WB0_ENABLED
+	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
+	select HAS_STM32LIB
+	select USE_STM32_HAL_PKA
+	select USE_STM32_HAL_CORTEX
+	select USE_STM32_HAL_GPIO
+	select USE_STM32_HAL_RADIO
+	select USE_STM32_HAL_RADIO_TIMER
+	help
+	  ST STM32WB0 HCI Bluetooth interface
+
 config BT_SILABS_EFR32
 	bool
 	default y
