@@ -140,7 +140,10 @@ dt_nodelabel(uicr_path NODELABEL "uicr")
 if(DEFINED uicr_path)
   dt_prop(nfct_pins_as_gpios PATH ${uicr_path} PROPERTY "nfct-pins-as-gpios")
   if(${nfct_pins_as_gpios})
-    zephyr_library_compile_definitions(CONFIG_NFCT_PINS_AS_GPIOS)
+    zephyr_library_compile_definitions(
+      CONFIG_NFCT_PINS_AS_GPIOS
+      NRF_CONFIG_NFCT_PINS_AS_GPIOS
+    )
   endif()
 
   dt_prop(gpio_as_nreset PATH ${uicr_path} PROPERTY "gpio-as-nreset")
