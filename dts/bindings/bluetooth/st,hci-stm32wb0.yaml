@@ -1,0 +1,13 @@
+description: Bluetooth HCI driver for ST STM32WB0 series
+
+compatible: "st,hci-stm32wb0"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "HCI over RAM"
+  bt-hci-bus:
+    default: "virtual"
+  bt-hci-quirks:
+    default: ["no-reset"]
