@@ -767,6 +767,17 @@ config BT_CTLR_PERIPHERAL_RESERVE_MAX
 	  the is_abort_cb mechanism to decide on continuation of the connection
 	  event.
 
+config BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX
+	bool "Use maximum data PDU size time reservation for Peripheral"
+	depends on BT_CTLR_PERIPHERAL_ISO
+	default y
+	help
+	  Use the maximum Peripheral CIG event time reservation.
+
+	  If maximum Peripheral CIG event time reservation is not enabled, then
+	  only time required to transmit or receive the burst number of CIS PDUs
+	  is reserved.
+
 config BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX
 	bool "Reserve maximum event overhead in time reservations"
 	default y
