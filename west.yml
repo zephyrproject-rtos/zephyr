@@ -286,11 +286,6 @@ manifest:
       path: modules/crypto/mbedtls
       groups:
         - crypto
-    - name: wolfssl
-      revision: 1cf96eb72c0113767daf34c3a916f0c8c8741aac
-      path: modules/crypto/wolfssl
-      groups:
-        - crypto
     - name: mcuboot
       revision: fb2cf0ec3da3687b93f28e556ab682bdd4b85223
       path: bootloader/mcuboot
@@ -331,12 +326,6 @@ manifest:
       path: modules/crypto/tinycrypt
       groups:
         - crypto
-    - name: wolfssl
-      path: modules/crypto/wolfssl
-      revision: master
-      remote: wolfssl
-      groups:
-        - crypto
     - name: trusted-firmware-m
       revision: f8d3a903578192d226ac1552f383d95b94ee8780
       path: modules/tee/tf-m/trusted-firmware-m
@@ -350,6 +339,11 @@ manifest:
     - name: uoscore-uedhoc
       revision: 84ef879a46d7bfd9a423fbfb502b04289861f9ea
       path: modules/lib/uoscore-uedhoc
+    - name: wolfssl
+      revision: 1cf96eb72c0113767daf34c3a916f0c8c8741aac
+      path: modules/crypto/wolfssl
+      groups:
+        - crypto
     - name: zcbor
       revision: 75d088037eb237b18e7ec1f47c9ce494b9b95aab
       path: modules/lib/zcbor
