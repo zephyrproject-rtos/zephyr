@@ -59,6 +59,7 @@
 	overrun-character = <0x00>;
 	memory-regions = <&dma_fast_region>;
 	cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+	zephyr,pm-device-runtime-auto;
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;

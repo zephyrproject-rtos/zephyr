@@ -29,6 +29,7 @@
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
+	zephyr,pm-device-runtime-auto;
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
