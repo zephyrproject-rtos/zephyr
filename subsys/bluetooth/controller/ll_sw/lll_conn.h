@@ -69,11 +69,20 @@ struct lll_conn {
 		struct {
 			uint8_t initiated:1;
 			uint8_t cancelled:1;
+			uint8_t forced:1;
+		};
+
+		struct {
+			uint8_t initiated:1;
+			uint8_t cancelled:1;
+			uint8_t forced:1;
 		} central;
+
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
 			uint8_t  initiated:1;
 			uint8_t  cancelled:1;
+			uint8_t  forced:1;
 			uint8_t  latency_enabled:1;
 
 			uint32_t window_widening_periodic_us;
@@ -160,6 +169,7 @@ int lll_conn_reset(void);
 void lll_conn_flush(uint16_t handle, struct lll_conn *lll);
 
 void lll_conn_prepare_reset(void);
+int lll_conn_is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param);
 void lll_conn_isr_rx(void *param);
 void lll_conn_isr_tx(void *param);
