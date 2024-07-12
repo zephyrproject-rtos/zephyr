@@ -7,4 +7,15 @@
 
 &spi130 {
 	memory-regions = <&cpuapp_dma_region>;
+	zephyr,pm-device-runtime-auto;
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_K(500)>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
 };
