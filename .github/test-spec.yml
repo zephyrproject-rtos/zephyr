@@ -195,12 +195,6 @@
       - "!samples/bluetooth/**/*"
       - "!tests/bluetooth/**/*"
 
-"CI-gazell-test":
-  - any:
-      - "**/*"
-      - "!samples/bluetooth/**/*"
-      - "!tests/bluetooth/**/*"
-
 "CI-rpc-test":
   - "subsys/ipc/ipc_service/**/*"
   - "subsys/random/**/*"
