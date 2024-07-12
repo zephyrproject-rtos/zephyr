@@ -468,12 +468,8 @@ class KconfigCheck(ComplianceTest):
         kconfig_boards_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.boards')
         kconfig_defconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.defconfig')
 
-        board_roots = self.get_module_setting_root('board', settings_file)
-        board_roots.insert(0, Path(ZEPHYR_BASE))
-        soc_roots = self.get_module_setting_root('soc', settings_file)
-        soc_roots.insert(0, Path(ZEPHYR_BASE))
-        root_args = argparse.Namespace(**{'board_roots': board_roots,
-                                          'soc_roots': soc_roots, 'board': None})
+        root_args = argparse.Namespace(**{'board_roots': [Path(ZEPHYR_BASE)],
+                                          'soc_roots': [Path(ZEPHYR_BASE)], 'board': None})
         v2_boards = list_boards.find_v2_boards(root_args)
 
         with open(kconfig_defconfig_file, 'w') as fp:
@@ -579,7 +575,7 @@ class KconfigCheck(ComplianceTest):
         os.makedirs(os.path.join(kconfiglib_dir, 'arch'), exist_ok=True)
 
         os.environ["BOARD_DIR"] = kconfiglib_boards_dir
-        self.get_v2_model(kconfiglib_dir, os.path.join(kconfiglib_dir, "settings_file.txt"))
+        self.get_v2_model(kconfiglib_dir)
 
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
