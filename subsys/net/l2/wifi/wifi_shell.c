@@ -434,6 +434,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					       {"eap-version", required_argument, 0, 'V'},
 					       {"eap-identity", required_argument, 0, 'I'},
 					       {"eap-password", required_argument, 0, 'P'},
+					       {"ieee-80211r", no_argument, 0, 'R'},
 					       {"help", no_argument, 0, 'h'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
@@ -455,7 +456,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->mfp = WIFI_MFP_OPTIONAL;
 	params->eap_ver = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:T:V:I:P:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:T:V:I:P:Rh",
 		long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -608,6 +609,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					    WIFI_IDENTITY_MAX_LEN);
 				return -EINVAL;
 			}
+			break;
+		case 'R':
+			params->ft_used = 1;
 			break;
 		case 'h':
 			return -ENOEXEC;
