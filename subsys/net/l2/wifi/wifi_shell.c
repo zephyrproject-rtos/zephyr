@@ -368,6 +368,38 @@ static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
 	k_mutex_unlock(&wifi_ap_sta_list_lock);
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+static void handle_wifi_signal_change(struct net_mgmt_event_callback *cb)
+{
+	struct net_if *iface = net_if_get_wifi_sta();
+	const struct shell *sh = context.sh;
+	int ret;
+
+	ret = net_mgmt(NET_REQUEST_WIFI_START_ROAMING, iface, NULL, 0);
+	if (ret) {
+		PR_WARNING("Start roaming failed\n");
+		return;
+	}
+
+	PR("Start roaming requested\n");
+}
+
+static void handle_wifi_neighbor_rep_complete(struct net_mgmt_event_callback *cb)
+{
+	struct net_if *iface = net_if_get_wifi_sta();
+	const struct shell *sh = context.sh;
+	int ret;
+
+	ret = net_mgmt(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE, iface, NULL, 0);
+	if (ret) {
+		PR_WARNING("Neighbor report complete failed\n");
+		return;
+	}
+
+	PR("Neighbor report complete requested\n");
+}
+#endif
+
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
 				    struct net_if *iface)
 {
@@ -404,6 +436,14 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint32_t
 	case NET_EVENT_WIFI_AP_STA_DISCONNECTED:
 		handle_wifi_ap_sta_disconnected(cb);
 		break;
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	case NET_EVENT_WIFI_SIGNAL_CHANGE:
+		handle_wifi_signal_change(cb);
+		break;
+	case NET_EVENT_WIFI_NEIGHBOR_REP_COMP:
+		handle_wifi_neighbor_rep_complete(cb);
+		break;
+#endif
 	default:
 		break;
 	}

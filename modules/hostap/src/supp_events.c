@@ -368,6 +368,21 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 			iface,
 			*(int *)supplicant_status);
 		break;
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	case NET_EVENT_WIFI_CMD_SIGNAL_CHANGE:
+		net_mgmt_event_notify_with_info(NET_EVENT_WIFI_SIGNAL_CHANGE,
+						iface, NULL, 0);
+		break;
+	case NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED:
+		wifi_mgmt_raise_neighbor_rep_recv_event(
+			iface,
+			(char *)supplicant_status, len);
+		break;
+	case NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE:
+		net_mgmt_event_notify_with_info(NET_EVENT_WIFI_NEIGHBOR_REP_COMP,
+						iface, NULL, 0);
+		break;
+#endif
 #ifdef CONFIG_AP
 	case NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT:
 		wifi_mgmt_raise_ap_enable_result_event(iface,
