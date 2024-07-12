@@ -773,6 +773,7 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 {
 	int ret;
 	uint32_t perm;
+	struct k_thread *cur_thread;
 	struct xtensa_mpu_map *map = &domain->arch.mpu_map;
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
 	uintptr_t end_addr = partition->start + partition->size;
@@ -841,6 +842,15 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 				 NULL);
 
+	/*
+	 * Need to update hardware MPU regions if we are removing
+	 * partition from the domain of the current running thread.
+	 */
+	cur_thread = _current_cpu->current;
+	if (cur_thread->mem_domain_info.mem_domain == domain) {
+		xtensa_mpu_map_write(cur_thread);
+	}
+
 out:
 	return ret;
 }
@@ -849,6 +859,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				  uint32_t partition_id)
 {
 	int ret;
+	struct k_thread *cur_thread;
 	struct xtensa_mpu_map *map = &domain->arch.mpu_map;
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
 	uintptr_t end_addr = partition->start + partition->size;
@@ -862,6 +873,20 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				 (uint8_t)partition->attr,
 				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 				 NULL);
+
+	/*
+	 * Need to update hardware MPU regions if we are removing
+	 * partition from the domain of the current running thread.
+	 *
+	 * Note that this function can be called with dummy thread
+	 * at boot so we need to avoid writing MPU regions to
+	 * hardware.
+	 */
+	cur_thread = _current_cpu->current;
+	if (((cur_thread->base.thread_state & _THREAD_DUMMY) != _THREAD_DUMMY) &&
+	    (cur_thread->mem_domain_info.mem_domain == domain)) {
+		xtensa_mpu_map_write(cur_thread);
+	}
 
 out:
 	return ret;
