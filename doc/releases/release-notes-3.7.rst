@@ -342,6 +342,9 @@ Boards & SoC Support
   * Introduced the simulated :ref:`nrf54l15bsim<nrf54l15bsim>` target.
   * The nrf5x bsim targets now support BT LE Coded PHY.
   * LLVM fuzzing support has been refactored while adding support for it in native_sim.
+  * nRF54H20 PDK (pre-release) converted to :ref:`nrf54h20dk_nrf54h20`
+  * PPR core target in :ref:`nrf54h20dk_nrf54h20` runs from RAM by default. A
+    new ``xip`` variant has been introduced which runs from MRAM (XIP).
 
 * Added support for these following shields:
 
