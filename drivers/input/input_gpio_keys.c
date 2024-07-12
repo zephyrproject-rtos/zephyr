@@ -62,7 +62,7 @@ static void gpio_keys_poll_pin(const struct device *dev, int key_index)
 	struct gpio_keys_pin_data *pin_data = &cfg->pin_data[key_index];
 	int new_pressed;
 
-	new_pressed = gpio_pin_get(pin_cfg->spec.port, pin_cfg->spec.pin);
+	new_pressed = gpio_pin_get_dt(&pin_cfg->spec);
 
 	LOG_DBG("%s: pin_state=%d, new_pressed=%d, key_index=%d", dev->name,
 		pin_data->cb_data.pin_state, new_pressed, key_index);
@@ -137,7 +137,7 @@ static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 		return ret;
 	}
 
-	cb->pin_state = -1;
+	cb->pin_state = gpio_pin_get_dt(gpio_spec);
 
 	LOG_DBG("port=%s, pin=%d", gpio_spec->port->name, gpio_spec->pin);
 
