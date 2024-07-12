@@ -33,6 +33,9 @@ extern char _heap_start[];
 /** MPU foreground map for kernel mode. */
 static struct xtensa_mpu_map xtensa_mpu_map_fg_kernel;
 
+/** Make sure write to the MPU region is atomic. */
+static struct k_spinlock xtensa_mpu_lock;
+
 /*
  * Additional information about the MPU maps: foreground and background
  * maps.
@@ -629,6 +632,9 @@ void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
 #endif
 {
 	int entry;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&xtensa_mpu_lock);
 
 #ifdef CONFIG_USERSPACE
 	struct xtensa_mpu_map *map = thread->arch.mpu_map;
@@ -652,6 +658,8 @@ void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
 		__asm__ volatile("wptlb %0, %1\n\t"
 				 : : "a"(map->entries[entry].at), "a"(map->entries[entry].as));
 	}
+
+	k_spin_unlock(&xtensa_mpu_lock, key);
 }
 
 /**
