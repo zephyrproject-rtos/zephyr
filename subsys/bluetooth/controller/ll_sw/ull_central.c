@@ -253,6 +253,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->role = 0;
 	conn_lll->central.initiated = 0;
 	conn_lll->central.cancelled = 0;
+	conn_lll->central.forced = 0;
 	/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));

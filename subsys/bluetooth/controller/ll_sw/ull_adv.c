@@ -1072,6 +1072,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->role = 1;
 		conn_lll->periph.initiated = 0;
 		conn_lll->periph.cancelled = 0;
+		conn_lll->periph.forced = 0;
 		conn_lll->data_chan_sel = 0;
 		conn_lll->data_chan_use = 0;
 		conn_lll->event_counter = 0;

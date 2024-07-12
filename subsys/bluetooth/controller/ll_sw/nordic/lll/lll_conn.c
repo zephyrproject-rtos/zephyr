@@ -59,6 +59,7 @@ static struct pdu_data *get_last_tx_pdu(struct lll_conn *lll);
 
 static uint8_t crc_expire;
 static uint8_t crc_valid;
+static uint8_t is_aborted;
 static uint16_t trx_cnt;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -142,10 +143,23 @@ void lll_conn_prepare_reset(void)
 	trx_cnt = 0U;
 	crc_valid = 0U;
 	crc_expire = 0U;
+	is_aborted = 0U;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	mic_state = LLL_CONN_MIC_NONE;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+}
+
+int lll_conn_is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
+{
+	struct lll_conn *lll = curr;
+
+	/* Do not abort if near supervision timeout */
+	if (lll->forced) {
+		return 0;
+	}
+
+	return -ECANCELED;
 }
 
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
@@ -156,6 +170,17 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* NOTE: This is not a prepare being cancelled */
 	if (!prepare_param) {
+		/* Get reference to LLL connection context */
+		lll = param;
+
+		/* For a peripheral role, ensure at least one PDU is tx-ed
+		 * back to central, otherwise let the supervision timeout
+		 * countdown be started.
+		 */
+		if ((lll->role == BT_HCI_ROLE_PERIPHERAL) && (trx_cnt <= 1U)) {
+			is_aborted = 1U;
+		}
+
 		/* Perform event abort here.
 		 * After event has been cleanly aborted, clean up resources
 		 * and dispatch event done.
@@ -171,8 +196,10 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
 
-	/* Accumulate the latency as event is aborted while being in pipeline */
+	/* Get reference to LLL connection context */
 	lll = prepare_param->param;
+
+	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll->latency_prepare += (prepare_param->lazy + 1);
 
 	/* Extra done event, to check supervision timeout */
@@ -867,6 +894,7 @@ static void isr_done(void *param)
 	e->type = EVENT_DONE_EXTRA_TYPE_CONN;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_valid;
+	e->is_aborted = is_aborted;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	e->mic_state = mic_state;
