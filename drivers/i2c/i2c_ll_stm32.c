@@ -176,9 +176,6 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 				ret = -EINVAL;
 				break;
 			}
-		} else {
-			/* Stop condition is required for the last message */
-			current->flags |= I2C_MSG_STOP;
 		}
 
 		current++;
