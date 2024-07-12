@@ -5,6 +5,14 @@
  */
 
 #include "s32z2xxdc2_s32z270_pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	aliases {
+		watchdog0 = &swt0;
+		eeprom-0 = &eeprom0;
+	};
+};
 
 &swt0 {
 	status = "okay";
@@ -40,4 +48,23 @@
 &can1 {
 	pinctrl-0 = <&can1_default>;
 	pinctrl-names = "default";
+};
+
+&i3c2 {
+	pinctrl-0 = <&i3c2_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	baudrate-cfg = <I2C_BITRATE_STANDARD 500000 6000000>,
+			<I2C_BITRATE_FAST 1000000 6000000>,
+			<I2C_BITRATE_FAST_PLUS 1000000 6000000>;
+	status = "okay";
+
+	eeprom0: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <128>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+	};
 };

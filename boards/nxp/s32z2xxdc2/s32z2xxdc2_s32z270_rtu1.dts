@@ -18,10 +18,6 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,canbus = &can0;
 	};
-
-	aliases {
-		watchdog0 = &swt0;
-	};
 };
 
 &mru4 {
