@@ -74,6 +74,12 @@ static void udp_data_exchange(volatile bool *connected)
 				continue;
 			}
 
+			/* flush socket */
+			uint8_t trash;
+
+			while (recv(serv_sock, &trash, sizeof(trash), MSG_DONTWAIT) > 0) {
+			}
+
 			static uint8_t tx_buf[ECHO_SERVER_UDP_BUF_SIZE];
 			size_t tx_len = 0;
 
@@ -200,6 +206,12 @@ static void udp_ipv6_data_exchange(volatile bool *connected)
 				LOG_ERR("inet_pton failed");
 				error = true;
 				continue;
+			}
+
+			/* flush socket */
+			uint8_t trash;
+
+			while (recv(serv_sock, &trash, sizeof(trash), MSG_DONTWAIT) > 0) {
 			}
 
 			static uint8_t tx_buf[ECHO_SERVER_UDP_IPV6_BUF_SIZE];
