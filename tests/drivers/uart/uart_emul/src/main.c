@@ -167,7 +167,7 @@ static void uart_emul_isr_handle_rx_ready(struct uart_emul_fixture *fixture)
 	uint32_t rx_content_it;
 	int ret;
 
-	if (fixture->tx_remaining) {
+	if (fixture->rx_remaining) {
 		rx_content_it = sizeof(fixture->rx_content) - fixture->rx_remaining;
 		ret = uart_fifo_read(fixture->dev, &fixture->rx_content[rx_content_it],
 				     fixture->rx_remaining);
