@@ -238,6 +238,10 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 	select MBEDTLS_X509_CSR_WRITE_C
 	select MBEDTLS_X509_CSR_PARSE_C
 
+config WIFI_NM_WPA_SUPPLICANT_ROAMING
+	bool "Roaming support"
+	default y
+
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
 # same name options.
