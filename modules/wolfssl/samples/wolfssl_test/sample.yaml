@@ -1,0 +1,21 @@
+sample:
+  description: wolfCrypt test sample app
+  name: wolfCrypt test
+common:
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Exiting main with return code: 0"
+tests:
+  sample.crypto.wolfssl_test:
+    timeout: 120
+    platform_allow: qemu_x86
+    integration_platforms:
+      - qemu_x86
+  sample.crypto.wolfssl_test_no_malloc:
+    timeout: 120
+    platform_allow: qemu_x86
+    extra_args: CONF_FILE="prj-no-malloc.conf"
+    integration_platforms:
+      - qemu_x86

@@ -1,0 +1,267 @@
+# Kconfig.tls - TLS/DTLS related options
+
+#
+# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "TLS configuration"
+
+menu "Supported TLS version"
+
+config WOLFSSL_TLS_VERSION_1_0
+	bool "Enable support for TLS 1.0"
+	select WOLFSSL_ALLOW_TLSV10_ENABLED
+
+config WOLFSSL_TLS_VERSION_1_1
+	bool "Enable support for TLS 1.1"
+	select WOLFSSL_NO_OLD_TLS_DISABLED
+
+config WOLFSSL_TLS_VERSION_1_2
+	bool "Enable support for TLS 1.2"
+	default y
+
+config WOLFSSL_TLS_VERSION_1_3
+	bool "Enable support for TLS 1.3"
+	select WOLFSSL_TLS13_ENABLED
+
+endmenu
+
+menu "Ciphersuite configuration"
+
+comment "Supported key exchange modes"
+
+config WOLFSSL_KEY_EXCHANGE_ALL_ENABLED
+	bool "Enable all available ciphersuite modes"
+	select WOLFSSL_KEY_EXCHANGE_PSK_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_DHE_PSK_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_RSA_PSK_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_RSA_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_DHE_RSA_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	select WOLFSSL_KEY_EXCHANGE_ECJPAKE_ENABLED
+
+config WOLFSSL_KEY_EXCHANGE_PSK_ENABLED
+	bool "Enable the PSK based ciphersuite modes"
+
+config WOLFSSL_KEY_EXCHANGE_DHE_PSK_ENABLED
+	bool "Enable the DHE-PSK based ciphersuite modes"
+
+config WOLFSSL_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	bool "Enable the ECDHE-PSK based ciphersuite modes"
+
+config WOLFSSL_KEY_EXCHANGE_RSA_PSK_ENABLED
+	bool "Enable the RSA-PSK based ciphersuite modes"
+
+config WOLFSSL_KEY_EXCHANGE_RSA_ENABLED
+	bool "Enable the RSA-only based ciphersuite modes"
+	default y
+
+config WOLFSSL_KEY_EXCHANGE_DHE_RSA_ENABLED
+	bool "Enable the DHE-RSA based ciphersuite modes"
+
+config WOLFSSL_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	bool "Enable the ECDHE-RSA based ciphersuite modes"
+
+config WOLFSSL_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	bool "Enable the ECDHE-ECDSA based ciphersuite modes"
+
+config WOLFSSL_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	bool "Enable the ECDH-ECDSA based ciphersuite modes"
+
+config WOLFSSL_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	bool "Enable the ECDH-RSA based ciphersuite modes"
+
+config WOLFSSL_KEY_EXCHANGE_ECJPAKE_ENABLED
+	bool "Enable the ECJPAKE based ciphersuite modes"
+
+if WOLFSSL_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
+   WOLFSSL_KEY_EXCHANGE_ECDHE_RSA_ENABLED || \
+   WOLFSSL_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED || \
+   WOLFSSL_KEY_EXCHANGE_ECDH_ECDSA_ENABLED || \
+   WOLFSSL_KEY_EXCHANGE_ECDH_RSA_ENABLED || \
+   WOLFSSL_KEY_EXCHANGE_ECJPAKE_ENABLED
+
+comment "Supported elliptic curves"
+
+config WOLFSSL_ECP_ALL_ENABLED
+	bool "Enable all available elliptic curves"
+	select WOLFSSL_ECP_DP_SECP192R1_ENABLED
+	select WOLFSSL_ECP_DP_SECP192R1_ENABLED
+	select WOLFSSL_ECP_DP_SECP224R1_ENABLED
+	select WOLFSSL_ECP_DP_SECP256R1_ENABLED
+	select WOLFSSL_ECP_DP_SECP384R1_ENABLED
+	select WOLFSSL_ECP_DP_SECP521R1_ENABLED
+	select WOLFSSL_ECP_DP_SECP192K1_ENABLED
+	select WOLFSSL_ECP_DP_SECP224K1_ENABLED
+	select WOLFSSL_ECP_DP_SECP256K1_ENABLED
+	select WOLFSSL_ECP_DP_BP256R1_ENABLED
+	select WOLFSSL_ECP_DP_BP384R1_ENABLED
+	select WOLFSSL_ECP_DP_BP512R1_ENABLED
+	select WOLFSSL_ECP_DP_CURVE25519_ENABLED
+	select WOLFSSL_ECP_DP_CURVE448_ENABLED
+	select WOLFSSL_ECP_NIST_OPTIM
+
+config WOLFSSL_ECP_DP_SECP192R1_ENABLED
+	bool "Enable SECP192R1 elliptic curve"
+
+config WOLFSSL_ECP_DP_SECP224R1_ENABLED
+	bool "Enable SECP224R1 elliptic curve"
+
+config WOLFSSL_ECP_DP_SECP256R1_ENABLED
+	bool "Enable SECP256R1 elliptic curve"
+
+config WOLFSSL_ECP_DP_SECP384R1_ENABLED
+	bool "Enable SECP384R1 elliptic curve"
+
+config WOLFSSL_ECP_DP_SECP521R1_ENABLED
+	bool "Enable SECP521R1 elliptic curve"
+
+config WOLFSSL_ECP_DP_SECP192K1_ENABLED
+	bool "Enable SECP192K1 elliptic curve"
+
+config WOLFSSL_ECP_DP_SECP224K1_ENABLED
+	bool "Enable SECP224K1 elliptic curve"
+
+config WOLFSSL_ECP_DP_SECP256K1_ENABLED
+	bool "Enable SECP256K1 elliptic curve"
+
+config WOLFSSL_ECP_DP_BP256R1_ENABLED
+	bool "Enable BP256R1 elliptic curve"
+
+config WOLFSSL_ECP_DP_BP384R1_ENABLED
+	bool "Enable BP384R1 elliptic curve"
+
+config WOLFSSL_ECP_DP_BP512R1_ENABLED
+	bool "Enable BP512R1 elliptic curve"
+
+config WOLFSSL_ECP_DP_CURVE25519_ENABLED
+	bool "Enable CURVE25519 elliptic curve"
+
+config WOLFSSL_ECP_DP_CURVE448_ENABLED
+	bool "Enable CURVE448 elliptic curve"
+
+config WOLFSSL_ECP_NIST_OPTIM
+	bool "Enable NSIT curves optimization"
+
+endif
+
+comment "Supported cipher modes"
+
+config WOLFSSL_CIPHER_ALL_ENABLED
+	bool "Enable all available ciphers"
+	select WOLFSSL_CIPHER_AES_ENABLED
+	select WOLFSSL_CIPHER_CAMELLIA_ENABLED
+	select WOLFSSL_CIPHER_DES_ENABLED
+	select WOLFSSL_CIPHER_ARC4_ENABLED
+	select WOLFSSL_CIPHER_CHACHA20_ENABLED
+	select WOLFSSL_CIPHER_BLOWFISH_ENABLED
+	select WOLFSSL_CIPHER_CCM_ENABLED
+	select WOLFSSL_CIPHER_MODE_XTS_ENABLED
+	select WOLFSSL_CIPHER_MODE_GCM_ENABLED
+	select WOLFSSL_CIPHER_CBC_ENABLED
+	select WOLFSSL_CHACHAPOLY_AEAD_ENABLED
+
+config WOLFSSL_CIPHER_AES_ENABLED
+	bool "Enable the AES block cipher"
+	default y
+
+config WOLFSSL_AES_ROM_TABLES
+	depends on WOLFSSL_CIPHER_AES_ENABLED
+	bool "Use precomputed AES tables stored in ROM."
+	default y
+
+config WOLFSSL_CIPHER_CAMELLIA_ENABLED
+	bool "Enable the Camellia block cipher"
+
+config WOLFSSL_CIPHER_DES_ENABLED
+	bool "Enable the DES block cipher"
+	default y
+
+config WOLFSSL_CIPHER_ARC4_ENABLED
+	bool "Enable the ARC4 stream cipher"
+
+config WOLFSSL_CIPHER_CHACHA20_ENABLED
+	bool "Enable the ChaCha20 stream cipher"
+
+config WOLFSSL_CIPHER_BLOWFISH_ENABLED
+	bool "Enable the Blowfish block cipher"
+
+config WOLFSSL_CIPHER_CCM_ENABLED
+	bool "Enable the Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
+	depends on WOLFSSL_CIPHER_AES_ENABLED || WOLFSSL_CIPHER_CAMELLIA_ENABLED
+
+config WOLFSSL_CIPHER_MODE_XTS_ENABLED
+	bool "Enable Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES"
+	depends on WOLFSSL_CIPHER_AES_ENABLED || WOLFSSL_CIPHER_CAMELLIA_ENABLED
+
+config WOLFSSL_CIPHER_MODE_GCM_ENABLED
+	bool "Enable the Galois/Counter Mode (GCM) for AES"
+	depends on WOLFSSL_CIPHER_AES_ENABLED || WOLFSSL_CIPHER_CAMELLIA_ENABLED
+
+config WOLFSSL_CIPHER_CBC_ENABLED
+	bool "Enable Cipher Block Chaining mode (CBC) for symmetric ciphers"
+	default y
+
+config WOLFSSL_CHACHAPOLY_AEAD_ENABLED
+	bool "Enable the ChaCha20-Poly1305 AEAD algorithm"
+	depends on WOLFSSL_CIPHER_CHACHA20_ENABLED || WOLFSSL_MAC_POLY1305_ENABLED
+
+comment "Supported message authentication methods"
+
+config WOLFSSL_MAC_ALL_ENABLED
+	bool "Enable all available MAC methods"
+	select WOLFSSL_MAC_MD4_ENABLED
+	select WOLFSSL_MAC_MD5_ENABLED
+	select WOLFSSL_MAC_SHA1_ENABLED
+	select WOLFSSL_MAC_SHA256_ENABLED
+	select WOLFSSL_MAC_SHA512_ENABLED
+	select WOLFSSL_MAC_POLY1305_ENABLED
+
+config WOLFSSL_MAC_MD4_ENABLED
+	bool "Enable the MD4 hash algorithm"
+
+config WOLFSSL_MAC_MD5_ENABLED
+	bool "Enable the MD5 hash algorithm"
+	default y
+
+config WOLFSSL_MAC_SHA1_ENABLED
+	bool "Enable the SHA1 hash algorithm"
+	default y
+
+config WOLFSSL_MAC_SHA256_ENABLED
+	bool "Enable the SHA-224 and SHA-256 hash algorithms"
+	default y
+
+config WOLFSSL_MAC_SHA512_ENABLED
+	bool "Enable the SHA-384 and SHA-512 hash algorithms"
+
+config WOLFSSL_MAC_POLY1305_ENABLED
+	bool "Enable the Poly1305 MAC algorithm"
+
+endmenu
+
+comment "Random number generators"
+
+config WOLFSSL_HMAC_DRBG_ENABLED
+	bool "Enable the HMAC_DRBG random generator"
+	default y
+
+comment "Other configurations"
+
+config WOLFSSL_HAVE_ASM
+	bool "Enable use of assembly code"
+	default y
+	help
+	  Enable use of assembly code in wolfSSL. This improves the performances
+	  of asymmetric cryptography, however this might have an impact on the
+	  code size.
+
+endmenu

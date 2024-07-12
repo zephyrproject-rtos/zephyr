@@ -1,0 +1,43 @@
+# vim:ft=automake
+# included from Top Level Makefile.am
+# All paths should be given relative to the root
+
+EXTRA_DIST+= zephyr/CMakeLists.txt
+EXTRA_DIST+= zephyr/Kconfig
+EXTRA_DIST+= zephyr/Kconfig.tls-generic
+EXTRA_DIST+= zephyr/zephyr_init.c
+EXTRA_DIST+= zephyr/module.yml
+EXTRA_DIST+= zephyr/wolfssl/options.h
+EXTRA_DIST+= zephyr/user_settings.h
+EXTRA_DIST+= zephyr/README.md
+EXTRA_DIST+= zephyr/samples/wolfssl_benchmark/
+EXTRA_DIST+= zephyr/samples/wolfssl_benchmark/CMakeLists.txt
+EXTRA_DIST+= zephyr/samples/wolfssl_benchmark/README
+EXTRA_DIST+= zephyr/samples/wolfssl_benchmark/boards/nrf5340dk_nrf5340_cpuapp.conf
+EXTRA_DIST+= zephyr/samples/wolfssl_benchmark/boards/nrf5340dk_nrf5340_cpuapp_ns.conf
+EXTRA_DIST+= zephyr/samples/wolfssl_benchmark/install_test.sh
+EXTRA_DIST+= zephyr/samples/wolfssl_benchmark/prj.conf
+EXTRA_DIST+= zephyr/samples/wolfssl_benchmark/sample.yaml
+EXTRA_DIST+= zephyr/samples/wolfssl_test/CMakeLists.txt
+EXTRA_DIST+= zephyr/samples/wolfssl_test/README
+EXTRA_DIST+= zephyr/samples/wolfssl_test/boards/nrf5340dk_nrf5340_cpuapp.conf
+EXTRA_DIST+= zephyr/samples/wolfssl_test/boards/nrf5340dk_nrf5340_cpuapp_ns.conf
+EXTRA_DIST+= zephyr/samples/wolfssl_test/install_test.sh
+EXTRA_DIST+= zephyr/samples/wolfssl_test/prj.conf
+EXTRA_DIST+= zephyr/samples/wolfssl_test/sample.yaml
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_sock/CMakeLists.txt
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_sock/README
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_sock/install_sample.sh
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_sock/prj.conf
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_sock/sample.yaml
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_sock/src
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_sock/src/tls_sock.c
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_thread/CMakeLists.txt
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_thread/README
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_thread/boards/nrf5340dk_nrf5340_cpuapp.conf
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_thread/boards/nrf5340dk_nrf5340_cpuapp_ns.conf
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_thread/install_sample.sh
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_thread/prj.conf
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_thread/sample.yaml
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_thread/src
+EXTRA_DIST+= zephyr/samples/wolfssl_tls_thread/src/tls_threaded.c

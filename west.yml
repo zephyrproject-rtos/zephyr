@@ -23,8 +23,6 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
-    - name: wolfssl
-      url-base: https://github.com/wolfssl
 
   group-filter: [-babblesim, -optional]
 
@@ -286,6 +284,11 @@ manifest:
     - name: mbedtls
       revision: 2f24831ee13d399ce019c4632b0bcd440a713f7c
       path: modules/crypto/mbedtls
+      groups:
+        - crypto
+    - name: wolfssl
+      revision: 1cf96eb72c0113767daf34c3a916f0c8c8741aac
+      path: modules/crypto/wolfssl
       groups:
         - crypto
     - name: mcuboot

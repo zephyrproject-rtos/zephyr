@@ -1,0 +1,134 @@
+# Kconfig - Cryptography primitive options for wolfSSL
+
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+config ZEPHYR_WOLFSSL_MODULE
+        bool
+config WOLFSSL_PROMPTLESS
+        bool
+        help
+          Symbol to disable the prompt for WOLFSSL selection.
+          This symbol may be used internally in a Kconfig tree to hide the
+          wolfSSL menu prompt and instead handle the selection of WOLFSSL from
+          dependent sub-configurations and thus prevent stuck symbol behavior.
+
+
+menuconfig WOLFSSL
+	bool "wolfSSL Support" if !WOLFSSL_PROMPTLESS
+	help
+	  This option enables the wolfSSL cryptography library.
+
+if WOLFSSL
+
+choice WOLFSSL_IMPLEMENTATION
+	prompt "Select implementation"
+	default WOLFSSL_BUILTIN
+
+config WOLFSSL_BUILTIN
+	bool "Enable wolfSSL integrated sources"
+	help
+	  Link with local wolfSSL sources instead of external library.
+
+config WOLFSSL_LIBRARY
+	bool "Enable wolfSSL external library"
+	help
+	  This option enables wolfSSL library.
+
+endchoice
+
+config WOLFSSL_SETTINGS_FILE
+	string "wolfSSL settings file"
+	depends on WOLFSSL_BUILTIN
+	help
+	  Use a specific wolfSSL settings file. The default config file
+	  file can be tweaked with Kconfig. The default settings is
+	  suitable to communicate with majority of HTTPS servers on the Internet,
+	  but has relatively many features enabled. To optimize resources for
+	  special TLS usage, use available Kconfig settings, or select an
+	  alternative config.
+
+rsource "Kconfig.tls-generic"
+
+config WOLFCRYPT_FIPS
+	bool "wolfCrypt FIPS support"
+	depends on WOLFSSL_BUILTIN
+	help
+	  Enables FIPS support in wolfCrypt. Requires the wolfSSL FIPS ready
+	  download that includes fips.c/fips_test.c.
+
+config WOLFSSL_DTLS
+  bool "wolfSSL DTLS support"
+  help
+    Enable DTLS support
+
+config WOLFSSL_ALPN
+  bool "wolfSSL ALPN support"
+  help
+    Enable ALPN support
+
+config WOLFSSL_PSK
+  bool "wolfSSL PSK support"
+  help
+    Enable PSK support
+
+config WOLFSSL_MAX_FRAGMENT_LEN
+  int
+  default 3
+  range 1 6
+  help
+    Sets the maximum fragment length wolfSSL will use, values 1-6 correspond to enum values
+    WOLFSSL_MFL_* in ssl.h
+
+config WOLFCRYPT_ARMASM
+	bool "wolfCrypt ARM Assembly support"
+	depends on WOLFSSL_BUILTIN
+	help
+	  wolfCrypt ARM (ARMv8/ARMv7) assembly support for AES, SHA-2, SHA-3,
+	  ChaCha20/Poly1305 and Curve25519
+
+config WOLFCRYPT_INTELASM
+	bool "wolfCrypt Intel Assembly support"
+	depends on WOLFSSL_BUILTIN
+	help
+	  wolfCrypt Intel Aassembly support (AVX/AVX2/AESNI)
+
+config WOLFSSL_DEBUG
+	bool "wolfSSL debug activation"
+	depends on WOLFSSL_BUILTIN
+	help
+	  Enable debugging activation for wolfSSL configuration. If you use
+	  wolfSSL/Zephyr integration (e.g. net_app), this will activate debug
+	  logging (of the level configured by WOLFSSL_DEBUG_LEVEL).
+
+config WOLFSSL_INSTALL_PATH
+	string "wolfSSL install path"
+	depends on WOLFSSL_LIBRARY
+	help
+	  This option holds the path where the wolfSSL libraries and headers are
+	  installed. Make sure this option is properly set when WOLFSSL_LIBRARY
+	  is enabled otherwise the build will fail.
+
+config APP_LINK_WITH_WOLFSSL
+	bool "Link 'app' with WOLFSSL"
+	default y
+	help
+	  Add WOLFSSL header files to the 'app' include path. It may be
+	  disabled if the include paths for WOLFSSL are causing aliasing
+	  issues for 'app'.
+
+endif
+
