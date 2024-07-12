@@ -204,3 +204,8 @@ tests:
   drivers.spi.max32_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-max32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_MAX32
+  drivers.spi.nrf_pm_runtime:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+    filter: CONFIG_SOC_FAMILY_NORDIC_NRF
