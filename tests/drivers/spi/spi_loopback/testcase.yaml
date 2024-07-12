@@ -228,3 +228,8 @@ tests:
     filter: CONFIG_SOC_FAMILY_MAX32
     platform_allow:
       - apard32690/max32690/m4
+  drivers.spi.nrf_pm_runtime:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+    filter: CONFIG_SOC_FAMILY_NORDIC_NRF
