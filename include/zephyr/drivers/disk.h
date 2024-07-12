@@ -23,7 +23,7 @@
  * @brief Interfaces for disks.
  * @defgroup disk_driver_interface Disk Access
  * @since 1.6
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -110,6 +110,7 @@ struct disk_operations {
 		    uint32_t start_sector, uint32_t num_sector);
 	int (*write)(struct disk_info *disk, const uint8_t *data_buf,
 		     uint32_t start_sector, uint32_t num_sector);
+	int (*erase)(struct disk_info *disk, uint32_t start_sector, uint32_t num_sector);
 	int (*ioctl)(struct disk_info *disk, uint8_t cmd, void *buff);
 };
 
