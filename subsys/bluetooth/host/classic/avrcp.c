@@ -240,9 +240,49 @@ static void avrcp_disconnected(struct bt_avctp *session)
 	}
 }
 
+/* An AVRCP message received */
+static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
+{
+	struct bt_avrcp *avrcp = AVRCP_AVCTP(session);
+	struct bt_avctp_header *avctp_hdr;
+	struct bt_avrcp_header *avrcp_hdr;
+
+	avctp_hdr = (void *)buf->data;
+	net_buf_pull(buf, sizeof(*avctp_hdr));
+	avrcp_hdr = (void *)buf->data;
+
+	if (avctp_hdr->pid != sys_cpu_to_be16(BT_SDP_AV_REMOTE_SVCLASS)) {
+		return -EINVAL; /* Ignore other profile */
+	}
+
+	LOG_DBG("AVRCP msg received, cr:0x%X, tid:0x%X, ctype: 0x%X, opc:0x%02X,", avctp_hdr->cr,
+		avctp_hdr->tid, avrcp_hdr->ctype, avrcp_hdr->opcode);
+	if (avctp_hdr->cr == BT_AVCTP_RESPONSE) {
+		if (avrcp_hdr->opcode == BT_AVRCP_OPC_VENDOR_DEPENDENT &&
+		    avrcp_hdr->ctype == BT_AVRCP_CTYPE_CHANGED) {
+			/* Status changed notifiation, do not reset timer */
+		} else if (avrcp_hdr->opcode == BT_AVRCP_OPC_PASS_THROUGH) {
+			/* No max response time for pass through commands  */
+		} else if (avrcp->req.tid != avctp_hdr->tid ||
+			   avrcp->req.subunit != avrcp_hdr->subunit_id ||
+			   avrcp->req.opcode != avrcp_hdr->opcode) {
+			LOG_WRN("unexpected AVRCP response, expected tid:0x%X, subunit:0x%X, "
+				"opc:0x%02X",
+				avrcp->req.tid, avrcp->req.subunit, avrcp->req.opcode);
+		} else {
+			k_work_cancel_delayable(&avrcp->timeout_work);
+		}
+	}
+
+	/* TODO: add handlers */
+
+	return 0;
+}
+
 static const struct bt_avctp_ops_cb avctp_ops = {
 	.connected = avrcp_connected,
 	.disconnected = avrcp_disconnected,
+	.recv = avrcp_recv,
 };
 
 static int avrcp_accept(struct bt_conn *conn, struct bt_avctp **session)
@@ -379,7 +419,6 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 		avrcp->req.opcode = avrcp_hdr.opcode;
 
 		k_work_reschedule(&avrcp->timeout_work, AVRCP_TIMEOUT);
-		/* TODO: k_work_cancel_delayable(&avrcp->timeout_work); when response received */
 	}
 
 	return 0;
