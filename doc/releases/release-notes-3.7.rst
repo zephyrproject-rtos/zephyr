@@ -316,7 +316,7 @@ Boards & SoC Support
   * STM32C0: Added support for :kconfig:option:`CONFIG_POWEROFF`.
   * STM32U5: Added support for Stop3 mode.
 
-* Added support for these ARM boards:
+* Added support for these boards:
 
   * Added support for :ref:`Ambiq Apollo3 Blue board <apollo3_evb>`: ``apollo3_evb``.
   * Added support for :ref:`Ambiq Apollo3 Blue Plus board <apollo3p_evb>`: ``apollo3p_evb``.
@@ -332,24 +332,15 @@ Boards & SoC Support
   * Added support for :ref:`ST STM32L152CDISCOVERY board <stm32l1_disco_board>`: ``stm32l152c_disco``.
   * Added support for :ref:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1_board>`: ``steval_stwinbx1``.
 
-* Added support for these Xtensa boards:
-
-* Made these changes for ARM boards:
+* Made these board changes:
 
   * On :ref:`ST STM32H7B3I Discovery Kit <stm32h7b3i_dk_board>`: ``stm32h7b3i_dk_board``,
     enabled full cache management, Chrom-ART, double frame buffer and full refresh for
     optimal LVGL performance.
   * On ST STM32 boards, stm32cubeprogrammer runner can now be used to program external
     flash using ``--extload`` option.
-
-* Made these changes for RISC-V boards:
-
-* Made these changes for native/POSIX boards:
-
   * Introduced the simulated :ref:`nrf54l15bsim<nrf54l15bsim>` target.
-
   * The nrf5x bsim targets now support BT LE Coded PHY.
-
   * LLVM fuzzing support has been refactored while adding support for it in native_sim.
 
 * Added support for these following shields:
