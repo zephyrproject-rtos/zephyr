@@ -1,0 +1,23 @@
+identifier: sparkfun_thing_plus_matter_mgm240p
+name: MGM240P
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - uart
+  - spi
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - pm
+    - hwinfo
+vendor: sparkfun
