@@ -157,13 +157,13 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 		if (bt_uuid_cmp(chrc->uuid, TEST_CHRC_UUID) == 0) {
 			printk("Found chrc\n");
-			chrc_handle = chrc->value_handle;
+			chrc_handle = bt_gatt_attr_value_handle(attr);
 		} else if (bt_uuid_cmp(chrc->uuid, TEST_LONG_CHRC_UUID) == 0) {
 			printk("Found long_chrc\n");
-			long_chrc_handle = chrc->value_handle;
+			long_chrc_handle = bt_gatt_attr_value_handle(attr);
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_GATT_CLIENT_FEATURES) == 0) {
 			printk("Found csf\n");
-			csf_handle = chrc->value_handle;
+			csf_handle = bt_gatt_attr_value_handle(attr);
 		}
 	}
 

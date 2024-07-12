@@ -146,15 +146,15 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 		if (bt_uuid_cmp(chrc->uuid, BT_UUID_GATT_CLIENT_FEATURES) == 0) {
 			printk("Found client supported features\n");
-			gatt_handles[CLIENT_FEATURES] = chrc->value_handle;
+			gatt_handles[CLIENT_FEATURES] = bt_gatt_attr_value_handle(attr);
 
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_GATT_SC) == 0) {
 			printk("Found service changed\n");
-			gatt_handles[SERVICE_CHANGED] = chrc->value_handle;
+			gatt_handles[SERVICE_CHANGED] = bt_gatt_attr_value_handle(attr);
 
 		} else if (bt_uuid_cmp(chrc->uuid, &test_chrc_uuid.uuid) == 0) {
 			printk("Found test characteristic\n");
-			gatt_handles[TEST_CHAR] = chrc->value_handle;
+			gatt_handles[TEST_CHAR] = bt_gatt_attr_value_handle(attr);
 		}
 	}
 

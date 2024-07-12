@@ -464,22 +464,22 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 
 		if (bt_uuid_cmp(chrc->uuid, BT_UUID_VCS_STATE) == 0) {
 			LOG_DBG("Volume state");
-			vol_ctlr->state_handle = chrc->value_handle;
+			vol_ctlr->state_handle = bt_gatt_attr_value_handle(attr);
 			sub_params = &vol_ctlr->state_sub_params;
 			sub_params->disc_params = &vol_ctlr->state_sub_disc_params;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_VCS_CONTROL) == 0) {
 			LOG_DBG("Control Point");
-			vol_ctlr->control_handle = chrc->value_handle;
+			vol_ctlr->control_handle = bt_gatt_attr_value_handle(attr);
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_VCS_FLAGS) == 0) {
 			LOG_DBG("Flags");
-			vol_ctlr->flag_handle = chrc->value_handle;
+			vol_ctlr->flag_handle = bt_gatt_attr_value_handle(attr);
 			sub_params = &vol_ctlr->flag_sub_params;
 			sub_params->disc_params = &vol_ctlr->flag_sub_disc_params;
 		}
 
 		if (sub_params != NULL) {
 			sub_params->value = BT_GATT_CCC_NOTIFY;
-			sub_params->value_handle = chrc->value_handle;
+			sub_params->value_handle = bt_gatt_attr_value_handle(attr);
 			sub_params->ccc_handle = 0;
 			sub_params->end_handle = vol_ctlr->end_handle;
 			sub_params->notify = vcp_vol_ctlr_notify_handler;

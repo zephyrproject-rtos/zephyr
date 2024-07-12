@@ -581,30 +581,30 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 
 		chrc = (struct bt_gatt_chrc *)attr->user_data;
 		if (inst->cli.start_handle == 0) {
-			inst->cli.start_handle = chrc->value_handle;
+			inst->cli.start_handle = bt_gatt_attr_value_handle(attr);
 		}
-		inst->cli.end_handle = chrc->value_handle;
+		inst->cli.end_handle = bt_gatt_attr_value_handle(attr);
 
 		if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_STATE)) {
 			LOG_DBG("Audio Input state");
-			inst->cli.state_handle = chrc->value_handle;
+			inst->cli.state_handle = bt_gatt_attr_value_handle(attr);
 			sub_params = &inst->cli.state_sub_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_GAIN_SETTINGS)) {
 			LOG_DBG("Gain settings");
-			inst->cli.gain_handle = chrc->value_handle;
+			inst->cli.gain_handle = bt_gatt_attr_value_handle(attr);
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_INPUT_TYPE)) {
 			LOG_DBG("Input type");
-			inst->cli.type_handle = chrc->value_handle;
+			inst->cli.type_handle = bt_gatt_attr_value_handle(attr);
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_INPUT_STATUS)) {
 			LOG_DBG("Input status");
-			inst->cli.status_handle = chrc->value_handle;
+			inst->cli.status_handle = bt_gatt_attr_value_handle(attr);
 			sub_params = &inst->cli.status_sub_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_CONTROL)) {
 			LOG_DBG("Control point");
-			inst->cli.control_handle = chrc->value_handle;
+			inst->cli.control_handle = bt_gatt_attr_value_handle(attr);
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_DESCRIPTION)) {
 			LOG_DBG("Description");
-			inst->cli.desc_handle = chrc->value_handle;
+			inst->cli.desc_handle = bt_gatt_attr_value_handle(attr);
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				sub_params = &inst->cli.desc_sub_params;
 			}
@@ -618,7 +618,7 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			int err;
 
 			sub_params->value = BT_GATT_CCC_NOTIFY;
-			sub_params->value_handle = chrc->value_handle;
+			sub_params->value_handle = bt_gatt_attr_value_handle(attr);
 			/*
 			 * TODO: Don't assume that CCC is at handle + 2;
 			 * do proper discovery;

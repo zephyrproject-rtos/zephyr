@@ -205,7 +205,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	printk("UUID %s\n", str);
 
 	if (!bt_uuid_cmp(chrc->uuid, &pawr_char_uuid.uuid)) {
-		pawr_attr_handle = chrc->value_handle;
+		pawr_attr_handle = bt_gatt_attr_value_handle(attr);
 
 		printk("Characteristic handle: %d\n", pawr_attr_handle);
 

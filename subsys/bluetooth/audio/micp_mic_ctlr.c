@@ -413,7 +413,7 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 
 		if (bt_uuid_cmp(chrc->uuid, BT_UUID_MICS_MUTE) == 0) {
 			LOG_DBG("Mute");
-			mic_ctlr->mute_handle = chrc->value_handle;
+			mic_ctlr->mute_handle = bt_gatt_attr_value_handle(attr);
 			sub_params = &mic_ctlr->mute_sub_params;
 			sub_params->disc_params = &mic_ctlr->mute_sub_disc_params;
 		}
@@ -425,7 +425,7 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 			sub_params->ccc_handle = 0;
 			sub_params->end_handle = mic_ctlr->end_handle;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
-			sub_params->value_handle = chrc->value_handle;
+			sub_params->value_handle = bt_gatt_attr_value_handle(attr);
 			sub_params->notify = mute_notify_handler;
 			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 

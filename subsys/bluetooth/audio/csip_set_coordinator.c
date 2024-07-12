@@ -719,13 +719,13 @@ static uint8_t discover_func(struct bt_conn *conn,
 		chrc = (struct bt_gatt_chrc *)attr->user_data;
 		if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SIRK) == 0) {
 			LOG_DBG("SIRK");
-			client->cur_inst->sirk_handle = chrc->value_handle;
+			client->cur_inst->sirk_handle = bt_gatt_attr_value_handle(attr);
 			sub_params = &client->cur_inst->sirk_sub_params;
 			sub_params->disc_params = &client->cur_inst->sirk_sub_disc_params;
 			notify_handler = sirk_notify_func;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SET_SIZE) == 0) {
 			LOG_DBG("Set size");
-			client->cur_inst->set_size_handle = chrc->value_handle;
+			client->cur_inst->set_size_handle = bt_gatt_attr_value_handle(attr);
 			sub_params = &client->cur_inst->size_sub_params;
 			sub_params->disc_params = &client->cur_inst->size_sub_disc_params;
 			notify_handler = size_notify_func;
@@ -733,7 +733,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			struct bt_csip_set_coordinator_set_info *set_info;
 
 			LOG_DBG("Set lock");
-			client->cur_inst->set_lock_handle = chrc->value_handle;
+			client->cur_inst->set_lock_handle = bt_gatt_attr_value_handle(attr);
 			sub_params = &client->cur_inst->lock_sub_params;
 			sub_params->disc_params = &client->cur_inst->lock_sub_disc_params;
 			notify_handler = lock_notify_func;
@@ -742,7 +742,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			set_info->lockable = true;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_RANK) == 0) {
 			LOG_DBG("Set rank");
-			client->cur_inst->rank_handle = chrc->value_handle;
+			client->cur_inst->rank_handle = bt_gatt_attr_value_handle(attr);
 		}
 
 		if (sub_params != NULL && notify_handler != NULL) {
@@ -759,7 +759,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 				/* With ccc_handle == 0 it will use auto discovery */
 				sub_params->ccc_handle = 0;
 				sub_params->end_handle = client->cur_inst->end_handle;
-				sub_params->value_handle = chrc->value_handle;
+				sub_params->value_handle = bt_gatt_attr_value_handle(attr);
 				sub_params->notify = notify_handler;
 				atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 

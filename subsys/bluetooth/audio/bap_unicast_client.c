@@ -3214,7 +3214,7 @@ static uint8_t unicast_client_cp_discover_func(struct bt_conn *conn,
 	}
 
 	chrc = attr->user_data;
-	value_handle = chrc->value_handle;
+	value_handle = bt_gatt_attr_value_handle(attr);
 	memset(discover, 0, sizeof(*discover));
 
 	LOG_DBG("conn %p attr %p handle 0x%04x", conn, attr, value_handle);
@@ -3344,7 +3344,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 	}
 
 	chrc = attr->user_data;
-	value_handle = chrc->value_handle;
+	value_handle = bt_gatt_attr_value_handle(attr);
 	memset(discover, 0, sizeof(*discover));
 
 	client = &uni_cli_insts[bt_conn_index(conn)];
@@ -3510,7 +3510,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 
 	chrc = attr->user_data;
 	chrc_properties = chrc->properties;
-	value_handle = chrc->value_handle;
+	value_handle = bt_gatt_attr_value_handle(attr);
 	memset(discover, 0, sizeof(*discover));
 
 	LOG_DBG("conn %p attr %p handle 0x%04x", conn, attr, value_handle);
@@ -3706,7 +3706,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 	}
 
 	chrc = attr->user_data;
-	value_handle = chrc->value_handle;
+	value_handle = bt_gatt_attr_value_handle(attr);
 	memset(discover, 0, sizeof(*discover));
 
 	LOG_DBG("conn %p attr %p handle 0x%04x", conn, attr, value_handle);
@@ -3816,7 +3816,7 @@ static uint8_t unicast_client_pacs_context_discover_cb(struct bt_conn *conn,
 	}
 
 	chrc = attr->user_data;
-	value_handle = chrc->value_handle;
+	value_handle = bt_gatt_attr_value_handle(attr);
 	memset(discover, 0, sizeof(*discover));
 
 	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, value_handle,
@@ -4008,7 +4008,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 	}
 
 	chrc = attr->user_data;
-	value_handle = chrc->value_handle;
+	value_handle = bt_gatt_attr_value_handle(attr);
 	memset(discover, 0, sizeof(*discover));
 
 	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, value_handle,

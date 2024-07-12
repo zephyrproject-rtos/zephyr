@@ -1956,7 +1956,7 @@ uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr)
 	if (attr != NULL && bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC) == 0) {
 		struct bt_gatt_chrc *chrc = attr->user_data;
 
-		handle = chrc->value_handle;
+		handle = bt_gatt_attr_value_handle(attr);
 		if (handle == 0) {
 			/* Fall back to Zephyr value handle policy */
 			handle = bt_gatt_attr_get_handle(attr) + 1U;

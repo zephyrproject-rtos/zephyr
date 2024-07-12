@@ -110,7 +110,7 @@ static uint8_t bt_ias_alert_lvl_disc_cb(struct bt_conn *conn,
 
 	chrc = (struct bt_gatt_chrc *)attr->user_data;
 
-	client_by_conn(conn)->alert_level_handle = chrc->value_handle;
+	client_by_conn(conn)->alert_level_handle = bt_gatt_attr_value_handle(attr);
 	discover_complete(conn, 0);
 
 	return BT_GATT_ITER_STOP;

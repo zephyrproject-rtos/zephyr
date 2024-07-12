@@ -378,17 +378,17 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 
 		chrc = (struct bt_gatt_chrc *)attr->user_data;
 		if (inst->start_handle == 0) {
-			inst->start_handle = chrc->value_handle;
+			inst->start_handle = bt_gatt_attr_value_handle(attr);
 		}
-		inst->end_handle = chrc->value_handle;
+		inst->end_handle = bt_gatt_attr_value_handle(attr);
 
 		if (!bt_uuid_cmp(chrc->uuid, BT_UUID_VOCS_STATE)) {
 			LOG_DBG("Volume offset state");
-			inst->state_handle = chrc->value_handle;
+			inst->state_handle = bt_gatt_attr_value_handle(attr);
 			sub_params = &inst->state_sub_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_VOCS_LOCATION)) {
 			LOG_DBG("Location");
-			inst->location_handle = chrc->value_handle;
+			inst->location_handle = bt_gatt_attr_value_handle(attr);
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				sub_params = &inst->location_sub_params;
 			}
@@ -397,10 +397,10 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_VOCS_CONTROL)) {
 			LOG_DBG("Control point");
-			inst->control_handle = chrc->value_handle;
+			inst->control_handle = bt_gatt_attr_value_handle(attr);
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_VOCS_DESCRIPTION)) {
 			LOG_DBG("Description");
-			inst->desc_handle = chrc->value_handle;
+			inst->desc_handle = bt_gatt_attr_value_handle(attr);
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				sub_params = &inst->desc_sub_params;
 			}
@@ -413,7 +413,7 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			int err;
 
 			sub_params->value = BT_GATT_CCC_NOTIFY;
-			sub_params->value_handle = chrc->value_handle;
+			sub_params->value_handle = bt_gatt_attr_value_handle(attr);
 			/*
 			 * TODO: Don't assume that CCC is at handle + 2;
 			 * do proper discovery;

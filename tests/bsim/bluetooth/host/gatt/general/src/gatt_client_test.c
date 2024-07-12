@@ -151,16 +151,16 @@ static uint8_t discover_func(struct bt_conn *conn,
 
 		if (bt_uuid_cmp(chrc->uuid, TEST_CHRC_UUID) == 0) {
 			printk("Found chrc\n");
-			chrc_handle = chrc->value_handle;
+			chrc_handle = bt_gatt_attr_value_handle(attr);
 		} else if (bt_uuid_cmp(chrc->uuid, TEST_LONG_CHRC_UUID) == 0) {
 			printk("Found long_chrc\n");
-			long_chrc_handle = chrc->value_handle;
+			long_chrc_handle = bt_gatt_attr_value_handle(attr);
 		} else if (bt_uuid_cmp(chrc->uuid, TEST_ENC_CHRC_UUID) == 0) {
 			printk("Found enc_chrc_handle\n");
-			enc_chrc_handle = chrc->value_handle;
+			enc_chrc_handle = bt_gatt_attr_value_handle(attr);
 		} else if (bt_uuid_cmp(chrc->uuid, TEST_LESC_CHRC_UUID) == 0) {
 			printk("Found lesc_chrc_handle\n");
-			lesc_chrc_handle = chrc->value_handle;
+			lesc_chrc_handle = bt_gatt_attr_value_handle(attr);
 		}
 	}
 

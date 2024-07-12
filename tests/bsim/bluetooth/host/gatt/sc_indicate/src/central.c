@@ -95,7 +95,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			int err;
 
 			LOG_DBG("found sc");
-			gatt_handles[SC] = chrc->value_handle;
+			gatt_handles[SC] = bt_gatt_attr_value_handle(attr);
 
 			params->uuid = &ccc_uuid.uuid;
 			params->start_handle = attr->handle + 2;

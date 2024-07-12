@@ -95,7 +95,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 
 		if (bt_uuid_cmp(chrc->uuid, TEST_CHRC_UUID) == 0) {
 			printk("Found chrc value\n");
-			chrc_handle = chrc->value_handle;
+			chrc_handle = bt_gatt_attr_value_handle(attr);
 			params->type = BT_GATT_DISCOVER_DESCRIPTOR;
 		}
 	}

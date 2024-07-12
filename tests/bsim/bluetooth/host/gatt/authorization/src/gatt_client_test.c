@@ -137,16 +137,16 @@ static uint8_t discover_func(struct bt_conn *conn,
 
 		if (bt_uuid_cmp(chrc->uuid, TEST_UNHANDLED_CHRC_UUID) == 0) {
 			printk("Found unhandled chrc\n");
-			unhandled_chrc_handle = chrc->value_handle;
+			unhandled_chrc_handle = bt_gatt_attr_value_handle(attr);
 		} else if (bt_uuid_cmp(chrc->uuid, TEST_UNAUTHORIZED_CHRC_UUID) == 0) {
 			printk("Found unauthorized\n");
-			unauthorized_chrc_handle = chrc->value_handle;
+			unauthorized_chrc_handle = bt_gatt_attr_value_handle(attr);
 		} else if (bt_uuid_cmp(chrc->uuid, TEST_AUTHORIZED_CHRC_UUID) == 0) {
 			printk("Found authorized chrc\n");
-			authorized_chrc_handle = chrc->value_handle;
+			authorized_chrc_handle = bt_gatt_attr_value_handle(attr);
 		} else if (bt_uuid_cmp(chrc->uuid, TEST_CP_CHRC_UUID) == 0) {
 			printk("Found CP chrc\n");
-			cp_chrc_handle = chrc->value_handle;
+			cp_chrc_handle = bt_gatt_attr_value_handle(attr);
 		}
 	}
 
