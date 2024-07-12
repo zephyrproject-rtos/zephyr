@@ -1,0 +1,57 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 I2C controller over I3C peripheral
+
+compatible: "nxp,s32-i2c-i3c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  baudrate-cfg:
+    type: array
+    required: true
+    description: |
+      An array of pre-computed baudrates needed for the controller to setting
+      up I2C speed for I2C communication. For each used I2C rate, three elements
+      need to be provided in the order: I2C, Open-Drain and Push-pull baudrate.
+      These baudrates should be calculated by user based on Functional Clock and
+      as required by application.
+
+      For example: I3C instance 0 with Functional Clock is 134Mhz and application
+      intends to use STANDARD, FAST and FAST_PLUS speed:
+
+        &i3c0 = {
+          baudrate-cfg = <I2C_BITRATE_STANDARD 500000 6000000>,
+                          <I2C_BITRATE_FAST 1000000 6000000>,
+                          <I2C_BITRATE_FAST_PLUS 1000000 6000000>;
+        }
+
+      The baudrate configuration does not need to be declared for unused I2C speeds.
+
+  disable-timeout:
+    type: boolean
+    description: disable timeout to prevent application errors
+
+  high-keeper:
+    type: string
+    default: HIGH_KEEPER_NONE
+    enum:
+      - HIGH_KEEPER_NONE
+      - PASSIVE_SDA_SCL
+    description: indicates how high-keeper is supposed to be support

@@ -1,0 +1,20 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_NXP_S32_I3C
+	bool "NXP S32 I2C driver over I3C peripheral"
+	default y if DT_HAS_NXP_S32_I2C_I3C_ENABLED
+	help
+	  Enable I2C support over I3C peripheral on NXP S32 SoCs
+
+if I2C_NXP_S32_I3C
+
+config I2C_NXP_S32_I3C_TRANSFER_TIMEOUT
+	int "Transfer timeout [ms]"
+	default 0
+	help
+	  Timeout in milliseconds used for each I2C transfer. 0 means that the
+	  driver should use the K_FOREVER value, i.e. it should wait as long as
+	  necessary.
+
+endif

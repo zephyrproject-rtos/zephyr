@@ -718,5 +718,35 @@
 			interrupt-names = "rx_tx_mru", "error";
 			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
 		};
+
+		i3c0: i2c@401d0000 {
+			compatible = "nxp,s32-i2c-i3c";
+			reg = <0x401d0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 252 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_P0_REG_INTF_CLK>;
+			status = "disabled";
+		};
+
+		i3c1: i2c@409d0000 {
+			compatible = "nxp,s32-i2c-i3c";
+			reg = <0x409d0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 253 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_P1_REG_INTF_CLK>;
+			status = "disabled";
+		};
+
+		i3c2: i2c@421d0000 {
+			compatible = "nxp,s32-i2c-i3c";
+			reg = <0x421d0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 254 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
+			status = "disabled";
+		};
 	};
 };
