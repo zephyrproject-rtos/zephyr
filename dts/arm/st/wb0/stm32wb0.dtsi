@@ -23,6 +23,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &flash;
+		zephyr,bt-hci = &bt_hci_wb0;
 	};
 
 	cpus {
@@ -258,6 +259,11 @@
 			dma-requests= <25>;
 			status = "disabled";
 		};
+	};
+
+	bt_hci_wb0: bt_hci_wb0 {
+		compatible = "st,hci-stm32wb0";
+		status = "disabled";
 	};
 };
 
