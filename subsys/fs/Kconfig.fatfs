@@ -26,6 +26,7 @@ config FS_FATFS_READ_ONLY
 
 config FS_FATFS_MKFS
 	bool "mkfs support for FAT FS"
+	depends on !FS_FATFS_READ_ONLY
 	default y if FILE_SYSTEM_MKFS
 	help
 	  Adds code for creating disks with FAT file system.
