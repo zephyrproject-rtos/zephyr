@@ -694,11 +694,6 @@ static int i2c_dw_transfer(const struct device *dev,
 			dw->xfr_flags |= I2C_MSG_RESTART;
 		}
 
-		/* Send STOP if this is the last message */
-		if (msg_left == 1U) {
-			dw->xfr_flags |= I2C_MSG_STOP;
-		}
-
 		dw->state &= ~(I2C_DW_CMD_SEND | I2C_DW_CMD_RECV);
 
 		if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
