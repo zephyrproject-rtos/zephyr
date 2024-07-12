@@ -441,6 +441,10 @@ config DPP2
 config DPP3
 	bool
 
+config IEEE80211R
+	bool
+	default y
+
 config NW_SEL_RELIABILITY
 	bool
 	default y
