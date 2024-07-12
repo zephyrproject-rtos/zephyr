@@ -51,6 +51,7 @@ family:
         socs:
           - name: efr32mg24b220f1536im48
           - name: efr32mg24b310f1536im48
+          - name: efr32mg24b020f1536im40
       - name: efr32bg27
         socs:
           - name: efr32bg27c140f768im40
