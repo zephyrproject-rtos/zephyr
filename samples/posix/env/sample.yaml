@@ -14,6 +14,6 @@ common:
     regex:
       - "BOARD=.*"
       - "BUILD_VERSION=.*"
-      - "ALERT=.*"
+      - "ALERT="
 tests:
   sample.posix.env: {}
