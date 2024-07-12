@@ -632,6 +632,15 @@ Drivers and Sensors
 
 * Pin control
 
+  * Added driver for Renesas RA8 series
+  * Added driver for Infineon PSoC6 (legacy)
+  * Added driver for Analog Devices MAX32690
+  * Added driver for Ambiq Apollo3
+  * Added driver for ENE KB1200
+  * Added driver for NXP RW
+  * Espressif driver now supports ESP32C6
+  * STM32 driver now supports remap functionality for STM32C0
+
 * PWM
 
   * Added support for STM32H7R/S series.
