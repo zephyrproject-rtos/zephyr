@@ -639,6 +639,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	bool need_daa = true;
 	struct i3c_ccc_events i3c_events;
 
+#ifdef CONFIG_I3C_INIT_RSTACT
 	/*
 	 * Reset all connected targets. Also reset dynamic
 	 * addresses for all devices as we have no idea what
@@ -661,6 +662,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 			LOG_DBG("Broadcast RSTACT (peripehral) was NACK.");
 		}
 	}
+#endif
 
 	if (i3c_ccc_do_rstdaa_all(dev) != 0) {
 		LOG_DBG("Broadcast RSTDAA was NACK.");
