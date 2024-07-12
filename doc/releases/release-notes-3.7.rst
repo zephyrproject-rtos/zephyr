@@ -249,6 +249,15 @@ Kernel
   * Added :c:func:`k_realloc`, that uses kernel heap to implement traditional :c:func:`realloc`
     semantics.
 
+  * Devices can now store devicetree metadata such as nodelabels by turning on
+    :kconfig:option:`CONFIG_DEVICE_DT_METADATA`. This option may be useful in
+    e.g. shells as devices can be obtained using human-friendly names thanks to
+    APIs like :c:func:`device_get_by_dt_nodelabel`.
+
+  * Any device initialization can be deferred if its associated devicetree node
+    has the special ``zephyr,deferred-init`` property set. The device can be
+    initialized later in time by using :c:func:`device_init`.
+
 Bluetooth
 *********
 * Audio
