@@ -71,3 +71,9 @@ properties:
 
       For example
          dma-names = "tx", "rx";
+
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.

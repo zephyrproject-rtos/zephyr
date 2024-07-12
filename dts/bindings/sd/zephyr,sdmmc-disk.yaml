@@ -7,3 +7,10 @@ description: |
 compatible: "zephyr,sdmmc-disk"
 
 include: [sd-device.yaml]
+
+properties:
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.
