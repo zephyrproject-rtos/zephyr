@@ -54,6 +54,7 @@
 			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
 					 NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
 			core-clock = <200000000>;
+			powerdown-mode = <NUMAKER_CLK_PMUCTL_PDMSEL_DPD>;
 
 			pcc: peripheral-clock-controller {
 				compatible = "nuvoton,numaker-pcc";
