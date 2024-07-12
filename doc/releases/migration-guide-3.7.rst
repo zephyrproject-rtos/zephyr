@@ -658,6 +658,12 @@ LED Strip
   or :kconfig:option:`CONFIG_WS2812_STRIP_RPI_PICO_PIO`, one of them had to be selected with
   ``CONFIG_WS2812_STRIP_DRIVER``, but this is no longer necessary. Please set each option directly.
 
+MDIO
+====
+
+* :kconfig:option:`CONFIG_MDIO_NXP_ENET_TIMEOUT` is now in units of
+  microseconds instead of milliseconds. (:github:`75625`)
+
 Sensors
 =======
 
