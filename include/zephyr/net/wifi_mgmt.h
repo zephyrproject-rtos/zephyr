@@ -116,6 +116,12 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_WPS_CONFIG,
 	/** AP WPS config */
 	NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG,
+	/** Start roaming */
+	NET_REQUEST_WIFI_CMD_START_ROAMING,
+	/** Neighbor report complete */
+	NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE,
+	/** Specific scan */
+	NET_REQUEST_WIFI_CMD_SPEC_SCAN,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -250,6 +256,16 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
 
+#define NET_REQUEST_WIFI_START_ROAMING				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_START_ROAMING)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING);
+
+#define NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE);
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 /** Request a Wi-Fi BTM query */
 #define NET_REQUEST_WIFI_BTM_QUERY (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTM_QUERY)
@@ -306,6 +322,12 @@ enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT,
 	/** Disconnect complete */
 	NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE,
+	/** Signal change event */
+	NET_EVENT_WIFI_CMD_SIGNAL_CHANGE,
+	/** Neighbor Report */
+	NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED,
+	/** Neighbor Report complete */
+	NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE,
 	/** AP mode enable result */
 	NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT,
 	/** AP mode disable result */
@@ -367,6 +389,14 @@ enum net_event_wifi_cmd {
 /** Event emitted Wi-Fi station is disconnected from AP */
 #define NET_EVENT_WIFI_AP_STA_DISCONNECTED			\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED)
+
+/** Event signal change of connected AP */
+#define NET_EVENT_WIFI_SIGNAL_CHANGE				\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_SIGNAL_CHANGE)
+
+/** Event Neighbor Report Completed */
+#define NET_EVENT_WIFI_NEIGHBOR_REP_COMP			\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE)
 
 /** @brief Wi-Fi version */
 struct wifi_version {
@@ -1427,6 +1457,21 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*ap_wps_config)(const struct device *dev, struct wifi_wps_config_params *params);
+	/** Trigger specific scan
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 * @param params Scan parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*spec_scan)(const struct device *dev, struct wifi_scan_params *params);
+	/** Start 11r roaming
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*start_11r_roaming)(const struct device *dev);
 };
 
 /** Wi-Fi management offload API */
@@ -1517,6 +1562,17 @@ void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
  * @param status Disconnect complete status
  */
 void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface, int status);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+/** Wi-Fi management neighbor reports event
+ *
+ * @param iface Network interface
+ * @param inbuf Input buffer of neighbor reports
+ * @param buf_len Lenghth of input buffer
+ */
+void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface,
+					     char *inbuf, size_t buf_len);
+#endif
 
 /** Wi-Fi management AP mode enable result event
  *
