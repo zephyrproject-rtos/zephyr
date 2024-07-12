@@ -1377,6 +1377,8 @@ static void update_conn(struct bt_conn *conn, const bt_addr_le_t *id_addr,
 
 void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
+	__ASSERT_NO_MSG(evt->status == BT_HCI_ERR_SUCCESS);
+
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
 	bt_addr_le_t peer_addr, id_addr;
@@ -1390,34 +1392,6 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 #if defined(CONFIG_BT_SMP)
 	bt_id_pending_keys_update();
 #endif
-
-	if (evt->status) {
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-		    evt->status == BT_HCI_ERR_ADV_TIMEOUT) {
-			le_conn_complete_adv_timeout();
-			return;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-		    evt->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
-			le_conn_complete_cancel(evt->status);
-			bt_le_scan_update(false);
-			return;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_CENTRAL) && IS_ENABLED(CONFIG_BT_PER_ADV_RSP) &&
-		    evt->status == BT_HCI_ERR_CONN_FAIL_TO_ESTAB) {
-			le_conn_complete_cancel(evt->status);
-
-			atomic_clear_bit(bt_dev.flags, BT_DEV_INITIATING);
-
-			return;
-		}
-
-		LOG_WRN("Unexpected status 0x%02x", evt->status);
-
-		return;
-	}
 
 	id = evt->role == BT_HCI_ROLE_PERIPHERAL ? bt_dev.adv_conn_id : BT_ID_DEFAULT;
 	translate_addrs(&peer_addr, &id_addr, evt, id);
@@ -1570,6 +1544,8 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 *evt,
 				      struct bt_le_per_adv_sync *sync)
 {
+	__ASSERT_NO_MSG(evt->status == BT_HCI_ERR_SUCCESS);
+
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
 	bt_addr_le_t peer_addr, id_addr;
@@ -1605,12 +1581,6 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 #if defined(CONFIG_BT_SMP)
 	bt_id_pending_keys_update();
 #endif
-
-	if (evt->status) {
-		LOG_ERR("Unexpected status 0x%02x", evt->status);
-
-		return;
-	}
 
 	translate_addrs(&peer_addr, &id_addr, (const struct bt_hci_evt_le_enh_conn_complete *)evt,
 			BT_ID_DEFAULT);
@@ -1654,9 +1624,42 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 
+static void enh_conn_complete_error_handle(uint8_t status)
+{
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && status == BT_HCI_ERR_ADV_TIMEOUT) {
+		le_conn_complete_adv_timeout();
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+		le_conn_complete_cancel(status);
+		bt_le_scan_update(false);
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && IS_ENABLED(CONFIG_BT_PER_ADV_RSP) &&
+	    status == BT_HCI_ERR_CONN_FAIL_TO_ESTAB) {
+		le_conn_complete_cancel(status);
+
+		atomic_clear_bit(bt_dev.flags, BT_DEV_INITIATING);
+
+		return;
+	}
+
+	LOG_WRN("Unexpected status 0x%02x", status);
+}
+
 static void le_enh_conn_complete(struct net_buf *buf)
 {
-	enh_conn_complete((void *)buf->data);
+	struct bt_hci_evt_le_enh_conn_complete *evt =
+		(struct bt_hci_evt_le_enh_conn_complete *)buf->data;
+
+	if (evt->status != BT_HCI_ERR_SUCCESS) {
+		enh_conn_complete_error_handle(evt->status);
+		return;
+	}
+
+	enh_conn_complete(evt);
 }
 
 #if defined(CONFIG_BT_PER_ADV_RSP) || defined(CONFIG_BT_PER_ADV_SYNC_RSP)
@@ -1664,6 +1667,11 @@ static void le_enh_conn_complete_v2(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_enh_conn_complete_v2 *evt =
 		(struct bt_hci_evt_le_enh_conn_complete_v2 *)buf->data;
+
+	if (evt->status != BT_HCI_ERR_SUCCESS) {
+		enh_conn_complete_error_handle(evt->status);
+		return;
+	}
 
 	if (evt->adv_handle == BT_HCI_ADV_HANDLE_INVALID &&
 	    evt->sync_handle == BT_HCI_SYNC_HANDLE_INVALID) {
@@ -1703,6 +1711,11 @@ static void le_legacy_conn_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
 	struct bt_hci_evt_le_enh_conn_complete enh;
+
+	if (evt->status != BT_HCI_ERR_SUCCESS) {
+		enh_conn_complete_error_handle(evt->status);
+		return;
+	}
 
 	LOG_DBG("status 0x%02x role %u %s", evt->status, evt->role,
 		bt_addr_le_str(&evt->peer_addr));
