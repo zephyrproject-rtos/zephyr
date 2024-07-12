@@ -1032,7 +1032,11 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 		/* FIXME: Time reservation for interleaved packing */
 		/* Below is time reservation for sequential packing */
-		slot_us = cis->lll.sub_interval * cis->lll.nse;
+		if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX)) {
+			slot_us = cis->lll.sub_interval * cis->lll.nse;
+		} else {
+			slot_us = cis->lll.sub_interval * MAX(cis->lll.tx.bn, cis->lll.rx.bn);
+		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
 			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
