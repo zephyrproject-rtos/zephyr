@@ -169,10 +169,23 @@
   - "subsys/settings/**/*"
 
 "CI-nfc-test":
-  - any:
-      - "**/*"
-      - "!samples/bluetooth/**/*"
-      - "!tests/bluetooth/**/*"
+  - "drivers/bluetooth/hci/**/*"
+  - "drivers/entropy/**/*"
+  - "drivers/flash/**/*"
+  - "drivers/mbox/**/*"
+  - "drivers/spi/**/*"
+  - "lib/crc/**/*"
+  - "modules/hal_nordic/**/*"
+  - "soc/nordic/**/*"
+  - "subsys/bluetooth/**/*"
+  - "subsys/ipc/ipc_service/**/*"
+  - "subsys/fs/**/*"
+  - "subsys/mem_mgmt/**/*"
+  - "subsys/net/**/*"
+  - "subsys/random/**/*"
+  - "subsys/settings/**/*"
+  - "subsys/shell/**/*"
+  - "subsys/storage/**/*"
 
 "CI-matter-test":
   - "include/dfu/**/*"
