@@ -1120,6 +1120,9 @@ static uint8_t credits(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_l2cap_credits_cmd *cp = cmd;
 	struct channel *chan;
+#if defined(CONFIG_BT_CLASSIC)
+	struct br_channel *br_chan = NULL;
+#endif /* defined(CONFIG_BT_CLASSIC) */
 
 	if (cp->chan_id >= CHANNELS) {
 		return BTP_STATUS_FAILED;
@@ -1128,8 +1131,27 @@ static uint8_t credits(const void *cmd, uint16_t cmd_len,
 	chan = &channels[cp->chan_id];
 
 	if (!chan->in_use) {
+#if defined(CONFIG_BT_CLASSIC)
+		br_chan = &br_channels[cp->chan_id];
+		if (!br_chan->in_use) {
+			return BTP_STATUS_FAILED;
+		}
+#else
 		return BTP_STATUS_FAILED;
+#endif /* defined(CONFIG_BT_CLASSIC) */
 	}
+
+#if defined(CONFIG_BT_CLASSIC)
+	if (br_chan) {
+		if (br_chan->pending_credit)
+		{
+			bt_l2cap_chan_recv_complete(&br_chan->br.chan,
+				br_chan->pending_credit);
+		}
+		chan->pending_credit = NULL;
+		return BTP_STATUS_SUCCESS;
+	}
+#endif /* defined(CONFIG_BT_CLASSIC) */
 
 	if (chan->pending_credit) {
 		if (bt_l2cap_chan_recv_complete(&chan->le.chan,
