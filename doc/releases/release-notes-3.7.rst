@@ -1136,6 +1136,9 @@ Libraries / Subsystems
     * Instructions for the deprecated mcumgr go tool have been removed, a list of alternative,
       supported clients can be found on :ref:`mcumgr_tools_libraries`.
 
+    * Fixed an issue with the SMP structure not being packed which would cause a fault on devices
+      that do not support unaligned memory accesses.
+
 * Logging
 
   * By enabling :kconfig:option:`CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION`, the IP address of the
