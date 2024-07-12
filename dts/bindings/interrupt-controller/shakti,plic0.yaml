@@ -12,3 +12,9 @@ properties:
     type: int
     description: Number of external interrupts supported
     required: true
+  base:
+    type: int
+    required: true   
+  interrupt-shift:
+    type: int
+    required: false

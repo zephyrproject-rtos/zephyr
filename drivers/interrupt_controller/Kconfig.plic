@@ -4,7 +4,7 @@
 config PLIC
 	bool "Platform Level Interrupt Controller (PLIC)"
 	default y
-	depends on DT_HAS_SHAKTI_PLIC_ENABLED
+	depends on DT_HAS_PLIC_ENABLED
 	select MULTI_LEVEL_INTERRUPTS
 	select 2ND_LEVEL_INTERRUPTS
 	help

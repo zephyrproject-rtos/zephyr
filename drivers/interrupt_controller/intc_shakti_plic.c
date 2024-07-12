@@ -12,8 +12,8 @@
 
 // Zephyr-plic_shakti
 
-#define DT_DRV_COMPAT shakti_plic
-#define PLIC_BASE_ADDR(n) DT_INST_REG_ADDR(n)
+#define DT_DRV_COMPAT shakti_plic0
+#define PLIC_BASE_ADDRESS DT_INST_PROP(0, base)
 
 //--------------------------------
 
@@ -36,7 +36,7 @@
 #define PLIC_THRESHOLD_OFFSET           0x200000UL
 #define PLIC_CLAIM_OFFSET               0x200004UL
 
-#define PLIC_REG_OFFSET                 ((uint32_t)PLIC_BASE_ADDR(0) + PLIC_THRESHOLD_OFFSET)
+#define PLIC_REG_OFFSET                 ((uint32_t)PLIC_BASE_ADDRESS + PLIC_THRESHOLD_OFFSET)
 
 #define PLIC_MAX_INTERRUPT_SRC          58 // set this value to CONFIG_NUM_IRQS
 #define PLIC_EN_SIZE                    ((uint32_t)(PLIC_MAX_INTERRUPT_SRC/32) * (sizeof(uint32_t))) 
@@ -51,6 +51,7 @@ typedef struct plic_shakti_regs_t
 }plic_regs_t;
 
 static int track_irq_num;
+volatile int key=0;
 
 // plic_fptr_t isr_table[PLIC_MAX_INTERRUPT_SRC];
 // interrupt_data_t hart0_interrupt_matrix[PLIC_MAX_INTERRUPT_SRC];
@@ -136,7 +137,7 @@ void plic_irq_handler( const void *arg)
 
     track_irq_num = interrupt_id;
 
-    if (irq == 0U || irq >= PLIC_IRQS)
+    if (track_irq_num == 0U || track_irq_num >= CONFIG_NUM_IRQS)
 	    z_irq_spurious(NULL);
 
 	// log_trace("\nmach_plic_handler entered\n");
@@ -167,7 +168,7 @@ void plic_irq_handler( const void *arg)
 	// 	  interrupt_id,hart0_interrupt_matrix[interrupt_id].state);
 
 	/*call relevant interrupt service routine*/
-    int_handle_t = (struct _isr_table_entry *)&_sw_isr_table[interrupt_id];
+    int_handle_t = (struct _isr_table_entry *)&_sw_isr_table[interrupt_id+31];
     int_handle_t->isr(int_handle_t->arg);
 
 	// isr_table[interrupt_id](interrupt_id);
@@ -222,7 +223,7 @@ int riscv_plic_get_irq(void)
  * @details A single bit that enables an interrupt. The bit position corresponds to the interrupt id
  * @param uint32_t interrupt_id
  */
-void plic_shakti_irq_enable(uint32_t interrupt_id)
+void plic_irq_enable(uint32_t interrupt_id)
 {
 	uint32_t *interrupt_enable_addr;
 	uint32_t current_value = 0x00, new_value;
@@ -235,7 +236,7 @@ void plic_shakti_irq_enable(uint32_t interrupt_id)
 	// 		,PLIC_BASE_ADDRESS, PLIC_ENABLE_OFFSET);
 	interrupt_enable_addr = (uint32_t *) (PLIC_BASE_ADDRESS +
 			PLIC_ENABLE_OFFSET +
-			((interrupt_id / 32)*sizeof(uint32_t)));
+			(((interrupt_id / 32)-1)*sizeof(uint32_t)));
 
 	current_value = *interrupt_enable_addr;
 
@@ -243,9 +244,11 @@ void plic_shakti_irq_enable(uint32_t interrupt_id)
 	// 		interrupt_enable_addr, current_value);
 
 	/*set the bit corresponding to the interrupt src*/
-	new_value = current_value | (0x1 << (interrupt_id % 32)); //Changed thissssss
+	new_value = current_value | (0x1 << ((interrupt_id % 32)+1)); //Changed thissssss
 
+	key = irq_lock();
 	*((uint32_t*)interrupt_enable_addr) = new_value;
+	irq_unlock(key);
 
 	// log_debug("value read: new_value = %x\n", new_value);
 
@@ -280,9 +283,11 @@ void plic_shakti_irq_disable(uint32_t interrupt_id)
 	// 	  interrupt_disable_addr, current_value);   
 
 	/*unset the bit corresponding to the interrupt src*/
-	new_value = current_value & (~(0x1 << (interrupt_id % 32)));
+	new_value = current_value & (~(0x1 << ((interrupt_id % 32) + 1)));
 
+	key = irq_lock();
 	*interrupt_disable_addr = new_value;
+	irq_unlock(key);
 
 	// hart0_interrupt_matrix[interrupt_id].state = INACTIVE;
 
@@ -383,7 +388,7 @@ void plic_shakti_set_priority(uint32_t priority_value, uint32_t int_id)
  */
 void plic_shakti_init(const struct device *dev)
 {
-	uint32_t int_id = 0;
+	// uint32_t int_id = 0;
 
     volatile uint32_t *interrupt_disable_addr = (uint32_t *) (PLIC_BASE_ADDRESS + PLIC_ENABLE_OFFSET);
     volatile uint32_t *interrupt_threshold_priority = (uint32_t *) (PLIC_BASE_ADDRESS + PLIC_THRESHOLD_OFFSET);    
@@ -395,11 +400,11 @@ void plic_shakti_init(const struct device *dev)
         interrupt_disable_addr++;
     }
 
-    for (int j = 1; j < PLIC_MAX_INTERRUPT_SRC; j++)
-    {
-        interrupt_threshold_priority += (j << PLIC_PRIORITY_SHIFT_PER_INT)
-        *interrupt_threshold_priority = 0U;
-    }
+    // for (int j = 1; j <= PLIC_MAX_INTERRUPT_SRC; j++)
+    // {
+    //     interrupt_threshold_priority += (j << PLIC_PRIORITY_SHIFT_PER_INT)
+    //     *interrupt_threshold_priority = 0U;
+    // }
 
     regs->priority_thershold = 0U;
 
