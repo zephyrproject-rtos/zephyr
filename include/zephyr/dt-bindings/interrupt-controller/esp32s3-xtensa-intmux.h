@@ -45,7 +45,7 @@
 #define USB_INTR_SOURCE                       38 /* interrupt of USB, level*/
 #define RTC_CORE_INTR_SOURCE                  39 /* interrupt of rtc core and watchdog, level*/
 #define RMT_INTR_SOURCE                       40 /* interrupt of remote controller, level*/
-#define PCNT_INTR_SOURCE                      41 /* interrupt of pluse count, level*/
+#define PCNT_INTR_SOURCE                      41 /* interrupt of pulse count, level*/
 #define I2C_EXT0_INTR_SOURCE                  42 /* interrupt of I2C controller1, level*/
 #define I2C_EXT1_INTR_SOURCE                  43 /* interrupt of I2C controller0, level*/
 #define SPI2_DMA_INTR_SOURCE                  44 /* interrupt of SPI2 DMA, level*/
@@ -59,7 +59,7 @@
 #define TG1_T0_LEVEL_INTR_SOURCE              53 /* interrupt of TIMER_GROUP1, TIMER0, EDGE*/
 #define TG1_T1_LEVEL_INTR_SOURCE              54 /* interrupt of TIMER_GROUP1, TIMER1, EDGE*/
 #define TG1_WDT_LEVEL_INTR_SOURCE             55 /* interrupt of TIMER_GROUP1, WATCHDOG, EDGE*/
-#define CACHE_IA_INTR_SOURCE                  56 /* interrupt of Cache Invalied Access, LEVEL*/
+#define CACHE_IA_INTR_SOURCE                  56 /* interrupt of Cache Invalid Access, LEVEL*/
 #define SYSTIMER_TARGET0_EDGE_INTR_SOURCE     57 /* interrupt of system timer 0, EDGE*/
 #define SYSTIMER_TARGET1_EDGE_INTR_SOURCE     58 /* interrupt of system timer 1, EDGE*/
 #define SYSTIMER_TARGET2_EDGE_INTR_SOURCE     59 /* interrupt of system timer 2, EDGE*/

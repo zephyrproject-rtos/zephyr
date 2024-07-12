@@ -69,14 +69,14 @@ config HTTP_SERVER_MAX_STREAMS
 config HTTP_SERVER_CLIENT_BUFFER_SIZE
 	int "Client Buffer Size"
 	default 256
-	range 64 1024
+	range 64 4294967295
 	help
 	  This setting determines the buffer size for each client.
 
 config HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE
 	int "Size of the buffer used for decoding Huffman-encoded strings"
 	default 256
-	range 64 1024
+	range 64 4294967295
 	help
 	  Size of the buffer used for decoding Huffman-encoded strings when
 	  processing HPACK compressed headers. This effectively limits the
@@ -122,6 +122,16 @@ config HTTP_SERVER_RESOURCE_WILDCARD
 	  Allow user to specify wildcards when setting up resource strings.
 	  This means that instead of specifying multiple resources with exact
 	  string matches, one resource handler could handle multiple URLs.
+
+config HTTP_SERVER_RESTART_DELAY
+	int "Delay before re-initialization when restarting server"
+	default 1000
+	range 1 60000
+	help
+	  In case server restarts for any reason, the server re-initialization
+	  will be delayed by this value (miliseconds). The delay is needed to
+	  allow any existing connections to finalize to avoid binding errors
+	  during initialization.
 
 endif
 

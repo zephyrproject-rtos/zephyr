@@ -45,7 +45,6 @@ void net_socket_service_foreach(net_socket_service_cb_t cb, void *user_data)
 static void cleanup_svc_events(const struct net_socket_service_desc *svc)
 {
 	for (int i = 0; i < svc->pev_len; i++) {
-		ctx.events[get_idx(svc) + i].fd = -1;
 		svc->pev[i].event.fd = -1;
 		svc->pev[i].event.events = 0;
 	}
@@ -86,10 +85,6 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 		for (i = 0; i < len; i++) {
 			svc->pev[i].event = fds[i];
 			svc->pev[i].user_data = user_data;
-		}
-
-		for (i = 0; i < svc->pev_len; i++) {
-			ctx.events[get_idx(svc) + i] = svc->pev[i].event;
 		}
 	}
 
@@ -151,18 +146,8 @@ static int call_work(struct zsock_pollfd *pev, struct k_work_q *work_q,
 	 */
 	pev->fd = -1;
 
-	if (work->handler == NULL) {
-		/* Synchronous call */
-		net_socket_service_callback(work);
-	} else {
-		if (work_q != NULL) {
-			ret = k_work_submit_to_queue(work_q, work);
-		} else {
-			ret = k_work_submit(work);
-		}
-
-		k_yield();
-	}
+	/* Synchronous call */
+	net_socket_service_callback(work);
 
 	return ret;
 

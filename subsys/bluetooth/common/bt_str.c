@@ -62,6 +62,7 @@ const char *bt_uuid_str(const struct bt_uuid *uuid)
 	return str;
 }
 
+#if defined(CONFIG_BT_HCI_ERR_TO_STR)
 const char *bt_hci_err_to_str(uint8_t hci_err)
 {
 	#define HCI_ERR(err) [err] = #err
@@ -146,3 +147,4 @@ const char *bt_hci_err_to_str(uint8_t hci_err)
 
 	#undef HCI_ERR
 }
+#endif /* CONFIG_BT_HCI_ERR_TO_STR */

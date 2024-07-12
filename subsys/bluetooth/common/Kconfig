@@ -80,7 +80,7 @@ config BT_BUF_ACL_RX_SIZE
 config BT_BUF_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default 6
-	range 1 64
+	range 2 256
 	help
 	  Number or incoming ACL data buffers sent from the Controller to the
 	  Host.
@@ -93,6 +93,10 @@ config BT_BUF_ACL_RX_COUNT
 
 	  When Controller to Host flow control is not enabled the Controller
 	  can assume that the Host has infinite amount of buffers.
+
+	  For both configurations, there is an additional requirement that is
+	  enforced by a build-time check: BT_BUF_ACL_RX_COUNT needs to be at
+	  least one greater than BT_MAX_CONN.
 
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
@@ -252,6 +256,14 @@ config BT_ASSERT_PANIC
 	  k_panic() instead of k_oops() when an assertion is triggered.
 
 endif # BT_ASSERT
+
+config BT_HCI_ERR_TO_STR
+	bool "Print HCI error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of HCI error
+	  codes represented as strings.
+	  See bt_hci_err_to_str() for more details.
 
 config BT_MONITOR
 	bool

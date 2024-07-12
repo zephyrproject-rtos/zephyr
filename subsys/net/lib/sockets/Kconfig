@@ -225,7 +225,7 @@ config NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE
 	  Size of the intermediate buffer for DTLS sendmsg() function. The
 	  intermediate buffer is needed, as sendmsg() for DGRAM is expected to
 	  send all of the data in a single datagram, therefore all data provided
-	  in msghdr strucure need to be linearized before passing to mbed TLS.
+	  in msghdr structure need to be linearized before passing to mbed TLS.
 	  The buffer size can be set to 0, in that case data linearizing for
 	  DTLS sockets is disabled. In result, sendmsg() will only accept msghdr
 	  with a single non-empty iov buffer.

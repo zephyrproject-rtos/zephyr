@@ -523,7 +523,7 @@ int cbprintf_package_convert(void *in_packaged,
 			     uint16_t *strl,
 			     size_t strl_len);
 
-/* @interal Context used for package copying. */
+/* @internal Context used for package copying. */
 struct z_cbprintf_buf_desc {
 	void *buf;
 	size_t size;

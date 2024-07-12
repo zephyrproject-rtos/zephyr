@@ -17,7 +17,7 @@
 #include <zephyr/net/http/frame.h>
 
 /* HTTP1/HTTP2 state handling */
-int handle_http_frame_rst_frame(struct http_client_ctx *client);
+int handle_http_frame_rst_stream(struct http_client_ctx *client);
 int handle_http_frame_goaway(struct http_client_ctx *client);
 int handle_http_frame_settings(struct http_client_ctx *client);
 int handle_http_frame_priority(struct http_client_ctx *client);
@@ -26,6 +26,7 @@ int handle_http_frame_window_update(struct http_client_ctx *client);
 int handle_http_frame_header(struct http_client_ctx *client);
 int handle_http_frame_headers(struct http_client_ctx *client);
 int handle_http_frame_data(struct http_client_ctx *client);
+int handle_http_frame_padding(struct http_client_ctx *client);
 int handle_http1_request(struct http_client_ctx *client);
 int handle_http1_to_http2_upgrade(struct http_client_ctx *client);
 int handle_http1_to_websocket_upgrade(struct http_client_ctx *client);
@@ -41,7 +42,8 @@ int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t 
 void http_client_timer_restart(struct http_client_ctx *client);
 
 /* TODO Could be static, but currently used in tests. */
-int parse_http_frame_header(struct http_client_ctx *client);
-const char *get_frame_type_name(enum http_frame_type type);
+int parse_http_frame_header(struct http_client_ctx *client, const uint8_t *buffer,
+			    size_t buflen);
+const char *get_frame_type_name(enum http2_frame_type type);
 
 #endif /* HTTP_SERVER_INTERNAL_H_ */

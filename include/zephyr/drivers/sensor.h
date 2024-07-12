@@ -1056,9 +1056,9 @@ static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_
 		}
 		rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM, buf, buf_len, buf);
 	}
-	rtio_submit(ctx, 1);
+	rtio_submit(ctx, 0);
 
-	struct rtio_cqe *cqe = rtio_cqe_consume(ctx);
+	struct rtio_cqe *cqe = rtio_cqe_consume_block(ctx);
 	int res = cqe->result;
 
 	__ASSERT(cqe->userdata != buf,

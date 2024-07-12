@@ -6,9 +6,9 @@ Coding Guidelines
 The project TSC and the Safety Committee of the project agreed to implement
 a staged and incremental approach for complying with a set of coding rules (AKA
 Coding Guidelines) to improve quality and consistency of the code base. Below
-are the agreed upon stages and the approximate timelines:
+are the agreed upon stages:
 
-Stage I
+Stage I (COMPLETED)
   Coding guideline rules are available to be followed and referenced,
   but not enforced. Rules are not yet enforced in CI and pull-requests cannot be
   blocked by reviewers/approvers due to violations.
@@ -32,6 +32,13 @@ Stage IV
 
     Coding guideline rules may be removed/changed at any time by filing a
     GH issue/RFC.
+
+.. important::
+
+    **Current stage:**
+    The prerequisites for entering **Stage II** are currently being looked at:
+    The tooling is in evaluation, CI setup and `enforcement strategy
+    <https://github.com/zephyrproject-rtos/zephyr/issues/58903>`__ is being worked on.
 
 Main rules
 **********

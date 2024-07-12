@@ -1696,7 +1696,7 @@ struct bt_mesh_comp_p1_elem {
 	size_t nsig;
 	/** The number of vendor models in this element */
 	size_t nvnd;
-	/** Buffer containig SIG and Vendor Model Items */
+	/** Buffer containing SIG and Vendor Model Items */
 	struct net_buf_simple *_buf;
 };
 

@@ -68,9 +68,9 @@
 		reg = <0x1b000 DT_SIZE_K(1428)>;
 	};
 
-	sram0: memory@20180000 {
+	sram0: memory@180000 {
 		compatible = "mmio-sram";
-		reg = <0x20180000 DT_SIZE_K(3072)>;
+		reg = <0x180000 DT_SIZE_K(3072)>;
 	};
 
 	sram1: memory@40140000 {
@@ -98,6 +98,10 @@
 	 * addresses differ between non-secure (0x40000000) and secure
 	 * modes (0x50000000).
 	 */
+
+	flexspi: spi@134000 {
+		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+	};
 
 	clkctl0: clkctl@1000 {
 		/* FIXME This chip does NOT have a syscon */
@@ -406,9 +410,9 @@
 		min-bus-freq = <400000>;
 	};
 
-	lpadc0: lpadc@13A0000 {
+	lpadc0: lpadc@13a000 {
 		compatible = "nxp,lpc-lpadc";
-		reg = <0x13A000 0x304>;
+		reg = <0x13a000 0x304>;
 		interrupts = <22 0>;
 		status = "disabled";
 		clk-divider = <1>;

@@ -119,8 +119,8 @@ endforeach()
 set(llext_cflags ${new_cflags})
 
 
-list(APPEND base_flags_make ${llext_cflags} ${imacros_make})
-list(APPEND base_flags_cmake ${llext_cflags} ${imacros_cmake})
+list(APPEND base_flags_make ${llext_cflags} ${imacros_make} -DLL_EXTENSION_BUILD)
+list(APPEND base_flags_cmake ${llext_cflags} ${imacros_cmake} -DLL_EXTENSION_BUILD)
 
 separate_arguments(include_dirs NATIVE_COMMAND ${INTERFACE_INCLUDE_DIRECTORIES})
 file(MAKE_DIRECTORY ${llext_edk_inc})

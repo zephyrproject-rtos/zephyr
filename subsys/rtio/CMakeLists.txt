@@ -12,3 +12,5 @@ if(CONFIG_RTIO)
 	zephyr_library_sources(rtio_init.c)
 	zephyr_library_sources_ifdef(CONFIG_USERSPACE rtio_handlers.c)
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_RTIO_WORKQ rtio_workq.c)

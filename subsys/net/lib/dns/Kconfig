@@ -286,7 +286,7 @@ source "subsys/net/Kconfig.template.log_config.net"
 endif # DNS_SD
 
 # Note that we enable the DNS socket dispatcher always if either responder or
-# resolver support is enabed to simplify things. Strictly speaking the
+# resolver support is enabled to simplify things. Strictly speaking the
 # dispatcher is really needed for supporting resolver and responder at the same
 # time.
 config DNS_SOCKET_DISPATCHER

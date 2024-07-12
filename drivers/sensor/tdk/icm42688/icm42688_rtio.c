@@ -1,10 +1,12 @@
 /*
  * Copyright (c) 2023 Google LLC
+ * Copyright (c) 2024 Croxel Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/rtio/work.h>
 #include "icm42688.h"
 #include "icm42688_decoder.h"
 #include "icm42688_reg.h"
@@ -77,9 +79,10 @@ static void icm42688_submit_one_shot(const struct device *dev, struct rtio_iodev
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 
-void icm42688_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+void icm42688_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = cfg->sensor;
 
 	if (!cfg->is_streaming) {
 		icm42688_submit_one_shot(dev, iodev_sqe);
@@ -88,6 +91,15 @@ void icm42688_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	} else {
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
+}
+
+void icm42688_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_work_req *req = rtio_work_req_alloc();
+
+	__ASSERT_NO_MSG(req);
+
+	rtio_work_req_submit(req, iodev_sqe, icm42688_submit_sync);
 }
 
 BUILD_ASSERT(sizeof(struct icm42688_decoder_header) == 9);

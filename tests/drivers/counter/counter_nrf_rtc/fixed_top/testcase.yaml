@@ -9,15 +9,4 @@ tests:
       - nrf52_bsim
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
-  drivers.counter.nrf_rtc.nrf54h20_cpuppr:
-    tags:
-      - drivers
-      - counter
-    depends_on: counter
-    platform_allow: nrf54h20dk/nrf54h20/cpuppr
-    sysbuild: true
-    extra_args:
-      - vpr_launcher_DTC_OVERLAY_FILE="../../../tests/drivers/counter/counter_nrf_rtc/fixed_top/boards/nrf54h20dk_nrf54h20_vpr_launcher.overlay"
-      - SB_CONFIG_VPR_LAUNCHER=y
-      # Disable asserts to fit in limited code memory
-      - CONFIG_ASSERT=n
+      - nrf54h20dk/nrf54h20/cpuppr

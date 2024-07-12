@@ -264,6 +264,8 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 	net_eth_carrier_off(data->iface);
 
 	config->irq_config_func();
+
+	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT_ENABLED, NULL);
 }
 
 static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev)

@@ -1588,6 +1588,8 @@ static int pkt_setup_ip_data(struct net_pkt *pkt, struct hl7800_socket *sock)
 			    &((struct sockaddr_in6 *)&sock->src)->sin6_addr)) {
 			return -1;
 		}
+		net_pkt_set_remote_address(pkt, &sock->dst, sizeof(struct sockaddr_in6));
+		pkt->remote.sa_family = AF_INET6;
 		src_port = ntohs(net_sin6(&sock->src)->sin6_port);
 		dst_port = ntohs(net_sin6(&sock->dst)->sin6_port);
 
@@ -1601,6 +1603,8 @@ static int pkt_setup_ip_data(struct net_pkt *pkt, struct hl7800_socket *sock)
 			    &((struct sockaddr_in *)&sock->src)->sin_addr)) {
 			return -1;
 		}
+		net_pkt_set_remote_address(pkt, &sock->dst, sizeof(struct sockaddr_in));
+		pkt->remote.sa_family = AF_INET;
 		src_port = ntohs(net_sin(&sock->src)->sin_port);
 		dst_port = ntohs(net_sin(&sock->dst)->sin_port);
 

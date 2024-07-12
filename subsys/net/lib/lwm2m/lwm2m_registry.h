@@ -150,7 +150,7 @@ int path_to_objs(const struct lwm2m_obj_path *path, struct lwm2m_engine_obj_inst
 
 /**
  * @brief Returns the object instance in the registry with object id = @p obj_id that has the
- * smalles object instance id strictly larger than @p obj_inst_id.
+ * smallest object instance id strictly larger than @p obj_inst_id.
  *
  * @param[in] obj_id Object id of the object instance.
  * @param[in] obj_inst_id Lower bound of the object instance id.

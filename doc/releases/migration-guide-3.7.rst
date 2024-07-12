@@ -294,13 +294,13 @@ Bluetooth HCI
       choice, rather they can now be enabled and disabled independently, mostly based on their
       respective devicetree node being enabled or not.
    * The ``BT_HCI_VS_EXT`` Kconfig option was deleted and the feature is now included in the
-      :kconfig:option:`BT_HCI_VS` Kconfig option.
+      :kconfig:option:`CONFIG_BT_HCI_VS` Kconfig option.
    * The ``BT_HCI_VS_EVT`` Kconfig option was removed, since vendor event support is implicit if
-      the :kconfig:option:`BT_HCI_VS` option is enabled.
+      the :kconfig:option:`CONFIG_BT_HCI_VS` option is enabled.
    * The bt_read_static_addr() API was removed. This wasn't really a completely public API, but
       since it was exposed by the public hci_driver.h header file the removal is mentioned here.
-      Enable the :kconfig:option:`BT_HCI_VS` Kconfig option instead, and use vendor specific HCI
-      commands API to get the Controller's Bluetooth static address when available.
+      Enable the :kconfig:option:`CONFIG_BT_HCI_VS` Kconfig option instead, and use vendor specific
+      HCI commands API to get the Controller's Bluetooth static address when available.
 
 Charger
 =======
@@ -316,8 +316,9 @@ Controller Area Network (CAN)
 
 * Removed the following deprecated CAN controller devicetree properties. Out-of-tree boards using
   these properties can switch to using the ``bitrate``, ``sample-point``, ``bitrate-data``, and
-  ``sample-point-data`` devicetree properties (or rely on :kconfig:option:`CAN_DEFAULT_BITRATE` and
-  :kconfig:option:`CAN_DEFAULT_BITRATE_DATA`) for specifying the initial CAN bitrate:
+  ``sample-point-data`` devicetree properties (or rely on
+  :kconfig:option:`CONFIG_CAN_DEFAULT_BITRATE` and
+  :kconfig:option:`CONFIG_CAN_DEFAULT_BITRATE_DATA`) for specifying the initial CAN bitrate:
 
   * ``sjw``
   * ``prop-seg``
@@ -805,6 +806,12 @@ Bluetooth Host
   * :c:macro:`BT_LE_EXT_ADV_CODED_NCONN_NAME`
 
   (:github:`75065`)
+
+* :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` now needs to be larger than
+  :kconfig:option:`CONFIG_BT_MAX_CONN`. This was always the case due to the design of the HCI
+  interface. It is now being enforced through a build-time assertion.
+
+  (:github:`75592`)
 
 Bluetooth Crypto
 ================

@@ -99,7 +99,7 @@ static int ad569x_sw_reset(const struct device *dev)
 
 	if (reg != 0) {
 		LOG_ERR("failed to reset DAC output");
-		ret = -EIO;
+		return -EIO;
 	}
 
 	return 0;
@@ -118,6 +118,8 @@ static int ad569x_write_value(const struct device *dev, uint8_t channel, uint32_
 		LOG_ERR("invalid value %d", value);
 		return -EINVAL;
 	}
+
+	value <<= 16 - config->resolution;
 
 	return ad569x_write(dev, AD569X_CMD_WRITE_AND_UPDATE, value);
 }

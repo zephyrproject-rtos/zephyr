@@ -1,13 +1,8 @@
 common:
-  # For twister runs, the following arch/platforms use logging backends
-  # which do not output dictionary logging in hexidecimal format,
-  # and thus cannot be used for testing. Currently, only UART
-  # logging backend does that.
-  arch_exclude:
-    - posix
-  platform_exclude:
-    - qemu_xtensa
-    - qemu_xtensa/dc233c/mmu
+  # For twister runs, only logging backends with in hexidecimal format
+  # are supported. Currently, only UART logging backend does that.
+  filter: CONFIG_LOG_BACKEND_UART and CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY
+          and CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
 tests:
   logging.dictionary:
     tags: logging

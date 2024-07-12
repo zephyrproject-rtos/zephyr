@@ -204,7 +204,7 @@ int websocket_register(int http_sock, uint8_t *recv_buf, size_t recv_buf_len);
 
 /**
  * @brief Unregister a websocket. This is called when we no longer need
- *        the underlaying "real" socket. This will close first the websocket
+ *        the underlying "real" socket. This will close first the websocket
  *        and then the original socket.
  *
  * @param ws_sock Websocket connection socket.

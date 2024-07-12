@@ -56,6 +56,8 @@ static struct http_server_ctx server_ctx;
 static K_SEM_DEFINE(server_start, 0, 1);
 static bool server_running;
 
+static void close_client_connection(struct http_client_ctx *client);
+
 int http_server_init(struct http_server_ctx *ctx)
 {
 	int proto;
@@ -209,6 +211,8 @@ int http_server_init(struct http_server_ctx *ctx)
 
 	if (failed >= svc_count) {
 		LOG_ERR("All services failed (%d)", failed);
+		/* Close eventfd socket */
+		zsock_close(ctx->fds[0].fd);
 		return -ESRCH;
 	}
 
@@ -241,7 +245,7 @@ static int accept_new_client(int server_fd)
 	return new_socket;
 }
 
-static int close_all_sockets(struct http_server_ctx *ctx)
+static void close_all_sockets(struct http_server_ctx *ctx)
 {
 	zsock_close(ctx->fds[0].fd); /* close eventfd */
 	ctx->fds[0].fd = -1;
@@ -251,11 +255,17 @@ static int close_all_sockets(struct http_server_ctx *ctx)
 			continue;
 		}
 
-		zsock_close(ctx->fds[i].fd);
+		if (i < ctx->listen_fds) {
+			zsock_close(ctx->fds[i].fd);
+		} else {
+			struct http_client_ctx *client =
+				&server_ctx.clients[i - ctx->listen_fds];
+
+			close_client_connection(client);
+		}
+
 		ctx->fds[i].fd = -1;
 	}
-
-	return 0;
 }
 
 static void client_release_resources(struct http_client_ctx *client)
@@ -361,9 +371,11 @@ static void init_client_ctx(struct http_client_ctx *client, int new_socket)
 	http_client_timer_restart(client);
 
 	ARRAY_FOR_EACH(client->streams, i) {
-		client->streams[i].stream_state = HTTP_SERVER_STREAM_IDLE;
+		client->streams[i].stream_state = HTTP2_STREAM_IDLE;
 		client->streams[i].stream_id = 0;
 	}
+
+	client->current_stream = NULL;
 }
 
 static int handle_http_preface(struct http_client_ctx *client)
@@ -433,13 +445,16 @@ static int handle_http_request(struct http_client_ctx *client)
 			ret = handle_http_frame_window_update(client);
 			break;
 		case HTTP_SERVER_FRAME_RST_STREAM_STATE:
-			ret = handle_http_frame_rst_frame(client);
+			ret = handle_http_frame_rst_stream(client);
 			break;
 		case HTTP_SERVER_FRAME_GOAWAY_STATE:
 			ret = handle_http_frame_goaway(client);
 			break;
 		case HTTP_SERVER_FRAME_PRIORITY_STATE:
 			ret = handle_http_frame_priority(client);
+			break;
+		case HTTP_SERVER_FRAME_PADDING_STATE:
+			ret = handle_http_frame_padding(client);
 			break;
 		case HTTP_SERVER_DONE_STATE:
 			ret = handle_http_done(client);
@@ -479,7 +494,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 		if (ret < 0) {
 			ret = -errno;
 			LOG_DBG("poll failed (%d)", ret);
-			return ret;
+			goto closing;
 		}
 
 		if (ret == 0) {
@@ -490,6 +505,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 		if (ret == 1 && ctx->fds[0].revents) {
 			eventfd_read(ctx->fds[0].fd, &value);
 			LOG_DBG("Received stop event. exiting ..");
+			ret = 0;
 			goto closing;
 		}
 
@@ -523,7 +539,8 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 				/* Listening socket error, abort. */
 				LOG_ERR("Listening socket error, aborting.");
-				return -sock_error;
+				ret = -sock_error;
+				goto closing;
 
 			}
 
@@ -614,7 +631,8 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 closing:
 	/* Close all client connections and the server socket */
-	return close_all_sockets(ctx);
+	close_all_sockets(ctx);
+	return ret;
 }
 
 /* Compare two strings where the terminator is either "\0" or "?" */
@@ -750,13 +768,17 @@ static void http_server_thread(void *p1, void *p2, void *p3)
 			ret = http_server_init(&server_ctx);
 			if (ret < 0) {
 				LOG_ERR("Failed to initialize HTTP2 server");
-				return;
+				goto again;
 			}
 
 			ret = http_server_run(&server_ctx);
-			if (server_running) {
-				LOG_INF("Re-starting server (%d)", ret);
+			if (!server_running) {
+				continue;
 			}
+
+again:
+			LOG_INF("Re-starting server (%d)", ret);
+			k_sleep(K_MSEC(CONFIG_HTTP_SERVER_RESTART_DELAY));
 		}
 	}
 }

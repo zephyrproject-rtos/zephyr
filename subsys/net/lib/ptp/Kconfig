@@ -39,7 +39,7 @@ config PTP_SERVICE_THREAD_PRIO
 	default NUM_PREEMPT_PRIORITIES
 	help
 	  Set the priority of the PTP. This handler polls the sockets and checks
-	  timers, depending on received PTP messeges or timeouts actions defined
+	  timers, depending on received PTP messages or timeouts actions defined
 	  in the standard are taken. The value should be selected carefully.
 
 config PTP_MSG_POLL_SIZE
@@ -182,7 +182,7 @@ config PTP_TIME_RECEIVER_ONLY
 	bool "Configure Clock as timeReceiver PTP Instance"
 	depends on PTP_ORDINARY_CLOCK
 	help
-	  An Oridinary Clock may be designed to ba a timeReceiver PTP Instnace. In that state
+	  An Oridinary Clock may be designed to ba a timeReceiver PTP Instance. In that state
 	  the instance can never enter the TIME_TRANSMITTER state.
 
 config PTP_ANNOUNCE_RECV_TIMEOUT

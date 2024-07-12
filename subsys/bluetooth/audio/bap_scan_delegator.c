@@ -249,6 +249,8 @@ static void bis_sync_request_updated(struct bt_conn *conn,
 	    scan_delegator_cbs->bis_sync_req != NULL) {
 		scan_delegator_cbs->bis_sync_req(conn, &internal_state->state,
 						 internal_state->requested_bis_sync);
+	} else {
+		LOG_WRN("bis_sync_req callback is missing");
 	}
 }
 
@@ -275,18 +277,15 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 					    bt_security_t level,
 					    enum bt_security_err err)
 {
-	if (err != 0 || conn->encrypt == 0) {
-		return;
-	}
 
-	if (bt_addr_le_is_bonded(conn->id, &conn->le.dst) == 0) {
+	if (err != 0 || level < BT_SECURITY_L2 || !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		return;
 	}
 
 	/* Notify all receive states after a bonded device reconnects */
 	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
-		struct bass_recv_state_internal *internal_state = &scan_delegator.recv_states[i];
-		int gatt_err;
+		const struct bass_recv_state_internal *internal_state =
+			&scan_delegator.recv_states[i];
 
 		if (!internal_state->active) {
 			continue;
@@ -300,17 +299,9 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 		}
 
 		net_buf_put_recv_state(internal_state);
-
-		gatt_err = bt_gatt_notify_uuid(conn, BT_UUID_BASS_RECV_STATE,
-					       internal_state->attr, read_buf.data,
-					       read_buf.len);
+		bass_notify_receive_state(conn, internal_state);
 
 		k_sem_give(&read_buf_sem);
-
-		if (gatt_err != 0) {
-			LOG_WRN("Could not notify receive state[%d] to reconnecting assistant: %d",
-				i, gatt_err);
-		}
 	}
 }
 
@@ -480,6 +471,8 @@ static int pa_sync_request(struct bt_conn *conn,
 		err = scan_delegator_cbs->pa_sync_req(conn, state,
 						      past_supported,
 						      pa_interval);
+	} else {
+		LOG_WRN("pa_sync_req callback is missing, rejecting PA sync request");
 	}
 
 	return err;
@@ -493,6 +486,8 @@ static int pa_sync_term_request(struct bt_conn *conn,
 	if (scan_delegator_cbs != NULL &&
 	    scan_delegator_cbs->pa_sync_req != NULL) {
 		err = scan_delegator_cbs->pa_sync_term_req(conn, state);
+	} else {
+		LOG_WRN("pa_sync_term_req callback is missing, rejecting PA sync term request");
 	}
 
 	return err;

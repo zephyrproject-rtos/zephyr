@@ -228,7 +228,7 @@ struct tls_credential *credential_get(sec_tag_t tag,
 }
 
 
-/* Get the following credential filtered by a TAG valud */
+/* Get the following credential filtered by a TAG value */
 struct tls_credential *credential_next_get(sec_tag_t tag,
 					   struct tls_credential *iter)
 {

@@ -19,7 +19,7 @@
 		CREATE_OBJ_LEVEL(init, SMP)
 		__init_end = .;
 		__deferred_init_list_start = .;
-		KEEP(*(.z_deferred_init))
+		KEEP(*(.z_deferred_init*))
 		__deferred_init_list_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -41,7 +41,7 @@
 	 */
 	SECTION_PROLOGUE(.text.z_shared_isr,,)
 	{
-		KEEP(*(.text.z_shared_isr))
+		KEEP(*(.text.z_shared_isr*))
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 

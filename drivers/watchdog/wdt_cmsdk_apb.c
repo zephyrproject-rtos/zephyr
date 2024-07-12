@@ -65,8 +65,9 @@ struct wdog_cmsdk_apb {
 /* Keep reference of the device to pass it to the callback */
 const struct device *wdog_r;
 
-/* watchdog reload value in sec */
-static unsigned int reload_s = CMSDK_APB_WDOG_RELOAD;
+/* watchdog reload value in clock cycles */
+static unsigned int reload_cycles = CMSDK_APB_WDOG_RELOAD;
+static uint8_t assigned_channels;
 static uint8_t flags;
 
 static void (*user_cb)(const struct device *dev, int channel_id);
@@ -102,6 +103,8 @@ static int wdog_cmsdk_apb_disable(const struct device *dev)
 	/* Stop the watchdog counter with INTEN bit */
 	wdog->ctrl = ~(CMSDK_APB_WDOG_CTRL_RESEN | CMSDK_APB_WDOG_CTRL_INTEN);
 
+	assigned_channels = 0;
+
 	return 0;
 }
 
@@ -109,19 +112,27 @@ static int wdog_cmsdk_apb_install_timeout(const struct device *dev,
 					  const struct wdt_timeout_cfg *config)
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
+	uint32_t clk_freq_khz = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency) / 1000;
 
 	ARG_UNUSED(dev);
 
+	if (config->window.max == 0) {
+		return -EINVAL;
+	}
+	if (assigned_channels == 1) {
+		return -ENOMEM;
+	}
+
 	/* Reload value */
-	reload_s = config->window.max *
-			   DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency);
+	reload_cycles = config->window.max * clk_freq_khz;
 	flags = config->flags;
 
-	wdog->load = reload_s;
+	wdog->load = reload_cycles;
 
 	/* Configure only the callback */
 	user_cb = config->callback;
 
+	assigned_channels++;
 	return 0;
 }
 
@@ -136,7 +147,7 @@ static int wdog_cmsdk_apb_feed(const struct device *dev, int channel_id)
 	wdog->intclr = CMSDK_APB_WDOG_INTCLR;
 
 	/* Reload */
-	wdog->load = reload_s;
+	wdog->load = reload_cycles;
 
 	return 0;
 }
@@ -185,7 +196,7 @@ static int wdog_cmsdk_apb_init(const struct device *dev)
 	wdog_cmsdk_apb_unlock(dev);
 
 	/* set default reload value */
-	wdog->load = reload_s;
+	wdog->load = reload_cycles;
 
 #ifdef CONFIG_RUNTIME_NMI
 	/* Configure the interrupts */
