@@ -112,6 +112,7 @@ struct nrf_wifi_ctx_zep {
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 	bool rpu_recovery_in_progress;
 	unsigned long last_rpu_recovery_time_ms;
+	unsigned int rpu_recovery_retries;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 };
 
