@@ -275,17 +275,17 @@ enum sd_ocr_flag {
 	SD_OCR_VDD29_30FLAG = BIT(17),
 	/*!< VDD 2.9-3.0 */
 	SD_OCR_VDD30_31FLAG = BIT(18),
-	/*!< VDD 2.9-3.0 */
-	SD_OCR_VDD31_32FLAG = BIT(19),
 	/*!< VDD 3.0-3.1 */
-	SD_OCR_VDD32_33FLAG = BIT(20),
+	SD_OCR_VDD31_32FLAG = BIT(19),
 	/*!< VDD 3.1-3.2 */
-	SD_OCR_VDD33_34FLAG = BIT(21),
+	SD_OCR_VDD32_33FLAG = BIT(20),
 	/*!< VDD 3.2-3.3 */
-	SD_OCR_VDD34_35FLAG = BIT(22),
+	SD_OCR_VDD33_34FLAG = BIT(21),
 	/*!< VDD 3.3-3.4 */
-	SD_OCR_VDD35_36FLAG = BIT(23),
+	SD_OCR_VDD34_35FLAG = BIT(22),
 	/*!< VDD 3.4-3.5 */
+	SD_OCR_VDD35_36FLAG = BIT(23),
+	/*!< VDD 3.5-3.6 */
 };
 
 /**
@@ -353,7 +353,7 @@ enum sd_switch_arg {
 /**
  * @brief SD switch group numbers
  *
- * SD CMD6 has multiple function groups it can check/set. These indices are
+ * SD CMD6 has multiple function groups it can check/set. These indicies are
  * used to determine which group CMD6 will interact with.
  */
 enum sd_group_num {
