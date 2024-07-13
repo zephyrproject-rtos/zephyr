@@ -708,6 +708,12 @@ config NRF_WIFI_RPU_RECOVERY_DEBUG
 	help
 		Enable RPU recovery debug logs to help debug RPU recovery mechanism.
 
+config NRF_WIFI_RPU_RECOVERY_QUIET_PERIOD_MS
+	int "RPU recovery quiet period in milliseconds"
+	default 5000
+	help
+	  Quiet period in milliseconds after RPU recovery is triggered. During
+	  this period, no new RPU recovery will be triggered.
 endif # NRF_WIFI_RPU_RECOVERY
 
 config NRF_WIFI_FEAT_WMM

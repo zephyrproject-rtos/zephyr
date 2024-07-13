@@ -111,6 +111,7 @@ struct nrf_wifi_ctx_zep {
 	struct k_mutex rpu_lock;
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 	bool rpu_recovery_in_progress;
+	unsigned long last_rpu_recovery_time_ms;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 };
 
