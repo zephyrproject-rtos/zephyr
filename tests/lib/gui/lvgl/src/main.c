@@ -17,10 +17,8 @@
 
 #ifdef CONFIG_FS_LITTLEFS_BLK_DEV
 
-#ifdef CONFIG_DISK_DRIVER_SDMMC
-#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
-#elif defined(CONFIG_DISK_DRIVER_MMC)
-#define DISK_NAME CONFIG_MMC_VOLUME_NAME
+#if defined(CONFIG_DISK_DRIVER_SDMMC) || defined(CONFIG_DISK_DRIVER_MMC)
+#define DISK_NAME "SDMMC"
 #else
 #error "No disk device defined, is your board supported?"
 #endif /* CONFIG_DISK_DRIVER_SDMMC */

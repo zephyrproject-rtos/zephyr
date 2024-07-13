@@ -20,10 +20,8 @@
 #include <zephyr/drivers/loopback_disk.h>
 #endif
 
-#if defined(CONFIG_DISK_DRIVER_SDMMC)
-#define DISK_NAME_PHYS CONFIG_SDMMC_VOLUME_NAME
-#elif defined(CONFIG_DISK_DRIVER_MMC)
-#define DISK_NAME_PHYS CONFIG_MMC_VOLUME_NAME
+#if defined(CONFIG_DISK_DRIVER_SDMMC) || defined(CONFIG_DISK_DRIVER_MMC)
+#define DISK_NAME "SDMMC"
 #elif defined(CONFIG_DISK_DRIVER_FLASH)
 #define DISK_NAME_PHYS "NAND"
 #elif defined(CONFIG_NVME)

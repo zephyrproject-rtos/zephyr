@@ -19,13 +19,6 @@ config SD_INIT_PRIORITY
 	help
 	  SDMMC controller driver initialization priority.
 
-config SDMMC_VOLUME_NAME
-	string "SDMMC Disk mount point or drive name"
-	default "SD" if FAT_FILESYSTEM_ELM
-	default "SDMMC"
-	help
-	  Disk name as per file system naming guidelines.
-
 config SDMMC_SUBSYS
 	bool "SDMMC access via SD subsystem"
 	select SDMMC_STACK

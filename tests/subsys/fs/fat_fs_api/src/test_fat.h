@@ -15,10 +15,8 @@
 #define DISK_NAME "RAM"
 #elif defined(CONFIG_DISK_DRIVER_FLASH)
 #define DISK_NAME DT_PROP(DT_NODELABEL(test_disk), disk_name)
-#elif defined(CONFIG_DISK_DRIVER_SDMMC)
-#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
-#elif defined(CONFIG_DISK_DRIVER_MMC)
-#define DISK_NAME CONFIG_MMC_VOLUME_NAME
+#elif defined(CONFIG_DISK_DRIVER_SDMMC) || defined(CONFIG_DISK_DRIVER_MMC)
+#define DISK_NAME "SDMMC"
 #else
 #error "Failed to select DISK access type"
 #endif
