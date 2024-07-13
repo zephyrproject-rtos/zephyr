@@ -98,6 +98,20 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 		return;
 	}
 
+	if (rpu_ctx_zep->last_rpu_recovery_time_ms &&
+		((k_uptime_get() - rpu_ctx_zep->last_rpu_recovery_time_ms) <
+	    CONFIG_NRF_WIFI_RPU_RECOVERY_QUIET_PERIOD_MS)) {
+#ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
+		LOG_ERR("%s: In quiet period (last_rpu_recovery_time_ms=%ld), ignoring",
+			__func__, rpu_ctx_zep->last_rpu_recovery_time_ms);
+#else
+		LOG_DBG("%s: In quiet period (last_rpu_recovery_time_ms=%ld), ignoring",
+			__func__, rpu_ctx_zep->last_rpu_recovery_time_ms);
+#endif
+		return;
+	}
+
+
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: Starting RPU recovery", __func__);
 #else
@@ -127,6 +141,7 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 		LOG_ERR("%s: net_if_up failed: %d", __func__, ret);
 	}
 	rpu_ctx_zep->rpu_recovery_in_progress = false;
+	rpu_ctx_zep->last_rpu_recovery_time_ms = k_uptime_get();
 	k_mutex_unlock(&rpu_ctx_zep->rpu_lock);
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: RPU recovery done", __func__);
