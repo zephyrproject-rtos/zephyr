@@ -6,10 +6,17 @@
 
 
 #include <errno.h>
+#include <limits.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+/* FIXME: use k_off_t instead of off_t */
+#include <sys/types.h>
 
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
-#include <string.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/sys/math_extras.h>
 
 LOG_MODULE_REGISTER(flash, CONFIG_FLASH_LOG_LEVEL);
 
@@ -79,4 +86,112 @@ int z_impl_flash_flatten(const struct device *dev, off_t offset, size_t size)
 #else
 	return -ENOSYS;
 #endif
+}
+
+static bool off_add_overflow(off_t offset, off_t size, off_t *result)
+{
+	if (sizeof(off_t) == sizeof(uint32_t)) {
+		uint32_t end;
+
+		/* account for signedness of off_t due to lack of s32_add_overflow() */
+		if (u32_add_overflow((uint32_t)offset, (uint32_t)size, &end) ||
+		    (end > (UINT32_MAX >> 1))) {
+			return true;
+		}
+	} else if (sizeof(off_t) == sizeof(uint64_t)) {
+		uint64_t end;
+
+		/* account for signedness of off_t due to lack of s64_add_overflow() */
+		if (u64_add_overflow((uint64_t)offset, (uint64_t)size, &end) ||
+		    (end > (UINT64_MAX >> 1))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int flash_ranges_overlap(off_t a_start, off_t a_size, off_t b_start, off_t b_size)
+{
+	off_t a_end = 0;
+	off_t b_end = 0;
+
+	BUILD_ASSERT((sizeof(off_t) == sizeof(uint32_t)) || (sizeof(off_t) == sizeof(uint64_t)));
+
+	if ((a_start < 0) || (a_size < 0) || (b_start < 0) || (b_size < 0)) {
+		return -EINVAL;
+	}
+
+	if (off_add_overflow(a_start, a_size, &a_end) ||
+	    off_add_overflow(b_start, b_size, &b_end)) {
+		return -EINVAL;
+	}
+
+	return (a_start < b_end) && (a_end > b_start);
+}
+
+int flash_copy(const struct device *src_dev, off_t src_offset, const struct device *dst_dev,
+	       off_t dst_offset, off_t size, uint32_t *buf, size_t buf_size)
+{
+	int ret;
+	uint32_t write_size;
+
+	if ((src_offset < 0) || (dst_offset < 0) || (size < 0) || (buf == NULL) ||
+	    (buf_size == 0)) {
+		LOG_DBG("invalid argument");
+		return -EINVAL;
+	}
+
+	if ((src_dev == dst_dev) && (src_offset == dst_offset)) {
+		/* nothing to do */
+		return 0;
+	}
+
+	if ((src_dev == dst_dev) &&
+	    (flash_ranges_overlap(src_offset, size, dst_offset, size) != 0)) {
+		LOG_DBG("%s (%lx) and %s (%lx) overlap with size (%lx)", "source", (long)src_offset,
+			"destination", (long)dst_offset, (long)size);
+		return -EINVAL;
+	}
+
+	if (!device_is_ready(src_dev)) {
+		LOG_DBG("%s device not ready", "source");
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(dst_dev)) {
+		LOG_DBG("%s device not ready", "destination");
+		return -ENODEV;
+	}
+
+	write_size = flash_get_write_block_size(dst_dev);
+	if ((buf_size < write_size) || ((buf_size % write_size) != 0)) {
+		LOG_DBG("buf size %zu is incompatible with write_size of %zu", buf_size,
+			write_size);
+		return -EINVAL;
+	}
+
+	for (uint32_t offs = 0, N = size, bytes_read = 0, bytes_left = N; offs < N;
+	     offs += bytes_read, bytes_left -= bytes_read) {
+
+		if (bytes_left < write_size) {
+			memset(buf, 0, write_size);
+		}
+		bytes_read = MIN(MAX(bytes_left, write_size), buf_size);
+		ret = flash_read(src_dev, src_offset + offs, buf, bytes_read);
+		if (ret < 0) {
+			LOG_DBG("%s failed at offset %lx: %d", "flash_read()",
+				(long)(src_offset + offs), ret);
+			return ret;
+		}
+
+		ret = flash_write(dst_dev, dst_offset + offs, buf, bytes_read);
+		if (ret < 0) {
+			LOG_DBG("%s failed at offset %lx: %d", "flash_write()",
+				(long)(src_offset + offs), ret);
+			return ret;
+		}
+	}
+
+	return 0;
 }
