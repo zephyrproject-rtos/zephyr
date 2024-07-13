@@ -1,0 +1,23 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA2 Ioports Controller node
+
+compatible: renesas,ra2-ioports
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  prwcntr:
+    type: int
+    enum:
+    - 1
+    - 2
+    - 3
+    default: 1
+    description: |
+      Number of Port Read Wait Cycles
