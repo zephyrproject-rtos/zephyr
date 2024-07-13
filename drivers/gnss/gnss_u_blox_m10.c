@@ -951,9 +951,6 @@ static int ubx_m10_configure(const struct device *dev)
 
 reset:
 	ret = ubx_m10_ubx_cfg_rst(dev, UBX_CFG_RST_RESET_MODE_CONTROLLED_GNSS_START);
-	if (ret < 0) {
-		goto reset;
-	}
 
 	return ret;
 }
