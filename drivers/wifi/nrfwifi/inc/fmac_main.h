@@ -109,6 +109,9 @@ struct nrf_wifi_ctx_zep {
 	unsigned char *extended_capa, *extended_capa_mask;
 	unsigned int extended_capa_len;
 	struct k_mutex rpu_lock;
+#ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
+	bool rpu_recovery_in_progress;
+#endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 };
 
 struct nrf_wifi_drv_priv_zep {
