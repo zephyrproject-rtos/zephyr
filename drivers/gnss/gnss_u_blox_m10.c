@@ -393,17 +393,10 @@ static int ubx_m10_set_uart_baudrate(const struct device *dev, uint32_t baudrate
 	uart_cfg.baudrate = baudrate;
 
 	ret = uart_configure(config->uart, &uart_cfg);
-	if (ret < 0) {
-		goto reset_and_unlock;
-	}
 
 reset_and_unlock:
 	ret |= ubx_m10_resume(dev);
-	if (ret < 0) {
-		goto unlock;
-	}
 
-unlock:
 	k_spin_unlock(&data->lock, key);
 
 	return ret;
