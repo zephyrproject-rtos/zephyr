@@ -253,5 +253,13 @@ ZTEST(flash_driver, test_flash_flatten)
 	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
 }
 
+ZTEST(flash_driver, test_flash_copy)
+{
+	uint32_t buf[EXPECTED_SIZE / sizeof(uint32_t)];
+
+	zassert_ok(flash_copy(flash_dev, TEST_AREA_OFFSET, flash_dev,
+			      TEST_AREA_OFFSET + EXPECTED_SIZE / 2, EXPECTED_SIZE / 2, buf,
+			      sizeof(buf)));
+}
 
 ZTEST_SUITE(flash_driver, NULL, flash_driver_setup, NULL, NULL, NULL);
