@@ -66,6 +66,7 @@
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			interrupts = <49 0>;
 			status = "disabled";
+			disk-name = "SDMMC";
 		};
 	};
 

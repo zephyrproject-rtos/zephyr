@@ -151,6 +151,7 @@
 			resets = <&rctl STM32_RESET(APB2, 10U)>;
 			interrupts = <49 0>;
 			status = "disabled";
+			disk-name = "SDMMC";
 		};
 
 		rtc@40002800 {

@@ -829,6 +829,7 @@
 			resets = <&rctl STM32_RESET(APB2, 11U)>;
 			interrupts = <49 0>;
 			status = "disabled";
+			disk-name = "SDMMC";
 		};
 
 		backup_sram: memory@40024000 {

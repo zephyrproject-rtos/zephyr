@@ -997,6 +997,7 @@
 			resets = <&rctl STM32_RESET(AHB3, 16U)>;
 			interrupts = <49 0>;
 			status = "disabled";
+			disk-name = "SDMMC";
 		};
 
 		sdmmc2: sdmmc@48022400 {
@@ -1007,6 +1008,7 @@
 			resets = <&rctl STM32_RESET(AHB2, 9U)>;
 			interrupts = <124 0>;
 			status = "disabled";
+			disk-name = "SD2";
 		};
 
 		mac: ethernet@40028000 {

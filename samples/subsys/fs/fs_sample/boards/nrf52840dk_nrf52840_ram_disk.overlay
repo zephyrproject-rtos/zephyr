@@ -11,7 +11,7 @@
 		/* Sample, to make things easier, mounts all FAT
 		 * systems at "SD".
 		 */
-		disk-name = "SD";
+		disk-name = "SDMMC";
 		/* Disk size is 64kB, 128 sectors of 512B, the minimal
 		 * required by FAT FS.
 		 */

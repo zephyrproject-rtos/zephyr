@@ -39,7 +39,7 @@
 		status="okay";
 		compatible = "zephyr,flash-disk";
 		partition = <&storage_partition>;
-		disk-name = "SD";
+		disk-name = "SDMMC";
 		cache-size = <512>;
 	};
 };

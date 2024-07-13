@@ -67,6 +67,7 @@
 	disk {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
+		disk-name = "SDMMC";
 	};
 
 	vmmc-supply = <&vcc_sd0>;
@@ -94,6 +95,7 @@
 	disk {
 		compatible = "zephyr,mmc-disk";
 		status = "disabled";
+		disk-name = "MMC";
 	};
 	bus-width = <8>;
 	mmc-hs200-1_8v;

@@ -18,6 +18,7 @@
 			resets = <&rctl STM32_RESET(AHB4, 12U)>;
 			interrupts = <102 0>;
 			status = "disabled";
+			disk-name = "SDMMC";
 		};
 	};
 };

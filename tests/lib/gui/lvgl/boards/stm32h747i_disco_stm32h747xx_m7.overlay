@@ -7,6 +7,7 @@
 &sdmmc1 {
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SDMMC";
 	};
 };
 

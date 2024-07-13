@@ -217,6 +217,7 @@
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";
+			disk-name = "SDMMC";
 		};
 
 	};

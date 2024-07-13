@@ -344,6 +344,7 @@
 			resets = <&rctl STM32_RESET(AHB2, 22U)>;
 			interrupts = <49 0>;
 			status = "disabled";
+			disk-name = "SDMMC";
 		};
 
 		sdmmc2: sdmmc@50062800 {
@@ -354,6 +355,7 @@
 			resets = <&rctl STM32_RESET(AHB2, 23U)>;
 			interrupts = <47 0>;
 			status = "disabled";
+			disk-name = "SD2";
 		};
 
 		dac1: dac@40007400 {

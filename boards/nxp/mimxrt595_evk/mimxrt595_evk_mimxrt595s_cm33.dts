@@ -370,6 +370,7 @@ zephyr_udc0: &usbhs {
 	mmc {
 		compatible = "zephyr,mmc-disk";
 		status = "okay";
+		disk-name = "MMC";
 	};
 	pinctrl-0 = <&pinmux_usdhc>;
 	pinctrl-names = "default";

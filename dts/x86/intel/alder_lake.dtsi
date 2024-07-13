@@ -350,6 +350,7 @@
 				compatible = "zephyr,mmc-disk";
 				bus-width = <8>;
 				status = "okay";
+				disk-name = "MMC";
 			};
 
 			status = "okay";
