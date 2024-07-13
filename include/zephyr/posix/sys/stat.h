@@ -39,41 +39,6 @@ extern "C" {
 
 #include <zephyr/posix/posix_types.h>
 
-#ifndef _DEV_T_DECLARED
-typedef int dev_t;
-#define _DEV_T_DECLARED
-#endif
-
-#ifndef _INO_T_DECLARED
-typedef int ino_t;
-#define _INO_T_DECLARED
-#endif
-
-#ifndef _NLINK_T_DECLARED
-typedef unsigned short nlink_t;
-#define _NLINK_T_DECLARED
-#endif
-
-#ifndef _UID_T_DECLARED
-typedef unsigned short uid_t;
-#define _UID_T_DECLARED
-#endif
-
-#ifndef _GID_T_DECLARED
-typedef unsigned short gid_t;
-#define _GID_T_DECLARED
-#endif
-
-#ifndef _BLKSIZE_T_DECLARED
-typedef unsigned long blksize_t;
-#define _BLKSIZE_T_DECLARED
-#endif
-
-#ifndef _BLKCNT_T_DECLARED
-typedef unsigned long blkcnt_t;
-#define _BLKCNT_T_DECLARED
-#endif
-
 /* dj's stat defines _STAT_H_ */
 #ifndef _STAT_H_
 
