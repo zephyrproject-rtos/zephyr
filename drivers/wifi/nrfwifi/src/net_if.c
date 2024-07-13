@@ -18,6 +18,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
+#include <zephyr/sys/reboot.h>
+
 #include "net_private.h"
 
 #include "util.h"
@@ -111,13 +113,27 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 		return;
 	}
 
-
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: Starting RPU recovery", __func__);
 #else
 	LOG_DBG("%s: Starting RPU recovery", __func__);
 #endif
 	k_mutex_lock(&rpu_ctx_zep->rpu_lock, K_FOREVER);
+#if CONFIG_NRF_WIFI_RPU_RECOVERY_MAX_RETRIES > 0
+	if (!rpu_ctx_zep->last_rpu_recovery_time_ms ||
+		(k_uptime_get() - rpu_ctx_zep->last_rpu_recovery_time_ms) <
+	    CONFIG_NRF_WIFI_RPU_RECOVERY_RETRY_WINDOW_S * MSEC_PER_SEC) {
+		if (rpu_ctx_zep->rpu_recovery_retries >=
+		    CONFIG_NRF_WIFI_RPU_RECOVERY_MAX_RETRIES) {
+			LOG_ERR("%s: Maximum recovery retries reached, rebooting system",
+				__func__);
+			sys_reboot(SYS_REBOOT_COLD);
+		}
+		rpu_ctx_zep->rpu_recovery_retries++;
+	} else {
+		rpu_ctx_zep->rpu_recovery_retries = 0;
+	}
+#endif
 	rpu_ctx_zep->rpu_recovery_in_progress = true;
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: Bringing the interface down", __func__);
