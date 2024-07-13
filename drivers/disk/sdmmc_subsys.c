@@ -21,12 +21,13 @@ enum sd_status {
 
 struct sdmmc_config {
 	const struct device *host_controller;
+	const char *name;
 };
 
 struct sdmmc_data {
+	struct disk_info info;
 	struct sd_card card;
 	enum sd_status status;
-	char *name;
 };
 
 
@@ -114,29 +115,25 @@ static const struct disk_operations sdmmc_disk_ops = {
 	.ioctl = disk_sdmmc_access_ioctl,
 };
 
-static struct disk_info sdmmc_disk = {
-	.ops = &sdmmc_disk_ops,
-};
-
 static int disk_sdmmc_init(const struct device *dev)
 {
+	const struct sdmmc_config *config = dev->config;
 	struct sdmmc_data *data = dev->data;
 
 	data->status = SD_UNINIT;
-	sdmmc_disk.dev = dev;
-	sdmmc_disk.name = data->name;
+	data->info.dev = dev;
+	data->info.ops = &sdmmc_disk_ops;
+	data->info.name = config->name;
 
-	return disk_access_register(&sdmmc_disk);
+	return disk_access_register(&data->info);
 }
 
 #define DISK_ACCESS_SDMMC_INIT(n)						\
 	static const struct sdmmc_config sdmmc_config_##n = {			\
 		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
+		.name = DT_INST_PROP(n, disk_name),				\
 	};									\
-										\
-	static struct sdmmc_data sdmmc_data_##n = {				\
-		.name = CONFIG_SDMMC_VOLUME_NAME,				\
-	};									\
+	static struct sdmmc_data sdmmc_data_##n;				\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			&disk_sdmmc_init,					\
