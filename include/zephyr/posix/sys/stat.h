@@ -36,8 +36,8 @@ extern "C" {
 
 #include <time.h>
 #include <sys/cdefs.h>
-#include <sys/types.h>
-#include <sys/_timespec.h>
+
+#include <zephyr/posix/posix_types.h>
 
 #ifndef _DEV_T_DECLARED
 typedef int dev_t;
