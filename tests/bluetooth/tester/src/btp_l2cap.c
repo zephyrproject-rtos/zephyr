@@ -1243,6 +1243,47 @@ static uint8_t listen_with_mode(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t set_opt(const void *cmd, uint16_t cmd_len,
+		      void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_set_option_cmd *cp = cmd;
+	struct channel *chan;
+#if defined(CONFIG_BT_CLASSIC)
+	struct br_channel *br_chan = NULL;
+#endif /* defined(CONFIG_BT_CLASSIC) */
+
+	if (cp->chan_id >= CHANNELS) {
+		return BTP_STATUS_FAILED;
+	}
+
+	chan = &channels[cp->chan_id];
+
+	if (!chan->in_use) {
+#if defined(CONFIG_BT_CLASSIC)
+		br_chan = &br_channels[cp->chan_id];
+		if (!br_chan->in_use) {
+			return BTP_STATUS_FAILED;
+		}
+#else
+		return BTP_STATUS_FAILED;
+#endif /* defined(CONFIG_BT_CLASSIC) */
+	}
+
+#if defined(CONFIG_BT_CLASSIC)
+	if (br_chan) {
+		if (cp->options & BTP_L2CAP_SET_OPT_HOLD_CREDIT) {
+			br_chan->hold_credit = true;
+		}
+		return BTP_STATUS_SUCCESS;
+	}
+#endif /* defined(CONFIG_BT_CLASSIC) */
+
+	if (cp->options & BTP_L2CAP_SET_OPT_HOLD_CREDIT) {
+		chan->hold_credit = true;
+	}
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
@@ -1349,6 +1390,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_L2CAP_LISTEN_WITH_MODE,
 		.expect_len = sizeof(struct btp_l2cap_listen_with_mode_cmd),
 		.func = listen_with_mode,
+	},
+	{
+		.opcode = BTP_L2CAP_SET_OPT,
+		.expect_len = sizeof(struct btp_l2cap_set_option_cmd),
+		.func = set_opt,
 	},
 };
 

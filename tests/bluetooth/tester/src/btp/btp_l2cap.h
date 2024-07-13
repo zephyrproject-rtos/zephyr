@@ -138,6 +138,14 @@ struct btp_l2cap_listen_with_mode_cmd {
 	uint16_t response;
 } __packed;
 
+#define BTP_L2CAP_SET_OPT_HOLD_CREDIT			0x01
+
+#define BTP_L2CAP_SET_OPT						0x0f
+struct btp_l2cap_set_option_cmd {
+	uint8_t chan_id;
+	uint8_t options;
+} __packed;
+
 /* events */
 #define BTP_L2CAP_EV_CONNECTION_REQ			0x80
 struct btp_l2cap_connection_req_ev {
