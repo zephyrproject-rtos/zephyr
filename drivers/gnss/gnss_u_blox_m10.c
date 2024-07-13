@@ -42,8 +42,6 @@ LOG_MODULE_REGISTER(ubx_m10, CONFIG_GNSS_LOG_LEVEL);
 
 #define UBX_M10_GNSS_SYS_CNT		8
 #define UBX_M10_GNSS_SUPP_SYS_CNT	6
-/* The datasheet of the device doesn't specify boot time. But 1 sec helped significantly. */
-#define UBX_M10_BOOT_TIME_MS		1000
 
 struct ubx_m10_config {
 	const struct device *uart;
@@ -963,8 +961,6 @@ reset:
 static int ubx_m10_init(const struct device *dev)
 {
 	int ret;
-
-	k_sleep(K_MSEC(UBX_M10_BOOT_TIME_MS));
 
 	ret = ubx_m10_init_nmea0183_match(dev);
 	if (ret < 0) {
