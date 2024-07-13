@@ -89,12 +89,22 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 		return;
 	}
 
+	if (rpu_ctx_zep->rpu_recovery_in_progress) {
+#ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
+		LOG_ERR("%s: RPU recovery already in progress", __func__);
+#else
+		LOG_DBG("%s: RPU recovery already in progress", __func__);
+#endif
+		return;
+	}
+
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: Starting RPU recovery", __func__);
 #else
 	LOG_DBG("%s: Starting RPU recovery", __func__);
 #endif
 	k_mutex_lock(&rpu_ctx_zep->rpu_lock, K_FOREVER);
+	rpu_ctx_zep->rpu_recovery_in_progress = true;
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: Bringing the interface down", __func__);
 #else
@@ -116,6 +126,7 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 	if (ret) {
 		LOG_ERR("%s: net_if_up failed: %d", __func__, ret);
 	}
+	rpu_ctx_zep->rpu_recovery_in_progress = false;
 	k_mutex_unlock(&rpu_ctx_zep->rpu_lock);
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: RPU recovery done", __func__);
