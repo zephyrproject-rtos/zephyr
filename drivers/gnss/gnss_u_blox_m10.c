@@ -223,9 +223,6 @@ static int ubx_m10_modem_ubx_run_script(const struct device *dev,
 	}
 
 	ret = modem_ubx_run_script(&data->ubx, modem_ubx_script_tx);
-	if (ret < 0) {
-		goto reset_modem_module;
-	}
 
 reset_modem_module:
 	ret |= ubx_m10_modem_module_change(dev, 1);
@@ -264,9 +261,6 @@ static int ubx_m10_modem_ubx_script_init(const struct device *dev, void *payload
 
 	ret = ubx_create_and_validate_frame(data->request_buf, sizeof(data->request_buf), msg_cls,
 					    msg_id, payload, payld_sz);
-	if (ret < 0) {
-		return ret;
-	}
 
 	return ret;
 }
@@ -289,9 +283,6 @@ static int ubx_m10_ubx_cfg_rate(const struct device *dev)
 	}
 
 	ret = ubx_m10_modem_ubx_run_script(dev, &(data->script));
-	if (ret < 0) {
-		goto unlock;
-	}
 
 unlock:
 	k_spin_unlock(&data->lock, key);
@@ -325,9 +316,6 @@ static int ubx_m10_ubx_cfg_prt_set(const struct device *dev, uint32_t target_bau
 	 * (in order to receive response as well), which we are not doing right now.
 	 */
 	ret = ubx_m10_modem_ubx_run_script(dev, &(data->script));
-	if (ret < 0) {
-		goto unlock;
-	}
 
 unlock:
 	k_spin_unlock(&data->lock, key);
@@ -476,7 +464,7 @@ static int ubx_m10_configure_gnss_device_baudrate(const struct device *dev)
 
 static int ubx_m10_configure_messages(const struct device *dev)
 {
-	int ret;
+	int ret = 0;
 	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 	struct ubx_cfg_msg_payload payload;
@@ -885,9 +873,6 @@ static int ubx_m10_set_fix_rate(const struct device *dev, uint32_t fix_interval_
 	}
 
 	ret = ubx_m10_modem_ubx_run_script(dev, &(data->script));
-	if (ret < 0) {
-		goto unlock;
-	}
 
 unlock:
 	k_spin_unlock(&data->lock, key);
@@ -964,7 +949,6 @@ static int ubx_m10_configure(const struct device *dev)
 	ret = ubx_m10_configure_messages(dev);
 	if (ret < 0) {
 		LOG_ERR("Configuring messages failed. Returned %d.", ret);
-		goto reset;
 	}
 
 reset:
