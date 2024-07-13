@@ -5,6 +5,8 @@ config UART_ALTERA_JTAG
 	bool "Nios II/NiosV JTAG UART driver"
 	default y
 	depends on DT_HAS_ALTR_JTAG_UART_ENABLED
+	select POSIX_API
+	select POSIX_TIMERS
 	select SERIAL_HAS_DRIVER
 	help
 	  Enable the Altera JTAG UART driver, built in to many Nios II/NiosV CPU
