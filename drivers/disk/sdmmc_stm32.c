@@ -85,6 +85,7 @@ struct stm32_sdmmc_priv {
 	struct stm32_pclken *pclken;
 	const struct pinctrl_dev_config *pcfg;
 	const struct reset_dt_spec reset;
+	struct disk_info info;
 
 #if STM32_SDMMC_USE_DMA
 	struct sdmmc_dma_stream dma_rx;
@@ -503,12 +504,6 @@ static const struct disk_operations stm32_sdmmc_ops = {
 	.ioctl = stm32_sdmmc_access_ioctl,
 };
 
-static struct disk_info stm32_sdmmc_info = {
-	.name = CONFIG_SDMMC_VOLUME_NAME,
-	.ops = &stm32_sdmmc_ops,
-};
-
-
 #ifdef CONFIG_SDMMC_STM32_EMMC
 static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv)
 {
@@ -694,8 +689,8 @@ static int disk_stm32_sdmmc_init(const struct device *dev)
 		priv->status = DISK_STATUS_NOMEDIA;
 	}
 
-	stm32_sdmmc_info.dev = dev;
-	err = disk_access_register(&stm32_sdmmc_info);
+	priv->info.dev = dev;
+	err = disk_access_register(&priv->info);
 	if (err) {
 		goto err_pwr;
 	}
@@ -777,6 +772,10 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 #if DT_INST_NODE_HAS_PROP(0, pwr_gpios)
 	.pe = GPIO_DT_SPEC_INST_GET(0, pwr_gpios),
 #endif
+	.info = {
+		.name = DT_INST_PROP(0, disk_name),
+		.ops = &stm32_sdmmc_ops,
+	},
 	.pclken = pclken_sdmmc,
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.reset = RESET_DT_SPEC_INST_GET(0),
