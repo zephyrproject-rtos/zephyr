@@ -21,6 +21,48 @@
 extern "C" {
 #endif
 
+#if !defined(_DEV_T_DECLARED) && !defined(__dev_t_defined)
+typedef int dev_t;
+#define _DEV_T_DECLARED
+#define __dev_t_defined
+#endif
+
+#if !defined(_INO_T_DECLARED) && !defined(__ino_t_defined)
+typedef int ino_t;
+#define _INO_T_DECLARED
+#define __ino_t_defined
+#endif
+
+#if !defined(_NLINK_T_DECLARED) && !defined(__nlink_t_defined)
+typedef unsigned short nlink_t;
+#define _NLINK_T_DECLARED
+#define __nlink_t_defined
+#endif
+
+#if !defined(_UID_T_DECLARED) && !defined(__uid_t_defined)
+typedef unsigned short uid_t;
+#define _UID_T_DECLARED
+#define __uid_t_defined
+#endif
+
+#if !defined(_GID_T_DECLARED) && !defined(__gid_t_defined)
+typedef unsigned short gid_t;
+#define _GID_T_DECLARED
+#define __gid_t_defined
+#endif
+
+#if !defined(_BLKSIZE_T_DECLARED) && !defined(__blksize_t_defined)
+typedef unsigned long blksize_t;
+#define _BLKSIZE_T_DECLARED
+#define __blksize_t_defined
+#endif
+
+#if !defined(_BLKCNT_T_DECLARED) && !defined(__blkcnt_t_defined)
+typedef unsigned long blkcnt_t;
+#define _BLKCNT_T_DECLARED
+#define __blkcnt_t_defined
+#endif
+
 #if !defined(CONFIG_ARCMWDT_LIBC)
 typedef int pid_t;
 #endif
