@@ -398,7 +398,6 @@ static int ubx_m10_set_uart_baudrate(const struct device *dev, uint32_t baudrate
 	}
 
 reset_and_unlock:
-	ubx_m10_init_pipe(dev);
 	ret |= ubx_m10_resume(dev);
 	if (ret < 0) {
 		goto unlock;
