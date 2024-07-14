@@ -524,6 +524,22 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	 */
 	ARG_UNUSED(resume_cb);
 
+	/* Prepare being cancelled (no resume for periodic sync) */
+	if (next == NULL) {
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+		struct lll_sync *sync_lll;
+
+		sync_lll = curr;
+		if ((sync_lll->forced == 0U) && (sync_lll->abort_count == 0U)) {
+			return -ECANCELED;
+		}
+
+		return 0;
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
+		return -ECANCELED;
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
+	}
+
 	/* Different radio event overlap */
 	if (next != curr) {
 		struct lll_scan_aux *lll_aux;
@@ -534,7 +550,7 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 			/* Do not abort current periodic sync event as next
 			 * event is a scan event.
 			 */
-			return 0;
+			return -EBUSY;
 		}
 
 		lll_aux = ull_scan_aux_lll_is_valid_get(next);
@@ -556,7 +572,7 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 			/* Do not abort if near supervision timeout */
 			if (lll_sync_curr->forced) {
-				return 0;
+				return -EBUSY;
 			}
 
 			/* Abort current event as next event is not a
@@ -567,18 +583,11 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 		lll_sync_curr = curr;
 		if (lll_sync_curr->abort_count < lll_sync_next->abort_count) {
-			if (lll_sync_curr->abort_count < UINT8_MAX) {
-				lll_sync_curr->abort_count++;
-			}
 
 			/* Abort current event as next event has higher abort
 			 * count.
 			 */
 			return -ECANCELED;
-		}
-
-		if (lll_sync_next->abort_count < UINT8_MAX) {
-			lll_sync_next->abort_count++;
 		}
 
 #else /* !CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
@@ -603,6 +612,16 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* NOTE: This is not a prepare being cancelled */
 	if (!prepare_param) {
+		/* Get reference to LLL connection context */
+		lll = param;
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+		/* Increment abort count */
+		if (lll->abort_count < UINT8_MAX) {
+			lll->abort_count++;
+		}
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
+
 		/* Perform event abort here.
 		 * After event has been cleanly aborted, clean up resources
 		 * and dispatch event done.
@@ -633,6 +652,13 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
 
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+	/* Increment abort count */
+	if (lll->abort_count < UINT8_MAX) {
+		lll->abort_count++;
+	}
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
+
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
 	LL_ASSERT_ERR(e);
@@ -647,7 +673,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	* CONFIG_BT_CTLR_CTEINLINE_SUPPORT
 	*/
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 static void isr_aux_setup(void *param)

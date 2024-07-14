@@ -26,21 +26,25 @@
  * and receiving auxiliary PDUs.
  */
 #define EVENT_OVERHEAD_START_US       733 /* 24 RTC ticks */
+#define EVENT_OVERHEAD_RESUME_US      123
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
 /* Active connection in peripheral role with extended scanning on 1M only, scheduling and receiving
  * auxiliary PDUs.
  */
 #define EVENT_OVERHEAD_START_US       428 /* 14 RTC ticks */
+#define EVENT_OVERHEAD_RESUME_US      123
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 #else /* !CONFIG_BT_OBSERVER */
 /* Simultaneous 3 extended advertising sets, calculating aux offsets.
  */
 #define EVENT_OVERHEAD_START_US       275 /* 9 RTC ticks */
+#define EVENT_OVERHEAD_RESUME_US      123
 #endif /* !CONFIG_BT_OBSERVER */
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 /* Active connection in peripheral role with additional advertising state.
  */
 #define EVENT_OVERHEAD_START_US       275 /* 9 RTC ticks */
+#define EVENT_OVERHEAD_RESUME_US      123
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 /* Lowest ACL peripheral connection intervals possible on 2M PHY, nRF52x SoC:
