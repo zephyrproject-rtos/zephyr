@@ -1785,22 +1785,34 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 	return start_us;
 }
 
+static uint32_t ticks_radio_tmr_start;
+
+void radio_tmr_start_save(uint32_t ticks_start)
+{
+	ticks_radio_tmr_start = ticks_start;
+}
+
+uint32_t radio_tmr_start_restore(void)
+{
+	return ticks_radio_tmr_start;
+}
+
 uint32_t radio_tmr_start_get(void)
 {
-	uint32_t start_ticks;
+	uint32_t ticks_start;
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint64_t cc;
 
 	cc = nrf_grtc_sys_counter_cc_get(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
 
-	start_ticks = cc & 0xffffffffUL;
+	ticks_start = cc & 0xffffffffUL;
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
-	start_ticks = nrf_rtc_cc_get(NRF_RTC, 2);
+	ticks_start = nrf_rtc_cc_get(NRF_RTC, 2);
 #endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
 
-	return start_ticks;
+	return ticks_start;
 }
 
 uint32_t radio_tmr_start_latency_get(void)
