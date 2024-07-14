@@ -635,6 +635,11 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	 */
 	ARG_UNUSED(resume_cb);
 
+	/* Prepare being cancelled (no resume for scan aux) */
+	if (!next) {
+		return -ECANCELED;
+	}
+
 	/* Auxiliary event shall not overlap as they are not periodically
 	 * scheduled.
 	 */
