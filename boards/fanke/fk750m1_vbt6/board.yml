@@ -1,0 +1,11 @@
+board:
+  name: fk750m1_vbt6
+  vendor: fanke
+  socs:
+    - name: stm32h750xx
+  revision:
+    format: major.minor.patch
+    default: 1.1.0
+    revisions:
+      - name: 1.0.0
+      - name: 1.1.0
