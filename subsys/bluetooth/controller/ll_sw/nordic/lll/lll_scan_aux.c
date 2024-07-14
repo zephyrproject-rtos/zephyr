@@ -664,6 +664,11 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	 */
 	ARG_UNUSED(resume_cb);
 
+	/* Prepare being cancelled (no resume for scan aux) */
+	if (next == NULL) {
+		return 0;
+	}
+
 	/* Auxiliary event shall not overlap as they are not periodically
 	 * scheduled.
 	 */
@@ -688,11 +693,23 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 	lll = ull_scan_lll_is_valid_get(next);
 	if (lll != NULL) {
-		/* Next event is scan context, let the current auxiliary scan
-		 * continue.
-		 */
+		/* Do not abort current ISO sync event as next event is a scan event. */
+		return -EBUSY;
+	}
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN) && \
+	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX)
+	struct lll_sync *sync_lll;
+
+	/* Do not abort sync if near supervision timeout or previously aborted */
+	sync_lll = ull_sync_lll_is_valid_get(next);
+
+	if ((sync_lll != NULL) && (sync_lll->forced == 0U) && (sync_lll->abort_count == 0U)) {
 		return 0;
 	}
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN &&
+	* CONFIG_BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX
+	*/
 
 	/* Yield current auxiliary event to other than scan events */
 	return -ECANCELED;
@@ -762,10 +779,10 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	LL_ASSERT_ERR(e);
 
 #if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
-	e->lll = param;
+	e->lll = prepare_param->param;
 #endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 static void isr_done(void *param)
