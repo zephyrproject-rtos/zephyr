@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_utils, CONFIG_NET_UTILS_LOG_LEVEL);
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 
 #include <zephyr/sys/byteorder.h>
@@ -966,13 +967,12 @@ int net_port_set_default(struct sockaddr *addr, uint16_t default_port)
 
 int net_bytes_from_str(uint8_t *buf, int buf_len, const char *src)
 {
-	unsigned int i;
+	size_t i;
+	size_t src_len = strlen(src);
 	char *endptr;
 
-	for (i = 0U; i < strlen(src); i++) {
-		if (!(src[i] >= '0' && src[i] <= '9') &&
-		    !(src[i] >= 'A' && src[i] <= 'F') &&
-		    !(src[i] >= 'a' && src[i] <= 'f') &&
+	for (i = 0U; i < src_len; i++) {
+		if (!isxdigit((unsigned char)src[i]) &&
 		    src[i] != ':') {
 			return -EINVAL;
 		}
@@ -980,8 +980,8 @@ int net_bytes_from_str(uint8_t *buf, int buf_len, const char *src)
 
 	(void)memset(buf, 0, buf_len);
 
-	for (i = 0U; i < buf_len; i++) {
-		buf[i] = strtol(src, &endptr, 16);
+	for (i = 0U; i < (size_t)buf_len; i++) {
+		buf[i] = (uint8_t)strtol(src, &endptr, 16);
 		src = ++endptr;
 	}
 
