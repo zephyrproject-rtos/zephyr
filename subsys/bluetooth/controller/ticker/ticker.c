@@ -2529,17 +2529,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			ticker_next = &nodes[ticker_id_next];
 			ticks_to_expire_offset += ticker_next->ticks_to_expire;
 
-			/* Skip other pending re-schedule nodes and
-			 * tickers with no reservation or not periodic
-			 */
-			if (TICKER_RESCHEDULE_PENDING(ticker_next) ||
-			    !ticker_next->ticks_slot ||
-			    !ticker_next->ticks_periodic) {
-				ticker_id_next = ticker_next->next;
-
-				continue;
-			}
-
 			/* Calculate end of window. Since window may be aligned
 			 * with expiry of next node, we add a margin
 			 */
@@ -2579,6 +2568,17 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			} else {
 				/* No space in window - try the next node */
 				ticks_to_expire = 0U;
+			}
+
+			/* Skip other pending re-schedule nodes and
+			 * tickers with no reservation or not periodic
+			 */
+			if (TICKER_RESCHEDULE_PENDING(ticker_next) ||
+			    !ticker_next->ticks_slot ||
+			    !ticker_next->ticks_periodic) {
+				ticker_id_next = ticker_next->next;
+
+				continue;
 			}
 
 			/* Decide if the re-scheduling ticker node fits in the
