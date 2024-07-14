@@ -2020,6 +2020,40 @@ add_custom_command(
   COMMAND_EXPAND_LISTS
   )
 
+if(CONFIG_BUILD_OUTPUT_TSV_STRIPPED_HEX)
+# Add post_build_commands to post-process the final .hex file produced by
+# stripping first line of zephyr.hex
+find_package(Perl REQUIRED)
+set(MERGED_KERNEL_HEX_NAME merged.hex)
+set(BIN_2_HEX_OPTION --width=64)
+set(BIN2HEX scripts/build/bin2heximage)
+add_custom_command(
+    OUTPUT ${MERGED_KERNEL_HEX_NAME}
+    COMMAND ${PERL_EXECUTABLE} ${ZEPHYR_BASE}/${BIN2HEX} ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME} ${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME} ${BIN_2_HEX_OPTION}
+    DEPENDS ${logical_target_for_zephyr_elf}
+    )
+
+    add_custom_target(bin2hex ALL DEPENDS ${MERGED_KERNEL_HEX_NAME})
+    list(APPEND RUNNERS_DEPS bin2hex)
+    message(VERBOSE "Creating hex files: ${MERGED_KERNEL_HEX_NAME}")
+
+# Remove the 1st line of elf header from the zepher.hex file
+# and call the enw file as zephyrstrp.hex
+
+set(STRIPPED_KERNEL_HEX_NAME stripped.hex)
+set(STRIPPED_HEX_NAME zephyrstrp.hex)
+set(TAIL_EXECUTABLE /usr/bin/tail)
+add_custom_command(
+	OUTPUT ${STRIPPED_KERNEL_HEX_NAME}
+	COMMAND ${TAIL_EXECUTABLE} -n +2 ${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME} >> ${PROJECT_BINARY_DIR}/${STRIPPED_HEX_NAME}
+	DEPENDS ${MERGED_KERNEL_HEX_NAME}
+    )
+
+    add_custom_target(strippedhex ALL DEPENDS ${STRIPPED_KERNEL_HEX_NAME})
+    list(APPEND RUNNERS_DEPS strippedhex)
+    message(VERBOSE "strippng hex files: ${STRIPPED_KERNEL_HEX_NAME}")
+endif()
+
 # To populate with hex files to merge, do the following:
 #  set_property(GLOBAL APPEND PROPERTY HEX_FILES_TO_MERGE ${my_local_list})
 # Note that the zephyr.hex file will not be included automatically.

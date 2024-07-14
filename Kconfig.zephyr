@@ -708,6 +708,12 @@ config BUILD_OUTPUT_BIN
 	  Build a "raw" binary zephyr/zephyr.bin in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_TSV_STRIPPED_HEX
+        bool "Build a Stripped Hex file"
+        default n
+        help
+          Build a "raw" hex zephyr/zephyrstrp.hex in the build directory.
+
 config BUILD_OUTPUT_EFI
 	bool "Build as an EFI application"
 	default n

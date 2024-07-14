@@ -1,0 +1,177 @@
+#! /usr/bin/env perl
+BEGIN { $^W = 1 }
+#-------------------------------------------------------------------------------
+#
+# The confidential and proprietary information contained in this file may
+# only be used by a person authorised under and to the extent permitted
+# by a subsisting licensing agreement from Arm Limited or its affiliates.
+#
+#                 (C) COPYRIGHT 2013-2017 Arm Limited or its affiliates.
+#                       ALL RIGHTS RESERVED
+#
+# This entire notice must be reproduced on all copies of this file
+# and copies of this file may only be made by a person if such person is
+# permitted to do so under the terms of a subsisting license agreement
+# from Arm Limited or its affiliates.
+#
+#
+#      Release Information : TM250-MN-22010-r1p1-00rel0
+#
+#-------------------------------------------------------------------------------
+# Description:
+#
+#   Converts a binary image into a Verilog memory initialisation file that can
+#   be read using $readmemh.
+#
+# Usage:
+#
+#   bin2heximage <input_file> <output_file> [--be | --le] [--width=<data_width>] [--address=<start_address>]
+#
+#   Where
+#
+#     --le      : Image is in little-endian format (this is the default.)
+#     --be      : Image is in big-endian format
+#     --width   : Width in bits of the target memory array, default 32
+#     --address : Start address in decimal, default 0
+#
+#   The memory width must be a multiple of 32, i.e. a whole number of words.
+#-------------------------------------------------------------------------------
+
+use strict;
+
+################################################################################
+# Global variables
+################################################################################
+
+# Arguments
+my $infile;           # Input filename
+my $outfile;          # Output filename
+my $datawidth = 32;   # Data width
+my $bigendian = 0;    # Big endian format
+my $startaddress = 0; # Start address
+my $cntrnum = 0;
+
+# Other variables
+my $words_per_row;    # Number of words in one row of memory
+my $unpack_template;  # Data template for the unpack function
+my $word;             # A word of packed binary data
+my @row = ();         # A row of packed binary data
+my $arg;              # User specified argument
+my $format = 8;       # Used in sprintf for formatting number, equals datawidth/4
+
+
+################################################################################
+# Argument parsing
+################################################################################
+
+foreach $arg (@ARGV)
+{
+  if ($arg =~ (/^--((\w+)(=(\d+))?)/))
+  {
+    # Options
+    if    (lc($2) eq "be")                      { $bigendian    = 1;  }
+    elsif (lc($2) eq "le")                      { $bigendian    = 0;  }
+    elsif (lc($2) eq "width" and defined($4))   { $datawidth    = $4; }
+    elsif (lc($2) eq "address" and defined($4)) { $startaddress = $4; }
+    else  { die("ERROR: Unknown argument: $1\n");                     }
+  }
+  else
+  {
+    # The first non-optional argument is the input filename, the second is the
+    # output filename.  Any additional arguments not prefixed with double-dash
+    # are illegal.
+    if    (!defined($infile )) { $infile  = $arg;    }
+    elsif (!defined($outfile)) { $outfile = $arg;    }
+    else  { die "ERROR: too many arguments: $arg\n"; }
+  }
+}
+
+# Check that the data width is valid
+die "ERROR: Data width must be a multiple of 32 bits\n" if (($datawidth % 32) != 0);
+
+# Check that input and output files have been given
+die "ERROR: No input file specified\n"  if (!defined($infile));
+die "ERROR: No output file specified\n" if (!defined($outfile));
+
+
+################################################################################
+# Data conversion
+################################################################################
+
+open(INFILE,  "$infile"  ) or die("ERROR: could not open $infile for reading\n");
+open(OUTFILE, ">$outfile") or die("ERROR: could not open $outfile for writing\n");
+
+# Ensure the input is treated as binary data, not text
+binmode(INFILE);
+
+# We'll read data one word at a time from the binary file, and buffer these
+# words until there's enough data to write a whole row to the output file.
+# The ASCII conversion is done using the unpack() function, which restricts us
+# converting one word (4 bytes) at a time, assuming a 32-bit machine.
+#
+# Note that $datawidth was already checked to be divisible by 32.  The data
+# will be treated as either big endian or little endian depending on the
+# options chosen.
+$words_per_row   = $datawidth / 32;
+$unpack_template = $bigendian ? "N" : "V";
+$format          = $datawidth / 4;
+
+# Print the startaddress in hexadecimal representation with leading "1" to the output file.
+print OUTFILE sprintf("1%.${format}x", ($startaddress));
+print OUTFILE "\n";
+
+while (read(INFILE, $word, 4))  # 4 bytes = 1 word
+{
+  # Push an ASCII hexadecimal representation of each word into the row,
+  # ensuring that the ASCII conversion does not truncate leading zeroes.
+  unshift(@row, sprintf("%.8x", unpack($unpack_template, $word)));
+  $cntrnum++;
+
+  # When the row array equals the target size, print the conversion to file.
+  # Note that row[0] must be printed last.
+  if (($#row == $words_per_row - 1))
+  {
+    # Prepend a leading "0" to the row to indicate dataword
+    unshift(@row, "0");
+
+    # Print to output file
+    print OUTFILE @row;
+    print OUTFILE "\n";
+    @row = ();
+  }
+  if (($cntrnum == 0x10000)) {
+    seek INFILE, 0x60000000, 0;
+  }
+}
+
+# Since the loop only prints lines when we have a full row, we might be left
+# a part-full row at the end of the loop.  Pad this with zeroes and print it.
+if ($#row > -1)
+{
+  # Pad with leading zeros
+  unshift(@row, "00000000") while ($#row < $words_per_row - 1);
+
+  # Prepend a leading "0" to the row to indicate dataword
+  unshift(@row, "0");
+
+  # Print to output file
+  print OUTFILE @row;
+  print OUTFILE "\n";
+  @row = ();
+}
+
+# Prepare array of zeros for end of file pattern
+unshift(@row, "00000000") while ($#row < $words_per_row - 1);
+
+# Prepend a leading "2" to the last row to indicate end of file
+unshift(@row, "2");
+
+# Print end of file pattern to output file
+print OUTFILE @row;
+print OUTFILE "\n";
+@row = ();
+
+# Close the files
+close(INFILE);
+close(OUTFILE);
+
