@@ -956,11 +956,11 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 			 * scheduled after the colliding ticker?
 			 */
 			uint8_t curr_has_ticks_slot_window =
-					(TICKER_HAS_SLOT_WINDOW(ticker) &&
-					 ((acc_ticks_to_expire +
-					   ticker_next->ticks_slot) <
-					  (ticker->ext_data->ticks_slot_window -
-					   ticker->ticks_slot)));
+					TICKER_HAS_SLOT_WINDOW(ticker) &&
+					((acc_ticks_to_expire +
+					  ticker_next->ticks_slot) <=
+					 (ticker->ext_data->ticks_slot_window -
+					  ticker->ticks_slot));
 
 #else /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
 #if defined(CONFIG_BT_TICKER_PRIORITY_SET)
@@ -982,7 +982,7 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 				(TICKER_HAS_SLOT_WINDOW(ticker) &&
 				 !ticker->ticks_slot &&
 				 ((acc_ticks_to_expire +
-				   ticker_next->ticks_slot) <
+				   ticker_next->ticks_slot) <=
 				  (ticker->ext_data->ticks_slot_window)));
 
 #endif /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
@@ -2551,7 +2551,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			 */
 			if (((window_start_ticks + ticks_slot) <=
 			     ticks_slot_window) &&
-			    (window_end_ticks > (ticks_start_offset +
+			    (window_end_ticks >= (ticks_start_offset +
 						 ticks_slot))) {
 				if (!ticker_resched->ticks_slot) {
 					/* Place at start of window */
@@ -2590,6 +2590,9 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 						 ticks_slot))) {
 				/* Re-scheduled node fits before this node */
 				break;
+			} else {
+				/* Not inside the window */
+				ticks_to_expire = 0U;
 			}
 
 			/* We din't find a valid slot for re-scheduling - try
@@ -2603,6 +2606,19 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			if (!ticker_resched->ticks_slot) {
 				/* Try at the end of the next node */
 				ticks_to_expire = window_start_ticks;
+			} else if (IS_ENABLED(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD) &&
+				   (ticker_resched->ticks_periodic <
+				    ticker_next->ticks_periodic)) {
+				/* Try to place it before the overlap and be
+				 * rescheduled to its next periodic interval
+				 * for collision resolution.
+				 */
+				if (ticks_start_offset > ticks_slot) {
+					ticks_to_expire = ticks_start_offset -
+							  ticks_slot;
+				} else {
+					ticks_to_expire = 0U;
+				}
 			} else {
 				/* Try at the end of the slot window. This
 				 * ensures that ticker with slot window and that
