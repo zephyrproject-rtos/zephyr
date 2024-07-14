@@ -45,6 +45,7 @@
 static struct {
 	struct {
 		void              *param;
+		uint32_t          ticks_at_expire;
 		lll_is_abort_cb_t is_abort_cb;
 		lll_abort_cb_t    abort_cb;
 	} curr;
@@ -73,7 +74,7 @@ static inline bool is_done_sync(void);
 static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx);
 static inline struct lll_event *resume_enqueue(lll_is_abort_cb_t is_abort_cb,
 					       lll_abort_cb_t abort_cb, lll_prepare_cb_t resume_cb,
-					       void *param);
+					       void *param, uint32_t ticks_at_expire);
 static void isr_race(void *param);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
@@ -1002,7 +1003,8 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 				event.curr.param = NULL;
 
 				next = resume_enqueue(event.curr.is_abort_cb, event.curr.abort_cb,
-						      resume_cb, curr_param);
+						      resume_cb, curr_param,
+						      event.curr.ticks_at_expire);
 				LL_ASSERT_ERR(next);
 			} else {
 				LL_ASSERT_ERR(err == -ECANCELED);
@@ -1016,6 +1018,7 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	LL_ASSERT_ERR(!ready || &ready->prepare_param == prepare_param);
 
 	event.curr.param = prepare_param->param;
+	event.curr.ticks_at_expire = prepare_param->ticks_at_expire;
 	event.curr.is_abort_cb = is_abort_cb;
 	event.curr.abort_cb = abort_cb;
 
@@ -1088,13 +1091,15 @@ static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx)
 
 static inline struct lll_event *resume_enqueue(lll_is_abort_cb_t is_abort_cb,
 					       lll_abort_cb_t abort_cb, lll_prepare_cb_t resume_cb,
-					       void *param)
+					       void *param, uint32_t ticks_at_expire)
 {
 	struct lll_prepare_param prepare_param = {0};
 
 	prepare_param.param = param;
+	prepare_param.ticks_at_expire = ticks_at_expire;
 
-	return ull_prepare_enqueue(is_abort_cb, abort_cb, &prepare_param, resume_cb, 1U);
+	return ull_prepare_enqueue(event.curr.is_abort_cb, event.curr.abort_cb,
+				   &prepare_param, resume_cb, 1);
 }
 
 static void isr_race(void *param)
@@ -1376,42 +1381,91 @@ preempt_find_preemptor:
 
 	/* Check if current event want to continue */
 	err = event.curr.is_abort_cb(ready->prepare_param.param, event.curr.param, &resume_cb);
-	if (!err || (err == -EBUSY)) {
-		if (err == -EBUSY) {
-			uint32_t ret;
+	if (err == 0U || err == -EINPROGRESS) {
+		/* Returns 0 to continue the current event, -EINPROGRESS to resume after the
+		 * preemptor (ready) event
+		 */
 
-			/* Returns -EBUSY when same curr and next ready state/role, do not abort
-			 * same curr and next ready event.
-			 */
-			ready->prepare_param.defer = 1U;
+		/* Check if curr and next ready event are different state/role  */
+		if (event.curr.param != ready->prepare_param.param) {
+			int err_ready;
 
-			/* Find next prepare that is ready and not a resume */
-			ready = prepare_dequeue_iter_ready_get(&idx);
-			if (ready == NULL) {
-				/* No ready prepare */
-				return;
+			/* Check if ready event want to continue */
+			err_ready = ready->is_abort_cb(NULL, ready->prepare_param.param,
+						       &resume_cb);
+			if (err_ready == 0U) {
+				/* Preemptor (ready) event wants to cancel the current event */
+				if (err == -EINPROGRESS) {
+					/* Preemptee wants to continue after the preemptor */
+					err = -EAGAIN;
+				} else {
+					/* Preemptee be cancelled before preemptor */
+					err = -ECANCELED;
+				}
+
+				goto preempt_cancel_curr;
 			}
 
-			/* Start the preempt timeout for next ready prepare */
-			ret = preempt_ticker_start(ready, NULL, ready);
-			LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
-				      (ret == TICKER_STATUS_BUSY));
-
-		} else {
-			/* Let preemptor LLL know about the cancelled prepare */
-			ready->is_aborted = 1;
-			ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
+			err = err_ready;
 		}
 
+		/* Let the prepare be dequeued from the pipeline */
+		ready->is_aborted = 1;
+
+		/* Check if resume requested */
+		if (err == -EAGAIN) {
+			struct lll_event *next;
+
+			next = ull_prepare_enqueue(ready->is_abort_cb, ready->abort_cb,
+						   &ready->prepare_param, resume_cb, 1U);
+			LL_ASSERT(next);
+
+			return;
+		}
+
+		/* Let preemptor LLL know about the cancelled prepare */
+		ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
+
 		return;
+
+	} else if (err == -EBUSY) {
+		uint32_t ret;
+
+		/* Returns -EBUSY when same curr and next ready state/role, do not abort same curr
+		 * and next ready event.
+		 */
+		ready->prepare_param.defer = 1U;
+
+		/* Find next prepare that is ready and not a resume */
+		ready = prepare_dequeue_iter_ready_get(&idx);
+		if (ready == NULL) {
+			/* No ready prepare */
+			return;
+		}
+
+		/* Start the preempt timeout for next ready prepare */
+		ret = preempt_ticker_start(ready, NULL, ready);
+		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (ret == TICKER_STATUS_BUSY));
+
+		return;
+
+	} else if (err == -EAGAIN) {
+		/* Returns -EAGAIN to be placed back in pipeline as resume event */
+
+	} else {
+		/* Returns -ECANCELED to have current event aborted */
+		LL_ASSERT(err == -ECANCELED);
 	}
 
+preempt_cancel_curr:
 	/* Abort the current event */
 	event.curr.abort_cb(NULL, event.curr.param);
 
 	/* Check if resume requested */
 	if (err == -EAGAIN) {
 		lll_is_abort_cb_t is_abort_cb;
+		uint32_t ticks_at_expire;
 		lll_abort_cb_t abort_cb;
 		uint8_t is_resume_abort;
 		struct lll_event *iter;
@@ -1424,9 +1478,10 @@ preempt_find_preemptor:
 		curr_param = event.curr.param;
 		event.curr.param = NULL;
 
-		/* backup is_abort_cb and abort_cb */
+		/* backup is_abort_cb, abort_cb and ticks_at_expire */
 		is_abort_cb = event.curr.is_abort_cb;
 		abort_cb = event.curr.abort_cb;
+		ticks_at_expire = event.curr.ticks_at_expire;
 
 		/* Iterate twice to ensure preempt timeout is setup after all duplicate resume
 		 * events are aborted.
@@ -1464,7 +1519,8 @@ preempt_abort_resume:
 		}
 
 		/* Enqueue as resume event */
-		iter = resume_enqueue(is_abort_cb, abort_cb, resume_cb, curr_param);
+		iter = resume_enqueue(is_abort_cb, abort_cb, resume_cb, curr_param,
+				      ticks_at_expire);
 		LL_ASSERT_ERR(iter);
 	} else {
 		LL_ASSERT_ERR(err == -ECANCELED);
