@@ -458,7 +458,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	cig_lll->lazy_prepare = prepare_param->lazy;
 	cig_lll->latency_prepare += (cig_lll->lazy_prepare + 1U);
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 static void isr_tx(void *param)

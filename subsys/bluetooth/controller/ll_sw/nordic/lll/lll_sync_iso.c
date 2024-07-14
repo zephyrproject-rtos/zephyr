@@ -493,7 +493,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	e->trx_cnt = 0U;
 	e->crc_valid = 0U;
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 static void isr_rx_estab(void *param)
