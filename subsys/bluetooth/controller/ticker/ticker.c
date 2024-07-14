@@ -2484,6 +2484,17 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		/* Ensure that resched ticker is expired */
 		LL_ASSERT(ticker_resched->ticks_to_expire == 0U);
 
+		/* Use ticker's reserved time ticks_slot, else for unreserved
+		 * tickers use the reschedule margin as ticks_slot.
+		 */
+		if (ticker_resched->ticks_slot) {
+			ticks_slot = ticker_resched->ticks_slot;
+		} else {
+			LL_ASSERT(TICKER_HAS_SLOT_WINDOW(ticker_resched));
+
+			ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
+		}
+
 		/* Window start after intersection with already active node */
 		window_start_ticks = instance->ticks_slot_previous +
 				     HAL_TICKER_RESCHEDULE_MARGIN;
@@ -2498,30 +2509,38 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		 * and not be restricted to ticks_slot_window - ticks_drift.
 		 */
 		ext_data = ticker_resched->ext_data;
-		if (ext_data->ticks_drift < ext_data->ticks_slot_window) {
-			ticks_slot_window = ext_data->ticks_slot_window -
-					    ext_data->ticks_drift;
+		if (IS_ENABLED(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD) &&
+		    ticker_resched->ticks_slot &&
+		    !ext_data->ticks_drift &&
+		    !ext_data->is_drift_in_window) {
+			/* Use slot window after intersection include required
+			 * ticks_slot, and we do not take the interval of the
+			 * colliding ticker provided every expiry increments the
+			 * interval by random amount of ticks.
+			 */
+			ticks_slot_window = window_start_ticks + ticks_slot;
+
 			/* Window available, proceed to calculate further
 			 * drift
 			 */
 			ticker_id_next = ticker_resched->next;
+
+		} else if (ext_data->ticks_drift < ext_data->ticks_slot_window) {
+			/* Use reduced slot window */
+			ticks_slot_window = ext_data->ticks_slot_window -
+					    ext_data->ticks_drift;
+
+			/* Window available, proceed to calculate further
+			 * drift
+			 */
+			ticker_id_next = ticker_resched->next;
+
 		} else {
 			/* Window has been exhausted - we can't reschedule */
 			ticker_id_next = TICKER_NULL;
 
 			/* Assignment will be unused when TICKER_NULL */
 			ticks_slot_window = 0U;
-		}
-
-		/* Use ticker's reserved time ticks_slot, else for unreserved
-		 * tickers use the reschedule margin as ticks_slot.
-		 */
-		if (ticker_resched->ticks_slot) {
-			ticks_slot = ticker_resched->ticks_slot;
-		} else {
-			LL_ASSERT(TICKER_HAS_SLOT_WINDOW(ticker_resched));
-
-			ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
 		}
 
 		/* Try to find available slot for re-scheduling */
@@ -2579,17 +2598,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 				ticks_to_expire = 0U;
 			}
 
-			/* Skip other pending re-schedule nodes and
-			 * tickers with no reservation or not periodic
-			 */
-			if (TICKER_RESCHEDULE_PENDING(ticker_next) ||
-			    !ticker_next->ticks_slot ||
-			    !ticker_next->ticks_periodic) {
-				ticker_id_next = ticker_next->next;
-
-				continue;
-			}
-
 			/* Decide if the re-scheduling ticker node fits in the
 			 * slot found - break if it fits
 			 */
@@ -2602,6 +2610,17 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			} else {
 				/* Not inside the window */
 				ticks_to_expire = 0U;
+			}
+
+			/* Skip other pending re-schedule nodes and
+			 * tickers with no reservation or not periodic
+			 */
+			if (TICKER_RESCHEDULE_PENDING(ticker_next) ||
+			    !ticker_next->ticks_slot ||
+			    !ticker_next->ticks_periodic) {
+				ticker_id_next = ticker_next->next;
+
+				continue;
 			}
 
 			/* We din't find a valid slot for re-scheduling - try
@@ -2620,20 +2639,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 							   ticks_slot))) {
 					/* Try at the end of the next node */
 					ticks_to_expire = window_start_ticks;
-				}
-			} else if (IS_ENABLED(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD) &&
-				   (ticker_resched->ticks_periodic <
-				    ticker_next->ticks_periodic)) {
-				uint32_t ticks_slot_with_margin = ticker_resched->ticks_slot +
-								  HAL_TICKER_RESCHEDULE_MARGIN;
-
-				/* Try to place it before the overlap and be
-				 * rescheduled to its next periodic interval
-				 * for collision resolution.
-				 */
-				if (ticks_start_offset > ticks_slot_with_margin) {
-					ticks_to_expire = ticks_start_offset -
-							  ticks_slot_with_margin;
 				}
 			} else {
 				/* Try at the end of the slot window. This
