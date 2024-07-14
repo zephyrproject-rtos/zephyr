@@ -110,7 +110,7 @@ config POSIX_ENV
 	  Please use CONFIG_POSIX_SINGLE_PROCESS instead.
 
 config POSIX_FS
-	bool "Support for environ, getenv(), getenv_r(), setenv(), and unsetenv() [DEPRECATED]"
+	bool "POSIX file system API support [DEPRECATED]"
 	select DEPRECATED
 	select POSIX_FILE_SYSTEM
 	help
