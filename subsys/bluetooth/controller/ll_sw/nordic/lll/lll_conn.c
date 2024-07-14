@@ -318,7 +318,7 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	e->mic_state = LLL_CONN_MIC_NONE;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 void lll_conn_isr_rx(void *param)
