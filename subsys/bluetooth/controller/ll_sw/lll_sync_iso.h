@@ -96,6 +96,16 @@ struct lll_sync_iso {
 	uint8_t payload_count_max;
 	uint8_t payload_tail;
 
+	uint8_t trx_cnt;
+	uint8_t crc_ok_anchor:1;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	uint8_t is_lll_resume:1;
+	uint32_t ticks_start;
+	uint32_t ready_us;
+	uint32_t aa_us;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	uint32_t window_widening_periodic_us;
 	uint32_t window_widening_max_us;
 	uint32_t window_widening_prepare_us;
