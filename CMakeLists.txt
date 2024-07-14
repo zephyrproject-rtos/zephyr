@@ -2029,6 +2029,7 @@ set(BIN_2_HEX_OPTION --width=64)
 set(BIN2HEX scripts/build/bin2heximage)
 add_custom_command(
     OUTPUT ${MERGED_KERNEL_HEX_NAME}
+    COMMAND rm -fr ${PROJECT_BINARY_NAME}/*.hex
     COMMAND ${PERL_EXECUTABLE} ${ZEPHYR_BASE}/${BIN2HEX} ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME} ${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME} ${BIN_2_HEX_OPTION}
     DEPENDS ${logical_target_for_zephyr_elf}
     )
