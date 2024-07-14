@@ -142,7 +142,7 @@ manifest:
       groups:
         - hal
     - name: hal_altera
-      revision: 0d225ddd314379b32355a00fb669eacf911e750d
+      revision: 4fe4df959d4593ce66e676aeba0b57f546dba0fe
       path: modules/hal/altera
       groups:
         - hal

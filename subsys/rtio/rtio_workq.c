@@ -42,6 +42,10 @@ struct rtio_work_req *rtio_work_req_alloc(void)
 		return NULL;
 	}
 
+	/** Initialize work item before using it as it comes
+	 * from a Memory slab (no-init region).
+	 */
+	req->work.thread = NULL;
 	(void)k_sem_init(&req->work.done_sem, 1, 1);
 
 	return req;
