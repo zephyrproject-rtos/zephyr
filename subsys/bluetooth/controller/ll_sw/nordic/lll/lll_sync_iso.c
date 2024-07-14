@@ -21,6 +21,8 @@
 #include "util/mem.h"
 #include "util/memq.h"
 
+#include "ticker/ticker.h"
+
 #include "pdu_df.h"
 #include "lll/pdu_vendor.h"
 #include "pdu.h"
@@ -45,6 +47,7 @@ static void create_prepare_bh(void *param);
 static void prepare_bh(void *param);
 static int create_prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb(struct lll_prepare_param *p);
+static int prepare_cb_event(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p);
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -172,7 +175,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 {
 	int err;
 
-	err = prepare_cb_common(p);
+	err = prepare_cb_event(p);
 	if (err) {
 		DEBUG_RADIO_START_O(1);
 		return 0;
@@ -181,6 +184,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	radio_isr_set(isr_rx_estab, p->param);
 
 	DEBUG_RADIO_START_O(1);
+
 	return 0;
 }
 
@@ -188,7 +192,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 {
 	int err;
 
-	err = prepare_cb_common(p);
+	err = prepare_cb_event(p);
 	if (err) {
 		DEBUG_RADIO_START_O(1);
 		return 0;
@@ -197,7 +201,35 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_isr_set(isr_rx, p->param);
 
 	DEBUG_RADIO_START_O(1);
+
 	return 0;
+}
+
+static int prepare_cb_event(struct lll_prepare_param *p)
+{
+	struct lll_sync_iso *lll;
+
+	DEBUG_RADIO_START_O(1);
+
+	lll = p->param;
+
+	/* Deduce the latency */
+	lll->latency_event = lll->latency_prepare - 1U;
+
+	/* Update BIS packet counter to next value */
+	lll->payload_count += (lll->latency_prepare * lll->bn);
+
+	/* Reset accumulated latencies */
+	lll->latency_prepare = 0U;
+
+	/* Current window widening */
+	lll->window_widening_event_us += lll->window_widening_prepare_us;
+	lll->window_widening_prepare_us = 0U;
+	if (lll->window_widening_event_us > lll->window_widening_max_us) {
+		lll->window_widening_event_us =	lll->window_widening_max_us;
+	}
+
+	return prepare_cb_common(p);
 }
 
 static int prepare_cb_common(struct lll_prepare_param *p)
@@ -224,25 +256,6 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	lll = p->param;
 
-	/* Deduce the latency */
-	lll->latency_event = lll->latency_prepare - 1U;
-
-	/* Calculate the current event counter value */
-	event_counter = (lll->payload_count / lll->bn) + lll->latency_event;
-
-	/* Update BIS packet counter to next value */
-	lll->payload_count += (lll->latency_prepare * lll->bn);
-
-	/* Reset accumulated latencies */
-	lll->latency_prepare = 0U;
-
-	/* Current window widening */
-	lll->window_widening_event_us += lll->window_widening_prepare_us;
-	lll->window_widening_prepare_us = 0U;
-	if (lll->window_widening_event_us > lll->window_widening_max_us) {
-		lll->window_widening_event_us =	lll->window_widening_max_us;
-	}
-
 	/* Initialize trx chain count */
 	trx_cnt = 0U;
 
@@ -258,9 +271,15 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Initialize control subevent flag */
 	lll->ctrl = 0U;
 
+	/* Initialise resume subevent flag */
+	lll->is_lll_resume = 0U;
+
 	/* Calculate the Access Address for the BIS event */
 	util_bis_aa_le32(lll->bis_curr, lll->seed_access_addr, access_addr);
 	data_chan_id = lll_chan_id(access_addr);
+
+	/* Calculate the current event counter value */
+	event_counter = (lll->payload_count / lll->bn) - 1U;
 
 	/* Calculate the radio channel to use for ISO event and hence store the
 	 * channel to be used for control subevent.
@@ -485,8 +504,59 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+static int drift_prepare_cb(struct lll_prepare_param *p)
+{
+	uint32_t ticks_at_expire;
+	struct ull_hdr *ull;
+
+	ticks_at_expire = p->ticks_at_expire;
+
+	ull = HDR_LLL2ULL(p->param);
+	p->ticks_at_expire = ticker_ticks_diff_get(ticker_ticks_now_get(),
+						   lll_event_offset_get(ull));
+	p->ticks_drift += ticker_ticks_diff_get(p->ticks_at_expire,
+						ticks_at_expire);
+	p->remainder = 0U;
+	p->lazy = 0U;
+
+	return prepare_cb(p);
+}
+
+static int resume_prepare_cb(struct lll_prepare_param *p)
+{
+	uint32_t ticks_at_expire;
+	struct ull_hdr *ull;
+	int err;
+
+	ticks_at_expire = p->ticks_at_expire;
+
+	ull = HDR_LLL2ULL(p->param);
+	p->ticks_at_expire = ticker_ticks_diff_get(ticker_ticks_now_get(),
+						   lll_event_offset_get(ull));
+	p->ticks_drift += ticker_ticks_diff_get(p->ticks_at_expire,
+						ticks_at_expire);
+	p->remainder = 0U;
+	p->lazy = 0U;
+
+	err = prepare_cb_common(p);
+
+	radio_isr_set(isr_rx, p->param);
+
+	return err;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	if (!next) {
+		*resume_cb = drift_prepare_cb;
+
+		return -EAGAIN;
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	if (next != curr) {
 		struct lll_sync_iso *lll;
 
@@ -494,6 +564,14 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		if (lll->bn_curr <= lll->bn) {
 			return 0;
 		}
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+		*resume_cb = resume_prepare_cb;
+
+		lll->is_lll_resume = 1U;
+
+		return -EAGAIN;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 	}
 
 	return -ECANCELED;
@@ -506,8 +584,24 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* NOTE: This is not a prepare being cancelled */
 	if (!prepare_param) {
-		radio_isr_set(isr_done, param);
+		struct lll_sync_iso *lll = param;
+
+		if (false) {
+
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) &&
+			   lll->is_lll_resume) {
+			/* Retain HF clock */
+			err = lll_hfclock_on();
+			LL_ASSERT(err >= 0);
+
+			radio_isr_set(lll_isr_abort, param);
+
+		} else {
+			radio_isr_set(isr_done, param);
+		}
+
 		radio_disable();
+
 		return;
 	}
 
