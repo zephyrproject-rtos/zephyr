@@ -2377,8 +2377,7 @@ static inline uint8_t ticker_job_insert(struct ticker_instance *instance,
  *
  * @internal
  */
-static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
-					    uint32_t ticks_elapsed)
+static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 {
 	struct ticker_node *nodes;
 	uint8_t rescheduling;
@@ -2427,15 +2426,8 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 		/* Ensure that resched ticker is expired */
 		LL_ASSERT(ticker_resched->ticks_to_expire == 0U);
 
-		/* Check for intersection with already active node */
-		window_start_ticks = 0U;
-		if (instance->ticks_slot_previous > ticks_elapsed) {
-			/* Active node intersects - window starts after end of
-			 * active slot
-			 */
-			window_start_ticks = instance->ticks_slot_previous -
-					     ticks_elapsed;
-		}
+		/* Window start after intersection with already active node */
+		window_start_ticks = instance->ticks_slot_previous;
 
 		/* If drift was applied to this node, this must be
 		 * taken into consideration. Reduce the window with
@@ -2492,6 +2484,11 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 			if (TICKER_RESCHEDULE_PENDING(ticker_next) ||
 			    !ticker_next->ticks_slot ||
 			    !ticker_next->ticks_periodic) {
+				/* Reschedule at window start if no more tickers
+				 * in the list.
+				 */
+				ticks_to_expire = window_start_ticks;
+
 				ticker_id_next = ticker_next->next;
 
 				continue;
@@ -3186,7 +3183,7 @@ void ticker_job(void *param)
 #if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC) &&\
 	!defined(CONFIG_BT_TICKER_LOW_LAT)
 		/* Re-schedule any pending nodes with slot_window */
-		if (ticker_job_reschedule_in_window(instance, ticks_elapsed)) {
+		if (ticker_job_reschedule_in_window(instance)) {
 			flag_compare_update = 1U;
 		}
 #endif /* CONFIG_BT_TICKER_EXT */
