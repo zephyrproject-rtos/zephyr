@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 #define AXP192_GPIO1_FUNC_REG          0x92U
 #define AXP192_GPIO2_FUNC_REG          0x93U
 #define AXP192_GPIO34_FUNC_REG         0x95U
+#define AXP192_GPIO5_NRSTO_FUNC_REG    0x9EU
 #define AXP192_GPIO012_PINVAL_REG      0x94U
 #define AXP192_GPIO34_PINVAL_REG       0x96U
 #define AXP192_GPIO012_PULLDOWN_REG    0x97U
@@ -63,6 +64,10 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 	(AXP192_GPIO34_FUNC_ENA | AXP192_GPIO4_FUNC_VAL_CHARGE_CTL |                               \
 	 AXP192_GPIO4_FUNC_VAL_OUTPUT_OD | AXP192_GPIO4_FUNC_VAL_INPUT)
 
+#define AXP192_GPIO5_FUNC_ENA       0x80U
+#define AXP192_GPIO5_FUNC_VAL_INPUT 0x40U
+#define AXP192_GPIO5_FUNC_MASK      (AXP192_GPIO5_FUNC_ENA | AXP192_GPIO5_FUNC_VAL_INPUT)
+
 #define AXP192_EXTEN_ENA  0x04U
 #define AXP192_EXTEN_MASK 0x04U
 
@@ -71,7 +76,11 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 #define AXP192_GPIO1_PULLDOWN_ENABLE 0x02U
 #define AXP192_GPIO2_PULLDOWN_ENABLE 0x04U
 
-/* GPIO Value parameters */
+/*
+ *  GPIO value parameters
+ */
+
+/* GPIO012 value - GPIO012 reg */
 #define AXP192_GPIO0_INPUT_VAL      0x10U
 #define AXP192_GPIO1_INPUT_VAL      0x20U
 #define AXP192_GPIO2_INPUT_VAL      0x40U
@@ -89,13 +98,20 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 #define AXP192_GPIO012_OUTPUT_MASK                                                                 \
 	(AXP192_GPIO0_OUTPUT_VAL | AXP192_GPIO1_OUTPUT_VAL | AXP192_GPIO2_OUTPUT_VAL)
 
+/* GPIO34 value - GPIO34 reg */
 #define AXP192_GPIO3_OUTPUT_VAL   0x01U
 #define AXP192_GPIO4_OUTPUT_VAL   0x02U
 #define AXP192_GPIO34_OUTPUT_MASK (AXP192_GPIO3_OUTPUT_VAL | AXP192_GPIO4_OUTPUT_VAL)
 
-#define AXP192_GPIO5_OUTPUT_MASK  0x04U
-#define AXP192_GPIO5_OUTPUT_VAL   0x04U
-#define AXP192_GPIO5_OUTPUT_SHIFT 3U
+/* GPIO5 value - NRSTO ctrl reg */
+#define AXP192_GPIO5_OUTPUT_MASK  0x20U
+#define AXP192_GPIO5_OUTPUT_VAL   0x20U
+#define AXP192_GPIO5_OUTPUT_SHIFT 5U
+
+/* GPIO6 value - EXTEN-DCDC2 ctrl reg */
+#define AXP192_GPIO6_OUTPUT_MASK  0x04U
+#define AXP192_GPIO6_OUTPUT_VAL   0x04U
+#define AXP192_GPIO6_OUTPUT_SHIFT 2U
 
 struct mfd_axp192_config {
 	struct i2c_dt_spec i2c;
@@ -138,7 +154,16 @@ const struct mfd_axp192_func_reg_desc gpio_reg_desc[AXP192_GPIO_MAX_NUM] = {
 		.reg = AXP192_GPIO34_FUNC_REG,
 		.mask = AXP192_GPIO4_FUNC_MASK,
 	},
-};
+	{
+		/* GPIO5 */
+		.reg = AXP192_GPIO5_NRSTO_FUNC_REG,
+		.mask = AXP192_GPIO5_FUNC_MASK,
+	},
+	{
+		/* GPIO6/EXTEN  - this is an output only pin */
+		.reg = AXP192_EXTEN_DCDC2_CONTROL_REG,
+		.mask = AXP192_EXTEN_MASK,
+	}};
 
 static int mfd_axp192_init(const struct device *dev)
 {
@@ -273,6 +298,21 @@ int mfd_axp192_gpio_func_get(const struct device *dev, uint8_t gpio, enum axp192
 		break;
 
 	case 5U:
+		/* GPIO5 - NRSTO */
+		switch (reg_fnc) {
+		case (AXP192_GPIO5_FUNC_VAL_INPUT | AXP192_GPIO34_FUNC_ENA):
+			*func = AXP192_GPIO_FUNC_INPUT;
+			break;
+		case AXP192_GPIO34_FUNC_ENA:
+			*func = AXP192_GPIO_FUNC_OUTPUT_OD;
+			break;
+		default:
+			ret = -ENOTSUP;
+			break;
+		}
+		break;
+
+	case 6U:
 		/* EXTEN is an output only pin */
 		*func = AXP192_GPIO_FUNC_OUTPUT_LOW;
 		break;
@@ -388,6 +428,21 @@ int mfd_axp192_gpio_func_ctrl(const struct device *dev, const struct device *cli
 		break;
 
 	case 5U:
+		/* GPIO5 - NRSTO */
+		switch (func) {
+		case AXP192_GPIO_FUNC_INPUT:
+			reg_cfg = AXP192_GPIO5_FUNC_VAL_INPUT | AXP192_GPIO5_FUNC_ENA;
+			break;
+		case AXP192_GPIO_FUNC_OUTPUT_OD:
+			reg_cfg = AXP192_GPIO5_FUNC_ENA;
+			is_output = true;
+		default:
+			ret = -ENOTSUP;
+			break;
+		}
+		break;
+
+	case 6U:
 		/* EXTEN is an output only pin */
 		break;
 
@@ -443,6 +498,8 @@ int mfd_axp192_gpio_pd_get(const struct device *dev, uint8_t gpio, bool *enabled
 	case 4U:
 		__fallthrough;
 	case 5U:
+		__fallthrough;
+	case 6U:
 		LOG_DBG("Pull-Down not support on gpio %d", gpio);
 		return -ENOTSUP;
 
@@ -496,6 +553,8 @@ int mfd_axp192_gpio_pd_ctrl(const struct device *dev, uint8_t gpio, bool enable)
 	case 4U:
 		__fallthrough;
 	case 5U:
+		__fallthrough;
+	case 6U:
 		LOG_ERR("Pull-Down not support on gpio %d", gpio);
 		return -ENOTSUP;
 
@@ -518,6 +577,7 @@ int mfd_axp192_gpio_read_port(const struct device *dev, uint8_t *value)
 	uint8_t gpio012_val;
 	uint8_t gpio34_val;
 	uint8_t gpio5_val;
+	uint8_t gpio6_val;
 	uint8_t gpio_input_val;
 	uint8_t gpio_output_val;
 
@@ -534,7 +594,13 @@ int mfd_axp192_gpio_read_port(const struct device *dev, uint8_t *value)
 	}
 
 	/* read gpio5 */
-	ret = i2c_reg_read_byte_dt(&(config->i2c), AXP192_EXTEN_DCDC2_CONTROL_REG, &gpio5_val);
+	ret = i2c_reg_read_byte_dt(&(config->i2c), AXP192_GPIO5_NRSTO_FUNC_REG, &gpio5_val);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* read gpio6 */
+	ret = i2c_reg_read_byte_dt(&(config->i2c), AXP192_EXTEN_DCDC2_CONTROL_REG, &gpio6_val);
 	if (ret != 0) {
 		return ret;
 	}
@@ -542,6 +608,7 @@ int mfd_axp192_gpio_read_port(const struct device *dev, uint8_t *value)
 	LOG_DBG("GPIO012 pinval-reg=0x%x", gpio012_val);
 	LOG_DBG("GPIO34 pinval-reg =0x%x", gpio34_val);
 	LOG_DBG("GPIO5 pinval-reg =0x%x", gpio5_val);
+	LOG_DBG("GPIO6 pinval-reg =0x%x", gpio6_val);
 	LOG_DBG("Output-Mask       =0x%x", data->gpio_mask_output);
 
 	gpio_input_val =
@@ -553,6 +620,8 @@ int mfd_axp192_gpio_read_port(const struct device *dev, uint8_t *value)
 	gpio_output_val |= ((gpio34_val & AXP192_GPIO34_OUTPUT_MASK) << 3u);
 	gpio_output_val |=
 		(((gpio5_val & AXP192_GPIO5_OUTPUT_MASK) >> AXP192_GPIO5_OUTPUT_SHIFT) << 5u);
+	gpio_output_val |=
+		(((gpio6_val & AXP192_GPIO6_OUTPUT_MASK) >> AXP192_GPIO6_OUTPUT_SHIFT) << 6u);
 
 	*value = gpio_input_val & ~(data->gpio_mask_output);
 	*value |= (gpio_output_val & data->gpio_mask_output);
@@ -593,8 +662,20 @@ int mfd_axp192_gpio_write_port(const struct device *dev, uint8_t value, uint8_t 
 
 	/* Write gpio5. Mask out other port pins */
 	if ((mask & BIT(5)) != 0) {
+		gpio_reg_mask = AXP192_GPIO5_OUTPUT_MASK;
+		gpio_reg_val = (value & BIT(5)) ? AXP192_GPIO5_OUTPUT_VAL : 0U;
+		ret = i2c_reg_update_byte_dt(&(config->i2c), AXP192_GPIO5_NRSTO_FUNC_REG,
+					     gpio_reg_mask, gpio_reg_val);
+		if (ret != 0) {
+			return ret;
+		}
+		LOG_DBG("GPIO5 pinval-reg =0x%x mask=0x%x\n", gpio_reg_val, gpio_reg_mask);
+	}
+
+	/* Write gpio6. Mask out other port pins */
+	if ((mask & BIT(5)) != 0) {
 		gpio_reg_mask = AXP192_EXTEN_MASK;
-		gpio_reg_val = (value & BIT(5)) ? AXP192_EXTEN_ENA : 0U;
+		gpio_reg_val = (value & BIT(6)) ? AXP192_EXTEN_ENA : 0U;
 		ret = i2c_reg_update_byte_dt(&(config->i2c), AXP192_EXTEN_DCDC2_CONTROL_REG,
 					     gpio_reg_mask, gpio_reg_val);
 		if (ret != 0) {

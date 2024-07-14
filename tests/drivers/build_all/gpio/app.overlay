@@ -207,7 +207,7 @@
 					compatible = "x-powers,axp192-gpio";
 					gpio-controller;
 					#gpio-cells = <2>;
-					ngpios = <6>;
+					ngpios = <7>;
 				};
 			};
 
