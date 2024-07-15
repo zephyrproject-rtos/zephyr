@@ -7,13 +7,12 @@ import logging
 
 from pathlib import Path
 from twister_harness import DeviceAdapter, Shell, MCUmgr
-from utils import (
+from twister_harness.helpers.utils import (
     find_in_config,
     match_lines,
-    match_no_lines,
-    check_with_shell_command,
-    check_with_mcumgr_command,
+    match_no_lines
 )
+from utils import check_with_shell_command, check_with_mcumgr_command
 from test_upgrade import create_signed_image
 
 
