@@ -100,7 +100,7 @@ struct bt_mesh_brg_cfg_cli {
 	const struct bt_mesh_model *model;
 
 	/** Event handler callbacks */
-	const struct bt_mesh_bdg_cfg_cli_cb *cb;
+	const struct bt_mesh_brg_cfg_cli_cb *cb;
 
 	/* Internal parameters for tracking message responses. */
 	struct bt_mesh_msg_ack_ctx ack_ctx;
@@ -294,6 +294,18 @@ int bt_mesh_brg_cfg_cli_bridged_subnets_get(uint16_t net_idx, uint16_t addr,
 int bt_mesh_brg_cfg_cli_bridging_table_get(uint16_t net_idx, uint16_t addr, uint16_t net_idx1,
 					   uint16_t net_idx2, uint16_t start_idx,
 					   struct bt_mesh_bridging_table_list *rsp);
+
+/** @brief Get the current transmission timeout value.
+ *
+ *  @return The configured transmission timeout in milliseconds.
+ */
+int32_t bt_mesh_brg_cfg_cli_timeout_get(void);
+
+/** @brief Set the transmission timeout value.
+ *
+ *  @param timeout The new transmission timeout.
+ */
+void bt_mesh_brg_cfg_cli_timeout_set(int32_t timeout);
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op _bt_mesh_brg_cfg_cli_op[];
