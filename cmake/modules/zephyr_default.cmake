@@ -112,6 +112,7 @@ list(APPEND zephyr_cmake_modules kconfig)
 list(APPEND zephyr_cmake_modules arch_v2)
 list(APPEND zephyr_cmake_modules soc_v1)
 list(APPEND zephyr_cmake_modules soc_v2)
+list(APPEND zephyr_cmake_modules rust)
 
 foreach(component ${SUB_COMPONENTS})
   if(NOT ${component} IN_LIST zephyr_cmake_modules)
