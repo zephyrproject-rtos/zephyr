@@ -320,6 +320,10 @@ static int bme680_read_compensation(const struct device *dev)
 	uint8_t buff[BME680_LEN_COEFF_ALL];
 	int err = 0;
 
+	if (data->has_read_compensation) {
+		return 0;
+	}
+
 	err = bme680_reg_read(dev, BME680_REG_COEFF1, buff, BME680_LEN_COEFF1);
 	if (err < 0) {
 		return err;
@@ -373,6 +377,7 @@ static int bme680_read_compensation(const struct device *dev)
 	data->res_heat_range = ((buff[39] & BME680_MSK_RH_RANGE) >> 4);
 	data->range_sw_err = ((int8_t)(buff[41] & BME680_MSK_RANGE_SW_ERR)) / 16;
 
+	data->has_read_compensation = true;
 	return 0;
 }
 
