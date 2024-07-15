@@ -28,6 +28,13 @@ properties:
         PLLI2S multiplication factor for VCO
         Valid range may vary between parts: 50 - 432 , 192 - 432
 
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for the PLLI2S input clock
+        Valid range: 2 - 63
+
   div-r:
     type: int
     required: true
