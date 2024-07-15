@@ -1110,16 +1110,6 @@ static int qspi_nor_init(const struct device *dev)
 		(void)nrfx_qspi_deactivate();
 	}
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	int rc2 = pm_device_runtime_enable(dev);
-
-	if (rc2 < 0) {
-		LOG_ERR("Failed to enable runtime power management: %d", rc2);
-	} else {
-		LOG_DBG("Runtime power management enabled");
-	}
-#endif
-
 #ifdef CONFIG_NORDIC_QSPI_NOR_XIP
 	if (rc == 0) {
 		/* Enable XIP mode for QSPI NOR flash, this will prevent the
