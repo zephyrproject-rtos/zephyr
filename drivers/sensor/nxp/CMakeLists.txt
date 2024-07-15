@@ -3,6 +3,7 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_FXAS21002 fxas21002)
+add_subdirectory_ifdef(CONFIG_FXLS8974 fxls8974)
 add_subdirectory_ifdef(CONFIG_FXOS8700 fxos8700)
 add_subdirectory_ifdef(CONFIG_MCUX_ACMP mcux_acmp)
 add_subdirectory_ifdef(CONFIG_MCUX_LPCMP mcux_lpcmp)
