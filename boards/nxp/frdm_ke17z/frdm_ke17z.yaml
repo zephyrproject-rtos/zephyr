@@ -12,6 +12,7 @@ supported:
   - gpio
   - adc
   - uart
+  - pwm
   - i2c
   - spi
   - dma
