@@ -562,6 +562,13 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 		lll_sync_next = ull_sync_lll_is_valid_get(next);
 		if (!lll_sync_next) {
+			lll_sync_curr = curr;
+
+			/* Do not abort if near supervision timeout */
+			if (lll_sync_curr->forced) {
+				return 0;
+			}
+
 			/* Abort current event as next event is not a
 			 * scan and not a scan aux event.
 			 */

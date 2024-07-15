@@ -722,6 +722,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	memcpy(lll->crc_init, si->crc_init, sizeof(lll->crc_init));
 	lll->event_counter = sys_le16_to_cpu(si->evt_cntr);
 	lll->phy = aux->lll.phy;
+	lll->forced = 0U;
 
 	interval = sys_le16_to_cpu(si->interval);
 	interval_us = interval * PERIODIC_INT_UNIT_US;
@@ -1020,6 +1021,7 @@ void ull_sync_done(struct node_rx_event_done *done)
 	struct ll_sync_set *sync;
 	uint16_t elapsed_event;
 	uint16_t skip_event;
+	uint8_t force_lll;
 	uint16_t lazy;
 	uint8_t force;
 
@@ -1100,6 +1102,7 @@ void ull_sync_done(struct node_rx_event_done *done)
 
 		/* check timeout */
 		force = 0U;
+		force_lll = 0U;
 		if (sync->timeout_expire) {
 			if (sync->timeout_expire > elapsed_event) {
 				sync->timeout_expire -= elapsed_event;
@@ -1107,7 +1110,11 @@ void ull_sync_done(struct node_rx_event_done *done)
 				/* break skip */
 				lll->skip_event = 0U;
 
-				if (skip_event) {
+				if (sync->timeout_expire <= 6U) {
+					force_lll = 1U;
+
+					force = 1U;
+				} else if (skip_event) {
 					force = 1U;
 				}
 			} else {
@@ -1116,6 +1123,8 @@ void ull_sync_done(struct node_rx_event_done *done)
 				return;
 			}
 		}
+
+		lll->forced = force_lll;
 
 		/* Check if skip needs update */
 		lazy = 0U;
