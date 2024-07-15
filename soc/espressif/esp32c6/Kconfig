@@ -14,8 +14,6 @@ config SOC_SERIES_ESP32C6
 	select RISCV_ISA_EXT_ZICSR
 	select HAS_ESPRESSIF_HAL
 	select XIP if !MCUBOOT
-	select HAS_PM
-	select HAS_POWEROFF
 
 if SOC_SERIES_ESP32C6
 
