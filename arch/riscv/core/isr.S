@@ -347,6 +347,21 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 */
 	li t1, RISCV_EXC_ECALLU
 	beq t0, t1, is_user_syscall
+
+#ifdef CONFIG_PMP_STACK_GUARD
+	/*
+	 * Determine if we come from user space. If so, reconfigure the PMP for
+	 * kernel mode stack guard.
+	 */
+	csrr t0, mstatus
+	li t1, MSTATUS_MPP
+	and t0, t0, t1
+	bnez t0, 1f
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_pmp_stackguard_enable
+1:
+#endif /* CONFIG_PMP_STACK_GUARD */
+
 #endif /* CONFIG_USERSPACE */
 
 	/*
