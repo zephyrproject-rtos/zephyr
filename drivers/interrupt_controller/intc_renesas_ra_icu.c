@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 TOKITTA Hiroshi <tokita.hiroshi@fujitsu.com>
+ * Copyright (c) 2023 - 2024 TOKITTA Hiroshi <tokita.hiroshi@fujitsu.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,104 +21,99 @@
 #define IELSRn_IR_POS     16
 #define IELSRn_IR_MASK    BIT_MASK(1)
 
+const ra_intr_id_t __weak __intr_id_table[RA_INTR_ID_COUNT] = {};
+
 enum {
 	IRQCRi_OFFSET = 0x0,
 	IELSRn_OFFSET = 0x300,
 };
 
-int ra_icu_query_exists_irq(uint32_t event)
+static inline unsigned int event_to_irq(unsigned int event)
 {
-	for (uint32_t i = 0; i < CONFIG_NUM_IRQS; i++) {
-		uint32_t els = sys_read32(IELSRn_REG(i)) & UINT8_MAX;
-
-		if (event == els) {
-			return i;
-		}
+	if (event >= RA_INTR_ID_COUNT) {
+		return RA_INVALID_INTR_ID;
 	}
 
-	return -EINVAL;
+	return RA_INTR_ID_TO_IRQ(event);
 }
 
-int ra_icu_query_available_irq(uint32_t event)
+void ra_icu_event_enable(unsigned int event)
 {
-	int irq = -EINVAL;
+	const unsigned int irq = event_to_irq(event);
 
-	if (ra_icu_query_exists_irq(event) > 0) {
-		return -EINVAL;
+	if (irq == RA_INVALID_INTR_ID) {
+		return;
 	}
 
-	for (uint32_t i = 0; i < CONFIG_NUM_IRQS; i++) {
-		if (_sw_isr_table[i].isr == z_irq_spurious) {
-			irq = i;
-			break;
-		}
+	sys_write32(event, IELSRn_REG(irq));
+	irq_enable(irq);
+}
+
+void ra_icu_event_disable(unsigned int event)
+{
+	const unsigned int irq = event_to_irq(event);
+
+	if (irq == RA_INVALID_INTR_ID) {
+		return;
 	}
 
-	return irq;
+	irq_disable(irq);
+	sys_write32(0, IELSRn_REG(irq));
 }
 
-void ra_icu_clear_int_flag(unsigned int irqn)
+int ra_icu_event_is_enabled(unsigned int event)
 {
-	uint32_t cfg = sys_read32(IELSRn_REG(irqn));
+	const unsigned int irq = event_to_irq(event);
 
-	sys_write32(cfg & ~BIT(IELSRn_IR_POS), IELSRn_REG(irqn));
-}
-
-void ra_icu_query_irq_config(unsigned int irq, uint32_t *intcfg, ra_isr_handler *cb,
-			     const void **cbarg)
-{
-	*intcfg = sys_read32(IELSRn_REG(irq));
-	*cb = _sw_isr_table[irq].isr;
-	*cbarg = (void *)_sw_isr_table[irq].arg;
-}
-
-static void ra_icu_irq_configure(unsigned int irqn, uint32_t intcfg)
-{
-	uint8_t reg = sys_read8(IRQCRi_REG(irqn)) & ~(IRQCRi_IRQMD_MASK);
-
-	sys_write8(reg | (intcfg & IRQCRi_IRQMD_MASK), IRQCRi_REG(irqn));
-}
-
-int ra_icu_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			       void (*routine)(const void *parameter), const void *parameter,
-			       uint32_t flags)
-{
-	uint32_t event = ((flags & RA_ICU_FLAG_EVENT_MASK) >> RA_ICU_FLAG_EVENT_OFFSET);
-	uint32_t intcfg = ((flags & RA_ICU_FLAG_INTCFG_MASK) >> RA_ICU_FLAG_INTCFG_OFFSET);
-	int irqn = irq;
-
-	if (irq == RA_ICU_IRQ_UNSPECIFIED) {
-		irqn = ra_icu_query_available_irq(event);
-		if (irqn < 0) {
-			return irqn;
-		}
+	if (irq == RA_INVALID_INTR_ID) {
+		return 0;
 	}
 
-	irq_disable(irqn);
-	sys_write32(event, IELSRn_REG(irqn));
-	z_isr_install(irqn, routine, parameter);
-	z_arm_irq_priority_set(irqn, priority, flags);
-	ra_icu_irq_configure(event, intcfg);
-
-	return irqn;
+	return irq_is_enabled(irq);
 }
 
-int ra_icu_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
-				  void (*routine)(const void *parameter), const void *parameter,
-				  uint32_t flags)
+void ra_icu_event_priority_set(unsigned int event, unsigned int prio, uint32_t flags)
 {
-	int irqn = irq;
+	const unsigned int irq = event_to_irq(event);
 
-	if (irq == RA_ICU_IRQ_UNSPECIFIED) {
-		return -EINVAL;
+	if (irq == RA_INVALID_INTR_ID) {
+		return;
 	}
 
-	irq_disable(irqn);
-	sys_write32(0, IELSRn_REG(irqn));
-	z_isr_install(irqn, z_irq_spurious, NULL);
-	z_arm_irq_priority_set(irqn, 0, 0);
-
-	return 0;
+	z_arm_irq_priority_set(irq, prio, flags);
 }
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+void ra_icu_event_clear_flag(unsigned int event)
+{
+	const unsigned int irq = event_to_irq(event);
+
+	if (irq == RA_INVALID_INTR_ID) {
+		return;
+	}
+
+	sys_write32(sys_read32(IELSRn_REG(irq)) & ~BIT(IELSRn_IR_POS), IELSRn_REG(irq));
+}
+
+void ra_icu_event_query_config(unsigned int event, uint32_t *intcfg)
+{
+	const unsigned int extirq = event - 1;
+
+	if (extirq >= 16) {
+		return;
+	}
+
+	*intcfg = sys_read8(IRQCRi_REG(extirq));
+}
+
+void ra_icu_event_configure(unsigned int event, uint32_t intcfg)
+{
+	const unsigned int extirq = event - 1;
+
+	if (extirq >= 16) {
+		return;
+	}
+
+	sys_write8((intcfg & IRQCRi_IRQMD_MASK) |
+			   (sys_read8(IRQCRi_REG(extirq)) & ~(IRQCRi_IRQMD_MASK)),
+		   IRQCRi_REG(extirq));
+}
