@@ -333,8 +333,15 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		     "Standard deviation (in microseconds) outside expected bound");
 
 	/* Validate the timer drift (accuracy over time) is within a configurable bound */
-	zassert_true(abs(time_diff_us) < CONFIG_TIMER_TEST_MAX_DRIFT,
+	if (strcmp(mechanism, "builtin") == 0) {
+		/* There should be no drift only when periodic timer is used but when new timer
+		 * is started from the callback of the previous timer then new time setting is
+		 * relative to that moment and not to the expiration of previous timer and drift
+		 * will occur.
+		 */
+		zassert_true(abs(time_diff_us) < CONFIG_TIMER_TEST_MAX_DRIFT,
 		     "Drift (in microseconds) outside expected bound");
+	}
 }
 
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)
