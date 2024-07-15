@@ -297,14 +297,12 @@ static inline void qspi_clock_div_restore(void)
 static void qspi_acquire(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = dev->data;
+	int rc;
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
-	int rc = pm_device_runtime_get(dev);
-
+	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
 		LOG_ERR("pm_device_runtime_get failed: %d", rc);
 	}
-#endif
 #if defined(CONFIG_MULTITHREADING)
 	/* In multithreading, the driver can call qspi_acquire more than once
 	 * before calling qspi_release. Keeping count, so QSPI is deactivated
@@ -326,6 +324,7 @@ static void qspi_release(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = dev->data;
 	bool deactivate = true;
+	int rc;
 
 #if defined(CONFIG_MULTITHREADING)
 	/* The last thread to finish using the driver deactivates the QSPI */
@@ -344,13 +343,10 @@ static void qspi_release(const struct device *dev)
 
 	qspi_unlock(dev);
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
-	int rc = pm_device_runtime_put(dev);
-
+	rc = pm_device_runtime_put(dev);
 	if (rc < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", rc);
 	}
-#endif
 }
 
 static inline void qspi_wait_for_completion(const struct device *dev,
