@@ -74,7 +74,7 @@ def test_pytest_command_extra_args(testinstance: TestInstance):
 
 def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     pytest_harness = Pytest()
-    pytest_args_from_yaml = '-k test_from_yaml'
+    pytest_args_from_yaml = '--extra-option'
     pytest_args_from_cmd = ['-k', 'test_from_cmd']
     testinstance.testsuite.harness_config['pytest_args'] = [pytest_args_from_yaml]
     testinstance.handler.options.pytest_args = pytest_args_from_cmd
@@ -82,7 +82,7 @@ def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     command = pytest_harness.generate_command()
     assert pytest_args_from_cmd[0] in command
     assert pytest_args_from_cmd[1] in command
-    assert pytest_args_from_yaml not in command
+    assert pytest_args_from_yaml in command
 
 
 @pytest.mark.parametrize(

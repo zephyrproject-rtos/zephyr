@@ -234,7 +234,7 @@ Artificially long but functional example:
     parser.add_argument(
         "--pytest-args", action="append",
         help="""Pass additional arguments to the pytest subprocess. This parameter
-        will override the pytest_args from the harness_config in YAML file.
+        will extend the pytest_args from the harness_config in YAML file.
         """)
 
     valgrind_asan_group.add_argument(
