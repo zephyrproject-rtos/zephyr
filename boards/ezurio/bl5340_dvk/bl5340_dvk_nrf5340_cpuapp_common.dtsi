@@ -111,7 +111,7 @@
 		compatible = "zephyr,mipi-dbi-spi";
 		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
-		spi-dev = <&spi2>;
+		spi-dev = <&spi4>;
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
