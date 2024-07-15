@@ -1,0 +1,22 @@
+# Rust configuration options
+#
+# Copyright (c) 2024 Linaro LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Rust Language Support"
+
+config RUST_SUPPORTED
+	bool
+	default y if (CPU_CORTEX_M || \
+		(RISCV && !RISCV_ISA_RV32E && !RISCV_ISA_RV128I))
+	help
+	  Selected for platforms that have support for Rust.
+
+config RUST
+	bool "Rust support for the application"
+	depends on RUST_SUPPORTED
+	select EXPERIMENTAL
+	help
+	  This option enables the use of applications written in Rust.
+
+endmenu
