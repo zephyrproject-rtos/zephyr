@@ -9,6 +9,7 @@
 #include <nxp/nxp_ke17z512.dtsi>
 #include "frdm_ke17z512-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	model = "NXP Freedom KE17Z512 board";
@@ -27,6 +28,9 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
 	};
 
 	leds {
@@ -42,6 +46,22 @@
 		blue_led: led_2 {
 			gpios = <&gpiod 12 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		red_pwm_led: led_pwm_0 {
+			pwms = <&ftm2 0 PWM_HZ(20) PWM_POLARITY_INVERTED>;
+			label = "RED RGB PWM LED";
+		};
+		green_pwm_led: led_pwm_1 {
+			pwms = <&ftm2 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "GREEN RGB PWM LED";
+		};
+		blue_pwm_led: led_pwm_2 {
+			pwms = <&ftm2 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "BLUE RGB PWM LED";
 		};
 	};
 
@@ -114,4 +134,15 @@
 			reg = <0x00076000 DT_SIZE_K(40)>;
 		};
 	};
+};
+
+&ftm2 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	clocks = <&scg KINETIS_SCG_SIRC_CLK>;
+	prescaler = <128>;
+	pinctrl-0 = <&ftm2_default>;
+	pinctrl-names = "default";
+	clock-source = "system";
 };
