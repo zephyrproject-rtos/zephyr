@@ -651,6 +651,13 @@
 				clocks = <&lfclk>;
 			};
 
+			egu130: egu@92d000 {
+				compatible = "nordic,nrf-egu";
+				reg = <0x92d000 0x1000>;
+				status = "disabled";
+				interrupts = <301 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
 			gpiote130: gpiote@934000 {
 				compatible = "nordic,nrf-gpiote";
 				reg = <0x934000 0x1000>;
