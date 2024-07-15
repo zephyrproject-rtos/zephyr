@@ -87,6 +87,9 @@ static int nxp_s32_power_init(void)
 
 	Power_Ip_Init(&power_cfg);
 
+	/* Read and clear the reset reason to avoid persisting it across resets */
+	(void)Power_Ip_GetResetReason();
+
 	return 0;
 }
 
