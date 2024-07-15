@@ -1,0 +1,13 @@
+# Rust configuration options
+#
+# Copyright (c) 2024 Linaro LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Rust Language Support"
+
+config RUST
+	bool "Rust support for the application"
+	help
+	  This option enables the use of applications written in Rust.
+
+endmenu
