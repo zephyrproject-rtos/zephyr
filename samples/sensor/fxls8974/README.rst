@@ -1,6 +1,6 @@
 .. _fxls8974:
 
-FXLS8974 Accelerometer/Magnetometer Sensor
+FXLS8974 Accelerometer Sensor
 ##########################################
 
 Overview
