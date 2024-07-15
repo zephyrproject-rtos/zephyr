@@ -198,10 +198,24 @@ zephyr_lcdif: &lcdif {
 	pinctrl-names = "default";
 };
 
-/* Leave LPI2C3 disabled by default, since it conflicts with LPSPI1 pins */
-&lpi2c3 {
+lpi2c3: &lpi2c3 {
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
+	status = "okay";
+
+	fxls8974: fxls8974@18 {
+		compatible = "nxp,fxls8974";
+		reg = <0x18>;
+		status = "okay";
+
+		/* Two zero ohm resistors (R115 and R122) isolate sensor
+		 * interrupt gpios from the soc and are unpopulated by default.
+		 * Note that if you populate them, they conflict with JTAG_TDO and
+		 * ethernet PHY interrupt signals.
+		 */
+		int1-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+	};
 };
 
 /* GPT and Systick are enabled. If power management is enabled, the GPT
