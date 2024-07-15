@@ -421,12 +421,8 @@ class Pytest(Harness):
 
         if handler.options.pytest_args:
             command.extend(handler.options.pytest_args)
-            if pytest_args_yaml:
-                logger.warning(f'The pytest_args ({handler.options.pytest_args}) specified '
-                               'in the command line will override the pytest_args defined '
-                               f'in the YAML file {pytest_args_yaml}')
-        else:
-            command.extend(pytest_args_yaml)
+
+        command.extend(pytest_args_yaml)
 
         return command
 

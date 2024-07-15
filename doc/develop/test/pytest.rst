@@ -97,6 +97,8 @@ There are two ways for passing extra arguments to the called pytest subprocess:
       -s samples/subsys/testsuite/pytest/shell/sample.pytest.shell \
       --pytest-args='-k test_shell_print_version'
 
+   The command line arguments will extend those from the .yaml file. If the same argument is
+   present in both places, the one from the command line will take precedence.
 
 Fixtures
 ********
