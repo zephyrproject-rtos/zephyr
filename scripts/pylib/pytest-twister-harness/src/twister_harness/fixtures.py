@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
+from pathlib import Path
 from typing import Generator, Type
 
 import pytest
@@ -13,6 +14,7 @@ from twister_harness.device.factory import DeviceFactory
 from twister_harness.twister_harness_config import DeviceConfig, TwisterHarnessConfig
 from twister_harness.helpers.shell import Shell
 from twister_harness.helpers.mcumgr import MCUmgr
+from twister_harness.helpers.utils import find_in_config
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,9 @@ def dut(request: pytest.FixtureRequest, device_object: DeviceAdapter) -> Generat
 def shell(dut: DeviceAdapter) -> Shell:
     """Return ready to use shell interface"""
     shell = Shell(dut, timeout=20.0)
+    if prompt := find_in_config(Path(dut.device_config.app_build_dir) / 'zephyr' / '.config',
+                                'CONFIG_SHELL_PROMPT_UART'):
+        shell.prompt = prompt
     logger.info('Wait for prompt')
     if not shell.wait_for_prompt():
         pytest.fail('Prompt not found')
