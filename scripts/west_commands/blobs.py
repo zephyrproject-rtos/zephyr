@@ -122,7 +122,7 @@ class Blobs(WestCommand):
     def fetch(self, args):
         blobs = self.get_blobs(args)
         for blob in blobs:
-            if blob['status'] == 'A':
+            if blob['status'] == zephyr_module.BLOB_PRESENT:
                 log.dbg('Blob {module}: {abspath} is up to date'.format(**blob))
                 continue
             log.inf('Fetching blob {module}: {abspath}'.format(**blob))
@@ -131,7 +131,7 @@ class Blobs(WestCommand):
     def clean(self, args):
         blobs = self.get_blobs(args)
         for blob in blobs:
-            if blob['status'] == 'D':
+            if blob['status'] == zephyr_module.BLOB_NOT_PRESENT:
                 log.dbg('Blob {module}: {abspath} not in filesystem'.format(**blob))
                 continue
             log.inf('Deleting blob {module}: {status} {abspath}'.format(**blob))
