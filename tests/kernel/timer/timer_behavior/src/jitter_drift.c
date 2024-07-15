@@ -129,6 +129,7 @@ static double cycles_to_us(uint64_t cycles)
 static void do_test_using(void (*sample_collection_fn)(void), const char *mechanism)
 {
 	k_timeout_t actual_timeout = K_USEC(CONFIG_TIMER_TEST_PERIOD);
+	uint32_t real_period = k_ticks_to_us_near32(actual_timeout.ticks);
 	uint64_t expected_duration = (uint64_t)actual_timeout.ticks * CONFIG_TIMER_TEST_SAMPLES;
 
 	TC_PRINT("collecting time samples for approx %llu seconds\n",
@@ -216,12 +217,12 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 	 * conversions otherwise
 	 */
 	double expected_time_us =
-		(double)CONFIG_TIMER_TEST_PERIOD * (double)CONFIG_TIMER_TEST_SAMPLES;
+		(double)real_period * (double)CONFIG_TIMER_TEST_SAMPLES;
 	double actual_time_us = cycles_to_us(periodic_end - periodic_start);
 
 	/* While this could be non-integer, the mean should be very close to it over time */
 	double expected_period =
-		(double)CONFIG_TIMER_TEST_PERIOD * (double)sys_clock_hw_cycles_per_sec()
+		(double)real_period * (double)sys_clock_hw_cycles_per_sec()
 		/ 1000000.0;
 	/*
 	 * Expected period drift(us) due to round up/down errors during the
@@ -252,7 +253,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 	TC_PRINT("period duration statistics for %d samples (%u rollovers):\n",
 		 CONFIG_TIMER_TEST_SAMPLES - periodic_rollovers, periodic_rollovers);
 	TC_PRINT("  expected: %d us,       \t%f cycles\n",
-		 CONFIG_TIMER_TEST_PERIOD, expected_period);
+		 real_period, expected_period);
 	TC_PRINT("  min:      %f us, \t%llu cycles\n", min_us, min_cyc);
 	TC_PRINT("  max:      %f us, \t%llu cycles\n", max_us, max_cyc);
 	TC_PRINT("  mean:     %f us, \t%f cycles\n", mean_us, mean_cyc);
@@ -284,6 +285,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		 ", \"CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC\":%d"
 		 ", \"CONFIG_SYS_CLOCK_TICKS_PER_SEC\":%d"
 		 ", \"CONFIG_TIMER_TEST_PERIOD\":%d"
+		 ", \"CONFIG_TIMER_TEST_PERIOD (adjusted)\":%d"
 		 ", \"CONFIG_TIMER_TEST_SAMPLES\":%d"
 		 ", \"MAX STD DEV\":%d"
 		 "}\n",
@@ -305,12 +307,13 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 		 CONFIG_SYS_CLOCK_TICKS_PER_SEC,
 		 CONFIG_TIMER_TEST_PERIOD,
+		 real_period,
 		 CONFIG_TIMER_TEST_SAMPLES,
 		 max_stddev
 		 );
 
 	/* Validate the maximum/minimum timer period is off by no more than 10% */
-	double test_period = (double)CONFIG_TIMER_TEST_PERIOD;
+	double test_period = (double)real_period;
 	double period_max_drift_percentage =
 		(double)CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT / 100;
 	double min_us_bound = test_period - period_max_drift_percentage * test_period
