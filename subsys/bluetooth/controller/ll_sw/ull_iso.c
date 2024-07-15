@@ -2013,7 +2013,6 @@ void ull_iso_resume_ticker_start(struct lll_event *resume_event,
 
 	if (role == BT_HCI_ROLE_PERIPHERAL) {
 		/* Add peripheral specific delay */
-		resume_delay_us += EVENT_JITTER_US;
 		if (0) {
 #if defined(CONFIG_BT_CTLR_PHY)
 		} else {
