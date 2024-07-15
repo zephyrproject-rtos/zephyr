@@ -18,6 +18,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 #include "bme680.h"
 
@@ -375,16 +376,10 @@ static int bme680_read_compensation(const struct device *dev)
 	return 0;
 }
 
-static int bme680_init(const struct device *dev)
+static int bme680_power_up(const struct device *dev)
 {
 	struct bme680_data *data = dev->data;
 	int err;
-
-	err = bme680_bus_check(dev);
-	if (err < 0) {
-		LOG_ERR("Bus not ready for '%s'", dev->name);
-		return err;
-	}
 
 #if BME680_BUS_SPI
 	if (bme680_is_on_spi(dev)) {
@@ -426,8 +421,7 @@ static int bme680_init(const struct device *dev)
 		return err;
 	}
 
-	err = bme680_reg_write(dev, BME680_REG_CTRL_GAS_1,
-			       BME680_CTRL_GAS_1_VAL);
+	err = bme680_reg_write(dev, BME680_REG_CTRL_GAS_1, BME680_CTRL_GAS_1_VAL);
 	if (err < 0) {
 		return err;
 	}
@@ -444,10 +438,39 @@ static int bme680_init(const struct device *dev)
 		return err;
 	}
 
-	err = bme680_reg_write(dev, BME680_REG_CTRL_MEAS,
-			       BME680_CTRL_MEAS_VAL);
+	return bme680_reg_write(dev, BME680_REG_CTRL_MEAS, BME680_CTRL_MEAS_VAL);
+}
 
-	return err;
+static int bme680_pm_control(const struct device *dev, enum pm_device_action action)
+{
+	int rc = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		rc = bme680_power_up(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return rc;
+}
+
+static int bme680_init(const struct device *dev)
+{
+	int err;
+
+	err = bme680_bus_check(dev);
+	if (err < 0) {
+		LOG_ERR("Bus not ready for '%s'", dev->name);
+		return err;
+	}
+
+	return pm_device_driver_init(dev, bme680_pm_control);
 }
 
 static const struct sensor_driver_api bme680_api_funcs = {
@@ -480,9 +503,10 @@ static const struct sensor_driver_api bme680_api_funcs = {
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (BME680_CONFIG_SPI(inst)),			\
 			    (BME680_CONFIG_I2C(inst)));			\
+	PM_DEVICE_DT_INST_DEFINE(inst, bme680_pm_control);              \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			 bme680_init,					\
-			 NULL,						\
+			 PM_DEVICE_DT_INST_GET(inst),			\
 			 &bme680_data_##inst,				\
 			 &bme680_config_##inst,				\
 			 POST_KERNEL,					\
