@@ -156,6 +156,10 @@
 			#size-cells = <0>;
 			status = "disabled";
 
+			phy0: ethernet-phy@1 {
+				compatible = "ethernet-phy";
+				reg = <1>;
+			};
 		};
 		eth0: ethernet@e0009800 {
 			compatible = "litex,liteeth";
@@ -192,6 +196,7 @@
 				"tx_ev_pending",
 				"tx_ev_enable",
 				"buffers";
+			phy-handle = <&phy0>;
 			status = "disabled";
 		};
 		dna0: dna@e0003800 {
