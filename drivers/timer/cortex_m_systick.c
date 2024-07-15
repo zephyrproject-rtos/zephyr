@@ -162,10 +162,13 @@ static uint32_t elapsed(void)
 	return (last_load - val2) + overflow_cyc;
 }
 
-/* Callout out of platform assembly, not hooked via IRQ_CONNECT... */
-void sys_clock_isr(void *arg)
+/* sys_clock_isr is calling directly from the platform's vectors table.
+ * However using ISR_DIRECT_DECLARE() is not so suitable due to possible
+ * tracing overflow, so here is a stripped down version of it.
+ */
+ARCH_ISR_DIAG_OFF
+__attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 {
-	ARG_UNUSED(arg);
 	uint32_t dcycles;
 	uint32_t dticks;
 
@@ -185,6 +188,7 @@ void sys_clock_isr(void *arg)
 	 * sys_clock_idle_exit function.
 	 */
 	if (timeout_idle) {
+		ISR_DIRECT_PM();
 		z_arm_int_exit();
 
 		return;
@@ -211,8 +215,11 @@ void sys_clock_isr(void *arg)
 	} else {
 		sys_clock_announce(1);
 	}
+
+	ISR_DIRECT_PM();
 	z_arm_int_exit();
 }
+ARCH_ISR_DIAG_ON
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
@@ -419,7 +426,15 @@ void sys_clock_idle_exit(void)
 #endif /* CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER */
 
 	if (last_load == TIMER_STOPPED) {
-		SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+		/* We really don’t know here how much time has passed,
+		 * so let’s restart the timer from scratch.
+		 */
+		K_SPINLOCK(&lock) {
+			last_load = CYC_PER_TICK;
+			SysTick->LOAD = last_load - 1;
+			SysTick->VAL = 0; /* resets timer to last_load */
+			SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+		}
 	}
 }
 
