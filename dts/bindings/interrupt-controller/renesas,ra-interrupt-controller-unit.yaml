@@ -1,4 +1,4 @@
-# Copyright (c) 2023, TOKITA Hiroshi
+# Copyright (c) 2023 - 2024, TOKITA Hiroshi
 # SPDX-License-Identifier: Apache-2.0
 
 description: Renesas RA series interrupt controller unit
@@ -12,9 +12,15 @@ properties:
     required: true
 
   "#interrupt-cells":
-    const: 3
+    const: 2
+
+  interrupt-id-count:
+    type: int
+    required: true
+    description: |
+      Specifies the number of Interrupt IDs that indicate the types of
+      interrupts this SoC has.
 
 interrupt-cells:
-  - irq
+  - event
   - priority
-  - flags
