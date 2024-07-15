@@ -458,7 +458,9 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	return (uint32_t)(counter_sub(counter(), last_count) / CYC_PER_TICK);
+	uint32_t diff = (uint32_t)counter_sub(counter(), last_count);
+
+	return DIV_ROUND_UP(diff, CYC_PER_TICK);
 }
 
 static int sys_clock_driver_init(void)
@@ -519,17 +521,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : MIN(MAX_TICKS, MAX(ticks, 0));
-
-	uint64_t delta_time = ticks * CYC_PER_TICK;
-
-	uint64_t target_time = counter() + delta_time;
-
-	/* Rounded down target_time to the tick boundary
-	 * (but not less than one tick after the last)
-	 */
-	target_time = MAX((target_time - last_count)/CYC_PER_TICK, 1)*CYC_PER_TICK + last_count;
-
-	system_timeout_set_abs(target_time);
+	system_timeout_set_abs(last_count + ticks * CYC_PER_TICK);
 }
 
 #if defined(CONFIG_NRF_GRTC_TIMER_APP_DEFINED_INIT)
