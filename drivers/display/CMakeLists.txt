@@ -9,11 +9,10 @@ zephyr_library_sources_ifdef(CONFIG_DISPLAY_MCUX_DCNANO_LCDIF	display_mcux_dcnan
 zephyr_library_sources_ifdef(CONFIG_UC81XX		uc81xx.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9XXX		display_ili9xxx.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9340		display_ili9340.c)
-zephyr_library_sources_ifdef(CONFIG_TFT			display_tft.c)
 
-zephyr_library_sources_ifdef(CONFIG_ILI9341TFT			ili9341_driver.c)
+# zephyr_library_sources_ifdef(CONFIG_ILI9341TFT			ili9341_driver.c)
 
-zephyr_library_sources_ifdef(CONFIG_ILI9341		display_ili9341.c)
+zephyr_library_sources_ifdef(CONFIG_ILI9341		ili9341_driver.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9342C	display_ili9342c.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9488		display_ili9488.c)
 zephyr_library_sources_ifdef(CONFIG_LS0XX		ls0xx.c)
@@ -45,4 +44,8 @@ if (CONFIG_SDL_DISPLAY)
 	else()
 		target_sources(native_simulator INTERFACE display_sdl_bottom.c)
 	endif()
+endif()
+
+if (CONFIG_ILI9341TFT)
+	zephyr_library_sources(ili9341_driver.c)
 endif()

@@ -44,17 +44,37 @@ chosen {
 		sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
         comm_configure = <0x01 0x00 0x03 0x08>;
 		clock-frequency = <10000000>;
-        cs-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+        cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 
         ili9341_display: ili9341@0 {
-          compatible = "galaxycore,gc9x01x";
+		  status = "okay";
+          compatible = "ilitek,ili9341_driver";
           reg = <0>;
           spi-max-frequency = <2000000>;
           cmd-data-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
           reset-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
-          pixel-format = <16>;
+          pixel-format = <0U>;
+		  rotation = <180>;
           width = <240>;
           height = <320>;
+		  pwctrla = [39 2c 00 34 02];
+		  pwctrlb = [00 8b 30];
+		  timctrla = [85 00 78];
+		  timctrlb = [00 00];
+		  pwseqctrl = [55 01 23 01];
+		  pumpratioctrl = [20];
+		  disctrl = [08 82 27 04];
+		  vmctrl1 = [45 15];
+		  vmctrl2 = [90];
+		  enable3g = [00];
+		  ifctl = [01 00 00];
+		  ifmode = [40];
+		  gamset = [01];
+		  frmctr1 = [00 1b];
+		  pwctrl1 = [10];
+		  pwctrl2 = [10];
+		  pgamctrl = [0F 29 24 0c 0e 09 4e 78 3c 09 13 05 17 11 00];
+		  ngamctrl = [00 16 1b 04 11 07 31 33 42 05 0c 0a 28 2f 0f];
         };
 };
 &gpio0 {

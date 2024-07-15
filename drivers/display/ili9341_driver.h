@@ -5,10 +5,67 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9341_H_
-#define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9341_H_
+#ifndef ZEPHYR_DRIVERS_DISPLAY_ILI9341_DRIVER_H_
+#define ZEPHYR_DRIVERS_DISPLAY_ILI9341_DRIVER_H_
 
 #include <zephyr/device.h>
+#include <zephyr/sys/util.h>
+
+/* ili9xxx*/
+/* Commands/registers. */
+#define ILI9XXX_SWRESET 0x01
+#define ILI9XXX_SLPOUT 0x11
+#define ILI9XXX_DINVON 0x21
+#define ILI9XXX_GAMSET 0x26
+#define ILI9XXX_DISPOFF 0x28
+#define ILI9XXX_DISPON 0x29
+#define ILI9XXX_CASET 0x2a
+#define ILI9XXX_PASET 0x2b
+#define ILI9XXX_RAMWR 0x2c
+#define ILI9XXX_MADCTL 0x36           
+#define ILI9XXX_PIXSET 0x3A
+
+/* MADCTL register fields. */
+#define ILI9XXX_MADCTL_MY BIT(7U)
+#define ILI9XXX_MADCTL_MX BIT(6U)
+#define ILI9XXX_MADCTL_MV BIT(5U)
+#define ILI9XXX_MADCTL_ML BIT(4U)
+#define ILI9XXX_MADCTL_BGR BIT(3U)
+#define ILI9XXX_MADCTL_MH BIT(2U)
+
+/* PIXSET register fields. */
+#define ILI9XXX_PIXSET_RGB_18_BIT 0x60
+#define ILI9XXX_PIXSET_RGB_16_BIT 0x50
+#define ILI9XXX_PIXSET_MCU_18_BIT 0x06
+#define ILI9XXX_PIXSET_MCU_16_BIT 0x05
+
+/** Command/data GPIO level for commands. */
+#define ILI9XXX_CMD 1U
+/** Command/data GPIO level for data. */
+#define ILI9XXX_DATA 0U
+
+/** Sleep out time (ms), ref. 8.2.12 of ILI9XXX manual. */
+#define ILI9XXX_SLEEP_OUT_TIME 120
+
+/** Reset pulse time (ms), ref 15.4 of ILI9XXX manual. */
+#define ILI9XXX_RESET_PULSE_TIME 1
+
+/** Reset wait time (ms), ref 15.4 of ILI9XXX manual. */
+#define ILI9XXX_RESET_WAIT_TIME 5
+
+enum madctl_cmd_set {
+	CMD_SET_1,	/* Default for most of ILI9xxx display controllers */
+	CMD_SET_2,	/* Used by ILI9342c */
+};
+
+struct ili9xxx_quirks {
+	enum madctl_cmd_set cmd_set;
+};
+
+/* Pixel formats */
+#define ILI9XXX_PIXEL_FORMAT_RGB565 0U
+#define ILI9XXX_PIXEL_FORMAT_RGB888 1U
+
 
 /* Commands/registers. */
 #define ILI9341_GAMSET 0x26
@@ -81,66 +138,27 @@ struct ili9341_regs {
 };
 
 /* Initializer macro for ILI9341 registers. */
-#define ILI9341_REGS_INIT(n)                                                                       \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), gamset) == ILI9341_GAMSET_LEN,        \
-		     "ili9341: Error length gamma set (GAMSET) register");                         \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), ifmode) == ILI9341_IFMODE_LEN,        \
-		     "ili9341: Error length frame rate control (IFMODE) register");                \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), frmctr1) == ILI9341_FRMCTR1_LEN,      \
-		     "ili9341: Error length frame rate control (FRMCTR1) register");               \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), disctrl) == ILI9341_DISCTRL_LEN,      \
-		     "ili9341: Error length display function control (DISCTRL) register");         \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pwctrl1) == ILI9341_PWCTRL1_LEN,      \
-		     "ili9341: Error length power control 1 (PWCTRL1) register");                  \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pwctrl2) == ILI9341_PWCTRL2_LEN,      \
-		     "ili9341: Error length power control 2 (PWCTRL2) register");                  \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), vmctrl1) == ILI9341_VMCTRL1_LEN,      \
-		     "ili9341: Error length VCOM control 1 (VMCTRL1) register");                   \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), vmctrl2) == ILI9341_VMCTRL2_LEN,      \
-		     "ili9341: Error length VCOM control 2 (VMCTRL2) register");                   \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pgamctrl) == ILI9341_PGAMCTRL_LEN,    \
-		     "ili9341: Error length positive gamma correction (PGAMCTRL) register");       \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), ngamctrl) == ILI9341_NGAMCTRL_LEN,    \
-		     "ili9341: Error length negative gamma correction (NGAMCTRL) register");       \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pwctrla) == ILI9341_PWCTRLA_LEN,      \
-		     "ili9341: Error length power control A (PWCTRLA) register");                  \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pwctrlb) == ILI9341_PWCTRLB_LEN,      \
-		     "ili9341: Error length power control B (PWCTRLB) register");                  \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pwseqctrl) == ILI9341_PWSEQCTRL_LEN,  \
-		     "ili9341: Error length power on sequence control (PWSEQCTRL) register");      \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), timctrla) == ILI9341_TIMCTRLA_LEN,    \
-		     "ili9341: Error length driver timing control A (TIMCTRLA) register");         \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), timctrlb) == ILI9341_TIMCTRLB_LEN,    \
-		     "ili9341: Error length driver timing control B (TIMCTRLB) register");         \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pumpratioctrl) ==                     \
-			     ILI9341_PUMPRATIOCTRL_LEN,                                            \
-		     "ili9341: Error length Pump ratio control (PUMPRATIOCTRL) register");         \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), enable3g) == ILI9341_ENABLE3G_LEN,    \
-		     "ili9341: Error length enable 3G (ENABLE3G) register");                       \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), ifctl) == ILI9341_IFCTL_LEN,          \
-		     "ili9341: Error length frame rate control (IFCTL) register");                 \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), etmod) == ILI9341_ETMOD_LEN,          \
-		     "ili9341: Error length entry Mode Set (ETMOD) register");                     \
-	static const struct ili9341_regs ili9xxx_regs_##n = {                                      \
-		.gamset = DT_PROP(DT_INST(n, ilitek_ili9341), gamset),                             \
-		.ifmode = DT_PROP(DT_INST(n, ilitek_ili9341), ifmode),                             \
-		.frmctr1 = DT_PROP(DT_INST(n, ilitek_ili9341), frmctr1),                           \
-		.disctrl = DT_PROP(DT_INST(n, ilitek_ili9341), disctrl),                           \
-		.pwctrl1 = DT_PROP(DT_INST(n, ilitek_ili9341), pwctrl1),                           \
-		.pwctrl2 = DT_PROP(DT_INST(n, ilitek_ili9341), pwctrl2),                           \
-		.vmctrl1 = DT_PROP(DT_INST(n, ilitek_ili9341), vmctrl1),                           \
-		.vmctrl2 = DT_PROP(DT_INST(n, ilitek_ili9341), vmctrl2),                           \
-		.pgamctrl = DT_PROP(DT_INST(n, ilitek_ili9341), pgamctrl),                         \
-		.ngamctrl = DT_PROP(DT_INST(n, ilitek_ili9341), ngamctrl),                         \
-		.pwctrla = DT_PROP(DT_INST(n, ilitek_ili9341), pwctrla),                           \
-		.pwctrlb = DT_PROP(DT_INST(n, ilitek_ili9341), pwctrlb),                           \
-		.pwseqctrl = DT_PROP(DT_INST(n, ilitek_ili9341), pwseqctrl),                       \
-		.timctrla = DT_PROP(DT_INST(n, ilitek_ili9341), timctrla),                         \
-		.timctrlb = DT_PROP(DT_INST(n, ilitek_ili9341), timctrlb),                         \
-		.pumpratioctrl = DT_PROP(DT_INST(n, ilitek_ili9341), pumpratioctrl),               \
-		.enable3g = DT_PROP(DT_INST(n, ilitek_ili9341), enable3g),                         \
-		.ifctl = DT_PROP(DT_INST(n, ilitek_ili9341), ifctl),                               \
-		.etmod = DT_PROP(DT_INST(n, ilitek_ili9341), etmod),                               \
+#define ILI9341_REGS_INIT(inst)                                                                       \
+	static const struct ili9341_regs ili9341_regs_##inst = {                                      \
+		.gamset = DT_INST_PROP(inst, gamset),                             \
+		.ifmode = DT_INST_PROP(inst, ifmode),                             \
+		.frmctr1 = DT_INST_PROP(inst, frmctr1),                           \
+		.disctrl = DT_INST_PROP(inst, disctrl),                           \
+		.pwctrl1 = DT_INST_PROP(inst, pwctrl1),                           \
+		.pwctrl2 = DT_INST_PROP(inst, pwctrl2),                           \
+		.vmctrl1 = DT_INST_PROP(inst, vmctrl1),                           \
+		.vmctrl2 = DT_INST_PROP(inst, vmctrl2),                           \
+		.pgamctrl = DT_INST_PROP(inst, pgamctrl),                         \
+		.ngamctrl = DT_INST_PROP(inst, ngamctrl),                         \
+		.pwctrla = DT_INST_PROP(inst, pwctrla),                           \
+		.pwctrlb = DT_INST_PROP(inst, pwctrlb),                           \
+		.pwseqctrl = DT_INST_PROP(inst, pwseqctrl),                       \
+		.timctrla = DT_INST_PROP(inst, timctrla),                         \
+		.timctrlb = DT_INST_PROP(inst, timctrlb),                         \
+		.pumpratioctrl = DT_INST_PROP(inst, pumpratioctrl),               \
+		.enable3g = DT_INST_PROP(inst, enable3g),                         \
+		.ifctl = DT_INST_PROP(inst, ifctl),                               \
+		.etmod = DT_INST_PROP(inst, etmod),                               \
 	}
 
 /**

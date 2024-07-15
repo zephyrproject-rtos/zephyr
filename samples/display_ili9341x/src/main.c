@@ -38,7 +38,6 @@ int main(void)
 
 	while (1) {
 		lv_task_handler();
-		// k_sleep(K_MSEC(10));
-		printf("Task running\n");
+		k_sleep(K_MSEC(10));
 	}
 }

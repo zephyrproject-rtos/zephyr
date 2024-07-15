@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: ILI9XXX display controllers common properties.
-
-include: [spi-device.yaml, display-controller.yaml, lcd-controller.yaml]
+include: [spi-device.yaml, lcd-controller.yaml]
 
 properties:
   pixel-format:

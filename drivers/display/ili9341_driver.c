@@ -4,11 +4,11 @@
  * Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
  * SPDX-License-Identifier: Apache-2.0
  */
-#define DT_DRV_COMPAT ilitek_ili9341
+#define DT_DRV_COMPAT ilitek_ili9341_driver
 
 #include "ili9341_driver.h"
-#include "display_ili9xxx.h"
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+// #include "display_ili9xxx.h"
+// #include <zephyr/dt-bindings/display/ili9xxx.h>
 
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/drivers/display.h>
@@ -39,12 +39,12 @@ struct ili9341_data {
 
 /* Configuration data struct.*/
 struct ili9341_config {
+	const struct ili9xxx_quirks *quirks;
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec cmd_data;
 	struct gpio_dt_spec reset;
 	uint8_t pixel_format;
     uint16_t rotation;
-	uint16_t orientation;
 	uint16_t x_resolution;
 	uint16_t y_resolution;
 	bool inversion;
@@ -603,18 +603,49 @@ static const struct display_driver_api ili9341_api = {
 	.set_orientation = ili9341_set_orientation,
 };
 
+static const struct ili9xxx_quirks ili9341_quirks = {
+	.cmd_set = CMD_SET_1,
+};
+
+// #define ILI9XXX_INIT(inst)                                                     \
+// 	ILI9341_REGS_INIT(inst);                                                 \
+// 	static const struct ili9341_config ili9341_config_##inst = {              \
+// 		.quirks = &ili##t##_quirks,                                    \
+// 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0) ,        \
+// 		.cmd_data = GPIO_DT_SPEC_INST_GET(inst, cmd_data_gpios),                           \
+// 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
+// 		.pixel_format = DT_INST_PROP(inst, pixel_format),  \
+// 		.rotation = DT_INST_PROP(inst, rotation),          \
+// 		.x_resolution = DT_INST_PROP(inst, width),                                         \
+// 		.y_resolution = DT_INST_PROP(inst, height),                                        \
+// 		.inversion = DT_INST_PROP(inst, display_inversion),\
+// 		.regs = &ili9341_regs_##inst,                                     \
+// 		.regs_init_fn = ili9341_regs_init,                            \
+// 	};                                                                     \
+// 									       \
+// 	static struct ili9341_data ili9341_data_##inst;                           \
+
+// 	DEVICE_DT_INST_DEFINE(inst, ili9341_init,                  \
+// 			    NULL, &ili9341_data_##inst,                           \
+// 			    &ili9341_config_##inst, POST_KERNEL,                  \
+// 			    CONFIG_DISPLAY_INIT_PRIORITY, &ili9341_api);
+
+// DT_INST_FOREACH_STATUS_OKAY(ILI9341_INIT)
+
 #define ILI9341_INIT(inst)                                                                         \
 	ILI9341_REGS_INIT(inst);                                                                   \
 	static const struct ili9341_config ili9341_config_##inst = {                               \
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0) ,        \
+		.quirks = &ili9341_quirks,                                    \
 		.cmd_data = GPIO_DT_SPEC_INST_GET(inst, cmd_data_gpios),                           \
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
 		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
-		.orientation = DT_INST_ENUM_IDX(inst, orientation),                                \
+		.rotation = DT_INST_ENUM_IDX(inst, rotation),                                \
 		.x_resolution = DT_INST_PROP(inst, width),                                         \
 		.y_resolution = DT_INST_PROP(inst, height),                                        \
 		.inversion = DT_INST_PROP(inst, display_inversion),\
-		.regs = &ili9341_regs_##inst,                                                      \
+		.regs = &ili9341_regs_##inst,      \
+		.regs_init_fn = ili9341_regs_init,                            \
 	};                                                                                         \
 	static struct ili9341_data ili9341_data_##inst;                                            \
 	PM_DEVICE_DT_INST_DEFINE(inst, ili9341_pm_action);                                         \
