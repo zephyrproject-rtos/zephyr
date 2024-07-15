@@ -1240,6 +1240,18 @@ config BT_MESH_BRG_CFG_CLI
 	  The Bridge Configuration Client is used to support the functionality of a
 	  node that can configure the subnet bridge functionality of another node.
 
+if BT_MESH_BRG_CFG_CLI
+
+config BT_MESH_BRG_CFG_CLI_TIMEOUT
+	int "Bridge Configuration Client model timeout in milliseconds"
+	default 5000
+	help
+	  This timeout controls how long the bridge configuration client waits for a
+	  response message to arrive. This value can be changed at runtime using
+	  @ref bt_mesh_brg_cfg_cli_timeout_set.
+
+endif # BT_MESH_BRG_CFG_CLI
+
 endmenu # Models
 
 menu "Proxy"
