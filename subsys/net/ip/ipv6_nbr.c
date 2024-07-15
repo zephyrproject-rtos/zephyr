@@ -950,10 +950,12 @@ try_send:
 	net_ipv6_nbr_unlock();
 
 #if defined(CONFIG_NET_IPV6_ND)
-	/* We need to send NS and wait for NA before sending the packet. */
+	/* We need to send NS and wait for NA before sending the packet. If the packet was
+	 * forwarded from another interface do not use the original source address.
+	 */
 	ret = net_ipv6_send_ns(net_pkt_iface(pkt), pkt,
-			       (struct in6_addr *)ip_hdr->src, NULL, nexthop,
-			       false);
+			       net_pkt_forwarding(pkt) ? NULL : (struct in6_addr *)ip_hdr->src,
+			       NULL, nexthop, false);
 	if (ret < 0) {
 		/* In case of an error, the NS send function will unref
 		 * the pkt.
