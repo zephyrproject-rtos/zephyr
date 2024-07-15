@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <project>
   <qdid>300252</qdid>
   <name>Zephyr_Bluetooth_Host</name>
@@ -176,6 +176,10 @@
       <item>
         <table>14a</table>
         <row>2</row>
+      </item>
+      <item>
+        <table>17b</table>
+        <row>4</row>
       </item>
       <item>
         <table>11b</table>
@@ -523,6 +527,10 @@
       </item>
       <item>
         <table>20A</table>
+        <row>6</row>
+      </item>
+      <item>
+        <table>20A</table>
         <row>7</row>
       </item>
       <item>
@@ -700,6 +708,10 @@
       <item>
         <table>27</table>
         <row>6</row>
+      </item>
+      <item>
+        <table>27</table>
+        <row>7</row>
       </item>
       <item>
         <table>27</table>
@@ -1050,6 +1062,10 @@
         <row>6</row>
       </item>
       <item>
+        <table>23</table>
+        <row>7</row>
+      </item>
+      <item>
         <table>33</table>
         <row>7</row>
       </item>
@@ -1369,6 +1385,10 @@
       <item>
         <table>3</table>
         <row>15</row>
+      </item>
+      <item>
+        <table>3</table>
+        <row>16</row>
       </item>
       <item>
         <table>3</table>
