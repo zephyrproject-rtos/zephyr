@@ -252,6 +252,44 @@
 			clocks = <&pcc 0x19c KINETIS_PCC_SRC_FIRC_ASYNC>;
 			status = "disabled";
 		};
+
+		ftm0: ftm@40038000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40038000 0x1000>;
+			interrupts = <17 0>;
+			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			prescaler = <16>;
+			status = "disabled";
+		};
+
+		ftm1: ftm@40039000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40039000 0x1000>;
+			interrupts = <18 0>;
+			clocks = <&pcc 0xe4 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			prescaler = <16>;
+			status = "disabled";
+		};
+
+		ftm2: ftm@4003a000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x4003a000 0x1000>;
+			interrupts = <19 0>;
+			clocks = <&pcc 0xe8 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			prescaler = <16>;
+			status = "disabled";
+		};
+
+		pwt: pwt@40056000 {
+			compatible = "nxp,kinetis-pwt";
+			reg = <0x40056000 0x1000>;
+			interrupts = <29 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			prescaler = <1>;
+			status = "disabled";
+
+			#pwm-cells = <3>;
+		};
 	};
 };
 
