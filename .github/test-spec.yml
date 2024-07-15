@@ -227,10 +227,23 @@
       - "!subsys/bluetooth/audio/**/*"
 
 "CI-find-my-test":
-  - any:
-      - "**/*"
-      - "!samples/bluetooth/**/*"
-      - "!tests/bluetooth/**/*"
+  - "boards/nordic/**/*"
+  - "drivers/bluetooth/**/*"
+  - "drivers/entropy/**/*"
+  - "drivers/flash/**/*"
+  - "drivers/usb/**/*"
+  - "drivers/regulator/**/*"
+  - "soc/nordic/**/*"
+  - "subsys/bluetooth/**/*"
+  - "subsys/dfu/**/*"
+  - "subsys/fs/**/*"
+  - "subsys/ipc/**/*"
+  - "subsys/net/**/*"
+  - "subsys/random/**/*"
+  - "subsys/settings/**/*"
+  - "subsys/storage/**/*"
+  - "subsys/tracing/**/*"
+  - "subsys/usb/device/**/*"
 
 "CI-rpc-test":
   - "subsys/ipc/ipc_service/**/*"
