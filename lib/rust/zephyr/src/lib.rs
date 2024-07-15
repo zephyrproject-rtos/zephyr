@@ -8,6 +8,9 @@
 
 #![no_std]
 
+// Bring in the generated kconfig module
+include!(concat!(env!("OUT_DIR"), "/kconfig.rs"));
+
 // Ensure that Rust is enabled.
 #[cfg(not(CONFIG_RUST))]
 compile_error!("CONFIG_RUST must be set to build Rust in Zephyr");
