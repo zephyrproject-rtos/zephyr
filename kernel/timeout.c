@@ -59,41 +59,12 @@ static void remove_timeout(struct _timeout *t)
 	sys_dlist_remove(&t->node);
 }
 
-static int32_t elapsed(void)
-{
-	/* While sys_clock_announce() is executing, new relative timeouts will be
-	 * scheduled relatively to the currently firing timeout's original tick
-	 * value (=curr_tick) rather than relative to the current
-	 * sys_clock_elapsed().
-	 *
-	 * This means that timeouts being scheduled from within timeout callbacks
-	 * will be scheduled at well-defined offsets from the currently firing
-	 * timeout.
-	 *
-	 * As a side effect, the same will happen if an ISR with higher priority
-	 * preempts a timeout callback and schedules a timeout.
-	 *
-	 * The distinction is implemented by looking at announce_remaining which
-	 * will be non-zero while sys_clock_announce() is executing and zero
-	 * otherwise.
-	 */
-	return announce_remaining == 0 ? sys_clock_elapsed() : 0U;
-}
-
 static int32_t next_timeout(void)
 {
 	struct _timeout *to = first();
-	int32_t ticks_elapsed = elapsed();
-	int32_t ret;
 
-	if ((to == NULL) ||
-	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
-		ret = MAX_WAIT;
-	} else {
-		ret = MAX(0, to->dticks - ticks_elapsed);
-	}
+	return (to == NULL) ? MAX_WAIT : to->dticks;
 
-	return ret;
 }
 
 void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
@@ -113,13 +84,12 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 	K_SPINLOCK(&timeout_lock) {
 		struct _timeout *t;
 
-		if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) &&
-		    (Z_TICK_ABS(timeout.ticks) >= 0)) {
+		if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && (Z_TICK_ABS(timeout.ticks) >= 0)) {
 			k_ticks_t ticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
 
 			to->dticks = MAX(1, ticks);
 		} else {
-			to->dticks = timeout.ticks + 1 + elapsed();
+			to->dticks = timeout.ticks + 1 + sys_clock_elapsed();
 		}
 
 		for (t = first(); t != NULL; t = next(t)) {
@@ -176,7 +146,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 
 	K_SPINLOCK(&timeout_lock) {
 		if (!z_is_inactive_timeout(timeout)) {
-			ticks = timeout_rem(timeout) - elapsed();
+			ticks = timeout_rem(timeout) - sys_clock_elapsed();
 		}
 	}
 
@@ -263,7 +233,7 @@ int64_t sys_clock_tick_get(void)
 	uint64_t t = 0U;
 
 	K_SPINLOCK(&timeout_lock) {
-		t = curr_tick + elapsed();
+		t = curr_tick + (announce_remaining == 0 ? sys_clock_elapsed() : 0U);
 	}
 	return t;
 }
