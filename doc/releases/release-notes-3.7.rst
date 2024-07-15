@@ -317,6 +317,7 @@ Boards & SoC Support
   * Added support for Ambiq Apollo3 Blue and Apollo3 Blue Plus SoC series.
   * Added support for STM32H7R/S SoC series.
   * Added support for NXP mke15z7, mke17z7, mke17z9, MCXNx4x, RW61x
+  * Added support for Analog Devices MAX32 SoC series.
 
 * Made these changes in other SoC series:
 
@@ -345,6 +346,14 @@ Boards & SoC Support
   * Added support for :ref:`ST STM32L152CDISCOVERY board <stm32l1_disco_board>`: ``stm32l152c_disco``.
   * Added support for :ref:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1_board>`: ``steval_stwinbx1``.
   * Added support for NXP boards: ``frdm_mcxn947``, ``ke17z512``, ``rd_rw612_bga``, ``frdm_rw612``, ``frdm_ke15z``, ``frdm_ke17z``
+  * Added support for :ref:`Analog Devices MAX32690EVKIT <max32690_evkit>`: ``max32690evkit``.
+  * Added support for :ref:`Analog Devices MAX32680EVKIT <max32680_evkit>`: ``max32680evkit``.
+  * Added support for :ref:`Analog Devices MAX32672EVKIT <max32672_evkit>`: ``max32672evkit``.
+  * Added support for :ref:`Analog Devices MAX32672FTHR <max32672_fthr>`: ``max32672fthr``.
+  * Added support for :ref:`Analog Devices MAX32670EVKIT <max32670_evkit>`: ``max32670evkit``.
+  * Added support for :ref:`Analog Devices MAX32655EVKIT <max32655_evkit>`: ``max32655evkit``.
+  * Added support for :ref:`Analog Devices MAX32655FTHR <max32655_fthr>`: ``max32655fthr``.
+  * Added support for :ref:`Analog Devices AD-APARD32690-SL <ad_apard32690_sl>`: ``ad_apard32690_sl``.
 
 * Made these board changes:
 
@@ -459,6 +468,7 @@ Drivers and Sensors
 
   * Added support for Microcontroller Clock Output (MCO) on STM32H5 series.
   * Added support for MSI clock on STM32WL series.
+  * Added driver for Analog Devices MAX32 SoC series.
 
 * Counter
 
@@ -569,6 +579,7 @@ Drivers and Sensors
   * Added Broadcom Set-top box(brcmstb) SoC GPIO driver.
   * Added c:macro:`STM32_GPIO_WKUP` flag which allows to configure specific pins as wakeup source
     from Power Off state on STM32 L4, U5, WB, & WL SoC series.
+  * Added driver for Analog Devices MAX32 SoC series.
 
 * Hardware info
 
@@ -586,6 +597,7 @@ Drivers and Sensors
     using device tree.
   * Added support for STM32H5 series.
   * Added support to NXP MCXN947
+  * Added driver for Analog Devices MAX32 SoC series.
 
 * I2S
 
@@ -669,7 +681,7 @@ Drivers and Sensors
 
   * Added driver for Renesas RA8 series
   * Added driver for Infineon PSoC6 (legacy)
-  * Added driver for Analog Devices MAX32690
+  * Added driver for Analog Devices MAX32 SoC series.
   * Added driver for Ambiq Apollo3
   * Added driver for ENE KB1200
   * Added driver for NXP RW
@@ -796,6 +808,7 @@ Drivers and Sensors
   * Added support for :kconfig:option:`CONFIG_PM` and :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` on STM32 SPI driver.
   * Added support for :kconfig:option:`CONFIG_NOCACHE_MEMORY` in DMA SPI mode for STM32F7x SoC series.
   * Added support for STM32H7R/S series.
+  * Added driver for Analog Devices MAX32 SoC series.
 
 * USB
 
@@ -1306,6 +1319,12 @@ HALs
   * Updated STM32WB to cube version V1.19.1.
   * Updated STM32WBA to cube version V1.3.1.
   * Added STM32H7R/S with cube version V1.0.0.
+
+* ADI
+
+  * Introduced the ``hal_adi`` module, which is a subset of the Maxim Software
+    Development Kit (MSDK) that contains device header files and bare metal
+    peripheral drivers (:github:`72391`).
 
 MCUboot
 *******
