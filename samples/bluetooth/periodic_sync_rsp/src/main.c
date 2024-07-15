@@ -44,6 +44,8 @@ static void sync_cb(struct bt_le_per_adv_sync *sync, struct bt_le_per_adv_sync_s
 	err = bt_le_per_adv_sync_subevent(sync, &params);
 	if (err) {
 		printk("Failed to set subevents to sync to (err %d)\n", err);
+	} else {
+		printk("Changed sync to subevent %d\n", subevents[0]);
 	}
 
 	k_sem_give(&sem_per_sync);
@@ -156,6 +158,8 @@ static ssize_t write_timing(struct bt_conn *conn, const struct bt_gatt_attr *att
 		err = bt_le_per_adv_sync_subevent(default_sync, &params);
 		if (err) {
 			printk("Failed to set subevents to sync to (err %d)\n", err);
+		} else {
+			printk("Changed sync to subevent %d\n", subevents[0]);
 		}
 	} else {
 		printk("Not synced yet\n");
