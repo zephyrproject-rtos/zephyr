@@ -718,10 +718,75 @@ Drivers and Sensors
 
 * Sensors
 
-  * Added TMP114 driver
-  * Added DS18S20 1-wire temperature sensor driver.
-  * STM32 QDEC driver now supports encoder mode configuration (see :dtcompatible:`st,stm32-qdec`).
-  * Added support for STM32 Digital Temperature Sensor (:dtcompatible:`st,stm32-digi-temp`).
+  * General
+
+    * Added a channel specifier to the new read/decoder API.
+    * Added a blocking sensor read call :c:func:`sensor_read`.
+    * Decoupled RTIO requests using RTIO workqueues service to turn
+      :c:func:`sensor_submit_callback` into an asynchronous request.
+    * Moved most drivers to vendor subdirectories.
+
+  * AMS
+
+    * Added TSL2591 light sensor driver (:dtcompatible:`ams,tsl2591`).
+
+  * Aosong
+
+    * Added DHT20 digital-output humidity and temperature sensor driver
+      (:dtcompatible:`aosong,dht20`).
+
+  * Bosch
+
+    * Updated BME280 to the new async API.
+
+  * Infineon
+
+    * Added TLE9104 power train switch diagnostics sensor driver
+      (:dtcompatible:`infineon,tle9104-diagnostics`).
+
+  * Maxim
+
+    * Added DS18S20 1-wire temperature sensor driver (:dtcompatible:`maxim,ds18s20`).
+    * Added MAX31790 fan speed and fan fault sensor
+      (:dtcompatible:`maxim,max31790-fan-fault` and :dtcompatible:`maxim,max31790-fan-speed`).
+
+  * NXP
+
+    * Added low power comparator driver (:dtcompatible:`nxp,lpcmp`).
+
+  * Rohm
+
+    * Added BD8LB600FS diagnostics sensor driver (:dtcompatible:`rohm,bd8lb600fs-diagnostics`).
+
+  * Silabs
+
+    * Made various fixes and enhancements to the SI7006 humidity/temperature sensor driver.
+
+  * ST
+
+    * QDEC driver now supports encoder mode configuration (see :dtcompatible:`st,stm32-qdec`).
+    * Added support for STM32 Digital Temperature Sensor (:dtcompatible:`st,stm32-digi-temp`).
+    * Added IIS328DQ I2C/SPI accelerometer sensor driver (:dtcompatible:`st,iis328dq`).
+
+  * TI
+
+    * Added TMP114 driver (:dtcompatible:`ti,tmp114`).
+    * Added INA226 bidirectional current and power monitor driver (:dtcompatible:`ti,ina226`).
+    * Added LM95234 quad remote diode and local temperature sensor driver
+      (:dtcompatible:`national,lm95234`).
+
+  * Other vendors
+
+    * Added Angst+Pfister FCX-MLDX5 O2 sensor driver (:dtcompatible:`ap,fcx-mldx5`).
+    * Added ENE KB1200 tachometer sensor driver (:dtcompatible:`ene,kb1200-tach`).
+    * Added Festo VEAA-X-3 series proportional pressure regulator driver
+      (:dtcompatible:`festo,veaa-x-3`).
+    * Added Innovative Sensor Technology TSic xx6 temperature sensor driver
+      (:dtcompatible:`ist,tsic-xx6`).
+    * Added ON Semiconductor NCT75 temperature sensor driver (:dtcompatible:`onnn,nct75`).
+    * Added ScioSense ENS160 digital metal oxide multi-gas sensor driver
+      (:dtcompatible:`sciosense,ens160`).
+    * Made various fixes and enhancements to the GROW_R502A fingerprint sensor driver.
 
 * Serial
 
