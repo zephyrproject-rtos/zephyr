@@ -12,6 +12,8 @@ used by network administrators to configure and diagnose mesh nodes.
 .. toctree::
    :maxdepth: 1
 
+   brg_cfg_cli
+   brg_cfg_srv
    cfg_cli
    cfg_srv
    health_cli
