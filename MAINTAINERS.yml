@@ -3039,6 +3039,17 @@ Retention:
   labels:
     - "area: Retention"
 
+Rust:
+  status: maintained
+  maintainers:
+    - d3zd3z
+  files:
+    - cmake/modules/rust.cmake
+    - lib/rust/
+    - samples/rust/
+  labels:
+    - "area: Rust"
+
 Samples:
   status: maintained
   maintainers:
