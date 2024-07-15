@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Linaro LTD
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "zephyr-build"
+version = "0.1.0"
+edition = "2021"
+description = """
+Build-time support for Rust-based applications that run on Zephyr.
+Provides utilities for accessing Kconfig and devicetree information.
+"""
+
+# These are needed at build time.
+# Whether these need to be vendored is an open question.  They are not
+# used by the core Zephyr tree, but are needed by zephyr applications.
+[dependencies]
+regex = "1.10.3"
