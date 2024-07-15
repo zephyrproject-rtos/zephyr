@@ -44,7 +44,7 @@ static struct br_channel {
 	struct bt_l2cap_br_chan br;
 	bool in_use;
 	bool hold_credit;
-	struct net_buf *pending_credit;
+	struct net_buf *pending_credit[CHANNELS];
 } br_channels[CHANNELS];
 #endif /* defined(CONFIG_BT_CLASSIC) */
 
@@ -202,6 +202,12 @@ static struct channel *get_free_channel()
 }
 
 #if defined(CONFIG_BT_CLASSIC)
+
+static struct net_buf *alloc_buf_br_cb(struct bt_l2cap_chan *chan)
+{
+	return net_buf_alloc(&data_pool, K_NO_WAIT);
+}
+
 static struct br_channel *get_free_br_channel(void)
 {
 	uint8_t i;
@@ -233,6 +239,7 @@ static int recv_br_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
 			l2cap_chan, struct bt_l2cap_br_chan, chan);
 	struct br_channel *br_chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	ev->chan_id = br_chan->chan_id;
 	ev->data_length = sys_cpu_to_le16(buf->len);
@@ -241,11 +248,13 @@ static int recv_br_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DATA_RECEIVED,
 		     recv_cb_buf, sizeof(*ev) + buf->len);
 
-	if (br_chan->hold_credit && !br_chan->pending_credit) {
+	if (br_chan->hold_credit && (pool == &data_pool) &&
+		(net_buf_id(buf) < (int)ARRAY_SIZE(br_chan->pending_credit)) &&
+		!br_chan->pending_credit[net_buf_id(buf)]) {
 		/* no need for extra ref, as when returning EINPROGRESS user
 		 * becomes owner of the netbuf
 		 */
-		br_chan->pending_credit = buf;
+		br_chan->pending_credit[net_buf_id(buf)] = buf;
 		return -EINPROGRESS;
 	}
 
@@ -289,6 +298,14 @@ static void disconnected_br_cb(struct bt_l2cap_chan *l2cap_chan)
 			l2cap_chan, struct bt_l2cap_br_chan, chan);
 	struct br_channel *br_chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
 
+	/* release netbuf on premature disconnection */
+	for (size_t i = 0; i < ARRAY_SIZE(br_chan->pending_credit); i++) {
+		if (br_chan->pending_credit[i]) {
+			net_buf_unref(br_chan->pending_credit[i]);
+		}
+		br_chan->pending_credit[i] = NULL;
+	}
+
 	(void)memset(&ev, 0, sizeof(struct btp_l2cap_disconnected_ev));
 
 	/* TODO: ev.psm */
@@ -330,7 +347,7 @@ static void reconfigured_br_cb(struct bt_l2cap_chan *l2cap_chan)
 #endif
 
 static const struct bt_l2cap_chan_ops l2cap_br_ops = {
-	.alloc_buf	= alloc_buf_cb,
+	.alloc_buf	= alloc_buf_br_cb,
 	.recv		= recv_br_cb,
 	.connected	= connected_br_cb,
 	.disconnected	= disconnected_br_cb,
@@ -1143,12 +1160,13 @@ static uint8_t credits(const void *cmd, uint16_t cmd_len,
 
 #if defined(CONFIG_BT_CLASSIC)
 	if (br_chan) {
-		if (br_chan->pending_credit)
-		{
-			bt_l2cap_chan_recv_complete(&br_chan->br.chan,
-				br_chan->pending_credit);
+		for (size_t i = 0; i < ARRAY_SIZE(br_chan->pending_credit); i++) {
+			if (br_chan->pending_credit[i]) {
+				bt_l2cap_chan_recv_complete(&br_chan->br.chan,
+					br_chan->pending_credit[i]);
+			}
+			br_chan->pending_credit[i] = NULL;
 		}
-		chan->pending_credit = NULL;
 		return BTP_STATUS_SUCCESS;
 	}
 #endif /* defined(CONFIG_BT_CLASSIC) */
