@@ -144,6 +144,19 @@
 				"uptime_cycles";
 			status = "disabled";
 		};
+		mdio0: mdio@e0008000 {
+			compatible = "litex,liteeth-mdio";
+			reg = <0xe0008000 0x4>,
+				<0xe0008004 0x4>,
+				<0xe0008008 0x4>;
+			reg-names = "crg_reset",
+				"mdio_w",
+				"mdio_r";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+		};
 		eth0: ethernet@e0009800 {
 			compatible = "litex,liteeth";
 			interrupt-parent = <&intc0>;
