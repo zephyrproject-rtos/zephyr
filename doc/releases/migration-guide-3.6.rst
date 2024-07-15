@@ -46,6 +46,9 @@ Kernel
   :kconfig:option:`CONFIG_HEAP_MEM_POOL_IGNORE_MIN` option has been introduced (which defaults
   being disabled).
 
+* STM32H7 and STM32F7 should now activate the cache (Icache and Dcache) by setting explicitly
+  the  ``CONFIG_CACHE_MANAGEMENT`` to ``y``.
+
 Boards
 ******
 
