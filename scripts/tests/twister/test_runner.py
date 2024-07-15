@@ -1504,6 +1504,7 @@ def test_projectbuilder_process(
     instance_mock.run = instance_run
     instance_mock.handler = mock.Mock()
     instance_mock.handler.ready = instance_handler_ready
+    instance_mock.testsuite.harness = 'test'
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
