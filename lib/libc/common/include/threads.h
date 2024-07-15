@@ -19,15 +19,15 @@ extern "C" {
 typedef int (*thrd_start_t)(void *arg);
 
 enum {
-	thrd_success,
+	thrd_success = 4,
 #define thrd_success thrd_success
-	thrd_nomem,
+	thrd_nomem = 3,
 #define thrd_nomem thrd_nomem
-	thrd_timedout,
+	thrd_timedout = 5,
 #define thrd_timedout thrd_timedout
-	thrd_busy,
+	thrd_busy = 1,
 #define thrd_busy thrd_busy
-	thrd_error,
+	thrd_error = 2,
 #define thrd_error thrd_error
 };
 
