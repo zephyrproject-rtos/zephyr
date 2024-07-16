@@ -43,10 +43,6 @@ config WIFI_NM_WPA_SUPPLICANT_WQ_PRIO
 	int "Thread priority of wpa_supplicant iface workqueue"
 	default 7
 
-config WIFI_NM_WPA_SUPPLICANT_PRIO
-	int "Thread priority of wpa_supplicant"
-	default 0
-
 # Currently we default ZVFS_OPEN_MAX to 16 in lib/posix/Kconfig
 # l2_packet - 1
 # ctrl_iface - 2 * socketpairs = 4(local and global)
@@ -175,9 +171,6 @@ config WIFI_NM_WPA_SUPPLICANT_WPA3
 
 config WIFI_NM_WPA_SUPPLICANT_AP
 	bool "AP mode support"
-
-config WIFI_NM_HOSTAPD_AP
-	bool "AP mode hostapd support"
 
 config WIFI_NM_WPA_SUPPLICANT_WPS
 	bool "WPS support"
