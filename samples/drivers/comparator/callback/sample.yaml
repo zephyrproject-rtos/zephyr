@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Comparator callback sample
+tests:
+  sample.drivers.comparator.callback:
+    tags:
+      - drivers
+      - comparator
+    filter: dt_alias_exists("comparator")

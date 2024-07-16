@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	aliases {
+		comparator = &comp;
+	};
+};
+
+&comp {
+	positive-input = "INPUT_0"; /* P0.04 */
+	external-reference = "EXT_REF_1"; /* P0.05 */
+	reference-selection = "AREF";
+	main-mode = "DIFF";
+	speed-mode = "NORMAL";
+	hysteresis = "50MV";
+	isource = "OFF";
+	status = "okay";
+};
