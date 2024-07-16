@@ -87,13 +87,7 @@ struct i3c_ibi_payload {
  * @brief Node about a queued IBI.
  */
 struct i3c_ibi_work {
-	/**
-	 * @cond INTERNAL_HIDDEN
-	 *
-	 * Used for keeping track of work in a queue.
-	 */
 	sys_snode_t node;
-	/** @endcond */
 
 	/**
 	 * k_work struct.
