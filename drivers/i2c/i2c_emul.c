@@ -36,6 +36,7 @@ struct i2c_emul_data {
 
 struct i2c_emul_config {
 	struct emul_list_for_bus emul_list;
+	bool target_buffered_mode;
 	const struct i2c_dt_spec *forward_list;
 	uint16_t forward_list_size;
 };
@@ -88,6 +89,41 @@ static int i2c_emul_send_to_target(const struct device *dev, struct i2c_msg *msg
 {
 	struct i2c_emul_data *data = dev->data;
 	const struct i2c_target_callbacks *callbacks = data->target_cfg->callbacks;
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	const struct i2c_emul_config *config = dev->config;
+
+	if (config->target_buffered_mode) {
+		for (uint8_t i = 0; i < num_msgs; ++i) {
+			if (i2c_is_read_op(&msgs[i])) {
+				uint8_t *ptr = NULL;
+				uint32_t len;
+				int rc =
+					callbacks->buf_read_requested(data->target_cfg, &ptr, &len);
+
+				if (rc != 0) {
+					return rc;
+				}
+				if (len > msgs[i].len) {
+					LOG_ERR("buf_read_requested returned too many bytes");
+					return -ENOMEM;
+				}
+				memcpy(msgs[i].buf, ptr, len);
+			} else {
+				callbacks->buf_write_received(data->target_cfg, msgs[i].buf,
+							      msgs[i].len);
+			}
+			if (i2c_is_stop_op(&msgs[i])) {
+				int rc = callbacks->stop(data->target_cfg);
+
+				if (rc != 0) {
+					return rc;
+				}
+			}
+		}
+		return 0;
+	}
+#endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
 
 	for (uint8_t i = 0; i < num_msgs; ++i) {
 		LOG_DBG("    msgs[%u].flags? 0x%02x", i, msgs[i].flags);
@@ -289,6 +325,7 @@ static const struct i2c_driver_api i2c_emul_api = {
 				.children = emuls_##n,                                             \
 				.num_children = ARRAY_SIZE(emuls_##n),                             \
 			},                                                                         \
+		.target_buffered_mode = DT_INST_PROP(n, target_buffered_mode),                     \
 		.forward_list = emul_forward_list_##n,                                             \
 		.forward_list_size = ARRAY_SIZE(emul_forward_list_##n),                            \
 	};                                                                                         \

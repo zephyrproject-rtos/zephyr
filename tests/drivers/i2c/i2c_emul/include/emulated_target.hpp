@@ -31,7 +31,11 @@ extern struct i2c_target_config emulated_target_config[FORWARD_COUNT];
 	DECLARE_FAKE_VALUE_FUNC(int, target_write_requested_##n, struct i2c_target_config *);      \
 	DECLARE_FAKE_VALUE_FUNC(int, target_write_received_##n, struct i2c_target_config *,        \
 				uint8_t);                                                          \
-	DECLARE_FAKE_VALUE_FUNC(int, target_stop_##n, struct i2c_target_config *);
+	DECLARE_FAKE_VALUE_FUNC(int, target_stop_##n, struct i2c_target_config *);                 \
+	DECLARE_FAKE_VALUE_FUNC(int, target_buf_read_requested_##n, struct i2c_target_config *,    \
+				uint8_t **, uint32_t *)                                            \
+	DECLARE_FAKE_VOID_FUNC(target_buf_write_received_##n, struct i2c_target_config *,          \
+			       uint8_t *, uint32_t)
 
 DT_FOREACH_PROP_ELEM(CONTROLLER_LABEL, forwards, DECLARE_FAKE_TARGET_FUNCTIONS)
 
@@ -42,6 +46,8 @@ DT_FOREACH_PROP_ELEM(CONTROLLER_LABEL, forwards, DECLARE_FAKE_TARGET_FUNCTIONS)
 		fn(target_write_requested_##n);                                                    \
 		fn(target_write_received_##n);                                                     \
 		fn(target_stop_##n);                                                               \
+		fn(target_buf_read_requested_##n);                                                 \
+		fn(target_buf_write_received_##n);                                                 \
 	} while (0);
 
 #define FFF_FAKES_LIST_FOREACH(fn)                                                                 \

@@ -150,7 +150,7 @@ I2C Emulation features
 In the binding of the I2C emulated bus, there's a custom property for address
 based forwarding. Given the following devicetree node:
 
-.. code-block::
+.. code-block:: devicetree
 
    i2c0: i2c@100 {
      status = "okay";
@@ -170,7 +170,7 @@ same image.
 
 .. note::
    The ``#forward-cells`` attribute should always be 1. Each entry in the
-   ``fowards`` attribute consists of the phandle followed by the address. In
+   ``forwards`` attribute consists of the phandle followed by the address. In
    the example above, ``<&i2c1 0x20>`` will forward all read/write operations
    made to ``i2c0`` at port ``0x20`` to ``i2c1`` on the same port. Since no
    additional cells are used by the emulated controller, the number of cells
