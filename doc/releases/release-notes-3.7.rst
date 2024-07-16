@@ -389,29 +389,67 @@ Build system and Infrastructure
 
   * A ``socs`` folder for applications has been introduced that allows for Kconfig fragments and
     devicetree overlays that should apply to any board target using a particular SoC and board
-    qualifier.
+    qualifier (:github:`70418`). Support has also been added to sysbuild (:github:`71320`).
 
-  * :ref:`Board/SoC flashing configuration<flashing-soc-board-config>` settings have been added.
+  * :ref:`Board/SoC flashing configuration<flashing-soc-board-config>` settings have been added
+    (:github:`69748`).
 
   * Deprecated the global CSTD cmake property in favor of the :kconfig:option:`CONFIG_STD_C`
     choice to select the C Standard version. Additionally subsystems can select a minimum
     required C Standard version, with for example :kconfig:option:`CONFIG_REQUIRES_STD_C11`.
 
-  * Fixed issue with passing UTF-8 configs to applications using sysbuild.
+  * Fixed issue with passing UTF-8 configs to applications using sysbuild (:github:`74152`).
 
   * Fixed issue whereby domain file in sysbuild projects would be loaded and used with outdated
-    information if sysbuild configuration was changed, and ``west flash`` was ran directly after.
+    information if sysbuild configuration was changed, and ``west flash`` was ran directly after
+    (:github:`73864`).
 
   * Fixed issue with Zephyr modules not being listed in sysbuild if they did not have a Kconfig
-    file set.
+    file set (:github:`72070`).
 
-  * Add sysbuild ``SB_CONFIG_COMPILER_WARNINGS_AS_ERRORS`` Kconfig option to turn on
-    "warning as error" toolchain flags for all images, if set.
+  * Added sysbuild ``SB_CONFIG_COMPILER_WARNINGS_AS_ERRORS`` Kconfig option to turn on
+    "warning as error" toolchain flags for all images, if set (:github:`70217`).
 
   * Fixed issue whereby files used in a project (e.g. devicetree overlays or Kconfig fragments)
-    were not correctly watched and CMake would not reconfigure if they were changed.
+    were not correctly watched and CMake would not reconfigure if they were changed
+    (:github:`74655`).
 
   * Added flash support for Intel Hex files for the LinkServer runner.
+
+  * Added sysbuild ``sysbuild/CMakeLists.txt`` entry point and added support for
+    ``APPLICATION_CONFIG_DIR`` which allows for adjusting how sysbuild functions (:github:`72923`).
+
+  * Fixed issue with armfvp find path if it contained a colon-separated list (:github:`74868`).
+
+  * Fixed issue with version.cmake field sizes not being enforced (:github:`74357`).
+
+  * Fixed issue with sysbuild not clearing ``EXTRA_CONF_FILE`` before processing images which
+    prevented this option being passed on to the image (:github:`74082`).
+
+  * Added sysbuild root support which works similarly to the existing root module, adjusting paths
+    relative to ``APP_DIR`` (:github:`73390`).
+
+  * Added warning/error message for blobs that are missing (:github:`73051`).
+
+  * Fixed issue with correct python executable detection on some systems (:github:`72232`).
+
+  * Added support for enabling LTO for whole application (:github:`69519`).
+
+  * Fixed ``FILE_SUFFIX`` issues relating to double application of suffixes, non-application in
+    sysbuild and variable name clases in CMake functions (:github:`70124`, :github:`71280`).
+
+  * Added support for new agressive size optimisation flag (for GCC and Clang) using
+    :kconfig:option:`CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE` (:github:`70511`).
+
+  * Fixed issue with printing out ``BUILD_VERSION`` if it was empty (:github:`70970`).
+
+  * Fixed sysbuild issue of ``sysbuild_cache_set()`` cmake function wrongly detecting partial
+    matches for de-duplication (:github:`71381`).
+
+  * Fixed issue with detecting wrong ``VERSION`` file (:github:`71385`).
+
+  * Added support for disabling output disassembly having the source code in using
+    :kconfig:option:`CONFIG_OUTPUT_DISASSEMBLY_WITH_SOURCE` (:github:`71535`).
 
 Drivers and Sensors
 *******************
