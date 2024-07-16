@@ -1415,6 +1415,18 @@ Libraries / Subsystems
 
 * ZBus
 
+  * Improved the VDED process by optimizing the channel reference copying for the clones delivered
+    during the message subscriber delivery notification.
+
+  * Improved the initialization phase by statically initiating the semaphores and runtime observer
+    list. That decreased the duration of the zbus initialization.
+
+  * Added a way of isolating a channel message subscribers pool. Some channels can now share an
+    isolated pool to avoid delivery failures and shorten communication latency. It is only necessary
+    to enable the :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` and use the
+    function :c:func:`zbus_chan_set_msg_sub_pool` to change the msg pool used by the channel.
+    Channels can share the same message pool.
+
 HALs
 ****
 
