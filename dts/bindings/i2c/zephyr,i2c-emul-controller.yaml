@@ -10,6 +10,12 @@ include: i2c-controller.yaml
 properties:
   reg:
     required: true
+  target-buffered-mode:
+    type: boolean
+    description: |
+      This option is used when the I2C target is enabled and it can support
+      buffered mode for I2C target transfer. When 'false', the target will use
+      PIO (Programmed I/O) mode.
   forwards:
     type: phandle-array
     description: |
