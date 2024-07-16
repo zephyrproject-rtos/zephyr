@@ -77,41 +77,6 @@ extern "C" {
 #define SO_KEEPOPEN 34
 /** sockopt: bind to PDN */
 #define SO_BINDTOPDN 40
-/** sockopt: Release Assistance Indication feature: This will indicate that the
- *  application will not send any more data.
- *
- *  @note This socket option requires the socket to be connected.
- *
- *  @deprecated use @ref SO_RAI with value @ref RAI_NO_DATA instead.
- */
-#define SO_RAI_NO_DATA 50
-/** sockopt: Release Assistance Indication feature: This will indicate that the
- *  next call to send/sendto will be the last one for some time.
- *
- *  @deprecated use @ref SO_RAI with value @ref RAI_LAST instead.
- */
-#define SO_RAI_LAST 51
-/** sockopt: Release Assistance Indication feature: This will indicate that
- *  after the next call to send/sendto, the application is expecting to receive
- *  one more data packet before this socket will not be used again for some time.
- *
- *  @deprecated use @ref SO_RAI with value @ref RAI_ONE_RESP instead.
- */
-#define SO_RAI_ONE_RESP 52
-/** sockopt: Release Assistance Indication feature: If a client application
- *  expects to use the socket more it can indicate that by setting this socket
- *  option before the next send call which will keep the network up longer.
- *
- *  @deprecated use @ref SO_RAI with value @ref RAI_ONGOING instead.
- */
-#define SO_RAI_ONGOING 53
-/** sockopt: Release Assistance Indication feature: If a server application
- *  expects to use the socket more it can indicate that by setting this socket
- *  option before the next send call.
- *
- *  @deprecated use @ref SO_RAI with value @ref RAI_WAIT_MORE instead.
- */
-#define SO_RAI_WAIT_MORE 54
 
 /** sockopt: Release assistance indication (RAI).
  *  The option accepts an integer, indicating the type of RAI.
