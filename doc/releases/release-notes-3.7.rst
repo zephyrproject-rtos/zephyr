@@ -1376,6 +1376,8 @@ Libraries / Subsystems
 
 * Crypto
 
+  * TinyCrypt remains available but is now being phased out in favor
+    of PSA Crypto for enhanced security and performance.
   * Mbed TLS was updated to 3.6.0. Release notes can be found at:
     https://github.com/Mbed-TLS/mbedtls/releases/tag/v3.6.0
   * When any PSA crypto provider is available in the system
