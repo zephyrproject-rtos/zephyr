@@ -61,6 +61,50 @@ static inline int b64url_char(int value)
 }
 #endif
 
+#if 1
+static int b64url_val(int ch)
+{
+	if (('A' <= ch) && ('Z' >= ch)) {
+		return ch - 'A';
+	} else if (('a' <= ch) && ('z' >= ch)) {
+		return ch + 26 - 'a';
+	} else if (('0' <= ch) && ('9' >= ch)) {
+		return ch + 52 - '0';
+	} else if (ch == '-') {
+		return 62;
+	} else if (ch == '_') {
+		return 63;
+	} else {
+		return 64;
+	}
+}
+#else
+/* clang-format off */
+static const char b64url_decode_table[256] = {
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 62, 64, 64,
+	52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 64, 64, 64, 64, 64, 64,
+	64,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+	15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 64, 64, 64, 64, 63,
+	64, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+	41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 64, 64, 64, 64, 64,
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64
+};
+/* clang-format on */
+static inline int b64url_val(int ch)
+{
+	return b64url_decode_table[ch];
+}
+#endif
+
 /*
  * Add a single character to the jwt buffer.  Detects overflow, and
  * always keeps the buffer null terminated.
@@ -126,6 +170,40 @@ static int base64url_encode_append_bytes(const char *bytes, size_t len,
 	}
 
 	return 0;
+}
+
+/*
+ * Base64URL decoding
+ */
+static int base64url_decode(char *dst, size_t dlen, const char *src, size_t slen)
+{
+	char *bp = dst;
+
+	if (dlen < (((slen * 3) + 3) >> 2)) {
+		return -ENOSPC;
+	}
+
+	while (slen > 4) {
+		(*bp++) = ((b64url_val(src[0]) & 0x3f) << 2) | ((b64url_val(src[1]) & 0x30) >> 4);
+		(*bp++) = ((b64url_val(src[1]) & 0x0f) << 4) | ((b64url_val(src[2]) & 0x3c) >> 2);
+		(*bp++) = ((b64url_val(src[2]) & 0x03) << 6) | (b64url_val(src[3]) & 0x3f);
+		src += 4;
+		slen -= 4;
+	}
+
+	if (slen > 1) {
+		(*bp++) = ((b64url_val(src[0]) & 0x3f) << 2) | ((b64url_val(src[1]) & 0x30) >> 4);
+	}
+	if (slen > 2) {
+		(*bp++) = ((b64url_val(src[1]) & 0x0f) << 4) | ((b64url_val(src[2]) & 0x3c) >> 2);
+	}
+	if (slen > 3) {
+		(*bp++) = ((b64url_val(src[2]) & 0x03) << 6) | (b64url_val(src[3]) & 0x3f);
+	}
+
+	*bp = 0;
+
+	return bp - dst;
 }
 
 struct jwt_payload {
@@ -316,4 +394,126 @@ int jwt_init_builder(struct jwt_builder *builder,
 	builder->pending = 0;
 
 	return jwt_add_header(builder);
+}
+
+int jwt_parse_payload(struct jwt_parser *parser, int32_t *exp, int32_t *iat, char *aud)
+{
+	struct jwt_payload payload;
+	int res;
+
+	res = base64url_decode(parser->buf, parser->buf_len, parser->payload, parser->payload_len);
+	if (res < 0) {
+		return res;
+	}
+
+	res = json_obj_parse(parser->buf, res, jwt_payload_desc, ARRAY_SIZE(jwt_payload_desc),
+			     &payload);
+	if (res == (1 << ARRAY_SIZE(jwt_payload_desc)) - 1) {
+		*exp = payload.exp;
+		*iat = payload.iat;
+		strcpy(aud, payload.aud);
+		res = 0;
+	} else if (res >= 0) {
+		res = -EINVAL;
+	}
+
+	return res;
+}
+
+int jwt_verify(struct jwt_parser *parser, const char *der_key, size_t der_key_len)
+{
+	struct jwt_builder builder;
+	char *builder_header;
+	size_t builder_header_len;
+	char *builder_sign;
+	size_t builder_sign_len;
+	int res;
+
+	/*
+	 * Use existing jwt_add_header and jwt_sign functions to fill a
+	 * jwt_builder structure and use it to compare header and signature
+	 * fields
+	 */
+
+	/*
+	 * Check JWT header
+	 */
+
+	res = jwt_init_builder(&builder, parser->buf, parser->buf_len);
+	if (res != 0) {
+		return res;
+	}
+	builder_header = builder.base;
+	builder_header_len = builder.buf - builder.base;
+	res = strncmp(parser->header, builder_header, builder_header_len);
+	if (res != 0) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Copy the payload
+	 */
+
+	if (builder.len < (parser->payload_len + 1)) {
+		return -ENOSPC;
+	}
+	/* -1/+1 to also copy the dot */
+	strncpy(builder.buf, parser->payload - 1, parser->payload_len + 1);
+	builder.buf += parser->payload_len + 1;
+	builder.len -= parser->payload_len + 1;
+	builder_sign = builder.buf + 1;
+
+	/*
+	 * Check JWT signature
+	 */
+
+	res = jwt_sign(&builder, der_key, der_key_len);
+	if (res != 0) {
+		return res;
+	}
+	builder_sign_len = builder.buf - builder_sign;
+	res = strncmp(parser->sign, builder_sign, builder_sign_len);
+	if (res != 0) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int jwt_init_parser(struct jwt_parser *parser, const char *token, char *buffer, size_t buffer_size)
+{
+	char *first_dot;
+	char *last_dot;
+
+	if (buffer_size < (strlen(token) + 1)) {
+		return -ENOSPC;
+	}
+
+	parser->buf = buffer;
+	parser->buf_len = buffer_size;
+
+	first_dot = strchr(token, '.');
+	if (first_dot == NULL) {
+		return -EINVAL;
+	}
+
+	last_dot = strrchr(token, '.');
+	if (last_dot == NULL) {
+		return -EINVAL;
+	}
+
+	if (first_dot == last_dot) {
+		return -EINVAL;
+	}
+
+	parser->header = token;
+	parser->header_len = first_dot - parser->header;
+
+	parser->payload = first_dot + 1;
+	parser->payload_len = last_dot - parser->payload;
+
+	parser->sign = last_dot + 1;
+	parser->sign_len = strlen(parser->sign);
+
+	return 0;
 }
