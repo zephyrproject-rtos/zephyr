@@ -442,6 +442,10 @@ static uint8_t _connect(const void *cmd, uint16_t cmd_len, void *rsp,
 			rp->chan_id[i] = br_chan->chan_id;
 			allocated_channels[i] = &br_chan->br.chan;
 			br_chan->hold_credit = cp->options & BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT;
+#if defined(CONFIG_BT_L2CAP_RET) || defined(CONFIG_BT_L2CAP_FC) || \
+	defined(CONFIG_BT_L2CAP_ENH_RET) || defined(CONFIG_BT_L2CAP_STREAM)
+			br_chan->br.rx.optional = cp->options & BTP_L2CAP_CONNECT_OPT_MODE_OPTIONAL;
+#endif
 			continue;
 		}
 #endif /* defined(CONFIG_BT_CLASSIC) */
