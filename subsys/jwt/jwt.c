@@ -31,7 +31,7 @@
  * little more than half of the size of the lookup table.
  */
 #if 1
-static int base64_char(int value)
+static int b64url_char(int value)
 {
 	if (value < 26) {
 		return value + 'A';
@@ -46,11 +46,11 @@ static int base64_char(int value)
 	}
 }
 #else
-static const char b64_table[] =
+static const char b64url_encode_table[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-static inline int base64_char(int value)
+static inline int b64url_char(int value)
 {
-	return b64_table[value];
+	return b64url_encode_table[value];
 }
 #endif
 
@@ -58,7 +58,7 @@ static inline int base64_char(int value)
  * Add a single character to the jwt buffer.  Detects overflow, and
  * always keeps the buffer null terminated.
  */
-static void base64_outch(struct jwt_builder *st, char ch)
+static void base64url_encode_outch(struct jwt_builder *st, char ch)
 {
 	if (st->overflowed) {
 		return;
@@ -79,43 +79,43 @@ static void base64_outch(struct jwt_builder *st, char ch)
  * bytes are present, this will generate 4 characters, otherwise it
  * may generate fewer.
  */
-static void base64_flush(struct jwt_builder *st)
+static void base64url_encode_flush(struct jwt_builder *st)
 {
 	if (st->pending < 1) {
 		return;
 	}
 
-	base64_outch(st, base64_char(st->wip[0] >> 2));
-	base64_outch(st, base64_char(((st->wip[0] & 0x03) << 4) |
+	base64url_encode_outch(st, b64url_char(st->wip[0] >> 2));
+	base64url_encode_outch(st, b64url_char(((st->wip[0] & 0x03) << 4) |
 				(st->wip[1] >> 4)));
 
 	if (st->pending >= 2) {
-		base64_outch(st, base64_char(((st->wip[1] & 0x0f) << 2) |
+		base64url_encode_outch(st, b64url_char(((st->wip[1] & 0x0f) << 2) |
 				(st->wip[2] >> 6)));
 	}
 	if (st->pending >= 3) {
-		base64_outch(st, base64_char(st->wip[2] & 0x3f));
+		base64url_encode_outch(st, b64url_char(st->wip[2] & 0x3f));
 	}
 
 	st->pending = 0;
 	memset(st->wip, 0, 3);
 }
 
-static void base64_addbyte(struct jwt_builder *st, uint8_t byte)
+static void base64url_encode_addbyte(struct jwt_builder *st, uint8_t byte)
 {
 	st->wip[st->pending++] = byte;
 	if (st->pending == 3) {
-		base64_flush(st);
+		base64url_encode_flush(st);
 	}
 }
 
-static int base64_append_bytes(const char *bytes, size_t len,
+static int base64url_encode_append_bytes(const char *bytes, size_t len,
 			 void *data)
 {
 	struct jwt_builder *st = data;
 
 	while (len-- > 0) {
-		base64_addbyte(st, *bytes++);
+		base64url_encode_addbyte(st, *bytes++);
 	}
 
 	return 0;
@@ -173,12 +173,12 @@ int jwt_add_payload(struct jwt_builder *builder,
 		.aud = aud,
 	};
 
-	base64_outch(builder, '.');
+	base64url_encode_outch(builder, '.');
 	int res = json_obj_encode(jwt_payload_desc,
 				  ARRAY_SIZE(jwt_payload_desc),
-				  &payload, base64_append_bytes, builder);
+				  &payload, base64url_encode_append_bytes, builder);
 
-	base64_flush(builder);
+	base64url_encode_flush(builder);
 	return res;
 }
 
@@ -194,9 +194,9 @@ int jwt_sign(struct jwt_builder *builder,
 		return ret;
 	}
 
-	base64_outch(builder, '.');
-	base64_append_bytes(sig, sizeof(sig), builder);
-	base64_flush(builder);
+	base64url_encode_outch(builder, '.');
+	base64url_encode_append_bytes(sig, sizeof(sig), builder);
+	base64url_encode_flush(builder);
 
 	return builder->overflowed ? -ENOMEM : 0;
 }
