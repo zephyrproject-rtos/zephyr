@@ -8,7 +8,6 @@
 
 cpu: &cpuflpr {};
 clic: &cpuflpr_clic {};
-cpuflpr_vevif: &cpuflpr_vevif_local {};
 
 /delete-node/ &cpuapp;
 /delete-node/ &cpuapp_rram;
@@ -20,6 +19,34 @@ cpuflpr_vevif: &cpuflpr_vevif_local {};
 		compatible = "simple-bus";
 		interrupt-parent = <&cpuflpr_clic>;
 		ranges;
+	};
+};
+
+&cpuflpr {
+	cpuflpr_vevif_rx: mailbox {
+		compatible = "nordic,nrf-vevif-task-rx";
+		status = "disabled";
+		interrupt-parent = <&cpuflpr_clic>;
+		interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>,
+				 <12 NRF_DEFAULT_IRQ_PRIORITY>,
+				 <13 NRF_DEFAULT_IRQ_PRIORITY>,
+				 <14 NRF_DEFAULT_IRQ_PRIORITY>,
+				 <15 NRF_DEFAULT_IRQ_PRIORITY>,
+				 <16 NRF_DEFAULT_IRQ_PRIORITY>,
+				 <17 NRF_DEFAULT_IRQ_PRIORITY>;
+		#mbox-cells = <1>;
+		nordic,tasks = <7>;
+		nordic,tasks-mask = <0x0003f800>;
+	};
+};
+
+&cpuflpr_vpr {
+	cpuflpr_vevif_tx: mailbox {
+		compatible = "nordic,nrf-vevif-event-tx";
+		#mbox-cells = <1>;
+		nordic,events = <1>;
+		nordic,events-mask = <0x00008000>;
+		status = "disabled";
 	};
 };
 
