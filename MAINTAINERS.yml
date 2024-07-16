@@ -1307,6 +1307,8 @@ Release Notes:
   status: maintained
   maintainers:
     - ceolin
+  collaborators:
+    - tomi-font
   files:
     - drivers/entropy/
     - include/zephyr/drivers/entropy.h
@@ -4795,6 +4797,7 @@ West:
   collaborators:
     - ithinuel
     - valeriosetti
+    - tomi-font
   files:
     - modules/mbedtls/
     - tests/crypto/mbedtls/
@@ -4968,6 +4971,7 @@ West:
     - Vge0rge
     - ithinuel
     - valeriosetti
+    - tomi-font
   files:
     - modules/trusted-firmware-m/
     - samples/tfm_integration/
@@ -5159,6 +5163,8 @@ Random:
   status: maintained
   maintainers:
     - ceolin
+  collaborators:
+    - tomi-font
   files:
     - subsys/random/
     - include/zephyr/random/
