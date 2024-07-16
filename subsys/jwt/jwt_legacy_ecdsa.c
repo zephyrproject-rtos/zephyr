@@ -80,3 +80,37 @@ int jwt_sign_impl(struct jwt_builder *builder, const unsigned char *der_key, siz
 
 	return 0;
 }
+
+int jwt_verify_impl(struct jwt_builder *builder, const unsigned char *der_key, size_t der_key_len,
+		    const unsigned char *sig, size_t sig_size)
+{
+	struct tc_sha256_state_struct ctx;
+	uint8_t pub_key[64];
+	uint8_t hash[32];
+	int res;
+
+	ARG_UNUSED(sig_size);
+
+	res = uECC_compute_public_key(der_key, pub_key, &curve_secp256r1);
+	if (res != 1) {
+		return -EINVAL;
+	}
+
+	tc_sha256_init(&ctx);
+	tc_sha256_update(&ctx, builder->base, builder->buf - builder->base);
+	tc_sha256_final(hash, &ctx);
+
+	res = setup_prng();
+
+	if (res != 0) {
+		return res;
+	}
+
+	/* Note that tinycrypt only supports P-256. */
+	res = uECC_verify(pub_key, hash, sizeof(hash), sig, &curve_secp256r1);
+	if (res != TC_CRYPTO_SUCCESS) {
+		return -EINVAL;
+	}
+
+	return 0;
+}

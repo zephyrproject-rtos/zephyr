@@ -9,7 +9,10 @@
 
 #include <zephyr/data/jwt.h>
 
-int jwt_sign_impl(struct jwt_builder *builder, const unsigned char *der_key,
-		  size_t der_key_len, unsigned char *sig, size_t sig_size);
+int jwt_sign_impl(struct jwt_builder *builder, const unsigned char *der_key, size_t der_key_len,
+		  unsigned char *sig, size_t sig_size);
+
+int jwt_verify_impl(struct jwt_builder *builder, const unsigned char *der_key, size_t der_key_len,
+		    const unsigned char *sig, size_t sig_size);
 
 #endif /* ZEPHYR_SUBSYS_JWT_JWT_H_ */

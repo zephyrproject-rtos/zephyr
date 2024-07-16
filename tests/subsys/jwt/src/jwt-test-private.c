@@ -119,7 +119,7 @@ unsigned char jwt_test_private_der[] = {
  * - generate the key using OpenSSL:
  *   $ openssl ecparam -name prime256v1 -genkey | openssl ec -outform der | xxd -ps
  * - copy the content to https://lapo.it/asn1js/
- * - get the first OCTECT STRING, which is the private key, and copy it here
+ * - get the first OCTET STRING, which is the private key, and copy it here
  */
 
 unsigned char jwt_test_private_der[] = {
