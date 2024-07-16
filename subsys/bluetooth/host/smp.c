@@ -44,11 +44,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_smp);
 
-#if defined(CONFIG_BT_SMP_ENFORCE_MITM)
-#define SMP_TIMEOUT K_SECONDS(35) //Temp workaround to pass auto-pts GAP/SEC/AUT/BV-25-C, GAP/SEC/AUT/BV-27-C
-#else
 #define SMP_TIMEOUT K_SECONDS(30)
-#endif
 
 #if defined(CONFIG_BT_SIGNING)
 #define SIGN_DIST BT_SMP_DIST_SIGN
