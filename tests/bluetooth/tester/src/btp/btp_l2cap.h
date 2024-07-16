@@ -116,6 +116,7 @@ struct btp_l2cap_echo_cmd {
 #define BTP_L2CAP_LISTEN_OPT_FC				0x08
 #define BTP_L2CAP_LISTEN_OPT_ERET			0x10
 #define BTP_L2CAP_LISTEN_OPT_STREAM			0x20
+#define BTP_L2CAP_LISTEN_OPT_MODE_OPTIONAL		0x40
 
 #define BTP_L2CAP_LISTEN_WITH_MODE			0x0c
 struct btp_l2cap_listen_with_mode_cmd {
