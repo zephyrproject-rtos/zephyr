@@ -97,8 +97,6 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
 	/** BSS transition management query */
 	NET_REQUEST_WIFI_CMD_BTM_QUERY,
-	/** DPP actions */
-	NET_REQUEST_WIFI_CMD_DPP,
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -221,13 +219,6 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTM_QUERY)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
-
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
-#define NET_REQUEST_WIFI_DPP			\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_DPP)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
-#endif
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -838,105 +829,6 @@ struct wifi_ap_config_params {
 	uint32_t max_num_sta;
 };
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
-#define WIFI_DPP_QRCODE_MAX_LEN 255
-
-enum wifi_dpp_op {
-	WIFI_DPP_OP_INVALID = 0,
-	WIFI_DPP_CONFIGURATOR_ADD,
-	WIFI_DPP_AUTH_INIT,
-	WIFI_DPP_QR_CODE,
-	WIFI_DPP_CHIRP,
-	WIFI_DPP_LISTEN,
-	WIFI_DPP_BOOTSTRAP_GEN,
-	WIFI_DPP_BOOTSTRAP_GET_URI,
-	WIFI_DPP_SET_CONF_PARAM,
-	WIFI_DPP_SET_WAIT_RESP_TIME
-};
-
-enum wifi_dpp_curves {
-	/* default P-256 */
-	WIFI_DPP_CURVES_DEFAULT = 0,
-	WIFI_DPP_CURVES_P_256,
-	WIFI_DPP_CURVES_P_384,
-	WIFI_DPP_CURVES_P_512,
-	WIFI_DPP_CURVES_BP_256,
-	WIFI_DPP_CURVES_BP_384,
-	WIFI_DPP_CURVES_BP_512
-};
-
-enum wifi_dpp_role {
-	WIFI_DPP_ROLE_UNSET = 0,
-	WIFI_DPP_ROLE_CONFIGURATOR,
-	WIFI_DPP_ROLE_ENROLLEE,
-	WIFI_DPP_ROLE_EITHER
-};
-
-/* current only support DPP only AKM */
-enum wifi_dpp_conf {
-	WIFI_DPP_CONF_UNSET = 0,
-	WIFI_DPP_CONF_STA,
-	WIFI_DPP_CONF_AP,
-	WIFI_DPP_CONF_QUERY
-};
-
-/* current default and only support QR-CODE */
-enum wifi_dpp_bootstrap_type {
-	WIFI_DPP_BOOTSTRAP_TYPE_UNSET = 0,
-	WIFI_DPP_BOOTSTRAP_TYPE_QRCODE,
-	WIFI_DPP_BOOTSTRAP_TYPE_PKEX,
-	WIFI_DPP_BOOTSTRAP_TYPE_NFC_URI
-};
-
-/* Wi-Fi DPP operation params */
-struct wifi_dpp_params {
-	int action;
-	union {
-		struct wifi_dpp_configurator_add_params {
-			int curve;
-			int net_access_key_curve;
-		} configurator_add;
-		struct wifi_dpp_auth_init_params {
-			int peer;
-			int configurator;
-			int role;
-			int conf;
-			char ssid[WIFI_SSID_MAX_LEN + 1];
-		} auth_init;
-		struct wifi_dpp_chirp_params {
-			int id;
-			int freq;
-		} chirp;
-		struct wifi_dpp_listen_params {
-			int freq;
-			int role;
-		} listen;
-		struct wifi_dpp_bootstrap_gen_params {
-			int op_class;
-			int chan;
-			int curve;
-			int type;
-			uint8_t mac[WIFI_MAC_ADDR_LEN];
-		} bootstrap_gen;
-		struct wifi_dpp_configurator_set_params {
-			int peer;
-			int configurator;
-			int role;
-			int conf;
-			int curve;
-			int net_access_key_curve;
-			char ssid[WIFI_SSID_MAX_LEN + 1];
-		} configurator_set;
-		/* bootstrap get uri id */
-		int id;
-		/* timeout for dpp frame response rx */
-		int dpp_resp_wait_time;
-		/* dpp QR-CODE, max for SHA512 */
-		uint8_t dpp_qr_code[WIFI_DPP_QRCODE_MAX_LEN + 1];
-	};
-};
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
-
 #include <zephyr/net/net_if.h>
 
 /** Scan result callback
@@ -1128,7 +1020,6 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*get_version)(const struct device *dev, struct wifi_version *params);
-
 	/** Set RTS threshold value
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -1145,16 +1036,6 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*ap_config_params)(const struct device *dev, struct wifi_ap_config_params *params);
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
-	/** Dispatch DPP operations by action enum, with or without arguments in string format
-	 *
-	 * @param dev Pointer to the device structure for the driver instance
-	 * @param params DPP action enum and parameters in string
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*dpp_dispatch)(const struct device *dev, struct wifi_dpp_params *params);
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 };
 
 /** Wi-Fi management offload API */
