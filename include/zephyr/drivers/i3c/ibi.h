@@ -14,10 +14,11 @@
  * @{
  */
 
+#include <stdint.h>
+
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/types.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/slist.h>
 
 #ifndef CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE
 #define CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE 0
