@@ -4093,24 +4093,6 @@ TDK Sensors:
   tests:
     - sample.drivers.misc.timeaware_gpio
 
-TF-M Integration:
-  status: maintained
-  maintainers:
-    - d3zd3z
-  collaborators:
-    - Vge0rge
-    - ithinuel
-    - valeriosetti
-  files:
-    - samples/tfm_integration/
-    - modules/trusted-firmware-m/
-    - doc/services/tfm/
-  labels:
-    - "area: TF-M"
-  tests:
-    - trusted-firmware-m
-
-
 "Toolchain Integration":
   status: maintained
   maintainers:
@@ -4985,10 +4967,15 @@ West:
   collaborators:
     - Vge0rge
     - ithinuel
+    - valeriosetti
   files:
     - modules/trusted-firmware-m/
+    - samples/tfm_integration/
+    - doc/services/tfm/
   labels:
     - "area: TF-M"
+  tests:
+    - trusted-firmware-m
 
 "West project: tf-m-tests":
   status: maintained
