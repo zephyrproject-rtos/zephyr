@@ -162,16 +162,6 @@
 	pmu: pmu@31000 {
 		reg = <0x31000 0x130>;
 		compatible = "nxp,rw-pmu";
-		pin0: pin0 {
-			compatible = "nxp,aon-wakeup-pin";
-			interrupts = <100 0>;
-			status = "disabled";
-		};
-		pin1: pin1 {
-			compatible = "nxp,aon-wakeup-pin";
-			interrupts = <101 0>;
-			status = "disabled";
-		};
 	};
 
 	trng: random@14000 {
