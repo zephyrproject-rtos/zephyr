@@ -215,9 +215,13 @@ Architectures
 
 * ARM
 
+  * Added initial support for Cortex-M85 Core
+
 * ARM64
 
   * Implemented symbol names in the backtraces, enable by selecting :kconfig:option:`CONFIG_SYMTAB`
+
+  * Add compiler tuning for Cortex-R82
 
 * RISC-V
 
