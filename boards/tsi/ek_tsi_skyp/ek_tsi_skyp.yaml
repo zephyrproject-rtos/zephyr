@@ -1,0 +1,19 @@
+identifier: ek_tsi_skyp
+name: TSI sky-p
+type: mcu
+arch: arm
+ram: 2016
+flash: 32
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+testing:
+  ignore_tags:
+    - drivers
+    - bluetooth
+    - net
+    - timer
+vendor: arm

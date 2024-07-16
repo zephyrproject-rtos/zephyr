@@ -1,0 +1,14 @@
+# Copyright (c) 2024 TSI
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ARM
+	bool
+
+config SOC_FAMILY_ARM64
+	bool
+
+config SOC_FAMILY
+	default "arm" if SOC_FAMILY_ARM
+	default "arm64" if SOC_FAMILY_ARM64
+
+rsource "*/Kconfig.soc"
