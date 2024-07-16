@@ -2481,25 +2481,6 @@ MAINTAINERS file:
   description: >-
     Zephyr Maintainers File
 
-Mbed TLS:
-  status: maintained
-  maintainers:
-    - d3zd3z
-    - ceolin
-  collaborators:
-    - ithinuel
-    - valeriosetti
-  files:
-    - tests/crypto/mbedtls/
-    - tests/benchmarks/mbedtls/
-  labels:
-    - "area: Crypto / RNG"
-  description: >-
-    Mbed TLS module implementing the PSA Crypto API and TLS.
-  tests:
-    - benchmark.crypto.mbedtls
-    - crypto.mbedtls
-
 MCU Manager:
   status: maintained
   maintainers:
@@ -4716,8 +4697,13 @@ West:
     - valeriosetti
   files:
     - modules/mbedtls/
+    - tests/crypto/mbedtls/
+    - tests/benchmarks/mbedtls/
   labels:
-    - "area: Crypto / RNG"
+    - "area: mbedTLS / PSA Crypto"
+  tests:
+    - benchmark.crypto.mbedtls
+    - crypto.mbedtls
 
 "West project: mcuboot":
   status: maintained
