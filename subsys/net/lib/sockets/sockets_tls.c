@@ -3240,9 +3240,11 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 
 	if (pfd->events & ZSOCK_POLLIN) {
 		ret = ztls_poll_update_pollin(pfd->fd, ctx, pfd);
-		if (ret == -EAGAIN && pfd->revents != 0) {
+		if (ret == -EAGAIN && pfd->revents == 0) {
 			(*pev - 1)->state = K_POLL_STATE_NOT_READY;
 			goto exit;
+		} else {
+			ret = 0;
 		}
 	}
 exit:
