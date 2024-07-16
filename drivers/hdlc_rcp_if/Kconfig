@@ -1,0 +1,29 @@
+# Configuration options for HDLC RCP communication Interface
+
+# Copyright (c) 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# HDLC communication Interface used by Zephyr running Openthread RCP host
+#
+
+menuconfig HDLC_RCP_IF
+	bool "HDLC interface for a Zephyr Openthread RCP host"
+	depends on NET_L2_OPENTHREAD && !OPENTHREAD_COPROCESSOR
+
+if HDLC_RCP_IF
+
+source "drivers/hdlc_rcp_if/Kconfig.nxp"
+
+config HDLC_RCP_IF_DRV_NAME
+	string "HDLC RCP Interface Driver's name"
+	default "hdlc_rcp_if"
+	help
+	  This option sets the driver name
+
+module = HDLC_RCP_IF_DRIVER
+module-str = HDLC driver for Openthread RCP host
+module-help = Sets log level for Openthread HDLC RCP host interface Device Drivers.
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # HDLC_RCP_IF

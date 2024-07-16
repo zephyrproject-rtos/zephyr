@@ -101,7 +101,7 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define OT_POLL_PERIOD 0
 #endif
 
-#define PACKAGE_NAME "Zephyr"
+#define ZEPHYR_PACKAGE_NAME "Zephyr"
 #define PACKAGE_VERSION KERNEL_VERSION_STRING
 
 extern void platformShellInit(otInstance *aInstance);
@@ -159,12 +159,14 @@ static int ncp_hdlc_send(const uint8_t *buf, uint16_t len)
 	return len;
 }
 
+#ifndef CONFIG_HDLC_RCP_IF
 void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 {
 	ARG_UNUSED(instance);
 
 	memcpy(ieee_eui64, ll_addr->addr, ll_addr->len);
 }
+#endif /* CONFIG_HDLC_RCP_IF */
 
 void otTaskletsSignalPending(otInstance *instance)
 {
@@ -451,9 +453,8 @@ int openthread_start(struct openthread_context *ot_context)
 		/* No dataset - initiate network join procedure. */
 		NET_DBG("Starting OpenThread join procedure.");
 
-		error = otJoinerStart(ot_instance, OT_JOINER_PSKD, NULL,
-				      PACKAGE_NAME, OT_PLATFORM_INFO,
-				      PACKAGE_VERSION, NULL,
+		error = otJoinerStart(ot_instance, OT_JOINER_PSKD, NULL, ZEPHYR_PACKAGE_NAME,
+				      OT_PLATFORM_INFO, PACKAGE_VERSION, NULL,
 				      &ot_joiner_start_handler, ot_context);
 
 		if (error != OT_ERROR_NONE) {
