@@ -406,7 +406,10 @@ static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 
 static int uhc_vrt_sof_enable(const struct device *dev)
 {
-	/* TODO */
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+
 	return 0;
 }
 
@@ -423,17 +426,21 @@ static int uhc_vrt_bus_suspend(const struct device *dev)
 static int uhc_vrt_bus_reset(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	int ret;
 
 	k_timer_stop(&priv->sof_timer);
+	ret = uvb_advert(priv->host_node, UVB_EVT_RESET, NULL);
+	/* TDRSTR */
+	k_msleep(50);
+	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
 
-	return uvb_advert(priv->host_node, UVB_EVT_RESET, NULL);
+	return ret;
 }
 
 static int uhc_vrt_bus_resume(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	k_timer_init(&priv->sof_timer, sof_timer_handler, NULL);
 	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
 
 	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
