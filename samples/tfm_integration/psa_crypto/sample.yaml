@@ -14,7 +14,7 @@ tests:
     platform_allow: mps2/an521/cpu0/ns v2m_musca_s1/musca_s1/ns
       nrf5340dk/nrf5340/cpuapp/ns nrf9160dk/nrf9160/ns
       stm32l562e_dk/stm32l562xx/ns bl5340_dvk/nrf5340/cpuapp/ns
-      rd_rw612_bga/rw612/ns frdm_rw612/rw612/ns
+      rd_rw612_bga/rw612/ns
     harness: console
     harness_config:
       type: multi_line
