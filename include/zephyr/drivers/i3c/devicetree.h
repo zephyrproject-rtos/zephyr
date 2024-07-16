@@ -14,9 +14,10 @@
  * @{
  */
 
+#include <stdint.h>
+
 #include <zephyr/device.h>
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus

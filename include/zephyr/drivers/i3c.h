@@ -17,14 +17,18 @@
  * @{
  */
 
-#include <zephyr/types.h>
-#include <zephyr/device.h>
+#include <errno.h>
+#include <stdint.h>
+#include <stddef.h>
 
+#include <zephyr/device.h>
 #include <zephyr/drivers/i3c/addresses.h>
 #include <zephyr/drivers/i3c/ccc.h>
 #include <zephyr/drivers/i3c/devicetree.h>
 #include <zephyr/drivers/i3c/ibi.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

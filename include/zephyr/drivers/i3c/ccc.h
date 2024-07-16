@@ -15,7 +15,8 @@
  * @{
  */
 
-#include <zephyr/types.h>
+#include <stdint.h>
+
 #include <zephyr/device.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
