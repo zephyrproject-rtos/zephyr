@@ -648,6 +648,12 @@ LED Strip
 
 * Made ``update_channels`` function optional and removed unimplemented functions.
 
+* The ``CONFIG_WS2812_STRIP_DRIVER`` kconfig option has been removed.
+  Previously, when using :kconfig:option:`CONFIG_WS2812_STRIP_SPI`,
+  :kconfig:option:`CONFIG_WS2812_STRIP_I2S`, :kconfig:option:`CONFIG_WS2812_STRIP_GPIO`,
+  or :kconfig:option:`CONFIG_WS2812_STRIP_RPI_PICO_PIO`, one of them had to be selected with
+  ``CONFIG_WS2812_STRIP_DRIVER``, but this is no longer necessary. Please set each option directly.
+
 Sensors
 =======
 
