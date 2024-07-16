@@ -18,3 +18,12 @@ tests:
         - "host: Sent"
         - "host: Received"
         - "host: IPC-service HOST demo ended"
+  sample.ipc.icmsg.nrf54l15:
+    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15pdk/nrf54l15/cpuapp
+    tags: ipc
+    extra_args:
+      icmsg_SNIPPET=nordic-flpr
+    sysbuild: true
+    harness: remote

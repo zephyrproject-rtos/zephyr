@@ -7,3 +7,4 @@ source "share/sysbuild/Kconfig"
 config NET_CORE_BOARD
 string
 	default "nrf5340dk/nrf5340/cpunet" if $(BOARD) = "nrf5340dk"
+	default "nrf54l15pdk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15pdk"
