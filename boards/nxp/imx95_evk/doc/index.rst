@@ -124,6 +124,19 @@ CPU's UART1 for Cortex-A55, UART3 for Cortex-M7.
 Programming and Debugging (A55)
 *******************************
 
+Use this configuration to run basic Zephyr applications and kernel tests,
+for example, with the :zephyr:code-sample:`synchronization` sample:
+
+1. Build and run the Non-SMP application
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: imx95_evk/mimx9596/a55
+   :goals: run
+
+This will build an image (zephyr.bin) with the synchronization sample app.
+
 Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
 plug the SD card into the board. Power it up and stop the u-boot execution at
 prompt.
@@ -132,27 +145,17 @@ Use U-Boot to load and kick zephyr.bin to Cortex-A55 Core1:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu 1 release 0xd0000000
+    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; cpu 1 release 0xd0000000
 
 
 Or use the following command to kick zephyr.bin to Cortex-A55 Core0:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0xd0000000
+    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; go 0xd0000000
 
 
-Use this configuration to run basic Zephyr applications and kernel tests,
-for example, with the :zephyr:code-sample:`synchronization` sample:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/synchronization
-   :host-os: unix
-   :board: imx95_evk/mimx9596/a55
-   :goals: run
-
-This will build an image with the synchronization sample app, boot it and
-display the following ram console output:
+It will display the following console output:
 
 .. code-block:: console
 
@@ -162,6 +165,47 @@ display the following ram console output:
     thread_a: Hello World from cpu 0 on imx95_evk!
     thread_b: Hello World from cpu 0 on imx95_evk!
     thread_a: Hello World from cpu 0 on imx95_evk!
+
+2. Build and run the SMP application
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: imx95_evk/mimx9596/a55/smp
+   :goals: run
+
+This will build an image (zephyr.bin) with the synchronization sample app.
+
+Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
+plug the SD card into the board. Power it up and stop the u-boot execution at
+prompt.
+
+Use the following command to kick zephyr.bin to Cortex-A55 Core0:
+
+.. code-block:: console
+
+    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; go 0xd0000000
+
+
+It will display the following console output:
+.. code-block:: console
+
+    *** Booting Zephyr OS build v3.7.0-rc3-15-g2f0beaea144a ***
+    Secondary CPU core 1 (MPID:0x100) is up
+    Secondary CPU core 2 (MPID:0x200) is up
+    Secondary CPU core 3 (MPID:0x300) is up
+    Secondary CPU core 4 (MPID:0x400) is up
+    Secondary CPU core 5 (MPID:0x500) is up
+    thread_a: Hello World from cpu 0 on imx95_evk!
+    thread_b: Hello World from cpu 4 on imx95_evk!
+    thread_a: Hello World from cpu 0 on imx95_evk!
+    thread_b: Hello World from cpu 3 on imx95_evk!
+    thread_a: Hello World from cpu 0 on imx95_evk!
+    thread_b: Hello World from cpu 1 on imx95_evk!
+    thread_a: Hello World from cpu 0 on imx95_evk!
+    thread_b: Hello World from cpu 5 on imx95_evk!
+    thread_a: Hello World from cpu 0 on imx95_evk!
+    thread_b: Hello World from cpu 2 on imx95_evk!
 
 Programming and Debugging (M7)
 ******************************
