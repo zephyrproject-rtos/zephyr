@@ -59,7 +59,6 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.mode = supplicant_mode,
 	.filter = supplicant_filter,
 	.channel = supplicant_channel,
-	.btm_query = supplicant_btm_query,
 #ifdef CONFIG_AP
 	.ap_enable = supplicant_ap_enable,
 	.ap_disable = supplicant_ap_disable,

@@ -484,16 +484,6 @@ static const char * const wifi_ps_param_config_err_code_tbl[] = {
 };
 /** @endcond */
 
-/** 11v BSS transition management Query reasons. */
-enum wifi_btm_query_reason {
-	/** Unspecified. */
-	WIFI_BTM_QUERY_REASON_UNDPECIFIED = 0,
-	/** Low RSSI. */
-	WIFI_BTM_QUERY_REASON_LOW_RSSI = 16,	
-	/** Leaving ESS. */
-	WIFI_BTM_QUERY_REASON_LEAVING_ESS=20,
-};
-
 /** Helper function to get user-friendly power save error code name. */
 static inline const char *wifi_ps_get_config_err_code_str(int16_t err_no)
 {
