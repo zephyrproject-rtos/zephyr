@@ -335,6 +335,7 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * Intel ACE Audio DSP: Use dedicated registers to report boot status instead of arbitrary memory.
   * ITE: Rename the Kconfig symbol for all ITE SoC variants.
   * STM32: Enabled ART Accelerator, I-cache, D-cache and prefetch on compatible series.
   * STM32H5: Added support for Stop mode and :kconfig:option:`CONFIG_PM`.
