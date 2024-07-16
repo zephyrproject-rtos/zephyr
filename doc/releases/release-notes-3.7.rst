@@ -270,6 +270,12 @@ Kernel
     has the special ``zephyr,deferred-init`` property set. The device can be
     initialized later in time by using :c:func:`device_init`.
 
+  * The declaration of statically allocated thread stacks have been updated to utilize
+    :c:macro:`K_THREAD_STACK_LEN` for both single thread stack declaration and array thread
+    stack declarations. This ensures correct alignment for all thread stacks. For user
+    threads, this may increase the size of the statically allocated stack objects depending
+    on architecture alignment requirements.
+
 Bluetooth
 *********
 * Audio
