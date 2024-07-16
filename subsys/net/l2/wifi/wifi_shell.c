@@ -1549,7 +1549,7 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 
 	context.sh = sh;
 
-	if (!parse_number(sh, (long int *)&query_reason, argv[1],
+	if (!parse_number(sh, &query_reason, argv[1],
 			  WIFI_BTM_QUERY_REASON_UNDPECIFIED,
 			  WIFI_BTM_QUERY_REASON_LOW_RSSI)) {
 		return -EINVAL;
