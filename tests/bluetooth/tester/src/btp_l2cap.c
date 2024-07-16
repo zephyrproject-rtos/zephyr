@@ -378,7 +378,7 @@ static uint8_t _connect(const void *cmd, uint16_t cmd_len, void *rsp,
 	uint16_t psm = sys_le16_to_cpu(cp->psm);
 	uint8_t i = 0;
 	bool ecfc = cp->options & BTP_L2CAP_CONNECT_OPT_ECFC;
-	int err;
+	int err = -EINVAL;
 #if defined(CONFIG_BT_CLASSIC)
 	bool bredr = false;
 #endif /* defined(CONFIG_BT_CLASSIC) */
@@ -512,6 +512,11 @@ fail:
 			channels[BT_L2CAP_LE_CHAN(allocated_channels[i])->ident].in_use = false;
 		}
 	}
+#if defined(CONFIG_BT_CLASSIC)
+	if (err == -ENOTSUP) {
+		return BTP_STATUS_NOT_SUPPORT;
+	}
+#endif /* defined(CONFIG_BT_CLASSIC) */
 	return BTP_STATUS_FAILED;
 }
 
