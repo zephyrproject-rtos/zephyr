@@ -14,10 +14,12 @@
  * @{
  */
 
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/device.h>
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
