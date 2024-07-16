@@ -6,6 +6,7 @@
  */
 #include <sys/types.h>
 
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
@@ -608,6 +609,21 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		bool is_report_complete;
 		bool more_to_come;
 		bool is_new_advertiser;
+
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+			/* The application has not requested explicit scan, so it is not expecting
+			 * advertising reports. Discard, and reset the reassembler if not inactive
+			 * This is done in the loop as this flag can change between each iteration,
+			 * and it is not uncommon that scanning is disabled in the callback called
+			 * from le_adv_recv
+			 */
+
+			if (reassembling_advertiser.state != FRAG_ADV_INACTIVE) {
+				reset_reassembling_advertiser();
+			}
+
+			break;
+		}
 
 		if (buf->len < sizeof(*evt)) {
 			LOG_ERR("Unexpected end of buffer");
@@ -1456,6 +1472,17 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 	while (num_reports--) {
 		struct bt_le_scan_recv_info adv_info;
+
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+			/* The application has not requested explicit scan, so it is not expecting
+			 * advertising reports. Discard.
+			 * This is done in the loop as this flag can change between each iteration,
+			 * and it is not uncommon that scanning is disabled in the callback called
+			 * from le_adv_recv
+			 */
+
+			break;
+		}
 
 		if (buf->len < sizeof(*evt)) {
 			LOG_ERR("Unexpected end of buffer");
