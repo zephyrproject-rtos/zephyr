@@ -126,7 +126,7 @@ extern "C" {
  * The service can be referenced using the @p id variable.
  *
  * Example (with TXT):
- * @code{c}
+ * @code{.c}
  * #include <zephyr/net/dns_sd.h>
  * static const bar_txt[] = {
  *   "\x06" "path=/"
@@ -140,7 +140,7 @@ extern "C" {
  * static uint16_t bar_port;
  * DNS_SD_REGISTER_TCP_SERVICE(bar, CONFIG_NET_HOSTNAME,
  *   "_bar", "local", bar_txt, &bar_port);
- * @endcode{c}
+ * @endcode
  *
  * TXT records begin with a single length byte (hex-encoded)
  * and contain key=value pairs. Thus, the length of the key-value pair
@@ -172,13 +172,13 @@ extern "C" {
  * The service can be referenced using the @p id variable.
  *
  * Example (no TXT):
- * @code{c}
+ * @code{.c}
  * #include <zephyr/net/dns_sd.h>
  * #include <zephyr/sys/byteorder.h>
  * static const foo_port = sys_cpu_to_be16(4242);
  * DNS_SD_REGISTER_UDP_SERVICE(foo, CONFIG_NET_HOSTNAME,
  *   "_foo", DNS_SD_EMPTY_TXT, &foo_port);
- * @endcode{c}
+ * @endcode
  *
  * @param id variable name for the DNS-SD service record
  * @param instance name of the service instance such as "My TFTP Server"
