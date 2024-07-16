@@ -398,6 +398,9 @@ Bluetooth Host:
     - subsys/bluetooth/shell/
     - tests/bluetooth/host*/
     - tests/bsim/bluetooth/host/
+  files-exclude:
+    - subsys/bluetooth/host/classic/
+    - include/zephyr/bluetooth/classic/
   labels:
     - "area: Bluetooth Host"
     - "area: Bluetooth"
@@ -475,6 +478,7 @@ Bluetooth Classic:
     - include/zephyr/bluetooth/classic/
   labels:
     - "area: Bluetooth Classic"
+    - "area: Bluetooth"
   tests:
     - bluetooth
 
