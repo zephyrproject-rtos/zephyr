@@ -30,11 +30,11 @@ command needed to install the appropriate target support:
 
 .. _rustup: https://rustup.rs/
 
-.. code-block:: bash
+.. code-block:: shell
 
    $ west build ...
    ...
-   error[E0463]: can't find crate for `core`
+   error[E0463]: cant find crate for `core`
      |
    = note: the `thumbv7m-none-eabi` target may not be installed
    = help: consider downloading the target with `rustup target add thumb7m-none-eabi`
