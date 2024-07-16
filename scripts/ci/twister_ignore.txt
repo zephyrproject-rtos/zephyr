@@ -46,5 +46,7 @@ scripts/checkpatch/*
 scripts/checkpatch.pl
 scripts/ci/pylintrc
 scripts/footprint/*
+scripts/make_bugs_pickle.py
 scripts/set_assignees.py
 scripts/gitlint/zephyr_commit_rules.py
+scripts/west_commands/runners/canopen_program.py

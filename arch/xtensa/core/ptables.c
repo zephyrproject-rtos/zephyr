@@ -317,6 +317,13 @@ void xtensa_mmu_init(void)
 
 	xtensa_init_paging(xtensa_kernel_ptables);
 
+	/*
+	 * This is used to determine whether we are faulting inside double
+	 * exception if this is not zero. Sometimes SoC starts with this not
+	 * being set to zero. So clear it during boot.
+	 */
+	XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
+
 	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
 }
 

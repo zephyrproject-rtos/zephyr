@@ -83,7 +83,7 @@ static bool dvfs_service_handler_freq_setting_allowed(enum dvfs_frequency_settin
 
 static enum dvfs_frequency_setting dvfs_service_handler_get_current_oppoint(void)
 {
-	LOG_INF("Current LD freq setting: %d", current_freq_setting);
+	LOG_DBG("Current LD freq setting: %d", current_freq_setting);
 	return current_freq_setting;
 }
 
@@ -103,12 +103,12 @@ static bool dvfs_service_handler_is_downscaling(enum dvfs_frequency_setting targ
 /* Function handling steps for scaling preparation. */
 static void dvfs_service_handler_prepare_to_scale(enum dvfs_frequency_setting oppoint_freq)
 {
-	LOG_INF("Prepare to scale, oppoint freq %d", oppoint_freq);
+	LOG_DBG("Prepare to scale, oppoint freq %d", oppoint_freq);
 	enum dvfs_frequency_setting new_oppoint	    = oppoint_freq;
 	enum dvfs_frequency_setting current_oppoint = dvfs_service_handler_get_current_oppoint();
 
 	if (new_oppoint == current_oppoint) {
-		LOG_INF("New oppoint is same as previous, no change");
+		LOG_DBG("New oppoint is same as previous, no change");
 	} else {
 		ld_dvfs_configure_abb_for_transition(current_oppoint, new_oppoint);
 
@@ -125,7 +125,7 @@ static void dvfs_service_handler_prepare_to_scale(enum dvfs_frequency_setting op
 /* Do background job during scaling process (e.g. increased power consumption during down-scale). */
 static void dvfs_service_handler_scaling_background_job(enum dvfs_frequency_setting oppoint_freq)
 {
-	LOG_INF("Perform scaling background job if needed.");
+	LOG_DBG("Perform scaling background job if needed.");
 	if (dvfs_service_handler_is_downscaling(oppoint_freq)) {
 		k_sem_give(&dvfs_service_idle_sem);
 	}
@@ -134,7 +134,7 @@ static void dvfs_service_handler_scaling_background_job(enum dvfs_frequency_sett
 /* Perform scaling finnish procedure. */
 static void dvfs_service_handler_scaling_finish(enum dvfs_frequency_setting oppoint_freq)
 {
-	LOG_INF("Scaling finnish oppoint freq %d", oppoint_freq);
+	LOG_DBG("Scaling finnish oppoint freq %d", oppoint_freq);
 	ld_dvfs_scaling_finish(dvfs_service_handler_is_downscaling(oppoint_freq));
 	if (!dvfs_service_handler_is_downscaling(oppoint_freq)) {
 		int32_t err = ld_dvfs_configure_hsfll(oppoint_freq);
@@ -160,33 +160,33 @@ static void dvfs_service_handler_set_initial_hsfll_config(void)
 /* DVFS event handler callback function.*/
 static void nrfs_dvfs_evt_handler(nrfs_dvfs_evt_t const *p_evt, void *context)
 {
-	LOG_INF("%s", __func__);
+	LOG_DBG("%s", __func__);
 	switch (p_evt->type) {
 	case NRFS_DVFS_EVT_INIT_PREPARATION:
-		LOG_INF("DVFS handler EVT_INIT_PREPARATION");
+		LOG_DBG("DVFS handler EVT_INIT_PREPARATION");
 #if defined(NRF_SECURE)
 		ld_dvfs_clear_zbb();
 		dvfs_service_handler_nrfs_error_check(
 			nrfs_dvfs_init_complete_request(get_next_context()));
-		LOG_INF("DVFS handler EVT_INIT_PREPARATION handled");
+		LOG_DBG("DVFS handler EVT_INIT_PREPARATION handled");
 #else
 		LOG_ERR("DVFS handler - unexpected EVT_INIT_PREPARATION");
 #endif
 		break;
 	case NRFS_DVFS_EVT_INIT_DONE:
-		LOG_INF("DVFS handler EVT_INIT_DONE");
+		LOG_DBG("DVFS handler EVT_INIT_DONE");
 		dvfs_service_handler_set_initial_hsfll_config();
 		dvfs_service_handler_set_state_bit(DVFS_SERV_HDL_INIT_DONE_BIT_POS);
 		k_sem_give(&dvfs_service_sync_sem);
-		LOG_INF("DVFS handler EVT_INIT_DONE handled");
+		LOG_DBG("DVFS handler EVT_INIT_DONE handled");
 		break;
 	case NRFS_DVFS_EVT_OPPOINT_REQ_CONFIRMED:
 		/* Optional confirmation from sysctrl, wait for oppoint.*/
-		LOG_INF("DVFS handler EVT_OPPOINT_REQ_CONFIRMED");
+		LOG_DBG("DVFS handler EVT_OPPOINT_REQ_CONFIRMED");
 		break;
 	case NRFS_DVFS_EVT_OPPOINT_SCALING_PREPARE:
 		/*Target oppoint will be received here.*/
-		LOG_INF("DVFS handler EVT_OPPOINT_SCALING_PREPARE");
+		LOG_DBG("DVFS handler EVT_OPPOINT_SCALING_PREPARE");
 #if !defined(NRF_SECURE)
 		if (dvfs_service_handler_is_downscaling(p_evt->freq)) {
 #endif
@@ -194,7 +194,7 @@ static void nrfs_dvfs_evt_handler(nrfs_dvfs_evt_t const *p_evt, void *context)
 			dvfs_service_handler_nrfs_error_check(
 						nrfs_dvfs_ready_to_scale(get_next_context()));
 			dvfs_service_handler_scaling_background_job(p_evt->freq);
-			LOG_INF("DVFS handler EVT_OPPOINT_SCALING_PREPARE handled");
+			LOG_DBG("DVFS handler EVT_OPPOINT_SCALING_PREPARE handled");
 #if !defined(NRF_SECURE)
 			current_freq_setting = p_evt->freq;
 		} else {
@@ -203,10 +203,10 @@ static void nrfs_dvfs_evt_handler(nrfs_dvfs_evt_t const *p_evt, void *context)
 #endif
 		break;
 	case NRFS_DVFS_EVT_OPPOINT_SCALING_DONE:
-		LOG_INF("DVFS handler EVT_OPPOINT_SCALING_DONE");
+		LOG_DBG("DVFS handler EVT_OPPOINT_SCALING_DONE");
 		dvfs_service_handler_clear_state_bit(DVFS_SERV_HDL_FREQ_CHANGE_IN_PROGRESS_BIT_POS);
 		dvfs_service_handler_scaling_finish(p_evt->freq);
-		LOG_INF("DVFS handler EVT_OPPOINT_SCALING_DONE handled");
+		LOG_DBG("DVFS handler EVT_OPPOINT_SCALING_DONE handled");
 		break;
 	case NRFS_DVFS_EVT_REJECT:
 		LOG_ERR("DVFS handler - request rejected");
@@ -224,30 +224,30 @@ static void dvfs_service_handler_task(void *dummy0, void *dummy1, void *dummy2)
 	ARG_UNUSED(dummy1);
 	ARG_UNUSED(dummy2);
 
-	LOG_INF("Trim ABB for default voltage.");
+	LOG_DBG("Trim ABB for default voltage.");
 	ld_dvfs_init();
 
-	LOG_INF("Waiting for backend init");
+	LOG_DBG("Waiting for backend init");
 	/* Wait for ipc initialization */
 	nrfs_backend_wait_for_connection(K_FOREVER);
 
 	nrfs_err_t status;
 
-	LOG_INF("nrfs_dvfs_init");
+	LOG_DBG("nrfs_dvfs_init");
 	status = nrfs_dvfs_init(nrfs_dvfs_evt_handler);
 	dvfs_service_handler_nrfs_error_check(status);
 
-	LOG_INF("nrfs_dvfs_init_prepare_request");
+	LOG_DBG("nrfs_dvfs_init_prepare_request");
 	status = nrfs_dvfs_init_prepare_request(get_next_context());
 	dvfs_service_handler_nrfs_error_check(status);
 
 	/* Wait for init*/
 	k_sem_take(&dvfs_service_sync_sem, K_FOREVER);
 
-	LOG_INF("DVFS init done.");
+	LOG_DBG("DVFS init done.");
 
 #if defined(CONFIG_NRFS_LOCAL_DOMAIN_DVFS_SCALE_DOWN_AFTER_INIT)
-	LOG_INF("Requesting lowest frequency oppoint.");
+	LOG_DBG("Requesting lowest frequency oppoint.");
 	dvfs_service_handler_change_freq_setting(DVFS_FREQ_LOW);
 #endif
 
@@ -271,12 +271,12 @@ K_THREAD_DEFINE(dvfs_service_handler_task_id,
 int32_t dvfs_service_handler_change_freq_setting(enum dvfs_frequency_setting freq_setting)
 {
 	if (!dvfs_service_handler_init_done()) {
-		LOG_INF("Init not done!");
+		LOG_WRN("Init not done!");
 		return -EAGAIN;
 	}
 
 	if (dvfs_service_handler_freq_change_in_progress()) {
-		LOG_INF("Frequency change in progress.");
+		LOG_DBG("Frequency change in progress.");
 		return -EBUSY;
 	}
 

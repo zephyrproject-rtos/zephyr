@@ -192,7 +192,7 @@ extern "C" {
 #define TLS_SESSION_CACHE_PURGE 13
 /** Write-only socket option to control DTLS CID.
  *  The option accepts an integer, indicating the setting.
- *  Accepted vaules for the option are: 0, 1 and 2.
+ *  Accepted values for the option are: 0, 1 and 2.
  *  Effective when set before connecting to the socket.
  *  - 0 - DTLS CID will be disabled.
  *  - 1 - DTLS CID will be enabled, and a 0 length CID value to be sent to the
@@ -205,7 +205,7 @@ extern "C" {
 /** Read-only socket option to get DTLS CID status.
  *  The option accepts a pointer to an integer, indicating the setting upon
  *  return.
- *  Returned vaules for the option are:
+ *  Returned values for the option are:
  *  - 0 - DTLS CID is disabled.
  *  - 1 - DTLS CID is received on the downlink.
  *  - 2 - DTLS CID is sent to the uplink.
@@ -625,10 +625,7 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
  * it may conflict with generic POSIX ``poll()`` function).
  * @endrst
  */
-static inline int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
-{
-	return zvfs_poll(fds, nfds, timeout);
-}
+__syscall int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
 
 /**
  * @brief Get various socket options
@@ -1406,21 +1403,11 @@ struct net_socket_register {
  * zephyr/net/socket.h header file.
  */
 #if defined(CONFIG_POSIX_API)
-#if !defined(ZEPHYR_INCLUDE_POSIX_ARPA_INET_H_)
-#include <zephyr/posix/arpa/inet.h>
-#endif
-#if !defined(ZEPHYR_INCLUDE_POSIX_NETDB_H_)
-#include <zephyr/posix/netdb.h>
-#endif
-#if !defined(ZEPHYR_INCLUDE_POSIX_UNISTD_H_)
-#include <zephyr/posix/unistd.h>
-#endif
-#if !defined(ZEPHYR_INCLUDE_POSIX_POLL_H_)
-#include <zephyr/posix/poll.h>
-#endif
-#if !defined(ZEPHYR_INCLUDE_POSIX_SYS_SOCKET_H_)
-#include <zephyr/posix/sys/socket.h>
-#endif
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <poll.h>
+#include <sys/socket.h>
 #endif /* CONFIG_POSIX_API */
 
 #endif /* ZEPHYR_INCLUDE_NET_SOCKET_H_ */

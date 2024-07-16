@@ -223,7 +223,7 @@ struct mspi_dev_id {
 struct mspi_cfg {
 	/** @brief mspi channel number */
 	uint8_t                 channel_num;
-	/** @brief Configure operaton mode */
+	/** @brief Configure operation mode */
 	enum mspi_op_mode       op_mode;
 	/** @brief Configure duplex mode */
 	enum mspi_duplex        duplex;
@@ -724,7 +724,7 @@ static inline int z_impl_mspi_scramble_config(const struct device *controller,
 }
 
 /**
- * @brief Configure a MSPI timing settigs.
+ * @brief Configure a MSPI timing settings.
  *
  * This routine provides a generic interface to configure MSPI controller
  * timing if necessary.
@@ -767,7 +767,7 @@ static inline int z_impl_mspi_timing_config(const struct device *controller,
  * @brief Register the mspi callback functions.
  *
  * This routines provides a generic interface to register mspi callback functions.
- * In generall it should be called before mspi_transceive.
+ * In generally it should be called before mspi_transceive.
  *
  * @param controller Pointer to the device structure for the driver instance.
  * @param dev_id Pointer to the device ID structure from a device.
@@ -804,5 +804,5 @@ static inline int mspi_register_callback(const struct device *controller,
 /**
  * @}
  */
-#include <syscalls/mspi.h>
+#include <zephyr/syscalls/mspi.h>
 #endif /* ZEPHYR_INCLUDE_MSPI_H_ */

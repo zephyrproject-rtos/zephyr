@@ -24,7 +24,6 @@ endif # POSIX_REALTIME_SIGNALS
 config POSIX_SIGNALS
 	bool "POSIX signals [EXPERIMENTAL]"
 	select EXPERIMENTAL
-	select POSIX_MULTI_PROCESS
 	help
 	  Enable support for POSIX signals.
 
@@ -36,12 +35,6 @@ config POSIX_SIGNAL_STRING_DESC
 	help
 	  Use full description for the strsignal API.
 	  Will use 256 bytes of ROM.
-
-# These options are intended to be used for compatibility with external POSIX
-# implementations such as those in Newlib or Picolibc.
-
-config POSIX_SIGNALS_ALIAS_KILL
-	bool
 
 endif
 

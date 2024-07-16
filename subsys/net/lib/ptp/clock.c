@@ -521,7 +521,7 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 	offset = ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1 - delay;
 
 	/* If diff is too big, ptp_clk needs to be set first. */
-	if (offset > NSEC_PER_SEC || offset < -NSEC_PER_SEC) {
+	if ((offset > (int64_t)NSEC_PER_SEC) || (offset < -(int64_t)NSEC_PER_SEC)) {
 		struct net_ptp_time current;
 
 		LOG_WRN("Clock offset exceeds 1 second.");

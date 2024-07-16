@@ -1,10 +1,11 @@
-/** @file
- *  @brief Bluetooth LC3 codec handling
+/**
+ * @file
+ * @brief Bluetooth LC3 codec handling
  */
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,17 +28,23 @@ extern "C" {
 #endif
 
 /**
- *  @brief Helper to declare LC3 codec capability
+ * @brief Helper to declare LC3 codec capability
  *
- *  ``_max_frames_per_sdu`` value is optional and will be included only if != 1
- */
-/* COND_CODE_1 is used to omit an LTV entry in case the _frames_per_sdu is 1.
- * COND_CODE_1 will evaluate to second argument if the flag parameter(first argument) is 1
+ * @p _max_frames_per_sdu is optional and will be included only if != 1
+ *
+ * @ref COND_CODE_1 is used to omit an LTV entry in case the @p _frames_per_sdu is 1.
+ * @ref COND_CODE_1 will evaluate to second argument if the flag parameter(first argument) is 1
  * - removing one layer of paranteses.
  * If the flags argument is != 1 it will evaluate to the third argument which inserts a LTV
  * entry for the max_frames_per_sdu value.
- */
 
+ * @param _freq Supported Sampling Frequencies bitfield (see ``BT_AUDIO_CODEC_CAP_FREQ_*``)
+ * @param _duration Supported Frame Durations bitfield (see ``BT_AUDIO_CODEC_CAP_DURATION_*``)
+ * @param _chan_count Supported channels (see @ref BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT)
+ * @param _len_min Minimum number of octets supported per codec frame
+ * @param _len_max Maximum number of octets supported per codec frame
+ * @param _max_frames_per_sdu Supported maximum codec frames per SDU
+ */
 #define BT_AUDIO_CODEC_CAP_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max,             \
 				    _max_frames_per_sdu)                                           \
 	{                                                                                          \
@@ -53,7 +60,9 @@ extern "C" {
 	}
 
 /**
- *  @brief Helper to declare LC3 codec metadata
+ * @brief Helper to declare LC3 codec metadata
+ *
+ * @param _prefer_context Preferred contexts (@ref bt_audio_context)
  */
 #define BT_AUDIO_CODEC_CAP_LC3_META(_prefer_context)                                               \
 	{                                                                                          \
@@ -71,7 +80,6 @@ extern "C" {
  * @param _len_max Maximum number of octets supported per codec frame
  * @param _max_frames_per_sdu Supported maximum codec frames per SDU
  * @param _prefer_context Preferred contexts (@ref bt_audio_context)
- *
  */
 #define BT_AUDIO_CODEC_CAP_LC3(_freq, _duration, _chan_count, _len_min, _len_max,                  \
 			       _max_frames_per_sdu, _prefer_context)                               \
@@ -81,14 +89,14 @@ extern "C" {
 			   BT_AUDIO_CODEC_CAP_LC3_META(_prefer_context))
 
 /**
- *  @brief Helper to declare LC3 codec data configuration
+ * @brief Helper to declare LC3 codec data configuration
  *
- *  @param _freq            Sampling frequency (``BT_AUDIO_CODEC_CFG_FREQ_*``)
- *  @param _duration        Frame duration (``BT_AUDIO_CODEC_CFG_DURATION_*``)
- *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _len             Octets per frame (16-bit integer)
- *  @param _frames_per_sdu  Frames per SDU (8-bit integer). This value is optional and will be
- *                          included only if != 1
+ * @param _freq            Sampling frequency (``BT_AUDIO_CODEC_CFG_FREQ_*``)
+ * @param _duration        Frame duration (``BT_AUDIO_CODEC_CFG_DURATION_*``)
+ * @param _loc             Audio channel location bitfield (@ref bt_audio_location)
+ * @param _len             Octets per frame (16-bit integer)
+ * @param _frames_per_sdu  Frames per SDU (8-bit integer). This value is optional and will be
+ *                         included only if != 1
  */
 #define BT_AUDIO_CODEC_CFG_LC3_DATA(_freq, _duration, _loc, _len, _frames_per_sdu)                 \
 	{                                                                                          \
@@ -101,9 +109,7 @@ extern "C" {
 						 (_frames_per_sdu))))                              \
 	}
 
-/**
- *  @brief Helper to declare LC3 codec metadata configuration
- */
+/** @brief Helper to declare LC3 codec metadata configuration */
 #define BT_AUDIO_CODEC_CFG_LC3_META(_stream_context)                                               \
 	{                                                                                          \
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,                         \
@@ -111,14 +117,14 @@ extern "C" {
 	}
 
 /**
- *  @brief Helper to declare LC3 codec configuration.
+ * @brief Helper to declare LC3 codec configuration.
  *
- *  @param _freq            Sampling frequency (``BT_AUDIO_CODEC_CFG_FREQ_*``)
- *  @param _duration        Frame duration (``BT_AUDIO_CODEC_CFG_DURATION_*``)
- *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _len             Octets per frame (16-bit integer)
- *  @param _frames_per_sdu  Frames per SDU (8-bit integer)
- *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
+ * @param _freq            Sampling frequency (``BT_AUDIO_CODEC_CFG_FREQ_*``)
+ * @param _duration        Frame duration (``BT_AUDIO_CODEC_CFG_DURATION_*``)
+ * @param _loc             Audio channel location bitfield (@ref bt_audio_location)
+ * @param _len             Octets per frame (16-bit integer)
+ * @param _frames_per_sdu  Frames per SDU (8-bit integer)
+ * @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG(_freq, _duration, _loc, _len, _frames_per_sdu, _stream_context)  \
 	BT_AUDIO_CODEC_CFG(                                                                        \

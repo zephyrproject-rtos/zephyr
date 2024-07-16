@@ -12,7 +12,7 @@
 			pinmux = <&iomuxc_uart4_rxd_uart_rx_uart4_rx>,
 				<&iomuxc_uart4_txd_uart_tx_uart4_tx>;
 			slew-rate = "fast";
-			drive-strength = "40-ohm";
+			drive-strength = "x6";
 		};
 	};
 
@@ -21,7 +21,7 @@
 			pinmux = <&iomuxc_uart3_rxd_uart_rx_uart3_rx>,
 				<&iomuxc_uart3_txd_uart_tx_uart3_tx>;
 			slew-rate = "fast";
-			drive-strength = "40-ohm";
+			drive-strength = "x6";
 		};
 	};
 
@@ -32,7 +32,7 @@
 				<&iomuxc_sai3_txfs_uart_tx_uart2_rx>,
 				<&iomuxc_sai3_txc_uart_rx_uart2_tx>;
 			slew-rate = "fast";
-			drive-strength = "40-ohm";
+			drive-strength = "x6";
 		};
 	};
 
@@ -43,7 +43,7 @@
 				<&iomuxc_sai2_rxd0_uart_rts_b_uart1_rts_b>,
 				<&iomuxc_sai2_txfs_uart_cts_b_uart1_cts_b>;
 			slew-rate = "fast";
-			drive-strength = "40-ohm";
+			drive-strength = "x6";
 		};
 	};
 };

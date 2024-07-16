@@ -33,3 +33,11 @@ properties:
     description: |
       Maximum bandgap startup time as specified in the
       appropriate device data sheet, in microseconds.
+
+  "#nxp,reference-cells":
+    type: int
+    const: 1
+    description: Number of items to expect in a vref specifier.
+
+nxp,reference-cells:
+  - vref_mv

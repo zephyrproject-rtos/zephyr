@@ -35,7 +35,7 @@ If a mt9m114 camera shield is missing, video software generator will be used ins
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/video/tcpserversink
    :board: mimxrt1064_evk
-   :shield: [dvp_fpc24_mt9m114]
+   :shield: dvp_fpc24_mt9m114
    :goals: build
    :compact:
 

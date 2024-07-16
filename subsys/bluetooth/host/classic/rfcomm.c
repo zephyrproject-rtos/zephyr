@@ -1427,6 +1427,10 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 	}
 
 	if (pf == BT_RFCOMM_PF_UIH_CREDIT) {
+		if (buf->len == 0) {
+			LOG_WRN("Data recvd is invalid");
+			return;
+		}
 		rfcomm_dlc_tx_give_credits(dlc, net_buf_pull_u8(buf));
 	}
 

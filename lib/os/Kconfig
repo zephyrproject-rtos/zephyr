@@ -60,7 +60,9 @@ config SPSC_PBUF_CACHE_ALWAYS
 	bool "Always handle cache"
 	help
 	  Handle cache writeback and invalidation for all instances. Option used
-	  to avoid runtime check and thus reduce memory footprint.
+	  to avoid runtime check and thus reduce memory footprint. Beware! It shall
+	  be used only if all packet buffer instances are used for data sharing
+	  between cores.
 
 config SPSC_PBUF_CACHE_NEVER
 	bool "Never handle cache"

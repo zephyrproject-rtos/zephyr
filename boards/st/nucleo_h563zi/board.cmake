@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-board_runner_args(stm32cubeprogrammer "--erase" "--port=swd" "--reset-mode=hw")
+board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
 
 board_runner_args(pyocd "--target=stm32h563zitx")
 

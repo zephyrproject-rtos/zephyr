@@ -96,7 +96,7 @@ config IPI_OPTIMIZE
 	  O(N) in the number of CPUs, and in exchange reduces the number of
 	  interrupts delivered. Which to choose is going to depend on
 	  application behavior. If the architecture also supports directing
-	  IPIs to specific CPUs then this has the potential to signficantly
+	  IPIs to specific CPUs then this has the potential to significantly
 	  reduce the number of IPIs (and consequently ISRs) processed by the
 	  system as the number of CPUs increases. If not, the only benefit
 	  would be to not issue any IPIs if the newly readied thread is of

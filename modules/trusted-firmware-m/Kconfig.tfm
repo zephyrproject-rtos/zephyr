@@ -192,7 +192,9 @@ config TFM_IMAGE_VERSION_S
 	help
 	  MCUBoot may be configured to prevent rollback prevention based on image
 	  versions of both the secure firmware and non-secure firmware. This sets
-	  the secure firmware's version for rollback prevention.
+	  the secure firmware's version for rollback prevention. This version is
+	  also used for merged secure + non-secure builds
+	  (TFM_MCUBOOT_IMAGE_NUMBER == 1).
 
 config TFM_IMAGE_VERSION_NS
 	string "Version of the Non-Secure Image"
@@ -250,7 +252,8 @@ config TFM_KEY_FILE_S
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing secure
-	  firmware images.
+	  firmware images. This key file is also used for merged secure +
+	  non-secure builds (TFM_MCUBOOT_IMAGE_NUMBER == 1).
 
 config TFM_KEY_FILE_NS
 	string "Path to private key used to sign non-secure firmware images."

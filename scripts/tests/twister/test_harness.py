@@ -33,7 +33,7 @@ GTEST_FAIL_STATE = "  FAILED  "
 SAMPLE_GTEST_START = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Running all tests.[0m"
 )
-SAMPLE_GTEST_FMT = "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test}[0m"
+SAMPLE_GTEST_FMT = "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test} (0ms)[0m"
 SAMPLE_GTEST_END = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Done running all tests.[0m"
 )
@@ -133,7 +133,8 @@ def test_robot_configure(tmp_path):
 
     instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
     instance.testsuite.harness_config = {
-        'robot_test_path': '/path/to/robot/test'
+        'robot_testsuite': '/path/to/robot/test',
+        'robot_option': 'test_option'
     }
     robot_harness = Robot()
 
@@ -143,6 +144,7 @@ def test_robot_configure(tmp_path):
     #Assert
     assert robot_harness.instance == instance
     assert robot_harness.path == '/path/to/robot/test'
+    assert robot_harness.option == 'test_option'
 
 
 def test_robot_handle(tmp_path):
@@ -190,6 +192,7 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     handler.log = "handler.log"
 
     path = "path"
+    option = "option"
 
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
@@ -209,6 +212,7 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
 
     robot = Robot()
     robot.path = path
+    robot.option = option
     robot.instance = instance
     proc_mock = mock.Mock(
         returncode = returncode,

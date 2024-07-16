@@ -5,9 +5,7 @@
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
-	select ZVFS
-	select ZVFS_POLL
-	select ZVFS_SELECT
+	select FDTABLE
 	help
 	  Provide BSD Sockets like API on top of native Zephyr networking API.
 
@@ -49,7 +47,9 @@ config NET_SOCKETS_POSIX_NAMES
 
 config NET_SOCKETS_POLL_MAX
 	int "Max number of supported poll() entries"
-	default ZVFS_POLL_MAX
+	default 6 if WIFI_NM_WPA_SUPPLICANT
+	default 4 if SHELL_BACKEND_TELNET
+	default 3
 	help
 	  Maximum number of entries supported for poll() call.
 
@@ -222,7 +222,7 @@ config NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE
 	  Size of the intermediate buffer for DTLS sendmsg() function. The
 	  intermediate buffer is needed, as sendmsg() for DGRAM is expected to
 	  send all of the data in a single datagram, therefore all data provided
-	  in msghdr strucure need to be linearized before passing to mbed TLS.
+	  in msghdr structure need to be linearized before passing to mbed TLS.
 	  The buffer size can be set to 0, in that case data linearizing for
 	  DTLS sockets is disabled. In result, sendmsg() will only accept msghdr
 	  with a single non-empty iov buffer.

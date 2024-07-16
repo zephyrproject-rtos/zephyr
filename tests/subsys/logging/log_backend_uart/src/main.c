@@ -19,7 +19,8 @@ LOG_MODULE_REGISTER(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 #define SAMPLE_DATA_SIZE          EMUL_UART_TX_FIFO_SIZE(0)
 
 #define TEST_DATA "0123456789ABCDEF"
-BUILD_ASSERT(strlen(TEST_DATA) < SAMPLE_DATA_SIZE);
+/* Assert that size of the test string (without '\0') fits in the SAMPLE_DATA_SIZE */
+BUILD_ASSERT((sizeof(TEST_DATA) - 1) < SAMPLE_DATA_SIZE);
 
 struct log_backend_uart_fixture {
 	const struct device *dev[EMUL_UART_NUM];

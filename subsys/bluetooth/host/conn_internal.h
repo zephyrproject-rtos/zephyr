@@ -547,5 +547,11 @@ void bt_conn_tx_processor(void);
 
 /* To be called by upper layers when they want to send something.
  * Functions just like an IRQ.
+ *
+ * Note: This fn will take and hold a reference to `conn` until the IRQ for that
+ * conn is serviced.
+ * For the current implementation, that means:
+ * - ref the conn when putting on an "conn-ready" slist
+ * - unref the conn when popping the conn from the slist
  */
 void bt_conn_data_ready(struct bt_conn *conn);

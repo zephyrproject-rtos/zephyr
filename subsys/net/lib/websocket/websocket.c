@@ -544,7 +544,8 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 }
 
 #if !defined(CONFIG_NET_TEST)
-static int sendmsg_all(int sock, const struct msghdr *message, int flags)
+static int sendmsg_all(int sock, const struct msghdr *message, int flags,
+			const k_timepoint_t req_end_timepoint)
 {
 	int ret, i;
 	size_t offset = 0;
@@ -556,7 +557,25 @@ static int sendmsg_all(int sock, const struct msghdr *message, int flags)
 
 	while (offset < total_len) {
 		ret = zsock_sendmsg(sock, message, flags);
-		if (ret < 0) {
+
+		if ((ret == 0) || (ret < 0 && errno == EAGAIN)) {
+			struct zsock_pollfd pfd;
+			int pollres;
+			k_ticks_t req_timeout_ticks =
+				sys_timepoint_timeout(req_end_timepoint).ticks;
+			int req_timeout_ms = k_ticks_to_ms_floor32(req_timeout_ticks);
+
+			pfd.fd = sock;
+			pfd.events = ZSOCK_POLLOUT;
+			pollres = zsock_poll(&pfd, 1, req_timeout_ms);
+			if (pollres == 0) {
+				return -ETIMEDOUT;
+			} else if (pollres > 0) {
+				continue;
+			} else {
+				return -errno;
+			}
+		} else if (ret < 0) {
 			return -errno;
 		}
 
@@ -622,8 +641,11 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 		tout = K_MSEC(timeout);
 	}
 
+	k_timeout_t req_timeout = K_MSEC(timeout);
+	k_timepoint_t req_end_timepoint = sys_timepoint_calc(req_timeout);
+
 	return sendmsg_all(ctx->real_sock, &msg,
-			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
+			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0, req_end_timepoint);
 #endif /* CONFIG_NET_TEST */
 }
 

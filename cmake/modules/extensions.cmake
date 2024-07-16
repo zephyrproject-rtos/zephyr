@@ -5444,7 +5444,6 @@ function(add_llext_target target_name)
       ${PYTHON_EXECUTABLE}
       ${ZEPHYR_BASE}/scripts/build/llext_inject_slids.py
       --elf-file ${llext_pkg_output}
-      -vvv
     )
   else()
     set(slid_inject_cmd ${CMAKE_COMMAND} -E true)

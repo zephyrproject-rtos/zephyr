@@ -567,10 +567,11 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			params->mfp = atoi(optarg);
 			break;
 		case 'm':
-			sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-				&params->bssid[0], &params->bssid[1],
-				&params->bssid[2], &params->bssid[3],
-				&params->bssid[4], &params->bssid[5]);
+			if (net_bytes_from_str(params->bssid, sizeof(params->bssid),
+					       optarg) < 0) {
+				PR_WARNING("Invalid MAC address\n");
+				return -EINVAL;
+			}
 			break;
 		case 't':
 			if (iface_mode == WIFI_MODE_INFRA) {

@@ -184,7 +184,8 @@ vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0,
 	rtc_isr
 };
-#elif defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX) && \
+#elif (defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX) ||	\
+	defined(CONFIG_SOC_SERIES_RW6XX)) && \
 	defined(CONFIG_MCUX_OS_TIMER)
 /* MXRT685 employs a OS Event timer to implement the Kernel system
  * timer, instead of the ARM Cortex-M SysTick. Therefore, a pointer to

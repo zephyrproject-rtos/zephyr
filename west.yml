@@ -142,7 +142,7 @@ manifest:
       groups:
         - hal
     - name: hal_altera
-      revision: 0d225ddd314379b32355a00fb669eacf911e750d
+      revision: 4fe4df959d4593ce66e676aeba0b57f546dba0fe
       path: modules/hal/altera
       groups:
         - hal
@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 826077a9d9c762ea7033f137b992b1b36b4aeacb
+      revision: 87e7902d7184a8280b4d13bce79801a723f4ddd8
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -234,7 +234,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 855f195793df094644ce8b8617c01275408bbf58
+      revision: f1317150eac951fdd8259337a47cbbc4c2e6d335
       path: modules/hal/stm32
       groups:
         - hal
@@ -261,9 +261,9 @@ manifest:
     - name: hostap
       repo-path: hostap
       path: modules/lib/hostap
-      revision: 83574f533fb5c6808af0d9872741d72d48be2f98
+      revision: a90df86d7c596a5367ff70c2b50c7f599e6636f3
     - name: libmetal
-      revision: 243eed541b9c211a2ce8841c788e62ddce84425e
+      revision: a6851ba6dba8c9e87d00c42f171a822f7a29639b
       path: modules/hal/libmetal
       groups:
         - hal
@@ -287,7 +287,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 898a1ca64a759541d9fcc37fef921db93d99ad70
+      revision: fb2cf0ec3da3687b93f28e556ab682bdd4b85223
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -303,14 +303,14 @@ manifest:
       revision: 6c389b9b5fa0a079cd4502e69d375da4c0c289b7
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
-      revision: da78aea63159771956fe0c9263f2e6985b66e9d5
+      revision: 76d2168bcdfcd23a9a7dce8c21f2083b90a1e60a
       path: modules/lib/open-amp
     - name: openthread
       revision: 3873c6fcd5a8a9dd01b71e8efe32ef5dc7923bb1
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
-      revision: 1a67f3e2dbc2a8d53e5248d72bac946db381692d
+      revision: a49e5f3947faad0dd654eddd5a750127fb81e50d
       groups:
         - debug
     - name: picolibc
@@ -327,7 +327,7 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-m
-      revision: 8df9cc8baf46252fd188bba1d87333a8daa9a5e8
+      revision: 826c4a97053264d45a4fd76755f947b6b3a573f3
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

@@ -30,7 +30,6 @@ config RISCV_GP
 config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	bool "Do not use mret outside a trap handler context"
 	depends on MULTITHREADING
-	depends on !RISCV_PMP
 	help
 	  Use mret instruction only when in a trap handler.
 	  This is for RISC-V implementations that require every mret to be
@@ -48,10 +47,11 @@ config RISCV_EXCEPTION_STACK_TRACE
 menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR
-	bool "Include Reset vector"
+	bool "Jumps to __initialize directly"
 	help
-	  Include the reset vector stub, which initializes the stack and
-	  prepares for running C code.
+	  Select 'y' here to use the Zephyr provided default implementation that
+	  jumps to `__initialize` directly. Otherwise a SOC needs to provide its
+	  custom `__reset` routine.
 
 config RISCV_PRIVILEGED
 	bool

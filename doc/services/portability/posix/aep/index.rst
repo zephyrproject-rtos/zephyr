@@ -50,8 +50,8 @@ The *Minimal Realtime System Profile* (PSE51) includes all of the
 
     :ref:`POSIX_C_LANG_JUMP <posix_option_group_c_lang_jump>`, yes,
     :ref:`POSIX_C_LANG_SUPPORT <posix_option_group_c_lang_support>`, yes,
-    :ref:`POSIX_DEVICE_IO <posix_option_group_device_io>`,yes, :kconfig:option:`CONFIG_POSIX_DEVICE_IO`
-    :ref:`POSIX_SIGNALS <posix_option_group_signals>`, yes, :kconfig:option:`CONFIG_POSIX_SIGNALS` :ref:`†<posix_undefined_behaviour>`
+    :ref:`POSIX_DEVICE_IO <posix_option_group_device_io>`,, :kconfig:option:`CONFIG_POSIX_DEVICE_IO`
+    :ref:`POSIX_SIGNALS <posix_option_group_signals>`,, :kconfig:option:`CONFIG_POSIX_SIGNALS`
     :ref:`POSIX_SINGLE_PROCESS <posix_option_group_single_process>`, yes, :kconfig:option:`CONFIG_POSIX_SINGLE_PROCESS`
     :ref:`XSI_THREADS_EXT <posix_option_group_xsi_threads_ext>`, yes, :kconfig:option:`CONFIG_XSI_THREADS_EXT`
 
@@ -101,7 +101,7 @@ The *Realtime Controller System Profile* (PSE52) includes all features from PSE5
    :widths: 50, 10, 50
 
     :ref:`POSIX_C_LANG_MATH <posix_option_group_c_lang_math>`, yes,
-    :ref:`POSIX_FD_MGMT <posix_option_group_fd_mgmt>`, yes, :kconfig:option:`CONFIG_POSIX_FD_MGMT`
+    :ref:`POSIX_FD_MGMT <posix_option_group_fd_mgmt>`,, :kconfig:option:`CONFIG_POSIX_FD_MGMT`
     :ref:`POSIX_FILE_SYSTEM <posix_option_group_file_system>`,, :kconfig:option:`CONFIG_POSIX_FILE_SYSTEM`
 
 .. csv-table:: PSE52 Option Requirements

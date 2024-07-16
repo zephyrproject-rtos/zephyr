@@ -67,7 +67,7 @@ sensors (soldered + 2 satellites) and the 7 segments display.
 Programming
 ***********
 
-Set ``-DSHIELD=x_nucleo_53l0a1`` when you invoke ``west build``. For example:
+Set ``--shield x_nucleo_53l0a1`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/vl53l0x

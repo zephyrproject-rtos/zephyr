@@ -34,7 +34,7 @@ see the following documentation:
 Programming
 ***********
 
-Set ``-DSHIELD=mikro_accel13_click`` when you invoke ``west build``. For
+Set ``--shield mikro_accel13_click`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::

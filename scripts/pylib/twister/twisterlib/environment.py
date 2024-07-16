@@ -413,7 +413,8 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         action = "store_true",
         help="Take ROM/RAM sections footprint summary values from the 'build.log' "
              "instead of 'objdump' results used otherwise."
-             "Requires --enable-size-report or one of the baseline comparison modes.")
+             "Requires --enable-size-report or one of the baseline comparison modes."
+             "Warning: the feature will not work correctly with sysbuild.")
 
     compare_group_option = footprint_group.add_mutually_exclusive_group()
 
@@ -862,9 +863,13 @@ def parse_arguments(parser, args, options = None, on_init=True):
             sc.size_report()
         sys.exit(0)
 
-    if options.footprint_from_buildlog and not options.enable_size_report:
-        logger.error("--footprint-from-buildlog requires --enable-size-report")
-        sys.exit(1)
+    if options.footprint_from_buildlog:
+        logger.warning("WARNING: Using --footprint-from-buildlog will give inconsistent results "
+                       "for configurations using sysbuild. It is recommended to not use this flag "
+                       "when building configurations using sysbuild.")
+        if not options.enable_size_report:
+            logger.error("--footprint-from-buildlog requires --enable-size-report")
+            sys.exit(1)
 
     if len(options.extra_test_args) > 0:
         # extra_test_args is a list of CLI args that Twister did not recognize

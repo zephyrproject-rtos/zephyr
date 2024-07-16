@@ -39,7 +39,7 @@ Arduino header or custom header (by adjusting the overlay).
 Programming
 ***********
 
-Set ``-DSHIELD=arceli_eth_w5500`` when you invoke ``west build``. For example:
+Set ``--shield arceli_eth_w5500`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/dhcpv4_client

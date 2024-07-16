@@ -322,6 +322,13 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 		return;
 	}
 
+	if (udc_ep_buf_has_zlp(buf) && ep != USB_CONTROL_EP_IN) {
+		udc_ep_buf_clear_zlp(buf);
+		HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, 0);
+
+		return;
+	}
+
 	udc_buf_get(dev, ep);
 
 	if (ep == USB_CONTROL_EP_IN) {
@@ -541,6 +548,16 @@ static int udc_stm32_disable(const struct device *dev)
 	HAL_StatusTypeDef status;
 
 	irq_disable(DT_INST_IRQN(0));
+
+	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
+		LOG_ERR("Failed to disable control endpoint");
+		return -EIO;
+	}
+
+	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
+		LOG_ERR("Failed to disable control endpoint");
+		return -EIO;
+	}
 
 	status = HAL_PCD_Stop(&priv->pcd);
 	if (status != HAL_OK) {
@@ -768,6 +785,23 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 	return 0;
 }
 
+static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
+{
+	struct udc_stm32_data *priv = udc_get_private(dev);
+
+#ifdef USBD_HS_SPEED
+	if (priv->pcd.Init.speed == USBD_HS_SPEED) {
+		return UDC_BUS_SPEED_HS;
+	}
+#endif
+
+	if (priv->pcd.Init.speed == USBD_FS_SPEED) {
+		return UDC_BUS_SPEED_FS;
+	}
+
+	return UDC_BUS_UNKNOWN;
+}
+
 static const struct udc_api udc_stm32_api = {
 	.lock = udc_stm32_lock,
 	.unlock = udc_stm32_unlock,
@@ -784,6 +818,7 @@ static const struct udc_api udc_stm32_api = {
 	.ep_clear_halt = udc_stm32_ep_clear_halt,
 	.ep_enqueue = udc_stm32_ep_enqueue,
 	.ep_dequeue = udc_stm32_ep_dequeue,
+	.device_speed = udc_stm32_device_speed,
 };
 
 /* ----------------- Instance/Device specific data ----------------- */

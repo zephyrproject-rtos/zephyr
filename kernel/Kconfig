@@ -276,7 +276,7 @@ choice DYNAMIC_THREAD_PREFER
 	help
 	  If both CONFIG_DYNAMIC_THREAD_ALLOC=y and
 	  CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0, then the user may
-	  specify the order in which allocation is attmpted.
+	  specify the order in which allocation is attempted.
 
 config DYNAMIC_THREAD_PREFER_ALLOC
 	bool "Prefer heap-based allocation"
@@ -991,7 +991,7 @@ config TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
 
 config STATIC_INIT_GNU
 	bool "Support GNU-compatible initializers and constructors"
-	default y if CPP || NATIVE_BUILD || COVERAGE
+	default y if CPP || NATIVE_LIBRARY || COVERAGE
 	depends on TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
 	depends on !CMAKE_LINKER_GENERATOR
 	help

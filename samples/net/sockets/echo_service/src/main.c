@@ -57,14 +57,8 @@ static void udp_service_handler(struct k_work *work)
 	receive_data(true, pev, buf, sizeof(buf));
 }
 
-/* In this example we create two services, one with async behavior and one with
- * sync one. The async is for TCP and sync is for UDP (this is just an arbitrary
- * choice).
- * This is an artificial example, both UDP and TCP sockets could be served by the
- * same service.
- */
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_udp, NULL, udp_service_handler, MAX_SERVICES);
-NET_SOCKET_SERVICE_ASYNC_DEFINE_STATIC(service_tcp, NULL, tcp_service_handler, MAX_SERVICES);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_tcp, NULL, tcp_service_handler, MAX_SERVICES);
 
 static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 			 char *buf, size_t buflen)
@@ -102,8 +96,13 @@ static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 
 	p = buf;
 	do {
-		out_len = sendto(client, p, len, 0,
-				 (struct sockaddr *)&addr, addrlen);
+		if (is_udp) {
+			out_len = sendto(client, p, len, 0,
+					 (struct sockaddr *)&addr, addrlen);
+		} else {
+			out_len = send(client, p, len, 0);
+		}
+
 		if (out_len < 0) {
 			LOG_ERR("sendto: %d", -errno);
 			break;

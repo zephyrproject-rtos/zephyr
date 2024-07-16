@@ -34,7 +34,7 @@ parallelization, building and reporting) remains the same as for other harnesses
 happens during the execution step. The below picture presents a simplified overview of the
 integration.
 
-.. figure:: twister_and_pytest.svg
+.. figure:: figures/twister_and_pytest.svg
    :figclass: align-center
 
 

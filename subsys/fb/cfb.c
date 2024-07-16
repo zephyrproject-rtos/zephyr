@@ -451,10 +451,6 @@ int cfb_framebuffer_invert(const struct device *dev)
 {
 	struct char_framebuffer *fb = &char_fb;
 
-	if (!fb) {
-		return -ENODEV;
-	}
-
 	fb->inverted = !fb->inverted;
 
 	return 0;

@@ -757,7 +757,7 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn,
 				     size_t *length)
 {
 #if defined(CONFIG_BT_ISO_TX)
-	LOG_DBG("conn %p amount %d", conn, amount);
+	BT_ISO_DATA_DBG("conn %p amount %d", conn, amount);
 
 	/* Leave the PDU buffer in the queue until we have sent all its
 	 * fragments.
@@ -765,7 +765,7 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn,
 	struct net_buf *frag = k_fifo_peek_head(&conn->iso.txq);
 
 	if (!frag) {
-		LOG_DBG("signaled ready but no frag available");
+		BT_ISO_DATA_DBG("signaled ready but no frag available");
 		/* Service other connections */
 		bt_tx_irq_raise();
 
@@ -797,7 +797,7 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn,
 	if (last_frag) {
 		__maybe_unused struct net_buf *b = k_fifo_get(&conn->iso.txq, K_NO_WAIT);
 
-		LOG_DBG("last frag, pop buf");
+		BT_ISO_DATA_DBG("last frag, pop buf");
 		__ASSERT_NO_MSG(b == frag);
 	}
 
@@ -846,7 +846,7 @@ int conn_iso_send(struct bt_conn *conn, struct net_buf *buf, enum bt_iso_timesta
 	net_buf_push_u8(buf, has_ts);
 
 	net_buf_put(&conn->iso.txq, buf);
-	LOG_DBG("%p put on list", buf);
+	BT_ISO_DATA_DBG("%p put on list", buf);
 
 	/* only one ISO channel per conn-object */
 	bt_conn_data_ready(conn);
@@ -914,7 +914,7 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq
 
 	iso_conn = chan->iso;
 
-	LOG_DBG("send-iso (no ts)");
+	BT_ISO_DATA_DBG("send-iso (no ts)");
 	return conn_iso_send(iso_conn, buf, BT_ISO_TS_ABSENT);
 }
 

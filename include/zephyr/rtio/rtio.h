@@ -53,7 +53,7 @@ extern "C" {
  */
 
 /**
- * @brief RTIO Predefined Priorties
+ * @brief RTIO Predefined Priorities
  * @defgroup rtio_sqe_prio RTIO Priorities
  * @ingroup rtio
  * @{

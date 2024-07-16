@@ -346,8 +346,13 @@ static int spi_gecko_transceive(const struct device *dev,
 {
 	struct spi_gecko_data *data = dev->data;
 	uint16_t control = 0;
+	int ret;
 
-	spi_config(dev, config, &control);
+	ret = spi_config(dev, config, &control);
+	if (ret < 0) {
+		return ret;
+	}
+
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 	spi_gecko_xfer(dev, config);
 	return 0;

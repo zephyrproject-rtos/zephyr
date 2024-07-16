@@ -1008,10 +1008,11 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param api_ Reference to device API ops.
  * @param state_ Reference to device state.
  * @param deps_ Reference to device dependencies.
+ * @param node_id_ Devicetree node identifier
  * @param dev_id_ Device identifier token, as passed to Z_DEVICE_BASE_DEFINE
  */
-#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_,			\
-			dev_id_)			\
+#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_, node_id_,	\
+		      dev_id_)								\
 	{										\
 		.name = name_,								\
 		.config = (config_),							\
@@ -1019,10 +1020,23 @@ device_get_dt_nodelabels(const struct device *dev)
 		.state = (state_),							\
 		.data = (data_),							\
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/			\
-		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),})) /**/		\
+		IF_ENABLED(CONFIG_PM_DEVICE, Z_DEVICE_INIT_PM_BASE(pm_)) /**/		\
 		IF_ENABLED(CONFIG_DEVICE_DT_METADATA,					\
-			   (.dt_meta = &Z_DEVICE_DT_METADATA_NAME_GET(dev_id_),))	\
+			   (IF_ENABLED(DT_NODE_EXISTS(node_id_),			\
+				       (.dt_meta = &Z_DEVICE_DT_METADATA_NAME_GET(	\
+						dev_id_),))))				\
 	}
+
+/*
+ * Anonymous unions require C11. Some pre-C11 gcc versions have early support for anonymous
+ * unions but they require these braces when combined with C99 designated initializers. For
+ * more details see https://docs.zephyrproject.org/latest/develop/languages/cpp/
+ */
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__) < 201100
+#  define Z_DEVICE_INIT_PM_BASE(pm_) ({ .pm_base = (pm_),},)
+#else
+#  define Z_DEVICE_INIT_PM_BASE(pm_)   (.pm_base = (pm_),)
+#endif
 
 /**
  * @brief Device section name (used for sorting purposes).
@@ -1056,7 +1070,7 @@ device_get_dt_nodelabels(const struct device *dev)
 	STRUCT_SECTION_ITERABLE_NAMED_ALTERNATE(                                                   \
 		device, COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (device_mutable), (device)),     \
 		Z_DEVICE_SECTION_NAME(level, prio), DEVICE_NAME_GET(dev_id)) =                     \
-		Z_DEVICE_INIT(name, pm, data, config, api, state, deps, dev_id)
+		Z_DEVICE_INIT(name, pm, data, config, api, state, deps, node_id, dev_id)
 
 /* deprecated device initialization levels */
 #define Z_DEVICE_LEVEL_DEPRECATED_EARLY                                        \
@@ -1095,10 +1109,7 @@ device_get_dt_nodelabels(const struct device *dev)
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
 			.init_fn = {COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) = \
 					    (init_fn_)},                                           \
-			{                                                                          \
-				COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) =     \
-					&DEVICE_NAME_GET(dev_id),                                  \
-			},                                                                         \
+			Z_DEVICE_INIT_ENTRY_DEV(node_id, dev_id),                                  \
 	}
 
 #define Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn_)                                \
@@ -1107,11 +1118,22 @@ device_get_dt_nodelabels(const struct device *dev)
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
 			.init_fn = {COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) = \
 					    (init_fn_)},                                           \
-			{                                                                          \
-				COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) =     \
-					&DEVICE_NAME_GET(dev_id),                                  \
-			},                                                                         \
+			Z_DEVICE_INIT_ENTRY_DEV(node_id, dev_id),                                  \
 	}
+
+/*
+ * Anonymous unions require C11. Some pre-C11 gcc versions have early support for anonymous
+ * unions but they require these braces when combined with C99 designated initializers. For
+ * more details see https://docs.zephyrproject.org/latest/develop/languages/cpp/
+ */
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__) < 201100
+#  define Z_DEVICE_INIT_ENTRY_DEV(node_id, dev_id) { Z_DEV_ENTRY_DEV(node_id, dev_id) }
+#else
+#  define Z_DEVICE_INIT_ENTRY_DEV(node_id, dev_id)   Z_DEV_ENTRY_DEV(node_id, dev_id)
+#endif
+
+#define Z_DEV_ENTRY_DEV(node_id, dev_id)                                                           \
+	COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) =  &DEVICE_NAME_GET(dev_id)
 
 /**
  * @brief Define a @ref device and all other required objects.
@@ -1142,7 +1164,8 @@ device_get_dt_nodelabels(const struct device *dev)
 		   (Z_DEVICE_DEPS_DEFINE(node_id, dev_id, __VA_ARGS__);))       \
                                                                                 \
 	IF_ENABLED(CONFIG_DEVICE_DT_METADATA,                                   \
-		   (Z_DEVICE_DT_METADATA_DEFINE(node_id, dev_id);))             \
+		   (IF_ENABLED(DT_NODE_EXISTS(node_id),                         \
+			      (Z_DEVICE_DT_METADATA_DEFINE(node_id, dev_id);))))\
                                                                                 \
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,    \
 		prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));                   \

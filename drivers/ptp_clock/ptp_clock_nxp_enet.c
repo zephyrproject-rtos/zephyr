@@ -247,6 +247,7 @@ static const struct ptp_clock_driver_api ptp_clock_nxp_enet_api = {
 										\
 	static const struct ptp_clock_nxp_enet_config				\
 		ptp_clock_nxp_enet_##n##_config = {				\
+			.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
 			.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 			.port = DEVICE_DT_INST_GET(n),				\
 			.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\

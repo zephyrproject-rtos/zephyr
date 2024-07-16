@@ -21,7 +21,9 @@
 extern "C" {
 #endif
 
+#if !defined(CONFIG_ARCMWDT_LIBC)
 typedef int pid_t;
+#endif
 
 #ifndef __useconds_t_defined
 typedef unsigned long useconds_t;

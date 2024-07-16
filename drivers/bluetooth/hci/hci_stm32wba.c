@@ -52,6 +52,20 @@ static K_SEM_DEFINE(hci_sem, 1, 1);
 
 #define DIVC(x, y)         (((x)+(y)-1)/(y))
 
+#if defined(CONFIG_BT_HCI_SETUP)
+/* Bluetooth LE public STM32WBA default device address (if udn not available) */
+static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
+
+#define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
+#define HCI_CONFIG_DATA_PUBADDR_OFFSET	   0
+static bt_addr_t bd_addr_udn;
+struct aci_set_ble_addr {
+	uint8_t config_offset;
+	uint8_t length;
+	uint8_t value[6];
+} __packed;
+#endif
+
 static uint32_t __noinit buffer[DIVC(BLE_DYN_ALLOC_SIZE, 4)];
 static uint32_t __noinit gatt_buffer[DIVC(BLE_GATT_BUF_SIZE, 4)];
 
@@ -380,7 +394,90 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 	return ret;
 }
 
+#if defined(CONFIG_BT_HCI_SETUP)
+
+bt_addr_t *bt_get_ble_addr(void)
+{
+	bt_addr_t *bd_addr;
+	uint32_t udn;
+	uint32_t company_id;
+	uint32_t device_id;
+
+	/* Get the 64 bit Unique Device Number UID */
+	/* The UID is used by firmware to derive */
+	/* 48-bit Device Address EUI-48 */
+	udn = LL_FLASH_GetUDN();
+
+	if (udn != 0xFFFFFFFF) {
+		/* Get the ST Company ID */
+		company_id = LL_FLASH_GetSTCompanyID();
+		/* Get the STM32 Device ID */
+		device_id = LL_FLASH_GetDeviceID();
+
+		/*
+		 * Public Address with the ST company ID
+		 * bit[47:24] : 24bits (OUI) equal to the company ID
+		 * bit[23:16] : Device ID.
+		 * bit[15:0] : The last 16bits from the UDN
+		 * Note: In order to use the Public Address in a final product, a dedicated
+		 * 24bits company ID (OUI) shall be bought.
+		 */
+
+		bd_addr_udn.val[0] = (uint8_t)(udn & 0x000000FF);
+		bd_addr_udn.val[1] = (uint8_t)((udn & 0x0000FF00) >> 8);
+		bd_addr_udn.val[2] = (uint8_t)device_id;
+		bd_addr_udn.val[3] = (uint8_t)(company_id & 0x000000FF);
+		bd_addr_udn.val[4] = (uint8_t)((company_id & 0x0000FF00) >> 8);
+		bd_addr_udn.val[5] = (uint8_t)((company_id & 0x00FF0000) >> 16);
+		bd_addr = &bd_addr_udn;
+	} else {
+		bd_addr = &bd_addr_dflt;
+	}
+
+	return bd_addr;
+}
+
+static int bt_hci_stm32wba_setup(const struct device *dev,
+				 const struct bt_hci_setup_params *params)
+{
+	bt_addr_t *uid_addr;
+	struct aci_set_ble_addr *param;
+	struct net_buf *buf;
+	int err;
+
+	uid_addr = bt_get_ble_addr();
+	if (!uid_addr) {
+		return -ENOMSG;
+	}
+
+	buf = bt_hci_cmd_create(ACI_HAL_WRITE_CONFIG_DATA, sizeof(*param));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	param = net_buf_add(buf, sizeof(*param));
+	param->config_offset = HCI_CONFIG_DATA_PUBADDR_OFFSET;
+	param->length = 6;
+
+	if (bt_addr_eq(&params->public_addr, BT_ADDR_ANY)) {
+		bt_addr_copy((bt_addr_t *)param->value, uid_addr);
+	} else {
+		bt_addr_copy((bt_addr_t *)param->value, &(params->public_addr));
+	}
+
+	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_HCI_SETUP */
+
 static const struct bt_hci_driver_api drv = {
+#if defined(CONFIG_BT_HCI_SETUP)
+	.setup          = bt_hci_stm32wba_setup,
+#endif
 	.open           = bt_hci_stm32wba_open,
 	.send           = bt_hci_stm32wba_send,
 };

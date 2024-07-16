@@ -214,7 +214,7 @@ struct pcie_scan_opt {
 
 /** Scan for PCIe devices.
  *
- * Scan the PCI bus (or busses) for available endpoints.
+ * Scan the PCI bus (or buses) for available endpoints.
  *
  * @param opt Options determining how to perform the scan.
  * @return 0 on success, negative POSIX error number on failure.

@@ -43,7 +43,7 @@ The Nucleo F302R8 provides the following hardware components:
 - ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
 - 72 MHz max CPU frequency
 - VDD from 2.0 V to 3.6 V
-- 64 MB Flash
+- 64 KB Flash
 - 16 KB SRAM
 - RTC
 - Advanced-control Timer

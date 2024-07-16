@@ -52,7 +52,7 @@ enum ptp_tlv_type {
 };
 
 /**
- * @brief PTP managenment message action field
+ * @brief PTP management message action field
  *
  * @note based on IEEE 1588-2019 Section 15.4.1.6 Table 57
  */
@@ -65,7 +65,7 @@ enum ptp_mgmt_op {
 };
 
 /**
- * @brief PTP managenment message ID
+ * @brief PTP management message ID
  *
  * @note based on IEEE 1588-2019 Section 15.5.2.3 Table 59
  */
@@ -221,7 +221,7 @@ struct ptp_tlv_container {
 	sys_snode_t		       node;
 	/** Pointer to the TLV. */
 	struct ptp_tlv		       *tlv;
-	/** Structure holding pointers for Clock desccription. */
+	/** Structure holding pointers for Clock description. */
 	struct ptp_tlv_mgmt_clock_desc clock_desc;
 };
 
@@ -346,7 +346,7 @@ struct ptp_tlv_container *ptp_tlv_alloc(void);
 void ptp_tlv_free(struct ptp_tlv_container *tlv_container);
 
 /**
- * @brief Function for getting type of action to be taken on recipt of the PTP message.
+ * @brief Function for getting type of action to be taken on receipt of the PTP message.
  *
  * @param[in] msg Pointer to the PTP message.
  *
@@ -368,7 +368,7 @@ enum ptp_tlv_type ptp_tlv_type(struct ptp_tlv *tlv);
  *
  * @param[in] tlv Pointer to the received TLV.
  *
- * @return Zero on success, othervise negative.
+ * @return Zero on success, otherwise negative.
  */
 int ptp_tlv_post_recv(struct ptp_tlv *tlv);
 

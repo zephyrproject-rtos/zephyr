@@ -970,7 +970,7 @@ enum ieee802154_config_type {
 	 * beacons of a single PAN, periodic ranging "blinks"), a single
 	 * timestamp at any time in the past or in the future may be given from
 	 * which other expected timestamps can be derived by adding or
-	 * substracting multiples of the RX period. See e.g. the CSL
+	 * subtracting multiples of the RX period. See e.g. the CSL
 	 * documentation in this API.
 	 *
 	 * Additionally this parameter MAY be used by drivers to discipline
@@ -1053,7 +1053,7 @@ enum ieee802154_config_type {
 	 *
 	 * L2 SHALL minimize the space required to keep IE configuration inside
 	 * the driver by consolidating address filters and by removing
-	 * configuation that is no longer required.
+	 * configuration that is no longer required.
 	 *
 	 * @note requires @ref IEEE802154_HW_RX_TX_ACK capability and is
 	 * available in any interface operational state. Currently we only
@@ -1665,7 +1665,7 @@ struct ieee802154_radio_api {
 	 * with the frame data to be transmitted
 	 *
 	 * @retval 0 The frame was successfully sent or scheduled. If the driver
-	 * supports ACK offloading and the frame requested acknowlegment (AR bit
+	 * supports ACK offloading and the frame requested acknowledgment (AR bit
 	 * set), this means that the packet was successfully acknowledged by its
 	 * peer.
 	 * @retval -EINVAL Invalid packet (e.g. an expected IE is missing or the

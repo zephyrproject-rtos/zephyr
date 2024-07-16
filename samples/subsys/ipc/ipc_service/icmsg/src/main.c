@@ -112,6 +112,11 @@ int main(void)
 
 	LOG_INF("IPC-service HOST demo started");
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+	LOG_INF("Run network core");
+	nrf53_cpunet_enable(true);
+#endif
+
 	ipc0_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
 
 	ret = ipc_service_open_instance(ipc0_instance);

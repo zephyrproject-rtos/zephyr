@@ -3,11 +3,17 @@
 LE Audio Stack
 ##############
 
-.. figure:: img/ble_audio_arch.svg
-   :align: center
-   :alt: Bluetooth Audio Architecture
+.. graphviz::
+   :caption: Bluetooth Audio Architecture
 
-   Bluetooth Audio Architecture
+   digraph bluetooth_audio_arch {
+      r [shape=record, width=5, height=3
+         label="{{TMAP | HAP | PBP | GMAP | ...} |
+                  GAF |
+                  {{{ GATT | GAP } | Low-level protocols (L2CAP, ATT, etc.)} | GAP | ISO}
+                  | HCI Driver (USB, UART, SPI, virtual, etc.)}"
+         ];
+   }
 
 Overall design
 **************
@@ -42,22 +48,306 @@ audio streams or broadcast (unconnected) audio streams.
 
 GAF mandates the use of the LC3 codec, but also supports other codecs.
 
-.. figure:: img/gaf.svg
-   :align: center
-   :alt: Generic Audio Framework
+.. graphviz::
+   :caption: Generic Audio Framework (GAF)
 
-   Generic Audio Framework
+   digraph gaf {
+      node [shape=record];
+      edge [style=invis];
+      compound=true;
+      nodesep=0.1;
+
+      subgraph hap_layer {
+         cluster=true;
+         label="HAP";
+         HAS;
+         BAS [style=dashed];
+         IAS [style=dashed];
+      }
+
+      subgraph pbp_layer {
+         cluster=true;
+         label="PBP";
+         PBS[style=invis]; // Make it possible to treat PBP like the others
+      }
+
+      subgraph tmap_layer {
+         cluster=true;
+         label="TMAP";
+         TMAS;
+      }
+
+      subgraph gmap_layer {
+         cluster=true;
+         label="GMAP";
+         GMAS;
+      }
+
+      subgraph gaf_layer {
+         cluster=true;
+         label="Generic Audio Framework";
+
+         subgraph transition_and_coordination_control_layer {
+            cluster=true;
+            label="Transition and Coordination Control";
+            style=dashed;
+
+            subgraph cap_layer {
+               cluster=true;
+               style=solid;
+               label="CAP";
+               CAS;
+            }
+
+            subgraph csip_layer {
+               cluster=true;
+               style=solid;
+               label="CSIP";
+               CSIS;
+            }
+         }
+
+         subgraph stream_control_layer {
+            cluster=true;
+            label="Stream Control";
+            style=dashed;
+
+            subgraph bap_layer {
+               cluster=true;
+               label="BAP";
+               style=solid;
+               PACS [style=dashed];
+               ASCS [style=dashed];
+               BASS [style=dashed];
+            }
+         }
+
+         subgraph content_control_layer {
+            cluster=true;
+            label="Content Control";
+            style=dashed;
+
+            subgraph mcp_layer {
+               cluster=true;
+               label="MCP";
+               style=solid;
+               MCS;
+            }
+
+            subgraph ccp_layer {
+               cluster=true;
+               label="CCP";
+               style=solid;
+               TBS;
+            }
+         }
+
+         subgraph rendering_and_capture_control_layer {
+            cluster=true;
+            label="Rendering and Capture Control";
+            style=dashed;
+
+            subgraph micp_layer {
+               cluster=true;
+               label="MICP";
+               style=solid;
+               MICS;
+               MICP_AICS [style=dashed];
+            }
+
+            subgraph vcp_layer {
+               cluster=true;
+               label="VCP";
+               style=solid;
+               VCS;
+               VOCS [style=dashed];
+               VCP_AICS [style=dashed];
+            }
+         }
+      }
+
+      HAS -> CAS;
+      PBS -> CAS;
+      TMAS -> CAS;
+      GMAS -> CAS;
+
+      CAS -> MCS;
+      CAS -> TBS;
+      CAS -> ASCS;
+      CAS -> PACS;
+      CAS -> BASS;
+      CAS -> MICS;
+      CAS -> MICP_AICS;
+      CAS -> VCS;
+      CAS -> VOCS;
+      CAS -> VCP_AICS;
+
+      CSIS -> MCS;
+      CSIS -> TBS;
+      CSIS -> ASCS;
+      CSIS -> PACS;
+      CSIS -> BASS;
+      CSIS -> MICS;
+      CSIS -> MICP_AICS;
+      CSIS -> VCS;
+      CSIS -> VOCS;
+      CSIS -> VCP_AICS;
+   }
 
 The top-level profiles TMAP and HAP are not part of the GAF, but rather provide
 top-level requirements for how to use the GAF.
 
-GAF has been implemented in Zephyr with the following structure.
+GAF and the top layer profiles gave been implemented in Zephyr with the following structure.
 
-.. figure:: img/zephyr_gaf.svg
-   :align: center
-   :alt: Generic Audio Framework
+.. graphviz::
+   :caption: Zephyr Generic Audio Framework
 
-   Zephyr Generic Audio Framework
+   digraph gaf {
+      node [shape=record];
+      edge [style=invis];
+      compound=true;
+      nodesep=0.1;
+
+      subgraph hap_layer {
+         cluster=true;
+         label="HAP";
+         HAS_H [label="has.h"];
+         BAS_H [label="bas.h"];
+         IAS_H [label="ias.h"];
+      }
+
+      subgraph pbp_layer {
+         cluster=true;
+         label="PBP";
+         PBP_H [label="pbp.h"]; // Make it possible to treat PBP like the others
+      }
+
+      subgraph tmap_layer {
+         cluster=true;
+         label="TMAP";
+         TMAP_H [label="tmap.h"];
+      }
+
+      subgraph gmap_layer {
+         cluster=true;
+         label="GMAP";
+         GMAP_H [label="gmap.h"];
+         GMAP_PRESET_H [label="gmap_lc3_preset.h"];
+      }
+
+      subgraph gaf_layer {
+         cluster=true;
+         label="Generic Audio Framework";
+         AUDIO_H [label="audio.h"];
+         LC3_H [label="lc3.h"];
+
+         subgraph transition_and_coordination_control_layer {
+            cluster=true;
+            label="Transition and Coordination Control";
+            style=dashed;
+
+            subgraph cap_layer {
+               cluster=true;
+               style=solid;
+               label="CAP";
+               CAP_H [label="cap.h"];
+            }
+
+            subgraph csip_layer {
+               cluster=true;
+               style=solid;
+               label="CSIP";
+               CSIP_H [label="csip.h"];
+            }
+         }
+
+         subgraph stream_control_layer {
+            cluster=true;
+            label="Stream Control";
+            style=dashed;
+
+            subgraph bap_layer {
+               cluster=true;
+               label="BAP";
+               style=solid;
+               PACS_H [label="pacs.h"];
+               BAP_H [label="bap.h"];
+               BAP_PRESET_H [label="bap_lc3_preset.h"];
+            }
+         }
+
+         subgraph content_control_layer {
+            cluster=true;
+            label="Content Control";
+            style=dashed;
+
+            subgraph mcp_layer {
+               cluster=true;
+               label="MCP";
+               style=solid;
+               MCS_H [label="mcs.h"];
+               MCC_H [label="mcc.h"];
+               MP_H [label="media_proxy.h"];
+            }
+
+            subgraph ccp_layer {
+               cluster=true;
+               label="CCP";
+               style=solid;
+               TBS_H [label="tbs.h"];
+            }
+         }
+
+         subgraph rendering_and_capture_control_layer {
+            cluster=true;
+            label="Rendering and Capture Control";
+            style=dashed;
+
+            subgraph micp_layer {
+               cluster=true;
+               label="MICP";
+               style=solid;
+               MICP_H [label="micp.h"];
+               AICS_H [label="aics.h"];
+            }
+
+            subgraph vcp_layer {
+               cluster=true;
+               label="VCP";
+               style=solid;
+               VCP_H [label="vcp.h"];
+               VOCS_H [label="vocs.h"];
+               AICS_H [label="aics.h"];
+            }
+         }
+      }
+
+      HAS_H -> CAP_H;
+      PBP_H -> CAP_H;
+      TMAP_H -> CAP_H;
+      GMAP_H -> CAP_H;
+      GMAP_PRESET_H -> CAP_H;
+
+      CAP_H -> MCS_H;
+      CAP_H -> MCC_H;
+      CAP_H -> MP_H;
+      CAP_H -> TBS_H;
+      CAP_H -> BAP_H;
+      CAP_H -> BAP_PRESET_H;
+      CAP_H -> PACS_H;
+      CAP_H -> MICP_H;
+      CAP_H -> VCP_H;
+
+      CSIP_H -> MCS_H;
+      CSIP_H -> MCC_H;
+      CSIP_H -> MP_H;
+      CSIP_H -> TBS_H;
+      CSIP_H -> BAP_H;
+      CSIP_H -> BAP_PRESET_H;
+      CSIP_H -> PACS_H;
+      CSIP_H -> MICP_H;
+      CSIP_H -> VCP_H;
+   }
 
 Bluetooth Audio Stack Status
 ============================
@@ -594,10 +884,10 @@ MTU requirements
 The Basic Audio Profile (BAP) has a requirement that both sides shall support a minimum ATT_MTU of
 at least 64 on the unenhanced ATT bearer or at least one enhanced ATT bearer.
 The requirement comes from the preferred (or sometimes mandatory) use of GATT Write Without
-Response, and where support for Write Long Characterstic Value is optional in most cases.
+Response, and where support for Write Long Characteristic Value is optional in most cases.
 
-If a ASCS device supports values larger than the minimum ATT_MTU of 64 octets, then it shall supoort
-Read long Characterstic Value by setting :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT` to a
+If a ASCS device supports values larger than the minimum ATT_MTU of 64 octets, then it shall support
+Read long Characteristic Value by setting :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT` to a
 non-zero value.
 
 LE Audio resources
@@ -633,7 +923,7 @@ The project is mostly automated,
 and the LE Audio contributors almost only rely on the automated workflows
 to present the state of development.
 Anyone is able to pick any of the open issues and work on it.
-If you cannot assign the issue to youself,
+If you cannot assign the issue to yourself,
 please leave a comment in the issue itself or ping the Discord channel for help.
 
 Bluetooth SIG errata for LE Audio

@@ -399,17 +399,19 @@ static int nvs_ate_cmp_const(const struct nvs_ate *entry, uint8_t value)
 }
 
 /* nvs_ate_valid validates an ate:
- *     return 1 if crc8 and offset valid,
+ *     return 1 if crc8, offset and length are valid,
  *            0 otherwise
  */
 static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
 {
 	size_t ate_size;
+	uint32_t position;
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+	position = entry->offset + entry->len;
 
 	if ((nvs_ate_crc8_check(entry)) ||
-	    (entry->offset >= (fs->sector_size - ate_size))) {
+	    (position >= (fs->sector_size - ate_size))) {
 		return 0;
 	}
 

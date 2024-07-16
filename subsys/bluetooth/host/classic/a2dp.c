@@ -195,11 +195,10 @@ static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 	int err;
 
 	*errcode = 0;
+
+	__ASSERT(sep, "Invalid sep");
+
 	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
-	if (ep == NULL) {
-		*errcode = BT_AVDTP_BAD_ACP_SEID;
-		return -1;
-	}
 
 	/* parse the configuration */
 	codec_info_element_len = 4U;
@@ -252,13 +251,11 @@ static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 			stream->remote_ep = NULL;
 			stream->codec_config = *cfg.codec_config;
 			ep->stream = stream;
-		}
-	}
 
-	ops = stream->ops;
-	if (*errcode == 0) {
-		if ((ops != NULL) && (stream->ops->configured != NULL)) {
-			stream->ops->configured(stream);
+			ops = stream->ops;
+			if ((ops != NULL) && (ops->configured != NULL)) {
+				ops->configured(stream);
+			}
 		}
 	}
 
@@ -727,9 +724,9 @@ int bt_a2dp_stream_establish(struct bt_a2dp_stream *stream)
 
 	a2dp = stream->a2dp;
 	a2dp->open_param.req.func = bt_a2dp_open_cb;
-	a2dp->open_param.acp_stream_ep_id = stream->remote_ep == NULL ?
+	a2dp->open_param.acp_stream_ep_id = stream->remote_ep != NULL ?
 		stream->remote_ep->sep.sep_info.id : stream->remote_ep_id;
-	a2dp->open_param.sep = a2dp->set_config_param.sep;
+	a2dp->open_param.sep = &stream->local_ep->sep;
 	return bt_avdtp_open(&a2dp->session, &a2dp->open_param);
 }
 
@@ -749,7 +746,7 @@ int bt_a2dp_stream_start(struct bt_a2dp_stream *stream)
 
 	a2dp = stream->a2dp;
 	a2dp->start_param.req.func = bt_a2dp_start_cb;
-	a2dp->start_param.acp_stream_ep_id = stream->remote_ep == NULL ?
+	a2dp->start_param.acp_stream_ep_id = stream->remote_ep != NULL ?
 		stream->remote_ep->sep.sep_info.id : stream->remote_ep_id;
 	a2dp->start_param.sep = &stream->local_ep->sep;
 	return bt_avdtp_start(&a2dp->session, &a2dp->start_param);

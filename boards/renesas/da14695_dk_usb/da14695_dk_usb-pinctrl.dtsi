@@ -44,10 +44,27 @@
 		};
 	};
 
+	/omit-if-no-ref/ i2c_sleep: i2c_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 0, 31)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 30)>;
+			bias-pull-up;
+
+		};
+	};
+
 	i2c2_default: i2c2_default {
 		group1 {
 			pinmux = <SMARTBOND_PINMUX(I2C2_SDA, 0, 19)>,
 				<SMARTBOND_PINMUX(I2C2_SCL, 0, 18)>;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/ i2c2_sleep: i2c2_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 0, 28)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 29)>;
 			bias-pull-up;
 		};
 	};

@@ -169,6 +169,7 @@
 			drive-strength = "normal";
 			drive-open-drain;
 			slew-rate = "fast";
+			input-enable;
 		};
 	};
 

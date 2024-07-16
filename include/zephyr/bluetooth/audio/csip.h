@@ -1,5 +1,10 @@
 /**
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * @file
+ * @brief Bluetooth Coordinated Set Identification Profile (CSIP) APIs.
+ */
+
+/*
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +22,9 @@
  *
  * @ingroup bluetooth
  * @{
+ *
+ * The Coordinated Set Identification Profile (CSIP) provides procedures to discover and coordinate
+ * sets of devices.
  */
 
 #include <stdbool.h>
@@ -37,6 +45,10 @@ extern "C" {
 /** Recommended timer for member discovery */
 #define BT_CSIP_SET_COORDINATOR_DISCOVER_TIMER_VALUE        K_SECONDS(10)
 
+/**
+ * Defines the maximum number of Coordinated Set Identification service instances for the
+ * Coordinated Set Identification Set Coordinator
+ */
 #if defined(CONFIG_BT_CSIP_SET_COORDINATOR)
 #define BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES
 #else
@@ -153,7 +165,7 @@ struct bt_csip_set_member_register_param {
 	/** Pointer to the callback structure. */
 	struct bt_csip_set_member_cb *cb;
 
-#if CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1
+#if CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1 || defined(__DOXYGEN__)
 	/**
 	 * @brief Parent service pointer
 	 *
@@ -287,6 +299,7 @@ struct bt_csip_set_coordinator_set_info {
  * (bt_csip_set_coordinator_discover()).
  */
 struct bt_csip_set_coordinator_csis_inst {
+	/** Information about the coordinated set */
 	struct bt_csip_set_coordinator_set_info info;
 
 	/** Internally used pointer value */
@@ -388,18 +401,26 @@ typedef void (*bt_csip_set_coordinator_ordered_access_cb_t)(
 	int err, bool locked,
 	struct bt_csip_set_coordinator_set_member *member);
 
+/**
+ * @brief Struct to hold the Coordinated Set Identification Profile Set Coordinator callbacks
+ *
+ * These can be registered for usage with bt_csip_set_coordinator_register_cb().
+ */
 struct bt_csip_set_coordinator_cb {
-	/* Set callbacks */
-	bt_csip_set_coordinator_lock_set_cb             lock_set;
-	bt_csip_set_coordinator_lock_set_cb             release_set;
-	bt_csip_set_coordinator_lock_changed_cb         lock_changed;
-	bt_csip_set_coordinator_sirk_changed_cb         sirk_changed;
+	/** Callback when discovery has finished */
+	bt_csip_set_coordinator_discover_cb discover;
+	/** Callback when locking a set has finished */
+	bt_csip_set_coordinator_lock_set_cb lock_set;
+	/** Callback when unlocking a set has finished */
+	bt_csip_set_coordinator_lock_set_cb release_set;
+	/** Callback when a set's lock state has changed */
+	bt_csip_set_coordinator_lock_changed_cb lock_changed;
+	/** Callback when a set's SIRK has changed */
+	bt_csip_set_coordinator_sirk_changed_cb sirk_changed;
+	/** Callback for the ordered access procedure */
+	bt_csip_set_coordinator_ordered_access_cb_t ordered_access;
 
-	/* Device specific callbacks */
-	bt_csip_set_coordinator_discover_cb             discover;
-	bt_csip_set_coordinator_ordered_access_cb_t     ordered_access;
-
-	/** Internally used field for list handling */
+	/** @internal Internally used field for list handling */
 	sys_snode_t _node;
 };
 
@@ -448,7 +469,7 @@ typedef bool (*bt_csip_set_coordinator_ordered_access_t)(
  * (if present). Once this procedure is finished or an error occurs,
  * @ref bt_csip_set_coordinator_cb.ordered_access will be called.
  *
- * This procedure only works if all the members have the lock characterstic,
+ * This procedure only works if all the members have the lock characteristic,
  * and all either has rank = 0 or unique ranks.
  *
  * If any of the members are in the locked state, the procedure will be

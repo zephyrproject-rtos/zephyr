@@ -22,6 +22,7 @@
 		zephyr,reference = "ADC_REF_EXTERNAL1";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
+		zephyr,vref-mv = <1800>;
 		zephyr,input-positive = <MCUX_LPADC_CH1A>;
 	};
 
@@ -31,6 +32,7 @@
 		zephyr,reference = "ADC_REF_EXTERNAL1";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
+		zephyr,vref-mv = <1800>;
 		zephyr,input-positive = <MCUX_LPADC_CH2A>;
 	};
 };

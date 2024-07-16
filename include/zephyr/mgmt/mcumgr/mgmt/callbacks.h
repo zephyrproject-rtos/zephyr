@@ -39,7 +39,7 @@ extern "C" {
  */
 
 /** @cond INTERNAL_HIDDEN */
-/** Event which signfies that all event IDs for a particular group should be enabled. */
+/** Event which signifies that all event IDs for a particular group should be enabled. */
 #define MGMT_EVT_OP_ID_ALL 0xffff
 
 /** Get event for a particular group and event ID. */
@@ -67,7 +67,7 @@ enum mgmt_cb_return {
 
 	/**
 	 * Group (application-level) error and ``err_group`` contains the group ID that caused
-	 * the error and ``err_rc`` contians the error code of that group to return.
+	 * the error and ``err_rc`` contains the error code of that group to return.
 	 */
 	MGMT_CB_ERROR_ERR,
 };

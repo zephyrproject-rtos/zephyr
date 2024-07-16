@@ -10,11 +10,6 @@ set -ue
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-app=tests/bsim/bluetooth/host/adv/resume compile
-app=tests/bsim/bluetooth/host/adv/resume conf_file=prj_2.conf compile
-app=tests/bsim/bluetooth/host/adv/resume2/connectable compile
-app=tests/bsim/bluetooth/host/adv/resume2/connecter compile
-app=tests/bsim/bluetooth/host/adv/resume2/dut compile
 app=tests/bsim/bluetooth/host/adv/chain compile
 app=tests/bsim/bluetooth/host/adv/extended conf_file=prj_advertiser.conf compile
 app=tests/bsim/bluetooth/host/adv/extended conf_file=prj_scanner.conf compile

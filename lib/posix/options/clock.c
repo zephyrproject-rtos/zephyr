@@ -225,7 +225,7 @@ static int __z_clock_nanosleep(clockid_t clock_id, int flags, const struct times
 		ns = rqtp->tv_sec * NSEC_PER_SEC + rqtp->tv_nsec;
 	}
 
-	uptime_ns = k_cyc_to_ns_ceil64(k_cycle_get_32());
+	uptime_ns = k_ticks_to_ns_ceil64(sys_clock_tick_get());
 
 	if (flags & TIMER_ABSTIME && clock_id == CLOCK_REALTIME) {
 		key = k_spin_lock(&rt_clock_base_lock);

@@ -42,7 +42,7 @@ grown to be mature and feature-rich, as can be seen in the section below.
   * Concurrent multi-protocol support ready
   * Intelligent scheduling of roles to minimize overlap
   * Portable design to any open BLE radio, currently supports Nordic
-    Semiconductor nRF51 and nRF52, as well as proprietary radios
+    Semiconductor nRF52x and nRF53x SoC Series, as well as proprietary radios
   * Supports little and big endian architectures, and abstracts the hard
     real-time specifics so that they can be encapsulated in a hardware-specific
     module

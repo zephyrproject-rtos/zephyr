@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MTK_ADSP
-	bool "Mediatek MT8xxx Series Audio DSPs"
+	bool
 	select XTENSA
 	select XTENSA_GEN_HANDLERS
+	help
+	  Mediatek MT8xxx Series Audio DSPs
 
 config SOC_SERIES_MT8195_ADSP
-	bool "Mediatek 8195 Audio DSP"
+	bool
 	select SOC_FAMILY_MTK_ADSP
 	help
 	  Mediatek MT8195 Audio DSP

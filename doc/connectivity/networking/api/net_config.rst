@@ -50,6 +50,18 @@ setup the system:
    this option tells that the network application needs IPv6 router to exists
    before continuing. This means in practice that the application wants to wait
    until it receives IPv6 router advertisement message before continuing."
+   ":kconfig:option:`CONFIG_NET_CONFIG_MY_IPV6_ADDR`","Local static IPv6 address assigned to
+   the default network interface."
+   ":kconfig:option:`CONFIG_NET_CONFIG_PEER_IPV6_ADDR`","Peer static IPv6 address. This is mainly
+   useful in testing setups where the application can connect to a pre-defined host."
+   ":kconfig:option:`CONFIG_NET_CONFIG_MY_IPV4_ADDR`","Local static IPv4 address assigned to
+   the default network interface."
+   ":kconfig:option:`CONFIG_NET_CONFIG_MY_IPV4_NETMASK`","Static IPv4 netmask assigned to the IPv4
+   address."
+   ":kconfig:option:`CONFIG_NET_CONFIG_MY_IPV4_GW`","Static IPv4 gateway address assigned to the
+   default network interface."
+   ":kconfig:option:`CONFIG_NET_CONFIG_PEER_IPV4_ADDR`","Peer static IPv4 address. This is mainly
+   useful in testing setups where the application can connect to a pre-defined host."
 
 Sample usage
 ************

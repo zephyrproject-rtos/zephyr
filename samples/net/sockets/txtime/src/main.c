@@ -263,7 +263,7 @@ static int create_socket(struct net_if *iface, struct sockaddr *peer)
 {
 	struct sockaddr local;
 	socklen_t addrlen;
-	bool optval;
+	int optval;
 	uint8_t priority;
 	int sock;
 	int ret;

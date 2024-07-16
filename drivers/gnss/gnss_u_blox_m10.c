@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "gnss_nmea0183.h"
 #include "gnss_nmea0183_match.h"

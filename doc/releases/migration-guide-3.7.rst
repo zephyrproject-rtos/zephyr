@@ -64,6 +64,10 @@ Kernel
 
 * The named struct ``z_arch_esf_t`` is now deprecated. Use ``struct arch_esf`` instead. (:github:`73593`)
 
+* The header file :zephyr_file:`include/zephyr/arch/arch_interface.h` has been moved from
+  ``include/zephyr/sys/`` into ``include/zephyr/arch/``. Out-of-tree source files will need to
+  update the include path. (:github:`64987`)
+
 Boards
 ******
 
@@ -238,8 +242,35 @@ Device Drivers and Devicetree
         };
     };
 
+* The driver for :dtcompatible:`invensense,icm42688` now correctly supports device
+  tree configuration(:github:`74267`). Prior devicetrees may have tried to use
+  the bindings to set sample rate and scale for the accel/gyro without any
+  effect. The devicetree usage should now use the provided defines and include
+  file along with new bindings which take these values.
+
+  For example:
+
+  .. code-block:: devicetree
+
+    #include <zephyr/dt-bindings/sensor/icm42688.h>
+
+    icm42688: icm42688@0 {
+        accel-pwr-mode = <ICM42688_ACCEL_LN>;
+        accel-fs = <ICM42688_ACCEL_FS_16G>;
+        accel-odr = <ICM42688_ACCEL_ODR_2000>;
+        gyro-pwr-mode= <ICM42688_GYRO_LN>;
+        gyro-fs = <ICM42688_GYRO_FS_2000>;
+        gyro-odr = <ICM42688_GYRO_ODR_2000>;
+    };
+
 * `st,lis2mdl` property `spi-full-duplex` changed to `duplex =
   SPI_FULL_DUPLEX`. Full duplex is now the default.
+
+* The DT property ``nxp,reference-supply`` of :dtcompatible:`nxp,lpc-lpadc` driver has
+  been removed, users should remove this property from their devicetree if it is present.
+  Added new phandle-array type DT property ``nxp,references``, the user can use this
+  property to specify the reference voltage and reference voltage value to be used by
+  the lpadc. (:github:`75005`)
 
 Analog-to-Digital Converter (ADC)
 =================================
@@ -263,13 +294,13 @@ Bluetooth HCI
       choice, rather they can now be enabled and disabled independently, mostly based on their
       respective devicetree node being enabled or not.
    * The ``BT_HCI_VS_EXT`` Kconfig option was deleted and the feature is now included in the
-      :kconfig:option:`BT_HCI_VS` Kconfig option.
+      :kconfig:option:`CONFIG_BT_HCI_VS` Kconfig option.
    * The ``BT_HCI_VS_EVT`` Kconfig option was removed, since vendor event support is implicit if
-      the :kconfig:option:`BT_HCI_VS` option is enabled.
+      the :kconfig:option:`CONFIG_BT_HCI_VS` option is enabled.
    * The bt_read_static_addr() API was removed. This wasn't really a completely public API, but
       since it was exposed by the public hci_driver.h header file the removal is mentioned here.
-      Enable the :kconfig:option:`BT_HCI_VS` Kconfig option instead, and use vendor specific HCI
-      commands API to get the Controller's Bluetooth static address when available.
+      Enable the :kconfig:option:`CONFIG_BT_HCI_VS` Kconfig option instead, and use vendor specific
+      HCI commands API to get the Controller's Bluetooth static address when available.
 
 Charger
 =======
@@ -285,8 +316,9 @@ Controller Area Network (CAN)
 
 * Removed the following deprecated CAN controller devicetree properties. Out-of-tree boards using
   these properties can switch to using the ``bitrate``, ``sample-point``, ``bitrate-data``, and
-  ``sample-point-data`` devicetree properties (or rely on :kconfig:option:`CAN_DEFAULT_BITRATE` and
-  :kconfig:option:`CAN_DEFAULT_BITRATE_DATA`) for specifying the initial CAN bitrate:
+  ``sample-point-data`` devicetree properties (or rely on
+  :kconfig:option:`CONFIG_CAN_DEFAULT_BITRATE` and
+  :kconfig:option:`CONFIG_CAN_DEFAULT_BITRATE_DATA`) for specifying the initial CAN bitrate:
 
   * ``sjw``
   * ``prop-seg``
@@ -634,6 +666,9 @@ Sensors
 Serial
 ======
 
+* The Raspberry Pi UART driver ``uart_rpi_pico`` has been removed.
+  Use ``uart_pl011`` (:dtcompatible:`arm,pl011`) instead. (:github:`71074`)
+
 Timer
 =====
 
@@ -771,6 +806,12 @@ Bluetooth Host
   * :c:macro:`BT_LE_EXT_ADV_CODED_NCONN_NAME`
 
   (:github:`75065`)
+
+* :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` now needs to be larger than
+  :kconfig:option:`CONFIG_BT_MAX_CONN`. This was always the case due to the design of the HCI
+  interface. It is now being enforced through a build-time assertion.
+
+  (:github:`75592`)
 
 Bluetooth Crypto
 ================

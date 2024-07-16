@@ -187,9 +187,9 @@ static void port_delay_req_timestamp_cb(struct net_pkt *pkt)
 			return;
 		}
 
-		req->timestamp.host._sec.high = ntohs(pkt->timestamp._sec.high);
-		req->timestamp.host._sec.low = ntohl(pkt->timestamp._sec.low);
-		req->timestamp.host.nanosecond = ntohl(pkt->timestamp.nanosecond);
+		req->timestamp.host._sec.high = pkt->timestamp._sec.high;
+		req->timestamp.host._sec.low = pkt->timestamp._sec.low;
+		req->timestamp.host.nanosecond = pkt->timestamp.nanosecond;
 
 		LOG_DBG("Port %d registered timestamp for %d Delay_Req",
 			port->port_ds.id.port_number,
@@ -1090,7 +1090,7 @@ enum ptp_port_event ptp_port_event_gen(struct ptp_port *port, int idx)
 	case PTP_MSG_PDELAY_RESP:
 		__fallthrough;
 	case PTP_MSG_PDELAY_RESP_FOLLOW_UP:
-		/* P2P delay machanism not supported */
+		/* P2P delay mechanism not supported */
 		break;
 	case PTP_MSG_FOLLOW_UP:
 		port_follow_up_msg_process(port, msg);

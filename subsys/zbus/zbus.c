@@ -76,13 +76,7 @@ int _zbus_init(void)
 
 		++(curr->data->observers_end_idx);
 	}
-	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
-		k_sem_init(&chan->data->sem, 1, 1);
 
-#if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS)
-		sys_slist_init(&chan->data->observers);
-#endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
-	}
 	return 0;
 }
 SYS_INIT(_zbus_init, APPLICATION, CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY);
@@ -236,15 +230,7 @@ static inline void chan_update_hop(const struct zbus_channel *chan)
 
 static inline void update_all_channels_hop(const struct zbus_observer *obs)
 {
-	struct zbus_channel_observation *observation;
-
-	int count;
-
-	STRUCT_SECTION_COUNT(zbus_channel_observation, &count);
-
-	for (int16_t i = 0; i < count; ++i) {
-		STRUCT_SECTION_GET(zbus_channel_observation, i, &observation);
-
+	STRUCT_SECTION_FOREACH(zbus_channel_observation, observation) {
 		if (obs != observation->obs) {
 			continue;
 		}

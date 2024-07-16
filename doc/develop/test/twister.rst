@@ -218,6 +218,15 @@ files in the application's project directory. This test application
 configuration file may contain one or more entries in the tests section each
 identifying a test scenario.
 
+.. _twister_test_project_diagram:
+
+.. figure:: figures/twister_test_project.svg
+   :alt: Twister and a Test applications' project.
+   :figclass: align-center
+
+   Twister and a Test applications' project.
+
+
 Test application configurations are written using the YAML syntax and share the
 same structure as samples.
 
@@ -615,8 +624,11 @@ harness_config: <harness configuration options>
         If the scope is set to ``function``, DUT is launched for every test case
         in python script. For ``session`` scope, DUT is launched only once.
 
-    robot_test_path: <robot file path> (default empty)
-        Specify a path to a file containing a Robot Framework test suite to be run.
+    robot_testsuite: <robot file path> (default empty)
+        Specify one or more paths to a file containing a Robot Framework test suite to be run.
+
+    robot_option: <robot option> (default empty)
+        One or more options to be send to robotframework.
 
     bsim_exe_name: <string>
         If provided, the executable filename when copying to BabbleSim's bin
@@ -673,7 +685,33 @@ harness_config: <harness configuration options>
           robot.example:
             harness: robot
             harness_config:
-              robot_test_path: [robot file path]
+              robot_testsuite: [robot file path]
+
+    It can be more than one test suite using a list.
+
+    .. code-block:: yaml
+
+        tests:
+          robot.example:
+            harness: robot
+            harness_config:
+              robot_testsuite:
+                - [robot file path 1]
+                - [robot file path 2]
+                - [robot file path n]
+
+    One or more options can be passed to robotframework.
+
+    .. code-block:: yaml
+
+        tests:
+          robot.example:
+            harness: robot
+            harness_config:
+              robot_testsuite: [robot file path]
+              robot_option:
+                - --exclude tag
+                - --stop-on-error
 
 filter: <expression>
     Filter whether the test scenario should be run by evaluating an expression
@@ -1128,7 +1166,7 @@ When running ``twister`` with ``--device-testing``, the configured fixture
 in the hardware map file will be matched to test scenarios requesting the same fixtures
 and these tests will be executed on the boards that provide this fixture.
 
-.. figure:: fixtures.svg
+.. figure:: figures/fixtures.svg
    :figclass: align-center
 
 Fixtures can also be provided via twister command option ``--fixture``, this option

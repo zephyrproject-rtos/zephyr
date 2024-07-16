@@ -713,7 +713,7 @@ union i3c_ccc_getmxds {
 
 		/**
 		 * Defining Byte 0x91: CRHDLY
-		 * - Bit[2]: Set Bus Actibity State
+		 * - Bit[2]: Set Bus Activity State
 		 * - Bit[1:0]: Controller Handoff Activity State
 		 */
 		uint8_t crhdly1;

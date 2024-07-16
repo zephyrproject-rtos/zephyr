@@ -318,7 +318,6 @@
 			clock-output-names = "CLK_0", "CLK_1";
 			litex,lock-timeout = <10>;
 			litex,drdy-timeout = <10>;
-			litex,sys-clock-frequency = <100000000>;
 			litex,divclk-divide-min = <1>;
 			litex,divclk-divide-max = <107>;
 			litex,clkfbout-mult-min = <2>;

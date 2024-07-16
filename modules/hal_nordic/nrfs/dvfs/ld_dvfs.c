@@ -124,7 +124,7 @@ K_TIMER_DEFINE(dvfs_downscale_secure_timer, ld_dvfs_secure_downscale_timeout, NU
  */
 __weak void ld_dvfs_secure_start_increased_power_consumption(void)
 {
-	LOG_INF("Start increased power consumption for DVFS sequence and start safety timer.");
+	LOG_DBG("Start increased power consumption for DVFS sequence and start safety timer.");
 	k_timer_start(&dvfs_downscale_secure_timer, DOWNSCALE_SAFETY_TIMEOUT, K_NO_WAIT);
 	atomic_set(&increased_power_consumption, 1);
 
@@ -147,7 +147,7 @@ __weak void ld_dvfs_secure_start_increased_power_consumption(void)
  */
 __weak void ld_dvfs_secure_stop_increased_power_consumption(void)
 {
-	LOG_INF("Stop increased power consumption for DVFS sequence.");
+	LOG_DBG("Stop increased power consumption for DVFS sequence.");
 	k_timer_stop(&dvfs_downscale_secure_timer);
 	atomic_set(&increased_power_consumption, 0);
 }

@@ -63,6 +63,7 @@ static void it8xxx2_kbd_drive_column(const struct device *dev, int col)
 	const uint8_t ksol_mask = kso_mask & 0xff;
 	const uint8_t ksoh1_mask = (kso_mask >> 8) & 0xff;
 	uint32_t kso_val;
+	unsigned int key;
 
 	/* Tri-state all outputs */
 	if (col == INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE) {
@@ -77,7 +78,17 @@ static void it8xxx2_kbd_drive_column(const struct device *dev, int col)
 
 	/* Set KSO[17:0] output data */
 	inst->KBS_KSOL = (inst->KBS_KSOL & ~ksol_mask) | (kso_val & ksol_mask);
+	/*
+	 * Disable global interrupts for critical section
+	 * The KBS_KSOH1 register contains both keyboard and GPIO output settings.
+	 * Not all bits are for the keyboard will be driven, so a critical section
+	 * is needed to avoid race conditions.
+	 */
+	key = irq_lock();
 	inst->KBS_KSOH1 = (inst->KBS_KSOH1 & ~ksoh1_mask) | ((kso_val >> 8) & ksoh1_mask);
+	/* Restore interrupts */
+	irq_unlock(key);
+
 	if (common->col_size > 16) {
 		inst->KBS_KSOH2 = (kso_val >> 16) & 0xff;
 	}

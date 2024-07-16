@@ -1898,7 +1898,6 @@ if (CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
     ${ZEPHYR_BASE}/scripts/build/llext_prepare_exptab.py
     --elf-file ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
     --slid-listing ${PROJECT_BINARY_DIR}/slid_listing.txt
-    -vvv
   )
 
 endif()
@@ -1989,22 +1988,39 @@ elseif(CONFIG_LOG_MIPI_SYST_USE_CATALOG)
 endif()
 
 if(LOG_DICT_DB_NAME_ARG)
-  if (NOT CONFIG_LOG_DICTIONARY_DB_TARGET)
-    set(LOG_DICT_DB_ALL_TARGET ALL)
-  endif()
-  add_custom_command(
-    OUTPUT ${LOG_DICT_DB_NAME}
-    COMMAND
+  set(log_dict_gen_command
       ${PYTHON_EXECUTABLE}
       ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
       ${KERNEL_ELF_NAME}
       ${LOG_DICT_DB_NAME_ARG}=${LOG_DICT_DB_NAME}
       --build-header ${PROJECT_BINARY_DIR}/include/generated/zephyr/version.h
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMENT "Generating logging dictionary database: ${LOG_DICT_DB_NAME}"
-    DEPENDS ${logical_target_for_zephyr_elf}
   )
-  add_custom_target(log_dict_db_gen ${LOG_DICT_DB_ALL_TARGET} DEPENDS ${LOG_DICT_DB_NAME})
+
+  if (NOT CONFIG_LOG_DICTIONARY_DB_TARGET)
+    # If not using a separate target for generating logging dictionary
+    # database, add the generation to post build command to make sure
+    # the database is actually being generated.
+    list(APPEND
+      post_build_commands
+      COMMAND ${CMAKE_COMMAND} -E echo "Generating logging dictionary database: ${LOG_DICT_DB_NAME}"
+      COMMAND ${log_dict_gen_command}
+    )
+    list(APPEND
+      post_build_byproducts
+      ${LOG_DICT_DB_NAME}
+    )
+  else()
+    # Seprate build target for generating logging dictionary database.
+    # This needs to be explicitly called/used to generate the database.
+    add_custom_command(
+      OUTPUT ${LOG_DICT_DB_NAME}
+      COMMAND ${log_dict_gen_command}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      COMMENT "Generating logging dictionary database: ${LOG_DICT_DB_NAME}"
+      DEPENDS ${logical_target_for_zephyr_elf}
+    )
+    add_custom_target(log_dict_db_gen DEPENDS ${LOG_DICT_DB_NAME})
+  endif()
 endif()
 
 # Add post_build_commands to post-process the final .elf file produced by

@@ -35,6 +35,9 @@ config ENTROPY_STM32_CLK_CHECK
 config FPU
 	default y
 
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
 endif
 
 if PM_S2RAM

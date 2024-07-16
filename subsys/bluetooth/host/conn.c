@@ -773,6 +773,10 @@ static bool should_stop_tx(struct bt_conn *conn)
 {
 	LOG_DBG("%p", conn);
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		return true;
+	}
+
 	/* TODO: This function should be overridable by the application: they
 	 * should be able to provide their own heuristic.
 	 */
@@ -804,6 +808,12 @@ void bt_conn_data_ready(struct bt_conn *conn)
 
 	/* The TX processor will call the `pull_cb` to get the buf */
 	if (!atomic_set(&conn->_conn_ready_lock, 1)) {
+		/* Attach a reference to the `bt_dev.le.conn_ready` list.
+		 *
+		 * This reference will be consumed when the conn is popped off
+		 * the list (in `get_conn_ready`).
+		 */
+		bt_conn_ref(conn);
 		sys_slist_append(&bt_dev.le.conn_ready,
 				 &conn->_conn_ready);
 		LOG_DBG("raised");
@@ -857,6 +867,12 @@ struct bt_conn *get_conn_ready(void)
 		return NULL;
 	}
 
+	/* `conn` borrows from the list node. That node is _not_ popped yet.
+	 *
+	 * If we end up not popping that conn off the list, we have to make sure
+	 * to increase the refcount before returning a pointer to that
+	 * connection out of this function.
+	 */
 	struct bt_conn *conn = CONTAINER_OF(node, struct bt_conn, _conn_ready);
 
 	if (dont_have_viewbufs()) {
@@ -887,6 +903,7 @@ struct bt_conn *get_conn_ready(void)
 	}
 
 	if (should_stop_tx(conn)) {
+		/* Move reference off the list and into the `conn` variable. */
 		__maybe_unused sys_snode_t *s = sys_slist_get(&bt_dev.le.conn_ready);
 
 		__ASSERT_NO_MSG(s == node);
@@ -902,9 +919,11 @@ struct bt_conn *get_conn_ready(void)
 			LOG_DBG("appending %p to back of TX queue", conn);
 			bt_conn_data_ready(conn);
 		}
+
+		return conn;
 	}
 
-	return conn;
+	return bt_conn_ref(conn);
 }
 
 /* Crazy that this file is compiled even if this is not true, but here we are. */
@@ -985,7 +1004,8 @@ void bt_conn_tx_processor(void)
 	LOG_DBG("processing conn %p", conn);
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		LOG_ERR("conn %p: not connected", conn);
+		LOG_WRN("conn %p: not connected", conn);
+
 		/* Call the user callbacks & destroy (final-unref) the buffers
 		 * we were supposed to send.
 		 */
@@ -994,7 +1014,8 @@ void bt_conn_tx_processor(void)
 			destroy_and_callback(conn, buf, cb, ud);
 			buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
 		}
-		return;
+
+		goto exit;
 	}
 
 	/* now that we are guaranteed resources, we can pull data from the upper
@@ -1008,7 +1029,8 @@ void bt_conn_tx_processor(void)
 		 * the upper layer when it has more data.
 		 */
 		LOG_DBG("no buf returned");
-		return;
+
+		goto exit;
 	}
 
 	bool last_buf = conn_mtu(conn) >= buf_len;
@@ -1044,13 +1066,17 @@ void bt_conn_tx_processor(void)
 		destroy_and_callback(conn, buf, cb, ud);
 		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
-		return;
+		goto exit;
 	}
 
 	/* Always kick the TX work. It will self-suspend if it doesn't get
 	 * resources or there is nothing left to send.
 	 */
 	bt_tx_irq_raise();
+
+exit:
+	/* Give back the ref that `get_conn_ready()` gave us */
+	bt_conn_unref(conn);
 }
 
 static void process_unack_tx(struct bt_conn *conn)
@@ -3007,15 +3033,6 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 {
 	LOG_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn, conn->le.features[0],
 		param->interval_min, param->interval_max, param->latency, param->timeout);
-
-	/* Check if there's a need to update conn params */
-	if (conn->le.interval >= param->interval_min &&
-	    conn->le.interval <= param->interval_max &&
-	    conn->le.latency == param->latency &&
-	    conn->le.timeout == param->timeout) {
-		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
-		return -EALREADY;
-	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_CONN_ROLE_CENTRAL) {

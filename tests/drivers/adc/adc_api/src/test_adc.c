@@ -104,7 +104,7 @@ static void check_samples(int expected_count)
 	for (i = 0; i < BUFFER_SIZE; i++) {
 		int16_t sample_value = m_sample_buffer[i];
 
-		TC_PRINT("0x%04x ", sample_value);
+		TC_PRINT("0x%04hx ", sample_value);
 		if (i < expected_count) {
 			zassert_not_equal(INVALID_ADC_VALUE, sample_value,
 				"[%u] should be filled", i);

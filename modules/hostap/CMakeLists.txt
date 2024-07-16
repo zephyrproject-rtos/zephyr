@@ -417,7 +417,6 @@ zephyr_library_sources(
 	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls-bignum.c
 	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls-ec.c
 	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls.c
-	${HOSTAP_SRC_BASE}/crypto/tls_mbedtls.c
 	${HOSTAP_SRC_BASE}/crypto/aes-internal.c
 	${HOSTAP_SRC_BASE}/crypto/aes-wrap.c
 	${HOSTAP_SRC_BASE}/crypto/aes-unwrap.c
@@ -439,6 +438,10 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3
 	${HOSTAP_SRC_BASE}/crypto/sha256-kdf.c
 )
 
+zephyr_library_sources_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	${HOSTAP_SRC_BASE}/crypto/tls_none.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	# common
 	${HOSTAP_SRC_BASE}/crypto/sha384-tlsprf.c
@@ -450,6 +453,7 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	# MD4 removed from MbedTLS
 	${HOSTAP_SRC_BASE}/crypto/md4-internal.c
 	${HOSTAP_SRC_BASE}/crypto/aes-encblock.c
+	${HOSTAP_SRC_BASE}/crypto/tls_mbedtls.c
 )
 endif()
 

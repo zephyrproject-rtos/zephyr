@@ -328,7 +328,8 @@ void z_log_vprintk(const char *fmt, va_list ap);
 		log_source_const_data,								\
 		Z_LOG_ITEM_CONST_DATA(_name)) =							\
 	{											\
-		.name = COND_CODE_1(CONFIG_LOG_FMT_SECTION,					\
+		.name = IS_ENABLED(CONFIG_LOG_FMT_SECTION_STRIP) ? NULL :			\
+			COND_CODE_1(CONFIG_LOG_FMT_SECTION,					\
 				(UTIL_CAT(_name, _str)), (STRINGIFY(_name))),			\
 		.level = (_level)								\
 	}

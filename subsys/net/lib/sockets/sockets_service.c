@@ -13,7 +13,14 @@ LOG_MODULE_REGISTER(net_sock_svc, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/zvfs/eventfd.h>
 
 static int init_socket_service(void);
-static bool init_done;
+
+enum SOCKET_SERVICE_THREAD_STATUS {
+	SOCKET_SERVICE_THREAD_UNINITIALIZED = 0,
+	SOCKET_SERVICE_THREAD_FAILED,
+	SOCKET_SERVICE_THREAD_STOPPED,
+	SOCKET_SERVICE_THREAD_RUNNING,
+};
+static enum SOCKET_SERVICE_THREAD_STATUS thread_status;
 
 static K_MUTEX_DEFINE(lock);
 static K_CONDVAR_DEFINE(wait_start);
@@ -38,7 +45,6 @@ void net_socket_service_foreach(net_socket_service_cb_t cb, void *user_data)
 static void cleanup_svc_events(const struct net_socket_service_desc *svc)
 {
 	for (int i = 0; i < svc->pev_len; i++) {
-		ctx.events[get_idx(svc) + i].fd = -1;
 		svc->pev[i].event.fd = -1;
 		svc->pev[i].event.events = 0;
 	}
@@ -52,8 +58,12 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	if (!init_done) {
+	if (thread_status == SOCKET_SERVICE_THREAD_UNINITIALIZED) {
 		(void)k_condvar_wait(&wait_start, &lock, K_FOREVER);
+	} else if (thread_status != SOCKET_SERVICE_THREAD_RUNNING) {
+		NET_ERR("Socket service thread not running, service %p register fails.", svc);
+		ret = -EIO;
+		goto out;
 	}
 
 	if (STRUCT_SECTION_START(net_socket_service_desc) > svc ||
@@ -75,10 +85,6 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 		for (i = 0; i < len; i++) {
 			svc->pev[i].event = fds[i];
 			svc->pev[i].user_data = user_data;
-		}
-
-		for (i = 0; i < svc->pev_len; i++) {
-			ctx.events[get_idx(svc) + i] = svc->pev[i].event;
 		}
 	}
 
@@ -140,18 +146,8 @@ static int call_work(struct zsock_pollfd *pev, struct k_work_q *work_q,
 	 */
 	pev->fd = -1;
 
-	if (work->handler == NULL) {
-		/* Synchronous call */
-		net_socket_service_callback(work);
-	} else {
-		if (work_q != NULL) {
-			ret = k_work_submit_to_queue(work_q, work);
-		} else {
-			ret = k_work_submit(work);
-		}
-
-		k_yield();
-	}
+	/* Synchronous call */
+	net_socket_service_callback(work);
 
 	return ret;
 
@@ -219,7 +215,7 @@ static void socket_service_thread(void)
 		goto out;
 	}
 
-	init_done = true;
+	thread_status = SOCKET_SERVICE_THREAD_RUNNING;
 	k_condvar_broadcast(&wait_start);
 
 	ctx.events[0].fd = fd;
@@ -274,11 +270,12 @@ restart:
 
 out:
 	NET_DBG("Socket service thread stopped");
-	init_done = false;
+	thread_status = SOCKET_SERVICE_THREAD_STOPPED;
 
 	return;
 
 fail:
+	thread_status = SOCKET_SERVICE_THREAD_FAILED;
 	k_condvar_broadcast(&wait_start);
 }
 

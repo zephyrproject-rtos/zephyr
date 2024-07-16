@@ -44,6 +44,9 @@
 
 #define FIRST_PRINTABLE_ASCII_CHAR ' ' /* space */
 
+#define BT_TBS_CALL_FLAG_SET_INCOMING(flag) (flag &= ~BT_TBS_CALL_FLAG_OUTGOING)
+#define BT_TBS_CALL_FLAG_SET_OUTGOING(flag) (flag |= BT_TBS_CALL_FLAG_OUTGOING)
+
 const char *parse_string_value(const void *data, uint16_t length,
 				      uint16_t max_len);
 
@@ -144,8 +147,6 @@ static inline const char *bt_tbs_technology_str(uint8_t status)
 		return "2G";
 	case BT_TBS_TECHNOLOGY_WCDMA:
 		return "WCDMA";
-	case BT_TBS_TECHNOLOGY_IP:
-		return "IP";
 	default:
 		return "unknown technology";
 	}

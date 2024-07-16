@@ -7,6 +7,15 @@ tests:
     depends_on: usbd
     integration_platforms:
       - nrf52840dk/nrf52840
+    platform_exclude:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.usb.udc.build_only:
+    build_only: true
+    # Platform excluded above, only to build, with justification.
+    platform_allow:
+      # The controller cannot be enabled without VBUS, but the device should
+      # not be connected to the host during testing.
+      - nrf54h20dk/nrf54h20/cpuapp
   drivers.usb.udc.skeleton:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="udc_skeleton.overlay"

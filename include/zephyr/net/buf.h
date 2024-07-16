@@ -900,7 +900,7 @@ uint64_t net_buf_simple_pull_be64(struct net_buf_simple *buf);
  *
  * @return Tail pointer for the buffer.
  */
-static inline uint8_t *net_buf_simple_tail(struct net_buf_simple *buf)
+static inline uint8_t *net_buf_simple_tail(const struct net_buf_simple *buf)
 {
 	return buf->data + buf->len;
 }
@@ -914,7 +914,7 @@ static inline uint8_t *net_buf_simple_tail(struct net_buf_simple *buf)
  *
  * @return Number of bytes available in the beginning of the buffer.
  */
-size_t net_buf_simple_headroom(struct net_buf_simple *buf);
+size_t net_buf_simple_headroom(const struct net_buf_simple *buf);
 
 /**
  * @brief Check buffer tailroom.
@@ -925,7 +925,7 @@ size_t net_buf_simple_headroom(struct net_buf_simple *buf);
  *
  * @return Number of bytes available at the end of the buffer.
  */
-size_t net_buf_simple_tailroom(struct net_buf_simple *buf);
+size_t net_buf_simple_tailroom(const struct net_buf_simple *buf);
 
 /**
  * @brief Check maximum net_buf_simple::len value.
@@ -936,7 +936,7 @@ size_t net_buf_simple_tailroom(struct net_buf_simple *buf);
  *
  * @return Number of bytes usable behind the net_buf_simple::data pointer.
  */
-uint16_t net_buf_simple_max_len(struct net_buf_simple *buf);
+uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf);
 
 /**
  * @brief Parsing state of a buffer.
@@ -960,7 +960,7 @@ struct net_buf_simple_state {
  * @param buf Buffer from which the state should be saved.
  * @param state Storage for the state.
  */
-static inline void net_buf_simple_save(struct net_buf_simple *buf,
+static inline void net_buf_simple_save(const struct net_buf_simple *buf,
 				       struct net_buf_simple_state *state)
 {
 	state->offset = (uint16_t)net_buf_simple_headroom(buf);
@@ -1318,7 +1318,7 @@ struct net_buf_pool *net_buf_pool_get(int id);
  *
  * @return Zero-based index for the buffer.
  */
-int net_buf_id(struct net_buf *buf);
+int net_buf_id(const struct net_buf *buf);
 
 /**
  * @brief Allocate a new fixed buffer from a pool.
@@ -2499,7 +2499,7 @@ static inline uint64_t net_buf_pull_be64(struct net_buf *buf)
  *
  * @return Number of bytes available at the end of the buffer.
  */
-static inline size_t net_buf_tailroom(struct net_buf *buf)
+static inline size_t net_buf_tailroom(const struct net_buf *buf)
 {
 	return net_buf_simple_tailroom(&buf->b);
 }
@@ -2513,7 +2513,7 @@ static inline size_t net_buf_tailroom(struct net_buf *buf)
  *
  * @return Number of bytes available in the beginning of the buffer.
  */
-static inline size_t net_buf_headroom(struct net_buf *buf)
+static inline size_t net_buf_headroom(const struct net_buf *buf)
 {
 	return net_buf_simple_headroom(&buf->b);
 }
@@ -2527,7 +2527,7 @@ static inline size_t net_buf_headroom(struct net_buf *buf)
  *
  * @return Number of bytes usable behind the net_buf::data pointer.
  */
-static inline uint16_t net_buf_max_len(struct net_buf *buf)
+static inline uint16_t net_buf_max_len(const struct net_buf *buf)
 {
 	return net_buf_simple_max_len(&buf->b);
 }
@@ -2541,7 +2541,7 @@ static inline uint16_t net_buf_max_len(struct net_buf *buf)
  *
  * @return Tail pointer for the buffer.
  */
-static inline uint8_t *net_buf_tail(struct net_buf *buf)
+static inline uint8_t *net_buf_tail(const struct net_buf *buf)
 {
 	return net_buf_simple_tail(&buf->b);
 }
@@ -2617,7 +2617,7 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
  * @return number of bytes actually copied
  */
 size_t net_buf_linearize(void *dst, size_t dst_len,
-			 struct net_buf *src, size_t offset, size_t len);
+			 const struct net_buf *src, size_t offset, size_t len);
 
 /**
  * @typedef net_buf_allocator_cb
@@ -2714,7 +2714,7 @@ static inline struct net_buf *net_buf_skip(struct net_buf *buf, size_t len)
  *
  * @return Number of bytes in the buffer and its fragments.
  */
-static inline size_t net_buf_frags_len(struct net_buf *buf)
+static inline size_t net_buf_frags_len(const struct net_buf *buf)
 {
 	size_t bytes = 0;
 

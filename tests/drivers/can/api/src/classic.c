@@ -529,6 +529,9 @@ ZTEST_USER(can_classic, test_set_bitrate)
 	err = can_set_bitrate(can_dev, TEST_BITRATE_1);
 	zassert_equal(err, 0, "failed to set bitrate");
 
+	err = can_set_bitrate(can_dev, CONFIG_CAN_DEFAULT_BITRATE);
+	zassert_equal(err, 0, "failed to restore default bitrate");
+
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
@@ -546,6 +549,9 @@ ZTEST_USER(can_classic, test_set_timing_min)
 	err = can_set_timing(can_dev, can_get_timing_min(can_dev));
 	zassert_equal(err, 0, "failed to set minimum timing parameters (err %d)", err);
 
+	err = can_set_bitrate(can_dev, CONFIG_CAN_DEFAULT_BITRATE);
+	zassert_equal(err, 0, "failed to restore default bitrate");
+
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
@@ -562,6 +568,9 @@ ZTEST_USER(can_classic, test_set_timing_max)
 
 	err = can_set_timing(can_dev, can_get_timing_max(can_dev));
 	zassert_equal(err, 0, "failed to set maximum timing parameters (err %d)", err);
+
+	err = can_set_bitrate(can_dev, CONFIG_CAN_DEFAULT_BITRATE);
+	zassert_equal(err, 0, "failed to restore default bitrate");
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -1180,10 +1189,13 @@ ZTEST_USER(can_classic, test_filters_preserved_through_bitrate_change)
 	zassert_equal(state, CAN_STATE_STOPPED, "CAN controller not stopped");
 
 	err = can_set_bitrate(can_dev, TEST_BITRATE_2);
-	zassert_equal(err, 0, "failed to set bitrate");
+	zassert_equal(err, 0, "failed to set bitrate 2");
 
 	err = can_set_bitrate(can_dev, TEST_BITRATE_1);
-	zassert_equal(err, 0, "failed to set bitrate");
+	zassert_equal(err, 0, "failed to set bitrate 1");
+
+	err = can_set_bitrate(can_dev, CONFIG_CAN_DEFAULT_BITRATE);
+	zassert_equal(err, 0, "failed to restore default bitrate");
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);

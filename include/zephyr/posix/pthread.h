@@ -124,7 +124,7 @@ int pthread_condattr_init(pthread_condattr_t *att);
 int pthread_condattr_destroy(pthread_condattr_t *att);
 
 /**
- * @brief POSIX threading comatibility API
+ * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
  *

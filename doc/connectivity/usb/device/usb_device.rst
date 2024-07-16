@@ -25,11 +25,11 @@ over time. It provides the following functionalities:
   customer applications. The APIs is described in
   :zephyr_file:`include/zephyr/usb/usb_device.h`
 
-The device stack and :ref:`usb_dc_api` have some limitations, such as not being
-able to support more than one controller instance at runtime and only supporting
-one USB device configuration. We are actively working on new USB support, which
-means we will continue to maintain the device stack described here until all
-supported USB classes are ported, but do not expect any new features or enhancements.
+.. note::
+   It is planned to deprecate all APIs listed in :ref:`usb_api` and the
+   functions that depend on them between Zephyr v3.7.0 and v4.0.0, and remove
+   them in v4.2.0. The new USB device support, represented by the APIs in
+   :ref:`usb_device_next_api`, will become the default in Zephyr v4.0.0.
 
 Supported USB classes
 *********************
@@ -452,7 +452,7 @@ Interface number and endpoint address assignment
 
 In USB terminology, a ``function`` is a device that provides a capability to the
 host, such as a HID class device that implements a keyboard. A function
-constains a collection of ``interfaces``; at least one interface is required. An
+contains a collection of ``interfaces``; at least one interface is required. An
 interface may contain device ``endpoints``; for example, at least one input
 endpoint is required to implement a HID class device, and no endpoints are
 required to implement a USB DFU class. A USB device that combines functions is
@@ -474,7 +474,7 @@ Also, one controller may be able to have IN/OUT endpoints on the same endpoint
 number, interrupt IN endpoint 0x81 and bulk OUT endpoint 0x01, while the other
 may only be able to handle one endpoint per endpoint number. Information about
 the number of interfaces, interface associations, endpoint types, and addresses
-is provided to the host by the interface, interface specifiec, and endpoint
+is provided to the host by the interface, interface specific, and endpoint
 descriptors.
 
 Host driver for specific function, uses interface and endpoint descriptor to

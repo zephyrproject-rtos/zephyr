@@ -160,7 +160,8 @@ class Robot(Harness):
 
         config = instance.testsuite.harness_config
         if config:
-            self.path = config.get('robot_test_path', None)
+            self.path = config.get('robot_testsuite', None)
+            self.option = config.get('robot_option', None)
 
     def handle(self, line):
         ''' Test cases that make use of this harness care about results given
@@ -176,7 +177,24 @@ class Robot(Harness):
         start_time = time.time()
         env = os.environ.copy()
 
-        command.append(os.path.join(handler.sourcedir, self.path))
+        if self.option:
+            if isinstance(self.option, list):
+                for option in self.option:
+                    for v in str(option).split():
+                        command.append(f'{v}')
+            else:
+                for v in str(self.option).split():
+                    command.append(f'{v}')
+
+        if self.path is None:
+            raise PytestHarnessException(f'The parameter robot_testsuite is mandatory')
+
+        if isinstance(self.path, list):
+            for suite in self.path:
+                command.append(os.path.join(handler.sourcedir, suite))
+        else:
+            command.append(os.path.join(handler.sourcedir, self.path))
+
         with subprocess.Popen(command, stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env) as renode_test_proc:
             out, _ = renode_test_proc.communicate()
@@ -552,11 +570,11 @@ class Pytest(Harness):
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_SKIP_PATTERN = r".*\[ DISABLED \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    FINISHED_PATTERN = r".*\[==========\] Done running all tests\.$"
+    TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    TEST_SKIP_PATTERN = r".*\[ DISABLED \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    FINISHED_PATTERN = r".*\[==========\] Done running all tests\."
 
     def __init__(self):
         super().__init__()
