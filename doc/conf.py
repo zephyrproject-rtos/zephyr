@@ -325,6 +325,7 @@ external_content_contents = [
     (ZEPHYR_BASE, "samples/**/doc"),
     (ZEPHYR_BASE, "snippets/**/*.rst"),
     (ZEPHYR_BASE, "snippets/**/doc"),
+    (ZEPHYR_BASE, "tests/**/*.pts"),
 ]
 external_content_keep = [
     "reference/kconfig/*",
