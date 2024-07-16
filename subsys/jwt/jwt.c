@@ -238,10 +238,10 @@ static int jwt_add_header(struct jwt_builder *builder)
 	return 0;
 }
 
-int jwt_add_payload(struct jwt_builder *builder, int32_t exp, int32_t iat, const char *aud)
+int jwt_add_payload(struct jwt_builder *builder, int32_t expt, int32_t iat, const char *aud)
 {
 	struct jwt_payload payload = {
-		.exp = exp,
+		.exp = expt,
 		.iat = iat,
 		.aud = aud,
 	};
@@ -282,7 +282,7 @@ int jwt_init_builder(struct jwt_builder *builder, char *buffer, size_t buffer_si
 	return jwt_add_header(builder);
 }
 
-int jwt_parse_payload(struct jwt_parser *parser, int32_t *exp, int32_t *iat, char *aud)
+int jwt_parse_payload(struct jwt_parser *parser, int32_t *expt, int32_t *iat, char *aud)
 {
 	struct jwt_payload payload;
 	int res;
@@ -295,7 +295,7 @@ int jwt_parse_payload(struct jwt_parser *parser, int32_t *exp, int32_t *iat, cha
 	res = json_obj_parse(parser->buf, res, jwt_payload_desc, ARRAY_SIZE(jwt_payload_desc),
 			     &payload);
 	if (res == (1 << ARRAY_SIZE(jwt_payload_desc)) - 1) {
-		*exp = payload.exp;
+		*expt = payload.exp;
 		*iat = payload.iat;
 		strcpy(aud, payload.aud);
 		res = 0;
