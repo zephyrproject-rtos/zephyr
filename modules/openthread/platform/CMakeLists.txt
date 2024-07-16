@@ -6,8 +6,16 @@ zephyr_library_sources(
   entropy.c
   misc.c
   platform.c
+  )
+
+zephyr_library_sources_ifndef(CONFIG_HDLC_RCP_IF
   radio.c
   spi.c
+  )
+
+zephyr_library_sources_ifdef(CONFIG_HDLC_RCP_IF
+  radio_spinel.cpp
+  hdlc_interface.cpp
   )
 
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_BLE_TCAT ble.c)
