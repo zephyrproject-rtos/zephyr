@@ -990,6 +990,10 @@ static int accept_br(struct bt_conn *conn, struct bt_l2cap_server *server,
 	chan->br.chan.ops = &l2cap_br_ops;
 	chan->br.rx.mtu = DATA_MTU_INITIAL;
 	chan->hold_credit = br_server->options & BTP_L2CAP_LISTEN_OPT_HOLD_CREDIT;
+#if defined(CONFIG_BT_L2CAP_RET) || defined(CONFIG_BT_L2CAP_FC) || \
+	defined(CONFIG_BT_L2CAP_ENH_RET) || defined(CONFIG_BT_L2CAP_STREAM)
+	chan->br.rx.optional = br_server->options & BTP_L2CAP_LISTEN_OPT_MODE_OPTIONAL;
+#endif
 
 	if (br_server->options & BTP_L2CAP_LISTEN_OPT_RET) {
 #if defined(CONFIG_BT_L2CAP_RET)
