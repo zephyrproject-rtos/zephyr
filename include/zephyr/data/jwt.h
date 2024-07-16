@@ -105,7 +105,7 @@ int jwt_init_builder(struct jwt_builder *builder,
  * @brief add JWT primary payload.
  */
 int jwt_add_payload(struct jwt_builder *builder,
-		    int32_t exp,
+		    int32_t expt,
 		    int32_t iat,
 		    const char *aud);
 
@@ -139,14 +139,14 @@ int jwt_init_parser(struct jwt_parser *parser, const char *token, char *buffer, 
  * Parse JWT payload from a previously initialized parser.
  *
  * @param parser A previously initialized parser.
- * @param exp A valid pointer to store Expiration Time value.
+ * @param expt A valid pointer to store Expiration Time value.
  * @param iat A valid pointer to store Issued At value.
  * @param aud A valid pointer to store Audience value.
  *
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int jwt_parse_payload(struct jwt_parser *parser, int32_t *exp, int32_t *iat, char *aud);
+int jwt_parse_payload(struct jwt_parser *parser, int32_t *expt, int32_t *iat, char *aud);
 
 /**
  * @brief Verify JWT header and signature.
