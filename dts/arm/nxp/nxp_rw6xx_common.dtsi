@@ -17,6 +17,7 @@
 	chosen {
 		zephyr,entropy = &trng;
 		zephyr,bt-hci = &hci;
+		zephyr,hdlc-rcp-if = &hdlc_rcp_if;
 	};
 
 	cpus {
@@ -519,6 +520,14 @@
 		/* first index is the hci interrupt, the second is the wake up done interrupt */
 		interrupts = <90 2>, <82 2>;
 		interrupt-names = "hci_int", "wakeup_int";
+	};
+
+	hdlc_rcp_if: hdlc_rcp_if {
+		compatible = "nxp,hdlc-rcp-if";
+		/* first index is the hdlc_rcp_if interrupt */
+		/* the second is the wake up done interrupt */
+		interrupts = <90 2>, <82 2>;
+		interrupt-names = "hdlc_rcp_if_int", "wakeup_int";
 	};
 
 	enet: enet@138000 {
