@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +56,7 @@ extern "C" {
 #define IMG_MGMT_ID_CORELIST	3
 #define IMG_MGMT_ID_CORELOAD	4
 #define IMG_MGMT_ID_ERASE	5
+#define IMG_MGMT_ID_SLOT_INFO	6
 
 /**
  * Command result codes for image management group.
