@@ -5,8 +5,11 @@ zephyr_library_sources(
   alarm.c
   entropy.c
   misc.c
-  platform.c
+  )
+
+zephyr_library_sources_ifndef(CONFIG_OPENTHREAD_HDLC_RCP
   radio.c
+  platform.c
   spi.c
   )
 
