@@ -1313,6 +1313,14 @@ Libraries / Subsystems
    * By enabling :kconfig:option:`CONFIG_SYMTAB`, the symbol table will be
      generated with Zephyr link stage executable on supported architectures.
 
+* Demand Paging
+
+  * NRU (Not Recently Used) eviction algorithm has updated its selection logic to avoid
+    picking the same page to evict constantly. The updated login now searches for a new
+    candidate linearly after the last evicted page.
+
+  * Added LRU (Least Recently Used) eviction algorithm.
+
 * Management
 
   * hawkBit
