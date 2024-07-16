@@ -7,6 +7,11 @@ project(i2c_emul)
 
 target_sources(app PRIVATE
     src/emulated_target.cpp
-    src/test_forwarding.cpp
+    src/test_fowarding_common.cpp
 )
+if(CONFIG_I2C_TARGET_BUFFER_MODE)
+    target_sources(app PRIVATE src/test_forwarding_buf.cpp)
+else()
+    target_sources(app PRIVATE src/test_forwarding_pio.cpp)
+endif()
 target_include_directories(app PRIVATE include)
