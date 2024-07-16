@@ -72,9 +72,17 @@ nvic: &cpuapp_nvic {};
 };
 
 &gpiote20 {
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+	interrupts = <218 NRF_DEFAULT_IRQ_PRIORITY>;
+#else
 	interrupts = <219 NRF_DEFAULT_IRQ_PRIORITY>;
+#endif
 };
 
 &gpiote30 {
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+	interrupts = <268 NRF_DEFAULT_IRQ_PRIORITY>;
+#else
 	interrupts = <269 NRF_DEFAULT_IRQ_PRIORITY>;
+#endif
 };
