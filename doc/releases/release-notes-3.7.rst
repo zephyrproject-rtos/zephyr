@@ -330,6 +330,7 @@ Boards & SoC Support
   * Added support for STM32H7R/S SoC series.
   * Added support for NXP mke15z7, mke17z7, mke17z9, MCXNx4x, RW61x
   * Added support for Analog Devices MAX32 SoC series.
+  * Added support for Infineon Technologies AIROC:tm: CYW20829 Bluetooth LE SoC series.
 
 * Made these changes in other SoC series:
 
@@ -366,6 +367,7 @@ Boards & SoC Support
   * Added support for :ref:`Analog Devices MAX32655EVKIT <max32655_evkit>`: ``max32655evkit``.
   * Added support for :ref:`Analog Devices MAX32655FTHR <max32655_fthr>`: ``max32655fthr``.
   * Added support for :ref:`Analog Devices AD-APARD32690-SL <ad_apard32690_sl>`: ``ad_apard32690_sl``.
+  * Added support for :ref:`Infineon Technologies CYW920829M2EVK-02 <cyw920829m2evk_02>`: ``cyw920829m2evk_02``.
 
 * Made these board changes:
 
