@@ -421,7 +421,6 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	static struct option long_options[] = {{"ssid", required_argument, 0, 's'},
 					       {"passphrase", required_argument, 0, 'p'},
 					       {"key-mgmt", required_argument, 0, 'k'},
-					       {"SAE-PWE", required_argument, 0, 'e'},
 					       {"ieee-80211w", required_argument, 0, 'w'},
 					       {"bssid", required_argument, 0, 'm'},
 					       {"band", required_argument, 0, 'b'},
@@ -447,7 +446,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:h",
 		long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -472,12 +471,6 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'c':
 			channel = strtol(optarg, &endptr, 10);
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-			if (iface_mode == WIFI_MODE_AP && channel == 0) {
-				params->channel = channel;
-				break;
-			}
-#endif
 			for (band = 0; band < ARRAY_SIZE(all_bands); band++) {
 				offset += snprintf(bands_str + offset, sizeof(bands_str) - offset,
 						   "%s%s", band ? "," : "",
@@ -504,8 +497,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			params->channel = channel;
 			break;
 		case 'b':
-			if (iface_mode == WIFI_MODE_INFRA ||
-				iface_mode == WIFI_MODE_AP) {
+			if (iface_mode == WIFI_MODE_INFRA) {
 				switch (atoi(optarg)) {
 				case 2:
 					params->band = WIFI_FREQ_BAND_2_4_GHZ;
@@ -521,15 +513,6 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					return -EINVAL;
 				}
 			}
-			break;
-		case 'e':
-			if (params->security != WIFI_SECURITY_TYPE_SAE) {
-				PR_ERROR("PWE not supported for security type %s\n",
-						 wifi_security_txt(params->security));
-				return -EINVAL;
-			}
-			params->sae_pwe = atoi(optarg);
-			params->pwe_configed = true;
 			break;
 		case 'w':
 			if (params->security == WIFI_SECURITY_TYPE_NONE ||
@@ -1962,7 +1945,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
 		  "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
 		  "0:Disable, 1:Optional, 2:Required\n"
-		  "-b --band=<band> (2 -2.4GHz, 5 - 5Ghz, 6 - 6GHz)\n"
+		  "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
 		  "-m --bssid=<BSSID>\n"
 		  "-h --help (prints help)",
 		  cmd_wifi_ap_enable,
@@ -2034,7 +2017,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP,"
 		  " 7: WPA-PSK, 8: WPA-Auto-Personal\n"
-		  "[-e, --SAE-PWE]: SAE mechanism for PWE derivation (0/1/2)\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
