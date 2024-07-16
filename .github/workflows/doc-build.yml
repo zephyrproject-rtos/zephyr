@@ -17,7 +17,7 @@ env:
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
-  DOXYGEN_VERSION: 1.9.6
+  DOXYGEN_VERSION: 1.12.0
   # Job count is set to 2 less than the vCPU count of 16 because the total available RAM is 32GiB
   # and each sphinx-build process may use more than 2GiB of RAM.
   JOB_COUNT: 14
