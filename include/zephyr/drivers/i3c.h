@@ -125,11 +125,8 @@ extern "C" {
 /** Device Role - I3C Controller Capable. */
 #define I3C_BCR_DEVICE_ROLE_I3C_CONTROLLER_CAPABLE	1U
 
-/** Device Role bit shift value. */
-#define I3C_BCR_DEVICE_ROLE_SHIFT			6U
-
 /** Device Role bit shift mask. */
-#define I3C_BCR_DEVICE_ROLE_MASK			(0x03U << I3C_BCR_DEVICE_ROLE_SHIFT)
+#define I3C_BCR_DEVICE_ROLE_MASK			GENMASK(7U, 6U)
 
 /**
  * @brief Device Role
@@ -139,7 +136,7 @@ extern "C" {
  * @param bcr BCR value
  */
 #define I3C_BCR_DEVICE_ROLE(bcr)			\
-	(((bcr) & I3C_BCR_DEVICE_ROLE_MASK) >> I3C_BCR_DEVICE_ROLE_SHIFT)
+	FIELD_GET(I3C_BCR_DEVICE_ROLE_MASK, (bcr))
 
 /** @} */
 
@@ -168,9 +165,6 @@ extern "C" {
 /** I2C FM Mode. */
 #define I3C_LVR_I2C_FM_MODE				1
 
-/** I2C Mode Indicator bit shift value. */
-#define I3C_LVR_I2C_MODE_SHIFT				4
-
 /** I2C Mode Indicator bitmask. */
 #define I3C_LVR_I2C_MODE_MASK				BIT(4)
 
@@ -182,7 +176,7 @@ extern "C" {
  * @param lvr LVR value
  */
 #define I3C_LVR_I2C_MODE(lvr)				\
-	(((lvr) & I3C_LVR_I2C_MODE_MASK) >> I3C_LVR_I2C_MODE_SHIFT)
+	FIELD_GET(I3C_LVR_I2C_MODE_MASK, (lvr))
 
 /**
  * @brief I2C Device Index 0.
@@ -208,11 +202,8 @@ extern "C" {
  */
 #define I3C_LVR_I2C_DEV_IDX_2				2
 
-/** I2C Device Index bit shift value. */
-#define I3C_LVR_I2C_DEV_IDX_SHIFT			5
-
 /** I2C Device Index bitmask. */
-#define I3C_LVR_I2C_DEV_IDX_MASK			(0x07U << I3C_LVR_I2C_DEV_IDX_SHIFT)
+#define I3C_LVR_I2C_DEV_IDX_MASK			GENMASK(7U, 5U)
 
 /**
  * @brief I2C Device Index
@@ -222,7 +213,7 @@ extern "C" {
  * @param lvr LVR value
  */
 #define I3C_LVR_I2C_DEV_IDX(lvr)			\
-	(((lvr) & I3C_LVR_I2C_DEV_IDX_MASK) >> I3C_LVR_I2C_DEV_IDX_SHIFT)
+	FIELD_GET(I3C_LVR_I2C_DEV_IDX_MASK, (lvr))
 
 /** @} */
 
