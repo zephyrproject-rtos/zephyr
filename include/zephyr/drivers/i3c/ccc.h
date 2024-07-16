@@ -593,12 +593,8 @@ union i3c_ccc_getstatus {
 /** GETSTATUS Format 1 - Protocol Error bit. */
 #define I3C_CCC_GETSTATUS_PROTOCOL_ERR				BIT(5)
 
-/** GETSTATUS Format 1 - Activity Mode bit shift value. */
-#define I3C_CCC_GETSTATUS_ACTIVITY_MODE_SHIFT			6
-
 /** GETSTATUS Format 1 - Activity Mode bitmask. */
-#define I3C_CCC_GETSTATUS_ACTIVITY_MODE_MASK			\
-	(0x03U << I3C_CCC_GETSTATUS_ACTIVITY_MODE_SHIFT)
+#define I3C_CCC_GETSTATUS_ACTIVITY_MODE_MASK			GENMASK(7U, 6U)
 
 /**
  * @brief GETSTATUS Format 1 - Activity Mode
@@ -609,15 +605,10 @@ union i3c_ccc_getstatus {
  * @param status GETSTATUS Format 1 value
  */
 #define I3C_CCC_GETSTATUS_ACTIVITY_MODE(status)			\
-	(((status) & I3C_CCC_GETSTATUS_ACTIVITY_MODE_MASK)	\
-	 >> I3C_CCC_GETSTATUS_ACTIVITY_MODE_SHIFT)
-
-/** GETSTATUS Format 1 - Number of Pending Interrupts bit shift value. */
-#define I3C_CCC_GETSTATUS_NUM_INT_SHIFT				0
+	FIELD_GET(I3C_CCC_GETSTATUS_ACTIVITY_MODE_MASK, (status))
 
 /** GETSTATUS Format 1 - Number of Pending Interrupts bitmask. */
-#define I3C_CCC_GETSTATUS_NUM_INT_MASK				\
-	(0x0FU << I3C_CCC_GETSTATUS_NUM_INT_SHIFT)
+#define I3C_CCC_GETSTATUS_NUM_INT_MASK				GENMASK(3U, 0U)
 
 /**
  * @brief GETSTATUS Format 1 - Number of Pending Interrupts
@@ -628,8 +619,7 @@ union i3c_ccc_getstatus {
  * @param status GETSTATUS Format 1 value
  */
 #define I3C_CCC_GETSTATUS_NUM_INT(status)			\
-	(((status) & I3C_CCC_GETSTATUS_NUM_INT_MASK)		\
-	 >> I3C_CCC_GETSTATUS_NUM_INT_SHIFT)
+	FIELD_GET(I3C_CCC_GETSTATUS_NUM_INT_MASK, (status))
 
 /** GETSTATUS Format 2 - PERCR - Deep Sleep Detected bit. */
 #define I3C_CCC_GETSTATUS_PRECR_DEEP_SLEEP_DETECTED		BIT(0)
@@ -757,12 +747,8 @@ union i3c_ccc_getmxds {
 /** Get Max Data Speed (GETMXDS) - maxWr - Optional Defining Byte Support. */
 #define I3C_CCC_GETMXDS_MAXWR_DEFINING_BYTE_SUPPORT		BIT(3)
 
-/** Get Max Data Speed (GETMXDS) - Max Sustained Data Rate bit shift value. */
-#define I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_SHIFT		0
-
 /** Get Max Data Speed (GETMXDS) - Max Sustained Data Rate bitmask. */
-#define I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_MASK			\
-	(0x07U << I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_SHIFT)
+#define I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_MASK			GENMASK(2U, 0U)
 
 /**
  * @brief Get Max Data Speed (GETMXDS) - maxWr - Max Sustained Data Rate
@@ -773,19 +759,13 @@ union i3c_ccc_getmxds {
  * @param maxwr GETMXDS maxWr value.
  */
 #define I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL(maxwr)		\
-	(((maxwr) &						\
-	  I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_MASK)		\
-	 >> I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_SHIFT)
+	FIELD_GET(I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_MASK, (maxwr))
 
 /** Get Max Data Speed (GETMXDS) - maxRd - Write-to-Read Permits Stop Between. */
 #define I3C_CCC_GETMXDS_MAXRD_W2R_PERMITS_STOP_BETWEEN		BIT(6)
 
-/** Get Max Data Speed (GETMXDS) - maxRd - Clock to Data Turnaround bit shift value. */
-#define I3C_CCC_GETMXDS_MAXRD_TSCO_SHIFT			3
-
 /** Get Max Data Speed (GETMXDS) - maxRd - Clock to Data Turnaround bitmask. */
-#define I3C_CCC_GETMXDS_MAXRD_TSCO_MASK				\
-	(0x07U << I3C_CCC_GETMXDS_MAXRD_TSCO_SHIFT)
+#define I3C_CCC_GETMXDS_MAXRD_TSCO_MASK				GENMASK(5U, 3U)
 
 /**
  * @brief Get Max Data Speed (GETMXDS) - maxRd - Clock to Data Turnaround
@@ -796,15 +776,10 @@ union i3c_ccc_getmxds {
  * @param maxrd GETMXDS maxRd value.
  */
 #define I3C_CCC_GETMXDS_MAXRD_TSCO(maxrd)			\
-	(((maxrd) & I3C_CCC_GETMXDS_MAXRD_TSCO_MASK)		\
-	 >> I3C_CCC_GETMXDS_MAXRD_TSCO_SHIFT)
-
-/** Get Max Data Speed (GETMXDS) - maxRd - Max Sustained Data Rate bit shift value. */
-#define I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_SHIFT		0
+	FIELD_GET(I3C_CCC_GETMXDS_MAXRD_TSCO_MASK, (maxrd))
 
 /** Get Max Data Speed (GETMXDS) - maxRd - Max Sustained Data Rate bitmask. */
-#define I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_MASK			\
-	(0x07U << I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_SHIFT)
+#define I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_MASK			GENMASK(2U, 0U)
 
 /**
  * @brief Get Max Data Speed (GETMXDS) - maxRd - Max Sustained Data Rate
@@ -815,19 +790,13 @@ union i3c_ccc_getmxds {
  * @param maxrd GETMXDS maxRd value.
  */
 #define I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL(maxrd)		\
-	(((maxrd) &						\
-	  I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_MASK)		\
-	 >> I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_SHIFT)
+	FIELD_GET(I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_MASK, (maxrd))
 
 /** Get Max Data Speed (GETMXDS) - CRDHLY1 - Set Bus Activity State bit shift value. */
 #define I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE		BIT(2)
 
-/** Get Max Data Speed (GETMXDS) - CRDHLY1 - Controller Handoff Activity State bit shift value. */
-#define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_SHIFT	0
-
 /** Get Max Data Speed (GETMXDS) - CRDHLY1 - Controller Handoff Activity State bitmask. */
-#define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK	\
-	(0x03U << I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_SHIFT)
+#define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK	GENMASK(1U, 0U)
 
 /**
  * @brief Get Max Data Speed (GETMXDS) - CRDHLY1 - Controller Handoff Activity State
@@ -838,9 +807,7 @@ union i3c_ccc_getmxds {
  * @param crhdly1 GETMXDS value.
  */
 #define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE(crhdly1)	\
-	(((crhdly1) &						\
-	  I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK)	\
-	 >> I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_SHIFT)
+	FIELD_GET(I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK, (chrdly1))
 
 /**
  * @brief Indicate which format of GETCAPS to use.
@@ -1019,16 +986,9 @@ union i3c_ccc_getcaps {
 
 /**
  * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 -
- *        Group Address Capabilities bit shift value.
- */
-#define I3C_CCC_GETCAPS2_GRPADDR_CAP_SHIFT			4
-
-/**
- * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 -
  *        Group Address Capabilities bitmask.
  */
-#define I3C_CCC_GETCAPS2_GRPADDR_CAP_MASK			\
-	(0x03U << I3C_CCC_GETCAPS2_GRPADDR_CAP_SHIFT)
+#define I3C_CCC_GETCAPS2_GRPADDR_CAP_MASK			GENMASK(5U, 4U)
 
 /**
  * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 - Group Address Capabilities.
@@ -1039,22 +999,13 @@ union i3c_ccc_getcaps {
  * @param getcaps2 GETCAPS2 value.
  */
 #define I3C_CCC_GETCAPS2_GRPADDR_CAP(getcaps2)			\
-	(((getcaps2) &						\
-	  I3C_CCC_GETCAPS2_GRPADDR_CAP_MASK)			\
-	 >> I3C_CCC_GETCAPS_GRPADDR_CAP_SHIFT)
-
-/**
- * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 -
- *        I3C 1.x Specification Version bit shift value.
- */
-#define I3C_CCC_GETCAPS2_SPEC_VER_SHIFT				0
+	FIELD_GET(I3C_CCC_GETCAPS2_GRPADDR_CAP_MASK, (getcaps2))
 
 /**
  * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 -
  *        I3C 1.x Specification Version bitmask.
  */
-#define I3C_CCC_GETCAPS2_SPEC_VER_MASK				\
-	(0x0FU << I3C_CCC_GETCAPS2_SPEC_VER_SHIFT)
+#define I3C_CCC_GETCAPS2_SPEC_VER_MASK				GENMASK(3U, 0U)
 
 /**
  * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 -
@@ -1066,9 +1017,7 @@ union i3c_ccc_getcaps {
  * @param getcaps2 GETCAPS2 value.
  */
 #define I3C_CCC_GETCAPS2_SPEC_VER(getcaps2)			\
-	(((getcaps2) &						\
-	  I3C_CCC_GETCAPS2_SPEC_VER_MASK)			\
-	 >> I3C_CCC_GETCAPS_SPEC_VER_SHIFT)
+	FIELD_GET(I3C_CCC_GETCAPS2_SPEC_VER_MASK, (getcaps2))
 
 /**
  * @brief Get Optional Feature Capabilities Byte 3 (GETCAPS) Format 1 -
@@ -1184,12 +1133,8 @@ union i3c_ccc_getcaps {
  */
 #define I3C_CCC_GETCAPS_CRCAPS2_DELAYED_CONTROLLER_HANDOFF	BIT(3)
 
-/** Get Capabilities (GETCAPS) - VTCAP1 - Virtual Target Type bit shift value. */
-#define I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_SHIFT	0
-
 /** Get Capabilities (GETCAPS) - VTCAP1 - Virtual Target Type bitmask. */
-#define I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_MASK		\
-	(0x07U << I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_SHIFT)
+#define I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_MASK		GENMASK(2U, 0U)
 
 /**
  * @brief Get Capabilities (GETCAPS) - VTCAP1 - Virtual Target Type
@@ -1200,9 +1145,7 @@ union i3c_ccc_getcaps {
  * @param vtcap1 VTCAP1 value.
  */
 #define I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE(vtcap1)	\
-	(((vtcap1) &						\
-	  I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_MASK)	\
-	 >> I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_SHIFT)
+	FIELD_GET(I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_MASK, (vtcap1))
 
 /**
  * @brief Get Virtual Target Capabilities Byte 1 (GETCAPS) Format 2 -
@@ -1216,12 +1159,8 @@ union i3c_ccc_getcaps {
  */
 #define I3C_CCC_GETCAPS_VTCAP1_SHARED_PERIPH_DETECT		BIT(5)
 
-/** Get Capabilities (GETCAPS) - VTCAP2 - Interrupt Requests bit shift value. */
-#define I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_SHIFT	0
-
 /** Get Capabilities (GETCAPS) - VTCAP2 - Interrupt Requests bitmask. */
-#define I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_MASK		\
-	(0x03U << I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_SHIFT)
+#define I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_MASK		GENMASK(1U, 0U)
 
 /**
  * @brief Get Capabilities (GETCAPS) - VTCAP2 - Interrupt Requests
@@ -1232,9 +1171,7 @@ union i3c_ccc_getcaps {
  * @param vtcap2 VTCAP2 value.
  */
 #define I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS(vtcap2)	\
-	(((vtcap2) &						\
-	  I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_MASK)	\
-	 >> I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_SHIFT)
+	FIELD_GET(I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_MASK, (vtcap2))
 
 /**
  * @brief Get Virtual Target Capabilities Byte 2 (GETCAPS) Format 2 -
@@ -1242,12 +1179,8 @@ union i3c_ccc_getcaps {
  */
 #define I3C_CCC_GETCAPS_VTCAP2_ADDRESS_REMAPPING		BIT(2)
 
-/** Get Capabilities (GETCAPS) - VTCAP2 - Bus Context and Condition bit shift value. */
-#define I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_SHIFT	3
-
 /** Get Capabilities (GETCAPS) - VTCAP2 - Bus Context and Condition bitmask. */
-#define I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_MASK		\
-	(0x03U << I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_SHIFT)
+#define I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_MASK	GENMASK(4U, 3U)
 
 /**
  * @brief Get Capabilities (GETCAPS) - VTCAP2 - Bus Context and Condition
@@ -1258,9 +1191,7 @@ union i3c_ccc_getcaps {
  * @param vtcap2 VTCAP2 value.
  */
 #define I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND(vtcap2)	\
-	(((vtcap2) &						\
-	  I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_MASK)	\
-	 >> I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_SHIFT)
+	FIELD_GET(I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_MASK, (vtcap2))
 
 /**
  * @brief Enum for I3C Reset Action (RSTACT) Defining Byte Values.
