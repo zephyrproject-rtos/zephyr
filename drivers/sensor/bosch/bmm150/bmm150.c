@@ -552,6 +552,7 @@ static int bmm150_init_chip(const struct device *dev)
 	struct bmm150_data *data = dev->data;
 	struct bmm150_preset preset;
 	uint8_t chip_id;
+	int ret = -EIO;
 
 	if (bmm150_full_por(dev) != 0) {
 		goto err_poweroff;
@@ -615,20 +616,24 @@ static int bmm150_init_chip(const struct device *dev)
 	data->tregs.z3 = sys_le16_to_cpu(data->tregs.z3);
 	data->tregs.z4 = sys_le16_to_cpu(data->tregs.z4);
 
-	return 0;
-
+	ret = 0;
 err_poweroff:
 	(void)bmm150_power_control(dev, 0); /* Suspend */
 
-	return -EIO;
+	return ret;
 }
 
-#ifdef CONFIG_PM_DEVICE
 static int pm_action(const struct device *dev, enum pm_device_action action)
 {
-	int ret;
+	int ret = 0;
 
 	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = bmm150_init_chip(dev);
+		if (ret != 0) {
+			LOG_ERR("failed to initialize chip: %d", ret);
+		}
+		break;
 	case PM_DEVICE_ACTION_RESUME:
 		/* Need to enter sleep mode before setting OpMode to normal */
 		ret = bmm150_power_control(dev, 1);
@@ -642,20 +647,33 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 		if (ret != 0) {
 			LOG_ERR("failed to enter normal mode: %d", ret);
 		}
+#ifdef CONFIG_BMM150_TRIGGER
+		else {
+			ret = bmm150_trigger_mode_power_ctrl(dev, true);
+		}
 		break;
+#endif
+#ifdef CONFIG_PM_DEVICE
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = bmm150_power_control(dev, 0); /* Suspend */
 		if (ret != 0) {
 			LOG_ERR("failed to enter suspend mode: %d", ret);
 		}
+#ifdef CONFIG_BMM150_TRIGGER
+		else {
+			ret = bmm150_trigger_mode_power_ctrl(dev, false);
+		}
+#endif
 		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+#endif /* CONFIG_PM_DEVICE */
 	default:
 		return -ENOTSUP;
 	}
 
 	return ret;
 }
-#endif
 
 static int bmm150_init(const struct device *dev)
 {
@@ -667,11 +685,6 @@ static int bmm150_init(const struct device *dev)
 		return err;
 	}
 
-	if (bmm150_init_chip(dev) < 0) {
-		LOG_ERR("failed to initialize chip");
-		return -EIO;
-	}
-
 #ifdef CONFIG_BMM150_TRIGGER
 	if (bmm150_trigger_mode_init(dev) < 0) {
 		LOG_ERR("Cannot set up trigger mode.");
@@ -679,7 +692,7 @@ static int bmm150_init(const struct device *dev)
 	}
 #endif
 
-	return 0;
+	return pm_device_driver_init(dev, pm_action);
 }
 
 /* Initializes a struct bmm150_config for an instance on a SPI bus. */
