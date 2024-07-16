@@ -180,12 +180,24 @@ static int mipi_csi2rx_get_caps(const struct device *dev, enum video_endpoint_id
 	return video_get_caps(config->sensor_dev, ep, caps);
 }
 
+static inline int mipi_csi2rx_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+{
+	const struct mipi_csi2rx_config *config = dev->config;
+
+	if (config->sensor_dev) {
+		return video_set_ctrl(config->sensor_dev, cid, value);
+	}
+
+	return -ENOTSUP;
+}
+
 static const struct video_driver_api mipi_csi2rx_driver_api = {
 	.get_caps = mipi_csi2rx_get_caps,
 	.get_format = mipi_csi2rx_get_fmt,
 	.set_format = mipi_csi2rx_set_fmt,
 	.stream_start = mipi_csi2rx_stream_start,
 	.stream_stop = mipi_csi2rx_stream_stop,
+	.set_ctrl = mipi_csi2rx_set_ctrl,
 };
 
 static int mipi_csi2rx_init(const struct device *dev)
