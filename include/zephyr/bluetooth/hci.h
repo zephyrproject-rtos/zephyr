@@ -113,6 +113,18 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
  */
 int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle);
 
+/** @brief Get connection given a connection handle.
+ *
+ * The caller gets a new reference to the connection object which must be
+ * released with bt_conn_unref() once done using the object.
+ *
+ * @param handle The connection handle
+ *
+ * @returns The corresponding connection object on success.
+ *          NULL if it does not exist.
+ */
+struct bt_conn *bt_hci_conn_lookup_handle(uint16_t handle);
+
 /** @brief Get advertising handle for an advertising set.
  *
  * @param adv Advertising set.
