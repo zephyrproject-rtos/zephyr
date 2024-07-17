@@ -1466,6 +1466,18 @@ Libraries / Subsystems
     and :c:macro:`FIXED_PARTITION_NODE_DEVICE` have been added to allow obtaining
     fixed partition information from a devicetree node rather than a label.
 
+  * Added :kconfig:option:`CONFIG_NVS_DATA_CRC`, to add CRC protection for data.
+    Note that enabling this option makes NVS incompatible with existing storage
+    that have not been previously using CRC on data.
+
+  * Fixed NVS issue where :c:func:`nvs_calc_free_space` would return larger
+    size than available, because space for reserved ate was not subtracted.
+
+  * Fixed ext2 incorrectly calculating free space when attempting to format
+    partition.
+
+  * Fixed FAT driver leaving disk in initialized state after unmount.
+
 * POSIX API
 
 * LoRa/LoRaWAN
