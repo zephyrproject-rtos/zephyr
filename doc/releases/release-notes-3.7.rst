@@ -796,6 +796,13 @@ Drivers and Sensors
   * Added Raspberry Pi Pico RTC driver.
   * Added support for :kconfig:option:`CONFIG_RTC_ALARM` on all STM32 MCU series (except STM32F1).
 
+* RTIO
+
+  * Move lock-free queues out of RTIO into lib, dropping the ``rtio_`` prefix to SPSC and MPSC queues.
+  * Added tests and fixed bugs related to chained callback requests.
+  * Wrapper around p4wq (rtio workq) created to go from blocking to non-blocking behavior in cases
+    where native asynchronous RTIO functionality is unavailable.
+
 * SMBUS
 
 * SDHC
