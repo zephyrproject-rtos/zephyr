@@ -63,12 +63,29 @@ struct stm32_temp_config {
 	bool is_ntc;
 };
 
+static inline void adc_enable_tempsensor_channel(ADC_TypeDef *adc)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+					path | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+
+	k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+}
+
+static inline void adc_disable_tempsensor_channel(ADC_TypeDef *adc)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+					path & ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+}
+
 static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct stm32_temp_data *data = dev->data;
 	struct adc_sequence *sp = &data->adc_seq;
 	int rc;
-	uint32_t path;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
@@ -83,20 +100,14 @@ static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel
 		goto unlock;
 	}
 
-	path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base));
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base),
-				       LL_ADC_PATH_INTERNAL_TEMPSENSOR | path);
-
-	k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+	adc_enable_tempsensor_channel(data->adc_base);
 
 	rc = adc_read(data->adc, sp);
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
 
-	path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base));
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base),
-				       path &= ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	adc_disable_tempsensor_channel(data->adc_base);
 
 unlock:
 	pm_device_runtime_put(data->adc);
