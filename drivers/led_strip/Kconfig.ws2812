@@ -17,6 +17,14 @@ config WS2812_STRIP_SPI
 	  The SPI driver is portable, but requires significantly more
 	  memory (1 byte of overhead per bit of pixel data).
 
+config WS2812_STRIP_SPI_PREAMBLE_SUPPORT
+	bool "WS2812 LED strip SPI preamble support"
+	default n
+	depends on WS2812_STRIP_SPI
+	help
+	  Enables support for spi-empty-preamble-frames to support platforms with
+	  MOSI high during inactive bus behaviours e.g. the I.MX RT series MCUs
+
 config WS2812_STRIP_I2S
 	bool "WS2812 LED strip I2S driver"
 	default y

@@ -45,6 +45,9 @@ struct ws2812_spi_cfg {
 	const uint8_t *color_mapping;
 	size_t length;
 	uint16_t reset_delay;
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT)
+	uint16_t empty_preamble_frames;
+#endif
 };
 
 static const struct ws2812_spi_cfg *dev_cfg(const struct device *dev)
@@ -83,16 +86,25 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	const uint8_t one = cfg->one_frame, zero = cfg->zero_frame;
 	struct spi_buf buf = {
 		.buf = cfg->px_buf,
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT)
+		.len = cfg->empty_preamble_frames + (cfg->length * 8 * cfg->num_colors),
+#else
 		.len = (cfg->length * 8 * cfg->num_colors),
+#endif
 	};
 	const struct spi_buf_set tx = {
 		.buffers = &buf,
 		.count = 1
 	};
-	uint8_t *px_buf = cfg->px_buf;
 	size_t i;
 	int rc;
-
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT)
+	uint8_t *px_buf = &cfg->px_buf[cfg->empty_preamble_frames];
+	/* Ensure zero fill on preamble (if present) */
+	memset(cfg->px_buf, 0, cfg->empty_preamble_frames);
+#else
+	uint8_t *px_buf = cfg->px_buf;
+#endif
 	/*
 	 * Convert pixel data into SPI frames. Each frame has pixel data
 	 * in color mapping on-wire format (e.g. GRB, GRBW, RGB, etc).
@@ -182,8 +194,18 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 	(DT_INST_PROP(idx, spi_one_frame))
 #define WS2812_SPI_ZERO_FRAME(idx) \
 	(DT_INST_PROP(idx, spi_zero_frame))
+/* Get the latch/reset delay from the "reset-delay" DT property. */
+#define WS2812_RESET_DELAY(idx) \
+	(DT_INST_PROP(idx, reset_delay))
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT)
+#define WS2812_PREAMBLE_FRAMES(idx) \
+	((DT_INST_PROP(idx, spi_max_frequency) * WS2812_RESET_DELAY(idx))/8000000)
+#else
+#define WS2812_PREAMBLE_FRAMES(idx) \
+	(0)
+#endif
 #define WS2812_SPI_BUFSZ(idx) \
-	(WS2812_NUM_COLORS(idx) * 8 * WS2812_SPI_NUM_PIXELS(idx))
+	(WS2812_PREAMBLE_FRAMES(idx) + (WS2812_NUM_COLORS(idx) * 8 * WS2812_SPI_NUM_PIXELS(idx)))
 
 /*
  * Retrieve the channel to color mapping (e.g. RGB, BGR, GRB, ...) from the
@@ -195,9 +217,34 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 
 #define WS2812_NUM_COLORS(idx) (DT_INST_PROP_LEN(idx, color_mapping))
 
-/* Get the latch/reset delay from the "reset-delay" DT property. */
-#define WS2812_RESET_DELAY(idx) DT_INST_PROP(idx, reset_delay)
-
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT)
+#define WS2812_SPI_DEVICE(idx)						 \
+									 \
+	static uint8_t ws2812_spi_##idx##_px_buf[WS2812_SPI_BUFSZ(idx)]; \
+									 \
+	WS2812_COLOR_MAPPING(idx);					 \
+									 \
+	static const struct ws2812_spi_cfg ws2812_spi_##idx##_cfg = {	 \
+		.bus = SPI_DT_SPEC_INST_GET(idx, SPI_OPER(idx), 0),	 \
+		.px_buf = ws2812_spi_##idx##_px_buf,			 \
+		.one_frame = WS2812_SPI_ONE_FRAME(idx),			 \
+		.zero_frame = WS2812_SPI_ZERO_FRAME(idx),		 \
+		.num_colors = WS2812_NUM_COLORS(idx),			 \
+		.color_mapping = ws2812_spi_##idx##_color_mapping,	 \
+		.length = DT_INST_PROP(idx, chain_length),               \
+		.reset_delay = WS2812_RESET_DELAY(idx),			 \
+		.empty_preamble_frames = WS2812_PREAMBLE_FRAMES(idx),	 \
+	};								 \
+									 \
+	DEVICE_DT_INST_DEFINE(idx,					 \
+			      ws2812_spi_init,				 \
+			      NULL,					 \
+			      NULL,					 \
+			      &ws2812_spi_##idx##_cfg,			 \
+			      POST_KERNEL,				 \
+			      CONFIG_LED_STRIP_INIT_PRIORITY,		 \
+			      &ws2812_spi_api);
+#else
 #define WS2812_SPI_DEVICE(idx)						 \
 									 \
 	static uint8_t ws2812_spi_##idx##_px_buf[WS2812_SPI_BUFSZ(idx)]; \
@@ -223,5 +270,5 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 			      POST_KERNEL,				 \
 			      CONFIG_LED_STRIP_INIT_PRIORITY,		 \
 			      &ws2812_spi_api);
-
+#endif
 DT_INST_FOREACH_STATUS_OKAY(WS2812_SPI_DEVICE)
