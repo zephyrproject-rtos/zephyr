@@ -1355,6 +1355,11 @@ found:
 	return NULL;
 }
 
+struct bt_conn *bt_hci_conn_lookup_handle(uint16_t handle)
+{
+	return bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
+}
+
 void bt_conn_foreach(enum bt_conn_type type,
 		     void (*func)(struct bt_conn *conn, void *data),
 		     void *data)
