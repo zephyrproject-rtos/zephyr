@@ -79,8 +79,6 @@ LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 
 #define DEFAULT_MIPI_CHANNEL 0
 
-#define OV5640_RESOLUTION_PARAM_NUM 24
-
 struct ov5640_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec reset_gpio;
@@ -101,14 +99,14 @@ struct ov5640_mipi_clock_config {
 	uint8_t pllCtrl2;
 };
 
-struct ov5640_resolution_config {
+struct ov5640_mode_config {
 	uint16_t width;
 	uint16_t height;
 	const struct ov5640_reg *res_params;
 	const struct ov5640_mipi_clock_config mipi_pclk;
 };
 
-static const struct ov5640_reg ov5640InitParams[] = {
+static const struct ov5640_reg init_params[] = {
 	/* Power down */
 	{SYS_CTRL0_REG, SYS_CTRL0_SW_PWDN},
 
@@ -323,31 +321,31 @@ static const struct ov5640_reg ov5640InitParams[] = {
 	{0x5000, 0xa7},
 };
 
-static const struct ov5640_reg ov5640_low_res_params[] = {
+static const struct ov5640_reg low_res_params[] = {
 	{0x3800, 0x00}, {0x3801, 0x00}, {0x3802, 0x00}, {0x3803, 0x04}, {0x3804, 0x0a},
 	{0x3805, 0x3f}, {0x3806, 0x07}, {0x3807, 0x9b}, {0x3808, 0x02}, {0x3809, 0x80},
 	{0x380a, 0x01}, {0x380b, 0xe0}, {0x380c, 0x07}, {0x380d, 0x68}, {0x380e, 0x03},
 	{0x380f, 0xd8}, {0x3810, 0x00}, {0x3811, 0x10}, {0x3812, 0x00}, {0x3813, 0x06},
 	{0x3814, 0x31}, {0x3815, 0x31}, {0x3824, 0x02}, {0x460c, 0x22}};
 
-static const struct ov5640_reg ov5640_720p_res_params[] = {
+static const struct ov5640_reg hd_res_params[] = {
 	{0x3800, 0x00}, {0x3801, 0x00}, {0x3802, 0x00}, {0x3803, 0xfa}, {0x3804, 0x0a},
 	{0x3805, 0x3f}, {0x3806, 0x06}, {0x3807, 0xa9}, {0x3808, 0x05}, {0x3809, 0x00},
 	{0x380a, 0x02}, {0x380b, 0xd0}, {0x380c, 0x07}, {0x380d, 0x64}, {0x380e, 0x02},
 	{0x380f, 0xe4}, {0x3810, 0x00}, {0x3811, 0x10}, {0x3812, 0x00}, {0x3813, 0x04},
 	{0x3814, 0x31}, {0x3815, 0x31}, {0x3824, 0x04}, {0x460c, 0x20}};
 
-static const struct ov5640_resolution_config resolutionParams[] = {
+static const struct ov5640_mode_config modes[] = {
 	{.width = 640,
 	 .height = 480,
-	 .res_params = ov5640_low_res_params,
+	 .res_params = low_res_params,
 	 .mipi_pclk = {
 			 .pllCtrl1 = 0x14,
 			 .pllCtrl2 = 0x38,
 		 }},
 	{.width = 1280,
 	 .height = 720,
-	 .res_params = ov5640_720p_res_params,
+	 .res_params = hd_res_params,
 	 .mipi_pclk = {
 			 .pllCtrl1 = 0x21,
 			 .pllCtrl2 = 0x54,
@@ -460,8 +458,7 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 {
 	struct ov5640_data *drv_data = dev->data;
 	const struct ov5640_config *cfg = dev->config;
-	int ret;
-	int i;
+	int ret, i;
 
 	for (i = 0; i < ARRAY_SIZE(fmts); ++i) {
 		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
@@ -482,12 +479,13 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 
 	drv_data->fmt = *fmt;
 
-	/* Set resolution parameters */
-	for (i = 0; i < ARRAY_SIZE(resolutionParams); i++) {
-		if (fmt->width == resolutionParams[i].width &&
-		    fmt->height == resolutionParams[i].height) {
-			ret = ov5640_write_multi_regs(&cfg->i2c, resolutionParams[i].res_params,
-						      OV5640_RESOLUTION_PARAM_NUM);
+	/* Set resolution */
+	for (i = 0; i < ARRAY_SIZE(modes); i++) {
+		if (fmt->width == modes[i].width && fmt->height == modes[i].height) {
+			ret = ov5640_write_multi_regs(&cfg->i2c, modes[i].res_params,
+						      modes[i].res_params == hd_res_params
+							      ? ARRAY_SIZE(hd_res_params)
+							      : ARRAY_SIZE(low_res_params));
 			if (ret) {
 				LOG_ERR("Unable to set resolution parameters");
 				return ret;
@@ -496,8 +494,8 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 		}
 	}
 
-	/* Set pixel format, default to VIDEO_PIX_FMT_RGB565 */
-	struct ov5640_reg fmt_params[2] = {
+	/* Set pixel format */
+	struct ov5640_reg fmt_params[] = {
 		{0x4300, 0x6f},
 		{0x501f, 0x01},
 	};
@@ -515,10 +513,8 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 
 	/* Configure MIPI pixel clock */
 	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL0_REG, 0x0f, 0x08);
-	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL1_REG, 0xff,
-				 resolutionParams[i].mipi_pclk.pllCtrl1);
-	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL2_REG, 0xff,
-				 resolutionParams[i].mipi_pclk.pllCtrl2);
+	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL1_REG, 0xff, modes[i].mipi_pclk.pllCtrl1);
+	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL2_REG, 0xff, modes[i].mipi_pclk.pllCtrl2);
 	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL3_REG, 0x1f, 0x13);
 	ret |= ov5640_modify_reg(&cfg->i2c, SYS_ROOT_DIV_REG, 0x3f, 0x01);
 	ret |= ov5640_write_reg(&cfg->i2c, PCLK_PERIOD_REG, 0x0a);
@@ -642,7 +638,7 @@ static int ov5640_init(const struct device *dev)
 	k_sleep(K_MSEC(5));
 
 	/* Initialize register values */
-	ret = ov5640_write_multi_regs(&cfg->i2c, ov5640InitParams, ARRAY_SIZE(ov5640InitParams));
+	ret = ov5640_write_multi_regs(&cfg->i2c, init_params, ARRAY_SIZE(init_params));
 	if (ret) {
 		LOG_ERR("Unable to initialize the sensor");
 		return -EIO;
@@ -667,7 +663,7 @@ static int ov5640_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Set default format to 720p RGB565 */
+	/* Set default format */
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	fmt.width = 1280;
 	fmt.height = 720;
