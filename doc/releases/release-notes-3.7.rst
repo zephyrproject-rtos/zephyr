@@ -745,6 +745,22 @@ Drivers and Sensors
   * Added release API
   * Added support for mode selection via the device tree
 
+* MSPI
+
+  * Add the new experimental :ref:`MSPI(Multi-bit SPI) <mspi_api>` API, enabling support for
+    advanced SPI controllers and peripherals that typically require command, address and data
+    phases as well as variable latency for a transfer. The API now supports from single wire
+    SDR up to hex wires DDR communication in sync/async ways.
+  * Added MSPI bus emulator under bus emulators to showcase the implementation of the MSPI API.
+  * Added MSPI flash device emulator to showcase the use of the MSPI API and interfacing with
+    MSPI bus controllers.
+  * Added APS6404L QPI pSRAM device driver.
+  * Added ATXP032 OPI NOR flash device driver.
+  * Added Ambiq Apollo3p MSPI controller driver.
+  * Added :zephyr:code-sample:`mspi-async` and :zephyr:code-sample:`mspi-flash` samples to
+    showcase the use of MSPI device drivers.
+  * Added mspi/api and mspi/flash testcase for developers to check their implementations.
+
 * Pin control
 
   * Added driver for Renesas RA8 series
