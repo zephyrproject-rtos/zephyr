@@ -1364,6 +1364,27 @@ Libraries / Subsystems
   * By enabling :kconfig:option:`CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION`, the IP address of the
     syslog server for the networking backend is set by the DHCPv4 Log Server Option (7).
 
+  * Use real time clock as timestamp on POSIX.
+
+  * Add support for syslog (POSIX).
+
+  * Add :c:macro:`LOG_WRN_ONCE` for logging warning message where only the first occurrence is
+    logged.
+
+  * Add :c:func:`log_thread_trigger` for triggering processing of the log messages.
+
+  * Fix case when deferred logging not compiling when :kconfig:option:`CONFIG_MULTITHREADING` was
+    disabled.
+
+  * Fix case when logging strings could be stripped from the binary when dictionary based logging
+    was mixed with non-dictionary.
+
+  * Fix dictionary database not being generated in certain situations.
+
+  * Fix dictionary logging parser not handling long long arguments correctly.
+
+  * Fix support for :kconfig:option:`CONFIG_LOG_MSG_APPEND_RO_STRING_LOC`.
+
 * Modem modules
 
   * Added modem pipelink module which shares modem pipes globally, allowing device drivers to
