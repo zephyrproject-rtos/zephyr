@@ -81,6 +81,56 @@ static inline void adc_disable_tempsensor_channel(ADC_TypeDef *adc)
 					path & ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 }
 
+static float convert_adc_sample_to_temperature(const struct device *dev)
+{
+	struct stm32_temp_data *data = dev->data;
+	const struct stm32_temp_config *cfg = dev->config;
+	float temperature;
+
+#if defined(HAS_CALIBRATION)
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
+	 * This is required on STM32H5, where the manufacturing flash must be
+	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
+	 */
+	LL_ICACHE_Disable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+	temperature = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->cal_vrefanalog;
+	temperature -= (*cfg->cal1_addr >> cfg->ts_cal_shift);
+#if defined(HAS_SINGLE_CALIBRATION)
+	if (cfg->is_ntc) {
+		temperature = -temperature;
+	}
+	temperature /= (cfg->avgslope * 4096) / (cfg->cal_vrefanalog * 1000);
+#else
+	temperature *= (cfg->cal2_temp - cfg->cal1_temp);
+	temperature /= ((*cfg->cal2_addr - *cfg->cal1_addr) >> cfg->ts_cal_shift);
+#endif
+	temperature += cfg->cal1_temp;
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Re-enable the ICACHE (unconditonally, as it should always be on) */
+	LL_ICACHE_Enable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+#else
+	/* Sensor value in millivolts */
+	int32_t mv = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
+
+	if (cfg->is_ntc) {
+		temperature = (float)(cfg->v25_mv - mv);
+	} else {
+		temperature = (float)(mv - cfg->v25_mv);
+	}
+	temperature = (temperature / cfg->avgslope) * 10;
+	temperature += 25;
+#endif
+
+	return temperature;
+}
+
 static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct stm32_temp_data *data = dev->data;
@@ -119,49 +169,11 @@ unlock:
 static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel chan,
 				  struct sensor_value *val)
 {
-	struct stm32_temp_data *data = dev->data;
-	const struct stm32_temp_config *cfg = dev->config;
-	float temp;
-
 	if (chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
 	}
 
-#if HAS_CALIBRATION
-
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ICACHE_Disable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
-
-	temp = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->cal_vrefanalog;
-	temp -= (*cfg->cal1_addr >> cfg->ts_cal_shift);
-#if HAS_SINGLE_CALIBRATION
-	if (cfg->is_ntc) {
-		temp = -temp;
-	}
-	temp /= (cfg->avgslope * 4096) / (cfg->cal_vrefanalog * 1000);
-#else
-	temp *= (cfg->cal2_temp - cfg->cal1_temp);
-	temp /= ((*cfg->cal2_addr - *cfg->cal1_addr) >> cfg->ts_cal_shift);
-#endif
-	temp += cfg->cal1_temp;
-
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ICACHE_Enable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
-
-#else
-	/* Sensor value in millivolts */
-	int32_t mv = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
-
-	if (cfg->is_ntc) {
-		temp = (float)(cfg->v25_mv - mv);
-	} else {
-		temp = (float)(mv - cfg->v25_mv);
-	}
-	temp = (temp / cfg->avgslope) * 10;
-	temp += 25;
-#endif
+	const float temp = convert_adc_sample_to_temperature(dev);
 
 	return sensor_value_from_float(val, temp);
 }
