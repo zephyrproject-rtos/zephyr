@@ -84,6 +84,15 @@
 	0xc3, 0xcb, 0xbc, 0xb8, 0x3f, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x5f, 0x87, \
 	0x49, 0x7c, 0xa5, 0x8a, 0xe8, 0x19, 0xaa, 0x0f, 0x0d, 0x02, 0x31, 0x37, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+#define TEST_HTTP2_PARTIAL_HEADERS_POST_DYNAMIC_STREAM_1 \
+	0x00, 0x00, 0x20, 0x01, 0x00, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x83, 0x86, 0x41, 0x87, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xff, 0x04, \
+	0x86, 0x62, 0x4f, 0x55, 0x0e, 0x93, 0x13, 0x7a, 0x88, 0x25, 0xb6, 0x50, \
+	0xc3, 0xcb, 0xbc, 0xb8, 0x3f, 0x53, 0x03, 0x2a
+#define TEST_HTTP2_CONTINUATION_POST_DYNAMIC_STREAM_1 \
+	0x00, 0x00, 0x10, 0x09, 0x04, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x2f, 0x2a, 0x5f, 0x87, 0x49, 0x7c, 0xa5, 0x8a, 0xe8, 0x19, 0xaa, 0x0f, \
+	0x0d, 0x02, 0x31, 0x37
 #define TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1 \
 	0x00, 0x00, 0x11, 0x00, 0x01, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0x54, 0x65, 0x73, 0x74, 0x20, 0x64, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, \
@@ -735,6 +744,51 @@ ZTEST(server_function_tests, test_http2_post_headers_with_priority_and_padding)
 
 	common_verify_http2_dynamic_post_request(request_post_dynamic,
 						 sizeof(request_post_dynamic));
+}
+
+ZTEST(server_function_tests, test_http2_post_headers_with_continuation)
+{
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_PARTIAL_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_CONTINUATION_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_request(request_post_dynamic,
+						 sizeof(request_post_dynamic));
+}
+
+ZTEST(server_function_tests, test_http2_post_missing_continuation)
+{
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_PARTIAL_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	memset(buf, 0, sizeof(buf));
+
+	ret = zsock_send(client_fd, request_post_dynamic,
+			 sizeof(request_post_dynamic), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	/* Expect settings, but processing headers (and lack of continuation
+	 * frame) should break the stream, and trigger disconnect.
+	 */
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+
+	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Connection should've been closed");
 }
 
 ZTEST(server_function_tests, test_http2_get_headers_with_padding)
