@@ -24,7 +24,6 @@
  * @{
  */
 
-
 /** Cipher Algorithm */
 enum cipher_algo {
 	CRYPTO_CIPHER_ALGO_AES = 1,
@@ -49,6 +48,7 @@ enum cipher_mode {
 	CRYPTO_CIPHER_MODE_GCM = 5, /**< Galois/Counter mode. */
 	CRYPTO_CIPHER_MODE_CFB = 6, /**< Cipher Feedback mode. */
 	CRYPTO_CIPHER_MODE_OFB = 7, /**< Output Feedback mode. */
+	CRYPTO_CIPHER_MODE_CTR_DRBG = 6,
 };
 
 /* Forward declarations */
@@ -61,17 +61,15 @@ typedef int (*block_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt);
 /* Function signatures for encryption/ decryption using standard cipher modes
  * like  CBC, CTR, CCM.
  */
-typedef int (*cbc_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
-			uint8_t *iv);
+typedef int (*cbc_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv);
 
-typedef int (*ctr_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
-			uint8_t *ctr);
+typedef int (*ctr_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *ctr);
 
-typedef int (*ccm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
-			 uint8_t *nonce);
+typedef int (*ccm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt, uint8_t *nonce);
 
-typedef int (*gcm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
-			 uint8_t *nonce);
+typedef int (*gcm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt, uint8_t *nonce);
+
+typedef int (*ctr_drbg_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *ctr);
 
 /**
  * @brief Perform a CFB cipher operation.
@@ -119,6 +117,7 @@ struct cipher_ops {
 		cfb_op_t	cfb_crypt_hndlr;
 		/** Handler for OFB operations. */
 		ofb_op_t	ofb_crypt_hndlr;
+		ctr_drbg_op_t ctr_drbg_crypt_hndlr;
 	};
 };
 
@@ -137,6 +136,13 @@ struct ctr_params {
 struct gcm_params {
 	uint16_t tag_len;
 	uint16_t nonce_len;
+};
+
+struct ctr_drbg_params {
+	/* CTR-DRBG mode counter is a split counter composed of iv and counter
+	 * such that ivlen + ctr_len = keylen
+	 */
+	uint32_t ctr_len;
 };
 
 /**
@@ -191,12 +197,13 @@ struct cipher_ctx {
 		struct ccm_params ccm_info;
 		struct ctr_params ctr_info;
 		struct gcm_params gcm_info;
+		struct ctr_drbg_params ctr_drbg_info;
 	} mode_params;
 
 	/** Cryptographic keylength in bytes. To be populated by the app
 	 * before calling begin_session()
 	 */
-	uint16_t  keylen;
+	uint16_t keylen;
 
 	/** How certain fields are to be interpreted for this session.
 	 * (A bitmask of CAP_* below.)
@@ -221,7 +228,7 @@ struct cipher_pkt {
 	uint8_t *in_buf;
 
 	/** Bytes to be operated upon */
-	int  in_len;
+	int in_len;
 
 	/** Start of the output buffer, to be allocated by
 	 * the application. Can be NULL for in-place ops. To be populated
