@@ -14,15 +14,17 @@
 #include <zephyr/posix/sys/eventfd.h>
 #include <zephyr/ztest.h>
 
-#define SUPPORT_BACKWARD_COMPATIBILITY 1
-#define SUPPORT_HTTP_SERVER_UPGRADE    2
 #define BUFFER_SIZE                    512
 #define SERVER_IPV4_ADDR               "127.0.0.1"
 #define SERVER_PORT                    8080
 #define TIMEOUT_S                      1
 
+#define UPGRADE_STREAM_ID              1
+#define TEST_STREAM_ID_1               3
+#define TEST_STREAM_ID_2               5
+
 /* Magic, SETTINGS[0], HEADERS[1]: GET /, HEADERS[3]: GET /index.html, SETTINGS[0], GOAWAY[0]*/
-static const unsigned char request_get_2_streams[] = {
+static const uint8_t request_get_2_streams[] = {
 	/* Magic */
 	0x50, 0x52, 0x49, 0x20, 0x2a, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x32,
 	0x2e, 0x30, 0x0d, 0x0a, 0x0d, 0x0a, 0x53, 0x4d, 0x0d, 0x0a, 0x0d, 0x0a,
@@ -30,12 +32,12 @@ static const unsigned char request_get_2_streams[] = {
 	0x00, 0x00, 0x0c, 0x04, 0x00, 0x00, 0x00, 0x00,	0x00,
 	0x00, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00, 0x04, 0x00, 0x00, 0xff, 0xff,
 	/* HEADERS[1]: GET / */
-	0x00, 0x00, 0x21, 0x01, 0x05, 0x00, 0x00, 0x00, 0x01,
+	0x00, 0x00, 0x21, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1,
 	0x82, 0x84, 0x86, 0x41, 0x8a, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xdc,
 	0x78, 0x0f, 0x03, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x90, 0x7a, 0x8a, 0xaa,
 	0x69, 0xd2, 0x9a, 0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83,
 	/* HEADERS[3]: GET /index.html */
-	0x00, 0x00, 0x21, 0x01, 0x05, 0x00, 0x00, 0x00, 0x03,
+	0x00, 0x00, 0x21, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_2,
 	0x82, 0x85, 0x86, 0x41, 0x8a, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xdc,
 	0x78, 0x0f, 0x03, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x90, 0x7a, 0x8a, 0xaa,
 	0x69, 0xd2, 0x9a, 0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83,
@@ -46,183 +48,265 @@ static const unsigned char request_get_2_streams[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+static const uint8_t request_get_static_simple[] = {
+	/* Magic */
+	0x50, 0x52, 0x49, 0x20, 0x2a, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x32,
+	0x2e, 0x30, 0x0d, 0x0a, 0x0d, 0x0a, 0x53, 0x4d, 0x0d, 0x0a, 0x0d, 0x0a,
+	/* SETTINGS[0] */
+	0x00, 0x00, 0x0c, 0x04, 0x00, 0x00, 0x00, 0x00,	0x00,
+	0x00, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00, 0x04, 0x00, 0x00, 0xff, 0xff,
+	/* HEADERS[1]: GET / */
+	0x00, 0x00, 0x21, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1,
+	0x82, 0x84, 0x86, 0x41, 0x8a, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xdc,
+	0x78, 0x0f, 0x03, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x90, 0x7a, 0x8a, 0xaa,
+	0x69, 0xd2, 0x9a, 0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83,
+	/* SETTINGS[0] */
+	0x00, 0x00, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00,
+	/*  GOAWAY[0] */
+	0x00, 0x00, 0x08, 0x07, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+#define TEST_STATIC_PAYLOAD "Hello, World!"
+
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
 		    &test_http_service_port, 1, 10, NULL);
 
-static const char static_resource_payload[] = "Hello, World!";
+static const char static_resource_payload[] = TEST_STATIC_PAYLOAD;
 struct http_resource_detail_static static_resource_detail = {
 	.common = {
 			.type = HTTP_RESOURCE_TYPE_STATIC,
 			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
 		},
 	.static_data = static_resource_payload,
-	.static_data_len = sizeof(static_resource_payload),
+	.static_data_len = sizeof(static_resource_payload) - 1,
 };
 
 HTTP_RESOURCE_DEFINE(static_resource, test_http_service, "/",
 		     &static_resource_detail);
 
 static int client_fd = -1;
+static uint8_t buf[BUFFER_SIZE];
 
-static void test_streams(void)
+/* This function ensures that there's at least as much data as requested in
+ * the buffer.
+ */
+static void test_read_data(size_t *offset, size_t need)
 {
 	int ret;
-	static unsigned char buf[BUFFER_SIZE];
-	unsigned int length;
-	uint8_t type;
-	size_t offset;
-	uint32_t stream_id;
+
+	while (*offset < need) {
+		ret = zsock_recv(client_fd, buf + *offset, sizeof(buf) - *offset, 0);
+		zassert_not_equal(ret, -1, "recv() failed (%d)", errno);
+		*offset += ret;
+		if (ret == 0) {
+			break;
+		}
+	};
+
+	zassert_true(*offset >= need, "Not all requested data received");
+}
+
+/* This function moves the remaining data in the buffer to the beginning. */
+static void test_consume_data(size_t *offset, size_t consume)
+{
+	zassert_true(*offset >= consume, "Cannot consume more data than received");
+	*offset -= consume;
+	memmove(buf, buf + consume, *offset);
+}
+
+static void expect_http1_switching_protocols(size_t *offset)
+{
+	static const char switching_protocols[] =
+		"HTTP/1.1 101 Switching Protocols\r\n"
+		"Connection: Upgrade\r\n"
+		"Upgrade: h2c\r\n"
+		"\r\n";
+
+	test_read_data(offset, sizeof(switching_protocols) - 1);
+	zassert_mem_equal(buf, switching_protocols, sizeof(switching_protocols) - 1,
+			  "Received data doesn't match expected response");
+	test_consume_data(offset, sizeof(switching_protocols) - 1);
+}
+
+static void test_get_frame_header(size_t *offset, struct http2_frame *frame)
+{
+	test_read_data(offset, HTTP2_FRAME_HEADER_SIZE);
+
+	frame->length = sys_get_be24(&buf[HTTP2_FRAME_LENGTH_OFFSET]);
+	frame->type = buf[HTTP2_FRAME_TYPE_OFFSET];
+	frame->flags = buf[HTTP2_FRAME_FLAGS_OFFSET];
+	frame->stream_identifier = sys_get_be32(
+				&buf[HTTP2_FRAME_STREAM_ID_OFFSET]);
+	frame->stream_identifier &= HTTP2_FRAME_STREAM_ID_MASK;
+
+	test_consume_data(offset, HTTP2_FRAME_HEADER_SIZE);
+}
+
+static void expect_http2_settings_frame(size_t *offset, bool ack)
+{
+	struct http2_frame frame;
+
+	test_get_frame_header(offset, &frame);
+
+	zassert_equal(frame.type, HTTP2_SETTINGS_FRAME, "Expected settings frame");
+	zassert_equal(frame.stream_identifier, 0, "Settings frame stream ID must be 0");
+
+	if (ack) {
+		zassert_equal(frame.length, 0, "Invalid settings frame length");
+		zassert_equal(frame.flags, HTTP2_FLAG_SETTINGS_ACK,
+			      "Expected settings ACK flag");
+	} else {
+		zassert_equal(frame.length % sizeof(struct http2_settings_field), 0,
+			      "Invalid settings frame length");
+		zassert_equal(frame.flags, 0, "Expected no settings flags");
+
+		/* Consume settings payload */
+		test_read_data(offset, frame.length);
+		test_consume_data(offset, frame.length);
+	}
+}
+
+static void expect_http2_headers_frame(size_t *offset, int stream_id,
+				       uint8_t flags)
+{
+	struct http2_frame frame;
+
+	test_get_frame_header(offset, &frame);
+
+	zassert_equal(frame.type, HTTP2_HEADERS_FRAME, "Expected headers frame");
+	zassert_equal(frame.stream_identifier, stream_id,
+		      "Invalid headers frame stream ID");
+	zassert_equal(frame.flags, flags, "Unexpected flags received");
+
+	/* Consume headers payload */
+	test_read_data(offset, frame.length);
+	test_consume_data(offset, frame.length);
+}
+
+static void expect_http2_data_frame(size_t *offset, int stream_id,
+				    const uint8_t *payload, size_t payload_len,
+				    uint8_t flags)
+{
+	struct http2_frame frame;
+
+	test_get_frame_header(offset, &frame);
+
+	zassert_equal(frame.type, HTTP2_DATA_FRAME, "Expected data frame");
+	zassert_equal(frame.stream_identifier, stream_id,
+		      "Invalid data frame stream ID");
+	zassert_equal(frame.flags, flags, "Unexpected flags received");
+	zassert_equal(frame.length, payload_len, "Unexpected data frame length");
+
+	/* Verify data payload */
+	test_read_data(offset, frame.length);
+	zassert_mem_equal(buf, payload, payload_len, "Unexpected data payload");
+	test_consume_data(offset, frame.length);
+}
+
+ZTEST(server_function_tests, test_http2_get_concurrent_streams)
+{
+	size_t offset = 0;
+	int ret;
 
 	ret = zsock_send(client_fd, request_get_2_streams,
 			 sizeof(request_get_2_streams), 0);
 	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
 
 	memset(buf, 0, sizeof(buf));
-	offset = 0;
-	do {
-		ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - offset, 0);
-		zassert_not_equal(ret, -1, "recv() failed (%d)", errno);
-
-		offset += ret;
-	} while (ret > 0);
 
 	/* Settings frame is expected twice (server settings + settings ACK) */
-	length = (buf[0] << 16) | (buf[1] << 8) | buf[2];
-	length += 9;
-	type = buf[3];
-	stream_id = (buf[5] << 24) | (buf[6] << 16) | (buf[7] << 8) | buf[8];
-	stream_id &= 0x7fffffff;
-
-	zassert_true((type == 0x4 && stream_id == 0),
-		     "Expected a SETTINGS frame with stream ID 0");
-	zassert_true(offset > length, "Parsing error, buffer exceeded");
-
-	offset -= length;
-	memmove(buf, buf + length, offset);
-
-	length = (buf[0] << 16) | (buf[1] << 8) | buf[2];
-	length += 9;
-	type = buf[3];
-	stream_id = (buf[5] << 24) | (buf[6] << 16) | (buf[7] << 8) | buf[8];
-	stream_id &= 0x7fffffff;
-
-	zassert_true((type == 0x4 && stream_id == 0),
-		     "Expected a SETTINGS frame with stream ID 0");
-	zassert_true(offset > length, "Parsing error, buffer exceeded");
-
-	offset -= length;
-	memmove(buf, buf + length, offset);
-
-	length = (buf[0] << 16) | (buf[1] << 8) | buf[2];
-	length += 9;
-	type = buf[3];
-	stream_id = (buf[5] << 24) | (buf[6] << 16) | (buf[7] << 8) | buf[8];
-	stream_id &= 0x7fffffff;
-
-	zassert_true((type == 0x1 && stream_id == 1),
-		     "Expected a HEADERS frame with stream ID 1, got %d", stream_id);
-	zassert_true(offset > length, "Parsing error, buffer exceeded");
-
-	offset -= length;
-	memmove(buf, buf + length, offset);
-
-	length = (buf[0] << 16) | (buf[1] << 8) | buf[2];
-	length += 9;
-	type = buf[3];
-	stream_id = (buf[5] << 24) | (buf[6] << 16) | (buf[7] << 8) | buf[8];
-	stream_id &= 0x7fffffff;
-	buf[9] = 0;
-
-	zassert_true((type == 0x0 && stream_id == 1),
-		     "Expected a DATA frame with stream ID 1, got %d", stream_id);
-	zassert_true(offset > length, "Parsing error, buffer exceeded");
-
-	offset -= length;
-	memmove(buf, buf + length, offset);
-
-	length = (buf[0] << 16) | (buf[1] << 8) | buf[2];
-	length += 9;
-	type = buf[3];
-	stream_id = (buf[5] << 24) | (buf[6] << 16) | (buf[7] << 8) | buf[8];
-	stream_id &= 0x7fffffff;
-
-	zassert_true((type == 0x1 && stream_id == 3),
-		     "Expected a HEADERS frame with stream ID 3");
-	zassert_true(offset >= length, "Parsing error, buffer exceeded");
-
-	offset -= length;
-	memmove(buf, buf + length, offset);
-
-	length = (buf[0] << 16) | (buf[1] << 8) | buf[2];
-	length += 9;
-	type = buf[3];
-	stream_id = (buf[5] << 24) | (buf[6] << 16) | (buf[7] << 8) | buf[8];
-	stream_id &= 0x7fffffff;
-
-	zassert_true((type == 0x0 && stream_id == 3),
-		     "Expected a DATA frame with stream ID 3");
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD),
+				HTTP2_FLAG_END_STREAM);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_2,
+				   HTTP2_FLAG_END_HEADERS);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_2, NULL, 0,
+				HTTP2_FLAG_END_STREAM);
 }
 
-ZTEST(server_function_tests, test_http_concurrent_streams)
+ZTEST(server_function_tests, test_http2_static_get)
 {
-	test_streams();
-}
-
-static void test_common(int test_support)
-{
+	size_t offset = 0;
 	int ret;
-	static unsigned char buf[BUFFER_SIZE];
 
-	if (test_support == SUPPORT_BACKWARD_COMPATIBILITY) {
+	ret = zsock_send(client_fd, request_get_static_simple,
+			 sizeof(request_get_static_simple), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
 
-		char *http1_request = "GET / HTTP/1.1\r\n"
-				      "Host: 127.0.0.1:8080\r\n"
-				      "User-Agent: curl/7.68.0\r\n"
-				      "Accept: */*\r\n"
-				      "Accept-Encoding: deflate, gzip, br\r\n"
-				      "\r\n";
+	memset(buf, 0, sizeof(buf));
 
-		ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
-		zassert_not_equal(ret, -1, "send() failed (%d)", errno);
-
-		char expected_response[] = "HTTP/1.1 200 OK\r\n"
-					   "Content-Type: text/html\r\n"
-					   "Content-Length: 14\r\n"
-					   "\r\n";
-
-		memset(buf, 0, sizeof(buf));
-		ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
-		zassert_not_equal(ret, -1, "recv() failed (%d)", errno);
-
-		zassert_equal(strncmp(buf, expected_response,
-				      strlen(expected_response)), 0,
-			      "Received data doesn't match expected response");
-
-	} else if (test_support == SUPPORT_HTTP_SERVER_UPGRADE) {
-
-		ret = zsock_send(client_fd, request_get_2_streams,
-				 sizeof(request_get_2_streams), 0);
-		zassert_not_equal(ret, -1, "send() failed (%d)", errno);
-
-		memset(buf, 0, sizeof(buf));
-		ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
-		zassert_not_equal(ret, -1, "recv() failed (%d)", errno);
-
-		uint8_t type = buf[3];
-
-		zassert_true(type == 0x4, "Expected a SETTINGS frame");
-	}
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD),
+				HTTP2_FLAG_END_STREAM);
 }
 
-ZTEST(server_function_tests, test_http_upgrade)
+ZTEST(server_function_tests, test_http1_static_upgrade_get)
 {
-	test_common(SUPPORT_HTTP_SERVER_UPGRADE);
+	static const char http1_request[] =
+		"GET / HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Accept: */*\r\n"
+		"Accept-Encoding: deflate, gzip, br\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n";
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	/* Verify HTTP1 switching protocols response. */
+	expect_http1_switching_protocols(&offset);
+
+	/* Verify HTTP2 frames. */
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS);
+	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD),
+				HTTP2_FLAG_END_STREAM);
 }
 
-ZTEST(server_function_tests, test_backward_compatibility)
+ZTEST(server_function_tests, test_http1_static_get)
 {
-	test_common(SUPPORT_BACKWARD_COMPATIBILITY);
+	static const char http1_request[] =
+		"GET / HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"Accept-Encoding: deflate, gzip, br\r\n"
+		"\r\n";
+	static const char expected_response[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: 13\r\n"
+		"\r\n"
+		TEST_STATIC_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
 }
 
 ZTEST(server_function_tests_no_init, test_http_server_start_stop)
