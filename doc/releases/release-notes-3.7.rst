@@ -341,6 +341,7 @@ Boards & SoC Support
   * STM32U5: Added support for Stop3 mode.
   * NXP IMX8M: added resource domain controller support
   * NXP s32k146: set RTC clock source to internal oscillator
+  * GD32F4XX: Fixed an incorrect uart4 irq number.
 
 * Added support for these boards:
 
@@ -951,6 +952,7 @@ Drivers and Sensors
   * Added support for :kconfig:option:`CONFIG_NOCACHE_MEMORY` in DMA SPI mode for STM32F7x SoC series.
   * Added support for STM32H7R/S series.
   * Added driver for Analog Devices MAX32 SoC series.
+  * Fixed an incorrect register assignment in gd32 spi.
 
 * USB
 
