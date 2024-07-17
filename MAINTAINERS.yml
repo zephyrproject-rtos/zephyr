@@ -3071,6 +3071,7 @@ Sensor Subsystem:
     - "area: Sensor Subsystem"
   tests:
     - sample.sensing
+    - sensing.api
 
 Stats:
   status: odd fixes
