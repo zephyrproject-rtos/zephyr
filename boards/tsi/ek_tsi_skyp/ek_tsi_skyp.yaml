@@ -2,8 +2,10 @@ identifier: ek_tsi_skyp
 name: TSI sky-p
 type: mcu
 arch: arm
-ram: 2016
-flash: 32
+ram: 1792
+flash: 256
+simulation: qemu
+
 toolchain:
   - zephyr
   - gnuarmemb
