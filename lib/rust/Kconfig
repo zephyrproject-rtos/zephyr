@@ -7,6 +7,7 @@ menu "Rust Language Support"
 
 config RUST
 	bool "Rust support for the application"
+	select EXPERIMENTAL
 	help
 	  This option enables the use of applications written in Rust.
 
