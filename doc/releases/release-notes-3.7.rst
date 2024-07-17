@@ -1328,6 +1328,10 @@ Libraries / Subsystems
 
   * Added LRU (Least Recently Used) eviction algorithm.
 
+* Formatted output
+
+  * Fix warning when compiling cbprintf with ARCMWDT.
+
 * Management
 
   * hawkBit
