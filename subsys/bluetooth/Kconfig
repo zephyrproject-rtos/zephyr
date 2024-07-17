@@ -187,7 +187,6 @@ rsource "Kconfig.iso"
 rsource "common/Kconfig"
 rsource "host/Kconfig"
 rsource "controller/Kconfig"
-rsource "shell/Kconfig"
 rsource "crypto/Kconfig"
 rsource "lib/Kconfig"
 rsource "Kconfig.logging"
@@ -200,6 +199,8 @@ config BT_USE_PSA_API
 	  Use PSA APIs instead of TinyCrypt for crypto operations
 
 endif # BT_HCI
+
+rsource "shell/Kconfig"
 
 config BT_COMPANY_ID
 	hex "Company Id"
