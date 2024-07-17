@@ -1,0 +1,15 @@
+# CC23X0 AES accelerator configuration options
+
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_CC23X0
+	bool "CC23X0 AES accelerator driver"
+	default y
+	depends on DT_HAS_TI_CC23X0_AES_ENABLED
+	help
+	  Enable TI CC23X0 AES accelerator driver.
+	  This driver supports the following modes:
+	  - ECB (Electronic Code Book) encryption only (decryption not supported by the hardware)
+	  - CTR (Counter)
+	  - CCM (CTR with CBC-MAC)
