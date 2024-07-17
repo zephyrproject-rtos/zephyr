@@ -765,6 +765,13 @@ config ARCH_HAS_DEMAND_PAGING
 	  This hidden configuration should be selected by the architecture if
 	  demand paging is supported.
 
+config ARCH_HAS_DEMAND_MAPPING
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  demand paging is supported and arch_mem_map() supports
+	  K_MEM_MAP_UNPAGED.
+
 config ARCH_HAS_RESERVED_PAGE_FRAMES
 	bool
 	help

@@ -549,7 +549,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 	}
 
 	phys = k_mem_page_frame_to_phys(pf);
-	arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE, flags | K_MEM_CACHE_WB);
+	arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE, flags);
 
 	if (lock) {
 		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
@@ -622,16 +622,34 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 
 	if (is_anon) {
 		/* Mapping from anonymous memory */
-		VIRT_FOREACH(dst, size, pos) {
-			ret = map_anon_page(pos, flags);
+		flags |= K_MEM_CACHE_WB;
+#ifdef CONFIG_DEMAND_MAPPING
+		if ((flags & K_MEM_MAP_LOCK) == 0) {
+			flags |= K_MEM_MAP_UNPAGED;
+			VIRT_FOREACH(dst, size, pos) {
+				arch_mem_map(pos,
+					     uninit ? ARCH_UNPAGED_ANON_UNINIT
+						    : ARCH_UNPAGED_ANON_ZERO,
+					     CONFIG_MMU_PAGE_SIZE, flags);
+			}
+			LOG_DBG("memory mapping anon pages %p to %p unpaged", dst, pos-1);
+			/* skip the memset() below */
+			uninit = true;
+		} else
+#endif
+		{
+			VIRT_FOREACH(dst, size, pos) {
+				ret = map_anon_page(pos, flags);
 
-			if (ret != 0) {
-				/* TODO: call k_mem_unmap(dst, pos - dst)  when
-				 * implemented in #28990 and release any guard virtual
-				 * page as well.
-				 */
-				dst = NULL;
-				goto out;
+				if (ret != 0) {
+					/* TODO:
+					 * call k_mem_unmap(dst, pos - dst)
+					 * when implemented in #28990 and
+					 * release any guard virtual page as well.
+					 */
+					dst = NULL;
+					goto out;
+				}
 			}
 		}
 	} else {
@@ -1114,6 +1132,20 @@ extern struct k_mem_paging_histogram_t z_paging_histogram_backing_store_page_out
 
 static inline void do_backing_store_page_in(uintptr_t location)
 {
+#ifdef CONFIG_DEMAND_MAPPING
+	/* Check for special cases */
+	switch (location) {
+	case ARCH_UNPAGED_ANON_ZERO:
+		memset(K_MEM_SCRATCH_PAGE, 0, CONFIG_MMU_PAGE_SIZE);
+		__fallthrough;
+	case ARCH_UNPAGED_ANON_UNINIT:
+		/* nothing else to do */
+		return;
+	default:
+		break;
+	}
+#endif /* CONFIG_DEMAND_MAPPING */
+
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
 	uint32_t time_diff;
 
