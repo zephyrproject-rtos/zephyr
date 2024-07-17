@@ -18,4 +18,6 @@ config COMPARATOR_INIT_PRIORITY
 	help
 	  Comparator device driver initialization priority.
 
+rsource "Kconfig.nrf_comp"
+
 endif # COMPARATOR

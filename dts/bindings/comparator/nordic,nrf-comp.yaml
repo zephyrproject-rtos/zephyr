@@ -1,0 +1,80 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF COMP (analog COMParator)
+
+compatible: "nordic,nrf-comp"
+
+include: base.yaml
+
+properties:
+  positive-input:
+    type: string
+    enum:
+      - "INPUT_0"
+      - "INPUT_1"
+      - "INPUT_2"
+      - "INPUT_3"
+      - "INPUT_4"
+      - "INPUT_5"
+      - "INPUT_6"
+      - "INPUT_7"
+      - "INPUT_VDD_DIV2"
+      - "INPUT_VDD_DIV5"
+
+  external-reference:
+    type: string
+    enum:
+      - "EXT_REF_0"
+      - "EXT_REF_1"
+      - "EXT_REF_2"
+      - "EXT_REF_3"
+      - "EXT_REF_4"
+      - "EXT_REF_5"
+      - "EXT_REF_6"
+      - "EXT_REF_7"
+
+  reference-selection:
+    type: string
+    enum:
+      - "INT_1V2"
+      - "INT_1V8"
+      - "INT_2V4"
+      - "VDD"
+      - "AREF"
+
+  main-mode:
+    type: string
+    enum:
+      - "SE"
+      - "DIFF"
+
+  hysteresis:
+    type: string
+    enum:
+      - "NO_HYST"
+      - "40MV"
+      - "50MV"
+
+  speed-mode:
+    type: string
+    enum:
+      - "LOW"
+      - "NORMAL"
+      - "HIGH"
+
+  threshold-up:
+    type: int
+    default: 0
+
+  threshold-down:
+    type: int
+    default: 0
+
+  isource:
+    type: string
+    enum:
+      - "OFF"
+      - "IEN_2UA5"
+      - "IEN_5UA"
+      - "IEN_10UA"
