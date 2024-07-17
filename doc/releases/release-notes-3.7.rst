@@ -773,6 +773,10 @@ Drivers and Sensors
     configurable (see :dtcompatible:`st,stm32-ospi`).
   * Added FlexSPI support to NXP MCXN947
 
+* Fuel Gauge
+
+  * max17048: Corrected voltage units from mV to uV.
+
 * GNSS
 
 * GPIO
