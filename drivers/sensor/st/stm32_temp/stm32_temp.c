@@ -49,7 +49,7 @@ struct stm32_temp_data {
 
 struct stm32_temp_config {
 #if !defined(HAS_CALIBRATION)
-	int average_slope;		/** Unit: mV/°C x10 */
+	float average_slope;		/** Unit: mV/°C */
 	int v25;			/** Unit: mV */
 #else /* HAS_CALIBRATION */
 	unsigned int calib_vrefanalog;	/** Unit: mV */
@@ -57,7 +57,7 @@ struct stm32_temp_config {
 	const void *ts_cal1_addr;
 	int ts_cal1_temp;		/** Unit: °C */
 #if defined(HAS_SINGLE_CALIBRATION)
-	int average_slope;		/** Unit: µV/°C */
+	float average_slope;		/** Unit: mV/°C */
 #else /* HAS_DUAL_CALIBRATION */
 	const void *ts_cal2_addr;
 	int ts_cal2_temp;		/** Unit: °C */
@@ -121,42 +121,88 @@ static void read_calibration_data(const struct stm32_temp_config *cfg,
 }
 #endif /* HAS_CALIBRATION */
 
-
 static float convert_adc_sample_to_temperature(const struct device *dev)
 {
 	struct stm32_temp_data *data = dev->data;
 	const struct stm32_temp_config *cfg = dev->config;
+	const uint16_t vdda_mv = adc_ref_internal(data->adc);
 	float temperature;
 
-#if defined(HAS_CALIBRATION)
+#if !defined(HAS_CALIBRATION)
+	/**
+	 * Series without calibration (STM32F1/F2):
+	 *   Tjunction = ((Dividend) / Avg_Slope) + 25
+	 *
+	 *  where Dividend is:
+	 *   - (V25 - Vsense) on STM32F1 series ("ntc")
+	 *   - (Vsense - V25) on STM32F2 series
+	 *  and Vsense = (ADC raw data) / ADC_MAX_VALUE * Vdda
+	 *  and ADC_MAX_VALUE = 4095 (12-bit ADC resolution)
+	 *
+	 * References:
+	 *  - RM0008 §11.10 "Temperature sensor" (STM32F100)
+	 *  - RM0041 §10.9  "Temperature sensor" (STM32F101/F102/F103/F105/F107)
+	 *  - RM0033 §10.10 "Temperature sensor" (STM32F2)
+	 */
+	/* Perform multiplication first for higher accuracy */
+	const int vsense = ((int)data->raw * vdda_mv) / 4095;
+
+	if (cfg->is_ntc) {
+		temperature = (float)(cfg->v25 - vsense);
+	} else {
+		temperature = (float)(vsense - cfg->v25);
+	}
+	temperature /= cfg->average_slope;
+	temperature += 25.0f;
+#else /* HAS_CALIBRATION */
 	uint32_t calib[MAX_CALIB_POINTS];
 
 	read_calibration_data(cfg, calib);
 
-	temperature = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->calib_vrefanalog;
-	temperature -= (calib[0] >> cfg->calib_data_shift);
+	const float sense_data = ((float)vdda_mv / cfg->calib_vrefanalog) * data->raw;
+
 #if defined(HAS_SINGLE_CALIBRATION)
-	if (cfg->is_ntc) {
-		temperature = -temperature;
-	}
-	temperature /= (cfg->average_slope * 4096) / (cfg->calib_vrefanalog * 1000);
-#else
-	temperature *= (cfg->ts_cal2_temp - cfg->ts_cal1_temp);
-	temperature /= ((calib[1] - calib[0]) >> cfg->calib_data_shift);
-#endif
-	temperature += cfg->ts_cal1_temp;
-#else
-	/* Sensor value in millivolts */
-	int32_t mv = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
+	/**
+	 * Series with one calibration point (STM32C0,STM32F030/F070):
+	 *  Tjunction = ((Dividend) / Avg_Slope_Code) + TS_CAL1_TEMP
+	 *
+	 *  where Dividend is:
+	 *   - (TS_CAL1 - Sense_Data) on STM32F030/STM32F070 ("ntc")
+	 *   - (Sense_Data - TS_CAL1) on STM32C0 series
+	 *
+	 *  and Avg_SlopeCode = (Avg_Slope * 4096 / calibration Vdda)
+	 *
+	 * References:
+	 *  - RM0360 §12.8  "Temperature sensor" (STM32F030/STM32F070)
+	 *  - RM0490 §14.10 "Temperature sensor and internal reference voltage" (STM32C0)
+	 */
+	const float avg_slope_code =
+		(cfg->average_slope / cfg->calib_vrefanalog) * 4096.f;
+	float dividend;
 
 	if (cfg->is_ntc) {
-		temperature = (float)(cfg->v25 - mv);
+		dividend = ((float)(calib[0] >> cfg->calib_data_shift) - sense_data);
 	} else {
-		temperature = (float)(mv - cfg->v25);
+		dividend = (sense_data - (calib[0] >> cfg->calib_data_shift));
 	}
-	temperature = (temperature / cfg->average_slope) * 10;
-	temperature += 25;
-#endif
+
+	temperature = (dividend / avg_slope_code) + cfg->ts_cal1_temp;
+#else /* HAS_DUAL_CALIBRATION */
+	/**
+	 * Series with two calibration points:
+	 *  Tjunction = (Slope * (Sense_Data - TS_CAL1)) + TS_CAL1_TEMP
+	 *
+	 *                 (TS_CAL2_TEMP - TS_CAL1_TEMP)
+	 *  where Slope =  -----------------------------
+	 *                      (TS_CAL2 - TS_CAL1)
+	 */
+	const float slope = ((float)(cfg->ts_cal2_temp - cfg->ts_cal1_temp))
+					/ ((calib[1] - calib[0]) >> cfg->calib_data_shift);
+
+	temperature = (slope * (sense_data - (calib[0] >> cfg->calib_data_shift)))
+			+ cfg->ts_cal1_temp;
+#endif /* HAS_SINGLE_CALIBRATION */
+#endif /* HAS_CALIBRATION */
 
 	return temperature;
 }
@@ -269,7 +315,10 @@ static const struct stm32_temp_config stm32_temp_dev_config = {
 	.ts_cal1_addr = (const void *)DT_INST_PROP(0, ts_cal1_addr),
 	.ts_cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
 #if defined(HAS_SINGLE_CALIBRATION)
-	.average_slope = DT_INST_PROP(0, avgslope),
+	/* DT property is premultiplied by 1000 to cope with Device Tree
+	 * properties being integer-only. Rescale here during compile.
+	 */
+	.average_slope = ((float)DT_INST_PROP(0, avgslope) / 1000.0f),
 #else /* HAS_DUAL_CALIBRATION */
 	.ts_cal2_addr = (const void *)DT_INST_PROP(0, ts_cal2_addr),
 	.ts_cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
@@ -277,7 +326,10 @@ static const struct stm32_temp_config stm32_temp_dev_config = {
 	.calib_data_shift = (DT_INST_PROP(0, ts_cal_resolution) - CAL_RES),
 	.calib_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
 #else
-	.average_slope = DT_INST_PROP(0, avgslope),
+	/* DT property is premultiplied by 10 to cope with Device Tree
+	 * properties being integer-only. Rescale here during compile.
+	 */
+	.average_slope = ((float)DT_INST_PROP(0, avgslope) / 10.0f),
 	.v25 = DT_INST_PROP(0, v25),
 #endif
 	.is_ntc = DT_INST_PROP_OR(0, ntc, false)
