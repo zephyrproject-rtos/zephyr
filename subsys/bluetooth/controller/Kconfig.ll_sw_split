@@ -459,6 +459,7 @@ config BT_CTLR_ADV_DATA_BUF_MAX
 	depends on BT_BROADCASTER
 	range 1 64 if BT_CTLR_ADV_EXT
 	range 1 1 if !BT_CTLR_ADV_EXT
+	default 2 if BT_CTLR_ADV_PERIODIC
 	default 1
 	help
 	  Maximum number of buffered Advertising Data payload across enabled
