@@ -15,7 +15,7 @@
 #define LOG_LEVEL CONFIG_LED_STRIP_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ws2812_spi);
-
+#define CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT 1
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
@@ -45,8 +45,8 @@ struct ws2812_spi_cfg {
 	const uint8_t *color_mapping;
 	size_t length;
 	uint16_t reset_delay;
-#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT)
-	uint16_t empty_preamble_frames;
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT) || IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT)
+	uint16_t empty_padding_frames;
 #endif
 };
 
@@ -86,11 +86,7 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	const uint8_t one = cfg->one_frame, zero = cfg->zero_frame;
 	struct spi_buf buf = {
 		.buf = cfg->px_buf,
-#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT)
-		.len = cfg->empty_preamble_frames + (cfg->length * 8 * cfg->num_colors),
-#else
 		.len = (cfg->length * 8 * cfg->num_colors),
-#endif
 	};
 	const struct spi_buf_set tx = {
 		.buffers = &buf,
@@ -98,12 +94,19 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	};
 	size_t i;
 	int rc;
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT)
+    buf.len += cfg->empty_padding_frames;
+#endif
 #if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT)
-	uint8_t *px_buf = &cfg->px_buf[cfg->empty_preamble_frames];
+    buf.len += cfg->empty_padding_frames;
+	uint8_t *px_buf = &cfg->px_buf[cfg->empty_padding_frames];
 	/* Ensure zero fill on preamble (if present) */
-	memset(cfg->px_buf, 0, cfg->empty_preamble_frames);
 #else
 	uint8_t *px_buf = cfg->px_buf;
+#endif
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT) || IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT)
+    /* If zero values are padded on either end we need to ensure the buffer is all zeros before filling */
+	memset(cfg->px_buf, 0, buf.len);
 #endif
 	/*
 	 * Convert pixel data into SPI frames. Each frame has pixel data
@@ -197,15 +200,25 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 /* Get the latch/reset delay from the "reset-delay" DT property. */
 #define WS2812_RESET_DELAY(idx) \
 	(DT_INST_PROP(idx, reset_delay))
-#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT)
-#define WS2812_PREAMBLE_FRAMES(idx) \
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT) || IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT)
+#define WS2812_PADDING_FRAMES(idx) \
 	((DT_INST_PROP(idx, spi_max_frequency) * WS2812_RESET_DELAY(idx))/8000000)
 #else
-#define WS2812_PREAMBLE_FRAMES(idx) \
+#define WS2812_PADDING_FRAMES(idx) \
 	(0)
 #endif
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT)
+#define WS2812_POSTAMBLE_FRAMES(idx) \
+	((DT_INST_PROP(idx, spi_max_frequency) * WS2812_RESET_DELAY(idx))/8000000)
+#else
+#define WS2812_POSTAMBLE_FRAMES(idx) \
+	(0)
+#endif
+/* size of buffer is number of pixel bits + pre/postamble padding if enabled */
 #define WS2812_SPI_BUFSZ(idx) \
-	(WS2812_PREAMBLE_FRAMES(idx) + (WS2812_NUM_COLORS(idx) * 8 * WS2812_SPI_NUM_PIXELS(idx)))
+	((WS2812_PADDING_FRAMES(idx) \
+    * (IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT) + IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT))) \
+    + (WS2812_NUM_COLORS(idx) * 8 * WS2812_SPI_NUM_PIXELS(idx)))
 
 /*
  * Retrieve the channel to color mapping (e.g. RGB, BGR, GRB, ...) from the
@@ -233,7 +246,7 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 		.color_mapping = ws2812_spi_##idx##_color_mapping,	 \
 		.length = DT_INST_PROP(idx, chain_length),               \
 		.reset_delay = WS2812_RESET_DELAY(idx),			 \
-		.empty_preamble_frames = WS2812_PREAMBLE_FRAMES(idx),	 \
+		.empty_padding_frames = WS2812_PADDING_FRAMES(idx),	 \
 	};								 \
 									 \
 	DEVICE_DT_INST_DEFINE(idx,					 \

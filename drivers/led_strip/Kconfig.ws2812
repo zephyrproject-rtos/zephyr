@@ -25,6 +25,14 @@ config WS2812_STRIP_SPI_PREAMBLE_SUPPORT
 	  Enables support for spi-empty-preamble-frames to support platforms with
 	  MOSI high during inactive bus behaviours e.g. the I.MX RT series MCUs
 
+config WS2812_STRIP_SPI_POSTAMBLE_SUPPORT
+	bool "WS2812 LED strip SPI postamble support"
+	default n
+	depends on WS2812_STRIP_SPI
+	help
+	  Enables support for spi-empty-postamble-frames to support platforms with
+	  MOSI high during inactive bus behaviours e.g. the I.MX RT series MCUs
+
 config WS2812_STRIP_I2S
 	bool "WS2812 LED strip I2S driver"
 	default y
