@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Emna Rekik
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,14 +16,13 @@
 
 #define SUPPORT_BACKWARD_COMPATIBILITY 1
 #define SUPPORT_HTTP_SERVER_UPGRADE    2
-#define BUFFER_SIZE                    256
-#define MY_IPV4_ADDR                   "127.0.0.1"
+#define BUFFER_SIZE                    512
+#define SERVER_IPV4_ADDR               "127.0.0.1"
 #define SERVER_PORT                    8080
-#define TIMEOUT                        1000
-
+#define TIMEOUT_S                      1
 
 /* Magic, SETTINGS[0], HEADERS[1]: GET /, HEADERS[3]: GET /index.html, SETTINGS[0], GOAWAY[0]*/
-static const unsigned char frame[] = {
+static const unsigned char request_get_2_streams[] = {
 	/* Magic */
 	0x50, 0x52, 0x49, 0x20, 0x2a, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x32,
 	0x2e, 0x30, 0x0d, 0x0a, 0x0d, 0x0a, 0x53, 0x4d, 0x0d, 0x0a, 0x0d, 0x0a,
@@ -47,57 +47,35 @@ static const unsigned char frame[] = {
 };
 
 static uint16_t test_http_service_port = SERVER_PORT;
-HTTP_SERVICE_DEFINE(test_http_service, MY_IPV4_ADDR,
+HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
 		    &test_http_service_port, 1, 10, NULL);
 
-static const char index_html_gz[] = "Hello, World!";
-struct http_resource_detail_static index_html_gz_resource_detail = {
+static const char static_resource_payload[] = "Hello, World!";
+struct http_resource_detail_static static_resource_detail = {
 	.common = {
 			.type = HTTP_RESOURCE_TYPE_STATIC,
 			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
 		},
-	.static_data = index_html_gz,
-	.static_data_len = sizeof(index_html_gz),
+	.static_data = static_resource_payload,
+	.static_data_len = sizeof(static_resource_payload),
 };
 
-HTTP_RESOURCE_DEFINE(index_html_gz_resource, test_http_service, "/",
-		     &index_html_gz_resource_detail);
+HTTP_RESOURCE_DEFINE(static_resource, test_http_service, "/",
+		     &static_resource_detail);
+
+static int client_fd = -1;
 
 static void test_streams(void)
 {
 	int ret;
-	int client_fd;
-	int proto = IPPROTO_TCP;
-	char *ptr;
-	struct sockaddr_in sa;
-	static unsigned char buf[512];
+	static unsigned char buf[BUFFER_SIZE];
 	unsigned int length;
 	uint8_t type;
 	size_t offset;
 	uint32_t stream_id;
 
-	zassert_ok(http_server_start(), "Failed to start the server");
-
-	ret = zsock_socket(AF_INET, SOCK_STREAM, proto);
-	zassert_not_equal(ret, -1, "failed to create client socket (%d)", errno);
-	client_fd = ret;
-
-	sa.sin_family = AF_INET;
-	sa.sin_port = htons(SERVER_PORT);
-
-	ret = zsock_inet_pton(AF_INET, MY_IPV4_ADDR, &sa.sin_addr.s_addr);
-	zassert_not_equal(-1, ret, "inet_pton() failed (%d)", errno);
-	zassert_not_equal(0, ret, "%s is not a valid IPv4 address", MY_IPV4_ADDR);
-	zassert_equal(1, ret, "inet_pton() failed to convert %s", MY_IPV4_ADDR);
-
-	memset(buf, '\0', sizeof(buf));
-	ptr = (char *)zsock_inet_ntop(AF_INET, &sa.sin_addr, buf, sizeof(buf));
-	zassert_not_equal(ptr, NULL, "inet_ntop() failed (%d)", errno);
-
-	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
-	zassert_not_equal(ret, -1, "failed to connect (%d)", errno);
-
-	ret = zsock_send(client_fd, frame, sizeof(frame), 0);
+	ret = zsock_send(client_fd, request_get_2_streams,
+			 sizeof(request_get_2_streams), 0);
 	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
 
 	memset(buf, 0, sizeof(buf));
@@ -184,11 +162,6 @@ static void test_streams(void)
 
 	zassert_true((type == 0x0 && stream_id == 3),
 		     "Expected a DATA frame with stream ID 3");
-
-	ret = zsock_close(client_fd);
-	zassert_not_equal(-1, ret, "close() failed on the client fd (%d)", errno);
-
-	zassert_ok(http_server_stop(), "Failed to stop the server");
 }
 
 ZTEST(server_function_tests, test_http_concurrent_streams)
@@ -199,32 +172,7 @@ ZTEST(server_function_tests, test_http_concurrent_streams)
 static void test_common(int test_support)
 {
 	int ret;
-	int client_fd;
-	int proto = IPPROTO_TCP;
-	char *ptr;
-	struct sockaddr_in sa = { 0 };
-	static unsigned char buf[512];
-
-	zassert_ok(http_server_start(), "Failed to start the server");
-
-	ret = zsock_socket(AF_INET, SOCK_STREAM, proto);
-	zassert_not_equal(ret, -1, "failed to create client socket (%d)", errno);
-	client_fd = ret;
-
-	sa.sin_family = AF_INET;
-	sa.sin_port = htons(SERVER_PORT);
-
-	ret = zsock_inet_pton(AF_INET, MY_IPV4_ADDR, &sa.sin_addr.s_addr);
-	zassert_not_equal(-1, ret, "inet_pton() failed (%d)", errno);
-	zassert_not_equal(0, ret, "%s is not a valid IPv4 address", MY_IPV4_ADDR);
-	zassert_equal(1, ret, "inet_pton() failed to convert %s", MY_IPV4_ADDR);
-
-	memset(buf, '\0', sizeof(buf));
-	ptr = (char *)zsock_inet_ntop(AF_INET, &sa.sin_addr, buf, sizeof(buf));
-	zassert_not_equal(ptr, NULL, "inet_ntop() failed (%d)", errno);
-
-	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
-	zassert_not_equal(ret, -1, "failed to connect (%s/%d)", strerror(errno), errno);
+	static unsigned char buf[BUFFER_SIZE];
 
 	if (test_support == SUPPORT_BACKWARD_COMPATIBILITY) {
 
@@ -253,7 +201,8 @@ static void test_common(int test_support)
 
 	} else if (test_support == SUPPORT_HTTP_SERVER_UPGRADE) {
 
-		ret = zsock_send(client_fd, frame, sizeof(frame), 0);
+		ret = zsock_send(client_fd, request_get_2_streams,
+				 sizeof(request_get_2_streams), 0);
 		zassert_not_equal(ret, -1, "send() failed (%d)", errno);
 
 		memset(buf, 0, sizeof(buf));
@@ -264,11 +213,6 @@ static void test_common(int test_support)
 
 		zassert_true(type == 0x4, "Expected a SETTINGS frame");
 	}
-
-	ret = zsock_close(client_fd);
-	zassert_not_equal(-1, ret, "close() failed on the client fd (%d)", errno);
-
-	zassert_ok(http_server_stop(), "Failed to stop the server");
 }
 
 ZTEST(server_function_tests, test_http_upgrade)
@@ -281,19 +225,16 @@ ZTEST(server_function_tests, test_backward_compatibility)
 	test_common(SUPPORT_BACKWARD_COMPATIBILITY);
 }
 
-ZTEST(server_function_tests, test_http_server_start_stop)
+ZTEST(server_function_tests_no_init, test_http_server_start_stop)
 {
 	struct sockaddr_in sa = { 0 };
-	int client_fd;
 	int ret;
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(SERVER_PORT);
 
-	ret = zsock_inet_pton(AF_INET, MY_IPV4_ADDR, &sa.sin_addr.s_addr);
-	zassert_not_equal(-1, ret, "inet_pton() failed (%d)", errno);
-	zassert_not_equal(0, ret, "%s is not a valid IPv4 address", MY_IPV4_ADDR);
-	zassert_equal(1, ret, "inet_pton() failed to convert %s", MY_IPV4_ADDR);
+	ret = zsock_inet_pton(AF_INET, SERVER_IPV4_ADDR, &sa.sin_addr.s_addr);
+	zassert_equal(1, ret, "inet_pton() failed to convert %s", SERVER_IPV4_ADDR);
 
 	zassert_ok(http_server_start(), "Failed to start the server");
 	zassert_not_ok(http_server_start(), "Server start should report na error.");
@@ -308,16 +249,15 @@ ZTEST(server_function_tests, test_http_server_start_stop)
 	zassert_not_equal(ret, -1, "failed to create client socket (%d)", errno);
 	client_fd = ret;
 
-	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
-	zassert_not_equal(ret, -1, "failed to connect to the server (%d)", errno);
-
-	ret = zsock_close(client_fd);
-	zassert_not_equal(-1, ret, "close() failed on the client fd (%d)", errno);
+	zassert_ok(zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa)),
+		   "failed to connect to the server (%d)", errno);
+	zassert_ok(zsock_close(client_fd), "close() failed on the client fd (%d)", errno);
+	client_fd = -1;
 
 	zassert_ok(http_server_stop(), "Failed to stop the server");
 }
 
-ZTEST(server_function_tests, test_get_frame_type_name)
+ZTEST(server_function_tests_no_init, test_get_frame_type_name)
 {
 	zassert_str_equal(get_frame_type_name(HTTP2_DATA_FRAME), "DATA",
 			  "Unexpected frame type");
@@ -341,7 +281,7 @@ ZTEST(server_function_tests, test_get_frame_type_name)
 			  "CONTINUATION", "Unexpected frame type");
 }
 
-ZTEST(server_function_tests, test_parse_http_frames)
+ZTEST(server_function_tests_no_init, test_parse_http_frames)
 {
 	static struct http_client_ctx ctx_client1;
 	static struct http_client_ctx ctx_client2;
@@ -401,4 +341,65 @@ ZTEST(server_function_tests, test_parse_http_frames)
 		      "Expected stream_identifier for the 2nd frame doesn't match");
 }
 
-ZTEST_SUITE(server_function_tests, NULL, NULL, NULL, NULL, NULL);
+static void http_server_tests_before(void *fixture)
+{
+	struct sockaddr_in sa;
+	struct timeval optval = {
+		.tv_sec = TIMEOUT_S,
+		.tv_usec = 0,
+	};
+	int ret;
+
+	ARG_UNUSED(fixture);
+
+	ret = http_server_start();
+	if (ret < 0) {
+		printk("Failed to start the server\n");
+		return;
+	}
+
+	ret = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (ret < 0) {
+		printk("Failed to create client socket (%d)\n", errno);
+		return;
+	}
+	client_fd = ret;
+
+	ret = zsock_setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			       sizeof(optval));
+	if (ret < 0) {
+		printk("Failed to set timeout (%d)\n", errno);
+		return;
+	}
+
+	sa.sin_family = AF_INET;
+	sa.sin_port = htons(SERVER_PORT);
+
+	ret = zsock_inet_pton(AF_INET, SERVER_IPV4_ADDR, &sa.sin_addr.s_addr);
+	if (ret != 1) {
+		printk("inet_pton() failed to convert %s\n", SERVER_IPV4_ADDR);
+		return;
+	}
+
+	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		printk("Failed to connect (%d)\n", errno);
+	}
+}
+
+static void http_server_tests_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (client_fd >= 0) {
+		(void)zsock_close(client_fd);
+		client_fd = -1;
+	}
+
+	(void)http_server_stop();
+}
+
+ZTEST_SUITE(server_function_tests, NULL, NULL, http_server_tests_before,
+	    http_server_tests_after, NULL);
+ZTEST_SUITE(server_function_tests_no_init, NULL, NULL, NULL,
+	    http_server_tests_after, NULL);
