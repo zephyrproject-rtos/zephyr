@@ -114,6 +114,25 @@ extern "C" {
  */
 #define K_MEM_MAP_LOCK		BIT(17)
 
+/**
+ * Region will be unpaged i.e. not mapped into memory
+ *
+ * This is meant to be used by kernel code and not by application code.
+ *
+ * Corresponding memory address range will be set so no actual memory will
+ * be allocated initially. Allocation will happen through demand paging when
+ * addresses in that range are accessed. This is incompatible with
+ * K_MEM_MAP_LOCK.
+ *
+ * When this flag is specified, the phys argument to k_mem_map_phys_guard()
+ * is interpreted as a backing store location value not a physical address.
+ * This is very similar to arch_mem_page_out() in that regard.
+ * Two special location values are defined: ARCH_UNPAGED_ANON_ZERO and
+ * ARCH_UNPAGED_ANON_UNINIT. Those are to be used with anonymous memory
+ * mappings for zeroed and uninitialized pages respectively.
+ */
+#define K_MEM_MAP_UNPAGED	BIT(18)
+
 /** @} */
 
 /**
