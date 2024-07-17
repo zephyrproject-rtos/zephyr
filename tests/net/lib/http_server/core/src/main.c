@@ -111,6 +111,9 @@
 #define TEST_HTTP2_TRAILING_HEADER_STREAM_1 \
 	0x00, 0x00, 0x0c, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0x40, 0x84, 0x92, 0xda, 0x69, 0xf5, 0x85, 0x9c, 0xa3, 0x90, 0xb6, 0x7f
+#define TEST_HTTP2_RST_STREAM_STREAM_1 \
+	0x00, 0x00, 0x04, 0x03, 0x00, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0xaa, 0xaa, 0xaa, 0xaa
 
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
@@ -867,6 +870,38 @@ ZTEST(server_function_tests, test_http2_get_headers_with_padding)
 
 	common_verify_http2_dynamic_get_request(request_get_dynamic,
 						sizeof(request_get_dynamic));
+}
+
+ZTEST(server_function_tests, test_http2_rst_stream)
+{
+	static const uint8_t request_rst_stream[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_RST_STREAM_STREAM_1,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	size_t offset = 0;
+	int ret;
+
+	memset(buf, 0, sizeof(buf));
+
+	ret = zsock_send(client_fd, request_rst_stream,
+			 sizeof(request_rst_stream), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	/* Expect settings, but processing RST_STREAM should close the stream,
+	 * so DATA frame should trigger connection error (closed stream) and
+	 * disconnect.
+	 */
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+
+	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Connection should've been closed");
 }
 
 ZTEST(server_function_tests_no_init, test_http_server_start_stop)
