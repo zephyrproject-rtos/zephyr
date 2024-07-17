@@ -580,6 +580,7 @@ Drivers and Sensors
 
 * DMA
 
+  * Error callback configuration renamed to better signal enable/disable status
   * Add support to NXP MCXN947
 
 * DMIC
