@@ -471,8 +471,12 @@
 /* Target T_LOW period in open-drain mode. */
 #define I3C_BUS_TLOW_OD_MIN_NS 200
 
-/* MIPI I3C v1.1.1 Spec defines tsco max as 12ns */
-#define I3C_TSCO_DEFAULT_NS 10
+/*
+ * MIPI I3C v1.1.1 Spec defines tsco max as 12ns, but the default for devices is 8ns
+ * TODO: this should be configurable by the value with in maxRd from the CCC GETMXDS
+ * for individual devices
+ */
+#define I3C_TSCO_DEFAULT_NS 8
 
 /* Interrupt thresholds. */
 /* command response fifo threshold */
@@ -3115,10 +3119,17 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	 *
 	 * Set the I3C Bus Mode based on the LVR of the I2C devices
 	 */
-	uint32_t ctrl = CTRL_HJ_DISEC | CTRL_MCS_EN | (CTRL_BUS_MODE_MASK & cdns_mode) |
-			CTRL_THD_DELAY(cdns_i3c_clk_to_data_turnaround(dev));
+	uint32_t ctrl = CTRL_HJ_DISEC | CTRL_MCS_EN | (CTRL_BUS_MODE_MASK & cdns_mode);
 	/* Disable Controllership requests as it is not supported yet by the driver */
 	ctrl &= ~CTRL_MST_ACK;
+
+	/*
+	 * Cadence I3C release r104v1p0 and above support configuration of the clock to data
+	 * turnaround time.
+	 */
+	if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 4)) {
+		ctrl |= CTRL_THD_DELAY(cdns_i3c_clk_to_data_turnaround(dev));
+	}
 
 	/*
 	 * Cadence I3C release r105v1p0 and above support I3C v1.1 timing change
