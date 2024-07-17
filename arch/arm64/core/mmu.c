@@ -243,8 +243,15 @@ static void set_pte_table_desc(uint64_t *pte, uint64_t *table, unsigned int leve
 
 static void set_pte_block_desc(uint64_t *pte, uint64_t desc, unsigned int level)
 {
-	if (desc) {
-		desc |= (level == XLAT_LAST_LEVEL) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
+	if (level != XLAT_LAST_LEVEL) {
+		desc |= PTE_BLOCK_DESC;
+	} else if (!IS_ENABLED(CONFIG_DEMAND_PAGING) || (desc & PTE_BLOCK_DESC_AF) != 0) {
+		desc |= PTE_PAGE_DESC;
+	} else {
+		/*
+		 * Demand paging configured and AF unset: leave the descriptor
+		 * type to "invalid" as in arch_mem_page_out().
+		 */
 	}
 	*pte = desc;
 	debug_show_pte(pte, level);
@@ -677,6 +684,11 @@ static uint64_t get_region_desc(uint32_t attrs)
 
 	/* the access flag */
 	desc |= PTE_BLOCK_DESC_AF;
+	if (IS_ENABLED(CONFIG_DEMAND_PAGING) && (attrs & MT_PAGED_OUT) != 0) {
+		/* set it up for demand paging like arch_mem_page_out() */
+		desc &= ~PTE_BLOCK_DESC_AF;
+		desc |= PTE_BLOCK_DESC_AP_RO;
+	}
 
 	/* memory attribute index field */
 	mem_type = MT_TYPE(attrs);
@@ -1084,6 +1096,10 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 
 	if ((flags & K_MEM_PERM_USER) != 0U) {
 		entry_flags |= MT_RW_AP_ELx;
+	}
+
+	if (IS_ENABLED(CONFIG_DEMAND_PAGING) && (flags & K_MEM_MAP_UNPAGED) != 0) {
+		entry_flags |= MT_PAGED_OUT;
 	}
 
 	return add_map(ptables, "generic", phys, (uintptr_t)virt, size, entry_flags);
