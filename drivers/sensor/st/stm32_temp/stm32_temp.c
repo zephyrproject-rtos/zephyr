@@ -45,21 +45,21 @@ struct stm32_temp_data {
 };
 
 struct stm32_temp_config {
-#if HAS_CALIBRATION
-	uint16_t *cal1_addr;
-	int cal1_temp;
-#if HAS_DUAL_CALIBRATION
-	uint16_t *cal2_addr;
-	int cal2_temp;
-#else
-	int avgslope;
+#if !defined(HAS_CALIBRATION)
+	int average_slope;		/** Unit: mV/°C x10 */
+	int v25;			/** Unit: mV */
+#else /* HAS_CALIBRATION */
+	unsigned int calib_vrefanalog;	/** Unit: mV */
+	unsigned int calib_data_shift;
+	const uint16_t *ts_cal1_addr;
+	int ts_cal1_temp;		/** Unit: °C */
+#if defined(HAS_SINGLE_CALIBRATION)
+	int average_slope;		/** Unit: µV/°C */
+#else /* HAS_DUAL_CALIBRATION */
+	const uint16_t *ts_cal2_addr;
+	int ts_cal2_temp;		/** Unit: °C */
 #endif
-	int cal_vrefanalog;
-	int ts_cal_shift;
-#else
-	int avgslope;
-	int v25_mv;
-#endif
+#endif /* HAS_CALIBRATION */
 	bool is_ntc;
 };
 
@@ -97,18 +97,18 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	LL_ICACHE_Disable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
-	temperature = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->cal_vrefanalog;
-	temperature -= (*cfg->cal1_addr >> cfg->ts_cal_shift);
+	temperature = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->calib_vrefanalog;
+	temperature -= (*cfg->ts_cal1_addr >> cfg->calib_data_shift);
 #if defined(HAS_SINGLE_CALIBRATION)
 	if (cfg->is_ntc) {
 		temperature = -temperature;
 	}
-	temperature /= (cfg->avgslope * 4096) / (cfg->cal_vrefanalog * 1000);
+	temperature /= (cfg->average_slope * 4096) / (cfg->calib_vrefanalog * 1000);
 #else
-	temperature *= (cfg->cal2_temp - cfg->cal1_temp);
-	temperature /= ((*cfg->cal2_addr - *cfg->cal1_addr) >> cfg->ts_cal_shift);
+	temperature *= (cfg->ts_cal2_temp - cfg->ts_cal1_temp);
+	temperature /= ((*cfg->ts_cal2_addr - *cfg->ts_cal1_addr) >> cfg->calib_data_shift);
 #endif
-	temperature += cfg->cal1_temp;
+	temperature += cfg->ts_cal1_temp;
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* Re-enable the ICACHE (unconditonally, as it should always be on) */
@@ -120,11 +120,11 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	int32_t mv = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
 
 	if (cfg->is_ntc) {
-		temperature = (float)(cfg->v25_mv - mv);
+		temperature = (float)(cfg->v25 - mv);
 	} else {
-		temperature = (float)(mv - cfg->v25_mv);
+		temperature = (float)(mv - cfg->v25);
 	}
-	temperature = (temperature / cfg->avgslope) * 10;
+	temperature = (temperature / cfg->average_slope) * 10;
 	temperature += 25;
 #endif
 
@@ -235,20 +235,20 @@ static struct stm32_temp_data stm32_temp_dev_data = {
 };
 
 static const struct stm32_temp_config stm32_temp_dev_config = {
-#if HAS_CALIBRATION
-	.cal1_addr = (uint16_t *)DT_INST_PROP(0, ts_cal1_addr),
-	.cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
-#if HAS_DUAL_CALIBRATION
-	.cal2_addr = (uint16_t *)DT_INST_PROP(0, ts_cal2_addr),
-	.cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
-#else
-	.avgslope = DT_INST_PROP(0, avgslope),
+#if defined(HAS_CALIBRATION)
+	.ts_cal1_addr = (uint16_t *)DT_INST_PROP(0, ts_cal1_addr),
+	.ts_cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
+#if defined(HAS_SINGLE_CALIBRATION)
+	.average_slope = DT_INST_PROP(0, avgslope),
+#else /* HAS_DUAL_CALIBRATION */
+	.ts_cal2_addr = (uint16_t *)DT_INST_PROP(0, ts_cal2_addr),
+	.ts_cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
 #endif
-	.ts_cal_shift = (DT_INST_PROP(0, ts_cal_resolution) - CAL_RES),
-	.cal_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
+	.calib_data_shift = (DT_INST_PROP(0, ts_cal_resolution) - CAL_RES),
+	.calib_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
 #else
-	.avgslope = DT_INST_PROP(0, avgslope),
-	.v25_mv = DT_INST_PROP(0, v25),
+	.average_slope = DT_INST_PROP(0, avgslope),
+	.v25 = DT_INST_PROP(0, v25),
 #endif
 	.is_ntc = DT_INST_PROP_OR(0, ntc, false)
 };
