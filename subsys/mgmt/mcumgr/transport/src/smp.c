@@ -72,6 +72,10 @@ void *smp_alloc_rsp(const void *req, void *arg)
 
 	req_nb = req;
 
+	if (req_nb->user_data_size > CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE) {
+		return NULL;
+	}
+
 	rsp_nb = smp_packet_alloc();
 	if (rsp_nb == NULL) {
 		return NULL;
