@@ -350,6 +350,7 @@ Boards & SoC Support
   * NXP IMX8M: added resource domain controller support
   * NXP s32k146: set RTC clock source to internal oscillator
   * GD32F4XX: Fixed an incorrect uart4 irq number.
+  * Nordic nRF54L: Added support for the FLPR (fast lightweight processor) RISC-V CPU.
 
 * Added support for these boards:
 
@@ -394,6 +395,12 @@ Boards & SoC Support
   * PPR core target in :ref:`nrf54h20dk_nrf54h20` runs from RAM by default. A
     new ``xip`` variant has been introduced which runs from MRAM (XIP).
   * Refactored :ref:`beagleconnect_freedom` external antenna switch handling.
+  * Added Arduino dts node labels for the nRF5340 Audio DK.
+  * Changed the default revision of the nRF54L15 PDK from 0.2.1 to 0.3.0.
+  * In boards based on the nRF5340 SoC, replaced direct accesses to the register
+    that controls the network core Force-OFF signal with a module that uses an
+    on-off manager to keep track of the network core use and exposes its API
+    in ``<nrf53_cpunet_mgmt.h>``.
 
 * Added support for these following shields:
 
@@ -663,6 +670,9 @@ Drivers and Sensors
 * I2S
 
   * Added support for STM32H5 series.
+  * Extended the mcux flexcomm driver to support additional channels and formats.
+  * Added support for Nordic nRF54L Series.
+  * Fixed divider calculations in the nRF I2S driver.
 
 * I3C
 
@@ -766,6 +776,8 @@ Drivers and Sensors
   * Made the NXP MCUX PWM driver thread safe
   * Fix zephyr:code-sample:`pwm-blinky` code sample to demonstrate PWM support for
     :ref:`beagleconnect_freedom`.
+  * Added driver for ENE KB1200.
+  * Added support for Nordic nRF54H and nRF54L Series SoCs.
 
 * Regulators
 
@@ -1493,6 +1505,11 @@ Libraries / Subsystems
 
 HALs
 ****
+
+* Nordic
+
+  * Updated nrfx to version 3.5.0.
+  * Added nRF Services (nrfs) library.
 
 * STM32
 
