@@ -17,7 +17,10 @@
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
-#define CAL_RES 12
+
+#define CAL_RES			12
+#define MAX_CALIB_POINTS	2
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
 #define DT_DRV_COMPAT st_stm32_temp
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp_cal)
@@ -51,12 +54,12 @@ struct stm32_temp_config {
 #else /* HAS_CALIBRATION */
 	unsigned int calib_vrefanalog;	/** Unit: mV */
 	unsigned int calib_data_shift;
-	const uint16_t *ts_cal1_addr;
+	const void *ts_cal1_addr;
 	int ts_cal1_temp;		/** Unit: °C */
 #if defined(HAS_SINGLE_CALIBRATION)
 	int average_slope;		/** Unit: µV/°C */
 #else /* HAS_DUAL_CALIBRATION */
-	const uint16_t *ts_cal2_addr;
+	const void *ts_cal2_addr;
 	int ts_cal2_temp;		/** Unit: °C */
 #endif
 #endif /* HAS_CALIBRATION */
@@ -81,14 +84,22 @@ static inline void adc_disable_tempsensor_channel(ADC_TypeDef *adc)
 					path & ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 }
 
-static float convert_adc_sample_to_temperature(const struct device *dev)
-{
-	struct stm32_temp_data *data = dev->data;
-	const struct stm32_temp_config *cfg = dev->config;
-	float temperature;
-
 #if defined(HAS_CALIBRATION)
+static uint32_t fetch_mfg_data(const void *addr)
+{
+	/* On all STM32 series, the calibration data is stored
+	 * as 16-bit data in the manufacturing flash region
+	 */
+	return sys_read16((mem_addr_t)addr);
+}
 
+/**
+ * @returns TS_CAL1 in calib_data[0]
+ *          TS_CAL2 in calib_data[1] if applicable
+ */
+static void read_calibration_data(const struct stm32_temp_config *cfg,
+				uint32_t calib_data[MAX_CALIB_POINTS])
+{
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
 	 * This is required on STM32H5, where the manufacturing flash must be
@@ -97,8 +108,33 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	LL_ICACHE_Disable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
+	calib_data[0] = fetch_mfg_data(cfg->ts_cal1_addr);
+#if defined(HAS_DUAL_CALIBRATION)
+	calib_data[1] = fetch_mfg_data(cfg->ts_cal2_addr);
+#endif
+
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
+	LL_ICACHE_Enable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+}
+#endif /* HAS_CALIBRATION */
+
+
+static float convert_adc_sample_to_temperature(const struct device *dev)
+{
+	struct stm32_temp_data *data = dev->data;
+	const struct stm32_temp_config *cfg = dev->config;
+	float temperature;
+
+#if defined(HAS_CALIBRATION)
+	uint32_t calib[MAX_CALIB_POINTS];
+
+	read_calibration_data(cfg, calib);
+
 	temperature = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->calib_vrefanalog;
-	temperature -= (*cfg->ts_cal1_addr >> cfg->calib_data_shift);
+	temperature -= (calib[0] >> cfg->calib_data_shift);
 #if defined(HAS_SINGLE_CALIBRATION)
 	if (cfg->is_ntc) {
 		temperature = -temperature;
@@ -106,15 +142,9 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	temperature /= (cfg->average_slope * 4096) / (cfg->calib_vrefanalog * 1000);
 #else
 	temperature *= (cfg->ts_cal2_temp - cfg->ts_cal1_temp);
-	temperature /= ((*cfg->ts_cal2_addr - *cfg->ts_cal1_addr) >> cfg->calib_data_shift);
+	temperature /= ((calib[1] - calib[0]) >> cfg->calib_data_shift);
 #endif
 	temperature += cfg->ts_cal1_temp;
-
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	/* Re-enable the ICACHE (unconditonally, as it should always be on) */
-	LL_ICACHE_Enable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
-
 #else
 	/* Sensor value in millivolts */
 	int32_t mv = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
@@ -236,12 +266,12 @@ static struct stm32_temp_data stm32_temp_dev_data = {
 
 static const struct stm32_temp_config stm32_temp_dev_config = {
 #if defined(HAS_CALIBRATION)
-	.ts_cal1_addr = (uint16_t *)DT_INST_PROP(0, ts_cal1_addr),
+	.ts_cal1_addr = (const void *)DT_INST_PROP(0, ts_cal1_addr),
 	.ts_cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
 #if defined(HAS_SINGLE_CALIBRATION)
 	.average_slope = DT_INST_PROP(0, avgslope),
 #else /* HAS_DUAL_CALIBRATION */
-	.ts_cal2_addr = (uint16_t *)DT_INST_PROP(0, ts_cal2_addr),
+	.ts_cal2_addr = (const void *)DT_INST_PROP(0, ts_cal2_addr),
 	.ts_cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
 #endif
 	.calib_data_shift = (DT_INST_PROP(0, ts_cal_resolution) - CAL_RES),
