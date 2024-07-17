@@ -866,10 +866,14 @@ Display drivers:
     - include/zephyr/drivers/display.h
     - subsys/fb/
     - samples/subsys/display/
+    - tests/subsys/display/
     - doc/hardware/peripherals/display/
     - tests/drivers/*/display/
   labels:
     - "area: Display"
+  tests:
+    - display.cfb
+    - drivers.display
 
 Documentation:
   status: maintained
