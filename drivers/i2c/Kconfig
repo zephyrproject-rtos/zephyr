@@ -8,6 +8,8 @@
 #
 menuconfig I2C
 	bool "Inter-Integrated Circuit (I2C) bus drivers"
+	# Select I3C as I3C also includes the I2C API
+	select I3C
 	help
 	  Enable I2C Driver Configuration
 
