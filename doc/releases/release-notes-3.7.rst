@@ -364,6 +364,10 @@ Boards & SoC Support
   * NXP s32k146: set RTC clock source to internal oscillator
   * GD32F4XX: Fixed an incorrect uart4 irq number.
   * Nordic nRF54L: Added support for the FLPR (fast lightweight processor) RISC-V CPU.
+  * Espressif: Removed idf-bootloader dependency from all ESP32 SoC variants.
+  * Espressif: Added Simple boot support for ESP32 SoC variants, which allows loading application
+    using a single binary image without a 2nd stage bootloader.
+  * Espressif: Re-worked and optimized all SoCs memory map.
 
 * Added support for these boards:
 
@@ -391,6 +395,11 @@ Boards & SoC Support
   * Added support for :ref:`Analog Devices AD-APARD32690-SL <ad_apard32690_sl>`: ``ad_apard32690_sl``.
   * Added support for :ref:`Infineon Technologies CYW920829M2EVK-02 <cyw920829m2evk_02>`: ``cyw920829m2evk_02``.
   * Added support for :ref:`Nuvoton Numaker M2L31KI board <nuvoton_m2l31ki>`: ``numaker_m2l31ki``.
+  * Added support for :ref:`Espressif ESP32-S2 DevKit-C <esp32s2_devkitc>`: ``esp32s2_devkitc``.
+  * Added support for :ref:`Espressif ESP32-S3 DevKit-C <esp32s3_devkitc>`: ``esp32s3_devkitc``.
+  * Added support for :ref:`Espressif ESP32-C6 DevKit-C <esp32c6_devkitc>`: ``esp32c6_devkitc``.
+  * Added support for :ref:`Waveshare ESP32-S3-Touch-LCD-1.28 <esp32s3_touch_lcd_1_28>`: ``esp32s3_touch_lcd_1_28``.
+  * Added support for :ref:`M5Stack ATOM Lite <m5stack_atom_lite>`: ``m5stack_atom_lite``.
 
 * Made these board changes:
 
@@ -487,6 +496,9 @@ Build system and Infrastructure
 
   * Added support for disabling output disassembly having the source code in using
     :kconfig:option:`CONFIG_OUTPUT_DISASSEMBLY_WITH_SOURCE` (:github:`71535`).
+
+  * Twister now supports ``--flash-before`` parameter that allows flashing DUT before
+    opening serial port (:github:`47037`).
 
 Drivers and Sensors
 *******************
@@ -606,6 +618,7 @@ Drivers and Sensors
   * Added support for MSI clock on STM32WL series.
   * Added driver for Analog Devices MAX32 SoC series.
   * Added support for Nuvoton Numaker M2L31X series.
+  * Refactored ESP32 clock control driver to support ESP32-C6.
 
 * Counter
 
@@ -736,6 +749,7 @@ Drivers and Sensors
     * Added support to esp32 ethernet driver to set the MAC address during runtime.
     * Updated esp32 ethernet driver to work with the version 5.1 of hal_espressif.
     * Fixed build of esp32 ethernet driver when :kconfig:option:`CONFIG_NET_STATISTICS` is enabled.
+    * Fixed ESP32 ethernet driver not clocking external PHY correctly over GPIO.
   * Other ethernet driver changes
 
     * Added link status detection to the w5500 ethernet driver, configurable via kconfig.
@@ -1195,6 +1209,7 @@ Drivers and Sensors
   * Added support for Ambiq Apollo3 series.
   * Added support for STM32H7R/S series.
   * Added support for Nuvoton Numaker M2L31X series.
+  * Added watchdog for external 32kHz crystal in ESP32 SoC variants.
 
 * Wi-Fi
 
@@ -1202,6 +1217,7 @@ Drivers and Sensors
   * Fixed esp-at connect failures.
   * Implement :c:func:`bind` and :c:func:`recvfrom` for UDP sockets for esp-at.
   * Added option for setting maximum data size for eswifi.
+  * Fixed ESP32 Wi-Fi driver memory leak.
 
 Networking
 **********
@@ -1764,6 +1780,10 @@ HALs
   * Introduced the ``hal_adi`` module, which is a subset of the Maxim Software
     Development Kit (MSDK) that contains device header files and bare metal
     peripheral drivers (:github:`72391`).
+
+* Espressif
+
+  * Updated HAL to version v5.1, which has new SoCs low-level files.
 
 MCUboot
 *******
