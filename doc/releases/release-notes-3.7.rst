@@ -119,6 +119,9 @@ Removed APIs in this release
  * Removed ``pm_device_state_lock``, ``pm_device_state_is_locked`` and ``pm_device_state_unlock``
    functions from the Device PM APIs.
 
+ * Removed deprecated MCUmgr transport API functions: ``zephyr_smp_rx_req``,
+   ``zephyr_smp_alloc_rsp`` and ``zephyr_smp_free_buf``.
+
 Deprecated in this release
 ==========================
 
@@ -1378,6 +1381,12 @@ Libraries / Subsystems
 
     * Fixed an issue with the SMP structure not being packed which would cause a fault on devices
       that do not support unaligned memory accesses.
+
+    * Added :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION` that allows users
+      to select whether MCUmgr BT service is statically registered at compile time or
+      dynamically at run time.
+
+    * In FS group, TinyCrypt has been replaced with PSA calls for SHA calculation.
 
 * Logging
 
