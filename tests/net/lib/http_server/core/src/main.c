@@ -55,6 +55,14 @@
 	0x86, 0x62, 0x4f, 0x55, 0x0e, 0x93, 0x13, 0x7a, 0x88, 0x25, 0xb6, 0x50, \
 	0xc3, 0xcb, 0xbc, 0xb8, 0x3f, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x5f, 0x87, \
 	0x49, 0x7c, 0xa5, 0x8a, 0xe8, 0x19, 0xaa
+#define TEST_HTTP2_HEADERS_GET_DYNAMIC_STREAM_1_PADDED \
+	0x00, 0x00, 0x3d, 0x01, 0x0d, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, 0x11,\
+	0x82, 0x86, 0x41, 0x87, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xff, 0x04, \
+	0x86, 0x62, 0x4f, 0x55, 0x0e, 0x93, 0x13, 0x7a, 0x88, 0x25, 0xb6, 0x50, \
+	0xc3, 0xcb, 0xbc, 0xb8, 0x3f, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x5f, 0x87, \
+	0x49, 0x7c, 0xa5, 0x8a, 0xe8, 0x19, 0xaa, \
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+	0x00, 0x00, 0x00, 0x00, 0x00
 #define TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1 \
 	0x00, 0x00, 0x30, 0x01, 0x04, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0x83, 0x86, 0x41, 0x87, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xff, 0x04, \
@@ -65,6 +73,14 @@
 	0x00, 0x00, 0x11, 0x00, 0x01, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0x54, 0x65, 0x73, 0x74, 0x20, 0x64, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, \
 	0x20, 0x50, 0x4f, 0x53, 0x54
+#define TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1_PADDED \
+	0x00, 0x00, 0x34, 0x00, 0x09, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, 0x22, \
+	0x54, 0x65, 0x73, 0x74, 0x20, 0x64, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, \
+	0x20, 0x50, 0x4f, 0x53, 0x54, \
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+
 
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
@@ -393,21 +409,13 @@ ZTEST(server_function_tests, test_http1_static_get)
 			  "Received data doesn't match expected response");
 }
 
-ZTEST(server_function_tests, test_http2_dynamic_post)
+static void common_verify_http2_dynamic_post_request(const uint8_t *request,
+						     size_t request_len)
 {
-	static const uint8_t request_post_dynamic[] = {
-		TEST_HTTP2_MAGIC,
-		TEST_HTTP2_SETTINGS,
-		TEST_HTTP2_SETTINGS_ACK,
-		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
-		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
-		TEST_HTTP2_GOAWAY,
-	};
 	size_t offset = 0;
 	int ret;
 
-	ret = zsock_send(client_fd, request_post_dynamic,
-			 sizeof(request_post_dynamic), 0);
+	ret = zsock_send(client_fd, request, request_len, 0);
 	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
 
 	memset(buf, 0, sizeof(buf));
@@ -421,6 +429,21 @@ ZTEST(server_function_tests, test_http2_dynamic_post)
 		      "Wrong dynamic resource length");
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_post)
+{
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_request(request_post_dynamic,
+						 sizeof(request_post_dynamic));
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_upgrade_post)
@@ -492,23 +515,16 @@ ZTEST(server_function_tests, test_http1_dynamic_post)
 			  dynamic_payload_len, "Wrong dynamic resource data");
 }
 
-ZTEST(server_function_tests, test_http2_dynamic_get)
+static void common_verify_http2_dynamic_get_request(const uint8_t *request,
+						    size_t request_len)
 {
-	static const uint8_t request_get_dynamic[] = {
-		TEST_HTTP2_MAGIC,
-		TEST_HTTP2_SETTINGS,
-		TEST_HTTP2_SETTINGS_ACK,
-		TEST_HTTP2_HEADERS_GET_DYNAMIC_STREAM_1,
-		TEST_HTTP2_GOAWAY,
-	};
 	size_t offset = 0;
 	int ret;
 
 	dynamic_payload_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
 	memcpy(dynamic_payload, TEST_DYNAMIC_GET_PAYLOAD, dynamic_payload_len);
 
-	ret = zsock_send(client_fd, request_get_dynamic,
-			 sizeof(request_get_dynamic), 0);
+	ret = zsock_send(client_fd, request, request_len, 0);
 	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
 
 	memset(buf, 0, sizeof(buf));
@@ -521,6 +537,20 @@ ZTEST(server_function_tests, test_http2_dynamic_get)
 				strlen(TEST_DYNAMIC_GET_PAYLOAD), 0);
 	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, NULL, 0,
 				HTTP2_FLAG_END_STREAM);
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_get)
+{
+	static const uint8_t request_get_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_get_request(request_get_dynamic,
+						sizeof(request_get_dynamic));
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_upgrade_get)
@@ -645,6 +675,35 @@ ZTEST(server_function_tests, test_http1_connection_close)
 	 */
 	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
 	zassert_equal(ret, 0, "Connection should've been closed");
+}
+
+ZTEST(server_function_tests, test_http2_post_data_with_padding)
+{
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1_PADDED,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_request(request_post_dynamic,
+						 sizeof(request_post_dynamic));
+}
+
+ZTEST(server_function_tests, test_http2_get_headers_with_padding)
+{
+	static const uint8_t request_get_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_DYNAMIC_STREAM_1_PADDED,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_get_request(request_get_dynamic,
+						sizeof(request_get_dynamic));
 }
 
 ZTEST(server_function_tests_no_init, test_http_server_start_stop)
