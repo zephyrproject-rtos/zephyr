@@ -404,6 +404,7 @@ Boards & SoC Support
     that controls the network core Force-OFF signal with a module that uses an
     on-off manager to keep track of the network core use and exposes its API
     in ``<nrf53_cpunet_mgmt.h>``.
+  * Laird Connectivity boards are rebranded to Ezurio.
 
 * Added support for these following shields:
 
