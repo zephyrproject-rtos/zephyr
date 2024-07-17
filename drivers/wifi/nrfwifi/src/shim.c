@@ -235,6 +235,10 @@ static void *zep_shim_nbuf_alloc(unsigned int size)
 
 static void zep_shim_nbuf_free(void *nbuf)
 {
+	if (!nbuf) {
+		return;
+	}
+
 	k_free(((struct nwb *)nbuf)->priv);
 	k_free(nbuf);
 }
