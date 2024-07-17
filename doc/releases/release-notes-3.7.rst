@@ -350,6 +350,7 @@ Boards & SoC Support
   * Added support for Infineon Technologies AIROC:tm: CYW20829 Bluetooth LE SoC series.
   * Added support for MediaTek MT8195 Audio DSPs
   * Added support for Nuvoton Numaker M2L31X SoC series.
+  * Added support for the Microchip PolarFire ICICLE Kit SMP variant.
 
 * Made these changes in other SoC series:
 
@@ -368,6 +369,10 @@ Boards & SoC Support
   * Espressif: Added Simple boot support for ESP32 SoC variants, which allows loading application
     using a single binary image without a 2nd stage bootloader.
   * Espressif: Re-worked and optimized all SoCs memory map.
+  * LiteX:
+
+    * Added support for :c:func:`sys_arch_reboot()`.
+    * :kconfig:option:`CONFIG_RISCV_ISA_EXT_A` is no longer erroneously y-selected.
 
 * Added support for these boards:
 
@@ -619,6 +624,8 @@ Drivers and Sensors
   * Added driver for Analog Devices MAX32 SoC series.
   * Added support for Nuvoton Numaker M2L31X series.
   * Refactored ESP32 clock control driver to support ESP32-C6.
+  * In LiteX (:file:`drivers/clock_control/clock_control_litex.c`) added return code checking for
+    :c:func:`litex_clk_get_duty_cycle()` and :c:func:`litex_clk_get_clkout_divider`.
 
 * Counter
 
@@ -832,6 +839,11 @@ Drivers and Sensors
   * Added support to NXP MCXN947
   * Added driver for Analog Devices MAX32 SoC series.
   * Added support for Nuvoton Numaker M2L31X series.
+  * LiteX I2C driver (:file:`drivers/i2c/i2c_litex.c`):
+
+    * Added support for bitrate setting from the devicetree.
+    * Added :c:func:`i2c_litex_recover_bus()` and :c:func:`i2c_litex_get_config()` API
+      implementations.
 
 * I2S
 
