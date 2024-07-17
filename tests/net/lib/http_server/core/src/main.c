@@ -309,6 +309,62 @@ ZTEST(server_function_tests, test_http1_static_get)
 			  "Received data doesn't match expected response");
 }
 
+ZTEST(server_function_tests, test_http1_connection_close)
+{
+	static const char http1_request_1[] =
+		"GET / HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"Accept-Encoding: deflate, gzip, br\r\n"
+		"\r\n";
+	static const char http1_request_2[] =
+		"GET / HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"Accept-Encoding: deflate, gzip, br\r\n"
+		"Connection: close\r\n"
+		"\r\n";
+	static const char expected_response[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: 13\r\n"
+		"\r\n"
+		TEST_STATIC_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request_1, strlen(http1_request_1), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+	test_consume_data(&offset, sizeof(expected_response) - 1);
+
+	/* With no connection: close, the server shall serve another request on
+	 * the same connection.
+	 */
+	ret = zsock_send(client_fd, http1_request_2, strlen(http1_request_2), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+	test_consume_data(&offset, sizeof(expected_response) - 1);
+
+	/* Second request included connection: close, so we should expect the
+	 * connection to be closed now.
+	 */
+	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Connection should've been closed");
+}
+
 ZTEST(server_function_tests_no_init, test_http_server_start_stop)
 {
 	struct sockaddr_in sa = { 0 };
