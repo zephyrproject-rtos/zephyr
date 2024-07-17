@@ -689,6 +689,13 @@ Drivers and Sensors
   * The ``chain-length`` and ``color-mapping`` properties have been added to all LED strip
     bindings.
 
+  * The length of a strip is now checked before updating it, an error is returned if the provided
+    data is too long.
+
+  * A length function has been added which returns the length of the LED strip
+    (:c:func:`led_strip_length`).
+
+  * The update channels function is now optional and can be left unimplemented.
 
 * LoRa
 
@@ -822,6 +829,9 @@ Drivers and Sensors
     * Added DHT20 digital-output humidity and temperature sensor driver
       (:dtcompatible:`aosong,dht20`).
 
+    * Added :kconfig:option:`CONFIG_DHT_LOCK_IRQS` for the dht11 driver which allows for locking
+      interrupts during sensor reading to prevent issues with reading the sensor.
+
   * Bosch
 
     * Updated BME280 to the new async API.
@@ -854,6 +864,11 @@ Drivers and Sensors
     * QDEC driver now supports encoder mode configuration (see :dtcompatible:`st,stm32-qdec`).
     * Added support for STM32 Digital Temperature Sensor (:dtcompatible:`st,stm32-digi-temp`).
     * Added IIS328DQ I2C/SPI accelerometer sensor driver (:dtcompatible:`st,iis328dq`).
+
+  * TDK
+
+    * Added support for the MPU6500 3-axis accelerometer and 3-axis gyroscope sensor to the
+      MPU6050 driver.
 
   * TI
 
