@@ -654,12 +654,17 @@ static void remove_all_sources(void)
 static int sync_broadcast(struct sync_state *state)
 {
 	int err;
+	uint32_t bis_sync[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 
 	UNSET_FLAG(flag_recv_state_updated);
 
+	for (size_t i = 0U; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
+		bis_sync[i] = BT_ISO_BIS_INDEX_BIT(i + 1);
+	}
+
 	/* We don't actually need to sync to the BIG/BISes */
-	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id,
-						       (uint32_t[]){BT_ISO_BIS_INDEX_BIT(1)});
+	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, bis_sync);
+
 	if (err) {
 		return err;
 	}
