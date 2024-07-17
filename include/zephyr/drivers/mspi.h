@@ -7,6 +7,8 @@
 /**
  * @file
  * @brief Public APIs for MSPI driver
+ * @since 3.7
+ * @version 0.1.0
  */
 
 #ifndef ZEPHYR_INCLUDE_MSPI_H_
