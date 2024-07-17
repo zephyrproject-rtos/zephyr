@@ -104,7 +104,13 @@
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-
+#define TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1_NO_END_STREAM \
+	0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x54, 0x65, 0x73, 0x74, 0x20, 0x64, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, \
+	0x20, 0x50, 0x4f, 0x53, 0x54
+#define TEST_HTTP2_TRAILING_HEADER_STREAM_1 \
+	0x00, 0x00, 0x0c, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x40, 0x84, 0x92, 0xda, 0x69, 0xf5, 0x85, 0x9c, 0xa3, 0x90, 0xb6, 0x7f
 
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
@@ -311,6 +317,26 @@ static void expect_http2_data_frame(size_t *offset, int stream_id,
 	/* Verify data payload */
 	test_read_data(offset, frame.length);
 	zassert_mem_equal(buf, payload, payload_len, "Unexpected data payload");
+	test_consume_data(offset, frame.length);
+}
+
+static void expect_http2_window_update_frame(size_t *offset, int stream_id)
+{
+	struct http2_frame frame;
+
+	test_get_frame_header(offset, &frame);
+
+	zassert_equal(frame.type, HTTP2_WINDOW_UPDATE_FRAME,
+		      "Expected window update frame");
+	zassert_equal(frame.stream_identifier, stream_id,
+		      "Invalid window update frame stream ID");
+	zassert_equal(frame.flags, 0, "Unexpected flags received");
+	zassert_equal(frame.length, sizeof(uint32_t),
+		      "Unexpected window update frame length");
+
+
+	/* Consume window update payload */
+	test_read_data(offset, frame.length);
 	test_consume_data(offset, frame.length);
 }
 
@@ -789,6 +815,44 @@ ZTEST(server_function_tests, test_http2_post_missing_continuation)
 
 	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
 	zassert_equal(ret, 0, "Connection should've been closed");
+}
+
+ZTEST(server_function_tests, test_http2_post_trailing_headers)
+{
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1_NO_END_STREAM,
+		TEST_HTTP2_TRAILING_HEADER_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_post_dynamic,
+			 sizeof(request_post_dynamic), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	/* In this case order is reversed, data frame had not END_STREAM flag.
+	 * Because of this, reply will only be sent after processing the final
+	 * trailing headers frame, but this will be preceded by window update
+	 * after processing the data frame.
+	 */
+	expect_http2_window_update_frame(&offset, TEST_STREAM_ID_1);
+	expect_http2_window_update_frame(&offset, 0);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM);
+
+	zassert_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  dynamic_payload_len, "Wrong dynamic resource data");
 }
 
 ZTEST(server_function_tests, test_http2_get_headers_with_padding)
