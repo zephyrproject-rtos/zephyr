@@ -254,6 +254,22 @@ ZTEST(server_function_tests_no_init, test_http_server_start_stop)
 	zassert_ok(zsock_close(client_fd), "close() failed on the client fd (%d)", errno);
 	client_fd = -1;
 
+	/* Check if the server can be restarted again after client connected. */
+	zassert_ok(http_server_stop(), "Failed to stop the server");
+	zassert_ok(http_server_start(), "Failed to start the server");
+
+	/* Let the server thread run. */
+	k_msleep(CONFIG_HTTP_SERVER_RESTART_DELAY + 10);
+
+	ret = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_not_equal(ret, -1, "failed to create client socket (%d)", errno);
+	client_fd = ret;
+
+	zassert_ok(zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa)),
+		   "failed to connect to the server (%d)", errno);
+	zassert_ok(zsock_close(client_fd), "close() failed on the client fd (%d)", errno);
+	client_fd = -1;
+
 	zassert_ok(http_server_stop(), "Failed to stop the server");
 }
 
