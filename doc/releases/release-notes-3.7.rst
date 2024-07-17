@@ -349,6 +349,7 @@ Boards & SoC Support
   * Added support for Analog Devices MAX32 SoC series.
   * Added support for Infineon Technologies AIROC:tm: CYW20829 Bluetooth LE SoC series.
   * Added support for MediaTek MT8195 Audio DSPs
+  * Added support for Nuvoton Numaker M2L31X SoC series.
 
 * Made these changes in other SoC series:
 
@@ -389,6 +390,7 @@ Boards & SoC Support
   * Added support for :ref:`Analog Devices MAX32655FTHR <max32655_fthr>`: ``max32655fthr``.
   * Added support for :ref:`Analog Devices AD-APARD32690-SL <ad_apard32690_sl>`: ``ad_apard32690_sl``.
   * Added support for :ref:`Infineon Technologies CYW920829M2EVK-02 <cyw920829m2evk_02>`: ``cyw920829m2evk_02``.
+  * Added support for :ref:`Nuvoton Numaker M2L31KI board <nuvoton_m2l31ki>`: ``numaker_m2l31ki``.
 
 * Made these board changes:
 
@@ -553,6 +555,8 @@ Drivers and Sensors
       the tla2021 driver by correcting the reference voltage value.
 
 
+  * Added support for Nuvoton Numaker M2L31X series.
+
 * Auxiliary Display
 
 * Audio
@@ -586,7 +590,7 @@ Drivers and Sensors
   * Renamed the ``bus_speed`` and ``bus_speed_data`` fields of :c:struct:`can_driver_config` to
     ``bitrate`` and ``bitrate_data``.
   * Added driver for :dtcompatible:`nordic,nrf-can`.
-  * Added driver support for Numaker M2l31x to the :dtcompatible:`nuvoton,numaker-canfd` driver.
+  * Added driver support for Numaker M2L31X to the :dtcompatible:`nuvoton,numaker-canfd` driver.
   * Added host communication test suite.
 
 * Charger
@@ -601,6 +605,7 @@ Drivers and Sensors
   * Added support for Microcontroller Clock Output (MCO) on STM32H5 series.
   * Added support for MSI clock on STM32WL series.
   * Added driver for Analog Devices MAX32 SoC series.
+  * Added support for Nuvoton Numaker M2L31X series.
 
 * Counter
 
@@ -773,6 +778,7 @@ Drivers and Sensors
   * STM32 OSPI driver: clk, dqs, ncs ports can now be configured by device tree
     configurable (see :dtcompatible:`st,stm32-ospi`).
   * Added FlexSPI support to NXP MCXN947
+  * Added support for Nuvoton Numaker M2L31X series.
 
 * Fuel Gauge
 
@@ -787,6 +793,7 @@ Drivers and Sensors
   * Added c:macro:`STM32_GPIO_WKUP` flag which allows to configure specific pins as wakeup source
     from Power Off state on STM32 L4, U5, WB, & WL SoC series.
   * Added driver for Analog Devices MAX32 SoC series.
+  * Added support for Nuvoton Numaker M2L31X series.
 
 * Hardware info
 
@@ -805,6 +812,7 @@ Drivers and Sensors
   * Added support for STM32H5 series.
   * Added support to NXP MCXN947
   * Added driver for Analog Devices MAX32 SoC series.
+  * Added support for Nuvoton Numaker M2L31X series.
 
 * I2S
 
@@ -935,6 +943,7 @@ Drivers and Sensors
   * Added driver for NXP RW
   * Espressif driver now supports ESP32C6
   * STM32 driver now supports remap functionality for STM32C0
+  * Added support for Nuvoton Numaker M2L31X series.
 
 * PWM
 
@@ -945,6 +954,7 @@ Drivers and Sensors
     :ref:`beagleconnect_freedom`.
   * Added driver for ENE KB1200.
   * Added support for Nordic nRF54H and nRF54L Series SoCs.
+  * Added support for Nuvoton Numaker M2L31X series.
 
 * Regulators
 
@@ -967,6 +977,7 @@ Drivers and Sensors
   * Added driver for reset controller on Nuvoton NPCX chips.
   * Added reset controller driver for NXP SYSCON.
   * Added reset controller driver for NXP RSTCTL.
+  * Added support for Nuvoton Numaker M2L31X series.
 
 * Retained memory
 
@@ -974,6 +985,7 @@ Drivers and Sensors
 
   * Added Raspberry Pi Pico RTC driver.
   * Added support for :kconfig:option:`CONFIG_RTC_ALARM` on all STM32 MCU series (except STM32F1).
+  * Added support for Nuvoton Numaker M2L31X series.
 
 * RTIO
 
@@ -1146,6 +1158,8 @@ Drivers and Sensors
 
     * Added support to identify if DMA buffers are in data cache or non-cacheable memory.
 
+  * Added support for Nuvoton Numaker M2L31X series.
+
 * SPI
 
   * Added support to NXP MCXN947
@@ -1180,6 +1194,7 @@ Drivers and Sensors
     in milliseconds. Removed no longer used :kconfig:option:`CONFIG_WDT_NPCX_DELAY_CYCLES`.
   * Added support for Ambiq Apollo3 series.
   * Added support for STM32H7R/S series.
+  * Added support for Nuvoton Numaker M2L31X series.
 
 * Wi-Fi
 
