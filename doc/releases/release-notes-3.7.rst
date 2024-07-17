@@ -1128,6 +1128,10 @@ Drivers and Sensors
 
 * USB
 
+  * Added UDC shim driver for NXP EHCI and IP3511 USB controller.
+  * Various fixes and improvements in IT82xx2, DWC2, STM32, RP2040, Smartbond
+    USB controller drivers.
+
 * Video
 
   * Added support for STM32 Digital camera interface (DCMI) driver (:dtcompatible:`st,stm32-dcmi`).
@@ -1454,6 +1458,13 @@ Networking
 
 USB
 ***
+
+* new USB device stack:
+
+  * Added support for HID devices
+  * Introduced speed-specific configurations and made high-speed support
+    compliant with the USB2.0 specification
+  * Added notification support and initial BOS support
 
 Devicetree
 **********
