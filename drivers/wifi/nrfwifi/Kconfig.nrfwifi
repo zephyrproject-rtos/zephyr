@@ -673,4 +673,27 @@ config NRF_WIFI_FEAT_WMM
 	help
 	  This option controls disable/enable of the WMM(Wireless Multi-Media) feature.
 
+choice NRF_WIFI_PS_DATA_RETRIEVAL_MECHANISM
+	prompt "Power save data retrieval mechanism"
+	default NRF_WIFI_PS_POLL_BASED_RETRIEVAL
+	help
+	  Select the mechanism to retrieve buffered data from AP.
+
+config NRF_WIFI_PS_POLL_BASED_RETRIEVAL
+	bool "PS-Poll frame based mechanism to retrieve buffered data from AP"
+	help
+	  When AP notifies about availability of buffered data, the STA stays in power save
+	  and retrieves the frames one-by-one, this conserved more power but adds latency
+	  to the traffic. Ideal for minimum number of frames.
+
+config NRF_WIFI_QOS_NULL_BASED_RETRIEVAL
+	bool "QoS null frame based mechanism to retrieve buffered data from AP"
+	help
+	  When AP notifies about availability of buffered data, the STA comes out of
+	  power save and then AP can deliver all buffered frames without any additional
+	  overhead or latency, but STA enters power save after a delay costing more power
+	  depending on the delay. Ideal for heavy buffered traffic.
+
+endchoice
+
 endif # WIFI_NRF70
