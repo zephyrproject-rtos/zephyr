@@ -279,6 +279,14 @@ Kernel
     threads, this may increase the size of the statically allocated stack objects depending
     on architecture alignment requirements.
 
+  * Fix an edge case deadlock in :c:func:`k_thread_abort` (and join)
+    where racing ISRs on SMP systems could become stuck spinning to
+    signal each other's interrupted threads.
+
+  * Fix a bug where :kconfig:option:`CONFIG_SCHED_SCALABLE` and
+    :kconfig:option:`CONFIG_SCHED_DEADLINE` would corrupt the
+    scheduling queue when used together.
+
 Bluetooth
 *********
 * Audio
@@ -340,6 +348,7 @@ Boards & SoC Support
   * Added support for NXP mke15z7, mke17z7, mke17z9, MCXNx4x, RW61x
   * Added support for Analog Devices MAX32 SoC series.
   * Added support for Infineon Technologies AIROC:tm: CYW20829 Bluetooth LE SoC series.
+  * Added support for MediaTek MT8195 Audio DSPs
 
 * Made these changes in other SoC series:
 
