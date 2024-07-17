@@ -46,7 +46,9 @@ pub fn build_kconfig_mod() {
     let dotconfig = env::var("DOTCONFIG").expect("DOTCONFIG must be set by wrapper");
     let outdir = env::var("OUT_DIR").expect("OUT_DIR must be set");
 
-    let config_num = Regex::new(r"^(CONFIG_.*)=([1-9][0-9]*|0x[0-9a-fA-F]+)$").unwrap();
+    // The assumption is that hex values are unsigned, and decimal are signed.
+    let config_hex = Regex::new(r"^(CONFIG_.*)=(0x[0-9a-fA-F]+)$").unwrap();
+    let config_int = Regex::new(r"^(CONFIG_.*)=(-?[1-9][0-9]*)$").unwrap();
     // It is unclear what quoting might be used in the .config.
     let config_str = Regex::new(r#"^(CONFIG_.*)=(".*")$"#).unwrap();
     let gen_path = Path::new(&outdir).join("kconfig.rs");
@@ -57,9 +59,14 @@ pub fn build_kconfig_mod() {
     let file = File::open(&dotconfig).expect("Unable to open dotconfig");
     for line in BufReader::new(file).lines() {
         let line = line.expect("reading line from dotconfig");
-        if let Some(caps) = config_num.captures(&line) {
+        if let Some(caps) = config_hex.captures(&line) {
             writeln!(&mut f, "    #[allow(dead_code)]").unwrap();
             writeln!(&mut f, "    pub const {}: usize = {};",
+                &caps[1], &caps[2]).unwrap();
+        }
+        if let Some(caps) = config_int.captures(&line) {
+            writeln!(&mut f, "    #[allow(dead_code)]").unwrap();
+            writeln!(&mut f, "    pub const {}: isize = {};",
                 &caps[1], &caps[2]).unwrap();
         }
         if let Some(caps) = config_str.captures(&line) {
