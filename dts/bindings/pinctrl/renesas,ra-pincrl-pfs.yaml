@@ -21,7 +21,7 @@ description: |
        */
 
       /* include pre-defined combinations for the SoC variant used by the board */
-      #include <dt-bindings/pinctrl/renesas/ra-pinctrl.h>
+      #include <dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 
       &pinctrl {
         /* configuration for the sci0 "default" state */
@@ -67,7 +67,7 @@ description: |
              pinctrl-names = "default", "sleep";
        };
 
-compatible: "renesas,ra8-pinctrl"
+compatible: "renesas,ra-pinctrl-pfs"
 
 include: base.yaml
 
