@@ -5,3 +5,7 @@
 &dut {
 	memory-regions = <&cpuapp_dma_region>;
 };
+
+&dut2 {
+	memory-regions = <&dma_fast_region>;
+};
