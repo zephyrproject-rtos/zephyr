@@ -769,4 +769,12 @@ config NRF_WIFI_QOS_NULL_BASED_RETRIEVAL
 
 endchoice
 
+config NRF_WIFI_MGMT_BUFF_OFFLOAD
+	bool "management buffer offload"
+	default y
+	help
+	  This option offloads the refilling of management buffers to UMAC, saves host
+	  having to exchange commands and events for every management packet even if it is
+	  consumed by UMAC.
+
 endif # WIFI_NRF70
