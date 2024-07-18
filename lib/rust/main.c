@@ -7,7 +7,7 @@
 
 #ifdef CONFIG_RUST
 
-extern void rust_main();
+extern void rust_main(void);
 
 int main(void)
 {
