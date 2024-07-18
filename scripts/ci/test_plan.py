@@ -242,7 +242,7 @@ class Filters:
         for changed in changed_boards:
             for board in known_boards:
                 c = (zephyr_base / changed).resolve()
-                if c.is_relative_to(board.directories[0].resolve()):
+                if c.is_relative_to(board.dir.resolve()):
                     for file in glob.glob(os.path.join(board.dir, f"{board.name}*.yaml")):
                         with open(file, 'r') as f:
                             b = yaml.load(f.read(), Loader=SafeLoader)

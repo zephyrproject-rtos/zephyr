@@ -127,8 +127,7 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
                     board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", qualifier).upper()
                     f.write('config  ' + board_str + '\n')
                     f.write('\t bool\n')
-                f.write('source "' +
-                        (board.directories[0] / ('Kconfig.' + board.name)).as_posix() + '"\n\n')
+                f.write('source "' + (board.dir / ('Kconfig.' + board.name)).as_posix() + '"\n\n')
 
         # base environment
         os.environ["ZEPHYR_BASE"] = str(ZEPHYR_BASE)

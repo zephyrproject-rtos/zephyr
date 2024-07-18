@@ -98,6 +98,5 @@ class Boards(WestCommand):
         for board in list_boards.find_v2_boards(args).values():
             if name_re is not None and not name_re.search(board.name):
                 continue
-            log.inf(args.format.format(name=board.name, arch='', dir=board.directories[0],
-                                       hwm=board.hwm,
+            log.inf(args.format.format(name=board.name, arch='', dir=board.dir, hwm=board.hwm,
                                        qualifiers=list_boards.board_v2_qualifiers_csv(board)))
