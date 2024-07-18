@@ -30,8 +30,10 @@ struct lll_sync_iso {
 
 	uint16_t iso_interval;
 
+	uint16_t lazy_prepare;
 	uint16_t latency_prepare;
 	uint16_t latency_event;
+
 	union {
 		struct lll_sync_iso_data_chan data_chan;
 

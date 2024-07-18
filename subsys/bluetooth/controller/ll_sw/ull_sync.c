@@ -1342,7 +1342,7 @@ void ull_sync_done(struct node_rx_event_done *done)
 			sync->sync_expire = 0U;
 		}
 
-		elapsed_event = skip_event + lll->lazy_prepare + 1U;
+		elapsed_event = lll->lazy_prepare + 1U;
 
 		/* Reset supervision countdown */
 		if (done->extra.crc_valid) {
