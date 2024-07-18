@@ -14,3 +14,4 @@ Functionality for Rust-based applications that run on Zephyr.
 # used by the core Zephyr tree, but are needed by zephyr applications.
 [build-dependencies]
 zephyr-build = "0.1.0"
+zephyr-sys = "0.1.0"

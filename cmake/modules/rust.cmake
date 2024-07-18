@@ -43,7 +43,7 @@ function(rust_cargo_application)
   # For now, hard-code the Zephyr crate directly here.  Once we have
   # more than one crate, these should be added by the modules
   # themselves.
-  set(LIB_RUST_CRATES zephyr zephyr-build)
+  set(LIB_RUST_CRATES zephyr zephyr-build zephyr-sys)
 
   _rust_map_target()
   message(STATUS "Building Rust llvm target ${RUST_TARGET}")
