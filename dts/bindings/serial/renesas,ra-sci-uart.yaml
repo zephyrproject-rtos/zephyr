@@ -1,11 +1,11 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA SCI_B UART controller
+description: Renesas RA SCI UART controller
 
-compatible: "renesas,ra8-uart-sci-b"
+compatible: "renesas,ra-sci-uart"
 
-include: [pinctrl-device.yaml, uart-controller.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
   channel:
