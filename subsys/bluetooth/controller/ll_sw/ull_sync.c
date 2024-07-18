@@ -1016,14 +1016,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_pdu *rx)
 
 void ull_sync_done(struct node_rx_event_done *done)
 {
-	uint32_t ticks_drift_minus;
-	uint32_t ticks_drift_plus;
 	struct ll_sync_set *sync;
-	uint16_t elapsed_event;
-	uint16_t skip_event;
-	uint8_t force_lll;
-	uint16_t lazy;
-	uint8_t force;
 
 	/* Get reference to ULL context */
 	sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
@@ -1053,17 +1046,19 @@ void ull_sync_done(struct node_rx_event_done *done)
 	} else
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 	{
+		uint32_t ticks_drift_minus;
+		uint32_t ticks_drift_plus;
+		uint16_t elapsed_event;
 		struct lll_sync *lll;
+		uint16_t skip_event;
+		uint8_t force_lll;
+		uint16_t lazy;
+		uint8_t force;
 
 		lll = &sync->lll;
 
 		/* Events elapsed used in timeout checks below */
 		skip_event = lll->skip_event;
-		if (lll->skip_prepare) {
-			elapsed_event = skip_event + lll->skip_prepare;
-		} else {
-			elapsed_event = skip_event + 1U;
-		}
 
 		/* Sync drift compensation and new skip calculation */
 		ticks_drift_plus = 0U;
@@ -1078,6 +1073,8 @@ void ull_sync_done(struct node_rx_event_done *done)
 			/* Reset failed to establish sync countdown */
 			sync->sync_expire = 0U;
 		}
+
+		elapsed_event = skip_event + lll->lazy_prepare + 1U;
 
 		/* Reset supervision countdown */
 		if (done->extra.crc_valid) {
