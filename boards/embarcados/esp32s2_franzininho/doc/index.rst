@@ -6,7 +6,7 @@ ESP32-S2 Franzininho
 Overview
 ********
 
-Franzininho is an educational development board based on ESP32-S2 which is a highly integrated, low-power, single-core Wi-Fi Microcontroller SoC,
+Franzininho is an educational development board created by the Embarcados team based on ESP32-S2 which is a highly integrated, low-power, single-core Wi-Fi Microcontroller SoC,
 designed to be secure and cost-effective, with a high performance and a rich set of IO capabilities. [1]_
 
 The features include the following:
