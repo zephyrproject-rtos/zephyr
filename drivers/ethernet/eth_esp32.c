@@ -353,6 +353,12 @@ err:
 	return res;
 }
 
+static const struct device *eth_esp32_phy_get(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return eth_esp32_phy_dev;
+}
+
 static void eth_esp32_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -381,6 +387,7 @@ static const struct ethernet_api eth_esp32_api = {
 	.iface_api.init		= eth_esp32_iface_init,
 	.get_capabilities	= eth_esp32_caps,
 	.set_config		= eth_esp32_set_config,
+	.get_phy		= eth_esp32_phy_get,
 	.send			= eth_esp32_send,
 };
 

@@ -663,6 +663,13 @@ static int smsc_init(struct smsc_data *sc)
 	return 0;
 }
 
+static const struct device *eth_get_phy(const struct device *dev)
+{
+	const struct eth_config *cfg = dev->config;
+
+	return cfg->phy_dev;
+}
+
 static void phy_link_state_changed(const struct device *phy_dev, struct phy_link_state *state,
 				   void *user_data)
 {
@@ -769,6 +776,7 @@ static void eth_initialize(struct net_if *iface)
 static const struct ethernet_api api_funcs = {
 	.iface_api.init   = eth_initialize,
 	.get_capabilities = eth_smsc_get_caps,
+	.get_phy          = eth_get_phy,
 	.set_config       = eth_smsc_set_config,
 	.send             = eth_tx,
 };
