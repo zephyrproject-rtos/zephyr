@@ -608,6 +608,13 @@ static void eth_nxp_enet_isr(const struct device *dev)
 	irq_unlock(irq_lock_key);
 }
 
+static const struct device *eth_nxp_enet_get_phy(const struct device *dev)
+{
+	const struct nxp_enet_mac_config *config = dev->config;
+
+	return config->phy_dev;
+}
+
 /* Note this is not universally unique, it just is probably unique on a network */
 static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 {
@@ -820,6 +827,7 @@ static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_devic
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_nxp_enet_iface_init,
 	.get_capabilities	= eth_nxp_enet_get_capabilities,
+	.get_phy                = eth_nxp_enet_get_phy,
 	.set_config		= eth_nxp_enet_set_config,
 	.send			= NXP_ENET_SEND_FUNC,
 #if defined(CONFIG_PTP_CLOCK)
