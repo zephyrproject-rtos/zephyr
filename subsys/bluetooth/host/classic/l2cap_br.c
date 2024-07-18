@@ -4623,6 +4623,9 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	while (buf->len > 0) {
 		if (buf->len < sizeof(*hdr)) {
 			LOG_ERR("Too small L2CAP signaling PDU");
+			hdr = (struct bt_l2cap_sig_hdr *)buf->data;
+			l2cap_br_send_reject(chan->conn, hdr->ident,
+						BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
 			return 0;
 		}
 
