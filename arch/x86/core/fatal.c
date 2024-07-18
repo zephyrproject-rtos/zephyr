@@ -140,20 +140,44 @@ struct stack_frame {
 #endif
 };
 
-#define MAX_STACK_FRAMES CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES
-
-__pinned_func
-static void unwind_stack(uintptr_t base_ptr, uint16_t cs)
+static bool print_trace_address(void *arg, unsigned long addr)
 {
+	ARG_UNUSED(arg);
+
+#ifdef CONFIG_X86_64
+	LOG_ERR("     0x%016lx", addr);
+#else
+	LOG_ERR("     0x%08lx", addr);
+#endif
+
+	return true;
+}
+
+__pinned_func static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
+					  const struct arch_esf *esf, int max_frames)
+{
+	uintptr_t base_ptr;
+	uint16_t cs;
 	struct stack_frame *frame;
 	int i;
+
+	if (esf != NULL) {
+#ifdef CONFIG_X86_64
+		base_ptr = esf->rbp;
+#else /* x86 32-bit */
+		base_ptr = esf->ebp;
+#endif /* CONFIG_X86_64 */
+		cs = esf->cs;
+	} else {
+		return;
+	}
 
 	if (base_ptr == 0U) {
 		LOG_ERR("NULL base ptr");
 		return;
 	}
 
-	for (i = 0; i < MAX_STACK_FRAMES; i++) {
+	for (i = 0; i < max_frames; i++) {
 		if (base_ptr % sizeof(base_ptr) != 0U) {
 			LOG_ERR("unaligned frame ptr");
 			return;
@@ -178,15 +202,39 @@ static void unwind_stack(uintptr_t base_ptr, uint16_t cs)
 		if (frame->ret_addr == 0U) {
 			break;
 		}
-#ifdef CONFIG_X86_64
-		LOG_ERR("     0x%016lx", frame->ret_addr);
-#else
-		LOG_ERR("     0x%08lx (0x%lx)", frame->ret_addr, frame->args);
-#endif
+
+		if (!cb(cookie, frame->ret_addr)) {
+			break;
+		}
+
 		base_ptr = frame->next;
 	}
 }
+
+__pinned_func
+static void unwind_stack(const struct arch_esf *esf)
+{
+	walk_stackframe(print_trace_address, NULL, esf,
+			CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES);
+}
 #endif /* CONFIG_EXCEPTION_STACK_TRACE */
+
+void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
+		     const struct k_thread *thread, const struct arch_esf *esf)
+{
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+	ARG_UNUSED(thread);
+
+	walk_stackframe(callback_fn, cookie, esf, CONFIG_ARCH_STACKWALK_MAX_FRAMES);
+#else
+	ARG_UNUSED(callback_fn);
+	ARG_UNUSED(cookie);
+	ARG_UNUSED(thread);
+	ARG_UNUSED(esf);
+
+	LOG_DBG("Enable CONFIG_EXCEPTION_STACK_TRACE for %s()", __func__);
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
+}
 
 static inline uintptr_t get_cr3(const struct arch_esf *esf)
 {
@@ -231,7 +279,7 @@ static void dump_regs(const struct arch_esf *esf)
 #endif
 	LOG_ERR("RIP: 0x%016lx", esf->rip);
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
-	unwind_stack(esf->rbp, esf->cs);
+	unwind_stack(esf);
 #endif
 }
 #else /* 32-bit */
@@ -250,7 +298,7 @@ static void dump_regs(const struct arch_esf *esf)
 #endif
 	LOG_ERR("EIP: 0x%08x", esf->eip);
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
-	unwind_stack(esf->ebp, esf->cs);
+	unwind_stack(esf);
 #endif
 }
 #endif /* CONFIG_X86_64 */
