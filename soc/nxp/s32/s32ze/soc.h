@@ -25,21 +25,6 @@
 /* LINFlexD*/
 #define IP_LINFLEX_12_BASE      IP_MSC_0_LIN_BASE
 
-/* STM */
-#define IP_STM_0_BASE           IP_CE_STM_0_BASE
-#define IP_STM_1_BASE           IP_CE_STM_1_BASE
-#define IP_STM_2_BASE           IP_CE_STM_2_BASE
-#define IP_STM_3_BASE           IP_RTU0__STM_0_BASE
-#define IP_STM_4_BASE           IP_RTU0__STM_1_BASE
-#define IP_STM_5_BASE           IP_RTU0__STM_2_BASE
-#define IP_STM_6_BASE           IP_RTU0__STM_3_BASE
-#define IP_STM_7_BASE           IP_RTU1__STM_0_BASE
-#define IP_STM_8_BASE           IP_RTU1__STM_1_BASE
-#define IP_STM_9_BASE           IP_RTU1__STM_2_BASE
-#define IP_STM_10_BASE          IP_RTU1__STM_3_BASE
-#define IP_STM_11_BASE          IP_SMU__STM_0_BASE
-#define IP_STM_12_BASE          IP_SMU__STM_2_BASE
-
 /* NETC */
 #define IP_NETC_EMDIO_0_BASE    IP_NETC__EMDIO_BASE_BASE
 
