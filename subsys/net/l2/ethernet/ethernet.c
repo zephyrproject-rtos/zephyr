@@ -834,6 +834,26 @@ void net_eth_carrier_off(struct net_if *iface)
 	}
 }
 
+const struct device *net_eth_get_phy(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
+
+	if (!api) {
+		return NULL;
+	}
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return NULL;
+	}
+
+	if (!api->get_phy) {
+		return NULL;
+	}
+
+	return api->get_phy(net_if_get_device(iface));
+}
+
 #if defined(CONFIG_PTP_CLOCK)
 const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
