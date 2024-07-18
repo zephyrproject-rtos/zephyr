@@ -7,6 +7,8 @@
 // symbols from the crate are directly used.
 extern crate zephyr;
 
+use zephyr::gpio::{sleep, toggle};
+
 #[no_mangle]
 extern "C" fn rust_main() {
     // Until we have allocation, converting a Rust string into a C string is a bit awkward.
@@ -18,6 +20,11 @@ extern "C" fn rust_main() {
 
     unsafe {
         printk("Hello world from Rust on %s\n\0".as_ptr(), board.as_ptr());
+    }
+
+    loop {
+        toggle();
+        sleep();
     }
 }
 
