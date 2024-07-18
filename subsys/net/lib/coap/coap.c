@@ -1342,7 +1342,7 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code)
 	return val;
 }
 
-int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8_t *block_number)
+int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint32_t *block_number)
 {
 	int ret = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
 
@@ -1356,7 +1356,7 @@ int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8
 	return ret;
 }
 
-int coap_get_block2_option(const struct coap_packet *cpkt, uint8_t *block_number)
+int coap_get_block2_option(const struct coap_packet *cpkt, uint32_t *block_number)
 {
 	int ret = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
 
