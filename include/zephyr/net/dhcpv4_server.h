@@ -21,6 +21,8 @@ extern "C" {
 /**
  * @brief DHCPv4 server
  * @defgroup dhcpv4_server DHCPv4 server
+ * @since 3.6
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

@@ -18,6 +18,8 @@
 /**
  * @brief BSD Sockets compatible API
  * @defgroup bsd_sockets BSD Sockets compatible API
+ * @since 1.9
+ * @version 1.0.0
  * @ingroup networking
  * @{
  */
@@ -93,8 +95,10 @@ extern "C" {
 /** @} */
 
 /**
- *  @defgroup secure_sockets_options Socket options for TLS
- *  @{
+ * @defgroup secure_sockets_options Socket options for TLS
+ * @since 1.13
+ * @version 0.8.0
+ * @{
  */
 /**
  * @name Socket options for TLS

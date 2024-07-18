@@ -25,6 +25,8 @@ extern "C" {
 /**
  * @brief DNS resolving library
  * @defgroup dns_resolve DNS Resolve Library
+ * @since 1.8
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

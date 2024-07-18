@@ -27,6 +27,8 @@ extern "C" {
 /**
  * @brief Network Packet Filter API
  * @defgroup net_pkt_filter Network Packet Filter API
+ * @since 3.0
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -209,6 +211,8 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
 
 /**
  * @defgroup npf_basic_cond Basic Filter Conditions
+ * @since 3.0
+ * @version 0.8.0
  * @ingroup net_pkt_filter
  * @{
  */
@@ -386,6 +390,8 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
 /**
  * @defgroup npf_eth_cond Ethernet Filter Conditions
  * @ingroup net_pkt_filter
+ * @since 3.0
+ * @version 0.8.0
  * @{
  */
 

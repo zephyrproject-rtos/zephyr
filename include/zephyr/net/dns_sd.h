@@ -29,6 +29,8 @@ extern "C" {
  * @see <a href="https://tools.ietf.org/html/rfc6763">RFC 6763</a>
  *
  * @defgroup dns_sd DNS Service Discovery
+ * @since 2.5
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
