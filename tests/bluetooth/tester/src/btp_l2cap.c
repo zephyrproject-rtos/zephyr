@@ -25,7 +25,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define CHANNELS 2
 #define SERVERS 1
 
-NET_BUF_POOL_FIXED_DEFINE(data_pool, CHANNELS, DATA_BUF_SIZE, 8, NULL);
+#define TX_BUFF_COUNT 4
+
+NET_BUF_POOL_FIXED_DEFINE(data_pool, TX_BUFF_COUNT, DATA_BUF_SIZE, 8, NULL);
 
 static bool authorize_flag;
 static uint8_t req_keysize;
@@ -44,7 +46,7 @@ static struct br_channel {
 	struct bt_l2cap_br_chan br;
 	bool in_use;
 	bool hold_credit;
-	struct net_buf *pending_credit[CHANNELS];
+	struct net_buf *pending_credit[TX_BUFF_COUNT];
 } br_channels[CHANNELS];
 
 struct bt_l2cap_br_server {
