@@ -55,7 +55,7 @@ config BT_LLL_VENDOR_NORDIC
 
 	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN || \
 				   (BT_OBSERVER && BT_CTLR_ADV_EXT)
-	select BT_TICKER_REMAINDER if BT_CTLR_CENTRAL_ISO
+	select BT_TICKER_START_REMAINDER if BT_CTLR_CENTRAL_ISO
 	select BT_TICKER_REMAINDER_GET if BT_BROADCASTER && BT_CTLR_ADV_EXT
 	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC || BT_CTLR_CENTRAL_ISO
 
@@ -1066,8 +1066,8 @@ config BT_TICKER_UPDATE
 	help
 	  This option enables Ticker Update interface.
 
-config BT_TICKER_REMAINDER
-	bool "Ticker Remainder"
+config BT_TICKER_START_REMAINDER
+	bool "Ticker Start Remainder Parameter"
 	help
 	  This option enables Ticker Start interface remainder parameter for
 	  first expire timeout.
