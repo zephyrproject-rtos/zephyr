@@ -196,7 +196,23 @@ static void esf_dump(const struct arch_esf *esf)
 }
 
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
-static void esf_unwind(const struct arch_esf *esf)
+static bool print_trace_address(void *arg, unsigned long lr)
+{
+	int *i = arg;
+#ifdef CONFIG_SYMTAB
+	uint32_t offset = 0;
+	const char *name = symtab_find_symbol_name(lr, &offset);
+
+	LOG_ERR("backtrace %2d: lr: 0x%016lx [%s+0x%x]", (*i)++, lr, name, offset);
+#else
+	LOG_ERR("backtrace %2d: lr: 0x%016lx", (*i)++, lr);
+#endif /* CONFIG_SYMTAB */
+
+	return true;
+}
+
+static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const struct arch_esf *esf,
+			    int max_frames)
 {
 	/*
 	 * For GCC:
@@ -218,30 +234,52 @@ static void esf_unwind(const struct arch_esf *esf)
 	 *  +  +-----------------+
 	 */
 
-	uint64_t *fp = (uint64_t *) esf->fp;
-	unsigned int count = 0;
+	uint64_t *fp;
 	uint64_t lr;
 
-	LOG_ERR("");
-	for (int i = 0; (fp != NULL) && (i < CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES); i++) {
-		lr = fp[1];
-#ifdef CONFIG_SYMTAB
-		uint32_t offset = 0;
-		const char *name = symtab_find_symbol_name(lr, &offset);
+	if (esf != NULL) {
+		fp = (uint64_t *) esf->fp;
+	} else {
+		return;
+	}
 
-		LOG_ERR("backtrace %2d: fp: 0x%016llx lr: 0x%016llx [%s+0x%x]",
-			 count++, (uint64_t) fp, lr, name, offset);
-#else
-		LOG_ERR("backtrace %2d: fp: 0x%016llx lr: 0x%016llx",
-			 count++, (uint64_t) fp, lr);
-#endif
+	for (int i = 0; (fp != NULL) && (i < max_frames); i++) {
+		lr = fp[1];
+		if (!cb(cookie, lr)) {
+			break;
+		}
 		fp = (uint64_t *) fp[0];
 	}
+}
+
+static void esf_unwind(const struct arch_esf *esf)
+{
+	int i = 0;
+
+	LOG_ERR("");
+	walk_stackframe(print_trace_address, &i, esf, CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES);
 	LOG_ERR("");
 }
 #endif
 
 #endif /* CONFIG_EXCEPTION_DEBUG */
+
+void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
+		     const struct k_thread *thread, const struct arch_esf *esf)
+{
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+	ARG_UNUSED(thread);
+
+	walk_stackframe(callback_fn, cookie, esf, CONFIG_ARCH_STACKWALK_MAX_FRAMES);
+#else
+	ARG_UNUSED(callback_fn);
+	ARG_UNUSED(cookie);
+	ARG_UNUSED(thread);
+	ARG_UNUSED(esf);
+
+	LOG_DBG("Enable CONFIG_EXCEPTION_STACK_TRACE for %s()", __func__);
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
+}
 
 #ifdef CONFIG_ARM64_STACK_PROTECTION
 static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, uint64_t far)
