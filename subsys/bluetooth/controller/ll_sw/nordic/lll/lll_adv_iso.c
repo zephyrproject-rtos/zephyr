@@ -118,23 +118,12 @@ static int init_reset(void)
 
 static void prepare(void *param)
 {
-	struct lll_prepare_param *p;
-	struct lll_adv_iso *lll;
-	uint16_t elapsed;
 	int err;
+
+	ARG_UNUSED(param);
 
 	err = lll_hfclock_on();
 	LL_ASSERT_ERR(err >= 0);
-
-	p = param;
-
-	/* Instants elapsed */
-	elapsed = p->lazy + 1U;
-
-	lll = p->param;
-
-	/* Save the (latency + 1) for use in event */
-	lll->latency_prepare += elapsed;
 }
 
 static void create_prepare_bh(void *param)
@@ -163,11 +152,12 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 
 	lll = p->param;
 
-	/* Deduce the latency */
-	lll->latency_event = lll->latency_prepare - 1U;
+	/* Calculate the current event latency */
+	lll->lazy_prepare = p->lazy;
+	lll->latency_event = lll->latency_prepare + lll->lazy_prepare;
 
 	/* Update BIS payload counter to next value */
-	lll->payload_count += (lll->latency_prepare * lll->bn);
+	lll->payload_count += (lll->latency_event + 1U) * lll->bn;
 
 	/* Reset accumulated latencies */
 	lll->latency_prepare = 0U;
@@ -202,11 +192,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll = p->param;
 
-	/* Deduce the latency */
-	lll->latency_event = lll->latency_prepare - 1U;
+	/* Calculate the current event latency */
+	lll->lazy_prepare = p->lazy;
+	lll->latency_event = lll->latency_prepare + lll->lazy_prepare;
 
 	/* Update BIS payload counter to next value */
-	lll->payload_count += (lll->latency_prepare * lll->bn);
+	lll->payload_count += (lll->latency_event + 1U) * lll->bn;
 
 	/* Reset accumulated latencies */
 	lll->latency_prepare = 0U;
@@ -671,11 +662,12 @@ static int drift_prepare_cb(struct lll_prepare_param *p)
 		p->ticks_drift += ticker_ticks_diff_get(p->ticks_at_expire, ticks_at_expire_prev);
 	}
 
-	/* Deduce the latency */
-	lll->latency_event = lll->latency_prepare - 1U;
+	/* Calculate the current event latency */
+	lll->lazy_prepare = p->lazy;
+	lll->latency_event = lll->latency_prepare + lll->lazy_prepare;
 
 	/* Update BIS payload counter to next value */
-	lll->payload_count += (lll->latency_prepare * lll->bn);
+	lll->payload_count += (lll->latency_event + 1U) * lll->bn;
 
 	/* Reset accumulated latencies */
 	lll->latency_prepare = 0U;
@@ -829,7 +821,8 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 	} else {
-		lll->latency_prepare += (prepare_param->lazy + 1U);
+		lll->lazy_prepare = prepare_param->lazy;
+		lll->latency_prepare += (lll->lazy_prepare + 1U);
 	}
 
 	lll_done(prepare_param->param);
