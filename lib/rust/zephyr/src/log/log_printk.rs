@@ -11,14 +11,13 @@
 
 extern crate alloc;
 
-use core::ffi::c_char;
 use alloc::ffi::CString;
 
 pub use alloc::format;
 
 // Printk, with a fixed C-string formatting argument, and one we've built here.
 extern "C" {
-    fn printk(fmt: *const i8, message: *const c_char);
+    fn printk(fmt: *const i8, ...);
 }
 
 pub fn log_message(message: &str) {
