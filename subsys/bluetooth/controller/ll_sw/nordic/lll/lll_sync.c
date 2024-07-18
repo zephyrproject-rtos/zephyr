@@ -46,7 +46,6 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static void prepare(void *param);
 static int create_prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx);
@@ -100,7 +99,9 @@ void lll_sync_create_prepare(void *param)
 {
 	int err;
 
-	prepare(param);
+	/* Request to start HF Clock */
+	err = lll_hfclock_on();
+	LL_ASSERT(err >= 0);
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(is_abort_cb, abort_cb, create_prepare_cb, 0, param);
@@ -111,35 +112,13 @@ void lll_sync_prepare(void *param)
 {
 	int err;
 
-	prepare(param);
-
-	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
-}
-
-static void prepare(void *param)
-{
-	struct lll_prepare_param *p;
-	struct lll_sync *lll;
-	int err;
-
 	/* Request to start HF Clock */
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
-	p = param;
-
-	lll = p->param;
-
-	lll->lazy_prepare = p->lazy;
-
-	/* Accumulate window widening */
-	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (lll->lazy_prepare + 1U);
-	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
-		lll->window_widening_prepare_us = lll->window_widening_max_us;
-	}
+	/* Invoke common pipeline handling of prepare */
+	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
+	LL_ASSERT(err == 0 || err == -EINPROGRESS);
 }
 
 void lll_sync_aux_prepare_cb(struct lll_sync *lll,
@@ -274,6 +253,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* Calculate the current event latency */
+	lll->lazy_prepare = p->lazy;
 	lll->skip_event = lll->skip_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
@@ -362,6 +342,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* Calculate the current event latency */
+	lll->lazy_prepare = p->lazy;
 	lll->skip_event = lll->skip_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
@@ -441,6 +422,13 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	uint32_t ret;
 
 	lll = p->param;
+
+	/* Accumulate window widening */
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
+					   (lll->lazy_prepare + 1U);
+	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
+		lll->window_widening_prepare_us = lll->window_widening_max_us;
+	}
 
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
@@ -631,9 +619,19 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
 
-	/* Accumulate the latency as event is aborted while being in pipeline */
+	/* Get reference to LLL connection context */
 	lll = prepare_param->param;
+
+	/* Accumulate the latency as event is aborted while being in pipeline */
+	lll->lazy_prepare = prepare_param->lazy;
 	lll->skip_prepare += (lll->lazy_prepare + 1U);
+
+	/* Accumulate window widening */
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
+					   (prepare_param->lazy + 1);
+	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
+		lll->window_widening_prepare_us = lll->window_widening_max_us;
+	}
 
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
