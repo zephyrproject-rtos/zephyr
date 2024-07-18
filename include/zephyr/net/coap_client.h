@@ -15,6 +15,8 @@
 /**
  * @brief CoAP client API
  * @defgroup coap_client CoAP client API
+ * @since 3.4
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

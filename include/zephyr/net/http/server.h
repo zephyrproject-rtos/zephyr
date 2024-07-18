@@ -14,6 +14,8 @@
  * @brief HTTP server API
  *
  * @defgroup http_server HTTP server API
+ * @since 3.7
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */
