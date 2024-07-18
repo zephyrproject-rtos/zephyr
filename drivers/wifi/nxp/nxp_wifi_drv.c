@@ -138,8 +138,11 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		LOG_ERR("WLAN: initialization failed");
 		break;
 	case WLAN_REASON_AUTH_SUCCESS:
-		net_eth_carrier_on(g_mlan.netif);
 		LOG_DBG("WLAN: authenticated to nxp_wlan_network");
+		break;
+	case WLAN_REASON_ASSOC_SUCCESS:
+		net_if_dormant_off(g_mlan.netif);
+		LOG_DBG("WLAN: associated to nxp_wlan_network");
 		break;
 	case WLAN_REASON_SUCCESS:
 		LOG_DBG("WLAN: connected to nxp_wlan_network");
@@ -214,8 +217,12 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		wifi_mgmt_raise_disconnect_result_event(g_mlan.netif, 0);
 		break;
 	case WLAN_REASON_LINK_LOST:
-		net_eth_carrier_off(g_mlan.netif);
+		net_if_dormant_on(g_mlan.netif);
 		LOG_WRN("WLAN: link lost");
+		break;
+	case WLAN_REASON_DISCONNECTED:
+		net_if_dormant_on(g_mlan.netif);
+		LOG_DBG("WLAN: deauth leaving");
 		break;
 	case WLAN_REASON_CHAN_SWITCH:
 		LOG_DBG("WLAN: channel switch");
@@ -407,6 +414,12 @@ static int nxp_wifi_wlan_start(void)
 	}
 
 	s_nxp_wifi_State = NXP_WIFI_STARTED;
+
+	/* Initialize device as dormant */
+	net_if_dormant_on(g_mlan.netif);
+
+	/* L1 network layer (physical layer) is up */
+	net_eth_carrier_on(g_mlan.netif);
 
 	return 0;
 }
