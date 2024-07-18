@@ -1129,7 +1129,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_PERIPHERAL */
 	}
 
-	elapsed_event = latency_event + lll->lazy_prepare + 1U;
+	elapsed_event = lll->lazy_prepare + 1U;
 
 	/* Reset supervision countdown */
 	if (done->extra.crc_valid && !done->extra.is_aborted) {
