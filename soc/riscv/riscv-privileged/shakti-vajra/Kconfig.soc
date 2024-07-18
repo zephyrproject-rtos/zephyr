@@ -10,6 +10,7 @@ depends on SOC_SERIES_RISCV64_SHAKTI
 config SOC_RISCV64_SHAKTI
 	bool "Shakti Vajra SOC implementation"
 	select ATOMIC_OPERATIONS_ARCH
+	select ATOMIC_OPERATIONS_BUILTIN
 	select RISCV_ISA_EXT_M
     select RISCV_ISA_EXT_A
     select RISCV_ISA_EXT_C

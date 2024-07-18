@@ -19,6 +19,7 @@ chosen {
 
 &i2c0 {
 	status = "ok";
+	base = <0x44000>;
 	clock_frequency = <40000000>;
 	scl_frequency = <100000>;
 };
@@ -36,7 +37,6 @@ chosen {
         comm_configure = <0x01 0x00 0x03 0x08>;
 		clock-frequency = <10000000>;
 };
-
 &gpio0 {
 	status = "okay";
 };
