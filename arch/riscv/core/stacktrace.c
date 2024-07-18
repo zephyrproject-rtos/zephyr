@@ -134,22 +134,53 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 		ra = csf->ra;
 	}
 
-	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy(fp, thread, esf) && (fp > last_fp);) {
-		if (in_text_region(ra)) {
-			if (!cb(cookie, ra)) {
-				break;
-			}
-			/*
-			 * Increment the iterator only if `ra` is within the text region to get the
-			 * most out of it
-			 */
-			i++;
+	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy(fp, thread, esf) && (fp > last_fp); i++) {
+		if (in_text_region(ra) && !cb(cookie, ra)) {
+			break;
 		}
 		last_fp = fp;
+
 		/* Unwind to the previous frame */
 		frame = (struct stackframe *)fp - 1;
-		ra = frame->ra;
+
+		if ((i == 0) && (esf != NULL)) {
+			/* Print `esf->ra` if we are at the top of the stack */
+			if (in_text_region(esf->ra) && !cb(cookie, esf->ra)) {
+				break;
+			}
+			/**
+			 * For the first stack frame, the `ra` is not stored in the frame if the
+			 * preempted function doesn't call any other function, we can observe:
+			 *
+			 *                     .-------------.
+			 *   frame[0]->fp ---> | frame[0] fp |
+			 *                     :-------------:
+			 *   frame[0]->ra ---> | frame[1] fp |
+			 *                     | frame[1] ra |
+			 *                     :~~~~~~~~~~~~~:
+			 *                     | frame[N] fp |
+			 *
+			 * Instead of:
+			 *
+			 *                     .-------------.
+			 *   frame[0]->fp ---> | frame[0] fp |
+			 *   frame[0]->ra ---> | frame[1] ra |
+			 *                     :-------------:
+			 *                     | frame[1] fp |
+			 *                     | frame[1] ra |
+			 *                     :~~~~~~~~~~~~~:
+			 *                     | frame[N] fp |
+			 *
+			 * Check if `frame->ra` actually points to a `fp`, and adjust accordingly
+			 */
+			if (vrfy(frame->ra, thread, esf)) {
+				fp = frame->ra;
+				frame = (struct stackframe *)fp;
+			}
+		}
+
 		fp = frame->fp;
+		ra = frame->ra;
 	}
 }
 #else  /* !CONFIG_FRAME_POINTER */
