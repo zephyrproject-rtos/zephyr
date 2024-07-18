@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -873,6 +873,15 @@
 			reg = <0x4028c000 0x4000>;
 			func-reset-threshold = <0>;
 			dest-reset-threshold = <0>;
+		};
+
+		swt0: watchdog@40270000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x40270000 0x4000>;
+			interrupts = <42 0>;
+			clocks = <&clock NXP_S32_SIRC_CLK>;
+			service-mode = "fixed";
+			status = "okay";
 		};
 	};
 };
