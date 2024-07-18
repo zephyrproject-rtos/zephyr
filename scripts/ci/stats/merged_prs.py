@@ -92,11 +92,12 @@ def process_pr(pr):
     business_days = sum(1 for day in dates if day.weekday() < 5)
     prj['business_days_open'] = business_days
 
+    release_notes = 'Release Notes' in labels and len(labels) == 1
     trivial = 'Trivial' in labels
     hotfix = 'Hotfix' in labels
     min_review_time_rule = "no"
 
-    if hotfix or (trivial and deltah >= 4) or business_days >= 2:
+    if hotfix or ((release_notes or trivial) and deltah >= 4) or business_days >= 2:
         min_review_time_rule = "yes"
 
     prj['time_rule'] = min_review_time_rule
