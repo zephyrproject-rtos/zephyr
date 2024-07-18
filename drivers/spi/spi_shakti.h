@@ -289,6 +289,7 @@ struct spi_shakti_cfg {
 	uint32_t base;
 	uint32_t f_sys;
     const struct pinctrl_dev_config *pcfg;
+    struct k_mutex mutex;
 };
 
 #endif
