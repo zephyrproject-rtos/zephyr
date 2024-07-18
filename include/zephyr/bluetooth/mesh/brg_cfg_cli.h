@@ -193,18 +193,13 @@ int bt_mesh_brg_cfg_cli_bridging_table_size_get(uint16_t net_idx, uint16_t addr,
  *
  *  @param net_idx    Network index to encrypt the message with.
  *  @param addr       Target node address.
- *  @param directions Allowed directions for the bridged traffic
- *  @param net_idx1   NetKey Index of the first subnet
- *  @param net_idx2   NetKey Index of the second subnet
- *  @param addr1      Address of the node in the first subnet
- *  @param addr2      Address of the node in the second subnet
+ *  @param entry      Pointer to bridging Table entry to add.
  *  @param rsp        Status response parameter
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_brg_cfg_cli_bridging_table_add(uint16_t net_idx, uint16_t addr, uint8_t directions,
-					   uint16_t net_idx1, uint16_t net_idx2,
-					   uint16_t addr1, uint16_t addr2,
+int bt_mesh_brg_cfg_cli_bridging_table_add(uint16_t net_idx, uint16_t addr,
+					   struct bt_mesh_bridging_table_entry *entry,
 					   struct bt_mesh_bridging_table_status *rsp);
 
 /** @brief Sends a Bridging Table Remove message to the given destination
