@@ -18,6 +18,7 @@
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
+		sdhc0 = &sdhc1;
 		lora0 = &lora0;
 	};
 
@@ -28,6 +29,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &ssd1306_128x64;
+		zephyr,sdhc = &sdhc1;
 	};
 
 	leds {
@@ -119,6 +121,31 @@
 
 &trng0 {
 	status = "okay";
+};
+
+&sdhc {
+	sdhc1: sdhc@1 {
+		status = "okay";
+
+		pinctrl-0 = <&sdhc0_default>;
+		pinctrl-names = "default";
+		power-delay-ms = <100>;
+		max-bus-freq = <52000000>;
+		bus-width = <4>;
+
+		clk-pin = <14>;
+		cmd-pin = <15>;
+		d0-pin = <2>;
+		d1-pin = <4>;
+		d2-pin = <12>;
+		d3-pin = <13>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
 };
 
 &flash0 {
