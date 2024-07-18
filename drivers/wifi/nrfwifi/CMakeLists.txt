@@ -285,6 +285,10 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_AP_MODE
   -DNRF70_AP_MODE
 )
 
+zephyr_compile_definitions_ifdef(CONFIG_NRF_WIFI_MGMT_BUFF_OFFLOAD
+  -DNRF_WIFI_MGMT_BUFF_OFFLOAD
+)
+
 zephyr_compile_definitions(
   -DNRF70_RX_NUM_BUFS=${CONFIG_NRF70_RX_NUM_BUFS}
   -DNRF70_MAX_TX_TOKENS=${CONFIG_NRF70_MAX_TX_TOKENS}
