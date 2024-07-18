@@ -48,6 +48,7 @@ struct lll_conn {
 	uint16_t latency;
 
 	uint16_t latency_prepare;
+	uint16_t lazy_prepare;
 	uint16_t latency_event;
 	uint16_t event_counter;
 

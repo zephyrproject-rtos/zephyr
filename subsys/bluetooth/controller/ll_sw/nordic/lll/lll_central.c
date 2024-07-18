@@ -120,7 +120,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll_conn_prepare_reset();
 
 	/* Calculate the current event latency */
-	lll->latency_event = lll->latency_prepare + p->lazy;
+	lll->lazy_prepare = p->lazy;
+	lll->latency_event = lll->latency_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->latency_event;

@@ -200,7 +200,22 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	lll = prepare_param->param;
 
 	/* Accumulate the latency as event is aborted while being in pipeline */
-	lll->latency_prepare += (prepare_param->lazy + 1);
+	lll->lazy_prepare = prepare_param->lazy;
+	lll->latency_prepare += (lll->lazy_prepare + 1U);
+
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+		/* Accumulate window widening */
+		lll->periph.window_widening_prepare_us +=
+		    lll->periph.window_widening_periodic_us *
+		    (prepare_param->lazy + 1);
+		if (lll->periph.window_widening_prepare_us >
+		    lll->periph.window_widening_max_us) {
+			lll->periph.window_widening_prepare_us =
+				lll->periph.window_widening_max_us;
+		}
+	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	/* Extra done event, to check supervision timeout */
 	e = ull_event_done_extra_get();
