@@ -163,9 +163,9 @@ struct ticker_user_op_start {
 	uint16_t lazy;			/* Periodic latency in number of
 					 * periods
 					 */
-#if defined(CONFIG_BT_TICKER_REMAINDER)
+#if defined(CONFIG_BT_TICKER_START_REMAINDER)
 	uint32_t remainder_first;       /* Sub-microsecond tick remainder */
-#endif /* CONFIG_BT_TICKER_REMAINDER */
+#endif /* CONFIG_BT_TICKER_START_REMAINDER */
 
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	uint32_t ticks_slot;		/* Air-time reservation ticks */
@@ -2314,11 +2314,11 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 	ticker->ticks_to_expire = start->ticks_first;
 	ticker->ticks_to_expire_minus = 0U;
 	ticks_to_expire_prep(ticker, ticks_current, start->ticks_at_start);
-#if defined(CONFIG_BT_TICKER_REMAINDER)
+#if defined(CONFIG_BT_TICKER_START_REMAINDER)
 	ticker->remainder_current = start->remainder_first;
-#else /* !CONFIG_BT_TICKER_REMAINDER */
+#else /* !CONFIG_BT_TICKER_START_REMAINDER */
 	ticker->remainder_current = 0U;
-#endif /* !CONFIG_BT_TICKER_REMAINDER */
+#endif /* !CONFIG_BT_TICKER_START_REMAINDER */
 	ticker->lazy_current = 0U;
 	ticker->force = 1U;
 
@@ -3517,11 +3517,11 @@ uint8_t ticker_start_us(uint8_t instance_index, uint8_t user_id,
 	user_op->id = ticker_id;
 	user_op->params.start.ticks_at_start = ticks_anchor;
 	user_op->params.start.ticks_first = ticks_first;
-#if defined(CONFIG_BT_TICKER_REMAINDER)
+#if defined(CONFIG_BT_TICKER_START_REMAINDER)
 	user_op->params.start.remainder_first = remainder_first;
-#else /* !CONFIG_BT_TICKER_REMAINDER */
+#else /* !CONFIG_BT_TICKER_START_REMAINDER */
 	ARG_UNUSED(remainder_first);
-#endif /* !CONFIG_BT_TICKER_REMAINDER */
+#endif /* !CONFIG_BT_TICKER_START_REMAINDER */
 	user_op->params.start.ticks_periodic = ticks_periodic;
 	user_op->params.start.remainder_periodic = remainder_periodic;
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
