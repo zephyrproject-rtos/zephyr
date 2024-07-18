@@ -7,3 +7,6 @@ family:
       - name: ra8m1
         socs:
           - name: r7fa8m1ahecbd
+      - name: ra6m5
+        socs:
+          - name: r7fa6m5bh3cfc
