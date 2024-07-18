@@ -106,7 +106,7 @@ ${config_paths}
 
   # The library is built by invoking Cargo.
   add_custom_command(
-    OUTPUT ${DUMMY_FILE}
+    OUTPUT ${DUMMY_FILE} /tmp/bindgen/extern.c
     BYPRODUCTS ${RUST_LIBRARY}
     COMMAND
       ${CMAKE_EXECUTABLE}
@@ -141,7 +141,7 @@ ${config_paths}
 
   # Presumably, Rust applications will have no C source files, but cmake will require them.
   # Add an empty file so that this will build.  The main will come from the rust library.
-  target_sources(app PRIVATE ${ZEPHYR_BASE}/lib/rust/main.c)
+  target_sources(app PRIVATE ${ZEPHYR_BASE}/lib/rust/main.c ${ZEPHYR_BASE}/lib/rust/panic.c)
 
   # TODO: Make safer and nicer
   target_sources(app PRIVATE /tmp/bindgen/extern.c)

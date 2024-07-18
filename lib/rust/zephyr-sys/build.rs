@@ -30,6 +30,7 @@ fn main() {
         .wrap_static_fns(true)
         .allowlist_function("gpio_.*")
         .allowlist_function("k_.*")
+        .allowlist_function("printk")
         .header("wrapper.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
