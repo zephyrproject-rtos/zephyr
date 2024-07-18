@@ -45,7 +45,7 @@ struct bridging_table_entry {
 /** Bridging Table Status response */
 struct bt_mesh_bridging_table_status {
 	/** Status Code of the requesting message */
-	enum bt_mesh_subnet_bridge_state status;
+	uint8_t status;
 	/** Requested Bridging Table entry */
 	struct bridging_table_entry entry;
 };
