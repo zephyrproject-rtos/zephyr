@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci7_default: sci7_default {
+		group1 {
+			/* tx rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_7, 6, 13)>,
+			<RA_PSEL(RA_PSEL_SCI_7, 6, 14)>;
+		};
+	};
+};
+
+&sci7 {
+	pinctrl-0 = <&sci7_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	dut: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
