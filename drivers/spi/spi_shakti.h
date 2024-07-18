@@ -1,3 +1,20 @@
+/**
+ * Project                           : Secure IoT SoC
+ * Name of the file                  : spi_shakti.h
+ * Brief Description of file         : Header to zephyr spi driver
+ * Name of Author                    : Kishore. J
+ * Email ID                          : kishore@mindgrovetech.in
+ * 
+ * @file spi_shakti.h
+ * @author Kishore. J (kishore@mindgrovetech.in)
+ * @brief This is a zephyr SSPI Driver's Header file for Mindgrove Silicon's SPI Peripheral
+ * @version 0.1
+ * @date 2024-04-17
+ * 
+ * @copyright Copyright (c) Mindgrove Technologies Pvt. Ltd 2023. All rights reserved.
+ * 
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -6,7 +23,6 @@ extern "C" {
 #define __SPI_SHAKTI__H
 
 #include "spi_context.h"
-
 #include <stdint.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/device.h>
@@ -14,12 +30,9 @@ extern "C" {
 #include <zephyr/drivers/spi.h>
 // #include <./zephyr/drivers/pinctrl.h>
 
-
 #define SPI_CFG(dev) ((struct spi_shakti_cfg *) ((dev)->config))
 #define SPI_DATA(dev) ((struct spi_shakti_data *) ((dev)->data))
-
 #define SPI_REG(dev, offset) ((mem_addr_t) (SPI_CFG(dev)->base + (offset)))
-
 
 /*clock frequency*/
 #define CLOCK_FREQUENCY 40000000
@@ -47,7 +60,6 @@ extern "C" {
 #define SSPI3_END_ADDRESS  0x000203FF /*! Standard Serial Peripheral Interface 3 Base address*/
 
 #define SSPI_BASE_OFFSET 0x100
-
 
 #define COMMCTRL    0x00
 #define CLKCTRL     0x04
@@ -128,7 +140,6 @@ extern "C" {
 #define SPI_RX_FULL_INTR_EN     (1<<17)
 #define SPI_RX_OVERRUN_INTR_EN  (1<<18)
 
-
 #define FIFO_DEPTH_8  32
 #define FIFO_DEPTH_16 FIFO_DEPTH_8/2
 #define FIFO_DEPTH_32 FIFO_DEPTH_8/4
@@ -160,11 +171,15 @@ extern "C" {
 #define DATA_SIZE_16 16
 #define DATA_SIZE_32 32
 
-// typedef union{
-//     uint8_t tx_data8;
-//     uint16_t tx_data16;
-//     uint32_t tx_data32;
-// }size;
+#define POL_AND_PHA     0b0000000000000110      // polarity and phase is 1
+#define INV_POLANDPHA   0b0000000000000000      // polarity and phase is 0      
+#define HALFDUPLEX      0b0000100000000000      // if mode bit is 1 then spi is halfduplex      
+#define FULLDUPLEX      0b0000000000000000      // if mode bit is 0 then spi is fullduplex
+
+/**
+ * The below code defines a union type named "Data" that can hold a 32-bit integer, a 16-bit integer,
+ * or an 8-bit integer.
+ */
 
 typedef union{
     uint32_t data_32;
@@ -172,21 +187,99 @@ typedef union{
     uint8_t data_8;
 } Data;
 
+/**
+ * @struct sspi_struct
+ * @brief This defines a structure for controlling and communicating with an SSPI device.
+ * @details This structure contains all the registers used in the Serial Peripheral Interface(SPI).
+ * The registers used are: communication_control, clock_control register, TX and RX Data registers,
+ * Interrupt Enable register, Communication and FIFO status registers, and an Input Qualification register.
+ */
 
 typedef struct{
+/**
+ * @var uint32_t comm_control
+ * This is a 32-bit register that controls the communication
+ * settings of the SSPI (Synchronous Serial Peripheral Interface) module. It may include settings such
+ * as clock polarity, clock phase, data order, and master/slave mode.
+ */
     uint32_t    comm_control;
+/**
+ * @var uint32_t clk_control
+ * The clk_control property is a 32-bit register that controls the
+ * clock signal used by the SSPI (Synchronous Serial Peripheral Interface) module. It can be used to
+ * set the clock frequency, phase, and polarity.
+ */
     uint32_t    clk_control;
+/** 
+* @var Data data_tx
+* The above code is declaring a structure named "Data" and a variable named "data_tx" of that
+* structure type. The structure has a member named "data_tx" which is of type "unsigned int" and is
+* used to hold data for transmission in a Serial Peripheral Interface (SPI) communication protocol.
+* The comment indicates that the data size can be 8, 16, or 32 bits. 
+*/
     Data        data_tx; 
+/**
+* @var Data     data_rx;
+* The above code is declaring a structure named "Data" and a variable named "data_rx" of that
+* structure type. The structure has a member named "data_rx" which is of type "unsigned int" and is
+* used to receive the data from a Serial Peripheral Interface (SPI) communication protocol. This register is used
+* to read the data received from the SSPI device during data transfer operations.
+* The comment indicates that the data size can be 8, 16, or 32 bits. " 
+*/
     Data        data_rx;
+/**
+ * @var uint32_t intr_en
+ * The "intr_en" property is a 32-bit register that controls the
+ * interrupt enable status for various events in the SSPI (Synchronous Serial Peripheral Interface)
+ * module. These events include transmit buffer empty, receive buffer full, and various error
+ * conditions. By setting the appropriate bits in this register, the interrupt will be enbled or disabled.
+ */
     uint32_t    intr_en;
+/**
+ * @var uint32_t fifo_status
+ * The fifo_status property is an 32-bit register that indicates the
+ * status of the FIFO (First-In-First-Out) buffer in the SSPI (Synchronous Serial Peripheral Interface)
+ * module. It can be used to determine if the FIFO is full, empty, or partially full.
+ */
     uint32_t    fifo_status;
+/**
+ * @var uint16_t comm_status
+ * The SSPI Communication Status Register is an 16-bit register that
+ * provides information about the current status of the SSPI communication. It may contain information
+ * such as whether the communication is currently active, whether there are any errors in the
+ * communication, or whether the communication has been completed successfully.
+ */
     uint16_t    comm_status;
+/**
+ * @var uint16_t reserve0
+ * This is a 16-bit field that is reserved for future use and currently
+ * has no defined purpose or functionality. It is included in the structure for potential future
+ * expansion or compatibility with other systems.
+ */
     uint16_t    reserve0;
+/**
+ * @var uint8_t qual
+ * The "qual" property is the SSPI Input Qualification Control Register,
+ * which is an 8-bit register used to set the input qualification level for the SSPI receiver. This
+ * register determines the minimum pulse width required for the SSPI receiver to recognize a valid
+ * input signal. 
+ */
     uint8_t     qual;
+/**
+ * @var uint8_t reserve5
+ * The reserve5 is an 8-bit reserved field in the sspi_struct. It is not
+ * used for any specific purpose and is left unused for future modifications or updates to the
+ * structure.
+ */
     uint8_t     reserve1;
+/**
+ * @var uint16_t reserve6
+ * This is a 16-bit field that is reserved for future use and currently
+ * has no defined purpose or functionality. It is included in the structure for potential future
+ * expansion or compatibility with other systems.
+ */
     uint16_t    reserve2;
 }sspi_struct;
-
 
 struct spi_shakti_data {
 	struct spi_context ctx;
@@ -197,7 +290,6 @@ struct spi_shakti_cfg {
 	uint32_t f_sys;
     const struct pinctrl_dev_config *pcfg;
 };
-
 
 #endif
 
