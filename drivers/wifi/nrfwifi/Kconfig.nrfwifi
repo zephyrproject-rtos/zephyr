@@ -731,6 +731,13 @@ config NRF_WIFI_RPU_RECOVERY_RETRY_WINDOW_S
 	  retries are counted. If the number of consecutive RPU recovery retries
 	  exceeds NRF_WIFI_RPU_RECOVERY_MAX_RETRIES within this window, the system
 	  will be reset.
+
+config NRF_WIFI_RPU_RECOVERY_PS_STATE_DEBUG
+	bool "RPU recovery power save state debug logs"
+	help
+	  Enable RPU recovery power save state debug logs to help debug RPU recovery mechanism.
+
+
 endif # NRF_WIFI_RPU_RECOVERY
 
 config NRF_WIFI_FEAT_WMM
