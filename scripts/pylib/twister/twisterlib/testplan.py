@@ -408,7 +408,7 @@ class TestPlan:
         v1_boards = list_boards.find_boards(lb_args)
         v2_dirs = list_boards.find_v2_board_dirs(lb_args)
         for b in v1_boards:
-            board_dirs.add(b.dir)
+            board_dirs.add(b.directories)
         board_dirs.update(v2_dirs)
         logger.debug("Reading platform configuration files under %s..." % self.env.board_roots)
 
