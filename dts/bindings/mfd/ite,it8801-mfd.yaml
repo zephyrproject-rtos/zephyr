@@ -1,0 +1,109 @@
+# Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ITE IT8801 ioexpander multi-function device drivers.
+  This ioexpander provides a GPIO/PWM/Keyboard function via I2C bus.
+
+  An example configuration:
+
+  &i2c4 {
+      status = "okay";
+      clock-frequency = <I2C_BITRATE_STANDARD>;
+      pinctrl-0 = <&i2c4_clk_gpe0_default
+                   &i2c4_data_gpe7_default>;
+      pinctrl-names = "default";
+
+      it8801_mfd: it8801@38 {
+          compatible = "ite,it8801-mfd";
+          /*
+           * SMBus address (7-bit without R/W)
+           * SMB_ADDR pin is 0, SMBus address is 0x38
+           * SMB_ADDR pin is 1, SMBus address is 0x39
+           */
+          reg = <0x38>;
+          irq-gpios = <&gpioa 1 0>; /* SMB_INT# */
+          #address-cells = <1>;
+          #size-cells = <1>;
+
+          ioex_it8801_port0: it8801_port@0  {
+              compatible = "ite,it8801-gpio";
+              reg = <0x00 1   /* GPIPSR */
+                     0x05 1   /* GPSOVR */
+                     0x0a 8   /* GPCR */
+                     0x32 1   /* GPISR */
+                     0x37 1>; /* GPIER */
+              gpio-controller;
+              #gpio-cells = <2>;
+              ngpios = <8>;
+              pin-mask = <0xdb>;
+          };
+
+          ioex_it8801_port1: it8801_port@1 {
+              compatible = "ite,it8801-gpio";
+              reg = <0x01 1   /* GPIPSR */
+                     0x06 1   /* GPSOVR */
+                     0x12 8   /* GPCR */
+                     0x33 1   /* GPISR */
+                     0x38 1>; /* GPIER */
+              gpio-controller;
+              #gpio-cells = <2>;
+              ngpios = <8>;
+              pin-mask = <0x3f>;
+          };
+
+          ioex_it8801_port2: it8801_port@2 {
+              compatible = "ite,it8801-gpio";
+              reg = <0x02 1   /* GPIPSR */
+                     0x07 1   /* GPSOVR */
+                     0x1a 8   /* GPCR */
+                     0x34 1   /* GPISR */
+                     0x39 1>; /* GPIER */
+              gpio-controller;
+              #gpio-cells = <2>;
+              ngpios = <8>;
+              pin-mask = <0x0f>;
+          };
+
+          ioex_it8801_kbd: it8801_kbd@40 {
+              compatible = "ite,it8801-kbd";
+              reg = <0x40 1   /* KSOMCR */
+                     0x41 1   /* KSIDR */
+                     0x42 1   /* KSIEER */
+                     0x43 1>; /* KSIIER */
+              kso-mapping = <0 1 20 3 4 5 6
+                             17 18 16 15 11 12>;
+              mfdctrl = <&kso18_gp01_default
+                         &kso20_gp23_default>;
+              row-size = <8>;
+              col-size = <13>;
+
+              kscan_input: kscan-input {
+                  compatible = "zephyr,kscan-input";
+              };
+          };
+
+          ioex_it8801_pwm: it8801_pwm@90 {
+              compatible = "ite,it8801-pwm";
+              mfdctrl = <&pwm7_gp20_default>;
+              reg = <0x90 1   /* PWMMCR */
+                     0x94 1>; /* PWMDCR */
+              channel = <7>;
+              #pwm-cells = <3>;
+          };
+      };
+  };
+
+compatible: "ite,it8801-mfd"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  irq-gpios:
+    type: phandle-array
+    description: |
+      An interrupt can be asserted on SMB_INT# pin to notify
+      the host-side since an effective interrupt occurs.
