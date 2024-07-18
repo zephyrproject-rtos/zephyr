@@ -35,6 +35,8 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, 0);
 #define UARTE_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(UARTE(idx), prop)
 #define UARTE_PROP(idx, prop)		DT_PROP(UARTE(idx), prop)
 
+#define UARTE_IS_CACHEABLE(idx) DMM_IS_REG_CACHEABLE(DT_PHANDLE(UARTE(idx), memory_regions))
+
 /* Execute macro f(x) for all instances. */
 #define UARTE_FOR_EACH_INSTANCE(f, sep, off_code, ...) \
 	NRFX_FOREACH_PRESENT(UARTE, f, sep, off_code, __VA_ARGS__)
@@ -89,6 +91,12 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, 0);
 
 #if UARTE_FOR_EACH_INSTANCE(INSTANCE_HAS_PROP, (+), (0), frame_timeout)
 #define UARTE_HAS_FRAME_TIMEOUT 1
+#endif
+
+#define INSTANCE_NEEDS_CACHE_MGMT(unused, prefix, i, prop) UARTE_IS_CACHEABLE(prefix##i)
+
+#if UARTE_FOR_EACH_INSTANCE(INSTANCE_NEEDS_CACHE_MGMT, (+), (0), _)
+#define UARTE_ANY_CACHE 1
 #endif
 
 /*
@@ -200,7 +208,7 @@ struct uarte_nrfx_data {
 /* If enabled then TIMER and PPI is used for byte counting. */
 #define UARTE_CFG_FLAG_HW_BYTE_COUNTING   BIT(2)
 
-/* If enabled then TIMER and PPI is used for byte counting. */
+/* If enabled then cache management is required (except for dmm buffers). */
 #define UARTE_CFG_FLAG_CACHEABLE   BIT(3)
 
 /* If enabled then UARTE peripheral is disabled when not used. This allows
@@ -666,6 +674,11 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 		return;
 	}
 #endif
+
+	if (IS_ENABLED(UARTE_ANY_CACHE) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+		sys_cache_data_flush_range((void *)buf, len);
+	}
+
 	nrf_uarte_tx_buffer_set(uarte, buf, len);
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
@@ -1030,14 +1043,20 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		if (rdata->flush_cnt) {
 			int cpy_len = MIN(len, rdata->flush_cnt);
 
+			if (IS_ENABLED(UARTE_ANY_CACHE) &&
+			    (cfg->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+				sys_cache_data_invd_range(cfg->rx_flush_buf, cpy_len);
+			}
+
 			memcpy(buf, cfg->rx_flush_buf, cpy_len);
-			buf += cpy_len;
-			len -= cpy_len;
-#ifdef CONFIG_HAS_NORDIC_DMM
-			if (cfg->flags & UARTE_CFG_FLAG_CACHEABLE) {
+
+			if (IS_ENABLED(UARTE_ANY_CACHE) &&
+			    (cfg->flags & UARTE_CFG_FLAG_CACHEABLE)) {
 				sys_cache_data_flush_range(buf, cpy_len);
 			}
-#endif
+
+			buf += cpy_len;
+			len -= cpy_len;
 
 			/* If flush content filled whole new buffer complete the
 			 * request and indicate rx being disabled.
@@ -1046,6 +1065,11 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 				rdata->flush_cnt -= cpy_len;
 				memmove(cfg->rx_flush_buf, &cfg->rx_flush_buf[cpy_len],
 						rdata->flush_cnt);
+				if (IS_ENABLED(UARTE_ANY_CACHE) &&
+				    (cfg->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+					sys_cache_data_flush_range(cfg->rx_flush_buf,
+								   rdata->flush_cnt);
+				}
 				atomic_or(&data->flags, UARTE_FLAG_TRIG_RXTO);
 				NRFX_IRQ_PENDING_SET(nrfx_get_irq_number(uarte));
 				return 0;
@@ -1447,11 +1471,15 @@ static uint8_t rx_flush(const struct device *dev, uint8_t *buf)
 	/* Flushing RX fifo requires buffer bigger than 4 bytes to empty fifo*/
 	static const uint8_t dirty = CONFIG_UART_NRFX_UARTE_RX_FLUSH_MAGIC_BYTE;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	const struct uarte_nrfx_config *config = dev->config;
 	uint32_t prev_rx_amount;
 	uint32_t rx_amount;
 
 	if (IS_ENABLED(RX_FLUSH_WORKAROUND)) {
 		memset(buf, dirty, UARTE_HW_RX_FIFO_SIZE);
+		if (IS_ENABLED(UARTE_ANY_CACHE) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+			sys_cache_data_flush_range(buf, UARTE_HW_RX_FIFO_SIZE);
+		}
 		prev_rx_amount = nrf_uarte_rx_amount_get(uarte);
 	} else {
 		prev_rx_amount = 0;
@@ -1480,6 +1508,10 @@ static uint8_t rx_flush(const struct device *dev, uint8_t *buf)
 
 	if (rx_amount > UARTE_HW_RX_FIFO_SIZE) {
 		return 0;
+	}
+
+	if (IS_ENABLED(UARTE_ANY_CACHE) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+		sys_cache_data_invd_range(buf, UARTE_HW_RX_FIFO_SIZE);
 	}
 
 	for (int i = 0; i < rx_amount; i++) {
@@ -1768,6 +1800,10 @@ static int uarte_nrfx_poll_in(const struct device *dev, unsigned char *c)
 		return -1;
 	}
 
+	if (IS_ENABLED(UARTE_ANY_CACHE) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+		sys_cache_data_invd_range(config->poll_in_byte, 1);
+	}
+
 	*c = *config->poll_in_byte;
 
 	/* clear the interrupt */
@@ -1861,6 +1897,10 @@ static int uarte_nrfx_fifo_read(const struct device *dev,
 	if (size > 0 && nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 		/* Clear the interrupt */
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
+
+		if (IS_ENABLED(UARTE_ANY_CACHE) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+			sys_cache_data_invd_range(config->poll_in_byte, 1);
+		}
 
 		/* Receive a character */
 		rx_data[num_rx++] = *config->poll_in_byte;
@@ -2298,8 +2338,6 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 			(DT_PROP(UARTE_MEM_REGION(idx), zephyr_memory_attr)),		  \
 			(0))),								  \
 		(0))
-
-#define UARTE_IS_CACHEABLE(idx) DMM_IS_REG_CACHEABLE(UARTE(idx))
 
 #define UARTE_GET_BAUDRATE_DIV(idx)						\
 	COND_CODE_0(UARTE_HAS_PROP(idx, base_frequency), (1),			\
