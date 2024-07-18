@@ -19,4 +19,15 @@ config RUST
 	help
 	  This option enables the use of applications written in Rust.
 
+if RUST
+
+config RUST_ALLOC
+       bool "Support an allocator in Rust code"
+       help
+         If enabled, the Rust zephyr rust support library will include support for an allocator.
+         This allocator will use the currently configured Zephyr allocator (malloc/free). With this
+         enabled, Rust applications can use the `alloc` crate.
+
+endif # RUST
+
 endmenu

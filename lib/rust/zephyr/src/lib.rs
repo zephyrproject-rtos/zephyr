@@ -37,3 +37,7 @@ fn panic(_ :&PanicInfo) -> ! {
 pub mod _export {
     pub use core::format_args;
 }
+
+/// If allocation has been requested, provide the allocator.
+#[cfg(CONFIG_RUST_ALLOC)]
+mod alloc;
