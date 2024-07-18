@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RA6M5
+
+config NUM_IRQS
+	default 96
+
+config PINCTRL
+	default y
+
+endif # SOC_SERIES_RA6M5
