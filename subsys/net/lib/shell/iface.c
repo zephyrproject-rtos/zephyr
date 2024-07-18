@@ -19,6 +19,9 @@ LOG_MODULE_DECLARE(net_shell);
 #if defined(CONFIG_NET_L2_VIRTUAL)
 #include <zephyr/net/virtual.h>
 #endif
+#if defined(CONFIG_ETH_PHY_DRIVER)
+#include <zephyr/net/phy.h>
+#endif
 
 #include "net_shell_private.h"
 
@@ -67,6 +70,26 @@ static void print_supported_ethernet_capabilities(
 	}
 }
 #endif /* CONFIG_NET_L2_ETHERNET */
+
+#ifdef CONFIG_ETH_PHY_DRIVER
+static void print_phy_link_state(const struct shell *sh, const struct device *phy_dev)
+{
+	struct phy_link_state link;
+	int ret;
+
+	ret = phy_get_link_state(phy_dev, &link);
+	if (ret < 0) {
+		PR_ERROR("Failed to get link state (%d)\n", ret);
+		return;
+	}
+
+	PR("Ethernet link speed: %s ", PHY_LINK_IS_SPEED_1000M(link.speed)  ? "1 Gbits"
+				       : PHY_LINK_IS_SPEED_100M(link.speed) ? "100 Mbits"
+									    : "10 Mbits");
+
+	PR("%s-duplex\n", PHY_LINK_IS_FULL_DUPLEX(link.speed) ? "full" : "half");
+}
+#endif
 
 #if defined(CONFIG_NET_NATIVE)
 static const char *iface_flags2str(struct net_if *iface)
@@ -305,6 +328,16 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		PR("Ethernet capabilities supported:\n");
 		print_supported_ethernet_capabilities(sh, iface);
+
+#ifdef CONFIG_ETH_PHY_DRIVER
+		const struct device *phy_dev = net_eth_get_phy(iface);
+
+		PR("Ethernet PHY device: %s (%p)\n", (phy_dev != NULL) ? phy_dev->name : "<none>",
+		   phy_dev);
+		if (phy_dev != NULL) {
+			print_phy_link_state(sh, phy_dev);
+		}
+#endif /* CONFIG_ETH_PHY_DRIVER */
 	}
 #endif /* CONFIG_NET_L2_ETHERNET */
 
