@@ -1,7 +1,7 @@
 family:
   - name: renesas_ra
     series:
-      - name: ra4m1
+      - name: ra4m1_arduino
         socs:
           - name: r7fa4m1ab3cfm
       - name: ra8m1
@@ -25,3 +25,6 @@ family:
       - name: ra6m2
         socs:
           - name: r7fa6m2af3cfb
+      - name: ra6m4
+        socs:
+          - name: r7fa6m4af3cfb
