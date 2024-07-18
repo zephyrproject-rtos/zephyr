@@ -799,6 +799,7 @@ static int udc_nrf_driver_init(const struct device *dev)
 	data->caps.out_ack = true;
 	data->caps.mps0 = UDC_NRF_MPS0;
 	data->caps.can_detect_vbus = true;
+	data->caps.sof = true;
 
 	return 0;
 }
