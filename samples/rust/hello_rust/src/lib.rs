@@ -3,7 +3,9 @@
 
 #![no_std]
 
-use zephyr::printkln;
+extern crate alloc;
+
+use alloc::format;
 
 // Reference the Zephyr crate so that the panic handler gets used.  This is only needed if no
 // symbols from the crate are directly used.
