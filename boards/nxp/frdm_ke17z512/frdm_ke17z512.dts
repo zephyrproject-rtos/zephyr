@@ -75,6 +75,11 @@
 	status = "okay";
 };
 
+&rtc {
+	status = "okay";
+	clock-source = "LPO";
+};
+
 &lpi2c0 {
 	status = "okay";
 	pinctrl-0 = <&lpi2c0_default>;
