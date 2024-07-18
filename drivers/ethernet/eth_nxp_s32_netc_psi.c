@@ -76,6 +76,13 @@ static void phy_link_state_changed(const struct device *pdev,
 	}
 }
 
+static const struct device *nxp_s32_eth_get_phy(const struct device *dev)
+{
+	const struct nxp_s32_eth_config *cfg = dev->config;
+
+	return cfg->phy_dev;
+}
+
 /* Configure ETHx_EXT_RX_CLK @ 125 MHz as source of ETH_x_RGMII_RX_CLK */
 static int nxp_s32_eth_configure_cgm(uint8_t port_idx)
 {
@@ -204,6 +211,7 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 static const struct ethernet_api nxp_s32_eth_api = {
 	.iface_api.init = nxp_s32_eth_iface_init,
 	.get_capabilities = nxp_s32_eth_get_capabilities,
+	.get_phy = nxp_s32_eth_get_phy,
 	.set_config = nxp_s32_eth_set_config,
 	.send = nxp_s32_eth_tx
 };
