@@ -29,7 +29,7 @@ enum bt_mesh_subnet_bridge_state {
 };
 
 /** Bridging Table state entry corresponding to a entry in the Bridging Table. */
-struct bridging_table_entry {
+struct bt_mesh_bridging_table_entry {
 	/** Allowed directions for the bridged traffic (or bridged traffic not allowed) */
 	uint8_t directions;
 	/** NetKey Index of the first subnet */
@@ -47,7 +47,7 @@ struct bt_mesh_bridging_table_status {
 	/** Status Code of the requesting message */
 	uint8_t status;
 	/** Requested Bridging Table entry */
-	struct bridging_table_entry entry;
+	struct bt_mesh_bridging_table_entry entry;
 };
 
 /** Used to filter set of pairs of NetKey Indexes from the Bridging Table */
