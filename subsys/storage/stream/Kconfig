@@ -6,6 +6,7 @@
 
 menuconfig STREAM_FLASH
 	bool "Stream to flash"
+	depends on FLASH_HAS_PAGE_LAYOUT
 	select FLASH_PAGE_LAYOUT
 	help
 	  Enable support of stream to flash API

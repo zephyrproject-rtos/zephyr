@@ -10,6 +10,7 @@
 config FCB
 	bool "Flash Circular Buffer support"
 	depends on FLASH_MAP
+	depends on FLASH_HAS_PAGE_LAYOUT
 	select CRC
 	select FLASH_PAGE_LAYOUT
 	help
