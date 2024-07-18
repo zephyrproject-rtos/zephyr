@@ -102,6 +102,32 @@ static int ili9341_transmit(const struct device *dev, uint8_t cmd, const void *t
 	return 0;
 }
 
+	/* 
+	SOFTWARE RESET 	01
+					EF
+	PWCTRLB			CF
+	PWSEQCTRL		ED
+	TIMCTRLA		E8
+	PWCTRLA			E8
+	PUMPRATIOCTRL	F7
+	TIMCTRLB		EA
+	PWCTRL1			C0
+	PWCTRL2			C1
+	VMCTRL1 		C5
+	VMCTRL2			C7
+	MADCTL			36
+	PIXELFORMAT
+	PIXELFORMAT
+	FRMCTR1			B1
+	DISCTRL			B6
+	ENABLE3G		F2
+	GAMSET			26
+	PGAMCRTL		E0
+	NGAMCRTL		E1	
+	SLPOUT			11
+	DISPON			29
+	*/
+
 int ili9341_regs_init(const struct device *dev)
 {
 	const struct ili9341_config *config = dev->config;

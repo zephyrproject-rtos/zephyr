@@ -46,6 +46,3 @@ if (CONFIG_SDL_DISPLAY)
 	endif()
 endif()
 
-if (CONFIG_ILI9341TFT)
-	zephyr_library_sources(ili9341_driver.c)
-endif()

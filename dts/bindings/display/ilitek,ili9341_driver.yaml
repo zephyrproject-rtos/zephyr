@@ -13,13 +13,11 @@ include: ilitek,ili9xxx-common.yaml
 properties:
   height:
     type: int
-    required: true
     description: 
       Height of the panel driven by the controller, with the units in pixels.
 
   width:
     type: int
-    required: true
     description: 
       Width of the panel driven by the controller, with the units in pixels.
       
@@ -124,6 +122,16 @@ properties:
   vmctrl2:
     type: uint8-array
     default: [0xc0]
+    description:
+      VCOM control 2 (VMCTRL2) register values.
+
+  madctrl:
+    type: uint8-array
+    description:
+      VCOM control 2 (VMCTRL2) register values.
+  
+  pixset:
+    type: uint8-array
     description:
       VCOM control 2 (VMCTRL2) register values.
 

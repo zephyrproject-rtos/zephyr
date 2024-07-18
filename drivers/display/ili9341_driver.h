@@ -89,6 +89,8 @@ struct ili9xxx_quirks {
 #define ILI9341_PUMPRATIOCTRL 0xF7
 
 /* Commands/registers length. */
+#define ILI9341_MADCTRL_LEN	1u
+#define ILI9341_PIXSET_LEN	1u
 #define ILI9341_GAMSET_LEN 1U
 #define ILI9341_IFMODE_LEN 1U
 #define ILI9341_FRMCTR1_LEN 2U
@@ -135,6 +137,8 @@ struct ili9341_regs {
 	uint8_t enable3g[ILI9341_ENABLE3G_LEN];
 	uint8_t ifctl[ILI9341_IFCTL_LEN];
 	uint8_t etmod[ILI9341_ETMOD_LEN];
+	uint8_t madctrl[ILI9341_MADCTRL_LEN];
+	uint8_t pixset[ILI9341_PIXSET_LEN];
 };
 
 /* Initializer macro for ILI9341 registers. */
@@ -158,6 +162,8 @@ struct ili9341_regs {
 		.pumpratioctrl = DT_INST_PROP(inst, pumpratioctrl),               \
 		.enable3g = DT_INST_PROP(inst, enable3g),                         \
 		.ifctl = DT_INST_PROP(inst, ifctl),                               \
+		.madctrl = DT_INST_PROP(inst, madctrl),							  \
+		.pixset = DT_INST_PROP(inst, pixset),							  \	
 		.etmod = DT_INST_PROP(inst, etmod),                               \
 	}
 
@@ -169,4 +175,4 @@ struct ili9341_regs {
  */
 int ili9341_regs_init(const struct device *dev);
 
-#endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9341_H_ */
+#endif /* ZEPHYR_DRIVERS_DISPLAY_ILI9341_DRIVER_H_ */
