@@ -860,6 +860,13 @@ Drivers and Sensors
   * Migrated :dtcompatible:`holtek,ht16k33` and
     :dtcompatible:`microchip,xec-kbd` from kscan to input subsystem.
 
+* LED
+
+  * Added device completion to LED shell commands and made the ``get_info`` command display
+    colors as strings.
+
+  * Added driver for Lumissil Microsystems (a division of ISSI) IS31FL3194 controller.
+
 * LED Strip
 
   * The ``chain-length`` and ``color-mapping`` properties have been added to all LED strip
@@ -872,6 +879,15 @@ Drivers and Sensors
     (:c:func:`led_strip_length`).
 
   * The update channels function is now optional and can be left unimplemented.
+
+  * The ``in-gpios`` and ``output-pin`` properties of the respective
+    :dtcompatible:`worldsemi,ws2812-gpio` and :dtcompatible:`worldsemi,ws2812-rpi_pico-pio`
+    devicetree bindings have been renamed to ``gpios``.
+
+  * Removed :kconfig:option:`CONFIG_WS2812_STRIP` and :kconfig:option:`CONFIG_WS2812_STRIP_DRIVER`
+    Kconfig options. They became useless after refactoring.
+
+  * Added driver for Texas Instruments TLC59731 RGB controller.
 
 * LoRa
 
