@@ -15,6 +15,8 @@
 /**
  * @brief Network Interface abstraction layer
  * @defgroup net_if Network Interface abstraction layer
+ * @since 1.5
+ * @version 1.0.0
  * @ingroup networking
  * @{
  */

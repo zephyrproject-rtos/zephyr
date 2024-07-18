@@ -22,6 +22,8 @@
 /**
  * @brief Wi-Fi Network manager API
  * @defgroup wifi_nm Wi-Fi Network Manager API
+ * @since 3.5
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
