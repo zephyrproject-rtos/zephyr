@@ -31,12 +31,17 @@ struct dut_data {
 	const char *name;
 };
 
-static ZTEST_DMEM struct dut_data duts[] = {
+ZTEST_DMEM struct dut_data duts[] = {
 	{
 		.dev = DEVICE_DT_GET(UART_NODE),
 		.name = DT_NODE_FULL_NAME(UART_NODE),
 	},
-	/* More instances can be added here. */
+#if DT_NODE_EXISTS(DT_NODELABEL(dut2)) && DT_NODE_HAS_STATUS(DT_NODELABEL(dut2), okay)
+	{
+		.dev = DEVICE_DT_GET(DT_NODELABEL(dut2)),
+		.name = DT_NODE_FULL_NAME(DT_NODELABEL(dut2)),
+	},
+#endif
 };
 
 static ZTEST_BMEM const struct device *uart_dev;
