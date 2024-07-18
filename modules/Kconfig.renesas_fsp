@@ -22,3 +22,8 @@ config USE_RA_FSP_I2C_IIC
 	bool
 	help
 	  Enable Renesas RA I2C IIC Master driver
+
+config USE_RA_FSP_SCI_UART
+	bool
+	help
+	  Enable RA FSP SCI UART driver
