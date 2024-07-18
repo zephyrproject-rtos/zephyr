@@ -34,6 +34,17 @@ config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	  is assumed that the custom interrupt control interface implementation
 	  assumes responsibility for handling the NVIC.
 
+config ARM_CUSTOM_IRQ_CONNECT
+	bool
+	help
+	  Use custom defined ARCH_IRQ_CONNECT and ARCH_IRQ_CONNECT_DIRECT.
+
+	  This option supports the case that soc needs custom isr_table generation
+	  and special initialization for ISR.
+
+	  When you enable this option, include the soc_custom_irq_connect.h header,
+	  then define ARCH_IRQ_CONNECT and ARCH_IRQ_DIRECT_CONNECT in that file.
+
 config ROMSTART_RELOCATION_ROM
 	bool "Relocate rom_start region"
 	default n
