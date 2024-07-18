@@ -15,3 +15,7 @@ Provides utilities for accessing Kconfig and devicetree information.
 # used by the core Zephyr tree, but are needed by zephyr applications.
 [dependencies]
 regex = "1.10.3"
+pest = "2.6"
+pest_derive = "2.6"
+quote = "1.0"
+proc-macro2 = "1.0.86"

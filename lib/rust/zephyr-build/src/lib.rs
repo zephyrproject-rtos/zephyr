@@ -15,8 +15,14 @@ use std::io::{BufRead, BufReader, Write};
 use std::env;
 use std::fs::File;
 use std::path::Path;
+use std::process::{Command, Stdio};
 
+use proc_macro2::TokenStream;
 use regex::Regex;
+
+use devicetree::DeviceTree;
+
+mod devicetree;
 
 /// Export boolean Kconfig entries.  This must happen in any crate that wishes to access the
 /// configuration settings.
@@ -74,4 +80,58 @@ pub fn build_kconfig_mod() {
         }
     }
     writeln!(&mut f, "}}").unwrap();
+}
+
+/// Parse the finalized DTS file, generating the Rust devicetree file.
+pub fn build_dts() {
+    let zephyr_dts = env::var("ZEPHYR_DTS").expect("ZEPHYR_DTS must be set");
+    let outdir = env::var("OUT_DIR").expect("OUT_DIR must be set");
+    let gen_include = env::var("BINARY_DIR_INCLUDE_GENERATED")
+        .expect("BINARY_DIR_INCLUDE_GENERATED");
+
+    let generated = format!("{}/devicetree_generated.h", gen_include);
+    let dt = DeviceTree::new(&zephyr_dts, generated);
+    let _ = dt;
+
+    let out_path = Path::new(&outdir).join("devicetree.rs");
+    let mut out = File::create(&out_path).expect("Unable to create devicetree.rs");
+
+    let tokens = dt.to_tokens();
+    if has_rustfmt() {
+        write_formatted(out, tokens);
+    } else {
+        writeln!(out, "{}", tokens).unwrap();
+    };
+}
+
+/// Determine if `rustfmt` is in the path, and can be excecuted. Returns false on any kind of error.
+pub fn has_rustfmt() -> bool {
+    match Command::new("rustfmt")
+        .arg("--version")
+        .status()
+    {
+        Ok(st) if st.success() => true,
+        _ => false,
+    }
+}
+
+/// Attempt to write the contents to a file, using rustfmt. If there is an error running rustfmt,
+/// print a warning, and then just directly write the file.
+fn write_formatted(file: File, tokens: TokenStream) {
+    let mut rustfmt = Command::new("rustfmt")
+        .args(["--emit", "stdout"])
+        .stdin(Stdio::piped())
+        .stdout(file)
+        .stderr(Stdio::inherit())
+        .spawn()
+        .expect("Failed to run rustfmt");
+    // TODO: Handle the above failing.
+
+    let mut stdin = rustfmt.stdin.as_ref().expect("Stdin should have been opened by spawn");
+    writeln!(stdin, "{}", tokens).expect("Writing to rustfmt");
+
+    match rustfmt.wait() {
+        Ok(st) if st.success() => (),
+        _ => panic!("Failure running rustfmt"),
+    }
 }

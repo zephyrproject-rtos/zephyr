@@ -1,0 +1,77 @@
+// Device Tree Source file
+//
+// This is a pest parser for a subset of the DTS
+// format that will be seen by the output of dtc.
+
+file = _{ SOI ~ header ~ node ~ EOI }
+
+header = _{ "/dts-v1/" ~ ";" }
+
+node = {
+    node_path ~
+    "{" ~
+    entry* ~
+    "}" ~ ";"
+}
+
+node_path = _{
+    (label ~ ":")*
+    ~("/" | nodename)
+}
+
+entry = _{
+    property |
+    node
+}
+
+property = {
+    (nodename ~ "=" ~ values ~ ";") |
+    (nodename ~ ";")
+}
+
+values = _{ value ~ ("," ~ value)* }
+value = _{ string | words | bytes | phandle }
+
+words = {
+    "<" ~
+    (number | phandle)+ ~
+    ">"
+}
+
+bytes = {
+    "[" ~
+    plain_hex_number+ ~
+    "]"
+}
+
+number = _{ decimal_number | hex_number }
+
+decimal_number = @{
+    ('1'..'9') ~
+    ASCII_DIGIT*
+}
+
+hex_number = @{
+    ("0x" | "0X") ~
+    ASCII_HEX_DIGIT+
+}
+
+plain_hex_number = @{
+    ASCII_HEX_DIGIT+
+}
+
+// Simple strings, no escapes or such.
+string = @{
+    "\"" ~
+    (!("\"" | "\n") ~ ANY)* ~
+    "\""
+}
+
+phandle = @{ "&" ~ label }
+
+label = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+nodename = @{
+    (ASCII_ALPHANUMERIC | "_" | "," | "." | "?" | "-" | "@" | "#")+
+}
+
+WHITESPACE = _{ " " | "\n" | "\t" }
