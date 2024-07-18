@@ -56,6 +56,7 @@ LPI2C         on-chip     i2c
 ADC SAR       on-chip     adc
 LPSPI         on-chip     spi
 WDT           FS26 SBC    watchdog
+SWT           on-chip     watchdog
 EMAC          on-chip     ethernet
                           mdio
 eMIOS         on-chip     pwm
