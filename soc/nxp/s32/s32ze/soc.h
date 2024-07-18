@@ -22,9 +22,6 @@
 
 /* Aliases for peripheral base addresses */
 
-/* SIUL2 */
-#define IP_SIUL2_2_BASE         0U  /* instance does not exist on this SoC */
-
 /* LINFlexD*/
 #define IP_LINFLEX_12_BASE      IP_MSC_0_LIN_BASE
 
