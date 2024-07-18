@@ -1,0 +1,53 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF LPCOMP (Low Power COMParator)
+
+compatible: "nordic,nrf-lpcomp"
+
+include: base.yaml
+
+properties:
+  positive-input:
+    type: string
+    enum:
+      - "INPUT_0"
+      - "INPUT_1"
+      - "INPUT_2"
+      - "INPUT_3"
+      - "INPUT_4"
+      - "INPUT_5"
+      - "INPUT_6"
+      - "INPUT_7"
+
+  external-reference:
+    type: string
+    enum:
+      - "REF0"
+      - "REF1"
+
+  reference-selection:
+    type: string
+    enum:
+      - "SUPPLY_1_8"
+      - "SUPPLY_2_8"
+      - "SUPPLY_3_8"
+      - "SUPPLY_4_8"
+      - "SUPPLY_5_8"
+      - "SUPPLY_6_8"
+      - "SUPPLY_7_8"
+      - "SUPPLY_1_16"
+      - "SUPPLY_3_16"
+      - "SUPPLY_5_16"
+      - "SUPPLY_7_16"
+      - "SUPPLY_9_16"
+      - "SUPPLY_11_16"
+      - "SUPPLY_13_16"
+      - "SUPPLY_15_16"
+      - "EXT_REF"
+
+  hysteresis:
+    type: string
+    enum:
+      - "NO_HYST"
+      - "ENABLED"
