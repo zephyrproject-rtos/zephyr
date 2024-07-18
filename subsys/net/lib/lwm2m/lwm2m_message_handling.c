@@ -2650,7 +2650,7 @@ static void handle_ongoing_block2_tx(struct lwm2m_message *msg, struct coap_pack
 {
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 	int r;
-	uint8_t block;
+	uint32_t block;
 	enum coap_block_size block_size;
 
 	r = coap_get_block2_option(cpkt, &block);
@@ -2688,8 +2688,8 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 	int r;
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 	bool more_blocks = false;
-	uint8_t block_num;
-	uint8_t last_block_num;
+	uint32_t block_num;
+	uint32_t last_block_num;
 #endif
 	bool has_block2;
 
