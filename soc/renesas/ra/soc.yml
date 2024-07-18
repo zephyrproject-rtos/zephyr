@@ -22,3 +22,6 @@ family:
       - name: ra6e1
         socs:
           - name: r7fa6e10f2cfp
+      - name: ra6e2
+        socs:
+          - name: r7fa6e2bb3cfm
