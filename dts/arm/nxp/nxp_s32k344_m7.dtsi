@@ -82,17 +82,15 @@
 			status = "okay";
 		};
 
-		siul2: siul2@40290000 {
+		siul2_0: siul2@40290000 {
 			reg = <0x40290000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			eirq0: eirq@40290010 {
 				compatible = "nxp,s32-siul2-eirq";
-				reg = <0x40290010 0x04>, <0x40290018 0x04>;
-				reg-names = "disr0", "direr0";
+				reg = <0x40290010 0xb4>;
 				interrupts = <53 0>, <54 0>, <55 0>, <56 0>;
-				interrupt-names = "0_7", "8_15", "16_23", "24_31";
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				status = "disabled";
