@@ -887,7 +887,7 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
  * @return Integer value of the block size in case of success
  * or negative in case of error.
  */
-int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8_t *block_number);
+int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint32_t *block_number);
 
 /**
  * @brief Get values from CoAP block2 option.
@@ -901,7 +901,7 @@ int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8
  * @return Integer value of the block size in case of success
  * or negative in case of error.
  */
-int coap_get_block2_option(const struct coap_packet *cpkt, uint8_t *block_number);
+int coap_get_block2_option(const struct coap_packet *cpkt, uint32_t *block_number);
 
 /**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates
