@@ -42,6 +42,7 @@ struct lll_sync {
 #endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
 
 	uint16_t skip_prepare;
+	uint16_t lazy_prepare;
 	uint16_t skip_event;
 	uint16_t event_counter;
 
