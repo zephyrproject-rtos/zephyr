@@ -15,7 +15,7 @@
 		};
 
 		peripheral: peripheral@40000000 {
-			ranges = <0x0 0x40000000 0x10000000>;
+			ranges = <0x0 0x40000000 0x8000000>;
 		};
 	};
 };
