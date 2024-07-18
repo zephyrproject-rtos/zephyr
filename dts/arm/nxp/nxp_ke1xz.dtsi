@@ -348,6 +348,15 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@4003d000 {
+			compatible = "nxp,kinetis-rtc";
+			reg = <0x4003d000 0x1000>;
+			interrupts = <20 0>;
+			clock-frequency = <32768>;
+			prescaler = <32768>;
+			status = "disabled";
+		};
+
 		cmp0: cmp@40073000 {
 			compatible = "nxp,kinetis-acmp";
 			reg = <0x40073000 0x1000>;
