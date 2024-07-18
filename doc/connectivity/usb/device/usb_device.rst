@@ -599,7 +599,7 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :ref:`bluetooth-hci-usb-h4-sample`                 | 0x000C |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`wpan-usb`                     | 0x000D |
+| Reserved (previously: wpan-usb)                    | 0x000D |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`uac2-explicit-feedback`       | 0x000E |
 +----------------------------------------------------+--------+
