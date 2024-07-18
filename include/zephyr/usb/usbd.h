@@ -1057,6 +1057,15 @@ int usbd_config_maxpower(struct usbd_context *const uds_ctx,
 bool usbd_can_detect_vbus(struct usbd_context *const uds_ctx);
 
 /**
+ * @brief Check whether the controller reports Start of Frame (SoF) events.
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ *
+ * @return true if controller reports SoF events, false otherwise
+ */
+bool usbd_reports_sof(struct usbd_context *const uds_ctx);
+
+/**
  * @}
  */
 

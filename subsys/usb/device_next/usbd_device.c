@@ -310,3 +310,10 @@ bool usbd_can_detect_vbus(struct usbd_context *const uds_ctx)
 
 	return caps.can_detect_vbus;
 }
+
+bool usbd_reports_sof(struct usbd_context *const uds_ctx)
+{
+	const struct udc_device_caps caps = udc_caps(uds_ctx->dev);
+
+	return caps.sof;
+}
