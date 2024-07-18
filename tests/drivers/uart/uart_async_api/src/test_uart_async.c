@@ -25,24 +25,26 @@ K_SEM_DEFINE(rx_buf_released, 0, 1);
 K_SEM_DEFINE(rx_disabled, 0, 1);
 
 static ZTEST_BMEM volatile bool failed_in_isr;
-static ZTEST_BMEM const struct device *const uart_dev =
-	DEVICE_DT_GET(UART_NODE);
+
+struct dut_data {
+	const struct device *dev;
+	const char *name;
+};
+
+static ZTEST_DMEM struct dut_data duts[] = {
+	{
+		.dev = DEVICE_DT_GET(UART_NODE),
+		.name = DT_NODE_FULL_NAME(UART_NODE),
+	},
+	/* More instances can be added here. */
+};
+
+static ZTEST_BMEM const struct device *uart_dev;
+static ZTEST_BMEM const char *uart_name;
 
 static void read_abort_timeout(struct k_timer *timer);
 static K_TIMER_DEFINE(read_abort_timer, read_abort_timeout, NULL);
 
-
-static void init_test(void)
-{
-	__ASSERT_NO_MSG(device_is_ready(uart_dev));
-	uart_rx_disable(uart_dev);
-	uart_tx_abort(uart_dev);
-	k_sem_reset(&tx_done);
-	k_sem_reset(&tx_aborted);
-	k_sem_reset(&rx_rdy);
-	k_sem_reset(&rx_buf_released);
-	k_sem_reset(&rx_disabled);
-}
 
 #ifdef CONFIG_USERSPACE
 static void set_permissions(void)
@@ -50,14 +52,22 @@ static void set_permissions(void)
 	k_thread_access_grant(k_current_get(), &tx_done, &tx_aborted,
 			      &rx_rdy, &rx_buf_coherency, &rx_buf_released,
 			      &rx_disabled, uart_dev, &read_abort_timer);
+
+	for (size_t i = 0; i < ARRAY_SIZE(duts); i++) {
+		k_thread_access_grant(k_current_get(), duts[i].dev);
+	}
 }
 #endif
 
-static void uart_async_test_init(void)
+static void uart_async_test_init(int idx)
 {
 	static bool initialized;
 
+	uart_dev = duts[idx].dev;
+	uart_name = duts[idx].name;
+
 	__ASSERT_NO_MSG(device_is_ready(uart_dev));
+	TC_PRINT("UART instance:%s\n", uart_name);
 	uart_rx_disable(uart_dev);
 	uart_tx_abort(uart_dev);
 	k_sem_reset(&tx_done);
@@ -79,7 +89,6 @@ static void uart_async_test_init(void)
 #endif
 
 	if (!initialized) {
-		init_test();
 		initialized = true;
 #ifdef CONFIG_USERSPACE
 		set_permissions();
@@ -143,11 +152,13 @@ static void test_single_read_callback(const struct device *dev,
 	}
 }
 
-ZTEST_BMEM volatile uint32_t tx_aborted_count;
+static ZTEST_BMEM volatile uint32_t tx_aborted_count;
 
 static void *single_read_setup(void)
 {
-	uart_async_test_init();
+	static int idx;
+
+	uart_async_test_init(idx++);
 
 	memset(&tdata, 0, sizeof(tdata));
 	tdata.supply_second_buffer = true;
@@ -228,7 +239,9 @@ ZTEST_USER(uart_async_single_read, test_single_read)
 
 static void *multiple_rx_enable_setup(void)
 {
-	uart_async_test_init();
+	static int idx;
+
+	uart_async_test_init(idx++);
 
 	memset(&tdata, 0, sizeof(tdata));
 	/* Reuse the callback from the single_read test case, as this test case
@@ -375,7 +388,9 @@ static void test_chained_read_callback(const struct device *dev,
 
 static void *chained_read_setup(void)
 {
-	uart_async_test_init();
+	static int idx;
+
+	uart_async_test_init(idx++);
 
 	uart_callback_set(uart_dev, test_chained_read_callback, NULL);
 
@@ -455,7 +470,9 @@ static void test_double_buffer_callback(const struct device *dev,
 
 static void *double_buffer_setup(void)
 {
-	uart_async_test_init();
+	static int idx;
+
+	uart_async_test_init(idx++);
 
 	uart_callback_set(uart_dev, test_double_buffer_callback, NULL);
 
@@ -501,6 +518,7 @@ static ZTEST_BMEM uint8_t test_read_abort_rx_buf[2][100];
 static ZTEST_BMEM uint8_t test_read_abort_read_buf[100];
 #endif /* NOCACHE_MEM */
 static ZTEST_BMEM int test_read_abort_rx_cnt;
+static ZTEST_BMEM bool test_read_abort_rx_buf_req_once;
 
 static void test_read_abort_callback(const struct device *dev,
 			      struct uart_event *evt, void *user_data)
@@ -515,14 +533,12 @@ static void test_read_abort_callback(const struct device *dev,
 		break;
 	case UART_RX_BUF_REQUEST:
 	{
-		static bool once;
-
-		if (!once) {
+		if (!test_read_abort_rx_buf_req_once) {
 			k_sem_give(&rx_buf_coherency);
 			uart_rx_buf_rsp(dev,
 					test_read_abort_rx_buf[1],
 					sizeof(test_read_abort_rx_buf[1]));
-			once = true;
+			test_read_abort_rx_buf_req_once = true;
 		}
 		break;
 	}
@@ -558,8 +574,11 @@ static void read_abort_timeout(struct k_timer *timer)
 
 static void *read_abort_setup(void)
 {
-	uart_async_test_init();
+	static int idx;
 
+	uart_async_test_init(idx++);
+
+	test_read_abort_rx_buf_req_once = false;
 	failed_in_isr = false;
 	uart_callback_set(uart_dev, test_read_abort_callback, NULL);
 
@@ -654,7 +673,9 @@ static void test_write_abort_callback(const struct device *dev,
 
 static void *write_abort_setup(void)
 {
-	uart_async_test_init();
+	static int idx;
+
+	uart_async_test_init(idx++);
 
 	uart_callback_set(uart_dev, test_write_abort_callback, NULL);
 
@@ -727,7 +748,9 @@ static void test_forever_timeout_callback(const struct device *dev,
 
 static void *forever_timeout_setup(void)
 {
-	uart_async_test_init();
+	static int idx;
+
+	uart_async_test_init(idx++);
 
 	uart_callback_set(uart_dev, test_forever_timeout_callback, NULL);
 
@@ -816,8 +839,12 @@ static void test_chained_write_callback(const struct device *dev,
 
 static void *chained_write_setup(void)
 {
-	uart_async_test_init();
+	static int idx;
 
+	uart_async_test_init(idx++);
+
+	tx_sent = 0;
+	chained_write_next_buf = true;
 	uart_callback_set(uart_dev, test_chained_write_callback, NULL);
 
 	return NULL;
@@ -869,11 +896,11 @@ static ZTEST_BMEM uint8_t long_tx_buf[TX_LONG_BUFFER];
 #endif /* NOCACHE_MEM */
 static ZTEST_BMEM volatile uint8_t evt_num;
 static ZTEST_BMEM size_t long_received[2];
+static ZTEST_BMEM uint8_t *long_next_buffer;
 
 static void test_long_buffers_callback(const struct device *dev,
 				struct uart_event *evt, void *user_data)
 {
-	static uint8_t *next_buffer = long_rx_buf2;
 
 	switch (evt->type) {
 	case UART_TX_DONE:
@@ -895,8 +922,8 @@ static void test_long_buffers_callback(const struct device *dev,
 		k_sem_give(&rx_disabled);
 		break;
 	case UART_RX_BUF_REQUEST:
-		uart_rx_buf_rsp(dev, next_buffer, RX_LONG_BUFFER);
-		next_buffer = (next_buffer == long_rx_buf2) ? long_rx_buf : long_rx_buf2;
+		uart_rx_buf_rsp(dev, long_next_buffer, RX_LONG_BUFFER);
+		long_next_buffer = (long_next_buffer == long_rx_buf2) ? long_rx_buf : long_rx_buf2;
 		break;
 	default:
 		break;
@@ -905,8 +932,12 @@ static void test_long_buffers_callback(const struct device *dev,
 
 static void *long_buffers_setup(void)
 {
-	uart_async_test_init();
+	static int idx;
 
+	uart_async_test_init(idx++);
+
+	evt_num = 0;
+	long_next_buffer = long_rx_buf2;
 	uart_callback_set(uart_dev, test_long_buffers_callback, NULL);
 
 	return NULL;
@@ -988,3 +1019,12 @@ ZTEST_SUITE(uart_async_write_abort, NULL, write_abort_setup,
 
 ZTEST_SUITE(uart_async_timeout, NULL, forever_timeout_setup,
 		NULL, NULL, NULL);
+
+void test_main(void)
+{
+	/* Run all suites for each dut UART. Setup function for each suite is picking
+	 * next UART from the array.
+	 */
+	ztest_run_all(NULL, false, ARRAY_SIZE(duts), 1);
+	ztest_verify_all_test_suites_ran();
+}
