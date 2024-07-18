@@ -12,7 +12,7 @@ extern crate alloc;
 
 mod allocator;
 mod panic;
-
+pub mod print;
 pub mod gpio;
 
 // Bring in the generated kconfig module
