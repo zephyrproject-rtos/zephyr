@@ -140,10 +140,10 @@ Rust on boolean Kconfig values.  For example:
 
 .. code-block:: rust
 
-   #[cfg(CONFIG_MY_SETTING)]
+   #[cfg(CONFIG_SCHED_DUMB)]
    one_declaration;
 
-   #[cfg(not(CONFIG_MY_SETTING)]
+   #[cfg(not(CONFIG_SCHED_DUMB)]
    other_declaration;
 
 Other Kconfig settings
@@ -154,7 +154,7 @@ All bool, numeric and string Kconfig settings are accessible from the
 
 .. code-block:: rust
 
-   let ram_size = zephyr::kconfig::CONFIG_RAM_SIZE * 1024;
+   let ceiling = zephyr::kconfig::CONFIG_PRIORITY_CEILING - 1;
 
 Other functionality
 -------------------
