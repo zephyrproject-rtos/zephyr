@@ -104,7 +104,7 @@ class Boards(WestCommand):
                 args.format.format(
                     name=board.name,
                     full_name=board.full_name,
-                    dir=board.directories[0],
+                    dir=board.dir,
                     hwm=board.hwm,
                     vendor=board.vendor,
                     qualifiers=list_boards.board_v2_qualifiers_csv(board),
