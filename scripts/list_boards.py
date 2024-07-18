@@ -447,7 +447,7 @@ def dump_boards(args):
             if args.cmakeformat is not None:
                 info = args.cmakeformat.format(
                     NAME='NAME;' + board.name,
-                    DIR='DIR;' + str(board.directories.as_posix()),
+                    DIR='DIR;' + str(board.dir.as_posix()),
                     HWM='HWM;' + board.hwm,
                     VENDOR='VENDOR;NOTFOUND',
                     REVISION_DEFAULT='REVISION_DEFAULT;NOTFOUND',
