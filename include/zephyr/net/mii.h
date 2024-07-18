@@ -15,6 +15,8 @@
 /**
  * @brief Ethernet MII (media independent interface) functions
  * @defgroup ethernet_mii Ethernet MII Support Functions
+ * @since 1.7
+ * @version 0.8.0
  * @ingroup ethernet
  * @{
  */

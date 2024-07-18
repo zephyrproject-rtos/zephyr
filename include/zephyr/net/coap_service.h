@@ -23,6 +23,8 @@ extern "C" {
 /**
  * @brief CoAP Service API
  * @defgroup coap_service CoAP service API
+ * @since 3.6
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

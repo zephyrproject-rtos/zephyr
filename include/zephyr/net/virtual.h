@@ -29,6 +29,8 @@ extern "C" {
 /**
  * @brief Virtual network interface support functions
  * @defgroup virtual Virtual Network Interface Support Functions
+ * @since 2.6
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

@@ -17,6 +17,8 @@
 /**
  * @brief Application network context
  * @defgroup net_context Application network context
+ * @since 1.0
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

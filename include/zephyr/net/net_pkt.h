@@ -40,6 +40,8 @@ extern "C" {
 /**
  * @brief Network packet management library
  * @defgroup net_pkt Network Packet Library
+ * @since 1.5
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
