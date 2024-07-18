@@ -15,7 +15,9 @@
 		};
 
 		peripheral: peripheral@50000000 {
-			ranges = <0x0 0x50000000 0x10000000>;
+			ranges = <0x0 0x50000000 0x8000000
+				  /* flexspi memory mapping */
+				  0x08000000 0x18000000 DT_SIZE_M(128)>;
 		};
 	};
 };
