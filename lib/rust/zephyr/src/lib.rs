@@ -12,6 +12,9 @@
 // Bring in the generated kconfig module
 include!(concat!(env!("OUT_DIR"), "/kconfig.rs"));
 
+// And the generated devicetree.
+include!(concat!(env!("OUT_DIR"), "/devicetree.rs"));
+
 // Ensure that Rust is enabled.
 #[cfg(not(CONFIG_RUST))]
 compile_error!("CONFIG_RUST must be set to build Rust in Zephyr");

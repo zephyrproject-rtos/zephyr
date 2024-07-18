@@ -14,4 +14,5 @@
 fn main() {
     zephyr_build::export_bool_kconfig();
     zephyr_build::build_kconfig_mod();
+    zephyr_build::build_dts();
 }
