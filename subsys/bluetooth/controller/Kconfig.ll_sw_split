@@ -53,6 +53,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_TIFS_HW_SUPPORT
 	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
+	select BT_TICKER_REMAINDER_SUPPORT
 	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN || \
 				   (BT_OBSERVER && BT_CTLR_ADV_EXT)
 	select BT_TICKER_START_REMAINDER if BT_CTLR_CENTRAL_ISO
@@ -76,6 +77,7 @@ config BT_LLL_VENDOR_OPENISA
 	select BT_CTLR_PHY_UPDATE_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
 
+	select BT_TICKER_REMAINDER_SUPPORT
 	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN
 
 	default y
@@ -1066,8 +1068,12 @@ config BT_TICKER_UPDATE
 	help
 	  This option enables Ticker Update interface.
 
+config BT_TICKER_REMAINDER_SUPPORT
+	bool
+
 config BT_TICKER_START_REMAINDER
 	bool "Ticker Start Remainder Parameter"
+	depends on BT_TICKER_REMAINDER_SUPPORT
 	help
 	  This option enables Ticker Start interface remainder parameter for
 	  first expire timeout.
@@ -1089,6 +1095,7 @@ config BT_TICKER_NEXT_SLOT_GET
 
 config BT_TICKER_REMAINDER_GET
 	bool "Ticker Next Slot Get with Remainder"
+	depends on BT_TICKER_REMAINDER_SUPPORT
 	select BT_TICKER_NEXT_SLOT_GET
 	select BT_TICKER_NEXT_SLOT_GET_MATCH
 	default y
