@@ -103,6 +103,13 @@ class Board:
     socs: List[Soc] = field(default_factory=list, compare=False)
     variants: List[str] = field(default_factory=list, compare=False)
 
+    @property
+    def dir(self):
+        # Get the main board directory.
+        if isinstance(self.directories, Path):
+            return self.directories
+        return self.directories[0]
+
     def from_qualifier(self, qualifiers):
         qualifiers_list = qualifiers.split('/')
 
