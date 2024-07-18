@@ -29,9 +29,4 @@ int main(void)
 	return 0;
 }
 
-void sample_sleep()
-{
-	k_msleep(1000);
-}
-
 #endif

@@ -1,11 +1,7 @@
-use zephyr_sys::{gpio_dt_spec, gpio_pin_toggle_dt};
+use zephyr_sys::{gpio_dt_spec, gpio_pin_toggle_dt, k_msleep};
 
 extern "C" {
     static led: gpio_dt_spec;
-}
-
-extern "C" {
-    fn sample_sleep();
 }
 
 pub fn toggle() {
@@ -16,7 +12,7 @@ pub fn toggle() {
 
 pub fn sleep() {
     unsafe {
-        sample_sleep();
+        k_msleep(1000);
     }
 }
 
