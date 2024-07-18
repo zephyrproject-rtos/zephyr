@@ -572,6 +572,9 @@ struct ethernet_api {
 	const struct device *(*get_ptp_clock)(const struct device *dev);
 #endif /* CONFIG_PTP_CLOCK */
 
+	/** Return PHY device that is tied to this ethernet device */
+	const struct device *(*get_phy)(const struct device *dev);
+
 	/** Send a network packet */
 	int (*send)(const struct device *dev, struct net_pkt *pkt);
 };
@@ -1296,6 +1299,16 @@ int net_eth_txinjection_mode(struct net_if *iface, bool enable);
  */
 int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
 		       enum ethernet_filter_type type, bool enable);
+
+/**
+ * @brief Return the PHY device that is tied to this ethernet network interface.
+ *
+ * @param iface Network interface
+ *
+ * @return Pointer to PHY device if found, NULL if not found.
+ */
+const struct device *net_eth_get_phy(struct net_if *iface);
+
 /**
  * @brief Return PTP clock that is tied to this ethernet network interface.
  *
