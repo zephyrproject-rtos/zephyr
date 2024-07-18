@@ -10,26 +10,13 @@
 #include <mem.h>
 
 / {
-	model = "Microchip PolarFire-SoC Icicle Kit";
+	model = "microchip,mpfs-icicle-kit";
 	compatible = "microchip,mpfs-icicle-kit", "microchip,mpfs";
-
-	cpus {
-		cpu@0 {
-			status = "disabled";
-		};
-	};
-
 	aliases {
 		led0 = &led0;
 		sw0 = &sw0;
 		i2c0 = &i2c0;
 		i2c1 = &i2c1;
-	};
-
-	chosen {
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
-		zephyr,sram = &sram1;
 	};
 
 	leds {
@@ -51,7 +38,7 @@
 	};
 };
 
-&uart1 {
+&uart0 {
 	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <150000000>;

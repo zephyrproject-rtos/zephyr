@@ -1,5 +1,5 @@
-identifier: mpfs_icicle/polarfire/smp
-name: Microchip PolarFire ICICLE kit (SMP)
+identifier: mpfs_icicle/polarfire/e51
+name: Microchip PolarFire SoC Icicle Kit
 type: mcu
 arch: riscv
 toolchain:
