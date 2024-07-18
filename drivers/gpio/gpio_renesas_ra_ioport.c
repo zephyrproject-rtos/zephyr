@@ -4,29 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT renesas_ra8_gpio
+#define DT_DRV_COMPAT renesas_ra_gpio_ioport
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/dt-bindings/gpio/renesas-ra8-gpio.h>
+#include <zephyr/dt-bindings/gpio/renesas-ra-gpio-ioport.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/irq.h>
 #include <soc.h>
 
-struct gpio_ra8_config {
+struct gpio_ra_config {
 	struct gpio_driver_config common;
 	uint8_t port_num;
 	R_PORT0_Type *port;
 	gpio_pin_t vbatt_pins[];
 };
 
-struct gpio_ra8_data {
+struct gpio_ra_data {
 	struct gpio_driver_data common;
 };
 
-static int gpio_ra8_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct gpio_ra8_config *config = dev->config;
+	const struct gpio_ra_config *config = dev->config;
 
 	struct ra_pinctrl_soc_pin pincfg = {0};
 
@@ -93,9 +93,9 @@ static int gpio_ra8_pin_configure(const struct device *dev, gpio_pin_t pin, gpio
 	return pinctrl_configure_pins(&pincfg, 1, PINCTRL_REG_NONE);
 }
 
-static int gpio_ra8_port_get_raw(const struct device *dev, uint32_t *value)
+static int gpio_ra_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	const struct gpio_ra8_config *config = dev->config;
+	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
 	*value = port->PIDR;
@@ -103,10 +103,10 @@ static int gpio_ra8_port_get_raw(const struct device *dev, uint32_t *value)
 	return 0;
 }
 
-static int gpio_ra8_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
-					gpio_port_value_t value)
+static int gpio_ra_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+				       gpio_port_value_t value)
 {
-	const struct gpio_ra8_config *config = dev->config;
+	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
 	port->PODR = ((port->PODR & ~mask) | (value & mask));
@@ -114,9 +114,9 @@ static int gpio_ra8_port_set_masked_raw(const struct device *dev, gpio_port_pins
 	return 0;
 }
 
-static int gpio_ra8_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
+static int gpio_ra_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
-	const struct gpio_ra8_config *config = dev->config;
+	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
 	port->PODR = (port->PODR | pins);
@@ -124,9 +124,9 @@ static int gpio_ra8_port_set_bits_raw(const struct device *dev, gpio_port_pins_t
 	return 0;
 }
 
-static int gpio_ra8_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
+static int gpio_ra_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
-	const struct gpio_ra8_config *config = dev->config;
+	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
 	port->PODR = (port->PODR & ~pins);
@@ -134,9 +134,9 @@ static int gpio_ra8_port_clear_bits_raw(const struct device *dev, gpio_port_pins
 	return 0;
 }
 
-static int gpio_ra8_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
+static int gpio_ra_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
-	const struct gpio_ra8_config *config = dev->config;
+	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
 	port->PODR = (port->PODR ^ pins);
@@ -144,19 +144,19 @@ static int gpio_ra8_port_toggle_bits(const struct device *dev, gpio_port_pins_t 
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_ra8_drv_api_funcs = {
-	.pin_configure = gpio_ra8_pin_configure,
-	.port_get_raw = gpio_ra8_port_get_raw,
-	.port_set_masked_raw = gpio_ra8_port_set_masked_raw,
-	.port_set_bits_raw = gpio_ra8_port_set_bits_raw,
-	.port_clear_bits_raw = gpio_ra8_port_clear_bits_raw,
-	.port_toggle_bits = gpio_ra8_port_toggle_bits,
+static const struct gpio_driver_api gpio_ra_drv_api_funcs = {
+	.pin_configure = gpio_ra_pin_configure,
+	.port_get_raw = gpio_ra_port_get_raw,
+	.port_set_masked_raw = gpio_ra_port_set_masked_raw,
+	.port_set_bits_raw = gpio_ra_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_ra_port_clear_bits_raw,
+	.port_toggle_bits = gpio_ra_port_toggle_bits,
 	.pin_interrupt_configure = NULL,
 	.manage_callback = NULL,
 };
 
-#define GPIO_DEVICE_INIT(node, port_number, suffix, addr)                                      \
-	static const struct gpio_ra8_config gpio_ra8_config_##suffix = {                           \
+#define GPIO_DEVICE_INIT(node, port_number, suffix, addr)                                          \
+	static const struct gpio_ra_config gpio_ra_config_##suffix = {                             \
 		.common =                                                                          \
 			{                                                                          \
 				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),              \
@@ -165,60 +165,59 @@ static const struct gpio_driver_api gpio_ra8_drv_api_funcs = {
 		.port = (R_PORT0_Type *)addr,                                                      \
 		.vbatt_pins = DT_PROP_OR(DT_NODELABEL(ioport##suffix), vbatts_pins, {0xFF}),       \
 	};                                                                                         \
-	static struct gpio_ra8_data gpio_ra8_data_##suffix;                                        \
-	DEVICE_DT_DEFINE(node, NULL, NULL, &gpio_ra8_data_##suffix,     \
-			 &gpio_ra8_config_##suffix, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,       \
-			 &gpio_ra8_drv_api_funcs)
+	static struct gpio_ra_data gpio_ra_data_##suffix;                                          \
+	DEVICE_DT_DEFINE(node, NULL, NULL, &gpio_ra_data_##suffix, &gpio_ra_config_##suffix,       \
+			 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_ra_drv_api_funcs)
 
-#define GPIO_DEVICE_INIT_RA8(suffix)                                                               \
+#define GPIO_DEVICE_INIT_RA(suffix)                                                                \
 	GPIO_DEVICE_INIT(DT_NODELABEL(ioport##suffix),                                             \
 			 DT_PROP(DT_NODELABEL(ioport##suffix), port), suffix,                      \
 			 DT_REG_ADDR(DT_NODELABEL(ioport##suffix)))
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport0), okay)
-GPIO_DEVICE_INIT_RA8(0);
+GPIO_DEVICE_INIT_RA(0);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport0), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport1), okay)
-GPIO_DEVICE_INIT_RA8(1);
+GPIO_DEVICE_INIT_RA(1);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport1), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport2), okay)
-GPIO_DEVICE_INIT_RA8(2);
+GPIO_DEVICE_INIT_RA(2);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport2), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport3), okay)
-GPIO_DEVICE_INIT_RA8(3);
+GPIO_DEVICE_INIT_RA(3);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport3), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport4), okay)
-GPIO_DEVICE_INIT_RA8(4);
+GPIO_DEVICE_INIT_RA(4);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport4), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport5), okay)
-GPIO_DEVICE_INIT_RA8(5);
+GPIO_DEVICE_INIT_RA(5);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport5), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport6), okay)
-GPIO_DEVICE_INIT_RA8(6);
+GPIO_DEVICE_INIT_RA(6);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport6), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport7), okay)
-GPIO_DEVICE_INIT_RA8(7);
+GPIO_DEVICE_INIT_RA(7);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport7), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport8), okay)
-GPIO_DEVICE_INIT_RA8(8);
+GPIO_DEVICE_INIT_RA(8);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport8), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport9), okay)
-GPIO_DEVICE_INIT_RA8(9);
+GPIO_DEVICE_INIT_RA(9);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport9), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioporta), okay)
-GPIO_DEVICE_INIT_RA8(a);
+GPIO_DEVICE_INIT_RA(a);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioporta), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ioportb), okay)
-GPIO_DEVICE_INIT_RA8(b);
+GPIO_DEVICE_INIT_RA(b);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioportb), okay) */
