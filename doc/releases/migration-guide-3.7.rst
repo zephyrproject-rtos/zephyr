@@ -2,8 +2,8 @@
 
 .. _migration_3.7:
 
-Migration guide to Zephyr v3.7.0 (Working Draft)
-################################################
+Migration guide to Zephyr v3.7.0
+################################
 
 This document describes the changes required when migrating your application from Zephyr v3.6.0 to
 Zephyr v3.7.0.
