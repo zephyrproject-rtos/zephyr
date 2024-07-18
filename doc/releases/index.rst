@@ -60,6 +60,8 @@ Supported Releases
 +=================+================+===============+
 | `Zephyr 2.7.6`_ | 2024-03-01     | 2025-01-26    |
 +-----------------+----------------+---------------+
+| `Zephyr 3.7.0`_ | 2024-07-26     | 2027-01-26    |
++-----------------+----------------+---------------+
 | `Zephyr 3.6.0`_ | 2024-02-23     | 2024-11-29    |
 +-----------------+----------------+---------------+
 | `Zephyr 3.5.0`_ | 2023-10-20     | 2024-07-26    |
@@ -121,3 +123,4 @@ to be able to understand the context of the change.
 .. _`Zephyr 2.7.6`: https://docs.zephyrproject.org/2.7.6/
 .. _`Zephyr 3.5.0`: https://docs.zephyrproject.org/3.5.0/
 .. _`Zephyr 3.6.0`: https://docs.zephyrproject.org/3.6.0/
+.. _`Zephyr 3.7.0`: https://docs.zephyrproject.org/3.7.0/
