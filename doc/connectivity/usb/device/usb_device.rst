@@ -577,7 +577,7 @@ The following Product IDs are currently used:
 +====================================================+========+
 | :zephyr:code-sample:`usb-cdc-acm`                  | 0x0001 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-cdc-acm-composite`        | 0x0002 |
+| Reserved (previously: usb-cdc-acm-composite)       | 0x0002 |
 +----------------------------------------------------+--------+
 | Reserved (previously: usb-hid-cdc)                 | 0x0003 |
 +----------------------------------------------------+--------+
