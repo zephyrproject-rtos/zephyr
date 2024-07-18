@@ -10,7 +10,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
 
-#include <zephyr/dt-bindings/pinctrl/renesas/ra-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 
 /**
  * @brief Type to hold a renesas ra pin's pinctrl configuration.
