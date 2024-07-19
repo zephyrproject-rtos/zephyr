@@ -191,6 +191,9 @@ config WIFI_NM_HOSTAPD_WPS
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	depends on WIFI_NM_HOSTAPD_AP
 
+config WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+	bool "Hostapd crypto enterprise support"
+
 config WIFI_NM_WPA_SUPPLICANT_P2P
 	bool "P2P mode support"
 	select WIFI_NM_WPA_SUPPLICANT_AP
@@ -403,6 +406,27 @@ config SUITEB192
 	bool
 
 config SUITEB
+	bool
+
+config EAP_SERVER_TLS
+	bool
+
+config EAP_SERVER_IDENTITY
+	bool
+
+config EAP_SERVER_MD5
+	bool
+
+config EAP_SERVER_MSCHAPV2
+	bool
+
+config EAP_SERVER_PEAP
+	bool
+
+config EAP_SERVER_GTC
+	bool
+
+config EAP_SERVER_TTLS
 	bool
 
 config WEP
