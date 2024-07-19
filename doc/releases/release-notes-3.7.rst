@@ -877,7 +877,8 @@ Drivers and Sensors
   * Added device completion to LED shell commands and made the ``get_info`` command display
     colors as strings.
 
-  * Added driver for Lumissil Microsystems (a division of ISSI) IS31FL3194 controller.
+  * Added driver for Lumissil Microsystems (a division of ISSI) IS31FL3194 controller
+    (:dtcompatible:`issi,is31fl3194`).
 
 * LED Strip
 
@@ -896,8 +897,8 @@ Drivers and Sensors
     :dtcompatible:`worldsemi,ws2812-gpio` and :dtcompatible:`worldsemi,ws2812-rpi_pico-pio`
     devicetree bindings have been renamed to ``gpios``.
 
-  * Removed :kconfig:option:`CONFIG_WS2812_STRIP` and :kconfig:option:`CONFIG_WS2812_STRIP_DRIVER`
-    Kconfig options. They became useless after refactoring.
+  * Removed ``CONFIG_WS2812_STRIP`` and ``CONFIG_WS2812_STRIP_DRIVER`` Kconfig options. They became
+    useless after refactoring.
 
   * Added driver for Texas Instruments TLC59731 RGB controller.
 
