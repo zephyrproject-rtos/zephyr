@@ -159,7 +159,7 @@ Deprecated in this release
 
 .. _zephyr_3.7_posix_api_deprecations:
 
- * POSIX API
+* POSIX API
 
   * Deprecated :c:macro:`PTHREAD_BARRIER_DEFINE` has been removed.
   * Deprecated :c:macro:`EFD_IN_USE` and :c:macro:`EFD_FLAGS_SET` have been removed.
