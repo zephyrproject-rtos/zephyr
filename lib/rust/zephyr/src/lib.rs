@@ -12,6 +12,7 @@ extern crate alloc;
 
 mod allocator;
 mod panic;
+mod devicetree;
 
 pub mod errno;
 pub mod kernel;
