@@ -659,22 +659,44 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'V':
 			params->eap_ver = atoi(optarg);
+			if (params->eap_ver != 0U && params->eap_ver != 1U) {
+				PR_WARNING("eap_ver error %d\n", params->eap_ver);
+				return -EINVAL;
+			}
 			break;
 		case 'I':
+			if (params->nusers >= WIFI_ENT_IDENTITY_MAX_USERS) {
+				PR_WARNING("too many eap identities (max %d identities)\n",
+					    WIFI_ENT_IDENTITY_MAX_USERS);
+				return -EINVAL;
+			}
+
 			params->eap_identity = optarg;
 			params->eap_id_length = strlen(params->eap_identity);
-			if (params->eap_id_length > WIFI_IDENTITY_MAX_LEN) {
+
+			params->identities[params->nusers] = optarg;
+			params->nusers++;
+			if (params->eap_id_length > WIFI_ENT_IDENTITY_MAX_LEN) {
 				PR_WARNING("eap identity too long (max %d characters)\n",
-					    WIFI_IDENTITY_MAX_LEN);
+					    WIFI_ENT_IDENTITY_MAX_LEN);
 				return -EINVAL;
 			}
 			break;
 		case 'P':
+			if (params->passwds >= WIFI_ENT_IDENTITY_MAX_USERS) {
+				PR_WARNING("too many eap passwds (max %d passwds)\n",
+					    WIFI_ENT_IDENTITY_MAX_USERS);
+				return -EINVAL;
+			}
+
 			params->eap_password = optarg;
 			params->eap_passwd_length = strlen(params->eap_password);
-			if (params->eap_passwd_length > WIFI_IDENTITY_MAX_LEN) {
+
+			params->passwords[params->passwds] = optarg;
+			params->passwds++;
+			if (params->eap_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
 				PR_WARNING("eap password length too long (max %d characters)\n",
-					    WIFI_IDENTITY_MAX_LEN);
+					    WIFI_ENT_PSWD_MAX_LEN);
 				return -EINVAL;
 			}
 			break;
@@ -2940,15 +2962,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "-c --channel=<channel number>\n"
 		  "-p --passphrase=<PSK> (valid only for secure SSIDs)\n"
 		  "-k --key-mgmt=<Security type> (valid only for secure SSIDs)\n"
-		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP-TLS, 6:WEP\n"
-		  "7: WPA-PSK, 11: DPP\n"
+		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
+		  "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
+		  "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2, 15: EAP-PEAP-TLS\n"
 		  "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
 		  "0:Disable, 1:Optional, 2:Required\n"
 		  "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
 		  "-m --bssid=<BSSID>\n"
+		  "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192.\n"
+		  "[-V, --eap-version]: 0 or 1.\n"
+		  "[-I, --eap-identity]: Client Identity.\n"
+		  "[-P, --eap-password]: Client Password.\n"
 		  "-h --help (prints help)",
 		  cmd_wifi_ap_enable,
-		  2, 13),
+		  2, 20),
 	SHELL_CMD_ARG(stations, NULL,
 		  "List stations connected to the AP",
 		  cmd_wifi_ap_stations,

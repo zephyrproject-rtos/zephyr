@@ -84,6 +84,36 @@ enum wifi_security_type {
 	/** @endcond */
 };
 
+enum wifi_eap_type {
+	WIFI_EAP_TYPE_NONE = 0,
+	WIFI_EAP_TYPE_IDENTITY = 1,
+	WIFI_EAP_TYPE_NOTIFICATION = 2,
+	WIFI_EAP_TYPE_NAK = 3,
+	WIFI_EAP_TYPE_MD5 = 4,
+	WIFI_EAP_TYPE_OTP = 5,
+	WIFI_EAP_TYPE_GTC = 6,
+	WIFI_EAP_TYPE_TLS = 13,
+	WIFI_EAP_TYPE_LEAP = 17,
+	WIFI_EAP_TYPE_SIM = 18,
+	WIFI_EAP_TYPE_TTLS = 21,
+	WIFI_EAP_TYPE_AKA = 23,
+	WIFI_EAP_TYPE_PEAP = 25,
+	WIFI_EAP_TYPE_MSCHAPV2 = 26,
+	WIFI_EAP_TYPE_TLV = 33,
+	WIFI_EAP_TYPE_TNC = 38,
+	WIFI_EAP_TYPE_FAST = 43,
+	WIFI_EAP_TYPE_PAX = 46,
+	WIFI_EAP_TYPE_PSK = 47,
+	WIFI_EAP_TYPE_SAKE = 48,
+	WIFI_EAP_TYPE_IKEV2 = 49,
+	WIFI_EAP_TYPE_AKA_PRIME = 50,
+	WIFI_EAP_TYPE_GPSK = 51,
+	WIFI_EAP_TYPE_PWD = 52,
+	WIFI_EAP_TYPE_EKE = 53,
+	WIFI_EAP_TYPE_TEAP = 55,
+	WIFI_EAP_TYPE_EXPANDED = 254,
+};
+
 /** suiteb types. */
 enum wifi_suiteb_type {
 	/** suiteb. */
@@ -128,6 +158,8 @@ struct wifi_cipher_desc {
 
 struct wifi_eap_config {
 	unsigned int type;
+	enum wifi_eap_type eap_type_phase1;
+	enum wifi_eap_type eap_type_phase2;
 	char *method;
 	char *phase2;
 };
@@ -186,10 +218,14 @@ const char *wifi_band_txt(enum wifi_frequency_bands band);
 #define WIFI_SAE_PSWD_MAX_LEN 128
 /** MAC address length */
 #define WIFI_MAC_ADDR_LEN 6
+
 /** Max enterprise identity length */
 #define WIFI_ENT_IDENTITY_MAX_LEN 64
 /** Max enterprise password length */
 #define WIFI_ENT_PSWD_MAX_LEN 128
+/** Max enterprise identity users */
+#define WIFI_ENT_IDENTITY_MAX_USERS 8
+
 
 /** Minimum channel number */
 #define WIFI_CHANNEL_MIN 1
