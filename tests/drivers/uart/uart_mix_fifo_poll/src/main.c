@@ -52,6 +52,12 @@ static struct dut_data duts[] = {
 		.dev = DEVICE_DT_GET(UART_NODE),
 		.name = DT_NODE_FULL_NAME(UART_NODE),
 	},
+#if DT_NODE_EXISTS(DT_NODELABEL(dut2))
+	{
+		.dev = DEVICE_DT_GET(DT_NODELABEL(dut2)),
+		.name = DT_NODE_FULL_NAME(DT_NODELABEL(dut2)),
+	},
+#endif
 };
 
 #define BUF_SIZE 16
