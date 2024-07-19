@@ -53,19 +53,17 @@ Package Options
   - ATM3330e: 7x7 mm, 56-pin QFN (up to 31 GPIOs)
   - ATM3330: 7x7 mm, 56-pin QFN (up to 31 GPIOs)
   - ATM3325: 5x5 mm, 40-pin QFN (up to 21 GPIOs)
-  - ATM3325: 49L WLCSP (up to 21 GPIOs)
-  - ATM3330e: 5x5 mm, 40-pin QFN (up to 15 GPIO)
+  - ATM3325: 5x5 mm with extended storage, 40-pin QFN (up to 18 GPIOs)
 
 
 .. _boards:
 
 Boards
 ======
-* ATMEVK-3325-LQK
-* ATMEVK-3325-QK-5
-* ATMEVK-3330-QN-5
-* ATMEVK-3330e-QN-5
 * ATMEVK-3330e-QN-7
+* ATMEVK-3330-QN-5
+* ATMEVK-3325-QK-5
+* ATMEVK-3325-LQK
 
 
 Getting Started
