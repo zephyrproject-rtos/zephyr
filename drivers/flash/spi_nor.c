@@ -135,16 +135,16 @@ struct spi_nor_config {
 #endif
 
 #if ANY_INST_HAS_DPD
-	uint16_t t_enter_dpd; /* in microseconds */
-	uint16_t t_dpdd_ms;   /* in microseconds */
+	uint16_t t_enter_dpd; /* in milliseconds */
+	uint16_t t_dpdd_ms;   /* in milliseconds */
 #if ANY_INST_HAS_T_EXIT_DPD
-	uint16_t t_exit_dpd;  /* in microseconds */
+	uint16_t t_exit_dpd;  /* in milliseconds */
 #endif
 #endif
 
 #if ANY_INST_HAS_DPD_WAKEUP_SEQUENCE
-	uint16_t t_crdp_ms; /* in microseconds */
-	uint16_t t_rdp_ms;  /* in microseconds */
+	uint16_t t_crdp_ms; /* in milliseconds */
+	uint16_t t_rdp_ms;  /* in milliseconds */
 #endif
 
 #if ANY_INST_HAS_MXICY_MX25R_POWER_MODE
