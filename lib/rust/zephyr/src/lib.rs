@@ -13,7 +13,7 @@ extern crate alloc;
 mod allocator;
 mod panic;
 pub mod print;
-pub mod gpio;
+pub mod drivers;
 
 // Bring in the generated kconfig module
 include!(concat!(env!("OUT_DIR"), "/kconfig.rs"));

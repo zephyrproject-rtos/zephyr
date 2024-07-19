@@ -8,7 +8,7 @@
 extern crate zephyr;
 extern crate alloc;
 
-use zephyr::gpio::{sleep, toggle};
+use zephyr::drivers::gpio::{sleep, toggle};
 use zephyr::println;
 
 #[no_mangle]
