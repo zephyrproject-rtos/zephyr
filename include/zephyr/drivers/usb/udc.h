@@ -76,6 +76,8 @@ struct udc_ep_caps {
 	uint32_t bulk : 1;
 	/** ISO transfer capable endpoint */
 	uint32_t iso : 1;
+	/** High-Bandwidth (interrupt or iso) capable endpoint */
+	uint32_t high_bandwidth : 1;
 	/** IN transfer capable endpoint */
 	uint32_t in : 1;
 	/** OUT transfer capable endpoint */
