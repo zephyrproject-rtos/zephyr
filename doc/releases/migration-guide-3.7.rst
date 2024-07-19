@@ -71,10 +71,10 @@ Kernel
 Boards
 ******
 
-* Reordered D1 and D0 in the `pro_micro` connector gpio-map for SparkFun Pro Micro RP2040 to match
+* Reordered D1 and D0 in the ``pro_micro`` connector gpio-map for SparkFun Pro Micro RP2040 to match
   original Pro Micro definition. Out-of-tree shields must be updated to reflect this change. (:github:`69994`)
 * ITE: Rename all SoC variant Kconfig options, e.g., ``CONFIG_SOC_IT82202_AX`` is renamed to
-  ``CONFIG_SOC_IT82202AX``.
+  :kconfig:option:`CONFIG_SOC_IT82202AX`.
   All symbols are renamed as follows: ``SOC_IT81202BX``, ``SOC_IT81202CX``, ``SOC_IT81302BX``,
   ``SOC_IT81302CX``, ``SOC_IT82002AW``, ``SOC_IT82202AX``, ``SOC_IT82302AX``.
   And, rename the ``SOC_SERIES_ITE_IT8XXX2`` to ``SOC_SERIES_IT8XXX2``. (:github:`71680`)
@@ -85,7 +85,7 @@ Boards
 * LiteX: Renamed the ``compatible`` of the LiteX VexRiscV interrupt controller node from
   ``vexriscv-intc0`` to :dtcompatible:`litex,vexriscv-intc0`. (:github:`73211`)
 
-* `lairdconnect` boards are now `ezurio` boards. Laird Connectivity has rebranded to `Ezurio <https://www.ezurio.com/laird-connectivity>`_.
+* ``lairdconnect`` boards are now ``ezurio`` boards. Laird Connectivity has rebranded to `Ezurio <https://www.ezurio.com/laird-connectivity>`_.
 
 Modules
 *******
@@ -126,7 +126,7 @@ Trusted Firmware-M
 * The default MCUboot signature type has been changed from RSA-3072 to EC-P256.
   This affects builds that have MCUboot enabled in TF-M (:kconfig:option:`CONFIG_TFM_BL2`).
   If you wish to keep using RSA-3072, you need to set :kconfig:option:`CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE`
-  to `"RSA-3072"`. Otherwise, make sure to have your own signing keys of the signature type in use.
+  to ``"RSA-3072"``. Otherwise, make sure to have your own signing keys of the signature type in use.
 
 zcbor
 =====
@@ -142,7 +142,7 @@ LVGL
 Device Drivers and Devicetree
 *****************************
 
-* The :dtcompatible:`nxp,kinetis-pit` pit driver has changed it's compatible
+* The :dtcompatible:`nxp,kinetis-pit` pit driver has changed its compatible
   to :dtcompatible:`nxp,pit` and has been updated to support multiple channels.
   To configure the individual channels, you must add a child node with the
   compatible :dtcompatible:`nxp,pit-channel` and configure as below.
@@ -263,8 +263,8 @@ Device Drivers and Devicetree
         gyro-odr = <ICM42688_GYRO_ODR_2000>;
     };
 
-* `st,lis2mdl` property `spi-full-duplex` changed to `duplex =
-  SPI_FULL_DUPLEX`. Full duplex is now the default.
+* ``st,lis2mdl`` property ``spi-full-duplex`` changed to ``duplex =
+  SPI_FULL_DUPLEX``. Full duplex is now the default.
 
 * The DT property ``nxp,reference-supply`` of :dtcompatible:`nxp,lpc-lpadc` driver has
   been removed, users should remove this property from their devicetree if it is present.
@@ -327,11 +327,11 @@ Controller Area Network (CAN)
   * ``sjw``
   * ``prop-seg``
   * ``phase-seg1``
-  * ``phase-seg1``
+  * ``phase-seg2``
   * ``sjw-data``
   * ``prop-seg-data``
   * ``phase-seg1-data``
-  * ``phase-seg1-data``
+  * ``phase-seg2-data``
 
   The ``bus-speed`` and ``bus-speed-data`` CAN controller devicetree properties have been
   deprecated.
@@ -410,9 +410,9 @@ Display
 
 * ST7735R based displays now use the MIPI DBI driver class. These displays
   must now be declared within a MIPI DBI driver wrapper device, which will
-  manage interfacing with the display. Note that the `cmd-data-gpios` pin has
+  manage interfacing with the display. Note that the ``cmd-data-gpios`` pin has
   changed polarity with this update, to align better with the new
-  `dc-gpios` name. For an example, see below:
+  ``dc-gpios`` name. For an example, see below:
 
   .. code-block:: devicetree
 
@@ -591,7 +591,7 @@ Enhanced Serial Peripheral Interface (eSPI)
   ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS``, ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE`` and
   ``ESPI_VWIRE_SIGNAL_TARGET_GPIO_<NUMBER>`` respectively to reflect the new terminology
   in eSPI 1.5 specification. (:github:`68492`)
-  The KConfig ``CONFIG_ESPI_SLAVE`` was renamed to ``CONFIG_ESPI_TARGET``, similarly
+  The Kconfig ``CONFIG_ESPI_SLAVE`` was renamed to ``CONFIG_ESPI_TARGET``, similarly
   ``CONFIG_ESPI_SAF`` was renamed as ``CONFIG_ESPI_TAF`` (:github:`73887`)
 
 Flash
@@ -868,14 +868,14 @@ Networking
   one IPv4 address / network interface, the netmask must be specified
   for each IPv4 address separately. (:github:`68419`)
 
-* Virtual network interface API no longer has the `input` callback. The input callback was
+* Virtual network interface API no longer has the ``input`` callback. The input callback was
   used to read the inner IPv4/IPv6 packets in an IP tunnel. This incoming tunnel read is now
-  implemented in `recv` callback. (:github:`70549`)
+  implemented in the ``recv`` callback. (:github:`70549`)
 
 * Virtual LAN (VLAN) implementation is changed to use the Virtual network interfaces.
-  There are no API changes, but the type of a VLAN network interface is changed from `ETHERNET`
-  to `VIRTUAL`. This could require changes to the code that sets the VLAN tags to a network
-  interface. For example in the `net_eth_is_vlan_enabled()` API, the 2nd interface parameter
+  There are no API changes, but the type of a VLAN network interface is changed from ``ETHERNET``
+  to ``VIRTUAL``. This could require changes to the code that sets the VLAN tags to a network
+  interface. For example in the :c:func:`net_eth_is_vlan_enabled()` API, the 2nd interface parameter
   must point to the main Ethernet interface, and not to the VLAN interface. (:github:`70345`)
 
 * Modified the ``wifi connect`` command to use key-value format for the arguments. In the
@@ -886,11 +886,11 @@ Networking
   ``wifi -h`` will give more information about the usage of connect command.
   (:github:`70024`)
 
-* The Kconfig ``CONFIG_NET_TCP_ACK_TIMEOUT`` has been deprecated. Its usage was
+* The Kconfig :kconfig:option:`CONFIG_NET_TCP_ACK_TIMEOUT` has been deprecated. Its usage was
   limited to TCP handshake only, and in such case the total timeout should depend
   on the total retransmission timeout (as in other cases) making the config
-  redundant and confusing. Use ``CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT`` and
-  ``CONFIG_NET_TCP_RETRY_COUNT`` instead to control the total timeout at the
+  redundant and confusing. Use :kconfig:option:`CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT` and
+  :kconfig:option:`CONFIG_NET_TCP_RETRY_COUNT` instead to control the total timeout at the
   TCP level. (:github:`70731`)
 
 * In LwM2M API, the callback type :c:type:`lwm2m_engine_set_data_cb_t` has now an additional
