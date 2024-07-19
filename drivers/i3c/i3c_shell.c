@@ -1389,12 +1389,6 @@ static int cmd_i3c_ccc_getcaps(const struct shell *shell_ctx, size_t argc, char 
 		return -ENODEV;
 	}
 
-	if (!(desc->bcr & I3C_BCR_ADV_CAPABILITIES)) {
-		shell_error(shell_ctx, "I3C: Device %s does not support advanced capabilities",
-			    desc->dev->name);
-		return -ENOTSUP;
-	}
-
 	/* If there is a defining byte, then it is assumed to be Format 2 */
 	if (argc > 3) {
 		fmt = GETCAPS_FORMAT_2;
