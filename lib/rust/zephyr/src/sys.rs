@@ -84,13 +84,13 @@ impl gpio_dt_spec {
     pub fn is_ready(&self) -> bool {
         unsafe { z_impl_device_is_ready(self.port) != 0 }
     }
-    pub fn configure(&self, extra_flags: gpio_flags_t) {
+    pub fn configure(&mut self, extra_flags: gpio_flags_t) {
         unsafe {
             z_impl_gpio_pin_configure(self.port, self.pin,
                                       self.dt_flags as gpio_flags_t | extra_flags);
         }
     }
-    pub fn toggle_pin(&self) {
+    pub fn toggle_pin(&mut self) {
         unsafe {
             gpio_pin_toggle(self.port, self.pin);
             // TODO error handling.
