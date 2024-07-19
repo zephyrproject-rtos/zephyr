@@ -7,6 +7,9 @@ config SOC_SERIES
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 100000000
 
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
 config RISCV_SOC_INTERRUPT_INIT
 	bool
 	default y
@@ -28,6 +31,9 @@ config RISCV_RAM_SIZE
 	default 0x10000000
 
 config RISCV_HAS_PLIC
+	default y
+
+config ATOMIC_OPERATIONS_C
 	default y
 
 endif

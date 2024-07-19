@@ -67,24 +67,25 @@ int sspi_shakti_init(const struct device *dev)
   int spi_base;
   char *spi_inst; 
   spi_inst = dev->name;
-
+  struct spi_shakti_cfg *confg = (struct spi_shakti_cfg *)dev->config;
   printk("SPI: %s\n", spi_inst);
   spi_number = spi_inst[6] - '0';
-
+  gpio_pin_configure_dt(&(((struct spi_shakti_cfg*)(dev->config))->ncs),1);
   printk("SPI NUMBER: %d\n", spi_number);
-
+  k_mutex_init(&(confg->mutex));
   if (spi_number < SSPI_MAX_COUNT & spi_number >= 0){
     sspi_instance[spi_number] = (sspi_struct*) ( (SSPI0_BASE_ADDRESS + ( spi_number * SSPI_BASE_OFFSET) ) );
     spi_base = sspi_instance[spi_number];
     #ifdef SPI_DEBUG
     printk("\nSPI%d Initialized..", spi_number);
     #endif
-    return spi_base;
+    return 0;
   }
   else{
     printk("\nInvalid SPI instance %d. This SoC supports only SPI-0 to SPI-3", spi_number);
     return -1;
   }
+  return 0;
 }
 
 
@@ -115,7 +116,7 @@ int sspi_shakti_configure(const struct device *dev, const struct spi_config *con
     printk("pol 1 pha 1 \n");
     pol = 1;
     pha = 1;
-  } else if((config -> operation & i_POLANDPHA) == i_POLANDPHA){
+  } else if((config -> operation & INV_POLANDPHA) == INV_POLANDPHA){
     printk("pol 0 and pha 0 \n");
     pol = 0;
     pha = 0;
@@ -354,18 +355,13 @@ void sspi_shakti_disable(const struct device *dev)
  * @see sspi_check_tx_fifo_32 function and sspi_wait_till_tx_complete function.
  */
 
-int sspi8_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data)
+int sspi8_shakti_transmit_data(const struct device *dev, uint8_t data)
 {
-  int data = tx_data->len;
-  for (int i = 0; i<data; i++){
-    printk("transferring %d\n", i);
+    printk("transferring");
     volatile int temp = sspi_shakti_check_tx_fifo_32();
-    uint8_t *buffer = tx_data->buf;
     if(temp == 0){
-      printk("tx_data[%d] : %x\n", i, buffer[i]);
-      printk("Addr :%#x",&(sspi_instance[spi_number]->data_tx.data_8));
-      sspi_instance[spi_number]->data_tx.data_8 = buffer[i];
-
+      printk("tx_data : %d\n",data);
+      sspi_instance[spi_number]->data_tx.data_8 = data;
       #ifdef SPI_DEBUG
       printk("tx_data[%d] = %d\n", i, tx_data[i]);
       #endif
@@ -375,13 +371,11 @@ int sspi8_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data
       printk("\nTX FIFO is full");
       #endif
       printk("TX FIFO is full \n");
-
       return -1;
     }
-  }
+
   sspi_shakti_wait_till_tx_complete();
   printk("transferring1 \n");
-  
   return 0;
 }
 
@@ -654,7 +648,7 @@ void sspi_shakti_wait_till_rxfifo_not_empty(const struct device *dev)
 {
   volatile uint32_t temp;
   while(1){
-    temp = sspi_instance[spi_number]->fifo_status;
+    temp = sspi_instance[1]->fifo_status;
     temp = temp & SPI_RX_EMPTY;
     if (temp == 0){
       #ifdef SPI_DEBUG
@@ -745,23 +739,19 @@ void sspi_shakti_wait_till_rxfifo_4(const struct device *dev)
  * buffer)
  */
 
-void sspi8_shakti_receive_data(const struct device *dev, struct spi_buf *rx_data)
+uint8_t sspi8_shakti_receive_data(const struct device *dev)
 {
-  int no_of_itr = rx_data->len;;
   volatile uint32_t temp;
+  uint8_t data;
   temp = sspi_instance[spi_number]->comm_control;
   temp = temp & SPI_COMM_MODE(3);
-
-  for (int i =0; i< no_of_itr; i++){
-
-    uint8_t *buffer = rx_data->buf;
     if (temp == SPI_COMM_MODE(1)){
       sspi_shakti_enable(dev);
     }
     sspi_shakti_wait_till_rxfifo_not_empty(dev);
-    buffer[i]= sspi_instance[spi_number]->data_rx.data_8;
-    printk("rx_data[%d] : %x\n", i, buffer[i]);
-  }
+    data = sspi_instance[spi_number]->data_rx.data_8;
+    printk("rx_data : %d\n",data);
+    return data;
 }
 
 /**
@@ -870,7 +860,6 @@ static int spi_shakti_transceive(const struct device *dev,
 {
   // spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL, NULL, config);
   sspi_shakti_configure(dev, config);
-
   #ifdef SPI_DEBUG
     printk("pol %d\n", pol);
     printk("pha %d\n", pha);
@@ -882,10 +871,18 @@ static int spi_shakti_transceive(const struct device *dev,
     printk("comm_mode %d\n", comm_mode);
     printk("spi_size %d\n", spi_size);
   #endif
-
+  uint8_t rx_buff[16];
+  struct spi_buf rx_loc_bufs = { .buf = rx_buff, .len = tx_bufs->buffers->len};
+  struct spi_buf_set rx_loc_buffs = { .buffers = &rx_loc_bufs, .count = 1};
+  if(rx_bufs == NULL){
+    rx_bufs = &rx_loc_buffs;
+  }
   sspi_shakti_init(dev);
   sclk_shakti_config(dev, pol, pha, prescale, setup_time, hold_time);
-
+  k_mutex_lock(&(((struct spi_shakti_cfg*)(dev->config))->mutex),K_FOREVER);
+  printf("Pin :%d\n",((struct spi_shakti_cfg*)(dev->config))->ncs.pin);
+  //gpio_pin_set_dt(&(((struct spi_shakti_cfg*)(dev->config))->ncs), 1);
+  uint32_t len;
   if (comm_mode == FULL_DUPLEX)
   {
     sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
@@ -893,10 +890,14 @@ static int spi_shakti_transceive(const struct device *dev,
 
     if (spi_size == DATA_SIZE_8)
     {
-      sspi8_shakti_transmit_data(dev, tx_bufs->buffers);
-      sspi8_shakti_receive_data(dev, rx_bufs->buffers);  
+      len = tx_bufs->buffers->len;
+      for(int i = 0;i<len;i++){
+      k_sched_lock();
+      sspi8_shakti_transmit_data(dev, ((uint8_t*)(tx_bufs->buffers->buf))[i]);
+      ((uint8_t*)(tx_bufs->buffers->buf))[i] = sspi8_shakti_receive_data(dev);  
+      k_sched_unlock();
     }
-
+    }
     if (spi_size == DATA_SIZE_16)
     {
       sspi16_shakti_transmit_data(dev, tx_bufs->buffers);
@@ -917,8 +918,10 @@ static int spi_shakti_transceive(const struct device *dev,
 
     if (spi_size == DATA_SIZE_8)
     {
-      sspi8_shakti_transmit_data(dev, tx_bufs->buffers);
-      sspi8_shakti_receive_data(dev, rx_bufs->buffers);  
+      len = tx_bufs->buffers->len;
+      for(int i = 0;i<len;i++){
+      sspi8_shakti_transmit_data(dev, ((uint8_t*)(tx_bufs->buffers->buf))[i]);
+      ((uint8_t*)(tx_bufs->buffers->buf))[i] = sspi8_shakti_receive_data(dev);
     }
 
     if (spi_size == DATA_SIZE_16)
@@ -933,8 +936,12 @@ static int spi_shakti_transceive(const struct device *dev,
       sspi32_shakti_receive_data(dev, rx_bufs->buffers);  
     }
   }
-}
+  //gpio_pin_set_dt(&(((struct spi_shakti_cfg*)(dev->config))->ncs), 0);
+  k_mutex_unlock(&(((struct spi_shakti_cfg*)(dev->config))->mutex));
 
+  return 0;
+}
+}
 static int spi_shakti_release(const struct device *dev,
 		       const struct spi_config *config)
 {
@@ -954,6 +961,7 @@ static struct spi_driver_api spi_shakti_api = {
     SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
   }; \
   static struct spi_shakti_cfg spi_shakti_cfg_##n = { \
+    .ncs = GPIO_DT_SPEC_INST_GET(n, cs_gpios),\
     .base = SPI_START_##n , \ 
     .f_sys = CLOCK_FREQUENCY, \
   }; \

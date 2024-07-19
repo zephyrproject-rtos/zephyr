@@ -8,6 +8,7 @@
 
 chosen {
 		zephyr,console = &uart0;
+		zephyr,display = &ili9341_display;
 	};
 };
 
@@ -19,15 +20,23 @@ chosen {
 
 &i2c0 {
 	status = "ok";
+	base = <0x44000>;
 	clock_frequency = <40000000>;
 	scl_frequency = <100000>;
 };
-
+&i2c1 {
+	status = "ok";
+	base = <0x44100>;
+	clock_frequency = <40000000>;
+	scl_frequency = <100000>;
+};
 &spi0 {
 		status = "okay";
 		sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
         comm_configure = <0x01 0x00 0x03 0x08>;
 		clock-frequency = <10000000>;
+        cs-gpios = <&gpio0 10 0>;
+
 };
 
 &spi1 {
@@ -35,8 +44,41 @@ chosen {
 		sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
         comm_configure = <0x01 0x00 0x03 0x08>;
 		clock-frequency = <10000000>;
-};
+        cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 
+        ili9341_display: ili9341@0 {
+		  status = "okay";
+          compatible = "ilitek,ili9341_driver";
+          reg = <0>;
+          spi-max-frequency = <2000000>;
+          cmd-data-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+          reset-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		  width = <240>;
+		  height = <240>;
+		  rotation = <180>;
+		  pixel-format = <0U>;
+		  pwctrla = [39 2c 00 34 02];
+		  pwctrlb = [00 c1 30];
+		  timctrla = [85 00 78];
+		  timctrlb = [00 00];
+		  pwseqctrl = [64 03 12 81];
+		  pumpratioctrl = [20];
+		  disctrl = [08 82 27];
+		  vmctrl1 = [3e 28];
+		  vmctrl2 = [c0];
+		  enable3g = [00];
+		  ifctl = [01 00 00];
+		  ifmode = [40];
+		  gamset = [01];
+		  frmctr1 = [00 18];
+		  pwctrl1 = [23];
+		  pwctrl2 = [10];
+		  pgamctrl = [0f 31 2b 0c 0e 08 4e f1 37 07 10 03 0e 09 00];
+		  ngamctrl = [00 0e 14 03 11 07 31 c1 48 08 0f 0c 31 36 0f];
+		  madctrl = [48];
+		  pixset = [55];
+        };
+};
 &gpio0 {
 	status = "okay";
 };

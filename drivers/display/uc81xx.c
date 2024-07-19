@@ -66,6 +66,10 @@ struct uc81xx_quirks {
 	bool auto_copy;
 
 	int (*set_cdi)(const struct device *dev, bool border);
+	int (*set_tres)(const struct device *dev);
+	int (*set_ptl)(const struct device *dev, uint16_t x, uint16_t y,
+		       uint16_t x_end_idx, uint16_t y_end_idx,
+		       const struct display_buffer_descriptor *desc);
 };
 
 struct uc81xx_config {
@@ -224,10 +228,6 @@ static int uc81xx_set_profile(const struct device *dev,
 		UC81XX_PSR_SHL |
 		UC81XX_PSR_SHD |
 		UC81XX_PSR_RST;
-	const struct uc81xx_tres tres = {
-		.hres = sys_cpu_to_be16(config->width),
-		.vres = sys_cpu_to_be16(config->height),
-	};
 
 	if (type >= UC81XX_NUM_PROFILES) {
 		return -EINVAL;
@@ -272,9 +272,7 @@ static int uc81xx_set_profile(const struct device *dev,
 	}
 
 	/* Set panel resolution */
-	LOG_HEXDUMP_DBG(&tres, sizeof(tres), "TRES");
-	if (uc81xx_write_cmd(dev, UC81XX_CMD_TRES,
-			     (const void *)&tres, sizeof(tres))) {
+	if (config->quirks->set_tres(dev)) {
 		return -EIO;
 	}
 
@@ -403,13 +401,6 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 
 	uint16_t x_end_idx = x + desc->width - 1;
 	uint16_t y_end_idx = y + desc->height - 1;
-	const struct uc81xx_ptl ptl = {
-		.hrst = sys_cpu_to_be16(x),
-		.hred = sys_cpu_to_be16(x_end_idx),
-		.vrst = sys_cpu_to_be16(y),
-		.vred = sys_cpu_to_be16(y_end_idx),
-		.flags = UC81XX_PTL_FLAG_PT_SCAN,
-	};
 	size_t buf_len;
 	const uint8_t back_buffer = data->blanking_on ?
 		UC81XX_CMD_DTM1 : UC81XX_CMD_DTM2;
@@ -448,15 +439,11 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 		}
 	}
 
-	/* Setup Partial Window and enable Partial Mode */
-	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "ptl");
-
 	if (uc81xx_write_cmd(dev, UC81XX_CMD_PTIN, NULL, 0)) {
 		return -EIO;
 	}
 
-	if (uc81xx_write_cmd(dev, UC81XX_CMD_PTL,
-			     (const void *)&ptl, sizeof(ptl))) {
+	if (config->quirks->set_ptl(dev, x, y, x_end_idx, y_end_idx, desc)) {
 		return -EIO;
 	}
 
@@ -487,8 +474,7 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 		 * needed.
 		 */
 
-		if (uc81xx_write_cmd(dev, UC81XX_CMD_PTL,
-				     (const void *)&ptl, sizeof(ptl))) {
+		if (config->quirks->set_ptl(dev, x, y, x_end_idx, y_end_idx, desc)) {
 			return -EIO;
 		}
 
@@ -505,32 +491,6 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 	return 0;
 }
 
-static int uc81xx_read(const struct device *dev, const uint16_t x, const uint16_t y,
-		       const struct display_buffer_descriptor *desc, void *buf)
-{
-	LOG_ERR("not supported");
-	return -ENOTSUP;
-}
-
-static void *uc81xx_get_framebuffer(const struct device *dev)
-{
-	LOG_ERR("not supported");
-	return NULL;
-}
-
-static int uc81xx_set_brightness(const struct device *dev,
-				 const uint8_t brightness)
-{
-	LOG_WRN("not supported");
-	return -ENOTSUP;
-}
-
-static int uc81xx_set_contrast(const struct device *dev, uint8_t contrast)
-{
-	LOG_WRN("not supported");
-	return -ENOTSUP;
-}
-
 static void uc81xx_get_capabilities(const struct device *dev,
 				    struct display_capabilities *caps)
 {
@@ -542,14 +502,6 @@ static void uc81xx_get_capabilities(const struct device *dev,
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
-}
-
-static int uc81xx_set_orientation(const struct device *dev,
-				  const enum display_orientation
-				  orientation)
-{
-	LOG_ERR("Unsupported");
-	return -ENOTSUP;
 }
 
 static int uc81xx_set_pixel_format(const struct device *dev,
@@ -654,7 +606,73 @@ static int uc81xx_init(const struct device *dev)
 	return uc81xx_controller_init(dev);
 }
 
-#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8176)
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8175)
+static int uc81xx_set_tres_8(const struct device *dev)
+{
+	const struct uc81xx_config *config = dev->config;
+	const struct uc81xx_tres8 tres = {
+		.hres = config->width,
+		.vres = config->height,
+	};
+
+	LOG_HEXDUMP_DBG(&tres, sizeof(tres), "TRES");
+
+	return uc81xx_write_cmd(dev, UC81XX_CMD_TRES, (const void *)&tres, sizeof(tres));
+}
+
+static inline int uc81xx_set_ptl_8(const struct device *dev, uint16_t x, uint16_t y,
+				   uint16_t x_end_idx, uint16_t y_end_idx,
+				   const struct display_buffer_descriptor *desc)
+{
+	const struct uc81xx_ptl8 ptl = {
+		.hrst = x,
+		.hred = x_end_idx,
+		.vrst = y,
+		.vred = y_end_idx,
+		.flags = UC81XX_PTL_FLAG_PT_SCAN,
+	};
+
+	/* Setup Partial Window and enable Partial Mode */
+	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "ptl");
+
+	return uc81xx_write_cmd(dev, UC81XX_CMD_PTL, (const void *)&ptl, sizeof(ptl));
+}
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8176) || DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8179)
+static int uc81xx_set_tres_16(const struct device *dev)
+{
+	const struct uc81xx_config *config = dev->config;
+	const struct uc81xx_tres16 tres = {
+		.hres = sys_cpu_to_be16(config->width),
+		.vres = sys_cpu_to_be16(config->height),
+	};
+
+	LOG_HEXDUMP_DBG(&tres, sizeof(tres), "TRES");
+
+	return uc81xx_write_cmd(dev, UC81XX_CMD_TRES, (const void *)&tres, sizeof(tres));
+}
+
+static inline int uc81xx_set_ptl_16(const struct device *dev, uint16_t x, uint16_t y,
+				    uint16_t x_end_idx, uint16_t y_end_idx,
+				    const struct display_buffer_descriptor *desc)
+{
+	const struct uc81xx_ptl16 ptl = {
+		.hrst = sys_cpu_to_be16(x),
+		.hred = sys_cpu_to_be16(x_end_idx),
+		.vrst = sys_cpu_to_be16(y),
+		.vred = sys_cpu_to_be16(y_end_idx),
+		.flags = UC81XX_PTL_FLAG_PT_SCAN,
+	};
+
+	/* Setup Partial Window and enable Partial Mode */
+	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "ptl");
+
+	return uc81xx_write_cmd(dev, UC81XX_CMD_PTL, (const void *)&ptl, sizeof(ptl));
+}
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8175) || DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8176)
 static int uc8176_set_cdi(const struct device *dev, bool border)
 {
 	const struct uc81xx_config *config = dev->config;
@@ -675,7 +693,22 @@ static int uc8176_set_cdi(const struct device *dev, bool border)
 	LOG_DBG("CDI: %#hhx", cdi);
 	return uc81xx_write_cmd_uint8(dev, UC81XX_CMD_CDI, cdi);
 }
+#endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8175)
+static const struct uc81xx_quirks uc8175_quirks = {
+	.max_width = 80,
+	.max_height = 160,
+
+	.auto_copy = false,
+
+	.set_cdi = uc8176_set_cdi,
+	.set_tres = uc81xx_set_tres_8,
+	.set_ptl = uc81xx_set_ptl_8,
+};
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8176)
 static const struct uc81xx_quirks uc8176_quirks = {
 	.max_width = 400,
 	.max_height = 300,
@@ -683,6 +716,8 @@ static const struct uc81xx_quirks uc8176_quirks = {
 	.auto_copy = false,
 
 	.set_cdi = uc8176_set_cdi,
+	.set_tres = uc81xx_set_tres_16,
+	.set_ptl = uc81xx_set_ptl_16,
 };
 #endif
 
@@ -714,6 +749,8 @@ static const struct uc81xx_quirks uc8179_quirks = {
 	.auto_copy = true,
 
 	.set_cdi = uc8179_set_cdi,
+	.set_tres = uc81xx_set_tres_16,
+	.set_ptl = uc81xx_set_ptl_16,
 };
 #endif
 
@@ -721,13 +758,8 @@ static struct display_driver_api uc81xx_driver_api = {
 	.blanking_on = uc81xx_blanking_on,
 	.blanking_off = uc81xx_blanking_off,
 	.write = uc81xx_write,
-	.read = uc81xx_read,
-	.get_framebuffer = uc81xx_get_framebuffer,
-	.set_brightness = uc81xx_set_brightness,
-	.set_contrast = uc81xx_set_contrast,
 	.get_capabilities = uc81xx_get_capabilities,
 	.set_pixel_format = uc81xx_set_pixel_format,
-	.set_orientation = uc81xx_set_orientation,
 };
 
 #define UC81XX_MAKE_ARRAY_OPT(n, p)					\
@@ -813,6 +845,9 @@ static struct display_driver_api uc81xx_driver_api = {
 			 POST_KERNEL,					\
 			 CONFIG_DISPLAY_INIT_PRIORITY,			\
 			 &uc81xx_driver_api);
+
+DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8175, UC81XX_DEFINE,
+			     &uc8175_quirks);
 
 DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8176, UC81XX_DEFINE,
 			     &uc8176_quirks);

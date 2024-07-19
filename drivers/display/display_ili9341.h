@@ -150,5 +150,6 @@ struct ili9341_regs {
  * @return 0 on success, errno otherwise.
  */
 int ili9341_regs_init(const struct device *dev);
+int ili9341_regs_initialization(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9341_H_ */

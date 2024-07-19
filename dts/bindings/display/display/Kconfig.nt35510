@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Erik Andersson <erian747@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config NT35510
+	bool "NT35510 display driver"
+	default y
+	depends on DT_HAS_FRIDA_NT35510_ENABLED
+	select MIPI_DSI
+	help
+	  Enable driver for NT35510 display driver.
+
+if NT35510
+
+config DISPLAY_NT35510_INIT_PRIORITY
+	int "Initialization priority"
+	default DISPLAY_INIT_PRIORITY
+	help
+	  NT35510 display driver initialization priority.
+
+endif

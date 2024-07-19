@@ -17,5 +17,8 @@ properties:
   scl_frequency:
     type: int
     required: true
-
-
+  
+  base:
+    type: int
+    required: true
+  

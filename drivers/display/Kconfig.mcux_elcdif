@@ -32,6 +32,16 @@ config MCUX_ELCDIF_FB_NUM
 	  implications of this concern you, leave at least one driver
 	  framebuffer enabled.
 
+config MCUX_ELCDIF_FB_SIZE
+	int "Framebuffer size required by the eLCDIF driver"
+	default 3686400
+	help
+	  eLCDIF driver allocates framebuffers to support partial display updates.
+	  The framebuffer size is computed as : panel_width * panel_height * bpp.
+	  The default value is set to afford for a default resolution of 1280x720 and
+	  4-bytes pixel format, e.g. ARGB8888. Applications should change this value
+	  according to the actual used resolution and format to optimize the heap size.
+
 config MCUX_ELCDIF_PXP
 	bool "Use PXP for display rotation"
 	depends on MCUX_PXP

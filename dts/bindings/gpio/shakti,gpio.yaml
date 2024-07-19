@@ -1,0 +1,29 @@
+# Copyright (c) 2018, SiFive Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: SHAKTI GPIO node
+
+compatible: "shakti,gpio"
+
+# include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  interrupts:
+    type: int
+    required: false
+
+  "#gpio-cells":
+    type: int
+    const: 2
+
+  config_gpio:
+    type: int
+    required: true
+
+gpio-cells:
+  - pin
+  - flags

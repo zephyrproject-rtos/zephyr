@@ -324,7 +324,7 @@ static int otm8009a_configure(const struct device *dev)
 
 	/* not documented */
 	buf[0] = 0x00;
-	ret = otm8009a_mcs_write(dev, OTM8009A_MCS_NO_DOC2, buf, 3);
+	ret = otm8009a_mcs_write(dev, OTM8009A_MCS_NO_DOC2, buf, 1);
 	if (ret < 0) {
 		return ret;
 	}
@@ -586,25 +586,9 @@ static int otm8009a_write(const struct device *dev, uint16_t x, uint16_t y,
 	return -ENOTSUP;
 }
 
-static int otm8009a_read(const struct device *dev, uint16_t x, uint16_t y,
-			 const struct display_buffer_descriptor *desc, void *buf)
-{
-	return -ENOTSUP;
-}
-
-static void *otm8009a_get_framebuffer(const struct device *dev)
-{
-	return NULL;
-}
-
 static int otm8009a_set_brightness(const struct device *dev, uint8_t brightness)
 {
 	return otm8009a_dcs_write(dev, MIPI_DCS_SET_DISPLAY_BRIGHTNESS, &brightness, 1);
-}
-
-static int otm8009a_set_contrast(const struct device *dev, uint8_t contrast)
-{
-	return -ENOTSUP;
 }
 
 static void otm8009a_get_capabilities(const struct device *dev,
@@ -621,29 +605,12 @@ static void otm8009a_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = data->orientation;
 }
 
-static int otm8009a_set_pixel_format(const struct device *dev,
-				     enum display_pixel_format pixel_format)
-{
-	return -ENOTSUP;
-}
-
-static int otm8009a_set_orientation(const struct device *dev,
-				    enum display_orientation orientation)
-{
-	return -ENOTSUP;
-}
-
 static const struct display_driver_api otm8009a_api = {
 	.blanking_on = otm8009a_blanking_on,
 	.blanking_off = otm8009a_blanking_off,
 	.write = otm8009a_write,
-	.read = otm8009a_read,
-	.get_framebuffer = otm8009a_get_framebuffer,
 	.set_brightness = otm8009a_set_brightness,
-	.set_contrast = otm8009a_set_contrast,
 	.get_capabilities = otm8009a_get_capabilities,
-	.set_pixel_format = otm8009a_set_pixel_format,
-	.set_orientation = otm8009a_set_orientation,
 };
 
 static int otm8009a_init(const struct device *dev)

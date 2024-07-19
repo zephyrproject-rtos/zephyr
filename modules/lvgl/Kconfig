@@ -12,6 +12,30 @@ config LVGL
 
 if LVGL
 
+config LV_MEM_CUSTOM
+	bool "Set Custom Memory for LVGL Library"
+	default y
+
+config LV_USE_LOG
+	bool "Set Logging functionality for LVGL"
+	default y
+
+config LV_USE_LABEL
+	bool "Use Label in LVGL"
+	default y
+
+config LV_USE_BTN
+	bool "Use Buttons in LVGL"
+	default y
+
+config LV_USE_IMG
+	bool "Use Image"
+	default y
+
+config LV_FONT_MONTSERRAT_14
+	bool "Set the Montserrat font and size to 14"
+	default y
+
 config LV_USE_MONKEY
 	bool
 
