@@ -1,7 +1,7 @@
-.. _posix_option_groups:
+POSIX Option and Option Group Details
+#####################################
 
-Subprofiling Option Groups
-##########################
+.. _posix_option_groups:
 
 POSIX Option Groups
 ===================
@@ -9,7 +9,7 @@ POSIX Option Groups
 .. _posix_option_group_barriers:
 
 POSIX_BARRIERS
-==============
+++++++++++++++
 
 .. csv-table:: POSIX_BARRIERS
    :header: API, Supported
@@ -24,7 +24,7 @@ POSIX_BARRIERS
 .. _posix_option_group_c_lang_jump:
 
 POSIX_C_LANG_JUMP
-=================
++++++++++++++++++
 
 The ``POSIX_C_LANG_JUMP`` Option Group is included in the ISO C standard.
 
@@ -42,7 +42,7 @@ The ``POSIX_C_LANG_JUMP`` Option Group is included in the ISO C standard.
 .. _posix_option_group_c_lang_math:
 
 POSIX_C_LANG_MATH
-=================
++++++++++++++++++
 
 The ``POSIX_C_LANG_MATH`` Option Group is included in the ISO C standard.
 
@@ -56,7 +56,7 @@ Group.
 .. _posix_option_group_c_lang_support:
 
 POSIX_C_LANG_SUPPORT
-====================
+++++++++++++++++++++
 
 The POSIX_C_LANG_SUPPORT option group contains the general ISO C Library.
 
@@ -73,7 +73,7 @@ to :ref:`details<language_support>`.
 .. _posix_option_group_c_lib_ext:
 
 POSIX_C_LIB_EXT
-===============
++++++++++++++++
 
 .. csv-table:: POSIX_C_LIB_EXT
    :header: API, Supported
@@ -98,7 +98,7 @@ POSIX_C_LIB_EXT
 .. _posix_option_group_clock_selection:
 
 POSIX_CLOCK_SELECTION
-=====================
++++++++++++++++++++++
 
 .. csv-table:: POSIX_CLOCK_SELECTION
    :header: API, Supported
@@ -111,7 +111,7 @@ POSIX_CLOCK_SELECTION
 .. _posix_option_group_device_io:
 
 POSIX_DEVICE_IO
-===============
++++++++++++++++
 
 .. csv-table:: POSIX_DEVICE_IO
    :header: API, Supported
@@ -170,7 +170,7 @@ POSIX_DEVICE_IO
 .. _posix_option_group_fd_mgmt:
 
 POSIX_FD_MGMT
-=============
++++++++++++++
 
 This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
 
@@ -194,7 +194,7 @@ This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
 .. _posix_option_group_file_locking:
 
 POSIX_FILE_LOCKING
-==================
+++++++++++++++++++
 
 This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
 
@@ -213,7 +213,7 @@ This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
 .. _posix_option_group_file_system:
 
 POSIX_FILE_SYSTEM
-=================
++++++++++++++++++
 
 .. csv-table:: POSIX_FILE_SYSTEM
    :header: API, Supported
@@ -249,7 +249,7 @@ POSIX_FILE_SYSTEM
 .. _posix_option_group_mapped_files:
 
 POSIX_MAPPED_FILES
-==================
+++++++++++++++++++
 
 .. csv-table:: POSIX_MAPPED_FILES
    :header: API, Supported
@@ -262,7 +262,7 @@ POSIX_MAPPED_FILES
 .. _posix_option_group_memory_protection:
 
 POSIX_MEMORY_PROTECTION
-=======================
++++++++++++++++++++++++
 
 .. csv-table:: POSIX_MEMORY_PROTECTION
    :header: API, Supported
@@ -273,7 +273,7 @@ POSIX_MEMORY_PROTECTION
 .. _posix_option_group_multi_process:
 
 POSIX_MULTI_PROCESS
-===================
++++++++++++++++++++
 
 .. csv-table:: POSIX_MULTI_PROCESS
    :header: API, Supported
@@ -307,7 +307,7 @@ POSIX_MULTI_PROCESS
 .. _posix_option_group_networking:
 
 POSIX_NETWORKING
-================
+++++++++++++++++
 
 The function ``sockatmark()`` is not yet supported and is expected to fail setting ``errno``
 to ``ENOSYS`` :ref:`†<posix_undefined_behaviour>`.
@@ -373,7 +373,7 @@ to ``ENOSYS`` :ref:`†<posix_undefined_behaviour>`.
 .. _posix_option_group_pipe:
 
 POSIX_PIPE
-==========
+++++++++++
 
 .. csv-table:: POSIX_PIPE
    :header: API, Supported
@@ -384,7 +384,7 @@ POSIX_PIPE
 .. _posix_option_group_realtime_signals:
 
 POSIX_REALTIME_SIGNALS
-======================
+++++++++++++++++++++++
 
 .. csv-table:: POSIX_REALTIME_SIGNALS
    :header: API, Supported
@@ -397,7 +397,7 @@ POSIX_REALTIME_SIGNALS
 .. _posix_option_group_semaphores:
 
 POSIX_SEMAPHORES
-================
+++++++++++++++++
 
 .. csv-table:: POSIX_SEMAPHORES
    :header: API, Supported
@@ -416,7 +416,7 @@ POSIX_SEMAPHORES
 .. _posix_option_group_signal_jump:
 
 POSIX_SIGNAL_JUMP
-=================
++++++++++++++++++
 
 .. csv-table:: POSIX_SIGNAL_JUMP
    :header: API, Supported
@@ -428,7 +428,7 @@ POSIX_SIGNAL_JUMP
 .. _posix_option_group_signals:
 
 POSIX_SIGNALS
-=============
++++++++++++++
 
 Signal services are a basic mechanism within POSIX-based systems and are
 required for error and event handling.
@@ -458,7 +458,7 @@ required for error and event handling.
 .. _posix_option_group_single_process:
 
 POSIX_SINGLE_PROCESS
-====================
+++++++++++++++++++++
 
 The POSIX_SINGLE_PROCESS option group contains services for single
 process applications.
@@ -479,7 +479,7 @@ process applications.
 .. _posix_option_group_spin_locks:
 
 POSIX_SPIN_LOCKS
-================
+++++++++++++++++
 
 .. csv-table:: POSIX_SPIN_LOCKS
    :header: API, Supported
@@ -494,7 +494,7 @@ POSIX_SPIN_LOCKS
 .. _posix_option_group_threads_base:
 
 POSIX_THREADS_BASE
-==================
+++++++++++++++++++
 
 The basic assumption in this profile is that the system
 consists of a single (implicit) process with multiple threads. Therefore, the
@@ -557,7 +557,7 @@ multiple processes.
 .. _posix_option_group_posix_threads_ext:
 
 POSIX_THREADS_EXT
-=================
++++++++++++++++++
 
 This table lists service support status in Zephyr:
 
@@ -573,7 +573,7 @@ This table lists service support status in Zephyr:
 .. _posix_option_group_timers:
 
 POSIX_TIMERS
-============
+++++++++++++
 
 .. csv-table:: POSIX_TIMERS
    :header: API, Supported
@@ -592,7 +592,7 @@ POSIX_TIMERS
 .. _posix_option_group_xsi_system_logging:
 
 XSI_SYSTEM_LOGGING
-==================
+++++++++++++++++++
 
 .. csv-table:: XSI_SYSTEM_LOGGING
    :header: API, Supported
@@ -606,7 +606,7 @@ XSI_SYSTEM_LOGGING
 .. _posix_option_group_xsi_threads_ext:
 
 XSI_THREADS_EXT
-===============
++++++++++++++++
 
 The XSI_THREADS_EXT option group is required because it provides
 functions to control a thread's stack. This is considered useful for any
