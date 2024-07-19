@@ -1477,6 +1477,124 @@ static int cmd_i3c_ccc_getcaps(const struct shell *shell_ctx, size_t argc, char 
 	return ret;
 }
 
+/* i3c ccc getvendor <device> <target> <id> [<defining byte>] */
+static int cmd_i3c_ccc_getvendor(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	uint8_t buf[MAX_I3C_BYTES] = {0};
+	uint8_t defbyte;
+	size_t num_xfer;
+	uint8_t id;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	if (argc > 3) {
+		defbyte = strtol(argv[3], NULL, 16);
+		ret = i3c_ccc_do_getvendor_defbyte(desc, id, defbyte, buf, MAX_I3C_BYTES,
+						   &num_xfer);
+	} else {
+		ret = i3c_ccc_do_getvendor(desc, id, buf, MAX_I3C_BYTES, &num_xfer);
+	}
+
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC VENDOR.");
+		return ret;
+	}
+
+	shell_hexdump(shell_ctx, buf, num_xfer);
+
+	return ret;
+}
+
+/* i3c ccc setvendor <device> <target> <id> [<bytes>] */
+static int cmd_i3c_ccc_setvendor(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	struct i3c_driver_data *data;
+	uint8_t buf[MAX_I3C_BYTES] = {0};
+	uint8_t data_length;
+	uint8_t id;
+	int ret;
+	int i;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	data_length = argc - 4;
+	for (i = 0; i < data_length; i++) {
+		buf[i] = (uint8_t)strtol(argv[4 + i], NULL, 16);
+	}
+
+	ret = i3c_ccc_do_setvendor(desc, id, buf, data_length);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC VENDOR.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc setvendor_bc <device> <id> [<bytes>] */
+static int cmd_i3c_ccc_setvendor_bc(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint8_t buf[MAX_I3C_BYTES] = {0};
+	uint8_t data_length;
+	uint8_t id;
+	int ret;
+	int i;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	data_length = argc - 3;
+	for (i = 0; i < data_length; i++) {
+		buf[i] = (uint8_t)strtol(argv[3 + i], NULL, 16);
+	}
+
+	ret = i3c_ccc_do_setvendor_all(dev, id, buf, data_length);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC VENDOR.");
+		return ret;
+	}
+
+	return ret;
+}
+
 static int cmd_i3c_attach(const struct shell *shell_ctx, size_t argc, char **argv)
 {
 	const struct device *dev, *tdev;
@@ -1887,6 +2005,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC GETCAPS\n"
 		      "Usage: ccc getcaps <device> <target> [<defining byte>]",
 		      cmd_i3c_ccc_getcaps, 3, 1),
+	SHELL_CMD_ARG(getvendor, &dsub_i3c_device_attached_name,
+		      "Send CCC GETVENDOR\n"
+		      "Usage: ccc getvendor <device> <target> <id> [<defining byte>]",
+		      cmd_i3c_ccc_getvendor, 4, 1),
+	SHELL_CMD_ARG(setvendor, &dsub_i3c_device_attached_name,
+		      "Send CCC SETVENDOR\n"
+		      "Usage: ccc setvendor <device> <target> <id> [<bytes>]",
+		      cmd_i3c_ccc_setvendor, 4, MAX_I3C_BYTES),
+	SHELL_CMD_ARG(setvendor_bc, &dsub_i3c_device_name,
+		      "Send CCC SETVENDOR BC\n"
+		      "Usage: ccc setvendor_bc <device> <id> [<bytes>]",
+		      cmd_i3c_ccc_setvendor_bc, 3, MAX_I3C_BYTES),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
