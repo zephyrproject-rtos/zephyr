@@ -1871,6 +1871,13 @@ MCUboot
 
   * The MCUboot version in this release is version ``2.1.0+0-dev``.
 
+OSDP
+****
+
+* Fixed issue in CP secure channel handshake where R-MAC can be reverted to an
+  old one by a rogue PD sending an out-of-order secure channel response resulting
+  in a replay attack.
+
 Trusted Firmware-M
 ******************
 
