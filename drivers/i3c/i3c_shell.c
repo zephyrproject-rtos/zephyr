@@ -524,6 +524,41 @@ static int cmd_i3c_ccc_entdaa(const struct shell *shell_ctx, size_t argc, char *
 	return i3c_do_daa(dev);
 }
 
+/* i3c ccc setaasa <device> */
+static int cmd_i3c_ccc_setaasa(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	sys_snode_t *node;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	ret = i3c_ccc_do_setaasa_all(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC SETAASA.");
+		return ret;
+	}
+
+	/* set all devices DA to SA */
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
+		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
+			struct i3c_device_desc *desc =
+				CONTAINER_OF(node, struct i3c_device_desc, node);
+			if ((desc->dynamic_addr == 0) && (desc->static_addr != 0)) {
+				desc->dynamic_addr = desc->static_addr;
+			}
+		}
+	}
+
+	return ret;
+}
+
 /* i3c ccc setdasa <device> <target> */
 static int cmd_i3c_ccc_setdasa(const struct shell *shell_ctx, size_t argc, char **argv)
 {
@@ -1897,6 +1932,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC ENTDAA\n"
 		      "Usage: ccc entdaa <device>",
 		      cmd_i3c_ccc_entdaa, 2, 0),
+	SHELL_CMD_ARG(setaasa, &dsub_i3c_device_name,
+		      "Send CCC SETAASA\n"
+		      "Usage: ccc setaasa <device>",
+		      cmd_i3c_ccc_setaasa, 2, 0),
 	SHELL_CMD_ARG(setdasa, &dsub_i3c_device_attached_name,
 		      "Send CCC SETDASA\n"
 		      "Usage: ccc setdasa <device> <target>",
