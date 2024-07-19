@@ -781,3 +781,100 @@ int i3c_ccc_do_setaasa_all(const struct device *controller)
 
 	return i3c_do_ccc(controller, &ccc_payload);
 }
+
+int i3c_ccc_do_getmxds(const struct i3c_device_desc *target,
+			 union i3c_ccc_getmxds *mxds,
+			 enum i3c_ccc_getmxds_fmt fmt,
+			 enum i3c_ccc_getmxds_defbyte defbyte)
+{
+	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
+	uint8_t defining_byte;
+	uint8_t data[5];
+	uint8_t len;
+	int ret;
+
+	__ASSERT_NO_MSG(target != NULL);
+	__ASSERT_NO_MSG(target->bus != NULL);
+	__ASSERT_NO_MSG(mxds != NULL);
+
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	ccc_tgt_payload.rnw = 1;
+	ccc_tgt_payload.data = &data[0];
+
+	if ((fmt == GETMXDS_FORMAT_1) || (fmt == GETMXDS_FORMAT_2)) {
+		/* Could be 2 or 5 Data Bytes Returned */
+		ccc_tgt_payload.data_len = sizeof(((union i3c_ccc_getmxds *)0)->fmt2);
+	} else if (fmt == GETMXDS_FORMAT_3) {
+		switch (defbyte) {
+		case GETMXDS_FORMAT_3_WRRDTURN:
+			/* Could be 2 or 5 Data Bytes Returned */
+			ccc_tgt_payload.data_len =
+				sizeof(((union i3c_ccc_getmxds *)0)->fmt3.wrrdturn);
+			break;
+		case GETMXDS_FORMAT_3_CRHDLY:
+			/* Only 1 Byte returned */
+			ccc_tgt_payload.data_len =
+				sizeof(((union i3c_ccc_getmxds *)0)->fmt3.crhdly1);
+			break;
+		default:
+			ret = -EINVAL;
+			goto out;
+		}
+	} else {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_GETMXDS;
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
+
+	if (fmt == GETMXDS_FORMAT_3) {
+		defining_byte = (uint8_t)defbyte;
+
+		ccc_payload.ccc.data = &defining_byte;
+		ccc_payload.ccc.data_len = 1;
+	}
+
+	ret = i3c_do_ccc(target->bus, &ccc_payload);
+
+	if (ret == 0) {
+		/* GETMXDS will return a variable length */
+		len = ccc_tgt_payload.num_xfer;
+
+		if ((fmt == GETMXDS_FORMAT_1) || (fmt == GETMXDS_FORMAT_2)) {
+			if (len == sizeof(((union i3c_ccc_getmxds *)0)->fmt1)) {
+				mxds->fmt1.maxwr = data[0];
+				mxds->fmt1.maxrd = data[1];
+				/* It is unknown wither format 1 or format 2 is returned ahead of
+				 * time
+				 */
+				memset(&mxds->fmt2.maxrdturn, 0, sizeof(mxds->fmt2.maxrdturn));
+			} else if (len == sizeof(((union i3c_ccc_getmxds *)0)->fmt2)) {
+				mxds->fmt2.maxwr = data[0];
+				mxds->fmt2.maxrd = data[1];
+				memcpy(&mxds->fmt2.maxrdturn, &data[2],
+				       sizeof(mxds->fmt2.maxrdturn));
+			}
+		} else if (fmt == GETMXDS_FORMAT_3) {
+			switch (defbyte) {
+			case GETMXDS_FORMAT_3_WRRDTURN:
+				memcpy(mxds->fmt3.wrrdturn, data, len);
+				/* for values not received, assume default (1'b0) */
+				memset(&mxds->fmt3.wrrdturn[len], 0,
+				       sizeof(mxds->fmt3.wrrdturn) - len);
+				break;
+			case GETMXDS_FORMAT_3_CRHDLY:
+				mxds->fmt3.crhdly1 = data[0];
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+out:
+	return ret;
+}

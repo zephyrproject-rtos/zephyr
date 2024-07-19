@@ -10,6 +10,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/drivers/i3c.h>
 
@@ -516,6 +517,7 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target)
 	struct i3c_ccc_mrl mrl = {0};
 	struct i3c_ccc_mwl mwl = {0};
 	union i3c_ccc_getcaps caps = {0};
+	union i3c_ccc_getmxds mxds = {0};
 
 	/*
 	 * Since some CCC functions requires BCR to function
@@ -566,6 +568,18 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target)
 		goto out;
 	} else {
 		ret = 0;
+	}
+
+	/* GETMXDS */
+	if (target->bcr & I3C_BCR_MAX_DATA_SPEED_LIMIT) {
+		ret = i3c_ccc_do_getmxds_fmt2(target, &mxds);
+		if (ret != 0) {
+			goto out;
+		}
+
+		target->data_speed.maxrd = mxds.fmt2.maxrd;
+		target->data_speed.maxwr = mxds.fmt2.maxwr;
+		target->data_speed.max_read_turnaround = sys_get_le24(mxds.fmt2.maxrdturn);
 	}
 
 	target->dcr = dcr.dcr;
