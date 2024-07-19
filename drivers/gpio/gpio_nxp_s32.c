@@ -285,28 +285,18 @@ static int nxp_s32_gpio_config_eirq(const struct device *dev,
 #endif /* CONFIG_NXP_S32_EIRQ */
 
 #if defined(CONFIG_NXP_S32_WKPU)
-static int nxp_s32_gpio_wkpu_get_trigger(Wkpu_Ip_EdgeType *edge_type,
-					 enum gpio_int_mode mode,
+static int nxp_s32_gpio_wkpu_get_trigger(enum wkpu_nxp_s32_trigger *wkpu_trigger,
 					 enum gpio_int_trig trigger)
 {
-	if (mode == GPIO_INT_MODE_DISABLED) {
-		*edge_type = WKPU_IP_NONE_EDGE;
-		return 0;
-	}
-
-	if (mode == GPIO_INT_MODE_LEVEL) {
-		return -ENOTSUP;
-	}
-
 	switch (trigger) {
 	case GPIO_INT_TRIG_LOW:
-		*edge_type = WKPU_IP_FALLING_EDGE;
+		*wkpu_trigger = WKPU_NXP_S32_FALLING_EDGE;
 		break;
 	case GPIO_INT_TRIG_HIGH:
-		*edge_type = WKPU_IP_RISING_EDGE;
+		*wkpu_trigger = WKPU_NXP_S32_RISING_EDGE;
 		break;
 	case GPIO_INT_TRIG_BOTH:
-		*edge_type = WKPU_IP_BOTH_EDGES;
+		*wkpu_trigger = WKPU_NXP_S32_BOTH_EDGES;
 		break;
 	default:
 		return -ENOTSUP;
@@ -323,37 +313,39 @@ static int nxp_s32_gpio_config_wkpu(const struct device *dev,
 	const struct gpio_nxp_s32_config *config = dev->config;
 	const struct gpio_nxp_s32_irq_config *irq_cfg = config->wkpu_info;
 	uint8_t irq_line;
-	Wkpu_Ip_EdgeType edge_type;
+	enum wkpu_nxp_s32_trigger wkpu_trigger;
 
 	if (irq_cfg == NULL) {
 		LOG_ERR("WKPU controller not available or enabled");
 		return -ENOTSUP;
 	}
 
-	if (nxp_s32_gpio_wkpu_get_trigger(&edge_type, mode, trig)) {
-		LOG_ERR("trigger or mode not supported");
+	if (mode == GPIO_INT_MODE_LEVEL) {
 		return -ENOTSUP;
 	}
 
 	irq_line = nxp_s32_gpio_pin_to_line(irq_cfg, pin);
 	if (irq_line == NXP_S32_GPIO_LINE_NOT_FOUND) {
-		if (edge_type == WKPU_IP_NONE_EDGE) {
+		if (mode == GPIO_INT_MODE_DISABLED) {
 			return 0;
 		}
 		LOG_ERR("pin %d cannot be used for external interrupt", pin);
 		return -ENOTSUP;
 	}
 
-	if (edge_type == WKPU_IP_NONE_EDGE) {
+	if (mode == GPIO_INT_MODE_DISABLED) {
 		wkpu_nxp_s32_disable_interrupt(irq_cfg->ctrl, irq_line);
 		wkpu_nxp_s32_unset_callback(irq_cfg->ctrl, irq_line);
 	} else {
-		if (wkpu_nxp_s32_set_callback(irq_cfg->ctrl, irq_line,
-					nxp_s32_gpio_isr, pin, (void *)dev)) {
+		if (nxp_s32_gpio_wkpu_get_trigger(&wkpu_trigger, trig)) {
+			return -ENOTSUP;
+		}
+		if (wkpu_nxp_s32_set_callback(irq_cfg->ctrl, irq_line, pin,
+					      nxp_s32_gpio_isr, (void *)dev)) {
 			LOG_ERR("pin %d is already in use", pin);
 			return -EBUSY;
 		}
-		wkpu_nxp_s32_enable_interrupt(irq_cfg->ctrl, irq_line, edge_type);
+		wkpu_nxp_s32_enable_interrupt(irq_cfg->ctrl, irq_line, wkpu_trigger);
 	}
 
 	return 0;
