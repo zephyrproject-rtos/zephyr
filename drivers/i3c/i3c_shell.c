@@ -1657,6 +1657,81 @@ static int cmd_i3c_ccc_setvendor_bc(const struct shell *shell_ctx, size_t argc, 
 	return ret;
 }
 
+/* i3c ccc getmxds <device> <target> [<defining byte>] */
+static int cmd_i3c_ccc_getmxds(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	union i3c_ccc_getmxds mxds;
+	enum i3c_ccc_getmxds_fmt fmt;
+	enum i3c_ccc_getmxds_defbyte defbyte = GETMXDS_FORMAT_3_INVALID;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	if (!(desc->bcr & I3C_BCR_MAX_DATA_SPEED_LIMIT)) {
+		shell_error(shell_ctx, "I3C: Device %s does not support max data speed limit",
+			    desc->dev->name);
+		return -ENOTSUP;
+	}
+
+	/* If there is a defining byte, then it is assumed to be Format 3 */
+	if (argc > 3) {
+		fmt = GETMXDS_FORMAT_3;
+		defbyte = strtol(argv[3], NULL, 16);
+		if (defbyte != GETMXDS_FORMAT_3_CRHDLY || defbyte != GETMXDS_FORMAT_3_WRRDTURN) {
+			shell_error(shell_ctx, "Invalid defining byte.");
+			return -EINVAL;
+		}
+	} else {
+		fmt = GETMXDS_FORMAT_2;
+	}
+
+	ret = i3c_ccc_do_getmxds(desc, &mxds, fmt, defbyte);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC GETMXDS.");
+		return ret;
+	}
+
+	if (fmt == GETMXDS_FORMAT_3) {
+		if (defbyte == GETMXDS_FORMAT_3_WRRDTURN) {
+			shell_print(shell_ctx,
+				    "WRRDTURN: maxwr 0x%02x; maxrd 0x%02x; maxrdturn 0x%06x",
+				    mxds.fmt3.wrrdturn[0], mxds.fmt3.wrrdturn[1],
+				    sys_get_le24(&mxds.fmt3.wrrdturn[2]));
+			/* Update values in descriptor */
+			desc->maxwr = mxds.fmt3.wrrdturn[0];
+			desc->maxrd = mxds.fmt3.wrrdturn[1];
+			desc->max_read_turnaround = sys_get_le24(&mxds.fmt3.wrrdturn[2]);
+		} else if (defbyte == GETMXDS_FORMAT_3_CRHDLY) {
+			shell_print(shell_ctx, "CRHDLY1: 0x%02x", mxds.fmt3.crhdly1);
+		}
+	} else {
+		shell_print(shell_ctx, "GETMXDS: maxwr 0x%02x; maxrd 0x%02x; maxrdturn 0x%06x",
+			    mxds.fmt2.maxwr, mxds.fmt2.maxrd, sys_get_le24(mxds.fmt2.maxrdturn));
+		/* Update values in descriptor */
+		desc->maxwr = mxds.fmt2.maxwr;
+		desc->maxrd = mxds.fmt2.maxrd;
+		desc->max_read_turnaround = sys_get_le24(mxds.fmt2.maxrdturn);
+	}
+
+	return ret;
+}
+
 static int cmd_i3c_attach(const struct shell *shell_ctx, size_t argc, char **argv)
 {
 	const struct device *dev, *tdev;
@@ -2075,6 +2150,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC GETCAPS\n"
 		      "Usage: ccc getcaps <device> <target> [<defining byte>]",
 		      cmd_i3c_ccc_getcaps, 3, 1),
+	SHELL_CMD_ARG(getmxds, &dsub_i3c_device_attached_name,
+		      "Send CCC GETMXDS\n"
+		      "Usage: ccc getmxds <device> <target> [<defining byte>]",
+		      cmd_i3c_ccc_getmxds, 3, 1),
 	SHELL_CMD_ARG(getvendor, &dsub_i3c_device_attached_name,
 		      "Send CCC GETVENDOR\n"
 		      "Usage: ccc getvendor <device> <target> <id> [<defining byte>]",
