@@ -682,9 +682,39 @@ struct i3c_ccc_setbrgtgt {
 } __packed;
 
 /**
+ * @brief Indicate which format of getmxds to use.
+ */
+enum i3c_ccc_getmxds_fmt {
+	/** GETMXDS Format 1 */
+	GETMXDS_FORMAT_1,
+
+	/** GETMXDS Format 2 */
+	GETMXDS_FORMAT_2,
+
+	/** GETMXDS Format 3 */
+	GETMXDS_FORMAT_3,
+};
+
+/**
+ * @brief Enum for I3C Get Max Data Speed (GETMXDS) Format 3 Defining Byte Values.
+ */
+enum i3c_ccc_getmxds_defbyte {
+	/** Standard Target Write/Read speed parameters, and optional Maximum Read Turnaround Time
+	 */
+	GETMXDS_FORMAT_3_WRRDTURN = 0x00U,
+
+	/** Delay parameters for a Controller-capable Device, and it's expected Activity State
+	 * during a Controller Handoff
+	 */
+	GETMXDS_FORMAT_3_CRHDLY = 0x91U,
+
+	/** Invalid defining byte. */
+	GETMXDS_FORMAT_3_INVALID = 0x100,
+};
+
+
+/**
  * @brief Payload for GETMXDS CCC (Get Max Data Speed).
- *
- * @note This is only for GETMXDS Format 1 and Format 2.
  */
 union i3c_ccc_getmxds {
 	struct {
@@ -716,7 +746,7 @@ union i3c_ccc_getmxds {
 		 *
 		 * @see i3c_ccc_getmxds::fmt2
 		 */
-		uint8_t wrrdturn;
+		uint8_t wrrdturn[5];
 
 		/**
 		 * Defining Byte 0x91: CRHDLY
@@ -1829,6 +1859,85 @@ int i3c_ccc_do_setvendor_all(const struct device *controller,
  * @return @see i3c_do_ccc
  */
 int i3c_ccc_do_setaasa_all(const struct device *controller);
+
+/**
+ * @brief Single target GETMXDS to Get Max Data Speed.
+ *
+ * Helper function to do GETMXDS (Get Max Data Speed) of
+ * one target.
+ *
+ * This should only be supported if Max Data Speed Limit Bit of
+ * the BCR is set
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETMXDS payload.
+ * @param[in] fmt Which GETMXDS to use.
+ * @param[in] defbyte Defining Byte if using format 3.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_getmxds(const struct i3c_device_desc *target,
+			 union i3c_ccc_getmxds *caps,
+			 enum i3c_ccc_getmxds_fmt fmt,
+			 enum i3c_ccc_getmxds_defbyte defbyte);
+
+/**
+ * @brief Single target GETMXDS to Get Max Data Speed (Format 1).
+ *
+ * Helper function to do GETMXDS (Get Max Data Speed, format 1) of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETMXDS payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_getmxds_fmt1(const struct i3c_device_desc *target,
+					    union i3c_ccc_getmxds *caps)
+{
+	return i3c_ccc_do_getmxds(target, caps,
+				    GETMXDS_FORMAT_1,
+				    GETMXDS_FORMAT_3_INVALID);
+}
+
+/**
+ * @brief Single target GETMXDS to Get Max Data Speed (Format 2).
+ *
+ * Helper function to do GETMXDS (Get Max Data Speed, format 2) of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETMXDS payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_getmxds_fmt2(const struct i3c_device_desc *target,
+					    union i3c_ccc_getmxds *caps)
+{
+	return i3c_ccc_do_getmxds(target, caps,
+				    GETMXDS_FORMAT_2,
+					GETMXDS_FORMAT_3_INVALID);
+}
+
+/**
+ * @brief Single target GETMXDS to Get Max Data Speed (Format 3).
+ *
+ * Helper function to do GETMXDS (Get Max Data Speed, format 3) of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETMXDS payload.
+ * @param[in] defbyte Defining Byte for GETMXDS format 3.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_getmxds_fmt3(const struct i3c_device_desc *target,
+					    union i3c_ccc_getmxds *caps,
+					    enum i3c_ccc_getmxds_defbyte defbyte)
+{
+	return i3c_ccc_do_getmxds(target, caps,
+				    GETMXDS_FORMAT_3, defbyte);
+}
 
 /**
  * @brief Broadcast DEFTGTS
