@@ -288,23 +288,29 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	unsigned int key;
 	uint32_t len;
 
-	spcavail = dwc2_ftx_avail(dev, ep_idx);
-	/* Round down to multiple of endpoint MPS */
-	spcavail -= spcavail % cfg->mps;
-	/*
-	 * Here, the available space should be equal to the FIFO space
-	 * assigned/configured for that endpoint because we do not schedule another
-	 * transfer until the previous one has not finished. For simplicity,
-	 * we only check that the available space is not less than the endpoint
-	 * MPS.
-	 */
-	if (spcavail < cfg->mps) {
-		LOG_ERR("ep 0x%02x FIFO space is too low, %u (%u)",
-			cfg->addr, spcavail, dwc2_ftx_avail(dev, ep_idx));
-		return -EAGAIN;
-	}
+	if (priv->bufferdma) {
+		/* DMA automatically handles packet split */
+		len = buf->len;
+	} else {
+		uint32_t spcavail = dwc2_ftx_avail(dev, ep_idx);
 
-	len = MIN(buf->len, spcavail);
+		/* Round down to multiple of endpoint MPS */
+		spcavail -= spcavail % cfg->mps;
+
+		/* Here, the available space should be equal to the FIFO space
+		 * assigned/configured for that endpoint because we do not
+		 * schedule another transfer until the previous one has not
+		 * finished. For simplicity, we only check that the available
+		 * space is not less than the endpoint MPS.
+		 */
+		if (spcavail < cfg->mps) {
+			LOG_ERR("ep 0x%02x FIFO space is too low, %u (%u)",
+				cfg->addr, spcavail, dwc2_ftx_avail(dev, ep_idx));
+			return -EAGAIN;
+		}
+
+		len = MIN(buf->len, spcavail);
+	}
 
 	if (len != 0U) {
 		max_pktcnt = dwc2_get_iept_pktctn(dev, ep_idx);
@@ -332,8 +338,8 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		pktcnt = 1U;
 	}
 
-	LOG_DBG("Prepare ep 0x%02x xfer len %u pktcnt %u spcavail %u",
-		cfg->addr, len, pktcnt, spcavail);
+	LOG_DBG("Prepare ep 0x%02x xfer len %u pktcnt %u",
+		cfg->addr, len, pktcnt);
 	priv->tx_len[ep_idx] = len;
 
 	/* Lock and write to endpoint FIFO */
@@ -363,22 +369,31 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	sys_write32(USB_DWC2_DIEPINT_INEPNAKEFF, diepint_reg);
 
 	if (!priv->bufferdma) {
-		/* FIFO access is always in 32-bit words */
+		const uint8_t *src = buf->data;
+		uint32_t pktlen;
 
-		for (uint32_t i = 0UL; i < len; i += d) {
-			uint32_t val = buf->data[i];
+		while (pktcnt > 0) {
+			uint32_t pktlen = MIN(len, cfg->mps);
 
-			if (i + 1 < len) {
-				val |= ((uint32_t)buf->data[i + 1UL]) << 8;
-			}
-			if (i + 2 < len) {
-				val |= ((uint32_t)buf->data[i + 2UL]) << 16;
-			}
-			if (i + 3 < len) {
-				val |= ((uint32_t)buf->data[i + 3UL]) << 24;
+			for (uint32_t i = 0UL; i < pktlen; i += d) {
+				uint32_t val = src[i];
+
+				if (i + 1 < pktlen) {
+					val |= ((uint32_t)src[i + 1UL]) << 8;
+				}
+				if (i + 2 < pktlen) {
+					val |= ((uint32_t)src[i + 2UL]) << 16;
+				}
+				if (i + 3 < pktlen) {
+					val |= ((uint32_t)src[i + 3UL]) << 24;
+				}
+
+				sys_write32(val, UDC_DWC2_EP_FIFO(base, ep_idx));
 			}
 
-			sys_write32(val, UDC_DWC2_EP_FIFO(base, ep_idx));
+			pktcnt--;
+			src += pktlen;
+			len -= pktlen;
 		}
 	}
 
