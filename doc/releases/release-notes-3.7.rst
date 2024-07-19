@@ -18,8 +18,10 @@ Major enhancements with this release include:
 * A long-awaited HTTP server library, and associated service API, allow to easily implement HTTP/1.1
   and HTTP/2 servers in Zephyr. Resources can be registered statically or at runtime, and WebSocket
   support is included.
-* POSIX support has been extended, with all the Option Requirements of POSIX Subprofiling Option
-  Groups now being supported for PSE51, PSE52, and PSE53 profiles.
+* POSIX support has been extended, with most Options of the IEEE 1003-2017
+  :ref:`System Interfaces <posix_system_interfaces_required>` receiving support, as well as most
+  Options and Option groups required for :ref:`PSE51 <posix_aep_pse51>`,
+  :ref:`PSE52 <posix_aep_pse52>`, and :ref:`PSE53 <posix_aep_pse53>`.
 * Bluetooth Host has been extended with support for the Nordic UART Service (NUS), Hands-free Audio
   Gateway (AG), Advanced Audio Distribution Profile (A2DP), and Audio/Video Distribution Transport
   Protocol (AVDTP).
@@ -1781,6 +1783,35 @@ Libraries / Subsystems
   * Fixed FAT driver leaving disk in initialized state after unmount.
 
 * POSIX API
+
+  * Improved Kconfig options to reflect standard POSIX Options and Option Groups.
+
+  * Added support for the following Option Groups
+
+    * :ref:`POSIX_MAPPED_FILES <posix_option_group_mapped_files>`
+    * :ref:`POSIX_MEMORY_PROTECTION <posix_option_group_memory_protection>`
+    * :ref:`POSIX_NETWORKING <posix_option_group_networking>`
+    * :ref:`POSIX_SINGLE_PROCESS <posix_option_group_single_process>`
+    * :ref:`POSIX_TIMERS <posix_option_group_timers>`
+    * :ref:`XSI_SYSTEM_LOGGING <posix_option_group_xsi_system_logging>`
+
+  * Added support for the following Options
+
+    * :ref:`_POSIX_ASYNCHRONOUS_IO <posix_option_asynchronous_io>`
+    * :ref:`_POSIX_CPUTIME <posix_option_cputime>`
+    * :ref:`_POSIX_FSYNC <posix_option_fsync>`
+    * :ref:`_POSIX_MEMLOCK <posix_option_memlock>`
+    * :ref:`_POSIX_MEMLOCK_RANGE <posix_option_memlock_range>`
+    * :ref:`_POSIX_READER_WRITER_LOCKS <posix_option_reader_writer_locks>`
+    * :ref:`_POSIX_SHARED_MEMORY_OBJECTS <posix_shared_memory_objects>`
+    * :ref:`_POSIX_THREAD_CPUTIME <posix_option_thread_cputime>`
+    * :ref:`_POSIX_THREAD_PRIO_PROTECT <posix_option_thread_prio_protect>`
+    * :ref:`_POSIX_THREAD_PRIORITY_SCHEDULING <posix_option_thread_priority_scheduling>`
+    * :ref:`_XOPEN_STREAMS <posix_option_xopen_streams>`
+
+  * Fixed eventfd ``F_SETFL`` handling to avoid overwriting internal flags.
+  * Fixed thread stack address printed in debug message.
+  * Fixed macro parameter usage in signal code.
 
 * LoRa/LoRaWAN
 
