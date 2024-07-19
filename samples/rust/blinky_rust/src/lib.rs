@@ -12,24 +12,11 @@ extern "C" fn rust_main() {
 }
 
 fn blink() {
-    use zephyr::sys::{device, gpio_dt_spec};
-
     println!("Inside of blinky");
 
-    let led0 = unsafe {
-        extern "C" {
-            static __device_dts_ord_11: device;
-        }
-        gpio_dt_spec {
-            port: &__device_dts_ord_11,
-            pin: 13,
-            dt_flags: 1,
-        }
-    };
+    let mut led0 = zephyr::devicetree::aliases::led0::get_instance();
 
-    if led0.is_ready() {
-        println!("LED is ready");
-    } else {
+    if !led0.is_ready() {
         println!("LED is not ready");
         return;
     }
