@@ -153,7 +153,7 @@
  */
 #define HID_OUT_EP_MPS(n, alt)							\
 	COND_CODE_1(alt,							\
-	(sys_cpu_to_le16(DT_INST_PROP(n, out_report_size))),			\
+	(sys_cpu_to_le16(USB_TPL_TO_MPS(DT_INST_PROP(n, out_report_size)))),	\
 	(sys_cpu_to_le16(MIN(DT_INST_PROP(n, out_report_size), 64U))))
 
 /*
@@ -162,7 +162,7 @@
  */
 #define HID_IN_EP_MPS(n, alt)							\
 	COND_CODE_1(alt,							\
-	(sys_cpu_to_le16(DT_INST_PROP(n, in_report_size))),			\
+	(sys_cpu_to_le16(USB_TPL_TO_MPS(DT_INST_PROP(n, in_report_size)))),	\
 	(sys_cpu_to_le16(MIN(DT_INST_PROP(n, in_report_size), 64U))))
 
 #define HID_OUT_EP_DEFINE(n, hs, alt)						\
@@ -205,5 +205,11 @@
 #define HID_OUT_POOL_ADDR(n)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, out_report_size),			\
 		    (&hid_buf_pool_out_##n), (NULL))
+
+#define HID_VERIFY_REPORT_SIZES(n)						\
+	BUILD_ASSERT(USB_TPL_IS_VALID(DT_INST_PROP_OR(n, out_report_size, 0)),	\
+		"out-report-size must be valid Total Packet Length");		\
+	BUILD_ASSERT(USB_TPL_IS_VALID(DT_INST_PROP_OR(n, in_report_size, 0)),	\
+		"in-report-size must be valid Total Packet Length");
 
 #endif /* ZEPHYR_USB_DEVICE_CLASS_HID_MACROS_H_ */
