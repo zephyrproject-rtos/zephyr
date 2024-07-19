@@ -820,6 +820,7 @@ static struct wifi_mgmt_ops nrf_wifi_mgmt_ops = {
 	.scan = nrf_wifi_disp_scan_zep,
 #ifdef CONFIG_NET_STATISTICS_WIFI
 	.get_stats = nrf_wifi_stats_get,
+	.reset_stats = nrf_wifi_stats_reset,
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 #ifdef CONFIG_NRF70_STA_MODE
 	.set_power_save = nrf_wifi_set_power_save,
