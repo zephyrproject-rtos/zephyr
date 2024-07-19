@@ -738,6 +738,7 @@ static void isr_aux_setup(void *param)
 	aux_start_us -= EVENT_JITTER_US;
 
 	start_us = radio_tmr_start_us(0, aux_start_us);
+	LL_ASSERT(start_us == (aux_start_us + 1U));
 
 	/* Setup header complete timeout */
 	hcto = start_us;
