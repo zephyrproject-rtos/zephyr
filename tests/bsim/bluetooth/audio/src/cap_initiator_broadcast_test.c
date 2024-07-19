@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/gap.h>
@@ -24,6 +25,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
 #include "bap_common.h"
@@ -193,6 +195,27 @@ static void init(void)
 		broadcast_streams[i] =
 			cap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
 		bt_cap_stream_ops_register(broadcast_streams[i], &broadcast_stream_ops);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_TBS)) {
+		const struct bt_tbs_register_param gtbs_param = {
+			.provider_name = "Generic TBS",
+			.uci = "un000",
+			.uri_schemes_supported = "tel,skype",
+			.gtbs = true,
+			.authorization_required = false,
+			.technology = BT_TBS_TECHNOLOGY_3G,
+			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+		};
+
+		err = bt_tbs_register_bearer(&gtbs_param);
+		if (err < 0) {
+			FAIL("Failed to register GTBS (err %d)\n", err);
+
+			return;
+		}
+
+		printk("Registered GTBS\n");
 	}
 }
 
@@ -449,14 +472,15 @@ static void test_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast
 
 static void test_broadcast_audio_update_inval(struct bt_cap_broadcast_source *broadcast_source)
 {
-	const uint16_t mock_ccid = 0xAB;
 	const uint8_t new_metadata[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
 				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, mock_ccid),
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PARENTAL_RATING,
+				    BT_AUDIO_PARENTAL_RATING_AGE_ANY),
 	};
 	const uint8_t invalid_metadata[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, mock_ccid),
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PARENTAL_RATING,
+				    BT_AUDIO_PARENTAL_RATING_AGE_ANY),
 	};
 	int err;
 
