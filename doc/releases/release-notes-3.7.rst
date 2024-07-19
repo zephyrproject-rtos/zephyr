@@ -43,7 +43,7 @@ Major enhancements with this release include:
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.6.0 to Zephyr v3.7.0 can be found in the separate :ref:`migration guide<migration_3.7>`.
 
-While you may refer to release notes from previous 3.x releases for a full description, other major
+While you may refer to release notes from previous 3.x releases for a full change log, other major
 enhancements and changes since previous LTS release, Zephyr 2.7.0, include:
 
 * Added support for Picolibc as the new default C library.
@@ -73,7 +73,7 @@ enhancements and changes since previous LTS release, Zephyr 2.7.0, include:
   * The following deprecated or experimental features have been removed:
 
     * 6LoCAN
-    * civetweb module. See Zephyr 3.7's new HTTP server as a replacement.
+    * civetweb module. See Zephyr 3.7's new :ref:`http_server_interface` as a replacement.
     * tinycbor module. You may use zcbor as a replacement.
 
 The following sections provide detailed lists of changes by component.
@@ -145,8 +145,8 @@ Deprecated in this release
     * :c:macro:`BT_LE_EXT_ADV_NCONN_NAME`
     * :c:macro:`BT_LE_EXT_ADV_CODED_NCONN_NAME`
 
-   Application developer will now need to set the advertised name themselves by updating the advertising data
-   or the scan response data.
+   Application developers will now need to set the advertised name themselves by updating the
+   advertising data or the scan response data.
 
 * CAN
 
@@ -267,7 +267,7 @@ Architectures
 Kernel
 ******
 
-  * Added :c:func:`k_uptime_seconds` function to simplify `k_uptime_get() / 1000` usage.
+  * Added :c:func:`k_uptime_seconds` function to simplify ``k_uptime_get() / 1000`` usage.
 
   * Added :c:func:`k_realloc`, that uses kernel heap to implement traditional :c:func:`realloc`
     semantics.
@@ -355,7 +355,7 @@ Boards & SoC Support
   * Added support for STM32H7R/S SoC series.
   * Added support for NXP mke15z7, mke17z7, mke17z9, MCXNx4x, RW61x
   * Added support for Analog Devices MAX32 SoC series.
-  * Added support for Infineon Technologies AIROC:tm: CYW20829 Bluetooth LE SoC series.
+  * Added support for Infineon Technologies AIROC |trade| CYW20829 Bluetooth LE SoC series.
   * Added support for MediaTek MT8195 Audio DSPs
   * Added support for Nuvoton Numaker M2L31X SoC series.
   * Added support for the Microchip PolarFire ICICLE Kit SMP variant.
@@ -1606,9 +1606,9 @@ Devicetree
 Kconfig
 *******
 
-* Added a `substring` kconfig preprocessor function.
-* Added a `dt_node_ph_prop_path` kconfig preprocessor function.
-* Added a `dt_compat_any_has_prop` kconfig preprocessor function.
+* Added a ``substring`` kconfig preprocessor function.
+* Added a ``dt_node_ph_prop_path`` kconfig preprocessor function.
+* Added a ``dt_compat_any_has_prop`` kconfig preprocessor function.
 
 Libraries / Subsystems
 **********************
