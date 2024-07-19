@@ -555,6 +555,13 @@ static int cmd_i3c_ccc_setdasa(const struct shell *shell_ctx, size_t argc, char 
 
 	/* update the target's dynamic address */
 	desc->dynamic_addr = desc->init_dynamic_addr ? desc->init_dynamic_addr : desc->static_addr;
+	if (desc->dynamic_addr != desc->static_addr) {
+		ret = i3c_reattach_i3c_device(desc, desc->static_addr);
+		if (ret < 0) {
+			shell_error(shell_ctx, "I3C: unable to reattach device");
+			return ret;
+		}
+	}
 
 	return ret;
 }
