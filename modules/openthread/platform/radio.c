@@ -524,6 +524,13 @@ static void openthread_handle_frame_to_send(otInstance *instance,
 		goto exit;
 	}
 
+	if (IS_ENABLED(CONFIG_OPENTHREAD)) {
+		/* Set multicast loop so the stack can process multicast packets for
+		 * subscribed addresses.
+		 */
+		otMessageSetMulticastLoopEnabled(message, true);
+	}
+
 	for (buf = pkt->buffer; buf; buf = buf->frags) {
 		if (otMessageAppend(message, buf->data, buf->len) != OT_ERROR_NONE) {
 			NET_ERR("Error while appending to otMessage");
