@@ -2,6 +2,10 @@
 
 #include "nrf54h20dk_nrf54h20_common.dtsi"
 
+&cpurad_dma_region {
+	reg = <0xe80 DT_SIZE_K(4)>;
+};
+
 &dut {
 	memory-regions = <&cpurad_dma_region>;
 };
