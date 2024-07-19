@@ -31,11 +31,17 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #define DT_DRV_COMPAT st_stm32_otghs
+#define UDC_STM32_IRQ_NAME     otghs
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
 #define DT_DRV_COMPAT st_stm32_otgfs
+#define UDC_STM32_IRQ_NAME     otgfs
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
 #define DT_DRV_COMPAT st_stm32_usb
+#define UDC_STM32_IRQ_NAME     usb
 #endif
+
+#define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
+#define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
 
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
@@ -547,7 +553,7 @@ static int udc_stm32_disable(const struct device *dev)
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	HAL_StatusTypeDef status;
 
-	irq_disable(DT_INST_IRQN(0));
+	irq_disable(UDC_STM32_IRQ);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
 		LOG_ERR("Failed to disable control endpoint");
@@ -1124,12 +1130,12 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	data->caps.mps0 = UDC_MPS0_64;
 
 	priv->dev = dev;
-	priv->irq = DT_INST_IRQN(0);
+	priv->irq = UDC_STM32_IRQ;
 	priv->clk_enable = priv_clock_enable;
 	priv->clk_disable = priv_clock_disable;
 	priv->pcd_prepare = priv_pcd_prepare;
 
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), udc_stm32_irq,
+	IRQ_CONNECT(UDC_STM32_IRQ, UDC_STM32_IRQ_PRI, udc_stm32_irq,
 		    DEVICE_DT_INST_GET(0), 0);
 
 	err = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
