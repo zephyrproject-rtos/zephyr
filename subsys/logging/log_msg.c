@@ -397,6 +397,7 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		z_log_msg_finalize(msg, source, desc, data);
 	}
 }
+EXPORT_SYMBOL(z_log_msg_runtime_vcreate);
 
 int16_t log_msg_get_source_id(struct log_msg *msg)
 {
