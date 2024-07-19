@@ -367,7 +367,7 @@ to ``ENOSYS`` :ref:`†<posix_undefined_behaviour>`.
     setsockopt(),yes
     shutdown(),yes
     socket(),yes
-    sockatmark(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    sockatmark(),yes :ref:`†<posix_undefined_behaviour>`
     socketpair(),yes
 
 .. _posix_option_group_pipe:
@@ -743,6 +743,10 @@ _POSIX_MONOTONIC_CLOCK
 _POSIX_PRIORITY_SCHEDULING
 ++++++++++++++++++++++++++
 
+As processes are not yet supported in Zephyr, the functions ``sched_rr_get_interval()``,
+``sched_setparam()``, and ``sched_setscheduler()`` are expected to fail setting ``errno``
+to ``ENOSYS``:ref:`†<posix_undefined_behaviour>`.
+
 .. csv-table:: _POSIX_PRIORITY_SCHEDULING
    :header: API, Supported
    :widths: 50,10
@@ -751,9 +755,9 @@ _POSIX_PRIORITY_SCHEDULING
     sched_get_priority_min(),yes
     sched_getparam(),yes
     sched_getscheduler(),yes
-    sched_rr_get_interval(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    sched_setparam(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    sched_setscheduler(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    sched_rr_get_interval(),yes :ref:`†<posix_undefined_behaviour>`
+    sched_setparam(),yes :ref:`†<posix_undefined_behaviour>`
+    sched_setscheduler(),yes :ref:`†<posix_undefined_behaviour>`
     sched_yield(),yes
 
 .. _posix_option_raw_sockets:
