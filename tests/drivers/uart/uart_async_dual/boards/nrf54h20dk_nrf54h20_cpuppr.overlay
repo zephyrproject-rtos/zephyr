@@ -5,3 +5,7 @@
 &timer137 {
 	interrupts = <467 (NRF_DEFAULT_IRQ_PRIORITY + 1)>;
 };
+
+&dut2 {
+	status = "disabled";
+};
