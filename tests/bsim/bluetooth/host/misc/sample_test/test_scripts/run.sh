@@ -62,8 +62,10 @@ cd ${BSIM_OUT_PATH}/bin
 
 # Instantiate all devices in the simulation.
 # The `testid` parameter is used to run the right role or procedure (here "dut" vs "tester").
-Execute "${test_exe}" -v=${verbosity_level} -s=${simulation_id} -d=0 -rs=420 -testid=dut
-Execute "${test_exe}" -v=${verbosity_level} -s=${simulation_id} -d=1 -rs=69  -testid=peer
+Execute "${test_exe}" -v=${verbosity_level} -s=${simulation_id} -d=0 -rs=420 -testid=dut \
+		-argstest log_level 3
+Execute "${test_exe}" -v=${verbosity_level} -s=${simulation_id} -d=1 -rs=69  -testid=peer \
+		-argstest log_level 3
 
 # Start the PHY. Double-check the `-D` parameter: it has to match the number of
 # devices started in the lines above.
