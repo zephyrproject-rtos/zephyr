@@ -9,6 +9,7 @@
 	zephyr,user {
 		io-channels = <&adc 0>;
 		reference_mv = <3000>;
+		expected_accuracy = <32>;
 	};
 };
 
