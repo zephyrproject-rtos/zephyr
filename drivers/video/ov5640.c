@@ -83,10 +83,18 @@ LOG_MODULE_REGISTER(ov5640);
 
 #define OV5640_RESOLUTION_PARAM_NUM 24
 
+/* Enum for bus types */
+#define OV5640_BUS_TYPE_PARALLEL		1
+#define OV5640_BUS_TYPE_MIPI_CSI_2_D_PHY	2
+#define OV5640_BUS_TYPE_MIPI_CSI_2_C_PHY	3
+#define OV5640_BUS_TYPE_MIPI_CSI_1		4
+
 struct ov5640_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec reset_gpio;
 	struct gpio_dt_spec powerdown_gpio;
+	uint8_t bus_type;
+	uint8_t bus_width;
 };
 
 struct ov5640_data {
@@ -106,11 +114,12 @@ struct ov5640_mipi_clock_config {
 struct ov5640_resolution_config {
 	uint16_t width;
 	uint16_t height;
+	uint16_t array_size_res_params;
 	const struct ov5640_reg *res_params;
 	const struct ov5640_mipi_clock_config mipi_pclk;
 };
 
-static const struct ov5640_reg ov5640InitParams[] = {
+static const struct ov5640_reg ov5640_init_params_common[] = {
 	/* Power down */
 	{SYS_CTRL0_REG, SYS_CTRL0_SW_PWDN},
 
@@ -325,6 +334,114 @@ static const struct ov5640_reg ov5640InitParams[] = {
 	{0x5000, 0xa7},
 };
 
+/* FIXME: Check with values are really necessary. */
+static const struct ov5640_reg ov5640_init_params_dvp[] = {
+	{0x4740, 0x21},
+	{0x4050, 0x6e},
+	{0x4051, 0x8f},
+	{0x3017, 0xff},
+	{0x3018, 0xff},
+	{0x302c, 0x02},
+	{0x3108, 0x01},
+	{0x3630, 0x2e},
+	{0x3a18, 0x00},
+	{0x3a19, 0xf8},
+	{0x3635, 0x1c},
+	{0x3c04, 0x28},
+	{0x3c05, 0x98},
+	{0x3c06, 0x00},
+	{0x3c07, 0x08},
+	{0x3c08, 0x00},
+	{0x3c09, 0x1c},
+	{0x3c0a, 0x9c},
+	{0x3c0b, 0x40},
+	{TIMING_TC_REG20_REG, 0x47},
+	{TIMING_TC_REG21_REG, 0x01},
+	{0x3800, 0x00},
+	{0x3801, 0x00},
+	{0x3802, 0x00},
+	{0x3803, 0x04},
+	{0x3804, 0x0a},
+	{0x3805, 0x3f},
+	{0x3806, 0x07},
+	{0x3807, 0x9b},
+	{0x3808, 0x05},
+	{0x3809, 0x00},
+	{0x380a, 0x03},
+	{0x380b, 0xc0},
+	{0x3810, 0x00},
+	{0x3811, 0x10},
+	{0x3812, 0x00},
+	{0x3813, 0x06},
+	{0x3814, 0x31},
+	{0x3815, 0x31},
+	{0x3034, 0x1a},
+	{0x3035, 0x11},
+	{0x3036, 0x64},
+	{0x3037, 0x13},
+	{0x3038, 0x00},
+	{0x3039, 0x00},
+	{0x380c, 0x07},
+	{0x380d, 0x68},
+	{0x380e, 0x03},
+	{0x380f, 0xd8},
+	{0x3c01, 0xb4},
+	{0x3c00, 0x04},
+	{0x3a08, 0x00},
+	{0x3a09, 0x93},
+	{0x3a0e, 0x06},
+	{0x3a0a, 0x00},
+	{0x3a0b, 0x7b},
+	{0x3a0d, 0x08},
+	{0x3a00, 0x38},
+	{0x3a02, 0x05},
+	{0x3a03, 0xc4},
+	{0x3a14, 0x05},
+	{0x3a15, 0xc4},
+	{0x300e, 0x58},
+	{0x302e, 0x00},
+	{0x4300, 0x30},
+	{0x501f, 0x00},
+	{0x4713, 0x04},
+	{0x4407, 0x04},
+	{0x460b, 0x35},
+	{0x460c, 0x22},
+	{0x3824, 0x02},
+	{0x3406, 0x01},
+	{0x3400, 0x06},
+	{0x3401, 0x80},
+	{0x3402, 0x04},
+	{0x3403, 0x00},
+	{0x3404, 0x06},
+	{0x3405, 0x00},
+	{0x5688, 0x22},
+	{0x5689, 0x22},
+	{0x568a, 0x42},
+	{0x568b, 0x24},
+	{0x568c, 0x42},
+	{0x568d, 0x24},
+	{0x568e, 0x22},
+	{0x568f, 0x22},
+	{0x5025, 0x00},
+	{0x3406, 0x00},
+	{0x3503, 0x00},
+	{0x3008, 0x02},
+	{0x3a02, 0x07},
+	{0x3a03, 0xae},
+	{0x3a08, 0x01},
+	{0x3a09, 0x27},
+	{0x3a0a, 0x00},
+	{0x3a0b, 0xf6},
+	{0x3a0e, 0x06},
+	{0x3a0d, 0x08},
+	{0x3a14, 0x07},
+	{0x3a15, 0xae},
+
+	/* JPEG Control */
+	{0x4401, 0x0d}, /* | Read SRAM enable when blanking | Read SRAM at first blanking */
+	{0x4723, 0x03}, /* DVP JPEG Mode456 Skip Line Number */
+};
+
 static const struct ov5640_reg ov5640_low_res_params[] = {
 	{0x3800, 0x00}, {0x3801, 0x00}, {0x3802, 0x00}, {0x3803, 0x04}, {0x3804, 0x0a},
 	{0x3805, 0x3f}, {0x3806, 0x07}, {0x3807, 0x9b}, {0x3808, 0x02}, {0x3809, 0x80},
@@ -339,9 +456,10 @@ static const struct ov5640_reg ov5640_720p_res_params[] = {
 	{0x380f, 0xe4}, {0x3810, 0x00}, {0x3811, 0x10}, {0x3812, 0x00}, {0x3813, 0x04},
 	{0x3814, 0x31}, {0x3815, 0x31}, {0x3824, 0x04}, {0x460c, 0x20}};
 
-static const struct ov5640_resolution_config resolutionParams[] = {
+static const struct ov5640_resolution_config csi2_resolution_params[] = {
 	{.width = 640,
 	 .height = 480,
+	 .array_size_res_params = ARRAY_SIZE(ov5640_low_res_params),
 	 .res_params = ov5640_low_res_params,
 	 .mipi_pclk = {
 			 .pllCtrl1 = 0x14,
@@ -349,11 +467,58 @@ static const struct ov5640_resolution_config resolutionParams[] = {
 		 }},
 	{.width = 1280,
 	 .height = 720,
+	 .array_size_res_params = ARRAY_SIZE(ov5640_720p_res_params),
 	 .res_params = ov5640_720p_res_params,
 	 .mipi_pclk = {
 			 .pllCtrl1 = 0x21,
 			 .pllCtrl2 = 0x54,
 		 }},
+};
+
+/* Initialization sequence for QQVGA resolution (160x120) */
+static const struct ov5640_reg ov5640_160x120_dvp_res_params[] = {
+	{0x3800, 0x00}, {0x3801, 0x08}, {0x3802, 0x00}, {0x3803, 0x02}, {0x3804, 0x0a},
+	{0x3805, 0x37}, {0x3806, 0x07}, {0x3807, 0xa1}, {0x3808, 0x00}, {0x3809, 0xa0},
+	{0x380a, 0x00}, {0x380b, 0x78}, {0x380c, 0x06}, {0x380d, 0x14}, {0x380e, 0x03},
+	{0x380f, 0xe8}, {0x3810, 0x00}, {0x3811, 0x04}, {0x3812, 0x00}, {0x3813, 0x02},
+	{0x3814, 0x31}, {0x3815, 0x31}, {0x3820, 0x47}, {0x3821, 0x01}, {0x4602, 0x00},
+	{0x4603, 0xa0}, {0x4604, 0x00}, {0x4605, 0x78}
+};
+
+/* Initialization sequence for QVGA resolution (320x240) */
+static const struct ov5640_reg ov5640_320x240_dvp_res_params[] = {
+	{0x3800, 0x00}, {0x3801, 0x08}, {0x3802, 0x00}, {0x3803, 0x02}, {0x3804, 0x0a},
+	{0x3805, 0x37}, {0x3806, 0x07}, {0x3807, 0xa1}, {0x3808, 0x01}, {0x3809, 0x40},
+	{0x380a, 0x00}, {0x380b, 0xf0}, {0x380c, 0x06}, {0x380d, 0x14}, {0x380e, 0x03},
+	{0x380f, 0xe8}, {0x3810, 0x00}, {0x3811, 0x04}, {0x3812, 0x00}, {0x3813, 0x02},
+	{0x3814, 0x31}, {0x3815, 0x31}, {0x3820, 0x47}, {0x3821, 0x01}, {0x4602, 0x01},
+	{0x4603, 0x40}, {0x4604, 0x00}, {0x4605, 0xf0}};
+
+/* Initialization sequence for 480x272 resolution */
+static const struct ov5640_reg ov5640_480x272_dvp_res_params[] = {
+	{0x3800, 0x00}, {0x3801, 0x08}, {0x3802, 0x00}, {0x3803, 0x02},	{0x3804, 0x0a},
+	{0x3805, 0x37}, {0x3806, 0x07}, {0x3807, 0xa1},	{0x3808, 0x01}, {0x3809, 0xe0},
+	{0x380a, 0x01}, {0x380b, 0x10},	{0x380c, 0x06}, {0x380d, 0x14},	{0x380e, 0x03},
+	{0x380f, 0xe8},	{0x3810, 0x00}, {0x3811, 0x04},	{0x3812, 0x00}, {0x3813, 0x79},
+	{0x3814, 0x31}, {0x3815, 0x31},	{0x3820, 0x47},	{0x3821, 0x01},	{0x4602, 0x01},
+	{0x4603, 0xe0},	{0x4604, 0x01}, {0x4605, 0x10}};
+
+static const struct ov5640_resolution_config dvp_resolution_params[] = {
+	{.width = 160,
+	.height = 120,
+	.array_size_res_params = ARRAY_SIZE(ov5640_160x120_dvp_res_params),
+	.res_params = ov5640_160x120_dvp_res_params
+	},
+	{.width = 320,
+	 .height = 240,
+	 .array_size_res_params = ARRAY_SIZE(ov5640_320x240_dvp_res_params),
+	 .res_params = ov5640_320x240_dvp_res_params
+	},
+	{.width = 480,
+	 .height = 272,
+	 .array_size_res_params = ARRAY_SIZE(ov5640_480x272_dvp_res_params),
+	 .res_params = ov5640_480x272_dvp_res_params
+	},
 };
 
 #define OV5640_VIDEO_FORMAT_CAP(width, height, format)                                             \
@@ -362,12 +527,25 @@ static const struct ov5640_resolution_config resolutionParams[] = {
 		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
 	}
 
-static const struct video_format_cap fmts[] = {
+static const struct video_format_cap csi2_fmts[] = {
 	OV5640_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_RGB565),
 	OV5640_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_YUYV),
 	OV5640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),
 	OV5640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),
 	{0}};
+
+static const struct video_format_cap dvp_fmts[] = {
+	OV5640_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_RGB565),
+	OV5640_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),
+	OV5640_VIDEO_FORMAT_CAP(480, 272, VIDEO_PIX_FMT_RGB565),
+	{0}};
+
+static inline bool ov5640_is_dvp(const struct device *dev)
+{
+	const struct ov5640_config *cfg = dev->config;
+
+	return cfg->bus_type == OV5640_BUS_TYPE_PARALLEL;
+}
 
 static int ov5640_read_reg(const struct i2c_dt_spec *spec, const uint16_t addr, void *val,
 			   const uint8_t val_size)
@@ -457,15 +635,76 @@ static int ov5640_write_multi_regs(const struct i2c_dt_spec *spec, const struct 
 	return 0;
 }
 
+static int ov5640_set_fmt_dvp(const struct ov5640_config *cfg)
+{
+	uint8_t reg;
+	int ret = 0;
+
+	ret |= ov5640_read_reg(&cfg->i2c, TIMING_TC_REG21_REG, &reg, sizeof(reg));
+	ret |= ov5640_write_reg(&cfg->i2c, TIMING_TC_REG21_REG, (reg & 0xDF) | 0x00);
+
+	if (ret) {
+		LOG_ERR("Unable to configure REG: %d on DVP", TIMING_TC_REG21_REG);
+		return ret;
+	}
+
+	ret |= ov5640_read_reg(&cfg->i2c, SYS_RESET02_REG, &reg, sizeof(reg));
+	ret |= ov5640_write_reg(&cfg->i2c, SYS_RESET02_REG, (reg & 0xE3) | 0x1C);
+
+	if (ret) {
+		LOG_ERR("Unable to configure REG: %d on DVP", SYS_RESET02_REG);
+		return ret;
+	}
+
+	ret |= ov5640_read_reg(&cfg->i2c, SYS_CLK_ENABLE02_REG, &reg, sizeof(reg));
+	ret |= ov5640_write_reg(&cfg->i2c, SYS_CLK_ENABLE02_REG, (reg & 0xD7) | 0x00);
+
+	if (ret) {
+		LOG_ERR("Unable to configure REG: %d on DVP", SYS_CLK_ENABLE02_REG);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int ov5640_set_fmt_csi2(const struct ov5640_config *cfg,
+				const struct ov5640_resolution_config *resolution_params)
+{
+	int ret = 0;
+
+	/* Configure MIPI pixel clock */
+	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL0_REG, 0x0f, 0x08);
+	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL1_REG, 0xff,
+				 resolution_params->mipi_pclk.pllCtrl1);
+	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL2_REG, 0xff,
+				 resolution_params->mipi_pclk.pllCtrl2);
+	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL3_REG, 0x1f, 0x13);
+	ret |= ov5640_modify_reg(&cfg->i2c, SYS_ROOT_DIV_REG, 0x3f, 0x01);
+	ret |= ov5640_write_reg(&cfg->i2c, PCLK_PERIOD_REG, 0x0a);
+
+	if (ret) {
+		LOG_ERR("Unable to configure MIPI pixel clock");
+		return ret;
+	}
+
+	return 0;
+}
+
 static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 			  struct video_format *fmt)
 {
 	struct ov5640_data *drv_data = dev->data;
 	const struct ov5640_config *cfg = dev->config;
+	const struct video_format_cap *fmts = ov5640_is_dvp(dev) ? dvp_fmts : csi2_fmts;
+	const size_t num_fmts = ov5640_is_dvp(dev) ? ARRAY_SIZE(dvp_fmts) : ARRAY_SIZE(csi2_fmts);
+	const struct ov5640_resolution_config *resolution_params = ov5640_is_dvp(dev) ?
+						dvp_resolution_params : csi2_resolution_params;
+	const size_t num_res_params = ov5640_is_dvp(dev) ?
+			ARRAY_SIZE(dvp_resolution_params) : ARRAY_SIZE(csi2_resolution_params);
 	int ret;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(fmts); ++i) {
+	for (i = 0; i < num_fmts; ++i) {
 		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
 		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
 		    fmt->height <= fmts[i].height_max) {
@@ -473,7 +712,7 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 		}
 	}
 
-	if (i == ARRAY_SIZE(fmts)) {
+	if (i == num_fmts) {
 		LOG_ERR("Unsupported pixel format or resolution");
 		return -ENOTSUP;
 	}
@@ -485,11 +724,11 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	drv_data->fmt = *fmt;
 
 	/* Set resolution parameters */
-	for (i = 0; i < ARRAY_SIZE(resolutionParams); i++) {
-		if (fmt->width == resolutionParams[i].width &&
-		    fmt->height == resolutionParams[i].height) {
-			ret = ov5640_write_multi_regs(&cfg->i2c, resolutionParams[i].res_params,
-						      OV5640_RESOLUTION_PARAM_NUM);
+	for (i = 0; i < num_res_params; i++) {
+		if (fmt->width == resolution_params[i].width &&
+		    fmt->height == resolution_params[i].height) {
+			ret = ov5640_write_multi_regs(&cfg->i2c, resolution_params[i].res_params,
+						      resolution_params[i].array_size_res_params);
 			if (ret) {
 				LOG_ERR("Unable to set resolution parameters");
 				return ret;
@@ -515,21 +754,11 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 		return ret;
 	}
 
-	/* Configure MIPI pixel clock */
-	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL0_REG, 0x0f, 0x08);
-	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL1_REG, 0xff,
-				 resolutionParams[i].mipi_pclk.pllCtrl1);
-	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL2_REG, 0xff,
-				 resolutionParams[i].mipi_pclk.pllCtrl2);
-	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL3_REG, 0x1f, 0x13);
-	ret |= ov5640_modify_reg(&cfg->i2c, SYS_ROOT_DIV_REG, 0x3f, 0x01);
-	ret |= ov5640_write_reg(&cfg->i2c, PCLK_PERIOD_REG, 0x0a);
-	if (ret) {
-		LOG_ERR("Unable to configure MIPI pixel clock");
-		return ret;
+	if (ov5640_is_dvp(dev)) {
+		return ov5640_set_fmt_dvp(cfg);
 	}
 
-	return 0;
+	return ov5640_set_fmt_csi2(cfg, &resolution_params[i]);
 }
 
 static int ov5640_get_fmt(const struct device *dev, enum video_endpoint_id ep,
@@ -545,13 +774,18 @@ static int ov5640_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 static int ov5640_get_caps(const struct device *dev, enum video_endpoint_id ep,
 			   struct video_caps *caps)
 {
-	caps->format_caps = fmts;
+	caps->format_caps = ov5640_is_dvp(dev) ? dvp_fmts : csi2_fmts;
 	return 0;
 }
 
 static int ov5640_stream_start(const struct device *dev)
 {
 	const struct ov5640_config *cfg = dev->config;
+
+	if (ov5640_is_dvp(dev)) {
+		return 0;
+	}
+
 	/* Power up MIPI PHY HS Tx & LP Rx in 2 data lanes mode */
 	int ret = ov5640_write_reg(&cfg->i2c, IO_MIPI_CTRL00_REG, 0x45);
 
@@ -565,6 +799,11 @@ static int ov5640_stream_start(const struct device *dev)
 static int ov5640_stream_stop(const struct device *dev)
 {
 	const struct ov5640_config *cfg = dev->config;
+
+	if (ov5640_is_dvp(dev)) {
+		return 0;
+	}
+
 	/* Power down MIPI PHY HS Tx & LP Rx */
 	int ret = ov5640_write_reg(&cfg->i2c, IO_MIPI_CTRL00_REG, 0x40);
 
@@ -634,6 +873,13 @@ static int ov5640_init(const struct device *dev)
 
 	k_sleep(K_MSEC(20));
 
+	/* Reset all registers */
+	ret = ov5640_write_reg(&cfg->i2c, SCCB_SYS_CTRL1_REG, 0x11);
+	if (ret) {
+		LOG_ERR("Unable to write to reset all registers");
+		return -EIO;
+	}
+
 	/* Software reset */
 	ret = ov5640_write_reg(&cfg->i2c, SYS_CTRL0_REG, SYS_CTRL0_SW_RST);
 	if (ret) {
@@ -644,17 +890,31 @@ static int ov5640_init(const struct device *dev)
 	k_sleep(K_MSEC(5));
 
 	/* Initialize register values */
-	ret = ov5640_write_multi_regs(&cfg->i2c, ov5640InitParams, ARRAY_SIZE(ov5640InitParams));
+	ret = ov5640_write_multi_regs(&cfg->i2c, ov5640_init_params_common,
+				ARRAY_SIZE(ov5640_init_params_common));
 	if (ret) {
-		LOG_ERR("Unable to initialize the sensor");
+		LOG_ERR("Unable to initialize the sensor with common parameters");
+		return -EIO;
+	}
+
+	if (ov5640_is_dvp(dev)) {
+		ret = ov5640_write_multi_regs(&cfg->i2c, ov5640_init_params_dvp,
+				ARRAY_SIZE(ov5640_init_params_dvp));
+	}
+
+	if (ret) {
+		LOG_ERR("Unable to initialize the sensor with DVP parameters");
 		return -EIO;
 	}
 
 	/* Set virtual channel */
-	ret = ov5640_modify_reg(&cfg->i2c, 0x4814, 3U << 6, (uint8_t)(DEFAULT_MIPI_CHANNEL) << 6);
-	if (ret) {
-		LOG_ERR("Unable to set virtual channel");
-		return -EIO;
+	if (!ov5640_is_dvp(dev)) {
+		ret = ov5640_modify_reg(&cfg->i2c, 0x4814, 3U << 6,
+				(uint8_t)(DEFAULT_MIPI_CHANNEL) << 6);
+		if (ret) {
+			LOG_ERR("Unable to set virtual channel");
+			return -EIO;
+		}
 	}
 
 	/* Check sensor chip id */
@@ -669,10 +929,18 @@ static int ov5640_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Set default format to 720p RGB565 */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = 1280;
-	fmt.height = 720;
+	if (ov5640_is_dvp(dev)) {
+		/* Set default format to 480x272 RGB565 */
+		fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
+		fmt.width = 480;
+		fmt.height = 272;
+	} else {
+		/* Set default format to 720p RGB565 */
+		fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
+		fmt.width = 1280;
+		fmt.height = 720;
+	}
+
 	fmt.pitch = fmt.width * 2;
 	ret = ov5640_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret) {
@@ -690,6 +958,8 @@ static int ov5640_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
 		.powerdown_gpio = GPIO_DT_SPEC_INST_GET_OR(n, powerdown_gpios, {0}),               \
+		.bus_type = DT_PROP(DT_DRV_INST(n), bus_type),                                     \
+		.bus_width = DT_PROP(DT_DRV_INST(n), bus_width),                                   \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &ov5640_init, NULL, &ov5640_data_##n, &ov5640_cfg_##n,            \
