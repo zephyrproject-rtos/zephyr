@@ -3,7 +3,5 @@ name = "zephyr-sys"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
-
 [build-dependencies]
 bindgen = { version = "0.69.4", features = ["experimental"] }

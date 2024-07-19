@@ -39,6 +39,50 @@ function(_rust_map_target)
   endif()
 endfunction()
 
+function(_generate_clang_args BINDGEN_CLANG_ARGS)
+  # Get compiler arguments from Zephyr
+  zephyr_get_system_include_directories_for_lang(C system_includes)
+  zephyr_get_include_directories_for_lang(C includes)
+  zephyr_get_compile_definitions_for_lang(C definitions)
+
+  # Gather -imacros options
+  set(options "-imacros${AUTOCONF_H}")
+
+  if(CONFIG_ENFORCE_ZEPHYR_STDINT)
+    list(APPEND options "-imacros${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h")
+  endif()
+
+  # Determine standard include directories of compiler
+  file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/empty.c)
+
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER} -E -Wp,-v ${CMAKE_CURRENT_BINARY_DIR}/empty.c
+    OUTPUT_QUIET
+    ERROR_VARIABLE output
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+
+  set(standard_includes "-nostdinc")
+  if(output MATCHES "#include <\.\.\.> search starts here:\n(.*)\nEnd of search list\.")
+    string(REGEX MATCHALL "[^ \n]+" paths "${CMAKE_MATCH_1}")
+    foreach(path ${paths})
+      get_filename_component(path ${path} ABSOLUTE)
+      list(APPEND standard_includes "-isystem${path}")
+    endforeach()
+  else()
+    message(WARNING "Unable to determine compiler standard include directories.")
+  endif()
+
+  # Generate file containing arguments for clang. Note that the file is generated after the
+  # CMake configure stage as the variables contain generator expressions which cannot be
+  # evaluated right now.
+  file(
+    GENERATE
+    OUTPUT ${BINDGEN_CLANG_ARGS}
+    CONTENT "${standard_includes};${system_includes};${includes};${definitions};${options}"
+  )
+endfunction()
+
 function(rust_cargo_application)
   # For now, hard-code the Zephyr crate directly here.  Once we have
   # more than one crate, these should be added by the modules
@@ -57,6 +101,11 @@ function(rust_cargo_application)
   set(CARGO_TARGET_DIR "${CMAKE_CURRENT_BINARY_DIR}/rust/target")
   set(RUST_LIBRARY "${CARGO_TARGET_DIR}/${RUST_TARGET}/${RUST_BUILD_TYPE}/librustapp.a")
   set(SAMPLE_CARGO_CONFIG "${CMAKE_CURRENT_BINARY_DIR}/rust/sample-cargo-config.toml")
+
+  set(BINDGEN_CLANG_ARGS "${CMAKE_CURRENT_BINARY_DIR}/rust/clang_args.txt")
+  set(BINDGEN_WRAP_STATIC_FNS "${CARGO_TARGET_DIR}/${RUST_TARGET}/${RUST_BUILD_TYPE}/wrap_static_fns.c")
+
+  _generate_clang_args(${BINDGEN_CLANG_ARGS})
 
   # To get cmake to always invoke Cargo requires a bit of a trick.  We make the output of the
   # command a file that never gets created.  This will cause cmake to always rerun cargo.  We
@@ -99,6 +148,8 @@ target-dir = \"${CARGO_TARGET_DIR}\"
 BUILD_DIR = \"${CMAKE_CURRENT_BINARY_DIR}\"
 DOTCONFIG = \"${DOTCONFIG}\"
 ZEPHYR_DTS = \"${ZEPHYR_DTS}\"
+BINDGEN_CLANG_ARGS = \"${BINDGEN_CLANG_ARGS}\"
+BINDGEN_WRAP_STATIC_FNS = \"${BINDGEN_WRAP_STATIC_FNS}\"
 
 [patch.crates-io]
 ${config_paths}
@@ -106,13 +157,15 @@ ${config_paths}
 
   # The library is built by invoking Cargo.
   add_custom_command(
-    OUTPUT ${DUMMY_FILE} /tmp/bindgen/extern.c
-    BYPRODUCTS ${RUST_LIBRARY}
+    OUTPUT ${DUMMY_FILE}
+    BYPRODUCTS ${RUST_LIBRARY} ${BINDGEN_WRAP_STATIC_FNS}
     COMMAND
       ${CMAKE_EXECUTABLE}
       env BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
       DOTCONFIG=${DOTCONFIG}
       ZEPHYR_DTS=${ZEPHYR_DTS}
+      BINDGEN_CLANG_ARGS=${BINDGEN_CLANG_ARGS}
+      BINDGEN_WRAP_STATIC_FNS="${BINDGEN_WRAP_STATIC_FNS}"
       cargo build
       # TODO: release flag if release build
       # --release
@@ -139,11 +192,9 @@ ${config_paths}
   target_link_libraries(app PUBLIC -Wl,--allow-multiple-definition ${RUST_LIBRARY})
   add_dependencies(app librustapp)
 
-  # Presumably, Rust applications will have no C source files, but cmake will require them.
-  # Add an empty file so that this will build.  The main will come from the rust library.
-  target_sources(app PRIVATE ${ZEPHYR_BASE}/lib/rust/main.c ${ZEPHYR_BASE}/lib/rust/panic.c)
-
-  # TODO: Make safer and nicer
-  target_sources(app PRIVATE /tmp/bindgen/extern.c)
-  target_include_directories(app PRIVATE ${ZEPHYR_BASE}/lib/rust/zephyr-sys)
+  target_sources(app PRIVATE
+    ${ZEPHYR_BASE}/lib/rust/main.c
+    ${ZEPHYR_BASE}/lib/rust/panic.c
+    ${BINDGEN_WRAP_STATIC_FNS}
+  )
 endfunction()
