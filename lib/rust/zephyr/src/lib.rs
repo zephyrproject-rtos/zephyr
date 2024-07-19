@@ -12,6 +12,8 @@ extern crate alloc;
 
 mod allocator;
 mod panic;
+
+pub mod kernel;
 pub mod print;
 pub mod drivers;
 

@@ -8,15 +8,20 @@
 extern crate zephyr;
 extern crate alloc;
 
-use zephyr::drivers::gpio::{sleep, toggle};
+use zephyr::kernel::msleep;
+use zephyr::drivers::gpio;
 use zephyr::println;
 
 #[no_mangle]
 extern "C" fn rust_main() {
     println!("Hello, world! {}", zephyr::kconfig::CONFIG_BOARD);
 
+    let pin = gpio::Pin::get_led();
+
+    pin.configure(gpio::Flags::OutputActive).expect("Failed to configure pin.");
+
     loop {
-        toggle();
-        sleep();
+        msleep(1000);
+        pin.toggle().expect("Failed to toggle pin.");
     }
 }

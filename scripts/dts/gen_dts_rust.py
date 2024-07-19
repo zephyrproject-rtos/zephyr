@@ -73,6 +73,8 @@ def generate_node_struct(node):
 def generate_node_instance(node):
     for label in node.labels:
         yield f'// label("{label}")\n'
+    for alias in node.aliases:
+        yield f'// alias("{alias}")\n'
     if node.matching_compat:
         yield f'// matching_compat("{node.matching_compat}")\n'
 
@@ -84,20 +86,22 @@ def generate_node_instance(node):
     for property_name, property_object in node.props.items():
         if property_object.spec.type == 'boolean':
             yield f'    {replace_chars(property_name)}: {"true" if property_object.val else "false"},\n'
-        if property_object.spec.type == 'int':
+        elif property_object.spec.type == 'int':
             yield f'    {replace_chars(property_name)}: {property_object.val},\n'
-        if property_object.spec.type == 'string':
+        elif property_object.spec.type == 'string':
             yield f'    {replace_chars(property_name)}: "{property_object.val}",\n'
-        if property_object.spec.type == 'array':
+        elif property_object.spec.type == 'array':
             yield f'    {replace_chars(property_name)}: ['
             yield ', '.join(str(val) for val in property_object.val)
             yield '],\n'
-        if property_object.spec.type == 'string-array':
+        elif property_object.spec.type == 'string-array':
             yield f'    {replace_chars(property_name)}: ['
             yield ', '.join(f'"{val}"' for val in property_object.val)
             yield '],\n'
-        if property_object.spec.type == 'phandle' or property_object.spec.type == 'path':
+        elif property_object.spec.type == 'phandle' or property_object.spec.type == 'path':
             yield f'    {replace_chars(property_name)}: "DT_NODE_{property_object.val.dep_ordinal}",\n'
+        else:
+            yield f'    // {replace_chars(property_name)} ({property_object.spec.type})\n'
 
     yield '};\n\n'
 

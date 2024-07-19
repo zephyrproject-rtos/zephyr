@@ -11,6 +11,7 @@ Functionality for Rust-based applications that run on Zephyr.
 
 [dependencies]
 zephyr-sys = "0.1.0"
+bitmask-enum = "2.2.4"
 
 # These are needed at build time.
 # Whether these need to be vendored is an open question.  They are not
