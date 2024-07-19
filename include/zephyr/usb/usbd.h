@@ -497,13 +497,13 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 #define USBD_DESC_LANG_DEFINE(name)					\
 	static uint16_t langid_##name = sys_cpu_to_le16(0x0409);	\
 	static struct usbd_desc_node name = {				\
-		.bLength = sizeof(struct usb_string_descriptor),	\
-		.bDescriptorType = USB_DESC_STRING,			\
 		.str = {						\
 			.idx = 0,					\
 			.utype = USBD_DUT_STRING_LANG,			\
 		},							\
 		.ptr = &langid_##name,					\
+		.bLength = sizeof(struct usb_string_descriptor),	\
+		.bDescriptorType = USB_DESC_STRING,			\
 	}
 
 /**
@@ -524,9 +524,9 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 			.utype = d_utype,					\
 			.ascii7 = true,						\
 		},								\
+		.ptr = &ascii_##d_name,						\
 		.bLength = USB_STRING_DESCRIPTOR_LENGTH(d_string),		\
 		.bDescriptorType = USB_DESC_STRING,				\
-		.ptr = &ascii_##d_name,					\
 	}
 
 /**
