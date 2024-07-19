@@ -750,3 +750,15 @@ int i3c_ccc_do_setvendor_all(const struct device *controller, uint8_t id, uint8_
 
 	return i3c_do_ccc(controller, &ccc_payload);
 }
+
+int i3c_ccc_do_setaasa_all(const struct device *controller)
+{
+	struct i3c_ccc_payload ccc_payload;
+
+	__ASSERT_NO_MSG(controller != NULL);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_SETAASA;
+
+	return i3c_do_ccc(controller, &ccc_payload);
+}

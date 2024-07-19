@@ -1814,6 +1814,19 @@ int i3c_ccc_do_setvendor_all(const struct device *controller,
 			uint8_t *payload,
 			size_t len);
 
+/**
+ * @brief Broadcast SETAASA to set all target's dynamic address to their
+ * static address.
+ *
+ * Helper function to set dynamic addresses of all connected targets to
+ * their static address.
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_setaasa_all(const struct device *controller);
+
 #ifdef __cplusplus
 }
 #endif
