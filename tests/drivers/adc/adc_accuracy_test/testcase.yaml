@@ -17,3 +17,4 @@ tests:
       fixture: adc_ref_volt
     platform_allow:
       - frdm_kl25z
+      - nrf52840dk/nrf52840
