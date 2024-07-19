@@ -1142,4 +1142,52 @@ unlock:
 out:
 	return ret;
 }
+
+int nrf_wifi_stats_reset(const struct device *dev)
+{
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	int ret = -1;
+
+	if (!dev) {
+		LOG_ERR("%s Device not found", __func__);
+		goto out;
+	}
+
+	vif_ctx_zep = dev->data;
+	if (!vif_ctx_zep) {
+		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		goto out;
+	}
+
+	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	if (ret != 0) {
+		LOG_ERR("%s: Failed to lock vif_lock", __func__);
+		goto out;
+	}
+
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
+		LOG_DBG("%s: rpu_ctx_zep or rpu_ctx is NULL",
+			__func__);
+		goto unlock;
+	}
+
+	status = nrf_wifi_fmac_stats_reset(rpu_ctx_zep->rpu_ctx);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_fmac_stats_reset failed", __func__);
+		goto unlock;
+	}
+
+	def_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	memset(&def_dev_ctx->host_stats, 0, sizeof(struct rpu_host_stats));
+
+	ret = 0;
+unlock:
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+out:
+	return ret;
+}
 #endif /* CONFIG_NET_STATISTICS_WIFI */
