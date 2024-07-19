@@ -197,7 +197,7 @@ static struct net_buf *test_udc_ep_buf_alloc(const struct device *dev,
 	struct net_buf *buf;
 
 	buf = udc_ep_buf_alloc(dev, ed->bEndpointAddress,
-			       sys_le16_to_cpu(ed->wMaxPacketSize));
+			       USB_MPS_TO_TPL(sys_le16_to_cpu(ed->wMaxPacketSize)));
 
 	zassert_not_null(buf, "Failed to allocate request");
 
@@ -338,7 +338,7 @@ static void test_udc_ep_api(const struct device *dev,
 		/* It needs a little reserve for memory management overhead. */
 		for (int n = 0; n < (CONFIG_UDC_BUF_COUNT - 4); n++) {
 			buf = udc_ep_buf_alloc(dev, ed->bEndpointAddress,
-					       sys_le16_to_cpu(ed->wMaxPacketSize));
+				USB_MPS_TO_TPL(sys_le16_to_cpu(ed->wMaxPacketSize)));
 			zassert_not_null(buf,
 					 "Failed to allocate request (%d) for 0x%02x",
 					 n, ed->bEndpointAddress);

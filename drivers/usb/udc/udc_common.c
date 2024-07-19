@@ -262,7 +262,7 @@ static bool ep_check_config(const struct device *dev,
 		return false;
 	}
 
-	if (mps > cfg->caps.mps) {
+	if (USB_MPS_EP_SIZE(mps) > USB_MPS_EP_SIZE(cfg->caps.mps)) {
 		return false;
 	}
 
@@ -273,12 +273,16 @@ static bool ep_check_config(const struct device *dev,
 		}
 		break;
 	case USB_EP_TYPE_INTERRUPT:
-		if (!cfg->caps.interrupt) {
+		if (!cfg->caps.interrupt ||
+		    (USB_MPS_ADDITIONAL_TRANSACTIONS(mps) &&
+		     !cfg->caps.high_bandwidth)) {
 			return false;
 		}
 		break;
 	case USB_EP_TYPE_ISO:
-		if (!cfg->caps.iso) {
+		if (!cfg->caps.iso ||
+		    (USB_MPS_ADDITIONAL_TRANSACTIONS(mps) &&
+		     !cfg->caps.high_bandwidth)) {
 			return false;
 		}
 		break;
