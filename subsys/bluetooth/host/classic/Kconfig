@@ -13,6 +13,7 @@ config BT_CLASSIC
 	select BT_CENTRAL
 	select BT_SMP
 	select BT_L2CAP_DYNAMIC_CHANNEL
+	select CRC
 	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth BR/EDR support
@@ -25,6 +26,84 @@ config BT_MAX_SCO_CONN
 	help
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
+
+config BT_L2CAP_RET
+	bool "Bluetooth L2CAP restransmission mode [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP restransmission mode
+
+config BT_L2CAP_FC
+	bool "Bluetooth L2CAP flow control mode [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP flow control mode
+
+config BT_L2CAP_ENH_RET
+	bool "Bluetooth L2CAP enhance restransmission [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP enhance restransmission
+
+config BT_L2CAP_STREAM
+	bool "Bluetooth L2CAP streaming mode [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP streaming mode
+
+config BT_L2CAP_FCS
+	bool "Bluetooth L2CAP FCS Option [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_L2CAP_STREAM || BT_L2CAP_ENH_RET
+	help
+	  This option enables Bluetooth L2CAP FCS Option
+
+config BT_L2CAP_EXT_WIN_SIZE
+	bool "Bluetooth L2CAP Extended window size Option [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_L2CAP_STREAM || BT_L2CAP_ENH_RET
+	help
+	  This option enables Bluetooth L2CAP Extended window size Option
+
+config BT_L2CAP_MPS
+	int "Bluetooth L2CAP MPS for restransmission and Flow control"
+	default 48
+	range 48 BT_L2CAP_TX_MTU
+	help
+	  Bluetooth L2CAP MPS for restransmission and Flow control
+
+config BT_L2CAP_MAX_WINDOW_SIZE
+	int "Maximum Windows Size of Retransmission and Flow Control"
+	default 1
+	range 1 32
+	help
+	  Maximum Windows Size of Retransmission and Flow Control.
+	  The minimum (and default) number is 1.
+	  The range is 1 to 32 for Flow Control mode and Retransmission mode.
+	  The range is 1 to 63 for Enhanced Retransmission mode.
+	  The range is 1 to 0x3FFF for Enhanced Retransmission mode with
+	  externed control.
+
+config BT_L2CAP_BR_RET_TIMEOUT
+	int "Retransmission timeout"
+	default 2000
+	range 1000 2000
+	help
+	  the Retransmission timeout shall be three times the value of flush
+	  timeout, subject to a minimum of 1 second and maximum of 2 seconds.
+
+config BT_L2CAP_BR_MONITOR_TIMEOUT
+	int "Monitor timeout"
+	default 12000 if BT_L2CAP_ENH_RET
+	default BT_L2CAP_BR_RET_TIMEOUT
+	range BT_L2CAP_BR_RET_TIMEOUT 12000
+	help
+	  If a flush timeout exists on the link for Enhanced Retransmission mode and
+	  both sides of the link are configured to the same flush timeout value then the
+	  monitor timeout shall be set to a value at least as large as the Retransmission
+	  timeout otherwise the value of the Monitor timeout shall be six times the value
+	  of flush timeout, subject to a minimum of the retransmission timeout value and
+	  a maximum of 12 seconds.
 
 config BT_L2CAP_CLS
 	bool "Bluetooth L2CAP connectionless data channel [EXPERIMENTAL]"

@@ -234,12 +234,111 @@ struct bt_l2cap_le_chan {
  */
 #define BT_L2CAP_LE_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_le_chan, chan)
 
+/** L2CAP Endpoint Link Mode. Basic mode. */
+#define BT_L2CAP_BR_LINK_MODE_BASIC  0x00
+/** L2CAP Endpoint Link Mode. Restransmission mode. */
+#define BT_L2CAP_BR_LINK_MODE_RET    0x01
+/** L2CAP Endpoint Link Mode. Flow control mode. */
+#define BT_L2CAP_BR_LINK_MODE_FC     0x02
+/** L2CAP Endpoint Link Mode. Enhance restransmission mode. */
+#define BT_L2CAP_BR_LINK_MODE_ERET   0x03
+/** L2CAP Endpoint Link Mode. Streaming mode. */
+#define BT_L2CAP_BR_LINK_MODE_STREAM 0x04
+
+/** Frame Check Sequence type. No FCS. */
+#define BT_L2CAP_BR_FCS_NO			 0x00
+/** Frame Check Sequence type. 16-bit FCS. */
+#define BT_L2CAP_BR_FCS_16BIT		 0x01
+
 /** @brief BREDR L2CAP Endpoint structure. */
 struct bt_l2cap_br_endpoint {
 	/** Endpoint Channel Identifier (CID) */
 	uint16_t				cid;
 	/** Endpoint Maximum Transmission Unit */
 	uint16_t				mtu;
+#if defined(CONFIG_BT_L2CAP_RET) || defined(CONFIG_BT_L2CAP_FC) || \
+	defined(CONFIG_BT_L2CAP_ENH_RET) || defined(CONFIG_BT_L2CAP_STREAM)
+	/** Endpoint Link Mode.
+	 *  The value is defined as BT_L2CAP_BR_LINK_MODE_*
+	 */
+	uint8_t					mode;
+	/** Whether Endpoint Link Mode is optional
+	 * If the `optional` is true, the `mode` could be
+	 * changed according to the extended feature and
+	 * peer configuration from L2CAP configuration
+	 * response and request.
+	 * Otherwise, if the channel configuration process
+	 * does not meet the set mode, the L2CAP channel
+	 * will be disconnected.
+	 */
+	bool					optional;
+	/** Endpoint Maximum Transmit
+	 * The field is used to set the max retransmission
+	 * count.
+	 * For `RET`, `FC`, and `ERET`, it should be not
+	 * less 1.
+	 * For `STREAM`, it should be 0.
+	 */
+	uint8_t					transmit;
+	/** Endpoint Retransmission Timeout
+	 * The field is configured by
+	 * `@kconfig{BT_L2CAP_BR_RET_TIMEOUT}`
+	 * The field should be no more than the field
+	 * `monitor_timeout`.
+	 */
+	uint16_t				ret_timeout;
+	/** Endpoint Monitor Timeout */
+	uint16_t				monitor_timeout;
+	/** Endpoint Maximum PDU payload Size
+	 * The field is configured by
+	 * `@kconfig{BT_L2CAP_BR_MONITOR_TIMEOUT}`
+	 */
+	uint16_t				mps;
+	/** Endpoint Maximum Window Size
+	 * MAX supported window size is configured by
+	 * `@kconfig{BT_L2CAP_MAX_WINDOW_SIZE}`. The field
+	 * should be no more then `CONFIG_BT_L2CAP_MAX_WINDOW_SIZE`.
+	 */
+	uint16_t				window;
+	/** Endpoint FCS Type
+	 * The value is defined as BT_L2CAP_BR_FCS_*
+	 * The default setting should be BT_L2CAP_BR_FCS_16BIT.
+	 * For FC and RET, the FCS type should be
+	 * BT_L2CAP_BR_FCS_16BIT.
+	 * For ERET and STREAM, the FCS type is optional. If
+	 * the field is not default value, the local will include
+	 * FCS option in configuration request packet if both side
+	 * support `FCS Option`.
+	 */
+	uint8_t					fcs;
+	/** Endpoint Extended Control.
+	 * If this field is true, and both side support
+	 * `Extended Window size feature`, the local will
+	 * include `extended window size` option in configuration
+	 * request packet.
+	 */
+	bool					extended_control;
+#endif
+};
+
+/** I-Frame transmission window for none `BASIC` mode L2cap connected channel. */
+struct bt_l2cap_br_window {
+	sys_snode_t node;
+
+	/** tx seq */
+	uint16_t tx_seq;
+	/** data address */
+	uint8_t *data;
+	/** data len */
+	uint16_t len;
+	/** Transmit Counter */
+	uint8_t transmit_counter;
+	/** SAR flag */
+	uint8_t sar;
+	/** srej flag */
+	bool srej;
+	/* Save PDU state */
+	struct net_buf_simple_state pdu;
 };
 
 /** @brief BREDR L2CAP Channel structure. */
@@ -270,6 +369,84 @@ struct bt_l2cap_br_chan {
 	atomic_t			_pdu_ready_lock;
 	/** @internal Queue of net bufs not yet sent to lower layer */
 	struct k_fifo			_pdu_tx_queue;
+
+#if defined(CONFIG_BT_L2CAP_RET) || defined(CONFIG_BT_L2CAP_FC) || \
+	defined(CONFIG_BT_L2CAP_ENH_RET) || defined(CONFIG_BT_L2CAP_STREAM)
+	/** @internal Total length of TX SDU */
+	uint16_t			_sdu_total_len;
+
+	/** @internal Holds the remaining length of current sending buffer */
+	size_t				_pdu_remaining;
+
+	/** @internal Holds the sending buffer. */
+	struct net_buf		*_pdu_buf;
+
+	/** @internal TX windows for outstanding frame */
+	sys_slist_t			_pdu_outstanding;
+
+	/** @internal PDU restore state */
+	struct net_buf_simple_state _pdu_state;
+
+	/** @internal Free TX windows */
+	struct k_fifo		_free_tx_win;
+
+	/** @internal TX windows */
+	struct bt_l2cap_br_window tx_win[CONFIG_BT_L2CAP_MAX_WINDOW_SIZE];
+
+	/** Segment SDU packet from upper layer */
+	struct net_buf		*_sdu;
+	/** @internal RX SDU */
+	uint16_t			_sdu_len;
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	uint16_t			_sdu_len_done;
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
+
+
+	/** @internal variables and sequence numbers */
+	/** @internal The sending peer uses the following variables and sequence
+	 * numbers.
+	 */
+	/** @internal The send sequence number used to sequentially number each
+	 * new I-frame transmitted.
+	 */
+	uint16_t				tx_seq;
+	/** @internal The sequence number to be used in the next new I-frame
+	 * transmitted.
+	 */
+	uint16_t				next_tx_seq;
+	/** @internal The sequence number of the next I-frame expected to be
+	 * acknowledged by the receiving peer.
+	 */
+	uint16_t				expected_ack_seq;
+	/** @internal The receiving peer uses the following variables and sequence
+	 * numbers.
+	 */
+	/** @internal The sequence number sent in an acknowledgment frame to
+	 * request transmission of I-frame with TxSeq = ReqSeq and acknowledge
+	 * receipt of I-frames up to and including (ReqSeq-1).
+	 */
+	uint16_t				req_seq;
+	/** @internal The value of TxSeq expected in the next I-frame.
+	 */
+	uint16_t				expected_tx_seq;
+	/** @internal When segmented I-frames are buffered this is used to delay
+	 * acknowledgment of received I-frame so that new I-frame transmissions do
+	 * not cause buffer overflow.
+	 */
+	uint16_t				buffer_seq;
+
+	/** @internal States of Enhanced Retransmission Mode */
+	/** @internal Holds the number of times an S-frame operation is retried
+	 */
+	uint16_t				retry_count;
+	/** @internal save the ReqSeq of a SREJ frame */
+	uint16_t				srej_save_req_seq;
+
+	/** @internal Retransmission Timer */
+	struct k_work_delayable		ret_work;
+	/** @internal Monitor Timer */
+	struct k_work_delayable		monitor_work;
+#endif
 };
 
 /** @brief L2CAP Channel operations structure. */

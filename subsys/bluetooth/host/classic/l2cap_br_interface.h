@@ -63,3 +63,5 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf);
 struct net_buf *l2cap_br_data_pull(struct bt_conn *conn,
 				   size_t amount,
 				   size_t *length);
+
+int bt_l2cap_br_chan_recv_complete(struct bt_l2cap_chan *chan);
