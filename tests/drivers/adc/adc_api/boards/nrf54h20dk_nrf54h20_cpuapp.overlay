@@ -25,7 +25,7 @@
 
 	channel@2 {
 		reg = <2>;
-		zephyr,gain = "ADC_GAIN_1_2";
+		zephyr,gain = "ADC_GAIN_2_3";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
 		zephyr,input-positive = <NRF_SAADC_AIN2>;
