@@ -16,6 +16,7 @@ fn main() {
         .wrap_static_fns(true)
         .wrap_static_fns_path(wrap_static_fns)
         .allowlist_file(zephyr_base.join(".*").to_str().unwrap())
+        .allowlist_file(".*/errno.h")
         .blocklist_function("z_impl_.*")
         .blocklist_var("K_SYSCALL_.*")
         .blocklist_var("DT_.*")

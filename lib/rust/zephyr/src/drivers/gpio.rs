@@ -1,4 +1,5 @@
 use bitmask_enum::bitmask;
+use crate::errno::{Errno, parse_result};
 
 extern "C" {
     static led: zephyr_sys::gpio_dt_spec;
@@ -31,21 +32,15 @@ impl Pin {
         }
     }
 
-    pub fn configure(&self, extra_flags: Flags) -> Result<(), i32>{
+    pub fn configure(&self, extra_flags: Flags) -> Result<(), Errno>{
         unsafe {
-            match zephyr_sys::gpio_pin_configure_dt(&self.gpio_dt_spec, extra_flags.bits()) {
-                0 => Ok(()),
-                res => Err(res),
-            }
+            parse_result(zephyr_sys::gpio_pin_configure_dt(&self.gpio_dt_spec, extra_flags.bits()))
         }
     }
 
-    pub fn toggle(&self) -> Result<(), i32> {
+    pub fn toggle(&self) -> Result<(), Errno> {
         unsafe {
-            match zephyr_sys::gpio_pin_toggle_dt(&self.gpio_dt_spec) {
-                0 => Ok(()),
-                res => Err(res),
-            }
+            parse_result(zephyr_sys::gpio_pin_toggle_dt(&self.gpio_dt_spec))
         }
     }
 }
