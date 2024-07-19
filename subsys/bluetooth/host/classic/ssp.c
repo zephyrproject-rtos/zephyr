@@ -213,6 +213,13 @@ static int ssp_confirm_neg_reply(struct bt_conn *conn)
 
 static void ssp_pairing_complete(struct bt_conn *conn, uint8_t status)
 {
+	/* When the ssp pairing complete event notified,
+	 * clear the pairing flag.
+	 */
+	atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
+
+	LOG_DBG("Pairing completed status %d", status);
+
 	if (!status) {
 		bool bond = !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND);
 		struct bt_conn_auth_info_cb *listener, *next;
