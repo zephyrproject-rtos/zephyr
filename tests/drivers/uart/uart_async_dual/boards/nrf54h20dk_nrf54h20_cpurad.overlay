@@ -15,6 +15,14 @@
 	memory-regions = <&cpurad_dma_region>;
 };
 
+&dma_fast_region {
+	status = "okay";
+};
+
+&dut2 {
+	memory-regions = <&dma_fast_region>;
+};
+
 &timer131 {
 	status = "okay";
 	prescaler = <0>;

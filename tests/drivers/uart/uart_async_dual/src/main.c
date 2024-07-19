@@ -45,17 +45,15 @@ ZTEST_DMEM struct dut_data duts[] = {
 		.name_aux = DT_SAME_NODE(DUT_NODE, DUT_AUX_NODE) ?
 			NULL : DT_NODE_FULL_NAME(DUT_AUX_NODE),
 	},
-#if 0
-#if DT_NODE_EXISTS(DT_NODELABEL(dut2))
+#if DT_NODE_EXISTS(DT_NODELABEL(dut2)) && DT_NODE_HAS_STATUS(DT_NODELABEL(dut2), okay)
 	{
 		.dev = DEVICE_DT_GET(DT_NODELABEL(dut2)),
 		.name = DT_NODE_FULL_NAME(DT_NODELABEL(dut2)),
-#if DT_NODE_EXISTS(DT_NODELABEL(dut_aux2))
+#if DT_NODE_EXISTS(DT_NODELABEL(dut_aux2)) && DT_NODE_HAS_STATUS(DT_NODELABEL(dut_aux2), okay)
 		.dev_aux = DEVICE_DT_GET(DT_NODELABEL(dut_aux2)),
 		.name_aux = DT_NODE_FULL_NAME(DT_NODELABEL(dut_aux2)),
 #endif
 	},
-#endif
 #endif
 };
 
