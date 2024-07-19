@@ -283,22 +283,26 @@ Atmosic In-System Programming (ISP) Tool
 This SDK ships with a tool called Atmosic In-System Programming Tool
 (ISP) for bundling all three types of binaries -- OTP NVDS, flash NVDS, and
 flash -- into a single binary archive.
------------------------------------------------------------------------
+
++---------------+-----------------------------------------------------+
 |  Binary Type  |  Description                                        |
------------------------------------------------------------------------
++---------------+-----------------------------------------------------+
 |   .bin        |  binary file, contains flash or nvds data only.     |
------------------------------------------------------------------------
++---------------+-----------------------------------------------------+
 |   .elf        |  elf file, a common standard file format, consists  |
 |               |  of elf headers and flash data.                     |
------------------------------------------------------------------------
++---------------+-----------------------------------------------------+
 |   .nvm        |  OTP NVDS file, contains OTP nvds data.             |
------------------------------------------------------------------------
++---------------+-----------------------------------------------------+
+
 The ISP tool, which is also shipped as a stand-alone package, can then be used
 to unpack the components of the archive and download them on a device.
 
 west atm_arch commands
 ======================
-atm isp archive tool
+::
+
+  atm isp archive tool
   -atm_isp_path ATM_ISP_PATH, --atm_isp_path ATM_ISP_PATH
                         specify atm_isp exe path path
   -d, --debug           debug enabled, default false
@@ -326,7 +330,9 @@ atm isp archive tool
 
 Generate atm isp file
 =====================
-  $ west atm_arch -o ATMEVK-3330-QN-5_beacon.atm \
+::
+
+  west atm_arch -o ATMEVK-3330-QN-5_beacon.atm \
     -p build/ATMEVK-3330-QN-5_ns/zephyr/samples/bluetooth/beacon/zephyr/partition_info.map \
     --app_file build/ATMEVK-3330-QN-5_ns/zephyr/samples/bluetooth/beacon/zephyr/zephyr.signed.bin \
     --mcuboot_file build/ATMEVK-3330-QN-5/bootloader/mcuboot/boot/zephyr/zephyr/zephyr.bin \
@@ -335,13 +341,17 @@ Generate atm isp file
 
 Show atm isp file
 =================
-  $ west atm_arch -i ATMEVK-3330-QN-5_beacon.atm \
+::
+
+  west atm_arch -i ATMEVK-3330-QN-5_beacon.atm \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_isp \
     --show
 
 Flash atm isp file
 ==================
-  $ west atm_arch -i ATMEVK-3330-QN-5_beacon.atm \
+::
+
+  west atm_arch -i ATMEVK-3330-QN-5_beacon.atm \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_isp \
     --openocd_pkg_root=modules/hal/atmosic_lib \
     --burn
