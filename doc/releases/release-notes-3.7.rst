@@ -12,29 +12,33 @@ This release is the last non-maintenance 3.x release and, as such, will be the n
 
 Major enhancements with this release include:
 
-* A new, completely overhauled hardware model has been introduced. This change the way both SoCs and
-  boards are named, defined and constructed in Zephyr.
+* A new, completely :ref:`overhauled hardware model <hw_model_v2>` has been introduced.
+  It changes the way both SoCs and boards are named, defined and constructed in Zephyr.
   Additional information can be found in the :ref:`board_porting_guide`.
-* A long-awaited HTTP server library, and associated service API, allow to easily implement HTTP/1.1
-  and HTTP/2 servers in Zephyr. Resources can be registered statically or at runtime, and WebSocket
-  support is included.
-* POSIX support has been extended, with most Options of the IEEE 1003-2017
+* A long-awaited :ref:`HTTP Server <http_server_interface>` library, and associated service API,
+  allow to easily implement HTTP/1.1 and HTTP/2 servers in Zephyr. Resources can be registered
+  statically or dynamically, and WebSocket support is included.
+* :ref:`POSIX support <posix_support>` has been extended, with most Options of the IEEE 1003-2017
   :ref:`System Interfaces <posix_system_interfaces_required>` receiving support, as well as most
   Options and Option groups required for :ref:`PSE51 <posix_aep_pse51>`,
   :ref:`PSE52 <posix_aep_pse52>`, and :ref:`PSE53 <posix_aep_pse53>`.
 * Bluetooth Host has been extended with support for the Nordic UART Service (NUS), Hands-free Audio
   Gateway (AG), Advanced Audio Distribution Profile (A2DP), and Audio/Video Distribution Transport
   Protocol (AVDTP).
-* Sensor abstraction model has been overhauled to adopt a read-then-decode approach that enables
-  more types of sensors and data flows than the previous fetch/get APIs.
-* A new LLEXT Extension Development Kit (EDK) makes it easier to develop and integrate custom
-  extensions into Zephyr, including outside of the Zephyr tree.
-* Native simulator now supports leveraging native host networking stack without having to rely on
-  complex setup of the host environment.
+* Sensor abstraction model has been overhauled to adopt a
+  :ref:`read-then-decode approach <sensor-read-and-decode>` that enables more types of sensors and
+  data flows than the previous fetch/get APIs.
+* A new :ref:`LLEXT Extension Developer Kit (EDK) <llext_build_edk>` makes it easier to develop and
+  integrate custom extensions into Zephyr, including outside of the Zephyr tree.
+* :ref:`Native simulator <native_sim>` now supports leveraging native host networking stack without
+  having to rely on complex setup of the host environment.
 * Trusted Firmware-M (TF-M) 2.1.0 and Mbed TLS 3.6.0 have been integrated into Zephyr.
-  Both of these versions are LTS releases.
+  Both of these versions are LTS releases. What's more, :ref:`psa_crypto` has been adopted as a replacement
+  for TinyCrypt and provides enhanced security and performance.
+* A new experimental implementation of the :ref:`Precision Time Protocol <ptp_interface>` (PTP, IEEE
+  1588) allows to synchronize time across devices with sub-microsecond accuracy.
 * New documentation pages have been introduced to help developers setup their local development
-  environment with Visual Studio Code and CLion.
+  environment for :ref:`vscode_ide` and :ref:`clion_ide`.
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.6.0 to Zephyr v3.7.0 can be found in the separate :ref:`migration guide<migration_3.7>`.
