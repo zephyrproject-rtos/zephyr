@@ -23,9 +23,10 @@
 use ordmap::OrdMap;
 use std::{cell::RefCell, collections::BTreeMap, path::Path, rc::Rc};
 
-mod parse;
+mod augment;
 mod ordmap;
 mod output;
+mod parse;
 
 pub struct DeviceTree {
     /// The root of the tree.
@@ -50,6 +51,8 @@ pub struct Node {
     properties: Vec<Property>,
     // Children nodes.
     children: Vec<Rc<Node>>,
+    // The parent. Should be non-null except at the root node.
+    parent: RefCell<Option<Rc<Node>>>,
 }
 
 #[derive(Debug)]
@@ -94,12 +97,19 @@ impl DeviceTree {
             .expect("Reading zephyr.dts file");
         let dt = parse::parse(&dts, &ords);
         dt.resolve_phandles();
+        dt.set_parents();
         dt
     }
 
     /// Walk the node tree, fixing any phandles to include their reference.
     fn resolve_phandles(&self) {
         self.root.phandle_walk(&self.labels);
+    }
+
+    /// Walk the node tree, setting each node's parent appropriately.
+    fn set_parents(&self) {
+        let root = self.root.clone();
+        self.root.parent_walk(root);
     }
 }
 
@@ -113,6 +123,67 @@ impl Node {
         for child in &self.children {
             child.phandle_walk(labels);
         }
+    }
+
+    fn parent_walk(self: &Rc<Self>, parent: Rc<Node>) {
+        *(self.parent.borrow_mut()) = Some(parent.clone());
+
+        for child in &self.children {
+
+            child.parent_walk(self.clone())
+        }
+    }
+
+    fn is_compatible(&self, name: &str) -> bool {
+        if let Some(prop) = self.properties.iter().find(|p| p.name == "compatible") {
+            prop.value.iter().any(|v| {
+                match v {
+                    Value::String(vn) if name == vn => true,
+                    _ => false,
+                }
+            })
+        } else {
+            // If there is no compatible field, we are clearly not compatible.
+            false
+        }
+    }
+
+    /// Is the named property present?
+    fn has_prop(&self, name: &str) -> bool {
+        self.properties.iter().any(|p| p.name == name)
+    }
+
+    /// Get this property in its entirety.
+    fn get_property(&self, name: &str) -> Option<&[Value]> {
+        for p in &self.properties {
+            if p.name == name {
+                return Some(&p.value);
+            }
+        }
+        return None;
+    }
+
+    /// Attempt to retrieve the named property, as a single entry of Words.
+    fn get_words(&self, name: &str) -> Option<&[Word]> {
+        self.get_property(name)
+            .and_then(|p| {
+                match p {
+                    &[Value::Words(ref w)] => Some(w.as_ref()),
+                    _ => None,
+                }
+            })
+    }
+
+    /// Get a property that consists of a single number.
+    fn get_number(&self, name: &str) -> Option<u32> {
+        self.get_words(name)
+            .and_then(|p| {
+                if let &[Word::Number(n)] = p {
+                    Some(n)
+                } else {
+                    None
+                }
+            })
     }
 }
 
@@ -157,6 +228,15 @@ impl Phandle {
     /// Get the child node, panicing if it wasn't resolved properly.
     fn node_ref(&self) -> Rc<Node> {
         self.node.borrow().as_ref().unwrap().clone()
+    }
+}
+
+impl Word {
+    pub fn get_number(&self) -> Option<u32> {
+        match self {
+            Word::Number(n) => Some(*n),
+            _ => None,
+        }
     }
 }
 

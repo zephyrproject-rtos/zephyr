@@ -11,20 +11,22 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 
-use super::{DeviceTree, Node, Property, Value, Word};
+use super::{augment::{get_augments, Augment}, DeviceTree, Node, Property, Value, Word};
 
 impl DeviceTree {
     /// Generate a TokenStream for the Rust representation of this device tree.
     pub fn to_tokens(&self) -> TokenStream {
+        let augments = get_augments();
+
         // Root is a little special, as we don't represent the name of the node as it's actual name,
         // but as just 'devicetree'.
-        self.node_walk(self.root.as_ref(), "devicetree")
+        self.node_walk(self.root.as_ref(), "devicetree", &augments)
     }
 
-    fn node_walk(&self, node: &Node, name: &str) -> TokenStream {
+    fn node_walk(&self, node: &Node, name: &str, augments: &[Box<dyn Augment>]) -> TokenStream {
         let name_id = dt_to_lower_id(name);
         let children = node.children.iter().map(|child| {
-            self.node_walk(child.as_ref(), &child.name)
+            self.node_walk(child.as_ref(), &child.name, augments)
         });
         // Simplistic first pass, turn the properties into constents of the formatted text of the
         // property.
@@ -32,11 +34,31 @@ impl DeviceTree {
             self.property_walk(prop)
         });
         let ord = node.ord;
+
+        // Open the parent as a submodule.  This is the same as 'super', so not particularly useful.
+        /*
+        let parent = if let Some(parent) = node.parent.borrow().as_ref() {
+            let route = parent.route_to_rust();
+            quote! {
+                pub mod silly_super {
+                    pub use #route::*;
+                }
+            }
+        } else {
+            TokenStream::new()
+        };
+        */
+
+        // If this is compatible with an augment, use the augment to add any additional properties.
+        let augs = augments.iter().map(|aug| aug.augment(node));
+
         quote! {
             pub mod #name_id {
                 pub const ORD: usize = #ord;
                 #(#props)*
                 #(#children)*
+                // #parent
+                #(#augs)*
             }
         }
     }
@@ -64,11 +86,11 @@ impl DeviceTree {
                 }
                 Value::Phandle(ref ph) => {
                     let target = ph.node_ref();
-                    let route: Vec<_> = target.route.iter().map(|p| dt_to_lower_id(p)).collect();
+                    let route = target.route_to_rust();
                     let tag = dt_to_lower_id(&prop.name);
                     return quote! {
                         pub mod #tag {
-                            pub use crate::devicetree #(:: #route)*;
+                            pub use #route::*;
                         }
                     }
                 }
@@ -76,6 +98,17 @@ impl DeviceTree {
             }
         }
         general_property(prop)
+    }
+}
+
+impl Node {
+    /// Return the route to this node, as a Rust token stream giving a fully resolved name of the
+    /// route.
+    pub fn route_to_rust(&self) -> TokenStream {
+        let route: Vec<_> = self.route.iter().map(|p| dt_to_lower_id(p)).collect();
+        quote! {
+            crate :: devicetree #(:: #route)*
+        }
     }
 }
 

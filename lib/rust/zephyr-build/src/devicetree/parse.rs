@@ -3,7 +3,7 @@
 //! Parse a limited subset of the devicetree source file that is output by the device tree compiler.
 //! This is used to parse the `zephyr.dts` file generated as a part of a Zephyr build.
 
-use std::{collections::BTreeMap, rc::Rc};
+use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 use pest::{iterators::{Pair, Pairs}, Parser};
 use pest_derive::Parser;
@@ -263,6 +263,7 @@ impl<'a, 'b> LazyName<'a, 'b> {
             labels: Vec::new(),
             properties: Vec::new(),
             children: Vec::new(),
+            parent: RefCell::new(None),
         }
     }
 }
