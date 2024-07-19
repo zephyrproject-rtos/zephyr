@@ -5,7 +5,7 @@ description: OV5640 CMOS video sensor
 
 compatible: "ovti,ov5640"
 
-include: i2c-device.yaml
+include: [i2c-device.yaml, video-interfaces.yaml]
 
 properties:
   reset-gpios:
