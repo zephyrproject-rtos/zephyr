@@ -21,4 +21,5 @@ tests:
       - ek_ra8m1
       - frdm_mcxc242
       - nrf52840dk/nrf52840
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
