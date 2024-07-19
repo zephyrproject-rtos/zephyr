@@ -266,7 +266,7 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 
 			ep_cfg.ep_type = (ep_descr->bmAttributes &
 					  USB_EP_TRANSFER_TYPE_MASK);
-			ep_cfg.ep_mps = ep_descr->wMaxPacketSize;
+			ep_cfg.ep_mps = sys_le16_to_cpu(ep_descr->wMaxPacketSize);
 			ep_cfg.ep_addr = ep_descr->bEndpointAddress;
 			if (ep_cfg.ep_addr & USB_EP_DIR_IN) {
 				if ((*requested_ep & (1U << (idx + 16U)))) {

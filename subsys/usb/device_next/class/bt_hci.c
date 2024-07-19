@@ -564,7 +564,7 @@ static struct usbd_bt_hci_desc bt_hci_desc_##n = {				\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = BT_HCI_EP_VOICE_IN,				\
 		.bmAttributes = USB_EP_TYPE_ISO,				\
-		.wMaxPacketSize = 0,						\
+		.wMaxPacketSize = sys_cpu_to_le16(0),				\
 		.bInterval = BT_HCI_EP_INTERVAL_VOICE,				\
 	},									\
 										\
@@ -573,7 +573,7 @@ static struct usbd_bt_hci_desc bt_hci_desc_##n = {				\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = BT_HCI_EP_VOICE_OUT,			\
 		.bmAttributes = USB_EP_TYPE_ISO,				\
-		.wMaxPacketSize = 0,						\
+		.wMaxPacketSize = sys_cpu_to_le16(0),				\
 		.bInterval = BT_HCI_EP_INTERVAL_VOICE,				\
 	},									\
 										\
@@ -594,7 +594,7 @@ static struct usbd_bt_hci_desc bt_hci_desc_##n = {				\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = BT_HCI_EP_VOICE_IN,				\
 		.bmAttributes = USB_EP_TYPE_ISO,				\
-		.wMaxPacketSize = BT_HCI_EP_MPS_VOICE,				\
+		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_MPS_VOICE),		\
 		.bInterval = BT_HCI_EP_INTERVAL_VOICE,				\
 	},									\
 										\
@@ -603,7 +603,7 @@ static struct usbd_bt_hci_desc bt_hci_desc_##n = {				\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = BT_HCI_EP_VOICE_OUT,			\
 		.bmAttributes = USB_EP_TYPE_ISO,				\
-		.wMaxPacketSize = BT_HCI_EP_MPS_VOICE,				\
+		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_MPS_VOICE),		\
 		.bInterval = BT_HCI_EP_INTERVAL_VOICE,				\
 	},									\
 										\
