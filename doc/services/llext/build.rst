@@ -130,8 +130,8 @@ Anything else after ``COMMAND`` will be passed to ``add_custom_command()`` as-is
 
 .. _llext_build_edk:
 
-LLEXT Extension Development Kit
-*******************************
+LLEXT Extension Development Kit (EDK)
+*************************************
 
 When building extensions as a standalone project, outside of the main Zephyr
 build system, it's important to have access to the same set of generated
