@@ -1736,6 +1736,84 @@ static inline int i3c_ccc_do_getcaps_fmt2(const struct i3c_device_desc *target,
 				    GETCAPS_FORMAT_2, defbyte);
 }
 
+/**
+ * @brief Single target to Set Vendor / Standard Extension CCC
+ *
+ * Helper function to set Vendor / Standard Extension CCC of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] id Vendor CCC ID.
+ * @param[in] payload Pointer to payload.
+ * @param[in] len Length of payload. 0 if no payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_setvendor(struct i3c_device_desc *target,
+			uint8_t id,
+			uint8_t *payload,
+			size_t len);
+
+/**
+ * @brief Single target to Get Vendor / Standard Extension CCC
+ *
+ * Helper function to get Vendor / Standard Extension CCC of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] id Vendor CCC ID.
+ * @param[out] payload Pointer to payload.
+ * @param[in] len Maximum Expected Length of the payload
+ * @param[out] num_xfer Length of the received payload
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_getvendor(struct i3c_device_desc *target,
+			uint8_t id,
+			uint8_t *payload,
+			size_t len,
+			size_t *num_xfer);
+
+/**
+ * @brief Single target to Get Vendor / Standard Extension CCC
+ * with a defining byte
+ *
+ * Helper function to get Vendor / Standard Extension CCC of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] id Vendor CCC ID.
+ * @param[in] defbyte Defining Byte
+ * @param[out] payload Pointer to payload.
+ * @param[in] len Maximum Expected Length of the payload
+ * @param[out] num_xfer Length of the received payload
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_getvendor_defbyte(struct i3c_device_desc *target,
+			uint8_t id,
+			uint8_t defbyte,
+			uint8_t *payload,
+			size_t len,
+			size_t *num_xfer);
+
+/**
+ * @brief Broadcast Set Vendor / Standard Extension CCC
+ *
+ * Helper function to broadcast Vendor / Standard Extension CCC
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ * @param[in] id Vendor CCC ID.
+ * @param[in] payload Pointer to payload.
+ * @param[in] len Length of payload. 0 if no payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_setvendor_all(const struct device *controller,
+			uint8_t id,
+			uint8_t *payload,
+			size_t len);
+
 #ifdef __cplusplus
 }
 #endif
