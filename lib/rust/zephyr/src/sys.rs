@@ -48,19 +48,19 @@ pub struct gpio_driver_api {
 }
 
 #[allow(non_camel_case_types)]
-type gpio_dt_flags_t = u16;
+pub type gpio_dt_flags_t = u16;
 
 #[allow(non_camel_case_types)]
-type gpio_port_value_t = u32;
+pub type gpio_port_value_t = u32;
 
 #[allow(non_camel_case_types)]
-type gpio_port_pins_t = u32;
+pub type gpio_port_pins_t = u32;
 
 #[allow(non_camel_case_types)]
-type gpio_flags_t = u32;
+pub type gpio_flags_t = u32;
 
 #[allow(non_camel_case_types)]
-type gpio_pin_t = u8;
+pub type gpio_pin_t = u8;
 
 // These constants are untyped in C. Since they are bigger than 16-bits, I will assume they are
 // actually part of the `gpio_dt_flags_t` type.  For now, we'll just make these constants, but bit
