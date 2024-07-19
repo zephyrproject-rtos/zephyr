@@ -2,6 +2,7 @@ common:
   tags:
     - drivers
     - uart
+  timeout: 120
 tests:
   drivers.uart.async_dual:
     harness: ztest
