@@ -45,4 +45,4 @@ List of Arduino-based display shields
 - :ref:`adafruit_2_8_tft_touch_v2`
 - :ref:`ssd1306_128_shield`
 - :ref:`st7789v_generic`
-- :ref:`waveshare_e_paper_raw_panel_shield`
+- :ref:`waveshare_epaper`
