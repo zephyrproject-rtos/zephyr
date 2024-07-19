@@ -4,6 +4,7 @@
 #![no_std]
 
 use zephyr::println;
+use zephyr::sys::GPIO_OUTPUT_ACTIVE;
 
 #[no_mangle]
 extern "C" fn rust_main() {
@@ -21,7 +22,7 @@ fn blink() {
         return;
     }
 
-    led0.configure((1 << 17) | (1 << 19) | (1 << 20));
+    led0.configure(GPIO_OUTPUT_ACTIVE);
     loop {
         led0.toggle_pin();
         zephyr::sys::k_msleep(500);
