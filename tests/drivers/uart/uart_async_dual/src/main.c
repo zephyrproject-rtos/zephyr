@@ -29,8 +29,38 @@ LOG_MODULE_REGISTER(test);
 
 #define MAX_PACKET_LEN 128
 
-static const struct device *const rx_dev = DEVICE_DT_GET(DUT_NODE);
-static const struct device *const tx_dev = DEVICE_DT_GET(DUT_AUX_NODE);
+struct dut_data {
+	const struct device *dev;
+	const struct device *dev_aux;
+	const char *name;
+	const char *name_aux;
+};
+
+ZTEST_DMEM struct dut_data duts[] = {
+	{
+		.dev = DEVICE_DT_GET(DUT_NODE),
+		.dev_aux = DT_SAME_NODE(DUT_NODE, DUT_AUX_NODE) ?
+			NULL : DEVICE_DT_GET(DUT_AUX_NODE),
+		.name = DT_NODE_FULL_NAME(DUT_NODE),
+		.name_aux = DT_SAME_NODE(DUT_NODE, DUT_AUX_NODE) ?
+			NULL : DT_NODE_FULL_NAME(DUT_AUX_NODE),
+	},
+#if 0
+#if DT_NODE_EXISTS(DT_NODELABEL(dut2))
+	{
+		.dev = DEVICE_DT_GET(DT_NODELABEL(dut2)),
+		.name = DT_NODE_FULL_NAME(DT_NODELABEL(dut2)),
+#if DT_NODE_EXISTS(DT_NODELABEL(dut_aux2))
+		.dev_aux = DEVICE_DT_GET(DT_NODELABEL(dut_aux2)),
+		.name_aux = DT_NODE_FULL_NAME(DT_NODELABEL(dut_aux2)),
+#endif
+	},
+#endif
+#endif
+};
+
+static const struct device *rx_dev;
+static const struct device *tx_dev;
 
 enum test_tx_mode {
 	TX_BULK,
@@ -674,6 +704,19 @@ ZTEST(uart_async_dual, test_hci_like_1M)
 
 static void *setup(void)
 {
+	static int idx;
+
+	rx_dev = duts[idx].dev;
+	if (duts[idx].dev_aux == NULL) {
+		TC_PRINT("Single UART test on instance:%s\n", duts[idx].name);
+		tx_dev = rx_dev;
+	} else {
+		TC_PRINT("Dual UART test on instances:%s and %s\n",
+			 duts[idx].name, duts[idx].name_aux);
+		tx_dev = duts[idx].dev_aux;
+	}
+	idx++;
+
 	zassert_true(device_is_ready(rx_dev));
 	zassert_true(device_is_ready(tx_dev));
 
@@ -681,3 +724,9 @@ static void *setup(void)
 }
 
 ZTEST_SUITE(uart_async_dual, NULL, setup, NULL, NULL, NULL);
+
+void test_main(void)
+{
+	ztest_run_all(NULL, false, ARRAY_SIZE(duts), 1);
+	ztest_verify_all_test_suites_ran();
+}
