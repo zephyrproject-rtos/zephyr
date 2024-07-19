@@ -1725,6 +1725,11 @@ Libraries / Subsystems
   * CMSIS-NN was updated to v6.0.0 from v4.1.0:
     https://arm-software.github.io/CMSIS-NN/latest/rev_hist.html
 
+* FPGA
+
+  * Improve handling of drivers missing reset, load, get_status, and get_info methods.
+  * Add support for Agilex and Agilex 5.
+
 * Random
 
   * Besides the existing :c:func:`sys_rand32_get` function, :c:func:`sys_rand8_get`,
