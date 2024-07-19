@@ -649,6 +649,7 @@ static int cmd_i3c_ccc_getbcr(const struct shell *shell_ctx, size_t argc, char *
 	}
 
 	shell_print(shell_ctx, "BCR: 0x%02x", bcr.bcr);
+	desc->bcr = bcr.bcr;
 
 	return ret;
 }
@@ -684,6 +685,7 @@ static int cmd_i3c_ccc_getdcr(const struct shell *shell_ctx, size_t argc, char *
 	}
 
 	shell_print(shell_ctx, "DCR: 0x%02x", dcr.dcr);
+	desc->dcr = dcr.dcr;
 
 	return ret;
 }
@@ -753,10 +755,13 @@ static int cmd_i3c_ccc_getmrl(const struct shell *shell_ctx, size_t argc, char *
 		return ret;
 	}
 
+	desc->data_length.mrl = mrl.len;
 	if (desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) {
 		shell_print(shell_ctx, "MRL: 0x%04x; IBI Length:0x%02x", mrl.len, mrl.ibi_len);
+		desc->data_length.max_ibi = mrl.ibi_len;
 	} else {
 		shell_print(shell_ctx, "MRL: 0x%04x", mrl.len);
+		desc->data_length.max_ibi = 0;
 	}
 
 	return ret;
@@ -793,6 +798,7 @@ static int cmd_i3c_ccc_getmwl(const struct shell *shell_ctx, size_t argc, char *
 	}
 
 	shell_print(shell_ctx, "MWL: 0x%04x", mwl.len);
+	desc->data_length.mwl = mwl.len;
 
 	return ret;
 }
@@ -838,6 +844,11 @@ static int cmd_i3c_ccc_setmrl(const struct shell *shell_ctx, size_t argc, char *
 		return ret;
 	}
 
+	desc->data_length.mrl = mrl.len;
+	if (argc > 3) {
+		desc->data_length.max_ibi = mrl.ibi_len;
+	}
+
 	return ret;
 }
 
@@ -873,6 +884,8 @@ static int cmd_i3c_ccc_setmwl(const struct shell *shell_ctx, size_t argc, char *
 		return ret;
 	}
 
+	desc->data_length.mwl = mwl.len;
+
 	return ret;
 }
 
@@ -880,6 +893,8 @@ static int cmd_i3c_ccc_setmwl(const struct shell *shell_ctx, size_t argc, char *
 static int cmd_i3c_ccc_setmrl_bc(const struct shell *shell_ctx, size_t argc, char **argv)
 {
 	const struct device *dev;
+	struct i3c_driver_data *data;
+	sys_snode_t *node;
 	struct i3c_ccc_mrl mrl;
 	int ret;
 
@@ -888,6 +903,7 @@ static int cmd_i3c_ccc_setmrl_bc(const struct shell *shell_ctx, size_t argc, cha
 		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
 	}
+	data = (struct i3c_driver_data *)dev->data;
 
 	mrl.len = strtol(argv[2], NULL, 16);
 	if (argc > 3) {
@@ -900,6 +916,17 @@ static int cmd_i3c_ccc_setmrl_bc(const struct shell *shell_ctx, size_t argc, cha
 		return ret;
 	}
 
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
+		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
+			struct i3c_device_desc *desc =
+				CONTAINER_OF(node, struct i3c_device_desc, node);
+			desc->data_length.mrl = mrl.len;
+			if ((argc > 3) && (desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE)) {
+				desc->data_length.max_ibi = mrl.ibi_len;
+			}
+		}
+	}
+
 	return ret;
 }
 
@@ -907,6 +934,8 @@ static int cmd_i3c_ccc_setmrl_bc(const struct shell *shell_ctx, size_t argc, cha
 static int cmd_i3c_ccc_setmwl_bc(const struct shell *shell_ctx, size_t argc, char **argv)
 {
 	const struct device *dev;
+	struct i3c_driver_data *data;
+	sys_snode_t *node;
 	struct i3c_ccc_mwl mwl;
 	int ret;
 
@@ -915,6 +944,7 @@ static int cmd_i3c_ccc_setmwl_bc(const struct shell *shell_ctx, size_t argc, cha
 		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
 	}
+	data = (struct i3c_driver_data *)dev->data;
 
 	mwl.len = strtol(argv[3], NULL, 16);
 
@@ -922,6 +952,14 @@ static int cmd_i3c_ccc_setmwl_bc(const struct shell *shell_ctx, size_t argc, cha
 	if (ret < 0) {
 		shell_error(shell_ctx, "I3C: unable to send CCC SETMWL BC.");
 		return ret;
+	}
+
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
+		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
+			struct i3c_device_desc *desc =
+				CONTAINER_OF(node, struct i3c_device_desc, node);
+			desc->data_length.mwl = mwl.len;
+		}
 	}
 
 	return ret;
