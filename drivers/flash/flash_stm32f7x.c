@@ -159,6 +159,48 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
+static __unused int write_optb(const struct device *dev, uint32_t mask,
+			       uint32_t value)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	int rc;
+
+	if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
+		return -EIO;
+	}
+
+	if ((regs->OPTCR & mask) == value) {
+		return 0;
+	}
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	regs->OPTCR = (regs->OPTCR & ~mask) | value;
+	regs->OPTCR |= FLASH_OPTCR_OPTSTRT;
+
+	/* Make sure previous write is completed. */
+	barrier_dsync_fence_full();
+
+	return flash_stm32_wait_flash_idle(dev);
+}
+
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+uint8_t flash_stm32_get_rdp_level(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	return (regs->OPTCR & FLASH_OPTCR_RDP_Msk) >> FLASH_OPTCR_RDP_Pos;
+}
+
+void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
+{
+	write_optb(dev, FLASH_OPTCR_RDP_Msk,
+		(uint32_t)level << FLASH_OPTCR_RDP_Pos);
+}
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
 /* Some SoC can run in single or dual bank mode, others can't.
  * Different SoC flash layouts are specified in various reference
