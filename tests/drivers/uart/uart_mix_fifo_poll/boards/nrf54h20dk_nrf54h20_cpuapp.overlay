@@ -6,6 +6,15 @@
 	memory-regions = <&cpuapp_dma_region>;
 };
 
+&dma_fast_region {
+	status = "okay";
+};
+
+&dut2 {
+	status = "okay";
+	memory-regions = <&dma_fast_region>;
+};
+
 &grtc {
 	interrupts = <109 2>;
 };
