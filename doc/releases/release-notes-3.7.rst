@@ -426,7 +426,25 @@ Boards & SoC Support
     in ``<nrf53_cpunet_mgmt.h>``.
   * Laird Connectivity boards are rebranded to Ezurio.
 
-* Added support for these following shields:
+* Added support for the following shields:
+
+  * :ref:`adafruit_2_8_tft_touch_v2` (``adafruit_2_8_tft_touch_v2``)
+  * :ref:`adafruit_neopixel_grid_bff` (``adafruit_neopixel_grid_bff``)
+  * :ref:`arduino_uno_click` (``arduino_uno_click``)
+  * :ref:`dvp_fpc24_mt9m114` (``dvp_fpc24_mt9m114``)
+  * :ref:`lcd_par_s035` (``lcd_par_s035``)
+  * :ref:`mikroe_weather_click` (``mikroe_weather_click``)
+  * :ref:`nxp_btb44_ov5640` (``nxp_btb44_ov5640``)
+  * :ref:`reyax_lora` (``reyax_lora``)
+  * :ref:`rk043fn02h_ct` (``rk043fn02h_ct``)
+  * :ref:`rk043fn66hs_ctg` (``rk043fn66hs_ctg``)
+  * :ref:`rpi_pico_uno_flexypin` (``rpi_pico_uno_flexypin``)
+  * :ref:`seeed_xiao_expansion_board` (``seeed_xiao_expansion_board``)
+  * :ref:`seeed_xiao_round_display` (``seeed_xiao_round_display``)
+  * :ref:`sparkfun_carrier_asset_tracker` (``sparkfun_carrier_asset_tracker``)
+  * :ref:`st_b_lcd40_dsi1_mb1166` (``st_b_lcd40_dsi1_mb1166``)
+  * :ref:`waveshare_epaper` (``waveshare_epaper``)
+  * :ref:`x_nucleo_bnrg2a1` (``x_nucleo_bnrg2a1``)
 
 Build system and Infrastructure
 *******************************
