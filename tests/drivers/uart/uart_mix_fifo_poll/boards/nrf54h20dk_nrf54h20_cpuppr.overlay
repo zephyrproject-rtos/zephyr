@@ -9,3 +9,8 @@
 &dut {
 	interrupts = <470 (NRF_DEFAULT_IRQ_PRIORITY + 1)>;
 };
+
+/* PPR cannot use that instance. */
+&uart120 {
+	status = "disabled"
+};
