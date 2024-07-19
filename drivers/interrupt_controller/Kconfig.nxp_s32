@@ -1,6 +1,6 @@
 # Configuration for NXP S32 external interrupt controller
 
-# Copyright 2022-2023 NXP
+# Copyright 2022-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config NXP_S32_EIRQ
@@ -34,6 +34,17 @@ config NXP_S32_WKPU
 	bool "Wake-up Unit interrupt controller driver for NXP S32 MCUs"
 	default y
 	depends on DT_HAS_NXP_S32_WKPU_ENABLED
-	select NOCACHE_MEMORY
 	help
 	  Wake-up Unit interrupt controller driver for NXP S32 MCUs
+
+if NXP_S32_WKPU
+
+config NXP_S32_WKPU_SOURCES_MAX
+	int
+	range 32 64
+	default 64 if SOC_SERIES_S32K3
+	help
+	  Number of WKPU external and internal sources per controller. This is
+	  a SoC integration option.
+
+endif # NXP_S32_WKPU
