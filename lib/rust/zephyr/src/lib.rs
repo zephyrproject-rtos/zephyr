@@ -12,12 +12,12 @@ extern crate alloc;
 
 mod allocator;
 mod panic;
-mod devicetree;
 
 pub mod errno;
 pub mod kernel;
 pub mod print;
 pub mod drivers;
+pub mod devicetree;
 
 // Bring in the generated kconfig module
 include!(concat!(env!("OUT_DIR"), "/kconfig.rs"));
