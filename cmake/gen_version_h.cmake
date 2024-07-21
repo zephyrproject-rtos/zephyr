@@ -16,6 +16,10 @@ if(NOT DEFINED ${BUILD_VERSION_NAME})
   git_describe(${work_dir} ${BUILD_VERSION_NAME})
 endif()
 
+git_commit_hash(${work_dir} GIT_COMMIT_HASH)
+git_commit_hash_short("${GIT_COMMIT_HASH}" GIT_COMMIT_HASH_SHORT GIT_COMMIT_HASH_SHORT_UINT32)
+set(GIT_COMMIT_HASH_SHORT_0X "0x${GIT_COMMIT_HASH_SHORT}")
+
 include(${ZEPHYR_BASE}/cmake/modules/version.cmake)
 file(READ ${ZEPHYR_BASE}/version.h.in version_content)
 string(CONFIGURE "${version_content}" version_content)
