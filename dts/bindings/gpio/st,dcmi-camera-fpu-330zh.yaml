@@ -1,0 +1,40 @@
+# Copyright (c) 2025 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO pins exposed on the 30-pin ZIF connector (CN5) of the B-CAMS-OMV.
+  Connector layout:
+    (1)   3V3
+    (2)   GND
+    (3)   I2C_SCL
+    (4)   I2C_SDA
+    (5)   RESET#
+    (6)   PWR_EN / LED1
+    (7)   SHUTTER
+    (8)   GND
+    (9)   PULLDOWN / LED2
+    (10)  Camera_CLK
+    (11)  3V3
+    (12)  DCMI_VSYNC
+    (13)  5V (RSU)
+    (14)  DCMI_HSYNC
+    (15)  GND
+    (16)  DCMI_PIXCK
+    (17)  GND
+    (18)  SPI_MISO
+    (19)  SPI_CS
+    (20)  DCMI_D7
+    (21)  DCMI_D6
+    (22)  DCMI_D5
+    (23)  DCMI_D4
+    (24)  DCMI_D3
+    (25)  DCMI_D2
+    (26)  DCMI_D1
+    (27)  DCMI_D0
+    (28)  SPI_MOSI
+    (29)  SPI_CLK
+    (30)  GND
+
+compatible: "st,dcmi-camera-fpu-330zh"
+
+include: [gpio-nexus.yaml, base.yaml]
