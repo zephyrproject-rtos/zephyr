@@ -93,3 +93,11 @@
 		status = "okay";
 	};
 };
+
+&pwm7 {
+	pinctrl-0 = <&pwm7_default>;
+	interrupts = <38 1>, <39 1>;
+	interrupt-names = "gtioca", "overflow";
+	pinctrl-names = "default";
+	status = "okay";
+};
