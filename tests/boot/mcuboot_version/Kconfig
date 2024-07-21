@@ -1,0 +1,7 @@
+# Override ROM_START_OFFSET
+# Copyright (c) 2024 Embeint Inc
+
+config ROM_START_OFFSET
+	default 0
+
+source "Kconfig.zephyr"
