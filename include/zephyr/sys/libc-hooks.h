@@ -34,6 +34,7 @@ __syscall int zephyr_write_stdout(const void *buf, int nbytes);
 /* Minimal libc and picolibc */
 
 __syscall int zephyr_fputc(int c, FILE * stream);
+__syscall int zephyr_fgetc(FILE *stream);
 
 #ifdef CONFIG_MINIMAL_LIBC
 /* Minimal libc only */

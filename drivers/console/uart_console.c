@@ -112,6 +112,33 @@ static int console_out(int c)
 
 #endif
 
+#if defined(CONFIG_STDIN_CONSOLE)
+/**
+ *
+ * @brief Get one character from UART
+ *
+ * @return The character received from console
+ */
+static int console_in(void)
+{
+	unsigned char c;
+
+	while (uart_poll_in(uart_console_dev, &c) < 0) {
+		k_msleep(CONFIG_UART_RX_POLL_PERIOD);
+	}
+
+	return (int)c;
+}
+#endif
+
+#if defined(CONFIG_STDOUT_CONSOLE)
+extern void __stdout_hook_install(int (*hook)(int c));
+#endif
+
+#if defined(CONFIG_STDIN_CONSOLE)
+extern void __stdin_hook_install(int (*hook)(void));
+#endif
+
 #if defined(CONFIG_CONSOLE_HANDLER)
 static struct k_fifo *avail_queue;
 static struct k_fifo *lines_queue;
@@ -595,6 +622,9 @@ static void uart_console_hook_install(void)
 #endif
 #if defined(CONFIG_PRINTK)
 	__printk_hook_install(console_out);
+#endif
+#if defined(CONFIG_STDIN_CONSOLE)
+	__stdin_hook_install(console_in);
 #endif
 }
 

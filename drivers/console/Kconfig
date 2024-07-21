@@ -86,6 +86,12 @@ config UART_CONSOLE_INPUT_EXPIRED_TIMEOUT
 	  Fixed amount of time which unit is milliseconds to keep the UART
 	  console in use flag true.
 
+config UART_RX_POLL_PERIOD
+	int "RX polling period (in milliseconds)"
+	default 10
+	help
+	  Determines how often UART is polled for RX byte.
+
 config JAILHOUSE_DEBUG_CONSOLE
 	bool "Use JAILHOUSE_DEBUG console"
 	select CONSOLE_HAS_DRIVER
