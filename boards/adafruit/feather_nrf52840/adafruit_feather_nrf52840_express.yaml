@@ -1,4 +1,4 @@
-identifier: adafruit_feather/nrf52840
+identifier: adafruit_feather_nrf52840_express/nrf52840
 name: Adafruit Feather nRF52840 Express
 type: mcu
 arch: arm
