@@ -1,7 +1,7 @@
 .. _adafruit_feather_nrf52840:
 
-Adafruit Feather nRF52840 Express
-#################################
+Adafruit Feather nRF52840 (Express, Sense)
+##########################################
 
 Overview
 ********
@@ -25,9 +25,19 @@ nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/adafruit_feather_nrf52840.jpg
-     :align: center
-     :alt: Adafruit Feather nRF52840 Express
+.. tabs::
+
+   .. group-tab:: Express
+
+      .. figure:: img/adafruit_feather_nrf52840_express.jpg
+           :align: center
+           :alt: Adafruit Feather nRF52840 Express
+
+   .. group-tab:: Sense
+
+      .. figure:: img/adafruit_feather_nrf52840_sense.jpg
+           :align: center
+           :alt: Adafruit Feather nRF52840 Sense
 
 Hardware
 ********
@@ -39,7 +49,14 @@ Hardware
 - 2 User LEDs
 - 1 NeoPixel LED
 - Reset button
-- SWD connector
+- SWD connector (Express only)
+- SWD solder pads on bottom of PCB (Sense only)
+- LSM6DS33 Accel/Gyro (Sense only)
+- LIS3MDL magnetometer (Sense only)
+- APDS9960 Proximity, Light, Color, and Gesture Sensor (Sense only)
+- MP34DT01-M PDM Microphone sound sensor (Sense only)
+- SHT3X Humidity sensor (Sense only)
+- BMP280 temperature and barometric pressure/altitude (Sense only)
 
 Supported Features
 ==================
@@ -85,13 +102,25 @@ Other hardware features have not been enabled yet for this board.
 Connections and IOs
 ===================
 
-The `Adafruit Feather nRF52840 Express Learn site`_ has detailed
-information about the board including `pinouts`_ and the `schematic`_.
+.. tabs::
+
+   .. group-tab:: Express
+
+      The `Adafruit Feather nRF52840 Express Learn site`_ has
+      detailed information about the board including
+      `pinouts (Express)`_ and the `schematic (Express)`_.
+
+   .. group-tab:: Sense
+
+      The `Adafruit Feather nRF52840 Sense Learn site`_ has
+      detailed information about the board including
+      `pinouts (Sense)`_ and the `schematic (Sense)`_.
 
 LED
 ---
 
-* LED0 (red) = P1.15
+* LED0 (red) = P1.15 (Express)
+* LED0 (red) = P1.9 (Sense)
 * LED1 (blue) = P1.10
 
 Push buttons
@@ -103,33 +132,56 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``adafruit_feather_nrf52840_express`` board configuration
-can be built and flashed in the usual way (see :ref:`build_an_application`
-and :ref:`application_run` for more details).
-
 Flashing
 ========
 
-Flashing Zephyr onto the ``adafruit_feather_nrf52480_express`` board requires
-an external programmer. The programmer is attached to the SWD header.
+Flashing Zephyr onto the ``adafruit_feather_nrf52480_express`` board is possible
+using an external programmer. The programmer is attached to the SWD header.
 
-Build the Zephyr kernel and the :zephyr:code-sample:`blinky` sample application.
+The Feather nRF52840 ships with the `Adafruit nRF52 Bootloader`_ which
+supports flashing using `UF2`_. This allows easy flashing of new images,
+but does not support debugging the device.
 
-   .. zephyr-app-commands::
-      :zephyr-app: samples/basic/blinky
-      :board: adafruit_feather_nrf52840_express
-      :goals: build
-      :compact:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`blinky` sample application.
 
-Flash the image.
+.. tabs::
 
-   .. zephyr-app-commands::
-      :zephyr-app: samples/basic/blinky
-      :board: adafruit_feather_nrf52840_express
-      :goals: flash
-      :compact:
+   .. group-tab:: Express
 
-You should see the red LED blink.
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840_express/nrf52840
+         :goals: build
+         :compact:
+
+   .. group-tab:: Sense
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840_sense/nrf52840
+         :goals: build
+         :compact:
+
+#. If using UF2, connect the board to your host computer using USB.
+
+#. Tap the reset button twice quickly to enter bootloader mode.
+   A mass storage device named `FTHR840BOOT` for (Express) or
+   `FTHRSNSBOOT` (Sense) should appear on the host. Ensure this is
+   mounted.
+
+#. Flash the image.
+
+.. tabs::
+
+   .. group-tab:: Sense
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840_sense
+         :goals: flash
+         :compact:
+
+#. You should see the red LED blink.
 
 References
 **********
@@ -139,8 +191,23 @@ References
 .. _Adafruit Feather nRF52840 Express Learn site:
     https://learn.adafruit.com/introducing-the-adafruit-nrf52840-feather/
 
-.. _pinouts:
+.. _pinouts (Express):
     https://learn.adafruit.com/introducing-the-adafruit-nrf52840-feather/pinouts
 
-.. _schematic:
+.. _schematic (Express):
     https://learn.adafruit.com/introducing-the-adafruit-nrf52840-feather/downloads
+
+.. _Adafruit Feather nRF52840 Sense Learn site:
+    https://learn.adafruit.com/adafruit-feather-sense
+
+.. _pinouts (Sense):
+    https://learn.adafruit.com/adafruit-feather-sense/pinouts
+
+.. _schematic (Sense):
+    https://learn.adafruit.com/adafruit-feather-sense/downloads
+
+.. _Adafruit nRF52 Bootloader:
+    https://github.com/adafruit/Adafruit_nRF52_Bootloader
+
+.. _UF2:
+    https://github.com/microsoft/uf2
