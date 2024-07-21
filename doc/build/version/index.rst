@@ -198,3 +198,7 @@ Use in MCUboot-supported applications
 No additional configuration needs to be done to the target application so long as it is configured
 to support MCUboot and a signed image is generated, the version information will be automatically
 included in the image data.
+
+If desired, the build value (``APP_TWEAK`` in the above) can be automatically populated from the
+git commit hash of the application directory, overriding the value of ``APP_TWEAK``, by enabling
+:kconfig:option:`MCUBOOT_IMGTOOL_SIGN_VERSION_GIT_BUILD`.
