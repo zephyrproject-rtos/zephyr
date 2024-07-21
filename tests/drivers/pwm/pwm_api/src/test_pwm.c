@@ -53,6 +53,9 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(intel_blinky_pwm)
 #define PWM_DEV_NODE DT_INST(0, intel_blinky_pwm)
 
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra8_pwm)
+#define PWM_DEV_NODE DT_INST(0, renesas_ra8_pwm)
+
 #else
 #error "Define a PWM device"
 #endif
