@@ -159,7 +159,6 @@ enum {
 	L2CAP_FLAG_FIXED_CONNECTED, /* fixed connected */
 
 	/* Retransmition and flow control flags*/
-	L2CAP_FLAG_SDU_SENDING, /* SDU is sending */
 	L2CAP_FLAG_RET_TIMER,   /* Retransmission timer is working */
 	L2CAP_FLAG_PDU_RETRANS, /* PDU retransmission */
 
@@ -374,7 +373,7 @@ static uint8_t l2cap_br_get_ident(void)
 /* L2CAP channel wants to send a PDU */
 static bool chan_has_data(struct bt_l2cap_br_chan *br_chan)
 {
-	return !k_fifo_is_empty(&br_chan->_pdu_tx_queue);
+	return !sys_slist_is_empty(&br_chan->_pdu_tx_queue);
 }
 
 static void raise_data_ready(struct bt_l2cap_br_chan *br_chan)
@@ -469,6 +468,15 @@ static struct bt_l2cap_br_window *l2cap_br_find_window(struct bt_l2cap_br_chan *
 	return win;
 }
 
+static void l2cap_br_free_window(struct bt_l2cap_br_chan *br_chan,
+								 struct bt_l2cap_br_window *tx_win)
+{
+	if (tx_win) {
+		memset(tx_win, 0, sizeof(*tx_win));
+		k_fifo_put(&br_chan->_free_tx_win, tx_win);
+	}
+}
+
 static uint16_t bt_l2cap_br_update_seq(struct bt_l2cap_br_chan *br_chan, uint16_t seq)
 {
 	if ((br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_ERET) ||
@@ -536,20 +544,55 @@ static bool bt_l2cap_br_check_req_seq_valid(struct bt_l2cap_br_chan *br_chan,
 	return false;
 }
 
+static void l2cap_br_sdu_is_done(struct bt_l2cap_br_chan *br_chan,
+			      struct net_buf *sdu, int err)
+{
+	bt_conn_tx_cb_t cb;
+
+	__ASSERT(sdu, "Invalid sdu buffer on chan %p", br_chan);
+
+	/* The SDU is done */
+	LOG_DBG("SDU is done, removing %p", sdu);
+
+	if (!sys_slist_find_and_remove(&br_chan->_pdu_tx_queue, &sdu->node)) {
+		LOG_WRN("SDU %p is not found", sdu);
+	}
+
+	cb = closure_cb(sdu->user_data);
+	if (cb) {
+		cb(br_chan->chan.conn, closure_data(sdu->user_data), err);
+	}
+
+	/* Remove the pdu */
+	net_buf_unref(sdu);
+
+	LOG_DBG("chan %p done", br_chan);
+
+	/* Append channel to list if it still has data */
+	if (chan_has_data(br_chan)) {
+		LOG_DBG("chan %p ready", br_chan);
+		raise_data_ready(br_chan);
+	}
+}
+
 static int bt_l2cap_br_update_req_seq_direct(struct bt_l2cap_br_chan *br_chan,
 			      uint16_t req_seq, bool rej)
 {
 	struct bt_l2cap_br_window *tx_win;
-	struct net_buf *pdu = k_fifo_peek_head(&br_chan->_pdu_tx_queue);
+	struct net_buf *sdu;
 
 	tx_win = (struct bt_l2cap_br_window *)sys_slist_peek_head(
 		&br_chan->_pdu_outstanding);
 	while (tx_win) {
 		if (tx_win->tx_seq != req_seq) {
+			sdu = tx_win->sdu;
+			if ((tx_win->sar == BT_L2CAP_CONTROL_SAR_UNSEG) ||
+				(tx_win->sar == BT_L2CAP_CONTROL_SAR_END)) {
+				l2cap_br_sdu_is_done(br_chan, sdu, 0);
+			}
 			tx_win = (struct bt_l2cap_br_window *)sys_slist_get(
 				&br_chan->_pdu_outstanding);
-			memset(tx_win, 0, sizeof(*tx_win));
-			k_fifo_put(&br_chan->_free_tx_win, tx_win);
+			l2cap_br_free_window(br_chan, tx_win);
 			tx_win = (struct bt_l2cap_br_window *)sys_slist_peek_head(
 				&br_chan->_pdu_outstanding);
 		} else {
@@ -558,21 +601,36 @@ static int bt_l2cap_br_update_req_seq_direct(struct bt_l2cap_br_chan *br_chan,
 	}
 	br_chan->expected_ack_seq = req_seq;
 
-	if (rej && pdu) {
+	if (rej) {
 		tx_win = (struct bt_l2cap_br_window *)sys_slist_peek_head(
 			&br_chan->_pdu_outstanding);
 		if (tx_win) {
-			net_buf_simple_restore(&pdu->b, &tx_win->pdu);
+			sdu = tx_win->sdu;
+			__ASSERT(sdu, "Invalid sdu buffer on chan %p", br_chan);
+			net_buf_simple_restore(&sdu->b, &tx_win->sdu_state);
+			if ((tx_win->sar == BT_L2CAP_CONTROL_SAR_UNSEG) ||
+				(tx_win->sar == BT_L2CAP_CONTROL_SAR_START)) {
+				br_chan->_sdu_total_len = 0;
+			} else {
+				br_chan->_sdu_total_len = tx_win->sdu_total_len;
+			}
 			br_chan->next_tx_seq = tx_win->tx_seq;
 		}
 
 		while (tx_win) {
 			tx_win = (struct bt_l2cap_br_window *)sys_slist_get(
 				&br_chan->_pdu_outstanding);
-			memset(tx_win, 0, sizeof(*tx_win));
-			k_fifo_put(&br_chan->_free_tx_win, tx_win);
+			l2cap_br_free_window(br_chan, tx_win);
 			tx_win = (struct bt_l2cap_br_window *)sys_slist_peek_head(
 				&br_chan->_pdu_outstanding);
+			if (tx_win) {
+				sdu = tx_win->sdu;
+				__ASSERT(sdu, "Invalid sdu buffer on chan %p", br_chan);
+				if ((tx_win->sar == BT_L2CAP_CONTROL_SAR_UNSEG) ||
+					(tx_win->sar == BT_L2CAP_CONTROL_SAR_START)) {
+					net_buf_simple_restore(&sdu->b, &tx_win->sdu_state);
+				}
+			}
 		}
 	}
 
@@ -776,7 +834,7 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return false;
 	}
 
-	k_fifo_init(&ch->_pdu_tx_queue);
+	sys_slist_init(&ch->_pdu_tx_queue);
 
 	/* All dynamic channels have the destroy handler which makes sure that
 	 * the RTX work structure is properly released with a cancel sync.
@@ -818,7 +876,7 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 	LOG_DBG("push PDU: cb %p userdata %p", cb, user_data);
 
 	make_closure(buf->user_data, cb, user_data);
-	net_buf_put(&br_chan->_pdu_tx_queue, buf);
+	sys_slist_append(&br_chan->_pdu_tx_queue, &buf->node);
 	raise_data_ready(br_chan);
 
 	return 0;
@@ -1020,6 +1078,27 @@ static void bt_l2cap_br_pack_i_frame_header(struct bt_l2cap_br_chan *br_chan, st
 	}
 }
 
+static struct net_buf *l2cap_br_get_next_sdu(struct bt_l2cap_br_chan *br_chan)
+{
+	struct net_buf *sdu, *next;
+
+	if (br_chan->_pdu_buf) {
+		return br_chan->_pdu_buf;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_tx_queue, sdu, next, node) {
+		if (sdu->len) {
+			return sdu;
+		}
+
+		if (L2CAP_BR_IS_S_FRAME(closure_data(sdu->user_data))) {
+			return sdu;
+		}
+	}
+
+	return NULL;
+}
+
 static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_buf *sdu)
 {
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
@@ -1078,126 +1157,76 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 	struct bt_l2cap_br_chan *br_chan =
 		CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
 
-	/* Leave the PDU buffer in the queue until we have sent all its
-	 * fragments.
-	 */
-	struct net_buf *pdu = k_fifo_peek_head(&br_chan->_pdu_tx_queue);
-	struct net_buf *send_buf = NULL;
-
-	__ASSERT(pdu, "signaled ready but no PDUs in the TX queue");
-
 	if (br_chan->_pdu_buf && bt_buf_has_view(br_chan->_pdu_buf)) {
-		LOG_ERR("already have view on %p of %p", br_chan->_pdu_buf, pdu);
+		LOG_ERR("already have view on %p", br_chan->_pdu_buf);
 		return NULL;
 	}
 
-	if (!br_chan->_pdu_buf && !bt_l2cap_br_get_outstanding_count(br_chan)) {
-		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SDU_SENDING)) {
-			/* There is a pdu has been done */
-			if (!pdu->len) {
-				/* The SDU is done */
-				LOG_DBG("last frag, removing %p", pdu);
-
-				__maybe_unused struct net_buf *b =
-					k_fifo_get(&br_chan->_pdu_tx_queue, K_NO_WAIT);
-				bt_conn_tx_cb_t cb;
-
-				__ASSERT_NO_MSG(b == pdu);
-
-				atomic_clear_bit(br_chan->flags, L2CAP_FLAG_SDU_SENDING);
-
-				br_chan->_pdu_buf = NULL;
-				br_chan->_pdu_remaining = 0;
-
-				cb = closure_cb(pdu->user_data);
-
-				if (cb) {
-					cb(conn, closure_data(pdu->user_data), 0);
-				}
-
-				/* Remove the pdu */
-				net_buf_unref(pdu);
-
-				LOG_DBG("chan %p done", br_chan);
-				lower_data_ready(br_chan);
-
-				/* Append channel to list if it still has data */
-				if (chan_has_data(br_chan)) {
-					LOG_DBG("chan %p ready", br_chan);
-					raise_data_ready(br_chan);
-				}
-
-				return NULL;
-			}
-		}
-	}
+	/* Leave the PDU buffer in the queue until we have sent all its
+	 * fragments.
+	 */
+	struct net_buf *pdu = l2cap_br_get_next_sdu(br_chan);
+	struct net_buf *send_buf = NULL;
 
 	if (br_chan->_pdu_remaining == 0) {
 		struct bt_l2cap_br_window *tx_win;
 		bool first = true;
+		uint8_t s_bit = BT_L2CAP_CONTROL_S_RR;
+		bool alloc = false;
 
-		send_buf = NULL;
+		if (pdu && !pdu->len && L2CAP_BR_IS_S_FRAME(closure_data(pdu->user_data))) {
+			/* It is a S-frame */
+			s_bit = L2CAP_BR_GET_S_BIT(closure_data(pdu->user_data));
+			alloc = true;
+		}
 
-		/* There is not any PDU in sending. Check whether needs to send S-frame. */
-		if (!br_chan->_pdu_buf) {
-			uint8_t s_bit = BT_L2CAP_CONTROL_S_RR;
-			bool alloc = false;
+		if ((atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R) &&
+		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED)) ||
+		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ) &&
+		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ_CHANGED)) ||
+		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P) &&
+		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED)) ||
+		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY) &&
+		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED)) ||
+		    atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME)) {
+			alloc = true;
+		}
 
-			if (!pdu->len && !atomic_test_bit(br_chan->flags, L2CAP_FLAG_SDU_SENDING)) {
-				if (L2CAP_BR_IS_S_FRAME(closure_data(pdu->user_data))) {
-					/* It is a S-frame */
-					s_bit = L2CAP_BR_GET_S_BIT(closure_data(pdu->user_data));
-					atomic_set_bit(br_chan->flags, L2CAP_FLAG_SDU_SENDING);
-					alloc = true;
-				}
+		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_P) &&
+		    !l2cap_br_send_i_frame(br_chan, pdu)) {
+			alloc = true;
+		}
+
+		if (alloc) {
+			/* Send S-Frame with R bit set. */
+			send_buf = bt_l2cap_create_pdu_timeout(&br_tx_pool, 0, K_NO_WAIT);
+			if (send_buf == NULL) {
+				/* No buffer can be used for transmission.
+				 * Waiting for buffer available.
+				 */
+				LOG_DBG("no buf for sending I-frame on %p", br_chan);
+				return NULL;
 			}
 
-			if ((atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R) &&
-			     atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED)) ||
-			    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ) &&
-			     atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ_CHANGED)) ||
-			    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P) &&
-			     atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED)) ||
-			    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY) &&
-			     atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED)) ||
-			    atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME)) {
-				alloc = true;
+			bt_l2cap_br_pack_s_frame_header(br_chan, send_buf, s_bit);
+			atomic_clear_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME);
+
+			if (BT_L2CAP_RT_FC_SDU_TAIL_SIZE(br_chan)) {
+				uint16_t fcs =
+					crc16_reflect(0xA001, 0, send_buf->data, send_buf->len);
+
+				net_buf_add_le16(send_buf, fcs);
+			}
+			br_chan->_pdu_remaining = send_buf->len;
+			br_chan->_pdu_buf = send_buf;
+
+			make_closure(send_buf->user_data, NULL, NULL);
+
+			if (pdu && !pdu->len && L2CAP_BR_IS_S_FRAME(closure_data(pdu->user_data))) {
+				l2cap_br_sdu_is_done(br_chan, pdu, 0);
 			}
 
-			if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_P) &&
-			    !l2cap_br_send_i_frame(br_chan, pdu)) {
-				alloc = true;
-			}
-
-			if (alloc) {
-				/* Send S-Frame with R bit set. */
-				send_buf = bt_l2cap_create_pdu_timeout(&br_tx_pool, 0, K_NO_WAIT);
-				if (send_buf == NULL) {
-					/* No buffer can be used for transmission.
-					 * Waiting for buffer available.
-					 */
-					LOG_DBG("no buf for sending I-frame on %p", br_chan);
-					return NULL;
-				}
-			}
-
-			if (send_buf != NULL) {
-				bt_l2cap_br_pack_s_frame_header(br_chan, send_buf, s_bit);
-				atomic_clear_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME);
-
-				if (BT_L2CAP_RT_FC_SDU_TAIL_SIZE(br_chan)) {
-					uint16_t fcs = crc16_reflect(0xA001, 0, send_buf->data,
-								     send_buf->len);
-
-					net_buf_add_le16(send_buf, fcs);
-				}
-				br_chan->_pdu_remaining = send_buf->len;
-				br_chan->_pdu_buf = send_buf;
-
-				make_closure(send_buf->user_data, NULL, NULL);
-
-				goto done;
-			}
+			goto done;
 		}
 
 		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
@@ -1258,6 +1287,15 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 			return NULL;
 		}
 
+		/* Check whether all PDUs have been sent. But not of all are confirmed. */
+		if (!pdu) {
+			/* No pending I-frame needs to be sent
+			 */
+			LOG_DBG("No pending I-frame needs to be sent on %p", br_chan);
+			lower_data_ready(br_chan);
+			return NULL;
+		}
+
 		tx_win = l2cap_br_find_window(br_chan);
 		if (!tx_win) {
 			/* No more window for sending I-frame PDU.
@@ -1269,26 +1307,6 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 			return NULL;
 		}
 
-		/* Check whether all PDUs have been sent. But not of all are confirmed. */
-		if (!pdu->len) {
-			/* All SDU are sent, but not all I-frames have been acked.
-			 * Waiting for all acks.
-			 * Remove the channel from the ready-list, it will be added
-			 * back later when the S-frame PDU has been received.
-			 */
-			if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_SDU_SENDING)) {
-				/* It is new SDU */
-				if (L2CAP_BR_IS_S_FRAME(closure_data(pdu->user_data))) {
-					LOG_DBG("Shouldn't be able to reach here");
-					__ASSERT(false, "Shouldn't be able to reach here");
-				}
-			} else {
-				LOG_DBG("Waiting for S-frame on %p", br_chan);
-				lower_data_ready(br_chan);
-				return NULL;
-			}
-		}
-
 send_i_frame:
 		send_buf = bt_l2cap_create_pdu_timeout(&br_tx_pool, 0, K_NO_WAIT);
 		if (send_buf == NULL) {
@@ -1297,6 +1315,9 @@ send_i_frame:
 			 */
 			LOG_DBG("no buf for sending I-frame on %p", br_chan);
 			/* Maybe we can disconnect channel here if retransmission I-frame. */
+
+			/* Free allocated tx_win. */
+			l2cap_br_free_window(br_chan, tx_win);
 			return NULL;
 		}
 
@@ -1311,9 +1332,7 @@ send_i_frame:
 			bool last_seg;
 			bool start_seg;
 
-			start_seg = atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_SDU_SENDING)
-					    ? false
-					    : true;
+			start_seg = br_chan->_sdu_total_len ? false : true;
 
 			if (start_seg) {
 				br_chan->_sdu_total_len = pdu->len;
@@ -1323,7 +1342,7 @@ send_i_frame:
 				}
 			}
 
-			net_buf_simple_save(&pdu->b, &tx_win->pdu);
+			net_buf_simple_save(&pdu->b, &tx_win->sdu_state);
 
 			pdu_len = get_pdu_len(br_chan, pdu, start_seg);
 
@@ -1350,6 +1369,7 @@ send_i_frame:
 				__ASSERT(false, "Tailroom of the buffer cannot be filled %zu / %zu",
 					 net_buf_tailroom(send_buf), actual_pdu_len);
 				net_buf_unref(send_buf);
+				l2cap_br_free_window(br_chan, tx_win);
 				return NULL;
 			}
 
@@ -1366,6 +1386,8 @@ send_i_frame:
 			tx_win->srej = false;
 			tx_win->sar = sar;
 			tx_win->transmit_counter = 1;
+			tx_win->sdu_total_len = br_chan->_sdu_total_len;
+			tx_win->sdu = pdu;
 
 			LOG_DBG("Sending I-frame %u: buf %p chan %p len %zu", tx_win->tx_seq,
 					pdu, br_chan, pdu_len);
@@ -1419,8 +1441,7 @@ send_i_frame:
 			if (br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_STREAM) {
 				sys_slist_append(&br_chan->_pdu_outstanding, &tx_win->node);
 			} else {
-				memset(tx_win, 0, sizeof(*tx_win));
-				k_fifo_put(&br_chan->_free_tx_win, tx_win);
+				l2cap_br_free_window(br_chan, tx_win);
 			}
 		}
 	}
@@ -1442,6 +1463,9 @@ done:
 	} else {
 		br_chan->_pdu_buf = NULL;
 		br_chan->_pdu_remaining = 0;
+		if (pdu && !pdu->len) {
+			br_chan->_sdu_total_len = 0;
+		}
 
 		LOG_DBG("done sending PDU");
 
@@ -1491,9 +1515,11 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn,
 	/* Leave the PDU buffer in the queue until we have sent all its
 	 * fragments.
 	 */
-	struct net_buf *pdu = k_fifo_peek_head(&br_chan->_pdu_tx_queue);
+	const sys_snode_t *tx_pdu = sys_slist_peek_head(&br_chan->_pdu_tx_queue);
 
-	__ASSERT(pdu, "signaled ready but no PDUs in the TX queue");
+	__ASSERT(tx_pdu, "signaled ready but no PDUs in the TX queue");
+
+	struct net_buf *pdu = CONTAINER_OF(tx_pdu, struct net_buf, node);
 
 	if (bt_buf_has_view(pdu)) {
 		LOG_ERR("already have view on %p", pdu);
@@ -1508,9 +1534,11 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn,
 
 	if (last_frag) {
 		LOG_DBG("last frag, removing %p", pdu);
-		__maybe_unused struct net_buf *b = k_fifo_get(&br_chan->_pdu_tx_queue, K_NO_WAIT);
+		__maybe_unused bool found;
 
-		__ASSERT_NO_MSG(b == pdu);
+		found = sys_slist_find_and_remove(&br_chan->_pdu_tx_queue, &pdu->node);
+
+		__ASSERT_NO_MSG(found);
 
 		LOG_DBG("chan %p done", br_chan);
 		lower_data_ready(br_chan);
@@ -2377,7 +2405,9 @@ void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
 
 	/* Remove buffers on the PDU TX queue. */
 	while (chan_has_data(br_chan)) {
-		struct net_buf *buf = net_buf_get(&br_chan->_pdu_tx_queue, K_NO_WAIT);
+		const sys_snode_t *tx_buf = sys_slist_get(&br_chan->_pdu_tx_queue);
+
+		struct net_buf *buf = CONTAINER_OF(tx_buf, struct net_buf, node);
 
 		net_buf_unref(buf);
 	}
