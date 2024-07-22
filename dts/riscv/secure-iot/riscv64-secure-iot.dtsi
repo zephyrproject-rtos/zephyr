@@ -50,7 +50,7 @@
     plic: interrupt-controller@c000000 {
       #address-cells = <0>;
 			#interrupt-cells = <2>;
-      compatible = "sifive,plic-1.0.0";
+      compatible = "shakti,plic0";
       interrupt-controller;
       reg = <0x0c000000 0x00000080
 			       0x0c002000 0x00000008
@@ -65,6 +65,11 @@
         compatible = "shakti,uart0";
         reg= < 0x0 0x11300 0x0 0x100>;
     };
+
+    uart1: serial@11400 {
+        compatible = "shakti,uart1";
+        reg= < 0x0 0x11400 0x0 0x100>;
+    };    
 
     spi0: spi@20000 {
             #address-cells = <1>;
@@ -85,6 +90,16 @@
                 compatible = "shakti,gpio";
                 reg = < 0x0 0x40200 0x0 0x08>;
                 config_gpio = <GPIO_OUTPUT>;
+                interrupt-parent = <&plic>;
+                interrupts = <1 1>, <2 1>, <3 1>, <4 1>,
+                          <5 1>, <6 1>, <7 1>, <8 1>,
+                          <9 1>, <10 1>, <11 1>, <12 1>,
+                          <13 1>, <14 1>, <15 1>, <16 1>,
+                          <17 1>, <18 1>, <19 1>, <20 1>,
+                          <21 1>, <22 1>, <23 1>, <24 1>,
+                          <25 1>, <26 1>, <27 1>, <28 1>,
+                          <29 1>, <30 1>, <31 1>, <32 1>;
+
     };
     
     i2c0: i2c@44000 {
@@ -94,7 +109,7 @@
     i2c1: i2c@44100 {
       compatible = "shakti,i2c0";
       reg= <0x0 0x44100 0x0 0x100>;
-};
+    };
 
   };
 };

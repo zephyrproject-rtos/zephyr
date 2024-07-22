@@ -18,6 +18,12 @@ chosen {
 	clock-frequency = <100000000>;
 };
 
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <100000000>;
+};
+
 &i2c0 {
 	status = "ok";
 	base = <0x44000>;
@@ -58,6 +64,13 @@ chosen {
 		  display-inversion;
         };
 };
+
 &gpio0 {
 	status = "okay";
+};
+
+&plic {
+
+	status = "okay";
+	base = <0xc000000>;
 };

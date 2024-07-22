@@ -20,7 +20,7 @@ config RISCV_HAS_CPU_IDLE
 
 config NUM_IRQS
 	int
-	default 32
+	default 100
 
 config RISCV_RAM_BASE_ADDR
 	hex

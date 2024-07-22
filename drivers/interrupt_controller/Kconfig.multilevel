@@ -64,7 +64,7 @@ config NUM_2ND_LEVEL_AGGREGATORS
 config 2ND_LEVEL_INTERRUPT_BITS
 	int "Total number of second level interrupt bits"
 	range 0 31
-	default 8
+	default 0
 	help
 	  The number of bits to use of the 32 bit interrupt mask for second
 	  tier interrupts.
@@ -118,7 +118,7 @@ config 3RD_LVL_ISR_TBL_OFFSET
 config 3RD_LEVEL_INTERRUPT_BITS
 	int "Total number of third level interrupt bits"
 	range 0 30
-	default 8
+	default 0
 	help
 	  The number of bits to use of the 32 bit interrupt mask for third
 	  tier interrupts.
