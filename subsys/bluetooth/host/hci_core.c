@@ -3758,7 +3758,7 @@ static void rx_queue_put(struct net_buf *buf)
 }
 #endif /* !CONFIG_BT_RECV_BLOCKING */
 
-int bt_recv(struct net_buf *buf)
+static int bt_recv_unsafe(struct net_buf *buf)
 {
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
@@ -3807,6 +3807,17 @@ int bt_recv(struct net_buf *buf)
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
+}
+
+int bt_recv(struct net_buf *buf)
+{
+	int err;
+
+	k_sched_lock();
+	err = bt_recv_unsafe(buf);
+	k_sched_unlock();
+
+	return err;
 }
 
 int bt_recv_prio(struct net_buf *buf)
