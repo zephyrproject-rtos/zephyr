@@ -628,8 +628,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE%s", resp.network_id,
-			    params->ft_used ? " FT-SAE" : "")) {
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt %s", resp.network_id,
+			    params->ft_used ? "FT-SAE" : "SAE")) {
 				goto out;
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
@@ -649,8 +649,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK%s",
-			    resp.network_id, params->ft_used ? " FT-PSK" : "")) {
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt %s",
+			    resp.network_id, params->ft_used ? "FT-PSK" : "WPA-PSK")) {
 				goto out;
 			}
 
@@ -687,7 +687,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 			} else if (params->suiteb_type == WIFI_SUITEB_192) {
 				key_mgmt = (params->ft_used ?
-					"WPA-EAP-SUITE-B-192 FT-EAP-SHA384" :
+					"FT-EAP-SHA384" :
 					"WPA-EAP-SUITE-B-192");
 				openssl_ciphers = "SUITEB192";
 				if (params->TLS_cipher == WIFI_EAP_TLS_ECC_P384) {
@@ -702,7 +702,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 
 			} else {
-				key_mgmt = (params->ft_used ? "WPA-EAP FT-EAP" : "WPA-EAP");
+				key_mgmt = (params->ft_used ? "FT-EAP" : "WPA-EAP");
 			}
 
 			if (!wpa_cli_cmd_v("set_network %d key_mgmt %s", resp.network_id,
