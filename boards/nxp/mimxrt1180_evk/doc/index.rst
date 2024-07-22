@@ -85,12 +85,11 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1180_evk board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1170_evk` , which is the superset board in NXP's i.MX RT11xx family.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1170_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1180_evk board:
+NXP considers the MIMXRT1180-EVK as the superset board for the i.MX RT118x
+family of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire RT118x family.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The mimxrt1180_evk board
+configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -101,7 +100,7 @@ already supported, which can also be re-used on this mimxrt1180_evk board:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
+| GPT       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
