@@ -279,33 +279,6 @@ Device Drivers and Devicetree
 Analog-to-Digital Converter (ADC)
 =================================
 
-Bluetooth HCI
-=============
-
- * A new HCI driver API was introduced (:github:`72323`) and the old one deprecated. The new API
-   follows the normal Zephyr driver model, with devicetree nodes, etc. The host now
-   selects which driver instance to use as the controller by looking for a ``zephyr,bt-hci``
-   chosen property. The devicetree bindings for all HCI drivers derive from a common
-   ``bt-hci.yaml`` base binding.
-
-  * As part of the new HCI driver API, the ``zephyr,bt-uart`` chosen property is no longer used,
-    rather the UART HCI drivers select their UART by looking for the parent devicetree node of the
-    HCI driver instance node.
-  * As part of the new HCI driver API, the ``zephyr,bt-hci-ipc`` chosen property is only used for
-    the controller side, whereas the HCI driver now relies on nodes with the compatible string
-    ``zephyr,bt-hci-ipc``.
-  * The ``BT_NO_DRIVER`` Kconfig option was removed. HCI drivers are no-longer behind a Kconfig
-    choice, rather they can now be enabled and disabled independently, mostly based on their
-    respective devicetree node being enabled or not.
-  * The ``BT_HCI_VS_EXT`` Kconfig option was deleted and the feature is now included in the
-    :kconfig:option:`CONFIG_BT_HCI_VS` Kconfig option.
-  * The ``BT_HCI_VS_EVT`` Kconfig option was removed, since vendor event support is implicit if
-    the :kconfig:option:`CONFIG_BT_HCI_VS` option is enabled.
-  * The bt_read_static_addr() API was removed. This wasn't really a completely public API, but
-    since it was exposed by the public hci_driver.h header file the removal is mentioned here.
-    Enable the :kconfig:option:`CONFIG_BT_HCI_VS` Kconfig option instead, and use vendor specific
-    HCI commands API to get the Controller's Bluetooth static address when available.
-
 Charger
 =======
 
@@ -713,6 +686,33 @@ Watchdog
 
 Bluetooth
 *********
+
+Bluetooth HCI
+=============
+
+ * A new HCI driver API was introduced (:github:`72323`) and the old one deprecated. The new API
+   follows the normal Zephyr driver model, with devicetree nodes, etc. The host now
+   selects which driver instance to use as the controller by looking for a ``zephyr,bt-hci``
+   chosen property. The devicetree bindings for all HCI drivers derive from a common
+   ``bt-hci.yaml`` base binding.
+
+  * As part of the new HCI driver API, the ``zephyr,bt-uart`` chosen property is no longer used,
+    rather the UART HCI drivers select their UART by looking for the parent devicetree node of the
+    HCI driver instance node.
+  * As part of the new HCI driver API, the ``zephyr,bt-hci-ipc`` chosen property is only used for
+    the controller side, whereas the HCI driver now relies on nodes with the compatible string
+    ``zephyr,bt-hci-ipc``.
+  * The ``BT_NO_DRIVER`` Kconfig option was removed. HCI drivers are no-longer behind a Kconfig
+    choice, rather they can now be enabled and disabled independently, mostly based on their
+    respective devicetree node being enabled or not.
+  * The ``BT_HCI_VS_EXT`` Kconfig option was deleted and the feature is now included in the
+    :kconfig:option:`CONFIG_BT_HCI_VS` Kconfig option.
+  * The ``BT_HCI_VS_EVT`` Kconfig option was removed, since vendor event support is implicit if
+    the :kconfig:option:`CONFIG_BT_HCI_VS` option is enabled.
+  * The bt_read_static_addr() API was removed. This wasn't really a completely public API, but
+    since it was exposed by the public hci_driver.h header file the removal is mentioned here.
+    Enable the :kconfig:option:`CONFIG_BT_HCI_VS` Kconfig option instead, and use vendor specific
+    HCI commands API to get the Controller's Bluetooth static address when available.
 
 Bluetooth Mesh
 ==============
