@@ -431,6 +431,42 @@ static int video_mcux_csi_set_signal(const struct device *dev, enum video_endpoi
 }
 #endif
 
+static int video_mcux_csi_set_frmival(const struct device *dev, enum video_endpoint_id ep,
+				      struct video_frmival *frmival)
+{
+	const struct video_mcux_csi_config *config = dev->config;
+
+	return video_set_frmival(config->source_dev, ep, frmival);
+}
+
+static int video_mcux_csi_get_frmival(const struct device *dev, enum video_endpoint_id ep,
+				      struct video_frmival *frmival)
+{
+	const struct video_mcux_csi_config *config = dev->config;
+
+	return video_get_frmival(config->source_dev, ep, frmival);
+}
+
+static int video_mcux_csi_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
+				       struct video_frmival_enum *fie)
+{
+	const struct video_mcux_csi_config *config = dev->config;
+	const struct video_format *fie_fmt = fie->format;
+	int ret;
+
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+	struct video_format converted_fmt = *fie->format;
+
+	video_pix_fmt_convert(&converted_fmt, false);
+	fie->format = &converted_fmt;
+#endif
+
+	ret = video_enum_frmival(config->source_dev, ep, fie);
+	fie->format = fie_fmt;
+
+	return ret;
+}
+
 static const struct video_driver_api video_mcux_csi_driver_api = {
 	.set_format = video_mcux_csi_set_fmt,
 	.get_format = video_mcux_csi_get_fmt,
@@ -442,6 +478,9 @@ static const struct video_driver_api video_mcux_csi_driver_api = {
 	.set_ctrl = video_mcux_csi_set_ctrl,
 	.get_ctrl = video_mcux_csi_get_ctrl,
 	.get_caps = video_mcux_csi_get_caps,
+	.set_frmival = video_mcux_csi_set_frmival,
+	.get_frmival = video_mcux_csi_get_frmival,
+	.enum_frmival = video_mcux_csi_enum_frmival,
 #ifdef CONFIG_POLL
 	.set_signal = video_mcux_csi_set_signal,
 #endif
