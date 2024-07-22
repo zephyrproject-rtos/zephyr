@@ -71,4 +71,5 @@ chosen {
 &plic {
 
 	status = "okay";
+	base = <0xc000000>;
 };

@@ -255,6 +255,33 @@ void plic_irq_enable(uint32_t interrupt_id)
 	// log_trace("\ninterrupt_enable exited \n");
 }
 
+void interrupt_disable(uint32_t id)
+{
+  	uint32_t *interrupt_disable_addr = 0U;
+
+	interrupt_disable_addr = (uint32_t *) (PLIC_BASE_ADDRESS +
+					      PLIC_ENABLE_OFFSET +
+					      (id / 32)*sizeof(uint32_t));
+
+	key = irq_lock();
+	*interrupt_disable_addr &= (~(0x1 << (id % 32)));
+	irq_unlock(key);
+	
+}
+
+void interrupt_priority(uint32_t id)
+{
+	uint32_t *interrupt_priority_address = 0U;
+
+	interrupt_priority_address = (uint32_t *) (PLIC_BASE_ADDRESS +
+					   PLIC_PRIORITY_OFFSET +
+					   (id <<
+					    PLIC_PRIORITY_SHIFT_PER_INT));
+
+	*interrupt_priority_address = 0x02;
+}
+
+
 /** @fn void interrupt_disable(uint32_t interrupt_id) 
  * @brief disable an interrupt
  * @details A single bit that enables an interrupt.
@@ -276,8 +303,6 @@ void plic_shakti_irq_disable(uint32_t interrupt_id)
 	interrupt_disable_addr = (uint32_t *) (PLIC_BASE_ADDRESS +
 					      PLIC_ENABLE_OFFSET +
 					      (interrupt_id / 32)*sizeof(uint32_t));
-
-	current_value = *interrupt_disable_addr;
 
 	// log_debug("interrupt_disable_addr = %x current_value = %x \n",
 	// 	  interrupt_disable_addr, current_value);   
@@ -394,17 +419,23 @@ void plic_shakti_init(const struct device *dev)
     volatile uint32_t *interrupt_threshold_priority = (uint32_t *) (PLIC_BASE_ADDRESS + PLIC_THRESHOLD_OFFSET);    
 
     volatile plic_regs_t *regs = (volatile plic_regs_t *)PLIC_REG_OFFSET;
-    for (int i = 0; i < PLIC_EN_SIZE; i++)
-    {
-        *interrupt_disable_addr = 0U;
-        interrupt_disable_addr++;
-    }
+    // for (int i = 0; i < PLIC_EN_SIZE; i++)
+    // {
+    //     *interrupt_disable_addr = 0U;
+    //     interrupt_disable_addr++;
+    // }
 
     // for (int j = 1; j <= PLIC_MAX_INTERRUPT_SRC; j++)
     // {
     //     interrupt_threshold_priority += (j << PLIC_PRIORITY_SHIFT_PER_INT)
     //     *interrupt_threshold_priority = 0U;
     // }
+
+	for (int id = 1; id < PLIC_MAX_INTERRUPT_SRC; id++)
+	{
+		interrupt_disable(id);
+		interrupt_priority(id);
+	}
 
     regs->priority_thershold = 0U;
 

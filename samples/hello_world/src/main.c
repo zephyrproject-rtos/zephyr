@@ -65,10 +65,10 @@ int main(void)
                 );
 
 
-	while(1);
-	// {
-	// 	printf("GPIO Pin Status : %x\n", gpio_port_get_raw(dev, GPIO_PIN));
-	// }
+	while(1)
+	{
+		printf("GPIO Pin Status : %x\n", gpio_port_get_raw(dev, GPIO_PIN));
+	}
 
 	return 0;
 }
