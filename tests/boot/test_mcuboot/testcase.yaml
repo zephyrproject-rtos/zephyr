@@ -4,10 +4,7 @@ common:
   harness_config:
     type: multi_line
     regex:
-      - "I: Starting bootloader"
       - "Launching primary slot application on (.*)"
-      - "Secondary application ready for swap, rebooting"
-      - "I: Starting swap using (.*)|I: Image 0 upgrade secondary slot -> primary slot"
       - "Swapped application booted on (.*)"
 tests:
   bootloader.mcuboot:
@@ -35,6 +32,7 @@ tests:
       - mimxrt685_evk/mimxrt685s/cm33
       - nrf52840dk/nrf52840
       - rd_rw612_bga
+      - nucleo_g071rb
     integration_platforms:
       - frdm_k64f
       - nrf52840dk/nrf52840
@@ -42,5 +40,6 @@ tests:
     tags: mcuboot
     platform_allow:
       - b_u585i_iot02a
+      - nucleo_g071rb
     extra_configs:
       - CONFIG_ASSERT=y

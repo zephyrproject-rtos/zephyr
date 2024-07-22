@@ -21,8 +21,14 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &usart2;
 	};
 
+	aliases {
+		mcuboot-button0 = &user_button;
+		mcuboot-led0 = &green_led_1;
+	};
 
 	leds: leds {
 		compatible = "gpio-leds";
@@ -166,12 +172,47 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "okay";
 
-		/* Set 2KB of storage at the end of 128KB flash */
-		storage_partition: partition@1f800 {
-			label = "storage";
-			reg = <0x0001f800 DT_SIZE_K(2)>;
-		};
+		/*
+		 * Note: stm32g071rb only has 128 kiB of flash (with 2k sector sizes), which is smaller
+		 * than many other MCUs supported by mcuboot. In order to fit mcuboot into boot_partition,
+		 * while also supporting signed images, while also allowing the applications to be of
+		 * reasonable size, and assuming the partition layout below,
+		 * mcuboot should be configured with
+		 * - CONFIG_LOG=n
+		 * - CONFIG_BOOT_VALIDATE_SLOT0=n
+		 * - CONFIG_BOOT_MAX_IMG_SECTORS=25
+		 *
+		 * For quick verification of this, add the above options to 
+		 *
+		 * tests/boot/test_mcuboot/sysbuild/mcuboot.conf
+		 *
+		 * and then run the test with the nucleo_g071rb board.
+		 *
+		 * e.g.
+		 * twister -i -p nucleo_g071rb \
+		 *   --west-flash --device-testing --device-serial /dev/tty.usbmodem214403 \
+		 *   -T tests/boot/test_mcuboot
+		 */
+        boot_partition: partition@0 {
+            label = "mcuboot";
+            reg = <0x0 DT_SIZE_K(32)>;
+            read-only;
+        };
+
+		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		 * of the primary slot0 for swap status and move.
+		 */
+        slot0_partition: partition@8000 {
+            label = "image-0";
+            reg = <0x00008000 (DT_SIZE_K(46) + DT_SIZE_K(2) + DT_SIZE_K(2))>;
+        };
+
+        slot1_partition: partition@14800 {
+            label = "image-1";
+            reg = <0x00014800 DT_SIZE_K(46)>;
+        };
 	};
 };
 
