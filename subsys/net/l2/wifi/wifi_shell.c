@@ -456,7 +456,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->mfp = WIFI_MFP_OPTIONAL;
 	params->eap_ver = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:T:V:I:P:Rh",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:T:V:I:P:R:h",
 		long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -478,6 +478,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'p':
 			params->psk = optarg;
 			params->psk_length = strlen(params->psk);
+			params->sae_password = optarg;
+			params->sae_password_length = strlen(params->sae_password);
 			break;
 		case 'c':
 			channel = strtol(optarg, &endptr, 10);
@@ -3060,6 +3062,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  "[-V, --eap-version]: 0 or 1.\n"
 		  "[-I, --eap-identity]: Client Identity.\n"
 		  "[-P, --eap-password]: Client Password.\n"
+		  "[-R, --fast-BSS-transition]: Fast BSS Transition used.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
 		  2, 20),
