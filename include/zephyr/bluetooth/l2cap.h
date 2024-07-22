@@ -338,7 +338,11 @@ struct bt_l2cap_br_window {
 	/** srej flag */
 	bool srej;
 	/* Save PDU state */
-	struct net_buf_simple_state pdu;
+	struct net_buf_simple_state sdu_state;
+	/** @internal Holds the sending buffer. */
+	struct net_buf		*sdu;
+	/** @internal Total length of TX SDU */
+	uint16_t			sdu_total_len;
 };
 
 /** @brief BREDR L2CAP Channel structure. */
@@ -367,8 +371,8 @@ struct bt_l2cap_br_chan {
 	sys_snode_t			_pdu_ready;
 	/** @internal To be used with @ref bt_conn.upper_data_ready */
 	atomic_t			_pdu_ready_lock;
-	/** @internal Queue of net bufs not yet sent to lower layer */
-	struct k_fifo			_pdu_tx_queue;
+	/** @internal List of net bufs not yet sent to lower layer */
+	sys_slist_t			_pdu_tx_queue;
 
 #if defined(CONFIG_BT_L2CAP_RET) || defined(CONFIG_BT_L2CAP_FC) || \
 	defined(CONFIG_BT_L2CAP_ENH_RET) || defined(CONFIG_BT_L2CAP_STREAM)
