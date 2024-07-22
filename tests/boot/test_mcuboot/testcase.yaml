@@ -35,6 +35,7 @@ tests:
       - mimxrt685_evk/mimxrt685s/cm33
       - nrf52840dk/nrf52840
       - rd_rw612_bga
+      - nucleo_g071rb
     integration_platforms:
       - frdm_k64f
       - nrf52840dk/nrf52840

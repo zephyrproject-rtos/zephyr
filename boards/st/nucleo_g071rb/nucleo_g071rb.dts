@@ -21,8 +21,14 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &usart2;
 	};
 
+	aliases {
+		mcuboot-button0 = &user_button;
+		mcuboot-led0 = &green_led_1;
+	};
 
 	leds: leds {
 		compatible = "gpio-leds";
@@ -166,6 +172,23 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "okay";
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(32)>;
+			read-only;
+		};
+
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 (DT_SIZE_K(46) + DT_SIZE_K(2) + DT_SIZE_K(2))>;
+		};
+
+		slot1_partition: partition@14800 {
+			label = "image-1";
+			reg = <0x00014800 DT_SIZE_K(46)>;
+		};
 
 		/* Set 2KB of storage at the end of 128KB flash */
 		storage_partition: partition@1f800 {
