@@ -19,3 +19,10 @@ config WDT_NRFX
 
 	help
 	  Enable support for nrfx WDT driver for nRF MCU series.
+
+config WDT_NRFX_NO_IRQ
+	bool "nRF WDT nrfx driver without IRQ enabled"
+	depends on WDT_NRFX
+
+	help
+	  Disable use of WDT interrupt in driver.

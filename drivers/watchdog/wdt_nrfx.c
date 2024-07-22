@@ -107,7 +107,8 @@ static int wdt_nrf_install_timeout(const struct device *dev,
 		 * the timeout) from range 0xF-0xFFFFFFFF given in 32768 Hz
 		 * clock ticks. This makes the allowed range of 0x1-0x07CFFFFF
 		 * in milliseconds. Check if the provided value is within
-		 * this range. */
+		 * this range.
+		 */
 		if ((cfg->window.max == 0U) || (cfg->window.max > 0x07CFFFFF)) {
 			return -EINVAL;
 		}
@@ -155,6 +156,7 @@ static const struct wdt_driver_api wdt_nrfx_driver_api = {
 	.feed = wdt_nrf_feed,
 };
 
+#if !defined(CONFIG_WDT_NRFX_NO_IRQ)
 static void wdt_event_handler(const struct device *dev, nrf_wdt_event_t event_type,
 			      uint32_t requests, void *p_context)
 {
@@ -172,45 +174,47 @@ static void wdt_event_handler(const struct device *dev, nrf_wdt_event_t event_ty
 		requests &= ~BIT(i);
 	}
 }
+#endif
 
 #define WDT(idx) DT_NODELABEL(wdt##idx)
 
-#define WDT_NRFX_WDT_DEVICE(idx)					       \
-	static void wdt_##idx##_event_handler(nrf_wdt_event_t event_type,      \
-					      uint32_t requests,	       \
-					      void *p_context)		       \
-	{								       \
-		wdt_event_handler(DEVICE_DT_GET(WDT(idx)), event_type,         \
-				  requests, p_context);			       \
-	}								       \
-	static int wdt_##idx##_init(const struct device *dev)		       \
-	{								       \
-		const struct wdt_nrfx_config *config = dev->config;	       \
-		nrfx_err_t err_code;					       \
-		IRQ_CONNECT(DT_IRQN(WDT(idx)), DT_IRQ(WDT(idx), priority),     \
-			    nrfx_isr, nrfx_wdt_##idx##_irq_handler, 0);	       \
-		err_code = nrfx_wdt_init(&config->wdt,			       \
-					 NULL,				       \
-					 wdt_##idx##_event_handler,	       \
-					 NULL);				       \
-		if (err_code != NRFX_SUCCESS) {				       \
-			return -EBUSY;					       \
-		}							       \
-		return 0;						       \
-	}								       \
-	static struct wdt_nrfx_data wdt_##idx##_data = {		       \
-		.m_timeout = 0,						       \
-		.m_allocated_channels = 0,				       \
-	};								       \
-	static const struct wdt_nrfx_config wdt_##idx##z_config = {	       \
-		.wdt = NRFX_WDT_INSTANCE(idx),				       \
-	};								       \
-	DEVICE_DT_DEFINE(WDT(idx),					       \
-			    wdt_##idx##_init,				       \
-			    NULL,					       \
-			    &wdt_##idx##_data,				       \
-			    &wdt_##idx##z_config,			       \
-			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
+#define WDT_NRFX_WDT_DEVICE(idx)							       \
+	COND_CODE_0(IS_ENABLED(CONFIG_WDT_NRFX_NO_IRQ), (				       \
+	static void wdt_##idx##_event_handler(nrf_wdt_event_t event_type,		       \
+					      uint32_t requests,			       \
+					      void *p_context)				       \
+	{										       \
+		wdt_event_handler(DEVICE_DT_GET(WDT(idx)), event_type,			       \
+				  requests, p_context);					       \
+	}										       \
+	), ())										       \
+	static int wdt_##idx##_init(const struct device *dev)				       \
+	{										       \
+		const struct wdt_nrfx_config *config = dev->config;			       \
+		nrfx_err_t err_code;							       \
+		COND_CODE_0(IS_ENABLED(CONFIG_WDT_NRFX_NO_IRQ), (			       \
+		IRQ_CONNECT(DT_IRQN(WDT(idx)), DT_IRQ(WDT(idx),				       \
+		priority), nrfx_isr, nrfx_wdt_##idx##_irq_handler, 0);), ())		       \
+		err_code = nrfx_wdt_init(&config->wdt,					       \
+					 NULL,						       \
+					 COND_CODE_0(IS_ENABLED(CONFIG_WDT_NRFX_NO_IRQ),       \
+					 (wdt_##idx##_event_handler,), (NULL,))		       \
+					 NULL);						       \
+		if (err_code != NRFX_SUCCESS) {						       \
+			return -EBUSY;							       \
+		}									       \
+		return 0;								       \
+	}										       \
+	static struct wdt_nrfx_data wdt_##idx##_data;					       \
+	static const struct wdt_nrfx_config wdt_##idx##z_config = {			       \
+		.wdt = NRFX_WDT_INSTANCE(idx),						       \
+	};										       \
+	DEVICE_DT_DEFINE(WDT(idx),							       \
+			    wdt_##idx##_init,						       \
+			    NULL,							       \
+			    &wdt_##idx##_data,						       \
+			    &wdt_##idx##z_config,					       \
+			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		       \
 			    &wdt_nrfx_driver_api)
 
 #ifdef CONFIG_HAS_HW_NRF_WDT0
