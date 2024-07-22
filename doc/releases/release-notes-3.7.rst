@@ -359,6 +359,7 @@ Boards & SoC Support
   * Added support for MediaTek MT8195 Audio DSPs
   * Added support for Nuvoton Numaker M2L31X SoC series.
   * Added support for the Microchip PolarFire ICICLE Kit SMP variant.
+  * Added support for Renesas RA8 series SoC.
 
 * Made these changes in other SoC series:
 
