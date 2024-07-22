@@ -19,3 +19,6 @@ mypy
 
 # used for mocking functions in pytest
 mock>=4.0.1
+
+# used to add CRC to elf file, parsing sections through symbols defined in the linker file.
+crc-tool
