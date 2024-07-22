@@ -304,6 +304,7 @@ Kernel
 
 Bluetooth
 *********
+
 * Audio
 
   * Removed ``err`` from :c:struct:`bt_bap_broadcast_assistant_cb.recv_state_removed` as it was
@@ -348,10 +349,15 @@ Bluetooth
     :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER` now depend on
     :kconfig:option:`CONFIG_BT_CONN` as they do not work without connections.
 
-* HCI Driver
+* HCI Drivers
 
+  * Completely redesigned HCI driver interface. See the Bluetooth HCI section in
+    :ref:`migration_3.7` for more information.
   * Added support for Ambiq Apollo3 Blue series.
   * Added support for NXP platforms.
+  * Added support for Infineon CYW208XX.
+  * Added support for Renesas SmartBond DA1469x.
+  * Removed unmaintained B91 driver.
 
 Boards & SoC Support
 ********************
