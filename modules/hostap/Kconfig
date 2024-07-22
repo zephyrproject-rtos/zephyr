@@ -633,6 +633,14 @@ config NO_RRM
 config NO_WMM_AC
 	bool
 
+config RRM_MSR_REPORT_LEN
+	int "RRM measurement report frame length"
+	default 1500
+	depends on WIFI_NM_WPA_SUPPLICANT_RRM
+
+config WMM_AC
+	bool
+
 config DPP
 	bool
 
