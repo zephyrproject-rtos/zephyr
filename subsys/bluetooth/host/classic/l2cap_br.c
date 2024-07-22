@@ -1952,15 +1952,27 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 		if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_FC) &&
 		    (!((br_chan_sig->info_feat_mask & L2CAP_FEAT_FC_MASK) &&
 		       L2CAP_EXTENDED_FEAT_MASK & L2CAP_FEAT_FC_MASK))) {
-			LOG_ERR("Invalid mode %u", br_chan->rx.mode);
-			return -ENOTSUP;
+			if (!br_chan->rx.optional) {
+				LOG_ERR("Invalid mode %u", br_chan->rx.mode);
+				return -ENOTSUP;
+			}
+
+			LOG_WRN("Unsupp mode %u, set basic mode", br_chan->rx.mode);
+			br_chan->rx.mode = BT_L2CAP_BR_LINK_MODE_BASIC;
+			break;
 		}
 
 		if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_RET) &&
 		    (!((br_chan_sig->info_feat_mask & L2CAP_FEAT_RET_MASK) &&
 		       (L2CAP_EXTENDED_FEAT_MASK & L2CAP_FEAT_RET_MASK)))) {
-			LOG_ERR("Invalid mode %u", br_chan->rx.mode);
-			return -ENOTSUP;
+			if (!br_chan->rx.optional) {
+				LOG_ERR("Invalid mode %u", br_chan->rx.mode);
+				return -ENOTSUP;
+			}
+
+			LOG_WRN("Unsupp mode %u, set basic mode", br_chan->rx.mode);
+			br_chan->rx.mode = BT_L2CAP_BR_LINK_MODE_BASIC;
+			break;
 		}
 
 		if ((br_chan_sig->info_feat_mask & L2CAP_FEAT_ENH_RET_MASK) &&
@@ -1976,15 +1988,27 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 	case BT_L2CAP_BR_LINK_MODE_ERET:
 		if (!((br_chan_sig->info_feat_mask & L2CAP_FEAT_ENH_RET_MASK) &&
 		      (L2CAP_EXTENDED_FEAT_MASK & L2CAP_FEAT_ENH_RET_MASK))) {
-			LOG_ERR("Invalid mode %u", br_chan->rx.mode);
-			return -ENOTSUP;
+			if (!br_chan->rx.optional) {
+				LOG_ERR("Invalid mode %u", br_chan->rx.mode);
+				return -ENOTSUP;
+			}
+
+			LOG_WRN("Unsupp mode %u, set basic mode", br_chan->rx.mode);
+			br_chan->rx.mode = BT_L2CAP_BR_LINK_MODE_BASIC;
+			break;
 		}
 		break;
 	case BT_L2CAP_BR_LINK_MODE_STREAM:
 		if (!((br_chan_sig->info_feat_mask & L2CAP_FEAT_STREAM_MASK) &&
 		      (L2CAP_EXTENDED_FEAT_MASK & L2CAP_FEAT_STREAM_MASK))) {
-			LOG_ERR("Invalid mode %u", br_chan->rx.mode);
-			return -ENOTSUP;
+			if (!br_chan->rx.optional) {
+				LOG_ERR("Invalid mode %u", br_chan->rx.mode);
+				return -ENOTSUP;
+			}
+
+			LOG_WRN("Unsupp mode %u, set basic mode", br_chan->rx.mode);
+			br_chan->rx.mode = BT_L2CAP_BR_LINK_MODE_BASIC;
+			break;
 		}
 		break;
 	default:
