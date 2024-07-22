@@ -93,15 +93,26 @@ LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 
 #define PI 3.141592654
 
+#define ABS(a, b) (a > b ? a - b : b - a)
+
+#define PCLK_ROOT_DIV 1
+#define SCLK2X_DIV    1
+#define SCLK_DIV      2
+#define PLL_ROOT_DIV  2
+#define PLL_PRE_DIV   3
+#define MIPI_BIT_MODE 0x08
+
+/* Must be kept in ascending order */
+enum ov5640_frame_rate {
+	OV5640_15_FPS = 15,
+	OV5640_30_FPS = 30,
+	OV5640_60_FPS = 60,
+};
+
 struct ov5640_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec reset_gpio;
 	struct gpio_dt_spec powerdown_gpio;
-};
-
-struct ov5640_data {
-	struct video_format fmt;
-	uint64_t cur_pixrate;
 };
 
 struct ov5640_reg {
@@ -109,16 +120,27 @@ struct ov5640_reg {
 	uint8_t val;
 };
 
-struct ov5640_mipi_clock_config {
+struct ov5640_mipi_frmrate_config {
+	uint8_t frmrate;
 	uint8_t pllCtrl1;
 	uint8_t pllCtrl2;
+	uint32_t pixelrate;
 };
 
 struct ov5640_mode_config {
 	uint16_t width;
 	uint16_t height;
 	const struct ov5640_reg *res_params;
-	const struct ov5640_mipi_clock_config mipi_pclk;
+	const struct ov5640_mipi_frmrate_config *mipi_frmrate_config;
+	uint16_t max_frmrate;
+	uint16_t def_frmrate;
+};
+
+struct ov5640_data {
+	struct video_format fmt;
+	uint64_t cur_pixrate;
+	uint16_t cur_frmrate;
+	const struct ov5640_mode_config *cur_mode;
 };
 
 static const struct ov5640_reg init_params[] = {
@@ -350,22 +372,31 @@ static const struct ov5640_reg hd_res_params[] = {
 	{0x380f, 0xe4}, {0x3810, 0x00}, {0x3811, 0x10}, {0x3812, 0x00}, {0x3813, 0x04},
 	{0x3814, 0x31}, {0x3815, 0x31}, {0x3824, 0x04}, {0x460c, 0x20}};
 
+static const struct ov5640_mipi_frmrate_config mipi_hd_frmrate_params[] = {
+	{15, 0x21, 0x2A, 24000000}, {30, 0x21, 0x54, 48000000}, {60, 0x11, 0x54, 96000000}};
+
+static const struct ov5640_mipi_frmrate_config mipi_vga_frmrate_params[] = {
+	{15, 0x22, 0x38, 24000000}, {30, 0x14, 0x38, 24000000}, {60, 0x14, 0x70, 48000000}};
+
 static const struct ov5640_mode_config modes[] = {
-	{.width = 640,
-	 .height = 480,
-	 .res_params = low_res_params,
-	 .mipi_pclk = {
-			 .pllCtrl1 = 0x14,
-			 .pllCtrl2 = 0x38,
-		 }},
-	{.width = 1280,
-	 .height = 720,
-	 .res_params = hd_res_params,
-	 .mipi_pclk = {
-			 .pllCtrl1 = 0x21,
-			 .pllCtrl2 = 0x54,
-		 }},
-};
+	{
+		.width = 640,
+		.height = 480,
+		.res_params = low_res_params,
+		.mipi_frmrate_config = mipi_vga_frmrate_params,
+		.max_frmrate = OV5640_60_FPS,
+		.def_frmrate = OV5640_30_FPS,
+	},
+	{
+		.width = 1280,
+		.height = 720,
+		.res_params = hd_res_params,
+		.mipi_frmrate_config = mipi_hd_frmrate_params,
+		.max_frmrate = OV5640_60_FPS,
+		.def_frmrate = OV5640_30_FPS,
+	}};
+
+static const int ov5640_frame_rates[] = {OV5640_15_FPS, OV5640_30_FPS, OV5640_60_FPS};
 
 #define OV5640_VIDEO_FORMAT_CAP(width, height, format)                                             \
 	{                                                                                          \
@@ -468,12 +499,62 @@ static int ov5640_write_multi_regs(const struct i2c_dt_spec *spec, const struct 
 	return 0;
 }
 
+static int ov5640_set_frmival(const struct device *dev, enum video_endpoint_id ep,
+			      struct video_frmival *frmival)
+{
+	const struct ov5640_config *cfg = dev->config;
+	struct ov5640_data *drv_data = dev->data;
+	int ret;
+	uint8_t i, ind = 0;
+	uint32_t desired_frmrate, best_match = ov5640_frame_rates[ind];
+
+	desired_frmrate = DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator);
+
+	/* Find the supported frame rate closest to the desired one */
+	for (i = 0; i < ARRAY_SIZE(ov5640_frame_rates); i++) {
+		if (ov5640_frame_rates[i] <= drv_data->cur_mode->max_frmrate &&
+		    ABS(desired_frmrate, ov5640_frame_rates[i]) <
+			    ABS(desired_frmrate, best_match)) {
+			best_match = ov5640_frame_rates[i];
+			ind = i;
+		}
+	}
+
+	struct ov5640_reg frmrate_params[] = {
+		{SC_PLL_CTRL1_REG, drv_data->cur_mode->mipi_frmrate_config[ind].pllCtrl1},
+		{SC_PLL_CTRL2_REG, drv_data->cur_mode->mipi_frmrate_config[ind].pllCtrl2},
+		{PCLK_PERIOD_REG, 0x0a}};
+
+	ret = ov5640_write_multi_regs(&cfg->i2c, frmrate_params, ARRAY_SIZE(frmrate_params));
+	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL0_REG, 0x0f, MIPI_BIT_MODE);
+	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL3_REG, 0x1f,
+				 (LOG2CEIL(PLL_ROOT_DIV) << 4) | (PLL_PRE_DIV & 0x07));
+	ret |= ov5640_modify_reg(&cfg->i2c, SYS_ROOT_DIV_REG, 0x3f,
+				 (LOG2CEIL(PCLK_ROOT_DIV) & 0x03 << 4) |
+					 (LOG2CEIL(SCLK2X_DIV) & 0x03 << 2) |
+					 (LOG2CEIL(SCLK_DIV) & 0x03));
+
+	if (ret) {
+		LOG_ERR("Unable to set frame interval");
+		return ret;
+	}
+
+	drv_data->cur_frmrate = best_match;
+	drv_data->cur_pixrate = drv_data->cur_mode->mipi_frmrate_config[ind].pixelrate;
+
+	frmival->numerator = 1;
+	frmival->denominator = best_match;
+
+	return 0;
+}
+
 static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 			  struct video_format *fmt)
 {
 	struct ov5640_data *drv_data = dev->data;
 	const struct ov5640_config *cfg = dev->config;
 	int ret, i;
+	struct video_frmival def_frmival;
 
 	for (i = 0; i < ARRAY_SIZE(fmts); ++i) {
 		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
@@ -505,6 +586,8 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 				LOG_ERR("Unable to set resolution parameters");
 				return ret;
 			}
+
+			drv_data->cur_mode = &modes[i];
 			break;
 		}
 	}
@@ -526,19 +609,11 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 		return ret;
 	}
 
-	/* Configure MIPI pixel clock */
-	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL0_REG, 0x0f, 0x08);
-	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL1_REG, 0xff, modes[i].mipi_pclk.pllCtrl1);
-	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL2_REG, 0xff, modes[i].mipi_pclk.pllCtrl2);
-	ret |= ov5640_modify_reg(&cfg->i2c, SC_PLL_CTRL3_REG, 0x1f, 0x13);
-	ret |= ov5640_modify_reg(&cfg->i2c, SYS_ROOT_DIV_REG, 0x3f, 0x01);
-	ret |= ov5640_write_reg(&cfg->i2c, PCLK_PERIOD_REG, 0x0a);
-	if (ret) {
-		LOG_ERR("Unable to configure MIPI pixel clock");
-		return ret;
-	}
+	/* Set frame rate */
+	def_frmival.denominator = drv_data->cur_mode->def_frmrate;
+	def_frmival.numerator = 1;
 
-	return 0;
+	return ov5640_set_frmival(dev, ep, &def_frmival);
 }
 
 static int ov5640_get_fmt(const struct device *dev, enum video_endpoint_id ep,
@@ -805,6 +880,41 @@ static inline int ov5640_get_ctrl(const struct device *dev, unsigned int cid, vo
 	}
 }
 
+static int ov5640_get_frmival(const struct device *dev, enum video_endpoint_id ep,
+			      struct video_frmival *frmival)
+{
+	struct ov5640_data *drv_data = dev->data;
+
+	frmival->numerator = 1;
+	frmival->denominator = drv_data->cur_frmrate;
+
+	return 0;
+}
+
+static int ov5640_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
+			       struct video_frmival_enum *fie)
+{
+	uint8_t i = 0;
+
+	for (i = 0; i < ARRAY_SIZE(modes); i++) {
+		if (fie->format->width == modes[i].width &&
+		    fie->format->height == modes[i].height) {
+			break;
+		}
+	}
+
+	if (i == ARRAY_SIZE(modes) || fie->index > ARRAY_SIZE(ov5640_frame_rates) ||
+	    ov5640_frame_rates[fie->index] > modes[i].max_frmrate) {
+		return -EINVAL;
+	}
+
+	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
+	fie->discrete.numerator = 1;
+	fie->discrete.denominator = ov5640_frame_rates[fie->index];
+
+	return 0;
+}
+
 static const struct video_driver_api ov5640_driver_api = {
 	.set_format = ov5640_set_fmt,
 	.get_format = ov5640_get_fmt,
@@ -813,6 +923,9 @@ static const struct video_driver_api ov5640_driver_api = {
 	.stream_stop = ov5640_stream_stop,
 	.set_ctrl = ov5640_set_ctrl,
 	.get_ctrl = ov5640_get_ctrl,
+	.set_frmival = ov5640_set_frmival,
+	.get_frmival = ov5640_get_frmival,
+	.enum_frmival = ov5640_enum_frmival,
 };
 
 static int ov5640_init(const struct device *dev)
