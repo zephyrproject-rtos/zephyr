@@ -31,3 +31,7 @@
 &systick {
 	status = "okay";
 };
+
+&gpt2 {
+	status = "okay";
+};
