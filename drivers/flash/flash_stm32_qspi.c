@@ -55,6 +55,9 @@ LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
 
+/* In dual-flash mode, total size is twice the size of one flash component */
+#define STM32_QSPI_DOUBLE_FLASH	DT_PROP(DT_NODELABEL(quadspi), dual_flash)
+
 #if STM32_QSPI_USE_DMA
 static const uint32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,
@@ -881,7 +884,7 @@ static int setup_pages_layout(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	uint32_t erase_size = BIT(exp);
+	uint32_t erase_size = BIT(exp) << STM32_QSPI_DOUBLE_FLASH;
 
 	/* We need layout page size to be compatible with erase size */
 	if ((layout_page_size % erase_size) != 0) {
@@ -1115,8 +1118,8 @@ static int spi_nor_process_bfp(const struct device *dev,
 	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
 	struct flash_stm32_qspi_data *data = dev->data;
 	struct jesd216_erase_type *etp = data->erase_types;
-	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
 	uint8_t addr_mode;
+	const size_t flash_size = (jesd216_bfp_density(bfp) / 8U) << STM32_QSPI_DOUBLE_FLASH;
 	int rc;
 
 	if (flash_size != dev_cfg->flash_size) {
@@ -1564,7 +1567,7 @@ static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 		.bus = DT_CLOCKS_CELL(STM32_QSPI_NODE, bus)
 	},
 	.irq_config = flash_stm32_qspi_irq_config_func,
-	.flash_size = DT_INST_REG_ADDR_BY_IDX(0, 1),
+	.flash_size = DT_INST_REG_ADDR_BY_IDX(0, 1) << STM32_QSPI_DOUBLE_FLASH,
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_QSPI_NODE),
 #if STM32_QSPI_RESET_GPIO
