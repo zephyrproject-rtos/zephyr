@@ -27,4 +27,6 @@ config NXP_S32_RTU_INDEX
 	help
 	  This option indicates the index of the target RTU (Real-Time Unit) subsystem.
 
+rsource "../common/Kconfig.power"
+
 endif # SOC_SERIES_S32ZE
