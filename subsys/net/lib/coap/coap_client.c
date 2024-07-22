@@ -286,21 +286,26 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		    struct coap_client_request *req, struct coap_transmission_parameters *params)
 {
 	int ret;
+	struct coap_client_internal_request *internal_req;
 
-	struct coap_client_internal_request *internal_req = get_free_request(client);
+	if (client == NULL || sock < 0 || req == NULL || req->path == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&client->lock, K_FOREVER);
+
+	internal_req = get_free_request(client);
 
 	if (internal_req == NULL) {
 		LOG_DBG("No more free requests");
-		return -EAGAIN;
-	}
-
-	if (sock < 0 || req == NULL || req->path == NULL) {
-		return -EINVAL;
+		ret = -EAGAIN;
+		goto out;
 	}
 
 	/* Don't allow changing to a different socket if there is already request ongoing. */
 	if (client->fd != sock && has_ongoing_request(client)) {
-		return -EALREADY;
+		ret = -EALREADY;
+		goto out;
 	}
 
 	/* Don't allow changing to a different address if there is already request ongoing. */
@@ -308,7 +313,8 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		if (memcmp(&client->address, addr, sizeof(*addr)) != 0) {
 			if (has_ongoing_request(client)) {
 				LOG_WRN("Can't change to a different socket, request ongoing.");
-				return -EALREADY;
+				ret = -EALREADY;
+				goto out;
 			}
 
 			memcpy(&client->address, addr, sizeof(*addr));
@@ -318,7 +324,8 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		if (client->socklen != 0) {
 			if (has_ongoing_request(client)) {
 				LOG_WRN("Can't change to a different socket, request ongoing.");
-				return -EALREADY;
+				ret = -EALREADY;
+				goto out;
 			}
 
 			memset(&client->address, 0, sizeof(client->address));
@@ -328,15 +335,9 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 
 	reset_internal_request(internal_req);
 
-	if (k_mutex_lock(&client->send_mutex, K_NO_WAIT)) {
-		LOG_DBG("Could not immediately lock send_mutex");
-		return -EAGAIN;
-	}
-
 	ret = coap_client_init_request(client, req, internal_req, false);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize coap request");
-		k_mutex_unlock(&client->send_mutex);
 		goto out;
 	}
 
@@ -345,7 +346,6 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 						client->echo_option.value, client->echo_option.len);
 		if (ret < 0) {
 			LOG_ERR("Failed to append echo option");
-			k_mutex_unlock(&client->send_mutex);
 			goto out;
 		}
 		client->send_echo = false;
@@ -354,7 +354,6 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 	ret = coap_client_schedule_poll(client, sock, req, internal_req);
 	if (ret < 0) {
 		LOG_ERR("Failed to schedule polling");
-		k_mutex_unlock(&client->send_mutex);
 		goto out;
 	}
 
@@ -365,7 +364,6 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 
 		if (ret < 0) {
 			LOG_ERR("Failed to initialize pending struct");
-			k_mutex_unlock(&client->send_mutex);
 			goto out;
 		}
 
@@ -375,9 +373,6 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 
 	ret = send_request(sock, internal_req->request.data, internal_req->request.offset, 0,
 			  &client->address, client->socklen);
-
-	k_mutex_unlock(&client->send_mutex);
-
 	if (ret < 0) {
 		LOG_ERR("Transmission failed: %d", errno);
 	} else {
@@ -385,6 +380,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		ret = 0;
 	}
 out:
+	k_mutex_unlock(&client->lock);
 	return ret;
 }
 
@@ -425,7 +421,6 @@ static int resend_request(struct coap_client *client,
 		if (internal_req->send_blk_ctx.total_size > 0) {
 			internal_req->send_blk_ctx.current = internal_req->offset;
 		}
-		k_mutex_lock(&client->send_mutex, K_FOREVER);
 		ret = coap_client_init_request(client, &internal_req->coap_request,
 					       internal_req, true);
 		if (ret < 0) {
@@ -440,7 +435,6 @@ static int resend_request(struct coap_client *client,
 				LOG_ERR("Failed to resend request, %d", ret);
 			}
 		}
-		k_mutex_unlock(&client->send_mutex);
 	} else {
 		LOG_ERR("Timeout in poll, no more retries left");
 		ret = -ETIMEDOUT;
@@ -456,11 +450,15 @@ static int coap_client_resend_handler(void)
 	int ret = 0;
 
 	for (int i = 0; i < num_clients; i++) {
+		k_mutex_lock(&clients[i]->lock, K_FOREVER);
+
 		for (int j = 0; j < CONFIG_COAP_CLIENT_MAX_REQUESTS; j++) {
 			if (timeout_expired(&clients[i]->requests[j])) {
 				ret = resend_request(clients[i], &clients[i]->requests[j]);
 			}
 		}
+
+		k_mutex_unlock(&clients[i]->lock);
 	}
 
 	return ret;
@@ -677,14 +675,11 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	if (find_echo_option(response, &client->echo_option)) {
 		 /* Resend request with echo option */
 		if (response_code == COAP_RESPONSE_CODE_UNAUTHORIZED) {
-			k_mutex_lock(&client->send_mutex, K_FOREVER);
-
 			ret = coap_client_init_request(client, &internal_req->coap_request,
 						       internal_req, false);
 
 			if (ret < 0) {
 				LOG_ERR("Error creating a CoAP request");
-				k_mutex_unlock(&client->send_mutex);
 				goto fail;
 			}
 
@@ -693,7 +688,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 							client->echo_option.len);
 			if (ret < 0) {
 				LOG_ERR("Failed to append echo option");
-				k_mutex_unlock(&client->send_mutex);
 				goto fail;
 			}
 
@@ -705,7 +699,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 							&params);
 				if (ret < 0) {
 					LOG_ERR("Error creating pending");
-					k_mutex_unlock(&client->send_mutex);
 					goto fail;
 				}
 
@@ -715,8 +708,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			ret = send_request(client->fd, internal_req->request.data,
 					   internal_req->request.offset, 0, &client->address,
 					   client->socklen);
-			k_mutex_unlock(&client->send_mutex);
-
 			if (ret < 0) {
 				LOG_ERR("Error sending a CoAP request");
 				goto fail;
@@ -797,13 +788,11 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 
 	/* If this wasn't last block, send the next request */
 	if (blockwise_transfer && !last_block) {
-		k_mutex_lock(&client->send_mutex, K_FOREVER);
 		ret = coap_client_init_request(client, &internal_req->coap_request, internal_req,
 					       false);
 
 		if (ret < 0) {
 			LOG_ERR("Error creating a CoAP request");
-			k_mutex_unlock(&client->send_mutex);
 			goto fail;
 		}
 
@@ -812,7 +801,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 					&client->address, &params);
 		if (ret < 0) {
 			LOG_ERR("Error creating pending");
-			k_mutex_unlock(&client->send_mutex);
 			goto fail;
 		}
 		coap_pending_cycle(&internal_req->pending);
@@ -820,8 +808,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		ret = send_request(client->fd, internal_req->request.data,
 				   internal_req->request.offset, 0, &client->address,
 				   client->socklen);
-		k_mutex_unlock(&client->send_mutex);
-
 		if (ret < 0) {
 			LOG_ERR("Error sending a CoAP request");
 			goto fail;
@@ -839,6 +825,8 @@ fail:
 
 void coap_client_cancel_requests(struct coap_client *client)
 {
+	k_mutex_lock(&client->lock, K_FOREVER);
+
 	for (int i = 0; i < ARRAY_SIZE(client->requests); i++) {
 		if (client->requests[i].request_ongoing == true) {
 			LOG_DBG("Cancelling request %d", i);
@@ -853,6 +841,7 @@ void coap_client_cancel_requests(struct coap_client *client)
 		}
 	}
 	atomic_clear(&coap_client_recv_active);
+	k_mutex_unlock(&client->lock);
 
 	/* Wait until after zsock_poll() can time out and return. */
 	k_sleep(K_MSEC(COAP_PERIODIC_TIMEOUT));
@@ -876,10 +865,13 @@ static void coap_client_recv(void *coap_cl, void *a, void *b)
 			if (clients[i]->response_ready) {
 				struct coap_packet response;
 
+				k_mutex_lock(&clients[i]->lock, K_FOREVER);
+
 				ret = recv_response(clients[i], &response);
 				if (ret < 0) {
 					LOG_ERR("Error receiving response");
 					clients[i]->response_ready = false;
+					k_mutex_unlock(&clients[i]->lock);
 					continue;
 				}
 
@@ -889,6 +881,7 @@ static void coap_client_recv(void *coap_cl, void *a, void *b)
 				}
 
 				clients[i]->response_ready = false;
+				k_mutex_unlock(&clients[i]->lock);
 			}
 		}
 
@@ -913,7 +906,7 @@ int coap_client_init(struct coap_client *client, const char *info)
 		return -ENOSPC;
 	}
 
-	k_mutex_init(&client->send_mutex);
+	k_mutex_init(&client->lock);
 
 	clients[num_clients] = client;
 	num_clients++;
