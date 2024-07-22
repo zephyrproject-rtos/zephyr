@@ -1,5 +1,0 @@
-board:
-  name: ek_tsi_skyp
-  vendor: Tsavorite
-  socs:
-  - name: skyp

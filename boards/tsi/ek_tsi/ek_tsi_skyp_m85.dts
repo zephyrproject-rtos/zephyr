@@ -108,7 +108,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x81000000 0x1effffff>;
 
-			 #include "ek_tsi_skyp-common.dtsi"
+			 #include "ek_tsi_skyp_m85-common.dtsi"
 		};
 	};
 };

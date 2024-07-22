@@ -4,3 +4,5 @@ family:
       - name: skyp_v1
         socs:
           - name: skyp
+            cpuclusters:
+            - name: m85

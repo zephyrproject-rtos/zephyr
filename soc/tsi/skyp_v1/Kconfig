@@ -13,6 +13,7 @@ config SOC_SERIES_SKYP_V1
 	select ARMV8_1_M_MVEI
 	select ARMV8_1_M_MVEF
 	select ARMV8_1_M_PMU
+		
 
 config ARMV8_1_M_PMU_EVENTCNT
 	int

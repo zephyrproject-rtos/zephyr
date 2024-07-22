@@ -1,4 +1,4 @@
-identifier: ek_tsi_skyp
+identifier: ek_tsi/skyp/m85
 name: TSI sky-p
 type: mcu
 arch: arm
