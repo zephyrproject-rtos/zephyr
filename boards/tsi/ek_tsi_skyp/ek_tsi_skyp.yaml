@@ -5,17 +5,8 @@ arch: arm
 ram: 1792
 flash: 256
 simulation: qemu
-
 toolchain:
   - zephyr
   - gnuarmemb
   - xtools
-supported:
-  - gpio
-testing:
-  ignore_tags:
-    - drivers
-    - bluetooth
-    - net
-    - timer
 vendor: arm

@@ -19,6 +19,5 @@
 /* We expect there to be 3 arm,mps3-fpgaio-gpio devices:
  * led0, button, and misc
  */
-FPGAIO_INIT(0);
-FPGAIO_INIT(1);
+
 FPGAIO_INIT(2);
