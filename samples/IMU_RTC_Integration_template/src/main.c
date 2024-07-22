@@ -38,8 +38,7 @@ int main(void)
 		lv_scr_load(guider_ui.screen_1);
 		lv_task_handler();
 	while (1) {
-		printf("looping\n");
-		lv_scr_load(guider_ui.screen_2);
-		lv_task_handler();
+		// lv_scr_load(guider_ui.screen_2);
+		// lv_task_handler();
 	}
 }

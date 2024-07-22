@@ -160,17 +160,31 @@ int sspi_shakti_configure(const struct device *dev, const struct spi_config *con
   }
 
   // If spi mode is set to full duplex then 11th bit in operation is set to 0, else if spi mode is set to half duplex then 11th bit in operation is set to 1.
-  if((config -> operation & HALFDUPLEX) ==  HALFDUPLEX){
-    printk("Half duplex \n");
-    comm_mode = HALF_DUPLEX;
+  if((config -> operation & MODE_SEL))
+  {
+
+    if((config -> operation & HALFDUPLEX) ==  HALFDUPLEX){
+      printk("Half duplex \n");
+      comm_mode = HALF_DUPLEX;
+    }
+    else if((config -> operation & FULLDUPLEX) == FULLDUPLEX){
+      printk("Full duplex \n"); // default spi works in full duplex.
+      comm_mode = FULL_DUPLEX;
+    }
+    else{
+      printk("SPI supports only fullduplex or halfduplex mode \n");
+      return -EINVAL;
+    } 
   }
-  else if((config -> operation & FULLDUPLEX) == FULLDUPLEX){
-    printk("Full duplex \n"); // default spi works in full duplex.
-    comm_mode = FULL_DUPLEX;
-  }
+
   else{
-    printk("SPI supports only fullduplex or halfduplex mode \n");
-    return -EINVAL;
+    if((config -> operation & SIMPLEX_TX) == SIMPLEX_TX)
+    {
+      comm_mode = SIMPLEX_TX;
+    }
+    else{
+      comm_mode = SIMPLEX_RX;
+    }
   }
 }
 
@@ -355,29 +369,29 @@ void sspi_shakti_disable(const struct device *dev)
  * @see sspi_check_tx_fifo_32 function and sspi_wait_till_tx_complete function.
  */
 
-int sspi8_shakti_transmit_data(const struct device *dev, uint8_t data)
-{
-    printk("transferring");
-    volatile int temp = sspi_shakti_check_tx_fifo_32();
-    if(temp == 0){
-      printk("tx_data : %d\n",data);
-      sspi_instance[spi_number]->data_tx.data_8 = data;
-      #ifdef SPI_DEBUG
-      printk("tx_data[%d] = %d\n", i, tx_data[i]);
-      #endif
-    }
-    else{
-      #ifdef SPI_DEBUG
-      printk("\nTX FIFO is full");
-      #endif
-      printk("TX FIFO is full \n");
-      return -1;
-    }
+// int sspi8_shakti_transmit_data(const struct device *dev, uint8_t data)
+// {
+//     printk("transferring");
+//     volatile int temp = sspi_shakti_check_tx_fifo_32();
+//     if(temp == 0){
+//       printk("tx_data : %d\n",data);
+//       sspi_instance[spi_number]->data_tx.data_8 = data;
+//       #ifdef SPI_DEBUG
+//       printk("tx_data[%d] = %d\n", i, tx_data[i]);
+//       #endif
+//     }
+//     else{
+//       #ifdef SPI_DEBUG
+//       printk("\nTX FIFO is full");
+//       #endif
+//       printk("TX FIFO is full \n");
+//       return -1;
+//     }
 
-  sspi_shakti_wait_till_tx_complete();
-  printk("transferring1 \n");
-  return 0;
-}
+//   sspi_shakti_wait_till_tx_complete();
+//   printk("transferring1 \n");
+//   return 0;
+// }
 
 /**
  * @fn int sspi16_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data)
@@ -394,6 +408,35 @@ int sspi8_shakti_transmit_data(const struct device *dev, uint8_t data)
  * @return an integer value. If the transmission is successful, it returns 0. If the TX FIFO does not
  * have enough space, it returns -1.
  */
+
+
+
+
+
+int sspi8_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data)
+{
+uint32_t length = tx_data->len/4;
+uint32_t *buffer = tx_data->buf;
+uint32_t i=0;
+uint32_t fs;
+while(i<length){
+  uint32_t temp = sspi_instance[spi_number]->fifo_status;
+  fs = fs & SPI_TX_FULL;
+  if(fs == SPI_TX_FULL){
+    sspi_instance[spi_number]->comm_control|=SPI_ENABLE(ENABLE);
+    continue;
+  }
+  sspi_instance[spi_number]->data_tx.data_32 = buffer[i];
+  sspi_instance[spi_number]->comm_control|=SPI_ENABLE(ENABLE);
+  i++;
+}
+  return 0;
+}
+
+
+
+
+
 
 int sspi16_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data)
 {
@@ -921,6 +964,7 @@ static int spi_shakti_transceive(const struct device *dev,
       sspi8_shakti_transmit_data(dev, ((uint8_t*)(tx_bufs->buffers->buf))[i]);
       ((uint8_t*)(tx_bufs->buffers->buf))[i] = sspi8_shakti_receive_data(dev);
     }
+    }
 
     if (spi_size == DATA_SIZE_16)
     {
@@ -934,10 +978,69 @@ static int spi_shakti_transceive(const struct device *dev,
       sspi32_shakti_receive_data(dev, rx_bufs->buffers);  
     }
   }
+  
+
+  if (comm_mode == SIMPLEX_TX)
+  {
+    sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
+    spi_context_buffers_setup(&SPI_DATA(dev)->ctx, tx_bufs, rx_bufs, 1);
+
+    if (spi_size == DATA_SIZE_8)
+    {
+      // len = tx_bufs->buffers->len;
+      // for(int i = 0;i<len;i++){
+      // sspi8_shakti_transmit_data(dev, ((uint8_t*)(tx_bufs->buffers->buf))[i]);
+      sspi8_shakti_transmit_data(dev, tx_bufs->buffers);
+      // ((uint8_t*)(tx_bufs->buffers->buf))[i] = sspi8_shakti_receive_data(dev);
+    }
+    }
+
+    if (spi_size == DATA_SIZE_16)
+    {
+      sspi16_shakti_transmit_data(dev, tx_bufs->buffers);
+      // sspi16_shakti_receive_data(dev, rx_bufs->buffers);  
+    }
+
+    if (spi_size == DATA_SIZE_32)
+    {
+      sspi32_shakti_transmit_data(dev, tx_bufs->buffers);
+      // sspi32_shakti_receive_data(dev, rx_bufs->buffers);  
+    }
+
+
+  if (comm_mode == SIMPLEX_RX)
+  {
+    sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
+    spi_context_buffers_setup(&SPI_DATA(dev)->ctx, tx_bufs, rx_bufs, 1);
+
+    if (spi_size == DATA_SIZE_8)
+    {
+      len = tx_bufs->buffers->len;
+      for(int i = 0;i<len;i++){
+      // sspi8_shakti_transmit_data(dev, ((uint8_t*)(tx_bufs->buffers->buf))[i]);
+      ((uint8_t*)(tx_bufs->buffers->buf))[i] = sspi8_shakti_receive_data(dev);
+    }
+    }
+
+    if (spi_size == DATA_SIZE_16)
+    {
+      // sspi16_shakti_transmit_data(dev, tx_bufs->buffers);
+      sspi16_shakti_receive_data(dev, rx_bufs->buffers);  
+    }
+
+    if (spi_size == DATA_SIZE_32)
+    {
+      // sspi32_shakti_transmit_data(dev, tx_bufs->buffers);
+      sspi32_shakti_receive_data(dev, rx_bufs->buffers);  
+    }
+  }
+
+
   //gpio_pin_set_dt(&(((struct spi_shakti_cfg*)(dev->config))->ncs), 0);
   k_mutex_unlock(&(((struct spi_shakti_cfg*)(dev->config))->mutex));
 }
-}
+
+
 static int spi_shakti_release(const struct device *dev,
 		       const struct spi_config *config)
 {

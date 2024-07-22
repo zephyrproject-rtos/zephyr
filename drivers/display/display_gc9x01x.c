@@ -686,7 +686,7 @@ static const struct display_driver_api gc9x01x_api = {
 #define GC9X01X_INIT(inst)                                                                         \
 	GC9X01X_REGS_INIT(inst);                                                                   \
 	static const struct gc9x01x_config gc9x01x_config_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0) ,        \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | (1<<19), 0) ,        \
 		.cmd_data = GPIO_DT_SPEC_INST_GET(inst, cmd_data_gpios),                           \
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
 		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \

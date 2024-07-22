@@ -55,6 +55,7 @@ chosen {
           pixel-format = <16>;
           width = <240>;
           height = <240>;
+		  display-inversion;
         };
 };
 &gpio0 {

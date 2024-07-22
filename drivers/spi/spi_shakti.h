@@ -176,6 +176,11 @@ extern "C" {
 #define HALFDUPLEX      0b0000100000000000      // if mode bit is 1 then spi is halfduplex      
 #define FULLDUPLEX      0b0000000000000000      // if mode bit is 0 then spi is fullduplex
 
+#define MODE_SEL        1<<19                   // if mode bit is 0 then spi is fullduplex
+#define SIMPLEX_TX      0<<18      // if mode bit is 0 then spi is fullduplex
+// #define FULLDUPLEX                // if mode bit is 0 then spi is fullduplex
+
+
 /**
  * The below code defines a union type named "Data" that can hold a 32-bit integer, a 16-bit integer,
  * or an 8-bit integer.
