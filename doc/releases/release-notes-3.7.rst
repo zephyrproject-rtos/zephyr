@@ -1812,6 +1812,10 @@ Libraries / Subsystems
 
   * Fixed FAT driver leaving disk in initialized state after unmount.
 
+* Task Watchdog
+
+  * Added shell (mainly for testing purposes during development).
+
 * POSIX API
 
   * Improved Kconfig options to reflect standard POSIX Options and Option Groups.
