@@ -224,6 +224,13 @@ Architectures
 
 * ARC
 
+  * Added ARC MWDT toolchain support for ARC-V targets
+  * Added HW memory barrier API support for multicore targets
+  * Enabled TLS by default if C++ is used in case of ARC MWDT toolchain
+  * Fixed the issue when mbedtls failed to build with ARC MWDT toolchain & minimal LibC due to
+    incorrect define which mark support of bounds-checking interfaces C library extension
+  * Fixed device deferred initialization in case of ARC MWDT toolchain
+
 * ARM
 
   * Added initial support for Cortex-M85 Core
@@ -352,6 +359,7 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * Added support for Ambiq Apollo3 Blue and Apollo3 Blue Plus SoC series.
+  * Added support for Synopsys ARC-V RMX1xx simulation platform.
   * Added support for STM32H7R/S SoC series.
   * Added support for NXP mke15z7, mke17z7, mke17z9, MCXNx4x, RW61x
   * Added support for Analog Devices MAX32 SoC series.
@@ -370,6 +378,11 @@ Boards & SoC Support
   * STM32WL: Decreased Sub-GHz SPI frequency from 12 to 8MHz.
   * STM32C0: Added support for :kconfig:option:`CONFIG_POWEROFF`.
   * STM32U5: Added support for Stop3 mode.
+  * Synopsys:
+
+    * nsim: split nsim platform for arc_classic (ARCv2 and ARCv3 ISA based) and arc_v (RISC-V ISA based)
+    * nsim/nsim_hs5x/smp: align sys clock frequency with other SMP nSIM configs
+
   * NXP IMX8M: added resource domain controller support
   * NXP s32k146: set RTC clock source to internal oscillator
   * GD32F4XX: Fixed an incorrect uart4 irq number.
@@ -402,6 +415,7 @@ Boards & SoC Support
   * Added support for :ref:`ST STM32L152CDISCOVERY board <stm32l1_disco_board>`: ``stm32l152c_disco``.
   * Added support for :ref:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1_board>`: ``steval_stwinbx1``.
   * Added support for NXP boards: ``frdm_mcxn947``, ``ke17z512``, ``rd_rw612_bga``, ``frdm_rw612``, ``frdm_ke15z``, ``frdm_ke17z``
+  * Added support for :ref:`Synopsys ARC-V RMX1xx nSIM-based simulation platform <nsim_arc_v>`: ``nsim_arc_v/rmx100``.
   * Added support for :ref:`Analog Devices MAX32690EVKIT <max32690_evkit>`: ``max32690evkit``.
   * Added support for :ref:`Analog Devices MAX32680EVKIT <max32680_evkit>`: ``max32680evkit``.
   * Added support for :ref:`Analog Devices MAX32672EVKIT <max32672_evkit>`: ``max32672evkit``.
