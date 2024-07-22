@@ -667,6 +667,13 @@ Drivers and Sensors
 
 * Crypto
 
+* DAC
+
+  * Added support for NXP RW SOC series DAC (:dtcompatible:`nxp,gau-dac`).
+  * Added support for Analog Devices AD5691 / AD5692 / AD5693 DACs
+    (:dtcompatible:`adi,ad5691`, :dtcompatible:`adi,ad5692` and :dtcompatible:`adi,ad5693`).
+  * Added support for Texas Instruments DACx0501 series DACs (:dtcompatible:`ti,dacx0501`).
+
 * Disk
 
   * Support for eMMC devices was added to the STM32 SD driver. This can
