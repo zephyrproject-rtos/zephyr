@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Ian Morris
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/renesas/hs300x/Kconfig"
+source "drivers/sensor/renesas/isl29035/Kconfig"
+# zephyr-keep-sorted-stop
