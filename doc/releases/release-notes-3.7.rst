@@ -384,6 +384,8 @@ Boards & SoC Support
     * :kconfig:option:`CONFIG_RISCV_ISA_EXT_A` is no longer erroneously y-selected.
   * rp2040: The proprietary UART driver has been discontinued and replaced with PL011.
 
+  * Renesas RZ/T2M: Added default values for System Clock Control register.
+
 * Added support for these boards:
 
   * Added support for :ref:`Ambiq Apollo3 Blue board <apollo3_evb>`: ``apollo3_evb``.
@@ -848,6 +850,7 @@ Drivers and Sensors
     from Power Off state on STM32 L4, U5, WB, & WL SoC series.
   * Added driver for Analog Devices MAX32 SoC series.
   * Added support for Nuvoton Numaker M2L31X series.
+  * Added interrupt support to the Renesas RZ/T2M GPIO driver (:dtcompatible:`renesas,rzt2m-gpio`).
 
 * Hardware info
 
