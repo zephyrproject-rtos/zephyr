@@ -62,6 +62,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='serial port to flash')
         parser.add_argument('--esp-baud-rate', default='921600',
                             help='serial baud rate, default 921600')
+        parser.add_argument('--esp-monitor-baud', default='115200',
+                            help='serial monitor baud rate, default 115200')
         parser.add_argument('--esp-flash-size', default='detect',
                             help='flash size, default "detect"')
         parser.add_argument('--esp-flash-freq', default='40m',
