@@ -33,7 +33,7 @@ extern "C" {
 /** Types of Wi-Fi interface */
 enum wifi_nm_iface_type {
 	/** IEEE 802.11 Wi-Fi Station */
-	WIFI_TYPE_STA = 0,
+	WIFI_TYPE_STA = 1,
 	/** IEEE 802.11 Wi-Fi Soft AP */
 	WIFI_TYPE_SAP,
 };
