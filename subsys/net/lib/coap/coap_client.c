@@ -86,7 +86,7 @@ static int coap_client_schedule_poll(struct coap_client *client, int sock,
 	return 0;
 }
 
-bool has_ongoing_request(struct coap_client *client)
+static bool has_ongoing_request(struct coap_client *client)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
 		if (client->requests[i].request_ongoing == true) {
@@ -97,7 +97,7 @@ bool has_ongoing_request(struct coap_client *client)
 	return false;
 }
 
-struct coap_client_internal_request *get_free_request(struct coap_client *client)
+static struct coap_client_internal_request *get_free_request(struct coap_client *client)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
 		if (client->requests[i].request_ongoing == false) {
@@ -588,21 +588,8 @@ static int send_ack(struct coap_client *client, const struct coap_packet *req,
 	return 0;
 }
 
-struct coap_client_internal_request *get_request_with_id(struct coap_client *client,
-							 uint16_t message_id)
-{
-	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
-		if (client->requests[i].request_ongoing == true &&
-		    client->requests[i].pending.id == message_id) {
-			return &client->requests[i];
-		}
-	}
-
-	return NULL;
-}
-
-struct coap_client_internal_request *get_request_with_token(struct coap_client *client,
-							    const struct coap_packet *resp)
+static struct coap_client_internal_request *get_request_with_token(
+	struct coap_client *client, const struct coap_packet *resp)
 {
 
 	uint8_t response_token[COAP_TOKEN_MAX_LEN];
@@ -871,7 +858,7 @@ void coap_client_cancel_requests(struct coap_client *client)
 	k_sleep(K_MSEC(COAP_PERIODIC_TIMEOUT));
 }
 
-void coap_client_recv(void *coap_cl, void *a, void *b)
+static void coap_client_recv(void *coap_cl, void *a, void *b)
 {
 	int ret;
 
