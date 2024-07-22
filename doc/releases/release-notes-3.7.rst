@@ -382,6 +382,7 @@ Boards & SoC Support
 
     * Added support for :c:func:`sys_arch_reboot()`.
     * :kconfig:option:`CONFIG_RISCV_ISA_EXT_A` is no longer erroneously y-selected.
+  * rp2040: The proprietary UART driver has been discontinued and replaced with PL011.
 
 * Added support for these boards:
 
