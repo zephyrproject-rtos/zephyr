@@ -96,9 +96,7 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 	}
 
 /*
- * ERRATA: STM32H5X: bus fault errors occur when reading engineering bytes with
- * icache enabled.
- * See https://github.com/zephyrproject-rtos/zephyr/commit/065a8f2
+ * STM32H5X: accesses to flash RO region must be done with caching disabled.
  */
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_ICACHE_Disable();
