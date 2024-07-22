@@ -109,7 +109,7 @@ struct coap_client {
 	struct sockaddr address;
 	socklen_t socklen;
 	bool response_ready;
-	struct k_mutex send_mutex;
+	struct k_mutex lock;
 	uint8_t send_buf[MAX_COAP_MSG_LEN];
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
