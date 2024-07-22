@@ -17,13 +17,14 @@ cst816s_t touch_dev_handle;
 
 K_MSGQ_DEFINE(touch_msg_q, sizeof(data_struct), 10, 1);
 data_struct data_send;
+void touch_isr(void);
 void thread1(void)
 {
 
 /* Enabling intterupts*/
 IRQ_CONNECT(32, 1, touch_isr, NULL, NULL);
 irq_enable(32);
-plic_enable(32);
+plic_irq_enable(32);
 
 data_struct data_recv;
 CST816S_init(&touch_dev_handle,dev1,dev,5,6,data_arr);
