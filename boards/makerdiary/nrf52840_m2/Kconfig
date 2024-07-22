@@ -1,0 +1,18 @@
+# nRF52840-M2 board configuration
+
+# Copyright (c) 2024 Stavros Avramidis <stavros9899@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840_M2
+
+config BOARD_ENABLE_DCDC
+	bool "Enable DCDC mode"
+	select SOC_DCDC_NRF52X
+	default y
+
+config BOARD_ENABLE_DCDC_HV
+	bool "High Voltage DCDC converter"
+	select SOC_DCDC_NRF52X_HV
+	default y
+
+endif # BOARD_NRF52840_M2

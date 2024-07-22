@@ -1,0 +1,11 @@
+# Maker Diary nRF52840-M2 Development board configuration
+#
+# Copyright (c) 2024 Stavros Avramidis <stavros9899@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840_M2
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_NRF52840_M2

@@ -1,0 +1,25 @@
+identifier: nrf52840_m2
+name: nRF52840-M2
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - ble
+  - counter
+  - i2c
+  - ieee802154
+  - pwm
+  - spi
+  - usb_cdc
+  - usb_device
+  - watchdog
+  
