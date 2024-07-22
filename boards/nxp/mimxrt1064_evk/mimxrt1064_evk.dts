@@ -336,6 +336,10 @@ zephyr_udc0: &usb1 {
 	pinctrl-names = "default";
 };
 
+&pxp {
+	status = "okay";
+};
+
 dvp_fpc24_i2c: &lpi2c1 {};
 
 dvp_fpc24_interface: &csi {};
