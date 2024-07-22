@@ -131,6 +131,7 @@ struct btp_l2cap_cls_send_cmd {
 #define BTP_L2CAP_LISTEN_OPT_ERET			0x10
 #define BTP_L2CAP_LISTEN_OPT_STREAM			0x20
 #define BTP_L2CAP_LISTEN_OPT_MODE_OPTIONAL	0x40
+#define BTP_L2CAP_LISTEN_OPT_EXT_WIN_SIZE	0x80
 
 #define BTP_L2CAP_LISTEN_WITH_MODE				0x0e
 struct btp_l2cap_listen_with_mode_cmd {

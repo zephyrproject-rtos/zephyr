@@ -997,6 +997,7 @@ static int accept_br(struct bt_conn *conn, struct bt_l2cap_server *server,
 #if defined(CONFIG_BT_L2CAP_RET) || defined(CONFIG_BT_L2CAP_FC) || \
 	defined(CONFIG_BT_L2CAP_ENH_RET) || defined(CONFIG_BT_L2CAP_STREAM)
 	chan->br.rx.optional = br_server->options & BTP_L2CAP_LISTEN_OPT_MODE_OPTIONAL;
+	chan->br.rx.extended_control = br_server->options & BTP_L2CAP_LISTEN_OPT_EXT_WIN_SIZE;
 #endif
 
 	if (br_server->options & BTP_L2CAP_LISTEN_OPT_RET) {
