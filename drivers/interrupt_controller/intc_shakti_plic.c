@@ -125,6 +125,16 @@ volatile int key=0;
  * @param uintptr_t int_id
  * @param uintptr_t epc
  */
+
+/* Fucntion that calls PLIC_IRQ_HANDLER */
+void arch_system_halt(unsigned int reason)
+{
+	struct _isr_table_entry *plic_int_t;
+	plic_int_t = (struct _isr_table_entry *)(&_sw_isr_table[11]);
+    plic_int_t->isr(plic_int_t->arg);
+}
+
+
 void plic_irq_handler( const void *arg)
 {
 	uint32_t  interrupt_id;
@@ -448,8 +458,25 @@ void plic_shakti_init(const struct device *dev)
 
 	/* Enable IRQ for PLIC driver */
 	irq_enable(RISCV_MACHINE_EXT_IRQ);
+
+	// Enable Global (PLIC) interrupts.
+    __asm__ volatile("li      t0, 8\t\n" 
+				"csrrs   zero, mstatus, t0\t\n"
+				);
+
+    // Enable Local (PLIC) interrupts.
+    __asm__ volatile("li      t0, 0x800\t\n"
+                 "csrrs   zero, mie, t0\t\n"
+                );
     
 }
+
+uint32_t plic_get_irq_id(uint32_t int_num)
+{
+	return (int_num + 32);
+}
+
+
 
 /** @fn void configure_interrupt(uint32_t int_id)
  * @brief configure the interrupt pin and enable bit
