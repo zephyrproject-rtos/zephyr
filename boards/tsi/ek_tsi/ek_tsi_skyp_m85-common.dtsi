@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2019-2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ sysclk: system-clock {
+	compatible = "fixed-clock";
+	clock-frequency = <25000000>;
+	#clock-cells = <0>;
+};
+
+uart0: uart@14001000 {
+	compatible = "arm,cmsdk-uart";
+	reg = <0x14001000 0x1000>;
+	interrupts = <34 3 33 3>;
+	interrupt-names = "tx", "rx";
+	clocks = <&sysclk>;
+	current-speed = <115200>;
+};
+
