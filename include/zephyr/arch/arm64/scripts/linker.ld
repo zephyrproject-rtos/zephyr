@@ -70,6 +70,9 @@ MEMORY
     LINKER_DT_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx) : ORIGIN = 0xFFFF8000, LENGTH = 32K
+#ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
+    ONDEMAND (rx) : ORIGIN = (CONFIG_KERNEL_VM_BASE), LENGTH = (CONFIG_KERNEL_VM_SIZE)
+#endif
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -293,6 +296,35 @@ SECTIONS
 #include <zephyr/linker/ram-end.ld>
 
     GROUP_END(RAMABLE_REGION)
+
+#ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
+    . = z_mapped_end;
+    MMU_ALIGN;
+    lnkr_ondemand_start = .;
+
+    ONDEMAND_TEXT_SECTION_NAME (.) : AT(ADDR(_BSS_SECTION_NAME))
+    {
+        lnkr_ondemand_text_start = .;
+        *(.ondemand_text)
+        *(.ondemand_text.*)
+        MMU_ALIGN;
+        lnkr_ondemand_text_end = .;
+    } > ONDEMAND
+    lnkr_ondemand_text_size = SIZEOF(ONDEMAND_TEXT_SECTION_NAME);
+
+    ONDEMAND_RODATA_SECTION_NAME :
+    {
+        lnkr_ondemand_rodata_start = .;
+        *(.ondemand_rodata)
+        *(.ondemand_rodata.*)
+        MMU_ALIGN;
+        lnkr_ondemand_rodata_end = .;
+    } > ONDEMAND
+    lnkr_ondemand_rodata_size = SIZEOF(ONDEMAND_RODATA_SECTION_NAME);
+
+    lnkr_ondemand_end = .;
+    lnkr_ondemand_load_start = LOADADDR(ONDEMAND_TEXT_SECTION_NAME);
+#endif
 
 #include <zephyr/linker/debug-sections.ld>
 

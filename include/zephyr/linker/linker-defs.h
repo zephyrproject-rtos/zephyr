@@ -337,6 +337,46 @@ static inline bool lnkr_is_region_pinned(uint8_t *addr, size_t sz)
 
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
+#ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
+/* lnkr_ondemand_start[] and lnkr_ondemand_end[] must encapsulate
+ * all the on-demand sections as these are used by
+ * the MMU code to mark the virtual pages with the appropriate backing store
+ * location token to have them be paged in on demand.
+ */
+extern char lnkr_ondemand_start[];
+extern char lnkr_ondemand_end[];
+extern char lnkr_ondemand_load_start[];
+
+extern char lnkr_ondemand_text_start[];
+extern char lnkr_ondemand_text_end[];
+extern char lnkr_ondemand_text_size[];
+extern char lnkr_ondemand_rodata_start[];
+extern char lnkr_ondemand_rodata_end[];
+extern char lnkr_ondemand_rodata_size[];
+
+__pinned_func
+static inline bool lnkr_is_ondemand(uint8_t *addr)
+{
+	if ((addr >= (uint8_t *)lnkr_ondemand_start) &&
+	    (addr < (uint8_t *)lnkr_ondemand_end)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+__pinned_func
+static inline bool lnkr_is_region_ondemand(uint8_t *addr, size_t sz)
+{
+	if ((addr >= (uint8_t *)lnkr_ondemand_start) &&
+	    ((addr + sz) < (uint8_t *)lnkr_ondemand_end)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+#endif /* CONFIG_LINKER_USE_ONDEMAND_SECTION */
 #endif /* ! _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_ */

@@ -97,6 +97,14 @@
 #define __pinned_noinit	__noinit
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
+#if defined(CONFIG_LINKER_USE_ONDEMAND_SECTION)
+#define __ondemand_func	Z_GENERIC_DOT_SECTION(ONDEMAND_TEXT_SECTION_NAME)
+#define __ondemand_rodata	Z_GENERIC_DOT_SECTION(ONDEMAND_RODATA_SECTION_NAME)
+#else
+#define __ondemand_func
+#define __ondemand_rodata
+#endif /* CONFIG_LINKER_USE_ONDEMAND_SECTION */
+
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
 #define __isr		__pinned_func
 #else
