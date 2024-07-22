@@ -54,7 +54,24 @@ The Zephyr TLSR9118BDK40D board configuration supports the following hardware fe
 | RISC-V Machine | on-chip    | timer                        |
 | Timer (32 KHz) |            |                              |
 +----------------+------------+------------------------------+
+| PINCTRL        | on-chip    | pinctrl                      |
++----------------+------------+------------------------------+
 | GPIO           | on-chip    | gpio                         |
++----------------+------------+------------------------------+
+| PWM            | on-chip    | pwm                          |
++----------------+------------+------------------------------+
+| TRNG           | on-chip    | entropy                      |
++----------------+------------+------------------------------+
+| FLASH (MSPI)   | on-chip    | flash                        |
++----------------+------------+------------------------------+
+| RADIO          | on-chip    | Bluetooth,                   |
+|                |            | wifi                         |
++----------------+------------+------------------------------+
+| I2C            | on-chip    | i2c                          |
++----------------+------------+------------------------------+
+| AES            | on-chip    | mbedtls                      |
++----------------+------------+------------------------------+
+| PKE            | on-chip    | mbedtls                      |
 +----------------+------------+------------------------------+
 
 Default configuration and IOs
@@ -68,7 +85,7 @@ with the on-chip PLL/DIV generating the 160 MHz system clock.
 The following values also could be assigned to the system clock in the board DTS file
 (``boards/riscv/tlsr9118bdk40d/tlsr9118bdk40d-common.dtsi``):
 
-- 16000000
+- 160000000
 
 .. code-block::
 
@@ -76,12 +93,25 @@ The following values also could be assigned to the system clock in the board DTS
        clock-frequency = <160000000>;
    };
 
+PINs Configuration
+------------------
+
+- LED0 (red): GPIO20, LED1 (green): GPIO19
+- SW0: GPIO16, SW1: GPIO15
+- Key Matrix SW0: GPIO18_GPIO16, SW1: GPIO18_GPIO15, SW2: GPIO17_GPIO16, SW3: GPIO17_GPIO15
+
+Peripheral's pins on the SoC are mapped to the following GPIO pins in the
+``boards/riscv/tlsr9118bdk40d/tlsr9118bdk40d-common.dtsi`` file:
+
+- PWM Channel 4: GPIO20
+- I2C SCL: GPIO15, SDA: GPIO16
 
 Debug backed
 ------------
 
-The TLSR9118BDK40D SoC has 2 UARTs. The Zephyr console output is assigned to UART1 (J47 connector).
-The default settings are 115200 8N1.
+The TLSR9118BDK40D SoC has 3 UARTs.
+The Zephyr console output is assigned to UART0 (J47 connector). The default settings are 115200 8N1.
+The slave core N22 console is assigned to UART1 (J71 connector). The default settings are 115200 8N1.
 
 Programming and debugging
 *************************
