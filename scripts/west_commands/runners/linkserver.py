@@ -187,9 +187,11 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         if self.erase:
             self.do_erase()
 
-        # Use .hex or .bin, preferring .hex over .bin
+        # Use .elf, .hex or .bin, preferring .hex over .elf over .bin
         if self.supports_hex and self.hex_name is not None and os.path.isfile(self.hex_name):
             flash_cmd = (["load", self.hex_name])
+        elif self.elf_name is not None and os.path.isfile(self.elf_name):
+            flash_cmd = (["load", self.elf_name])
         elif self.bin_name is not None and os.path.isfile(self.bin_name):
             if self.dt_flash:
                 load_addr = self.flash_address_from_build_conf(self.build_conf)
@@ -199,8 +201,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
             flash_cmd = (["load", "--addr", str(load_addr), self.bin_name])
         else:
-            err = 'Cannot flash; no hex ({}) or bin ({}) file found.'
-            raise ValueError(err.format(self.hex_name, self.bin_name))
+            err = 'Cannot flash; no hex ({}), elf ({}) or bin ({}) file found.'
+            raise ValueError(err.format(self.hex_name, self.elf_name, self.bin_name))
 
         # Flash the selected file
         linkserver_cmd = linkserver_cmd + flash_cmd
