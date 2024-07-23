@@ -10,6 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/printk-hooks.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/console/ipm_console.h>
 
@@ -30,7 +31,6 @@ static int consoleOut(int character)
 	return character;
 }
 
-extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
 
 int ipm_console_sender_init(const struct device *d)

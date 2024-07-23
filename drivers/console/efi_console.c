@@ -16,7 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/printk.h>
-
+#include <zephyr/sys/printk-hooks.h>
 
 extern int efi_console_putchar(int c);
 
@@ -41,10 +41,6 @@ static int console_out(int c)
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 extern void __stdout_hook_install(int (*hook)(int));
-#endif
-
-#if defined(CONFIG_PRINTK)
-extern void __printk_hook_install(int (*fn)(int));
 #endif
 
 /**
