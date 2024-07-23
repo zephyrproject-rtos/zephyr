@@ -42,6 +42,47 @@
 			clock-frequency = <DT_FREQ_M(128)>;
 			riscv,isa = "rv32emc";
 			nordic,bus-width = <32>;
+
+			cpuflpr_vevif_local: mailbox {
+				compatible = "nordic,nrf-vevif-local";
+				status = "disabled";
+				interrupt-parent = <&cpuflpr_clic>;
+				interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>,
+							<1 NRF_DEFAULT_IRQ_PRIORITY>,
+							<2 NRF_DEFAULT_IRQ_PRIORITY>,
+							<3 NRF_DEFAULT_IRQ_PRIORITY>,
+							<4 NRF_DEFAULT_IRQ_PRIORITY>,
+							<5 NRF_DEFAULT_IRQ_PRIORITY>,
+							<6 NRF_DEFAULT_IRQ_PRIORITY>,
+							<7 NRF_DEFAULT_IRQ_PRIORITY>,
+							<8 NRF_DEFAULT_IRQ_PRIORITY>,
+							<9 NRF_DEFAULT_IRQ_PRIORITY>,
+							<10 NRF_DEFAULT_IRQ_PRIORITY>,
+							<11 NRF_DEFAULT_IRQ_PRIORITY>,
+							<12 NRF_DEFAULT_IRQ_PRIORITY>,
+							<13 NRF_DEFAULT_IRQ_PRIORITY>,
+							<14 NRF_DEFAULT_IRQ_PRIORITY>,
+							<15 NRF_DEFAULT_IRQ_PRIORITY>,
+							<16 NRF_DEFAULT_IRQ_PRIORITY>,
+							<17 NRF_DEFAULT_IRQ_PRIORITY>,
+							<18 NRF_DEFAULT_IRQ_PRIORITY>,
+							<19 NRF_DEFAULT_IRQ_PRIORITY>,
+							<20 NRF_DEFAULT_IRQ_PRIORITY>,
+							<21 NRF_DEFAULT_IRQ_PRIORITY>,
+							<22 NRF_DEFAULT_IRQ_PRIORITY>,
+							<23 NRF_DEFAULT_IRQ_PRIORITY>,
+							<24 NRF_DEFAULT_IRQ_PRIORITY>,
+							<25 NRF_DEFAULT_IRQ_PRIORITY>,
+							<26 NRF_DEFAULT_IRQ_PRIORITY>,
+							<27 NRF_DEFAULT_IRQ_PRIORITY>,
+							<28 NRF_DEFAULT_IRQ_PRIORITY>,
+							<29 NRF_DEFAULT_IRQ_PRIORITY>,
+							<30 NRF_DEFAULT_IRQ_PRIORITY>,
+							<31 NRF_DEFAULT_IRQ_PRIORITY>;
+				#mbox-cells = <1>;
+				nordic,tasks = <18>;
+				nordic,tasks-mask = <0x007f0000>;
+			};
 		};
 	};
 
@@ -144,6 +185,15 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				status = "disabled";
+
+				cpuflpr_vevif_remote: mailbox@0 {
+					compatible = "nordic,nrf-vevif-remote";
+					reg = <0x0 0x1000>;
+					#mbox-cells = <1>;
+					nordic,tasks = <18>;
+					nordic,tasks-mask = <0x007f0000>;
+					status = "disabled";
+				};
 
 				cpuflpr_clic: interrupt-controller@f0000000 {
 					compatible = "nordic,nrf-clic";

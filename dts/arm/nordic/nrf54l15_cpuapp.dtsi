@@ -9,6 +9,7 @@
 cpu: &cpuapp {};
 systick: &cpuapp_systick {};
 nvic: &cpuapp_nvic {};
+cpuflpr_vevif: &cpuflpr_vevif_remote {};
 
 /delete-node/ &cpuflpr;
 /delete-node/ &cpuflpr_rram;
@@ -29,27 +30,6 @@ nvic: &cpuapp_nvic {};
 	psa_rng: psa-rng {
 		compatible = "zephyr,psa-crypto-rng";
 		status = "okay";
-	};
-};
-
-&cpuflpr_vpr {
-	cpuapp_vevif_rx: mailbox@1 {
-		compatible = "nordic,nrf-vevif-event-rx";
-		reg = <0x0 0x1000>;
-		status = "disabled";
-		interrupts = <76 NRF_DEFAULT_IRQ_PRIORITY>;
-		#mbox-cells = <1>;
-		nordic,events = <1>;
-		nordic,events-mask = <0x00008000>;
-	};
-
-	cpuapp_vevif_tx: mailbox@0 {
-		compatible = "nordic,nrf-vevif-task-tx";
-		reg = <0x0 0x1000>;
-		#mbox-cells = <1>;
-		nordic,tasks = <7>;
-		nordic,tasks-mask = <0x0003f800>;
-		status = "disabled";
 	};
 };
 
