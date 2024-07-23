@@ -60,7 +60,7 @@ void __printk_hook_install(printk_hook_fn_t fn)
 	_char_out = fn;
 }
 
-void *__printk_get_hook(void)
+printk_hook_fn_t __printk_get_hook(void)
 {
 	return _char_out;
 }
