@@ -503,11 +503,7 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 	LOG_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle, buf->len, cb,
 		user_data);
 
-	/* Allow for an additional buffer reference if callback is provided. This can be used to
-	 * extend lifetime of the net buffer until the data transmission is confirmed by ACK of the
-	 * remote.
-	 */
-	if (buf->ref > 1 + (cb ? 1 : 0)) {
+	if (buf->ref != 1) {
 		/* The host may alter the buf contents when fragmenting. Higher
 		 * layers cannot expect the buf contents to stay intact. Extra
 		 * refs suggests a silent data corruption would occur if not for
