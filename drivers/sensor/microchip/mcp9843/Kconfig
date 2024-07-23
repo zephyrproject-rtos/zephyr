@@ -1,0 +1,10 @@
+# Copyright 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config MCP9843
+	bool "MCP9843 temperature sensor"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP9843_ENABLED
+	select I2C
+	help
+	  Enable MCP9843 temperature sensor support.
