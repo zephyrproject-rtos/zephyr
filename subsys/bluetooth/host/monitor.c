@@ -17,6 +17,7 @@
 #include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 #include <zephyr/drivers/uart.h>
 
 #include <zephyr/logging/log_backend.h>
@@ -260,8 +261,6 @@ static int monitor_console_out(int c)
 
 	return c;
 }
-
-extern void __stdout_hook_install(int (*fn)(int));
 #endif /* !CONFIG_UART_CONSOLE && !CONFIG_RTT_CONSOLE && !CONFIG_LOG_PRINTK */
 
 #ifndef CONFIG_LOG_MODE_MINIMAL

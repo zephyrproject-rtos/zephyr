@@ -9,6 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/sys/printk-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ipm_console, CONFIG_IPM_LOG_LEVEL);
@@ -41,10 +42,6 @@ static int console_out(int c)
 
 	return c;
 }
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-extern void __stdout_hook_install(int (*hook)(int));
-#endif
 
 /* Install printk/stdout hooks */
 static void ipm_console_hook_install(void)

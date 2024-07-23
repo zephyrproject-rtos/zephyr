@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/winstream.h>
 #include <zephyr/sys/printk-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/cache.h>
 
@@ -46,10 +47,6 @@ int arch_printk_char_out(int c)
 	winstream_console_trace_out(&s, 1);
 	return 0;
 }
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-extern void __stdout_hook_install(int (*hook)(int));
-#endif
 
 static void winstream_console_hook_install(void)
 {
