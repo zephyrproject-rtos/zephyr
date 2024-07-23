@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Zühlke Engineering AG
+// SPDX-License-Identifier: Apache-2.0
+
 use std::{env, fs};
 use std::path::PathBuf;
 
@@ -15,6 +18,10 @@ fn main() {
         .detect_include_paths(false)
         .wrap_static_fns(true)
         .wrap_static_fns_path(wrap_static_fns)
+        .clang_args(clang_args.split(';'))
+        .header(input_header.to_str().unwrap())
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+
         .allowlist_file(zephyr_base.join(".*").to_str().unwrap())
         .allowlist_file(".*/errno.h")
         .blocklist_function("z_impl_.*")
@@ -22,9 +29,10 @@ fn main() {
         .blocklist_var("DT_.*")
         .blocklist_var("CONFIG_.*")
         .blocklist_var("Z_UTIL_.*")
-        .clang_args(clang_args.split(';'))
-        .header(input_header.to_str().unwrap())
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+
+        // Deprecated function, hopefully there is a more generic way of doing this.
+        .blocklist_function("sys_clock_timeout_end_calc")
+
         .generate()
         .expect("Unable to generate bindings!");
 

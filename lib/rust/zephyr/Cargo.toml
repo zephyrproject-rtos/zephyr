@@ -11,6 +11,8 @@ Functionality for Rust-based applications that run on Zephyr.
 
 [dependencies]
 zephyr-sys = "0.1.0"
+
+# Just for this experiment, probably the zephyr crate should come without dependencies.
 bitmask-enum = "2.2.4"
 int-enum = "1.1.2"
 

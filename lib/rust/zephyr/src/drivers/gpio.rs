@@ -1,10 +1,15 @@
-use bitmask_enum::bitmask;
-use crate::errno::{Errno, parse_result};
+// Copyright (c) 2024 Zühlke Engineering AG
+// SPDX-License-Identifier: Apache-2.0
 
-pub use zephyr_sys::gpio_dt_spec;
+use bitmask_enum::bitmask;
+use crate::errno::Errno;
+
+// Maybe this should be somehow wrapped to not expose zephyr_sys stuff to the application.
+pub type GpioDtSpec = zephyr_sys::gpio_dt_spec;
 
 #[bitmask(u32)]
-pub enum Flags {
+pub enum GpioFlags {
+    None = 0,
     Input = zephyr_sys::GPIO_INPUT,
     Output = zephyr_sys::GPIO_OUTPUT,
     Disconnected = zephyr_sys::GPIO_DISCONNECTED,
@@ -17,24 +22,24 @@ pub enum Flags {
     OutputActive = zephyr_sys::GPIO_OUTPUT | zephyr_sys::GPIO_OUTPUT_INIT_HIGH | zephyr_sys::GPIO_OUTPUT_INIT_LOGICAL,
 }
 
-pub struct Pin {
-    gpio_dt_spec: gpio_dt_spec,
+pub struct GpioPin {
+    gpio_dt_spec: GpioDtSpec,
 }
 
-impl Pin {
-    pub fn new(gpio_dt_spec: gpio_dt_spec) -> Self {
-        Pin { gpio_dt_spec }
+impl GpioPin {
+    pub fn new(gpio_dt_spec: GpioDtSpec) -> Self {
+        GpioPin { gpio_dt_spec }
     }
 
-    pub fn configure(&self, extra_flags: Flags) -> Result<(), Errno> {
+    pub fn configure(&self, extra_flags: GpioFlags) -> Result<(), Errno> {
         unsafe {
-            parse_result(zephyr_sys::gpio_pin_configure_dt(&self.gpio_dt_spec, extra_flags.bits()))
+            Errno::from(zephyr_sys::gpio_pin_configure_dt(&self.gpio_dt_spec, extra_flags.bits()))
         }
     }
 
     pub fn toggle(&self) -> Result<(), Errno> {
         unsafe {
-            parse_result(zephyr_sys::gpio_pin_toggle_dt(&self.gpio_dt_spec))
+            Errno::from(zephyr_sys::gpio_pin_toggle_dt(&self.gpio_dt_spec))
         }
     }
 }
@@ -57,7 +62,7 @@ macro_rules! dt_gpio_flags_by_idx {
 #[macro_export]
 macro_rules! gpio_dt_spec_get_by_idx {
     ($node:expr, $prop:ident, $idx:tt) => {
-        crate::drivers::gpio::gpio_dt_spec {
+        crate::drivers::gpio::GpioDtSpec {
             port: device_dt_get!(dt_gpio_ctrl_by_idx!($node, $prop, $idx)),
             pin: dt_gpio_pin_by_idx!($node, $prop, $idx) as u8,
             dt_flags: dt_gpio_flags_by_idx!($node, $prop, $idx) as u16,

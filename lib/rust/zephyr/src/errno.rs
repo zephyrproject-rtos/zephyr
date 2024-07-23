@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Zühlke Engineering AG
+// SPDX-License-Identifier: Apache-2.0
+
 use int_enum::IntEnum;
 
 #[repr(u32)]
@@ -84,17 +87,19 @@ pub enum Errno {
     ECANCELED = zephyr_sys::ECANCELED,
 }
 
-pub fn parse_result(result: i32) -> Result<(), Errno> {
-    parse_result_with_value(result).map(|_| ())
-}
-
-pub fn parse_result_with_value(result: i32) -> Result<i32, Errno> {
-    if result >= 0 {
-        return Ok(result)
+impl Errno {
+    pub fn from(result: core::ffi::c_int) -> Result<(), Self> {
+        Self::from_result(result).map(|_| ())
     }
 
-    match Errno::try_from(-result as u32) {
-        Ok(errno) => Err(errno),
-        _ => panic!("Unexpected value"),
+    pub fn from_result(result: core::ffi::c_int) -> Result<i32, Self> {
+        if result >= 0 {
+            return Ok(result as i32);
+        }
+
+        match Self::try_from(-result as u32) {
+            Ok(errno) => Err(errno),
+            _ => panic!("Unexpected value"),
+        }
     }
 }

@@ -45,14 +45,16 @@ function(_generate_clang_args BINDGEN_CLANG_ARGS)
   zephyr_get_include_directories_for_lang(C includes)
   zephyr_get_compile_definitions_for_lang(C definitions)
 
-  # Gather -imacros options
+  # -imacros are needed but are part of zephyr_get_compile_options_for_lang() where many
+  # things are not supported by Clang. Maybe there is a better way than hard coding.
   set(options "-imacros${AUTOCONF_H}")
 
   if(CONFIG_ENFORCE_ZEPHYR_STDINT)
     list(APPEND options "-imacros${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h")
   endif()
 
-  # Determine standard include directories of compiler
+  # Determine standard include directories of compiler.
+  # I hope someone knows a nicer way of doing this.
   file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/empty.c)
 
   execute_process(
@@ -73,7 +75,9 @@ function(_generate_clang_args BINDGEN_CLANG_ARGS)
     message(WARNING "Unable to determine compiler standard include directories.")
   endif()
 
-  # Generate file containing arguments for clang. Note that the file is generated after the
+  # Not sure if a proper target should be provided as well to generate the correct bindings.
+
+  # Generate file containing arguments for Clang. Note that the file is generated after the
   # CMake configure stage as the variables contain generator expressions which cannot be
   # evaluated right now.
   file(
@@ -81,6 +85,17 @@ function(_generate_clang_args BINDGEN_CLANG_ARGS)
     OUTPUT ${BINDGEN_CLANG_ARGS}
     CONTENT "${standard_includes};${system_includes};${includes};${definitions};${options}"
   )
+endfunction()
+
+function(_generate_rust_dts RUST_DTS)
+  execute_process(
+          COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/gen_dts_rust.py
+          --edt-pickle ${CMAKE_BINARY_DIR}/zephyr/edt.pickle
+          --rust-out ${RUST_DTS}
+          COMMAND_ERROR_IS_FATAL ANY
+  )
+
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DTS_RUST_SCRIPT})
 endfunction()
 
 function(rust_cargo_application)
@@ -102,12 +117,14 @@ function(rust_cargo_application)
   set(RUST_LIBRARY "${CARGO_TARGET_DIR}/${RUST_TARGET}/${RUST_BUILD_TYPE}/librustapp.a")
   set(SAMPLE_CARGO_CONFIG "${CMAKE_CURRENT_BINARY_DIR}/rust/sample-cargo-config.toml")
 
-  set(RUST_DTS "${CMAKE_BINARY_DIR}/zephyr/dts.rs")
-
+  set(RUST_DTS "${CMAKE_CURRENT_BINARY_DIR}/rust/dts.rs")
   set(BINDGEN_CLANG_ARGS "${CMAKE_CURRENT_BINARY_DIR}/rust/clang_args.txt")
-  set(BINDGEN_WRAP_STATIC_FNS "${CARGO_TARGET_DIR}/${RUST_TARGET}/${RUST_BUILD_TYPE}/wrap_static_fns.c")
+  set(BINDGEN_WRAP_STATIC_FNS "${CMAKE_CURRENT_BINARY_DIR}/rust/wrap_static_fns.c")
+
+  file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/rust")
 
   _generate_clang_args(${BINDGEN_CLANG_ARGS})
+  _generate_rust_dts(${RUST_DTS})
 
   # To get cmake to always invoke Cargo requires a bit of a trick.  We make the output of the
   # command a file that never gets created.  This will cause cmake to always rerun cargo.  We

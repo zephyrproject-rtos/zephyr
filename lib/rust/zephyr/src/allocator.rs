@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Zühlke Engineering AG
+// SPDX-License-Identifier: Apache-2.0
+
 use core::alloc::{GlobalAlloc, Layout};
 use zephyr_sys::{k_aligned_alloc, k_free};
 

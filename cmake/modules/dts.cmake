@@ -118,11 +118,6 @@ set(GEN_DTS_CMAKE_SCRIPT        ${DT_SCRIPTS}/gen_dts_cmake.py)
 # creating it.
 set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
 
-# This generates DT information needed by Rust applications.
-set(GEN_DTS_RUST_SCRIPT         ${DT_SCRIPTS}/gen_dts_rust.py)
-# The generated information itself, which is further processed by the Rust build script.
-set(DTS_RUST                    ${PROJECT_BINARY_DIR}/dts.rs)
-
 # The location of a file containing known vendor prefixes, relative to
 # each element of DTS_ROOT. Users can define their own in their own
 # modules.
@@ -274,7 +269,6 @@ set_property(DIRECTORY APPEND PROPERTY
   ${GEN_DEFINES_SCRIPT}
   ${GEN_DRIVER_KCONFIG_SCRIPT}
   ${GEN_DTS_CMAKE_SCRIPT}
-  ${GEN_DTS_RUST_SCRIPT}
   )
 
 #
@@ -339,21 +333,6 @@ if(NOT "${ret}" STREQUAL "0")
 else()
   message(STATUS "Including generated dts.cmake file: ${DTS_CMAKE}")
   include(${DTS_CMAKE})
-endif()
-
-#
-# Run GEN_DTS_RUST_SCRIPT.
-#
-
-execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} ${GEN_DTS_RUST_SCRIPT}
-        --edt-pickle ${EDT_PICKLE}
-        --rust-out ${DTS_RUST}
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        RESULT_VARIABLE ret
-)
-if(NOT "${ret}" STREQUAL "0")
-  message(FATAL_ERROR "gen_dts_rust.py failed with return code: ${ret}")
 endif()
 
 #

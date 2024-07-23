@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2024 Zühlke Engineering AG
+# SPDX-License-Identifier: Apache-2.0
+
+# This script uses edtlib and the devicetree data in the build directory
+# to generate a Rust source file which contains devicetree data.
+#
+# For each node, a struct is defined and instantiated once as a constant
+# containing all information and referencing child nodes and other
+# nodes via phandles. For nodes with status "okay" a device() method
+# is generated allowing to access the device object which can be used
+# to interface with the device drivers.
+#
+# The provided information allows to define macros which behave similar
+# as the macros we have in C to access devicetree information such as
+# `GPIO_DT_SPEC_GET`.
+
 import re
 import os
 import sys

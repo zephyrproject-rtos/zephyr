@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Zühlke Engineering AG
+// SPDX-License-Identifier: Apache-2.0
+
 #![no_std]
 
 #![allow(non_upper_case_globals)]

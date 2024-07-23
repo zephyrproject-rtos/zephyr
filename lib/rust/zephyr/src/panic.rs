@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Zühlke Engineering AG
+// SPDX-License-Identifier: Apache-2.0
+
 use alloc::ffi::CString;
 use alloc::string::ToString;
 use core::ffi::c_char;
@@ -5,7 +8,7 @@ use core::panic::PanicInfo;
 use zephyr_sys::printk;
 
 extern "C" {
-    fn k_panic__extern() -> !;
+    fn rust_panic() -> !;
 }
 
 #[panic_handler]
@@ -14,5 +17,5 @@ unsafe fn panic(_info: &PanicInfo) -> ! {
         printk("%s\n\0".as_ptr() as *const c_char, message.as_ptr());
     }
 
-    k_panic__extern();
+    rust_panic();
 }

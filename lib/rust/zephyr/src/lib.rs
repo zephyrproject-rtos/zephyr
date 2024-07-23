@@ -15,9 +15,12 @@ mod panic;
 
 pub mod errno;
 pub mod kernel;
-pub mod print;
 pub mod drivers;
 pub mod devicetree;
+
+// To me, it would feel more consistent if kconfig.rs was also generated using Python within the
+// Zephyr build infrastructure instead of the zephyr-build crate. For the devicetree this was
+// much easier as there is already the pickled EDT available.
 
 // Bring in the generated kconfig module
 include!(concat!(env!("OUT_DIR"), "/kconfig.rs"));
