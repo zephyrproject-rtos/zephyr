@@ -46,10 +46,10 @@ void i3c_addr_slots_set(struct i3c_addr_slots *slots,
 
 	bitpos = dev_addr * 2;
 	idx = bitpos / BITS_PER_LONG;
+	bitpos %= BITS_PER_LONG;
 
-	slots->slots[idx] &= ~((unsigned long)I3C_ADDR_SLOT_STATUS_MASK <<
-			       (bitpos % BITS_PER_LONG));
-	slots->slots[idx] |= status << (bitpos % BITS_PER_LONG);
+	slots->slots[idx] &= ~((unsigned long)I3C_ADDR_SLOT_STATUS_MASK << bitpos);
+	slots->slots[idx] |= status << bitpos;
 }
 
 enum i3c_addr_slot_status
@@ -72,8 +72,9 @@ i3c_addr_slots_status(struct i3c_addr_slots *slots,
 
 	bitpos = dev_addr * 2;
 	idx = bitpos / BITS_PER_LONG;
+	bitpos %= BITS_PER_LONG;
 
-	status = slots->slots[idx] >> (bitpos % BITS_PER_LONG);
+	status = slots->slots[idx] >> bitpos;
 	status &= I3C_ADDR_SLOT_STATUS_MASK;
 
 	return status;
