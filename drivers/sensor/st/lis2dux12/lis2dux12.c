@@ -107,6 +107,39 @@ static int lis2dux12_freq_to_odr_val(const struct device *dev, uint16_t freq)
 	return -EINVAL;
 }
 
+static int lis2dux12_set_fs(const struct device *dev, int16_t fs)
+{
+	int ret;
+	uint8_t range;
+
+	switch (fs) {
+	case 2:
+		range = LIS2DUX12_DT_FS_2G;
+		break;
+	case 4:
+		range = LIS2DUX12_DT_FS_4G;
+		break;
+	case 8:
+		range = LIS2DUX12_DT_FS_8G;
+		break;
+	case 16:
+		range = LIS2DUX12_DT_FS_16G;
+		break;
+	default:
+		LOG_ERR("fs [%d] not supported.", fs);
+		return -EINVAL;
+	}
+
+	ret = lis2dux12_set_range(dev, range);
+	if (ret < 0) {
+		LOG_ERR("%s: range init error %d", dev->name, range);
+		return ret;
+	}
+
+	LOG_DBG("%s: set fs to %d g", dev->name, fs);
+	return ret;
+}
+
 static int lis2dux12_accel_config(const struct device *dev, enum sensor_channel chan,
 				  enum sensor_attribute attr, const struct sensor_value *val)
 {
@@ -114,7 +147,7 @@ static int lis2dux12_accel_config(const struct device *dev, enum sensor_channel 
 
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
-		return lis2dux12_set_range(dev, sensor_ms2_to_g(val));
+		return lis2dux12_set_fs(dev, sensor_ms2_to_g(val));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		odr_val = lis2dux12_freq_to_odr_val(dev, val->val1);
 		if (odr_val < 0) {
