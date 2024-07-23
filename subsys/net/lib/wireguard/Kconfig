@@ -1,0 +1,89 @@
+# Wireguard VPN service for Zephyr
+
+# Copyright (c) 2026 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config WIREGUARD
+	bool "Wireguard VPN service [EXPERIMENTAL]"
+	depends on NET_UDP
+	select NET_VPN
+	select NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_L2_DUMMY
+	select NET_L2_VIRTUAL
+	select NET_L2_VIRTUAL_MGMT
+	select BASE64
+	select EXPERIMENTAL
+	help
+	  Select 'y' if you want to enable Wireguard VPN service.
+
+if WIREGUARD
+
+config WIREGUARD_BUF_COUNT
+	int "Internal temp network buffer count"
+	default 2
+	range 1 256
+	help
+	  How many network buffers to allocate for temporary
+	  use. Each buffer occupies WIREGUARD_BUF_LEN amount
+	  of bytes. Total amount of bytes needed is
+	  WIREGUARD_BUF_COUNT * WIREGUARD_BUF_LEN
+	  The temp buffers are used for decrypting (in RX) and
+	  encrypting (for TX) the data.
+
+config WIREGUARD_BUF_LEN
+	int "Internal temp network buffer length"
+	default 1500
+	range 1328 1500
+	help
+	  How long is one network buffer. It varies between
+	  minimum IPv6 MTU length and Ethernet MTU (minus Wireguard
+	  header length which is 16 bytes, auth tag len (16 bytes)
+	  and extra 16 byte padding).
+
+config WIREGUARD_MAX_PEER
+	int "Maximum number of peer connections"
+	default 1
+	range 1 256
+	help
+	  How many Wireguard VPN connections are possible.
+
+config WIREGUARD_MAX_SRC_IPS
+	int "Maximum number of peer source IP addresses"
+	default 2
+	range 1 256
+	help
+	  How many IP addresses are allowed / peer.
+
+config WIREGUARD_INTERFACE
+	string "Network interface to use"
+	help
+	  Leave empty if you want to use all network interfaces
+	  for the VPN connections. If set, then all VPN traffic
+	  is routed via this interface.
+
+config WIREGUARD_PORT
+	int "UDP port to use"
+	range 0 $(UINT16_MAX)
+	default 51820
+	help
+	  What UDP port to use when listening connections (in server role)
+	  or when connecting to other hosts.
+	  If set to 0, then let Wireguard code to select the port.
+
+module = WIREGUARD
+module-dep = NET_LOG
+module-str = Log level for Wireguard VPN service
+module-help = Enables Wireguard to output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+
+config WIREGUARD_TXRX_DEBUG
+	bool "Debug received and sent virtual interface packets"
+	depends on WIREGUARD_LOG_LEVEL_DBG
+	help
+	  Enables printing of received and sent network packets.
+	  This can produce lot of output so it is disabled by default.
+	  This prints data in the virtual interface (wg0) level.
+
+endif # WIREGUARD
