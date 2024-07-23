@@ -1683,7 +1683,7 @@ static void le_enh_conn_complete_v2(struct net_buf *buf)
 		/* Created via PAwR sync, no adv set terminated event, needs separate handling */
 		struct bt_le_per_adv_sync *sync;
 
-		sync = bt_hci_get_per_adv_sync(evt->sync_handle);
+		sync = bt_hci_per_adv_sync_lookup_handle(evt->sync_handle);
 		if (!sync) {
 			LOG_ERR("Unknown sync handle %d", evt->sync_handle);
 
