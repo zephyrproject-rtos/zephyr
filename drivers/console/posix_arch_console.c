@@ -8,6 +8,7 @@
 #include <zephyr/init.h>
 #include <zephyr/arch/posix/posix_trace.h>
 #include <zephyr/sys/printk-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 
 #define _STDOUT_BUF_SIZE 256
 static char stdout_buff[_STDOUT_BUF_SIZE];
@@ -55,7 +56,6 @@ static int posix_arch_console_init(void)
 	__printk_hook_install(print_char);
 #endif
 #ifdef CONFIG_STDOUT_CONSOLE
-	extern void __stdout_hook_install(int (*fn)(int));
 	__stdout_hook_install(print_char);
 #endif
 	return 0;
