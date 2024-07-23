@@ -33,6 +33,6 @@ void __printk_hook_install(printk_hook_fn_t fn);
  *
  * @return a function pointer or NULL if no hook is set
  */
-void *__printk_get_hook(void);
+printk_hook_fn_t __printk_get_hook(void);
 
 #endif /* ZEPHYR_INCLUDE_SYS_PRINTK_HOOKS_H_ */
