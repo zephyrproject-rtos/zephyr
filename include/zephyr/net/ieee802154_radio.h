@@ -517,7 +517,7 @@ enum ieee802154_hw_caps {
 	/** TX security supported (key management, encryption and authentication) */
 	IEEE802154_HW_TX_SEC = BIT(11),
 
-	/** macRxOnWhenIdle driver offloading supported */
+	/** `macRxOnWhenIdle` driver offloading supported */
 	IEEE802154_HW_RX_ON_WHEN_IDLE = BIT(12),
 
 	/* Note: Update also IEEE802154_HW_CAPS_BITS_COMMON_COUNT when changing
@@ -778,18 +778,19 @@ enum ieee802154_config_type {
 	 * time of an RX slot arrives, then the RX slot SHALL not be observed
 	 * and the receiver SHALL remain off.
 	 *
-	 * If the driver is "UP" while configuring an RX slot, the driver SHALL
-	 * turn off the receiver immediately and (possibly asynchronously) put
-	 * the driver into the lowest possible power saving mode until the
-	 * start of the RX slot. If the driver is "UP" while the RX slot is
-	 * deleted, then the driver SHALL enable the receiver immediately. The
-	 * receiver MUST be ready to receive packets before returning from the
-	 * `configure()` operation in this case.
+	 * If the driver is "UP" while configuring an RX slot, the driver SHALL turn
+	 * off the receiver immediately and (possibly asynchronously) put the driver
+	 * into the lowest possible power saving mode until the start of the RX
+	 * slot. While an RX slot is active, the setting of the `macRxOnWhenIdle`
+	 * MAC PIB attribute (@see IEEE802154_CONFIG_RX_ON_WHEN_IDLE) SHALL be
+	 * ignored.
 	 *
-	 * This behavior means that setting an RX slot implicitly sets the MAC
-	 * PIB attribute macRxOnWhenIdle (see section 8.4.3.1, table 8-94) to
-	 * "false" while deleting the RX slot implicitly sets macRxOnWhenIdle to
-	 * "true".
+	 * If the driver is "UP" while the RX slot is deleted, then the driver SHALL
+	 * enable the receiver immediately unless the `macRxOnWhenIdle` MAC PIB
+	 * attribute (@see IEEE802154_CONFIG_RX_ON_WHEN_IDLE) is set to `false`. The
+	 * receiver SHALL be ready to receive packets before returning from the
+	 * `configure()` operation when the RX slot is deleted and `macRxOnWhenIdle`
+	 * is `true`.
 	 *
 	 * @note requires @ref IEEE802154_HW_RXTIME capability and is available
 	 * in any interface operational state.
@@ -1068,31 +1069,37 @@ enum ieee802154_config_type {
 	IEEE802154_CONFIG_ENH_ACK_HEADER_IE,
 
 	/**
-	 * Enable/disable RxOnWhenIdle MAC PIB attribute (Table 8-94).
+	 * Configure the `macRxOnWhenIdle` MAC PIB attribute (section 8.4.3.1, table
+	 * 8-94).
 	 *
-	 * Since there is no clear guidance in IEEE 802.15.4 specification about the definition of
-	 * an "idle period", this implementation expects that drivers use the RxOnWhenIdle attribute
-	 * to determine next radio state (false --> off, true --> receive) in the following
-	 * scenarios:
-	 * - Finalization of a regular frame reception task, provided that:
-	 *   - The frame is received without errors and passes the filtering and it's not an
-	 *     spurious ACK.
-	 *   - ACK is not requested or transmission of ACK is not possible due to internal
-	 *     conditions.
-	 * - Finalization of a frame transmission or transmission of an ACK frame, when ACK is not
-	 *     requested in the transmitted frame.
-	 * - Finalization of the reception operation of a requested ACK due to:
-	 *   - ACK timeout expiration.
-	 *   - Reception of an invalid ACK or not an ACK frame.
-	 *   - Reception of the proper ACK, unless the transmitted frame was a Data Request Command
-	 *     and the frame pending bit on the received ACK is set to true. In this case the radio
-	 *     platform implementation SHOULD keep the receiver on until a determined timeout which
-	 *     triggers an idle period start.
+	 * @details Since there is no clear guidance in the IEEE 802.15.4
+	 * specification about the definition of an "idle period", drivers
+	 * implementing this API are expected to use the `macRxOnWhenIdle` attribute
+	 * to determine the next radio state (false --> rx off, true --> rx on) in
+	 * the following situations:
+	 * - After finalization of regular frame reception, provided that:
+	 *   - The frame is received without errors, passes the filtering and is not
+	 *     a spurious ACK.
+	 *   - ACK is not requested or transmission of an ACK frame is not possible
+	 *     due to internal conditions.
+	 * - After finalization of frame transmission, when ACK is not requested in
+	 *   the transmitted frame or after an ACK frame was transmitted.
+	 * - After finalization of the ACK procedure on the reception side due to:
+	 *   - ACK timeout.
+	 *   - Reception of an invalid ACK or non-ACK frame.
+	 *   - Reception of a valid ACK frame, unless the transmitted frame was a
+	 *     Data Request Command and the frame pending bit on the received ACK is
+	 *     set to true. In this case the radio driver implementation SHOULD keep
+	 *     the receiver on until a determined timeout which triggers an idle
+	 *     period start.
 	 * - Finalization of a stand alone CCA task.
 	 * - Finalization of a CCA operation with busy result during CSMA/CA procedure.
 	 * - Finalization of an Energy Detection task.
-	 * - Finalization of a scheduled radio reception window
-	 *     (see @ref IEEE802154_CONFIG_RX_SLOT).
+	 * - Finalization of a scheduled radio reception window (see
+	 *   @ref IEEE802154_CONFIG_RX_SLOT).
+	 *
+	 * @note By default `macRxOnWhenIdle` is assumed to be true to match legacy
+	 * behavior of drivers that do not implement this setting.
 	 */
 	IEEE802154_CONFIG_RX_ON_WHEN_IDLE,
 
@@ -1474,6 +1481,8 @@ static inline int ieee802154_attr_get_channel_page_and_range(
  *   upper layers configure an RX slot, then the driver SHALL immediately
  *   transition (asynchronously) to the lowest possible power state until the
  *   start of the RX slot or until a scheduled packet needs to be transmitted.
+ *   The same is true when the driver claims to support `macRxOnWhenIdle`
+ *   offloading and the receiver becomes "idle".
  * * The driver SHALL NOT change the interface's "UP"/"DOWN" state on its own.
  *   Initially, the interface SHALL be in the "DOWN" state.
  * * Drivers that implement the optional `continuous_carrier()` operation will
@@ -1490,13 +1499,13 @@ static inline int ieee802154_attr_get_channel_page_and_range(
  *   the "UP" state and return `-ENETDOWN` in any other state. See the
  *   function-level API documentation below for further details.
  *
- * @note In case of devices that support timed RX/TX, the "UP" state is not
- * equal to "receiver enabled". If a receive window (i.e. RX slot, see @ref
- * IEEE802154_CONFIG_RX_SLOT) is configured before calling `start()` then the
- * receiver will not be enabled when transitioning to the "UP" state.
- * Configuring a receive window while the interface is "UP" will cause the
- * receiver to be disabled immediately until the configured reception time has
- * arrived.
+ * @note In case of devices that support timed RX/TX or `macRxOnWhenIdle`, the
+ * "UP" state is not equal to "receiver enabled". If a receive window (i.e. RX
+ * slot, see @ref IEEE802154_CONFIG_RX_SLOT) is configured before calling
+ * `start()` then the receiver will not be enabled when transitioning to the
+ * "UP" state. Configuring a receive window while the interface is "UP" will
+ * cause the receiver to be disabled immediately until the configured reception
+ * time has arrived.
  */
 struct ieee802154_radio_api {
 	/**
@@ -1694,7 +1703,8 @@ struct ieee802154_radio_api {
 	 * operation returns with zero or `-EALREADY`. The interface is placed
 	 * in receive mode before returning from this operation unless an RX
 	 * slot has been configured (even if it lies in the past, see @ref
-	 * IEEE802154_CONFIG_RX_SLOT).
+	 * IEEE802154_CONFIG_RX_SLOT) or if the `macRxOnWhenIdle` setting has been
+	 * configured to "false".
 	 *
 	 * @note Implementations SHALL be **isr-ok** and MAY **sleep**. MAY be
 	 * called in any interface state once the driver is fully initialized
