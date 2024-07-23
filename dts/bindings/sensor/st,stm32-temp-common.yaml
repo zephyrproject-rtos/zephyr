@@ -8,6 +8,13 @@ properties:
     required: true
     description: ADC channel for temperature sensor
 
+  avgslope:
+    type: string
+    required: true
+    description: |
+      Average slope of T-V chart (in mV/°C), found in MCU datasheet
+      chapters "Electrical characteristics" or "Operating conditions"
+
   ntc:
     type: boolean
     description: |

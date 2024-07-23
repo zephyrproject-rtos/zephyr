@@ -707,8 +707,8 @@
 		compatible = "st,stm32-temp";
 		io-channels = <&adc1 16>;
 		status = "disabled";
+		avgslope = "2.5";
 		v25 = <760>;
-		avgslope = <25>;
 	};
 
 	otgfs_phy: otgfs_phy {

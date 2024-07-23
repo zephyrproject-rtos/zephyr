@@ -9,6 +9,7 @@ compatible: "st,stm32-temp-cal"
 include:
   - name: st,stm32-temp-cal-common.yaml
     property-blocklist:
+      - avgslope
       - ntc
 
 properties:
