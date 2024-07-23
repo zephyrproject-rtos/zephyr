@@ -53,9 +53,9 @@ __attribute__((weak)) int arch_printk_char_out(int c)
 }
 /* LCOV_EXCL_STOP */
 
-static int (*_char_out)(int c) = arch_printk_char_out;
+static printk_hook_fn_t _char_out = arch_printk_char_out;
 
-void __printk_hook_install(int (*fn)(int c))
+void __printk_hook_install(printk_hook_fn_t fn)
 {
 	_char_out = fn;
 }

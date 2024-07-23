@@ -8,13 +8,22 @@
 #define ZEPHYR_INCLUDE_SYS_PRINTK_HOOKS_H_
 
 /**
+ * @brief printk function handler
+ *
+ * @param c Character to output
+ *
+ * @returns The character passed as input.
+ */
+typedef int (*printk_hook_fn_t)(int c);
+
+/**
  * @brief Install the character output routine for printk
  *
  * To be called by the platform's console driver at init time. Installs a
  * routine that outputs one ASCII character at a time.
  * @param fn putc routine to install
  */
-void __printk_hook_install(int (*fn)(int c));
+void __printk_hook_install(printk_hook_fn_t fn);
 
 /**
  * @brief Get the current character output routine for printk
