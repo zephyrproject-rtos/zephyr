@@ -1,0 +1,7 @@
+# Cargo drops lock files in projects to capture resolved dependencies.
+# We don't want to record these.
+Cargo.lock
+
+# Cargo encourates a .cargo/config.toml file to symlink to a generated
+# file.  Don't save these.
+.cargo/
