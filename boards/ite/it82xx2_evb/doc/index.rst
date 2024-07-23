@@ -220,7 +220,7 @@ Ubuntu
       $ sudo ~/itetool/ite -f build/zephyr/zephyr.bin
 
    .. note:: The source code of ITE tool can be downloaded here:
-    https://www.ite.com.tw/uploads/product_download/itedlb4-linux-v106.tar.bz2
+    https://www.ite.com.tw/upload/2024_01_23/6_20240123162336wu55j1Rjm4.bz2
 
 #. Split first and second terminal windows to view both of them.
    You should see ``"Hello World! it82xx2_evb"`` in the first terminal window.
