@@ -330,6 +330,8 @@ struct ieee802154_req_params {
 	uint8_t len;
 	/** Link quality information, between 0 and 255 */
 	uint8_t lqi;
+	/** Flag if association is permitted by the coordinator */
+	bool association_permitted;
 
 	/** Additional payload of the beacon if any.*/
 	uint8_t *beacon_payload;

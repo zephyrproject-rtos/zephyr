@@ -45,9 +45,7 @@ enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 		return NET_DROP;
 	}
 
-	if (!mpdu->beacon->sf.association) {
-		return NET_DROP;
-	}
+	ctx->scan_ctx->association_permitted = mpdu->beacon->sf.association;
 
 	k_sem_take(&ctx->scan_ctx_lock, K_FOREVER);
 
