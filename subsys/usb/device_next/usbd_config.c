@@ -321,8 +321,6 @@ int usbd_add_configuration(struct usbd_context *const uds_ctx,
 
 	sys_slist_append(configs, &cfg_nd->node);
 
-	usbd_device_unlock(uds_ctx);
-
 add_configuration_exit:
 	usbd_device_unlock(uds_ctx);
 	return ret;
