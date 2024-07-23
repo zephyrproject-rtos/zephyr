@@ -537,26 +537,31 @@ static bool token_compare(struct coap_client_internal_request *internal_req,
 	return memcmp(&internal_req->request_token, &response_token, response_tkl) == 0;
 }
 
-static int recv_response(struct coap_client *client, struct coap_packet *response)
+static int recv_response(struct coap_client *client, struct coap_packet *response, bool *truncated)
 {
-	int len;
+	int total_len;
+	int available_len;
 	int ret;
 
 	memset(client->recv_buf, 0, sizeof(client->recv_buf));
-	len = receive(client->fd, client->recv_buf, sizeof(client->recv_buf), ZSOCK_MSG_DONTWAIT,
-		      &client->address, &client->socklen);
+	total_len = receive(client->fd, client->recv_buf, sizeof(client->recv_buf),
+			    ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_TRUNC, &client->address,
+			    &client->socklen);
 
-	if (len < 0) {
+	if (total_len < 0) {
 		LOG_ERR("Error reading response: %d", errno);
 		return -EINVAL;
-	} else if (len == 0) {
+	} else if (total_len == 0) {
 		LOG_ERR("Zero length recv");
 		return -EINVAL;
 	}
 
-	LOG_DBG("Received %d bytes", len);
+	available_len = MIN(total_len, sizeof(client->recv_buf));
+	*truncated = available_len < total_len;
 
-	ret = coap_packet_parse(response, client->recv_buf, len, NULL, 0);
+	LOG_DBG("Received %d bytes", available_len);
+
+	ret = coap_packet_parse(response, client->recv_buf, available_len, NULL, 0);
 	if (ret < 0) {
 		LOG_ERR("Invalid data received");
 		return ret;
@@ -615,7 +620,8 @@ static bool find_echo_option(const struct coap_packet *response, struct coap_opt
 	return coap_find_options(response, COAP_OPTION_ECHO, option, 1);
 }
 
-static int handle_response(struct coap_client *client, const struct coap_packet *response)
+static int handle_response(struct coap_client *client, const struct coap_packet *response,
+			   bool response_truncated)
 {
 	int ret = 0;
 	int response_type;
@@ -735,10 +741,10 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 
 	/* Check if block2 exists */
 	block_option = coap_get_option_int(response, COAP_OPTION_BLOCK2);
-	if (block_option > 0) {
+	if (block_option > 0 || response_truncated) {
 		blockwise_transfer = true;
-		last_block = !GET_MORE(block_option);
-		block_num = GET_BLOCK_NUM(block_option);
+		last_block = response_truncated ? false : !GET_MORE(block_option);
+		block_num = (block_option > 0) ? GET_BLOCK_NUM(block_option) : 0;
 
 		if (block_num == 0) {
 			coap_block_transfer_init(&internal_req->recv_blk_ctx,
@@ -864,10 +870,11 @@ static void coap_client_recv(void *coap_cl, void *a, void *b)
 		for (int i = 0; i < num_clients; i++) {
 			if (clients[i]->response_ready) {
 				struct coap_packet response;
+				bool response_truncated;
 
 				k_mutex_lock(&clients[i]->lock, K_FOREVER);
 
-				ret = recv_response(clients[i], &response);
+				ret = recv_response(clients[i], &response, &response_truncated);
 				if (ret < 0) {
 					LOG_ERR("Error receiving response");
 					clients[i]->response_ready = false;
@@ -875,7 +882,7 @@ static void coap_client_recv(void *coap_cl, void *a, void *b)
 					continue;
 				}
 
-				ret = handle_response(clients[i], &response);
+				ret = handle_response(clients[i], &response, response_truncated);
 				if (ret < 0) {
 					LOG_ERR("Error handling response");
 				}
