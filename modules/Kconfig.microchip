@@ -8,10 +8,12 @@ config HAS_MEC_HAL
 config HAS_MPFS_HAL
 	bool "Microchip MPFS HAL drivers support"
 
-config MPLABX
+config HAS_PIC32C_HAL
+	bool "Microchip PIC32C HAL drivers support"
+
+config PIC32C
 	bool
 	select HAS_CMSIS_CORE
-	depends on SOC_FAMILY_MICROCHIP_PIC32CXSG
 
 config HAS_PIC32CXSG_HAL
 	bool "Microchip PIC32CXSG HAL drivers support"
