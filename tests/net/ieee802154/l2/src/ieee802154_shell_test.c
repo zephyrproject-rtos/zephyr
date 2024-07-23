@@ -45,12 +45,16 @@ K_SEM_DEFINE(scan_lock, 0, 1);
 #define EXPECTED_ENDDEVICE_EXT_ADDR_STR    "08:07:06:05:04:03:02:01"
 #define EXPECTED_ENDDEVICE_SHORT_ADDR      0xaaaa
 
+#define EXPECTED_PAYLOAD_DATA EXPECTED_ENDDEVICE_EXT_ADDR_LE
+#define EXPECTED_PAYLOAD_LEN  8
+
 static void scan_result_cb(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
 			   struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_req_params *scan_ctx = ctx->scan_ctx;
 	uint8_t expected_coordinator_address[] = {EXPECTED_COORDINATOR_ADDR_BE};
+	uint8_t expected_payload_data[] = {EXPECTED_PAYLOAD_DATA};
 
 	/* No need for scan_ctx locking as we should execute exclusively. */
 
@@ -62,6 +66,10 @@ static void scan_result_cb(struct net_mgmt_event_callback *cb, uint32_t mgmt_eve
 	zassert_mem_equal(scan_ctx->addr, expected_coordinator_address, IEEE802154_EXT_ADDR_LENGTH);
 	zassert_equal(scan_ctx->lqi, EXPECTED_COORDINATOR_LQI,
 		      "Scan did not receive correct link quality indicator.");
+
+	zassert_equal(scan_ctx->beacon_payload_len, EXPECTED_PAYLOAD_LEN,
+		      "Scan did not include the payload");
+	zassert_mem_equal(scan_ctx->beacon_payload, expected_payload_data, EXPECTED_PAYLOAD_LEN);
 
 	k_sem_give(&scan_lock);
 }
@@ -201,7 +209,7 @@ ZTEST(ieee802154_l2_shell, test_active_scan)
 		0x00, 0xc0, /* Superframe Specification: PAN coordinator + association permitted */
 		0x00, /* GTS */
 		0x00, /* Pending Addresses */
-		0x00, 0x00 /* Payload */
+		EXPECTED_PAYLOAD_DATA /* Layer 3 payload */
 	};
 	struct net_pkt *pkt;
 
