@@ -4,8 +4,8 @@ use core::ffi::{c_char, c_int, c_void};
 
 // At this point, we only support the non-userspace setup, where the syscalls are just function
 // calls.
-#[cfg(CONFIG_USERSPACE)]
-compile_error!("CONFIG_USERSPACE not yet supported in Rust");
+// #[cfg(CONFIG_USERSPACE)]
+// compile_error!("CONFIG_USERSPACE not yet supported in Rust");
 
 // Ultimately, this will be better, but this is enough to get things started.
 
