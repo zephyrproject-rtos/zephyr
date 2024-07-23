@@ -22,7 +22,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_br);
 
-static bt_br_discovery_cb_t *discovery_cb;
 struct bt_br_discovery_result *discovery_results;
 static size_t discovery_results_size;
 static size_t discovery_results_count;
@@ -325,7 +324,6 @@ static bool eir_has_name(const uint8_t *eir)
 
 void bt_br_discovery_reset(void)
 {
-	discovery_cb = NULL;
 	discovery_results = NULL;
 	discovery_results_size = 0;
 	discovery_results_count = 0;
@@ -365,10 +363,6 @@ static void report_discovery_results(void)
 		if (listener->timeout) {
 			listener->timeout(discovery_results, discovery_results_count);
 		}
-	}
-
-	if (discovery_cb) {
-		discovery_cb(discovery_results, discovery_results_count);
 	}
 
 	bt_br_discovery_reset();
@@ -598,10 +592,6 @@ check_names:
 		if (listener->timeout) {
 			listener->timeout(discovery_results, discovery_results_count);
 		}
-	}
-
-	if (discovery_cb) {
-		discovery_cb(discovery_results, discovery_results_count);
 	}
 }
 
@@ -941,8 +931,7 @@ static bool valid_br_discov_param(const struct bt_br_discovery_param *param, siz
 }
 
 int bt_br_discovery_start(const struct bt_br_discovery_param *param,
-			  struct bt_br_discovery_result *results, size_t cnt,
-			  bt_br_discovery_cb_t cb)
+			  struct bt_br_discovery_result *results, size_t cnt)
 {
 	int err;
 
@@ -965,7 +954,6 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 
 	(void)memset(results, 0, sizeof(*results) * cnt);
 
-	discovery_cb = cb;
 	discovery_results = results;
 	discovery_results_size = cnt;
 	discovery_results_count = 0;
@@ -1013,7 +1001,6 @@ int bt_br_discovery_stop(void)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	discovery_cb = NULL;
 	discovery_results = NULL;
 	discovery_results_size = 0;
 	discovery_results_count = 0;

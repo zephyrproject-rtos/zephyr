@@ -56,21 +56,6 @@ struct bt_br_discovery_result {
 	uint8_t eir[240];
 };
 
-/**
- * @typedef bt_br_discovery_cb_t
- * @brief Callback type for reporting BR/EDR discovery (inquiry)
- *        results.
- *
- * A callback of this type is given to the bt_br_discovery_start()
- * function and will be called at the end of the discovery with
- * information about found devices populated in the results array.
- *
- * @param results Storage used for discovery results
- * @param count Number of valid discovery results.
- */
-typedef void bt_br_discovery_cb_t(struct bt_br_discovery_result *results,
-				  size_t count);
-
 /** BR/EDR discovery parameters */
 struct bt_br_discovery_param {
 	/** Maximum length of the discovery in units of 1.28 seconds.
@@ -86,24 +71,21 @@ struct bt_br_discovery_param {
  * @brief Start BR/EDR discovery
  *
  * Start BR/EDR discovery (inquiry) and provide results through the specified
- * callback. When bt_br_discovery_cb_t is called it indicates that discovery
- * has completed. If more inquiry results were received during session than
+ * callback. The discovery results will be notified through callbacks
+ * registered by @ref bt_br_discovery_cb_register.
+ * If more inquiry results were received during session than
  * fits in provided result storage, only ones with highest RSSI will be
  * reported.
  *
  * @param param Discovery parameters.
  * @param results Storage for discovery results.
  * @param count Number of results in storage. Valid range: 1-255.
- * @param cb Callback to notify discovery results.
- *           May be NULL if callback registration through
- *           @ref bt_br_discovery_cb_register is preferred.
  *
  * @return Zero on success or error code otherwise, positive in case
  * of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_br_discovery_start(const struct bt_br_discovery_param *param,
-			  struct bt_br_discovery_result *results, size_t count,
-			  bt_br_discovery_cb_t cb);
+			  struct bt_br_discovery_result *results, size_t count);
 
 /**
  * @brief Stop BR/EDR discovery.
