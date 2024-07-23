@@ -123,6 +123,19 @@ struct net_pkt {
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
+#if defined(CONFIG_WIREGUARD)
+	struct {
+		/** Original network interface */
+		struct net_if *iface;
+		/** Pointer to IP header of the encrypted pkt */
+		union net_ip_header ip_hdr;
+		/** Pointer to UDP header of the encrypted pkt */
+		union net_proto_header proto_hdr;
+		/** Peer id */
+		int peer_id;
+	} wg;
+#endif
+
 #if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_TXTIME)
 	/**
 	 * TX or RX timestamp if available
@@ -409,6 +422,53 @@ static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 	ARG_UNUSED(iface);
 #endif
 }
+
+#if defined(CONFIG_WIREGUARD)
+static inline struct net_if *net_pkt_wg_iface(struct net_pkt *pkt)
+{
+	return pkt->wg.iface;
+}
+
+static inline void net_pkt_set_wg_iface(struct net_pkt *pkt,
+					struct net_if *iface)
+{
+	pkt->wg.iface = iface;
+}
+
+static inline union net_ip_header *net_pkt_wg_ip_hdr(struct net_pkt *pkt)
+{
+	return &pkt->wg.ip_hdr;
+}
+
+static inline void net_pkt_set_wg_ip_hdr(struct net_pkt *pkt,
+					 union net_ip_header *ip_hdr)
+{
+	pkt->wg.ip_hdr = *ip_hdr;
+}
+
+static inline union net_proto_header *net_pkt_wg_udp_hdr(struct net_pkt *pkt)
+{
+	return &pkt->wg.proto_hdr;
+}
+
+static inline void net_pkt_set_wg_udp_hdr(struct net_pkt *pkt,
+					  union net_proto_header *proto_hdr)
+{
+	pkt->wg.proto_hdr = *proto_hdr;
+}
+
+static inline int net_pkt_wg_peer_id(struct net_pkt *pkt)
+{
+	return pkt->wg.peer_id;
+}
+
+static inline void net_pkt_set_wg_peer_id(struct net_pkt *pkt,
+					  int peer_id)
+{
+	pkt->wg.peer_id = peer_id;
+}
+
+#endif
 
 static inline uint8_t net_pkt_family(struct net_pkt *pkt)
 {

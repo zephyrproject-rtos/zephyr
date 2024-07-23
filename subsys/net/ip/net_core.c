@@ -655,6 +655,14 @@ static inline int services_init(void)
 
 	net_coap_init();
 
+	if (IS_ENABLED(CONFIG_WIREGUARD)) {
+		status = wireguard_init();
+		if (status != 0) {
+			NET_WARN("Cannot start Wireguard (%d)", status);
+			status = 0;
+		}
+	}
+
 	net_shell_init();
 
 	return status;
