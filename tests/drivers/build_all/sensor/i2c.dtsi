@@ -1082,3 +1082,9 @@ test_i2c_icm42670: icm42670@92 {
 	gyro-hz = <800>;
 	gyro-fs = <2000>;
 };
+
+test_i2c_mcp9843@93 {
+	compatible = "microchip,mcp9843";
+	reg = <0x93>;
+	resolution = <3>;
+};
