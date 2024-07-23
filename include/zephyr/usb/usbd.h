@@ -1004,6 +1004,17 @@ int usbd_device_set_pid(struct usbd_context *const uds_ctx,
 			const uint16_t pid);
 
 /**
+ * @brief Set USB device descriptor value bcdDevice
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] bcd     bcdDevice value
+ *
+ * @return 0 on success, other values on fail.
+ */
+int usbd_device_set_bcd_device(struct usbd_context *const uds_ctx,
+			       const uint16_t bcd);
+
+/**
  * @brief Set USB device descriptor code triple Base Class, SubClass, and Protocol
  *
  * @param[in] uds_ctx    Pointer to USB device support context

@@ -121,6 +121,30 @@ set_pid_exit:
 	return ret;
 }
 
+int usbd_device_set_bcd_device(struct usbd_context *const uds_ctx,
+			       const uint16_t bcd)
+{
+	struct usb_device_descriptor *fs_desc, *hs_desc;
+	int ret = 0;
+
+	usbd_device_lock(uds_ctx);
+
+	if (usbd_is_enabled(uds_ctx)) {
+		ret = -EALREADY;
+		goto set_bcd_device_exit;
+	}
+
+	fs_desc = get_device_descriptor(uds_ctx, USBD_SPEED_FS);
+	fs_desc->bcdDevice = sys_cpu_to_le16(bcd);
+
+	hs_desc = get_device_descriptor(uds_ctx, USBD_SPEED_HS);
+	hs_desc->bcdDevice = sys_cpu_to_le16(bcd);
+
+set_bcd_device_exit:
+	usbd_device_unlock(uds_ctx);
+	return ret;
+}
+
 int usbd_device_set_code_triple(struct usbd_context *const uds_ctx,
 				const enum usbd_speed speed,
 				const uint8_t base_class,
