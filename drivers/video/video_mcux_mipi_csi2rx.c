@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
@@ -201,6 +202,115 @@ static inline int mipi_csi2rx_set_ctrl(const struct device *dev, unsigned int ci
 	return -ENOTSUP;
 }
 
+static int mipi_csi2rx_set_frmival(const struct device *dev, enum video_endpoint_id ep,
+				   struct video_frmival *frmival)
+{
+	const struct mipi_csi2rx_config *config = dev->config;
+	int ret;
+
+	ret = video_set_frmival(config->sensor_dev, ep, frmival);
+	if (ret) {
+		LOG_ERR("Cannot set sensor_dev frmival");
+		return ret;
+	}
+
+	ret = mipi_csi2rx_update_settings(dev, ep);
+
+	return ret;
+}
+
+static int mipi_csi2rx_get_frmival(const struct device *dev, enum video_endpoint_id ep,
+				   struct video_frmival *frmival)
+{
+	const struct mipi_csi2rx_config *config = dev->config;
+
+	return video_get_frmival(config->sensor_dev, ep, frmival);
+}
+
+static uint64_t mipi_csi2rx_cal_frame_size(const struct video_format *fmt)
+{
+	return fmt->height * fmt->width * video_pix_fmt_bpp(fmt->pixelformat) * 8;
+}
+
+static uint64_t mipi_csi2rx_estimate_pixel_rate(const struct video_frmival *cur_fmival,
+						const struct video_frmival *fie_frmival,
+						const struct video_format *cur_format,
+						const struct video_format *fie_format,
+						uint64_t cur_pixel_rate, uint8_t laneNum)
+{
+	return mipi_csi2rx_cal_frame_size(cur_format) * fie_frmival->denominator *
+	       cur_fmival->numerator * cur_pixel_rate /
+	       (mipi_csi2rx_cal_frame_size(fie_format) * fie_frmival->numerator *
+		cur_fmival->denominator);
+}
+
+static int mipi_csi2rx_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
+				    struct video_frmival_enum *fie)
+{
+	const struct mipi_csi2rx_config *config = dev->config;
+	struct mipi_csi2rx_data *drv_data = dev->data;
+	int ret;
+	uint64_t cur_pixel_rate, est_pixel_rate;
+	struct video_frmival cur_frmival;
+	struct video_format cur_fmt;
+
+	ret = video_enum_frmival(config->sensor_dev, ep, fie);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_get_ctrl(config->sensor_dev, VIDEO_CID_PIXEL_RATE, &cur_pixel_rate);
+	if (ret) {
+		LOG_ERR("Cannot get sensor_dev pixel rate");
+		return ret;
+	}
+
+	ret = video_get_frmival(config->sensor_dev, ep, &cur_frmival);
+	if (ret) {
+		LOG_ERR("Cannot get sensor_dev frame rate");
+		return ret;
+	}
+
+	ret = video_get_format(config->sensor_dev, ep, &cur_fmt);
+	if (ret) {
+		LOG_ERR("Cannot get sensor_dev format");
+		return ret;
+	}
+
+	if (fie->type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
+		est_pixel_rate = mipi_csi2rx_estimate_pixel_rate(
+			&cur_frmival, &fie->discrete, &cur_fmt, fie->format, cur_pixel_rate,
+			drv_data->csi2rxConfig.laneNum);
+		if (est_pixel_rate > MAX_SUPPORTED_PIXEL_RATE) {
+			return -EINVAL;
+		}
+
+	} else {
+		/* Check the lane rate of the lower bound framerate */
+		est_pixel_rate = mipi_csi2rx_estimate_pixel_rate(
+			&cur_frmival, &fie->stepwise.min, &cur_fmt, fie->format, cur_pixel_rate,
+			drv_data->csi2rxConfig.laneNum);
+		if (est_pixel_rate > MAX_SUPPORTED_PIXEL_RATE) {
+			return -EINVAL;
+		}
+
+		/* Check the lane rate of the upper bound framerate */
+		est_pixel_rate = mipi_csi2rx_estimate_pixel_rate(
+			&cur_frmival, &fie->stepwise.max, &cur_fmt, fie->format, cur_pixel_rate,
+			drv_data->csi2rxConfig.laneNum);
+		if (est_pixel_rate > MAX_SUPPORTED_PIXEL_RATE) {
+			fie->stepwise.max.denominator =
+				(mipi_csi2rx_cal_frame_size(&cur_fmt) * MAX_SUPPORTED_PIXEL_RATE *
+				 cur_frmival.denominator) /
+				(mipi_csi2rx_cal_frame_size(fie->format) * cur_pixel_rate *
+				 cur_frmival.numerator);
+			fie->stepwise.max.numerator = 1;
+		}
+	}
+
+	return 0;
+}
+
 static const struct video_driver_api mipi_csi2rx_driver_api = {
 	.get_caps = mipi_csi2rx_get_caps,
 	.get_format = mipi_csi2rx_get_fmt,
@@ -208,6 +318,9 @@ static const struct video_driver_api mipi_csi2rx_driver_api = {
 	.stream_start = mipi_csi2rx_stream_start,
 	.stream_stop = mipi_csi2rx_stream_stop,
 	.set_ctrl = mipi_csi2rx_set_ctrl,
+	.set_frmival = mipi_csi2rx_set_frmival,
+	.get_frmival = mipi_csi2rx_get_frmival,
+	.enum_frmival = mipi_csi2rx_enum_frmival,
 };
 
 static int mipi_csi2rx_init(const struct device *dev)
