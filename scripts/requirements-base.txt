@@ -18,9 +18,11 @@ canopen
 packaging
 progress
 psutil
+py7zr; sys_platform == "win32"
 pylink-square
 pyserial
 requests
+semver
 
 # for ram/rom reports
 anytree
