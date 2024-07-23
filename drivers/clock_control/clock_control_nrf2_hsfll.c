@@ -17,6 +17,8 @@ LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "multiple instances not supported");
 
+#include <hal/nrf_hsfll.h>
+
 #ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
 #include <ld_dvfs_handler.h>
 
@@ -48,7 +50,17 @@ struct hsfll_dev_data {
 	NRF2_STRUCT_CLOCK_CONFIG(hsfll, ARRAY_SIZE(clock_options)) clk_cfg;
 	struct k_timer timer;
 };
+#endif /* CONFIG_NRFS_HAS_DVFS_SERVICE */
 
+struct hsfll_dev_config {
+	NRF_HSFLL_Type *hsfll;
+	uint32_t trim_vsup;
+	uint32_t trim_coarse;
+	uint32_t trim_fine;
+	uint8_t multiplier;
+};
+
+#ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
 static void freq_setting_applied_cb(enum dvfs_frequency_setting new_setting)
 {
 	ARG_UNUSED(new_setting);
@@ -194,6 +206,28 @@ static int api_get_rate_hsfll(const struct device *dev,
 
 static int hsfll_init(const struct device *dev)
 {
+	const struct hsfll_dev_config *dev_config = dev->config;
+	nrf_hsfll_trim_t trim = {
+		.vsup   = sys_read32(dev_config->trim_vsup),
+		.coarse = sys_read32(dev_config->trim_coarse),
+		.fine   = sys_read32(dev_config->trim_fine),
+	};
+
+	LOG_DBG("Trim: HSFLL VSUP: 0x%.8x",   trim.vsup);
+	LOG_DBG("Trim: HSFLL COARSE: 0x%.8x", trim.coarse);
+	LOG_DBG("Trim: HSFLL FINE: 0x%.8x",   trim.fine);
+
+	nrf_hsfll_clkctrl_mult_set(dev_config->hsfll, dev_config->multiplier);
+	nrf_hsfll_trim_set(dev_config->hsfll, &trim);
+
+	nrf_hsfll_task_trigger(dev_config->hsfll, NRF_HSFLL_TASK_FREQ_CHANGE);
+	/* HSFLL task frequency change needs to be triggered twice to take effect.*/
+	nrf_hsfll_task_trigger(dev_config->hsfll, NRF_HSFLL_TASK_FREQ_CHANGE);
+
+	LOG_DBG("NRF_HSFLL->TRIM.VSUP = %d",   dev_config->hsfll->TRIM.VSUP);
+	LOG_DBG("NRF_HSFLL->TRIM.COARSE = %d", dev_config->hsfll->TRIM.COARSE);
+	LOG_DBG("NRF_HSFLL->TRIM.FINE = %d",   dev_config->hsfll->TRIM.FINE);
+
 #ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
 	struct hsfll_dev_data *dev_data = dev->data;
 	int rc;
@@ -225,14 +259,30 @@ static struct nrf_clock_control_driver_api hsfll_drv_api = {
 	.cancel_or_release = api_cancel_or_release_hsfll,
 };
 
+#define HSFLL_MUTLIPLIER(n) \
+	DT_PROP(DT_DRV_INST(n), clock_frequency) / \
+		DT_PROP(DT_CLOCKS_CTLR(DT_DRV_INST(n)), clock_frequency)
+
+#define FICR_ADDR_GET(n, name) \
+	DT_REG_ADDR(DT_PHANDLE_BY_NAME(DT_DRV_INST(n), nordic_ficrs, name)) + \
+		DT_PHA_BY_NAME(DT_DRV_INST(n), nordic_ficrs, name, offset)
+
 #ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
 static struct hsfll_dev_data hsfll_data;
 #endif
+
+static const struct hsfll_dev_config hsfll_config = {
+	.hsfll = (NRF_HSFLL_Type *)DT_INST_REG_ADDR(0),
+	.multiplier  = HSFLL_MUTLIPLIER(0),
+	.trim_vsup   = FICR_ADDR_GET(0, vsup),
+	.trim_coarse = FICR_ADDR_GET(0, coarse),
+	.trim_fine   = FICR_ADDR_GET(0, fine),
+};
 
 DEVICE_DT_INST_DEFINE(0, hsfll_init, NULL,
 		      COND_CODE_1(CONFIG_NRFS_HAS_DVFS_SERVICE,
 				  (&hsfll_data),
 				  (NULL)),
-		      NULL,
+		      &hsfll_config,
 		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &hsfll_drv_api);
