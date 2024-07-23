@@ -173,7 +173,14 @@ struct bt_gatt_attr {
 	bt_gatt_attr_read_func_t read;
 	/** Attribute write callback */
 	bt_gatt_attr_write_func_t write;
-	/** Attribute user data */
+	/** @brief Attribute user data.
+	 *
+	 * When the attribute is a local attribute, this parameter contains
+	 * user provided data.
+	 * When the attribute is a remote attribute obtained through service discovery,
+	 * this parameter contains temporary information about the discovered attribute.
+	 * See @ref bt_gatt_discover_func_t for more details.
+	 */
 	void *user_data;
 	/** Attribute handle */
 	uint16_t handle;
