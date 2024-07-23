@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Vogl Electronic GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip MCP9842/98243 I2C Thermocouple EMF to Temperature Converter. See
+  https://www.microchip.com/wwwproducts/en/MCP9600.
+
+compatible: "microchip,mcp9843"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  resolution:
+    type: int
+    default: 1
+    description: |
+      Sensor resolution. Default is 0.25°C (0b01),
+      which is the power-up default.
+      0 = 0.5°C
+      1 = 0.25°C
+      2 = 0.125°C
+      3 = 0.0625°C
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
