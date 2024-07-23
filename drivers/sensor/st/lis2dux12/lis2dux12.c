@@ -27,10 +27,12 @@ LOG_MODULE_REGISTER(LIS2DUX12, CONFIG_SENSOR_LOG_LEVEL);
 
 static int lis2dux12_set_odr(const struct device *dev, uint8_t odr)
 {
+	struct lis2dux12_data *data = dev->data;
 	const struct lis2dux12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lis2dux12_md_t mode = {.odr = odr};
 
+	data->odr = odr;
 	return lis2dux12_mode_set(ctx, &mode);
 }
 
@@ -40,7 +42,7 @@ static int lis2dux12_set_range(const struct device *dev, uint8_t range)
 	struct lis2dux12_data *data = dev->data;
 	const struct lis2dux12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lis2dux12_md_t val = { .odr = cfg->odr, .fs = range };
+	lis2dux12_md_t val = { .odr = data->odr, .fs = range };
 
 	err = lis2dux12_mode_set(ctx, &val);
 
@@ -66,6 +68,7 @@ static int lis2dux12_set_range(const struct device *dev, uint8_t range)
 		break;
 	}
 
+	data->range = range;
 	return 0;
 }
 
@@ -187,7 +190,7 @@ static int lis2dux12_sample_fetch_accel(const struct device *dev)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 	/* fetch raw data sample */
-	lis2dux12_md_t mode = {.fs = cfg->range};
+	lis2dux12_md_t mode = {.fs = data->range};
 	lis2dux12_xl_data_t xzy_data = {0};
 
 	if (lis2dux12_xl_data_get(ctx, &mode, &xzy_data) < 0) {
@@ -355,11 +358,7 @@ static int lis2dux12_init(const struct device *dev)
 
 	/* set sensor default pm and odr */
 	LOG_DBG("%s: pm: %d, odr: %d", dev->name, cfg->pm, cfg->odr);
-	lis2dux12_md_t mode = {
-		.odr = cfg->odr,
-		.fs = cfg->range,
-	};
-	ret = lis2dux12_mode_set(ctx, &mode);
+	ret = lis2dux12_set_odr(dev, cfg->odr);
 	if (ret < 0) {
 		LOG_ERR("%s: odr init error (12.5 Hz)", dev->name);
 		return ret;
