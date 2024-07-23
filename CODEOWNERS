@@ -41,6 +41,7 @@
 /soc/riscv/riscv-privileged/gd32vf103/     @soburi
 /soc/starfive/jh71xx/ 			  @pfarwsi
 /soc/riscv/riscv-privileged/niosv/         @sweeaun
+/boards/adafruit/feather_nrf52840/        @jacobw
 /boards/ene/                              @ene-steven
 /boards/arm/96b_argonkey/                 @avisconti
 /boards/arm/96b_avenger96/                @Mani-Sadhasivam
