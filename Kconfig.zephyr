@@ -692,6 +692,7 @@ config CLEANUP_INTERMEDIATE_FILES
 	  (Software Bill of Material generation), and maybe others.
 
 config BUILD_NO_GAP_FILL
+	default y
 	bool "Don't fill gaps in generated hex/bin/s19 files."
 
 config BUILD_OUTPUT_HEX
