@@ -162,8 +162,8 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 	}
 
 	if (IS_ENABLED(CONFIG_SAMPLE_USBD_20_EXTENSION_DESC)) {
-		(void)usbd_device_set_bcd(&sample_usbd, USBD_SPEED_FS, 0x0201);
-		(void)usbd_device_set_bcd(&sample_usbd, USBD_SPEED_HS, 0x0201);
+		(void)usbd_device_set_bcd_usb(&sample_usbd, USBD_SPEED_FS, 0x0201);
+		(void)usbd_device_set_bcd_usb(&sample_usbd, USBD_SPEED_HS, 0x0201);
 
 		err = usbd_add_descriptor(&sample_usbd, &sample_usbext);
 		if (err) {

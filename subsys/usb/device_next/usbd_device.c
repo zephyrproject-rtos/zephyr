@@ -52,8 +52,8 @@ get_device_descriptor(struct usbd_context *const uds_ctx,
 	}
 }
 
-int usbd_device_set_bcd(struct usbd_context *const uds_ctx,
-			const enum usbd_speed speed, const uint16_t bcd)
+int usbd_device_set_bcd_usb(struct usbd_context *const uds_ctx,
+			    const enum usbd_speed speed, const uint16_t bcd)
 {
 	struct usb_device_descriptor *desc;
 	int ret = 0;
