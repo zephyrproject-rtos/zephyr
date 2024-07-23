@@ -52,7 +52,7 @@ __attribute__((weak)) int arch_printk_char_out(int c)
 }
 /* LCOV_EXCL_STOP */
 
-int (*_char_out)(int c) = arch_printk_char_out;
+static int (*_char_out)(int c) = arch_printk_char_out;
 
 /**
  * @brief Install the character output routine for printk
