@@ -15,6 +15,10 @@ include!(concat!(env!("OUT_DIR"), "/kconfig.rs"));
 #[cfg(not(CONFIG_RUST))]
 compile_error!("CONFIG_RUST must be set to build Rust in Zephyr");
 
+// Printk is provided if it is configured into the build.
+#[cfg(CONFIG_PRINTK)]
+pub mod printk;
+
 use core::panic::PanicInfo;
 
 /// Override rust's panic.  This simplistic initial version just hangs in a loop.
@@ -22,4 +26,10 @@ use core::panic::PanicInfo;
 fn panic(_ :&PanicInfo) -> ! {
     loop {
     }
+}
+
+/// Provide symbols used by macros in a crate-local namespace.
+#[doc(hidden)]
+pub mod _export {
+    pub use core::format_args;
 }
