@@ -8,6 +8,7 @@
 #include <zephyr/ztest.h>
 
 #define REF_V DT_PROP(DT_PATH(zephyr_user), reference_mv)
+#define EXP_ACC DT_PROP(DT_PATH(zephyr_user), expected_accuracy)
 
 extern const struct adc_dt_spec *get_adc_channel(void);
 
@@ -31,7 +32,7 @@ static int test_ref_to_adc(void)
 	ret = adc_raw_to_millivolts_dt(adc_channel, &sample_buffer);
 	zassert_equal(ret, 0, "adc_raw_to_millivolts_dt() failed with code %d",
 		      ret);
-	zassert_within(sample_buffer, REF_V, 32,
+	zassert_within(sample_buffer, REF_V, EXP_ACC,
 		"Value %d mV read from ADC does not match expected range (%d mV).",
 		sample_buffer, REF_V);
 
