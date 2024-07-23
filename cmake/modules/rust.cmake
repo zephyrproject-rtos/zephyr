@@ -3,7 +3,7 @@
 # Rust make support
 
 # Zephyr targets are defined through Kconfig.  We need to map these to
-# an appropriate llbm target triple.  This sets `RUST_TARGET` in the
+# an appropriate llvm target triple.  This sets `RUST_TARGET` in the
 # parent scope, or an error if the target is not yet supported by
 # Rust.
 function(_rust_map_target)
