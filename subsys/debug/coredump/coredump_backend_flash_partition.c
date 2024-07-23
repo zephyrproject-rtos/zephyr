@@ -525,7 +525,7 @@ static void coredump_flash_backend_buffer_output(uint8_t *buf, size_t buflen)
 			copy_sz = remaining;
 		}
 
-		(void)memcpy(tmp_buf, ptr, copy_sz);
+		(void)memmove(tmp_buf, ptr, copy_sz);
 
 		for (i = 0; i < copy_sz; i++) {
 			backend_ctx.checksum += tmp_buf[i];
