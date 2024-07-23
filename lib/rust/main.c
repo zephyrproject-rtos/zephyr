@@ -4,6 +4,7 @@
  */
 
 /* This main is brought into the Rust application. */
+#include <zephyr/kernel.h>
 
 #ifdef CONFIG_RUST
 
@@ -14,5 +15,15 @@ int main(void)
 	rust_main();
 	return 0;
 }
+
+#ifdef CONFIG_PRINTK
+/*
+ * Until we have syscall support in Rust, wrap this syscall.
+ */
+void wrapped_str_out(char *c, size_t n)
+{
+	k_str_out(c, n);
+}
+#endif
 
 #endif
