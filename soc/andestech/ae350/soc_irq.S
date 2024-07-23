@@ -47,6 +47,16 @@ SECTION_FUNC(exception.other, __soc_restore_context)
 #ifdef CONFIG_SOC_ANDES_V5_HWDSP
 	csrw NDS_UCODE, t1
 #endif
+
+#if defined(CONFIG_SOC_ANDES_V5_EXCSLVL) && defined(CONFIG_PMP_STACK_GUARD)
+	/*
+	 * PMP stack guard manages mstatus.MPRV and mstatus.MPP via software.
+	 * Clear msavestatus.MPP1 to prevent the hardware from disabling the PMP
+	 * stack guard by restoring mstatus.MPP.
+	 */
+	csrci NDS_MSAVESTATUS, (0x3 << 1)
+#endif
+
 	ret
 
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */

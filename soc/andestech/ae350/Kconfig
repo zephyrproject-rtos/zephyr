@@ -116,4 +116,15 @@ config SOC_ANDES_V5_IOCP
 		between cache and external non-caching master, such as DMA
 		controller.
 
+config SOC_ANDES_V5_EXCSLVL
+	bool "Andes V5 Exception Additional Save Levels (EXCSLVL)"
+	select RISCV_SOC_CONTEXT_SAVE if PMP_STACK_GUARD
+	default y
+	help
+		This option enables the Andes V5 Exception Additional Save
+		Levels (EXCSLVL). When this feature is supported, there is
+		additional CSRs to save/restore one or two levels of
+		NMI/exception state when NMI/exception entry and exit.
+		e.g. mstatus.MPIE => msavestatus.MPIE1 => msavestatus.MPIE2
+
 endif # SOC_SERIES_ANDES_AE350
