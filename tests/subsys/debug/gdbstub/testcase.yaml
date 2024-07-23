@@ -11,6 +11,13 @@ common:
   filter: CONFIG_ARCH_HAS_GDBSTUB
 
 tests:
+  # Basic build-only test for all platforms supporting gdbstub
+  debug.gdbstub.build_only:
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_a9
+    build_only: true
+
   # Connect to Zephyr gdbstub and run a simple GDB script
   debug.gdbstub.breakpoints:
     platform_allow:
