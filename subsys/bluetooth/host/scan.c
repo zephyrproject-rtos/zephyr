@@ -784,7 +784,7 @@ void bt_periodic_sync_disable(void)
 	}
 }
 
-struct bt_le_per_adv_sync *bt_hci_get_per_adv_sync(uint16_t handle)
+struct bt_le_per_adv_sync *bt_hci_per_adv_sync_lookup_handle(uint16_t handle)
 {
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
 		if (per_adv_sync_pool[i].handle == handle &&
@@ -845,7 +845,7 @@ static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->handle));
+	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->handle));
 
 	if (!per_adv_sync) {
 		LOG_ERR("Unknown handle 0x%04X for periodic advertising report",
@@ -1202,7 +1202,7 @@ void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 		(struct bt_hci_evt_le_per_adv_sync_lost *)buf->data;
 	struct bt_le_per_adv_sync *per_adv_sync;
 
-	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->handle));
+	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->handle));
 
 	if (!per_adv_sync) {
 		LOG_ERR("Unknown handle 0x%04Xfor periodic adv sync lost",
@@ -1367,7 +1367,7 @@ void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->sync_handle));
+	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->sync_handle));
 
 	if (!per_adv_sync) {
 		LOG_ERR("Unknown handle 0x%04X for periodic advertising report",
