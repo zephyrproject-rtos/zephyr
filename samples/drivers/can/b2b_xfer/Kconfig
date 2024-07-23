@@ -1,0 +1,41 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Controller Area Network board-to-board transfer sample"
+
+config SAMPLE_CAN_B2B_XFER_SENDER_CAN_ID
+	hex "CAN Tx ID"
+	default 0x123
+	range 0x000 0x7ff
+	help
+	  Sender node transmit CAN ID.
+
+config SAMPLE_CAN_B2B_XFER_REPLIER_CAN_ID
+	hex "CAN Tx ID"
+	default 0x321
+	range 0x000 0x7ff
+	help
+	  Replier node transmit CAN ID.
+
+choice SAMPLE_CAN_B2B_XFER_ROLE
+	prompt  "Select between sender and replier role"
+	default SAMPLE_CAN_B2B_XFER_ROLE_SENDER
+
+config SAMPLE_CAN_B2B_XFER_ROLE_SENDER
+	bool "Node role is sender"
+	help
+	  Sender node sends CAN frame with SENDER_CAN_ID when
+	  sw0 button is pressed. It listens reply CAN frame with
+	  REPLIER_CAN_ID.
+
+config SAMPLE_CAN_B2B_XFER_ROLE_REPLIER
+	bool "Node role is replier"
+	help
+	  Replier node listens on CAN frame with SENDER_CAN_ID
+	  and reply CAN frame with REPLIER_CAN_ID.
+
+endchoice # SAMPLE_CAN_B2B_XFER_ROLE
+
+endmenu
+
+source "Kconfig.zephyr"
