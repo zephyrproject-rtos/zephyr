@@ -315,10 +315,7 @@ static const struct stm32_temp_config stm32_temp_dev_config = {
 	.ts_cal1_addr = (const void *)DT_INST_PROP(0, ts_cal1_addr),
 	.ts_cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
 #if defined(HAS_SINGLE_CALIBRATION)
-	/* DT property is premultiplied by 1000 to cope with Device Tree
-	 * properties being integer-only. Rescale here during compile.
-	 */
-	.average_slope = ((float)DT_INST_PROP(0, avgslope) / 1000.0f),
+	.average_slope = ((float)DT_INST_STRING_UNQUOTED(0, avgslope)),
 #else /* HAS_DUAL_CALIBRATION */
 	.ts_cal2_addr = (const void *)DT_INST_PROP(0, ts_cal2_addr),
 	.ts_cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
@@ -326,10 +323,7 @@ static const struct stm32_temp_config stm32_temp_dev_config = {
 	.calib_data_shift = (DT_INST_PROP(0, ts_cal_resolution) - CAL_RES),
 	.calib_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
 #else
-	/* DT property is premultiplied by 10 to cope with Device Tree
-	 * properties being integer-only. Rescale here during compile.
-	 */
-	.average_slope = ((float)DT_INST_PROP(0, avgslope) / 10.0f),
+	.average_slope = ((float)DT_INST_STRING_UNQUOTED(0, avgslope)),
 	.v25 = DT_INST_PROP(0, v25),
 #endif
 	.is_ntc = DT_INST_PROP_OR(0, ntc, false)

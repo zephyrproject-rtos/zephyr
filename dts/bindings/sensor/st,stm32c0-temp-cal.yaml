@@ -7,11 +7,3 @@ description: |
 compatible: "st,stm32c0-temp-cal"
 
 include: "st,stm32-temp-cal-common.yaml"
-
-properties:
-  avgslope:
-    type: int
-    required: true
-    description: |
-      Average slope of T-V chart (in µV/°C), found in MCU datasheet
-      chapters "Electrical characteristics" or "Operating conditions"

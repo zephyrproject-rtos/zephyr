@@ -346,7 +346,7 @@
 		ts-cal1-addr = <0x1FFF7568>;
 		ts-cal1-temp = <30>;
 		ts-cal-vrefanalog = <3000>;
-		avgslope = <2530>;
+		avgslope = "2.53";
 		io-channels = <&adc1 9>;
 		status = "disabled";
 	};

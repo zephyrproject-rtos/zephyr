@@ -365,7 +365,7 @@
 		compatible = "st,stm32-temp";
 		io-channels = <&adc1 16>;
 		status = "disabled";
-		avgslope = <43>;
+		avgslope = "4.3";
 		v25 = <1430>;
 		ntc;
 	};
