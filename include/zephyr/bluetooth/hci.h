@@ -122,6 +122,15 @@ int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle);
  */
 int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle);
 
+/** @brief Get advertising set given an advertising handle
+ *
+ * @param handle The advertising handle
+ *
+ * @returns The corresponding advertising set on success,
+ *          NULL if it does not exist.
+ */
+struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle);
+
 /** @brief Get periodic advertising sync handle.
  *
  * @param sync Periodic advertising sync set.
