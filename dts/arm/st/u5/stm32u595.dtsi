@@ -96,6 +96,26 @@
 			st,adc-clock-source = <ASYNC>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
+
+		usbotg_hs: otghs@42040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x42040000 0x20000>;
+			interrupts = <73 0>;
+			interrupt-names = "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "high-speed";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x0000c000>,
+				 <&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
+			phys = <&otghs_phy>;
+			status = "disabled";
+		};
+	};
+
+	otghs_phy: otghs_phy {
+		/* Clock source defined by USBPHYC_SEL in */
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 
 	smbus5: smbus5 {
