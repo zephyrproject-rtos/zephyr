@@ -1072,3 +1072,9 @@ test_i2c_lsm9ds1: lsm9ds1@91 {
 	compatible = "st,lsm9ds1";
 	reg = <0x8e>;
 };
+
+test_i2c_mcp9843@92 {
+	compatible = "microchip,mcp9843";
+	reg = <0x92>;
+	resolution = <3>;
+};
