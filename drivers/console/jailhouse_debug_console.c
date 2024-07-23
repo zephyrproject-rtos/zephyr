@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/printk-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
@@ -24,10 +25,6 @@ static int console_out(int c)
 			  : "+r" (x0), "+r" (x1) : : );
 	return c;
 }
-#endif
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-extern void __stdout_hook_install(int (*hook)(int));
 #endif
 
 /**
