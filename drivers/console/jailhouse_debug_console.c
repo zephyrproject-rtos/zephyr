@@ -5,6 +5,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/printk-hooks.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
@@ -27,18 +28,6 @@ static int console_out(int c)
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 extern void __stdout_hook_install(int (*hook)(int));
-#else
-#define __stdout_hook_install(x)		\
-	do {/* nothing */			\
-	} while ((0))
-#endif
-
-#if defined(CONFIG_PRINTK)
-extern void __printk_hook_install(int (*fn)(int));
-#else
-#define __printk_hook_install(x)		\
-	do {/* nothing */			\
-	} while ((0))
 #endif
 
 /**
@@ -47,8 +36,12 @@ extern void __printk_hook_install(int (*fn)(int));
  */
 static int jailhouse_console_init(void)
 {
+#if defined(CONFIG_STDOUT_CONSOLE)
 	__stdout_hook_install(console_out);
+#endif
+#if defined(CONFIG_PRINTK)
 	__printk_hook_install(console_out);
+#endif
 	return 0;
 }
 

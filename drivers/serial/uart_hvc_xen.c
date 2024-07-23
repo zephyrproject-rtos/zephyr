@@ -17,6 +17,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys/printk-hooks.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_hvc_xen, CONFIG_UART_LOG_LEVEL);
@@ -267,7 +268,6 @@ DEVICE_DT_DEFINE(DT_NODELABEL(xen_hvc), xen_console_init, NULL, &xen_hvc_data,
 		&xen_hvc_api);
 
 #ifdef CONFIG_XEN_EARLY_CONSOLEIO
-extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
 
 int xen_consoleio_putc(int c)
