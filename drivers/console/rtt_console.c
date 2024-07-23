@@ -11,11 +11,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/printk-hooks.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <SEGGER_RTT.h>
 
-extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
 
 static bool host_present;
