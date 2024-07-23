@@ -313,6 +313,7 @@ _oops:
     push {r1, r2}
     push {r4-r11}
     mov  r1, sp /* pointer to _callee_saved_t */
+    mov r2, lr /* EXC_RETURN */
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
     bl z_do_kernel_oops

@@ -150,10 +150,12 @@ offload:
 
 _oops:
     /*
-     * Pass the exception frame to z_do_kernel_oops.  r1 contains the
-     * exception reason.
+     * Pass the exception frame to z_do_kernel_oops.
      */
     mov r0, sp
+    /* zero callee_regs and EXC_RETURN (only used on Cortex-M) */
+    mov r1, #0
+    mov r2, #0
     bl z_do_kernel_oops
 
 inv:
