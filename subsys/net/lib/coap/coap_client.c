@@ -774,6 +774,13 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		}
 	}
 
+	/* Until the last block of a transfer, limit data size sent to the application to the block
+	 * size, to avoid data above block size being repeated when the next block is received.
+	 */
+	if (blockwise_transfer && !last_block) {
+		payload_len = MIN(payload_len, CONFIG_COAP_CLIENT_BLOCK_SIZE);
+	}
+
 	/* Call user callback */
 	if (internal_req->coap_request.cb) {
 		if (!atomic_set(&internal_req->in_callback, 1)) {
