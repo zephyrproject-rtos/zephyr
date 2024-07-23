@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2024 Microchip
  *
+ *  
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -127,7 +128,7 @@ typedef volatile       uint8_t  RwReg8;  /**< Read-Write  8-bit register (volati
 #define TRNG                          (0x42002800) /**< \brief (TRNG) APB Base Address */
 #define USB                           (0x41000000) /**< \brief (USB) APB Base Address */
 #define WDT                           (0x40002000) /**< \brief (WDT) APB Base Address */
-#else
+#else	/* #if defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__) */
 #define AC                ((Ac       *)0x42002000UL) /**< \brief (AC) APB Base Address */
 #define AC_INST_NUM       1                          /**< \brief (AC) Number of instances */
 #define AC_INSTS          { AC }                     /**< \brief (AC) Instances List */
@@ -318,7 +319,8 @@ typedef volatile       uint8_t  RwReg8;  /**< Read-Write  8-bit register (volati
 #include "tc_fixup_pic32cxsg.h"
 #include "gmac_fixup_pic32cxsg.h"
 #include "adc_fixup_pic32cxsg.h"
-#include "../common/soc_port.h"
+
+/*#include "../common/soc_port.h"*/
 #include "../common/microchip_pic32cxsg_dt.h"
 
 #include "../common/component/ac_component_fixup_pic32cxsg.h"
@@ -427,5 +429,10 @@ typedef volatile       uint8_t  RwReg8;  /**< Read-Write  8-bit register (volati
 #define SOC_MICROCHIP_PIC32CXSG_MCK_FREQ_HZ SOC_MICROCHIP_PIC32CXSG_HCLK_FREQ_HZ
 #define SOC_MICROCHIP_PIC32CXSG_GCLK0_FREQ_HZ SOC_MICROCHIP_PIC32CXSG_MCK_FREQ_HZ
 #define SOC_MICROCHIP_PIC32CXSG_GCLK2_FREQ_HZ 48000000
+
+#define SOC_ATMEL_SAM0_HCLK_FREQ_HZ 			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#define SOC_ATMEL_SAM0_MCK_FREQ_HZ 				SOC_MICROCHIP_PIC32CXSG_HCLK_FREQ_HZ
+#define SOC_ATMEL_SAM0_GCLK0_FREQ_HZ 			SOC_MICROCHIP_PIC32CXSG_MCK_FREQ_HZ
+#define SOC_ATMEL_SAM0_GCLK2_FREQ_HZ 			48000000
 
 #endif /* _SOC_MICROCHIP_PIC32CXSG61_SOC_H_ */
