@@ -537,9 +537,9 @@ Build system and Infrastructure
   * Added support for enabling LTO for whole application (:github:`69519`).
 
   * Fixed ``FILE_SUFFIX`` issues relating to double application of suffixes, non-application in
-    sysbuild and variable name clases in CMake functions (:github:`70124`, :github:`71280`).
+    sysbuild and variable name clashes in CMake functions (:github:`70124`, :github:`71280`).
 
-  * Added support for new agressive size optimisation flag (for GCC and Clang) using
+  * Added support for new aggressive size optimisation flag (for GCC and Clang) using
     :kconfig:option:`CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE` (:github:`70511`).
 
   * Fixed issue with printing out ``BUILD_VERSION`` if it was empty (:github:`70970`).
@@ -584,7 +584,7 @@ Drivers and Sensors
     * Added configuration of internal reference voltage value to ad559x to support
       calls of :c:func:`adc_raw_to_millivolts()`.
     * Fixed issue with driver initialization causing improper operation in the ad559x driver
-      regarding the availibility of :kconfig:option:`CONFIG_THREAD_NAME`.
+      regarding the availability of :kconfig:option:`CONFIG_THREAD_NAME`.
     * Improved the ADC read efficiency and validation in ad559x driver.
   * ESP32 changes
 
