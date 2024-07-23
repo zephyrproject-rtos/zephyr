@@ -63,13 +63,11 @@ pub fn build_kconfig_mod() {
             writeln!(&mut f, "    #[allow(dead_code)]").unwrap();
             writeln!(&mut f, "    pub const {}: usize = {};",
                 &caps[1], &caps[2]).unwrap();
-        }
-        if let Some(caps) = config_int.captures(&line) {
+        } else if let Some(caps) = config_int.captures(&line) {
             writeln!(&mut f, "    #[allow(dead_code)]").unwrap();
             writeln!(&mut f, "    pub const {}: isize = {};",
                 &caps[1], &caps[2]).unwrap();
-        }
-        if let Some(caps) = config_str.captures(&line) {
+        } else if let Some(caps) = config_str.captures(&line) {
             writeln!(&mut f, "    #[allow(dead_code)]").unwrap();
             writeln!(&mut f, "    pub const {}: &'static str = {};",
                 &caps[1], &caps[2]).unwrap();
