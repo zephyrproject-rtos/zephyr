@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CC23X0_SYSTIM_TIMER
+	bool "TI SimpleLink CC23X0 system clock timer"
+	default y
+	depends on HAS_CC23X0_SDK
+	select TICKLESS_CAPABLE
+	help
+	  This module provides the "system clock driver" interfaces
+	  for the TI Simplelink CC23X0 devices.
