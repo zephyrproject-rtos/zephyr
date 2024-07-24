@@ -341,7 +341,7 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 
 		if (IS_ENABLED(CONFIG_DEMAND_PAGING) &&
 		    reason != K_ERR_STACK_CHK_FAIL &&
-		    z_arm64_do_demand_paging(esr, far)) {
+		    z_arm64_do_demand_paging(esf, esr, far)) {
 			return;
 		}
 
