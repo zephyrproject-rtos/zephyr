@@ -221,7 +221,7 @@ static int lis2dux12_sample_fetch_temp(const struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_temp = sys_le16_to_cpu(temp_data.heat.raw);
+	data->sample_temp = sys_le16_to_cpu(temp_data.heat.deg_c);
 
 	return 0;
 }
@@ -282,7 +282,7 @@ static inline int lis2dux12_get_channel(enum sensor_channel chan, struct sensor_
 		break;
 #if defined(CONFIG_LIS2DUX12_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		sensor_value_from_double(val, data->sample_temp);
+		sensor_value_from_float(val, data->sample_temp);
 		break;
 #endif
 	default:
