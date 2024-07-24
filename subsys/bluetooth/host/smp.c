@@ -37,7 +37,6 @@
 #include "keys.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
-#include "classic/l2cap_br_interface.h"
 #include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_SMP_LOG_LEVEL
@@ -710,7 +709,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		struct bt_smp_br *smp;
 
-		chan = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SMP);
+		chan = bt_l2cap_br_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SMP);
 		__ASSERT(chan, "No SMP channel found");
 
 		smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
@@ -1462,7 +1461,7 @@ static int smp_br_error(struct bt_smp_br *smp, uint8_t reason)
 	 * SMP timer is not restarted for PairingFailed so don't use
 	 * smp_br_send
 	 */
-	if (bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf,
+	if (bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf,
 				NULL, NULL)) {
 		net_buf_unref(buf);
 	}
@@ -6037,8 +6036,8 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept, NULL);
 #if defined(CONFIG_BT_CLASSIC)
-BT_L2CAP_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
-			bt_smp_br_accept, NULL);
+BT_L2CAP_BR_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
+			bt_smp_br_accept);
 #endif /* CONFIG_BT_CLASSIC */
 
 int bt_smp_init(void)
