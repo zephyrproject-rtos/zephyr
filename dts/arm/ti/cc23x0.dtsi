@@ -56,6 +56,11 @@
 				write-block-size = <0x10>;
 			};
 		};
+
+		pinctrl: pinctrl@40003000 {
+			compatible = "ti,cc23x0-pinctrl";
+			reg = <0x40003000 0xc14>;
+		};
 	};
 };
 
