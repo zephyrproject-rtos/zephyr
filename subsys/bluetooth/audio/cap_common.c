@@ -153,6 +153,7 @@ static bool active_proc_is_commander(void)
 	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_GAIN_CHANGE:
 	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_MUTE_CHANGE:
 	case BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START:
+	case BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP:
 		return true;
 	default:
 		return false;
@@ -180,7 +181,7 @@ bool bt_cap_common_conn_in_active_proc(const struct bt_conn *conn)
 				return true;
 			}
 		}
-#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
+#endif /* CONFIG_BT_CAP_COMMANDER */
 	}
 
 	return false;
