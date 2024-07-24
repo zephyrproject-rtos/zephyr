@@ -18,6 +18,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/usb/usb_ch9.h>
+#include <zephyr/usb/usbd.h>
 #include <usb_dwc2_hw.h>
 
 #include <zephyr/logging/log.h>
@@ -1840,14 +1841,14 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_ULPI:
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
 			   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_ULPI;
-		dcfg |= USB_DWC2_DCFG_DEVSPD_USBHS20
-			<< USB_DWC2_DCFG_DEVSPD_POS;
+		dcfg |= usb_dwc2_set_dcfg_devspd(USBD_SUPPORTS_HIGH_SPEED ?
+		    USB_DWC2_DCFG_DEVSPD_USBHS20 : USB_DWC2_DCFG_DEVSPD_USBFS20);
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_UTMIPLUS:
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
 			   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_UTMI;
-		dcfg |= USB_DWC2_DCFG_DEVSPD_USBHS20
-			<< USB_DWC2_DCFG_DEVSPD_POS;
+		dcfg |= usb_dwc2_set_dcfg_devspd(USBD_SUPPORTS_HIGH_SPEED ?
+		    USB_DWC2_DCFG_DEVSPD_USBHS20 : USB_DWC2_DCFG_DEVSPD_USBFS20);
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_NO_HS:
 		__fallthrough;
@@ -1857,8 +1858,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 			gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB11;
 		}
 
-		dcfg |= USB_DWC2_DCFG_DEVSPD_USBFS1148
-			<< USB_DWC2_DCFG_DEVSPD_POS;
+		dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBFS1148);
 	}
 
 	if (usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4)) {
