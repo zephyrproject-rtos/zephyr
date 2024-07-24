@@ -114,9 +114,21 @@ function(zephyr_mcuboot_tasks)
     set(imgtool_args --key "${keyfile}" ${imgtool_args})
   endif()
 
-  # Use overwrite-only instead of swap upgrades.
   if(CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY)
+    # Use overwrite-only instead of swap upgrades.
     set(imgtool_args --overwrite-only --align 1 ${imgtool_args})
+  elseif(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+    # RAM load requires setting the location of where to load the image to
+    dt_chosen(chosen_ram PROPERTY "zephyr,sram")
+    dt_reg_addr(chosen_ram_address PATH ${chosen_ram})
+    dt_nodelabel(slot0_partition NODELABEL "slot0_partition" REQUIRED)
+    dt_reg_addr(slot0_partition_address PATH ${slot0_partition})
+    dt_nodelabel(slot1_partition NODELABEL "slot1_partition" REQUIRED)
+    dt_reg_addr(slot1_partition_address PATH ${slot1_partition})
+
+    set(imgtool_args --align 1 --load-addr ${chosen_ram_address} ${imgtool_args})
+    set(imgtool_args_alt_slot ${imgtool_args} --hex-addr ${slot1_partition_address})
+    set(imgtool_args ${imgtool_args} --hex-addr ${slot0_partition_address})
   else()
     set(imgtool_args --align ${write_block_size} ${imgtool_args})
   endif()
@@ -156,6 +168,27 @@ function(zephyr_mcuboot_tasks)
                    ${imgtool_sign} ${imgtool_args} --encrypt "${keyfile_enc}" ${output}.bin
                    ${output}.signed.encrypted.bin)
     endif()
+
+    if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+      list(APPEND byproducts ${output}.slot1.signed.encrypted.bin)
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                   ${imgtool_sign} ${imgtool_args_alt_slot} ${output}.bin
+                   ${output}.slot1.signed.bin)
+
+      if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
+        list(APPEND byproducts ${output}.slot1.signed.confirmed.bin)
+        set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                     ${imgtool_sign} ${imgtool_args_alt_slot} --pad --confirm ${output}.bin
+                     ${output}.slot1.signed.confirmed.bin)
+      endif()
+
+      if(NOT "${keyfile_enc}" STREQUAL "")
+        list(APPEND byproducts ${output}.slot1.signed.encrypted.bin)
+        set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                     ${imgtool_sign} ${imgtool_args_alt_slot} --encrypt "${keyfile_enc}"
+                     ${output}.bin ${output}.slot1.signed.encrypted.bin)
+      endif()
+    endif()
   endif()
 
   # Set up .hex outputs.
@@ -187,8 +220,28 @@ function(zephyr_mcuboot_tasks)
                    ${imgtool_sign} ${imgtool_args} --encrypt "${keyfile_enc}" ${output}.hex
                    ${output}.signed.encrypted.hex)
     endif()
-  endif()
 
+    if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+      list(APPEND byproducts ${output}.slot1.signed.hex)
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                   ${imgtool_sign} ${imgtool_args_alt_slot} ${output}.hex
+                   ${output}.slot1.signed.hex)
+
+      if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
+        list(APPEND byproducts ${output}.slot1.signed.confirmed.hex)
+        set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                     ${imgtool_sign} ${imgtool_args_alt_slot} --pad --confirm ${output}.hex
+                     ${output}.slot1.signed.confirmed.hex)
+      endif()
+
+      if(NOT "${keyfile_enc}" STREQUAL "")
+        list(APPEND byproducts ${output}.slot1.signed.encrypted.hex)
+        set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                     ${imgtool_sign} ${imgtool_args_alt_slot} --encrypt "${keyfile_enc}"
+                     ${output}.hex ${output}.slot1.signed.encrypted.hex)
+      endif()
+    endif()
+  endif()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
 endfunction()
 
