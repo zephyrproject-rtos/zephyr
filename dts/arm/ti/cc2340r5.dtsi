@@ -13,3 +13,25 @@
 		reg = <0x20000000 DT_SIZE_K(36)>;
 	};
 };
+
+/* Main flash */
+&flash0 {
+	reg = <0x0 DT_SIZE_K(512)>;
+};
+
+/* CCFG */
+&flash1 {
+	reg = <0x4e020000 DT_SIZE_K(2)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ti_ccfg_partition: partition@4e020000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x4e020000 0x800>;
+			zephyr,memory-region = "FLASH_CCFG";
+		};
+	};
+};
