@@ -2650,10 +2650,11 @@ static void handle_ongoing_block2_tx(struct lwm2m_message *msg, struct coap_pack
 {
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 	int r;
+	bool more;
 	uint32_t block;
 	enum coap_block_size block_size;
 
-	r = coap_get_block2_option(cpkt, &block);
+	r = coap_get_block2_option(cpkt, &more, &block);
 	if (r < 0) {
 		LOG_ERR("Failed to parse BLOCK2");
 		return;
