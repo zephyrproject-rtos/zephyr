@@ -71,6 +71,14 @@
 			#gpio-cells = <2>;	/* Pin (ID), and flags */
 			ngpios = <26>;		/* Only [DIO0, DIO25] are available */
 		};
+
+		uart0: uart@40034000 {
+			compatible = "ti,cc23x0-uart";
+			reg = <0x40034000 0x52>;
+			interrupts = <11 0>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
 	};
 };
 
