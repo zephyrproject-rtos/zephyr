@@ -218,6 +218,6 @@ References
 .. _Telink TLSR9 series chipset: https://wiki.telink-semi.cn/wiki/chip-series/TLSR951x-Series/
 .. _Telink B91 Generic Starter Kit Hardware Guide: https://wiki.telink-semi.cn/wiki/Hardware/B91_Generic_Starter_Kit_Hardware_Guide/
 .. _Burning and Debugging Tools for all Series: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
-.. _Burning and Debugging Tools for Linux: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/Telink_Libusb_BDT-Linux-X64-1.5.2.1.tar
+.. _Burning and Debugging Tools for Linux: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/Telink_libusb_BDT-Linux-X64-V1.6.0.zip
 .. _Burning and Debugging Tools for Windows: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/BDT.zip
 .. _Zephyr Getting Started Guide: https://docs.zephyrproject.org/latest/getting_started/index.html
