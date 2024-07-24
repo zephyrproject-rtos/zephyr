@@ -1558,8 +1558,24 @@ void arch_mem_scratch(uintptr_t phys)
 	}
 }
 
+static bool do_mem_page_fault(struct arch_esf *esf, uintptr_t virt)
+{
+	/*
+	 * The k_mem_page_fault() code expects to be called with IRQs enabled
+	 * if the fault happened in a context where IRQs were enabled.
+	 */
+	if (arch_irq_unlocked(esf->spsr)) {
+		enable_irq();
+	}
+
+	bool ok = k_mem_page_fault((void *)virt);
+
+	disable_irq();
+	return ok;
+}
+
 /* Called from the fault handler. Returns true if the fault is resolved. */
-bool z_arm64_do_demand_paging(uint64_t esr, uint64_t far)
+bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 {
 	uintptr_t virt = far;
 	uint64_t *pte, desc;
@@ -1586,12 +1602,12 @@ bool z_arm64_do_demand_paging(uint64_t esr, uint64_t far)
 	pte = get_pte_location(&kernel_ptables, virt);
 	if (!pte) {
 		/* page mapping doesn't exist, let the core code do its thing */
-		return k_mem_page_fault((void *)virt);
+		return do_mem_page_fault(esf, virt);
 	}
 	desc = *pte;
 	if ((desc & PTE_DESC_TYPE_MASK) != PTE_PAGE_DESC) {
 		/* page is not loaded/mapped */
-		return k_mem_page_fault((void *)virt);
+		return do_mem_page_fault(esf, virt);
 	}
 
 	/*
