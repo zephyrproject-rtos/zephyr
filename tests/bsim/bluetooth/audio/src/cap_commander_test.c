@@ -51,6 +51,7 @@ static uint32_t broadcaster_broadcast_id;
 
 static uint8_t received_base[UINT8_MAX];
 static uint8_t received_base_size;
+static uint8_t src_id[CONFIG_BT_MAX_CONN];
 
 static struct k_sem sem_disconnected;
 static struct k_sem sem_cas_discovered;
@@ -66,6 +67,7 @@ CREATE_FLAG(flag_microphone_mute_changed);
 CREATE_FLAG(flag_microphone_gain_changed);
 
 CREATE_FLAG(flag_broadcast_reception_start);
+CREATE_FLAG(flag_broadcast_reception_stop);
 CREATE_FLAG(flag_broadcaster_found);
 CREATE_FLAG(flag_base_received);
 CREATE_FLAG(flag_recv_state_updated_with_bis_sync);
@@ -166,6 +168,16 @@ static void cap_broadcast_reception_start_cb(struct bt_conn *conn, int err)
 
 	SET_FLAG(flag_broadcast_reception_start);
 }
+
+static void cap_broadcast_reception_stop_cb(struct bt_conn *conn, int err)
+{
+	if (err != 0) {
+		FAIL("Failed to perform broadcast reception stop for conn %p: %d\n", conn, err);
+		return;
+	}
+
+	SET_FLAG(flag_broadcast_reception_stop);
+}
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT*/
 
 static struct bt_cap_commander_cb cap_cb = {
@@ -185,6 +197,7 @@ static struct bt_cap_commander_cb cap_cb = {
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 	.broadcast_reception_start = cap_broadcast_reception_start_cb,
+	.broadcast_reception_stop = cap_broadcast_reception_stop_cb,
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT*/
 };
 
@@ -428,6 +441,7 @@ bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char bad_code[BT_ISO_BROADCAST_CODE_SIZE * 2 + 1];
+	size_t acceptor_count = get_dev_cnt() - 2;
 
 	if (err != 0) {
 		FAIL("BASS recv state read failed (%d)\n", err);
@@ -449,6 +463,12 @@ bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 	if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
 		FAIL("Encryption state is BT_BAP_BIG_ENC_STATE_BAD_CODE");
 		return;
+	}
+
+	for (size_t index = 0; index < acceptor_count; index++) {
+		if (conn == connected_conns[index]) {
+			src_id[index] = state->src_id;
+		}
 	}
 
 	for (uint8_t i = 0; i < state->num_subgroups; i++) {
@@ -544,6 +564,7 @@ static void init(size_t acceptor_cnt)
 	UNSET_FLAG(flag_microphone_gain_changed);
 
 	UNSET_FLAG(flag_broadcast_reception_start);
+	UNSET_FLAG(flag_broadcast_reception_stop);
 	UNSET_FLAG(flag_broadcaster_found);
 	UNSET_FLAG(flag_base_received);
 	UNSET_FLAG(flag_recv_state_updated_with_bis_sync);
@@ -978,17 +999,31 @@ static void test_broadcast_reception_start(size_t acceptor_count)
 
 static void test_broadcast_reception_stop(size_t acceptor_count)
 {
-	struct bt_cap_commander_broadcast_reception_stop_param reception_stop_param;
+	struct bt_cap_commander_broadcast_reception_stop_param reception_stop_param = {0};
+	struct bt_cap_commander_broadcast_reception_stop_member_param param[CONFIG_BT_MAX_CONN] = {
+		0};
+
 	int err;
 
-	/* reception stop is not implemented yet, for now the following command will fail*/
 	reception_stop_param.type = BT_CAP_SET_TYPE_AD_HOC;
-	reception_stop_param.param = NULL;
-	reception_stop_param.count = 0U;
+	reception_stop_param.param = param;
+	reception_stop_param.count = acceptor_count;
+	for (size_t i = 0; i < acceptor_count; i++) {
+		uint8_t num_subgroups;
+
+		reception_stop_param.param[i].member.member = connected_conns[i];
+
+		reception_stop_param.param[i].src_id = src_id[i];
+		num_subgroups =
+			bt_bap_base_get_subgroup_count((const struct bt_bap_base *)received_base);
+		reception_stop_param.param[i].num_subgroups = num_subgroups;
+	}
 	err = bt_cap_commander_broadcast_reception_stop(&reception_stop_param);
 	if (err != 0) {
-		printk("Command not implemented yet, could not stop broadcast reception %d\n", err);
+		FAIL("Could not initiate broadcast reception stop: %d\n", err);
+		return;
 	}
+	WAIT_FOR_FLAG(flag_broadcast_reception_stop);
 }
 
 static void test_main_cap_commander_capture_and_render(void)
@@ -1070,8 +1105,7 @@ static void test_main_cap_commander_broadcast_reception(void)
 
 	backchannel_sync_wait_any(); /* wait for the acceptor to receive data */
 
-	backchannel_sync_wait_any(); /* wait for the acceptor to receive a metadata update
-				      */
+	backchannel_sync_wait_any(); /* wait for the acceptor to receive a metadata update */
 
 	test_broadcast_reception_stop(acceptor_count);
 
