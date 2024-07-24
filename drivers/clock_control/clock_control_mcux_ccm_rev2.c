@@ -225,6 +225,19 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		clock_root = kCLOCK_Root_Netc;
 		break;
 #endif
+
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+	case IMX_CCM_MIPI_CSI2RX_ROOT_CLK:
+		clock_root = kCLOCK_Root_Csi2;
+		break;
+	case IMX_CCM_MIPI_CSI2RX_ESC_CLK:
+		clock_root = kCLOCK_Root_Csi2_Esc;
+		break;
+	case IMX_CCM_MIPI_CSI2RX_UI_CLK:
+		clock_root = kCLOCK_Root_Csi2_Ui;
+		break;
+#endif
+
 	default:
 		return -EINVAL;
 	}
@@ -264,6 +277,16 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 		 */
 		return flexspi_clock_set_freq(clock_name, clock_rate);
 #endif
+
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+	case IMX_CCM_MIPI_CSI2RX_ROOT_CLK:
+		return mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2, clock_rate);
+	case IMX_CCM_MIPI_CSI2RX_UI_CLK:
+		return mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2_Ui, clock_rate);
+	case IMX_CCM_MIPI_CSI2RX_ESC_CLK:
+		return mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2_Esc, clock_rate);
+#endif
+
 	default:
 		/* Silence unused variable warning */
 		ARG_UNUSED(clock_rate);
