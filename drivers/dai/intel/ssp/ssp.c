@@ -873,7 +873,9 @@ static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 		sys_write16((pcmsycm & 0xffff), reg_add);
 	}
 #elif defined(CONFIG_SOC_INTEL_ACE30_PTL)
-	const struct dai_intel_ipc4_ssp_configuration_blob *blob = spec_config;
+	const struct ipc4_copier_gateway_cfg *spec_config_data = spec_config;
+	const struct dai_intel_ipc4_ssp_configuration_blob *blob =
+		     (void *)spec_config_data->config_data;
 	uint64_t time_slot_map = 0;
 	uint16_t pcmsycm = cfg->link_config;
 	uint8_t slot_count = 0;
@@ -1871,7 +1873,12 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 
 static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_config)
 {
-	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob = spec_config;
+	const struct ipc4_copier_gateway_cfg *spec_config_data = spec_config;
+	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob15 =
+		     (void *)spec_config_data->config_data;
+	const struct dai_intel_ipc4_ssp_configuration_blob *blob =
+		     (void *)spec_config_data->config_data;
+
 	int aux_tlv_size = sizeof(struct ssp_intel_aux_tlv);
 	int hop, i, j, cfg_len, pre_aux_len, aux_len;
 	struct ssp_intel_aux_tlv *aux_tlv;
@@ -1885,12 +1892,21 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	struct ssp_intel_link_ctl *link;
 #endif
+	uint32_t dma_config_size;
 	uint8_t *aux_ptr;
 
-	cfg_len = blob->size;
-	pre_aux_len = sizeof(*blob) + blob->i2s_mclk_control.mdivrcnt * sizeof(uint32_t);
-	aux_len = cfg_len - pre_aux_len;
-	aux_ptr = (uint8_t *)blob + pre_aux_len;
+	if (blob15->version == SSP_BLOB_VER_1_5) {
+		cfg_len = blob15->size;
+		pre_aux_len = sizeof(*blob15) + blob15->i2s_mclk_control.mdivrcnt * sizeof(uint32_t);
+		aux_len = cfg_len - pre_aux_len;
+		aux_ptr = (uint8_t *)blob15 + pre_aux_len;
+	} else {
+		cfg_len = spec_config_data->config_length * sizeof(uint32_t);
+		dma_config_size = sizeof(struct ipc_dma_config) + sizeof(struct ssp_intel_aux_tlv);
+		pre_aux_len = sizeof(struct dai_intel_ipc4_ssp_configuration_blob);
+		aux_len = cfg_len - pre_aux_len - dma_config_size;
+		aux_ptr = (uint8_t *)blob + pre_aux_len;
+	}
 
 	if (aux_len <= 0)
 		return 0;
@@ -2075,8 +2091,11 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_config *cfg,
 				   const void *spec_config)
 {
-	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob15 = spec_config;
-	const struct dai_intel_ipc4_ssp_configuration_blob *blob = spec_config;
+	const struct ipc4_copier_gateway_cfg *spec_config_data = spec_config;
+	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob15 =
+		     (void *)spec_config_data->config_data;
+	const struct dai_intel_ipc4_ssp_configuration_blob *blob =
+		     (void *)spec_config_data->config_data;
 	struct dai_intel_ssp_plat_data *ssp_plat_data = dai_get_plat_data(dp);
 	int err;
 
@@ -2091,10 +2110,11 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 		return 0;
 	}
 
+	err = dai_ssp_parse_aux_data(dp, spec_config);
+	if (err)
+		return err;
+
 	if (blob15->version == SSP_BLOB_VER_1_5) {
-		err = dai_ssp_parse_aux_data(dp, spec_config);
-		if (err)
-			return err;
 		dai_ssp_set_reg_config(dp, cfg, &blob15->i2s_ssp_config);
 		err = dai_ssp_set_clock_control_ver_1_5(dp, &blob15->i2s_mclk_control);
 		if (err)

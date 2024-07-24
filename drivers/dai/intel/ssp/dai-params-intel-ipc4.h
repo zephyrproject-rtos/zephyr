@@ -70,6 +70,35 @@ enum dai_intel_ipc4_connector_node_id_type {
 	dai_intel_ipc4_max_connector_node_id_type
 };
 
+/* Maximum number of devices */
+#define GTW_DMA_DEVICE_MAX_COUNT 16
+
+struct dma_device_stream_channel_map {
+	uint32_t device_address;
+	uint32_t channel_map;
+};
+
+struct dma_stream_channel_map {
+	uint32_t device_count;
+	struct dma_device_stream_channel_map map[GTW_DMA_DEVICE_MAX_COUNT];
+};
+
+struct ipc_dma_config {
+	uint8_t dma_method;		/**< DMA method */
+	uint8_t pre_allocated_by_host;	/**< 1 - DMA pre-allocated by host, otherwise to be
+					  *       allocated by DSP
+					  */
+	uint16_t rsvd;
+	uint32_t dma_channel_id;	/**< channel ID if DMA pre-allocated by host, otherwise
+					  *   invalid channel ID
+					  */
+	uint32_t stream_id;
+	/* DmaStreamChannelMap */
+	struct dma_stream_channel_map channel_map;
+	uint32_t dma_priv_config_size;
+	uint8_t  dma_priv_config[0];
+} __packed __aligned(4);
+
 struct ssp_intel_aux_tlv {
 	uint32_t type;
 	uint32_t size;
@@ -149,6 +178,30 @@ union dai_intel_ipc4_connector_node_id {
 		uint32_t _rsvd : 19;
 	} f; /**<< Bits */
 } __packed;
+
+
+struct ipc4_copier_gateway_cfg {
+	/* ID of Gateway Node. If node_id is valid, i.e. != -1, copier instance is connected to the
+	 * specified gateway using either input pin 0 or output pin 0 depending on
+	 * the node's direction, otherwise the data in this structure is ignored.
+	 */
+	union dai_intel_ipc4_connector_node_id node_id;
+	/* preferred Gateway DMA buffer size (in bytes).
+	 * FW attempts to allocate DMA buffer according to this value, however it may
+	 * fall back to IBS/OBS * 2 in case there is no memory available for deeper
+	 * buffering.
+	 */
+	uint32_t dma_buffer_size;
+	/* length of gateway node configuration blob specified in #config_data.
+	 * Length must be specified in number of dwords.
+	 * Refer to the specific gateway documentation for details on the node
+	 * configuration blob requirements.
+	 */
+	uint32_t config_length;
+	/* gateway node configuration blob */
+	uint32_t config_data[1];
+} __packed;
+
 
 /*!
  * Attributes are usually provided along with the gateway configuration
