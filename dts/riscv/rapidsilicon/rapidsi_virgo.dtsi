@@ -150,7 +150,7 @@
 		 spi0: spi@A0800000 {
 			 compatible = "andestech,atcspi200";
 			 reg = <0xA0800000 0xFFFF>;
-			 interrupts = <24 5>;
+			 interrupts = <24 10>;
 			 interrupt-parent = <&eclic>;
 			 dmas = <&dma0 0 0 0x009>,
 					<&dma0 1 1 0x00A>;
@@ -168,7 +168,7 @@
 			 interrupt-parent = <&eclic>;
 			 dma-channels = <8>;
 			 dma-requests = <32>;
-			 chain-transfer = <1>;
+			 chain-transfer = <0>;
 			 #dma-cells = <3>;
 			 status = "disabled";
 		 };

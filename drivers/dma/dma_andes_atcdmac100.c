@@ -49,26 +49,6 @@ LOG_MODULE_REGISTER(dma_andes_atcdmac100);
 #define DMA_CH_LL_PTR_L(dev, ch)	\
 		(((struct dma_atcdmac100_cfg *)dev->config)->base + 0x54 + DMA_CH_OFFSET(ch))
 
-/* ID and Revision Register Bits */
-#define DMA_REV_MINOR_OFFSET	0
-#define DMA_REV_MINOR_MASK		GENMASK(3, 0)
-#define DMA_REV_MAJOR_OFFSET	4
-#define DMA_REV_MAJOR_MASK		GENMASK(11, 4)
-#define DMA_ID_OFFSET			12
-#define DMA_ID_MASK				GENMASK(31, 12)
-
-/* Configuration Register Bits */
-#define DMA_RO_CFG_CH_NUM_OFFSET	0
-#define DMA_RO_CFG_CH_NUM_MASK		GENMASK(3, 0)
-#define DMA_RO_FIFO_DEPTH_OFFSET	4
-#define DMA_RO_FIFO_DEPTH_MASK		GENMASK(9, 4)
-#define DMA_RO_REQ_ACK_NUM_OFFSET	10
-#define DMA_RO_REQ_ACK_NUM_MASK		GENMASK(15, 10)
-#define DMA_RO_REQ_SYNC_OFFSET		30
-#define DMA_RO_REQ_SYNC_MASK		GENMASK(30, 30)
-#define DMA_RO_CHAIN_XFR_OFFSET		31
-#define DMA_RO_CHAIN_XFR_MASK		GENMASK(31, 31)
-
 /* DMA Control Register Bits */
 #define DMA_CTRL_RESET_OFFSET	0
 #define DMA_CTRL_RESET_MASK		GENMASK(0, 0)
@@ -129,7 +109,7 @@ LOG_MODULE_REGISTER(dma_andes_atcdmac100);
 
 typedef void (*atcdmac100_cfg_func_t)(void);
 
-struct chain_block {
+struct __attribute__((packed, aligned(4))) chain_block {
 	uint32_t ctrl;
 	uint32_t srcaddrl;
 	uint32_t dstaddrl;
@@ -180,12 +160,14 @@ static void dma_atcdmac100_isr(const struct device *dev)
 	int_ch_status = DMA_INT_STATUS_TC_VAL(int_status);
 	while (int_ch_status) {
 		channel = find_msb_set(int_ch_status) - 1;
+
 		int_ch_status &= ~(BIT(channel));
 
 		ch_data = &data->chan[channel];
 		if (ch_data->blkcallback) {
 			ch_data->blkcallback(dev, ch_data->blkuser_data, channel, 0);
-		}
+		} 
+
 		data->chan[channel].status.busy = false;
 	}
 
@@ -199,7 +181,7 @@ static void dma_atcdmac100_isr(const struct device *dev)
 		if (ch_data->blkcallback) {
 			ch_data->blkcallback(dev, ch_data->blkuser_data, channel, -EIO);
 		}
-	}
+	}	
 }
 
 static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
@@ -243,17 +225,15 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 	switch (cfg->channel_direction) {
 		case MEMORY_TO_MEMORY:
 			break;
-		case MEMORY_TO_PERIPHERAL: {
-				LOG_DBG("JATW %s(%d) MEMORY_TO_PERIPHERAL\n", __func__, __LINE__);
+		case MEMORY_TO_PERIPHERAL: {				
 				if(cfg->dest_handshake) {
 					ch_ctrl |= DMA_CH_CTRL_DSTREQ(cfg->dma_slot);
 					ch_ctrl |= DMA_CH_CTRL_DMODE_HANDSHAKE;
 				}
 			}
 			break;
-		case PERIPHERAL_TO_MEMORY: {
-				LOG_DBG("JATW %s(%d) PERIPHERAL_TO_MEMORY\n", __func__, __LINE__);
-				if(cfg->source_handshake) {
+		case PERIPHERAL_TO_MEMORY: {				
+				if(cfg->source_handshake) {					
 					ch_ctrl |= DMA_CH_CTRL_SRCREQ(cfg->dma_slot);
 					ch_ctrl |= DMA_CH_CTRL_SMODE_HANDSHAKE;
 				}
@@ -280,8 +260,6 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 			goto end;
 	}
 
-	LOG_DBG("JATW %s(%d) cfg_blocks->source_addr_adj:%d\n", __func__, __LINE__, cfg_blocks->source_addr_adj);
-
 	switch (cfg_blocks->dest_addr_adj) {
 		case DMA_ADDR_ADJ_INCREMENT:
 			ch_ctrl |= DMA_CH_CTRL_DSTADDR_INC;
@@ -296,8 +274,6 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 			ret = -EINVAL;
 			goto end;
 	}
-
-	LOG_DBG("JATW %s(%d) cfg_blocks->dest_addr_adj:%d\n", __func__, __LINE__, cfg_blocks->dest_addr_adj);
 
 	ch_ctrl |= DMA_CH_CTRL_INTABT;
 
@@ -342,17 +318,15 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 	/* Set source and destination address */
 	sys_write32(cfg_blocks->source_address,
 					DMA_CH_SRC_ADDR_L(dev, channel));
+
 	sys_write32(cfg_blocks->dest_address,
 					DMA_CH_DST_ADDR_L(dev, channel));
-
-	LOG_DBG("JATW %s(%d) cfg_blocks->source_address:0x%08x\n", __func__, __LINE__, cfg_blocks->source_address);
-	LOG_DBG("JATW %s(%d) cfg_blocks->dest_address:0x%08x\n", __func__, __LINE__, cfg_blocks->dest_address);
 
 	if (cfg->dest_chaining_en == 1 && cfg_blocks->next_block) {
 		uint32_t current_block_idx = 0;
 
 		sys_write32((uint32_t)((long)&dma_chain[channel][current_block_idx]),
-							DMA_CH_LL_PTR_L(dev, channel));
+							DMA_CH_LL_PTR_L(dev, channel));		
 
 		for (cfg_blocks = cfg_blocks->next_block; cfg_blocks != NULL;
 				cfg_blocks = cfg_blocks->next_block) {
@@ -418,7 +392,7 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 	}
 
 end:
-	LOG_DBG("JATW %s(%d) channel:%d ret:%d\n", __func__, __LINE__, channel, ret);
+
 	return ret;
 }
 
@@ -433,6 +407,7 @@ static int dma_atcdmac100_reload(const struct device *dev, uint32_t channel,
 
 	/* Set source and destination address */
 	sys_write32(src, DMA_CH_SRC_ADDR_L(dev, channel));
+
 	sys_write32(dst, DMA_CH_DST_ADDR_L(dev, channel));
 
 	src_width = FIELD_GET(DMA_CH_CTRL_SWIDTH_MASK, sys_read32(DMA_CH_CTRL(dev, channel)));
@@ -548,7 +523,7 @@ static const struct dma_driver_api dma_atcdmac100_api = {
 	static void dma_atcdmac100_irq_config_##n(void)			\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    1,						\
+			    DT_INST_IRQ(n, priority),						\
 			    dma_atcdmac100_isr,				\
 			    DEVICE_DT_INST_GET(n),			\
 			    0);						\
