@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Ensure hex-file is not filled between lower and upper flash.
+# If not, it will grow to 3.5 GB.
+CONFIG_BUILD_NO_GAP_FILL=y
+CONFIG_BUILD_OUTPUT_HEX=y
+
+CONFIG_GPIO=y
+CONFIG_PINCTRL=y
+CONFIG_SERIAL=y
+
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+CONFIG_DYNAMIC_THREAD_POOL_SIZE=4
+CONFIG_DYNAMIC_THREAD_STACK_SIZE=1024
