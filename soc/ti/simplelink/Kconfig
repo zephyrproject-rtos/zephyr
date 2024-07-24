@@ -17,5 +17,4 @@ config TI_SIMPLELINK_DYNAMIC_DPL_OBJECTS
 	help
 	  Turn on dynamic memory allocation for DPL objects. Reserves
 	  extra memory for this.
-
 endif # SOC_FAMILY_TI_SIMPLELINK

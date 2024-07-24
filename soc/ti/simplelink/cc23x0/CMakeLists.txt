@@ -27,3 +27,12 @@ set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
 set_property(TARGET runners_yaml_props_target PROPERTY hex_file ${checksums_calculated_file})
 
 set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${checksums_calculated_file})
+
+# TODO: Replace python script above with crc_tool
+set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+  # Insert CRC32 in CCFG
+  COMMAND crc_tool patch-image
+	  --elf ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
+	  --symbol-prefix CRC_CCFG
+	  --output ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
+  )
