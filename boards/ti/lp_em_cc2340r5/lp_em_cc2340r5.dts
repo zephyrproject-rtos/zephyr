@@ -18,3 +18,7 @@
 		zephyr,flash = &flash0;
 	};
 };
+
+&gpio0 {
+	status = "okay";
+};
