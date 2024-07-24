@@ -224,6 +224,24 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c0102, &rootCfg);
 #endif
 
+#if defined(CONFIG_I2C_MCUX_LPI2C) && \
+	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c3), okay) \
+	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c4), okay))
+	/* Configure LPI2C0304 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_LPI2C0304_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 4;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c0304, &rootCfg);
+#endif
+
+#if defined(CONFIG_I2C_MCUX_LPI2C) && \
+	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c5), okay) \
+	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c6), okay))
+	/* Configure LPI2C0506 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_LPI2C0506_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 4;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c0506, &rootCfg);
+#endif
+
 #if defined(CONFIG_SPI_MCUX_LPSPI) && \
 	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay) \
 	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi2), okay))
