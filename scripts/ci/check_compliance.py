@@ -845,6 +845,12 @@ flagged.
                               # Zephyr toolchain variant and therefore not
                               # visible to compliance.
         "BOARD_", # Used as regex in scripts/utils/board_v1_to_v2.py
+        "BOOT_DIRECT_XIP", # Used in sysbuild for MCUboot configuration
+        "BOOT_DIRECT_XIP_REVERT", # Used in sysbuild for MCUboot configuration
+        "BOOT_FIRMWARE_LOADER", # Used in sysbuild for MCUboot configuration
+        "BOOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
+        "BOOT_SWAP_USING_MOVE", # Used in sysbuild for MCUboot configuration
+        "BOOT_SWAP_USING_SCRATCH", # Used in sysbuild for MCUboot configuration
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
         "BINDESC_", # Used in documentation as a prefix
@@ -918,6 +924,7 @@ flagged.
         "LOG_BACKEND_MOCK_OUTPUT_SYST", #Referenced in testcase.yaml of log_syst test
         "SEL",
         "SHIFT",
+        "SINGLE_APPLICATION_SLOT", # Used in sysbuild for MCUboot configuration
         "SOC_SERIES_", # Used as regex in scripts/utils/board_v1_to_v2.py
         "SOC_WATCH",  # Issue 13749
         "SOME_BOOL",
