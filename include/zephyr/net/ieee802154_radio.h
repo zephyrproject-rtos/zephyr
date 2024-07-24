@@ -517,8 +517,8 @@ enum ieee802154_hw_caps {
 	/** TX security supported (key management, encryption and authentication) */
 	IEEE802154_HW_TX_SEC = BIT(11),
 
-	/** RxOnWhenIdle handling supported */
-	IEEE802154_RX_ON_WHEN_IDLE = BIT(12),
+	/** macRxOnWhenIdle driver offloading supported */
+	IEEE802154_HW_RX_ON_WHEN_IDLE = BIT(12),
 
 	/* Note: Update also IEEE802154_HW_CAPS_BITS_COMMON_COUNT when changing
 	 * the ieee802154_hw_caps type.
