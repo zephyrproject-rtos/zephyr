@@ -9,12 +9,15 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <soc.h>
 
 #include <fsl_mipi_csi2rx.h>
 
 LOG_MODULE_REGISTER(video_mipi_csi2rx, CONFIG_VIDEO_LOG_LEVEL);
 
-#define DEFAULT_CAMERA_FRAME_RATE  30
+#define MAX_SUPPORTED_PIXEL_RATE MHZ(96)
+
+#define ABS(a, b) (a > b ? a - b : b - a)
 
 struct mipi_csi2rx_config {
 	const MIPI_CSI2RX_Type *base;
@@ -25,98 +28,82 @@ struct mipi_csi2rx_data {
 	csi2rx_config_t csi2rxConfig;
 };
 
+struct mipi_csi2rx_tHsSettleEscClk_config {
+	uint64_t pixel_rate;
+	uint8_t tHsSettle_EscClk;
+};
+
+/* Must be in pixel rate ascending order */
+const struct mipi_csi2rx_tHsSettleEscClk_config tHsSettleEscClk_configs[] = {
+	{MHZ(24), 0x24},
+	{MHZ(48), 0x12},
+	{MHZ(96), 0x09},
+};
+
+static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endpoint_id ep)
+{
+	const struct mipi_csi2rx_config *config = dev->config;
+	struct mipi_csi2rx_data *drv_data = dev->data;
+	uint8_t bpp;
+	uint64_t sensor_pixel_rate, sensor_lane_rate, sensor_byte_clk;
+	uint32_t best_match;
+	int ret, ind = 0;
+	struct video_format fmt;
+
+	ret = video_get_format(config->sensor_dev, ep, &fmt);
+	if (ret) {
+		LOG_ERR("Cannot get sensor_dev pixel format");
+		return ret;
+	}
+
+	ret = video_get_ctrl(config->sensor_dev, VIDEO_CID_PIXEL_RATE, &sensor_pixel_rate);
+	if (ret) {
+		LOG_ERR("Can not get sensor_dev pixel rate");
+		return ret;
+	}
+
+	bpp = video_pix_fmt_bpp(fmt.pixelformat) * 8;
+	sensor_lane_rate = sensor_pixel_rate * bpp / drv_data->csi2rxConfig.laneNum;
+
+	if (sensor_pixel_rate > MAX_SUPPORTED_PIXEL_RATE) {
+		LOG_ERR("Sensor pixel rate is not supported");
+		return -ENOTSUP;
+	}
+
+	sensor_byte_clk = sensor_pixel_rate * bpp / drv_data->csi2rxConfig.laneNum / 8;
+	if (sensor_byte_clk > CLOCK_GetRootClockFreq(kCLOCK_Root_Csi2)) {
+		mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2, sensor_byte_clk);
+	}
+
+	if (sensor_pixel_rate > CLOCK_GetRootClockFreq(kCLOCK_Root_Csi2_Ui)) {
+		mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2_Ui, sensor_pixel_rate);
+	}
+
+	/* Find the supported sensor_pixel_rate closest to the desired one */
+	best_match = tHsSettleEscClk_configs[ind].pixel_rate;
+	for (uint8_t i = 0; i < ARRAY_SIZE(tHsSettleEscClk_configs); i++) {
+		if (ABS(tHsSettleEscClk_configs[i].pixel_rate, sensor_pixel_rate) <
+		    ABS(tHsSettleEscClk_configs[i].pixel_rate, best_match)) {
+			best_match = tHsSettleEscClk_configs[i].pixel_rate;
+			ind = i;
+		}
+	}
+
+	drv_data->csi2rxConfig.tHsSettle_EscClk = tHsSettleEscClk_configs[ind].tHsSettle_EscClk;
+
+	return ret;
+}
+
 static int mipi_csi2rx_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 			       struct video_format *fmt)
 {
 	const struct mipi_csi2rx_config *config = dev->config;
-	struct mipi_csi2rx_data *drv_data = dev->data;
-	csi2rx_config_t csi2rxConfig = {0};
-	uint8_t i = 0;
-
-	/*
-	 * Initialize the MIPI CSI2
-	 *
-	 * From D-PHY specification, the T-HSSETTLE should in the range of 85ns+6*UI to 145ns+10*UI
-	 * UI is Unit Interval, equal to the duration of any HS state on the Clock Lane
-	 *
-	 * T-HSSETTLE = csi2rxConfig.tHsSettle_EscClk * (Tperiod of RxClkInEsc)
-	 *
-	 * csi2rxConfig.tHsSettle_EscClk setting for camera:
-	 *
-	 *    Resolution  |  frame rate  |  T_HS_SETTLE
-	 *  =============================================
-	 *     720P       |     30       |     0x12
-	 *  ---------------------------------------------
-	 *     720P       |     15       |     0x17
-	 *  ---------------------------------------------
-	 *      VGA       |     30       |     0x1F
-	 *  ---------------------------------------------
-	 *      VGA       |     15       |     0x24
-	 *  ---------------------------------------------
-	 *     QVGA       |     30       |     0x1F
-	 *  ---------------------------------------------
-	 *     QVGA       |     15       |     0x24
-	 *  ---------------------------------------------
-	 */
-	static const uint32_t csi2rxHsSettle[][4] = {
-		{
-			1280,
-			720,
-			30,
-			0x12,
-		},
-		{
-			1280,
-			720,
-			15,
-			0x17,
-		},
-		{
-			640,
-			480,
-			30,
-			0x1F,
-		},
-		{
-			640,
-			480,
-			15,
-			0x24,
-		},
-		{
-			320,
-			240,
-			30,
-			0x1F,
-		},
-		{
-			320,
-			240,
-			15,
-			0x24,
-		},
-	};
-
-	for (i = 0; i < ARRAY_SIZE(csi2rxHsSettle); i++) {
-		if ((fmt->width == csi2rxHsSettle[i][0]) && (fmt->height == csi2rxHsSettle[i][1]) &&
-		    (DEFAULT_CAMERA_FRAME_RATE == csi2rxHsSettle[i][2])) {
-			csi2rxConfig.tHsSettle_EscClk = csi2rxHsSettle[i][3];
-			break;
-		}
-	}
-
-	if (i == ARRAY_SIZE(csi2rxHsSettle)) {
-		LOG_ERR("Unsupported resolution");
-		return -ENOTSUP;
-	}
-
-	drv_data->csi2rxConfig = csi2rxConfig;
 
 	if (video_set_format(config->sensor_dev, ep, fmt)) {
 		return -EIO;
 	}
 
-	return 0;
+	return mipi_csi2rx_update_settings(dev, ep);
 }
 
 static int mipi_csi2rx_get_fmt(const struct device *dev, enum video_endpoint_id ep,
@@ -204,7 +191,13 @@ static int mipi_csi2rx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	/*
+	 * CSI2 escape clock should be in the range [60, 80] Mhz. We set it
+	 * to 60 Mhz.
+	 */
+	mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2_Esc, MHZ(60));
+
+	return mipi_csi2rx_update_settings(dev, VIDEO_EP_ALL);
 }
 
 #define MIPI_CSI2RX_INIT(n)                                                                        \
