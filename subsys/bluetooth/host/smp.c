@@ -1601,6 +1601,12 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 	struct net_buf *req_buf;
 	uint8_t max_key_size;
 	struct bt_smp_br *smp;
+	uint8_t remote_fixed_chan;
+
+	remote_fixed_chan = bt_l2cap_br_get_remote_fixed_chan(conn);
+	if (!(remote_fixed_chan & BIT(BT_L2CAP_CID_BR_SMP))) {
+		return -ENOTSUP;
+	}
 
 	smp = smp_br_chan_get(conn);
 	if (!smp) {
