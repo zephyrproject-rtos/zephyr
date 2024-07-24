@@ -46,6 +46,7 @@ enum bt_cap_common_proc_type {
 	BT_CAP_COMMON_PROC_TYPE_UPDATE,
 	BT_CAP_COMMON_PROC_TYPE_STOP,
 	BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START,
+	BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_OFFSET_CHANGE,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_MUTE_CHANGE,
@@ -92,6 +93,12 @@ struct cap_broadcast_reception_start {
 	uint8_t num_subgroups;
 	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 };
+
+struct cap_broadcast_reception_stop {
+	uint8_t src_id;
+	uint8_t num_subgroups;
+	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
+};
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 
 struct bt_cap_commander_proc_param {
@@ -113,6 +120,7 @@ struct bt_cap_commander_proc_param {
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 		struct cap_broadcast_reception_start broadcast_reception_start;
+		struct cap_broadcast_reception_stop broadcast_reception_stop;
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
 		struct {
