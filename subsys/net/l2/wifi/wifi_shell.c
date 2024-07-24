@@ -1570,6 +1570,30 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 	return 0;
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	uint8_t query_reason = 0;
+
+	context.sh = sh;
+
+	if (!parse_number(sh, (long *)&query_reason, argv[1], NULL,
+			  WIFI_BTM_QUERY_REASON_UNSPECIFIED, WIFI_BTM_QUERY_REASON_LEAVING_ESS)) {
+		return -EINVAL;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_BTM_QUERY, iface, &query_reason, sizeof(query_reason))) {
+		PR_WARNING("Setting BTM query Reason failed..Reason :%d\n", query_reason);
+		return -ENOEXEC;
+	}
+
+	PR("Query reason %d\n", query_reason);
+
+	return 0;
+}
+#endif
+
 static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
@@ -2594,6 +2618,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"wifi -i1 -c5.\n",
 		cmd_wifi_channel,
 		2, 4),
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+	SHELL_CMD_ARG(11v_btm_query,
+		NULL,
+		"<query_reason: The reason code for a BSS transition management query>.\n",
+		cmd_wifi_btm_query,
+		2, 0),
+#endif
 	SHELL_CMD_ARG(ps_timeout,
 		      NULL,
 		      "<val> - PS inactivity timer(in ms).\n",
