@@ -30,6 +30,8 @@ static struct net_if *net_iface;
 static struct net_mgmt_event_callback scan_cb;
 K_SEM_DEFINE(scan_lock, 0, 1);
 
+static bool expected_association_permitted_bit;
+
 #define EXPECTED_COORDINATOR_LQI           15U
 
 #define EXPECTED_COORDINATOR_PAN_LE        0xcd, 0xab
@@ -66,6 +68,8 @@ static void scan_result_cb(struct net_mgmt_event_callback *cb, uint32_t mgmt_eve
 	zassert_mem_equal(scan_ctx->addr, expected_coordinator_address, IEEE802154_EXT_ADDR_LENGTH);
 	zassert_equal(scan_ctx->lqi, EXPECTED_COORDINATOR_LQI,
 		      "Scan did not receive correct link quality indicator.");
+	zassert_equal(scan_ctx->association_permitted, expected_association_permitted_bit,
+		      "Scan did not set the association permit bit correctly.");
 
 	zassert_equal(scan_ctx->beacon_payload_len, EXPECTED_PAYLOAD_LEN,
 		      "Scan did not include the payload");
@@ -201,6 +205,28 @@ release_frag:
 	current_pkt->frags = NULL;
 }
 
+static int create_and_receive_packet(uint8_t *beacon_pkt, size_t length)
+{
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_with_buffer(net_iface, length, AF_UNSPEC, 0, K_FOREVER);
+	if (!pkt) {
+		NET_ERR("*** No buffer to allocate");
+		return -1;
+	}
+
+	net_pkt_set_ieee802154_lqi(pkt, EXPECTED_COORDINATOR_LQI);
+	net_buf_add_mem(pkt->buffer, beacon_pkt, length);
+
+	/* The packet will be placed in the RX queue but not yet handled. */
+	if (net_recv_data(net_iface, pkt) < 0) {
+		NET_ERR("Recv data failed");
+		net_pkt_unref(pkt);
+		return -1;
+	}
+	return 0;
+}
+
 ZTEST(ieee802154_l2_shell, test_active_scan)
 {
 	uint8_t beacon_pkt[] = {
@@ -213,26 +239,25 @@ ZTEST(ieee802154_l2_shell, test_active_scan)
 		0x00, /* Pending Addresses */
 		EXPECTED_PAYLOAD_DATA /* Layer 3 payload */
 	};
-	struct net_pkt *pkt;
-
-	pkt = net_pkt_rx_alloc_with_buffer(net_iface, sizeof(beacon_pkt), AF_UNSPEC, 0, K_FOREVER);
-	if (!pkt) {
-		NET_ERR("*** No buffer to allocate");
-		goto fail;
-	}
-
-	net_pkt_set_ieee802154_lqi(pkt, EXPECTED_COORDINATOR_LQI);
-	net_buf_add_mem(pkt->buffer, beacon_pkt, sizeof(beacon_pkt));
-
-	/* The packet will be placed in the RX queue but not yet handled. */
-	if (net_recv_data(net_iface, pkt) < 0) {
-		NET_ERR("Recv data failed");
-		net_pkt_unref(pkt);
-		goto fail;
-	}
 
 	net_mgmt_init_event_callback(&scan_cb, scan_result_cb, NET_EVENT_IEEE802154_SCAN_RESULT);
 	net_mgmt_add_event_callback(&scan_cb);
+
+	expected_association_permitted_bit = true;
+
+	if (create_and_receive_packet(beacon_pkt, sizeof(beacon_pkt)) < 0) {
+		goto fail;
+	}
+
+	test_scan_shell_cmd();
+
+	/* disable the association permit flag */
+	beacon_pkt[14] = 0x40;
+	expected_association_permitted_bit = false;
+
+	if (create_and_receive_packet(beacon_pkt, sizeof(beacon_pkt)) < 0) {
+		goto fail;
+	}
 
 	test_scan_shell_cmd();
 
