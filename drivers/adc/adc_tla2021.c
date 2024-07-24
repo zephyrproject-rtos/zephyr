@@ -53,13 +53,14 @@ typedef uint16_t tla2021_reg_config_t;
 
 struct tla2021_config {
 	const struct i2c_dt_spec bus;
-	k_tid_t acq_thread_id;
 };
 
 struct tla2021_data {
 	const struct device *dev;
 	struct adc_context ctx;
+#ifdef CONFIG_ADC_ASYNC
 	struct k_sem acq_lock;
+#endif
 	tla2021_reg_data_t *buffer;
 	tla2021_reg_data_t *repeat_buffer;
 
@@ -186,6 +187,40 @@ static int tla2021_read(const struct device *dev, const struct adc_sequence *seq
 	return tla2021_read_async(dev, seq, NULL);
 }
 
+static void tla2021_perform_read(const struct device *dev)
+{
+	struct tla2021_data *data = dev->data;
+	tla2021_reg_config_t reg;
+	tla2021_reg_data_t res;
+	int ret;
+
+	/*
+	 * Wait until sampling is done
+	 */
+	do {
+		ret = tla2021_read_register(dev, REG_CONFIG, &reg);
+		if (ret < 0) {
+			adc_context_complete(&data->ctx, ret);
+		}
+	} while (!(reg & REG_CONFIG_OS_msk));
+
+	/*
+	 * Read result
+	 */
+	ret = tla2021_read_register(dev, REG_DATA, &res);
+	if (ret) {
+		adc_context_complete(&data->ctx, ret);
+	}
+
+	/*
+	 * ADC data is stored in the upper 12 bits
+	 */
+	res >>= REG_DATA_pos;
+	*data->buffer++ = res;
+
+	adc_context_on_sampling_done(&data->ctx, data->dev);
+}
+
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	int ret;
@@ -207,7 +242,11 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	data->repeat_buffer = data->buffer;
 
+#ifdef CONFIG_ADC_ASYNC
 	k_sem_give(&data->acq_lock);
+#else
+	tla2021_perform_read(dev);
+#endif
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
@@ -219,46 +258,19 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	}
 }
 
+#ifdef CONFIG_ADC_ASYNC
 static void tla2021_acq_thread_fn(void *p1, void *p2, void *p3)
 {
-	int ret;
-
-	struct tla2021_data *data = p1;
-	const struct device *dev = data->dev;
+	const struct device *dev = p1;
+	struct tla2021_data *data = dev->data;
 
 	while (true) {
 		k_sem_take(&data->acq_lock, K_FOREVER);
 
-		tla2021_reg_config_t reg;
-		tla2021_reg_data_t res;
-
-		/*
-		 * Wait until sampling is done
-		 */
-		do {
-			ret = tla2021_read_register(dev, REG_CONFIG, &reg);
-			if (ret < 0) {
-				adc_context_complete(&data->ctx, ret);
-			}
-		} while (!(reg & REG_CONFIG_OS_msk));
-
-		/*
-		 * Read result
-		 */
-		ret = tla2021_read_register(dev, REG_DATA, &res);
-		if (ret) {
-			adc_context_complete(&data->ctx, ret);
-		}
-
-		/*
-		 * ADC data is stored in the upper 12 bits
-		 */
-		res >>= REG_DATA_pos;
-		*data->buffer++ = res;
-
-		adc_context_on_sampling_done(&data->ctx, data->dev);
+		tla2021_perform_read(dev);
 	}
 }
+#endif
 
 static int tla2021_init(const struct device *dev)
 {
@@ -266,8 +278,6 @@ static int tla2021_init(const struct device *dev)
 
 	const struct tla2021_config *config = dev->config;
 	struct tla2021_data *data = dev->data;
-
-	k_sem_init(&data->acq_lock, 0, 1);
 
 	if (!i2c_is_ready_dt(&config->bus)) {
 		LOG_ERR("Bus not ready");
@@ -294,14 +304,16 @@ static const struct adc_driver_api tla2021_driver_api = {
 #endif
 };
 
+#define TLA2021_THREAD_INIT(n)                                                                     \
+	K_THREAD_DEFINE(adc_tla2021_##n##_thread, ACQ_THREAD_STACK_SIZE, tla2021_acq_thread_fn,    \
+			DEVICE_DT_INST_GET(n), NULL, NULL, ACQ_THREAD_PRIORITY, 0, 0);
+
 #define TLA2021_INIT(n)                                                                            \
 	static const struct tla2021_config inst_##n##_config;                                      \
 	static struct tla2021_data inst_##n##_data;                                                \
-	K_THREAD_DEFINE(inst_##n##_thread, ACQ_THREAD_STACK_SIZE, tla2021_acq_thread_fn,           \
-			&inst_##n##_data, NULL, NULL, ACQ_THREAD_PRIORITY, 0, 0);                  \
+	IF_ENABLED(CONFIG_ADC_ASYNC, (TLA2021_THREAD_INIT(n)))                                     \
 	static const struct tla2021_config inst_##n##_config = {                                   \
 		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.acq_thread_id = inst_##n##_thread,                                                \
 	};                                                                                         \
 	static struct tla2021_data inst_##n##_data = {                                             \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
@@ -309,6 +321,8 @@ static const struct adc_driver_api tla2021_driver_api = {
 		ADC_CONTEXT_INIT_TIMER(inst_##n##_data, ctx),                                      \
 		ADC_CONTEXT_INIT_SYNC(inst_##n##_data, ctx),                                       \
 		.reg_config = REG_CONFIG_DEFAULT,                                                  \
+		IF_ENABLED(CONFIG_ADC_ASYNC,                                                       \
+			   (.acq_lock = Z_SEM_INITIALIZER(inst_##n##_data.acq_lock, 0, 1),))       \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, &tla2021_init, NULL, &inst_##n##_data, &inst_##n##_config,        \
 			      POST_KERNEL, CONFIG_ADC_TLA2021_INIT_PRIORITY, &tla2021_driver_api);
