@@ -67,36 +67,19 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 	int ret = -ENOTSUP;
 
 	if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
-		ret = lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_OFF);
-		if (ret) {
-			return ret;
-		}
-
-		ret = oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR,
+		return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR,
 				       LAN865x_MAC_NCFGR_CAF);
-		if (ret) {
-			return ret;
-		}
-
-		return lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
-		ret = lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_OFF);
-		if (ret) {
-			return ret;
-		}
-
 		memcpy(ctx->mac_address, config->mac_address.addr,
 		       sizeof(ctx->mac_address));
 
 		lan865x_write_macaddress(dev);
 
-		net_if_set_link_addr(ctx->iface, ctx->mac_address,
+		return net_if_set_link_addr(ctx->iface, ctx->mac_address,
 				     sizeof(ctx->mac_address),
 				     NET_LINK_ETHERNET);
-
-		return lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {
