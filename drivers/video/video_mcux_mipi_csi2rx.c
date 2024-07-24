@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_mipi_csi2rx
 
 #include <fsl_mipi_csi2rx.h>
+#include <soc.h>
 
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
@@ -15,7 +16,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mipi_csi);
 
-#define DEFAULT_CAMERA_FRAME_RATE  30
+#define RX_HS_SETTLE_MIN           1
+/* CSI-2 Rx maximum lane rate is 1.5 Gbps */
+#define MAX_LANE_RATE              1500000000
 
 struct mipi_csi2rx_config {
 	const MIPI_CSI2RX_Type *base;
@@ -26,98 +29,99 @@ struct mipi_csi2rx_data {
 	csi2rx_config_t csi2rxConfig;
 };
 
+static int mipi_csi2rx_cal_rx_hs_settle(uint64_t lane_rate, uint8_t *tHsSettle_EscClk)
+{
+	uint64_t t_hs_settle_min, t_hs_settle_max, t_hs_settle, rx_hs_settle_cal, t_esc_clk;
+	uint32_t esc_clk;
+
+	esc_clk = CLOCK_GetRootClockFreq(kCLOCK_Root_Csi2_Esc);
+	if (esc_clk == 0) {
+		LOG_ERR("Invalid esc clk value");
+		return -EINVAL;
+	}
+
+	t_esc_clk = NSEC_PER_SEC / esc_clk;
+
+	/*
+	 * From MIPI CSI2 D-PHY specification, the T_HS_SETTLE period should be
+	 * in the range of 85ns+6*UI to 145ns+10*UI. The Unit Interval (UI) is
+	 * the period for transmitting one bit for each lane. Since the data is
+	 * transmitted in DDR mode, UI is defined as:
+	 *
+	 * UI = 1/2 * period of one bit = 1/2 * 1/link_freq
+	 *
+	 * Here, we choose a T_HS_SETTLE value which is in the middle of the range.
+	 * Thus, tHsSettle_EscClk is calculated using the following formula:
+	 * csi2rxConfig.tHsSettle_EscClk = T_HS_SETTLE / period of RxClkInEsc
+	 */
+	t_hs_settle_min = 85 + 6 * NSEC_PER_SEC / lane_rate;
+	t_hs_settle_max = 145 + 10 * NSEC_PER_SEC / lane_rate;
+	t_hs_settle = (t_hs_settle_min + t_hs_settle_max) / 2;
+	rx_hs_settle_cal = t_hs_settle / t_esc_clk;
+	if (!IN_RANGE(rx_hs_settle_cal, RX_HS_SETTLE_MIN, UINT8_MAX)) {
+		LOG_ERR("rx_hs_settle calculated value is not correct %llu", rx_hs_settle_cal);
+		return -EINVAL;
+	}
+
+	*tHsSettle_EscClk = (uint8_t)rx_hs_settle_cal;
+
+	return 0;
+}
+
+static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endpoint_id ep)
+{
+	const struct mipi_csi2rx_config *config = dev->config;
+	struct mipi_csi2rx_data *drv_data = dev->data;
+	uint8_t bpp;
+	uint64_t sensor_pixel_rate, sensor_lane_rate, sensor_byte_clk;
+	int ret;
+	struct video_format fmt;
+
+	ret = video_get_format(config->sensor_dev, ep, &fmt);
+	if (ret) {
+		LOG_ERR("Cannot get sensor_dev pixel format");
+		return ret;
+	}
+
+	ret = video_get_ctrl(config->sensor_dev, VIDEO_CID_PIXEL_RATE,
+			     (uint64_t *)&sensor_pixel_rate);
+	if (ret) {
+		LOG_ERR("Can not get sensor_dev pixel rate");
+		return ret;
+	}
+
+	bpp = video_pix_fmt_bpp(fmt.pixelformat) * 8;
+	sensor_lane_rate = sensor_pixel_rate * bpp / drv_data->csi2rxConfig.laneNum;
+	if (sensor_lane_rate > MAX_LANE_RATE) {
+		LOG_ERR("Rate per lane is too high (max limit: 1.5 Gbps each lane)");
+		return -EINVAL;
+	}
+
+	sensor_byte_clk = sensor_pixel_rate * bpp / drv_data->csi2rxConfig.laneNum / 8;
+	if (sensor_byte_clk >= CLOCK_GetRootClockFreq(kCLOCK_Root_Csi2)) {
+		mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2, sensor_byte_clk);
+	}
+
+	if (sensor_pixel_rate >= CLOCK_GetRootClockFreq(kCLOCK_Root_Csi2_Ui)) {
+		mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2_Ui, sensor_pixel_rate);
+	}
+
+	ret = mipi_csi2rx_cal_rx_hs_settle(sensor_lane_rate,
+					   &drv_data->csi2rxConfig.tHsSettle_EscClk);
+
+	return ret;
+}
+
 static int mipi_csi2rx_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 			       struct video_format *fmt)
 {
 	const struct mipi_csi2rx_config *config = dev->config;
-	struct mipi_csi2rx_data *drv_data = dev->data;
-	csi2rx_config_t csi2rxConfig = {0};
-	uint8_t i = 0;
-
-	/*
-	 * Initialize the MIPI CSI2
-	 *
-	 * From D-PHY specification, the T-HSSETTLE should in the range of 85ns+6*UI to 145ns+10*UI
-	 * UI is Unit Interval, equal to the duration of any HS state on the Clock Lane
-	 *
-	 * T-HSSETTLE = csi2rxConfig.tHsSettle_EscClk * (Tperiod of RxClkInEsc)
-	 *
-	 * csi2rxConfig.tHsSettle_EscClk setting for camera:
-	 *
-	 *    Resolution  |  frame rate  |  T_HS_SETTLE
-	 *  =============================================
-	 *     720P       |     30       |     0x12
-	 *  ---------------------------------------------
-	 *     720P       |     15       |     0x17
-	 *  ---------------------------------------------
-	 *      VGA       |     30       |     0x1F
-	 *  ---------------------------------------------
-	 *      VGA       |     15       |     0x24
-	 *  ---------------------------------------------
-	 *     QVGA       |     30       |     0x1F
-	 *  ---------------------------------------------
-	 *     QVGA       |     15       |     0x24
-	 *  ---------------------------------------------
-	 */
-	static const uint32_t csi2rxHsSettle[][4] = {
-		{
-			1280,
-			720,
-			30,
-			0x12,
-		},
-		{
-			1280,
-			720,
-			15,
-			0x17,
-		},
-		{
-			640,
-			480,
-			30,
-			0x1F,
-		},
-		{
-			640,
-			480,
-			15,
-			0x24,
-		},
-		{
-			320,
-			240,
-			30,
-			0x1F,
-		},
-		{
-			320,
-			240,
-			15,
-			0x24,
-		},
-	};
-
-	for (i = 0; i < ARRAY_SIZE(csi2rxHsSettle); i++) {
-		if ((fmt->width == csi2rxHsSettle[i][0]) && (fmt->height == csi2rxHsSettle[i][1]) &&
-		    (DEFAULT_CAMERA_FRAME_RATE == csi2rxHsSettle[i][2])) {
-			csi2rxConfig.tHsSettle_EscClk = csi2rxHsSettle[i][3];
-			break;
-		}
-	}
-
-	if (i == ARRAY_SIZE(csi2rxHsSettle)) {
-		LOG_ERR("Unsupported resolution");
-		return -ENOTSUP;
-	}
-
-	drv_data->csi2rxConfig = csi2rxConfig;
 
 	if (video_set_format(config->sensor_dev, ep, fmt)) {
 		return -EIO;
 	}
 
-	return 0;
+	return mipi_csi2rx_update_settings(dev, ep);
 }
 
 static int mipi_csi2rx_get_fmt(const struct device *dev, enum video_endpoint_id ep,
@@ -205,7 +209,13 @@ static int mipi_csi2rx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	/*
+	 * CSI2 escape clock should be in the range [60, 80] Mhz. We set it
+	 * to 60 Mhz.
+	 */
+	mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2_Esc, MHZ(60));
+
+	return mipi_csi2rx_update_settings(dev, VIDEO_EP_ANY);
 }
 
 #define MIPI_CSI2RX_INIT(n)                                                                        \
