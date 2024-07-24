@@ -81,3 +81,12 @@
 &dma {
 	status = "okay";
 };
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_sck_default
+		     &spi0_mosi_default
+		     &spi0_miso_default
+		     &spi0_cs_default>;
+	pinctrl-names = "default";
+};
