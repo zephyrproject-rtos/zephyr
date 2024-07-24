@@ -769,14 +769,14 @@ enum ieee802154_config_type {
 	 * be started.
 	 *
 	 * The driver SHALL take care to start/stop the receiver autonomously,
-	 * asynchronously and automatically around the RX slot. The driver
-	 * SHALL resume power just before the RX slot and suspend it again
-	 * after the slot unless another programmed event forces the driver not
-	 * to suspend. The driver SHALL switch to the programmed channel
-	 * before the RX slot and back to the channel set with set_channel()
-	 * after the RX slot. If the driver interface is "DOWN" when the start
-	 * time of an RX slot arrives, then the RX slot SHALL not be observed
-	 * and the receiver SHALL remain off.
+	 * asynchronously and automatically around the RX slot. The driver SHALL
+	 * resume power just before the RX slot and suspend it again after the slot
+	 * or - if RxAutoOff is `true` - after receiving a packet unless another
+	 * programmed event forces the driver not to suspend. The driver SHALL
+	 * switch to the programmed channel before the RX slot and back to the
+	 * channel set with set_channel() after the RX slot. If the driver interface
+	 * is "DOWN" when the start time of an RX slot arrives, then the RX slot
+	 * SHALL not be observed and the receiver SHALL remain off.
 	 *
 	 * If the driver is "UP" while configuring an RX slot, the driver SHALL turn
 	 * off the receiver immediately and (possibly asynchronously) put the driver
@@ -1205,6 +1205,26 @@ struct ieee802154_config {
 			 * Used channel
 			 */
 			uint8_t channel;
+
+			/**
+			 * Implements MLME `RxAutoOff` (see IEEE 802.15.4z,
+			 * section 8.2.10.2, table 8-27) for a single
+			 * `start`/`duration` tuple.
+			 *
+			 * If the driver doesn't support `RxAutoOff`, then
+			 * the parameter SHALL be silently ignored and the
+			 * receiver is kept on for the duration of the full
+			 * RX slot.
+			 *
+			 * When `RxAutoOff` is `true`, the receiver is disabled
+			 * immediately after the reception of a packet, otherwise
+			 * it remains enabled for the specified `duration` even
+			 * after the reception.
+			 *
+			 * When the `start` parameter is set to a negative
+			 * value, then `rx_auto_off` will be ignored.
+			 */
+			bool rx_auto_off;
 		} rx_slot;
 
 		/**
