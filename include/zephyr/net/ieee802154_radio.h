@@ -238,8 +238,8 @@ struct ieee802154_phy_channel_range {
 };
 
 /**
- * Represents a list channels supported by a driver for a given interface, see
- * @ref IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES.
+ * Represents the list of channels supported by a driver for a given interface,
+ * see @ref IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES.
  */
 struct ieee802154_phy_supported_channels {
 	/**
@@ -1249,8 +1249,11 @@ struct ieee802154_config {
 
 			/**
 			 * Flag for purging enh ACK header IEs.
-			 * When flag is set to true, driver should remove all existing
-			 * header IEs, and all other entries in config should be ignored.
+			 *
+			 * When this flag is set to true, the driver SHALL remove
+			 * all existing ACK header IEs. All other entries in the
+			 * ack_ie config SHALL be ignored.
+			 *
 			 * This means that purging current header IEs and
 			 * configuring a new one in the same call is not allowed.
 			 */
@@ -1732,12 +1735,13 @@ struct ieee802154_radio_api {
 	int (*stop)(const struct device *dev);
 
 	/**
-	 * @brief Start continuous carrier wave transmission.
+	 * @brief Start continuous carrier wave transmission ("TESTING" state).
 	 *
 	 * @details The method blocks until the interface has started to emit a
-	 * continuous carrier. To leave this mode, `start()` or `stop()` should
-	 * be called, which will put the driver back into the "UP" or "DOWN"
-	 * states, respectively.
+	 * continuous carrier. Upper layers will assume that the interface is in
+	 * "TESTING" state if the operation returns with zero or `-EALREADY`. To
+	 * leave this mode, `start()` or `stop()` should be called, which will put
+	 * the driver back into the "UP" or "DOWN" states, respectively.
 	 *
 	 * @note Implementations MAY **sleep** and will usually NOT be
 	 * **isr-ok**. MAY be called in any interface state once the driver is
