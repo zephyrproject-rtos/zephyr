@@ -1,0 +1,19 @@
+# Texas Instruments SimpleLink CC23X0
+
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_CC23X0
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config NUM_IRQS
+	default 19
+
+endif
