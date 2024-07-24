@@ -401,9 +401,15 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
-	/* We only care about a single subgroup in this test */
+	uint32_t total_bis = 0U;
+
 	broadcaster_broadcast_id = recv_state->broadcast_id;
-	if (bis_sync_req[0] != 0) {
+
+	for (int i = 0; i < recv_state->num_subgroups; i++) {
+		total_bis |= bis_sync_req[i];
+	}
+
+	if (total_bis != 0U) {
 		SET_FLAG(flag_bis_sync_requested);
 	} else {
 		UNSET_FLAG(flag_bis_sync_requested);
@@ -792,6 +798,7 @@ static void init(void)
 		UNSET_FLAG(flag_pa_request);
 		UNSET_FLAG(flag_received);
 		UNSET_FLAG(flag_base_metadata_updated);
+		UNSET_FLAG(flag_bis_sync_requested);
 
 		for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sink_streams); i++) {
 			bt_cap_stream_ops_register(
@@ -1039,10 +1046,12 @@ static void test_cap_acceptor_broadcast_reception(void)
 {
 	static struct bt_bap_stream *bap_streams[ARRAY_SIZE(broadcast_sink_streams)];
 	size_t stream_count;
+	int err;
 
 	init();
 
 	WAIT_FOR_FLAG(flag_pa_request);
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
 
 	pa_sync_create();
 
@@ -1051,12 +1060,23 @@ static void test_cap_acceptor_broadcast_reception(void)
 	sink_wait_for_data();
 
 	/* Since we are re-using the BAP broadcast source test
-	 * we get a metadata update, and we need to send an extra
-	 * backchannel sync
+	 * we get a metadata update
 	 */
 	base_wait_for_metadata_update();
 
-	backchannel_sync_send_all(); /* let broadcaster know we can stop the source */
+	/* when flag_bis_sync_requested is unset the bis_sync for all subgroups were set to 0 */
+	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
+
+	UNSET_FLAG(flag_syncable);
+	err = bt_bap_broadcast_sink_stop(g_broadcast_sink);
+	if (err != 0) {
+		FAIL("Unable to stop the sink: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_syncable);
+	/* Although in theory we can now sync, in practice we can not since all BIS-syncs are 0 */
+	backchannel_sync_send_all(); /* signal that we have stopped listening */
 
 	wait_for_streams_stop(stream_count);
 
