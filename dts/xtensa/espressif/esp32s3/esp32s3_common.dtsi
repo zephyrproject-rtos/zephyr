@@ -280,6 +280,34 @@
 			status = "disabled";
 		};
 
+		i2s0: i2s@6000f000 {
+			compatible = "espressif,esp32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x6000f000 0x1000>;
+			interrupts = <I2S0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_I2S0_MODULE>;
+			dmas = <&dma 2>, <&dma 3>;
+			dma-names = "rx", "tx";
+			unit = <0>;
+			status = "disabled";
+		};
+
+		i2s1: i2s@6002d000 {
+			compatible = "espressif,esp32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x6002d000 0x1000>;
+			interrupts = <I2S1_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_I2S1_MODULE>;
+			dmas = <&dma 4>, <&dma 5>;
+			dma-names = "rx", "tx";
+			unit = <1>;
+			status = "disabled";
+		};
+
 		spi2: spi@60024000 {
 			compatible = "espressif,esp32-spi";
 			reg = <0x60024000 DT_SIZE_K(4)>;
