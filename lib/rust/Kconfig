@@ -5,8 +5,15 @@
 
 menu "Rust Language Support"
 
+config RUST_SUPPORTED
+	bool
+	default y if CPU_CORTEX_M
+	help
+	  Selected for platforms that have support for Rust.
+
 config RUST
 	bool "Rust support for the application"
+	depends on RUST_SUPPORTED
 	select EXPERIMENTAL
 	help
 	  This option enables the use of applications written in Rust.
