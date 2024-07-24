@@ -134,8 +134,10 @@ static void test_scan_shell_cmd(void)
 
 	/* The beacon placed into the RX queue will be received and handled as
 	 * soon as this command yields waiting for beacons.
+	 * Scan should be as short as possible, because after 1 second an IPv6
+	 * Router Solicitation package will be placed into the TX queue
 	 */
-	ret = shell_execute_cmd(NULL, "ieee802154 scan active 11 500");
+	ret = shell_execute_cmd(NULL, "ieee802154 scan active 11 10");
 	zassert_equal(0, ret, "Active scan failed: %d", ret);
 
 	zassert_equal(0, k_sem_take(&scan_lock, K_NO_WAIT), "Active scan: did not receive beacon.");
