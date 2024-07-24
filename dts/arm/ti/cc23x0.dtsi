@@ -9,6 +9,10 @@
 #include <freq.h>
 
 / {
+	chosen {
+		zephyr,flash-controller = &flash_controller;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -29,6 +33,29 @@
 		compatible = "fixed-clock";
 		clock-frequency = <DT_FREQ_M(48)>;
 		#clock-cells = <0>;
+	};
+
+	soc {
+		flash_controller: flash-controller@40021000 {
+			compatible = "ti,cc23x0-flash-controller";
+			reg = <0x40021000 0x408>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Main flash sector */
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(2)>;
+				write-block-size = <0x10>;
+			};
+
+			/* CCFG flash sector */
+			flash1: flash@4e020000 {
+				compatible = "ti,cc23x0-ccfg-flash", "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(2)>;
+				write-block-size = <0x10>;
+			};
+		};
 	};
 };
 
