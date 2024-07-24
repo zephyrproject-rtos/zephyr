@@ -7,7 +7,8 @@ menu "Rust Language Support"
 
 config RUST_SUPPORTED
 	bool
-	default y if CPU_CORTEX_M
+	default y if (CPU_CORTEX_M || \
+		(RISCV && !RISCV_ISA_RV32E && !RISCV_ISA_RV128I))
 	help
 	  Selected for platforms that have support for Rust.
 
