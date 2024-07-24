@@ -267,6 +267,21 @@ struct bt_l2cap_chan *bt_l2cap_br_lookup_tx_cid(struct bt_conn *conn,
 	return NULL;
 }
 
+uint8_t bt_l2cap_br_get_remote_fixed_chan(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan_sig;
+	struct bt_l2cap_br *br_chan_sig;
+
+	chan_sig = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (!chan_sig) {
+		return (uint8_t)0U;
+	}
+
+	br_chan_sig = CONTAINER_OF(chan_sig, struct bt_l2cap_br, chan.chan);
+
+	return br_chan_sig->info_fixed_chan;
+}
+
 static struct bt_l2cap_br_chan*
 l2cap_br_chan_alloc_cid(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 {

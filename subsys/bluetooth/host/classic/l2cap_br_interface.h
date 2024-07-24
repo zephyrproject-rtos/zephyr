@@ -65,3 +65,6 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn,
 				   size_t *length);
 
 int bt_l2cap_br_chan_recv_complete(struct bt_l2cap_chan *chan);
+
+/* Get remote supported fixed channels */
+uint8_t bt_l2cap_br_get_remote_fixed_chan(struct bt_conn *conn);
