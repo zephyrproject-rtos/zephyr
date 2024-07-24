@@ -1940,15 +1940,16 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 		case SSP_LINK_CLK_SOURCE:
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 			link = (struct ssp_intel_link_ctl *)&aux_tlv->val;
-
 #if CONFIG_SOC_INTEL_ACE15_MTPM
-			sys_write32(sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) |
+			sys_write32((sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) &
+				    ~I2CLCTL_MLCS(0x7)) |
 				    I2CLCTL_MLCS(link->clock_source), dai_ip_base(dp) +
 				    I2SLCTL_OFFSET);
 #elif CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30_PTL
-			sys_write32(sys_read32(dai_i2svss_base(dp) + I2SLCTL_OFFSET) |
-				    I2CLCTL_MLCS(link->clock_source), dai_i2svss_base(dp) +
-				    I2SLCTL_OFFSET);
+			sys_write32((sys_read32(dai_i2svss_base(dp) + I2SLCTL_OFFSET) &
+				    ~I2CLCTL_MLCS(0x7)) |
+				    I2CLCTL_MLCS(link->clock_source),
+				    dai_i2svss_base(dp) + I2SLCTL_OFFSET);
 #endif
 			LOG_INF("link clock_source %u", link->clock_source);
 #endif
