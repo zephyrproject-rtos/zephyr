@@ -221,13 +221,18 @@ static int cst816s_chip_init(const struct device *dev)
 static int cst816s_init(const struct device *dev)
 {
 	struct cst816s_data *data = dev->data;
+	int ret;
 
 	data->dev = dev;
 	k_work_init(&data->work, cst816s_work_handler);
 
+	ret = cst816s_chip_init(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 #ifdef CONFIG_INPUT_CST816S_INTERRUPT
 	const struct cst816s_config *config = dev->config;
-	int ret;
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
 		LOG_ERR("GPIO port %s not ready", config->int_gpio.port->name);
@@ -259,7 +264,7 @@ static int cst816s_init(const struct device *dev)
 		      K_MSEC(CONFIG_INPUT_CST816S_PERIOD));
 #endif
 
-	return cst816s_chip_init(dev);
+	return ret;
 }
 
 #define CST816S_DEFINE(index)                                                                      \
