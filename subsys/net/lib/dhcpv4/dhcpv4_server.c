@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_dhcpv4_server, CONFIG_NET_DHCPV4_SERVER_LOG_LEVEL);
 #define DHCPV4_OPTIONS_IP_LEASE_TIME_SIZE 6
 #define DHCPV4_OPTIONS_SERVER_ID_SIZE 6
 #define DHCPV4_OPTIONS_SUBNET_MASK_SIZE 6
+#define DHCPV4_OPTIONS_ROUTER_SIZE 6
 #define DHCPV4_OPTIONS_CLIENT_ID_MIN_SIZE 2
 
 #define ADDRESS_RESERVED_TIMEOUT K_SECONDS(30)
@@ -379,6 +380,22 @@ static uint8_t *dhcpv4_encode_subnet_mask_option(uint8_t *buf, size_t *buflen,
 	return buf + DHCPV4_OPTIONS_SUBNET_MASK_SIZE;
 }
 
+static uint8_t *dhcpv4_encode_router_option(uint8_t *buf, size_t *buflen,
+					    struct in_addr *router)
+{
+	if (buf == NULL || *buflen < DHCPV4_OPTIONS_ROUTER_SIZE) {
+		return NULL;
+	}
+
+	buf[0] = DHCPV4_OPTIONS_ROUTER;
+	buf[1] = sizeof(struct in_addr);
+	memcpy(&buf[2], router->s4_addr, sizeof(struct in_addr));
+
+	*buflen -= DHCPV4_OPTIONS_ROUTER_SIZE;
+
+	return buf + DHCPV4_OPTIONS_ROUTER_SIZE;
+}
+
 static uint8_t *dhcpv4_encode_end_option(uint8_t *buf, size_t *buflen)
 {
 	if (buf == NULL || *buflen < 1) {
@@ -472,6 +489,13 @@ static uint8_t *dhcpv4_encode_requested_params(
 			}
 			break;
 
+		case DHCPV4_OPTIONS_ROUTER:
+			buf = dhcpv4_encode_router_option(
+				buf, buflen, &ctx->iface->config.ip.ipv4->gw);
+			if (buf == NULL) {
+				goto out;
+			}
+			break;
 		/* Others - just ignore. */
 		default:
 			break;
