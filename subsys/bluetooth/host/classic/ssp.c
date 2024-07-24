@@ -217,6 +217,7 @@ static void ssp_pairing_complete(struct bt_conn *conn, uint8_t status)
 	 * clear the pairing flag.
 	 */
 	atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
+	atomic_set_bit(conn->flags, BT_CONN_BR_PAIRED);
 
 	LOG_DBG("Pairing completed status %d", status);
 
