@@ -432,15 +432,13 @@ static void usb_data_request_cb(const struct device *dev)
 	uint8_t usb_audio_data[USB_STEREO_SAMPLE_SIZE] = {0};
 	static struct net_buf *pcm_buf;
 	static size_t cnt;
-	uint32_t size;
 	int err;
 
-	size = ring_buf_get(&usb_ring_buf, (uint8_t *)usb_audio_data, sizeof(usb_audio_data));
-	if (size == 0) {
-		/* size is 0, noop */
-		return;
-	}
-	/* Size lower than USB_STEREO_SAMPLE_SIZE is OK as usb_audio_data is 0-initialized */
+	ring_buf_get(&usb_ring_buf, (uint8_t *)usb_audio_data, sizeof(usb_audio_data));
+	/* Ignore ring_buf_get() return value, if size is 0 we send empty PCM frames to
+	 * not starve USB audio interface, if size is lower than USB_STEREO_SAMPLE_SIZE
+	 * we send frames padded with 0's as usb_audio_data is 0-initialized
+	 */
 
 	pcm_buf = net_buf_alloc(&usb_tx_buf_pool, K_NO_WAIT);
 	if (pcm_buf == NULL) {
