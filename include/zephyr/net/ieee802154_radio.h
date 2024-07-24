@@ -503,8 +503,7 @@ enum ieee802154_hw_caps {
 	 *     "DOWN", only devices in the "UP" state MAY transmit packets (RFC
 	 *     2863).
 	 *   - A migration path has been defined in #63670 for actual removal of
-	 *     this capability in favor of a standard compliant
-	 *     `configure(rx_on/rx_off)` call, see there for details.
+	 *     this capability, see there for details.
 	 *
 	 * @deprecated Drivers and L2 SHALL not introduce additional references
 	 * to this capability and remove existing ones as outlined in #63670.
@@ -645,6 +644,21 @@ enum ieee802154_tx_mode {
 	IEEE802154_TX_MODE_PRIV_START = IEEE802154_TX_MODE_COMMON_COUNT,
 };
 
+/** IEEE 802.15.4 Receiver mode. */
+enum ieee802154_rx_mode {
+	/** The receiver is continuously on. */
+	IEEE802154_RX_ON,
+
+	/** The receiver is continuously off. */
+	IEEE802154_RX_OFF,
+
+	/** Number of modes defined in ieee802154_rx_mode. */
+	IEEE802154_RX_MODE_COMMON_COUNT,
+
+	/** This and higher values are specific to the protocol- or driver-specific extensions. */
+	IEEE802154_RX_MODE_PRIV_START = IEEE802154_RX_MODE_COMMON_COUNT,
+};
+
 /** IEEE 802.15.4 Frame Pending Bit table address matching mode. */
 enum ieee802154_fpb_mode {
 	/** The pending bit shall be set only for addresses found in the list. */
@@ -752,21 +766,30 @@ enum ieee802154_config_type {
 	 * Set or unset a radio reception window (RX slot). This can be used for
 	 * any scheduled reception, e.g.: Zigbee GP device, CSL, TSCH, etc.
 	 *
-	 * @details The start and duration parameters of the RX slot are
-	 * relative to the network subsystem's local clock. If the start
-	 * parameter of the RX slot is -1 then any previously configured RX
-	 * slot SHALL be canceled immediately. If the start parameter is any
-	 * value in the past (including 0) or the duration parameter is zero
-	 * then the receiver SHALL remain off forever until the RX slot has
-	 * either been removed or re-configured to point to a future start
-	 * time. If an RX slot is configured while the previous RX slot is
-	 * still scheduled, then the previous slot SHALL be cancelled and the
-	 * new slot scheduled instead.
+	 * @details The `start` and `duration` parameters of the RX slot are relative to
+	 * the network subsystem's local clock.
 	 *
-	 * RX slots MAY be programmed while the driver is "DOWN". If any past
-	 * or future RX slot is configured when calling `start()` then the
-	 * interface SHALL be placed in "UP" state but the receiver SHALL not
-	 * be started.
+	 * If the `start` parameter of the RX slot is negative then any previously
+	 * configured RX slot SHALL be canceled immediately. If the `start`
+	 * parameter is any value in the past (including zero) then the
+	 * configuration call SHALL return a `-ETIME` error code. This corresponds
+	 * to the MLME-RX-ENABLE.confirm `PAST_TIME` status, see section 8.2.10.3.
+	 *
+	 * If the `start` parameter points to a valid value in the future but
+	 * the `duration` parameter is zero or negative then the configuration
+	 * call SHALL return a `-EINVAL` error code.
+	 *
+	 * Typically, the next higher layer will not configure a new RX slot until
+	 * the current slot has been completed. However, a new RX slot configuration
+	 * call SHALL disable the receiver if it is enabled at the time the new call
+	 * is issued, cancel the outstanding RX slot, and thereafter perform and
+	 * execute the newly configured RX slot.
+	 *
+	 * RX slots MAY be programmed while the driver is "DOWN". If any future RX
+	 * slot is configured when calling `start()` then the interface SHALL be
+	 * placed in "UP" state but the receiver SHALL not be started before the
+	 * start time of the slot. Past RX slots SHALL be canceled and ignored when
+	 * calling `start()`.
 	 *
 	 * The driver SHALL take care to start/stop the receiver autonomously,
 	 * asynchronously and automatically around the RX slot. The driver SHALL
@@ -1183,9 +1206,9 @@ struct ieee802154_config {
 			 * to be listening (i.e. not including any driver
 			 * startup times).
 			 *
-			 * Configuring an rx_slot with the start attribute set
-			 * to -1 will cancel and delete any previously active rx
-			 * slot.
+			 * Configuring an RX slot with the start attribute
+			 * set to a negative value will cancel and delete any
+			 * previously active RX slot.
 			 */
 			net_time_t start;
 
@@ -1196,13 +1219,22 @@ struct ieee802154_config {
 			 * not including any shutdown times). Only positive
 			 * values larger than or equal zero are allowed.
 			 *
-			 * Setting the duration to zero will disable the
-			 * receiver, no matter what the start parameter.
+			 * Setting the duration less than zero when the start
+			 * parameter greater or equal zero is not allowed.
+			 * The configuration call SHALL return `-EINVAL` in
+			 * this case.
+			 *
+			 * When the `start` parameter is set to a negative
+			 * value, then `duration` will be ignored.
 			 */
 			net_time_t duration;
 
 			/**
 			 * Used channel
+			 *
+			 * When the `start` parameter is set to a negative
+			 * value, then the `channel` parameter will be
+			 * ignored.
 			 */
 			uint8_t channel;
 
@@ -1479,7 +1511,8 @@ static inline int ieee802154_attr_get_channel_page_and_range(
  *   ifOperStatus values in RFC 2863, section 3.1.14, @ref net_if_oper_state and
  *   the `continuous_carrier()` exception below). A device that has its receiver
  *   temporarily disabled during "UP" state due to an active receive window
- *   configuration is still considered "UP".
+ *   configuration or an `rx()` call that switched off the receiver is still
+ *   considered "UP".
  * * Upper layers will assume that the interface managed by the driver is "UP"
  *   after a call to `start()` returned zero or `-EALREADY`. Upper layers assume
  *   that the interface is "DOWN" after calling `stop()` returned zero or
@@ -1519,13 +1552,13 @@ static inline int ieee802154_attr_get_channel_page_and_range(
  *   the "UP" state and return `-ENETDOWN` in any other state. See the
  *   function-level API documentation below for further details.
  *
- * @note In case of devices that support timed RX/TX or `macRxOnWhenIdle`, the
- * "UP" state is not equal to "receiver enabled". If a receive window (i.e. RX
- * slot, see @ref IEEE802154_CONFIG_RX_SLOT) is configured before calling
- * `start()` then the receiver will not be enabled when transitioning to the
- * "UP" state. Configuring a receive window while the interface is "UP" will
- * cause the receiver to be disabled immediately until the configured reception
- * time has arrived.
+ * @note In case of devices that support timed RX/TX, `macRxOnWhenIdle` or
+ * @ref IEEE802154_RX_OFF, the "UP" state is not equal to "receiver enabled". If
+ * a receive window (i.e. RX slot, see @ref IEEE802154_CONFIG_RX_SLOT) is
+ * configured before calling `start()` then the receiver will not be enabled
+ * when transitioning to the "UP" state. Configuring a receive window while the
+ * interface is "UP" will cause the receiver to be disabled immediately until
+ * the configured reception time has arrived.
  */
 struct ieee802154_radio_api {
 	/**
@@ -1717,7 +1750,45 @@ struct ieee802154_radio_api {
 		  struct net_pkt *pkt, struct net_buf *frag);
 
 	/**
-	 * @brief Start the device.
+	 * @brief Sets the next RX mode, e.g. receiver on/off, wake-on-radio, etc.
+	 *
+	 * @details When called with @ref IEEE802154_RX_OFF while "UP" will switch
+	 * the receiver off immediately while leaving the interface "UP". Calling
+	 * with @ref IEEE802154_RX_ON while "UP" will switch the receiver back on
+	 * immediately. When "UP" the driver SHALL block until the receiver has
+	 * fully reached the given mode, e.g. until the receiver is able to receive
+	 * a packet when switching the receiver back on.
+	 *
+	 * When called while "DOWN" will program the receiver mode to be reached as
+	 * soon as the `start()` operation is called.
+	 *
+	 * Additional non-standard modes may be defined by individual drivers or
+	 * protocols, see @ref ieee802154_rx_mode for details.
+	 *
+	 * @note Implementations SHALL be **isr-ok**. SHOULD NOT **sleep** when "UP"
+	 * and SHALL NOT **sleep** when "DOWN". SHALL return -EIO unless the
+	 * interface is either "UP" or "DOWN".
+	 *
+	 * @param dev pointer to IEEE 802.15.4 driver device
+	 * @param mode the receiver mode to be set
+	 *
+	 * @retval 0 The receiver state was successfully changed.
+	 * @retval -EALREADY The receiver was already in the requested state.
+	 * @retval -EBUSY The receiver currently receives a packet, waits for ACK or
+	 * serves a programmed RX slot.
+	 * @retval -EWOULDBLOCK The operation is called from ISR context but cannot
+	 * be executed without sleeping.
+	 * @retval -ENOTSUP The given RX mode is not supported by the driver.
+	 * @retval -EIO will be returned when the receiver state cannot be changed:
+	 * * The interface is neither "UP" nor "DOWN".
+	 * * The `macRxOnWhenIdle` setting is configured to `false` and manages
+	 *   receiver state autonomously.
+	 * * Some other unspecified driver error occurred.
+	 */
+	int (*rx)(const struct device *dev, enum ieee802154_rx_mode mode);
+
+	/**
+	 * @brief Start the device (interface "UP").
 	 *
 	 * @details Upper layers will assume the interface is "UP" if this
 	 * operation returns with zero or `-EALREADY`. The interface is placed
@@ -1741,7 +1812,7 @@ struct ieee802154_radio_api {
 	int (*start)(const struct device *dev);
 
 	/**
-	 * @brief Stop the device.
+	 * @brief Stop the device (interface "DOWN").
 	 *
 	 * @details Upper layers will assume the interface is "DOWN" if this
 	 * operation returns with zero or `-EALREADY`. The driver switches off
