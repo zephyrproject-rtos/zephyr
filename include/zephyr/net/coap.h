@@ -892,16 +892,17 @@ int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint3
 /**
  * @brief Get values from CoAP block2 option.
  *
- * Decode block number and block size from option. Ignore the has_more flag
- * as it should always be zero on queries.
+ * Decode block number, more flag and block size from option.
  *
  * @param cpkt Packet to be inspected
+ * @param has_more Is set to the value of the more flag
  * @param block_number Is set to the number of the block
  *
  * @return Integer value of the block size in case of success
  * or negative in case of error.
  */
-int coap_get_block2_option(const struct coap_packet *cpkt, uint32_t *block_number);
+int coap_get_block2_option(const struct coap_packet *cpkt, bool *has_more,
+			   uint32_t *block_number);
 
 /**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates
