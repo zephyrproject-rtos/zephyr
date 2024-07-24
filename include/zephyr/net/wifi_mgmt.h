@@ -94,6 +94,10 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
 	/** DPP actions */
 	NET_REQUEST_WIFI_CMD_DPP,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+	/** BSS transition management query */
+	NET_REQUEST_WIFI_CMD_BTM_QUERY,
+#endif
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -206,6 +210,13 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_DPP)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+/** Request a Wi-Fi BTM query */
+#define NET_REQUEST_WIFI_BTM_QUERY (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTM_QUERY)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
+#endif
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -1110,6 +1121,16 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*channel)(const struct device *dev, struct wifi_channel_info *channel);
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+	/** Send BTM query
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param reason query reason
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*btm_query)(const struct device *dev, uint8_t reason);
+#endif
 	/** Get Version of WiFi driver and Firmware
 	 *
 	 * The driver that implements the get_version function must not use stack to allocate the
