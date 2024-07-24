@@ -324,7 +324,8 @@ img_mgmt_slot_in_use(int slot)
 	int image = img_mgmt_slot_to_image(slot);
 	int active_slot = img_mgmt_active_slot(image);
 
-#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
+#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
 	enum img_mgmt_next_boot_type type = NEXT_BOOT_TYPE_NORMAL;
 	int nbs = img_mgmt_get_next_boot_slot(image, &type);
 
