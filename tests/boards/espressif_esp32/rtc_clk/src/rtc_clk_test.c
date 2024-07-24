@@ -15,7 +15,8 @@
 #define DT_CPU_COMPAT espressif_xtensa_lx6
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
 #define DT_CPU_COMPAT espressif_xtensa_lx7
-#elif defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
+#elif defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) || \
+	defined(CONFIG_SOC_SERIES_ESP32C6)
 #define DT_CPU_COMPAT espressif_riscv
 #endif
 
@@ -74,8 +75,13 @@ ZTEST(rtc_clk, test_cpu_xtal_src)
 
 uint32_t rtc_pll_src_freq_mhz[] = {
 	ESP32_CLK_CPU_PLL_80M,
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+	ESP32_CLK_CPU_PLL_120M,
+#else
 	ESP32_CLK_CPU_PLL_160M,
-#if !defined(CONFIG_SOC_SERIES_ESP32C3) && !defined(CONFIG_SOC_SERIES_ESP32C6)
+#endif
+#if !defined(CONFIG_SOC_SERIES_ESP32C2) && !defined(CONFIG_SOC_SERIES_ESP32C3) && \
+	!defined(CONFIG_SOC_SERIES_ESP32C6)
 	ESP32_CLK_CPU_PLL_240M,
 #endif
 };
