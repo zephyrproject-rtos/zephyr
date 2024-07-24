@@ -26,4 +26,8 @@ int main(void)
 	return 0;
 }
 
+#ifdef CONFIG_RUST_ALLOC
 const unsigned char __rust_no_alloc_shim_is_unstable = 0;
+#endif
+
+#endif

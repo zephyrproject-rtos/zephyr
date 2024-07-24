@@ -5,7 +5,7 @@
 
 use core::ffi::c_void;
 
-use zephyr::println;
+use zephyr::printkln;
 use zephyr::sys::GPIO_OUTPUT_ACTIVE;
 
 #[no_mangle]
@@ -23,12 +23,12 @@ extern "C" fn rust_main() {
 
 // fn blink() {
 extern "C" fn blink(_p1: *mut c_void, _p2: *mut c_void, _p3: *mut c_void) -> ! {
-    println!("Inside of blinky");
+    printkln!("Inside of blinky");
 
     let mut led0 = zephyr::devicetree::aliases::led0::get_instance();
 
     if !led0.is_ready() {
-        println!("LED is not ready");
+        printkln!("LED is not ready");
         loop {
         }
         // return;

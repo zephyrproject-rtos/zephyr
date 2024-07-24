@@ -3,7 +3,7 @@
 
 #![no_std]
 
-use zephyr::println;
+use zephyr::printkln;
 
 #[no_mangle]
 extern "C" fn rust_main() {
