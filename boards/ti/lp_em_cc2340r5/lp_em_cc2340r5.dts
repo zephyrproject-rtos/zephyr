@@ -8,6 +8,9 @@
 /dts-v1/;
 
 #include <ti/cc2340r5.dtsi>
+#include "boosterpack_connector.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "LP_EM_CC2340R5";
@@ -17,6 +20,43 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &btn0;
+		sw1 = &btn1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		btn0: btn_0 {
+			gpios = <&gpio0 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		btn1: btn_1 {
+			gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Button 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
 	};
 };
 
