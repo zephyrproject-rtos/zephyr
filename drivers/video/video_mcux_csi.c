@@ -510,11 +510,6 @@ static int video_mcux_csi_init_0(const struct device *dev)
 	return video_mcux_csi_init(dev);
 }
 
-/* CONFIG_KERNEL_INIT_PRIORITY_DEVICE is used to make sure the
- * CSI peripheral is initialized before the camera, which is
- * necessary since the clock to the camera is provided by the
- * CSI peripheral.
- */
 DEVICE_DT_INST_DEFINE(0, &video_mcux_csi_init_0, NULL, &video_mcux_csi_data_0,
 		      &video_mcux_csi_config_0, POST_KERNEL, CONFIG_VIDEO_MCUX_CSI_INIT_PRIORITY,
 		      &video_mcux_csi_driver_api);
