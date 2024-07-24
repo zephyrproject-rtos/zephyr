@@ -145,7 +145,8 @@ static int register_classes(const struct shell *sh)
 		shell_print(sh, "dev: register FS %s", c_nd->c_data->name);
 	}
 
-	if (usbd_caps_speed(my_uds_ctx) != USBD_SPEED_HS) {
+	if (!USBD_SUPPORTS_HIGH_SPEED ||
+	    usbd_caps_speed(my_uds_ctx) != USBD_SPEED_HS) {
 		return 0;
 	}
 

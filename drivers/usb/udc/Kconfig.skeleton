@@ -5,6 +5,7 @@ config UDC_SKELETON
 	bool "Skeleton for an USB device controller driver"
 	default y
 	depends on DT_HAS_ZEPHYR_UDC_SKELETON_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	help
 	  Skeleton for an USB device controller driver.
 
