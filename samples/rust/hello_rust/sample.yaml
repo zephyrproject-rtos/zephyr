@@ -1,0 +1,13 @@
+sample:
+  description: Hello world, but in Rust
+  name: hello rust
+common:
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello world from Rust on (.*)"
+  filter: CONFIG_RUST_SUPPORTED
+tests:
+  sample.rust.hellorust:
+    tags: introduction
