@@ -1,0 +1,6 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH if BOARD_MIMXRT1170_EVK_MIMXRT1176_CM7
+endchoice
