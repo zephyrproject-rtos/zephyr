@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_CC23X0
+	bool "TI SimpleLink CC23x0 UART driver"
+	default y
+	depends on DT_HAS_TI_CC23X0_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  Enable the TI SimpleLink CC23x0 UART driver.
