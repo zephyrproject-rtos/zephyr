@@ -48,6 +48,12 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_PSK_SHA256,
 	/** WPA3-SAE security. */
 	WIFI_SECURITY_TYPE_SAE,
+	/** WPA3-SAE security with hunting-and-pecking loop. */
+	WIFI_SECURITY_TYPE_SAE_HNP = WIFI_SECURITY_TYPE_SAE,
+	/** WPA3-SAE security with hash-to-element. */
+	WIFI_SECURITY_TYPE_SAE_H2E,
+	/** WPA3-SAE security with both hunting-and-pecking loop and hash-to-element enabled. */
+	WIFI_SECURITY_TYPE_SAE_AUTO,
 	/** GB 15629.11-2003 WAPI security. */
 	WIFI_SECURITY_TYPE_WAPI,
 	/** EAP security - Enterprise. */
