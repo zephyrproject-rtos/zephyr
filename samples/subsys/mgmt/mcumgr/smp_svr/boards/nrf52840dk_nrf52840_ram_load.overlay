@@ -1,0 +1,17 @@
+/delete-node/ &sram0;
+
+#include "../sysbuild/nrf52840dk_nrf52840_mcuboot_ram_load.overlay"
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		/delete-property/ zephyr,code-partition;
+	};
+
+	soc {
+		sram0: memory@20006000 {
+			compatible = "mmio-sram";
+			reg = <0x20006000 DT_SIZE_K(200)>;
+		};
+	};
+};
