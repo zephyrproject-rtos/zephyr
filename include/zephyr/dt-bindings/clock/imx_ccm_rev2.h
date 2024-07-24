@@ -43,12 +43,16 @@
 
 /* LPI2C */
 #define IMX_CCM_LPI2C_CLK              0x400UL
+#define IMX_CCM_LPI2C0102_CLK          0x400UL
 #define IMX_CCM_LPI2C1_CLK             0x400UL
 #define IMX_CCM_LPI2C2_CLK             0x401UL
+#define IMX_CCM_LPI2C0304_CLK          0x401UL
 #define IMX_CCM_LPI2C3_CLK             0x402UL
 #define IMX_CCM_LPI2C4_CLK             0x403UL
+#define IMX_CCM_LPI2C0506_CLK          0x402UL
 #define IMX_CCM_LPI2C5_CLK             0x404UL
 #define IMX_CCM_LPI2C6_CLK             0x405UL
+#define IMX_CCM_LPI2C0708_CLK          0x403UL
 #define IMX_CCM_LPI2C7_CLK             0x406UL
 #define IMX_CCM_LPI2C8_CLK             0x407UL
 
