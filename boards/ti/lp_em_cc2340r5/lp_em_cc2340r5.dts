@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ * Copyright (c) 2024 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc2340r5.dtsi>
+
+/ {
+	model = "LP_EM_CC2340R5";
+	compatible = "ti,lp_em_cc2340r5";
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
