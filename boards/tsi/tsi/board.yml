@@ -1,0 +1,10 @@
+board:
+  name: tsi
+  vendor: Tsavorite
+  socs:
+  - name: skyp
+    variants:
+    - name: m85
+      cpucluster: m85
+    # - name: xtensa
+    #   cpucluster: xtensa

@@ -1,0 +1,5 @@
+# Copyright (c) 2024 TSI
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TSI
+	select SOC_SKYP
