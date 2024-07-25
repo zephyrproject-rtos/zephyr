@@ -82,18 +82,25 @@ GEN_OFFSET_SYM(_thread_stack_info_t, start);
  * CPU context for S2RAM
  */
 #if defined(CONFIG_PM_S2RAM)
+
 GEN_OFFSET_SYM(_cpu_context_t, msp);
-GEN_OFFSET_SYM(_cpu_context_t, msplim);
 GEN_OFFSET_SYM(_cpu_context_t, psp);
-GEN_OFFSET_SYM(_cpu_context_t, psplim);
 GEN_OFFSET_SYM(_cpu_context_t, apsr);
 GEN_OFFSET_SYM(_cpu_context_t, ipsr);
 GEN_OFFSET_SYM(_cpu_context_t, epsr);
 
 GEN_OFFSET_SYM(_cpu_context_t, primask);
-GEN_OFFSET_SYM(_cpu_context_t, faultmask);
-GEN_OFFSET_SYM(_cpu_context_t, basepri);
 GEN_OFFSET_SYM(_cpu_context_t, control);
+
+#	ifdef CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+GEN_OFFSET_SYM(_cpu_context_t, basepri);
+GEN_OFFSET_SYM(_cpu_context_t, faultmask);
+#		ifdef CONFIG_ARMV8_M_MAINLINE
+GEN_OFFSET_SYM(_cpu_context_t, msplim);
+GEN_OFFSET_SYM(_cpu_context_t, psplim);
+#		endif /* CONFIG_ARMV8_M_MAINLINE */
+#	endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
 #endif /* CONFIG_PM_S2RAM */
 
 #endif /* _ARM_OFFSETS_INC_ */
