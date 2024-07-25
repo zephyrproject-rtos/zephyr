@@ -55,6 +55,13 @@ config WIREGUARD_USE_PSA
 	  - ChaCha20-Poly1305 AEAD encryption/decryption
 	  - Random number generation
 
+config WIREGUARD_SHELL
+	bool
+	depends on NET_SHELL
+	select GETOPT_LONG
+	select POSIX_C_LIB_EXT
+	default y
+
 config WIREGUARD_BUF_COUNT
 	int "Internal temp network buffer count"
 	default 2

@@ -3,6 +3,7 @@
 zephyr_library_sources(net_shell.c)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/l2)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/lib)
+zephyr_library_include_directories_ifdef(CONFIG_WIREGUARD . ${ZEPHYR_BASE}/subsys/net/lib/wireguard)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/ip)
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
@@ -38,3 +39,4 @@ zephyr_library_sources_ifdef(CONFIG_NET_SHELL_VIRTUAL_SUPPORTED virtual.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_VLAN_SUPPORTED vlan.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_WEBSOCKET_SUPPORTED websocket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_QBV_SUPPORTED qbv_shell.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_WIREGUARD_SUPPORTED wg_shell.c)
