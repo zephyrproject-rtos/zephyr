@@ -305,6 +305,28 @@ static void lan865x_write_macaddress(const struct device *dev)
 	oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_SAB1, val);
 }
 
+static int lan865x_set_specific_multicast_addr(const struct device *dev)
+{
+	struct lan865x_data *ctx = dev->data;
+	uint32_t mac_h_hash = 0xffffffff;
+	uint32_t mac_l_hash = 0xffffffff;
+	int ret;
+
+	/* Enable hash for all multicast addresses */
+	ret = oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_HRT, mac_h_hash);
+	if (ret) {
+		return ret;
+	}
+
+	ret = oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_HRB, mac_l_hash);
+	if (ret) {
+		return ret;
+	}
+
+	return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR,
+				LAN865x_MAC_NCFGR_MTIHEN);
+}
+
 static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
 {
 	/* Values in the below table are the same for LAN865x rev. B0 and B1 */
@@ -360,6 +382,7 @@ static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
 	}
 
 	lan865x_write_macaddress(dev);
+	lan865x_set_specific_multicast_addr(dev);
 
 	ret = lan865x_init_chip(dev, silicon_rev);
 	if (ret < 0)
