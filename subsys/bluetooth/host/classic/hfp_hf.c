@@ -119,7 +119,7 @@ static struct bt_sdp_attribute hfp_attrs[] = {
 	/* The values of the “SupportedFeatures” bitmap shall be the same as the
 	 * values of the Bits 0 to 4 of the AT-command AT+BRSF (see Section 5.3).
 	 */
-	BT_SDP_SUPPORTED_FEATURES(BT_HFP_HF_SUPPORTED_FEATURES & 0x1f),
+	BT_SDP_SUPPORTED_FEATURES(BT_HFP_HF_SDP_SUPPORTED_FEATURES),
 };
 
 static struct bt_sdp_record hfp_rec = BT_SDP_RECORD(hfp_attrs);

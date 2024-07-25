@@ -78,6 +78,20 @@ config BT_HFP_AG
 	help
 	  This option enables Bluetooth AG support
 
+if BT_HFP_HF
+config BT_HFP_HF_CLI
+	bool "CLI presentation capability for HFP HF [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables CLI presentation capability for HFP HF
+
+config BT_HFP_HF_VOLUME
+	bool "Remote audio volume control for HFP HF [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables Remote audio volume control for HFP HF
+endif # BT_HFP_HF
+
 if BT_HFP_AG
 config BT_HFP_AG_TX_BUF_COUNT
 	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"
