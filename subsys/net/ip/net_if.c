@@ -1105,6 +1105,10 @@ static void join_mcast_allnodes(struct net_if *iface)
 	struct in6_addr addr;
 	int ret;
 
+	if (iface->config.ip.ipv6 == NULL) {
+		return;
+	}
+
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
 
 	ret = net_ipv6_mld_join(iface, &addr);
@@ -1120,6 +1124,10 @@ static void join_mcast_solicit_node(struct net_if *iface,
 {
 	struct in6_addr addr;
 	int ret;
+
+	if (iface->config.ip.ipv6 == NULL) {
+		return;
+	}
 
 	/* Join to needed multicast groups, RFC 4291 ch 2.8 */
 	net_ipv6_addr_create_solicited_node(my_addr, &addr);
@@ -1160,6 +1168,10 @@ static void leave_mcast_all(struct net_if *iface)
 static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
 {
 	enum net_l2_flags flags = 0;
+
+	if (iface->config.ip.ipv6 == NULL) {
+		return;
+	}
 
 	flags = l2_flags_get(iface);
 	if (flags & NET_L2_MULTICAST) {
