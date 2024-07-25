@@ -106,6 +106,8 @@ struct bt_hfp_hf {
 	struct at_client at;
 	uint32_t hf_features;
 	uint32_t ag_features;
+	uint8_t vgm;
+	uint8_t vgs;
 	int8_t ind_table[HF_MAX_AG_INDICATORS];
 
 	ATOMIC_DEFINE(flags, BT_HFP_HF_NUM_FLAGS);
