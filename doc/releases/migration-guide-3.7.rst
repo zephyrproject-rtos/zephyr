@@ -117,9 +117,6 @@ Mbed TLS
   as there is any PSA crypto provider available in the system
   (i.e. :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT` is set). (:github:`72243`)
 
-MCUboot
-=======
-
 Trusted Firmware-M
 ==================
 
@@ -127,9 +124,6 @@ Trusted Firmware-M
   This affects builds that have MCUboot enabled in TF-M (:kconfig:option:`CONFIG_TFM_BL2`).
   If you wish to keep using RSA-3072, you need to set :kconfig:option:`CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE`
   to ``"RSA-3072"``. Otherwise, make sure to have your own signing keys of the signature type in use.
-
-zcbor
-=====
 
 LVGL
 ====
@@ -275,9 +269,6 @@ Device Drivers and Devicetree
  * The DT properties ``mc,interface-type``, ``mc,reset-gpio``, and ``mc,interrupt-gpio`` of
    the :dtcompatible:`microchip,ksz8081` phy binding have changed to
    ``microchip,interface-type``, ``reset-gpios``, and ``int-gpios``, respectively (:github:`73725`)
-
-Analog-to-Digital Converter (ADC)
-=================================
 
 Charger
 =======
@@ -567,12 +558,6 @@ Enhanced Serial Peripheral Interface (eSPI)
   The Kconfig ``CONFIG_ESPI_SLAVE`` was renamed to  :kconfig:option:`CONFIG_ESPI_TARGET`, similarly
   ``CONFIG_ESPI_SAF`` was renamed as :kconfig:option:`CONFIG_ESPI_TAF` (:github:`73887`)
 
-Flash
-=====
-
-General Purpose I/O (GPIO)
-==========================
-
 GNSS
 ====
 
@@ -662,9 +647,6 @@ Serial
 
 * The Raspberry Pi UART driver ``uart_rpi_pico`` has been removed.
   Use ``uart_pl011`` (:dtcompatible:`arm,pl011`) instead. (:github:`71074`)
-
-Timer
-=====
 
 Regulator
 =========
@@ -944,9 +926,6 @@ hawkBit
   :kconfig:option:`CONFIG_SETTINGS` needs to be enabled to use hawkBit, as it now uses the
   settings subsystem to store the hawkBit configuration. (:github:`68806`)
 
-LoRaWAN
-=======
-
 MCUmgr
 ======
 
@@ -975,9 +954,6 @@ POSIX API
 
     $ python ${ZEPHYR_BASE}/scripts/utils/migrate_posix_kconfigs.py -r root_path
 
-Shell
-=====
-
 State Machine Framework
 =======================
 
@@ -1003,12 +979,6 @@ UpdateHub
   It still defaults to using Mbed TLS (with a smaller footprint than previously) unless the
   board is built with TF-M or :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_C` is enabled. (:github:`73511`)
 
-ZBus
-====
-
-Userspace
-*********
-
 Architectures
 *************
 
@@ -1028,6 +998,3 @@ Architectures
   * LLVM fuzzing support has been refactored. A test application now needs to provide its own
     ``LLVMFuzzerTestOneInput()`` hook instead of relying on a board provided one. Check
     ``samples/subsys/debug/fuzz/`` for an example. (:github:`71378`)
-
-Xtensa
-======
