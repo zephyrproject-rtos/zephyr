@@ -431,13 +431,42 @@ int ring_handle(struct at_client *hf_at)
 	return 0;
 }
 
+#if defined(CONFIG_BT_HFP_HF_CLI)
+int clip_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	struct bt_conn *conn = hf->acl;
+	char *number;
+	uint32_t type;
+	int err;
+
+	number = at_get_string(hf_at);
+
+	err = at_get_number(hf_at, &type);
+	if (err) {
+		LOG_WRN("could not get the type");
+	} else {
+		type = 0;
+	}
+
+	if (bt_hf->clip) {
+		bt_hf->clip(conn, number, (uint8_t)type);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_CLI */
+
 static const struct unsolicited {
 	const char *cmd;
 	enum at_cmd_type type;
 	int (*func)(struct at_client *hf_at);
 } handlers[] = {
 	{ "CIEV", AT_CMD_TYPE_UNSOLICITED, ciev_handle },
-	{ "RING", AT_CMD_TYPE_OTHER, ring_handle }
+	{ "RING", AT_CMD_TYPE_OTHER, ring_handle },
+#if defined(CONFIG_BT_HFP_HF_CLI)
+	{ "CLIP", AT_CMD_TYPE_UNSOLICITED, clip_handle },
+#endif /* CONFIG_BT_HFP_HF_CLI */
 };
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
