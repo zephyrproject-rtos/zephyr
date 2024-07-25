@@ -171,7 +171,7 @@ static int i2c_w91_ipc_master_read(const struct device *dev, uint16_t addr, uint
 static size_t pack_i2c_w91_ipc_master_write(uint8_t inst, void *unpack_data, uint8_t *pack_data)
 {
 	struct i2c_master_tx_req *p_i2c_master_tx = unpack_data;
-	uint8_t *temp = unpack_data;
+
 	size_t pack_data_len = sizeof(uint32_t) + sizeof(p_i2c_master_tx->addr) +
 			       sizeof(p_i2c_master_tx->tx_len) + p_i2c_master_tx->tx_len;
 	if (pack_data != NULL) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Telink Semiconductor
+ * Copyright (c) 2024 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,10 +26,12 @@
 	uart2_cts_p17_default: uart2_cts_p17_default {
 		pinmux = <W91_PINMUX_SET(W91_PIN_17, W91_FUNC_UART2_CTS)>;
 	};
-	i2c_scl_default: i2c_scl_default {
+
+	/* I2C0 */
+	i2c0_scl_default: i2c0_scl_default {
 		pinmux = <W91_PINMUX_SET(W91_PIN_15, W91_FUNC_I2C0_SCL)>;
 	};
-	i2c_sda_default: i2c_sda_default {
+	i2c0_sda_default: i2c0_sda_default {
 		pinmux = <W91_PINMUX_SET(W91_PIN_16, W91_FUNC_I2C0_SDA)>;
 	};
 	/* PWM Channel 0 (P15) */

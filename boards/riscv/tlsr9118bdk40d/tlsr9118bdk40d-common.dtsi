@@ -63,6 +63,8 @@
 
 	chosen {
 /* Note: use RAM_DLM for ".ram_dlm" when a shared SRAM will be used for "zephyr,sram" */
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart2;
 		zephyr,sram = &ram_dlm;
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &flash_mspi;
@@ -123,14 +125,33 @@
 	status = "okay";
 };
 
-&i2c {
+&i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	pinctrl-0 = <&i2c_scl_default &i2c_sda_default>;
+	pinctrl-0 = <&i2c0_scl_default &i2c0_sda_default>;
 	pinctrl-names = "default";
 };
 
 &pwm0 {
 	status = "okay";
 	pinctrl-ch4 = <&pwm_ch4_p20_default>;
+};
+
+/* D25 Zephyr console output (J47 connector)*/
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+/* N22 console output (J71 connector)*/
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&uart2 {
+	status = "okay";
+	pinctrl-0= <&uart2_tx_p16_default &uart2_rx_p15_default>;
+	current-speed = <115200>;
+	pinctrl-names = "default";
 };

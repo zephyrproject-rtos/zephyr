@@ -58,6 +58,8 @@ The Zephyr TLSR9118BDK40D board configuration supports the following hardware fe
 +----------------+------------+------------------------------+
 | GPIO           | on-chip    | gpio                         |
 +----------------+------------+------------------------------+
+| UART           | on-chip    | serial                       |
++----------------+------------+------------------------------+
 | PWM            | on-chip    | pwm                          |
 +----------------+------------+------------------------------+
 | TRNG           | on-chip    | entropy                      |
@@ -106,12 +108,15 @@ Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 - PWM Channel 4: GPIO20
 - I2C SCL: GPIO15, SDA: GPIO16
 
-Debug backed
-------------
+Serial Port
+-----------
 
 The TLSR9118BDK40D SoC has 3 UARTs.
 The Zephyr console output is assigned to UART0 (J47 connector). The default settings are 115200 8N1.
 The slave core N22 console is assigned to UART1 (J71 connector). The default settings are 115200 8N1.
+
+Although UART0 and UART1 are set by default as console outputs for each core,
+UART2 can be configured to usage on GPIO15, GPIO16 (check ``boards/riscv/tlsr9118bdk40d/tlsr9118bdk40d-pinctrl.dtsi`` ).
 
 Programming and debugging
 *************************

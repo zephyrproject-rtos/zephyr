@@ -8,8 +8,8 @@
 #define IPC_BASED_DRIVER_H
 
 #include "ipc_dispatcher.h"
-#include <zephyr/kernel.h>
 #include <string.h>
+#include <zephyr/kernel.h>
 #include <assert.h>
 
 enum ipc_dispatcher_id {

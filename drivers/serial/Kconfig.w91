@@ -10,4 +10,21 @@ config UART_TELINK_W91
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
-	  This option enables the B9x serial driver.
+	  This option enables the W91 serial driver.
+
+
+if UART_TELINK_W91
+
+config TELINK_W91_UART_RX_THREAD_STACK_SIZE
+	int "UART IRQ Reception thread stack size"
+	default 1024
+	help
+	  UART IRQ RX stack size.
+
+config TELINK_W91_UART_RX_THREAD_PRIORITY
+	int "UART RX thread priority"
+	default 5
+	help
+	  UART RX thread priority.
+
+endif # UART_TELINK_W91

@@ -125,12 +125,7 @@
 			status = "okay";
 		};
 
-		uart2: uart2 {
-			compatible = "telink,w91-uart";
-			status = "disabled";
-		};
-
-		i2c: i2c {
+		i2c0: i2c0 {
 			compatible = "telink,w91-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -138,10 +133,29 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 		};
 
+		i2c1: i2c1 {
+			compatible = "telink,w91-i2c";
+			status = "disabled";
+		};
+
 		pwm0: pwm0 {
 			compatible = "telink,w91-pwm";
 			channels = <5>;
 			#pwm-cells = <3>;
+		};
+
+		uart0: uart0 {
+			compatible = "telink,w91-uart";
+			status = "disabled";
+		};
+
+		uart1: uart1 {
+			compatible = "telink,w91-uart";
+			status = "disabled";
+		};
+
+		uart2: uart2 {
+			compatible = "telink,w91-uart";
 			status = "disabled";
 		};
 	};

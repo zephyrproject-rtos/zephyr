@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&i2c {
+&i2c0 {
 	mpu6050@68 {
 		compatible = "invensense,mpu6050";
 		reg = <0x68>;
