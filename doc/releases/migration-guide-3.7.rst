@@ -263,7 +263,7 @@ Device Drivers and Devicetree
         gyro-odr = <ICM42688_GYRO_ODR_2000>;
     };
 
-* ``st,lis2mdl`` property ``spi-full-duplex`` changed to ``duplex =
+* :dtcompatible:`st,lis2mdl` property ``spi-full-duplex`` changed to ``duplex =
   SPI_FULL_DUPLEX``. Full duplex is now the default.
 
 * The DT property ``nxp,reference-supply`` of :dtcompatible:`nxp,lpc-lpadc` driver has
@@ -564,8 +564,8 @@ Enhanced Serial Peripheral Interface (eSPI)
   ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS``, ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE`` and
   ``ESPI_VWIRE_SIGNAL_TARGET_GPIO_<NUMBER>`` respectively to reflect the new terminology
   in eSPI 1.5 specification. (:github:`68492`)
-  The Kconfig ``CONFIG_ESPI_SLAVE`` was renamed to ``CONFIG_ESPI_TARGET``, similarly
-  ``CONFIG_ESPI_SAF`` was renamed as ``CONFIG_ESPI_TAF`` (:github:`73887`)
+  The Kconfig ``CONFIG_ESPI_SLAVE`` was renamed to  :kconfig:option:`CONFIG_ESPI_TARGET`, similarly
+  ``CONFIG_ESPI_SAF`` was renamed as :kconfig:option:`CONFIG_ESPI_TAF` (:github:`73887`)
 
 Flash
 =====
