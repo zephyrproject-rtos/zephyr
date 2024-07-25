@@ -674,6 +674,13 @@ Regulator
   has been removed, users should remove this property from their devicetree if it is present.
   (:github:`70642`)
 
+W1
+==
+
+* The :dtcompatible:`zephyr,w1-gpio` 1-Wire master driver no longer defaults to enabling the
+  internal pull-up resistor of the GPIO pin. The configuration is now taken from the pin's
+  configuration flags specified in devicetree. (:github:`71789`)
+
 Watchdog
 ========
 

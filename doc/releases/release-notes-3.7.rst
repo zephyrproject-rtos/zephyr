@@ -1140,7 +1140,7 @@ Drivers and Sensors
 
   * Maxim
 
-    * Added DS18S20 1-wire temperature sensor driver (:dtcompatible:`maxim,ds18s20`).
+    * Added DS18S20 1-Wire temperature sensor driver (:dtcompatible:`maxim,ds18s20`).
     * Added MAX31790 fan speed and fan fault sensor
       (:dtcompatible:`maxim,max31790-fan-fault` and :dtcompatible:`maxim,max31790-fan-speed`).
 
@@ -1291,8 +1291,6 @@ Drivers and Sensors
   * Added support for the ov5640 camera
   * Added CSI-2 MIPI driver for NXP MCUX
   * Added support for DVP FPC 24-pins mt9m114 camera module shield
-
-* W1
 
 * Watchdog
 
