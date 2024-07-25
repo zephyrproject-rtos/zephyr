@@ -16,6 +16,7 @@
 	compatible = "nxp,frdm-ke17z", "nxp,ke17z", "nxp,mke17z7";
 
 	aliases {
+		watchdog0 = &wdog;
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -158,5 +159,9 @@
 };
 
 &edma {
+	status = "okay";
+};
+
+&wdog {
 	status = "okay";
 };
