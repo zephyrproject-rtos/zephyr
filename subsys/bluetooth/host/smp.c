@@ -2704,6 +2704,10 @@ static uint8_t get_auth(struct bt_smp *smp, uint8_t auth)
 		auth &= ~BT_SMP_AUTH_KEYPRESS;
 	}
 
+#if defined(CONFIG_BT_CLASSIC)
+	auth |= BT_SMP_AUTH_CT2;
+#endif /* CONFIG_BT_CLASSIC */
+
 	return auth;
 }
 
