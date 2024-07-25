@@ -84,13 +84,15 @@ enum {
 	BT_HCI_VND_OP_WRITE_RAM = 0xFC4C,
 	BT_HCI_VND_OP_LAUNCH_RAM = 0xFC4E,
 	BT_HCI_VND_OP_UPDATE_BAUDRATE = 0xFC18,
+	BT_HCI_VND_OP_SET_LOCAL_DEV_ADDR = 0xFC01,
 };
 
 /* Externs for CY43xxx controller FW */
 extern const uint8_t brcm_patchram_buf[];
 extern const int brcm_patch_ram_length;
 
-#define CYBSP_BT_PLATFORM_CFG_SLEEP_MODE_LP_ENABLED   (1)
+#define CYBSP_BT_PLATFORM_CFG_SLEEP_MODE_LP_ENABLED (0)
+#define BTM_SET_LOCAL_DEV_ADDR_LENGTH 6
 
 static K_SEM_DEFINE(hci_sem, 1, 1);
 static K_SEM_DEFINE(cybt_platform_task_init_sem, 0, 1);
@@ -168,8 +170,9 @@ static int cyw208xx_bt_firmware_download(const uint8_t *firmware_image, uint32_t
 static int cyw208xx_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(params);
+
 	int err;
+	struct net_buf *buf;
 
 	/* Send HCI_RESET */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
@@ -185,6 +188,36 @@ static int cyw208xx_setup(const struct device *dev, const struct bt_hci_setup_pa
 
 	/* Waiting when BLE up after firmware launch */
 	cybt_platform_hci_wait_for_boot_fully_up(false);
+
+	/* Set public address */
+	buf = bt_hci_cmd_create(BT_HCI_VND_OP_SET_LOCAL_DEV_ADDR, BTM_SET_LOCAL_DEV_ADDR_LENGTH);
+	if (buf == NULL) {
+		LOG_ERR("Unable to allocate command buffer");
+		return -ENOMEM;
+	}
+
+	bt_addr_t *data = net_buf_add(buf, BTM_SET_LOCAL_DEV_ADDR_LENGTH);
+
+	bt_addr_copy(data, &(params->public_addr));
+
+	/* NOTE: By default, the CYW208xx controller sets some hard-coded static address.
+	 * To avoid address duplication, let's always override the default address by using
+	 * the HCI command BT_HCI_VND_OP_SET_LOCAL_DEV_ADDR. So
+	 *
+	 * 1. when cyw208xx_setup gets BT_ADDR_ANY from the host, it will overwrite the
+	 *    default address, and the host will switch to using a random address (set in
+	 *    the hci_init function).
+	 *
+	 * 2. If user set the static address (by using bt_id_create) before bt_enable,
+	 *    cyw208xx_setup will set user defined static address.
+	 */
+
+	err = bt_hci_cmd_send_sync(BT_HCI_VND_OP_SET_LOCAL_DEV_ADDR, buf, NULL);
+	if (err) {
+		LOG_ERR("Failed to set public address (%d)", err);
+		return err;
+	}
+
 	return 0;
 }
 
