@@ -535,3 +535,35 @@ void at_register(struct at_client *at, at_resp_cb_t resp, at_finish_cb_t finish)
 	at->finish = finish;
 	at->state = AT_STATE_START;
 }
+
+char *at_get_string(struct at_client *at)
+{
+	uint8_t pos = at->pos;
+	char *string;
+
+	skip_space(at);
+
+	if (at->buf[at->pos] != '"') {
+		at->pos = pos;
+		return NULL;
+	}
+	at->pos++;
+	string = &at->buf[at->pos];
+
+	while (at->buf[at->pos] != '\0' && at->buf[at->pos] != '"') {
+		at->pos++;
+	}
+
+	if (at->buf[at->pos] != '"') {
+		at->pos = pos;
+		return NULL;
+	}
+
+	at->buf[at->pos] = '\0';
+	at->pos++;
+
+	skip_space(at);
+	next_list(at);
+
+	return string;
+}
