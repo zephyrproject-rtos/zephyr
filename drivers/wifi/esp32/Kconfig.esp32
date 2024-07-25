@@ -240,7 +240,7 @@ config ESP32_WIFI_RX_IRAM_OPT
 config ESP32_WIFI_FTM_ENABLE
 	bool "WiFi FTM"
 	default n
-	depends on SOC_SERIES_ESP32C3
+	depends on SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3
 	help
 	  Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
 
