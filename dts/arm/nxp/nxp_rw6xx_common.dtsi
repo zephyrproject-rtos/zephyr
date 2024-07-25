@@ -304,6 +304,12 @@
 		num-inputs = <64>;
 	};
 
+	imu: nxp_wifi {
+		compatible = "nxp,wifi";
+		/* first index is the imu interrupt, the second is the wakeup done interrupt */
+		interrupts = <72 2>, <64 2>;
+	};
+
 	dma0: dma-controller@104000 {
 		compatible = "nxp,lpc-dma";
 		reg = <0x104000 0x1000>;
