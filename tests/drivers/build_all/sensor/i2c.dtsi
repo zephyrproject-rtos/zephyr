@@ -1067,3 +1067,13 @@ test_i2c_sht21@90 {
 	compatible = "sensirion,sht21";
 	reg = <0x90>;
 };
+
+test_i2c_icm42670: icm42670@91 {
+	compatible = "invensense,icm42670";
+	reg = <0x91>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-hz = <800>;
+	accel-fs = <16>;
+	gyro-hz = <800>;
+	gyro-fs = <2000>;
+};
