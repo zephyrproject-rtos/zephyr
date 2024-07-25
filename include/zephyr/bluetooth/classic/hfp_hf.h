@@ -231,6 +231,44 @@ int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd);
  */
 int bt_hfp_hf_cli(struct bt_conn *conn, bool enable);
 
+/** @brief Handsfree HF set Gain of Microphone (VGM)
+ *
+ *  set Gain of Microphone (VGM).
+ *  The AT command `AT+VGM=<gain>` will be sent to the AG to report its
+ *  current microphone gain level setting to the AG.
+ *  `<gain>` is a decimal numeric constant, relating to a particular
+ *  (implementation dependent) volume level controlled by the HF.
+ *  This command does not change the microphone gain of the AG; it simply
+ *  indicates the current value of the microphone gain in the HF.
+ *  If @kconfig{CONFIG_BT_HFP_HF_VOLUME} is not enabled, the error `-ENOTSUP`
+ *  will be returned if the function called.
+ *
+ *  @param conn Connection object.
+ *  @param gain Gain of microphone.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_vgm(struct bt_conn *conn, uint8_t gain);
+
+/** @brief Handsfree HF set Gain of Speaker (VGS)
+ *
+ *  set Gain of Speaker (VGS).
+ *  The AT command `AT+VGS=<gain>` will be sent to the AG to report its
+ *  current speaker gain level setting to the AG.
+ *  `<gain>` is a decimal numeric constant, relating to a particular
+ *  (implementation dependent) volume level controlled by the HF.
+ *  This command does not change the speaker gain of the AG; it simply
+ *  indicates the current value of the speaker gain in the HF.
+ *  If @kconfig{CONFIG_BT_HFP_HF_VOLUME} is not enabled, the error `-ENOTSUP`
+ *  will be returned if the function called.
+ *
+ *  @param conn Connection object.
+ *  @param gain Gain of speaker.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_vgs(struct bt_conn *conn, uint8_t gain);
+
 #ifdef __cplusplus
 }
 #endif

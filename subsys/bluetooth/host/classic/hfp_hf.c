@@ -918,6 +918,114 @@ int bt_hfp_hf_cli(struct bt_conn *conn, bool enable)
 #endif /* CONFIG_BT_HFP_HF_CLI */
 }
 
+#if defined(CONFIG_BT_HFP_HF_VOLUME)
+static int vgm_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("VGM set (result %d) on %p", result, hf);
+
+	/* AT+VGM is done. */
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_VOLUME */
+
+int bt_hfp_hf_vgm(struct bt_conn *conn, uint8_t gain)
+{
+#if defined(CONFIG_BT_HFP_HF_VOLUME)
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (gain > BT_HFP_HF_VGM_GAIN_MAX) {
+		LOG_ERR("Invalid gain %d>%d", gain, BT_HFP_HF_VGM_GAIN_MAX);
+		return -EINVAL;
+	}
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	hf->vgm = gain;
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		return 0;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, vgm_finish, "AT+VGM=%d", gain);
+	if (err < 0) {
+		LOG_ERR("HFP HF VGM set failed on %p", hf);
+	}
+
+	return err;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_VOLUME */
+}
+
+#if defined(CONFIG_BT_HFP_HF_VOLUME)
+static int vgs_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("VGS set (result %d) on %p", result, hf);
+
+	/* AT+VGS is done. */
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_VOLUME */
+
+int bt_hfp_hf_vgs(struct bt_conn *conn, uint8_t gain)
+{
+#if defined(CONFIG_BT_HFP_HF_VOLUME)
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (gain > BT_HFP_HF_VGM_GAIN_MAX) {
+		LOG_ERR("Invalid gain %d>%d", gain, BT_HFP_HF_VGM_GAIN_MAX);
+		return -EINVAL;
+	}
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	hf->vgs = gain;
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		return 0;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, vgs_finish, "AT+VGS=%d", gain);
+	if (err < 0) {
+		LOG_ERR("HFP HF VGS set failed on %p", hf);
+	}
+
+	return err;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_VOLUME */
+}
+
 static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
