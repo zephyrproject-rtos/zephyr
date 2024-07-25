@@ -1126,7 +1126,7 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 	 */
 	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
 
-	rsp->auth_req = 0x00;
+	rsp->auth_req = BT_SMP_AUTH_CT2;
 	rsp->io_capability = 0x00;
 	rsp->oob_flag = 0x00;
 	rsp->max_key_size = max_key_size;
@@ -1144,6 +1144,12 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 	smp_br_send(smp, rsp_buf, NULL);
 
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
+
+	/* If CT2 bit is set both side, set CT2 flag */
+	if ((rsp->auth_req & BT_SMP_AUTH_CT2) &&
+	    (req->auth_req & BT_SMP_AUTH_CT2)) {
+		atomic_set_bit(smp->flags, SMP_FLAG_CT2);
+	}
 
 	/* derive LTK if requested and clear distribution bits */
 	if ((smp->local_dist & BT_SMP_DIST_ENC_KEY) &&
@@ -1203,6 +1209,14 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+	}
+
+	/*
+	 * CT2 flag is set in pairing req by bt_smp_br_send_pairing_req.
+	 * If CT2 bit is set both side, set CT2 flag.
+	 */
+	if (rsp->auth_req & BT_SMP_AUTH_CT2) {
+		atomic_set_bit(smp->flags, SMP_FLAG_CT2);
 	}
 
 	/* derive LTK if requested and clear distribution bits */
@@ -1579,7 +1593,7 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 	 * ignored on reception.
 	 */
 
-	req->auth_req = 0x00;
+	req->auth_req = BT_SMP_AUTH_CT2;
 	req->io_capability = 0x00;
 	req->oob_flag = 0x00;
 	req->max_key_size = max_key_size;
