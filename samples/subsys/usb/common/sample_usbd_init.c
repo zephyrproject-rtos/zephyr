@@ -82,7 +82,7 @@ static void sample_fix_code_triple(struct usbd_context *uds_ctx,
 	}
 }
 
-struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
+struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
 {
 	int err;
 
@@ -167,6 +167,17 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 			LOG_ERR("Failed to add USB 2.0 Extension Descriptor");
 			return NULL;
 		}
+	}
+
+	return &sample_usbd;
+}
+
+struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
+{
+	int err;
+
+	if (sample_usbd_setup_device(msg_cb) == NULL) {
+		return NULL;
 	}
 
 	/* doc device init start */
