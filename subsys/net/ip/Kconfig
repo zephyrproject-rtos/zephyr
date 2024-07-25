@@ -186,6 +186,7 @@ config NET_SHELL
 	select SHELL
 	select NET_IPV4_IGMP if NET_NATIVE_IPV4
 	select REQUIRES_FLOAT_PRINTF
+	select GETOPT_LONG if WIREGUARD
 	help
 	  Activate shell module that provides network commands like
 	  ping to the console.
@@ -322,6 +323,11 @@ config NET_SHELL_WEBSOCKET_SUPPORTED
 	bool "Websocket client status"
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || WEBSOCKET_CLIENT
+
+config NET_SHELL_WIREGUARD_SUPPORTED
+	bool "Wireguard VPN"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || WIREGUARD
 
 config NET_SHELL_DYN_CMD_COMPLETION
 	bool "Network shell dynamic command completion"
