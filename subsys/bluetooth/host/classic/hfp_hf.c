@@ -42,6 +42,27 @@ NET_BUF_POOL_FIXED_DEFINE(hf_pool, CONFIG_BT_MAX_CONN + 1,
 
 static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BT_MAX_CONN];
 
+struct at_callback_set {
+	void *resp;
+	void *finish;
+} __packed;
+
+static inline void make_at_callback_set(void *storage, void *resp, void *finish)
+{
+	((struct at_callback_set *)storage)->resp = resp;
+	((struct at_callback_set *)storage)->finish = finish;
+}
+
+static inline void *at_callback_set_resp(void *storage)
+{
+	return ((struct at_callback_set *)storage)->resp;
+}
+
+static inline void *at_callback_set_finish(void *storage)
+{
+	return ((struct at_callback_set *)storage)->finish;
+}
+
 /* The order should follow the enum hfp_hf_ag_indicators */
 static const struct {
 	char *name;
@@ -136,6 +157,85 @@ void hf_slc_error(struct at_client *hf_at)
 	}
 }
 
+static void hfp_hf_send_failed(struct bt_hfp_hf *hf)
+{
+	int err;
+
+	LOG_ERR("SLC error: disconnecting");
+
+	err = bt_rfcomm_dlc_disconnect(&hf->rfcomm_dlc);
+	if (err) {
+		LOG_ERR("Fail to disconnect: %d", err);
+	}
+}
+
+static void hfp_hf_send_data(struct bt_hfp_hf *hf);
+
+static int hfp_hf_common_finish(struct at_client *at, enum at_result result,
+			  enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(at, struct bt_hfp_hf, at);
+	int err = 0;
+
+	if (result != AT_RESULT_OK) {
+		LOG_WRN("Fail to send AT command (result %d, cme err %d) on %p",
+		    result, cme_err, hf);
+	}
+
+	if (hf->backup_finish) {
+		err = hf->backup_finish(at, result, cme_err);
+		hf->backup_finish = NULL;
+	}
+
+	if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING)) {
+		LOG_DBG("Remove completed buf %p on %p", k_fifo_peek_head(&hf->tx_pending), hf);
+		(void)k_fifo_get(&hf->tx_pending, K_NO_WAIT);
+	} else {
+		LOG_WRN("Tx is not ongoing on %p", hf);
+	}
+
+	hfp_hf_send_data(hf);
+	return err;
+}
+
+static void hfp_hf_send_data(struct bt_hfp_hf *hf)
+{
+	struct net_buf *buf;
+	at_resp_cb_t resp;
+	at_finish_cb_t finish;
+	int err;
+
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING)) {
+		return;
+	}
+
+	buf = k_fifo_peek_head(&hf->tx_pending);
+	if (!buf) {
+		return;
+	}
+
+	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING);
+
+	resp = (at_resp_cb_t)at_callback_set_resp(buf->user_data);
+	finish = (at_finish_cb_t)at_callback_set_finish(buf->user_data);
+
+	/*
+	 * Backup the `finish` callback.
+	 * Provide a default finish callback to drive the next sending.
+	 */
+	hf->backup_finish = finish;
+	finish = hfp_hf_common_finish;
+
+	make_at_callback_set(buf->user_data, NULL, NULL);
+	at_register(&hf->at, resp, finish);
+
+	err = bt_rfcomm_dlc_send(&hf->rfcomm_dlc, buf);
+	if (err < 0) {
+		LOG_ERR("Rfcomm send error :(%d)", err);
+		hfp_hf_send_failed(hf);
+	}
+}
+
 int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 		    at_finish_cb_t finish, const char *format, ...)
 {
@@ -143,14 +243,13 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	va_list vargs;
 	int ret;
 
-	/* register the callbacks */
-	at_register(&hf->at, resp, finish);
-
 	buf = bt_rfcomm_create_pdu(&hf_pool);
 	if (!buf) {
 		LOG_ERR("No Buffers!");
 		return -ENOMEM;
 	}
+
+	make_at_callback_set(buf->user_data, resp, finish);
 
 	va_start(vargs, format);
 	ret = vsnprintk(buf->data, (net_buf_tailroom(buf) - 1), format, vargs);
@@ -165,11 +264,8 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 
 	LOG_DBG("HF %p, DLC %p sending buf %p", hf, &hf->rfcomm_dlc, buf);
 
-	ret = bt_rfcomm_dlc_send(&hf->rfcomm_dlc, buf);
-	if (ret < 0) {
-		LOG_ERR("Rfcomm send error :(%d)", ret);
-		return ret;
-	}
+	k_fifo_put(&hf->tx_pending, buf);
+	hfp_hf_send_data(hf);
 
 	return 0;
 }
@@ -554,9 +650,15 @@ static void slc_completed(struct at_client *hf_at)
 		bt_hf->connected(conn);
 	}
 
+	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED);
+
 	if (hfp_hf_send_cmd(hf, NULL, cmee_finish, "AT+CMEE=1") < 0) {
 		LOG_ERR("Error Sending AT+CMEE");
 	}
+
+#if defined(CONFIG_BT_HFP_HF_CLI)
+	(void)bt_hfp_hf_cli(conn, true);
+#endif /* CONFIG_BT_HFP_HF_CLI */
 }
 
 int cmer_finish(struct at_client *hf_at, enum at_result result,
@@ -710,6 +812,54 @@ int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd)
 	return 0;
 }
 
+#if defined(CONFIG_BT_HFP_HF_CLI)
+static int cli_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("CLIP set (result %d) on %p", result, hf);
+
+	/* AT+CLI is done. */
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_CLI */
+
+int bt_hfp_hf_cli(struct bt_conn *conn, bool enable)
+{
+#if defined(CONFIG_BT_HFP_HF_CLI)
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		LOG_ERR("SLC is not established on %p", hf);
+		return -EINVAL;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, cli_finish, "AT+CLIP=%d", enable ? 1 : 0);
+	if (err < 0) {
+		LOG_ERR("HFP HF CLI set failed on %p", hf);
+	}
+
+	return err;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_CLI */
+}
+
 static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
@@ -765,6 +915,8 @@ static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 			continue;
 		}
 
+		memset(hf, 0, sizeof(*hf));
+
 		hf->acl = conn;
 		hf->at.buf = hf->hf_buffer;
 		hf->at.buf_max_len = HF_MAX_BUF_LEN;
@@ -776,6 +928,8 @@ static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 
 		/* Set the supported features*/
 		hf->hf_features = BT_HFP_HF_SUPPORTED_FEATURES;
+
+		k_fifo_init(&hf->tx_pending);
 
 		for (j = 0; j < HF_MAX_AG_INDICATORS; j++) {
 			hf->ind_table[j] = -1;
