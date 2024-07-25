@@ -144,6 +144,7 @@ config BT_CYW208XX
 	bool
 	default y
 	depends on DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
+	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  Infineon CYW208XX HCI bluetooth interface
 
