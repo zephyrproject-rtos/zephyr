@@ -78,6 +78,44 @@ static void tx_ext_callback_2(const struct device *dev, int error, void *user_da
 }
 
 /**
+ * @brief Callback 1 invoked when CAN is stopped during transmission.
+ *
+ * See @a can_tx_callback_t() for argument description.
+ */
+static void tx_std_callback_netdown_1(const struct device *dev, int error, void *user_data)
+{
+	const struct can_frame *frame = user_data;
+
+	if ((error == 0) || (error == -ENETDOWN)) {
+		/* Frame may be sent before CAN is stopped */
+		k_sem_give(&tx_callback_sem);
+	}
+
+	zassert_equal(dev, can_dev, "CAN device does not match");
+	zassert_equal(frame->id, TEST_CAN_STD_ID_1, "ID does not match");
+	TC_PRINT("error1: %d\n", error);
+}
+
+/**
+ * @brief Callback 2 invoked when CAN is stopped during transmission.
+ *
+ * See @a can_tx_callback_t() for argument description.
+ */
+static void tx_std_callback_netdown_2(const struct device *dev, int error, void *user_data)
+{
+	const struct can_frame *frame = user_data;
+
+	if ((error == 0) || (error == -ENETDOWN)) {
+		/* Frame may be sent before CAN is stopped */
+		k_sem_give(&tx_callback_sem);
+	}
+
+	zassert_equal(dev, can_dev, "CAN device does not match");
+	zassert_equal(frame->id, TEST_CAN_STD_ID_2, "ID does not match");
+	TC_PRINT("error2: %d\n", error);
+}
+
+/**
  * @brief Standard (11-bit) CAN ID receive callback 1.
  *
  * See @a can_rx_callback_t() for argument description.
@@ -249,6 +287,35 @@ static void send_test_frame_nowait(const struct device *dev, const struct can_fr
 	err = can_send(dev, frame, TEST_SEND_TIMEOUT, callback, (void *)frame);
 	zassert_not_equal(err, -EBUSY, "arbitration lost in loopback mode");
 	zassert_equal(err, 0, "failed to send frame (err %d)", err);
+}
+
+/**
+ * @brief Test TX callback is executed when CAN gets stopped.
+ */
+ZTEST(canfd, test_tx_callback_when_can_stops)
+{
+	int err;
+
+#if defined(CONFIG_BOARD_NATIVE_SIM)
+	ztest_test_skip();
+#endif
+
+	k_sem_reset(&tx_callback_sem);
+
+	send_test_frame_nowait(can_dev, &test_std_fdf_frame_1, tx_std_callback_netdown_1);
+	send_test_frame_nowait(can_dev, &test_std_fdf_frame_2, tx_std_callback_netdown_2);
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = k_sem_take(&tx_callback_sem, K_MSEC(200));
+	zassert_equal(err, 0, "missing TX callback");
+
+	err = k_sem_take(&tx_callback_sem, K_MSEC(200));
+	zassert_equal(err, 0, "missing TX callback");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
 
 /**
@@ -487,6 +554,28 @@ ZTEST_USER(can_classic, test_bitrate_limits)
 }
 
 /**
+ * @brief Test setting a too low bitrate.
+ */
+ZTEST_USER(can_classic, test_set_bitrate_too_low)
+{
+	uint32_t min = can_get_bitrate_min(can_dev);
+	int err;
+
+	if (min == 0) {
+		ztest_test_skip();
+	}
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_bitrate(can_dev, min - 1);
+	zassert_equal(err, -ENOTSUP, "too low bitrate accepted");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
  * @brief Test setting a too high bitrate.
  */
 ZTEST_USER(can_classic, test_set_bitrate_too_high)
@@ -514,6 +603,21 @@ ZTEST_USER(can_classic, test_invalid_sample_point)
 
 	err = can_calc_timing(can_dev, &timing, TEST_BITRATE_1, 1000);
 	zassert_equal(err, -EINVAL, "invalid sample point of 100.0% accepted (err %d)", err);
+}
+
+/**
+ * @brief Test using an invalid bitrate.
+ */
+ZTEST_USER(can_classic, test_invalid_bitrate)
+{
+	struct can_timing timing;
+	int err;
+
+	err = can_calc_timing(can_dev, &timing, 0, TEST_SAMPLE_POINT);
+	zassert_equal(err, -EINVAL, "invalid bitrate of 0 bit/s accepted (err %d)", err);
+
+	err = can_calc_timing(can_dev, &timing, 1000001, TEST_SAMPLE_POINT);
+	zassert_equal(err, -EINVAL, "invalid bitrate of 1000001 bit/s accepted (err %d)", err);
 }
 
 /**
@@ -577,6 +681,110 @@ ZTEST_USER(can_classic, test_set_timing_max)
 }
 
 /**
+ * @brief Test that timing values for the data phase that are above the maximum can't be set.
+ */
+ZTEST_USER(can_classic, test_set_timing_above_max)
+{
+	int err;
+
+	const struct can_timing *max_timing = can_get_timing_max(can_dev);
+	struct can_timing test_timing;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	test_timing = *max_timing;
+	test_timing.sjw += 1;
+	err = can_set_timing(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid sjw was accepted (err %d)", err);
+
+	test_timing = *max_timing;
+	test_timing.prop_seg += 1;
+	err = can_set_timing(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid prop_seg was accepted (err %d)", err);
+
+	test_timing = *max_timing;
+	test_timing.phase_seg1 += 1;
+	err = can_set_timing(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid phase_seg1 was accepted (err %d)", err);
+
+	test_timing = *max_timing;
+	test_timing.phase_seg2 += 1;
+	err = can_set_timing(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid phase_seg2 was accepted (err %d)", err);
+
+	test_timing = *max_timing;
+	test_timing.prescaler += 1;
+	err = can_set_timing(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid prescaler was accepted (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test that timing values for the data phase that are below the minimum can't be set.
+ */
+ZTEST_USER(can_classic, test_set_timing_below_min)
+{
+	int err;
+
+	const struct can_timing *min_timing = can_get_timing_min(can_dev);
+	struct can_timing test_timing;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	if (min_timing->sjw > 0) {
+		test_timing = *min_timing;
+		test_timing.sjw -= 1;
+		err = can_set_timing(can_dev, &test_timing);
+		zassert_equal(err, -ENOTSUP, "invalid sjw was accepted (err %d)", err);
+	}
+
+	test_timing = *min_timing;
+	test_timing.sjw = min_timing->phase_seg1 + 1;
+	err = can_set_timing(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid sjw was accepted (err %d)", err);
+
+	test_timing = *min_timing;
+	test_timing.sjw = min_timing->phase_seg2 + 1;
+	err = can_set_timing(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid sjw was accepted (err %d)", err);
+
+	if (min_timing->prop_seg > 0) {
+		test_timing = *min_timing;
+		test_timing.prop_seg -= 1;
+		err = can_set_timing(can_dev, &test_timing);
+		zassert_equal(err, -ENOTSUP, "invalid prop_seg was accepted (err %d)", err);
+	}
+
+	if (min_timing->phase_seg1 > 0) {
+		test_timing = *min_timing;
+		test_timing.phase_seg1 -= 1;
+		err = can_set_timing(can_dev, &test_timing);
+		zassert_equal(err, -ENOTSUP, "invalid phase_seg1 was accepted (err %d)", err);
+	}
+
+	if (min_timing->phase_seg2 > 0) {
+		test_timing = *min_timing;
+		test_timing.phase_seg2 -= 1;
+		err = can_set_timing(can_dev, &test_timing);
+		zassert_equal(err, -ENOTSUP, "invalid phase_seg2 was accepted (err %d)", err);
+	}
+
+	if (min_timing->prescaler > 0) {
+		test_timing = *min_timing;
+		test_timing.prescaler -= 1;
+		err = can_set_timing(can_dev, &test_timing);
+		zassert_equal(err, -ENOTSUP, "invalid prescaler was accepted (err %d)", err);
+	}
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
  * @brief Test sending a message with no filters installed.
  *
  * This basic test work since the CAN controller is in loopback mode and
@@ -585,6 +793,46 @@ ZTEST_USER(can_classic, test_set_timing_max)
 ZTEST_USER(can_classic, test_send_and_forget)
 {
 	send_test_frame(can_dev, &test_std_frame_1);
+}
+
+/**
+ * @brief Test error when sending invalid frame (too big data payload).
+ *
+ * This basic test work since the CAN controller is in loopback mode and
+ * therefore ACKs its own frame.
+ */
+ZTEST_USER(can_classic, test_send_invalid_frame)
+{
+	struct can_frame test_invalid_frame = {
+		.flags   = 0,
+		.id      = TEST_CAN_STD_ID_1,
+		.dlc     = 9,
+		.data    = {0}
+	};
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_RUNTIME_ERROR_CHECKS);
+
+	err = can_send(can_dev, (const struct can_frame *) &test_invalid_frame,
+		TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_not_equal(err, -EBUSY, "arbitration lost in loopback mode");
+	zassert_equal(err, -EINVAL, "send incorrect frame (err %d)", err);
+
+	test_invalid_frame.flags = CAN_FRAME_IDE;
+	test_invalid_frame.dlc = 65;
+
+	err = can_send(can_dev, (const struct can_frame *) &test_invalid_frame,
+		TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_not_equal(err, -EBUSY, "arbitration lost in loopback mode");
+	zassert_equal(err, -EINVAL, "send incorrect frame (err %d)", err);
+
+	test_invalid_frame.flags = CAN_FRAME_ESI;
+	test_invalid_frame.dlc = 4;
+
+	err = can_send(can_dev, (const struct can_frame *) &test_invalid_frame,
+		TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_not_equal(err, -EBUSY, "arbitration lost in loopback mode");
+	zassert_equal(err, -ENOTSUP, "send incorrect frame (err %d)", err);
 }
 
 /**
@@ -673,6 +921,38 @@ ZTEST(can_classic, test_add_invalid_ext_filter)
 	filter.id = CAN_EXT_ID_MASK + 1U;
 	filter.mask = CAN_EXT_ID_MASK;
 	add_invalid_rx_filter(can_dev, &filter);
+}
+
+/**
+ * @brief Test adding filter with invalid flags.
+ */
+ZTEST(canfd, test_add_invalid_filter)
+{
+	int err;
+	const struct can_filter invalid_filter = {
+		.flags = 0xFFU,
+		.id = TEST_CAN_STD_ID_1,
+		.mask = CAN_STD_ID_MASK
+	};
+
+	err = can_add_rx_filter(can_dev, rx_std_callback_1, NULL, NULL);
+	zassert_equal(err, -EINVAL, "added invalid filter (err %d)", err);
+
+	err = can_add_rx_filter(can_dev, rx_std_callback_1, NULL, &invalid_filter);
+	zassert_equal(err, -ENOTSUP, "added invalid filter (err %d)", err);
+}
+
+/**
+ * @brief Test adding NULL callback.
+ */
+ZTEST(can_classic, test_add_NULL_callback_with_filter)
+{
+	int filter_id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_RUNTIME_ERROR_CHECKS);
+
+	filter_id = can_add_rx_filter(can_dev, NULL, NULL, &test_std_filter_1);
+	zassert_equal(filter_id, -EINVAL, "added filter with NULL callback");
 }
 
 /**
@@ -1349,6 +1629,70 @@ ZTEST_USER(can_classic, test_set_mode_while_started)
 	err = can_set_mode(can_dev, CAN_MODE_NORMAL);
 	zassert_not_equal(err, 0, "changed mode while started");
 	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
+}
+
+/**
+ * @brief Test that different CAN modes can be set.
+ */
+ZTEST_USER(can_classic, test_can_modes)
+{
+	enum can_state state;
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_get_state(can_dev, &state, NULL);
+	zassert_equal(err, 0, "failed to get CAN state (err %d)", err);
+	zassert_equal(state, CAN_STATE_STOPPED, "CAN controller not stopped");
+
+	err = can_set_mode(can_dev, CAN_MODE_NORMAL);
+	zassert_equal(err, 0, "failed to set normal mode (err %d)", err);
+	zassert_equal(CAN_MODE_NORMAL, can_get_mode(can_dev));
+
+	err = can_set_mode(can_dev, CAN_MODE_LISTENONLY);
+	if (err == -ENOTSUP) {
+		TC_PRINT("CAN_MODE_LISTENONLY is not supported\n");
+	} else {
+		zassert_equal(err, 0, "failed to set listen-only mode (err %d)", err);
+		zassert_equal(CAN_MODE_LISTENONLY, can_get_mode(can_dev));
+	}
+
+	err = can_set_mode(can_dev, CAN_MODE_ONE_SHOT);
+	if (err == -ENOTSUP) {
+		TC_PRINT("CAN_MODE_ONE_SHOT is not supported\n");
+	} else {
+		zassert_equal(err, 0, "failed to set one-shot mode (err %d)", err);
+		zassert_equal(CAN_MODE_ONE_SHOT, can_get_mode(can_dev));
+	}
+
+	err = can_set_mode(can_dev, CAN_MODE_3_SAMPLES);
+	if (err == -ENOTSUP) {
+		TC_PRINT("CAN_MODE_3_SAMPLES is not supported\n");
+	} else {
+		zassert_equal(err, 0, "failed to set 3-samples mode (err %d)", err);
+		zassert_equal(CAN_MODE_3_SAMPLES, can_get_mode(can_dev));
+	}
+
+	err = can_set_mode(can_dev, CAN_MODE_MANUAL_RECOVERY);
+	if (err == -ENOTSUP) {
+		TC_PRINT("CAN_MODE_MANUAL_RECOVERY is not supported\n");
+	} else {
+		zassert_equal(err, 0, "failed to set manual-recovery mode (err %d)", err);
+		zassert_equal(CAN_MODE_MANUAL_RECOVERY, can_get_mode(can_dev));
+	}
+
+	/* restore default CAN mode */
+	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+	zassert_equal(err, 0, "failed to set loopback mode (err %d)", err);
+	zassert_equal(CAN_MODE_LOOPBACK, can_get_mode(can_dev));
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+
+	err = can_get_state(can_dev, &state, NULL);
+	zassert_equal(err, 0, "failed to get CAN state (err %d)", err);
+	zassert_equal(state, CAN_STATE_ERROR_ACTIVE, "CAN controller not started");
 }
 
 void *can_classic_setup(void)
