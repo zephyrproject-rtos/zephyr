@@ -8,6 +8,7 @@
 #define FLASH_SIZE   DT_REG_SIZE(DT_INST(0, soc_nv_flash))
 #define FLASH_ORIGIN DT_REG_ADDR(DT_INST(0, soc_nv_flash))
 
+#include <zephyr/logging/log.h>
 #include <clock.h>
 #include <watchdog.h>
 #include <flash.h>
@@ -15,6 +16,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/kernel.h>
+#include <stdlib.h>
+
+LOG_MODULE_REGISTER(flash_b9x, CONFIG_FLASH_LOG_LEVEL);
 
 /* driver definitions */
 #define SECTOR_SIZE            (0x1000u)
@@ -26,7 +30,6 @@
 /* driver data structure */
 struct flash_b9x_data {
 	struct k_mutex flash_lock;
-	uint8_t *sector;
 };
 
 /* driver parameters structure */
@@ -35,46 +38,33 @@ static const struct flash_parameters flash_b9x_parameters = {
 	.erase_value = 0xff,
 };
 
-struct k_timer prot_tmr;
-
-static void flash_b9x_unlock(void)
+static void flash_b9x_unlock(unsigned int offset)
 {
 
 #if CONFIG_SOC_RISCV_TELINK_B92
-	k_timer_stop(&prot_tmr);
-	flash_protection_unlock_operation();
+	flash_protection_unlock_operation(offset);
 #elif CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
 
 #endif
 
 }
 
-static void flash_b9x_lock_start(void)
+static void flash_b9x_lock(unsigned int offset)
 {
 
 #if CONFIG_SOC_RISCV_TELINK_B92
-	k_timer_start(&prot_tmr, K_MSEC(FLASH_B9X_PROT_TIMEROUT_MS), K_NO_WAIT);
+	flash_protection_lock_operation(offset);
 #elif CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
 
 #endif
 
 }
 
-static void flash_b9x_lock_cb(struct k_timer *timer)
-{
-
-#if CONFIG_SOC_RISCV_TELINK_B92
-	flash_protection_lock_operation();
-#elif CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
-
-#endif
-
-}
 
 static void flash_b9x_lock_init(void)
 {
 #if CONFIG_SOC_RISCV_TELINK_B92
-	k_timer_init(&prot_tmr, &flash_b9x_lock_cb, NULL);
+	flash_protection_lock_init();
 #elif CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
 
 #endif
@@ -82,18 +72,27 @@ static void flash_b9x_lock_init(void)
 
 
 /* Check if flash page area is clean */
-static bool flash_b9x_is_clean(const struct flash_b9x_data *dev_data, uintptr_t offset, size_t len)
+static bool flash_b9x_is_clean(const struct flash_b9x_data *dev_data,
+		uintptr_t addr_flash, uintptr_t offset, size_t len)
 {
-	bool result = true;
 
+	bool result = true;
+	uint8_t *p_sector_clean = malloc(len);
+
+	if (p_sector_clean == NULL) {
+		return false;
+	}
+	flash_read_page(addr_flash, len, &p_sector_clean[0]);
 	for (size_t i = 0; i < len; i++) {
-		if (dev_data->sector[offset + i] != flash_b9x_parameters.erase_value) {
+		if (p_sector_clean[i] != flash_b9x_parameters.erase_value) {
 			result = false;
 			break;
 		}
 	}
+	free(p_sector_clean);
 	return result;
 }
+
 
 /* Modify flash data */
 static void flash_b9x_modify(struct flash_b9x_data *dev_data, uintptr_t offset,
@@ -105,31 +104,40 @@ static void flash_b9x_modify(struct flash_b9x_data *dev_data, uintptr_t offset,
 	while (len) {
 		size_t len_page_end =  SECTOR_SIZE - off_sector;
 		size_t len_current = len_page_end;
+		bool clean_flag;
 
 		if (len < len_page_end) {
 			len_current = len;
 		}
-		flash_read_page(addr_flash, len_current, &dev_data->sector[off_sector]);
-		if (!flash_b9x_is_clean(dev_data, off_sector, len_current)) {
+		clean_flag = flash_b9x_is_clean(dev_data, addr_flash, off_sector, len_current);
+		if (!clean_flag) {
+			uint8_t *p_sector = malloc(SECTOR_SIZE);
+
+			if (p_sector == NULL) {
+				LOG_ERR("malloc fail in flash modify.");
+				return;
+			}
+
 			if (off_sector) {
 				flash_read_page(addr_flash - off_sector, off_sector,
-					&dev_data->sector[0]);
+					&p_sector[0]);
 			}
 			if (len < len_page_end) {
 				flash_read_page(addr_flash + len_current,
 					len_page_end - len_current,
-					&dev_data->sector[off_sector + len_current]);
+					&p_sector[off_sector + len_current]);
 			}
 			flash_erase_sector(addr_flash - off_sector);
 			if (off_sector) {
 				flash_write_page(addr_flash - off_sector, off_sector,
-					&dev_data->sector[0]);
+					&p_sector[0]);
 			}
 			if (len < len_page_end) {
 				flash_write_page(addr_flash + len_current,
 					len_page_end - len_current,
-					&dev_data->sector[off_sector + len_current]);
+					&p_sector[off_sector + len_current]);
 			}
+			free(p_sector);
 		}
 		if (data) {
 			flash_write_page(addr_flash, len_current, (unsigned char *)data);
@@ -174,9 +182,8 @@ static int flash_b9x_erase(const struct device *dev, off_t offset, size_t len)
 	if (!flash_b9x_is_range_valid(offset, len)) {
 		return -EINVAL;
 	}
-	flash_b9x_unlock();
+
 	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B9X_ACCESS_TIMEOUT_MS))) {
-		flash_b9x_lock_start();
 		return -EACCES;
 	}
 
@@ -186,6 +193,8 @@ static int flash_b9x_erase(const struct device *dev, off_t offset, size_t len)
 		BM_CLR(reg_tmr_ctrl2, FLD_TMR_WD_EN);
 		wdt_been_enabled = true;
 	}
+	flash_b9x_unlock(offset);
+
 	if (offset % SECTOR_SIZE == 0 && len % SECTOR_SIZE == 0) {
 		/* erase directly , it will save some time for read */
 		size_t sec_cnt = len / SECTOR_SIZE;
@@ -196,13 +205,13 @@ static int flash_b9x_erase(const struct device *dev, off_t offset, size_t len)
 	} else {
 		flash_b9x_modify(dev_data, offset, NULL, len);
 	}
+	flash_b9x_lock(offset);
 
 	if (wdt_been_enabled) {
 		BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
 	}
 
 	k_mutex_unlock(&dev_data->flash_lock);
-	flash_b9x_lock_start();
 	return 0;
 }
 
@@ -218,10 +227,7 @@ static int flash_b9x_write(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
-	flash_b9x_unlock();
-
 	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B9X_ACCESS_TIMEOUT_MS))) {
-		flash_b9x_lock_start();
 		return -EACCES;
 	}
 
@@ -236,12 +242,11 @@ static int flash_b9x_write(const struct device *dev, off_t offset,
 	if (((uint32_t)data >= FLASH_ORIGIN) &&
 		((uint32_t)data < (FLASH_ORIGIN + FLASH_SIZE))) {
 
-		buf = k_malloc(len);
+		buf = malloc(len);
 		if (buf == NULL) {
 			if (wdt_been_enabled) {
 				BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
 			}
-			flash_b9x_lock_start();
 			k_mutex_unlock(&dev_data->flash_lock);
 			return -ENOMEM;
 		}
@@ -253,18 +258,18 @@ static int flash_b9x_write(const struct device *dev, off_t offset,
 		data = buf;
 	}
 	/* write flash */
-
+	flash_b9x_unlock(offset);
 	flash_b9x_modify(dev_data, offset, data, len);
+	flash_b9x_lock(offset);
 
 	/* if ram memory is allocated for flash writing it should be free */
 	if (buf != NULL) {
-		k_free(buf);
+		free(buf);
 	}
 
 	if (wdt_been_enabled) {
 		BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
 	}
-	flash_b9x_lock_start();
 	k_mutex_unlock(&dev_data->flash_lock);
 
 	return 0;
@@ -346,20 +351,13 @@ static const struct flash_driver_api flash_b9x_api = {
 
 /* Driver registration */
 #define FLASH_B9X_INIT(n)						\
-										    \
-	__attribute__((section(".bss")))			    \
-	static uint8_t sector_##n[SECTOR_SIZE];			    \
-										    \
-	static struct flash_b9x_data flash_data_##n = {			    \
-		.sector = sector_##n			    \
-	};			    \
-										    \
+	static struct flash_b9x_data flash_data_##n;			\
 	DEVICE_DT_INST_DEFINE(n, flash_b9x_init,			\
-			      NULL,				    \
-			      &flash_data_##n,				    \
-			      NULL,				    \
-			      POST_KERNEL,				    \
-			      CONFIG_FLASH_INIT_PRIORITY,			    \
+			      NULL,					\
+			      &flash_data_##n,				\
+			      NULL,					\
+			      POST_KERNEL,				\
+			      CONFIG_FLASH_INIT_PRIORITY,		\
 			      &flash_b9x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_B9X_INIT)
