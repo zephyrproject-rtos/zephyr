@@ -17,3 +17,11 @@
 &dut_spis {
 	memory-regions = <&cpurad_dma_region>;
 };
+
+&cpuapp_dma_region {
+	reg = <0xe80 0x80>;
+};
+
+&cpurad_dma_region {
+	reg = <0xf00 DT_SIZE_K(4)>;
+};
