@@ -624,10 +624,6 @@ Drivers and Sensors
 
   * Added support for Nuvoton Numaker M2L31X series.
 
-* Auxiliary Display
-
-* Audio
-
 * Battery
 
   * Added ``re-charge-voltage-microvolt`` property to the ``battery`` binding. This allows to set
@@ -684,8 +680,6 @@ Drivers and Sensors
   * Added driver for LPTMR to NXP MCXN947
   * Added the ``resolution`` property in ``nxp,lptmr`` binding to represent the maximum width
     in bits the LPTMR peripheral uses for its counter.
-
-* Crypto
 
 * DAC
 
@@ -919,8 +913,6 @@ Drivers and Sensors
   * Improvements and bug fixes on :dtcompatible:`nxp,mcux-i3c`, including handling the bus
     being busy more gracefully instead of simply returning errors.
 
-* IEEE 802.15.4
-
 * Input
 
   * New drivers: :dtcompatible:`adc-keys`, :dtcompatible:`chipsemi,chsc6x`,
@@ -1016,8 +1008,6 @@ Drivers and Sensors
   * ``pcie_bdf_lookup`` and ``pcie_probe`` have been removed since they have been
     deprecated since v3.3.0.
 
-* MEMC
-
 * MIPI-DBI
 
   * Added release API
@@ -1085,8 +1075,6 @@ Drivers and Sensors
   * Added reset controller driver for NXP RSTCTL.
   * Added support for Nuvoton Numaker M2L31X series.
 
-* Retained memory
-
 * RTC
 
   * Added Raspberry Pi Pico RTC driver.
@@ -1099,8 +1087,6 @@ Drivers and Sensors
   * Added tests and fixed bugs related to chained callback requests.
   * Wrapper around p4wq (rtio workq) created to go from blocking to non-blocking behavior in cases
     where native asynchronous RTIO functionality is unavailable.
-
-* SMBUS
 
 * SDHC
 
@@ -1736,8 +1722,6 @@ Libraries / Subsystems
   * Added ``modem_stats`` module which tracks the usage of buffers throughout the modem
     subsystem.
 
-* Picolibc
-
 * Power management
 
   * Devices can now declare which system power states cause power loss.
@@ -1791,8 +1775,6 @@ Libraries / Subsystems
   * Besides the existing :c:func:`sys_rand32_get` function, :c:func:`sys_rand8_get`,
     :c:func:`sys_rand16_get` and :c:func:`sys_rand64_get` are now also available.
     These functions are all implemented on top of :c:func:`sys_rand_get`.
-
-* Retention
 
 * SD
 
@@ -2004,9 +1986,6 @@ Trusted Firmware-M
 * Support for MCUboot signature types other than RSA-3072 has been added.
   The type can be chosen with the :kconfig:option:`CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE` Kconfig option.
   Using EC-P256, the new default, reduces flash usage by several KBs compared to RSA.
-
-zcbor
-*****
 
 LVGL
 ****
