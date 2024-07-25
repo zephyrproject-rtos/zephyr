@@ -297,7 +297,10 @@ static void lan865x_write_macaddress(const struct device *dev)
 	val = (mac[5] << 8) | mac[4];
 	oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_SAT2, val);
 
-	/* SPEC_ADD1_BOTTOM */
+	/*
+	 * SPEC_ADD1_BOTTOM - setting unique lower MAC address, back off time is
+	 * generated out of it.
+	 */
 	val = (mac[5] << 24) | (mac[4] << 16) | (mac[3] << 8) | mac[2];
 	oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_SAB1, val);
 }
