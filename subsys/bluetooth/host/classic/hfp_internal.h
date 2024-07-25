@@ -79,10 +79,22 @@
 #define HF_MAX_BUF_LEN       BT_HF_CLIENT_MAX_PDU
 #define HF_MAX_AG_INDICATORS 20
 
+
+/* bt_hfp_hf flags: the flags defined here represent hfp hf parameters */
+enum {
+	BT_HFP_HF_FLAG_CONNECTED,  /* HFP HF SLC Established */
+	BT_HFP_HF_FLAG_TX_ONGOING, /* HFP HF TX is ongoing */
+	/* Total number of flags - must be at the end of the enum */
+	BT_HFP_HF_NUM_FLAGS,
+};
+
 struct bt_hfp_hf {
 	struct bt_rfcomm_dlc rfcomm_dlc;
 	/* ACL connection handle */
 	struct bt_conn *acl;
+	/* AT command sending queue */
+	at_finish_cb_t backup_finish;
+	struct k_fifo tx_pending;
 	/* SCO Channel */
 	struct bt_sco_chan chan;
 	char hf_buffer[HF_MAX_BUF_LEN];
@@ -90,6 +102,8 @@ struct bt_hfp_hf {
 	uint32_t hf_features;
 	uint32_t ag_features;
 	int8_t ind_table[HF_MAX_AG_INDICATORS];
+
+	ATOMIC_DEFINE(flags, BT_HFP_HF_NUM_FLAGS);
 };
 
 enum hfp_hf_ag_indicators {
