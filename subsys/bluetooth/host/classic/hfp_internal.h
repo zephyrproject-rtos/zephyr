@@ -41,8 +41,40 @@
 #define BT_HFP_HF_FEATURE_ENH_VOICE_RECG  0x00000400 /* Enhanced Voice Recognition Status */
 #define BT_HFP_HF_FEATURE_VOICE_RECG_TEXT 0x00000800 /* Voice Recognition Text */
 
+/* HFP HF Features in SDP */
+#define BT_HFP_HF_SDP_FEATURE_ECNR            BIT(0) /* EC and/or NR function */
+#define BT_HFP_HF_SDP_FEATURE_3WAY_CALL       BIT(1) /* Three-way calling */
+#define BT_HFP_HF_SDP_FEATURE_CLI             BIT(2) /* CLI presentation */
+#define BT_HFP_HF_SDP_FEATURE_VOICE_RECG      BIT(3) /* Voice recognition */
+#define BT_HFP_HF_SDP_FEATURE_VOLUME          BIT(4) /* Remote volume control */
+#define BT_HFP_HF_SDP_FEATURE_WBS             BIT(5) /* Wide Band Speech */
+#define BT_HFP_HF_SDP_FEATURE_ENH_VOICE_RECG  BIT(6) /* Enhanced Voice Recognition Status */
+#define BT_HFP_HF_SDP_FEATURE_VOICE_RECG_TEXT BIT(7) /* Voice Recognition Text */
+#define BT_HFP_HF_SDP_FEATURE_SUPER_WBS       BIT(7) /* Super Wide Band Speech */
+
+#if defined(CONFIG_BT_HFP_HF_CLI)
+#define BT_HFP_HF_FEATURE_CLI_ENABLE BT_HFP_HF_FEATURE_CLI
+#define BT_HFP_HF_SDP_FEATURE_CLI_ENABLE BT_HFP_HF_SDP_FEATURE_CLI
+#else
+#define BT_HFP_HF_FEATURE_CLI_ENABLE 0
+#define BT_HFP_HF_SDP_FEATURE_CLI_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_CLI */
+
+#if defined(CONFIG_BT_HFP_HF_VOLUME)
+#define BT_HFP_HF_FEATURE_VOLUME_ENABLE BT_HFP_HF_FEATURE_VOLUME
+#define BT_HFP_HF_SDP_FEATURE_VOLUME_ENABLE BT_HFP_HF_SDP_FEATURE_VOLUME
+#else
+#define BT_HFP_HF_FEATURE_VOLUME_ENABLE 0
+#define BT_HFP_HF_SDP_FEATURE_VOLUME_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_VOLUME */
+
 /* HFP HF Supported features */
-#define BT_HFP_HF_SUPPORTED_FEATURES (BT_HFP_HF_FEATURE_CLI | BT_HFP_HF_FEATURE_VOLUME)
+#define BT_HFP_HF_SUPPORTED_FEATURES \
+(BT_HFP_HF_FEATURE_CLI_ENABLE | BT_HFP_HF_SDP_FEATURE_VOLUME_ENABLE)
+
+/* HFP HF Supported features in SDP */
+#define BT_HFP_HF_SDP_SUPPORTED_FEATURES \
+(BT_HFP_HF_SDP_FEATURE_CLI_ENABLE | BT_HFP_HF_SDP_FEATURE_VOLUME_ENABLE)
 
 #define HF_MAX_BUF_LEN       BT_HF_CLIENT_MAX_PDU
 #define HF_MAX_AG_INDICATORS 20
