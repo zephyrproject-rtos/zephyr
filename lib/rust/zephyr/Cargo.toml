@@ -10,6 +10,7 @@ Functionality for Rust-based applications that run on Zephyr.
 """
 
 [dependencies]
+log = "0.4.22"
 zephyr-sys = { version = "0.1.0", path = "../zephyr-sys" }
 
 # These are needed at build time.

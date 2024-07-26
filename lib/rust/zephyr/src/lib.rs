@@ -27,11 +27,21 @@ pub mod printk;
 
 use core::panic::PanicInfo;
 
+#[cfg(CONFIG_PRINTK)]
+pub fn set_logger() {
+    printk::set_printk_logger();
+}
+
 /// Override rust's panic.  This simplistic initial version just hangs in a loop.
 #[panic_handler]
 fn panic(_ :&PanicInfo) -> ! {
     loop {
     }
+}
+
+/// Re-export of zephyr-sys as zephyr::raw.
+pub mod raw {
+    pub use zephyr_sys::*;
 }
 
 /// Provide symbols used by macros in a crate-local namespace.

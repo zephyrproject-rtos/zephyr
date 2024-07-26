@@ -12,6 +12,8 @@ use core::fmt::{
     write,
 };
 
+use log::{LevelFilter, Log, Metadata, Record};
+
 #[macro_export]
 macro_rules! printk {
     ($($arg:tt)*) => {{
@@ -24,6 +26,35 @@ macro_rules! printkln {
     ($($arg:tt)*) => {{
         $crate::printk::printkln(format_args!($($arg)*));
     }};
+}
+
+/// A simple log handler built around printk.
+struct PrintkLogger;
+
+impl Log for PrintkLogger {
+    // Initially, everything is just available.
+    fn enabled(&self, _metadata: &Metadata<'_>) -> bool {
+        true
+    }
+
+    // Just print out the information.
+    fn log(&self, record: &Record<'_>) {
+        printkln!("{}:{}: {}",
+                  record.level(),
+                  record.target(),
+                  record.args());
+    }
+
+    // Nothing to do for flush.
+    fn flush(&self) {
+    }
+}
+
+static PRINTK_LOGGER: PrintkLogger = PrintkLogger;
+
+pub fn set_printk_logger() {
+    log::set_logger(&PRINTK_LOGGER).unwrap();
+    log::set_max_level(LevelFilter::Info);
 }
 
 // This could readily be optimized for the configuration where we don't have userspace, as well as
