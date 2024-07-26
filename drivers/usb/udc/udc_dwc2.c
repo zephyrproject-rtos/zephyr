@@ -38,7 +38,6 @@ enum dwc2_drv_event_type {
 struct dwc2_drv_event {
 	const struct device *dev;
 	enum dwc2_drv_event_type type;
-	uint32_t bcnt;
 	uint8_t ep;
 };
 
@@ -74,6 +73,7 @@ struct udc_dwc2_data {
 	uint32_t max_xfersize;
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
+	uint32_t rx_siz[16];
 	uint16_t dfifodepth;
 	uint16_t rxfifo_depth;
 	uint16_t max_txfifo_depth[16];
@@ -464,22 +464,11 @@ static uint32_t dwc2_rx_xfer_size(struct udc_dwc2_data *const priv,
 {
 	uint32_t size;
 
-	if (priv->bufferdma) {
-		size = net_buf_tailroom(buf);
+	size = net_buf_tailroom(buf);
 
-		/* Do as many packets in a single DMA as possible */
-		if (size > priv->max_xfersize) {
-			size = ROUND_DOWN(priv->max_xfersize,
-					  USB_MPS_TO_TPL(cfg->mps));
-		}
-	} else {
-		/* Completer mode can always program Max Packet Size, RxFLvl
-		 * interrupt will drop excessive data if necessary (i.e. buffer
-		 * is too short). The value returned must be Max Packet Size
-		 * multiple in order for dwc2_handle_rxflvl() to correctly
-		 * detect when RX has to be prepared during large transfers.
-		 */
-		size = USB_MPS_TO_TPL(cfg->mps);
+	/* Do as many packets in a single transfer as possible */
+	if (size > priv->max_xfersize) {
+		size = ROUND_DOWN(priv->max_xfersize, USB_MPS_TO_TPL(cfg->mps));
 	}
 
 	return size;
@@ -508,6 +497,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 		doeptsiz |= (1 << USB_DWC2_DOEPTSIZ0_SUPCNT_POS);
 	}
 
+	priv->rx_siz[ep_idx] = doeptsiz;
 	sys_write32(doeptsiz, doeptsiz_reg);
 
 	if (priv->bufferdma) {
@@ -785,10 +775,9 @@ static void dwc2_on_bus_reset(const struct device *dev)
 		}
 	}
 
-	doepmsk = USB_DWC2_DOEPINT_SETUP;
+	doepmsk = USB_DWC2_DOEPINT_SETUP | USB_DWC2_DOEPINT_XFERCOMPL;
 	if (priv->bufferdma) {
-		doepmsk |= USB_DWC2_DOEPINT_XFERCOMPL |
-			   USB_DWC2_DOEPINT_STSPHSERCVD;
+		doepmsk |= USB_DWC2_DOEPINT_STSPHSERCVD;
 	}
 
 	sys_write32(doepmsk, (mem_addr_t)&base->doepmsk);
@@ -852,49 +841,30 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_ep_config *ep_cfg;
-	struct dwc2_drv_event evt;
 	struct net_buf *buf;
 	uint32_t grxstsp;
 	uint32_t pktsts;
+	uint32_t bcnt;
+	uint8_t ep;
 
 	grxstsp = sys_read32((mem_addr_t)&base->grxstsp);
-	evt.ep = usb_dwc2_get_grxstsp_epnum(grxstsp);
-	evt.bcnt = usb_dwc2_get_grxstsp_bcnt(grxstsp);
+	ep = usb_dwc2_get_grxstsp_epnum(grxstsp);
+	bcnt = usb_dwc2_get_grxstsp_bcnt(grxstsp);
 	pktsts = usb_dwc2_get_grxstsp_pktsts(grxstsp);
 
-	LOG_DBG("ep 0x%02x: pktsts %u, bcnt %u", evt.ep, pktsts, evt.bcnt);
+	LOG_DBG("ep 0x%02x: pktsts %u, bcnt %u", ep, pktsts, bcnt);
 
 	switch (pktsts) {
 	case USB_DWC2_GRXSTSR_PKTSTS_SETUP:
-		dwc2_read_fifo_setup(dev, evt.ep, evt.bcnt);
+		dwc2_read_fifo_setup(dev, ep, bcnt);
 		break;
 	case USB_DWC2_GRXSTSR_PKTSTS_OUT_DATA:
-		evt.type = DWC2_DRV_EVT_DOUT;
-		ep_cfg = udc_get_ep_cfg(dev, evt.ep);
+		ep_cfg = udc_get_ep_cfg(dev, ep);
 
 		buf = udc_buf_peek(dev, ep_cfg->addr);
 
 		/* RxFIFO data must be retrieved even when buf is NULL */
-		dwc2_read_fifo(dev, evt.ep, buf, evt.bcnt);
-
-		if (buf == NULL) {
-			LOG_ERR("No buffer for ep 0x%02x", ep_cfg->addr);
-			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
-			break;
-		}
-
-		if ((evt.bcnt % udc_mps_ep_size(ep_cfg)) == 0 && net_buf_tailroom(buf)) {
-			uint32_t doeptsiz;
-
-			/* Prepare next read only when transfer finished */
-			doeptsiz = sys_read32((mem_addr_t)&base->out_ep[evt.ep].doeptsiz);
-			if (usb_dwc2_get_doeptsizn_xfersize(doeptsiz) == 0) {
-				dwc2_prep_rx(dev, buf, ep_cfg, 0);
-			}
-		} else {
-			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
-		}
-
+		dwc2_read_fifo(dev, ep, buf, bcnt);
 		break;
 	case USB_DWC2_GRXSTSR_PKTSTS_OUT_DATA_DONE:
 		LOG_DBG("RX pktsts DONE");
@@ -977,6 +947,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct dwc2_drv_event evt;
+	uint32_t bcnt;
 	struct net_buf *buf;
 	uint32_t doeptsiz;
 
@@ -991,21 +962,19 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 
 	evt.type = DWC2_DRV_EVT_DOUT;
 	evt.ep = ep_cfg->addr;
-	/* Assume udc buffer and endpoint config is the same as it was when
-	 * transfer was scheduled in dwc2_prep_rx(). The original transfer size
-	 * value is necessary here because controller decreases the value for
-	 * every byte stored.
+
+	/* The original transfer size value is necessary here because controller
+	 * decreases the value for every byte stored.
 	 */
-	evt.bcnt = dwc2_rx_xfer_size(priv, ep_cfg, buf) -
-		usb_dwc2_get_doeptsizn_xfersize(doeptsiz);
+	bcnt = usb_dwc2_get_doeptsizn_xfersize(priv->rx_siz[ep_idx]) -
+	       usb_dwc2_get_doeptsizn_xfersize(doeptsiz);
 
 	if (priv->bufferdma) {
-		sys_cache_data_invd_range(buf->data, evt.bcnt);
+		sys_cache_data_invd_range(buf->data, bcnt);
+		net_buf_add(buf, bcnt);
 	}
 
-	net_buf_add(buf, evt.bcnt);
-
-	if ((evt.bcnt % udc_mps_ep_size(ep_cfg)) == 0 && net_buf_tailroom(buf)) {
+	if ((bcnt % udc_mps_ep_size(ep_cfg)) == 0 && net_buf_tailroom(buf)) {
 		dwc2_prep_rx(dev, buf, ep_cfg, 0);
 	} else {
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
@@ -1063,7 +1032,6 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 			struct dwc2_drv_event evt = {
 				.type = DWC2_DRV_EVT_SETUP,
 				.ep = USB_CONTROL_EP_OUT,
-				.bcnt = 8,
 			};
 
 			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
