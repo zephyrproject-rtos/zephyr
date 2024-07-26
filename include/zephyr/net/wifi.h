@@ -58,6 +58,8 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WAPI,
 	/** EAP security - Enterprise. */
 	WIFI_SECURITY_TYPE_EAP,
+	/** EAP TLS security - Enterprise. */
+	WIFI_SECURITY_TYPE_EAP_TLS = WIFI_SECURITY_TYPE_EAP,
 	/** WEP security. */
 	WIFI_SECURITY_TYPE_WEP,
 	/** WPA-PSK security. */
