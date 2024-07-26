@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,62 +29,12 @@
 #include <cortex_a_r/stack.h>
 #endif
 
-#if defined(__GNUC__)
-/*
- * GCC can detect if memcpy is passed a NULL argument, however one of
- * the cases of relocate_vector_table() it is valid to pass NULL, so we
- * suppress the warning for this case.  We need to do this before
- * string.h is included to get the declaration of memcpy.
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnonnull"
-#endif
-
-#include <string.h>
-
-#if defined(CONFIG_SW_VECTOR_RELAY) || defined(CONFIG_SW_VECTOR_RELAY_CLIENT)
-Z_GENERIC_SECTION(.vt_pointer_section) __attribute__((used))
-void *_vector_table_pointer;
-#endif
-
 #ifdef CONFIG_ARM_MPU
 extern void z_arm_mpu_init(void);
 extern void z_arm_configure_static_mpu_regions(void);
 #elif defined(CONFIG_ARM_AARCH32_MMU)
 extern int z_arm_mmu_init(void);
 #endif
-
-#if defined(CONFIG_AARCH32_ARMV8_R)
-
-#define VECTOR_ADDRESS ((uintptr_t)_vector_start)
-
-static inline void relocate_vector_table(void)
-{
-	write_sctlr(read_sctlr() & ~HIVECS);
-	write_vbar(VECTOR_ADDRESS & VBAR_MASK);
-	barrier_isync_fence_full();
-}
-
-#else
-#define VECTOR_ADDRESS 0
-
-void __weak relocate_vector_table(void)
-{
-#if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) || \
-	!defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
-	write_sctlr(read_sctlr() & ~HIVECS);
-	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
-	(void)memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
-#elif defined(CONFIG_SW_VECTOR_RELAY) || defined(CONFIG_SW_VECTOR_RELAY_CLIENT)
-	_vector_table_pointer = _vector_start;
-#endif
-}
-
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
-
-#endif /* CONFIG_AARCH32_ARMV8_R */
 
 #if defined(CONFIG_CPU_HAS_FPU)
 
@@ -155,7 +106,6 @@ void z_prep_c(void)
 	/* Initialize tpidruro with our struct _cpu instance address */
 	write_tpidruro((uintptr_t)&_kernel.cpus[0]);
 
-	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
 #endif
