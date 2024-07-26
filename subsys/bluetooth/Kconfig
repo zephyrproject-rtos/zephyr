@@ -147,7 +147,7 @@ config BT_PHY_UPDATE
 
 config BT_DATA_LEN_UPDATE
 	bool "Data Length Update"
-	default y
+	default y if ((BT_BUF_ACL_TX_SIZE > 27) || (BT_BUF_ACL_RX_SIZE > 27))
 	depends on !BT_CTLR || BT_CTLR_DATA_LEN_UPDATE_SUPPORT
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
