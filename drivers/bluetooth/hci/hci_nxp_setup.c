@@ -993,7 +993,7 @@ static int fw_uploading(const uint8_t *fw, uint32_t fw_length)
 						return err;
 					}
 				} else {
-					LOG_ERR("Error occurs %d", fw_upload.error);
+					LOG_DBG("Error occurs %d", fw_upload.error);
 					fw_upload_send_ack(V3_TIMEOUT_ACK);
 					if (fw_upload.error & BT_MIC_FAIL_BIT) {
 						fw_upload.change_speed_buffer_len = 0;
@@ -1007,7 +1007,7 @@ static int fw_uploading(const uint8_t *fw, uint32_t fw_length)
 					LOG_DBG("FW download done");
 					return 0;
 				}
-				LOG_ERR("Error occurs %d", fw_upload.error);
+				LOG_DBG("Error occurs %d", fw_upload.error);
 				fw_upload_send_ack(V3_TIMEOUT_ACK);
 				if (fw_upload.error & BT_MIC_FAIL_BIT) {
 					fw_upload.change_speed_buffer_len = 0;
