@@ -2711,12 +2711,13 @@ static enum net_verdict tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
 	/* Delay ACK response in case of small window or missing PSH,
 	 * as described in RFC 813.
 	 */
-	if (tcp_short_window(conn) || !psh) {
-		k_work_schedule_for_queue(&tcp_work_q, &conn->ack_timer,
-					  ACK_DELAY);
-	} else {
+	if (psh && !tcp_short_window(conn)) {
 		k_work_cancel_delayable(&conn->ack_timer);
 		tcp_out(conn, ACK);
+	} else {
+		k_timeout_t ack_delay = K_MSEC(MAX(1,conn->recv_win_max/conn->recv_win));
+		k_work_schedule_for_queue(&tcp_work_q, &conn->ack_timer,
+					  ack_delay);
 	}
 
 	return ret;
