@@ -26,6 +26,8 @@ Application/software image management group defines following commands:
     +-------------------+-----------------------------------------------+
     | ``5``             | Image erase                                   |
     +-------------------+-----------------------------------------------+
+    | ``6``             | Slot info                                     |
+    +-------------------+-----------------------------------------------+
 
 Notion of "slots" and "images" in Zephyr
 ****************************************
@@ -516,3 +518,115 @@ where:
     Response from Zephyr running device may have "rc" value of
     :c:enumerator:`MGMT_ERR_EBADSTATE`, which means that the secondary
     image has been marked for next boot already and may not be erased.
+
+Slot info
+*********
+
+The command is used for fetching information on slots that are available. This command can be
+enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_SLOT_INFO`.
+
+Slot info request
+=================
+
+Slot info request header fields:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``0``  | ``1``        |  ``6``         |
+    +--------+--------------+----------------+
+
+The command sends an empty CBOR map as data.
+
+Slot info response
+==================
+
+Slot info response header fields:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``1``  | ``1``        |  ``6``         |
+    +--------+--------------+----------------+
+
+CBOR data of successful response:
+
+.. code-block:: none
+
+    {
+        (str)"images" : [
+            {
+                (str)"image"                        : (uint)
+                (str)"slots" : [
+                    {
+                        (str)"slot"                 : (uint)
+                        (str)"size"                 : (uint)
+                        (str,opt)"upload_image_id"  : (uint)
+                    }
+                    ...
+                ]
+                (str,opt)"max_image_size"           : (uint)
+            }
+            ...
+        ]
+    }
+
+In case of error the CBOR data takes the form:
+
+.. tabs::
+
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
+
+where:
+
+.. table::
+    :align: center
+
+    +-------------------+--------------------------------------------------------------------------------------------+
+    | "image"           | the image number being enumerated.                                                         |
+    +-------------------+--------------------------------------------------------------------------------------------+
+    | "slot"            | the slot inside the image being enumerated (note: this will be 0 or 1, it is the slot of   |
+    |                   | the image not the physical slot number).                                                   |
+    +-------------------+--------------------------------------------------------------------------------------------+
+    | "size"            | the size of the slot.                                                                      |
+    +-------------------+--------------------------------------------------------------------------------------------+
+    | "upload_image_id" | optional field (only present if :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD` is   |
+    |                   | enabled to allow direct image uploads) which specifies the image ID that can be used by    |
+    |                   | external tools to upload an image to that slot.                                            |
+    +-------------------+--------------------------------------------------------------------------------------------+
+    | "max_image_size"  | optional field (only present if :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD` |
+    |                   | or :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO` are enabled) which    |
+    |                   | specifies the maximum size of an application that can be uploaded to that image number.    |
+    +-------------------+--------------------------------------------------------------------------------------------+
+    | "err" -> "group"  | :c:enum:`mcumgr_group_t` group of the group-based error code. Only appears if an error is  |
+    |                   | returned when using SMP version 2.                                                         |
+    +-------------------+--------------------------------------------------------------------------------------------+
+    | "err" -> "rc"     | contains the index of the group-based error code. Only appears ifnon-zero (error           |
+    |                   | condition) when using SMP version 2.                                                       |
+    +-------------------+--------------------------------------------------------------------------------------------+
+    | "rc"              | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when using SMP version 1 |
+    |                   | or for SMP errors when using SMP version 2.                                                |
+    +-------------------+--------------------------------------------------------------------------------------------+
