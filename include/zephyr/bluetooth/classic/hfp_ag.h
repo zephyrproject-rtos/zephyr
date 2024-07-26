@@ -329,6 +329,21 @@ int bt_hfp_ag_vgm(struct bt_hfp_ag *ag, uint8_t vgm);
  */
 int bt_hfp_ag_vgs(struct bt_hfp_ag *ag, uint8_t vgs);
 
+/** @brief Set currently network operator
+ *
+ *  Set currently network operator.
+ *
+ *  @param ag HFP AG object.
+ *  @param mode Current mode and provides no information with regard
+ *              to the name of the operator.
+ *  @param name A string in alphanumeric format representing the
+ *                  name of the network operator. This string shall
+ *                  not exceed 16 characters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, uint8_t mode, char *name);
+
 #ifdef __cplusplus
 }
 #endif
