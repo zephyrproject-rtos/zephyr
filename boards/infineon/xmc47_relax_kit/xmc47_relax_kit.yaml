@@ -16,6 +16,7 @@ supported:
   - arduino_serial
   - watchdog
   - netif:eth
+  - rtc
 ram: 352
 flash: 2048
 vendor: infineon
