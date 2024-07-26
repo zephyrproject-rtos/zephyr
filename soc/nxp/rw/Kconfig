@@ -26,7 +26,7 @@ config INIT_SYS_PLL
 
 menuconfig NXP_RW6XX_BOOT_HEADER
 	bool "Create boot header"
-	default y if !BOOTLOADER_MCUBOOT && !BUILD_WITH_TFM
+	default y if !BOOTLOADER_MCUBOOT
 	help
 	  Create data structures required by the boot ROM to boot the
 	  application from an external flash device.
