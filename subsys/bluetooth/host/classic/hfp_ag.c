@@ -1444,6 +1444,64 @@ static int bt_hfp_ag_clip_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return err;
 }
 
+static int bt_hfp_ag_vgm_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	uint32_t vgm;
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_number(buf, &vgm);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (vgm > BT_HFP_HF_VGM_GAIN_MAX) {
+		LOG_ERR("Invalid vgm (%d>%d)", vgm, BT_HFP_HF_VGM_GAIN_MAX);
+		return -ENOTSUP;
+	}
+
+	if (bt_ag && bt_ag->vgm) {
+		bt_ag->vgm(ag, (uint8_t)vgm);
+	}
+	return err;
+}
+
+static int bt_hfp_ag_vgs_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	uint32_t vgs;
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_number(buf, &vgs);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (vgs > BT_HFP_HF_VGS_GAIN_MAX) {
+		LOG_ERR("Invalid vgs (%d>%d)", vgs, BT_HFP_HF_VGS_GAIN_MAX);
+		return -ENOTSUP;
+	}
+
+	if (bt_ag && bt_ag->vgs) {
+		bt_ag->vgs(ag, (uint8_t)vgs);
+	}
+	return err;
+}
+
 static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+BRSF", bt_hfp_ag_brsf_handler}, {"AT+BAC", bt_hfp_ag_bac_handler},
 	{"AT+CIND", bt_hfp_ag_cind_handler}, {"AT+CMER", bt_hfp_ag_cmer_handler},
@@ -1453,7 +1511,8 @@ static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"ATA", bt_hfp_ag_ata_handler},      {"AT+COPS", bt_hfp_ag_cops_handler},
 	{"AT+BCC", bt_hfp_ag_bcc_handler},   {"AT+BCS", bt_hfp_ag_bcs_handler},
 	{"ATD", bt_hfp_ag_atd_handler},      {"AT+BLDN", bt_hfp_ag_bldn_handler},
-	{"AT+CLIP", bt_hfp_ag_clip_handler},
+	{"AT+CLIP", bt_hfp_ag_clip_handler}, {"AT+VGM", bt_hfp_ag_vgm_handler},
+	{"AT+VGS", bt_hfp_ag_vgs_handler},
 };
 
 static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)
@@ -2359,6 +2418,78 @@ int bt_hfp_ag_select_codec(struct bt_hfp_ag *ag, uint8_t id)
 	atomic_set_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED);
 
 	err = bt_hfp_ag_create_audio_connection(ag);
+
+	return err;
+}
+
+int bt_hfp_ag_vgm(struct bt_hfp_ag *ag, uint8_t vgm)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	if (vgm > BT_HFP_HF_VGM_GAIN_MAX) {
+		LOG_ERR("Invalid VGM (%d>%d)", vgm, BT_HFP_HF_VGM_GAIN_MAX);
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+
+	if (!(ag->hf_features & BT_HFP_HF_FEATURE_VOLUME)) {
+		hfp_ag_unlock(ag);
+		LOG_ERR("Remote Audio Volume Control is unsupported");
+		return -ENOTSUP;
+	}
+	hfp_ag_unlock(ag);
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+VGM=%d\r\n", vgm);
+	if (err) {
+		LOG_ERR("Fail to notify vgm err :(%d)", err);
+	}
+
+	return err;
+}
+
+int bt_hfp_ag_vgs(struct bt_hfp_ag *ag, uint8_t vgs)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	if (vgs > BT_HFP_HF_VGS_GAIN_MAX) {
+		LOG_ERR("Invalid VGM (%d>%d)", vgs, BT_HFP_HF_VGS_GAIN_MAX);
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+
+	if (!(ag->hf_features & BT_HFP_HF_FEATURE_VOLUME)) {
+		hfp_ag_unlock(ag);
+		LOG_ERR("Remote Audio Volume Control is unsupported");
+		return -ENOTSUP;
+	}
+	hfp_ag_unlock(ag);
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+VGS=%d\r\n", vgs);
+	if (err) {
+		LOG_ERR("Fail to notify vgs err :(%d)", err);
+	}
 
 	return err;
 }
