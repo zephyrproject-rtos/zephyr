@@ -1198,6 +1198,91 @@ int bt_hfp_hf_vgs(struct bt_conn *conn, uint8_t gain)
 #endif /* CONFIG_BT_HFP_HF_VOLUME */
 }
 
+static int cops_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	uint32_t mode;
+	uint32_t format;
+	char *operator;
+	int err;
+
+	err = at_get_number(hf_at, &mode);
+	if (err < 0) {
+		LOG_ERR("Error getting value");
+		return err;
+	}
+
+	err = at_get_number(hf_at, &format);
+	if (err < 0) {
+		LOG_ERR("Error getting value");
+		return err;
+	}
+
+	operator = at_get_string(hf_at);
+
+	if (bt_hf && bt_hf->operator) {
+		bt_hf->operator(hf->acl, (uint8_t)mode, (uint8_t)format, operator);
+	}
+
+	return 0;
+}
+
+static int cops_resp(struct at_client *hf_at, struct net_buf *buf)
+{
+	int err;
+
+	LOG_DBG("");
+
+	err = at_parse_cmd_input(hf_at, buf, "COPS", cops_handle,
+				 AT_CMD_TYPE_NORMAL);
+	if (err < 0) {
+		LOG_ERR("Cannot parse response of AT+COPS?");
+		return err;
+	}
+
+	return 0;
+}
+
+static int cops_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+COPS? (result %d) on %p", result, hf);
+
+	return 0;
+}
+
+int bt_hfp_hf_get_operator(struct bt_conn *conn)
+{
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		return 0;
+	}
+
+	err = hfp_hf_send_cmd(hf, cops_resp, cops_finish, "AT+COPS?");
+	if (err < 0) {
+		LOG_ERR("Fail to read the currently selected operator on %p", hf);
+	}
+
+	return err;
+}
+
 static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
