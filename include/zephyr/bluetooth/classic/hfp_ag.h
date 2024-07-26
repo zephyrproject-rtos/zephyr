@@ -160,6 +160,26 @@ struct bt_hfp_ag_cb {
 	 *  @param ag HFP AG object.
 	 */
 	void (*codec)(struct bt_hfp_ag *ag, uint32_t ids);
+
+	/** HF VGM setting callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  VGM gain setting is informed from HF.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param gain HF microphone gain value.
+	 */
+	void (*vgm)(struct bt_hfp_ag *ag, uint8_t gain);
+
+	/** HF VGS setting callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  VGS gain setting is informed from HF.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param gain HF speaker gain value.
+	 */
+	void (*vgs)(struct bt_hfp_ag *ag, uint8_t gain);
 };
 
 /** @brief Register HFP AG profile
@@ -286,6 +306,28 @@ int bt_hfp_ag_remote_accept(struct bt_hfp_ag *ag);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_ag_remote_terminate(struct bt_hfp_ag *ag);
+
+/** @brief Set the HF microphone gain
+ *
+ *  Set the HF microphone gain
+ *
+ *  @param ag HFP AG object.
+ *  @param vgm Microphone gain value.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_vgm(struct bt_hfp_ag *ag, uint8_t vgm);
+
+/** @brief Set the HF speaker gain
+ *
+ *  Set the HF speaker gain
+ *
+ *  @param ag HFP AG object.
+ *  @param vgs Speaker gain value.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_vgs(struct bt_hfp_ag *ag, uint8_t vgs);
 
 #ifdef __cplusplus
 }
