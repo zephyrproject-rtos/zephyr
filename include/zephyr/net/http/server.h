@@ -59,6 +59,9 @@ enum http_resource_type {
 	/** Static resource, cannot be modified on runtime. */
 	HTTP_RESOURCE_TYPE_STATIC,
 
+	/** serves static gzipped files from a filesystem */
+	HTTP_RESOURCE_TYPE_STATIC_FS,
+
 	/** Dynamic resource, server interacts with the application via registered
 	 *  @ref http_resource_dynamic_cb_t.
 	 */
@@ -114,6 +117,37 @@ struct http_resource_detail_static {
 /* Make sure that the common is the first in the struct. */
 BUILD_ASSERT(offsetof(struct http_resource_detail_static, common) == 0);
 /** @endcond */
+
+/**
+ * @brief Representation of a static filesystem server resource.
+ */
+struct http_resource_detail_static_fs {
+	/** Common resource details. */
+	struct http_resource_detail common;
+
+	/** Path in the local filesystem */
+	const char *fs_path;
+};
+
+/** @cond INTERNAL_HIDDEN */
+/* Make sure that the common is the first in the struct. */
+BUILD_ASSERT(offsetof(struct http_resource_detail_static_fs, common) == 0);
+/** @endcond */
+
+struct http_content_type {
+	const char *extension;
+	size_t extension_len;
+	const char *content_type;
+};
+
+#define HTTP_SERVER_CONTENT_TYPE(_extension, _content_type)                                        \
+	const STRUCT_SECTION_ITERABLE(http_content_type, _extension) = {                           \
+		.extension = STRINGIFY(_extension),                                                \
+		.extension_len = sizeof(STRINGIFY(_extension)) - 1,                                \
+		.content_type = _content_type,                                                     \
+	};
+
+#define HTTP_SERVER_CONTENT_TYPE_FOREACH(_it) STRUCT_SECTION_FOREACH(http_content_type, _it)
 
 struct http_client_ctx;
 
