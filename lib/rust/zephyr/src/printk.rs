@@ -77,7 +77,7 @@ impl Context {
     fn flush(&mut self) {
         if self.count > 0 {
             unsafe {
-                wrapped_str_out(self.buf.as_ptr(), self.count);
+                zephyr_sys::k_str_out(self.buf.as_mut_ptr() as *mut i8, self.count);
             }
             self.count = 0;
         }
@@ -110,8 +110,4 @@ pub fn printkln(args: Arguments<'_>) {
     write(&mut context, args).unwrap();
     context.add_byte(b'\n');
     context.flush();
-}
-
-extern "C" {
-    fn wrapped_str_out(buf: *const u8, len: usize);
 }
