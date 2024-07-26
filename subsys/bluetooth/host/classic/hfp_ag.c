@@ -1232,7 +1232,8 @@ static int bt_hfp_ag_cops_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		return -ENOTSUP;
 	}
 
-	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+COPS:%d,%d,\"%s\"\r\n", 0, 0, ag->operator);
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+COPS:%d,%d,\"%s\"\r\n",
+		    ag->mode, 0, ag->operator);
 	if (err != 0) {
 		LOG_ERR("Fail to send err :(%d)", err);
 	}
@@ -2360,7 +2361,7 @@ int bt_hfp_ag_set_indicator(struct bt_hfp_ag *ag, enum bt_hfp_ag_indicator index
 	return err;
 }
 
-int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, char *name)
+int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, uint8_t mode, char *name)
 {
 	int len;
 
@@ -2380,6 +2381,7 @@ int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, char *name)
 	len = MIN(sizeof(ag->operator) - 1, len);
 	memcpy(ag->operator, name, len);
 	ag->operator[len] = '\0';
+	ag->mode = mode;
 	hfp_ag_unlock(ag);
 
 	return 0;
