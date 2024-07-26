@@ -11,6 +11,12 @@
  * are output.
  */
 
+/*
+ * This is getting build with KERNEL defined, which causes syscalls to not be implemented.  Work
+ * around this by just undefining this symbol.
+ */
+#undef KERNEL
+
 #ifdef RUST_BINDGEN
 /* errno is coming from somewhere in Zephyr's build.  Add the symbol when running bindgen so that it
  * is defined here.

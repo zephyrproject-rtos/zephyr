@@ -48,11 +48,14 @@ impl Augment for GpioAugment {
         let ord = node.ord;
         let device = format_ident!("__device_dts_ord_{}", ord);
         quote! {
-            pub unsafe fn get_instance() -> *const crate::sys::device {
-                extern "C" {
-                    static #device: crate::sys::device;
+            pub unsafe fn get_instance_raw() -> *const crate::raw::device {
+                &crate::raw::#device
+            }
+            pub fn get_instance() -> crate::sys::gpio::Gpio {
+                let device = unsafe { get_instance_raw() };
+                crate::sys::gpio::Gpio {
+                    device,
                 }
-                &#device
             }
         }
     }
@@ -95,13 +98,15 @@ impl Augment for GpioLedsAugment {
 
         let gpio_route = target.route_to_rust();
         quote! {
-            pub fn get_instance() -> crate::sys::gpio_dt_spec {
+            pub fn get_instance() -> crate::sys::gpio::GpioPin {
                 unsafe {
-                    let port = #gpio_route :: get_instance();
-                    crate::sys::gpio_dt_spec {
-                        port,
-                        pin: #pin as crate::sys::gpio_pin_t,
-                        dt_flags: #flags as crate::sys::gpio_dt_flags_t,
+                    let port = #gpio_route :: get_instance_raw();
+                    crate::sys::gpio::GpioPin {
+                        pin: crate::raw::gpio_dt_spec {
+                            port,
+                            pin: #pin as crate::raw::gpio_pin_t,
+                            dt_flags: #flags as crate::raw::gpio_dt_flags_t,
+                        }
                     }
                 }
             }

@@ -45,6 +45,10 @@ fn main() -> Result<()> {
         .derive_copy(false)
         .allowlist_function("k_.*")
         .allowlist_function("gpio_.*")
+        .allowlist_item("GPIO_.*")
+        // Each DT node has a device entry that is a static.
+        .allowlist_item("__device_dts_ord.*")
+        .allowlist_function("device_.*")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");
