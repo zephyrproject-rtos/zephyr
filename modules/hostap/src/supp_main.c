@@ -131,10 +131,6 @@ static struct hapd_global hglobal;
 #define HOSTAPD_CLEANUP_INTERVAL 10
 #endif /* HOSTAPD_CLEANUP_INTERVAL */
 
-static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level,
-					     enum wpa_msg_type type,
-					     const char *txt, size_t len);
-
 static int hostapd_periodic_call(struct hostapd_iface *iface, void *ctx)
 {
 	hostapd_periodic_iface(iface);
@@ -332,9 +328,6 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_READY, 0);
 	}
 
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	wpa_msg_register_cb(zephyr_hostap_ctrl_iface_msg_cb);
-#endif
 	ret = 0;
 
 out:
@@ -932,8 +925,6 @@ static struct hostapd_iface *hostapd_interface_init(struct hapd_interfaces *inte
 		return NULL;
 	}
 
-	iface->bss[0]->is_hostapd = 1;
-
 	return iface;
 }
 
@@ -1033,39 +1024,6 @@ static void zephyr_hostapd_init(struct supplicant_context *ctx)
 out:
 	return;
 }
-
-static const char *zephyr_hostap_msg_ifname_cb(void *ctx)
-{
-	if (ctx == NULL) {
-		return NULL;
-	}
-
-	if ((*((int *)ctx)) == 0) {
-		struct wpa_supplicant *wpa_s = ctx;
-		return wpa_s->ifname;
-	} else {
-		struct hostapd_data *hapd = ctx;
-		if (hapd && hapd->conf) {
-			return hapd->conf->iface;
-		}
-	}
-	return NULL;
-}
-
-static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level,
-					     enum wpa_msg_type type,
-					     const char *txt, size_t len)
-{
-	if (ctx == NULL) {
-		return;
-	}
-
-	if ((*((int *)ctx)) == 0) {
-		wpa_supplicant_msg_send(ctx, level, type, txt, len);
-	} else {
-		hostapd_msg_send(ctx, level, type, txt, len);
-	}
-}
 #endif
 
 static void handler(void)
@@ -1121,7 +1079,6 @@ static void handler(void)
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 	zephyr_hostapd_init(ctx);
-	wpa_msg_register_ifname_cb(zephyr_hostap_msg_ifname_cb);
 #endif
 
 	(void)wpa_supplicant_run(ctx->supplicant);
