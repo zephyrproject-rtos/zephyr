@@ -203,6 +203,22 @@ struct bt_hfp_hf_cb {
 	 *  @param inband In-band ring tone status from the AG.
 	 */
 	void (*inband_ring)(struct bt_conn *conn, bool inband);
+	/** HF network operator notification callback to application
+	 *
+	 *  If this callback is provided it will be called whenever there
+	 *  is a response code +COPS issued by the AG to
+	 *  response the AT+COPS? command issued by the HF by calling
+	 *  function `bt_hfp_hf_get_operator`.
+	 *
+	 *  @param conn Connection object.
+	 *  @param mode Current mode.
+	 *  @param format Format of the `operator` parameter string.
+	 *                It should be zero.
+	 *  @param operator A string in alphanumeric format
+	 *                  representing the name of the network
+	 *                  operator.
+	 */
+	void (*operator)(struct bt_conn *conn, uint8_t mode, uint8_t format, char *operator);
 };
 
 /** @brief Register HFP HF profile
@@ -287,6 +303,17 @@ int bt_hfp_hf_vgm(struct bt_conn *conn, uint8_t gain);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_vgs(struct bt_conn *conn, uint8_t gain);
+
+/** @brief Handsfree HF requests currently selected operator
+ *
+ *  Send the AT+COPS? (Read) command to find the currently
+ *  selected operator.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_get_operator(struct bt_conn *conn);
 
 #ifdef __cplusplus
 }
