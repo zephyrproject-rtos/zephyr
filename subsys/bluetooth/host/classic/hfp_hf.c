@@ -712,15 +712,129 @@ int cmd_complete(struct at_client *hf_at, enum at_result result,
 	return 0;
 }
 
-int cmee_finish(struct at_client *hf_at, enum at_result result,
-		enum at_cme cme_err)
+static int send_at_cmee(struct bt_hfp_hf *hf, at_finish_cb_t cb)
 {
-	if (result != AT_RESULT_OK) {
-		LOG_ERR("SLC Connection ERROR in response");
-		return -EINVAL;
+	if (hf->ag_features & BT_HFP_AG_FEATURE_EXT_ERR) {
+		return hfp_hf_send_cmd(hf, NULL, cb, "AT+CMEE=1");
+	} else {
+		return -ENOTSUP;
 	}
+}
+
+static int at_cmee_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("CMEE set (result %d) on %p", result, hf);
 
 	return 0;
+}
+
+static int send_at_cops(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+COPS=3,0");
+}
+
+static int at_cops_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("COPS set (result %d) on %p", result, hf);
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_HFP_HF_CLI)
+static int send_at_clip(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+CLIP=1");
+}
+
+static int at_clip_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("CLIP set (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_CLI */
+
+typedef int (*at_send_t)(struct bt_hfp_hf *hf, at_finish_cb_t cb);
+
+static struct at_cmd_init
+{
+	at_send_t send;
+	at_finish_cb_t finish;
+	bool disconnect; /* Disconnect if command failed. */
+} cmd_init_list[] = {
+	{send_at_cmee, at_cmee_finish, false},
+	{send_at_cops, at_cops_finish, false},
+#if defined(CONFIG_BT_HFP_HF_CLI)
+	{send_at_clip, at_clip_finish, false},
+#endif /* CONFIG_BT_HFP_HF_CLI */
+};
+
+static int at_cmd_init_start(struct bt_hfp_hf *hf);
+
+static int at_cmd_init_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	at_finish_cb_t finish;
+
+	if (result != AT_RESULT_OK) {
+		LOG_WRN("It is ERROR response of AT command %d.", hf->cmd_init_seq);
+	}
+
+	if (ARRAY_SIZE(cmd_init_list) > hf->cmd_init_seq) {
+		finish = cmd_init_list[hf->cmd_init_seq].finish;
+		if (finish) {
+			(void)finish(hf_at, result, cme_err);
+		}
+	} else {
+		LOG_ERR("Invalid indicator (%d>=%d)", hf->cmd_init_seq,
+		    ARRAY_SIZE(cmd_init_list));
+	}
+
+	/* Goto next AT command */
+	hf->cmd_init_seq++;
+	(void)at_cmd_init_start(hf);
+	return 0;
+}
+
+static int at_cmd_init_start(struct bt_hfp_hf *hf)
+{
+	at_send_t send;
+	int err = -EINVAL;
+
+	while (ARRAY_SIZE(cmd_init_list) > hf->cmd_init_seq) {
+		LOG_DBG("Fetch AT command (%d)", hf->cmd_init_seq);
+		send = cmd_init_list[hf->cmd_init_seq].send;
+		if (send) {
+			LOG_DBG("Send AT command");
+			err = send(hf, at_cmd_init_finish);
+		} else {
+			LOG_WRN("Invalid send func of AT command");
+		}
+
+		if (!err) {
+			break;
+		}
+
+		LOG_WRN("AT command sending failed");
+		if (cmd_init_list[hf->cmd_init_seq].disconnect) {
+			hfp_hf_send_failed(hf);
+			break;
+		}
+		/* Goto next AT command */
+		LOG_WRN("Send next AT command");
+		hf->cmd_init_seq++;
+	}
+	return err;
 }
 
 static void slc_completed(struct at_client *hf_at)
@@ -734,15 +848,11 @@ static void slc_completed(struct at_client *hf_at)
 
 	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED);
 
-	if (hf->ag_features & BT_HFP_AG_FEATURE_EXT_ERR) {
-		if (hfp_hf_send_cmd(hf, NULL, cmee_finish, "AT+CMEE=1") < 0) {
-			LOG_ERR("Error Sending AT+CMEE");
-		}
+	/* Start with first AT command */
+	hf->cmd_init_seq = 0;
+	if (at_cmd_init_start(hf)) {
+		LOG_ERR("Fail to start AT command initialization");
 	}
-
-#if defined(CONFIG_BT_HFP_HF_CLI)
-	(void)bt_hfp_hf_cli(conn, true);
-#endif /* CONFIG_BT_HFP_HF_CLI */
 }
 
 int cmer_finish(struct at_client *hf_at, enum at_result result,
