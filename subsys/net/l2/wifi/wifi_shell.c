@@ -2884,7 +2884,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      1, 0),
 	SHELL_SUBCMD_SET_END);
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_dpp,
 	SHELL_CMD_ARG(configurator_add, NULL,
@@ -2960,7 +2959,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "<network_id>\n",
 		      cmd_wifi_dpp_reconfig, 2, 0),
 	SHELL_SUBCMD_SET_END);
-#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_commands,
