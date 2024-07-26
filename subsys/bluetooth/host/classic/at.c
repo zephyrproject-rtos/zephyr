@@ -119,24 +119,46 @@ static int get_cmd_value(struct at_client *at, struct net_buf *buf,
 	return 0;
 }
 
-static int get_response_string(struct at_client *at, struct net_buf *buf,
-			       char stop_byte, enum at_state state)
+static bool is_stop_byte(char target, char *stop_string)
+{
+	return (strchr(stop_string, target) != NULL);
+}
+
+static bool is_vgm_or_vgs(struct at_client *at)
+{
+	if (!strcmp(at->buf, "VGM")) {
+		return true;
+	}
+
+	if (!strcmp(at->buf, "VGS")) {
+		return true;
+	}
+	return false;
+}
+
+static int get_response_string(struct at_client *at, struct net_buf *buf, char *stop_string,
+			       enum at_state state)
 {
 	int cmd_len = 0;
 	uint8_t pos = at->pos;
 	const char *str = (char *)buf->data;
 
 	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
-		if (*str != stop_byte) {
+		if (!is_stop_byte(*str, stop_string)) {
 			at->buf[at->pos++] = *str;
 			cmd_len++;
 			str++;
 			pos = at->pos;
 		} else {
+			char stop_byte = at->buf[at->pos];
+
 			cmd_len++;
 			at->buf[at->pos] = '\0';
 			at->pos = 0U;
 			at->state = state;
+			if ((stop_byte == '=') && !is_vgm_or_vgs(at)) {
+				return -EINVAL;
+			}
 			break;
 		}
 	}
@@ -197,7 +219,7 @@ static int at_state_start_lf(struct at_client *at, struct net_buf *buf)
 
 static int at_state_get_cmd_string(struct at_client *at, struct net_buf *buf)
 {
-	return get_response_string(at, buf, ':', AT_STATE_PROCESS_CMD);
+	return get_response_string(at, buf, ":=", AT_STATE_PROCESS_CMD);
 }
 
 static bool is_cmer(struct at_client *at)
@@ -227,7 +249,7 @@ static int at_state_process_cmd(struct at_client *at, struct net_buf *buf)
 
 static int at_state_get_result_string(struct at_client *at, struct net_buf *buf)
 {
-	return get_response_string(at, buf, '\r', AT_STATE_PROCESS_RESULT);
+	return get_response_string(at, buf, "\r", AT_STATE_PROCESS_RESULT);
 }
 
 static bool is_ring(struct at_client *at)
