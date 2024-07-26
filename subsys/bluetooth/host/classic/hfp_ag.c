@@ -1601,7 +1601,7 @@ static void hfp_ag_sent(struct bt_rfcomm_dlc *dlc, int err)
 	}
 
 	tx = CONTAINER_OF(node, struct bt_ag_tx, node);
-	LOG_ERR("Completed pending tx %p", tx);
+	LOG_DBG("Completed pending tx %p", tx);
 
 	/* Restart the tx work */
 	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
