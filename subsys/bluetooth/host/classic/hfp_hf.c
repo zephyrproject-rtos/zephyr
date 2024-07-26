@@ -652,8 +652,10 @@ static void slc_completed(struct at_client *hf_at)
 
 	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED);
 
-	if (hfp_hf_send_cmd(hf, NULL, cmee_finish, "AT+CMEE=1") < 0) {
-		LOG_ERR("Error Sending AT+CMEE");
+	if (hf->ag_features & BT_HFP_AG_FEATURE_EXT_ERR) {
+		if (hfp_hf_send_cmd(hf, NULL, cmee_finish, "AT+CMEE=1") < 0) {
+			LOG_ERR("Error Sending AT+CMEE");
+		}
 	}
 
 #if defined(CONFIG_BT_HFP_HF_CLI)
