@@ -441,6 +441,7 @@ static inline void init_iface(struct net_if *iface)
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 {
+	const struct net_l2 *l2;
 	struct net_context *context = net_pkt_context(pkt);
 	struct net_linkaddr *dst = net_pkt_lladdr_dst(pkt);
 	enum net_verdict verdict = NET_OK;
@@ -455,10 +456,24 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 		goto done;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && !net_if_l2(iface)) {
-		NET_WARN("no l2 for iface %p, discard pkt", iface);
-		verdict = NET_DROP;
-		goto done;
+	/* The check for CONFIG_NET_*_OFFLOAD here is an optimization;
+	 * This is currently the only way for net_if_l2 to be NULL or missing send().
+	 */
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) || IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
+		l2 = net_if_l2(iface);
+		if (l2 == NULL) {
+			/* Offloaded ifaces may choose not to use an L2 at all. */
+			NET_WARN("no l2 for iface %p, discard pkt", iface);
+			verdict = NET_DROP;
+			goto done;
+		} else if (l2->send == NULL) {
+			/* Or, their chosen L2 (for example, OFFLOADED_NETDEV_L2)
+			 * might simply not implement send.
+			 */
+			NET_WARN("l2 for iface %p cannot send, discard pkt", iface);
+			verdict = NET_DROP;
+			goto done;
+		}
 	}
 
 	/* If the ll address is not set at all, then we must set
