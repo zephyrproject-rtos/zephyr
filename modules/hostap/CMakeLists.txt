@@ -389,28 +389,6 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	${HOSTAP_SRC_BASE}/eap_peer/eap_aka.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-	${HOSTAP_SRC_BASE}/eap_server/eap_server_ttls.c
-	${HOSTAP_SRC_BASE}/eap_server/eap_server_tls.c
-	${HOSTAP_SRC_BASE}/eap_server/eap_server_tls_common.c
-	${HOSTAP_SRC_BASE}/eap_server/eap_server_peap.c
-	${HOSTAP_SRC_BASE}/eap_server/eap_server_mschapv2.c
-	${HOSTAP_SRC_BASE}/eap_server/eap_server_md5.c
-	${HOSTAP_SRC_BASE}/eap_server/eap_server_gtc.c
-)
-
-zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-	TLS_FUNCS
-	EAP_TLS_FUNCS
-	EAP_SERVER_TLS
-	EAP_SERVER_IDENTITY
-	EAP_SERVER_MD5
-	EAP_SERVER_MSCHAPV2
-	EAP_SERVER_PEAP
-	EAP_SERVER_GTC
-	EAP_SERVER_TTLS
-)
-
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	EAP_TLS
 	IEEE8021X_EAPOL

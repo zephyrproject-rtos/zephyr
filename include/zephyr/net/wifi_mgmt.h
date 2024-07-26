@@ -503,7 +503,7 @@ struct wifi_connect_req_params {
 	/** TLS cipher */
 	uint8_t TLS_cipher;
 	/** eap version */
-	int eap_ver;
+	uint8_t eap_ver;
 	/** Identity for EAP */
 	const uint8_t *eap_identity;
 	/** eap identity length */
@@ -514,14 +514,6 @@ struct wifi_connect_req_params {
 	uint8_t eap_passwd_length; /* Max 128 */
 	/** Fast BSS Transition used */
 	int ft_used;
-	/** Number of EAP users */
-	uint8_t nusers;
-	/** Number of EAP passwds */
-	uint8_t passwds;
-	/** User Identities */
-	const uint8_t *identities[WIFI_IDENTITY_MAX_USERS];
-	/** User Passwords */
-	const uint8_t *passwords[WIFI_IDENTITY_MAX_USERS];
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
