@@ -4,7 +4,5 @@ board:
   socs:
   - name: skyp
     variants:
-    - name: m85
+    - name: cortex-m85
       cpucluster: m85
-    # - name: xtensa
-    #   cpucluster: xtensa
