@@ -1499,18 +1499,6 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 				goto out;
 			iface->bss[0]->conf->sae_pwe = 2;
 		}
-		else if (params->security == WIFI_SECURITY_TYPE_DPP) {
-			if (!hostapd_cli_cmd_v("set wpa 2"))
-				goto out;
-			if (!hostapd_cli_cmd_v("set wpa_key_mgmt DPP"))
-				goto out;
-			if (!hostapd_cli_cmd_v("set wpa_passphrase %s", params->psk))
-				goto out;
-			if (!hostapd_cli_cmd_v("set wpa_pairwise CCMP"))
-				goto out;
-			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP"))
-				goto out;
-		}
 	} else {
 		if (!hostapd_cli_cmd_v("set wpa 0"))
 			goto out;
