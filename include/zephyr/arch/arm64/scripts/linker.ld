@@ -53,8 +53,8 @@
   _region_min_align = CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE;
   #define BSS_ALIGN ALIGN(_region_min_align)
 #else
-  /* If building without MMU support, use default 4-byte alignment. */
-  _region_min_align = 4;
+  /* If building without MMU support, use default 8-byte alignment. */
+  _region_min_align = 8;
 #endif
 
 #ifndef BSS_ALIGN
@@ -127,12 +127,6 @@ SECTIONS
         *(.text)
         *(".text.*")
         *(.gnu.linkonce.t.*)
-
-        /*
-         * These are here according to 'arm-zephyr-elf-ld --verbose',
-         * after .gnu.linkonce.t.*
-         */
-        *(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)
 
 #include <zephyr/linker/kobject-text.ld>
 
@@ -257,11 +251,7 @@ SECTIONS
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD), BSS_ALIGN)
     {
-        /*
-         * For performance, BSS section is assumed to be 4 byte aligned and
-         * a multiple of 4 bytes
-         */
-        . = ALIGN(4);
+        . = ALIGN(8);
         __bss_start = .;
         __kernel_ram_start = .;
 
@@ -270,11 +260,7 @@ SECTIONS
         *(COMMON)
         *(".kernel_bss.*")
 
-        /*
-         * As memory is cleared in words only, it is simpler to ensure the BSS
-         * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
-                 */
-        __bss_end = ALIGN(4);
+        __bss_end = ALIGN(8);
     } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 #include <zephyr/linker/common-noinit.ld>
