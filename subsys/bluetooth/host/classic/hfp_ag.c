@@ -176,7 +176,8 @@ static void bt_hfp_ag_set_call_state(struct bt_hfp_ag *ag, bt_hfp_call_state_t c
 
 	switch (call_state) {
 	case BT_HFP_CALL_TERMINATE:
-		atomic_clear(ag->flags);
+		atomic_clear_bit(ag->flags, BT_HFP_AG_CREATING_SCO);
+		atomic_clear_bit(ag->flags, BT_HFP_AG_INCOMING_CALL);
 		k_work_cancel_delayable(&ag->deferred_work);
 		break;
 	case BT_HFP_CALL_OUTGOING:
