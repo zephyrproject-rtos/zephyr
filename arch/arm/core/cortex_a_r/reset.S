@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -318,5 +319,7 @@ _primary_core:
 #if defined(CONFIG_DISABLE_TCM_ECC)
     bl z_arm_tcm_disable_ecc
 #endif
+
+    bl z_arm_relocate_vector_table
 
     bx r4
