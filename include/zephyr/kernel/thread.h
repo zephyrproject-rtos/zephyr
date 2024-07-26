@@ -237,7 +237,7 @@ typedef struct k_thread_runtime_stats {
 	uint64_t idle_cycles;
 #endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
-#if defined(__cplusplus) && !defined(CONFIG_SCHED_THREAD_USAGE) &&                                 \
+#if (defined(__cplusplus) || CONFIG_RUST) && !defined(CONFIG_SCHED_THREAD_USAGE) &&	\
 	!defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) && !defined(CONFIG_SCHED_THREAD_USAGE_ALL)
 	/* If none of the above Kconfig values are defined, this struct will have a size 0 in C
 	 * which is not allowed in C++ (it'll have a size 1). To prevent this, we add a 1 byte dummy
