@@ -107,10 +107,6 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_WPS_PBC,
 	/** WPS pin */
 	NET_REQUEST_WIFI_CMD_WPS_PIN,
-	/** AP WPS pbc */
-	NET_REQUEST_WIFI_CMD_AP_WPS_PBC,
-	/** AP WPS pin */
-	NET_REQUEST_WIFI_CMD_AP_WPS_PIN,
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -253,16 +249,6 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_PBC);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_WPS_PIN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_PIN);
-
-#define NET_REQUEST_WIFI_AP_WPS_PBC				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_WPS_PBC)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_WPS_PBC);
-
-#define NET_REQUEST_WIFI_AP_WPS_PIN				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_WPS_PIN)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_WPS_PIN);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 #define NET_REQUEST_WIFI_DPP			\
@@ -1282,21 +1268,6 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*wps_pin)(const struct device *dev, struct wifi_wps_pin_params *params);
-	/** Start AP wps pbc
-	 *
-	 * @param dev Pointer to the device structure for the driver instance
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*ap_wps_pbc)(const struct device *dev);
-	/** Start AP wps pin
-	 *
-	 * @param dev Pointer to the device structure for the driver instance
-	 * @param params wps pin operarion and pin number
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*ap_wps_pin)(const struct device *dev, struct wifi_wps_pin_params *params);
 };
 
 /** Wi-Fi management offload API */
