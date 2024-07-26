@@ -1421,6 +1421,10 @@ static int bt_hfp_ag_clip_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	int err;
 	uint32_t clip;
 
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
 	err = get_number(buf, &clip);
 	if (err != 0) {
 		return -ENOTSUP;
