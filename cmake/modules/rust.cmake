@@ -49,11 +49,27 @@ function(_rust_map_target)
   endif()
 endfunction()
 
+function(get_include_dirs target dirs)
+  get_target_property(include_dirs ${target} INTERFACE_INCLUDE_DIRECTORIES)
+  if(include_dirs)
+    set(${dirs} ${include_dirs} PARENT_SCOPE)
+  else()
+    set(${dirs} "" PARENT_SCOPE)
+  endif()
+endfunction()
+
 function(rust_cargo_application)
   # For now, hard-code the Zephyr crate directly here.  Once we have
   # more than one crate, these should be added by the modules
   # themselves.
   set(LIB_RUST_CRATES zephyr zephyr-build)
+
+  get_include_dirs(zephyr_interface include_dirs)
+
+  get_target_property(include_dirs, zephyr_interface INTERFACE_INCLUDE_DIRECTORIES)
+  get_property(include_defines TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_DEFINITIONS)
+  message(STATUS "Includes: ${include_dirs}")
+  message(STATUS "Defines: ${include_defines}")
 
   _rust_map_target()
   message(STATUS "Building Rust llvm target ${RUST_TARGET}")
@@ -67,6 +83,10 @@ function(rust_cargo_application)
   set(CARGO_TARGET_DIR "${CMAKE_CURRENT_BINARY_DIR}/rust/target")
   set(RUST_LIBRARY "${CARGO_TARGET_DIR}/${RUST_TARGET}/${RUST_BUILD_TYPE}/librustapp.a")
   set(SAMPLE_CARGO_CONFIG "${CMAKE_CURRENT_BINARY_DIR}/rust/sample-cargo-config.toml")
+
+  # The generated C binding wrappers. These are bindgen-generated wrappers for the inline functions
+  # within Zephyr.
+  set(WRAPPER_FILE "${CMAKE_CURRENT_BINARY_DIR}/rust/wrapper.c")
 
   # To get cmake to always invoke Cargo requires a bit of a trick.  We make the output of the
   # command a file that never gets created.  This will cause cmake to always rerun cargo.  We
@@ -109,6 +129,9 @@ target-dir = \"${CARGO_TARGET_DIR}\"
 BUILD_DIR = \"${CMAKE_CURRENT_BINARY_DIR}\"
 DOTCONFIG = \"${DOTCONFIG}\"
 ZEPHYR_DTS = \"${ZEPHYR_DTS}\"
+INCLUDE_DIRS = \"${include_dirs}\"
+INCLUDE_DEFINES = \"${include_defines}\"
+WRAPPER_FILE = \"${WRAPPER_FILE}\"
 
 [patch.crates-io]
 ${config_paths}
@@ -117,12 +140,15 @@ ${config_paths}
   # The library is built by invoking Cargo.
   add_custom_command(
     OUTPUT ${DUMMY_FILE}
-    BYPRODUCTS ${RUST_LIBRARY}
+    BYPRODUCTS ${RUST_LIBRARY} ${WRAPPER_FILE}
     COMMAND
       ${CMAKE_EXECUTABLE}
       env BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
       DOTCONFIG=${DOTCONFIG}
       ZEPHYR_DTS=${ZEPHYR_DTS}
+      INCLUDE_DIRS="${include_dirs}"
+      INCLUDE_DEFINES="${include_defines}"
+      WRAPPER_FilE="${WRAPPER_FILE}"
       cargo build
       # TODO: release flag if release build
       # --release
@@ -151,5 +177,9 @@ ${config_paths}
 
   # Presumably, Rust applications will have no C source files, but cmake will require them.
   # Add an empty file so that this will build.  The main will come from the rust library.
-  target_sources(app PRIVATE ${ZEPHYR_BASE}/lib/rust/main.c)
+  target_sources(app PRIVATE ${ZEPHYR_BASE}/lib/rust/main.c ${WRAPPER_FILE})
+  set_source_files_properties(
+    ${WRAPPER_FILE}
+    COMPILE_FLAGS "-I${ZEPHYR_BASE}/lib/rust/zephyr-sys"
+  )
 endfunction()
