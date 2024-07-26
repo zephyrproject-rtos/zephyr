@@ -77,6 +77,7 @@ struct udc_dwc2_data {
 	uint16_t dfifodepth;
 	uint16_t rxfifo_depth;
 	uint16_t max_txfifo_depth[16];
+	uint16_t sof_num;
 	unsigned int dynfifosizing : 1;
 	unsigned int bufferdma : 1;
 	/* Number of endpoints including control endpoint */
@@ -87,6 +88,9 @@ struct udc_dwc2_data {
 	uint8_t outeps;
 	uint8_t setup[8];
 };
+
+static void udc_dwc2_ep_disable(const struct device *dev,
+				struct udc_ep_config *const cfg, bool stall);
 
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
@@ -266,6 +270,11 @@ static bool dwc2_ep_is_periodic(struct udc_ep_config *const cfg)
 	}
 }
 
+static bool dwc2_ep_is_iso(struct udc_ep_config *const cfg)
+{
+	return (cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) == USB_EP_TYPE_ISO;
+}
+
 static bool dwc2_dma_buffer_ok_to_use(const struct device *dev, void *buf,
 				      uint32_t xfersize, uint16_t mps)
 {
@@ -298,17 +307,28 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	mem_addr_t diepctl_reg = (mem_addr_t)&base->in_ep[ep_idx].diepctl;
 	mem_addr_t diepint_reg = (mem_addr_t)&base->in_ep[ep_idx].diepint;
 
+	uint32_t diepctl;
 	uint32_t max_xfersize, max_pktcnt, pktcnt;
 	const uint32_t addnl = USB_MPS_ADDITIONAL_TRANSACTIONS(cfg->mps);
 	const size_t d = sizeof(uint32_t);
 	unsigned int key;
 	uint32_t len;
 	const bool is_periodic = dwc2_ep_is_periodic(cfg);
+	const bool is_iso = dwc2_ep_is_iso(cfg);
 
-	if (priv->bufferdma) {
-		/* DMA automatically handles packet split */
-		len = buf->len;
+	if (is_iso) {
+		/* Isochronous transfers can only be programmed one
+		 * (micro-)frame at a time.
+		 */
+		len = MIN(buf->len, USB_MPS_TO_TPL(cfg->mps));
 	} else {
+		/* DMA automatically handles packet split. In completer mode,
+		 * the value is sanitized below.
+		 */
+		len = buf->len;
+	}
+
+	if (!priv->bufferdma) {
 		uint32_t spcavail = dwc2_ftx_avail(dev, ep_idx);
 		uint32_t spcperpkt = ROUND_UP(udc_mps_ep_size(cfg), 4);
 		uint32_t max_pkts, max_transfer;
@@ -326,13 +346,13 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		 * packet (for periodic transfers at least the number of packets
 		 * per microframe).
 		 */
-		if ((buf->len > max_transfer) && ((1 + addnl) > max_pkts)) {
+		if ((len > max_transfer) && ((1 + addnl) > max_pkts)) {
 			LOG_ERR("ep 0x%02x FIFO space is too low, %u (%u)",
-				cfg->addr, spcavail, buf->len);
+				cfg->addr, spcavail, len);
 			return -EAGAIN;
 		}
 
-		len = MIN(buf->len, max_transfer);
+		len = MIN(len, max_transfer);
 	}
 
 	if (len != 0U) {
@@ -388,8 +408,19 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		sys_cache_data_flush_range(buf->data, len);
 	}
 
+	diepctl = sys_read32(diepctl_reg);
+	if (is_iso) {
+		if (priv->sof_num & 1) {
+			diepctl |= USB_DWC2_DEPCTL_SETODDFR;
+		} else {
+			diepctl |= USB_DWC2_DEPCTL_SETEVENFR;
+		}
+	}
+
 	/* Clear NAK and set endpoint enable */
-	sys_set_bits(diepctl_reg, USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_CNAK);
+	diepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_CNAK;
+	sys_write32(diepctl, diepctl_reg);
+
 	/* Clear IN Endpoint NAK Effective interrupt in case it was set */
 	sys_write32(USB_DWC2_DIEPINT_INEPNAKEFF, diepint_reg);
 
@@ -458,25 +489,9 @@ static inline int dwc2_read_fifo(const struct device *dev, const uint8_t ep,
 	return 0;
 }
 
-static uint32_t dwc2_rx_xfer_size(struct udc_dwc2_data *const priv,
-				  struct udc_ep_config *const cfg,
-				  struct net_buf *buf)
-{
-	uint32_t size;
-
-	size = net_buf_tailroom(buf);
-
-	/* Do as many packets in a single transfer as possible */
-	if (size > priv->max_xfersize) {
-		size = ROUND_DOWN(priv->max_xfersize, USB_MPS_TO_TPL(cfg->mps));
-	}
-
-	return size;
-}
-
 /* Can be called from ISR and we call it only when there is a buffer in the queue */
 static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
-			 struct udc_ep_config *const cfg, const bool ncnak)
+			 struct udc_ep_config *const cfg)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
@@ -485,9 +500,38 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 	mem_addr_t doepctl_reg = dwc2_get_dxepctl_reg(dev, ep_idx);
 	uint32_t pktcnt;
 	uint32_t doeptsiz;
+	uint32_t doepctl;
 	uint32_t xfersize;
 
-	xfersize = dwc2_rx_xfer_size(priv, cfg, buf);
+	/* Clear NAK and set endpoint enable */
+	doepctl = sys_read32(doepctl_reg);
+	doepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_CNAK;
+
+	if (dwc2_ep_is_iso(cfg)) {
+		xfersize = USB_MPS_TO_TPL(cfg->mps);
+		pktcnt = 1 + USB_MPS_ADDITIONAL_TRANSACTIONS(cfg->mps);
+
+		if (xfersize > net_buf_tailroom(buf)) {
+			LOG_ERR("ISO RX buffer too small");
+			return;
+		}
+
+		/* Set the Even/Odd (micro-)frame appropriately */
+		if (priv->sof_num & 1) {
+			doepctl |= USB_DWC2_DEPCTL_SETEVENFR;
+		} else {
+			doepctl |= USB_DWC2_DEPCTL_SETODDFR;
+		}
+	} else {
+		xfersize = net_buf_tailroom(buf);
+
+		/* Do as many packets in a single transfer as possible */
+		if (xfersize > priv->max_xfersize) {
+			xfersize = ROUND_DOWN(priv->max_xfersize, USB_MPS_TO_TPL(cfg->mps));
+		}
+
+		pktcnt = DIV_ROUND_UP(xfersize, USB_MPS_EP_SIZE(cfg->mps));
+	}
 
 	pktcnt = DIV_ROUND_UP(xfersize, udc_mps_ep_size(cfg));
 	doeptsiz = usb_dwc2_set_doeptsizn_pktcnt(pktcnt) |
@@ -514,11 +558,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 		sys_cache_data_invd_range(buf->data, xfersize);
 	}
 
-	if (ncnak) {
-		sys_set_bits(doepctl_reg, USB_DWC2_DEPCTL_EPENA);
-	} else {
-		sys_set_bits(doepctl_reg, USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_CNAK);
-	}
+	sys_write32(doepctl, doepctl_reg);
 
 	LOG_INF("Prepare RX 0x%02x doeptsiz 0x%x", cfg->addr, doeptsiz);
 }
@@ -534,7 +574,7 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 	}
 
 	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
-		dwc2_prep_rx(dev, buf, cfg, 0);
+		dwc2_prep_rx(dev, buf, cfg);
 	} else {
 		if (dwc2_tx_fifo_write(dev, cfg, buf)) {
 			LOG_ERR("Failed to start write to TX FIFO, ep 0x%02x",
@@ -556,7 +596,7 @@ static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
 	}
 
 	udc_buf_put(ep_cfg, buf);
-	dwc2_prep_rx(dev, buf, ep_cfg, 0);
+	dwc2_prep_rx(dev, buf, ep_cfg);
 	LOG_DBG("feed buf %p", buf);
 
 	return 0;
@@ -950,6 +990,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	uint32_t bcnt;
 	struct net_buf *buf;
 	uint32_t doeptsiz;
+	const bool is_iso = dwc2_ep_is_iso(ep_cfg);
 
 	doeptsiz = sys_read32((mem_addr_t)&base->out_ep[ep_idx].doeptsiz);
 
@@ -969,13 +1010,46 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	bcnt = usb_dwc2_get_doeptsizn_xfersize(priv->rx_siz[ep_idx]) -
 	       usb_dwc2_get_doeptsizn_xfersize(doeptsiz);
 
-	if (priv->bufferdma) {
+	if (is_iso) {
+		uint32_t pkts;
+		bool valid;
+
+		pkts = usb_dwc2_get_doeptsizn_pktcnt(priv->rx_siz[ep_idx]) -
+			usb_dwc2_get_doeptsizn_pktcnt(doeptsiz);
+		switch (usb_dwc2_get_doeptsizn_rxdpid(doeptsiz)) {
+		case USB_DWC2_DOEPTSIZN_RXDPID_DATA0:
+			valid = (pkts == 1);
+			break;
+		case USB_DWC2_DOEPTSIZN_RXDPID_DATA1:
+			valid = (pkts == 2);
+			break;
+		case USB_DWC2_DOEPTSIZN_RXDPID_DATA2:
+			valid = (pkts == 3);
+			break;
+		case USB_DWC2_DOEPTSIZN_RXDPID_MDATA:
+		default:
+			valid = false;
+			break;
+		}
+
+		if (!valid) {
+			if (!priv->bufferdma) {
+				/* RxFlvl added data to net buf, rollback */
+				net_buf_remove_mem(buf, bcnt);
+			}
+			/* Data is not valid, discard it */
+			bcnt = 0;
+		}
+	}
+
+	if (priv->bufferdma && bcnt) {
 		sys_cache_data_invd_range(buf->data, bcnt);
 		net_buf_add(buf, bcnt);
 	}
 
-	if ((bcnt % udc_mps_ep_size(ep_cfg)) == 0 && net_buf_tailroom(buf)) {
-		dwc2_prep_rx(dev, buf, ep_cfg, 0);
+	if (!is_iso && (bcnt % udc_mps_ep_size(ep_cfg)) == 0 &&
+	    net_buf_tailroom(buf)) {
+		dwc2_prep_rx(dev, buf, ep_cfg);
 	} else {
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 	}
@@ -1056,10 +1130,112 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 	sys_write32(USB_DWC2_GINTSTS_OEPINT, (mem_addr_t)&base->gintsts);
 }
 
+/* In DWC2 otg context incomplete isochronous IN transfer means that the host
+ * did not issue IN token to at least one isochronous endpoint and software has
+ * find on which endpoints the data is no longer valid and discard it.
+ */
+static void dwc2_handle_incompisoin(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	mem_addr_t gintsts_reg = (mem_addr_t)&base->gintsts;
+	const uint32_t mask =
+		USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_EPTYPE_MASK |
+		USB_DWC2_DEPCTL_USBACTEP;
+	const uint32_t val =
+		USB_DWC2_DEPCTL_EPENA |
+		usb_dwc2_set_depctl_eptype(USB_DWC2_DEPCTL_EPTYPE_ISO) |
+		USB_DWC2_DEPCTL_USBACTEP;
+
+	for (uint8_t i = 1U; i < priv->numdeveps; i++) {
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
+
+		if (epdir == USB_DWC2_GHWCFG1_EPDIR_IN ||
+		    epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
+			mem_addr_t diepctl_reg = dwc2_get_dxepctl_reg(dev, i | USB_EP_DIR_IN);
+			uint32_t diepctl;
+
+			diepctl = sys_read32(diepctl_reg);
+
+			/* Check if endpoint didn't receive ISO OUT data */
+			if ((diepctl & mask) == val) {
+				struct udc_ep_config *cfg;
+				struct net_buf *buf;
+
+				cfg = udc_get_ep_cfg(dev, i | USB_EP_DIR_IN);
+				__ASSERT_NO_MSG(cfg && cfg->stat.enabled &&
+						dwc2_ep_is_iso(cfg));
+
+				udc_dwc2_ep_disable(dev, cfg, false);
+
+				buf = udc_buf_get(dev, cfg->addr);
+				if (buf) {
+					udc_submit_ep_event(dev, buf, 0);
+				}
+			}
+		}
+	}
+
+	sys_write32(USB_DWC2_GINTSTS_INCOMPISOIN, gintsts_reg);
+}
+
+/* In DWC2 otg context incomplete isochronous OUT transfer means that the host
+ * did not issue OUT token to at least one isochronous endpoint and software has
+ * to find on which endpoint it didn't receive any data and let the stack know.
+ */
+static void dwc2_handle_incompisoout(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	mem_addr_t gintsts_reg = (mem_addr_t)&base->gintsts;
+	const uint32_t mask =
+		USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_EPTYPE_MASK |
+		USB_DWC2_DEPCTL_DPID | USB_DWC2_DEPCTL_USBACTEP;
+	const uint32_t val =
+		USB_DWC2_DEPCTL_EPENA |
+		usb_dwc2_set_depctl_eptype(USB_DWC2_DEPCTL_EPTYPE_ISO) |
+		((priv->sof_num & 1) ? USB_DWC2_DEPCTL_DPID : 0) |
+		USB_DWC2_DEPCTL_USBACTEP;
+
+	for (uint8_t i = 1U; i < priv->numdeveps; i++) {
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
+
+		if (epdir == USB_DWC2_GHWCFG1_EPDIR_OUT ||
+		    epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
+			mem_addr_t doepctl_reg = dwc2_get_dxepctl_reg(dev, i);
+			uint32_t doepctl;
+
+			doepctl = sys_read32(doepctl_reg);
+
+			/* Check if endpoint didn't receive ISO OUT data */
+			if ((doepctl & mask) == val) {
+				struct udc_ep_config *cfg;
+				struct net_buf *buf;
+
+				cfg = udc_get_ep_cfg(dev, i);
+				__ASSERT_NO_MSG(cfg && cfg->stat.enabled &&
+						dwc2_ep_is_iso(cfg));
+
+				udc_dwc2_ep_disable(dev, cfg, false);
+
+				buf = udc_buf_get(dev, cfg->addr);
+				if (buf) {
+					udc_submit_ep_event(dev, buf, 0);
+				}
+			}
+		}
+	}
+
+	sys_write32(USB_DWC2_GINTSTS_INCOMPISOOUT, gintsts_reg);
+}
+
 static void udc_dwc2_isr_handler(const struct device *dev)
 {
 	const struct udc_dwc2_config *const config = dev->config;
 	struct usb_dwc2_reg *const base = config->base;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	mem_addr_t gintsts_reg = (mem_addr_t)&base->gintsts;
 	uint32_t int_status;
 	uint32_t gintmsk;
@@ -1072,8 +1248,13 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 		LOG_DBG("GINTSTS 0x%x", int_status);
 
 		if (int_status & USB_DWC2_GINTSTS_SOF) {
+			uint32_t dsts;
+
 			/* Clear USB SOF interrupt. */
 			sys_write32(USB_DWC2_GINTSTS_SOF, gintsts_reg);
+
+			dsts = sys_read32((mem_addr_t)&base->dsts);
+			priv->sof_num = usb_dwc2_get_dsts_soffn(dsts);
 			udc_submit_event(dev, UDC_EVT_SOF, 0);
 		}
 
@@ -1118,6 +1299,14 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 		if (int_status & USB_DWC2_GINTSTS_OEPINT) {
 			/* Handle OUT Endpoints interrupt */
 			dwc2_handle_oepint(dev);
+		}
+
+		if (int_status & USB_DWC2_GINTSTS_INCOMPISOIN) {
+			dwc2_handle_incompisoin(dev);
+		}
+
+		if (int_status & USB_DWC2_GINTSTS_INCOMPISOOUT) {
+			dwc2_handle_incompisoout(dev);
 		}
 	}
 
@@ -1981,6 +2170,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	sys_write32(USB_DWC2_GINTSTS_OEPINT | USB_DWC2_GINTSTS_IEPINT |
 		    USB_DWC2_GINTSTS_ENUMDONE | USB_DWC2_GINTSTS_USBRST |
 		    USB_DWC2_GINTSTS_WKUPINT | USB_DWC2_GINTSTS_USBSUSP |
+		    USB_DWC2_GINTSTS_INCOMPISOOUT | USB_DWC2_GINTSTS_INCOMPISOIN |
 		    USB_DWC2_GINTSTS_SOF,
 		    (mem_addr_t)&base->gintmsk);
 
