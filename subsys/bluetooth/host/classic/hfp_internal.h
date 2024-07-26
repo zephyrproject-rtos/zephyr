@@ -110,6 +110,9 @@ struct bt_hfp_hf {
 	uint8_t vgs;
 	int8_t ind_table[HF_MAX_AG_INDICATORS];
 
+	/* AT command initialization indicator */
+	uint8_t cmd_init_seq;
+
 	ATOMIC_DEFINE(flags, BT_HFP_HF_NUM_FLAGS);
 };
 
