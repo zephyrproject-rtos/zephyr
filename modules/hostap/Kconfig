@@ -411,7 +411,7 @@ config WEP
 
 config WPA_CLI
 	bool
-	default y if WIFI_NM_WPA_SUPPLICANT_CLI
+        default y
 
 config WPA_CRYPTO
 	bool
