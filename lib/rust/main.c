@@ -16,14 +16,4 @@ int main(void)
 	return 0;
 }
 
-#ifdef CONFIG_PRINTK
-/*
- * Until we have syscall support in Rust, wrap this syscall.
- */
-void wrapped_str_out(char *c, size_t n)
-{
-	k_str_out(c, n);
-}
-#endif
-
 #endif
