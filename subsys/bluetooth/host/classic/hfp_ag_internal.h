@@ -102,6 +102,7 @@ struct bt_hfp_ag {
 	uint8_t hf_indicator_value[HFP_HF_IND_MAX];
 
 	/* operator */
+	uint8_t mode;
 	char operator[AT_COPS_OPERATOR_MAX_LEN + 1];
 
 	/* SCO Connection Object */
