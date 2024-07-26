@@ -3,32 +3,45 @@
 
 #![no_std]
 
+use log::warn;
+
 use core::ffi::c_void;
 
-use zephyr::printkln;
-use zephyr::sys::GPIO_OUTPUT_ACTIVE;
+use zephyr::sys::gpio::GPIO_OUTPUT_ACTIVE;
 
 #[no_mangle]
 extern "C" fn rust_main() {
+    zephyr::set_logger();
+
+    warn!("Starting blinky");
     // println!("Blinky!");
     // Invoke "blink" as a user thread.
     // blink();
-    unsafe {
-        k_thread_user_mode_enter(blink,
-                                 core::ptr::null_mut(),
-                                 core::ptr::null_mut(),
-                                 core::ptr::null_mut());
+    if false {
+        unsafe {
+            zephyr::raw::k_thread_user_mode_enter
+                (Some(blink),
+                core::ptr::null_mut(),
+                core::ptr::null_mut(),
+                core::ptr::null_mut());
+        }
+    } else {
+        unsafe {
+            blink(core::ptr::null_mut(),
+                  core::ptr::null_mut(),
+                  core::ptr::null_mut());
+        }
     }
 }
 
 // fn blink() {
-extern "C" fn blink(_p1: *mut c_void, _p2: *mut c_void, _p3: *mut c_void) -> ! {
-    printkln!("Inside of blinky");
+unsafe extern "C" fn blink(_p1: *mut c_void, _p2: *mut c_void, _p3: *mut c_void) {
+    warn!("Inside of blinky");
 
     let mut led0 = zephyr::devicetree::aliases::led0::get_instance();
 
     if !led0.is_ready() {
-        printkln!("LED is not ready");
+        warn!("LED is not ready");
         loop {
         }
         // return;
@@ -37,16 +50,6 @@ extern "C" fn blink(_p1: *mut c_void, _p2: *mut c_void, _p3: *mut c_void) -> ! {
     led0.configure(GPIO_OUTPUT_ACTIVE);
     loop {
         led0.toggle_pin();
-        zephyr::sys::k_msleep(500);
+        zephyr::raw::k_msleep(500);
     }
-}
-
-// Hack for usermode.
-#[allow(non_camel_case_types)]
-type k_thread_entry_t = extern "C" fn(*mut c_void, *mut c_void, *mut c_void) -> !;
-extern "C" {
-    fn k_thread_user_mode_enter(entry: k_thread_entry_t,
-                                p1: *mut c_void,
-                                p2: *mut c_void,
-                                p3: *mut c_void) -> !;
 }
