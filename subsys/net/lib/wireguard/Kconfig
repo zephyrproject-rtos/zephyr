@@ -21,6 +21,40 @@ config WIREGUARD
 
 if WIREGUARD
 
+config WIREGUARD_USE_PSA
+	bool
+	imply PSA_WANT_ALG_CHACHA20_POLY1305
+	imply PSA_WANT_ALG_ECDH
+	imply PSA_WANT_ECC_MONTGOMERY_255
+	imply PSA_WANT_ALG_HMAC
+	imply PSA_WANT_ALG_SHA_256
+	imply PSA_WANT_KEY_TYPE_CHACHA20
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+	select MBEDTLS if NET_NATIVE
+	select MBEDTLS_PSA_CRYPTO_C
+	select MBEDTLS_CIPHER
+	select MBEDTLS_CIPHER_CHACHA20_ENABLED
+	select MBEDTLS_POLY1305
+	select MBEDTLS_CHACHAPOLY_AEAD_ENABLED
+	select MBEDTLS_ECP_C
+	select MBEDTLS_ECP_DP_CURVE25519_ENABLED
+	select MBEDTLS_ECDH_C
+	select MBEDTLS_MD_C
+	select MBEDTLS_SHA256
+	default y
+	help
+	  Use PSA Crypto API for cryptographic operations where available.
+	  This enables hardware acceleration on platforms that support it.
+	  Note:  BLAKE2s and XChaCha20-Poly1305 are not available in PSA
+	  yet and will continue to use the reference implementation.
+	  XChaCha20 is found in PSA 1.2 but Zephyr does not have it yet.
+	  The following operations will use PSA when enabled:
+	  - X25519 key exchange
+	  - ChaCha20-Poly1305 AEAD encryption/decryption
+	  - Random number generation
+
 config WIREGUARD_BUF_COUNT
 	int "Internal temp network buffer count"
 	default 2
