@@ -1,0 +1,4 @@
+boards:
+  - name: xg27_rb4194a
+    socs:
+      - name: efr32bg27c140f768im40
