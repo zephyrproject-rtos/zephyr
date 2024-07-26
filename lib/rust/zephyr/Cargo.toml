@@ -9,8 +9,11 @@ description = """
 Functionality for Rust-based applications that run on Zephyr.
 """
 
+[dependencies]
+zephyr-sys = { version = "0.1.0", path = "../zephyr-sys" }
+
 # These are needed at build time.
 # Whether these need to be vendored is an open question.  They are not
 # used by the core Zephyr tree, but are needed by zephyr applications.
 [build-dependencies]
-zephyr-build = "0.1.0"
+zephyr-build = { version = "0.1.0", path = "../zephyr-build" }
