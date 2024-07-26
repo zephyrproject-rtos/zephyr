@@ -1,0 +1,12 @@
+# Microchip PIC32CXSG SERCOM SPI
+
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SAM0
+	bool "Microchip PIC32CXSG series SERCOM SPI driver"
+	default y
+	depends on DT_HAS_PIC32CXSG_SPI_ENABLED
+	select DMA if SPI_ASYNC
+	help
+	  Enable support for the Microchip PIC32CXSG SERCOM SPI driver.

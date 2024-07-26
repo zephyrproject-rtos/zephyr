@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Google LLC.
+ * Copyright (c) 2024 Microchip added 'GCLK_PCHCTRL_CHEN_BIT_MASK'
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -513,7 +514,7 @@ static int uart_sam0_init(const struct device *dev)
 #ifdef MCLK
 	/* Enable the GCLK */
 	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					       GCLK_PCHCTRL_CHEN;
+					       GCLK_PCHCTRL_CHEN_BIT_MASK;
 
 	/* Enable SERCOM clock in MCLK */
 	*cfg->mclk |= cfg->mclk_mask;

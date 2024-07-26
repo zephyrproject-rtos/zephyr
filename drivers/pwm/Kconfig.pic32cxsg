@@ -1,0 +1,11 @@
+# Microchip PIC32CXSG TCC as PWM configuration
+
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_PIC32CXSG_TCC
+	bool "Microchip PIC32CXSG MCU Family TCC PWM Driver"
+	default y
+	depends on DT_HAS_PIC32CXSG_TCC_PWM_ENABLED
+	help
+	  Enable PWM driver for Microchip PIC32CXSG MCUs using the TCC timer/counter.

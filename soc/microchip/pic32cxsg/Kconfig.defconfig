@@ -1,0 +1,30 @@
+# Microchip PIC32CXSG MCU family default configuration options
+
+# Copyright (c) 2024 Microchip
+
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_MICROCHIP_PIC32CXSG
+
+rsource "*/Kconfig.defconfig"
+
+config GPIO
+	default y
+
+config HWINFO_PIC32CXSG
+	default HWINFO
+
+config PINCTRL
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+if USB_DEVICE_DRIVER
+
+config HEAP_MEM_POOL_ADD_SIZE_SOC
+	def_int 1024
+
+endif # USB_DEVICE_DRIVER
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CXSG

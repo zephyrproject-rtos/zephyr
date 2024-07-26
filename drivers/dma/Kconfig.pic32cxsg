@@ -1,0 +1,11 @@
+# Microchip PIC32CXSG DMAC configuration options
+
+# Copyright (c) 2018 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_PIC32CXSG
+	bool "Microchip PIC32CXSG series DMAC driver"
+	default y
+	depends on DT_HAS_MICROCHIP_PIC32CXSG_DMAC_ENABLED
+	help
+	  DMA driver for Microchip PIC32CXSG series MCUs.

@@ -76,6 +76,8 @@ source "drivers/interrupt_controller/Kconfig.rv32m1"
 
 source "drivers/interrupt_controller/Kconfig.sam0"
 
+source "drivers/interrupt_controller/Kconfig.pic32cxsg"
+
 source "drivers/interrupt_controller/Kconfig.gic"
 
 source "drivers/interrupt_controller/Kconfig.npcx"

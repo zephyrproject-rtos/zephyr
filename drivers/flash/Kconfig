@@ -205,6 +205,8 @@ source "drivers/flash/Kconfig.stm32_xspi"
 
 source "drivers/flash/Kconfig.sam0"
 
+source "drivers/flash/Kconfig.pic32cxsg"
+
 source "drivers/flash/Kconfig.sam"
 
 source "drivers/flash/Kconfig.simulator"

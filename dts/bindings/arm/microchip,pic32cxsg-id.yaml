@@ -1,0 +1,10 @@
+description: |
+    For locating the Device ID (serial number) on Microchip PIC32CXSG devices
+
+compatible: "microchip,pic32cxsg-id"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

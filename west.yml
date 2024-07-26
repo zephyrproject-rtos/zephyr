@@ -20,6 +20,8 @@ manifest:
 
   remotes:
     - name: upstream
+      url-base: https://github.com/MyGh64605
+    - name: original
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
@@ -116,7 +118,8 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 4b96cbb174678dcd3ca86e11e1f24bc5f8726da0
+      remote: original
+      # revision: 4b96cbb174678dcd3ca86e11e1f24bc5f8726da0
       path: modules/hal/cmsis
       groups:
         - hal

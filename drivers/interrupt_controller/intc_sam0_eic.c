@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+ * Copyright (c) 2024 Microchip added 'MCLK_APBAMASK_EIC_BIT_MASK'
+ * Copyright (c) 2024 Microchip added 'GCLK_PCHCTRL_CHEN_BIT_MASK'
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -338,11 +340,11 @@ static int sam0_eic_init(const struct device *dev)
 
 #ifdef MCLK
 	/* Enable the EIC clock in APBAMASK */
-	MCLK->APBAMASK.reg |= MCLK_APBAMASK_EIC;
+	MCLK->APBAMASK.reg |= MCLK_APBAMASK_EIC_BIT_MASK;
 
 	/* Enable the GCLK */
 	GCLK->PCHCTRL[EIC_GCLK_ID].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					 GCLK_PCHCTRL_CHEN;
+					 GCLK_PCHCTRL_CHEN_BIT_MASK;
 #else
 	/* Enable the EIC clock in PM */
 	PM->APBAMASK.bit.EIC_ = 1;

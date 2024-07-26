@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_PIC32CXSG
+	bool "Microchip PIC32CXSG series I2C SERCOM driver"
+	default y
+	depends on DT_HAS_PIC32CXSG_I2C_ENABLED
+	help
+	  Enable the Microchip PIC32CXSG series SERCOM I2C driver.
+
+config I2C_PIC32CXSG_DMA_DRIVEN
+	bool "DMA support for Microchip PIC32CXSG I2C devices"
+	depends on I2C_PIC32CXSG
+	select DMA
+	help
+	  This enables DMA driven transactions for the I2C peripheral.
+	  DMA driven mode requires fewer interrupts to handle the
+	  transaction and ensures that high speed modes are not delayed
+	  by data reloading.

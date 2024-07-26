@@ -112,6 +112,7 @@ config CAN_QEMU_IFACE_NAME
 
 source "drivers/can/Kconfig.sam"
 source "drivers/can/Kconfig.sam0"
+source "drivers/can/Kconfig.pic32cxsg"
 source "drivers/can/Kconfig.stm32"
 source "drivers/can/Kconfig.mcux"
 source "drivers/can/Kconfig.mcp2515"

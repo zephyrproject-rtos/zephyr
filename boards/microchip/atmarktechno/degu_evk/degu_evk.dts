@@ -1,0 +1,176 @@
+/*
+ * Copyright (c) 2019 Atmark Techno, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "degu_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Degu Evaluation Kit";
+	compatible = "nordic,pca10056-dk";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &degu_cdc_acm_uart;
+		zephyr,shell-uart = &degu_cdc_acm_uart;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+		led1: led_1 {
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+		led2: led_2 {
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+		led3: led_3 {
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+			label = "LED4";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio1 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: button_1 {
+			gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		button2: button_2 {
+			gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW4";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	en-3v3-switch {
+		compatible = "regulator-fixed";
+		regulator-name = "en_3v3_switch";
+		enable-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	en-vin1-moni {
+		compatible = "regulator-fixed";
+		regulator-name = "en_vin1_moni";
+		enable-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		watchdog0 = &wdt0;
+	};
+};
+
+&adc {
+	status ="okay";
+};
+
+&uicr {
+	gpio-as-nreset;
+};
+
+&gpiote {
+	status ="okay";
+};
+
+&gpio0 {
+	status ="okay";
+};
+
+&gpio1 {
+	status ="okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00014000>;
+		};
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 0x0006e000>;
+		};
+		slot1_partition: partition@82000 {
+			label = "image-1";
+			reg = <0x00082000 0x0006e000>;
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x000f0000 0x00008000>;
+		};
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+
+	degu_cdc_acm_uart: degu_cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

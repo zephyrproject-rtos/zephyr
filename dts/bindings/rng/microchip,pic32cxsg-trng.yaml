@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip PIC32CXSG RNG
+
+compatible: "microchip,pic32cxsg-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

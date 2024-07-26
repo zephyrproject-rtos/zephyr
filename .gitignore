@@ -91,3 +91,5 @@ ModulesMaintainers.txt
 Nits.txt
 Pylint.txt
 YAMLLint.txt
+/dts/arm/microchip/pic32cxsg
+pic32cx_sg41_cult

@@ -70,6 +70,8 @@ source "drivers/pwm/Kconfig.mcux_tpm"
 
 source "drivers/pwm/Kconfig.sam0"
 
+source "drivers/pwm/Kconfig.pic32cxsg"
+
 source "drivers/pwm/Kconfig.npcx"
 
 source "drivers/pwm/Kconfig.xlnx"

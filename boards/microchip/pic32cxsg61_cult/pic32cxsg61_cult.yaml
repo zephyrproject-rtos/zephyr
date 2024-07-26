@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+identifier: pic32cxsg61_cult
+name: PIC32CX SG61 Curiosity Ultra
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+flash: 1024
+ram: 256
+supported:
+  - adc
+  - flash
+  - gpio
+  - i2c
+  - netif:eth
+  - pwm
+  - spi
+  - uart
+  - usb_device
+vendor: microchip

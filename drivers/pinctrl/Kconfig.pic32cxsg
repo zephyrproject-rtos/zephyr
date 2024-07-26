@@ -1,0 +1,9 @@
+# Copyright (c) 2024, Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_PIC32CXSG
+	bool "Microchip PIC32CXSG pin controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_PIC32CXSG_PINCTRL_ENABLED
+	help
+	  Microchip pin controller driver is used on PIC32CXSG SoC series

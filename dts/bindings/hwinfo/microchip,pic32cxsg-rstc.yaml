@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip PIC32CXSG Reset controller
+
+compatible: "microchip,pic32cxsg-rstc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  user-nrst:
+    type: boolean
+    description: Allow user reset on external NRST assert.

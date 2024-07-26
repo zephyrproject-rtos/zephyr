@@ -68,6 +68,8 @@ source "drivers/adc/Kconfig.sam"
 
 source "drivers/adc/Kconfig.sam0"
 
+source "drivers/adc/Kconfig.pic32cxsg"
+
 source "drivers/adc/Kconfig.stm32"
 
 source "drivers/adc/Kconfig.esp32"

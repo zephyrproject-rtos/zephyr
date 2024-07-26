@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_PIC32CXSG
+	bool "Microchip PIC32CXSG series DAC Driver"
+	default y
+	depends on DT_HAS_PIC32CXSG_DAC_ENABLED
+	help
+	  Enables the Microchip PIC32CXSG MCU Family Digital-to-Analog (DAC) driver.

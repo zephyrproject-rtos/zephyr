@@ -1,0 +1,11 @@
+# Microchip PIC32CXSG WDT configuration
+
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_PIC32CXSG
+	bool "Microchip PIC32CXSG series Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_PIC32CXSG_WATCHDOG_ENABLED
+	help
+	  Enable WDT driver for Microchip PIC32CXSG MCUs.

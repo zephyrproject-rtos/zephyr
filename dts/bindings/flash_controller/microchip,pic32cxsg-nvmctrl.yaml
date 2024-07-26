@@ -1,0 +1,11 @@
+description: Microchip PIC32CXSG NVMC (Non-Volatile Memory Controller)
+
+compatible: "microchip,pic32cxsg-nvmctrl"
+
+include: flash-controller.yaml
+
+properties:
+  lock-regions:
+    type: int
+    required: true
+    description: Number of lock regions

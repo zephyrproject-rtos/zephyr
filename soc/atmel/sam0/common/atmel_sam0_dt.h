@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2020 Linaro Ltd.
  * Copyright (c) 2021 Gerson Fernando Budke
+ * Copyright (c) 2024 Microchip added 'MCLK_APBAMASK_EIC_BIT_MASK'
+ * Copyright (c) 2024 Microchip added 'GCLK_PCHCTRL_CHEN_BIT_MASK'
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +13,9 @@
 
 #ifndef _ATMEL_SAM0_DT_H_
 #define _ATMEL_SAM0_DT_H_
+
+#define MCLK_APBAMASK_EIC_BIT_MASK (_UINT32_(0x1) << MCLK_APBAMASK_EIC_Pos) 
+#define GCLK_PCHCTRL_CHEN_BIT_MASK (_UINT32_(0x1) << GCLK_PCHCTRL_CHEN_Pos) 
 
 /* Helper macro to get MCLK register address for corresponding
  * that has corresponding clock enable bit.

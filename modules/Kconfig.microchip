@@ -1,4 +1,4 @@
-# Microchip MEC HAL drivers configuration
+# Microchip HAL drivers configuration
 
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,3 +10,15 @@ config HAS_MPFS_HAL
 
 config HAS_MEC5_HAL
 	bool "Microchip MEC5 HAL drivers support"
+
+config HAS_PIC32C_HAL
+	bool "Microchip PIC32C HAL drivers support"
+
+config PIC32C
+	bool
+	select HAS_CMSIS_CORE
+
+config HAS_PIC32CXSG_HAL
+	bool "Microchip PIC32CXSG HAL drivers support"
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_MICROCHIP_PIC32CXSG

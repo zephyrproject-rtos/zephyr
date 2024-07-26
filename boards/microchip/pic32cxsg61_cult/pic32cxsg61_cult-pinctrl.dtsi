@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2024 Microchip
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/pic32cx1025sg61128-pinctrl.h>
+
+&pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PC18F_TCC0_WO2>;
+		};
+	};
+
+	gmac_rmii: gmac_rmii {
+		group1 {
+			pinmux = <PA14L_GMAC_GTXCK>,
+				 <PA17L_GMAC_GTXEN>,
+				 <PA18L_GMAC_GTX0>,
+				 <PA19L_GMAC_GTX1>,
+				 <PC20L_GMAC_GRXDV>,
+				 <PA13L_GMAC_GRX0>,
+				 <PA12L_GMAC_GRX1>,
+				 <PA15L_GMAC_GRXER>;
+		};
+	};
+
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <PC22L_GMAC_GMDC>,
+				 <PC23L_GMAC_GMDIO>;
+		};
+	};
+
+	sercom7_i2c_default: sercom7_i2c_default {
+		group1 {
+			pinmux = <PD8C_SERCOM7_PAD0>,
+				 <PD9C_SERCOM7_PAD1>;
+		};
+	};
+
+	sercom0_spi_default: sercom0_spi_default {
+		group1 {
+			pinmux = <PB24C_SERCOM0_PAD0>,
+				 <PB25C_SERCOM0_PAD1>,
+				 <PC25C_SERCOM0_PAD3>;
+		};
+	};
+
+	sercom4_uart_default: sercom4_uart_default {
+		group1 {
+			pinmux = <PB12C_SERCOM4_PAD0>,
+				 <PB13C_SERCOM4_PAD1>;
+		};
+	};
+
+	usb_dc_default: usb_dc_default {
+		group1 {
+			pinmux = <PA25H_USB_DP>,
+				 <PA24H_USB_DM>;
+		};
+	};
+};

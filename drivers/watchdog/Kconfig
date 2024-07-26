@@ -70,6 +70,8 @@ source "drivers/watchdog/Kconfig.esp32"
 
 source "drivers/watchdog/Kconfig.sam0"
 
+source "drivers/watchdog/Kconfig.pic32cxsg"
+
 source "drivers/watchdog/Kconfig.nrfx"
 
 source "drivers/watchdog/Kconfig.mcux"

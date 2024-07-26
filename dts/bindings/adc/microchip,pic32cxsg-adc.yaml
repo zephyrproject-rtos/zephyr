@@ -1,0 +1,49 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip PIC32CXSG family ADC
+
+compatible: "microchip,pic32cxsg-adc"
+
+include:
+  - name: adc-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  gclk:
+    type: int
+    required: true
+    description: generic clock generator source
+
+  prescaler:
+    type: int
+    required: true
+    description: clock prescaler divisor applied to the generic clock
+
+  "#io-channel-cells":
+    const: 1
+
+  calib-offset:
+    type: int
+    description: |
+      bit position offset in NVM SW Calib for start of ADC0 BIASCOMP field.
+      This property is expected to be set on PIC32CXSG family of SoCs.
+      For ADC0 this should be 0, and for ADC1 this should be 14.
+    enum:
+      - 0
+      - 14
+
+io-channel-cells:
+  - input

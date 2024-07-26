@@ -1,0 +1,47 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip PIC32CXSG SERCOM SPI controller
+
+compatible: "microchip,pic32cxsg-spi"
+
+include:
+  - name: spi-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  dipo:
+    type: int
+    required: true
+    description: Data In Pinout
+
+  dopo:
+    type: int
+    required: true
+    description: Data Out Pinout
+
+  dmas:
+    description: |
+      Optional TX & RX dma specifiers.  Each specifier will have a phandle
+      reference to the dmac controller, the channel number, and peripheral
+      trigger source.
+
+      For example dmas for TX, RX on SERCOM3
+         dmas = <&dmac 0 0xb>, <&dmac 1 0xa>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists.  This should be "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";
