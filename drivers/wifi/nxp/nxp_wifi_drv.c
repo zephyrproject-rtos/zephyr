@@ -1800,7 +1800,6 @@ static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 	.dpp_listen               = wifi_nxp_wpa_dpp_listen,
 	.remain_on_channel        = wifi_nxp_wpa_supp_remain_on_channel,
 	.cancel_remain_on_channel = wifi_nxp_wpa_supp_cancel_remain_on_channel,
-	.send_action_cancel_wait  = wifi_nxp_wpa_supp_cancel_action_wait,
 };
 #endif
 
