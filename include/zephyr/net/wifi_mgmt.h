@@ -458,10 +458,6 @@ struct wifi_connect_req_params {
 	const uint8_t *key_passwd;
 	/** key passwd length */
 	uint8_t key_passwd_length; /* Max 128 */
-	/** private key2 passwd */
-	const uint8_t *key2_passwd;
-	/** key2 passwd length */
-	uint8_t key2_passwd_length; /* Max 128 */
 	/** suiteb or suiteb-192 */
 	uint8_t suiteb_type;
 	/** eap version */
