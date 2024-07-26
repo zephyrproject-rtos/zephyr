@@ -855,18 +855,6 @@ int supplicant_set_twt(const struct device *dev, struct wifi_twt_params *params)
 	return wifi_mgmt_api->set_twt(dev, params);
 }
 
-int supplicant_set_btwt(const struct device *dev, struct wifi_twt_params *params)
-{
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
-
-	if (!wifi_mgmt_api || !wifi_mgmt_api->set_btwt) {
-		wpa_printf(MSG_ERROR, "Set TWT not supported");
-		return -ENOTSUP;
-	}
-
-	return wifi_mgmt_api->set_btwt(dev, params);
-}
-
 int supplicant_get_power_save_config(const struct device *dev,
 				     struct wifi_ps_config *config)
 {
