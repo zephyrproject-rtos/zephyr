@@ -149,7 +149,7 @@ ${config_paths}
       ZEPHYR_DTS=${ZEPHYR_DTS}
       INCLUDE_DIRS="${include_dirs}"
       INCLUDE_DEFINES="${include_defines}"
-      WRAPPER_FilE="${WRAPPER_FILE}"
+      WRAPPER_FILE="${WRAPPER_FILE}"
       BINARY_DIR_INCLUDE_GENERATED=${BINARY_DIR_INCLUDE_GENERATED}
       cargo build
       # TODO: release flag if release build
