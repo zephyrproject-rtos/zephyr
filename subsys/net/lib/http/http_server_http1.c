@@ -15,6 +15,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include <zephyr/fs/fs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
@@ -24,6 +25,14 @@ LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 #include "headers/server_internal.h"
 
 #define TEMP_BUF_LEN 64
+
+static const char not_found_response[] = "HTTP/1.1 404 Not Found\r\n"
+					 "Content-Length: 9\r\n\r\n"
+					 "Not Found";
+static const char not_allowed_response[] = "HTTP/1.1 405 Method Not Allowed\r\n"
+					   "Content-Length: 18\r\n\r\n"
+					   "Method Not Allowed";
+static const char conflict_response[] = "HTTP/1.1 409 Conflict\r\n\r\n";
 
 static const char final_chunk[] = "0\r\n\r\n";
 static const char *crlf = &final_chunk[3];
@@ -256,6 +265,101 @@ static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 	return 0;
 }
 
+#if defined(CONFIG_FILE_SYSTEM)
+
+int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
+				    struct http_client_ctx *client)
+{
+#define RESPONSE_TEMPLATE_STATIC_FS                                                                \
+	"HTTP/1.1 200 OK\r\n"                                                                      \
+	"Content-Type: %s%s\r\n\r\n"
+#define CONTENT_ENCODING_GZIP "\r\nContent-Encoding: gzip"
+
+	bool gzipped = false;
+	int len;
+	int remaining;
+	int ret;
+	size_t file_size;
+	struct fs_file_t file;
+	char fname[HTTP_SERVER_MAX_URL_LENGTH];
+	char content_type[HTTP_SERVER_MAX_CONTENT_TYPE_LEN] = "text/html";
+	/* Add couple of bytes to response template size to have space
+	 * for the content type and encoding
+	 */
+	char http_response[sizeof(RESPONSE_TEMPLATE_STATIC_FS) + HTTP_SERVER_MAX_CONTENT_TYPE_LEN +
+			   sizeof(CONTENT_ENCODING_GZIP)];
+
+	if (!(static_fs_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET))) {
+		ret = http_server_sendall(client, not_allowed_response,
+					  sizeof(not_allowed_response) - 1);
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+		}
+		return ret;
+	}
+
+	/* get filename and content-type from url */
+	len = strlen(client->url_buffer);
+	if (len == 1) {
+		/* url is just the leading slash, use index.html as filename */
+		snprintk(fname, sizeof(fname), "%s/index.html", static_fs_detail->fs_path);
+	} else {
+		http_server_get_content_type_from_extension(client->url_buffer, content_type,
+							    sizeof(content_type));
+		snprintk(fname, sizeof(fname), "%s%s", static_fs_detail->fs_path,
+			 client->url_buffer);
+	}
+
+	/* open file, if it exists */
+	ret = http_server_find_file(fname, sizeof(fname), &file_size, &gzipped);
+	if (ret < 0) {
+		LOG_ERR("fs_stat %s: %d", fname, ret);
+		ret = http_server_sendall(client, not_found_response,
+					  sizeof(not_found_response) - 1);
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+		}
+		return ret;
+	}
+	fs_file_t_init(&file);
+	ret = fs_open(&file, fname, FS_O_READ);
+	if (ret < 0) {
+		LOG_ERR("fs_open %s: %d", fname, ret);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	LOG_DBG("found %s, file size: %d", fname, file_size);
+
+	/* send HTTP header */
+	len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
+		       content_type, gzipped ? CONTENT_ENCODING_GZIP : "");
+	ret = http_server_sendall(client, http_response, len);
+	if (ret < 0) {
+		goto close;
+	}
+
+	/* read and send file */
+	remaining = file_size;
+	while (remaining > 0) {
+		len = fs_read(&file, http_response, sizeof(http_response));
+		ret = http_server_sendall(client, http_response, len);
+		if (ret < 0) {
+			goto close;
+		}
+		remaining -= len;
+	}
+	ret = http_server_sendall(client, "\r\n\r\n", 4);
+
+close:
+	/* close file */
+	fs_close(&file);
+
+	return ret;
+}
+#endif
+
 static int handle_http1_dynamic_resource(
 	struct http_resource_detail_dynamic *dynamic_detail,
 	struct http_client_ctx *client)
@@ -274,9 +378,6 @@ static int handle_http1_dynamic_resource(
 	}
 
 	if (dynamic_detail->holder != NULL && dynamic_detail->holder != client) {
-		static const char conflict_response[] =
-				"HTTP/1.1 409 Conflict\r\n\r\n";
-
 		ret = http_server_sendall(client, conflict_response,
 					  sizeof(conflict_response) - 1);
 		if (ret < 0) {
@@ -606,6 +707,14 @@ upgrade_not_found:
 			if (ret < 0) {
 				return ret;
 			}
+#if defined(CONFIG_FILE_SYSTEM)
+		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
+			ret = handle_http1_static_fs_resource(
+				(struct http_resource_detail_static_fs *)detail, client);
+			if (ret < 0) {
+				return ret;
+			}
+#endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http1_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
@@ -616,11 +725,6 @@ upgrade_not_found:
 		}
 	} else {
 not_found: ; /* Add extra semicolon to make clang to compile when using label */
-		static const char not_found_response[] =
-			"HTTP/1.1 404 Not Found\r\n"
-			"Content-Length: 9\r\n\r\n"
-			"Not Found";
-
 		ret = http_server_sendall(client, not_found_response,
 					  sizeof(not_found_response) - 1);
 		if (ret < 0) {
