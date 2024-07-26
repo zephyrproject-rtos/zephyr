@@ -9,6 +9,8 @@
 #![no_std]
 #![allow(unexpected_cfgs)]
 
+extern crate alloc;
+
 pub mod sys;
 
 // Bring in the generated kconfig module
@@ -24,6 +26,9 @@ compile_error!("CONFIG_RUST must be set to build Rust in Zephyr");
 // Printk is provided if it is configured into the build.
 #[cfg(CONFIG_PRINTK)]
 pub mod printk;
+
+#[cfg(CONFIG_RUST_HEAP)]
+mod heap;
 
 use core::panic::PanicInfo;
 
@@ -52,7 +57,7 @@ pub mod _export {
 
 /// If allocation has been requested, provide the allocator.
 #[cfg(CONFIG_RUST_ALLOC)]
-mod alloc;
+mod heap;
 
 // If we have allocation, we can also support logging.
 #[cfg(CONFIG_RUST_ALLOC)]

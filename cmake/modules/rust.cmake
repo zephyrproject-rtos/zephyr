@@ -177,6 +177,12 @@ ${config_paths}
   target_link_libraries(app PUBLIC -Wl,--allow-multiple-definition ${RUST_LIBRARY})
   add_dependencies(app librustapp)
 
+  # Typically this property would be set via zephyr_library_app_memory(), but since we don't have a Zephyr library
+  # here we set it manually to move any globals from our Rust library to a dedicated partition.
+  # This is useful when using CONFIG_USERSPACE to enable access to globals when running threads in user mode.
+  get_filename_component(RUST_LIBRARY_NAME ${RUST_LIBRARY} NAME)
+  set_property(TARGET zephyr_property_target APPEND PROPERTY COMPILE_OPTIONS "-l" "${RUST_LIBRARY_NAME}" "rust_mem_part")
+
   # Presumably, Rust applications will have no C source files, but cmake will require them.
   # Add an empty file so that this will build.  The main will come from the rust library.
   target_sources(app PRIVATE ${ZEPHYR_BASE}/lib/rust/main.c ${WRAPPER_FILE})
