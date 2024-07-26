@@ -16,7 +16,6 @@ config WIFI_NM_WPA_SUPPLICANT
 	select NET_SOCKETPAIR
 	select NET_L2_WIFI_MGMT
 	select WIFI_NM
-	select WIFI_NM
 	select EXPERIMENTAL
 	select COMMON_LIBC_MALLOC
 	help
