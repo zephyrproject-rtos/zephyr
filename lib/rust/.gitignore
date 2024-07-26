@@ -1,0 +1,11 @@
+# The IDE tools will sometimes leave the Cargo.lock file lying around. Never check it in.
+Cargo.lock
+
+# To make development easier, it can be useful to make lib/rust/zephyr/.cargo/config.toml a symlink
+# to the build's build/rust/sample-cargo-config.toml file. This will allow the IDE to work for the
+# current build and do completion and such in the Zephyr crate.
+# However, it is important to not commit this symlink.
+.cargo/
+
+# Also ignore target directories if those show up due to an accidental build by the user.
+target/
