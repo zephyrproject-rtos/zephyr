@@ -213,6 +213,14 @@ static int ssp_confirm_neg_reply(struct bt_conn *conn)
 
 static void ssp_pairing_complete(struct bt_conn *conn, uint8_t status)
 {
+	/* When the ssp pairing complete event notified,
+	 * clear the pairing flag.
+	 */
+	atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
+	atomic_set_bit(conn->flags, BT_CONN_BR_PAIRED);
+
+	LOG_DBG("Pairing completed status %d", status);
+
 	if (!status) {
 		bool bond = !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND);
 		struct bt_conn_auth_info_cb *listener, *next;
@@ -347,10 +355,6 @@ int bt_ssp_start_security(struct bt_conn *conn)
 		return -EBUSY;
 	}
 
-	if (conn->required_sec_level > BT_SECURITY_L3) {
-		return -ENOTSUP;
-	}
-
 	if (get_io_capa() == BT_IO_NO_INPUT_OUTPUT &&
 	    conn->required_sec_level > BT_SECURITY_L2) {
 		return -EINVAL;
@@ -442,6 +446,24 @@ void bt_hci_link_key_notify(struct net_buf *buf)
 	}
 
 	LOG_DBG("%s, link type 0x%02x", bt_addr_str(&evt->bdaddr), evt->key_type);
+
+	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY) &&
+		(!(evt->key_type == BT_LK_AUTH_COMBINATION_P256))) {
+		/*
+		 * When in Secure Connections Only mode, all services
+		 * (except those allowed to have Security Mode 4, Level 0)
+		 * available on the BR/EDR physical transport require Security
+		 * Mode 4, Level 4.
+		 * Link key type should be P-256 based Secure Simple Pairing
+		 * and Secure Authentication.
+		 */
+		LOG_ERR("For SC only mode, link key type should be %d",
+				BT_LK_AUTH_COMBINATION_P256);
+		ssp_pairing_complete(conn, bt_security_err_get(BT_HCI_ERR_AUTH_FAIL));
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+		bt_conn_unref(conn);
+		return;
+	}
 
 	if (!conn->br.link_key) {
 		conn->br.link_key = bt_keys_get_link_key(&evt->bdaddr);
@@ -666,12 +688,30 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 	 */
 	if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR)) {
 		if (get_io_capa() != BT_IO_NO_INPUT_OUTPUT) {
-			auth = BT_HCI_DEDICATED_BONDING_MITM;
+			if (atomic_test_bit(conn->flags, BT_CONN_BR_GENERAL_BONDING)) {
+				auth = BT_HCI_GENERAL_BONDING_MITM;
+			} else {
+				auth = BT_HCI_DEDICATED_BONDING_MITM;
+			}
 		} else {
-			auth = BT_HCI_DEDICATED_BONDING;
+			if (atomic_test_bit(conn->flags, BT_CONN_BR_GENERAL_BONDING)) {
+				auth = BT_HCI_GENERAL_BONDING;
+			} else {
+				auth = BT_HCI_DEDICATED_BONDING;
+			}
+		}
+
+		if (conn->required_sec_level < BT_SECURITY_L3) {
+			/* If security level less than L3, clear MITM flag. */
+			auth = BT_HCI_SET_NO_MITM(auth);
 		}
 	} else {
 		auth = ssp_get_auth(conn);
+	}
+
+	if (!bt_get_bondable()) {
+		/* If bondable is false, clear bonding flag. */
+		auth = BT_HCI_SET_NO_BONDING(auth);
 	}
 
 	cp = net_buf_add(resp_buf, sizeof(*cp));

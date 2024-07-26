@@ -2381,6 +2381,11 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
+		conn->type == BT_CONN_TYPE_BR) {
+		return bt_l2cap_br_chan_recv_complete(chan);
+	}
+
 	if (conn->type != BT_CONN_TYPE_LE) {
 		return -ENOTSUP;
 	}

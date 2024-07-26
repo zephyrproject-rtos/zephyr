@@ -19,6 +19,11 @@ struct btp_l2cap_read_supported_commands_rp {
 
 #define BTP_L2CAP_CONNECT_OPT_ECFC			0x01
 #define BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT		0x02
+#define BTP_L2CAP_CONNECT_OPT_RET			0x04
+#define BTP_L2CAP_CONNECT_OPT_FC			0x08
+#define BTP_L2CAP_CONNECT_OPT_ERET			0x10
+#define BTP_L2CAP_CONNECT_OPT_STREAM		0x20
+#define BTP_L2CAP_CONNECT_OPT_MODE_OPTIONAL	0x40
 
 #define BTP_L2CAP_CONNECT				0x02
 struct btp_l2cap_connect_cmd {
@@ -85,6 +90,64 @@ struct btp_l2cap_credits_cmd {
 struct btp_l2cap_disconnect_eatt_chans_cmd {
 	bt_addr_le_t address;
 	uint8_t count;
+} __packed;
+
+#define BTP_L2CAP_CONNECT_SEC_LEVEL_0		0
+#define BTP_L2CAP_CONNECT_SEC_LEVEL_1		1
+#define BTP_L2CAP_CONNECT_SEC_LEVEL_2		2
+#define BTP_L2CAP_CONNECT_SEC_LEVEL_3		3
+#define BTP_L2CAP_CONNECT_SEC_LEVEL_4		4
+
+#define BTP_L2CAP_CONNECT_WITH_SEC_LEVEL		0x0a
+struct btp_l2cap_connect_with_sec_level_cmd {
+	struct btp_l2cap_connect_cmd cmd;
+	uint8_t sec_level;
+} __packed;
+
+#define BTP_L2CAP_ECHO							0x0b
+struct btp_l2cap_echo_cmd {
+	bt_addr_le_t address;
+	uint16_t data_len;
+	uint8_t data[];
+} __packed;
+
+#define BTP_L2CAP_CLS_LISTEN					0x0c
+struct btp_l2cap_cls_listen_cmd {
+	uint16_t psm;
+} __packed;
+
+#define BTP_L2CAP_CLS_SEND						0x0d
+struct btp_l2cap_cls_send_cmd {
+	bt_addr_le_t address;
+	uint16_t psm;
+	uint16_t data_len;
+	uint8_t data[];
+} __packed;
+
+#define BTP_L2CAP_LISTEN_OPT_ECFC			0x01
+#define BTP_L2CAP_LISTEN_OPT_HOLD_CREDIT	0x02
+#define BTP_L2CAP_LISTEN_OPT_RET			0x04
+#define BTP_L2CAP_LISTEN_OPT_FC				0x08
+#define BTP_L2CAP_LISTEN_OPT_ERET			0x10
+#define BTP_L2CAP_LISTEN_OPT_STREAM			0x20
+#define BTP_L2CAP_LISTEN_OPT_MODE_OPTIONAL	0x40
+#define BTP_L2CAP_LISTEN_OPT_EXT_WIN_SIZE	0x80
+
+#define BTP_L2CAP_LISTEN_WITH_MODE				0x0e
+struct btp_l2cap_listen_with_mode_cmd {
+	uint16_t psm;
+	uint8_t transport;
+	uint8_t options;
+	uint16_t mtu;
+	uint16_t response;
+} __packed;
+
+#define BTP_L2CAP_SET_OPT_HOLD_CREDIT			0x01
+
+#define BTP_L2CAP_SET_OPT						0x0f
+struct btp_l2cap_set_option_cmd {
+	uint8_t chan_id;
+	uint8_t options;
 } __packed;
 
 /* events */

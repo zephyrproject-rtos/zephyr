@@ -296,6 +296,12 @@ struct bt_hci_cmd_hdr {
 #define BT_HCI_GENERAL_BONDING                  0x04
 #define BT_HCI_GENERAL_BONDING_MITM             0x05
 
+/* Clear Bonding flag */
+#define BT_HCI_SET_NO_BONDING(auth) ((auth) & 0x01)
+
+/* Clear MITM flag */
+#define BT_HCI_SET_NO_MITM(auth) ((auth) & (~0x01))
+
 /*
  * MITM protection is enabled in SSP authentication requirements octet when
  * LSB bit is set.
@@ -730,9 +736,25 @@ struct bt_hci_cp_host_num_completed_packets {
 	struct bt_hci_handle_count h[0];
 } __packed;
 
+#define BT_HCI_OP_WRITE_CURRENT_IAC_LAP         BT_OP(BT_OGF_BASEBAND, 0x003a) /* 0x0c3a */
+struct bt_hci_iac_lap {
+	uint8_t iac[3];
+} __packed;
+
+struct bt_hci_cp_write_current_iac_lap {
+	uint8_t  num_current_iac;
+	struct bt_hci_iac_lap lap[0];
+} __packed;
+
 #define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045) /* 0x0c45 */
 struct bt_hci_cp_write_inquiry_mode {
 	uint8_t  mode;
+} __packed;
+
+#define BT_HCI_OP_WRITE_EXT_INQUIRY_RESPONSE    BT_OP(BT_OGF_BASEBAND, 0x0052) /* 0x0c52 */
+struct bt_hci_cp_write_extended_inquiry_response {
+	uint8_t fec_required;
+	uint8_t eir[240];
 } __packed;
 
 #define BT_HCI_OP_WRITE_SSP_MODE                BT_OP(BT_OGF_BASEBAND, 0x0056) /* 0x0c56 */

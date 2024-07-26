@@ -2206,7 +2206,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 			 * Start SMP over BR/EDR if we are pairing and are
 			 * central on the link
 			 */
-			if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING) &&
+			if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRED) &&
 			    conn->role == BT_CONN_ROLE_CENTRAL) {
 				bt_smp_br_send_pairing_req(conn);
 			}

@@ -694,7 +694,8 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 	default 16 if BT_SMP_SC_ONLY
 	default 7
 	help
-	  This option sets the minimum encryption key size accepted during pairing.
+	  This option sets the minimum encryption key size accepted during pairing
+	  both for LE and Classic.
 
 endif # BT_SMP
 
