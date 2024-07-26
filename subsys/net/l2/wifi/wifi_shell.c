@@ -1543,29 +1543,6 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 	return 0;
 }
 
-static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_first_wifi();
-	uint8_t query_reason = 0;
-
-	context.sh = sh;
-
-	if (!parse_number(sh, &query_reason, argv[1],
-			  WIFI_BTM_QUERY_REASON_UNDPECIFIED,
-			  WIFI_BTM_QUERY_REASON_LOW_RSSI)) {
-		return -EINVAL;
-	}
-
-	if (net_mgmt(NET_REQUEST_WIFI_BTM_QUERY, iface, &query_reason, sizeof(query_reason))) {
-		PR_WARNING("Setting BTM query Reason failed..Reason :%d\n", query_reason);
-		return -ENOEXEC;
-	}
-
-	PR("Query reason %d\n", query_reason);
-
-	return 0;
-}
-
 static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
@@ -2144,10 +2121,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		     NULL,
 		     "<rts_threshold: rts threshold/off>.\n",
 		     cmd_wifi_set_rts_threshold,
-	SHELL_CMD_ARG(11v_btm_query,
-		     NULL,
-		     "<query_reason: The reason code for a BSS transition management query>.\n",
-		     cmd_wifi_btm_query,
 		     2,
 		     0),
 	SHELL_SUBCMD_SET_END
