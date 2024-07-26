@@ -208,6 +208,16 @@ static void udp_ipv6_data_exchange(volatile bool *connected)
 				continue;
 			}
 
+			if (net_ipv6_is_ll_addr(&server_addr.sin6_addr)) {
+				int scope_id = net_if_get_by_iface(net_if_get_default());
+
+				if (scope_id > 0) {
+					server_addr.sin6_scope_id = scope_id;
+				} else {
+					LOG_WRN("no default interface index");
+				}
+			}
+
 			/* flush socket */
 			uint8_t trash;
 
@@ -409,6 +419,16 @@ static void tcp_ipv6_data_exchange(volatile bool *connected)
 	if (inet_pton(AF_INET6, ECHO_SERVER_IPV6, &server_addr.sin6_addr) < 0) {
 		LOG_ERR("inet_pton failed");
 		return;
+	}
+
+	if (net_ipv6_is_ll_addr(&server_addr.sin6_addr)) {
+		int scope_id = net_if_get_by_iface(net_if_get_default());
+
+		if (scope_id > 0) {
+			server_addr.sin6_scope_id = scope_id;
+		} else {
+			LOG_WRN("no default interface index");
+		}
 	}
 
 	uint8_t cnt = 0;
