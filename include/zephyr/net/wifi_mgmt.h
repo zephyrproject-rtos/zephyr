@@ -105,8 +105,6 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_DPP,
 	/** WPS pbc */
 	NET_REQUEST_WIFI_CMD_WPS_PBC,
-	/** WPS pin */
-	NET_REQUEST_WIFI_CMD_WPS_PIN,
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -241,14 +239,9 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
 
 #define NET_REQUEST_WIFI_WPS_PBC				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_WPS_PBC)
+        (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_WPS_PBC)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_PBC);
-
-#define NET_REQUEST_WIFI_WPS_PIN				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_WPS_PIN)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_PIN);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 #define NET_REQUEST_WIFI_DPP			\
@@ -999,26 +992,6 @@ struct wifi_dpp_params {
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
-#define WIFI_WPS_PIN_MAX_LEN 8
-
-/** get/set operation for wps pin*/
-enum wifi_wps_pin_op {
-	/** Get operation */
-	WIFI_WPS_PIN_GET = 0,
-	/** Set operation */
-	WIFI_WPS_PIN_SET = 1,
-};
-
-/** Wi-Fi wps pin setup */
-struct wifi_wps_pin_params {
-	/** wps pin operation */
-	enum wifi_wps_pin_op oper;
-	/** get pin value*/
-	char get_pin[WIFI_WPS_PIN_MAX_LEN + 1];
-	/** set pin value*/
-	char set_pin[WIFI_WPS_PIN_MAX_LEN + 1];
-};
-
 #include <zephyr/net/net_if.h>
 
 /** Scan result callback
@@ -1253,21 +1226,13 @@ struct wifi_mgmt_ops {
 	 */
 	int (*dpp_dispatch)(const struct device *dev, struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
-	/** Start wps pbc
+	/** Start WPS pbc
 	 *
 	 * @param dev Pointer to the device structure for the driver instance
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*wps_pbc)(const struct device *dev);
-	/** Set or get wps pin
-	 *
-	 * @param dev Pointer to the device structure for the driver instance
-	 * @param params wps pin operarion and pin number
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*wps_pin)(const struct device *dev, struct wifi_wps_pin_params *params);
 };
 
 /** Wi-Fi management offload API */

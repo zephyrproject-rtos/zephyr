@@ -1801,35 +1801,6 @@ static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_wifi_wps_pin(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_first_wifi();
-	struct wifi_wps_pin_params params = {0};
-
-	context.sh = sh;
-
-	if (argc == 1) {
-		params.oper = WIFI_WPS_PIN_GET;
-	} else if (argc == 2) {
-		params.oper = WIFI_WPS_PIN_SET;
-		strncpy(params.set_pin, argv[1], WIFI_WPS_PIN_MAX_LEN);
-	} else {
-		shell_help(sh);
-		return -ENOEXEC;
-	}
-
-	if (net_mgmt(NET_REQUEST_WIFI_WPS_PIN, iface, &params, sizeof(params))) {
-		PR_WARNING("Start wps pbc connection failed\n");
-		return -ENOEXEC;
-	}
-
-	if(params.oper == WIFI_WPS_PIN_GET) {
-		PR("WPS PIN is: %s \n", params.get_pin);
-	}
-
-	return 0;
-}
-
 static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
@@ -3073,10 +3044,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(wps_pbc, NULL,
 		     "Start wps pbc connection.\n",
 		     cmd_wifi_wps_pbc, 1, 0),
-	SHELL_CMD_ARG(wps_pin, NULL,
-		      "Set and get wps pin.\n"
-		      "[pin] No need input pin for get operation, for set operation is pin value.\n",
-		      cmd_wifi_wps_pin, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 
