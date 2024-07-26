@@ -4329,11 +4329,6 @@ int bt_disable(void)
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
-	/* Abort RX thread */
-	k_thread_abort(&bt_workq.thread);
-#endif
-
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 	err = bt_hci_close(bt_dev.hci);
 	if (err == -ENOSYS) {
@@ -4352,6 +4347,11 @@ int bt_disable(void)
 
 		return err;
 	}
+
+#if defined(CONFIG_BT_RECV_WORKQ_BT)
+	/* Abort RX thread */
+	k_thread_abort(&bt_workq.thread);
+#endif
 
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));

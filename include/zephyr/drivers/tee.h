@@ -46,7 +46,7 @@
 /**
  * @brief Trusted Execution Environment Interface
  * @defgroup tee_interface TEE Interface
- * @ingroup security
+ * @ingroup io_interfaces
  * @{
  *
  * The generic interface to work with Trusted Execution Environment (TEE).

@@ -193,6 +193,7 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("3.7.0 (LTS)", "/3.7.0/"),
         ("3.6.0", "/3.6.0/"),
         ("3.5.0", "/3.5.0/"),
         ("2.7.6 (LTS)", "/2.7.6/"),
@@ -325,6 +326,7 @@ external_content_contents = [
     (ZEPHYR_BASE, "samples/**/doc"),
     (ZEPHYR_BASE, "snippets/**/*.rst"),
     (ZEPHYR_BASE, "snippets/**/doc"),
+    (ZEPHYR_BASE, "tests/**/*.pts"),
 ]
 external_content_keep = [
     "reference/kconfig/*",

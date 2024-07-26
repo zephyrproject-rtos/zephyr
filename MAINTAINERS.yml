@@ -398,6 +398,9 @@ Bluetooth Host:
     - subsys/bluetooth/shell/
     - tests/bluetooth/host*/
     - tests/bsim/bluetooth/host/
+  files-exclude:
+    - subsys/bluetooth/host/classic/
+    - include/zephyr/bluetooth/classic/
   labels:
     - "area: Bluetooth Host"
     - "area: Bluetooth"
@@ -475,6 +478,7 @@ Bluetooth Classic:
     - include/zephyr/bluetooth/classic/
   labels:
     - "area: Bluetooth Classic"
+    - "area: Bluetooth"
   tests:
     - bluetooth
 
@@ -812,6 +816,7 @@ Devicetree:
     - doc/build/dts/
     - include/zephyr/devicetree/
     - scripts/kconfig/kconfigfunctions.py
+    - doc/build/kconfig/preprocessor-functions.rst
     - include/zephyr/devicetree.h
   files-exclude:
     - dts/common/nordic/
@@ -865,10 +870,14 @@ Display drivers:
     - include/zephyr/drivers/display.h
     - subsys/fb/
     - samples/subsys/display/
+    - tests/subsys/display/
     - doc/hardware/peripherals/display/
     - tests/drivers/*/display/
   labels:
     - "area: Display"
+  tests:
+    - display.cfb
+    - drivers.display
 
 Documentation:
   status: maintained
@@ -3070,6 +3079,7 @@ Sensor Subsystem:
     - "area: Sensor Subsystem"
   tests:
     - sample.sensing
+    - sensing.api
 
 Stats:
   status: odd fixes
