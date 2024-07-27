@@ -215,7 +215,7 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev,
 	struct video_stm32_dcmi_data *data = dev->data;
 	unsigned int bpp = video_pix_fmt_bpp(fmt->pixelformat);
 
-	if (!bpp || ep != VIDEO_EP_OUT) {
+	if (bpp == 0 || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
 		return -EINVAL;
 	}
 
@@ -238,7 +238,7 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev,
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
 
-	if ((fmt == NULL) || (ep != VIDEO_EP_OUT)) {
+	if (fmt == NULL || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
 		return -EINVAL;
 	}
 
@@ -309,7 +309,7 @@ static int video_stm32_dcmi_enqueue(const struct device *dev,
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -327,7 +327,7 @@ static int video_stm32_dcmi_dequeue(const struct device *dev,
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -346,7 +346,7 @@ static int video_stm32_dcmi_get_caps(const struct device *dev,
 	const struct video_stm32_dcmi_config *config = dev->config;
 	int ret = -ENODEV;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
