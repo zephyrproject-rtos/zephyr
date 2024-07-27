@@ -121,6 +121,10 @@ POSIX_DEVICE_IO
 
 Enable this option group with :kconfig:option:`CONFIG_POSIX_DEVICE_IO`.
 
+.. note::
+   When using Newlib, Picolibc, or other C libraries conforming to the ISO C Standard, the
+   C89 components of the ``POSIX_DEVICE_IO`` Option Group are considered supported.
+
 .. csv-table:: POSIX_DEVICE_IO
    :header: API, Supported
    :widths: 50,10
@@ -131,48 +135,48 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_DEVICE_IO`.
     FD_ZERO(),yes
     clearerr(),yes
     close(),yes
-    fclose(),
-    fdopen(),
-    feof(),
-    ferror(),
-    fflush(),
-    fgetc(),
-    fgets(),
-    fileno(),
-    fopen(),
+    fclose(),yes
+    fdopen(),yes
+    feof(),yes
+    ferror(),yes
+    fflush(),yes
+    fgetc(),yes
+    fgets(),yes
+    fileno(),yes
+    fopen(),yes
     fprintf(),yes
     fputc(),yes
     fputs(),yes
-    fread(),
-    freopen(),
-    fscanf(),
+    fread(),yes
+    freopen(),yes
+    fscanf(),yes
     fwrite(),yes
-    getc(),
-    getchar(),
-    gets(),
+    getc(),yes
+    getchar(),yes
+    gets(),yes
     open(),yes
     perror(),yes
     poll(),yes
     printf(),yes
-    pread(),
-    pselect(),
+    pread(),yes
+    pselect(),yes
     putc(),yes
     putchar(),yes
     puts(),yes
-    pwrite(),
+    pwrite(),yes
     read(),yes
-    scanf(),
+    scanf(),yes
     select(),yes
-    setbuf(),
-    setvbuf(),
-    stderr,
-    stdin,
-    stdout,
-    ungetc(),
+    setbuf(),yes
+    setvbuf(),yes
+    stderr,yes
+    stdin,yes
+    stdout,yes
+    ungetc(),yes
     vfprintf(),yes
-    vfscanf(),
+    vfscanf(),yes
     vprintf(),yes
-    vscanf(),
+    vscanf(),yes
     write(),yes
 
 .. _posix_option_group_fd_mgmt:
