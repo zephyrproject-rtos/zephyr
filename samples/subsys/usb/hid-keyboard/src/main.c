@@ -55,9 +55,11 @@ static uint8_t __aligned(sizeof(void *)) report[KB_REPORT_COUNT];
 static uint32_t kb_duration;
 static bool kb_ready;
 
-static void input_cb(struct input_event *evt)
+static void input_cb(struct input_event *evt, void *user_data)
 {
 	struct kb_event kb_evt;
+
+	ARG_UNUSED(user_data);
 
 	kb_evt.code = evt->code;
 	kb_evt.value = evt->value;
@@ -66,7 +68,7 @@ static void input_cb(struct input_event *evt)
 	}
 }
 
-INPUT_CALLBACK_DEFINE(NULL, input_cb);
+INPUT_CALLBACK_DEFINE(NULL, input_cb, NULL);
 
 static void kb_iface_ready(const struct device *dev, const bool ready)
 {

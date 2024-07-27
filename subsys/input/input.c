@@ -22,7 +22,7 @@ static void input_process(struct input_event *evt)
 {
 	STRUCT_SECTION_FOREACH(input_callback, callback) {
 		if (callback->dev == NULL || callback->dev == evt->dev) {
-			callback->callback(evt);
+			callback->callback(evt, callback->user_data);
 		}
 	}
 }

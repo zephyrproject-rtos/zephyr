@@ -29,8 +29,9 @@ struct keymap_data {
 	bool pressed;
 };
 
-static void keymap_cb(const struct device *dev, struct input_event *evt)
+static void keymap_cb(struct input_event *evt, void *user_data)
 {
+	const struct device *dev = user_data;
 	const struct keymap_config *cfg = dev->config;
 	struct keymap_data *data = dev->data;
 	const uint16_t *codes = cfg->codes;
@@ -98,11 +99,8 @@ static int keymap_init(const struct device *dev)
 		KEYMAP_ENTRY_CODE(DT_PROP_BY_IDX(node_id, prop, idx)),
 
 #define INPUT_KEYMAP_DEFINE(inst)								\
-	static void keymap_cb_##inst(struct input_event *evt)					\
-	{											\
-		keymap_cb(DEVICE_DT_INST_GET(inst), evt);					\
-	}											\
-	INPUT_CALLBACK_DEFINE(DEVICE_DT_GET(DT_INST_PARENT(inst)), keymap_cb_##inst);		\
+	INPUT_CALLBACK_DEFINE(DEVICE_DT_GET(DT_INST_PARENT(inst)), keymap_cb,			\
+			      (void *)DEVICE_DT_INST_GET(inst));				\
 												\
 	DT_INST_FOREACH_PROP_ELEM(inst, keymap, KEYMAP_ENTRY_VALIDATE)				\
 												\
