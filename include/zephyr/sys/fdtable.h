@@ -7,9 +7,10 @@
 #define ZEPHYR_INCLUDE_SYS_FDTABLE_H_
 
 #include <stdarg.h>
-#include <sys/types.h>
+#include <time.h>
+
 /* FIXME: For native_posix ssize_t, off_t. */
-#include <zephyr/fs/fs.h>
+#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
@@ -207,6 +208,23 @@ struct zvfs_pollfd {
 
 __syscall int zvfs_poll(struct zvfs_pollfd *fds, int nfds, int poll_timeout);
 
+struct zvfs_fd_set {
+	uint32_t bitset[(CONFIG_ZVFS_OPEN_MAX + 31) / 32];
+};
+
+/** @brief Number of file descriptors which can be added @ref zvfs_fd_set */
+#define ZVFS_FD_SETSIZE (sizeof(((struct zvfs_fd_set *)0)->bitset) * 8)
+
+void ZVFS_FD_CLR(int fd, struct zvfs_fd_set *fdset);
+int ZVFS_FD_ISSET(int fd, struct zvfs_fd_set *fdset);
+void ZVFS_FD_SET(int fd, struct zvfs_fd_set *fdset);
+void ZVFS_FD_ZERO(struct zvfs_fd_set *fdset);
+
+__syscall int zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
+			  struct zvfs_fd_set *ZRESTRICT writefds,
+			  struct zvfs_fd_set *ZRESTRICT errorfds,
+			  const struct timeval *ZRESTRICT timeout);
+
 /**
  * Request codes for fd_op_vtable.ioctl().
  *
@@ -235,5 +253,7 @@ enum {
 #ifdef __cplusplus
 }
 #endif
+
+#include <zephyr/syscalls/fdtable.h>
 
 #endif /* ZEPHYR_INCLUDE_SYS_FDTABLE_H_ */
