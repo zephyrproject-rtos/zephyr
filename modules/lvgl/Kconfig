@@ -162,6 +162,20 @@ config LV_Z_USE_OSAL
 	  Use the Zephyr LVGL OSAL to enable parallel rendering
 	  pipelines.
 
+config LV_USE_PXP
+	bool
+
+config LV_USE_GPU_NXP_PXP
+	bool
+	default y if LV_USE_PXP
+
+config LV_Z_PXP_INTERRUPT_PRIORITY
+	int "PXP interrupt priority"
+	depends on LV_USE_PXP
+	default 3
+	help
+	  Sets the interrupt priority for PXP
+
 rsource "Kconfig.memory"
 rsource "Kconfig.input"
 rsource "Kconfig.shell"
