@@ -42,7 +42,8 @@ static void input_cb_unfiltered(struct input_event *evt, void *user_data)
 		k_sem_give(&cb_done);
 	}
 }
-INPUT_CALLBACK_DEFINE(NULL, input_cb_unfiltered, NULL);
+INPUT_CALLBACK_DEFINE_NAMED(NULL, input_cb_unfiltered, NULL,
+			    input_cb_unfiltered_custom_name);
 
 ZTEST(input_api, test_sequence_thread)
 {

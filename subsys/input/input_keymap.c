@@ -99,8 +99,8 @@ static int keymap_init(const struct device *dev)
 		KEYMAP_ENTRY_CODE(DT_PROP_BY_IDX(node_id, prop, idx)),
 
 #define INPUT_KEYMAP_DEFINE(inst)								\
-	INPUT_CALLBACK_DEFINE(DEVICE_DT_GET(DT_INST_PARENT(inst)), keymap_cb,			\
-			      (void *)DEVICE_DT_INST_GET(inst));				\
+	INPUT_CALLBACK_DEFINE_NAMED(DEVICE_DT_GET(DT_INST_PARENT(inst)), keymap_cb,		\
+				    (void *)DEVICE_DT_INST_GET(inst), keymap_cb_##inst);	\
 												\
 	DT_INST_FOREACH_PROP_ELEM(inst, keymap, KEYMAP_ENTRY_VALIDATE)				\
 												\
