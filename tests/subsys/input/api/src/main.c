@@ -17,7 +17,7 @@ static int message_count_unfiltered;
 static K_SEM_DEFINE(cb_start, 1, 1);
 static K_SEM_DEFINE(cb_done, 1, 1);
 
-static void input_cb_filtered(struct input_event *evt)
+static void input_cb_filtered(struct input_event *evt, void *user_data)
 {
 	TC_PRINT("%s: %d\n", __func__, message_count_filtered);
 
@@ -29,9 +29,9 @@ static void input_cb_filtered(struct input_event *evt)
 
 	k_sem_give(&cb_start);
 }
-INPUT_CALLBACK_DEFINE(&fake_dev, input_cb_filtered);
+INPUT_CALLBACK_DEFINE(&fake_dev, input_cb_filtered, NULL);
 
-static void input_cb_unfiltered(struct input_event *evt)
+static void input_cb_unfiltered(struct input_event *evt, void *user_data)
 {
 	TC_PRINT("%s: %d\n", __func__, message_count_unfiltered);
 
@@ -42,7 +42,7 @@ static void input_cb_unfiltered(struct input_event *evt)
 		k_sem_give(&cb_done);
 	}
 }
-INPUT_CALLBACK_DEFINE(NULL, input_cb_unfiltered);
+INPUT_CALLBACK_DEFINE(NULL, input_cb_unfiltered, NULL);
 
 ZTEST(input_api, test_sequence_thread)
 {
@@ -85,19 +85,19 @@ ZTEST(input_api, test_sequence_thread)
 
 #else /* CONFIG_INPUT_MODE_THREAD */
 
-static void input_cb_filtered(struct input_event *evt)
+static void input_cb_filtered(struct input_event *evt, void *user_data)
 {
 	if (evt->dev == &fake_dev) {
 		message_count_filtered++;
 	}
 }
-INPUT_CALLBACK_DEFINE(&fake_dev, input_cb_filtered);
+INPUT_CALLBACK_DEFINE(&fake_dev, input_cb_filtered, NULL);
 
-static void input_cb_unfiltered(struct input_event *evt)
+static void input_cb_unfiltered(struct input_event *evt, void *user_data)
 {
 	message_count_unfiltered++;
 }
-INPUT_CALLBACK_DEFINE(NULL, input_cb_unfiltered);
+INPUT_CALLBACK_DEFINE(NULL, input_cb_unfiltered, NULL);
 
 ZTEST(input_api, test_synchronous)
 {
@@ -118,11 +118,11 @@ ZTEST(input_api, test_synchronous)
 
 static struct input_event last_event;
 
-static void input_cb_last_event(struct input_event *evt)
+static void input_cb_last_event(struct input_event *evt, void *user_data)
 {
 	memcpy(&last_event, evt, sizeof(last_event));
 }
-INPUT_CALLBACK_DEFINE(NULL, input_cb_last_event);
+INPUT_CALLBACK_DEFINE(NULL, input_cb_last_event, NULL);
 
 ZTEST(input_api, test_report_apis)
 {
