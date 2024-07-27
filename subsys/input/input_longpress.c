@@ -109,8 +109,9 @@ static int longpress_init(const struct device *dev)
 		      !DT_INST_NODE_HAS_PROP(inst, short_codes));                                  \
 	BUILD_ASSERT(DT_INST_PROP_LEN(inst, input_codes) == DT_INST_PROP_LEN(inst, long_codes));   \
 	                                                                                           \
-	INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input)),                 \
-			      longpress_cb, (void *)DEVICE_DT_INST_GET(inst));                     \
+	INPUT_CALLBACK_DEFINE_NAMED(DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input)),           \
+				    longpress_cb, (void *)DEVICE_DT_INST_GET(inst),                \
+				    longpress_cb_##inst);                                          \
 	                                                                                           \
 	static const uint16_t longpress_input_codes_##inst[] = DT_INST_PROP(inst, input_codes);    \
 	                                                                                           \
