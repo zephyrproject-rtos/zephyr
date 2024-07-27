@@ -857,6 +857,23 @@
 			reg = <0x40080000 0x4000>;
 			status = "disabled";
 		};
+
+		pmc: pmc@402e8000 {
+			compatible = "nxp,s32k3-pmc";
+			reg = <0x402e8000 0x4000>;
+		};
+
+		mc_me: mc_me@402dc000 {
+			compatible = "nxp,s32-mc-me";
+			reg = <0x402dc000 0x4000>;
+		};
+
+		mc_rgm: mc_rgm@4028c000 {
+			compatible = "nxp,s32-mc-rgm";
+			reg = <0x4028c000 0x4000>;
+			func-reset-threshold = <0>;
+			dest-reset-threshold = <0>;
+		};
 	};
 };
 

@@ -38,23 +38,4 @@ config IVT_HEADER_SIZE
 	help
 	  Size of ivt header region
 
-config NXP_S32_PMC_LMEN
-	bool "Last Mile regulator"
-	default y if CLOCK_CONTROL
-	help
-	  Enables the Last Mile regulator, which regulates an external 1.5V
-	  voltage on V15 down to the core and logic supply (V11 power domain),
-	  which is typically 1.1V.
-	  When enabling PLL as system clock, the PMC last mile regulator should
-	  be enabled.
-
-config NXP_S32_PMC_LMBCTLEN
-	bool "External BCTL regulator for V15"
-	depends on NXP_S32_PMC_LMEN
-	help
-	  This option must be selected if an external BJT between VDD_HV_A and
-	  V15 is used on the PCB. The base of this BJT must be connected to the
-	  VRC_CTRL pin and is controlled by the PMC to regulate a voltage of
-	  1.5V on V15 pin.
-
 endif # SOC_SERIES_S32K3
