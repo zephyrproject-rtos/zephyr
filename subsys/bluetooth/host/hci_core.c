@@ -988,7 +988,12 @@ static void hci_disconn_complete(struct net_buf *buf)
 #if defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 		bt_conn_set_state(conn, BT_CONN_SCAN_BEFORE_INITIATING);
-		bt_le_scan_update(false);
+		/* Just a best-effort check if the scanner should be started. */
+		int err = bt_le_scan_user_remove(BT_LE_SCAN_USER_NONE);
+
+		if (err) {
+			LOG_WRN("Error while updating the scanner (%d)", err);
+		}
 	}
 #endif /* defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
@@ -1401,7 +1406,12 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    evt->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
 			le_conn_complete_cancel(evt->status);
-			bt_le_scan_update(false);
+			/* Just a best-effort check if the scanner should be started. */
+			int err = bt_le_scan_user_remove(BT_LE_SCAN_USER_NONE);
+
+			if (err) {
+				LOG_WRN("Error while updating the scanner (%d)", err);
+			}
 			return;
 		}
 
@@ -1560,9 +1570,14 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	bt_conn_unref(conn);
 
-	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    conn->role == BT_HCI_ROLE_CENTRAL) {
-		bt_le_scan_update(false);
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && conn->role == BT_HCI_ROLE_CENTRAL) {
+		int err;
+
+		/* Just a best-effort check if the scanner should be started. */
+		err = bt_le_scan_user_remove(BT_LE_SCAN_USER_NONE);
+		if (err) {
+			LOG_WRN("Error while updating the scanner (%d)", err);
+		}
 	}
 }
 
@@ -4099,7 +4114,7 @@ void bt_finalize_init(void)
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 
 	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
-		bt_le_scan_update(false);
+		bt_scan_reset();
 	}
 
 	bt_dev_show_info();
