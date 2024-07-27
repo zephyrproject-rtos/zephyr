@@ -130,6 +130,20 @@ struct input_callback {
 };
 
 /**
+ * @brief Register a callback structure for input events with a custom name.
+ *
+ * Same as @ref INPUT_CALLBACK_DEFINE but allows specifying a custom name
+ * for the callback structure. Useful if multiple callbacks are used for the
+ * same callback function.
+ */
+#define INPUT_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data, name)         \
+	static const STRUCT_SECTION_ITERABLE(input_callback, name) = {         \
+		.dev = _dev,                                                   \
+		.callback = _callback,                                         \
+		.user_data = _user_data,                                       \
+	}
+
+/**
  * @brief Register a callback structure for input events.
  *
  * The @p _dev field can be used to only invoke callback for events generated
@@ -141,12 +155,8 @@ struct input_callback {
  * @param _user_data Pointer to user specified data.
  */
 #define INPUT_CALLBACK_DEFINE(_dev, _callback, _user_data)                     \
-	static const STRUCT_SECTION_ITERABLE(input_callback,                   \
-					     _input_callback__##_callback) = { \
-		.dev = _dev,                                                   \
-		.callback = _callback,                                         \
-		.user_data = _user_data,                                       \
-	}
+	INPUT_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data,               \
+				    _input_callback__##_callback)
 
 #ifdef __cplusplus
 }
