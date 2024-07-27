@@ -124,10 +124,14 @@ struct video_buffer {
  * Identify the video device endpoint.
  */
 enum video_endpoint_id {
-	VIDEO_EP_NONE,
-	VIDEO_EP_ANY,
-	VIDEO_EP_IN,
-	VIDEO_EP_OUT,
+	/** Targets some part of the video device not bound to an endpoint */
+	VIDEO_EP_NONE = -1,
+	/** Targets all input or output endpoints of the device */
+	VIDEO_EP_ALL = -2,
+	/** Targets all input endpoints of the device: those consuming data */
+	VIDEO_EP_IN = -3,
+	/** Targets all output endpoints of the device: those producing data */
+	VIDEO_EP_OUT = -4,
 };
 
 /**
@@ -449,7 +453,7 @@ static inline int video_stream_stop(const struct device *dev)
 	}
 
 	ret = api->stream_stop(dev);
-	video_flush(dev, VIDEO_EP_ANY, true);
+	video_flush(dev, VIDEO_EP_ALL, true);
 
 	return ret;
 }
