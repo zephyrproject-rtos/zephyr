@@ -1,0 +1,13 @@
+# VIDEO drivers on I2C bus configuration options
+
+# Copyright (c) 2019 Linaro Limited
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/video/i2c/Kconfig.mt9m114"
+source "drivers/video/i2c/Kconfig.ov2640"
+source "drivers/video/i2c/Kconfig.ov5640"
+source "drivers/video/i2c/Kconfig.ov7670"
+source "drivers/video/i2c/Kconfig.ov7725"
+# zephyr-keep-sorted-stop
