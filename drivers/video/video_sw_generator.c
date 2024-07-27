@@ -52,7 +52,7 @@ static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpo
 	struct video_sw_generator_data *data = dev->data;
 	int i = 0;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -79,7 +79,7 @@ static int video_sw_generator_get_fmt(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -171,7 +171,7 @@ static int video_sw_generator_enqueue(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -185,7 +185,7 @@ static int video_sw_generator_dequeue(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
