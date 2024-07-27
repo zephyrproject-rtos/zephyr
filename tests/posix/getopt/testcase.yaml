@@ -3,12 +3,17 @@ common:
   tags:
     - posix
     - getopt
-  integration_platforms:
-    - qemu_x86
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
 tests:
   portability.posix.getopt:
     min_flash: 64
     min_ram: 32
+  portability.posix.getopt.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
   portability.posix.getopt.newlib:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
