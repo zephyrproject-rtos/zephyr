@@ -17,3 +17,13 @@ config USE_RA_FSP_DTC
 	bool
 	help
 	  Enable RA FSP DTC driver
+
+config USE_RA_FSP_SCE
+	bool
+	help
+	  Enable RA FSP SCE driver
+
+config USE_RA_FSP_SPI_B
+	bool
+	help
+	  Enable RA FSP SPI-B driver
