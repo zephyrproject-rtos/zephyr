@@ -119,7 +119,7 @@ are supported:
 Enabling the stack
 ******************
 
-The following configuration option must me enabled in :file:`prj.conf` file.
+The following configuration option must be enabled in :file:`prj.conf` file.
 
 - :kconfig:option:`CONFIG_PTP`
 
