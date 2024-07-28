@@ -2,5 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_IMX9
-rsource "*/Kconfig"
-endif
+
+rsource "Kconfig.defconfig.*"
+
+endif # SOC_SERIES_IMX9
