@@ -98,6 +98,8 @@ The below features are currently supported on Zephyr OS for EK-RA8M1 board:
 +-----------+------------+----------------------+
 | CLOCK     | on-chip    | clock control        |
 +-----------+------------+----------------------+
+| I2C       | on-chip    | i2c                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
