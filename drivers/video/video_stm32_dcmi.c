@@ -7,10 +7,12 @@
 #define DT_DRV_COMPAT st_stm32_dcmi
 
 #include <errno.h>
+
 #include <zephyr/kernel.h>
+#include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/irq.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma.h>
@@ -18,8 +20,7 @@
 
 #include <stm32_ll_dma.h>
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(video_stm32_dcmi, CONFIG_STM32_DCMI_LOG_LEVEL);
+LOG_MODULE_REGISTER(video_stm32_dcmi, CONFIG_VIDEO_LOG_LEVEL);
 
 K_HEAP_DEFINE(video_stm32_buffer_pool, CONFIG_VIDEO_BUFFER_POOL_SZ_MAX);
 

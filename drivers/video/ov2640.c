@@ -5,16 +5,15 @@
  */
 
 #define DT_DRV_COMPAT ovti_ov2640
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-
+#include <zephyr/logging/log.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(ov2640);
+LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 
 /* DSP register bank FF=0x00*/
 #define QS                  0x44

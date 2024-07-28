@@ -3,13 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT zephyr_sw_generator
+
 #include <zephyr/kernel.h>
-
 #include <zephyr/drivers/video.h>
-
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(video_sw_generator);
+
+LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_PATTERN_COLOR_BAR 0
 #define VIDEO_PATTERN_FPS       30

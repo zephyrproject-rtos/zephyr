@@ -13,6 +13,10 @@ menuconfig VIDEO
 
 if VIDEO
 
+module = VIDEO
+module-str = video
+source "subsys/logging/Kconfig.template.log_config"
+
 config VIDEO_INIT_PRIORITY
 	int "Video initialization priority"
 	default 60
