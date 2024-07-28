@@ -32,10 +32,6 @@
 	};
 };
 
-&ioport1 {
-	status = "okay";
-};
-
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";

@@ -51,3 +51,40 @@
 			   <21 0 &ioport1 0 0>;   /* D15 */
 	};
 };
+
+&ioport0 {
+	/delete-property/ port-irq3-pins;  /* P004: Not connected */
+	/delete-property/ port-irq10-pins; /* P005: Not available */
+	/delete-property/ port-irq15-pins; /* P011: Not connected */
+};
+
+&ioport1 {
+	/delete-property/ port-irq2-pins; /* P100: Conflict with P002. choose either. */
+	status = "okay";
+};
+
+&ioport2 {
+	/delete-property/ port-irq0-pins; /* P206: Not connected */
+	/delete-property/ port-irq1-pins; /* P205: Not connected */
+	/delete-property/ port-irq2-pins; /* P213: Not connected */
+	/delete-property/ port-irq3-pins; /* P212: Not connected */
+};
+
+&ioport3 {
+	/delete-property/ port-irq6-pins; /* P301: Conflict with P001, choose either. */
+	/delete-property/ port-irq8-pins; /* P305: Not available */
+};
+
+&ioport4 {
+	/delete-property/ port-irq0-pins; /* P400: Not connected */
+	/delete-property/ port-irq4-pins; /* P402/P411: Not connected */
+	/delete-property/ port-irq5-pins; /* P401/P410: Not connected */
+	/delete-property/ port-irq6-pins; /* P409: Not connected */
+	/delete-property/ port-irq7-pins; /* P408: Not connected */
+	/delete-property/ port-irq8-pins; /* P415: Not available */
+	/delete-property/ port-irq9-pins; /* P414: Not available */
+};
+
+&ioport5 {
+	/delete-property/ port-irq14-pins; /* P505: Not available */
+};
