@@ -170,6 +170,23 @@
 			status = "disabled";
 		};
 
+		iic0: iic0@4025e000 {
+			compatible = "renesas,ra-iic";
+			channel = <0>;
+			interrupts = <87 1>, <88 1>, <89 1>, <90 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4025E000 0x100>;
+			status = "disabled";
+		};
+		iic1: iic1@4025e100 {
+			compatible = "renesas,ra-iic";
+			channel = <1>;
+			interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4025E100 0x100>;
+			status = "disabled";
+		};
+
 		sci0: sci0@40358000 {
 			compatible = "renesas,ra-sci";
 			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
