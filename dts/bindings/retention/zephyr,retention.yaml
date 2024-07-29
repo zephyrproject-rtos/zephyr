@@ -49,6 +49,17 @@ properties:
   reg:
     required: true
 
+  write32:
+    description: |
+      An optional property to indicates that retention memory requires
+      write in 32bit words. With some sram, especially on the stm32h74x/h750 mcus,
+      when an incomplete word is written to an retention ram and a reset occurs,
+      the last incomplete word is not really written. This is due to the ECC behavior.
+      This property must be set to ensure that an incomplete word is written to retention ram,
+      It will write an additional dummy incomplete word to the same RAM at a different address
+      before issuing a reset.
+    type: boolean
+
   prefix:
     description: |
       An optional magic prefix, which indicates that the data has been set

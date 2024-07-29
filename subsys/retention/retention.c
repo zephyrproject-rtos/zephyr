@@ -25,12 +25,27 @@ LOG_MODULE_REGISTER(retention, CONFIG_RETENTION_LOG_LEVEL);
 
 #define INST_HAS_PREFIX(n) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prefix), (1), (0)) ||
 
+/*
+ * STM32H74x/H75x - RM0433 : when an incomplete word is written to an internal SRAM
+ * and a reset occurs, the last incomplete word is not really written.
+ * This is due to the ECC behavior.
+ * To ensure that an incomplete word is written to SRAM, write an additional dummy
+ * incomplete word to the same RAM at a different address before issuing a reset.
+ * Choosing this different address to be offset 2 * offset of the checksum
+ * TODO: consider other stm32 series than stm32H7
+ */
+#define INST_HAS_WRITE32(n) DT_INST_PROP(n, write32) ||
+
 #if (DT_INST_FOREACH_STATUS_OKAY(INST_HAS_CHECKSUM) 0)
 #define ANY_HAS_CHECKSUM
 #endif
 
 #if (DT_INST_FOREACH_STATUS_OKAY(INST_HAS_PREFIX) 0)
 #define ANY_HAS_PREFIX
+#endif
+
+#if (DT_INST_FOREACH_STATUS_OKAY(INST_HAS_WRITE32) 0)
+#define ANY_HAS_WRITE32
 #endif
 
 enum {
@@ -176,6 +191,7 @@ int retention_is_valid(const struct device *dev)
 
 	/* If neither the header or checksum are enabled, return a not supported error */
 	if (config->prefix_len == 0 && config->checksum_size == 0) {
+		LOG_ERR("Neither header nor checksum are enabled");
 		rc = -ENOTSUP;
 		goto finish;
 	}
@@ -313,7 +329,9 @@ int retention_write(const struct device *dev, off_t offset, const uint8_t *buffe
 	 * validity before marking it as being valid
 	 */
 	if (config->prefix_len != 0 && data->header_written == false) {
-		rc = retained_mem_write(config->parent, config->offset, (void *)config->prefix,
+		rc = retained_mem_write(config->parent,
+					config->offset,
+					(void *)config->prefix,
 					config->prefix_len);
 
 		if (rc < 0) {
@@ -322,7 +340,7 @@ int retention_write(const struct device *dev, off_t offset, const uint8_t *buffe
 
 		data->header_written = true;
 	}
-#endif
+#endif /* ANY_HAS_PREFIX */
 
 #ifdef ANY_HAS_CHECKSUM
 	if (config->checksum_size != 0) {
@@ -341,19 +359,47 @@ int retention_write(const struct device *dev, off_t offset, const uint8_t *buffe
 			rc = retained_mem_write(config->parent,
 					(config->offset + config->size - config->checksum_size),
 					(void *)&output_checksum, sizeof(output_checksum));
+#ifdef ANY_HAS_WRITE32
+			/* To write an incomplete 32-bit word : write again */
+			rc |= retained_mem_write(config->parent,
+					(config->offset + config->size - config->checksum_size),
+					(void *)&output_checksum, sizeof(output_checksum));
+#endif /* ANY_HAS_WRITE32 */
 		} else if (config->checksum_size == CHECKSUM_CRC16) {
 			uint16_t output_checksum = (uint16_t)checksum;
-
 			rc = retained_mem_write(config->parent,
 					(config->offset + config->size - config->checksum_size),
 					(void *)&output_checksum, sizeof(output_checksum));
+#ifdef ANY_HAS_WRITE32
+			/* To write an incomplete 32-bit word : write again */
+			rc |= retained_mem_write(config->parent,
+					(config->offset + config->size - config->checksum_size),
+					(void *)&output_checksum, sizeof(output_checksum));
+#endif /* ANY_HAS_WRITE32 */
 		} else if (config->checksum_size == CHECKSUM_CRC32) {
 			rc = retained_mem_write(config->parent,
 					(config->offset + config->size - config->checksum_size),
 					(void *)&checksum, sizeof(checksum));
 		}
 	}
-#endif
+
+#endif /* ANY_HAS_CHECKSUM */
+
+#if defined(ANY_HAS_PREFIX) && defined(ANY_HAS_WRITE32)
+	/* Need to write again incomplete word to validate the prefix */
+	if (config->prefix_len != 0 && data->header_written == false) {
+		rc = retained_mem_write(config->parent,
+					config->offset,
+					(void *)config->prefix,
+					config->prefix_len);
+
+		if (rc < 0) {
+			goto finish;
+		}
+
+		data->header_written = true;
+	}
+#endif /* ANY_HAS_PREFIX */
 
 finish:
 	retention_lock_release(dev);
