@@ -793,8 +793,8 @@ ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
 	/* Validate no new requests can be submitted */
 	modem_cmux_connect(&cmux);
 	modem_cmux_disconnect(&cmux);
-	modem_pipe_open(dlci1_pipe);
-	modem_pipe_open(dlci2_pipe);
+	modem_pipe_open(dlci1_pipe, K_SECONDS(10));
+	modem_pipe_open(dlci2_pipe, K_SECONDS(10));
 	modem_pipe_transmit(dlci1_pipe, transmit, sizeof(transmit));
 	modem_pipe_transmit(dlci2_pipe, transmit, sizeof(transmit));
 	modem_pipe_receive(dlci1_pipe, receive, sizeof(receive));
@@ -809,9 +809,9 @@ ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
 	modem_backend_mock_prime(&bus_mock, &transaction_control_sabm);
 	zassert_ok(modem_cmux_connect(&cmux));
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
-	zassert_ok(modem_pipe_open(dlci1_pipe));
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)));
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
-	zassert_ok(modem_pipe_open(dlci2_pipe));
+	zassert_ok(modem_pipe_open(dlci2_pipe, K_SECONDS(10)));
 }
 
 ZTEST_SUITE(modem_cmux, NULL, test_modem_cmux_setup, test_modem_cmux_before, NULL, NULL);
