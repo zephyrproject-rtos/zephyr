@@ -93,6 +93,12 @@ config BT_HFP_HF_VOLUME
 endif # BT_HFP_HF
 
 if BT_HFP_AG
+config BT_HFP_AG_EXT_ERR
+	bool "Extended Error Result Codes for HFP AG [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables Extended Error Result Codes for HFP AG
+
 config BT_HFP_AG_TX_BUF_COUNT
 	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"
 	default BT_RFCOMM_TX_MAX
