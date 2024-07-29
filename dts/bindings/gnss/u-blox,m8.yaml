@@ -1,9 +1,9 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: U-BLOX M10 GNSS Module
+description: U-BLOX M8 GNSS Module
 
-compatible: "u-blox,m10"
+compatible: "u-blox,m8"
 
 include:
   - uart-device.yaml

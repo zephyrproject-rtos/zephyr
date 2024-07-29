@@ -1,11 +1,11 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config GNSS_U_BLOX_M10
-	bool "U-BLOX M10 GNSS Module"
+config GNSS_U_BLOX_M8
+	bool "U-BLOX M8 GNSS Module"
 	default y
 	depends on GNSS
-	depends on DT_HAS_U_BLOX_M10_ENABLED
+	depends on DT_HAS_U_BLOX_M8_ENABLED
 	depends on GNSS_REFERENCE_FRAME_WGS84
 	select MODEM_MODULES
 	select MODEM_BACKEND_UART
@@ -17,9 +17,9 @@ config GNSS_U_BLOX_M10
 	select GNSS_U_BLOX_PROTOCOL
 	select UART_USE_RUNTIME_CONFIGURE
 	help
-	  Enable U-BLOX M10 GNSS modem driver.
+	  Enable U-BLOX M8 GNSS modem driver.
 
-config GNSS_U_BLOX_M10_SATELLITES_COUNT
+config GNSS_U_BLOX_M8_SATELLITES_COUNT
 	int "Maximum satellite count"
 	depends on GNSS_SATELLITES
 	default 24
