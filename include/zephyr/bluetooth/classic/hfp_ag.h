@@ -161,6 +161,33 @@ struct bt_hfp_ag_cb {
 	 */
 	void (*codec)(struct bt_hfp_ag *ag, uint32_t ids);
 
+	/** Codec negotiate callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  codec negotiation succeeded or failed.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param err Result of codec negotiation.
+	 */
+	void (*codec_negotiate)(struct bt_hfp_ag *ag, int err);
+
+	/** Audio connection request callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  audio conenction request is triggered by HF.
+	 *  When AT+BCC AT command received, it means the procedure of
+	 *  establishment of audio connection is triggered by HF.
+	 *  If the callback is provided by application, AG needs to
+	 *  start the codec connection procedure by calling
+	 *  function `bt_hfp_ag_audio_connect` in application layer.
+	 *  Or, the codec conenction procedure will be started with
+	 *  default codec id `BT_HFP_AG_CODEC_CVSD`.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param err Result of codec negotiation.
+	 */
+	void (*audio_connect_req)(struct bt_hfp_ag *ag);
+
 	/** HF VGM setting callback
 	 *
 	 *  If this callback is provided it will be called whenever the
@@ -343,6 +370,28 @@ int bt_hfp_ag_vgs(struct bt_hfp_ag *ag, uint8_t vgs);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, uint8_t mode, char *name);
+
+/** @brief Create audio connection
+ *
+ *  Create audio conenction by HFP AG. There are two setups included,
+ *  Codec connection and audio connection.
+ *  The codec connection will be established firstly if the codec
+ *  negotiation are supported by both side. If the passed codec id
+ *  is not same as the last codec connection, the codec connection
+ *  procedure will be triggered.
+ *  After the codec conenction is established, the audio conenction
+ *  will be started.
+ *  The passed codec id could be one of BT_HFP_AG_CODEC_XXX. If the
+ *  codec negotiation feature is supported by both side, the codec id
+ *  could be one of the bitmaps of `ids` notified by callback `codec`.
+ *  Or, the `id` should be BT_HFP_AG_CODEC_CVSD.
+ *
+ *  @param ag HFP AG object.
+ *  @param id Codec Id.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id);
 
 #ifdef __cplusplus
 }
