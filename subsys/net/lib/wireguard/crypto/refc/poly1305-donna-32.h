@@ -1,5 +1,6 @@
 // Taken from https://github.com/floodyberry/poly1305-donna - public domain or MIT
 // Copyright (c) 2014 Andrew Moon
+/* SPDX-License-Identifier: MIT */
 /*
 	poly1305 implementation using 32 bit * 32 bit = 64 bit multiplication and 64 bit addition
 */

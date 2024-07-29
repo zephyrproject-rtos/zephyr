@@ -1,4 +1,7 @@
 // Taken from https://sourceforge.net/p/strobe (MIT Licence)
+
+/* SPDX-License-Identifier: MIT */
+
 /**
  * @cond internal
  * @file x25519.c

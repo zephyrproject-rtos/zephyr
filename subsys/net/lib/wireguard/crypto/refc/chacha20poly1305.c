@@ -32,6 +32,9 @@
 
 // AEAD_CHACHA20_POLY1305 as described in https://tools.ietf.org/html/rfc7539
 // AEAD_XChaCha20_Poly1305 as described in https://tools.ietf.org/id/draft-arciszewski-xchacha-02.html
+
+/* SPDX-License-Identifier: BSD-3-Clause */
+
 #include "chacha20poly1305.h"
 #include "chacha20.h"
 #include "poly1305-donna.h"
