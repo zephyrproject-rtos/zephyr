@@ -12,6 +12,7 @@
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
 
 /* ESP32 includes */
 #include <esp_clk_tree.h>
@@ -51,6 +52,8 @@ struct sdhc_esp32_config {
 
 	int slot;
 	const sdmmc_dev_t *sdio_hw;
+	const struct device *clock_dev;
+	const clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pcfg;
 	const struct gpio_dt_spec pwr_gpio;
 	/*
@@ -1320,9 +1323,16 @@ static int sdhc_esp32_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* enable bus clock for registers */
-	sdmmc_ll_enable_bus_clock(sdio_hw, true);
-	sdmmc_ll_reset_register(sdio_hw);
+	if (!device_is_ready(cfg->clock_dev)) {
+		return -ENODEV;
+	}
+
+	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+
+	if (ret != 0) {
+		LOG_ERR("Error enabling SDHC clock");
+		return ret;
+	}
 
 	/* Enable clock to peripheral. Use smallest divider first */
 	ret = sdmmc_host_set_clk_div(sdio_hw, 2);
@@ -1406,6 +1416,8 @@ static const struct sdhc_driver_api sdhc_api = {.reset = sdhc_esp32_reset,
                                                                                                    \
 	static const struct sdhc_esp32_config sdhc_esp32_##n##_config = {                          \
 		.sdio_hw = (const sdmmc_dev_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                    \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),                     \
+		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), offset), \
 		.irq_source = DT_IRQN(DT_INST_PARENT(n)),                                          \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
