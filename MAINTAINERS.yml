@@ -120,6 +120,7 @@ ACPI:
     - include/zephyr/acpi/
     - tests/lib/acpi/
     - dts/bindings/acpi/
+    - include/zephyr/dt-bindings/acpi/
   labels:
     - "area: ACPI"
   tests:
@@ -317,6 +318,7 @@ Bluetooth HCI:
     - drivers/bluetooth/
     - samples/bluetooth/hci_*/
     - tests/bsim/bluetooth/hci_uart/
+    - dts/bindings/bluetooth/
   labels:
     - "area: Bluetooth Host"
     - "area: Bluetooth"
@@ -874,6 +876,8 @@ Devicetree:
   collaborators:
     - decsny
     - galak
+  files-regex:
+    - dts/bindings/.*zephyr.*
   files:
     - scripts/dts/
     - dts/common/
@@ -883,23 +887,15 @@ Devicetree:
     - scripts/kconfig/kconfigfunctions.py
     - doc/build/kconfig/preprocessor-functions.rst
     - include/zephyr/devicetree.h
+    - include/zephyr/dt-bindings/dt-util.h
+    - dts/binding-template.yaml
+    - dts/bindings/base/
   files-exclude:
     - dts/common/nordic/
   labels:
     - "area: Devicetree"
   tests:
     - libraries.devicetree
-
-Devicetree Bindings:
-  status: odd fixes
-  collaborators:
-    - decsny
-    - galak
-  files:
-    - include/zephyr/dt-bindings/
-    - dts/binding-template.yaml
-  labels:
-    - "area: Devicetree Binding"
 
 Disk:
   status: maintained
@@ -917,6 +913,9 @@ Disk:
     - tests/subsys/sd/
     - tests/drivers/disk/
     - include/zephyr/sd/
+    - dts/bindings/sd/
+    - dts/bindings/mmc/
+    - dts/bindings/disk/
   labels:
     - "area: Disk Access"
   tests:
@@ -930,6 +929,7 @@ Display drivers:
   files:
     - drivers/display/
     - dts/bindings/display/
+    - include/zephyr/dt-bindings/display/
     - include/zephyr/drivers/display.h
     - include/zephyr/display/
     - include/zephyr/drivers/display.h
@@ -1140,6 +1140,7 @@ Release Notes:
   files:
     - drivers/clock_control/
     - dts/bindings/clock/
+    - include/zephyr/dt-bindings/clock/
     - include/zephyr/drivers/clock_control.h
     - include/zephyr/dt-bindings/clock/
     - tests/drivers/clock_control/
@@ -1216,6 +1217,8 @@ Release Notes:
   files:
     - drivers/dac/
     - include/zephyr/drivers/dac.h
+    - dts/bindings/dac/
+    - include/zephyr/dt-bindings/dac/
     - tests/drivers/dac/
     - samples/drivers/dac/
     - doc/hardware/peripherals/dac.rst
@@ -1239,6 +1242,8 @@ Release Notes:
     - drivers/dai/
     - doc/hardware/peripherals/audio/dai.rst
     - include/zephyr/drivers/dai.h
+    - include/zephyr/dt-bindings/dai/
+    - dts/bindings/dai/
   labels:
     - "area: DAI"
 
@@ -1263,6 +1268,8 @@ Release Notes:
     - drivers/dma/
     - tests/drivers/dma/
     - include/zephyr/drivers/dma/
+    - dts/bindings/dma/
+    - include/zephyr/dt-bindings/dma/
     - doc/hardware/peripherals/dma.rst
     - include/zephyr/drivers/dma.h
     - include/zephyr/dt-bindings/dma/
@@ -1368,6 +1375,7 @@ Release Notes:
   files:
     - drivers/flash/
     - dts/bindings/flash_controller/
+    - include/zephyr/dt-bindings/flash_controller/
     - include/zephyr/drivers/flash.h
     - samples/drivers/flash_shell/
     - samples/drivers/soc_flash_nrf/
@@ -1423,6 +1431,7 @@ Release Notes:
   files:
     - doc/hardware/peripherals/gpio.rst
     - drivers/gpio/
+    - dts/bindings/gpio/
     - include/zephyr/drivers/gpio/
     - include/zephyr/drivers/gpio.h
     - include/zephyr/dt-bindings/gpio/
@@ -1445,6 +1454,8 @@ Release Notes:
     - drivers/gnss/
     - include/zephyr/drivers/gnss.h
     - include/zephyr/drivers/gnss/
+    - dts/bindings/gnss/
+    - include/zephyr/dt-bindings/gnss/
     - tests/drivers/build_all/gnss/
     - tests/drivers/gnss/
   labels:
@@ -1586,6 +1597,8 @@ Release Notes:
     - drivers/memc/
     - samples/drivers/memc/
     - tests/drivers/memc/
+    - include/zephyr/dt-bindings/memory-controller/
+    - dts/bindings/memory-controllers/
   labels:
     - "area: MEMC"
   tests:
@@ -1650,6 +1663,7 @@ Release Notes:
     - drivers/reset/
     - include/zephyr/drivers/reset.h
     - dts/bindings/reset/
+    - include/zephyr/dt-bindings/reset/
 
 "Interrupt Handling":
   status: odd fixes
@@ -1720,6 +1734,7 @@ Release Notes:
     - doc/hardware/peripherals/led.rst
     - tests/drivers/build_all/led/
     - dts/bindings/led/
+    - include/zephyr/dt-bindings/led/
   labels:
     - "area: LED"
   tests:
@@ -1836,6 +1851,7 @@ Release Notes:
     - include/zephyr/drivers/pcie/
     - doc/hardware/peripherals/pcie.rst
     - dts/bindings/pcie/
+    - include/zephyr/dt-bindings/pcie/
   labels:
     - "area: PCI"
 
@@ -1921,6 +1937,7 @@ Release Notes:
   files:
     - drivers/pwm/
     - dts/bindings/pwm/
+    - include/zephyr/dt-bindings/pwm/
     - tests/drivers/pwm/
     - include/zephyr/*/pwms.h
     - doc/hardware/peripherals/pwm.rst
@@ -2021,6 +2038,7 @@ Release Notes:
     - include/zephyr/drivers/spi.h
     - tests/drivers/spi/
     - dts/bindings/spi/
+    - include/zephyr/dt-bindings/spi/
     - doc/hardware/peripherals/spi.rst
   labels:
     - "area: SPI"
@@ -2037,6 +2055,7 @@ Release Notes:
     - drivers/timer/
     - include/zephyr/drivers/timer/
     - dts/bindings/timer/
+    - include/zephyr/dt-bindings/timer/
   labels:
     - "area: Timer"
 
@@ -2163,6 +2182,7 @@ Release Notes:
   files:
     - drivers/mipi_dbi/
     - dts/bindings/mipi-dbi/
+    - include/zephyr/dt-bindings/mipi_dbi/
   labels:
     - "area: Display Controller"
 
@@ -2326,6 +2346,7 @@ IPC:
     - tests/subsys/ipc/
     - doc/services/ipc/
     - dts/bindings/ipc/
+    - include/zephyr/dt-bindings/ipc_service/
   description: >-
     Inter-Processor Communication
   labels:
@@ -2492,6 +2513,7 @@ Memory Management:
     - tests/lib/mem_blocks/
     - doc/services/mem_mgmt/
     - include/zephyr/mem_mgmt/mem_attr.h
+    - include/zephyr/dt-bindings/memory-attr/
     - tests/lib/mem_blocks_stats/
     - tests/drivers/mm/
   tests:
@@ -2573,6 +2595,8 @@ LoRa and LoRaWAN:
     - include/zephyr/lorawan/
     - subsys/lorawan/
     - samples/subsys/lorawan/
+    - include/zephyr/dt-bindings/lora/
+    - dts/bindings/lora/
     - doc/connectivity/lora_lorawan/index.rst
   labels:
     - "area: LoRa"
@@ -3072,6 +3096,8 @@ Power management:
     - tests/subsys/pm/
     - doc/services/pm/
     - drivers/power_domain/
+    - dts/bindings/power/
+    - include/zephyr/dt-bindings/power/
   labels:
     - "area: Power Management"
   tests:
@@ -3545,6 +3571,8 @@ NXP Drivers:
     - drivers/misc/*/nxp*
     - include/zephyr/dt-bindings/*/*nxp*
     - include/zephyr/dt-bindings/*/*mcux*
+    - include/zephyr/dt-bindings/inputmux/
+    - include/zephyr/dt-bindings/rdc/
     - include/zephyr/drivers/*/*nxp*
     - include/zephyr/drivers/*/*mcux*
     - arch/arm/core/mpu/nxp_mpu.c
@@ -4176,6 +4204,7 @@ USB:
   files:
     - drivers/usb/
     - dts/bindings/usb/
+    - include/zephyr/dt-bindings/usb/
     - include/zephyr/*/usb/
     - include/zephyr/usb/
     - samples/subsys/usb/
@@ -4199,6 +4228,7 @@ USB-C:
   files:
     - drivers/usb_c/
     - dts/bindings/usb-c/
+    - include/zephyr/dt-bindings/usb-c/
     - include/zephyr/*/usb_c/
     - include/zephyr/usb_c/
     - samples/subsys/usb_c/
@@ -4778,6 +4808,7 @@ West:
   files:
     - modules/lvgl/
     - tests/lib/gui/lvgl/
+    - include/zephyr/dt-bindings/lvgl/
   labels:
     - "area: LVGL"
 
