@@ -363,6 +363,16 @@ int bt_hfp_hf_accept(struct bt_conn *conn);
  */
 int bt_hfp_hf_reject(struct bt_conn *conn);
 
+/** @brief Handsfree HF terminate the incoming call
+ *
+ *  Send the AT+CHUP command to terminate the incoming call.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_terminate(struct bt_conn *conn);
+
 /** @brief Handsfree HF setup audio connection
  *
  *  Setup audio conenction by sending AT+BCC.

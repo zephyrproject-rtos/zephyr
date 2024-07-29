@@ -417,6 +417,8 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 		}
 		break;
 	case HF_CALL_IND:
+		atomic_set_bit_to(hf->flags, BT_HFP_HF_FLAG_ACTIVE, value);
+
 		if (bt_hf->call) {
 			bt_hf->call(conn, value);
 		}
@@ -1446,6 +1448,32 @@ int bt_hfp_hf_reject(struct bt_conn *conn)
 	err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
 	if (err < 0) {
 		LOG_ERR("Fail to reject the incoming call on %p", hf);
+	}
+
+	return err;
+}
+
+int bt_hfp_hf_terminate(struct bt_conn *conn)
+{
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
+	if (err < 0) {
+		LOG_ERR("Fail to terminate the active call on %p", hf);
 	}
 
 	return err;
