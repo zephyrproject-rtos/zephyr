@@ -491,9 +491,24 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		}
 	}
 
+	if (!(codec_ids & BIT(BT_HFP_AG_CODEC_CVSD))) {
+		return -EOPNOTSUPP;
+	}
+
 	hfp_ag_lock(ag);
 	ag->hf_codec_ids = codec_ids;
+	ag->selected_codec_id = 0;
 	hfp_ag_unlock(ag);
+
+	atomic_set_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED);
+
+	if (atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_CODEC_CONN)) {
+		/* Codec connection is ended. It needs to be restarted. */
+		LOG_DBG("Codec connection is ended. It needs to be restarted.");
+		if (bt_ag && bt_ag->codec_negotiate) {
+			bt_ag->codec_negotiate(ag, -EAGAIN);
+		}
+	}
 
 	if (bt_ag && bt_ag->codec) {
 		bt_ag->codec(ag, ag->hf_codec_ids);
@@ -808,7 +823,11 @@ static void hfp_ag_close_sco(struct bt_hfp_ag *ag)
 
 static void bt_hfp_ag_reject_cb(struct bt_hfp_ag *ag, void *user_data)
 {
-	hfp_ag_close_sco(ag);
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_AUDIO_CONN)) {
+		LOG_DBG("It is not audio connection");
+		hfp_ag_close_sco(ag);
+	}
+
 	bt_hfp_ag_set_call_state(ag, BT_HFP_CALL_TERMINATE);
 
 	if (bt_ag && bt_ag->reject) {
@@ -827,7 +846,11 @@ static void bt_hfp_ag_call_reject(struct bt_hfp_ag *ag, void *user_data)
 
 static void bt_hfp_ag_terminate_cb(struct bt_hfp_ag *ag, void *user_data)
 {
-	hfp_ag_close_sco(ag);
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_AUDIO_CONN)) {
+		LOG_DBG("It is not audio connection");
+		hfp_ag_close_sco(ag);
+	}
+
 	bt_hfp_ag_set_call_state(ag, BT_HFP_CALL_TERMINATE);
 
 	if (bt_ag && bt_ag->terminate) {
@@ -1069,6 +1092,7 @@ static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 static int hfp_ag_open_sco(struct bt_hfp_ag *ag)
 {
 	bool create_sco;
+	bt_hfp_call_state_t call_state;
 
 	if (atomic_test_bit(ag->flags, BT_HFP_AG_CREATING_SCO)) {
 		LOG_WRN("SCO connection is creating!");
@@ -1076,6 +1100,7 @@ static int hfp_ag_open_sco(struct bt_hfp_ag *ag)
 	}
 
 	hfp_ag_lock(ag);
+	call_state = ag->call_state;
 	create_sco = (ag->sco_chan.sco == NULL) ? true : false;
 	if (create_sco) {
 		atomic_set_bit(ag->flags, BT_HFP_AG_CREATING_SCO);
@@ -1086,13 +1111,21 @@ static int hfp_ag_open_sco(struct bt_hfp_ag *ag)
 		struct bt_conn *sco_conn = bt_hfp_ag_create_sco(ag);
 
 		atomic_clear_bit(ag->flags, BT_HFP_AG_CREATING_SCO);
+		atomic_clear_bit(ag->flags, BT_HFP_AG_AUDIO_CONN);
 
 		if (sco_conn == NULL) {
 			LOG_ERR("Fail to create sco connection!");
 			return -ENOTCONN;
 		}
 
+		atomic_set_bit_to(ag->flags, BT_HFP_AG_AUDIO_CONN, call_state == BT_HFP_CALL_TERMINATE);
+
 		LOG_DBG("SCO connection created (%p)", sco_conn);
+	} else {
+		if (call_state == BT_HFP_CALL_INCOMING) {
+			bt_hfp_ag_set_call_state(ag, BT_HFP_CALL_ALERTING);
+			bt_hfp_ag_call_ringing_cb(ag, true);
+		}
 	}
 
 	return 0;
@@ -1106,9 +1139,8 @@ static int bt_hfp_ag_codec_select(struct bt_hfp_ag *ag)
 
 	hfp_ag_lock(ag);
 	if (ag->selected_codec_id == 0) {
-		LOG_ERR("Codec is invalid");
-		hfp_ag_unlock(ag);
-		return -EINVAL;
+		LOG_WRN("Codec is invalid, set default value");
+		ag->selected_codec_id = BT_HFP_AG_CODEC_CVSD;
 	}
 
 	if (!(ag->hf_codec_ids & BIT(ag->selected_codec_id))) {
@@ -1135,8 +1167,8 @@ static int bt_hfp_ag_create_audio_connection(struct bt_hfp_ag *ag)
 	hfp_ag_unlock(ag);
 
 	if ((hf_codec_ids != 0) && atomic_test_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED)) {
-		atomic_set_bit(ag->flags, BT_HFP_AG_CODEC_CONN);
 		err = bt_hfp_ag_codec_select(ag);
+		atomic_set_bit_to(ag->flags, BT_HFP_AG_CODEC_CONN, err == 0);
 	} else {
 		err = hfp_ag_open_sco(ag);
 	}
@@ -1246,6 +1278,7 @@ static int bt_hfp_ag_cops_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 
 static int bt_hfp_ag_bcc_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
+#if BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE
 	int err;
 
 	if (!is_char(buf, '\r')) {
@@ -1253,18 +1286,28 @@ static int bt_hfp_ag_bcc_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	}
 
 	hfp_ag_lock(ag);
-	if ((ag->selected_codec_id == 0) ||
-		(!(ag->hf_codec_ids & BIT(ag->selected_codec_id))) ||
-		(ag->call_state == BT_HFP_CALL_TERMINATE) ||
-		(ag->sco_chan.sco != NULL)) {
+	if (ag->selected_codec_id && (!(ag->hf_codec_ids & BIT(ag->selected_codec_id)))) {
 		hfp_ag_unlock(ag);
 		return -ENOTSUP;
 	}
+
+	if (ag->sco_chan.sco) {
+		hfp_ag_unlock(ag);
+		return -ECONNREFUSED;
+	}
 	hfp_ag_unlock(ag);
+
+	if (bt_ag && bt_ag->audio_connect_req) {
+		bt_ag->audio_connect_req(ag);
+		return 0;
+	}
 
 	err = hfp_ag_next_step(ag, bt_hfp_ag_audio_connection, NULL);
 
-	return 0;
+	return err;
+#else
+	return -ENOTSUP;
+#endif /* BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE */
 }
 
 static void bt_hfp_ag_unit_codec_conn_setup(struct bt_hfp_ag *ag, void *user_data)
@@ -1280,6 +1323,7 @@ static int bt_hfp_ag_bcs_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
 	int err;
 	uint32_t number;
+	bool codec_conn;
 
 	if (!is_char(buf, '=')) {
 		return -ENOTSUP;
@@ -1310,13 +1354,20 @@ static int bt_hfp_ag_bcs_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	}
 	hfp_ag_unlock(ag);
 
-	atomic_clear_bit(ag->flags, BT_HFP_AG_CODEC_CONN);
+	codec_conn = atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_CODEC_CONN);
 	atomic_clear_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED);
 
 	if (err == 0) {
+		if (codec_conn && bt_ag && bt_ag->codec_negotiate) {
+			bt_ag->codec_negotiate(ag, err);
+		}
 		err = hfp_ag_next_step(ag, bt_hfp_ag_unit_codec_conn_setup, NULL);
 	} else {
 		bt_hfp_call_state_t call_state;
+
+		if (codec_conn && bt_ag && bt_ag->codec_negotiate) {
+			bt_ag->codec_negotiate(ag, err);
+		}
 
 		hfp_ag_lock(ag);
 		call_state = ag->call_state;
@@ -1880,8 +1931,6 @@ int bt_hfp_ag_connect(struct bt_conn *conn, struct bt_hfp_ag **ag, uint8_t chann
 
 		k_work_init_delayable(&_ag->tx_work, bt_ag_tx_work);
 
-		atomic_set_bit(_ag->flags, BT_HFP_AG_CODEC_CHANGED);
-
 		*ag = _ag;
 	}
 
@@ -2390,7 +2439,7 @@ int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, uint8_t mode, char *name)
 	return 0;
 }
 
-int bt_hfp_ag_select_codec(struct bt_hfp_ag *ag, uint8_t id)
+int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id)
 {
 	int err;
 
@@ -2406,9 +2455,22 @@ int bt_hfp_ag_select_codec(struct bt_hfp_ag *ag, uint8_t id)
 		return -ENOTCONN;
 	}
 
-	if (!(ag->hf_codec_ids && BIT(id))) {
+	if (ag->hf_codec_ids) {
+		if (!(ag->hf_codec_ids & BIT(id))) {
+			hfp_ag_unlock(ag);
+			return -EINVAL;
+		}
+	} else {
+		if (id != BT_HFP_AG_CODEC_CVSD) {
+			hfp_ag_unlock(ag);
+			return -ENOTSUP;
+		}
+	}
+
+	if (ag->sco_chan.sco) {
+		LOG_ERR("Audio conenction has been connected");
 		hfp_ag_unlock(ag);
-		return -ENOTSUP;
+		return -ECONNREFUSED;
 	}
 	hfp_ag_unlock(ag);
 
@@ -2417,10 +2479,11 @@ int bt_hfp_ag_select_codec(struct bt_hfp_ag *ag, uint8_t id)
 	}
 
 	hfp_ag_lock(ag);
+	if (ag->selected_codec_id != id) {
+		atomic_set_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED);
+	}
 	ag->selected_codec_id = id;
 	hfp_ag_unlock(ag);
-
-	atomic_set_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED);
 
 	err = bt_hfp_ag_create_audio_connection(ag);
 
