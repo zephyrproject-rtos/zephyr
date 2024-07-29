@@ -1410,6 +1410,47 @@ int bt_hfp_hf_accept(struct bt_conn *conn)
 	return err;
 }
 
+static int chup_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CHUP (result %d) on %p", result, hf);
+
+	return 0;
+}
+
+int bt_hfp_hf_reject(struct bt_conn *conn)
+{
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING)) {
+		LOG_ERR("No incoming call setup in progress");
+		return -EINVAL;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
+	if (err < 0) {
+		LOG_ERR("Fail to reject the incoming call on %p", hf);
+	}
+
+	return err;
+}
+
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 static int bcc_finish(struct at_client *hf_at, enum at_result result,
 		   enum at_cme cme_err)
