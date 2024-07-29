@@ -315,6 +315,16 @@ int bt_hfp_hf_vgs(struct bt_conn *conn, uint8_t gain);
  */
 int bt_hfp_hf_get_operator(struct bt_conn *conn);
 
+/** @brief Handsfree HF accept the incoming call
+ *
+ *  Send the ATA command to accept the incoming call.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_accept(struct bt_conn *conn);
+
 #ifdef __cplusplus
 }
 #endif
