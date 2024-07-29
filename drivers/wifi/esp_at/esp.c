@@ -288,12 +288,12 @@ static int esp_pull_quoted(char **str, char *str_end, char **unquoted)
 static int esp_pull(char **str, char *str_end)
 {
 	while (*str < str_end) {
-		if (**str == ',' || **str == '\r' || **str == '\n') {
+		if (**str == ',' || **str == ':' || **str == '\r' || **str == '\n') {
 			char last_c = **str;
 
 			**str = '\0';
 
-			if (last_c == ',') {
+			if (last_c == ',' || last_c == ':') {
 				(*str)++;
 			}
 
