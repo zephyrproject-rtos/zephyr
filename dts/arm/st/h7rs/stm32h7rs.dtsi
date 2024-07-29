@@ -863,9 +863,21 @@
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(2)>;
 			dmas = <&gpdma1 0 64 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS)>;
+		};
+		
+		usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <91 0>;
+			interrupt-names = "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "high-speed";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x06000000>;
+			phys = <&otghs_fs_phy>;
 			status = "disabled";
 		};
-	};
+
 
 	otgfs_phy: otgfs_phy {
 		compatible = "usb-nop-xceiv";
@@ -897,6 +909,11 @@
 		vrefint-cal-mv = <3300>;
 		status = "disabled";
 		io-channels = <&adc1 17>;
+	};
+
+	otghs_fs_phy: otghs_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 };
 
