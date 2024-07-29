@@ -1904,6 +1904,11 @@ static void notify_connected(struct bt_conn *conn)
 		}
 	}
 
+#if defined(CONFIG_BT_CLASSIC)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		conn->br.mode = 0;
+	}
+#endif
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->connected) {
 			cb->connected(conn, conn->err);
@@ -4238,6 +4243,78 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
 
+#if defined(CONFIG_BT_CLASSIC)
+int bt_conn_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval,
+				uint16_t max_interval, uint16_t attempt, uint16_t timeout)
+{
+	struct bt_hci_cp_sniff_mode *cp;
+	struct net_buf *buf;
+
+	if (conn->type != BT_CONN_TYPE_BR || conn->state != BT_CONN_CONNECTED) {
+		return -EIO;
+	}
+
+	if (conn->br.mode == BT_SNIFF_MODE) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SNIFF_MODE, sizeof(*cp));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->max_interval = sys_cpu_to_le16(max_interval);
+	cp->min_interval = sys_cpu_to_le16(min_interval);
+	cp->attempt = sys_cpu_to_le16(attempt);
+	cp->timeout = sys_cpu_to_le16(timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SNIFF_MODE, buf, NULL);
+}
+
+int bt_conn_exit_sniff_mode(struct bt_conn *conn)
+{
+	struct bt_hci_cp_exit_sniff_mode *cp;
+	struct net_buf *buf;
+
+	if (conn->type != BT_CONN_TYPE_BR || conn->state != BT_CONN_CONNECTED) {
+		return -EIO;
+	}
+
+	if (conn->br.mode == BT_ACTIVE_MODE) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_EXIT_SNIFF_MODE, sizeof(*cp));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_EXIT_SNIFF_MODE, buf, NULL);
+}
+
+void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->link_mode_changed) {
+			callback->link_mode_changed(conn, mode, interval);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->link_mode_changed) {
+			cb->link_mode_changed(conn, mode, interval);
+		}
+	}
+}
+#endif /* CONFIG_BT_CLASSIC */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CONN_TX_NOTIFY_WQ)

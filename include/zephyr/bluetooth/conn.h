@@ -1762,6 +1762,18 @@ struct bt_conn_cb {
 				      struct bt_conn_remote_info *remote_info);
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
 
+#if defined(CONFIG_BT_CLASSIC)
+	/** @brief The connection mode change
+	 *
+	 *  This callback notifies the application controller mode changed
+	 *
+	 *  @param conn Connection object.
+	 *  @param mode Active/Hold/Sniff mode.
+	 *  @param interval Hold/Sniff interval.
+	 */
+	void (*link_mode_changed)(struct bt_conn *conn, uint8_t mode, uint16_t interval);
+#endif /* CONFIG_BT_CLASSIC */
+
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	/** @brief The PHY of the connection has changed.
 	 *
@@ -2572,6 +2584,28 @@ struct bt_br_conn_param {
  */
 struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 				  const struct bt_br_conn_param *param);
+
+/** @brief bluetooth conn check and enter sniff mode
+ *
+ *  This function is used to identify which ACL link connection is to
+ *  be placed in Sniff mode
+ *
+ *  @param conn bt_conn conn
+ *  @param min_interval Minimum sniff interval.
+ *  @param min_interval Maxmum sniff interval.
+ *  @param attemp Number of Baseband receive slots for sniff attempt.
+ *  @param timeout Number of Baseband receive slots for sniff timeout.
+ */
+int bt_conn_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval,
+				uint16_t max_interval, uint16_t attempt, uint16_t timeout);
+
+/** @brief bluetooth conn check and exit sniff mode
+ *
+ *  @param conn bt_conn conn
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_conn_exit_sniff_mode(struct bt_conn *conn);
 
 #ifdef __cplusplus
 }
