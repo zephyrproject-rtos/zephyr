@@ -164,7 +164,8 @@ static int gpio_smartbond_port_set_masked_raw(const struct device *dev,
 {
 	const struct gpio_smartbond_config *config = dev->config;
 
-	config->data_regs->data = value & mask;
+	config->data_regs->set = value & mask;
+	config->data_regs->reset = ~value & mask;
 
 	return 0;
 }
