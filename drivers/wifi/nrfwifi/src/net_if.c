@@ -282,6 +282,9 @@ int nrf_wifi_if_send(const struct device *dev,
 #ifdef CONFIG_NRF70_DATA_TX
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct rpu_host_stats *host_stats = NULL;
+	void *nbuf = NULL;
 
 	if (!dev || !pkt) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -306,6 +309,15 @@ int nrf_wifi_if_send(const struct device *dev,
 		goto unlock;
 	}
 
+	def_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	host_stats = &def_dev_ctx->host_stats;
+	nbuf = net_pkt_to_nbuf(pkt);
+	if (!nbuf) {
+		LOG_DBG("Failed to allocate net_pkt");
+		host_stats->total_tx_drop_pkts++;
+		goto out;
+	}
+
 #ifdef CONFIG_NRF70_RAW_DATA_TX
 	if ((*(unsigned int *)pkt->frags->data) == NRF_WIFI_MAGIC_NUM_RAWTX) {
 		if (vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) {
@@ -314,7 +326,7 @@ int nrf_wifi_if_send(const struct device *dev,
 
 		ret = nrf_wifi_fmac_start_rawpkt_xmit(rpu_ctx_zep->rpu_ctx,
 						      vif_ctx_zep->vif_idx,
-						      net_pkt_to_nbuf(pkt));
+						      nbuf);
 	} else {
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 		if ((vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) ||
@@ -324,7 +336,7 @@ int nrf_wifi_if_send(const struct device *dev,
 
 		ret = nrf_wifi_fmac_start_xmit(rpu_ctx_zep->rpu_ctx,
 					       vif_ctx_zep->vif_idx,
-					       net_pkt_to_nbuf(pkt));
+					       nbuf);
 #ifdef CONFIG_NRF70_RAW_DATA_TX
 	}
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
