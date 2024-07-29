@@ -12,3 +12,17 @@ tests:
       - neorv32
       - hifive1  # see #69350
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
+  drivers.gpio.1pin.nrf54h20dk_nrf54h20_cpuppr:
+    tags:
+      - drivers
+      - gpio
+    depends_on: gpio
+    # Fix exclude when we can exclude just sim run
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuppr
+    sysbuild: true
+    extra_configs:
+      # Disable asserts to fit in limited code memory
+      - CONFIG_ASSERT=n
+    extra_args:
+      - SB_CONFIG_VPR_LAUNCHER=y

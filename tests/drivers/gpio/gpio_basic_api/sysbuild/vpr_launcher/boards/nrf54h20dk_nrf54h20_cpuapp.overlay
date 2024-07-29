@@ -1,0 +1,13 @@
+&gpiote130 {
+	owned-channels = < 0 1 >;
+	nonsecure-channels = < 0 1 >;
+	child-owned-channels = < 0 1 >;
+};
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio0 6 0>;
+		in-gpios = <&gpio0 7 0>;
+	};
+};
