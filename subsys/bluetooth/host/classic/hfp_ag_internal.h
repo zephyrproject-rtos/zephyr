@@ -9,8 +9,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* HFP AG Features in SDP */
+#define BT_HFP_AG_SDP_FEATURE_3WAY_CALL       BIT(0) /* Three-way calling */
+#define BT_HFP_AG_SDP_FEATURE_ECNR            BIT(1) /* EC and/or NR function */
+#define BT_HFP_AG_SDP_FEATURE_VOICE_RECG      BIT(2) /* Voice recognition */
+#define BT_HFP_AG_SDP_FEATURE_INBAND_RINGTONE BIT(3) /* In-band ring tone capability */
+#define BT_HFP_AG_SDP_FEATURE_VOICE_TAG       BIT(4) /* Attach no. to voice tag */
+#define BT_HFP_AG_SDP_FEATURE_WBS             BIT(5) /* Wide Band Speech */
+#define BT_HFP_AG_SDP_FEATURE_ENH_VOICE_RECG  BIT(6) /* Enhanced Voice Recognition Status */
+#define BT_HFP_AG_SDP_FEATURE_VOICE_RECG_TEXT BIT(7) /* Voice Recognition Text */
+#define BT_HFP_AG_SDP_FEATURE_SUPER_WBS       BIT(8) /* Super Wide Band Speech */
+
 /* HFP AG Supported features */
-#define BT_HFP_AG_SUPPORTED_FEATURES (BT_HFP_AG_FEATURE_INBAND_RINGTONE | BT_HFP_AG_FEATURE_EXT_ERR)
+#define BT_HFP_AG_SUPPORTED_FEATURES (\
+	BT_HFP_AG_FEATURE_3WAY_CALL | \
+	BT_HFP_AG_FEATURE_INBAND_RINGTONE | \
+	BT_HFP_AG_FEATURE_EXT_ERR)
+
+/* HFP AG Supported features in SDP */
+#define BT_HFP_AG_SDP_SUPPORTED_FEATURES (\
+	BT_HFP_AG_SDP_FEATURE_3WAY_CALL | \
+	BT_HFP_AG_SDP_FEATURE_INBAND_RINGTONE)
 
 /* bt_hfp_ag flags: the flags defined here represent HFP AG parameters */
 enum {
