@@ -313,6 +313,26 @@ static int esp_pull_raw(char **str, char *str_end, char **raw)
 	return esp_pull(str, str_end);
 }
 
+static int esp_pull_long(char **str, char *str_end, long *value)
+{
+	char *str_begin = *str;
+	int err;
+	char *endptr;
+
+	err = esp_pull(str, str_end);
+	if (err) {
+		return err;
+	}
+
+	*value = strtol(str_begin, &endptr, 10);
+	if (endptr == str_begin) {
+		LOG_ERR("endptr == str_begin");
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
 /* +CWLAP:(sec,ssid,rssi,channel) */
 /* with: CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS: +CWLAP:<ecn>,<ssid>,<rssi>,<mac>,<ch>*/
 MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
@@ -326,7 +346,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 	char *ssid;
 	char *mac;
 	char *channel;
-	char *rssi;
+	long rssi;
 	long ecn_id;
 	int err;
 
@@ -354,7 +374,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 		return err;
 	}
 
-	err = esp_pull_raw(&str, str_end, &rssi);
+	err = esp_pull_long(&str, str_end, &rssi);
 	if (err) {
 		return err;
 	}
@@ -366,7 +386,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 	res.ssid_length = MIN(sizeof(res.ssid), strlen(ssid));
 	memcpy(res.ssid, ssid, res.ssid_length);
 
-	res.rssi = strtol(rssi, NULL, 10);
+	res.rssi = rssi;
 
 	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS)) {
 		err = esp_pull_quoted(&str, str_end, &mac);
