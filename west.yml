@@ -261,7 +261,7 @@ manifest:
     - name: hostap
       repo-path: hostap
       path: modules/lib/hostap
-      revision: a90df86d7c596a5367ff70c2b50c7f599e6636f3
+      revision: pull/15/head
     - name: libmetal
       revision: a6851ba6dba8c9e87d00c42f171a822f7a29639b
       path: modules/hal/libmetal
