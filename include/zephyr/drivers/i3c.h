@@ -2082,6 +2082,11 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target);
  */
 #include <zephyr/drivers/i3c/target_device.h>
 
+/*
+ * Include High-Data-Rate (HDR) inline helper functions
+ */
+#include <zephyr/drivers/i3c/hdr_ddr.h>
+
 #ifdef __cplusplus
 }
 #endif
