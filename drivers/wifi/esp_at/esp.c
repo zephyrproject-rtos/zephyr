@@ -758,13 +758,15 @@ socket_unref:
 #define MIN_IPD_LEN (sizeof("+IPD,I,0E") - 1)
 #define MAX_IPD_LEN (sizeof("+IPD,I,4294967295E") - 1)
 
-static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
-			     long *link_id,
+static int cmd_ipd_parse_hdr(struct esp_data *dev,
+			     struct esp_socket **sock,
+			     struct net_buf *buf, uint16_t len,
 			     int *data_offset, long *data_len)
 {
 	char ipd_buf[MAX_IPD_LEN + 1];
 	char *str;
 	char *str_end;
+	long link_id;
 	size_t frags_len;
 	size_t match_len;
 	int err;
@@ -788,7 +790,7 @@ static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
 	str = &ipd_buf[len + 1];
 	str_end = &ipd_buf[match_len];
 
-	err = esp_pull_long(&str, str_end, link_id);
+	err = esp_pull_long(&str, str_end, &link_id);
 	if (err) {
 		if (err == -EAGAIN && match_len >= MAX_IPD_LEN) {
 			LOG_ERR("Failed to pull %s", "link_id");
@@ -808,6 +810,12 @@ static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
 		return err;
 	}
 
+	*sock = esp_socket_ref_from_link_id(dev, link_id);
+	if (!sock) {
+		LOG_ERR("No socket for link %ld", link_id);
+		return str - ipd_buf;
+	}
+
 	*data_offset = (str - ipd_buf);
 
 	return 0;
@@ -820,23 +828,16 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 	struct esp_socket *sock;
 	int data_offset;
 	long data_len;
-	long link_id;
 	int err;
 	int ret;
 
-	err = cmd_ipd_parse_hdr(data->rx_buf, len, &link_id, &data_offset,
-				&data_len);
+	err = cmd_ipd_parse_hdr(dev, &sock, data->rx_buf, len,
+				&data_offset, &data_len);
 	if (err) {
 		if (err == -EAGAIN) {
 			return -EAGAIN;
 		}
 
-		return len;
-	}
-
-	sock = esp_socket_ref_from_link_id(dev, link_id);
-	if (!sock) {
-		LOG_ERR("No socket for link %ld", link_id);
 		return len;
 	}
 
