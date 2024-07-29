@@ -28,6 +28,7 @@ pub mod gpio {
     }
 
     /// Safe Wrapper around a single pin.
+    #[allow(dead_code)]
     pub struct GpioPin {
         /// This just wraps the spec from the DT:
         pub(crate) pin: gpio_dt_spec,
