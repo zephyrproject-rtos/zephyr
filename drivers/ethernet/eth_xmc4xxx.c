@@ -639,7 +639,7 @@ static const struct device *eth_xmc4xxx_get_phy(const struct device *dev)
 {
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
-	return config->phy_dev;
+	return dev_cfg->phy_dev;
 }
 
 static void eth_xmc4xxx_iface_init(struct net_if *iface)
