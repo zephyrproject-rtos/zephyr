@@ -751,9 +751,12 @@ static int bt_hfp_ag_cmee_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		return -ENOTSUP;
 	}
 
-	atomic_set_bit_to(ag->flags, BT_HFP_AG_CMEE_ENABLE, cmee == 1);
+	if (BT_HFP_AG_FEATURE_EXT_ERR_ENABLE) {
+		atomic_set_bit_to(ag->flags, BT_HFP_AG_CMEE_ENABLE, cmee == 1);
+		return 0;
+	}
 
-	return 0;
+	return -ENOTSUP;
 }
 
 static int hfp_ag_update_indicator(struct bt_hfp_ag *ag, enum bt_hfp_ag_indicator index,
