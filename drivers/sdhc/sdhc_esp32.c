@@ -874,24 +874,13 @@ int sdmmc_host_set_bus_width(sdmmc_dev_t *sdio_hw, int slot, size_t width)
 	}
 
 	const uint16_t mask = BIT(slot);
-	uint16_t temp;
 
 	if (width == 1) {
-		temp = sdio_hw->ctype.card_width_8 & ~mask;
-		HAL_FORCE_MODIFY_U32_REG_FIELD(sdio_hw->ctype, card_width_8, temp);
-
-		temp = sdio_hw->ctype.card_width & ~mask;
-		HAL_FORCE_MODIFY_U32_REG_FIELD(sdio_hw->ctype, card_width, temp);
-
+		sdio_hw->ctype.card_width_8 &= ~mask;
+		sdio_hw->ctype.card_width &= ~mask;
 	} else if (width == 4) {
-		temp = sdio_hw->ctype.card_width_8 & ~mask;
-		HAL_FORCE_MODIFY_U32_REG_FIELD(sdio_hw->ctype, card_width_8, temp);
-
-		temp = sdio_hw->ctype.card_width | mask;
-		HAL_FORCE_MODIFY_U32_REG_FIELD(sdio_hw->ctype, card_width, temp);
-	} else if (width == 8) {
-		temp = sdio_hw->ctype.card_width_8 | mask;
-		HAL_FORCE_MODIFY_U32_REG_FIELD(sdio_hw->ctype, card_width_8, temp);
+		sdio_hw->ctype.card_width_8 &= ~mask;
+		sdio_hw->ctype.card_width |= mask;
 	} else {
 		return ESP_ERR_INVALID_ARG;
 	}
@@ -1198,7 +1187,7 @@ static int sdhc_esp32_request(const struct device *dev, struct sdhc_command *cmd
 	}
 
 	if ((ret_esp != 0) || esp_cmd.error) {
-		LOG_DBG("\nError for command: %u arg %08x ret_esp = 0x%x error = 0x%x\n",
+		LOG_DBG("Error command: %u arg %08x ret_esp = 0x%x error = 0x%x\n",
 			cmd->opcode, cmd->arg, ret_esp, esp_cmd.error);
 
 		ret_esp = (ret_esp > 0) ? ret_esp : esp_cmd.error;
