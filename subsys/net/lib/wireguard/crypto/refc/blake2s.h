@@ -2,6 +2,7 @@
 // Copyright (c) 2015 IETF Trust and the persons identified as the
 // RFC document authors.  All rights reserved
 // BLAKE2s Hashing Context and API Prototypes
+/* SPDX-License-Identifier: BSD-3-Clause */
 #ifndef _BLAKE2S_H
 #define _BLAKE2S_H
 

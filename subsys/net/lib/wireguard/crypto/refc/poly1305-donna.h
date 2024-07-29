@@ -1,6 +1,8 @@
 // Taken from https://github.com/floodyberry/poly1305-donna - public domain or MIT
 // Copyright (c) 2014 Andrew Moon
 
+/* SPDX-License-Identifier: MIT */
+
 #ifndef POLY1305_DONNA_H
 #define POLY1305_DONNA_H
 
