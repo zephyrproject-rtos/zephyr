@@ -11,9 +11,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/retained_mem.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 
+#if CONFIG_APP_USE_NRF_RETENTION
 #include <hal/nrf_power.h>
 
 /* nRF52 RAM (really, RAM AHB slaves) are partitioned as:
@@ -52,11 +54,11 @@
 /* Size of a controllable RAM section in large blocks */
 #define LARGE_SECTION_SIZE 32768
 
+#elif CONFIG_APP_USE_RETAINED_MEM
+const static struct device *retained_mem_device = DEVICE_DT_GET(DT_ALIAS(retainedmemdevice));
+#endif
+
 /* Set or clear RAM retention in SYSTEM_OFF for the provided object.
- *
- * @note This only works for nRF52 with the POWER module.  The other
- * Nordic chips use a different low-level API, which is not currently
- * used by this function.
  *
  * @param ptr pointer to the start of the retainable object
  *
@@ -68,6 +70,13 @@ static int ram_range_retain(const void *ptr,
 			    size_t len,
 			    bool enable)
 {
+	int rc = 0;
+
+#if CONFIG_APP_USE_NRF_RETENTION
+	/* This only works for nRF52 with the POWER module.
+	 * The other  Nordic chips use a different low-level API,
+	 * which is not currently used by this variant.
+	 */
 	uintptr_t addr = (uintptr_t)ptr;
 	uintptr_t addr_end = addr + len;
 
@@ -124,12 +133,21 @@ static int ram_range_retain(const void *ptr,
 		/* Move to the first address in the next section. */
 		addr += section_size - (addr % section_size);
 	} while (addr < addr_end);
+#elif CONFIG_APP_USE_RETAINED_MEM
+	/* Retention setting cannot be controlled runtime with retained_mem API */
+	(void)enable;
+	rc = retained_mem_write(retained_mem_device, 0, ptr, len);
+#else
+	#error "Unsupported retention setting"
+#endif
 
-	return 0;
+	return rc;
 }
 
 /* Retained data must be defined in a no-init section to prevent the C
  * runtime initialization from zeroing it before anybody can see it.
+ * It is not necesarry when retained_mem driver is utilized
+ * as in this case retained data is stored in an area not initialized in runtime.
  */
 __noinit struct retained_data retained;
 
