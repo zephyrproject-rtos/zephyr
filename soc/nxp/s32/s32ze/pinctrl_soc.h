@@ -43,7 +43,7 @@
 
 #define NXP_S32_PINMUX_INIT(group, value)                                                          \
 	.mscr = {                                                                                  \
-		.inst = NXP_S32_PINMUX_GET_SIUL2_IDX(value),                                       \
+		.inst = NXP_S32_PINMUX_GET_MSCR_SIUL2_IDX(value),                                  \
 		.idx = NXP_S32_PINMUX_GET_MSCR_IDX(value),                                         \
 		.val = SIUL2_MSCR_SSS(NXP_S32_PINMUX_GET_MSCR_SSS(value)) |                        \
 		       SIUL2_MSCR_OBE(DT_PROP(group, output_enable)) |                             \
@@ -56,7 +56,7 @@
 				      DT_PROP(group, output_enable))                               \
 	},                                                                                         \
 	.imcr = {                                                                                  \
-		.inst = NXP_S32_PINMUX_GET_SIUL2_IDX(value),                                       \
+		.inst = NXP_S32_PINMUX_GET_IMCR_SIUL2_IDX(value),                                  \
 		.idx = NXP_S32_PINMUX_GET_IMCR_IDX(value),                                         \
 		.val = SIUL2_IMCR_SSS(NXP_S32_PINMUX_GET_IMCR_SSS(value)),                         \
 	}
