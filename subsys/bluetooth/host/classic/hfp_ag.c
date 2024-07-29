@@ -2561,3 +2561,30 @@ int bt_hfp_ag_vgs(struct bt_hfp_ag *ag, uint8_t vgs)
 
 	return err;
 }
+
+int bt_hfp_ag_inband_ringtone(struct bt_hfp_ag *ag, bool inband)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+	hfp_ag_unlock(ag);
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BSIR=%d\r\n", inband ? 1 : 0);
+	if (err) {
+		LOG_ERR("Fail to set inband ringtone err :(%d)", err);
+		return err;
+	}
+
+	atomic_set_bit_to(ag->flags, BT_HFP_AG_INBAND_RING, inband);
+	return 0;
+}
