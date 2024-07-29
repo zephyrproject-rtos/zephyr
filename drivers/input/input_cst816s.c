@@ -11,6 +11,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/dt-bindings/input/cst816s-gesture-codes.h>
 
 LOG_MODULE_REGISTER(cst816s, CONFIG_INPUT_LOG_LEVEL);
 
@@ -115,6 +116,16 @@ static int cst816s_process(const struct device *dev)
 	uint16_t x;
 	uint16_t y;
 
+#ifdef CONFIG_INPUT_CST816S_EV_DEVICE
+	uint8_t gesture;
+
+	r = i2c_burst_read_dt(&cfg->i2c, CST816S_REG_GESTURE_ID, &gesture, sizeof(gesture));
+	if (r < 0) {
+		LOG_ERR("Could not read gesture-ID data");
+		return r;
+	}
+#endif
+
 	r = i2c_burst_read_dt(&cfg->i2c, CST816S_REG_XPOS_H, (uint8_t *)&x, sizeof(x));
 	if (r < 0) {
 		LOG_ERR("Could not read x data");
@@ -141,6 +152,18 @@ static int cst816s_process(const struct device *dev)
 	} else {
 		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
 	}
+
+#ifdef CONFIG_INPUT_CST816S_EV_DEVICE
+	/* Also put the custom touch gestures into the input queue,
+	 * some applications may want to process it
+	 */
+
+	LOG_DBG("gesture: %d", gesture);
+
+	if (gesture != CST816S_GESTURE_CODE_NONE) {
+		input_report(dev, INPUT_EV_DEVICE, (uint16_t)gesture, 0, true, K_FOREVER);
+	}
+#endif
 
 	return r;
 }
