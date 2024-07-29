@@ -11,6 +11,8 @@ tests:
       - twr_ke18f
       - mimxrt595_evk/mimxrt595s/cm33
       - rd_rw612_bga
+      - frdm_ke17z
+      - frdm_ke17z512
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853
