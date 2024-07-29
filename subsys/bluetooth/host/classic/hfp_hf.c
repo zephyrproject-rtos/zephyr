@@ -422,6 +422,9 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 		}
 		break;
 	case HF_CALL_SETUP_IND:
+		atomic_set_bit_to(hf->flags, BT_HFP_HF_FLAG_INCOMING,
+		    value == BT_HFP_CALL_SETUP_INCOMING);
+
 		if (bt_hf->call_setup) {
 			bt_hf->call_setup(conn, value);
 		}
@@ -1283,6 +1286,47 @@ int bt_hfp_hf_get_operator(struct bt_conn *conn)
 	return err;
 }
 
+static int ata_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("ATA (result %d) on %p", result, hf);
+
+	return 0;
+}
+
+int bt_hfp_hf_accept(struct bt_conn *conn)
+{
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING)) {
+		LOG_ERR("No incoming call setup in progress");
+		return -EINVAL;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, ata_finish, "ATA");
+	if (err < 0) {
+		LOG_ERR("Fail to accept the incoming call on %p", hf);
+	}
+
+	return err;
+}
+
 static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
@@ -1318,7 +1362,7 @@ static void hfp_hf_sent(struct bt_rfcomm_dlc *dlc, int err)
 	LOG_DBG("DLC %p sent cb (err %d)", dlc, err);
 }
 
-static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
+static int hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 {
 	int i;
 	static struct bt_rfcomm_dlc_ops ops = {
@@ -1418,7 +1462,7 @@ static void hfp_hf_init(void)
 {
 	static struct bt_rfcomm_server chan = {
 		.channel = BT_RFCOMM_CHAN_HFP_HF,
-		.accept = bt_hfp_hf_accept,
+		.accept = hfp_hf_accept,
 	};
 
 	bt_rfcomm_server_register(&chan);
