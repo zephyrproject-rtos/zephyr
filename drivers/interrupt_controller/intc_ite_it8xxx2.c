@@ -241,11 +241,35 @@ uint8_t __soc_ram_code get_irq(void *arg)
 	return intc_irq;
 }
 
+static void intc_irq0_handler(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	LOG_DBG("SOC it8xxx2 Interrupt 0 handler");
+}
+
 void soc_interrupt_init(void)
 {
 	/* Ensure interrupts of soc are disabled at default */
 	for (int i = 0; i < ARRAY_SIZE(reg_enable); i++)
 		*reg_enable[i] = 0;
+
+	/*
+	 * WORKAROUND: In the it8xxx2 chip, the interrupt for INT0 is reserved.
+	 * However, in some stress tests, the unhandled IRQ0 issue occurs.
+	 * To prevent the system from going directly into kernel panic, we
+	 * implemented a workaround by registering interrupt number 0 and doing
+	 * nothing in the IRQ0 handler. The side effect of this solution is
+	 * that when IRQ0 is triggered, it will take some time to execute the
+	 * routine. There is no need to worry about missing interrupts because
+	 * each IRQ's ISR is write-clear, and if the status is not cleared, it
+	 * will continue to trigger.
+	 *
+	 * NOTE: After this workaround is merged, we will then find out under
+	 * what circumstances the situation can be reproduced and fix it, and
+	 * then remove the workaround.
+	 */
+	 IRQ_CONNECT(0, 0, intc_irq0_handler, 0, 0);
 
 	/* Enable M-mode external interrupt */
 	csr_set(mie, MIP_MEIP);
