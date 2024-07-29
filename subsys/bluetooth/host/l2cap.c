@@ -946,6 +946,11 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 				     l2cap_chan_sdu_sent,
 				     UINT_TO_POINTER(lechan->tx.cid));
 		}
+	} else {
+		if (L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
+			LOG_DBG("clean callback");
+			make_closure(pdu->user_data, NULL, NULL);
+		}
 	}
 
 	if (last_frag) {
