@@ -149,9 +149,9 @@ jobs:
 
     - name: compress-docs
       run: |
-        tar cfJ html-output.tar.xz --directory=doc/_build html
-        tar cfJ api-output.tar.xz --directory=doc/_build html/doxygen/html
-        tar cfJ api-coverage.tar.xz coverage-report
+        tar --use-compress-program="xz -T0" -cf html-output.tar.xz --directory=doc/_build html
+        tar --use-compress-program="xz -T0" -cf api-output.tar.xz --directory=doc/_build html/doxygen/html
+        tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
 
     - name: upload-build
       uses: actions/upload-artifact@v4
