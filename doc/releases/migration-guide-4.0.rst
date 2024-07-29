@@ -71,6 +71,10 @@ Enhanced Serial Peripheral Interface (eSPI)
 GNSS
 ====
 
+ * The u-blox M10 driver has been renamed to M8 as it only supports M8 based devices.
+   Existing devicetree compatibles should be updated to :dtcompatible:`u-blox,m8`, and Kconfig
+   symbols swapped to :kconfig:option:`CONFIG_GNSS_U_BLOX_M8`.
+
 Input
 =====
 
