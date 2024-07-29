@@ -94,6 +94,8 @@ Drivers and Sensors
 
 * Ethernet
 
+  * LiteX: Renamed the ``compatible`` from ``litex,eth0`` to :dtcompatible:`litex,liteeth`.
+
 * Flash
 
 * GNSS
