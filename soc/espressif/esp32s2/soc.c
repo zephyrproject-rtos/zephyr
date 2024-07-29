@@ -36,6 +36,9 @@
 #include <esp_err.h>
 #include <esp_clk_internal.h>
 #include <zephyr/sys/printk.h>
+#include "esp_log.h"
+
+#define TAG "boot.esp32s2"
 
 extern void rtc_clk_cpu_freq_set_xtal(void);
 extern void esp_reset_reason_init(void);
@@ -109,17 +112,17 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	esp_err_t err = esp_psram_init();
 
 	if (err != ESP_OK) {
-		printk("Failed to Initialize SPIRAM, aborting.\n");
+		ESP_EARLY_LOGE(TAG, "Failed to Initialize SPIRAM, aborting.");
 		abort();
 	}
 	if (esp_psram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
-		printk("SPIRAM size is less than configured size, aborting.\n");
+		ESP_EARLY_LOGE(TAG, "SPIRAM size is less than configured size, aborting.");
 		abort();
 	}
 
 	if (esp_psram_is_initialized()) {
 		if (!esp_psram_extram_test()) {
-			printk("External RAM failed memory test!");
+			ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");
 			abort();
 		}
 	}
