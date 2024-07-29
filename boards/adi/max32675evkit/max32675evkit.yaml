@@ -10,5 +10,6 @@ toolchain:
 supported:
   - gpio
   - serial
+  - trng
 ram: 160
 flash: 384
