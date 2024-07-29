@@ -242,7 +242,9 @@ static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
 		config->wkup_regs->clear = pin_mask;
 		data->both_edges_pins &= ~pin_mask;
 #if CONFIG_PM
-		da1469x_pdc_del(pdc_ix);
+		if (pdc_ix >= 0) {
+			da1469x_pdc_del(pdc_ix);
+		}
 #endif
 	} else {
 		if (trig == GPIO_INT_TRIG_BOTH) {
