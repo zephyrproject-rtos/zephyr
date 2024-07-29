@@ -30,7 +30,7 @@ int main(void)
 
 	printf("\n%s system off demo\n", CONFIG_BOARD);
 
-	if (IS_ENABLED(CONFIG_APP_RETENTION)) {
+	if (IS_ENABLED(CONFIG_APP_USE_NRF_RETENTION) || IS_ENABLED(CONFIG_APP_USE_RETAINED_MEM)) {
 		bool retained_ok = retained_validate();
 
 		/* Increment for this boot attempt and update. */
@@ -66,7 +66,7 @@ int main(void)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_APP_RETENTION)) {
+	if (IS_ENABLED(CONFIG_APP_USE_NRF_RETENTION) || IS_ENABLED(CONFIG_APP_USE_RETAINED_MEM)) {
 		/* Update the retained state */
 		retained.off_count += 1;
 		retained_update();
