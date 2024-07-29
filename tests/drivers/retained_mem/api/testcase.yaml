@@ -5,7 +5,7 @@ tests:
       - drivers
       - retained_mem
   drivers.retained_mem.api.ram:
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 nrf54l15pdk/nrf54l15/cpuapp
     tags:
       - drivers
       - retained_mem
