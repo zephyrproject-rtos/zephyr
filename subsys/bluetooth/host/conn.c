@@ -2452,6 +2452,10 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
 	conn->get_and_clear_cb = acl_get_and_clear_cb;
 	conn->has_data = acl_has_data;
 
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	conn->br.mode = BT_ACTIVE_MODE;
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
+
 	return conn;
 }
 
@@ -4238,6 +4242,85 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
 
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+int bt_conn_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval, uint16_t max_interval,
+			     uint16_t attempt, uint16_t timeout)
+{
+	struct bt_hci_cp_sniff_mode *cp;
+	struct net_buf *buf;
+
+	if (conn->type != BT_CONN_TYPE_BR || conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (conn->br.mode == BT_SNIFF_MODE) {
+		return -EBUSY;
+	}
+
+	/* Check if the parameters are valid */
+	if (min_interval < 0x0006 || min_interval > 0x0540 || max_interval < 0x0006 ||
+	    max_interval > 0x0540 || min_interval > max_interval || attempt == 0 ||
+	    attempt > 0x01F3 || timeout > 0x0028) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SNIFF_MODE, sizeof(*cp));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->max_interval = sys_cpu_to_le16(max_interval);
+	cp->min_interval = sys_cpu_to_le16(min_interval);
+	cp->attempt = sys_cpu_to_le16(attempt);
+	cp->timeout = sys_cpu_to_le16(timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SNIFF_MODE, buf, NULL);
+}
+
+int bt_conn_exit_sniff_mode(struct bt_conn *conn)
+{
+	struct bt_hci_cp_exit_sniff_mode *cp;
+	struct net_buf *buf;
+
+	if (conn->type != BT_CONN_TYPE_BR || conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (conn->br.mode == BT_ACTIVE_MODE) {
+		return -EBUSY;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_EXIT_SNIFF_MODE, sizeof(*cp));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_EXIT_SNIFF_MODE, buf, NULL);
+}
+
+void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->mode_changed) {
+			callback->mode_changed(conn, mode, interval);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->mode_changed) {
+			cb->mode_changed(conn, mode, interval);
+		}
+	}
+}
+
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CONN_TX_NOTIFY_WQ)
