@@ -34,6 +34,9 @@
 // https://tools.ietf.org/html/rfc7539
 // Adapted from https://cr.yp.to/streamciphers/timings/estreambench/submissions/salsa20/chacha8/ref/chacha.c by D. J. Bernstein (Public Domain)
 // HChaCha20 is described here: https://tools.ietf.org/id/draft-arciszewski-xchacha-02.html
+
+/* SPDX-License-Identifier: BSD-3-Clause */
+
 #ifndef _CHACHA20_H_
 #define _CHACHA20_H_
 

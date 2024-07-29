@@ -2,6 +2,8 @@
 // Copyright (c) 2015 IETF Trust and the persons identified as the
 // RFC document authors.  All rights reserved
 
+/* SPDX-License-Identifier: BSD-3-Clause */
+
 #include "blake2s.h"
 #include "../crypto.h"
 

@@ -1,6 +1,8 @@
 // Taken from https://github.com/floodyberry/poly1305-donna - public domain or MIT
 // Copyright (c) 2014 Andrew Moon
 
+/* SPDX-License-Identifier: MIT */
+
 #include "poly1305-donna.h"
 #include "poly1305-donna-32.h"
 
