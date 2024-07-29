@@ -756,7 +756,7 @@ socket_unref:
  * Other:        "+IPD,<id>,<len>:<data>"
  */
 #define MIN_IPD_LEN (sizeof("+IPD,I,0E") - 1)
-#define MAX_IPD_LEN (sizeof("+IPD,I,4294967295E") - 1)
+#define MAX_IPD_LEN (sizeof("+IPD,I,4294967295,\"\",65535E") - 1) + NET_IPV4_ADDR_LEN
 
 static int cmd_ipd_parse_hdr(struct esp_data *dev,
 			     struct esp_socket **sock,
@@ -816,9 +816,44 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 		return str - ipd_buf;
 	}
 
+	if (!ESP_PROTO_PASSIVE(esp_socket_ip_proto(*sock)) &&
+	    IS_ENABLED(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)) {
+		struct sockaddr_in *recv_addr =
+			(struct sockaddr_in *) &(*sock)->context->remote;
+		char *remote_ip;
+		long port;
+
+		err = esp_pull_quoted(&str, str_end, &remote_ip);
+		if (err) {
+			LOG_ERR("Failed to pull remote_ip");
+			goto socket_unref;
+		}
+
+		err = esp_pull_long(&str, str_end, &port);
+		if (err) {
+			LOG_ERR("Failed to pull port");
+			goto socket_unref;
+		}
+
+		err = net_addr_pton(AF_INET, remote_ip, &recv_addr->sin_addr);
+		if (err) {
+			LOG_ERR("Invalid IP address");
+			err = -EBADMSG;
+			goto socket_unref;
+		}
+
+		recv_addr->sin_family = AF_INET;
+		recv_addr->sin_port = htons(port);
+	}
+
 	*data_offset = (str - ipd_buf);
 
 	return 0;
+
+socket_unref:
+	esp_socket_unref(*sock);
+
+	return err;
 }
 
 MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
