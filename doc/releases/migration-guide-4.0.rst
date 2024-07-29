@@ -39,6 +39,9 @@ LVGL
 Device Drivers and Devicetree
 *****************************
 
+* The ``compatible`` of the LiteX ethernet controller has been renamed from
+  ``litex,eth0`` to :dtcompatible:`litex,liteeth`. (:github:`75433`)
+
 Controller Area Network (CAN)
 =============================
 
