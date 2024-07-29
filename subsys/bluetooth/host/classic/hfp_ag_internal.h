@@ -26,11 +26,18 @@
 #define BT_HFP_AG_FEATURE_EXT_ERR_ENABLE 0
 #endif /* CONFIG_BT_HFP_AG_EXT_ERR */
 
+#if defined(CONFIG_BT_HFP_AG_CODEC_NEG)
+#define BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE BT_HFP_AG_FEATURE_CODEC_NEG
+#else
+#define BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_CODEC_NEG */
+
 /* HFP AG Supported features */
 #define BT_HFP_AG_SUPPORTED_FEATURES (\
 	BT_HFP_AG_FEATURE_3WAY_CALL | \
 	BT_HFP_AG_FEATURE_INBAND_RINGTONE | \
-	BT_HFP_AG_FEATURE_EXT_ERR_ENABLE)
+	BT_HFP_AG_FEATURE_EXT_ERR_ENABLE | \
+	BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE)
 
 /* HFP AG Supported features in SDP */
 #define BT_HFP_AG_SDP_SUPPORTED_FEATURES (\
@@ -45,6 +52,7 @@ enum {
 	BT_HFP_AG_INBAND_RING,   /* In-band ring */
 	BT_HFP_AG_COPS_SET,      /* Query Operator selection */
 	BT_HFP_AG_INCOMING_CALL, /* Incoming call */
+	BT_HFP_AG_AUDIO_CONN,    /* Audio connection */
 	BT_HFP_AG_CODEC_CONN,    /* Codec connection is ongoing */
 	BT_HFP_AG_CODEC_CHANGED, /* Codec Id Changed */
 	BT_HFP_AG_TX_ONGOING,    /* TX is ongoing */

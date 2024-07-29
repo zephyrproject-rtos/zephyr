@@ -99,6 +99,11 @@ config BT_HFP_AG_EXT_ERR
 	help
 	  This option enables Extended Error Result Codes for HFP AG
 
+config BT_HFP_AG_CODEC_NEG
+	bool "Codec Negotiation for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Codec Negotiation for HFP AG
+
 config BT_HFP_AG_TX_BUF_COUNT
 	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"
 	default BT_RFCOMM_TX_MAX
