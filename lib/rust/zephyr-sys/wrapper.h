@@ -27,5 +27,17 @@ extern int errno;
 /* First, make sure we have all of our config settings. */
 #include <zephyr/autoconf.h>
 
+/*
+ * Gcc defines __SOFTFP__ when the target doesn't use hardware
+ * floating point.  For clang, this isn't getting defined, which stops
+ * CMSIS headers.  We can work around this by just defining this using
+ * the same logic we use for hard vs soft float.
+ */
+#ifdef CONFIG_CPU_CORTEX_M
+  #if !(defined(CONFIG_FP_HARDAI) || defined(FORCE_FP_HARDABI))
+    #define __SOFTFP__
+  #endif
+#endif
+
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
