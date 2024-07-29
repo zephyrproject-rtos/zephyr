@@ -54,6 +54,14 @@ GNSS
 Input
 =====
 
+* :c:macro:`INPUT_CALLBACK_DEFINE` has now an extra ``user_data`` void pointer
+  argument that can be used to reference any user data structure. To restore
+  the current behavior it can be set to ``NULL``. A ``void *user_data``
+  argument has to be added to the callback function arguments.
+
+* The :dtcompatible:`analog-axis` ``invert`` property has been renamed to
+  ``invert-input`` (there's now an ``invert-output`` available as well).
+
 Interrupt Controller
 ====================
 
