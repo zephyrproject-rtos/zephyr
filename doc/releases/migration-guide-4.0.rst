@@ -51,6 +51,9 @@ Enhanced Serial Peripheral Interface (eSPI)
 GNSS
 ====
 
+* The APIs :c:func:`gnss_set_periodic_config` and :c:func:`gnss_get_periodic_config` have
+  been removed. (:github:`76392`)
+
 Input
 =====
 
