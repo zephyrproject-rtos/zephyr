@@ -26,6 +26,7 @@ Samples and Demos
    cpp/*
    posix/*
    kernel/*
+   psa/*
    tfm_integration/tfm_integration.rst
    modules/*
    compression/*
