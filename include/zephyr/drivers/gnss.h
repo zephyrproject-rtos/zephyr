@@ -21,6 +21,7 @@
  * @{
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/data/navigation.h>
@@ -100,6 +101,9 @@ typedef int (*gnss_get_enabled_systems_t)(const struct device *dev, gnss_systems
 /** API for getting enabled systems */
 typedef int (*gnss_get_supported_systems_t)(const struct device *dev, gnss_systems_t *systems);
 
+/** API for getting timestamp of last PPS pulse */
+typedef int (*gnss_get_latest_timepulse_t)(const struct device *dev, k_ticks_t *timestamp);
+
 /** GNSS fix status */
 enum gnss_fix_status {
 	/** No GNSS fix acquired */
@@ -167,6 +171,7 @@ __subsystem struct gnss_driver_api {
 	gnss_set_enabled_systems_t set_enabled_systems;
 	gnss_get_enabled_systems_t get_enabled_systems;
 	gnss_get_supported_systems_t get_supported_systems;
+	gnss_get_latest_timepulse_t get_latest_timepulse;
 };
 
 /** GNSS data structure */
@@ -378,6 +383,33 @@ static inline int z_impl_gnss_get_supported_systems(const struct device *dev,
 	}
 
 	return api->get_supported_systems(dev, systems);
+}
+
+/**
+ * @brief Get the timestamp of the latest PPS timepulse
+ *
+ * @note The timestamp is considered valid when the timepulse pin is actively toggling.
+ *
+ * @param dev Device instance
+ * @param timestamp Kernel tick count at the time of the PPS pulse
+ *
+ * @retval 0 if successful
+ * @retval -ENOSYS if driver does not support API
+ * @retval -ENOTSUP if driver does not have PPS pin connected
+ * @retval -EAGAIN if PPS pulse is not considered valid
+ */
+__syscall int gnss_get_latest_timepulse(const struct device *dev, k_ticks_t *timestamp);
+
+static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
+						    k_ticks_t *timestamp)
+{
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
+
+	if (api->get_latest_timepulse == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_latest_timepulse(dev, timestamp);
 }
 
 /**
