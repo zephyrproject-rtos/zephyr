@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Generator, List, Optional
 
 from twisterlib.coverage import supported_coverage_formats
+from twisterlib.constants import SUPPORTED_SIMS
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -167,6 +168,13 @@ Artificially long but functional example:
                         and create a hardware map file to be used with
                         --device-testing
                         """)
+
+    run_group_option.add_argument(
+        "--simulation", dest="sim_name", choices=SUPPORTED_SIMS,
+        help="Selects which simulation to use. Must match one of the names defined in the board's "
+             "manifest. If multiple simulator are specified in the selected board and this "
+             "argument is not passed, then the first simulator is selected.")
+
 
     device.add_argument("--device-serial",
                         help="""Serial device for accessing the board
