@@ -393,6 +393,17 @@ int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, uint8_t mode, char *name);
  */
 int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id);
 
+/** @brief Set In-Band Ring Tone
+ *
+ *  Set In-Band Ring Tone.
+ *
+ *  @param ag HFP AG object.
+ *  @param inband In-band or no in-band.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_inband_ringtone(struct bt_hfp_ag *ag, bool inband);
+
 #ifdef __cplusplus
 }
 #endif
