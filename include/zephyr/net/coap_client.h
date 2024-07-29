@@ -160,6 +160,28 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 void coap_client_cancel_requests(struct coap_client *client);
 
 /**
+ * @brief Initialise a Block2 option to be added to a request
+ *
+ * If the application expects a request to require a blockwise transfer, it may pre-emptively
+ * suggest a maximum block size to the server - see RFC7959 Figure 3: Block-Wise GET with Early
+ * Negotiation.
+ *
+ * This helper function returns a Block2 option to send with the initial request.
+ *
+ * @return CoAP client initial Block2 option structure
+ */
+static inline struct coap_client_option coap_client_option_initial_block2(void)
+{
+	struct coap_client_option block2 = {
+		.code = COAP_OPTION_BLOCK2,
+		.len = 1,
+		.value[0] = coap_bytes_to_block_size(CONFIG_COAP_CLIENT_BLOCK_SIZE),
+	};
+
+	return block2;
+}
+
+/**
  * @}
  */
 
