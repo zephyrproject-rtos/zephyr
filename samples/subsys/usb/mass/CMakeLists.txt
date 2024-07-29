@@ -6,6 +6,7 @@ project(mass)
 
 if((NOT CONFIG_DISK_DRIVER_FLASH) AND
    (NOT CONFIG_DISK_DRIVER_RAM) AND
+   (NOT CONFIG_DISK_DRIVER_MMC) AND
    (NOT CONFIG_DISK_DRIVER_SDMMC))
 	message( FATAL_ERROR "No disk access settings detected." )
 endif()

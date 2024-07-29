@@ -50,6 +50,10 @@ USBD_DEFINE_MSC_LUN(NAND, "Zephyr", "FlashDisk", "0.00");
 USBD_DEFINE_MSC_LUN(SD, "Zephyr", "SD", "0.00");
 #endif
 
+#if CONFIG_DISK_DRIVER_MMC
+USBD_DEFINE_MSC_LUN(CONFIG_MMC_VOLUME_NAME, "Zephyr", "MMC", "0.00");
+#endif
+
 static int enable_usb_device_next(void)
 {
 	int err;
@@ -112,6 +116,8 @@ static int mount_app_fs(struct fs_mount_t *mnt)
 	if (IS_ENABLED(CONFIG_DISK_DRIVER_RAM)) {
 		mnt->mnt_point = "/RAM:";
 	} else if (IS_ENABLED(CONFIG_DISK_DRIVER_SDMMC)) {
+		mnt->mnt_point = "/SD:";
+	} else if (IS_ENABLED(CONFIG_DISK_DRIVER_MMC)) {
 		mnt->mnt_point = "/SD:";
 	} else {
 		mnt->mnt_point = "/NAND:";
