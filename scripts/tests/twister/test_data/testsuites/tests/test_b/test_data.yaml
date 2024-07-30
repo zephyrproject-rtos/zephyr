@@ -4,5 +4,4 @@ tests:
     tags: test_b
   test_b.check_2:
     min_ram: 32
-    extra_args: CONF_FILE="test.conf"
     tags: test_b
