@@ -34,6 +34,7 @@ pub mod errno;
 pub mod timeout;
 pub mod thread;
 pub mod mutex;
+pub mod random;
 
 use core::panic::PanicInfo;
 

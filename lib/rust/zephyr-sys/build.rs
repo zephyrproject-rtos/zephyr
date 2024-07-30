@@ -44,11 +44,14 @@ fn main() -> Result<()> {
         .clang_arg("-I../../../lib/libc/minimal/include")
         .derive_copy(false)
         .allowlist_function("k_.*")
+        .allowlist_function("sys_.*")
         .allowlist_function("gpio_.*")
         .allowlist_item("GPIO_.*")
         // Each DT node has a device entry that is a static.
         .allowlist_item("__device_dts_ord.*")
         .allowlist_function("device_.*")
+        // Deprecated, hopefully there is a more generic way
+        .blocklist_function("sys_clock_timeout_end_calc")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");
