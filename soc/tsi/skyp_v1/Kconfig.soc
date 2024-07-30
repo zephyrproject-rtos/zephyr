@@ -18,7 +18,7 @@ config SOC_SKYP_M85
 	bool
 	select SOC_SKYP
 	help
-	  skyp_m85 
+	  skyp_m85
 
 config SOC_SERIES
 	default "skyp_v1" if SOC_SERIES_SKYP_V1

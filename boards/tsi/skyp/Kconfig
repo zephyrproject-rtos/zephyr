@@ -1,5 +1,5 @@
 # Copyright (c) 2024 TSI
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_EK_TSI
-	select QEMU_TARGET
+# config BOARD_TSI
+# 	select QEMU_TARGET

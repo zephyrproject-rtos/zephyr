@@ -18,4 +18,3 @@ uart0: uart@14001000 {
 	clocks = <&sysclk>;
 	current-speed = <115200>;
 };
-

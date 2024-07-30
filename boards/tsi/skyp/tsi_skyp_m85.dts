@@ -19,22 +19,16 @@
 
 	chosen {
 		zephyr,console = &jtag_uart;
-		/*
-		zephyr,console = &uart0;
-		*/
 		zephyr,shell-uart = &jtag_uart;
-		/*
-		zephyr,shell-uart = &uart0;
-		*/
 		zephyr,sram = &sram;
 		zephyr,flash = &sram0;
 	};
 
-        jtag_uart: uart@95003000 {
-                compatible = "altr,jtag-uart";
-                reg = <0x95003000 0x8>;
-                status = "enabled";
-        };
+	jtag_uart: uart@95003000 {
+		compatible = "altr,jtag-uart";
+		reg = <0x95003000 0x8>;
+		status = "enabled";
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -57,11 +51,11 @@
 	/* We utilize the secure addresses, if you subtract 0x10000000
 	 * you'll get the non-secure alias
 	 */
-        itcm: itcm@4000 {   /* alias @ 0x4000 */
-                compatible = "zephyr,memory-region";
-                reg = <0x4000 DT_SIZE_K(16)>;
-                zephyr,memory-region = "ITCM";
-        };
+	itcm: itcm@4000 {   /* alias @ 0x4000 */
+		compatible = "zephyr,memory-region";
+		reg = <0x4000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "ITCM";
+	};
 
 	sram0: sram0@60000000 {	/* alias @ 0x60000000 */
 		compatible = "zephyr,memory-region";
@@ -91,14 +85,7 @@
 	ddr4: memory@60700000 {
 		device_type = "memory";
 		compatible = "zephyr,memory-region";
-		reg = <0x60700000 DT_SIZE_M(1)
-		       /*0x70000000 DT_SIZE_M(256)
-		       0x80000000 DT_SIZE_M(256)
-		       0x90000000 DT_SIZE_M(256)
-		       0xa0000000 DT_SIZE_M(256)
-		       0xb0000000 DT_SIZE_M(256)
-		       0xc0000000 DT_SIZE_M(256)
-		       0xd0000000 DT_SIZE_M(256)*/>;
+		reg = <0x60700000 DT_SIZE_M(1)>;
 		zephyr,memory-region = "DDR4";
 	};
 
@@ -108,7 +95,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x81000000 0x1effffff>;
 
-			 #include "ek_tsi_skyp_m85-common.dtsi"
+			 #include "tsi_skyp_m85-common.dtsi"
 		};
 	};
 };

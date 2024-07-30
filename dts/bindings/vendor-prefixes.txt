@@ -683,6 +683,7 @@ tronfy	Tronfy
 tronsmart	Tronsmart
 truly	Truly Semiconductors Limited
 tsd	Theobroma Systems Design und Consulting GmbH
+tsi	Tsavorite Scalable Intelligence
 tyan	Tyan Computer Corporation
 u-blox	u-blox
 u-boot	U-Boot bootloader
