@@ -8,6 +8,7 @@
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/console/ipm_console.h>
 #include <zephyr/device.h>
+#include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/init.h>
 #include <stdio.h>
 
@@ -91,14 +92,7 @@ int main(void)
 	}
 
 	/* Now do this through printf() to exercise the sender */
-	printf("Lorem ipsum dolor sit amet, consectetur adipiscing elit, "
-	       "sed do eiusmod tempor incididunt ut labore et dolore magna "
-	       "aliqua. Ut enim ad minim veniam, quis nostrud exercitation "
-	       "ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis "
-	       "aute irure dolor in reprehenderit in voluptate velit esse "
-	       "cillum dolore eu fugiat nulla pariatur. Excepteur sint "
-	       "occaecat cupidatat non proident, sunt in culpa qui officia "
-	       "deserunt mollit anim id est laborum.\n");
+	printf(LOREM_IPSUM_SHORT "\n");
 
 	/* XXX how to tell if something was actually printed out for
 	 * automation purposes?
