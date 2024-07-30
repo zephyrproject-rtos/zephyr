@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,7 @@ CREATE_FLAG(flag_pa_sync_lost);
 CREATE_FLAG(flag_received);
 CREATE_FLAG(flag_pa_request);
 CREATE_FLAG(flag_bis_sync_requested);
+CREATE_FLAG(flag_sink_started);
 
 static struct bt_bap_broadcast_sink *g_sink;
 static struct bt_le_scan_recv_info broadcaster_info;
@@ -77,8 +78,8 @@ static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	SUPPORTED_MIN_OCTETS_PER_FRAME, SUPPORTED_MAX_OCTETS_PER_FRAME,
 	SUPPORTED_MAX_FRAMES_PER_SDU, SUPPORTED_CONTEXTS);
 
-static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
-static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
+static K_SEM_DEFINE(sem_stream_started, 0U, ARRAY_SIZE(streams));
+static K_SEM_DEFINE(sem_stream_stopped, 0U, ARRAY_SIZE(streams));
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not
@@ -254,9 +255,23 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 	SET_FLAG(flag_syncable);
 }
 
+static void broadcast_sink_started_cb(struct bt_bap_broadcast_sink *sink)
+{
+	printk("Broadcast sink %p started\n", sink);
+	SET_FLAG(flag_sink_started);
+}
+
+static void broadcast_sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_t reason)
+{
+	printk("Broadcast sink %p stopped with reason 0x%02X\n", sink, reason);
+	UNSET_FLAG(flag_sink_started);
+}
+
 static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 	.base_recv = base_recv_cb,
 	.syncable = syncable_cb,
+	.started = broadcast_sink_started_cb,
+	.stopped = broadcast_sink_stopped_cb,
 };
 
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
@@ -505,7 +520,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 	}
 }
 
-static void started_cb(struct bt_bap_stream *stream)
+static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep_info info;
 	int err;
@@ -542,20 +557,19 @@ static void started_cb(struct bt_bap_stream *stream)
 	}
 
 	printk("Stream %p started\n", stream);
-	k_sem_give(&sem_started);
+	k_sem_give(&sem_stream_started);
 
 	validate_stream_codec_cfg(stream);
 }
 
-static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
+static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
-	k_sem_give(&sem_stopped);
+	k_sem_give(&sem_stream_stopped);
 }
 
-static void recv_cb(struct bt_bap_stream *stream,
-		    const struct bt_iso_recv_info *info,
-		    struct net_buf *buf)
+static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
+			   struct net_buf *buf)
 {
 	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 
@@ -601,9 +615,9 @@ static void recv_cb(struct bt_bap_stream *stream,
 }
 
 static struct bt_bap_stream_ops stream_ops = {
-	.started = started_cb,
-	.stopped = stopped_cb,
-	.recv = recv_cb
+	.started = stream_started_cb,
+	.stopped = stream_stopped_cb,
+	.recv = stream_recv_cb,
 };
 
 static int init(void)
@@ -782,8 +796,10 @@ static void test_broadcast_sync(bool encryption)
 	/* Wait for all to be started */
 	printk("Waiting for streams to be started\n");
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_started, K_FOREVER);
+		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
+
+	WAIT_FOR_FLAG(flag_sink_started);
 }
 
 static void test_broadcast_sync_inval(void)
@@ -858,8 +874,10 @@ static void test_broadcast_stop(void)
 
 	printk("Waiting for streams to be stopped\n");
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_stopped, K_FOREVER);
+		k_sem_take(&sem_stream_stopped, K_FOREVER);
 	}
+
+	WAIT_FOR_UNSET_FLAG(flag_sink_started);
 }
 
 static void test_broadcast_stop_inval(void)
@@ -982,8 +1000,9 @@ static void test_main(void)
 
 	printk("Waiting for streams to be stopped\n");
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_stopped, K_FOREVER);
+		k_sem_take(&sem_stream_stopped, K_FOREVER);
 	}
+	WAIT_FOR_UNSET_FLAG(flag_sink_started);
 
 	PASS("Broadcast sink passed\n");
 }
@@ -1046,7 +1065,7 @@ static void test_sink_encrypted(void)
 
 	printk("Waiting for streams to be stopped\n");
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_stopped, K_FOREVER);
+		k_sem_take(&sem_stream_stopped, K_FOREVER);
 	}
 
 	PASS("Broadcast sink passed\n");
