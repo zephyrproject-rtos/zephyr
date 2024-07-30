@@ -11,7 +11,7 @@ The DS1307 is a real-time clock module that keeps track of the current date and 
 
 References
 **********
-For more information about the DS1307 RTC module, see 
+For more information about the DS1307 RTC module, see
 https://www.analog.com/en/products/ds1307.html
 
 Building and Running

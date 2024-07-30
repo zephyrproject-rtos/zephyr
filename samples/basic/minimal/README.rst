@@ -11,7 +11,6 @@ can be used to measure Zephyr's minimal ROM footprint in different
 configurations.
 
 The following configuration files are available:
-
 * :file:`mt.conf`: Enable multithreading
 * :file:`no-mt.conf`: Disable multithreading
 * :file:`no-preempt.conf`: Disable preemption
