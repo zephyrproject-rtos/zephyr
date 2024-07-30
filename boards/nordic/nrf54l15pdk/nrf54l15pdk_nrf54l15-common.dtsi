@@ -98,3 +98,10 @@
 	pinctrl-1 = <&pwm20_sleep>;
 	pinctrl-names = "default", "sleep";
 };
+
+arduino_i2c: &i2c21 {
+	compatible = "nordic,nrf-twim";
+	pinctrl-0 = <&i2c21_default>;
+	pinctrl-1 = <&i2c21_sleep>;
+	pinctrl-names = "default", "sleep";
+};
