@@ -275,7 +275,7 @@ config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 
 config LINKER_LAST_SECTION_ID
 	bool "Last section identifier"
-	default y
+	default y if !ARM64
 	depends on ARM || ARM64 || RISCV
 	help
 	  If enabled, the last section will contain an identifier.
