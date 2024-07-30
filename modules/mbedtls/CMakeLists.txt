@@ -7,7 +7,7 @@ if(CONFIG_MBEDTLS)
 zephyr_interface_library_named(mbedTLS)
 
   if(CONFIG_MBEDTLS_BUILTIN)
-    if(CONFIG_MBEDTLS_ZEPHYR_ENTROPY AND NOT CONFIG_ENTROPY_HAS_DRIVER)
+    if(CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR AND NOT CONFIG_ENTROPY_HAS_DRIVER)
       message(WARNING "No entropy device on the system, using fake entropy source!")
     endif()
 

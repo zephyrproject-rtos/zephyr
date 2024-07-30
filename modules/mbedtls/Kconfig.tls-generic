@@ -387,11 +387,21 @@ config MBEDTLS_HAVE_ASM
 config MBEDTLS_ENTROPY_C
 	bool "Mbed TLS entropy accumulator"
 	depends on MBEDTLS_SHA256 || MBEDTLS_SHA384 || MBEDTLS_SHA512
-	default y if MBEDTLS_ZEPHYR_ENTROPY
 	help
 	  This module gathers entropy data from enabled entropy sources. It's
 	  mostly used in conjunction with CTR_DRBG or HMAC_DRBG to create
 	  a deterministic random number generator.
+
+config MBEDTLS_ENTROPY_POLL_ZEPHYR
+	bool "Provide entropy data to Mbed TLS through entropy driver or random generator"
+	depends on MBEDTLS_ENTROPY_C
+	help
+	  Provide entropy data to the Mbed TLS's entropy module through either
+	  an entropy driver (if available in the system) or a generic random
+	  number generator.
+	  Warning: the latter choice is potentially non secure because it might
+	  end up using weaker/test-only sources (ex: random number generator
+	  built on system timer).
 
 config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	bool "MbedTLS optimizations for OpenThread"
