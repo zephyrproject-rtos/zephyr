@@ -35,9 +35,9 @@ ZTEST(interrupt_feature, test_static_shared_irq_write)
 #else
 	int i;
 
-	IRQ_CONNECT(GIC_IRQ1, IRQ_PRIORITY, test_isr_0, 0, 0);
-	IRQ_CONNECT(GIC_IRQ1, IRQ_PRIORITY, test_isr_1, (void *)1, 0);
-	IRQ_CONNECT(GIC_IRQ2, IRQ_PRIORITY, test_isr_2, (void *)2, 0);
+	IRQ_CONNECT(GIC_IRQ1, IRQ_PRIORITY, test_isr_0, 0, IRQ_FLAGS);
+	IRQ_CONNECT(GIC_IRQ1, IRQ_PRIORITY, test_isr_1, (void *)1, IRQ_FLAGS);
+	IRQ_CONNECT(GIC_IRQ2, IRQ_PRIORITY, test_isr_2, (void *)2, IRQ_FLAGS);
 
 	zassert_true(_sw_isr_table[GIC_IRQ1].isr == z_shared_isr,
 		     "wrong _sw_isr_table ISR at GIC_IRQ1");
