@@ -93,8 +93,11 @@ static void check_delete_all_bt_entries(void)
 				BT_MESH_SETTINGS_BRG_PENDING);
 		}
 
-		bt_mesh_brg_cfg_tbl_remove(test_vector[i].net_idx1, test_vector[i].net_idx2,
-			test_vector[i].addr1, test_vector[i].addr2);
+		int err = bt_mesh_brg_cfg_tbl_remove(test_vector[i].net_idx1,
+				test_vector[i].net_idx2, test_vector[i].addr1,
+				test_vector[i].addr2);
+
+		zassert_equal(err, 0);
 	}
 }
 
@@ -129,13 +132,36 @@ ZTEST(bt_mesh_brg_cfg, test_basic_functionality_storage)
 	check_bt_mesh_brg_cfg_tbl_reset();
 	check_fill_all_bt_entries();
 
-	/* Test remove entries matching netkey1, and netkey2 */
+	int err;
 	uint16_t net_idx1 = test_vector[TEST_VECT_SZ - 1].net_idx1;
 	uint16_t net_idx2 = test_vector[TEST_VECT_SZ - 1].net_idx2;
 	uint16_t addr1 = BT_MESH_ADDR_UNASSIGNED;
-	uint16_t addr2 = BT_MESH_ADDR_UNASSIGNED;
 
-	bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	/* Try removing entries with invalid params */
+	uint16_t addr2 = BT_MESH_ADDR_ALL_NODES;
+
+	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	zassert_equal(err, -EINVAL);
+
+	addr2 = BT_MESH_ADDR_UNASSIGNED;
+	addr1 = BT_MESH_ADDR_RELAYS;
+	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	zassert_equal(err, -EINVAL);
+
+	addr1 = BT_MESH_ADDR_UNASSIGNED;
+	net_idx1 = 4096;
+	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	zassert_equal(err, -EINVAL);
+
+	net_idx1 = test_vector[TEST_VECT_SZ - 1].net_idx1;
+	net_idx2 = 4096;
+	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	zassert_equal(err, -EINVAL);
+
+	/* Test remove entries matching netkey1, and netkey2 */
+	net_idx2 = test_vector[TEST_VECT_SZ - 1].net_idx2;
+	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	zassert_equal(err, 0);
 
 	const struct bt_mesh_brg_cfg_row *brg_tbl;
 	int n = bt_mesh_brg_cfg_tbl_get(&brg_tbl);
