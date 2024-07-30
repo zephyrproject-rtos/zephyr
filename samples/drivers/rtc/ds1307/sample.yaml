@@ -1,5 +1,5 @@
 sample:
-  name: LSM303DLHC Magnetometer and Accelerometer data Monitor
+  name: DS1307 Clock
 tests:
   sample.rtc.ds1307:
     harness: rtc
