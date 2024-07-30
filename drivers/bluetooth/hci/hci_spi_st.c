@@ -350,7 +350,7 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 #if defined(CONFIG_BT_HCI_RAW)
 	return bt_send(buf);
 #else
-	return bt_hci_cmd_send(BLUENRG_ACI_WRITE_CONFIG_DATA, buf);
+	return bt_hci_cmd_send_sync(BLUENRG_ACI_WRITE_CONFIG_DATA, buf, NULL);
 #endif /* CONFIG_BT_HCI_RAW */
 }
 
