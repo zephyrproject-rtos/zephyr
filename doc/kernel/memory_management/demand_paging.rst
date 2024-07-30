@@ -179,6 +179,11 @@ which must be implemented:
   free a backing store location (the ``location`` token) which can
   then be used for subsequent page out operation.
 
+* :c:func:`k_mem_paging_backing_store_location_query()` is called to obtain
+  the ``location`` token corresponding to storage content to be virtually
+  mapped and paged-in on demand. Most useful with
+  :kconfig:option:`CONFIG_DEMAND_MAPPING`.
+
 * :c:func:`k_mem_paging_backing_store_page_in()` copies a data page
   from the backing store location associated with the provided
   ``location`` token to the page pointed by ``K_MEM_SCRATCH_PAGE``.
