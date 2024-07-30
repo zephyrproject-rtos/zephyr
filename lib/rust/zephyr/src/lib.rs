@@ -30,6 +30,8 @@ pub mod printk;
 #[cfg(CONFIG_RUST_HEAP)]
 mod heap;
 
+pub mod errno;
+
 use core::panic::PanicInfo;
 
 #[cfg(CONFIG_PRINTK)]
