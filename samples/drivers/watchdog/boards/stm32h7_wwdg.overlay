@@ -11,10 +11,6 @@
 	};
 };
 
-&rcc {
-	d2ppre1 = <16>;
-};
-
 &wwdg {
 	status = "okay";
 };

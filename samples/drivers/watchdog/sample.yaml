@@ -48,7 +48,9 @@ tests:
   sample.drivers.watchdog.stm32h7_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32h7_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
-    platform_allow: nucleo_h743zi
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
   sample.drivers.watchdog.stm32_iwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_iwdg.overlay
     filter: dt_compat_enabled("st,stm32-watchdog")
@@ -63,6 +65,7 @@ tests:
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_h743zi
+      - nucleo_h753zi
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_wb55rg
