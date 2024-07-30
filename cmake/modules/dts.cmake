@@ -290,10 +290,25 @@ execute_process(
   COMMAND ${CMD_GEN_DEFINES}
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   RESULT_VARIABLE ret
+  ERROR_VARIABLE stderr
   )
 if(NOT "${ret}" STREQUAL "0")
+  if (stderr)
+    # gen_defines.py failed after printing message(s) to stderr.
+    # Append stream content to the FATAL_ERROR message on a new line.
+    set(stderr "\n${stderr}")
+  else()
+    # gen_defines.py did not print anything on stderr. To inform users
+    # of this condition, set ${stderr} to "<empty>" to have this printed
+    # in the error message. Note that we do NOT want a newline, such that
+    # the error message is printed as a single line, e.g.:
+    #
+    #  gen_defines.py failed with result code: 1 - stderr contents: <empty>
+    #
+    set(stderr "<empty>")
+  endif()
   message(STATUS "In: ${PROJECT_BINARY_DIR}, command: ${CMD_GEN_DEFINES}")
-  message(FATAL_ERROR "gen_defines.py failed with return code: ${ret}")
+  message(FATAL_ERROR "gen_defines.py failed with result code: ${ret} - stderr contents: ${stderr}")
 else()
   zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
   zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
@@ -377,9 +392,14 @@ execute_process(
   OUTPUT_QUIET # Discard stdout
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   RESULT_VARIABLE ret
+  ERROR_VARIABLE stderr
   )
 
 if(NOT "${ret}" STREQUAL "0")
-  message(FATAL_ERROR "command failed with return code: ${ret}")
+  message(FATAL_ERROR "dtc failed with return code: ${ret}")
+elseif(stderr)
+  # dtc printed warnings on stderr but did not fail.
+  # Display them as CMake warnings to draw attention.
+  message(WARNING "dtc raised one or more warnings:\n${stderr}")
 endif()
 endif(DTC)
