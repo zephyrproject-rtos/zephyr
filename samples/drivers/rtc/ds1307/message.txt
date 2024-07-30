@@ -1,7 +1,0 @@
-drivers: rtc: ds1307: Implementation of RTC API
-
-This sample application periodically reads date 
-and time data from the DS1307 RTC module, and 
-displays on the console.
-
-Signed-off-by: Muhammd Waleed Badar <walid.badar@gmail.com>
