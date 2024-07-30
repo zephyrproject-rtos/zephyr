@@ -14,10 +14,15 @@ pub const K_USER: u32 = 1 << 2;
 pub const K_INHERIT_PERMS: u32 = 1 << 3;
 
 pub struct Thread {
-    tid: zephyr_sys::k_tid_t,
+    pub(crate) tid: zephyr_sys::k_tid_t,
 }
 
 impl Thread {
+    pub fn current_get() -> Thread {
+        unsafe {
+            Thread { tid: zephyr_sys::k_current_get() }
+        }
+    }
 
     pub fn new<F>(entry_point: F, stack_size: usize, priority: i32, options: u32, delay: Duration) -> ErrnoResult<Self>
     where

@@ -36,6 +36,9 @@ pub mod thread;
 pub mod mutex;
 pub mod random;
 
+#[cfg(CONFIG_USERSPACE)]
+pub mod userspace;
+
 use core::panic::PanicInfo;
 
 #[cfg(CONFIG_PRINTK)]

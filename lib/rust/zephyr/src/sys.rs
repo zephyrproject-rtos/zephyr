@@ -61,4 +61,8 @@ pub mod gpio {
             }
         }
     }
+
+    // Hack for the example...
+    unsafe impl Send for GpioPin {}
+    unsafe impl Sync for GpioPin {}
 }
