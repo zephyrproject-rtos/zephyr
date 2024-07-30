@@ -1623,10 +1623,15 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
 
 			size_t len;
 
-			if (precision >= 0) {
-				len = strnlen(bps, precision);
+			if (bps != NULL) {
+				if (precision >= 0) {
+					len = strnlen(bps, precision);
+				} else {
+					len = strlen(bps);
+				}
 			} else {
-				len = strlen(bps);
+				bps = "(nil)";
+				len = 5;
 			}
 
 			bpe = bps + len;
