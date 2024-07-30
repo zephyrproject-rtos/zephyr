@@ -904,12 +904,12 @@ __syscall int k_thread_priority_get(k_tid_t thread);
  * Rescheduling can occur immediately depending on the priority @a thread is
  * set to:
  *
- * - If its priority is raised above the priority of the caller of this
- * function, and the caller is preemptible, @a thread will be scheduled in.
+ * - If its priority is raised above the priority of a currently scheduled
+ * preemptible thread, @a thread will be scheduled in.
  *
- * - If the caller operates on itself, it lowers its priority below that of
- * other threads in the system, and the caller is preemptible, the thread of
- * highest priority will be scheduled in.
+ * - If the caller lowers the priority of a currently scheduled preemptible
+ * thread below that of other threads in the system, the thread of the highest
+ * priority will be scheduled in.
  *
  * Priority can be assigned in the range of -CONFIG_NUM_COOP_PRIORITIES to
  * CONFIG_NUM_PREEMPT_PRIORITIES-1, where -CONFIG_NUM_COOP_PRIORITIES is the

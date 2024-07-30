@@ -1038,7 +1038,6 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 	 * keep track of it) and idle cannot change its priority.
 	 */
 	Z_ASSERT_VALID_PRIO(prio, NULL);
-	__ASSERT(!arch_is_in_isr(), "");
 
 	bool need_sched = z_thread_prio_set((struct k_thread *)thread, prio);
 
