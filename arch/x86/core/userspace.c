@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/speculation.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -182,4 +184,20 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
 			      _current->stack_info.start);
 	CODE_UNREACHABLE;
+}
+
+int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,
+				     size_t *unused_ptr)
+{
+	struct z_x86_thread_stack_header *hdr_stack_obj;
+
+	if ((thread->base.user_options & K_USER) != K_USER) {
+		return -EINVAL;
+	}
+
+	hdr_stack_obj = (struct z_x86_thread_stack_header *)thread->stack_obj;
+
+	return z_stack_space_get(&hdr_stack_obj->privilege_stack[0],
+				 sizeof(hdr_stack_obj->privilege_stack),
+				 unused_ptr);
 }
