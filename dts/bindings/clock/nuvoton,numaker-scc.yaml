@@ -29,7 +29,7 @@ properties:
       - "enable"
       - "disable"
 
-  hirc48:
+  hirc48m:
     type: string
     description: |
       Enable/disable 48 MHz high-speed internal RC oscillator (HIRC48)
