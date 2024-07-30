@@ -384,10 +384,14 @@ config MBEDTLS_HAVE_ASM
 	  of asymmetric cryptography, however this might have an impact on the
 	  code size.
 
-config MBEDTLS_ENTROPY_ENABLED
-	bool "MbedTLS generic entropy pool"
+config MBEDTLS_ENTROPY_C
+	bool "Mbed TLS entropy accumulator"
 	depends on MBEDTLS_SHA256 || MBEDTLS_SHA384 || MBEDTLS_SHA512
 	default y if MBEDTLS_ZEPHYR_ENTROPY
+	help
+	  This module gathers entropy data from enabled entropy sources. It's
+	  mostly used in conjunction with CTR_DRBG or HMAC_DRBG to create
+	  a deterministic random number generator.
 
 config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	bool "MbedTLS optimizations for OpenThread"
@@ -474,7 +478,7 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 
 config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Use legacy modules to generate random data"
-	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_ENABLED
 	help
 	  Use legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG) as random

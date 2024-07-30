@@ -84,7 +84,7 @@ config BT_SILABS_HCI
 	select ENTROPY_GENERATOR
 	select MBEDTLS
 	select MBEDTLS_PSA_CRYPTO_C
-	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_ZEPHYR_ENTROPY
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
