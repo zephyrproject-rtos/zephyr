@@ -319,6 +319,9 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                              " Valid options for 'lcov' tool are: " +
                              ','.join(supported_coverage_formats['lcov']) + " (html,lcov - default).")
 
+    parser.add_argument("--coverage-exclude", action="append", default=[],
+                        help="Exclude patterns for coverage report")
+
     parser.add_argument("--test-config", action="store", default=os.path.join(ZEPHYR_BASE, "tests", "test_config.yaml"),
         help="Path to file with plans and test configurations.")
 

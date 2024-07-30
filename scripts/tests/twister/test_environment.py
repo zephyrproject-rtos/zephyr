@@ -236,8 +236,11 @@ TESTDATA_2 = [
     ids=['show footprint', 'compare report']
 )
 def test_parse_arguments(zephyr_base, additional_args):
-    args = ['--coverage', '--platform', 'dummy_platform'] + \
-           additional_args + ['--', 'dummy_extra_1', 'dummy_extra_2']
+    args = (
+        ["--coverage", "--platform", "dummy_platform", "--coverage-exclude", "my/dir"]
+        + additional_args
+        + ["--", "dummy_extra_1", "dummy_extra_2"]
+    )
 
     with mock.patch('sys.argv', ['twister'] + args):
         parser = twisterlib.environment.add_parse_arguments()
@@ -252,6 +255,8 @@ def test_parse_arguments(zephyr_base, additional_args):
     assert options.enable_coverage
 
     assert options.coverage_platform == ['dummy_platform']
+
+    assert options.coverage_exclude == ['my/dir']
 
     assert options.extra_test_args == ['dummy_extra_1', 'dummy_extra_2']
 
