@@ -700,6 +700,11 @@ config ARCH_SUPPORTS_MEM_MAPPED_STACKS
 	help
 	  Select when the architecture supports memory mapped stacks.
 
+config ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET
+	bool
+	help
+	  Select when the architecture implements arch_thread_priv_stack_space_get().
+
 #
 # Other architecture related options
 #
