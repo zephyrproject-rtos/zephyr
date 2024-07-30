@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2024 Vogl Electronic GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: LiteX LiteI2C I2C controller
+
+compatible: "litex,litei2c"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    required: true
