@@ -262,8 +262,11 @@ static int rv8263c8_time_get(const struct device *dev, struct rtc_time *timeptr)
 		return err;
 	}
 
-	/* Return an error when the oscillator is stopped. */
+	/* Clear the oscillator stop flag and return an error when the oscillator is stopped. */
+	/* The flag is set again if the error condition for the oscillator is still active. */
 	if (regs[0] & RV8263_BM_OS) {
+		regs[0] &= ~RV8263_BM_OS;
+		i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS, regs[0]);
 		return -ECANCELED;
 	}
 
