@@ -60,7 +60,7 @@ static unsigned int get_irq_slot(unsigned int start)
 
 			/* check to see if we can trigger this IRQ */
 			arch_irq_connect_dynamic(i, IRQ_PRIORITY, dummy_isr,
-						 NULL, 0);
+						 NULL, IRQ_FLAGS);
 			irq_enable(i);
 			trigger_irq(i);
 
@@ -108,7 +108,7 @@ static void dynamic_shared_irq_suite_before(void *data)
 	ARG_UNUSED(data);
 
 	arch_irq_connect_dynamic(fixture.irq1, fixture.irq_priority,
-				 test_isr_0, 0, 0);
+				 test_isr_0, 0, IRQ_FLAGS);
 
 	zassert_true(_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].isr == test_isr_0,
 		     "wrong _sw_isr_table ISR at irq1");
@@ -118,7 +118,7 @@ static void dynamic_shared_irq_suite_before(void *data)
 		     "wrong client number at irq1");
 
 	arch_irq_connect_dynamic(fixture.irq1, fixture.irq_priority,
-				 test_isr_1, (void *)1, 0);
+				 test_isr_1, (void *)1, IRQ_FLAGS);
 
 	zassert_true(_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].isr == z_shared_isr,
 		     "wrong _sw_isr_table ISR at irq1");
@@ -136,7 +136,7 @@ static void dynamic_shared_irq_suite_before(void *data)
 		     "unexpected client data for irq1, index 1");
 
 	arch_irq_connect_dynamic(fixture.irq2, fixture.irq_priority,
-				 test_isr_2, (void *)2, 0);
+				 test_isr_2, (void *)2, IRQ_FLAGS);
 
 	zassert_true(_sw_isr_table[fixture.irq2_table_idx + TABLE_OFFSET].isr == test_isr_2,
 		     "wrong _sw_isr_table ISR at irq2");
