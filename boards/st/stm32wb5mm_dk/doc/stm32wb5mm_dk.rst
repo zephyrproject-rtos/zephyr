@@ -198,6 +198,15 @@ Flashing
 STM32WB5MM-DK has an on-board ST-Link to flash and debug the firmware on the
 module.
 
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required.
+
+Alternatively, openocd can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
 
 Flashing ``hello_world`` application to STM32WB5MM-DK
 ------------------------------------------------------
@@ -239,9 +248,15 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5MM-DK on www.st.com:
    https://www.st.com/en/evaluation-tools/stm32wb5mm-dk.html
+
 .. _STM32WB5MMG datasheet:
    https://www.st.com/resource/en/datasheet/stm32wb5mmg.pdf
+
 .. _modules/hal/stm32/lib/stm32wb/hci/README:
    https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README
+
 .. _Hello_World:
    https://docs.zephyrproject.org/latest/samples/hello_world/README.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

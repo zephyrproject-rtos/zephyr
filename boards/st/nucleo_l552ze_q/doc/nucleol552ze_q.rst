@@ -290,16 +290,25 @@ Flashing
 ========
 
 Nucleo L552ZE Q board includes an ST-LINK/V2-1 embedded debug tool
-interface. Support can be enabled on pyocd by adding "pack" support with the
+interface.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required.
+
+Alternatively, openocd can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+
+Support can be enabled for pyocd by adding "pack" support with the
 following pyocd command:
 
 .. code-block:: console
 
    $ pyocd pack --update
    $ pyocd pack --install stm32l552ze
-
-Alternatively, this interface is supported by the openocd version
-included in the Zephyr SDK since v0.13.1.
 
 Flashing an application to Nucleo L552ZE Q
 ------------------------------------------

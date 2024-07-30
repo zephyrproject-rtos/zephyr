@@ -120,11 +120,19 @@ See :ref:`build_an_application` for more information about application builds.
 Flashing
 ========
 
-Flashing operation will depend on the target to be flashed and the SoC
-option bytes configuration.
-It is advised to use `STM32CubeProgrammer`_ to check and update option bytes
-configuration and flash the ``stm32h735g_disco`` target.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required.
 
+Alternatively, openocd or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
+It is advised to use `STM32CubeProgrammer`_ to check and update option bytes
+configuration.
 
 Debugging
 =========

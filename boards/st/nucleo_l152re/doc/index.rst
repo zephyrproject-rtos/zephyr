@@ -145,7 +145,16 @@ Flashing
 ========
 
 Nucleo L152RE board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in the Zephyr SDK.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required.
+
+Alternatively, openocd can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
 
 Flashing an application to Nucleo L152RE
 ----------------------------------------
@@ -187,3 +196,6 @@ References
 
 .. _STM32 Nucleo-64 board User Manual:
    https://www.st.com/resource/en/user_manual/dm00105823.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

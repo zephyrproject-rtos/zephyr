@@ -157,6 +157,17 @@ Flashing
 
 Nucleo H7A3ZI-Q board includes an ST-LINK/V3E embedded debug tool interface.
 
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required.
+
+Alternatively, openocd or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
 Flashing an application to Nucleo H7A3ZI-Q
 ------------------------------------------
 
@@ -204,3 +215,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32H7A3ZI-Q reference manual:
    https://www.st.com/resource/en/reference_manual/rm0455-stm32h7a37b3-and-stm32h7b0-value-line-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

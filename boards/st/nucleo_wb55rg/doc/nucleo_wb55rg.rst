@@ -248,8 +248,17 @@ Flashing
 ========
 
 Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is supported by the openocd version included in the
-Zephyr SDK since v0.11.0.
+interface.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required.
+
+Alternatively, openocd can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
 
 If you prefer, you can use pyocd, but it requires to enable "pack" support with
 the following pyocd command:
@@ -309,3 +318,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5RG reference manual:
    https://www.st.com/resource/en/reference_manual/dm00318631.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
