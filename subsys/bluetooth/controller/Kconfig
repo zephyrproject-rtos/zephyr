@@ -1025,6 +1025,7 @@ config BT_CTLR_SUBRATING
 	bool "LE Connection Subrating"
 	depends on BT_CTLR_SUBRATING_SUPPORT
 	select BT_CTLR_SET_HOST_FEATURE
+	default y if BT_SUBRATING
 	help
 	  Enable support for Bluetooth v5.3 LE Connection Subrating
 	  in the Controller.
