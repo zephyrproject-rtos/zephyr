@@ -1285,8 +1285,7 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 		case 's':
 			val = atoi(state->optarg);
 			if (val < 1) {
-				shell_fprintf(sh, SHELL_ERROR,
-					      "Invalid number of suite iterations\n");
+				shell_error(sh, "Invalid number of suite iterations");
 				return -ENOEXEC;
 			}
 			suite_iter = val;
@@ -1295,16 +1294,15 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 		case 'c':
 			val = atoi(state->optarg);
 			if (val < 1) {
-				shell_fprintf(sh, SHELL_ERROR,
-					      "Invalid number of case iterations\n");
+				shell_error(sh, "Invalid number of case iterations");
 				return -ENOEXEC;
 			}
 			case_iter = val;
 			opt_num++;
 			break;
 		default:
-			shell_fprintf(sh, SHELL_ERROR, "Invalid option or option usage: %s\n",
-				      argv[opt_index + 1]);
+			shell_error(sh, "Invalid option or option usage: %s",
+				    argv[opt_index + 1]);
 			return -ENOEXEC;
 		}
 	}
