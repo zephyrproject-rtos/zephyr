@@ -29,6 +29,13 @@ tests:
     platform_allow:
       - native_posix
     build_only: true
+  bluetooth.shell.subrating:
+    extra_configs:
+      - CONFIG_BT_SUBRATING=y
+      - CONFIG_BT_CTLR=n
+    platform_allow:
+      - native_posix
+    build_only: true
   bluetooth.shell.cdc_acm:
     extra_args:
       - OVERLAY_CONFIG=cdc_acm.conf
