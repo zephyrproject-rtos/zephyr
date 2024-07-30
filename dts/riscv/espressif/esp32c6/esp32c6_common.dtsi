@@ -171,6 +171,15 @@
 			current-speed = <115200>;
 		};
 
+		usb_serial: uart@6000f000 {
+			compatible = "espressif,esp32-usb-serial";
+			reg = <0x6000F000 0x1000>;
+			status = "disabled";
+			interrupts = <USB_SERIAL_JTAG_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_USB_MODULE>;
+		};
+
 		ledc0: ledc@60007000 {
 			compatible = "espressif,esp32-ledc";
 			pwm-controller;
