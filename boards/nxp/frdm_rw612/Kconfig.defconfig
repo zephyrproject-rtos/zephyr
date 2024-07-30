@@ -5,8 +5,13 @@
 
 if BOARD_FRDM_RW612
 
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
 config FLASH_LOAD_SIZE
-	default 0x400000 if !BOOTLOADER_MCUBOOT && !NXP_MONOLITHIC_BT
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) \
+	        if (MCUBOOT || BOOTLOADER_MCUBOOT || (BT_NXP && !NXP_MONOLITHIC_BT))
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_FLASH))
 
 config NET_L2_ETHERNET
 	default y if DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
