@@ -262,6 +262,7 @@ config LINKER_USE_PINNED_SECTION
 
 config LINKER_USE_ONDEMAND_SECTION
 	bool "Use Evictable Linker Section"
+	depends on DEMAND_MAPPING
 	depends on !LINKER_USE_PINNED_SECTION
 	depends on !ARCH_MAPS_ALL_RAM
 	help

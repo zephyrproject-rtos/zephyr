@@ -1019,6 +1019,34 @@ static void mark_linker_section_pinned(void *start_addr, void *end_addr,
 }
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION) || CONFIG_LINKER_USE_PINNED_SECTION */
 
+#ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
+static void z_paging_ondemand_section_map(void)
+{
+	uint8_t *addr;
+	size_t size;
+	uintptr_t location;
+	uint32_t flags;
+
+	size = (uintptr_t)lnkr_ondemand_text_size;
+	flags = K_MEM_MAP_UNPAGED | K_MEM_PERM_EXEC | K_MEM_CACHE_WB;
+	VIRT_FOREACH(lnkr_ondemand_text_start, size, addr) {
+		k_mem_paging_backing_store_location_query(addr, &location);
+		arch_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
+		sys_bitarray_set_region(&virt_region_bitmap, 1,
+					virt_to_bitmap_offset(addr, CONFIG_MMU_PAGE_SIZE));
+	}
+
+	size = (uintptr_t)lnkr_ondemand_rodata_size;
+	flags = K_MEM_MAP_UNPAGED | K_MEM_CACHE_WB;
+	VIRT_FOREACH(lnkr_ondemand_rodata_start, size, addr) {
+		k_mem_paging_backing_store_location_query(addr, &location);
+		arch_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
+		sys_bitarray_set_region(&virt_region_bitmap, 1,
+					virt_to_bitmap_offset(addr, CONFIG_MMU_PAGE_SIZE));
+	}
+}
+#endif /* CONFIG_LINKER_USE_ONDEMAND_SECTION */
+
 void z_mem_manage_init(void)
 {
 	uintptr_t phys;
@@ -1095,6 +1123,11 @@ void z_mem_manage_init(void)
 		}
 	}
 #endif /* CONFIG_DEMAND_PAGING */
+
+#ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
+	z_paging_ondemand_section_map();
+#endif
+
 #if __ASSERT_ON
 	page_frames_initialized = true;
 #endif
