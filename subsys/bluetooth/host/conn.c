@@ -862,7 +862,7 @@ static bool dont_have_viewbufs(void)
 #endif	/* CONFIG_BT_CONN_TX */
 }
 
-static bool dont_have_methods(struct bt_conn *conn)
+__maybe_unused static bool dont_have_methods(struct bt_conn *conn)
 {
 	return (conn->tx_data_pull == NULL) ||
 		(conn->get_and_clear_cb == NULL) ||
