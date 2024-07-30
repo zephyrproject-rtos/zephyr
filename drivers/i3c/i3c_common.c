@@ -563,6 +563,8 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target)
 		memcpy(&target->getcaps, &caps, sizeof(target->getcaps));
 	} else if ((ret != 0) && (target->bcr & I3C_BCR_ADV_CAPABILITIES)) {
 		goto out;
+	} else {
+		ret = 0;
 	}
 
 	target->dcr = dcr.dcr;
