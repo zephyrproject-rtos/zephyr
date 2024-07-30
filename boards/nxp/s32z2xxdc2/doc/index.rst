@@ -53,6 +53,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | CANEXCEL  | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
+| I3C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 

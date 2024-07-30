@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,6 +83,16 @@
 		group2 {
 			pinmux = <PM10_CANXL_1_TX>;
 			output-enable;
+		};
+	};
+
+	i3c2_default: i3c2_default {
+		group1 {
+			pinmux = <(PJ11_I3C_2_SDA0_I | PJ11_I3C_2_SDA0_O)>,
+				<(PJ10_I3C_2_SCL_I | PJ10_I3C_2_SCL_O)>;
+			input-enable;
+			output-enable;
+			drive-open-drain;
 		};
 	};
 };

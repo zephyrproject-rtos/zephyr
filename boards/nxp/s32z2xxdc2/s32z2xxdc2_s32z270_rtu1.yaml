@@ -16,4 +16,6 @@ supported:
   - can
   - spi
   - counter
+  - i2c
+  - eeprom
 vendor: nxp
