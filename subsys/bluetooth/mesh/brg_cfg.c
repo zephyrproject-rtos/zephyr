@@ -199,7 +199,7 @@ int bt_mesh_brg_cfg_tbl_add(enum bt_mesh_brg_cfg_dir direction, uint16_t net_idx
 {
 	/* Sanity checks */
 	if (!BT_MESH_ADDR_IS_UNICAST(addr1) || net_idx1 == net_idx2 || addr1 == addr2 ||
-	    net_idx1 > 0x03FF || net_idx2 > 0x03FF) {
+	    net_idx1 > BT_MESH_BRG_CFG_KEY_INDEX_MAX || net_idx2 > BT_MESH_BRG_CFG_KEY_INDEX_MAX) {
 		return -EINVAL;
 	}
 
@@ -267,18 +267,29 @@ void bt_mesh_brg_cfg_tbl_foreach_subnet(uint16_t src, uint16_t dst, uint16_t net
 	}
 }
 
-void bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1,
+int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1,
 				uint16_t addr2)
 {
 #if IS_ENABLED(CONFIG_BT_SETTINGS)
 	bool store = false;
 #endif
+	/* Sanity checks */
+	if ((!BT_MESH_ADDR_IS_UNICAST(addr1) && addr1 != BT_MESH_ADDR_UNASSIGNED) ||
+	    addr2 == BT_MESH_ADDR_ALL_NODES) {
+		return -EINVAL;
+	}
+
+	if (net_idx1 == net_idx2 || net_idx1 > BT_MESH_BRG_CFG_KEY_INDEX_MAX ||
+	    net_idx2 > BT_MESH_BRG_CFG_KEY_INDEX_MAX) {
+		return -EINVAL;
+	}
+
 
 	/* Iterate over items and set matching row to 0, if nothing exist, or nothing matches, then
 	 * it is success (similar to add)
 	 */
 	if (bt_mesh_brg_cfg_row_cnt == 0) {
-		return;
+		return 0;
 	}
 
 	for (int i = 0; i < bt_mesh_brg_cfg_row_cnt; i++) {
@@ -304,4 +315,6 @@ void bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t a
 		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
 	}
 #endif
+
+	return 0;
 }

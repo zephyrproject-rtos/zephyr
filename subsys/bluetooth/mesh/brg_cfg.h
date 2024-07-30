@@ -8,6 +8,11 @@
 #define ZEPHYR_SUBSYS_BLUETOOTH_MESH_BRG_CFG_H_
 
 /** These are internal APIs. They do not sanitize input params. */
+
+#define BT_MESH_BRG_CFG_KEY_INDEX_MAX 0x0FFF
+
+#define BT_MESH_BRG_CFG_NKEY_PRHB_FLT_MASK 0x000C
+
 enum bt_mesh_brg_cfg_dir {
 	/* Value is prohibited. */
 	BT_MESH_BRG_CFG_DIR_PROHIBITED = 0,
@@ -48,7 +53,7 @@ int bt_mesh_brg_cfg_tbl_get(const struct bt_mesh_brg_cfg_row **rows);
 int bt_mesh_brg_cfg_tbl_add(enum bt_mesh_brg_cfg_dir direction, uint16_t net_idx1,
 			    uint16_t net_idx2, uint16_t addr1, uint16_t addr2);
 
-void bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1,
+int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1,
 				uint16_t addr2);
 
 typedef void (*bt_mesh_brg_cfg_cb_t)(uint16_t new_netidx, void *user_data);
