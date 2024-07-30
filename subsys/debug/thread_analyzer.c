@@ -48,6 +48,18 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 		info->stack_size, pcnt,
 		info->utilization);
 
+#ifdef CONFIG_THREAD_ANALYZER_PRIV_STACK_USAGE
+	if (info->priv_stack_size > 0) {
+		pcnt = (info->priv_stack_used * 100U) / info->priv_stack_size;
+
+		THREAD_ANALYZER_PRINT(
+			THREAD_ANALYZER_FMT(
+				" %-20s: PRIV_STACK: unused %zu usage %zu / %zu (%zu %%)"),
+			" ", info->priv_stack_size - info->priv_stack_used, info->priv_stack_used,
+			info->priv_stack_size, pcnt);
+	}
+#endif
+
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	THREAD_ANALYZER_PRINT(
 		THREAD_ANALYZER_FMT(" %-20s: Total CPU cycles used: %llu"),
@@ -82,7 +94,6 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	struct k_thread *thread = (struct k_thread *)cthread;
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	k_thread_runtime_stats_t rt_stats_all;
-	int ret;
 #endif
 	size_t size = thread->stack_info.size;
 	struct ta_cb_user_data *ud = user_data;
@@ -93,6 +104,7 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	const char *name;
 	size_t unused;
 	int err;
+	int ret;
 
 
 
@@ -116,6 +128,16 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	info.stack_size = size;
 	info.stack_used = size - unused;
 
+#ifdef CONFIG_THREAD_ANALYZER_PRIV_STACK_USAGE
+	ret = arch_thread_priv_stack_space_get(cthread, &size, &unused);
+	if (ret == 0) {
+		info.priv_stack_size = size;
+		info.priv_stack_used = size - unused;
+	} else {
+		info.priv_stack_size = 0;
+	}
+#endif
+
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	ret = 0;
 
@@ -138,6 +160,9 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 			rt_stats_all.execution_cycles;
 	}
 #endif
+
+	ARG_UNUSED(ret);
+
 	cb(&info);
 }
 
