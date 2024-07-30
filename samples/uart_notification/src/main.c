@@ -16,7 +16,7 @@
 
 // static const struct 
 
-const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(uart1));
+const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(uart0));
 
 int main()
 {

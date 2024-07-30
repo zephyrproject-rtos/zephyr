@@ -21,14 +21,14 @@ void touch_isr(void);
 void thread1(void)
 {
 
-/* Enabling intterupts*/
-IRQ_CONNECT(32, 1, touch_isr, NULL, NULL);
-irq_enable(32);
-plic_irq_enable(32);
+// /* Enabling intterupts*/
+// IRQ_CONNECT(32, 1, touch_isr, NULL, NULL);
+// irq_enable(32);
+// plic_irq_enable(32);
 
 data_struct data_recv;
-CST816S_init(&touch_dev_handle,dev1,dev,5,6,data_arr);
-CST816S_begin(&touch_dev_handle);
+// CST816S_init(&touch_dev_handle,dev1,dev,5,6,data_arr);
+// CST816S_begin(&touch_dev_handle);
 while (1)
 {
 		k_msgq_get(&touch_msg_q, &data_recv, K_FOREVER);
@@ -38,9 +38,9 @@ while (1)
 
 void touch_isr(void)
 {
-    printf("Touch detected");
-    data = CST816S_read_touch(&touch_dev_handle);
-    k_msgq_put(&touch_msg_q, &data_send, K_NO_WAIT);
+    printf("Touch detected\n");
+    // data = CST816S_read_touch(&touch_dev_handle);
+    // k_msgq_put(&touch_msg_q, &data_send, K_NO_WAIT);
 }
 
 

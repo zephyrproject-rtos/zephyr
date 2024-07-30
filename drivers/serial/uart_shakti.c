@@ -11,13 +11,13 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/uart.h>
 
-#define DT_DRV_COMPAT shakti_uart0
+#define DT_DRV_COMPAT shakti_uart
 
-#define CONFIG_UART_SHAKTI_PORT_0 1
+// #define CONFIG_UART_SHAKTI_PORT_0 1
 
 #ifdef CONFIG_BOARD_SHAKTI_VAJRA
 
-#define SHAKTI_UART_0_CLK_FREQUENCY 50000000
+#define SHAKTI_NEXYS_FREQUENCY 50000000
 #define SHAKTI_UART_1_CLK_FREQUENCY 50000000
 #define SHAKTI_UART_BAUD 			19200
 #define SHAKTI_VCU_UART_BAUD 		115200
@@ -26,7 +26,7 @@
 
 #ifdef CONFIG_BOARD_SECURE_IOT
 
-#define SHAKTI_UART_0_CLK_FREQUENCY 40000000 // Change to 40000000 for nexys video board and 100 * 10^6 for vcu118 FPGA
+#define SHAKTI_NEXYS_FREQUENCY 40000000 // Change to 40000000 for nexys video board and 100 * 10^6 for vcu118 FPGA
 #define SHAKTI_UART_1_CLK_FREQUENCY 40000000
 #define SECIOT_NEXYS_UART_BAUD 19200
 #define SECIOT_VCU118_UART_BAUD 115200
@@ -425,84 +425,103 @@ static const struct uart_driver_api uart_shakti_driver_api = {
 	.irq_callback_set = uart_shakti_irq_callback_set,
 #endif
 };
+// #ifdef CONFIG_UART_INTERRUPT_DRIVEN									\
+// 	.cfg_func     = uart_shakti_irq_cfg_func_0,						\
+// #endif
 
-#ifdef CONFIG_UART_SHAKTI_PORT_0
+#define UART_SHAKTI_INIT(n) \
+	static struct uart_shakti_device_config uart_shakti_dev_cfg_##n = { \
+	.port         = DT_INST_PROP(n, base),							\
+	.sys_clk_freq = SHAKTI_NEXYS_FREQUENCY,							\
+	.baud_rate    = DT_INST_PROP(n, current_speed),					\
+	.rxcnt_irq    = 0,												\	
+	.txcnt_irq    = 0,												\	
+	};																\
+	DEVICE_DT_INST_DEFINE(n,										\
+		    uart_shakti_init,										\
+		    NULL,													\
+		    NULL, &uart_shakti_dev_cfg_##n,							\
+		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,				\
+		    (void *)&uart_shakti_driver_api);						\
+// #ifdef CONFIG_UART_SHAKTI
 
-static struct uart_shakti_data uart_shakti_data_0;
+// static struct uart_shakti_data uart_shakti_data_0;
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_shakti_irq_cfg_func_0(void);
-#endif
+// #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+// static void uart_shakti_irq_cfg_func_0(void);
+// #endif
 
-// PINCTRL_DT_INST_DEFINE(0);
+// // PINCTRL_DT_INST_DEFINE(0);
 
-static const struct uart_shakti_device_config uart_shakti_dev_cfg_0 = {
-	.port         = 0X11300,
-	.sys_clk_freq = SHAKTI_UART_0_CLK_FREQUENCY,
-	.baud_rate    = SECIOT_NEXYS_UART_BAUD,
-	.rxcnt_irq    = 0,
-	.txcnt_irq    = 0,
-	// .pcfg	      = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.cfg_func     = uart_shakti_irq_cfg_func_0,
-#endif
-};
+// static const struct uart_shakti_device_config uart_shakti_dev_cfg_0 = {
+// 	.port         = DT_INST_PROP(0, base),
+// 	.sys_clk_freq = SHAKTI_NEXYS_FREQUENCY,
+// 	.baud_rate    = DT_INST_PROP(0, current_speed),
+// 	.rxcnt_irq    = 0,
+// 	.txcnt_irq    = 0,
+// 	// .pcfg	      = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+// #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+// 	.cfg_func     = uart_shakti_irq_cfg_func_0,
+// #endif
+// };
 
-DEVICE_DT_INST_DEFINE(0,
-		    uart_shakti_init,
-		    NULL,
-		    &uart_shakti_data_0, &uart_shakti_dev_cfg_0,
-		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
-		    (void *)&uart_shakti_driver_api);
+// DEVICE_DT_INST_DEFINE(0,
+// 		    uart_shakti_init,
+// 		    NULL,
+// 		    &uart_shakti_data_0, &uart_shakti_dev_cfg_0,
+// 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
+// 		    (void *)&uart_shakti_driver_api);
 
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_shakti_irq_cfg_func_0(void)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    uart_shakti_irq_handler, DEVICE_DT_INST_GET(0),
-		    0);
+// #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+// static void uart_shakti_irq_cfg_func_0(void)
+// {
+// 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
+// 		    uart_shakti_irq_handler, DEVICE_DT_INST_GET(0),
+// 		    0);
 
-	irq_enable(DT_INST_IRQN(0));
-}
-#endif
-#endif /* CONFIG_UART_SHAKTI_PORT_0 */
+// 	irq_enable(DT_INST_IRQN(0));
+// }
+// #endif
+// #endif /* CONFIG_UART_SHAKTI_PORT_0 */
 
-#ifdef CONFIG_UART_SHAKTI_PORT_1
+// #ifdef CONFIG_UART_SHAKTI_PORT_1
 
-static struct uart_shakti_data uart_shakti_data_1;
+// static struct uart_shakti_data uart_shakti_data_1;
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_shakti_irq_cfg_func_1(void);
-#endif
+// #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+// static void uart_shakti_irq_cfg_func_1(void);
+// #endif
 
-static const struct uart_shakti_device_config uart_shakti_dev_cfg_1 = {
-	.port         = DT_SHAKTI_UART_1_BASE_ADDR,
-	.sys_clk_freq = DT_SHAKTI_UART_1_CLK_FREQ,
-	.baud_rate    = DT_SHAKTI_UART_1_CURRENT_SPEED,
-	.rxcnt_irq    = CONFIG_UART_SHAKTI_PORT_1_RXCNT_IRQ,
-	.txcnt_irq    = CONFIG_UART_SHAKTI_PORT_1_TXCNT_IRQ,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.cfg_func     = uart_shakti_irq_cfg_func_1,
-#endif
-};
+// static const struct uart_shakti_device_config uart_shakti_dev_cfg_1 = {
+// 	.port         = DT_SHAKTI_UART_1_BASE_ADDR,
+// 	.sys_clk_freq = DT_SHAKTI_UART_1_CLK_FREQ,
+// 	.baud_rate    = DT_SHAKTI_UART_1_CURRENT_SPEED,
+// 	.rxcnt_irq    = CONFIG_UART_SHAKTI_PORT_1_RXCNT_IRQ,
+// 	.txcnt_irq    = CONFIG_UART_SHAKTI_PORT_1_TXCNT_IRQ,
+// #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+// 	.cfg_func     = uart_shakti_irq_cfg_func_1,
+// #endif
+// };
 
-DEVICE_AND_API_INIT(uart_shakti_1, CONFIG_SHAKTI_UART_1_LABEL,
-		    uart_shakti_init,
-		    &uart_shakti_data_1, &uart_shakti_dev_cfg_1,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&uart_shakti_driver_api);
+// DEVICE_AND_API_INIT(uart_shakti_1, CONFIG_SHAKTI_UART_1_LABEL,
+// 		    uart_shakti_init,
+// 		    &uart_shakti_data_1, &uart_shakti_dev_cfg_1,
+// 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+// 		    (void *)&uart_shakti_driver_api);
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_shakti_irq_cfg_func_1(void)
-{
-	IRQ_CONNECT(DT_SHAKTI_UART_1_IRQ_0,
-		    CONFIG_UART_SHAKTI_PORT_1_IRQ_PRIORITY,
-		    uart_shakti_irq_handler, DEVICE_GET(uart_shakti_1),
-		    0);
+// #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+// static void uart_shakti_irq_cfg_func_1(void)
+// {
+// 	IRQ_CONNECT(DT_SHAKTI_UART_1_IRQ_0,
+// 		    CONFIG_UART_SHAKTI_PORT_1_IRQ_PRIORITY,
+// 		    uart_shakti_irq_handler, DEVICE_GET(uart_shakti_1),
+// 		    0);
 
-	irq_enable(DT_SHAKTI_UART_1_IRQ_0);
-}
-#endif
+// 	irq_enable(DT_SHAKTI_UART_1_IRQ_0);
+// }
+// #endif
 
-#endif /* CONFIG_UART_SHAKTI_PORT_1 */
+// #endif /* CONFIG_UART_SHAKTI_PORT_1 */
+
+DT_INST_FOREACH_STATUS_OKAY(UART_SHAKTI_INIT)
