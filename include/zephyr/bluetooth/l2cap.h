@@ -600,6 +600,10 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  on the stack's global buffer pool (sized
  *  @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}).
  *
+ *  @warning The buffer's user_data _will_ be overwritten by this function. Do
+ *  not store anything in it. As soon as a call to this function has been made,
+ *  consider ownership of user_data transferred into the stack.
+ *
  *  @note Buffer ownership is transferred to the stack in case of success, in
  *  case of an error the caller retains the ownership of the buffer.
  *
