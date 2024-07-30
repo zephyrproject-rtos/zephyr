@@ -598,3 +598,5 @@ void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf);
 void bt_hci_le_per_adv_response_report(struct net_buf *buf);
 
 void bt_tx_irq_raise(void);
+void bt_send_one_host_num_completed_packets(uint16_t handle);
+void bt_acl_set_ncp_sent(struct net_buf *packet, bool value);

@@ -13,5 +13,6 @@ supported:
   - gpio
   - serial
   - spi
+  - trng
 ram: 1024
 flash: 3072

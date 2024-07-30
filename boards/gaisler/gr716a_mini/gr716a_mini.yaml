@@ -10,6 +10,7 @@ toolchain:
 supported:
   - netif
   - spi
+  - gpio
 testing:
   ignore_tags:
     - net

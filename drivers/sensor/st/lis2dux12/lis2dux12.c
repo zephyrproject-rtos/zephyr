@@ -27,10 +27,12 @@ LOG_MODULE_REGISTER(LIS2DUX12, CONFIG_SENSOR_LOG_LEVEL);
 
 static int lis2dux12_set_odr(const struct device *dev, uint8_t odr)
 {
+	struct lis2dux12_data *data = dev->data;
 	const struct lis2dux12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lis2dux12_md_t mode = {.odr = odr};
 
+	data->odr = odr;
 	return lis2dux12_mode_set(ctx, &mode);
 }
 
@@ -40,7 +42,7 @@ static int lis2dux12_set_range(const struct device *dev, uint8_t range)
 	struct lis2dux12_data *data = dev->data;
 	const struct lis2dux12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lis2dux12_md_t val = { .odr = cfg->odr, .fs = range };
+	lis2dux12_md_t val = { .odr = data->odr, .fs = range };
 
 	err = lis2dux12_mode_set(ctx, &val);
 
@@ -66,6 +68,7 @@ static int lis2dux12_set_range(const struct device *dev, uint8_t range)
 		break;
 	}
 
+	data->range = range;
 	return 0;
 }
 
@@ -107,6 +110,39 @@ static int lis2dux12_freq_to_odr_val(const struct device *dev, uint16_t freq)
 	return -EINVAL;
 }
 
+static int lis2dux12_set_fs(const struct device *dev, int16_t fs)
+{
+	int ret;
+	uint8_t range;
+
+	switch (fs) {
+	case 2:
+		range = LIS2DUX12_DT_FS_2G;
+		break;
+	case 4:
+		range = LIS2DUX12_DT_FS_4G;
+		break;
+	case 8:
+		range = LIS2DUX12_DT_FS_8G;
+		break;
+	case 16:
+		range = LIS2DUX12_DT_FS_16G;
+		break;
+	default:
+		LOG_ERR("fs [%d] not supported.", fs);
+		return -EINVAL;
+	}
+
+	ret = lis2dux12_set_range(dev, range);
+	if (ret < 0) {
+		LOG_ERR("%s: range init error %d", dev->name, range);
+		return ret;
+	}
+
+	LOG_DBG("%s: set fs to %d g", dev->name, fs);
+	return ret;
+}
+
 static int lis2dux12_accel_config(const struct device *dev, enum sensor_channel chan,
 				  enum sensor_attribute attr, const struct sensor_value *val)
 {
@@ -114,7 +150,7 @@ static int lis2dux12_accel_config(const struct device *dev, enum sensor_channel 
 
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
-		return lis2dux12_set_range(dev, sensor_ms2_to_g(val));
+		return lis2dux12_set_fs(dev, sensor_ms2_to_g(val));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		odr_val = lis2dux12_freq_to_odr_val(dev, val->val1);
 		if (odr_val < 0) {
@@ -154,7 +190,7 @@ static int lis2dux12_sample_fetch_accel(const struct device *dev)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 	/* fetch raw data sample */
-	lis2dux12_md_t mode = {.fs = cfg->range};
+	lis2dux12_md_t mode = {.fs = data->range};
 	lis2dux12_xl_data_t xzy_data = {0};
 
 	if (lis2dux12_xl_data_get(ctx, &mode, &xzy_data) < 0) {
@@ -185,7 +221,7 @@ static int lis2dux12_sample_fetch_temp(const struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_temp = sys_le16_to_cpu(temp_data.heat.raw);
+	data->sample_temp = sys_le16_to_cpu(temp_data.heat.deg_c);
 
 	return 0;
 }
@@ -246,7 +282,7 @@ static inline int lis2dux12_get_channel(enum sensor_channel chan, struct sensor_
 		break;
 #if defined(CONFIG_LIS2DUX12_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		sensor_value_from_double(val, data->sample_temp);
+		sensor_value_from_float(val, data->sample_temp);
 		break;
 #endif
 	default:
@@ -322,11 +358,7 @@ static int lis2dux12_init(const struct device *dev)
 
 	/* set sensor default pm and odr */
 	LOG_DBG("%s: pm: %d, odr: %d", dev->name, cfg->pm, cfg->odr);
-	lis2dux12_md_t mode = {
-		.odr = cfg->odr,
-		.fs = cfg->range,
-	};
-	ret = lis2dux12_mode_set(ctx, &mode);
+	ret = lis2dux12_set_odr(dev, cfg->odr);
 	if (ret < 0) {
 		LOG_ERR("%s: odr init error (12.5 Hz)", dev->name);
 		return ret;

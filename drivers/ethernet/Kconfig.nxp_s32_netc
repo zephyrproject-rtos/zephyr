@@ -76,7 +76,7 @@ config ETH_NXP_S32_RX_IRQ_PACKET_THRESHOLD
 config ETH_NXP_S32_RX_IRQ_TIMER_THRESHOLD
 	int "RX interrupt coalescing timer threshold"
 	default 60000
-	range 1 4294967295
+	range 1 $(UINT32_MAX)
 	help
 	  RX interrupt coalescing timer threshold, in units of NETC clock cycles.
 	  This value determines the maximum amount of time allowed between a first

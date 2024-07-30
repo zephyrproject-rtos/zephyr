@@ -38,6 +38,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include "platform-zephyr.h"
 
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#include <openthread/nat64.h>
+#endif
+
+#define PKT_IS_IPv6(_p) ((NET_IPV6_HDR(_p)->vtc & 0xf0) == 0x60)
+
 #define SHORT_ADDRESS_SIZE 2
 
 #define FCS_SIZE     2
@@ -508,20 +514,57 @@ static void openthread_handle_received_frame(otInstance *instance,
 	net_pkt_unref(pkt);
 }
 
-static void openthread_handle_frame_to_send(otInstance *instance,
-					    struct net_pkt *pkt)
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+
+static otMessage *openthread_ip4_new_msg(otInstance *instance, otMessageSettings *settings)
 {
+	return otIp4NewMessage(instance, settings);
+}
+
+static otError openthread_nat64_send(otInstance *instance, otMessage *message)
+{
+	return otNat64Send(instance, message);
+}
+
+#else /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
+static otMessage *openthread_ip4_new_msg(otInstance *instance, otMessageSettings *settings)
+{
+	return NULL;
+}
+
+static otError openthread_nat64_send(otInstance *instance, otMessage *message)
+{
+	return OT_ERROR_DROP;
+}
+
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
+static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt *pkt)
+{
+	otError error;
 	struct net_buf *buf;
 	otMessage *message;
 	otMessageSettings settings;
+	bool is_ip6 = PKT_IS_IPv6(pkt);
 
-	NET_DBG("Sending Ip6 packet to ot stack");
+	NET_DBG("Sending %s packet to ot stack", is_ip6 ? "IPv6" : "IPv4");
 
 	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
 	settings.mLinkSecurityEnabled = true;
-	message = otIp6NewMessage(instance, &settings);
-	if (message == NULL) {
+
+	message = is_ip6 ? otIp6NewMessage(instance, &settings)
+			 : openthread_ip4_new_msg(instance, &settings);
+	if (!message) {
+		NET_ERR("Cannot allocate new message buffer");
 		goto exit;
+	}
+
+	if (IS_ENABLED(CONFIG_OPENTHREAD)) {
+		/* Set multicast loop so the stack can process multicast packets for
+		 * subscribed addresses.
+		 */
+		otMessageSetMulticastLoopEnabled(message, true);
 	}
 
 	for (buf = pkt->buffer; buf; buf = buf->frags) {
@@ -532,9 +575,11 @@ static void openthread_handle_frame_to_send(otInstance *instance,
 		}
 	}
 
-	if (otIp6Send(instance, message) != OT_ERROR_NONE) {
-		NET_ERR("Error while calling otIp6Send");
-		goto exit;
+	error = is_ip6 ? otIp6Send(instance, message) : openthread_nat64_send(instance, message);
+
+	if (error != OT_ERROR_NONE) {
+		NET_ERR("Error while calling %s [error: %d]",
+			is_ip6 ? "otIp6Send" : "openthread_nat64_send", error);
 	}
 
 exit:

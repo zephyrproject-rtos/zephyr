@@ -511,6 +511,37 @@ void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 	csr_set(mstatus, MSTATUS_MPRV);
 }
 
+/**
+ * @brief Remove PMP stackguard content to actual PMP registers
+ */
+void z_riscv_pmp_stackguard_disable(void)
+{
+
+	unsigned long pmp_addr[PMP_M_MODE_SLOTS];
+	unsigned long pmp_cfg[PMP_M_MODE_SLOTS / sizeof(unsigned long)];
+	unsigned int index = global_pmp_end_index;
+
+	/* Retrieve the pmpaddr value matching the last global PMP slot. */
+	pmp_addr[global_pmp_end_index - 1] = global_pmp_last_addr;
+
+	/* Disable (non-locked) PMP entries for m-mode while we update them. */
+	csr_clear(mstatus, MSTATUS_MPRV);
+
+	/*
+	 * Set a temporary default "catch all" PMP entry for MPRV to work,
+	 * except for the global locked entries.
+	 */
+	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+
+	/* Write "catch all" entry and clear unlocked entries to PMP regs. */
+	write_pmp_entries(global_pmp_end_index, index,
+			  true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+
+	if (PMP_DEBUG_DUMP) {
+		dump_pmp_regs("catch all register dump");
+	}
+}
+
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 #ifdef CONFIG_USERSPACE

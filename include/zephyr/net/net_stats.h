@@ -25,6 +25,8 @@ extern "C" {
 /**
  * @brief Network statistics library
  * @defgroup net_stats Network Statistics Library
+ * @since 1.5
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

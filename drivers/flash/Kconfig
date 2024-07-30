@@ -222,6 +222,7 @@ source "drivers/flash/Kconfig.gd32"
 source "drivers/flash/Kconfig.xmc4xxx"
 
 source "drivers/flash/Kconfig.ifx_cat1"
+
 source "drivers/flash/Kconfig.cadence_nand"
 
 source "drivers/flash/Kconfig.numaker"

@@ -10,6 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/printk-hooks.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/devicetree_regions.h>
@@ -27,7 +28,6 @@
 #define RAM_CONSOLE_BUF_ATTR
 #endif
 
-extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
 
 char ram_console_buf[CONFIG_RAM_CONSOLE_BUFFER_SIZE] RAM_CONSOLE_BUF_ATTR;

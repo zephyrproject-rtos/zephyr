@@ -246,7 +246,7 @@ static void adv_delete(struct bt_le_ext_adv *adv)
 }
 
 #if defined(CONFIG_BT_BROADCASTER)
-static struct bt_le_ext_adv *bt_adv_lookup_handle(uint8_t handle)
+struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle)
 {
 	if (handle < ARRAY_SIZE(adv_pool) &&
 	    atomic_test_bit(adv_pool[handle].flags, BT_ADV_CREATED)) {
@@ -2020,7 +2020,7 @@ void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf)
 	}
 
 	evt = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_subevent_data_request));
-	adv = bt_adv_lookup_handle(evt->adv_handle);
+	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
 	if (!adv) {
 		LOG_ERR("Unknown advertising handle %d", evt->adv_handle);
 
@@ -2050,7 +2050,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 	}
 
 	evt = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_response_report));
-	adv = bt_adv_lookup_handle(evt->adv_handle);
+	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
 	if (!adv) {
 		LOG_ERR("Unknown advertising handle %d", evt->adv_handle);
 
@@ -2150,7 +2150,7 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 #endif
 
 	evt = (void *)buf->data;
-	adv = bt_adv_lookup_handle(evt->adv_handle);
+	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
 	conn_handle = sys_le16_to_cpu(evt->conn_handle);
 
 	LOG_DBG("status 0x%02x adv_handle %u conn_handle 0x%02x num %u", evt->status,
@@ -2262,7 +2262,7 @@ void bt_hci_le_scan_req_received(struct net_buf *buf)
 	struct bt_le_ext_adv *adv;
 
 	evt = (void *)buf->data;
-	adv = bt_adv_lookup_handle(evt->handle);
+	adv = bt_hci_adv_lookup_handle(evt->handle);
 
 	LOG_DBG("handle %u peer %s", evt->handle, bt_addr_le_str(&evt->addr));
 

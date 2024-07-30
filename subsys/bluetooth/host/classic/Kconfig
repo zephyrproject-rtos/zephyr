@@ -36,7 +36,7 @@ config BT_RFCOMM_L2CAP_MTU
 	int "L2CAP MTU for RFCOMM frames"
 	depends on BT_RFCOMM
 	default BT_BUF_ACL_RX_SIZE
-	range 23 32767
+	range 23 $(INT16_MAX)
 	help
 	  Maximum size of L2CAP PDU for RFCOMM frames.
 	  RX MTU will be truncated to account for the L2CAP PDU header.
@@ -44,7 +44,7 @@ config BT_RFCOMM_L2CAP_MTU
 config BT_RFCOMM_TX_MAX
 	int "Maximum number of pending TX buffers for RFCOMM"
 	default BT_CONN_TX_MAX
-	range BT_CONN_TX_MAX 255
+	range BT_CONN_TX_MAX $(UINT8_MAX)
 	help
 	  Maximum number of pending TX buffers that have an associated
 	  sending buf. Normally this can be left to the default value, which
@@ -82,7 +82,7 @@ if BT_HFP_AG
 config BT_HFP_AG_TX_BUF_COUNT
 	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"
 	default BT_RFCOMM_TX_MAX
-	range BT_RFCOMM_TX_MAX 255
+	range BT_RFCOMM_TX_MAX $(UINT8_MAX)
 	help
 	  Maximum number of pending TX buffers that have an associated
 	  sending buf. Normally this can be left to the default value, which
@@ -129,7 +129,7 @@ config BT_HFP_AG_ALERTING_TIMEOUT
 config BT_HFP_AG_PHONE_NUMBER_MAX_LEN
 	int "Supported max length of phone number for HFP AG [EXPERIMENTAL]"
 	default 32
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Supported max length of phone number for HFP AG.
 

@@ -97,6 +97,41 @@ int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 
 	return 0;
 }
+
+int net_hostname_set_postfix_str(const uint8_t *hostname_postfix,
+			     int postfix_len)
+{
+#if !defined(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)
+	static bool postfix_set;
+#endif
+	int net_hostname_len = sizeof(CONFIG_NET_HOSTNAME) - 1;
+	int hostname_len_remain = (NET_HOSTNAME_MAX_LEN - net_hostname_len) + 1;
+
+#if !defined(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)
+	if (postfix_set) {
+		return -EALREADY;
+	}
+#endif
+
+	NET_ASSERT(postfix_len > 0);
+
+	if (hostname_len_remain < postfix_len) {
+		NET_DBG("Hostname postfix length %d is exceeding limit of %d", postfix_len,
+			hostname_len_remain);
+		return -EMSGSIZE;
+	}
+
+	snprintk(&hostname[net_hostname_len], hostname_len_remain, "%s", hostname_postfix);
+
+	NET_DBG("New Unique hostname: %s", hostname);
+
+#if !defined(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)
+	postfix_set = true;
+#endif
+	trigger_net_event();
+
+	return 0;
+}
 #endif /* CONFIG_NET_HOSTNAME_UNIQUE */
 
 void net_hostname_init(void)

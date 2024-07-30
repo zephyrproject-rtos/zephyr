@@ -1343,6 +1343,103 @@ static int cmd_i3c_i2c_detach(const struct shell *shell_ctx, size_t argc, char *
 	return ret;
 }
 
+/*
+ * This is a workaround command to perform an I2C Scan which is not as
+ * simple on an I3C bus as it is with the I2C Shell.
+ *
+ * This will print "I3" if an address is already assigned for an I3C
+ * device and it will print "I2" if an address is already assigned for
+ * an I2C device.
+ *
+ * This sends I2C messages without any data (i.e. stop condition after
+ * sending just the address). If there is an ACK for the address, it
+ * is assumed there is a device present.
+ *
+ * WARNING: As there is no standard I2C detection command, this code
+ * uses arbitrary SMBus commands (namely SMBus quick write and SMBus
+ * receive byte) to probe for devices.  This operation can confuse
+ * your I2C bus, cause data loss, and is known to corrupt the Atmel
+ * AT24RF08 EEPROM found on many IBM Thinkpad laptops.
+ *
+ * https://manpages.debian.org/buster/i2c-tools/i2cdetect.8.en.html
+ */
+/* i3c i2c_scan <device> */
+static int cmd_i3c_i2c_scan(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	enum i3c_addr_slot_status slot;
+	uint8_t cnt = 0, first = 0x04, last = 0x77;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	data = (struct i3c_driver_data *)dev->data;
+
+	shell_print(shell_ctx, "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f");
+	for (uint8_t i = 0; i <= last; i += 16) {
+		shell_fprintf(shell_ctx, SHELL_NORMAL, "%02x: ", i);
+		for (uint8_t j = 0; j < 16; j++) {
+			if (i + j < first || i + j > last) {
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "   ");
+				continue;
+			}
+
+			slot = i3c_addr_slots_status(&data->attached_dev.addr_slots, i + j);
+			if (slot == I3C_ADDR_SLOT_STATUS_FREE) {
+				struct i2c_msg msgs[1];
+				uint8_t dst;
+				int ret;
+				struct i3c_i2c_device_desc desc = {
+					.bus = dev,
+					.addr = i + j,
+					.lvr = 0x00,
+				};
+
+				ret = i3c_attach_i2c_device(&desc);
+				if (ret < 0) {
+					shell_error(shell_ctx,
+						    "I3C: unable to attach I2C addr 0x%02x.",
+						    desc.addr);
+				}
+
+				/* Send the address to read from */
+				msgs[0].buf = &dst;
+				msgs[0].len = 0U;
+				msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+				if (i2c_transfer(dev, &msgs[0], 1, i + j) == 0) {
+					shell_fprintf(shell_ctx, SHELL_NORMAL, "%02x ", i + j);
+					++cnt;
+				} else {
+					shell_fprintf(shell_ctx, SHELL_NORMAL, "-- ");
+				}
+
+				ret = i3c_detach_i2c_device(&desc);
+				if (ret < 0) {
+					shell_error(shell_ctx,
+						    "I3C: unable to detach I2C addr 0x%02x.",
+						    desc.addr);
+				}
+			} else if (slot == I3C_ADDR_SLOT_STATUS_I3C_DEV) {
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "I3 ");
+			} else if (slot == I3C_ADDR_SLOT_STATUS_I2C_DEV) {
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "I2 ");
+			} else {
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "-- ");
+			}
+		}
+		shell_print(shell_ctx, "");
+	}
+
+	shell_print(shell_ctx, "%u additional devices found on %s", cnt, argv[ARGV_DEV]);
+
+	return 0;
+}
+
 static void i3c_device_list_target_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	if (idx < ARRAY_SIZE(i3c_list)) {
@@ -1518,6 +1615,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Detach I2C device from the bus\n"
 		      "Usage: i2c_detach <device> <addr>",
 		      cmd_i3c_i2c_detach, 3, 0),
+	SHELL_CMD_ARG(i2c_scan, &dsub_i3c_device_name,
+		      "Scan I2C devices\n"
+		      "Usage: i2c_scan <device>",
+		      cmd_i3c_i2c_scan, 2, 0),
 	SHELL_CMD_ARG(ccc, &sub_i3c_ccc_cmds,
 		      "Send I3C CCC\n"
 		      "Usage: ccc <sub cmd>",

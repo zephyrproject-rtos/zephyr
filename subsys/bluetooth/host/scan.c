@@ -6,6 +6,7 @@
  */
 #include <sys/types.h>
 
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
@@ -609,6 +610,21 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		bool more_to_come;
 		bool is_new_advertiser;
 
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+			/* The application has not requested explicit scan, so it is not expecting
+			 * advertising reports. Discard, and reset the reassembler if not inactive
+			 * This is done in the loop as this flag can change between each iteration,
+			 * and it is not uncommon that scanning is disabled in the callback called
+			 * from le_adv_recv
+			 */
+
+			if (reassembling_advertiser.state != FRAG_ADV_INACTIVE) {
+				reset_reassembling_advertiser();
+			}
+
+			break;
+		}
+
 		if (buf->len < sizeof(*evt)) {
 			LOG_ERR("Unexpected end of buffer");
 			break;
@@ -784,7 +800,7 @@ void bt_periodic_sync_disable(void)
 	}
 }
 
-struct bt_le_per_adv_sync *bt_hci_get_per_adv_sync(uint16_t handle)
+struct bt_le_per_adv_sync *bt_hci_per_adv_sync_lookup_handle(uint16_t handle)
 {
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
 		if (per_adv_sync_pool[i].handle == handle &&
@@ -845,7 +861,7 @@ static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->handle));
+	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->handle));
 
 	if (!per_adv_sync) {
 		LOG_ERR("Unknown handle 0x%04X for periodic advertising report",
@@ -1202,7 +1218,7 @@ void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 		(struct bt_hci_evt_le_per_adv_sync_lost *)buf->data;
 	struct bt_le_per_adv_sync *per_adv_sync;
 
-	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->handle));
+	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->handle));
 
 	if (!per_adv_sync) {
 		LOG_ERR("Unknown handle 0x%04Xfor periodic adv sync lost",
@@ -1367,7 +1383,7 @@ void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->sync_handle));
+	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->sync_handle));
 
 	if (!per_adv_sync) {
 		LOG_ERR("Unknown handle 0x%04X for periodic advertising report",
@@ -1456,6 +1472,17 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 	while (num_reports--) {
 		struct bt_le_scan_recv_info adv_info;
+
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+			/* The application has not requested explicit scan, so it is not expecting
+			 * advertising reports. Discard.
+			 * This is done in the loop as this flag can change between each iteration,
+			 * and it is not uncommon that scanning is disabled in the callback called
+			 * from le_adv_recv
+			 */
+
+			break;
+		}
 
 		if (buf->len < sizeof(*evt)) {
 			LOG_ERR("Unexpected end of buffer");

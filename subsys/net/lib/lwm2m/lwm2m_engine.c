@@ -799,18 +799,20 @@ static void socket_loop(void *p1, void *p2, void *p3)
 		next = lwm2m_engine_service(now);
 
 		for (i = 0; i < sock_nfds; ++i) {
-			if (sock_ctx[i] == NULL) {
+			struct lwm2m_ctx *ctx = sock_ctx[i];
+
+			if (ctx == NULL) {
 				continue;
 			}
-			if (!sys_slist_is_empty(&sock_ctx[i]->pending_sends)) {
+			if (!sys_slist_is_empty(&ctx->pending_sends)) {
 				continue;
 			}
-			next_tx = retransmit_request(sock_ctx[i], now);
+			next_tx = retransmit_request(ctx, now);
 			if (next_tx < next) {
 				next = next_tx;
 			}
-			if (lwm2m_rd_client_is_registred(sock_ctx[i])) {
-				next_tx = check_notifications(sock_ctx[i], now);
+			if (lwm2m_rd_client_is_registred(ctx)) {
+				next_tx = check_notifications(ctx, now);
 				if (next_tx < next) {
 					next = next_tx;
 				}
@@ -836,8 +838,9 @@ static void socket_loop(void *p1, void *p2, void *p3)
 		}
 
 		for (i = 0; i < MAX_POLL_FD; i++) {
+			short revents = sock_fds[i].revents;
 
-			if (sock_fds[i].revents & ZSOCK_POLLIN && sock_fds[i].fd != -1 &&
+			if ((revents & ZSOCK_POLLIN) && sock_fds[i].fd != -1 &&
 			    sock_ctx[i] == NULL) {
 				/* This is the control socket, just read and ignore the data */
 				char tmp;
@@ -849,17 +852,15 @@ static void socket_loop(void *p1, void *p2, void *p3)
 				continue;
 			}
 
-			if ((sock_fds[i].revents & ZSOCK_POLLERR) ||
-			    (sock_fds[i].revents & ZSOCK_POLLNVAL) ||
-			    (sock_fds[i].revents & ZSOCK_POLLHUP)) {
-				LOG_ERR("Poll reported a socket error, %02x.", sock_fds[i].revents);
+			if (revents & (ZSOCK_POLLERR | ZSOCK_POLLNVAL | ZSOCK_POLLHUP)) {
+				LOG_ERR("Poll reported a socket error, %02x.", revents);
 				if (sock_ctx[i] != NULL && sock_ctx[i]->fault_cb != NULL) {
 					sock_ctx[i]->fault_cb(EIO);
 				}
 				continue;
 			}
 
-			if (sock_fds[i].revents & ZSOCK_POLLIN) {
+			if (revents & ZSOCK_POLLIN) {
 				while (sock_ctx[i]) {
 					rc = socket_recv_message(sock_ctx[i]);
 					if (rc) {
@@ -870,7 +871,7 @@ static void socket_loop(void *p1, void *p2, void *p3)
 				hint_socket_state(sock_ctx[i], NULL);
 			}
 
-			if (sock_fds[i].revents & ZSOCK_POLLOUT) {
+			if (revents & ZSOCK_POLLOUT) {
 				rc = socket_send_message(sock_ctx[i]);
 				/* Drop packets that cannot be send, CoAP layer handles retry */
 				/* Other fatal errors should trigger a recovery */

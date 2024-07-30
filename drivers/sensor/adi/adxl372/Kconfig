@@ -51,7 +51,7 @@ config ADXL372_INACTIVITY_THRESHOLD
 
 config ADXL372_ACTIVITY_TIME
 	int "Activity time"
-	range 0 255
+	range 0 $(UINT8_MAX)
 	default 1
 	help
 	  The activity timer implements a robust activity detection that
@@ -63,7 +63,7 @@ config ADXL372_ACTIVITY_TIME
 
 config ADXL372_INACTIVITY_TIME
 	int "In-activity time"
-	range 0 255
+	range 0 $(UINT8_MAX)
 	default 2
 	help
 	  The time that all enabled axes must be lower than the inactivity

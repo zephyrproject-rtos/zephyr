@@ -44,6 +44,8 @@ static void sync_cb(struct bt_le_per_adv_sync *sync, struct bt_le_per_adv_sync_s
 	err = bt_le_per_adv_sync_subevent(sync, &params);
 	if (err) {
 		printk("Failed to set subevents to sync to (err %d)\n", err);
+	} else {
+		printk("Changed sync to subevent %d\n", subevents[0]);
 	}
 
 	k_sem_give(&sem_per_sync);
@@ -156,6 +158,8 @@ static ssize_t write_timing(struct bt_conn *conn, const struct bt_gatt_attr *att
 		err = bt_le_per_adv_sync_subevent(default_sync, &params);
 		if (err) {
 			printk("Failed to set subevents to sync to (err %d)\n", err);
+		} else {
+			printk("Changed sync to subevent %d\n", subevents[0]);
 		}
 	} else {
 		printk("Not synced yet\n");
@@ -195,7 +199,7 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 	.disconnected = disconnected,
 };
 
-static const struct bt_data sd[] = {
+static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
@@ -229,7 +233,7 @@ int main(void)
 		err = bt_le_adv_start(
 			BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE,
 					BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
-			NULL, 0, sd, ARRAY_SIZE(sd));
+			ad, ARRAY_SIZE(ad), NULL, 0);
 		if (err && err != -EALREADY) {
 			printk("Advertising failed to start (err %d)\n", err);
 

@@ -12,6 +12,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/atomic.h>
 #include <soc.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
@@ -27,15 +28,13 @@ LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 #include <hal/nrf_gpio.h>
 
 struct qspi_nor_data {
-#if !defined(CONFIG_PM_DEVICE_RUNTIME) && defined(CONFIG_MULTITHREADING)
-	/* A semaphore to control QSPI deactivation. */
-	struct k_sem count;
-#endif
 #ifdef CONFIG_MULTITHREADING
 	/* The semaphore to control exclusive access to the device. */
 	struct k_sem sem;
 	/* The semaphore to indicate that transfer has completed. */
 	struct k_sem sync;
+	/* A counter to control QSPI deactivation. */
+	atomic_t usage_count;
 #else /* CONFIG_MULTITHREADING */
 	/* A flag that signals completed transfer when threads are
 	 * not enabled.
@@ -298,19 +297,18 @@ static inline void qspi_clock_div_restore(void)
 static void qspi_acquire(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = dev->data;
+	int rc;
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
-	int rc = pm_device_runtime_get(dev);
-
+	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
 		LOG_ERR("pm_device_runtime_get failed: %d", rc);
 	}
-#elif defined(CONFIG_MULTITHREADING)
+#if defined(CONFIG_MULTITHREADING)
 	/* In multithreading, the driver can call qspi_acquire more than once
 	 * before calling qspi_release. Keeping count, so QSPI is deactivated
-	 * only at the last call (count == 0).
+	 * only at the last call (usage_count == 0).
 	 */
-	k_sem_give(&dev_data->count);
+	atomic_inc(&dev_data->usage_count);
 #endif
 
 	qspi_lock(dev);
@@ -326,17 +324,17 @@ static void qspi_release(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = dev->data;
 	bool deactivate = true;
+	int rc;
 
-#if !defined(CONFIG_PM_DEVICE_RUNTIME) && defined(CONFIG_MULTITHREADING)
+#if defined(CONFIG_MULTITHREADING)
 	/* The last thread to finish using the driver deactivates the QSPI */
-	(void) k_sem_take(&dev_data->count, K_NO_WAIT);
-	deactivate = (k_sem_count_get(&dev_data->count) == 0);
+	deactivate = atomic_dec(&dev_data->usage_count) == 1;
 #endif
 
 	if (!dev_data->xip_enabled) {
 		qspi_clock_div_restore();
 
-		if (deactivate && !IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		if (deactivate) {
 			(void) nrfx_qspi_deactivate();
 		}
 
@@ -345,13 +343,10 @@ static void qspi_release(const struct device *dev)
 
 	qspi_unlock(dev);
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
-	int rc = pm_device_runtime_put(dev);
-
+	rc = pm_device_runtime_put(dev);
 	if (rc < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", rc);
 	}
-#endif
 }
 
 static inline void qspi_wait_for_completion(const struct device *dev,
@@ -1115,16 +1110,6 @@ static int qspi_nor_init(const struct device *dev)
 		(void)nrfx_qspi_deactivate();
 	}
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	int rc2 = pm_device_runtime_enable(dev);
-
-	if (rc2 < 0) {
-		LOG_ERR("Failed to enable runtime power management: %d", rc2);
-	} else {
-		LOG_DBG("Runtime power management enabled");
-	}
-#endif
-
 #ifdef CONFIG_NORDIC_QSPI_NOR_XIP
 	if (rc == 0) {
 		/* Enable XIP mode for QSPI NOR flash, this will prevent the
@@ -1370,9 +1355,6 @@ void z_vrfy_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 #endif /* CONFIG_USERSPACE */
 
 static struct qspi_nor_data qspi_nor_dev_data = {
-#if !defined(CONFIG_PM_DEVICE_RUNTIME) && defined(CONFIG_MULTITHREADING)
-	.count = Z_SEM_INITIALIZER(qspi_nor_dev_data.count, 0, K_SEM_MAX_LIMIT),
-#endif
 #ifdef CONFIG_MULTITHREADING
 	.sem = Z_SEM_INITIALIZER(qspi_nor_dev_data.sem, 1, 1),
 	.sync = Z_SEM_INITIALIZER(qspi_nor_dev_data.sync, 0, 1),

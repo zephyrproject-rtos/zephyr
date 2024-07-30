@@ -831,13 +831,13 @@
 			status = "disabled";
 		};
 
-		usbphy1: usbphy@0x40434000 {
+		usbphy1: usbphy@40434000 {
 			compatible = "nxp,usbphy";
 			reg = <0x40434000 0x1000>;
 			status = "disabled";
 		};
 
-		usbphy2: usbphy@0x40438000 {
+		usbphy2: usbphy@40438000 {
 			compatible = "nxp,usbphy";
 			reg = <0x40438000 0x1000>;
 			status = "disabled";

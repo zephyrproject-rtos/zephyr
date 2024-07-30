@@ -6,6 +6,7 @@
 #include <xtensa/simcall.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/printk-hooks.h>
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 /**
@@ -35,18 +36,6 @@ int arch_printk_char_out(int c)
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 extern void __stdout_hook_install(int (*hook)(int));
-#else
-#define __stdout_hook_install(x)		\
-	do {/* nothing */			\
-	} while ((0))
-#endif
-
-#if defined(CONFIG_PRINTK)
-extern void __printk_hook_install(int (*fn)(int));
-#else
-#define __printk_hook_install(x)		\
-	do {/* nothing */			\
-	} while ((0))
 #endif
 
 /**
@@ -54,8 +43,12 @@ extern void __printk_hook_install(int (*fn)(int));
  */
 static void xt_sim_console_hook_install(void)
 {
+#if defined(CONFIG_STDOUT_CONSOLE)
 	__stdout_hook_install(arch_printk_char_out);
+#endif
+#if defined(CONFIG_PRINTK)
 	__printk_hook_install(arch_printk_char_out);
+#endif
 }
 
 /**

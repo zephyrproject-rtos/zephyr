@@ -2448,10 +2448,10 @@ static struct uart_stm32_data uart_stm32_data_##index = {		\
 	UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
 };									\
 									\
-PM_DEVICE_DT_INST_DEFINE(index, uart_stm32_pm_action);		        \
+PM_DEVICE_DT_INST_DEFINE(index, uart_stm32_pm_action);			\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &uart_stm32_init,					\
+		    uart_stm32_init,					\
 		    PM_DEVICE_DT_INST_GET(index),			\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\

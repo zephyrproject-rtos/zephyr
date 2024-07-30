@@ -46,10 +46,10 @@ void i3c_addr_slots_set(struct i3c_addr_slots *slots,
 
 	bitpos = dev_addr * 2;
 	idx = bitpos / BITS_PER_LONG;
+	bitpos %= BITS_PER_LONG;
 
-	slots->slots[idx] &= ~((unsigned long)I3C_ADDR_SLOT_STATUS_MASK <<
-			       (bitpos % BITS_PER_LONG));
-	slots->slots[idx] |= status << (bitpos % BITS_PER_LONG);
+	slots->slots[idx] &= ~((unsigned long)I3C_ADDR_SLOT_STATUS_MASK << bitpos);
+	slots->slots[idx] |= status << bitpos;
 }
 
 enum i3c_addr_slot_status
@@ -72,8 +72,9 @@ i3c_addr_slots_status(struct i3c_addr_slots *slots,
 
 	bitpos = dev_addr * 2;
 	idx = bitpos / BITS_PER_LONG;
+	bitpos %= BITS_PER_LONG;
 
-	status = slots->slots[idx] >> (bitpos % BITS_PER_LONG);
+	status = slots->slots[idx] >> bitpos;
 	status &= I3C_ADDR_SLOT_STATUS_MASK;
 
 	return status;
@@ -96,6 +97,7 @@ int i3c_addr_slots_init(const struct device *dev)
 	sys_slist_init(&data->attached_dev.devices.i3c);
 	sys_slist_init(&data->attached_dev.devices.i2c);
 
+	/* Address restrictions (ref 5.1.2.2.5, Specification for I3C v1.1.1) */
 	for (i = 0; i <= 7; i++) {
 		/* Addresses 0 to 7 are reserved */
 		i3c_addr_slots_set(&data->attached_dev.addr_slots, i, I3C_ADDR_SLOT_STATUS_RSVD);
@@ -637,6 +639,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	bool need_daa = true;
 	struct i3c_ccc_events i3c_events;
 
+#ifdef CONFIG_I3C_INIT_RSTACT
 	/*
 	 * Reset all connected targets. Also reset dynamic
 	 * addresses for all devices as we have no idea what
@@ -659,6 +662,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 			LOG_DBG("Broadcast RSTACT (peripehral) was NACK.");
 		}
 	}
+#endif
 
 	if (i3c_ccc_do_rstdaa_all(dev) != 0) {
 		LOG_DBG("Broadcast RSTDAA was NACK.");
