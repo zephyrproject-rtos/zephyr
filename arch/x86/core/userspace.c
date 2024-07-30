@@ -93,6 +93,28 @@ void *z_x86_userspace_prepare_thread(struct k_thread *thread)
 
 	if ((thread->base.user_options & K_USER) != 0U) {
 		initial_entry = arch_user_mode_enter;
+
+#ifdef CONFIG_INIT_STACKS
+		/* setup_thread_stack() does not initialize the architecture specific
+		 * privileged stack. So we need to do it manually here as this function
+		 * is called by arch_new_thread() via z_setup_new_thread() after
+		 * setup_thread_stack() but before thread starts running.
+		 *
+		 * Note that only user threads have privileged stacks and kernel
+		 * only threads do not.
+		 *
+		 * Also note that this needs to be done before calling
+		 * z_x86_userspace_enter() where it clears the user stack.
+		 * That function requires using the privileged stack for
+		 * code execution so we cannot clear that at the same time.
+		 */
+		struct z_x86_thread_stack_header *hdr_stack_obj =
+			(struct z_x86_thread_stack_header *)thread->stack_obj;
+
+		(void)memset(&hdr_stack_obj->privilege_stack[0], 0xaa,
+			     sizeof(hdr_stack_obj->privilege_stack));
+#endif
+
 	} else {
 		initial_entry = z_thread_entry;
 	}
