@@ -1,0 +1,20 @@
+identifier: arduino_nicla_sense_me
+name: Arduino Nicla Sense ME
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+  - shell
+  - counter
+  - nvs
+  - pwm
+  - watchdog
+vendor: arduino

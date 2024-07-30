@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Only v1 model has choice for SoC selection, therefore the optional source
+# Sourced here and not in Kconfig.v1 to keep current SoC/CPU selection menu
+# side-by-side with "Hardware Configuration" in the menu structure.
+orsource "Kconfig.$(HWM_SCHEME).choice"
+
+menu "Hardware Configuration"
+
+rsource "Kconfig.$(HWM_SCHEME)"
+
+# Source Zephyr Kconfig specifics from SoC roots.
+osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig"
+
+# Source common Kconfig file
+osource "soc/common/Kconfig"
+
+module = SOC
+module-str = SOC
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+# The helper symbols below are put here due to an unusual setup: The simulated
+# nrf5x_bsim boards use the POSIX arch, but are compatible with Nordic ARM boards
+
+config SOC_COMPATIBLE_NRF
+	bool
+
+config SOC_COMPATIBLE_NRF52X
+	bool
+
+config SOC_COMPATIBLE_NRF53X
+	bool
+
+config SOC_COMPATIBLE_NRF54LX
+	bool
+
+config SOC_COMPATIBLE_NRF52833
+	bool
+
+config SOC_COMPATIBLE_NRF5340_CPUNET
+	bool
+
+config SOC_COMPATIBLE_NRF5340_CPUAPP
+	bool
+
+config SOC_COMPATIBLE_NRF54L15
+	bool
+
+config SOC_COMPATIBLE_NRF54L15_CPUAPP
+	bool
+
+config SOC_DEPRECATED_RELEASE
+	string
+	help
+	  This hidden option is set in the SoC configuration and indicates
+	  the Zephyr release that the SoC configuration will be removed.
+	  When set, any build for that SoC will generate a clearly visible
+	  deprecation warning.
+
+config SOC_HAS_TIMING_FUNCTIONS
+	bool
+	help
+	  Should be selected if SoC provides custom method for retrieving
+	  timestamps and cycle count.
+
+config SOC_HAS_RUNTIME_NUM_CPUS
+	bool
+	help
+	  Should be selected if SoC handles determining the number of CPUs
+	  at runtime.

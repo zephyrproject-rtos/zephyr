@@ -1,0 +1,56 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX PWM
+
+compatible: "nxp,imx-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  index:
+    type: int
+    description: flexpwm submodule index
+    required: true
+
+  interrupts:
+    required: true
+
+  run-in-wait:
+    type: boolean
+    description: |
+      Enable for PWM to keep running in WAIT mode.
+
+  run-in-debug:
+    type: boolean
+    description: |
+      Enable for PWM to keep running in debug mode.
+
+  nxp,prescaler:
+    type: int
+    enum: [1, 2, 4, 8, 16, 32, 64, 128]
+    required: true
+    description: |
+      Clock prescaler at the input of the PWM.
+
+  nxp,reload:
+    type: string
+    enum:
+      - "immediate"
+      - "half-cycle"
+      - "full-cycle"
+      - "half-and-full-cycle"
+    description: |
+      Select how to load the buffered-registers with new values:
+      "immediate" - buffered-registers get loaded with new values as soon as LDOK bit is set;
+      "half-cycle" - registers loaded on a PWM half cycle;
+      "full-cycle" - registers loaded on a PWM full cycle;
+      "half-and-full-cycle" - registers loaded on a PWM half & full cycle.
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

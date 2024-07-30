@@ -1,0 +1,62 @@
+# Copyright (c) 2022 Meta Platforms, Inc. and its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+description: BMI08X Gyro inertial measurement unit
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      This property specifies the connection for INT, because the
+      Zephyr driver maps all interrupts to INT. The signal defaults
+      to output low when produced by the sensor.
+
+  int3-4-map-io:
+    type: int
+    description: |
+      Bit[0] will map the data ready interrupt on INT3
+      Bit[2] will map the fifo interrupt on INT3
+      Bit[5] will map the fifo interrupt on INT4
+      Bit[7] will enable the data ready interrupt on INT4
+
+  int3-4-conf-io:
+    type: int
+    description: |
+      Bit[0]: if set to 1, INT3 is active high, otherwise it's active low
+      Bit[1]: if set to 1, INT3 is open-drain, otherwise it's push-pull
+      Bit[2]: if set to 1, INT4 is active high, otherwise it's active low
+      Bit[3]: if set to 1, INT4 is open-drain, otherwise it's push-pull
+
+  gyro-hz:
+    type: string
+    required: true
+    description: |
+      Default frequency of accelerometer. (Unit - Hz)
+    enum:
+      - "2000_532"
+      - "2000_230"
+      - "1000_116"
+      - "400_47"
+      - "200_23"
+      - "100_12"
+      - "200_64"
+      - "100_32"
+
+  gyro-fs:
+    type: int
+    required: true
+    description: |
+      Default full scale of accelerometer. (Unit - g)
+    enum:
+      - 2000
+      - 1000
+      - 500
+      - 250
+      - 125
+
+  data-sync:
+    type: boolean
+    description: |
+      Enables data sync if defined. Must be set if bmi08x-accel data-sync is set as well.

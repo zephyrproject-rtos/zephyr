@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2021 metraTec GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: lpcxpresso51u68
+name: NXP LPCXpresso51u68
+type: mcu
+arch: arm
+ram: 64
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - i2c
+  - spi
+vendor: nxp

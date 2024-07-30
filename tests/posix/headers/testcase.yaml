@@ -1,0 +1,57 @@
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - posix
+  min_ram: 32
+tests:
+  portability.posix.headers.with_posix_api:
+    extra_configs:
+      - CONFIG_POSIX_API=y
+    integration_platforms:
+      - qemu_x86
+  portability.posix.headers.without_posix_api:
+    extra_configs:
+      - CONFIG_POSIX_API=n
+    integration_platforms:
+      - qemu_x86
+  portability.posix.headers.picolibc.with_posix_api:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_POSIX_API=y
+      - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - qemu_x86
+  portability.posix.headers.picolibc.without_posix_api:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_POSIX_API=n
+      - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - qemu_x86
+  portability.posix.headers.newlib.with_posix_api:
+    tags: newlib
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_POSIX_API=y
+      - CONFIG_NEWLIB_LIBC=y
+    integration_platforms:
+      - qemu_x86
+  portability.posix.headers.newlib.without_posix_api:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_POSIX_API=n
+      - CONFIG_NEWLIB_LIBC=y
+    integration_platforms:
+      - qemu_x86
+  portability.posix.headers.arcmwdtlib.with_posix_api:
+    toolchain_allow: arcmwdt
+    extra_configs:
+      - CONFIG_POSIX_API=y
+      - CONFIG_ARCMWDT_LIBC=y
+  portability.posix.headers.arcmwdtlib.without_posix_api:
+    toolchain_allow: arcmwdt
+    extra_configs:
+      - CONFIG_POSIX_API=n
+      - CONFIG_ARCMWDT_LIBC=y

@@ -1,0 +1,43 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP VREF SOC peripheral
+
+compatible: "nxp,vref"
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-init-microvolt
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+      - regulator-initial-mode
+      - regulator-allowed-modes
+
+properties:
+  reg:
+    required: true
+
+  nxp,buffer-startup-delay-us:
+    type: int
+    required: true
+    description: |
+      Buffer startup delay as specified in the
+      appropriate device data sheet, in microseconds.
+
+  nxp,bandgap-startup-time-us:
+    type: int
+    required: true
+    description: |
+      Maximum bandgap startup time as specified in the
+      appropriate device data sheet, in microseconds.
+
+  "#nxp,reference-cells":
+    type: int
+    const: 1
+    description: Number of items to expect in a vref specifier.
+
+nxp,reference-cells:
+  - vref_mv

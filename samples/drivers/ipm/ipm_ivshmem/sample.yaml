@@ -1,0 +1,9 @@
+sample:
+  name: IVSHMEM IPM Sample
+tests:
+  sample.ipm.ipm_ivshmem:
+    build_only: true
+    platform_allow: qemu_cortex_a53
+    tags:
+      - samples
+      - ipm

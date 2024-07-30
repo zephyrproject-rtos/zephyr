@@ -1,0 +1,5 @@
+board:
+  name: mec172xevb_assy6906
+  vendor: microchip
+  socs:
+    - name: mec172x_nsz

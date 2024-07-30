@@ -1,0 +1,4 @@
+tests:
+  sample.driver.lora.rylr.send:
+    extra_args: SHIELD=reyax_lora
+    platform_allow: cy8ckit_062s4

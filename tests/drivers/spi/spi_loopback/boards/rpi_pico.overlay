@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dma/rpi_pico_dma.h>
+
+&dma {
+	status = "okay";
+};
+
+&spi0 {
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+
+	dmas = <&dma 0 RPI_PICO_DMA_SLOT_SPI0_TX 0>, <&dma 1 RPI_PICO_DMA_SLOT_SPI0_RX 0>;
+	dma-names = "tx", "rx";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};

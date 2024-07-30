@@ -1,0 +1,52 @@
+common:
+  platform_type:
+    - qemu
+  tags:
+    - log_api
+    - logging
+  skip: true
+  integration_platforms:
+    - qemu_x86
+tests:
+  logging.stack.deferred:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+  logging.stack.deferred_no_opt:
+    filter: not CONFIG_MIPS
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_NO_OPTIMIZATIONS=y
+      - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
+      - CONFIG_IDLE_STACK_SIZE=2048
+  logging.stack.immediate:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+  logging.stack.immediate_no_opt:
+    filter: not CONFIG_MIPS
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_NO_OPTIMIZATIONS=y
+      - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
+      - CONFIG_IDLE_STACK_SIZE=2048
+  logging.stack.deferred_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CPP=y
+  logging.stack.deferred_cpp_no_opt:
+    filter: not CONFIG_MIPS
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_NO_OPTIMIZATIONS=y
+      - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
+      - CONFIG_CPP=y
+  logging.stack.immediate_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_CPP=y
+  logging.stack.immediate_cpp_no_opt:
+    filter: not CONFIG_MIPS
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_NO_OPTIMIZATIONS=y
+      - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
+      - CONFIG_CPP=y

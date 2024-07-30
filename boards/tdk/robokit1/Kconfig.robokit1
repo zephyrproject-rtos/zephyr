@@ -1,0 +1,6 @@
+# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2024 Gerson Fernando Budke
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ROBOKIT1
+	select SOC_SAME70Q21B

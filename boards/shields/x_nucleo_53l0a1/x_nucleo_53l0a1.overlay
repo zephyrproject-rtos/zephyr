@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2021 Titouan Christophe
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&arduino_i2c {
+	expander1_x_nucleo_53l0a1: stmpe1600@42 {
+		compatible = "st,stmpe1600";
+		reg = <0x42>;
+		ngpios = <16>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+	expander2_x_nucleo_53l0a1: stmpe1600@43 {
+		compatible = "st,stmpe1600";
+		reg = <0x43>;
+		ngpios = <16>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	/* Center sensor soldered on the shield */
+	vl53l0x_c_x_nucleo_53l0a1: vl53l0x@30 {
+		compatible = "st,vl53l0x";
+		reg = <0x30>;
+		xshut-gpios = <&expander1_x_nucleo_53l0a1 15 GPIO_ACTIVE_LOW>;
+	};
+
+	/* Satellites optional sensors */
+	vl53l0x_l_x_nucleo_53l0a1: vl53l0x@31 {
+		compatible = "st,vl53l0x";
+		reg = <0x31>;
+		xshut-gpios = <&expander2_x_nucleo_53l0a1 14 GPIO_ACTIVE_LOW>;
+	};
+	vl53l0x_r_x_nucleo_53l0a1: vl53l0x@32 {
+		compatible = "st,vl53l0x";
+		reg = <0x32>;
+		xshut-gpios = <&expander2_x_nucleo_53l0a1 15 GPIO_ACTIVE_LOW>;
+	};
+};

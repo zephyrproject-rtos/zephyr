@@ -1,0 +1,111 @@
+# interrupt controller configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Interrupt controller drivers"
+
+config ARCV2_INTERRUPT_UNIT
+	bool "ARCv2 Interrupt Unit"
+	default y
+	depends on ARC
+	help
+	  The ARCv2 interrupt unit has 16 allocated exceptions associated with
+	  vectors 0 to 15 and 240 interrupts associated with vectors 16 to 255.
+	  The interrupt unit is optional in the ARCv2-based processors. When
+	  building a processor, you can configure the processor to include an
+	  interrupt unit. The ARCv2 interrupt unit is highly programmable.
+
+config SWERV_PIC
+	bool "SweRV EH1 Programmable Interrupt Controller (PIC)"
+	default y
+	depends on DT_HAS_SWERV_PIC_ENABLED
+	help
+	  Programmable Interrupt Controller for the SweRV EH1 RISC-V CPU.
+
+config VEXRISCV_LITEX_IRQ
+	bool "VexRiscv LiteX Interrupt controller"
+	default y
+	depends on DT_HAS_LITEX_VEXRISCV_INTC0_ENABLED
+	help
+	  IRQ implementation for LiteX VexRiscv
+
+config LEON_IRQMP
+	bool "GRLIB IRQMP interrupt controller"
+	default y
+	depends on DT_HAS_GAISLER_IRQMP_ENABLED
+	help
+	  GRLIB IRQMP and IRQAMP
+
+config INTC_INIT_PRIORITY
+	int "Interrupt controller init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Interrupt controller device initialization priority.
+
+if MCHP_ECIA_XEC
+
+config XEC_GIRQ_INIT_PRIORITY
+	int "XEX GIRQ Interrupt controller init priority"
+	default 41
+	help
+	  XEC GIRQ Interrupt controller device initialization priority.
+	  The priority value needs to be greater than INTC_INIT_PRIORITY
+	  So that the XEC GIRQ controllers are initialized after the
+	  xec_ecia.
+
+endif
+
+module = INTC
+module-str = intc
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/interrupt_controller/Kconfig.multilevel"
+
+source "drivers/interrupt_controller/Kconfig.loapic"
+
+source "drivers/interrupt_controller/Kconfig.dw"
+
+source "drivers/interrupt_controller/Kconfig.it8xxx2"
+
+source "drivers/interrupt_controller/Kconfig.stm32"
+
+source "drivers/interrupt_controller/Kconfig.cavs"
+
+source "drivers/interrupt_controller/Kconfig.rv32m1"
+
+source "drivers/interrupt_controller/Kconfig.sam0"
+
+source "drivers/interrupt_controller/Kconfig.gic"
+
+source "drivers/interrupt_controller/Kconfig.npcx"
+
+source "drivers/interrupt_controller/Kconfig.intel_vtd"
+
+source "drivers/interrupt_controller/Kconfig.esp32"
+
+source "drivers/interrupt_controller/Kconfig.esp32c3"
+
+source "drivers/interrupt_controller/Kconfig.xec"
+
+source "drivers/interrupt_controller/Kconfig.clic"
+
+source "drivers/interrupt_controller/Kconfig.gd32_exti"
+
+source "drivers/interrupt_controller/Kconfig.plic"
+
+source "drivers/interrupt_controller/Kconfig.nxp_s32"
+
+source "drivers/interrupt_controller/Kconfig.xmc4xxx"
+
+source "drivers/interrupt_controller/Kconfig.nxp_pint"
+
+source "drivers/interrupt_controller/Kconfig.vim"
+
+source "drivers/interrupt_controller/Kconfig.renesas_ra"
+
+source "drivers/interrupt_controller/Kconfig.nxp_irqsteer"
+
+source "drivers/interrupt_controller/Kconfig.mtk_adsp"
+
+endmenu

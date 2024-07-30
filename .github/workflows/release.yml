@@ -1,0 +1,60 @@
+name: Create a Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '!v*rc*'
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get the version
+        id: get_version
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "TRIMMED_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: REUSE Compliance Check
+        uses: fsfe/reuse-action@v1
+        with:
+          args: spdx -o zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
+
+      - name: upload-results
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
+          path: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
+
+      - name: Create empty release notes body
+        run: |
+          echo "TODO: add release overview and notes link" > release-notes.txt
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Zephyr ${{ steps.get_version.outputs.TRIMMED_VERSION }}
+          body_path: release-notes.txt
+          draft: true
+          prerelease: true
+
+      - name: Upload Release Assets
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
+          asset_name: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
+          asset_content_type: text/plain

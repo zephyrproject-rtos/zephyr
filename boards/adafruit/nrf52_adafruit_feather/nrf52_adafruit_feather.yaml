@@ -1,0 +1,14 @@
+identifier: nrf52_adafruit_feather
+name: nRF52 Adafruit Feather
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+supported:
+  - feather_serial
+  - feather_i2c
+vendor: adafruit

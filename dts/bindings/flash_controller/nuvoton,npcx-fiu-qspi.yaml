@@ -1,0 +1,40 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Properties defining the NPCX Quad-SPI peripheral of Flash Interface Unit (FIU).
+    A npcx quad-spi dt node would typically looks like:
+
+        &qspi_fiu0 {
+            status = "okay";
+
+            int_flash: w25q400@0 {
+                status = "okay";
+                reg = <0>;
+                ...
+            };
+
+            ext_flash: w25q256@1 {
+                status = "okay";
+                reg = <1>;
+                ...
+            };
+        };
+
+    `int_flash` and `ext_flash` are the devices accessed by this peripheral.
+
+compatible: "nuvoton,npcx-fiu-qspi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: qspi
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  en-direct-access-2dev:
+    type: boolean
+    description: |
+      Two external SPI devices are supported for Direct Read Access (DRA) on QSPI bus.

@@ -1,0 +1,121 @@
+/*
+ * Copyright (c) 2021 Laird Connectivity
+ * Copyright (c) 2024 Ezurio
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "bl654_usb-pinctrl.dtsi"
+
+/ {
+	model = "Ezurio BL654 USB adapter";
+	compatible = "ezurio,bl654_usb";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &bl654_cdc_acm_uart;
+		zephyr,shell-uart = &bl654_cdc_acm_uart;
+		zephyr,bt-c2h-uart = &bl654_cdc_acm_uart;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		led1bluepwm: led_pwm_1 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 1 Blue";
+		};
+
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1pwm = &led1bluepwm;
+		watchdog0 = &wdt0;
+	};
+};
+
+&uicr {
+	gpio-as-nreset;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* MCUboot placed after Nordic MBR.
+		 * The size of this partition ensures that MCUBoot
+		 * can be built with CDC ACM support and w/o optimizations.
+		 */
+		boot_partition: partition@1000 {
+			label = "mcuboot";
+			reg = <0x00001000 0x0000f000>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x0005e000>;
+		};
+		slot1_partition: partition@6e000 {
+			label = "image-1";
+			reg = <0x0006e000 0x0005e000>;
+		};
+		storage_partition: partition@cc000 {
+			label = "storage";
+			reg = <0x000cc000 0x00008000>;
+		};
+		scratch_partition: partition@d4000 {
+			label = "image-scratch";
+			reg = <0x000d4000 0x0000C000>;
+		};
+
+		/* Nordic nRF5 bootloader <0xe0000 0x1c000>
+		 *
+		 * In addition, the last and second last flash pages
+		 * are used by the nRF5 bootloader and MBR to store settings.
+		 */
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+
+	bl654_cdc_acm_uart: bl654_cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

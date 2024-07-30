@@ -1,0 +1,46 @@
+common:
+  tags: lorawan
+  depends_on: lora
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "<inf> lorawan_class_a: Joining network over OTAA"
+sample:
+  description: Demonstration of Class-A LoRaWAN functionality
+  name: LoRaWAN Class-A
+tests:
+  sample.lorawan.class_a.as923:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_AS923=y
+  sample.lorawan.class_a.au915:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_AU915=y
+  sample.lorawan.class_a.cn470:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_CN470=y
+  sample.lorawan.class_a.cn779:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_CN779=y
+  sample.lorawan.class_a.eu433:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_EU433=y
+  sample.lorawan.class_a.eu868:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_EU868=y
+  sample.lorawan.class_a.kr920:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_KR920=y
+  sample.lorawan.class_a.in865:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_IN865=y
+  sample.lorawan.class_a.us915:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_US915=y
+  sample.lorawan.class_a.ru864:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_RU864=y
+  sample.lorawan.class_a.multiregion:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_EU868=y
+      - CONFIG_LORAMAC_REGION_US915=y

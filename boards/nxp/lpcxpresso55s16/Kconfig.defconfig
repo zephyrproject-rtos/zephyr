@@ -1,0 +1,19 @@
+# LPCXpresso55S16 board
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LPCXPRESSO55S16
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
+
+if BOOTLOADER_MCUBOOT
+choice MCUBOOT_BOOTLOADER_MODE
+	# Board only supports MCUBoot via "upgrade only" method:
+	default MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+endchoice
+endif #BOOTLOADER_MCUBOOT
+
+endif # BOARD_LPCXPRESSO55S16

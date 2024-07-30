@@ -1,0 +1,14 @@
+identifier: decawave_dwm1001_dev
+name: Decawave-DWM1001-DEV
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+supported:
+  - spi
+  - i2c
+vendor: decawave

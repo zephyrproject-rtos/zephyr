@@ -1,0 +1,139 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <arm/armv7-m.dtsi>
+/ {
+	compatible = "arm,beetle";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		watchdog0 = &wdog0;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m3";
+			clock-frequency = <24000000>;
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 0x20000>;
+	};
+
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0 0x40000>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		timer0: timer@40000000 {
+			compatible = "arm,cmsdk-timer";
+			reg = <0x40000000 0x1000>;
+			interrupts = <8 3>;
+			clocks = <&syscon>;
+		};
+
+		timer1: timer@40001000 {
+			compatible = "arm,cmsdk-timer";
+			reg = <0x40001000 0x1000>;
+			interrupts = <9 3>;
+			clocks = <&syscon>;
+		};
+
+		dtimer0: dtimer@40002000 {
+			compatible = "arm,cmsdk-dtimer";
+			reg = <0x40002000 0x1000>;
+			interrupts = <10 3>;
+			clocks = <&syscon>;
+		};
+
+		uart0: uart@40004000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40004000 0x1000>;
+			interrupts = <0 3>;
+			clocks = <&sysclk &syscon>;
+			current-speed = <115200>;
+		};
+
+		uart1: uart@40005000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40005000 0x1000>;
+			interrupts = <2 3>;
+			clocks = <&sysclk &syscon>;
+			current-speed = <115200>;
+		};
+
+		wdog0: wdog@40008000 {
+			compatible = "arm,cmsdk-watchdog";
+			clocks = <&sysclk>;
+			reg = <0x40008000 0x1000>;
+		};
+
+		gpio0: gpio@40010000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40010000 0x1000>;
+			interrupts = <6 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			clocks = <&syscon>;
+		};
+
+		gpio1: gpio@40011000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40011000 0x1000>;
+			interrupts = <7 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			clocks = <&syscon>;
+		};
+
+		gpio2: gpio@40012000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40012000 0x1000>;
+			interrupts = <42 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			clocks = <&syscon>;
+		};
+
+		gpio3: gpio@40013000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40013000 0x1000>;
+			interrupts = <43 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			clocks = <&syscon>;
+		};
+
+		syscon: syscon@4001f000 {
+			compatible = "arm,beetle-syscon";
+			reg = <0x4001f000 0x1000>;
+			#clock-cells = <0>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

@@ -1,0 +1,186 @@
+/*
+ * Copyright 2023 The ChromiumOS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g0/stm32g0b1Xe.dtsi>
+#include <st/g0/stm32g0b1r(b-c-e)ixn-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Google Twinkie V2";
+	compatible = "google,twinkie-v2";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led_0: led0 {
+			gpios = <&gpioc 8 GPIO_ACTIVE_LOW>;
+		};
+		green_led_1: led1 {
+			gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+		};
+		blue_led_2: led2 {
+			gpios = <&gpiob 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		/* does not go to an actual button in current hardware.
+		 * short TP5 to TP6 to activate.
+		 */
+		dfu_detect: dfudetect {
+			gpios = <&gpioa 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	cc1_buf: cc1buf {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 1>;
+		output-ohms = <2000000000>;
+	};
+
+	cc2_buf: cc2buf {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 3>;
+		output-ohms = <2000000000>;
+	};
+
+	vbus_read_buf: vbusv {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 15>;
+		output-ohms = <68000>;
+		full-ohms = <(2000000 + 68000)>;
+	};
+
+	csa_vbus: vbusc {
+		compatible = "current-sense-amplifier";
+		io-channels = <&adc1 17>;
+		sense-resistor-micro-ohms = <3000>;
+		sense-gain-mult = <100>;
+	};
+
+	csa_cc2: vconc {
+		compatible = "current-sense-amplifier";
+		io-channels = <&adc1 18>;
+		sense-resistor-micro-ohms = <10000>;
+		sense-gain-mult = <25>;
+	};
+
+	aliases {
+		led0 = &red_led_0;
+		led1 = &green_led_1;
+		led2 = &blue_led_2;
+		bootloader-led0 = &blue_led_2;
+		vcc1 = &cc1_buf;
+		vcc2 = &cc2_buf;
+		vbus = &vbus_read_buf;
+		cbus = &csa_vbus;
+		ccon = &csa_cc2;
+	};
+};
+
+
+&adc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&adc1_in1_pa1	/* CC1_BUF	 */
+		     &adc1_in3_pa3	/* CC2_BUF	 */
+		     &adc1_in15_pb11	/* VBUS_READ_BUF */
+		     &adc1_in17_pc4	/* CSA_VBUS	 */
+		     &adc1_in18_pc5	/* CSA_CC2	 */
+		    >;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@15 {
+		reg = <15>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@17 {
+		reg = <17>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@18 {
+		reg = <18>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <8>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&ucpd1 {
+	status = "okay";
+
+	psc-ucpdclk = <1>;
+	hbitclkdiv = <27>;
+	pinctrl-0 = <&ucpd1_cc1_pa8 &ucpd1_cc2_pb15>;
+	pinctrl-names = "default";
+};

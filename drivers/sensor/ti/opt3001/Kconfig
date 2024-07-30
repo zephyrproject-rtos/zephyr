@@ -1,0 +1,12 @@
+# OPT3001 light sensor configuration options
+
+# Copyright (c) 2019 Actinius
+# SPDX-License-Identifier: Apache-2.0
+
+config OPT3001
+	bool "OPT3001 Light Sensor"
+	default y
+	depends on DT_HAS_TI_OPT3001_ENABLED
+	select I2C
+	help
+	  Enable driver for OPT3001 light sensors.

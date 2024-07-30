@@ -1,0 +1,16 @@
+sample:
+  name: I2S echo sample
+tests:
+  sample.drivers.i2s.echo:
+    tags: i2s
+    filter: dt_nodelabel_enabled("i2s_rxtx") or
+            (dt_nodelabel_enabled("i2s_rx") and dt_nodelabel_enabled("i2s_tx"))
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    platform_exclude: litex_vexriscv
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "I2S echo sample"

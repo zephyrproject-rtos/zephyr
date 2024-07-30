@@ -1,0 +1,34 @@
+#
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Enable NPCX firmware header
+CONFIG_NPCX_HEADER=y
+CONFIG_NPCX_IMAGE_OUTPUT_HEX=y
+CONFIG_NPCX_HEADER_SPI_MAX_CLOCK_50=y
+CONFIG_NPCX_HEADER_SPI_READ_MODE_DUAL=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Clock configuration
+CONFIG_CLOCK_CONTROL=y
+
+# General Kernel Options
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=15000000
+
+# UART Driver
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+
+# GPIO Driver
+CONFIG_GPIO=y
+
+# Pin Controller Driver
+CONFIG_PINCTRL=y
+
+# Console Driver
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y

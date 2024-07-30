@@ -1,0 +1,42 @@
+# Copyright (c) 2018, marc-cpdesign
+# SPDX-License-Identifier: Apache-2.0
+
+description: NRF5 GPIO node
+
+compatible: "nordic,nrf-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  gpiote-instance:
+    type: phandle
+    description: |
+      GPIOTE instance that can be used with this GPIO port.
+
+  "#gpio-cells":
+    const: 2
+
+  sense-edge-mask:
+    type: int
+    description: |
+      Mask of pins that use the GPIO sense mechanism for edge detection.
+      Pins not included in the mask use GPIOTE channels in the event mode.
+
+  port:
+    type: int
+    required: true
+    description: |
+      The GPIO port number. GPIO port P0 has:
+
+        port = <0>;
+
+      And P1 has:
+
+        port = <1>;
+
+gpio-cells:
+  - pin
+  - flags

@@ -1,0 +1,60 @@
+sample:
+  description: LVGL sample, containing all upstream demos
+  name: LVGL demos
+common:
+  modules:
+    - lvgl
+  harness: none
+  filter: dt_chosen_enabled("zephyr,display")
+  tags:
+    - samples
+    - display
+    - lvgl
+    - gui
+tests:
+  sample.modules.lvgl.demo_music:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_MUSIC=y
+  sample.modules.lvgl.demo_benchmark:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+  sample.modules.lvgl.demo_stress:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_STRESS=y
+  sample.modules.lvgl.demo_widgets:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_WIDGETS=y
+  sample.modules.lvgl.demos.st_b_lcd40_dsi1_mb1166:
+    filter: dt_compat_enabled("orisetech,otm8009a")
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
+    extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui
+  sample.modules.lvgl.demos.st_b_lcd40_dsi1_mb1166_a09:
+    filter: dt_compat_enabled("frida,nt35510")
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
+    extra_args: SHIELD=st_b_lcd40_dsi1_mb1166_a09
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui

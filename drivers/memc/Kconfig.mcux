@@ -1,0 +1,76 @@
+# Copyright 2020-2023 NXP
+# Copyright (c) 2021 Basalte bv
+# Copyright (c) 2023, ithinx GmbH
+# Copyright (c) 2023, Tonies GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if DT_HAS_NXP_IMX_FLEXSPI_ENABLED
+
+config MEMC_MCUX_FLEXSPI_W956A8MBYA
+	bool "MCUX FlexSPI Winbond W956A8MBYA HyperRAM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_W956A8MBYA_ENABLED
+	select MEMC_MCUX_FLEXSPI
+
+config MEMC_MCUX_FLEXSPI_S27KS0641
+	bool "MCUX FlexSPI Cypress S27KS0641 HyperRAM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_S27KS0641_ENABLED
+	select MEMC_MCUX_FLEXSPI
+
+config MEMC_MCUX_FLEXSPI_APS6408L
+	bool "MCUX FlexSPI AP Memory APS6408L pSRAM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_APS6408L_ENABLED
+	select MEMC_MCUX_FLEXSPI
+
+config MEMC_MCUX_FLEXSPI_IS66WVQ8M4
+	bool "MCUX FlexSPI ISSI IS66WVQ8M4 pSRAM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_IS66WVQ8M4_ENABLED
+	select MEMC_MCUX_FLEXSPI
+
+config MEMC_MCUX_FLEXSPI_INIT_PRIORITY
+	int "MCUX FLEXSPI MEMC driver initialization priority"
+	default MEMC_INIT_PRIORITY
+	help
+	  Initialization priority for FlexSPI MEMC driver. In cases where the
+	  flash driver must initialize before the MEMC RAM driver,
+	  initialization priorities can be set such that
+	  MEMC_MCUX_FLEXSPI_INIT_PRIORITY < FLASH_INIT_PRIORITY <
+	  MEMC_INIT_PRIORITY
+
+config MEMC_MCUX_FLEXSPI_INIT_XIP
+	bool "Initialize FLEXSPI when using device for XIP"
+	help
+	  Initialize the FLEXSPI device even when using it for XIP. If this
+	  Kconfig is enabled, the user must ensure that the pin control
+	  state used does not reconfigure the pins used to interface with
+	  the flash device used for XIP, and that the configuration settings
+	  used for the FLEXSPI are compatible with those needed for XIP from
+	  the flash device.
+
+config MEMC_MCUX_FLEXSPI
+	bool
+	select PINCTRL
+
+endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
+
+
+if DT_HAS_NXP_FLEXRAM_ENABLED
+
+config MEMC_NXP_FLEXRAM
+	bool
+	default y
+
+config MEMC_NXP_FLEXRAM_MAGIC_ADDR_API
+	bool "NXP FlexRAM magic addr API"
+	help
+	  Enable API to use flexRAM magic address functionality
+
+config MEMC_NXP_FLEXRAM_ERROR_INTERRUPT
+	bool "NXP FlexRAM error interrupt"
+	help
+	  Allow flexram to generate error interrupts
+
+endif # DT_HAS_NXP_FLEXRAM_ENABLED

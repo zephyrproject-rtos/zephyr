@@ -1,0 +1,341 @@
+# Debug configuration options
+
+# Copyright (c) 2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_Z_CONSOLE := zephyr,console
+
+config TRACING
+	bool "Tracing Support"
+	imply THREAD_NAME
+	imply THREAD_STACK_INFO
+	imply THREAD_MONITOR
+	select INSTRUMENT_THREAD_SWITCHING
+	help
+	  Enable system tracing. This requires a backend such as SEGGER
+	  Systemview to be enabled as well.
+
+if TRACING
+
+config TRACING_CORE
+	bool
+	help
+	  Automatically selected by formats that require the core
+	  tracing infrastructure.
+
+choice
+	prompt "Tracing Format"
+	default TRACING_NONE
+
+config TRACING_NONE
+	bool "No tracing format selected"
+	help
+	  None of the available tracing formats is selected.
+
+config PERCEPIO_TRACERECORDER
+	bool "Percepio Tracealyzer support"
+	select THREAD_NAME
+	select INIT_STACKS
+	select THREAD_MONITOR
+	depends on ZEPHYR_PERCEPIO_MODULE
+
+config SEGGER_SYSTEMVIEW
+	bool "Segger SystemView support"
+	select CONSOLE
+	select RTT_CONSOLE
+	select USE_SEGGER_RTT
+	select THREAD_MONITOR
+	select SEGGER_RTT_CUSTOM_LOCKING
+
+config TRACING_CTF
+	bool "Tracing via Common Trace Format support"
+	select TRACING_CORE
+	help
+	  Enable tracing to a Common Trace Format stream.
+
+config TRACING_TEST
+	bool "Tracing for test usage"
+	select TRACING_CORE
+	help
+	  Enable tracing for testing kinds of format purpose. It must
+	  implement the tracing hooks defined in tracing_test.h
+
+config TRACING_USER
+	bool "Tracing using user-defined functions"
+	help
+	  Use user-defined functions for tracing task switching and irqs
+
+endchoice
+
+
+config TRACING_CTF_TIMESTAMP
+	bool "CTF internal timestamp"
+	default y
+	depends on TRACING_CTF
+	help
+	  Timestamp prefix will be added to the beginning of CTF
+	  event internally.
+
+choice
+	prompt "Tracing Method"
+	default TRACING_ASYNC
+
+config TRACING_SYNC
+	bool "Synchronous Tracing"
+	select RING_BUFFER
+	help
+	  Enable synchronous tracing. This requires the backend to be
+	  very low-latency.
+
+config TRACING_ASYNC
+	bool "Asynchronous Tracing"
+	select RING_BUFFER
+	help
+	  Enable asynchronous tracing. This will buffer all the tracing
+	  packets to the ring buffer first, tracing thread will try to
+	  output as much data as possible from the buffer when tracing
+	  thread get scheduled.
+
+endchoice
+
+config TRACING_THREAD_STACK_SIZE
+	int "Stack size of tracing thread"
+	default 1024
+	depends on TRACING_ASYNC
+	help
+	  Stack size of tracing thread.
+
+config TRACING_THREAD_WAIT_THRESHOLD
+	int "Tracing thread waiting threshold"
+	default 100
+	depends on TRACING_ASYNC
+	help
+	  Tracing thread waiting period given in milliseconds after
+	  every first packet put to tracing buffer.
+
+config TRACING_BUFFER_SIZE
+	int "Size of tracing buffer"
+	default 2048 if TRACING_ASYNC
+	default TRACING_PACKET_MAX_SIZE if TRACING_SYNC
+	range 32 65536
+	help
+	  Size of tracing buffer. If TRACING_ASYNC is enabled, tracing buffer
+	  is used as a ring buffer to buffer data packet and string packet. If
+	  TRACING_SYNC is enabled, the buffer is used to hold the formatted data.
+
+config TRACING_PACKET_MAX_SIZE
+	int "Max size of one tracing packet"
+	default 32
+	help
+	  Max size of one tracing packet.
+
+choice
+	prompt "Tracing Backend"
+	default TRACING_BACKEND_UART
+
+config TRACING_BACKEND_UART
+	bool "UART backend"
+	depends on UART_CONSOLE
+
+	help
+	  Use UART to output tracing data.
+
+config TRACING_BACKEND_USB
+	bool "USB backend"
+	depends on USB_DEVICE_STACK
+	depends on TRACING_ASYNC
+	help
+	  Use USB to output tracing data.
+
+config TRACING_BACKEND_POSIX
+	bool "Posix architecture (native) backend"
+	depends on TRACING_SYNC
+	depends on ARCH_POSIX
+	help
+	  Use posix architecture to output tracing data to file system.
+
+config TRACING_BACKEND_RAM
+	bool "RAM backend"
+	help
+	  Use a ram buffer to output tracing data which can
+	  be dumped to a file at runtime with a debugger.
+	  See gdb dump binary memory documentation for example.
+
+config TRACING_BACKEND_ADSP_MEMORY_WINDOW
+	bool "Memory window in RAM"
+	depends on SOC_FAMILY_INTEL_ADSP
+	depends on TRACING_SYNC
+	help
+	  Use ADSP memory debug memory window to output tracing data
+
+endchoice
+
+config RAM_TRACING_BUFFER_SIZE
+	int "Ram Tracing buffer size"
+	default 4096
+	depends on TRACING_BACKEND_RAM
+	help
+	  Size of the RAM trace buffer. Trace will be discarded if the
+	  length is exceeded.
+
+config TRACING_USB_MPS
+	int "USB backend max packet size"
+	default 64
+	depends on TRACING_BACKEND_USB
+	help
+	  USB tracing backend max packet size(endpoint MPS).
+
+config TRACING_HANDLE_HOST_CMD
+	bool "Host command handle"
+	select UART_INTERRUPT_DRIVEN if TRACING_BACKEND_UART
+	help
+	  When enabled tracing will handle cmd from host to dynamically
+	  enable and disable tracing to have host capture tracing stream
+	  data conveniently.
+
+config TRACING_CMD_BUFFER_SIZE
+	int "Size of tracing command buffer"
+	default 32
+	range 32 128
+	help
+	  Size of tracing command buffer.
+
+config TRACING_OBJECT_TRACKING
+	bool "Object tracking"
+	help
+	  Keep lists to track kernel objects.
+
+menu "Tracing Configuration"
+
+config TRACING_SYSCALL
+	bool "Tracing Syscalls"
+	default y
+	help
+	  Enable tracing Syscalls.
+
+config TRACING_THREAD
+	bool "Tracing Threads"
+	default y
+	help
+	  Enable tracing Threads.
+
+config TRACING_WORK
+	bool "Tracing Work"
+	default y
+	help
+	  Enable tracing Work and Work queue events
+
+config TRACING_ISR
+	bool "Tracing ISRs"
+	default y
+	help
+	  Enable tracing ISRs. This requires the backend to be
+	  very low-latency.
+
+config TRACING_SEMAPHORE
+	bool "Tracing Semaphores"
+	default y
+	help
+	  Enable tracing Semaphores.
+
+config TRACING_MUTEX
+	bool "Tracing Mutexes"
+	default y
+	help
+	  Enable tracing Mutexes.
+
+config TRACING_CONDVAR
+	bool "Tracing Condition Variables"
+	default y
+	help
+	  Enable tracing Condition Variables
+
+config TRACING_QUEUE
+	bool "Tracing Queues"
+	default y
+	help
+	  Enable tracing Queues.
+
+config TRACING_FIFO
+	bool "Tracing FIFO queues"
+	default y
+	help
+	  Enable tracing FIFO queues.
+
+config TRACING_LIFO
+	bool "Tracing LIFO queues"
+	default y
+	help
+	  Enable tracing LIFO queues.
+
+config TRACING_STACK
+	bool "Tracing Memory Stacks"
+	default y
+	help
+	  Enable tracing Memory Stacks.
+
+config TRACING_MESSAGE_QUEUE
+	bool "Tracing Message Queues"
+	default y
+	help
+	  Enable tracing Message Queues.
+
+config TRACING_MAILBOX
+	bool "Tracing Mailboxes"
+	default y
+	help
+	  Enable tracing Mailboxes.
+
+config TRACING_PIPE
+	bool "Tracing Pipes"
+	default y
+	help
+	  Enable tracing Pipes.
+
+config TRACING_HEAP
+	bool "Tracing Memory Heaps"
+	default y
+	help
+	  Enable tracing Memory Heaps.
+
+config TRACING_MEMORY_SLAB
+	bool "Tracing Memory Slabs"
+	default y
+	help
+	  Enable tracing Memory Slabs.
+
+config TRACING_TIMER
+	bool "Tracing Timers"
+	default y
+	help
+	  Enable tracing Timers.
+
+config TRACING_EVENT
+	bool "Tracing Events"
+	default y
+	help
+	  Enable tracing Events.
+
+config TRACING_POLLING
+	bool "Tracing Polling"
+	default y
+	help
+	  Enable tracing Work Polling and Polling API.
+
+config TRACING_PM
+	bool "Tracing Power Management"
+	default y
+	help
+	  Enable tracing Power Management.
+
+config TRACING_NETWORKING
+	bool "Tracing Network Sockets"
+	default y if NETWORKING
+	help
+	  Enable tracing network sockets.
+
+endmenu  # Tracing Configuration
+
+endif
+
+source "subsys/tracing/sysview/Kconfig"

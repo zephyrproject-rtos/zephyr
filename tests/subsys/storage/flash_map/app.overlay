@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2022, Commonwealth Scientific and Industrial Research
+ * Organisation (CSIRO) ABN 41 687 119 230.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Test compilation with disabled flash nodes.
+ */
+
+/{
+	disabled_flash@0 {
+		compatible = "vnd,flash";
+		reg = <0x00 0x1000>;
+		status = "disabled";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			disabled_a: partition@0 {
+				label = "disabled_a";
+				reg = <0x00000000 0x00001000>;
+			};
+			disabled_b: partition@1000 {
+				label = "disabled_b";
+				reg = <0x00001000 0x00001000>;
+			};
+		};
+	};
+};

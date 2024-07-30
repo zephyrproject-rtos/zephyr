@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_STMPE811
+	bool "STMPE811 touch driver"
+	default y
+	depends on DT_HAS_ST_STMPE811_ENABLED
+	select I2C
+	help
+	  Enable driver for STMPE811 touch panel.

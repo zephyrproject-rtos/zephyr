@@ -1,0 +1,13 @@
+# LiteX UART (LiteUART) configuration option
+
+# Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_LITEUART
+	bool "LiteUART serial driver"
+	default y
+	depends on DT_HAS_LITEX_UART0_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables LiteUART serial driver.

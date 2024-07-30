@@ -1,0 +1,16 @@
+# Cypress SCB[UART] configuration
+
+# Copyright (c) 2018 Cypress
+# Copyright (c) 2020 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_PSOC6
+	bool "PSoC-6 MCU SCB serial driver"
+	default y
+	depends on DT_HAS_CYPRESS_PSOC6_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select USE_INFINEON_UART
+	select PINCTRL
+	help
+	  This option enables the SCB[UART] driver for PSoC-6 SoC family.

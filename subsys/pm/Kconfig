@@ -1,0 +1,159 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Power Management"
+
+config HAS_PM
+	bool
+	help
+	  This option must be selected by SoCs that provide PM hooks, that is,
+	  calls to configure low-power states.
+
+config PM
+	bool "System Power Management"
+	depends on SYS_CLOCK_EXISTS && HAS_PM
+	help
+	  This option enables the board to implement extra power management
+	  policies whenever the kernel becomes idle. The kernel informs the
+	  power management subsystem of the number of ticks until the next kernel
+	  timer is due to expire.
+
+if PM
+
+module = PM
+module-str = System Power Management
+source "subsys/logging/Kconfig.template.log_config"
+
+config PM_STATS
+	bool "System Power Management Stats"
+	depends on STATS
+	help
+	  Enable System Power Management Stats.
+
+config PM_S2RAM
+	bool "Suspend-to-RAM (S2RAM)"
+	depends on ARCH_HAS_SUSPEND_TO_RAM
+	help
+	  This option enables suspend-to-RAM (S2RAM).
+
+config PM_S2RAM_CUSTOM_MARKING
+	bool "Use custom marking functions"
+	depends on PM_S2RAM
+	help
+	  By default a magic word in RAM is used to mark entering suspend-to-RAM. Enabling
+	  this option allows custom implementation of functions which handles the marking.
+
+config PM_NEED_ALL_DEVICES_IDLE
+	bool "System Low Power Mode Needs All Devices Idle"
+	depends on PM_DEVICE && !SMP
+	help
+	  When this option is enabled, check that no devices are busy before
+	  entering into system low power mode.
+
+choice PM_POLICY
+	prompt "Idle State Power Management Policy"
+	default PM_POLICY_DEFAULT
+	help
+	  Select the idle state power management policy.
+
+config PM_POLICY_DEFAULT
+	bool "Default PM policy"
+	help
+	  This option selects the default PM policy. Default policy is based
+	  on CPU residency times and other constraints imposed by the drivers or
+	  application.
+
+config PM_POLICY_CUSTOM
+	bool "Custom PM Policy"
+	help
+	  This options allows applications to override the default policy with
+	  a custom implementation.
+
+endchoice
+
+config PM_POLICY_DEVICE_CONSTRAINTS
+	bool "Power state constraints per device"
+	help
+	  This option allows devices to have a list of power states
+	  that when the system transition to them, cause power loss in the device.
+	  This used to set and release power state constraints when
+	  it is needed by the device.
+
+endif # PM
+
+config PM_DEVICE
+	bool "Device Power Management"
+	help
+	  This option enables the device power management interface.  The
+	  interface implemented by device drivers are called by the power
+	  management subsystem. This allows device drivers to do any
+	  necessary power management operations like turning off
+	  device clocks and peripherals. Device drivers may also save
+	  and restore states in these hook functions.
+
+if PM_DEVICE
+
+module = PM_DEVICE
+module-str = Device Power Management
+source "subsys/logging/Kconfig.template.log_config"
+
+config PM_DEVICE_POWER_DOMAIN
+	bool "Power domain"
+	depends on PM_DEVICE
+	default y
+	help
+	  Enable support for Power Domain. With power domain enabled,
+	  devices that depend on a domain will be notified when this
+	  domain is suspended or resumed.
+
+config PM_DEVICE_POWER_DOMAIN_DYNAMIC
+	bool "Dynamically bind devices to a Power Domain"
+	depends on PM_DEVICE_POWER_DOMAIN && DEVICE_DEPS_DYNAMIC
+	help
+	  Enable support for dynamically bind devices to a Power Domain.
+
+config PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
+	int "Number of devices that can dynamically be bind to a Power Domain"
+	depends on PM_DEVICE_POWER_DOMAIN_DYNAMIC
+	default 1
+	help
+	  The number of devices that can dynamically be bind to a Power Domain.
+
+config PM_DEVICE_RUNTIME
+	bool "Runtime Device Power Management"
+	select EVENTS
+	help
+	  Enable Runtime Power Management to save power. With device runtime PM
+	  enabled, devices can be suspended or resumed based on the device
+	  usage even while the CPU or system is running.
+
+config PM_DEVICE_RUNTIME_EXCLUSIVE
+	depends on PM_DEVICE_RUNTIME
+	bool "[DEPRECATED] Use only on Runtime Power Management on system suspend / resume"
+	select DEPRECATED
+	help
+	  On system suspend / resume do not trigger the Device PM hooks but
+	  only rely on Runtime PM to manage the devices power states.
+
+config PM_DEVICE_SHELL
+	bool "Device Power Management shell"
+	depends on SHELL
+	help
+	  Enable the device power management shell, for triggering device power
+	  management events through the shell interface.
+
+config PM_DEVICE_SYSTEM_MANAGED
+	bool "System-Managed Device Power Management"
+	default y if !PM_DEVICE_RUNTIME_EXCLUSIVE && !PM_DEVICE_RUNTIME
+	help
+	  This option enables the system-managed device power
+	  management.  The power management subsystem will suspend
+	  devices before entering a low power state. Conversely, after
+	  the core wakes up from low power mode all suspended devices
+	  are resumed.
+
+
+endif # PM_DEVICE
+
+endmenu

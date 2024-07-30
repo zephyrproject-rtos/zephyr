@@ -1,0 +1,55 @@
+common:
+  tags:
+    - kernel
+    - benchmark
+tests:
+  benchmark.kernel.latency:
+    # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0
+    platform_exclude:
+      - qemu_cortex_m0
+      - m2gl025_miv
+    filter: CONFIG_PRINTK and not CONFIG_SOC_FAMILY_STM32
+    harness: console
+    integration_platforms:
+      - qemu_x86
+      - qemu_arc/qemu_arc_em
+    harness_config:
+      type: one_line
+      record:
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Cortex-M has 24bit systick, so default 1 TICK per seconds
+  # is achievable only if frequency is below 0x00FFFFFF (around 16MHz)
+  # 20 Ticks per secondes allows a frequency up to 335544300Hz (335MHz)
+  benchmark.kernel.latency.stm32:
+    arch_allow: arm
+    filter: CONFIG_PRINTK and CONFIG_SOC_FAMILY_STM32
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=20
+    harness: console
+    harness_config:
+      type: one_line
+      record:
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Obtain the benchmark results for various user thread / kernel thread
+  # configurations on platforms that support user space.
+  benchmark.kernel.latency.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    timeout: 300
+    extra_configs:
+      - CONFIG_USERSPACE=y
+    harness: console
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_a53
+    harness_config:
+      type: one_line
+      record:
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"

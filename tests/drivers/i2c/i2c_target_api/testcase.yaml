@@ -1,0 +1,42 @@
+common:
+  depends_on: i2c
+  tags:
+    - drivers
+    - i2c
+  harness: ztest
+  harness_config:
+    fixture: i2c_bus_short
+
+tests:
+  drivers.i2c.target_api.dual_role:
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_f746zg
+      - nucleo_g474re
+      - nucleo_f091rc
+      - stm32f072b_disco
+      - stm32f3_disco
+      - stm32h573i_dk
+      - nucleo_g071rb
+      - nucleo_f207zg
+      - nucleo_f401re
+      - nucleo_f429zi
+      - nucleo_wl55jc
+      - nucleo_l073rz
+      - nucleo_l152re
+      - nucleo_wb55rg
+      - rpi_pico
+      - sltb010a@0
+      - mr_canhubk3
+    integration_platforms:
+      - nucleo_f091rc
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y
+  drivers.i2c.target_api.single_role:
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1040_evk
+      - mimxrt1060_evk
+      - frdm_ke17z512

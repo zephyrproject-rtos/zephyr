@@ -1,0 +1,21 @@
+sample:
+  name: Bluetooth Central HT
+tests:
+  sample.bluetooth.central_ht:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
+  sample.bluetooth.central_ht.nxp:
+    # Disabling monolithic since CI environment doesn't use blobs
+    harness: bluetooth
+    platform_allow:
+      - rd_rw612_bga
+      - frdm_rw612
+    extra_configs:
+      - CONFIG_NXP_MONOLITHIC_BT=n

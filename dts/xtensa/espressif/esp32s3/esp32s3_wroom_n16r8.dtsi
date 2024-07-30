@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "esp32s3_common.dtsi"
+
+/* 16MB flash */
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+};
+
+/* 8MB psram */
+&psram0 {
+	reg = <0x3c000000 DT_SIZE_M(8)>;
+	status = "okay";
+};

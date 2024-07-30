@@ -1,0 +1,98 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT
+	bool "Input"
+	help
+	  Include input subsystem and drivers in the system config.
+
+if INPUT
+
+module = INPUT
+module-str = input
+source "subsys/logging/Kconfig.template.log_config"
+
+config INPUT_INIT_PRIORITY
+	int "Input subsystem and drivers init priority"
+	default 90
+	help
+	  Input subsystem and drivers initialization priority.
+
+choice INPUT_MODE
+	prompt "Input event processing mode"
+	default INPUT_MODE_THREAD
+
+config INPUT_MODE_SYNCHRONOUS
+	bool "Process input events synchronously"
+	help
+	  Input events callbacks are processed synchronously in the context of
+	  the code that is reporting the event.
+
+config INPUT_MODE_THREAD
+	bool "Process input events in a dedicated thread"
+	depends on MULTITHREADING
+	help
+	  Input events are added to a message queue and the callbacks are
+	  processed asynchronously in a dedicated thread.
+
+endchoice
+
+if INPUT_MODE_THREAD
+
+config INPUT_THREAD_PRIORITY_OVERRIDE
+	bool "Override default input thread priority"
+	help
+	  Option to change the default value of input thread priority.
+
+if INPUT_THREAD_PRIORITY_OVERRIDE
+config INPUT_THREAD_PRIORITY
+	int "Input thread priority"
+	default 0
+	help
+	  Set thread priority of the input
+endif
+
+config INPUT_QUEUE_MAX_MSGS
+	int "Input queue max messages"
+	default 16
+	help
+	  Maximum number of messages in the input event queue.
+
+config INPUT_THREAD_STACK_SIZE
+	int "Input thread stack size"
+	default 1024
+	help
+	  Stack size for the thread processing the input events, must have
+	  enough space for executing the registered callbacks.
+
+endif # INPUT_MODE_THREAD
+
+config INPUT_EVENT_DUMP
+	bool "Log all input events"
+	depends on LOG
+	help
+	  Dump all input devents using log info messages, has to be enabled
+	  with "input dump on" if INPUT_SHELL is used.
+
+config INPUT_SHELL
+	bool "Input shell"
+	depends on SHELL
+	help
+	  Enable the input shell, for interacting with the input subsystem
+	  through the shell interface.
+
+config INPUT_LONGPRESS
+	bool "Input longpress"
+	default y
+	depends on DT_HAS_ZEPHYR_INPUT_LONGPRESS_ENABLED
+	help
+	  Enable the input longpress driver.
+
+config INPUT_KEYMAP
+	bool "Input keymap"
+	default y
+	depends on DT_HAS_INPUT_KEYMAP_ENABLED
+	help
+	  Enable the input keymap driver.
+
+endif # INPUT

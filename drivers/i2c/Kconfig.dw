@@ -1,0 +1,29 @@
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_DW
+	bool "Design Ware I2C support"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_I2C_ENABLED
+	help
+	  Enable the Design Ware I2C driver
+
+config I2C_DW_CLOCK_SPEED
+	int "Set the clock speed for I2C"
+	depends on I2C_DW
+	default 32
+
+config I2C_DW_LPSS_DMA
+	bool "Use I2C integrated DMA for asynchronous transfer"
+	depends on I2C_DW
+	select DMA
+	select DMA_INTEL_LPSS
+	help
+	  This option enables I2C DMA feature to be used for asynchronous
+	  data transfers. All Tx operations are done using dma channel 0 and
+	  all Rx operations are done using dma channel 1.
+
+config I2C_DW_RW_TIMEOUT_MS
+	int "Set the Read/Write timeout in milliseconds"
+	depends on I2C_DW
+	default 100

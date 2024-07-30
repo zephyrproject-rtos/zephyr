@@ -1,0 +1,8 @@
+tests:
+  benchmark.data_structure_perf.dlist:
+    tags:
+      - benchmark
+      - dlist
+      - kernel
+    integration_platforms:
+      - native_sim

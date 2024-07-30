@@ -1,0 +1,5 @@
+board:
+  name: ast1030_evb
+  vendor: aspeed
+  socs:
+  - name: ast1030

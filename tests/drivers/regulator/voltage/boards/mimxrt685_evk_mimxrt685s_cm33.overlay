@@ -1,0 +1,74 @@
+/*
+ * Copyright 2022 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+
+/* RT685 ADC only supports up to 1.8V,
+ * so limit regulator voltage to this range.
+ * Only test regulators we can safely change voltage to in RUN mode
+ */
+ &ldo1 {
+	regulator-max-microvolt = <1800000>;
+ };
+
+ &ldo2 {
+	regulator-max-microvolt = <1800000>;
+ };
+
+/* Override LPADC0 pinctrl settings */
+&pinmux_lpadc0 {
+	group0 {
+		pinmux = <ADC0_CH0_PIO0_5>,
+			<ADC0_CH2_PIO0_19>;
+		slew-rate = "normal";
+		drive-strength = "normal";
+		nxp,analog-mode;
+	};
+};
+
+/ {
+	/* Note: make the following connections to run test on an RT685:
+	 * J30.1-> TP15
+	 * J30.3-> TP17
+	 */
+	resources: resources {
+		compatible = "test-regulator-voltage";
+		/* Note: LDO2 voltage range needs to be tested first
+		 * to pass this test. It seems that when LDO2 is at the
+		 * default voltage of 3.3V, LDO1 will not always deliver
+		 * a voltage within given tolerance
+		 */
+		regulators = <&ldo2 &ldo1>;
+		io-channels = <&lpadc0 0>, <&lpadc0 1>;
+		tolerance-microvolt = <35000>, <35000>;
+		set-read-delay-ms = <20>;
+		adc-avg-count = <10>;
+	};
+};
+
+&lpadc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <1800>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH0A>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <1800>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH2A>;
+	};
+};

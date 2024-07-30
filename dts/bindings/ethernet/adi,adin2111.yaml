@@ -1,0 +1,69 @@
+# Copyright (c) 2023 PHOENIX CONTACT Electronics GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADIN2111 standalone 10BASE-T1L Ethernet controller with SPI interface.
+
+  An example:
+
+  adin2111: adin2111@0 {
+          compatible = "adi,adin2111";
+          reg = <0x0>;
+          spi-max-frequency = <25000000>;
+          int-gpios   = <&gpioe 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+          reset-gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
+          port1 {
+              local-mac-address = [ CA 2F B7 10 23 63 ];
+          };
+          port2 {
+              local-mac-address = [ 3C 82 D4 A2 29 8E ];
+          };
+          mdio: mdio {
+                  compatible = "adi,adin2111-mdio";
+                  status = "okay";
+                  #address-cells = <1>;
+                  #size-cells = <0>;
+                  ethernet-phy@1 {
+                    reg = <0x1>;
+                    compatible = "adi,adin2111-phy";
+                    status = "okay";
+                  };
+                  ethernet-phy@2 {
+                    reg = <0x2>;
+                    compatible = "adi,adin2111-phy";
+                    status = "okay";
+                  };
+          };
+  };
+
+compatible: "adi,adin2111"
+
+include: [spi-device.yaml]
+
+bus: adin2111
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The interrupt pin of ADIN2111 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+  reset-gpios:
+    type: phandle-array
+    description: The reset pin of ADIN2111.
+  spi-oa:
+    type: boolean
+    description: Enables Open Alliance SPI protocol.
+  spi-oa-protection:
+    type: boolean
+    description: Enables Open Alliance SPI protocol protection.
+
+child-binding:
+  description: Port properties
+  properties:
+    local-mac-address:
+      type: uint8-array
+      description: |
+        Specifies the MAC address that was assigned to the network device.

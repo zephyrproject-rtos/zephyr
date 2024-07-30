@@ -1,0 +1,917 @@
+# IP stack config
+
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2021 Nordic Semiconductor
+# Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "IP stack"
+
+# Hidden option enabled whenever an IP stack is available.
+config NET_IP
+	bool
+	default y if NET_IPV6 || NET_IPV4
+
+# Hidden option enabled whenever an IP fragmentation is enabled.
+config NET_IP_FRAGMENT
+	bool
+	default y if NET_IPV6_FRAGMENT || NET_IPV4_FRAGMENT
+
+# Hidden option selected by net connection based socket implementations
+# to draw in all code required for connection infrastructure.
+config NET_CONNECTION_SOCKETS
+	bool
+
+config NET_NATIVE
+	bool "Native network stack support"
+	default y
+	help
+	  Enables Zephyr native IP stack. If you disable this, then
+	  you need to enable the offloading support if you want to
+	  have IP connectivity.
+
+# Hidden options for enabling native IPv6/IPv4. Using these options
+# avoids having "defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_NATIVE)"
+# in the code as we can have "defined(CONFIG_NET_NATIVE_IPV6)" instead.
+config NET_NATIVE_IP
+	bool
+	depends on NET_NATIVE
+	default y if NET_IP
+
+config NET_NATIVE_IPV6
+	bool
+	depends on NET_NATIVE
+	default y if NET_IPV6
+
+config NET_NATIVE_IPV4
+	bool
+	depends on NET_NATIVE
+	default y if NET_IPV4
+
+config NET_NATIVE_TCP
+	bool
+	depends on NET_NATIVE
+	default y if NET_TCP
+
+config NET_NATIVE_UDP
+	bool
+	depends on NET_NATIVE
+	default y if NET_UDP
+
+config NET_OFFLOAD
+	bool "Offload IP stack"
+	help
+	  Enables TCP/IP stack to be offload to a co-processor.
+
+config NET_OFFLOADING_SUPPORT
+	bool
+	default y if NET_OFFLOAD || NET_SOCKETS_OFFLOAD
+	help
+	  Hidden option that is set if either NET_OFFLOAD or
+	  NET_SOCKETS_OFFLOAD is set. This allows us to check
+	  only one option instead of two.
+
+if NET_OFFLOAD
+module = NET_OFFLOAD
+module-dep = NET_LOG
+module-str = Log level for offload layer
+module-help = Enables offload layer to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_OFFLOAD
+
+config NET_RAW_MODE
+	bool
+	help
+	  This is a very specific option used to built only the very minimal
+	  part of the net stack in order to get network drivers working without
+	  any net stack above: core, L2 etc... Basically this will build only
+	  net_pkt part. It is currently used only by IEEE 802.15.4 drivers,
+	  though any type of net drivers could use it.
+
+choice NET_QEMU_NETWORKING
+	prompt "Qemu networking"
+	default NET_QEMU_PPP if NET_PPP
+	default NET_QEMU_SLIP
+	depends on QEMU_TARGET
+	help
+	  Can be used to select how the network connectivity is established
+	  from inside qemu to host system. This can be done either via
+	  serial connection (SLIP) or via Qemu ethernet driver.
+
+config NET_QEMU_SLIP
+	bool "SLIP"
+	help
+	  Connect to host or to another Qemu via SLIP.
+
+config NET_QEMU_PPP
+	bool "PPP"
+	help
+	  Connect to host via PPP.
+
+config NET_QEMU_ETHERNET
+	bool "Ethernet"
+	help
+	  Connect to host system via Qemu ethernet driver support. One such
+	  driver that Zephyr supports is Intel e1000 ethernet driver.
+
+config NET_QEMU_USER
+	bool "SLIRP"
+	help
+	  Connect to host system via Qemu's built-in User Networking support. This
+	  is implemented using "slirp", which provides a full TCP/IP stack within
+	  QEMU and uses that stack to implement a virtual NAT'd network.
+
+endchoice
+
+config NET_QEMU_USER_EXTRA_ARGS
+	string "Qemu User Networking Args"
+	depends on NET_QEMU_USER
+	default ""
+	help
+	  Extra arguments passed to QEMU when User Networking is enabled. This may
+	  include host / guest port forwarding, device id, Network address
+	  information etc. This string is appended to the QEMU "-net user" option.
+
+if !NET_RAW_MODE
+
+config NET_INIT_PRIO
+	int
+	default 90
+	help
+	  Network initialization priority level. This number tells how
+	  early in the boot the network stack is initialized.
+
+config NET_IP_DSCP_ECN
+	bool "DSCP/ECN processing at IP layer"
+	depends on NET_IP
+	default y
+	help
+	  Specify whether DSCP/ECN values are processed at IP layer. The values
+	  are encoded within ToS field in IPv4 and TC field in IPv6.
+
+source "subsys/net/ip/Kconfig.ipv6"
+
+source "subsys/net/ip/Kconfig.ipv4"
+
+config NET_IPV4_MAPPING_TO_IPV6
+	bool "Support IPv4 mapped on IPv6 addresses"
+	depends on NET_NATIVE_IPV6
+	help
+	  Support v4-mapped-on-v6 address type. This allows IPv4 and IPv6
+	  to share a local port space. When the application gets an IPv4
+	  connection or packet to an IPv6 socket, its source address will
+	  be mapped to IPv6. This is turned off by default which means
+	  that IPV6_V6ONLY socket option is always on. If you enable this
+	  option, then you can still control the behaviour of the socket
+	  via the IPV6_V6ONLY option at runtime.
+
+config NET_SHELL
+	bool "Network shell utilities"
+	select SHELL
+	select NET_IPV4_IGMP if NET_IPV4
+	select REQUIRES_FLOAT_PRINTF
+	help
+	  Activate shell module that provides network commands like
+	  ping to the console.
+
+config NET_SHELL_DYN_CMD_COMPLETION
+	bool "Network shell dynamic command completion"
+	depends on NET_SHELL
+	default y
+	help
+	  Enable various net-shell command to support dynamic command
+	  completion. This means that for example the nbr command can
+	  automatically complete the neighboring IPv6 address and user
+	  does not need to type it manually.
+	  Please note that this uses more memory in order to save the
+	  dynamic command strings. For example for nbr command the
+	  increase is 320 bytes (8 neighbors * 40 bytes for IPv6 address
+	  length) by default. Other dynamic completion commands in
+	  net-shell require also some smaller amount of memory.
+
+config NET_SHELL_REQUIRE_TX_THREAD
+	bool
+	depends on NET_SHELL && (SHELL_BACKEND_TELNET || SHELL_BACKEND_MQTT)
+	default y if NET_ARP
+	help
+	  Hidden symbol indicating that network shell requires separate TX
+	  thread due to possible deadlocks during shell/net stack operations.
+
+config NET_TC_TX_COUNT
+	int "How many Tx traffic classes to have for each network device"
+	default 1 if USERSPACE || USB_DEVICE_NETWORK || \
+		     NET_SHELL_REQUIRE_TX_THREAD
+	default 0
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && \
+		(USERSPACE || NET_SHELL_REQUIRE_TX_THREAD)
+	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
+	range 1 8 if USERSPACE || NET_SHELL_REQUIRE_TX_THREAD
+	range 0 8
+	help
+	  Define how many Tx traffic classes (queues) the system should have
+	  when sending a network packet. The network packet priority can then
+	  be mapped to this traffic class so that higher prioritized packets
+	  can be processed before lower prioritized ones. Each queue is handled
+	  by a separate thread which will need RAM for stack space.
+	  Only increase the value from 1 if you really need this feature.
+	  The default value is 1 which means that all the network traffic is
+	  handled equally. In this implementation, the higher traffic class
+	  value corresponds to lower thread priority.
+	  If you select 0 here, then it means that all the network traffic
+	  is pushed to the driver directly without any queues.
+	  Note that if USERSPACE support is enabled, then currently we need to
+	  enable at least 1 TX thread.
+
+config NET_TC_RX_COUNT
+	int "How many Rx traffic classes to have for each network device"
+	default 1
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && USERSPACE
+	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
+	range 1 8 if USERSPACE
+	range 0 8
+	help
+	  Define how many Rx traffic classes (queues) the system should have
+	  when receiving a network packet. The network packet priority can then
+	  be mapped to this traffic class so that higher prioritized packets
+	  can be processed before lower prioritized ones. Each queue is handled
+	  by a separate thread which will need RAM for stack space.
+	  Only increase the value from 1 if you really need this feature.
+	  The default value is 1 which means that all the network traffic is
+	  handled equally. In this implementation, the higher traffic class
+	  value corresponds to lower thread priority.
+	  If you select 0 here, then it means that all the network traffic
+	  is pushed from the driver to application thread without any
+	  intermediate RX queue. There is always a receive socket queue between
+	  device driver and application. Disabling RX thread means that the
+	  network device driver, that is typically running in IRQ context, will
+	  handle the packet all the way to the application. This might cause
+	  other incoming packets to be lost if the RX processing takes long
+	  time.
+	  Note that if USERSPACE support is enabled, then currently we need to
+	  enable at least 1 RX thread.
+
+config NET_TC_SKIP_FOR_HIGH_PRIO
+	bool "Push high priority packets directly to network driver"
+	help
+	  If this is set, then high priority (>= NET_PRIORITY_CA) net_pkt will
+	  be pushed directly to network driver and will skip the traffic class
+	  queues. This is currently not enabled by default.
+
+choice NET_TC_THREAD_TYPE
+	prompt "How the network RX/TX threads should work"
+	help
+	  Please select the RX/TX threads to be either pre-emptive or
+	  co-operative.
+
+config NET_TC_THREAD_COOPERATIVE
+	bool "Use co-operative TX/RX threads"
+	depends on COOP_ENABLED
+	help
+	  With co-operative threads, the thread cannot be pre-empted.
+
+config NET_TC_THREAD_PREEMPTIVE
+	bool "Use pre-emptive TX/RX threads [EXPERIMENTAL]"
+	depends on PREEMPT_ENABLED
+	select EXPERIMENTAL
+	help
+	  With pre-emptive threads, the thread can be pre-empted.
+
+endchoice
+
+config NET_TC_NUM_PRIORITIES
+	int
+	default NUM_COOP_PRIORITIES if NET_TC_THREAD_COOPERATIVE
+	default NUM_PREEMPT_PRIORITIES if NET_TC_THREAD_PREEMPTIVE
+
+config NET_TC_THREAD_PRIO_CUSTOM
+	bool "Customize traffic class thread priority"
+	help
+	  Customise net threads priority by each.
+
+if NET_TC_THREAD_PRIO_CUSTOM
+config NET_TC_TX_THREAD_BASE_PRIO
+	int "Transmit traffic class base thread priority"
+	default 0
+	help
+	  Transmit traffic class threads priority will increase/decrease
+	  from this priority.
+	  If NET_TC_TX_COUNT is 1, this will be transmit traffic class
+	  thread priority.
+
+config NET_TC_RX_THREAD_BASE_PRIO
+	int "Receive traffic class base thread priority"
+	default 0
+	help
+	  Receive traffic class threads priority will increase/decrease
+	  from this priority.
+	  If NET_TC_RX_COUNT is 1, this will be receive traffic class
+	  thread priority.
+
+endif # NET_TC_THREAD_CUSTOM_PRIO
+
+choice
+	prompt "Priority to traffic class mapping"
+	help
+	  Select mapping to use to map network packet priorities to traffic
+	  classes.
+
+config NET_TC_MAPPING_STRICT
+	bool "Strict priority mapping"
+	help
+	  This is the recommended default priority to traffic class mapping.
+	  Use it for implementations that do not support the credit-based
+	  shaper transmission selection algorithm.
+	  See 802.1Q, chapter 8.6.6 for more information.
+
+config NET_TC_MAPPING_SR_CLASS_A_AND_B
+	bool "SR class A and class B mapping"
+	depends on NET_TC_TX_COUNT >= 2
+	depends on NET_TC_RX_COUNT >= 2
+	help
+	  This is the recommended priority to traffic class mapping for a
+	  system that supports SR (Stream Reservation) class A and SR class B.
+	  See 802.1Q, chapter 34.5 for more information.
+
+config NET_TC_MAPPING_SR_CLASS_B_ONLY
+	bool "SR class B only mapping"
+	depends on NET_TC_TX_COUNT >= 2
+	depends on NET_TC_RX_COUNT >= 2
+	help
+	  This is the recommended priority to traffic class mapping for a
+	  system that supports SR (Stream Reservation) class B only.
+	  See 802.1Q, chapter 34.5 for more information.
+endchoice
+
+config NET_TX_DEFAULT_PRIORITY
+	int "Default network TX packet priority if none have been set"
+	default 1
+	range 0 7
+	help
+	  What is the default network packet priority if user has not specified
+	  one. The value 0 means lowest priority and 7 is the highest.
+
+config NET_RX_DEFAULT_PRIORITY
+	int "Default network RX packet priority if none have been set"
+	default 0
+	range 0 7
+	help
+	  What is the default network RX packet priority if user has not set
+	  one. The value 0 means lowest priority and 7 is the highest.
+
+config NET_ALLOW_ANY_PRIORITY
+	bool "Allow any network packet priority to be used"
+	help
+	  If this is set, then any user given network packet priority can be used. Otherwise
+	  the network packet priorities are limited to 0-7 range.
+
+config NET_IP_ADDR_CHECK
+	bool "Check IP address validity before sending IP packet"
+	default y
+	help
+	  Check that either the source or destination address is
+	  correct before sending either IPv4 or IPv6 network packet.
+
+config NET_MAX_ROUTERS
+	int "How many routers are supported"
+	default 2 if NET_IPV4 && NET_IPV6
+	default 1 if NET_IPV4 && !NET_IPV6
+	default 1 if !NET_IPV4 && NET_IPV6
+	range 1 254
+	help
+	  The value depends on your network needs.
+
+# Normally the route support is enabled by RPL or similar technology
+# that needs to use the routing infrastructure.
+config NET_ROUTE
+	bool
+	depends on NET_IPV6_NBR_CACHE
+	default y if NET_IPV6_NBR_CACHE
+
+# Temporarily hide the routing option as we do not have RPL in the system
+# that used to populate the routing table.
+config NET_ROUTING
+	bool
+	depends on NET_ROUTE
+	help
+	  Allow IPv6 routing between different network interfaces and
+	  technologies. Currently this has limited use as some entity
+	  would need to populate the routing table. RPL used to do that
+	  earlier but currently there is no RPL support in Zephyr.
+
+config NET_MAX_ROUTES
+	int "Max number of routing entries stored."
+	default NET_IPV6_MAX_NEIGHBORS
+	depends on NET_ROUTE
+	help
+	  This determines how many entries can be stored in routing table.
+
+config NET_MAX_NEXTHOPS
+	int "Max number of next hop entries stored."
+	default NET_MAX_ROUTES
+	depends on NET_ROUTE
+	help
+	  This determines how many entries can be stored in nexthop table.
+
+config NET_ROUTE_MCAST
+	bool "Multicast Routing / Forwarding"
+	depends on NET_ROUTE
+	help
+	  Activates multicast routing/forwarding
+
+config NET_MAX_MCAST_ROUTES
+	int "Max number of multicast routing entries stored."
+	default 1
+	depends on NET_ROUTE_MCAST
+	help
+	  This determines how many entries can be stored in multicast
+	  routing table.
+
+config NET_MCAST_ROUTE_MAX_IFACES
+	int "Max number of network interfaces per multicast routing entry"
+	default 1
+	range 1 8
+	depends on NET_ROUTE_MCAST
+	help
+	  Determines how many network interfaces can be assigned to a
+	  single multicast route entry.
+
+config NET_MCAST_ROUTE_MLD_REPORTS
+	bool "Report multicast routes as a part of MLDv2 reports"
+	depends on NET_ROUTE_MCAST
+	depends on NET_IPV6_MLD
+	help
+	  Determines whether a multicast route entry should be advertised
+	  in MLDv2 reports.
+
+source "subsys/net/ip/Kconfig.tcp"
+
+config NET_TEST_PROTOCOL
+	bool "JSON based test protocol (UDP)"
+	help
+	  Enable JSON based test protocol (UDP).
+
+config NET_UDP
+	bool "UDP"
+	default y
+	depends on NET_IP
+	help
+	  The value depends on your network needs.
+
+config NET_UDP_CHECKSUM
+	bool "Check UDP checksum"
+	default y
+	depends on NET_UDP
+	help
+	  Enables UDP handler to check UDP checksum. If the checksum is invalid,
+	  then the packet is discarded.
+
+config NET_UDP_MISSING_CHECKSUM
+	bool "Accept missing checksum (IPv4 only)"
+	default y
+	depends on NET_UDP && NET_IPV4
+	help
+	  RFC 768 states the possibility to have a missing checksum, for
+	  debugging purposes for instance. That feature is however valid only
+	  for IPv4 and on reception only, since Zephyr will always compute the
+	  UDP checksum in transmission path.
+
+if NET_UDP
+module = NET_UDP
+module-dep = NET_LOG
+module-str = Log level for UDP
+module-help = Enables UDP handler output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_UDP
+
+config NET_MAX_CONN
+	int "How many network connections are supported"
+	depends on NET_UDP || NET_TCP || NET_SOCKETS_PACKET || NET_SOCKETS_CAN
+	default 8 if NET_IPV6 && NET_IPV4
+	default 4
+	help
+	  The value depends on your network needs. The value
+	  should include both UDP and TCP connections.
+
+config NET_MAX_CONTEXTS
+	int "Number of network contexts to allocate"
+	default 6
+	help
+	  Each network context is used to describe a network 5-tuple that
+	  is used when listening or sending network traffic. This is very
+	  similar as one could call a network socket in some other systems.
+
+config NET_CONTEXT_NET_PKT_POOL
+	bool "Net_buf TX pool / context"
+	default y if NET_TCP && NET_6LO
+	help
+	  If enabled, then it is possible to fine-tune network packet pool
+	  for each context when sending network data. If this setting is
+	  enabled, then you should define the context pools in your application
+	  using NET_PKT_TX_POOL_DEFINE() and NET_PKT_DATA_POOL_DEFINE()
+	  macros and tie these pools to desired context using the
+	  net_context_setup_pools() function.
+
+config NET_CONTEXT_SYNC_RECV
+	bool "Support synchronous functionality in net_context_recv() API"
+	default y
+	help
+	  You can disable sync support to save some memory if you are calling
+	  net_context_recv() in async way only when timeout is set to 0.
+
+config NET_CONTEXT_CHECK
+	bool "Check options when calling various net_context functions"
+	default y
+	help
+	  If you know that the options passed to net_context...() functions
+	  are ok, then you can disable the checks to save some memory.
+
+config NET_CONTEXT_PRIORITY
+	bool "Add priority support to net_context"
+	help
+	  It is possible to prioritize network traffic. This requires
+	  also traffic class support to work as expected.
+
+config NET_CONTEXT_TXTIME
+	bool "Add TXTIME support to net_context"
+	select NET_PKT_TXTIME
+	help
+	  It is possible to add information when the outgoing network packet
+	  should be sent. The TX time information should be placed into
+	  ancillary data field in sendmsg call.
+
+config NET_CONTEXT_RCVTIMEO
+	bool "Add RCVTIMEO support to net_context"
+	help
+	  It is possible to time out receiving a network packet. The timeout
+	  time is configurable run-time in the application code. For network
+	  sockets timeout is configured per socket with
+	  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, ...) function.
+
+config NET_CONTEXT_SNDTIMEO
+	bool "Add SNDTIMEO support to net_context"
+	help
+	  It is possible to time out sending a network packet. The timeout
+	  time is configurable run-time in the application code. For network
+	  sockets timeout is configured per socket with
+	  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, ...) function.
+
+config NET_CONTEXT_RCVBUF
+	bool "Add RCVBUF support to net_context"
+	help
+	  If is possible to define the maximum socket receive buffer per socket.
+	  The default value is set by CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE. For
+	  TCP sockets, the rcvbuf will determine the receive window size.
+
+config NET_CONTEXT_SNDBUF
+	bool "Add SNDBUF support to net_context"
+	help
+	  It is possible to define the maximum socket send buffer per socket.
+	  For TCP sockets, the sndbuf will determine the total size of queued
+	  data in the TCP layer.
+
+config NET_CONTEXT_DSCP_ECN
+	bool "Add support for setting DSCP/ECN IP properties on net_context"
+	depends on NET_IP_DSCP_ECN
+	default y
+	help
+	  Allow to set Differentiated Services and Explicit Congestion
+	  Notification values on net_context. Those values are then used in
+	  IPv4/IPv6 header when sending packets over net_context.
+
+config NET_CONTEXT_REUSEADDR
+	bool "Add REUSEADDR support to net_context"
+	default y if NET_TCP || NET_UDP
+	help
+	  Allow to set the SO_REUSEADDR flag on a socket. This enables multiple
+	  sockets to bind to the same local IP address.
+
+config NET_CONTEXT_REUSEPORT
+	bool "Add REUSEPORT support to net_context"
+	default y if NET_TCP || NET_UDP
+	help
+	  Allow to set the SO_REUSEPORT flag on a socket. This enables multiple
+	  sockets to bind to the same local IP address and port combination.
+
+config NET_CONTEXT_RECV_PKTINFO
+	bool "Add receive PKTINFO support to net_context"
+	depends on NET_UDP
+	help
+	  Allow to set the IP_PKTINFO or IPV6_RECVPKTINFO flags on a socket.
+	  This way user can get extra information about the received data in the
+	  socket.
+
+config NET_CONTEXT_TIMESTAMPING
+	bool "Add TIMESTAMPING support to net_context"
+	default y if (NET_UDP && NET_PKT_TIMESTAMP)
+	help
+	  Allow to set the TIMESTAMPING option on a socket. This way timestamp for a network
+	  packet will be added to the net_pkt structure.
+
+endif # NET_RAW_MODE
+
+config NET_SLIP_TAP
+	bool "TAP SLIP driver"
+	depends on NET_QEMU_SLIP
+	depends on NET_NATIVE
+	select SLIP
+	select UART_PIPE
+	select UART_INTERRUPT_DRIVEN
+	select SLIP_TAP
+	select NET_L2_ETHERNET
+	default y if (QEMU_TARGET && !NET_TEST)
+	help
+	  SLIP TAP support is necessary when testing with QEMU. The host
+	  needs to have tunslip6 with TAP support running in order to
+	  communicate via the SLIP driver. See net-tools project at
+	  https://github.com/zephyrproject-rtos/net-tools for more details.
+
+config NET_TEST
+	bool "Network Testing"
+	help
+	  Used for self-contained networking tests that do not require a
+	  network device.
+
+config NET_PKT_RX_COUNT
+	int "How many packet receives can be pending at the same time"
+	default 14 if NET_L2_ETHERNET
+	default 4
+	help
+	  Each RX buffer will occupy smallish amount of memory.
+	  See include/net/net_pkt.h and the sizeof(struct net_pkt)
+
+config NET_PKT_TX_COUNT
+	int "How many packet sends can be pending at the same time"
+	default 14 if NET_L2_ETHERNET
+	default 4
+	help
+	  Each TX buffer will occupy smallish amount of memory.
+	  See include/net/net_pkt.h and the sizeof(struct net_pkt)
+
+config NET_BUF_RX_COUNT
+	int "How many network buffers are allocated for receiving data"
+	default 36 if NET_L2_ETHERNET
+	default 16
+	help
+	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
+	  header (sizeof(struct net_buf)) amount of data.
+
+config NET_BUF_TX_COUNT
+	int "How many network buffers are allocated for sending data"
+	default 36 if NET_L2_ETHERNET
+	default 16
+	help
+	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
+	  header (sizeof(struct net_buf)) amount of data.
+
+choice
+	prompt "Network packet data allocator type"
+	default NET_BUF_FIXED_DATA_SIZE
+	help
+	  Select the memory allocator for the network buffers that hold the
+	  packet data.
+
+config NET_BUF_FIXED_DATA_SIZE
+	bool "Fixed data size buffer"
+	help
+	  Each buffer comes with a built time configured size. If runtime
+	  requested is bigger than that, it will allocate as many net_buf
+	  as necessary to reach that request.
+
+config NET_BUF_VARIABLE_DATA_SIZE
+	bool "Variable data size buffer [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  The buffer is dynamically allocated from runtime requested size.
+
+endchoice
+
+config NET_BUF_DATA_SIZE
+	int "Size of each network data fragment"
+	default 128
+	depends on NET_BUF_FIXED_DATA_SIZE
+	help
+	  This value tells what is the fixed size of each network buffer.
+
+config NET_BUF_DATA_POOL_SIZE
+	int "[DEPRECATED] Size of the memory pool where buffers are allocated from"
+	default 4096 if NET_L2_ETHERNET
+	default 2048
+	depends on NET_BUF_VARIABLE_DATA_SIZE
+	help
+	  This config is deprecated, use NET_PKT_BUF_RX_DATA_POOL_SIZE and
+	  NET_PKT_BUF_TX_DATA_POOL_SIZE instead.
+
+config NET_PKT_BUF_RX_DATA_POOL_SIZE
+	int "Size of the RX memory pool where buffers are allocated from"
+	default NET_BUF_DATA_POOL_SIZE
+	depends on NET_BUF_VARIABLE_DATA_SIZE
+	help
+	  This value tell what is the size of the RX memory pool where each
+	  network buffer is allocated from.
+
+config NET_PKT_BUF_TX_DATA_POOL_SIZE
+	int "Size of the TX memory pool where buffers are allocated from"
+	default NET_BUF_DATA_POOL_SIZE
+	depends on NET_BUF_VARIABLE_DATA_SIZE
+	help
+	  This value tell what is the size of the TX memory pool where each
+	  network buffer is allocated from.
+
+config NET_PKT_BUF_USER_DATA_SIZE
+	int "Size of user_data available in rx and tx network buffers"
+	default 4
+	range 4 16
+	help
+	  User data size used in rx and tx network buffers.
+
+config NET_HEADERS_ALWAYS_CONTIGUOUS
+	bool
+	help
+	  This a hidden option, which one should use with a lot of care.
+	  NO bug reports will be accepted if that option is enabled!
+	  You are warned.
+	  If you are 100% sure the headers memory space is always in a
+	  contiguous space, this will save stack usage and ROM in net core.
+	  This is a possible case when using IPv4 only, with
+	  NET_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
+	  instance.
+
+# If we are running network tests found in tests/net, then the NET_TEST is
+# set and in that case we default to Dummy L2 layer as typically the tests
+# use that by default.
+choice NET_DEFAULT_IF
+	prompt "Default Network Interface"
+	default NET_DEFAULT_IF_DUMMY if NET_TEST
+	default NET_DEFAULT_IF_FIRST
+	help
+	  If system has multiple interfaces enabled, then user shall be able
+	  to choose default interface. Otherwise first interface will be the
+	  default interface.
+
+config NET_DEFAULT_IF_FIRST
+	bool "First available interface"
+
+config NET_DEFAULT_IF_UP
+	bool "First interface which is up"
+
+config NET_DEFAULT_IF_ETHERNET
+	bool "Ethernet"
+	depends on NET_L2_ETHERNET
+
+config NET_DEFAULT_IF_IEEE802154
+	bool "IEEE 802.15.4"
+	depends on NET_L2_IEEE802154
+
+config NET_DEFAULT_IF_OFFLOAD
+	bool "Offloaded interface"
+	depends on NET_OFFLOAD
+
+config NET_DEFAULT_IF_DUMMY
+	bool "Dummy testing interface"
+	depends on NET_L2_DUMMY
+
+config NET_DEFAULT_IF_CANBUS_RAW
+	bool "Socket CAN interface"
+	depends on NET_L2_CANBUS_RAW
+
+config NET_DEFAULT_IF_PPP
+	bool "PPP interface"
+	depends on NET_L2_PPP
+
+config NET_DEFAULT_IF_WIFI
+	bool "WiFi interface"
+	depends on NET_L2_ETHERNET
+
+endchoice
+
+config NET_INTERFACE_NAME
+	bool "Allow setting a name to a network interface"
+	default y
+	help
+	  Allow application to set a name to the network interface in order
+	  to simplify network interface management.
+
+config NET_INTERFACE_NAME_LEN
+	int "Network interface max name length"
+	default 8
+	range 2 15
+	depends on NET_INTERFACE_NAME
+	help
+	  Maximum length of the network interface name.
+
+config NET_PKT_TIMESTAMP
+	bool "Network packet timestamp support"
+	help
+	  Enable network packet timestamp support. This is needed for
+	  example in gPTP which needs to know how long it takes to send
+	  a network packet or for timed radio protocols like IEEE 802.15.4
+	  CSL and TSCH.
+
+config NET_PKT_TIMESTAMP_THREAD
+	bool "Create TX timestamp thread"
+	default y if NET_L2_PTP
+	depends on NET_PKT_TIMESTAMP
+	help
+	  Create a TX timestamp thread that will pass the timestamped network
+	  packets to some other module like gPTP for further processing.
+	  If you just want to timestamp network packets and get information
+	  how long the network packets flow in the system, you can disable
+	  the thread support.
+
+config NET_PKT_TIMESTAMP_STACK_SIZE
+	int "Timestamp thread stack size"
+	default 1024
+	depends on NET_PKT_TIMESTAMP_THREAD
+	help
+	  Set the timestamp thread stack size in bytes. The timestamp
+	  thread waits for timestamped TX frames and calls registered
+	  callbacks.
+
+config NET_PKT_TXTIME
+	bool "Network packet TX time support"
+	help
+	  Enable network packet TX time support. This is needed for
+	  when the application wants to set the exact time when the network
+	  packet should be sent.
+
+config NET_PKT_RXTIME_STATS
+	bool "Network packet RX time statistics"
+	select NET_PKT_TIMESTAMP
+	select NET_STATISTICS
+	depends on (NET_UDP || NET_TCP || NET_SOCKETS_PACKET) && NET_NATIVE
+	help
+	  Enable network packet RX time statistics support. This is used to
+	  calculate how long on average it takes for a packet to travel from
+	  device driver to just before it is given to application. The RX
+	  timing information can then be seen in network interface statistics
+	  in net-shell.
+	  The RX statistics are only calculated for UDP and TCP packets.
+
+config NET_PKT_RXTIME_STATS_DETAIL
+	bool "Get extra receive detail statistics in RX path"
+	depends on NET_PKT_RXTIME_STATS
+	help
+	  Store receive statistics detail information in certain key points
+	  in RX path. This is very special configuration and will increase
+	  the size of net_pkt so in typical cases you should not enable it.
+	  The extra statistics can be seen in net-shell using "net stats"
+	  command.
+
+config NET_PKT_TXTIME_STATS
+	bool "Network packet TX time statistics"
+	select NET_PKT_TIMESTAMP
+	select NET_STATISTICS
+	depends on (NET_UDP || NET_TCP || NET_SOCKETS_PACKET) && NET_NATIVE
+	help
+	  Enable network packet TX time statistics support. This is used to
+	  calculate how long on average it takes for a packet to travel from
+	  application to just before it is sent to network. The TX timing
+	  information can then be seen in network interface statistics in
+	  net-shell.
+	  The RX calculation is done only for UDP, TCP or RAW packets,
+	  but for TX we do not know the protocol so the TX packet timing is
+	  done for all network protocol packets.
+
+config NET_PKT_TXTIME_STATS_DETAIL
+	bool "Get extra transmit detail statistics in TX path"
+	depends on NET_PKT_TXTIME_STATS
+	help
+	  Store receive statistics detail information in certain key points
+	  in TX path. This is very special configuration and will increase
+	  the size of net_pkt so in typical cases you should not enable it.
+	  The extra statistics can be seen in net-shell using "net stats"
+	  command.
+
+config NET_PROMISCUOUS_MODE
+	bool "Promiscuous mode support"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_L2_ETHERNET_MGMT if NET_L2_ETHERNET
+	help
+	  Enable promiscuous mode support. This only works if the network
+	  device driver supports promiscuous mode. The user application
+	  also needs to read the promiscuous mode data.
+
+if NET_PROMISCUOUS_MODE
+module = NET_PROMISC
+module-dep = NET_LOG
+module-str = Log level for promiscuous mode
+module-help = Enables promiscuous mode to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_PROMISCUOUS_MODE
+
+config NET_DISABLE_ICMP_DESTINATION_UNREACHABLE
+	bool "Disable destination unreachable ICMP errors"
+	help
+	  Suppress the generation of ICMP destination unreachable errors
+	  when ports that are not in a listening state receive packets.
+
+source "subsys/net/ip/Kconfig.stack"
+
+source "subsys/net/ip/Kconfig.mgmt"
+
+source "subsys/net/ip/Kconfig.stats"
+
+source "subsys/net/ip/Kconfig.debug"
+
+endmenu

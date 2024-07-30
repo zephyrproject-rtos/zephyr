@@ -1,0 +1,25 @@
+description: STM32 CAN controller
+
+compatible: "st,stm32-bxcan"
+
+include: [can-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  master-can-reg:
+    type: int
+    description: master can reg when different from current instance

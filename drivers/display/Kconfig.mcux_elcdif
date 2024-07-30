@@ -1,0 +1,110 @@
+# Copyright 2019,2023 NXP
+# Copyright (c) 2022, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig DISPLAY_MCUX_ELCDIF
+	bool "MCUX eLCDIF driver"
+	default y
+	depends on DT_HAS_NXP_IMX_ELCDIF_ENABLED
+	help
+	  Enable support for mcux eLCDIF driver.
+
+if DISPLAY_MCUX_ELCDIF
+
+config MCUX_ELCDIF_FB_NUM
+	int "Framebuffers to allocate in driver"
+	default 2
+	range 0 2
+	help
+	  Number of framebuffers to allocate in ELCDIF driver. Driver allocated
+	  framebuffers are required to support partial display updates.
+	  The driver has been validated to support 0 through 2 framebuffers.
+	  Note that hardware will likely perform best if zero driver
+	  framebuffers are allocated by the driver, and the application
+	  implements double framebuffering by always calling display_write with
+	  a buffer equal in size to the connected panel.
+
+	  NOTE: when no framebuffers are allocated, the ELCDIF will be
+	  set to display an empty buffer during initialization. This means
+	  the display will show what is effectively a dump of
+	  system RAM until a new framebuffer is written. If the security
+	  implications of this concern you, leave at least one driver
+	  framebuffer enabled.
+
+config MCUX_ELCDIF_FB_SIZE
+	int "Framebuffer size required by the eLCDIF driver"
+	default 3686400
+	help
+	  eLCDIF driver allocates framebuffers to support partial display updates.
+	  The framebuffer size is computed as : panel_width * panel_height * bpp.
+	  The default value is set to afford for a default resolution of 1280x720 and
+	  4-bytes pixel format, e.g. ARGB8888. Applications should change this value
+	  according to the actual used resolution and format to optimize the heap size.
+
+config MCUX_ELCDIF_PXP
+	bool "Use PXP for display rotation"
+	depends on MCUX_PXP
+	depends on (MCUX_ELCDIF_FB_NUM > 0)
+	help
+	  Use the PXP for display rotation. This requires the LCDIF node
+	  have a "nxp,pxp" devicetree property pointing to the PXP device node.
+	  The ELCDIF will only utilize the PXP to rotate frames if
+	  display_write is called with a framebuffer equal in size to the
+	  display.
+
+config MCUX_ELCDIF_LP
+	bool "ELCDIF low power"
+	help
+	  This option, when enabled, will enable CUR_FRAME_DONE_IRQ at the display
+	  write function and disable it at the interruption handler for each new frame.
+	  Disabling the interrupt when no new frame needs to be sent gives the CPU the
+	  possibility to enter low-power mode, thus saving energy.
+	  This option, when disabled, CUR_FRAME_DONE_IRQ will be enabled only
+	  once at initialization. This option should be disabled when the application's
+	  frame rate is close to the display's refresh rate to avoid introducing
+	  additional latency caused by frequently enabling and disabling CUR_FRAME_DONE_IRQ.
+
+if MCUX_ELCDIF_PXP
+
+choice MCUX_ELCDIF_PXP_ROTATE_DIRECTION
+	default MCUX_ELCDIF_PXP_ROTATE_0
+	prompt "Rotation angle of PXP"
+	help
+	  Set rotation angle of PXP. The ELCDIF cannot detect the correct
+	  rotation angle based on the call to display_write, so the user should
+	  configure it here. In order for PXP rotation to work, calls to
+	  display_write MUST supply a framebuffer equal in size to screen width
+	  and height (without rotation applied).  Note that the width and
+	  height settings of the screen in devicetree should not be modified
+	  from their values in the default screen orientation when using this
+	  functionality.
+
+config MCUX_ELCDIF_PXP_ROTATE_0
+	bool "Rotate display by 0 degrees"
+	help
+	  Rotate display by 0 degrees. Primarily useful for testing,
+	  production applications should simply disable the PXP.
+
+config MCUX_ELCDIF_PXP_ROTATE_90
+	bool "Rotate display by 90 degrees"
+	help
+	  Rotate display counter-clockwise by 90 degrees.
+	  For LVGL, this corresponds to a rotation of 270 degrees
+
+config MCUX_ELCDIF_PXP_ROTATE_180
+	bool "Rotate display by 180 degrees"
+	help
+	  Rotate display counter-clockwise by 180 degrees
+
+config MCUX_ELCDIF_PXP_ROTATE_270
+	bool "Rotate display by 270 degrees"
+	help
+	  Rotate display counter-clockwise by 270 degrees
+	  For LVGL, this corresponds to a rotation of 90 degrees
+
+endchoice
+
+endif # MCUX_ELCDIF_PXP
+
+endif # DISPLAY_MCUX_ELCDIF

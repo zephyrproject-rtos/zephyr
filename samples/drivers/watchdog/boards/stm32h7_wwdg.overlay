@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2021 Thomas Stranger
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		watchdog0 = &wwdg;
+	};
+};
+
+&rcc {
+	d2ppre1 = <16>;
+};
+
+&wwdg {
+	status = "okay";
+};
+
+&iwdg {
+	status = "disabled";
+};

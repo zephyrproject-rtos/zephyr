@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2020 Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h7.dtsi>
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	soc {
+		compatible = "st,stm32h750", "st,stm32h7", "simple-bus";
+
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				write-block-size = <32>;
+				erase-block-size = <DT_SIZE_K(128)>;
+				/* maximum erase time for a 128K sector */
+				max-erase-time = <4000>;
+			};
+		};
+
+		dmamux1: dmamux@40020800 {
+			dma-requests= <107>;
+		};
+
+		dmamux2: dmamux@58025800 {
+			dma-requests= <107>;
+		};
+
+		usbotg_fs: usb@40080000 {
+			compatible = "st,stm32-otgfs";
+			reg = <0x40080000 0x40000>;
+			interrupts = <98 0>, <99 0>, <100 0>, <101 0>;
+			interrupt-names = "ep1_out", "ep1_in", "wkup", "otgfs";
+			num-bidir-endpoints = <9>;
+			ram-size = <DT_SIZE_K(4)>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x08000000>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+			phys = <&otghs_fs_phy>;
+			status = "disabled";
+		};
+
+		ltdc: display-controller@50001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x50001000 0x200>;
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
+			status = "disabled";
+		};
+
+		rtc@58004000 {
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <32>;
+				status = "disabled";
+			};
+		};
+	};
+
+	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */
+	sram0: memory@24000000 {
+		reg = <0x24000000 DT_SIZE_K(512)>;
+		compatible = "mmio-sram";
+	};
+
+	/* System data RAM accessible over AHB bus: SRAM1 in D2 domain */
+	sram1: memory@30000000 {
+		reg = <0x30000000 DT_SIZE_K(128)>;
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM1";
+	};
+
+	/* System data RAM accessible over AHB bus: SRAM2 in D2 domain */
+	sram2: memory@30020000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x30020000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "SRAM2";
+	};
+
+	/* System data RAM accessible over AHB bus: SRAM3 in D2 domain */
+	sram3: memory@30040000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x30040000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAM3";
+	};
+
+	/* System data RAM accessible over AHB bus: SRAM4 in D3 domain  */
+	sram4: memory@38000000 {
+		reg = <0x38000000 DT_SIZE_K(64)>;
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM4";
+	};
+
+	dtcm: memory@20000000 {
+		compatible = "zephyr,memory-region", "arm,dtcm";
+		reg = <0x20000000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "DTCM";
+	};
+
+	otghs_fs_phy: otghs_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+
+	vref: vref {
+		io-channels = <&adc3 19>;
+	};
+
+	vbat: vbat {
+		io-channels = <&adc3 17>;
+	};
+};

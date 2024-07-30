@@ -1,0 +1,96 @@
+/**
+ * Copyright (c) 2019-2020, Juan Linietsky, Ariel Manzur and the Godot community
+ * Copyright (c) 2021, Teslabs Engineering S.L.
+ * SPDX-License-Identifier: CC-BY-3.0
+ *
+ * Dark theme colors
+ */
+
+:root {
+    --body-color: rgba(255, 255, 255, 0.85);
+    --content-wrap-background-color: #202326;
+    --content-background-color: #2e3236;
+    /* Decrease the logo opacity when using the dark theme to be less distracting */
+    --logo-opacity: 0.85;
+    --navbar-background-color: #25282b;
+    --navbar-background-color-hover: #333639;
+    --navbar-background-color-active: #111417;
+    --navbar-current-background-color: #333639;
+    --navbar-current-background-color-hover: #44474a;
+    --navbar-current-background-color-active: #222528;
+    --navbar-level-1-color: #ddd;
+    --navbar-level-2-color: #ccc;
+    --navbar-level-3-color: #bbb;
+    --navbar-heading-color: #af7fe4;
+    --navbar-scrollbar-color: #af7fe4;
+    --navbar-scrollbar-hover-color: #9454db;
+    --navbar-scrollbar-active-color: #7929d2;
+    --navbar-scrollbar-background: #1c1e21;
+
+    --link-color: #8cf;
+    --link-color-hover: #9df;
+    --link-color-active: #6ad;
+    --link-color-visited: #cb99f6;
+    --external-reference-icon: url("data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjEyIiB3aWR0aD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGNmIj48cGF0aCBkPSJtNy41IDcuMXYzLjRoLTZ2LTZoMy40Ii8+PHBhdGggZD0ibTUuNzY1IDFoNS4yMzV2NS4zOWwtMS41NzMgMS41NDctMS4zMS0xLjMxLTIuNzI0IDIuNzIzLTIuNjktMi42ODggMi44MS0yLjgwOC0xLjMxMy0xLjMxeiIvPjwvZz48L3N2Zz4K");
+    --classref-badge-text-color: hsl(0, 0%, 70%);
+
+    --hr-color: #555;
+    --table-row-odd-background-color: #3b3e41;
+    --code-background-color: #434649;
+    --code-border-color: #505356;
+    --code-literal-color: #faa;
+    --input-background-color: #333537;
+    --input-focus-border-color: #5f8cff;
+
+    --search-input-background-color: #43464a; /* derived from --input-background-color */
+    --search-match-color: #52b4ff; /* derived from --link-color */
+    --search-match-background-color: #414c56; /* derived from --link-color */
+    --search-active-color: #202326;
+    --search-credits-background-color: #202123; /* derived from --navbar-background-color */
+    --search-credits-color: #6b6b6b; /* derived from --footer-color */
+    --search-credits-link-color: #628fb1; /* derived from --link-color */
+
+    /* Colors taken from the Godot script editor with the Adaptive theme */
+    --highlight-background-color: #202531;
+    --highlight-background-emph-color: #2d3444;
+    --highlight-default-color: rgba(255, 255, 255, 0.85);
+    --highlight-comment-color: rgba(204, 206, 211, 0.5);
+    --highlight-keyword-color: #ff7085;
+    --highlight-keyword2-color: #42ffc2;
+    --highlight-number-color: #a1ffe0;
+    --highlight-decorator-color: #abc8ff;
+    --highlight-type-color: #8effda;
+    --highlight-type2-color: #c6ffed;
+    --highlight-function-color: #57b3ff;
+    --highlight-operator-color: #abc8ff;
+    --highlight-string-color: #ffeca1;
+
+    --admonition-note-background-color: #303d4f;
+    --admonition-note-color: #bfeeff;
+    --admonition-note-title-background-color: #305070;
+    --admonition-note-title-color: #bfefff;
+    --admonition-attention-background-color: #444033;
+    --admonition-attention-color: #ffeeaf;
+    --admonition-attention-title-background-color: #665022;
+    --admonition-attention-title-color: #ffeeaf;
+    --admonition-danger-background-color: #433;
+    --admonition-danger-color: #fcc;
+    --admonition-danger-title-background-color: #633;
+    --admonition-danger-title-color: #fcc;
+    --admonition-tip-background-color: #28382d;
+    --admonition-tip-color: #dfd;
+    --admonition-tip-title-background-color: #336648;
+    --admonition-tip-title-color: #dfd;
+
+    --kbd-background-color: #595b5d;
+    --kbd-outline-color: #3d4144;
+    --kbd-shadow-color: #1e2023;
+    --kbd-text-color: #e2f2ff;
+
+    --guiitems-background-color: #303d4f;
+    --guiitems-border-color: #7fbbe3;
+
+    --btn-neutral-background-color: #404040;
+    --btn-neutral-hover-background-color: #505050;
+    --footer-color: #aaa;
+}

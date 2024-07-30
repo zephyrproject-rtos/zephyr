@@ -1,0 +1,84 @@
+#
+# Copyright (c) 2023 Lucas Dietrich <ld.adecy@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "AWS"
+mainmenu "AWS IoT Core MQTT sample application"
+
+config AWS_ENDPOINT
+	string "AWS endpoint"
+	default ""
+	help
+	  Endpoint (hostname) of the AWS MQTT broker.
+	  Note that the endpoint is different when using AWS Device Advisor.
+
+config AWS_MQTT_PORT
+	int "MQTT Port"
+	default 8883
+	help
+	  Set port of AWS MQTT broker.
+
+config AWS_THING_NAME
+	string "AWS Thing name"
+	default "myThingName"
+	help
+	  Set the AWS Thing name created on IoT Console
+
+config AWS_SUBSCRIBE_TOPIC
+	string "MQTT subscribe topic"
+	default "myThingName/downlink"
+	help
+	  MQTT topic the client should subscribe to.
+
+config AWS_PUBLISH_TOPIC
+	string "MQTT publish topic"
+	default "myThingName/data"
+	help
+	  MQTT topic the client should publish to.
+
+choice AWS_TEST_SUITE
+	prompt "Device Advisor test suite"
+	default AWS_TEST_SUITE_NONE
+	help
+	  Select the AWS Device Advisor test suite to run.
+
+config AWS_TEST_SUITE_NONE
+	bool "No test suite running"
+
+config AWS_TEST_SUITE_DQP
+	bool "Device Qualification Program (DQP)"
+	help
+	  Make sure your region supports AWS Device Advisor for DQP
+
+config AWS_TEST_SUITE_RECV_QOS1
+	bool "Test suite for receiving QoS 1 messages"
+	help
+	  For single test case "MQTT Client Puack QoS1"
+
+endchoice
+
+config AWS_QOS
+	int "MQTT QoS"
+	default 0 if AWS_TEST_SUITE_DQP
+	default 1 if AWS_TEST_SUITE_RECV_QOS1
+	default 0
+	range 0 1
+	help
+	  Quality of Service to use for publishing and subscribing to topics.
+	  Notes:
+	  	- Use QoS 0 when passing DQP test suite
+	  	- QoS 2 is not supported by AWS MQTT broker
+
+
+config AWS_EXPONENTIAL_BACKOFF
+	bool "enable exponential backoff"
+	default n if AWS_TEST_SUITE_DQP || AWS_TEST_SUITE_RECV_QOS1
+	default y
+	help
+	  Enable AWS exponential backoff for reconnecting to AWS MQTT broker.
+
+endmenu
+
+source "Kconfig.zephyr"

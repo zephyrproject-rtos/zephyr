@@ -1,0 +1,80 @@
+# Copyright (c) 2022 Nordic Semiconductor (ASA)
+# SPDX-License-Identifier: Apache-2.0
+
+config IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	bool "Synchronize access to shared memory"
+	default y
+	help
+	  Provide synchronization access to shared memory at a library level.
+	  This option is enabled by default to allow to use sending API from
+	  multiple contexts. Mutex is used to guard access to the memory.
+	  This option can be safely disabled if an application ensures data
+	  are sent from single context.
+
+config IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS
+	int "Mutex lock timeout in milliseconds"
+	depends on IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	range 1 5
+	default 1
+	help
+	  Maximum time to wait, in milliseconds, for access to send data with
+	  backends basing on icmsg library. This time should be relatively low.
+
+config IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS
+	int "Bond notification timeout in miliseconds"
+	range 1 100
+	default 1
+	help
+	  Time to wait for remote bonding notification before the
+	  notification is repeated.
+
+config IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
+	bool "Use dedicated workqueue"
+	default y
+	help
+	  Enable dedicated workqueue thread for the ICMsg backend.
+	  Disabling this configuration will cause the ICMsg backend to
+	  process incoming data through the system workqueue context, and
+	  therefore reduces the RAM footprint of the backend.
+	  Disabling this config may result in deadlocks in certain usage
+	  scenarios, such as when synchronous IPC is executed from the system
+	  workqueue context.
+	  The callbacks coming from the backend are executed from the workqueue
+	  context.
+	  When the option is disabled, the user must obey the restrictions
+	  imposed by the system workqueue, such as never performing blocking
+	  operations from within the callback.
+
+if IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
+
+config IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE
+	int "Size of RX work queue stack"
+	default 1024
+	help
+	  Size of stack used by work queue RX thread. This work queue is
+	  created to prevent notifying service users about received data
+	  from the system work queue. The queue is shared among instances.
+
+config IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY
+	int "Priority of RX work queue thread"
+	default -1
+	range -256 -1
+	help
+	  Priority of the ICMSG RX work queue thread.
+	  The ICMSG library in its simplicity requires the workqueue to execute
+	  at a cooperative priority.
+
+endif
+
+# The Icmsg library in its simplicity requires the system workqueue to execute
+# at a cooperative priority.
+config SYSTEM_WORKQUEUE_PRIORITY
+	range -256 -1 if !IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
+
+config PBUF
+	bool "Packed buffer support library"
+	help
+	  The packet buffer implements lightweight unidirectional packet buffer
+	  with read/write semantics on top of a memory region shared by the
+	  reader and writer. It optionally embeds cache and memory barrier
+	  management to ensure correct data access.

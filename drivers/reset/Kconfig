@@ -1,0 +1,40 @@
+# Reset Controller driver configuration options
+
+# Copyright (c) 2022 Andrei-Edward Popa <andrei.popa105@yahoo.com>
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# Reset Controller options
+#
+menuconfig RESET
+	bool "Reset Controller drivers"
+	help
+	  Reset Controller drivers. Reset node represents a region containing
+	  information about reset controller device. The typical use-case is
+	  for some other node's drivers to acquire a reference to the reset
+	  controller node together with some reset information.
+
+if RESET
+
+config RESET_INIT_PRIORITY
+	int "Reset Controller driver init priority"
+	default 35
+	help
+	  This option controls the priority of the reset controller device
+	  initialization. Higher priority ensures that the device is
+	  initialized earlier in the startup cycle. If unsure, leave at default
+	  value
+
+comment "Reset Controller Drivers"
+
+rsource "Kconfig.rpi_pico"
+rsource "Kconfig.gd32"
+rsource "Kconfig.aspeed"
+rsource "Kconfig.stm32"
+rsource "Kconfig.numaker"
+rsource "Kconfig.intel_socfpga"
+rsource "Kconfig.npcx"
+rsource "Kconfig.lpc_syscon"
+rsource "Kconfig.nxp_rstctl"
+
+endif # RESET

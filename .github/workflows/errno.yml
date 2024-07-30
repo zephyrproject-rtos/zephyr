@@ -1,0 +1,34 @@
+name: Error numbers
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/errno.yml'
+      - 'lib/libc/minimal/include/errno.h'
+      - 'scripts/ci/errno.py'
+
+jobs:
+  check-errno:
+    runs-on: ubuntu-22.04
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.13
+
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Environment Setup
+        run: |
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
+      - name: Run errno.py
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          ./scripts/ci/errno.py

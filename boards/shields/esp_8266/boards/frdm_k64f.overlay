@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* ENET MUST be disabled because share
+* pins with UART-3
+*/
+&enet_mac {
+	status = "disabled";
+};
+&enet_mdio {
+	status = "disabled";
+};
+&enet_ptp_clock {
+	status = "disabled";
+};

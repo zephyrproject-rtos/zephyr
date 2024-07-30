@@ -1,0 +1,17 @@
+# Miscellaneous drivers not exposing Zephyr Device Driver API
+
+# Copyright (c) 2021 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Miscellaneous Drivers"
+
+source "drivers/misc/ft8xx/Kconfig"
+source "drivers/misc/grove_lcd_rgb/Kconfig"
+source "drivers/misc/pio_rpi_pico/Kconfig"
+source "drivers/misc/nxp_s32_emios/Kconfig"
+source "drivers/misc/timeaware_gpio/Kconfig"
+source "drivers/misc/devmux/Kconfig"
+source "drivers/misc/nordic_vpr_launcher/Kconfig"
+source "drivers/misc/mcux_flexio/Kconfig"
+
+endmenu

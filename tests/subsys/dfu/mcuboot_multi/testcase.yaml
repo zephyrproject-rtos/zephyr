@@ -1,0 +1,9 @@
+tests:
+  dfu.mcuboot.multiimage:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - native_sim
+      - native_sim/native/64
+    tags: dfu_mcuboot
+    integration_platforms:
+      - nrf52840dk/nrf52840

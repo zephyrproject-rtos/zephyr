@@ -1,0 +1,9 @@
+sample:
+  name: MAX17048 Sensor sample
+tests:
+  sample.sensor.max17048:
+    build_only: true
+    platform_allow: nrf52dk/nrf52832
+    integration_platforms:
+      - nrf52dk/nrf52832
+    tags: fuel_gauge

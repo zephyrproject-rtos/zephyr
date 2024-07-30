@@ -1,0 +1,42 @@
+# Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Raspberry Pi Pico DMA
+
+  channel: Select channel for data transmitting
+
+  slot: Select peripheral data request
+    Use the definitions defined in `zephyr/dt-bindings/dma/rpi_pico_dma.h`.
+
+  channel-config: A 32bit mask specifying the DMA channel configuration
+    - bit 3: Enable Quiet IRQ
+    - bit 1: Enable Byte Swap
+    - bit 0: Enable High Priority
+
+compatible: "raspberrypi,pico-dma"
+
+include: [dma-controller.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+
+  irq0-channels:
+    type: uint8-array
+    default: [0, 2, 4, 6, 8, 10]
+    description: Channels list that uses the irq0
+
+  "#dma-cells":
+    const: 3
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config

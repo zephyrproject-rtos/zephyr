@@ -1,0 +1,10 @@
+tests:
+  drivers.ipc.mailbox:
+    arch_exclude:
+      - posix
+      - xtensa
+    tags:
+      - drivers
+      - ipc
+    integration_platforms:
+      - qemu_x86

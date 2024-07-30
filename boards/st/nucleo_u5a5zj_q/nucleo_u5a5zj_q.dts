@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nucleo_u5a5zj_q-common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32U5A5ZJ-NUCLEO-Q board";
+	compatible = "st,stm32u5a5zj-nucleo-q";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		led0 = &blue_led_1;
+		sw0 = &user_button;
+		pwm-led0 = &pwm_led_1;
+		pwm-led1 = &pwm_led_2;
+		watchdog0 = &iwdg;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat4;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Following flash partition is dedicated to the use of nucleo_u5a5zj_q
+		 * with TZEN=0 (so w/o TFM).
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(1952)>;
+		};
+		slot1_partition: partition@1f8000 {
+			label = "image-1";
+			reg = <0x001f8000 DT_SIZE_K(1960)>;
+		};
+		storage_partition: partition@3e2000 {
+			label = "storage";
+			reg = <0x003f0000 DT_SIZE_K(120)>;
+		};
+
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};

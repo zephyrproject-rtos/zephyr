@@ -1,0 +1,16 @@
+identifier: emsdp/emsdp_em7d_esp
+name: EM Software Development Platform (EM7D_ESP)
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+  - xtools
+ram: 128
+supported:
+  - spi
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

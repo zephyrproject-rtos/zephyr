@@ -1,0 +1,10 @@
+board:
+  name: qemu_arc
+  vendor: qemu
+  socs:
+  - name: qemu_arc_em
+  - name: qemu_arc_hs
+    variants:
+    - name: xip
+  - name: qemu_arc_hs5x
+  - name: qemu_arc_hs6x

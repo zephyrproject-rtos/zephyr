@@ -1,0 +1,14 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - socket
+    - af_packet
+  # The test do not work in native_posix as the zeth interface creation
+  # needs root permission.
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
+tests:
+  net.socket.af_packet.ipproto_raw:
+    min_ram: 21

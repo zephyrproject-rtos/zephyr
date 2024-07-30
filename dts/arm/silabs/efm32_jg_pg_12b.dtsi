@@ -1,0 +1,269 @@
+/*
+ * Copyright (c) 2018 Christian Taedcke <hacking@taedcke.com>
+ * Copyright (c) 2019 Lemonbeat GmbH
+ * Copyright (c) 2021 T-Mobile USA, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "gpio_gecko.h"
+
+/ {
+	chosen {
+		zephyr,entropy = &trng0;
+		zephyr,flash-controller = &msc;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		msc: flash-controller@400e0000 {
+			compatible = "silabs,gecko-flash-controller";
+			reg = <0x400e0000 0x104>;
+			interrupts = <25 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				write-block-size = <4>;
+				erase-block-size = <2048>;
+			};
+		};
+
+		usart0: usart@40010000 { /* USART0 */
+			compatible = "silabs,gecko-usart";
+			reg = <0x40010000 0x400>;
+			interrupts = <12 0 13 0>;
+			interrupt-names = "rx", "tx";
+			peripheral-id = <0>;
+			status = "disabled";
+		};
+
+		usart1: usart@40010400 { /* USART1 */
+			compatible = "silabs,gecko-usart";
+			reg = <0x40010400 0x400>;
+			interrupts = <20 0 21 0>;
+			interrupt-names = "rx", "tx";
+			peripheral-id = <1>;
+			status = "disabled";
+		};
+
+		usart2: usart@40010800 { /* USART2 */
+			compatible = "silabs,gecko-usart";
+			reg = <0x40010800 0x400>;
+			interrupts = <40 0 41 0>;
+			interrupt-names = "rx", "tx";
+			peripheral-id = <2>;
+			status = "disabled";
+		};
+
+		usart3: usart@40010c00 { /* USART3 */
+			compatible = "silabs,gecko-usart";
+			reg = <0x40010c00 0x400>;
+			interrupts = <43 0 44 0>;
+			interrupt-names = "rx", "tx";
+			peripheral-id = <3>;
+			status = "disabled";
+		};
+
+		leuart0: leuart@4004a000 { /* LEUART0 */
+			compatible = "silabs,gecko-leuart";
+			reg = <0x4004a000 0x400>;
+			interrupts = <22 0>;
+			peripheral-id = <0>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@4000c000 {
+			compatible = "silabs,gecko-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4000c000 0x400>;
+			interrupts = <17 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@4000c400 {
+			compatible = "silabs,gecko-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4000c400 0x400>;
+			interrupts = <42 0>;
+			status = "disabled";
+		};
+
+		rtcc0: rtcc@40042000 {
+			compatible = "silabs,gecko-rtcc";
+			reg = <0x40042000 0x184>;
+			interrupts = <30 0>;
+			clock-frequency = <32768>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		gpio: gpio@4000a400 {
+			compatible = "silabs,gecko-gpio";
+			reg = <0x4000a400 0xf00>;
+			interrupts = <10 2 18 2>;
+			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
+
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioa: gpio@4000a000 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x4000a000 0x30>;
+				peripheral-id = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@4000a030 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x4000a030 0x30>;
+				peripheral-id = <1>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpioc: gpio@4000a060 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x4000a060 0x30>;
+				peripheral-id = <2>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@4000a090 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x4000a090 0x30>;
+				peripheral-id = <3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpioe: gpio@4000a0c0 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x4000a0c0 0x30>;
+				peripheral-id = <4>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiof: gpio@4000a0f0 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x4000a0f0 0x30>;
+				peripheral-id = <5>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpioi: gpio@4000a180 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x4000a180 0x30>;
+				peripheral-id = <8>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpioj: gpio@4000a1b0 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x4000a1b0 0x30>;
+				peripheral-id = <9>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiok: gpio@4000a1e0 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x4000a1e0 0x30>;
+				peripheral-id = <10>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+		};
+
+		wdog0: wdog@40052000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x40052000 0x2C>;
+			peripheral-id = <0>;
+			interrupts = <2 0>;
+			status = "disabled";
+		};
+
+		wdog1: wdog@40052400 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x40052400 0x2C>;
+			peripheral-id = <1>;
+			interrupts = <3 0>;
+			status = "disabled";
+		};
+
+		trng0: trng@4001d000 {
+			compatible = "silabs,gecko-trng";
+			reg = <0x4001d000 0x400>;
+			interrupts = <49 0>;
+			status = "disabled";
+		};
+
+		timer0: timer@40018000 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x40018000 0x400>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,gecko-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		adc0: adc@40002000 {
+			compatible = "silabs,gecko-adc";
+			reg = <0x40002000 0x400>;
+			interrupts = <15 0>;
+			frequency = <16000000>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		pinctrl: pin-controller {
+			/* Pin controller is a "virtual" device since SiLabs SoCs do pin
+			 * control in a distributed way (GPIO registers and PSEL
+			 * registers on each peripheral).
+			 */
+			compatible = "silabs,gecko-pinctrl";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

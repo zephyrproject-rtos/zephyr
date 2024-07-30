@@ -1,0 +1,64 @@
+# Copyright (c) 2019, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NORDIC_QSPI_NOR
+	bool "QSPI NOR Flash"
+	default y
+	depends on DT_HAS_NORDIC_QSPI_NOR_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select NRFX_QSPI
+	select FLASH_JESD216
+	select PINCTRL
+	help
+	  Enable support for nrfx QSPI driver with EasyDMA.
+
+if NORDIC_QSPI_NOR
+
+config NORDIC_QSPI_NOR_INIT_PRIORITY
+	int "Init priority"
+	default 41
+	help
+	  Device driver initialization priority.
+
+config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	int "Page size to use for FLASH_LAYOUT feature"
+	default 65536
+	help
+	  When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support
+	  that API.  By default the page size corresponds to the block
+	  size (65536).  Other option include the sector size (4096).
+
+config NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE
+	int "Size of a stack-based buffer to handle writes not supported by QSPI"
+	default 4
+	help
+	  The QSPI peripheral uses DMA and can only write data that is read
+	  from a word-aligned location in RAM. A non-zero value here enables
+	  a stack buffer to be used for any source data that does not meet
+	  these restrictions. Such data will be copied into this buffer to
+	  allow the write to proceed. Multiple transfers will be initiated
+	  if the data is larger than the configured size.
+	  Must be a multiple of 4. When set to 0, the feature is disabled.
+
+config NORDIC_QSPI_NOR_XIP
+	bool "XIP (eXecute in place)"
+	depends on SOC_NRF5340_CPUAPP
+	help
+	  Enable setting up the QSPI NOR driver to allow for execution of code
+	  stored in QSPI XIP region. Note that for this functionality to work,
+	  the QSPI NOR init priority must be set so that no XIP code in the
+	  QSPI NOR flash chip is executed until the driver has been setup.
+	  This will also disable power management for the QSPI NOR flash chip.
+
+config NORDIC_QSPI_NOR_TIMEOUT_MS
+	int "Timeout for QSPI operations (ms)"
+	default 500
+	help
+	  The QSPI peripheral operation timeout in milliseconds.
+	  Primarily intended for long running operations such as
+	  a flash sector erase. The 500 ms default allows for
+	  most typical NOR flash chips to erase a sector.
+
+endif # NORDIC_QSPI_NOR

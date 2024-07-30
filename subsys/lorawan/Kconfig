@@ -1,0 +1,81 @@
+# LoRaWAN configuration options
+
+# Copyright (c) 2020 Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LORAWAN
+	bool "LoRaWAN support [EXPERIMENTAL]"
+	depends on LORA
+	depends on SYSTEM_WORKQUEUE_STACK_SIZE >= 2048
+	select REQUIRES_FULL_LIBC
+	select HAS_SEMTECH_LORAMAC
+	select HAS_SEMTECH_SOFT_SE
+	select EXPERIMENTAL
+	help
+	  This option enables LoRaWAN support.
+
+if LORAWAN
+
+module = LORAWAN
+module-str = lorawan
+source "subsys/logging/Kconfig.template.log_config"
+
+config LORAWAN_EMUL
+	bool "LoRaWAN Emulator"
+	help
+	  The emulator can be used for unit testing of LoRaWAN services.
+	  It provides interfaces to send arbitrary messages to the LoRaWAN
+	  stack and receive the response through callbacks without using
+	  actual LoRa hardware.
+
+	  See include/zephyr/lorawan/emul.h for the emulator API.
+
+config LORAWAN_SYSTEM_MAX_RX_ERROR
+	int "LoRaWAN System Max Rx Error"
+	default 20
+	help
+	  System Max Rx timing error value in ms to be used by LoRaWAN stack
+	  for calculating the RX1/RX2 window timing.
+
+config LORAWAN_PUBLIC_NETWORK
+	bool "LoRaWAN Public Network"
+	default y
+	help
+	  Enable this option to use a public LoRaWAN network.
+	  Disable for private LoRaWAN networks.
+
+config LORAMAC_REGION_AS923
+	bool "Asia 923MHz Frequency band"
+
+config LORAMAC_REGION_AU915
+	bool "Australia 915MHz Frequency band"
+
+config LORAMAC_REGION_CN470
+	bool "China 470MHz Frequency band"
+
+config LORAMAC_REGION_CN779
+	bool "China 779MHz Frequency band"
+
+config LORAMAC_REGION_EU433
+	bool "Europe 433MHz Frequency band"
+
+config LORAMAC_REGION_EU868
+	bool "Europe 868MHz Frequency band"
+
+config LORAMAC_REGION_KR920
+	bool "South Korea 920MHz Frequency band"
+
+config LORAMAC_REGION_IN865
+	bool "India 865MHz Frequency band"
+
+config LORAMAC_REGION_US915
+	bool "North America 915MHz Frequency band"
+
+config LORAMAC_REGION_RU864
+	bool "Russia 864MHz Frequency band"
+
+rsource "nvm/Kconfig"
+
+rsource "services/Kconfig"
+
+endif # LORAWAN

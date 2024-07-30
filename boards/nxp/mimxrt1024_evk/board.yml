@@ -1,0 +1,5 @@
+board:
+  name: mimxrt1024_evk
+  vendor: nxp
+  socs:
+    - name: mimxrt1024

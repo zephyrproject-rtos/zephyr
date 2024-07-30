@@ -1,0 +1,15 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP eFLEX PWM module with mcux-pwm submodules
+
+compatible: "nxp,flexpwm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

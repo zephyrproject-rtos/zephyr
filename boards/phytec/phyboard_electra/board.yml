@@ -1,0 +1,5 @@
+board:
+  name: phyboard_electra
+  vendor: phytec
+  socs:
+  - name: am6442

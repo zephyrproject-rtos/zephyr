@@ -1,0 +1,112 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc54xxx_m4.dtsi>
+#include "lpcxpresso54114.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP LPCXpresso54114 board";
+	compatible = "nxp,lpc54xxx", "nxp,lpc";
+
+	aliases{
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+		sw2 = &user_button_3;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW1";
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_2: button_1 {
+			label = "User SW2";
+			gpios = <&gpio0 31 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		user_button_3: button_2 {
+			label = "User SW3";
+			gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+};
+
+/*
+ * Default for this board is to allocate SRAM0-1 to M4 CPU but the
+ * application can have an application specific device tree to
+ * allocate the SRAM0-3 differently.
+ *
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(128)>;
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&mailbox0 {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&blue_led {
+	status = "okay";
+};
+
+&flexcomm0 {
+	status = "okay";
+};
+
+&flexcomm4 {
+	status = "okay";
+};
+
+&flexcomm5 {
+	status = "okay";
+};
+
+&flash0 {
+	/*
+	 * LPC flash controller requires minimum 256 byte write to flash,
+	 * so MCUBoot is not supported. Just provide storage and code partition.
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(196)>;
+		};
+		storage_partition: partition@30000 {
+			label = "storage";
+			reg = <0x00030000 DT_SIZE_K(64)>;
+		};
+	};
+};

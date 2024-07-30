@@ -1,0 +1,254 @@
+# TCP options
+
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2021 Nordic Semiconductor
+# Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_TCP
+	bool "TCP"
+	depends on NET_IP
+	help
+	  The value depends on your network needs.
+
+if NET_TCP
+
+if NET_TCP
+module = NET_TCP
+module-dep = NET_LOG
+module-str = Log level for TCP
+module-help = Enables TCP handler output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_TCP
+
+config NET_TCP_WORKQ_STACK_SIZE
+	int "TCP work queue thread stack size"
+	default 1200 if X86
+	default 1024
+	depends on NET_TCP
+	help
+	  Set the TCP work queue thread stack size in bytes.
+
+config NET_TCP_WORKER_PRIO
+	int "Priority of the TCP work queue"
+	default 2
+	depends on NET_TCP
+	help
+	  Set the priority of the TCP worker queue, that handles all
+	  transmission and maintenance within the TCP stack.
+	  Value 0 = highest priortity.
+	  When CONFIG_NET_TC_THREAD_COOPERATIVE = y, lowest priority is
+	  CONFIG_NUM_COOP_PRIORITIES-1 else lowest priority is
+	  CONFIG_NUM_PREEMPT_PRIORITIES-1.
+	  Make sure the priority is lower than lower layer TX threads to
+	  avoid the TCP stack consume all net_bufs before transferring
+	  execution to the lower layer network stack, with a high risk of
+	  running out of net_bufs.
+
+config NET_TCP_TIME_WAIT_DELAY
+	int "How long to wait in TIME_WAIT state (in milliseconds)"
+	depends on NET_TCP
+	default 1500
+	help
+	  To avoid a (low-probability) issue when delayed packets from
+	  previous connection get delivered to next connection reusing
+	  the same local/remote ports, RFC 793 (TCP) suggests to keep
+	  an old, closed connection in a special "TIME_WAIT" state for
+	  the duration of 2*MSL (Maximum Segment Lifetime). The RFC
+	  suggests to use MSL of 2 minutes, but notes "This is an
+	  engineering choice, and may be changed if experience indicates
+	  it is desirable to do so." For low-resource systems, having
+	  large MSL may lead to quick resource exhaustion (and related
+	  DoS attacks). At the same time, the issue of packet misdelivery
+	  is largely alleviated in the modern TCP stacks by using random,
+	  non-repeating port numbers and initial sequence numbers. Due
+	  to this, Zephyr uses much lower value of 1500ms by default.
+	  Value of 0 disables TIME_WAIT state completely.
+
+config NET_TCP_ACK_TIMEOUT
+	int "[DEPRECATED] How long to wait for ACK (in milliseconds)"
+	depends on NET_TCP
+	default 1000
+	range 1 $(INT32_MAX)
+	help
+	  Deprecated. Use CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT and
+	  CONFIG_NET_TCP_RETRY_COUNT to control the total timeout at the TCP
+	  level.
+
+config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
+	int "Initial value of Retransmission Timeout (RTO) (in milliseconds)"
+	depends on NET_TCP
+	default 200
+	range 100 60000
+	help
+	  This value affects the timeout between initial retransmission
+	  of TCP data packets. The value is in milliseconds.
+
+config NET_TCP_RANDOMIZED_RTO
+	bool "Use a randomized retransmission time"
+	default y
+	depends on NET_TCP
+	help
+	  It can happen that two similar stacks enter a retransmission cycle
+	  due to a packet collision. If the transmission timeout is the same
+	  both stacks will retry at the same moment resulting in another
+	  collision. By introducing a randomized retry timeout, the chance of
+	  a second collision is reduced and it reduces further the more
+	  retransmissions occur.
+
+config NET_TCP_RETRY_COUNT
+	int "Maximum number of TCP segment retransmissions"
+	depends on NET_TCP
+	default 9
+	help
+	  The following formula can be used to determine the time (in ms)
+	  that a segment will be be buffered awaiting retransmission:
+	  n=NET_TCP_RETRY_COUNT
+	  Sum((1<<n) * NET_TCP_INIT_RETRANSMISSION_TIMEOUT)
+	  n=0
+	  With the default value of 9, the IP stack will try to
+	  retransmit for up to 1:42 minutes.  This is as close as possible
+	  to the minimum value recommended by RFC1122 (1:40 minutes).
+	  Only 5 bits are dedicated for the retransmission count, so accepted
+	  values are in the 0-31 range.  It's highly recommended to not go
+	  below 9, though.
+	  Should a retransmission timeout occur, the receive callback is
+	  called with -ETIMEDOUT error code and the context is dereferenced.
+
+config NET_TCP_MAX_SEND_WINDOW_SIZE
+	int "Maximum sending window size to use"
+	depends on NET_TCP
+	default 0
+	range 0 $(UINT16_MAX)
+	help
+	  This value affects how the TCP selects the maximum sending window
+	  size. The default value 0 lets the TCP stack select the value
+	  according to amount of network buffers configured in the system.
+
+config NET_TCP_MAX_RECV_WINDOW_SIZE
+	int "Maximum receive window size to use"
+	depends on NET_TCP
+	default 0
+	range 0 $(UINT16_MAX)
+	help
+	  This value defines the maximum TCP receive window size. Increasing
+	  this value can improve connection throughput, but requires more
+	  receive buffers available in the system for efficient operation.
+	  The default value 0 lets the TCP stack select the value
+	  according to amount of network buffers configured in the system.
+
+config NET_TCP_RECV_QUEUE_TIMEOUT
+	int "How long to queue received data (in ms)"
+	depends on NET_TCP
+	default 2000
+	range 0 10000
+	help
+	  If we receive out-of-order TCP data, we queue it. This value tells
+	  how long the data is kept before it is discarded if we have not been
+	  able to pass the data to the application. If set to 0, then receive
+	  queueing is not enabled. The value is in milliseconds.
+	  Note that we only queue data sequentially in current version i.e.,
+	  there should be no holes in the queue. For example, if we receive
+	  SEQs 5,4,3,6 and are waiting SEQ 2, the data in segments 3,4,5,6 is
+	  queued (in this order), and then given to application when we receive
+	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
+	  because the list would not be sequential as number 6 is be missing.
+
+config NET_TCP_PKT_ALLOC_TIMEOUT
+	int "How long to wait for a TCP packet allocation (in ms)"
+	depends on NET_TCP
+	default 100
+	range 10 1000
+	help
+	  The TCP network stack allocates packets from the buffers and the
+	  allocation can take some time depending on the situation.
+	  This value indicates how long the stack should wait for the packet to
+	  be allocated, before returning an internal error and trying again.
+
+config NET_TCP_CHECKSUM
+	bool "Check TCP checksum"
+	default y
+	depends on NET_TCP
+	help
+	  Enables TCP handler to check TCP checksum. If the checksum is invalid,
+	  then the packet is discarded.
+
+config NET_TCP_FAST_RETRANSMIT
+	bool "Fast-retry algorithm based on the number of duplicated ACKs"
+	depends on NET_TCP
+	default y
+	help
+	  When a packet is lost, the receiver will keep acknowledging the
+	  sequence number of the last correctly received byte. Upon reception
+	  of a sequence of acknowledgements for the same sequence number,
+	  this can be deduced as that the packet afterwards must have been lost.
+	  In that case a retransmission is triggered to avoid having to wait for
+	  the retransmit timer to elapse.
+
+config NET_TCP_CONGESTION_AVOIDANCE
+	bool "Implement a congestion avoidance algorithm in TCP"
+	depends on NET_TCP
+	default y
+	help
+	  To avoid overstressing a link reduce the transmission rate as soon as
+	  packets are starting to drop.
+
+config NET_TCP_KEEPALIVE
+	bool "TCP keep-alive support"
+	depends on NET_TCP
+	help
+	  Enabling this option allows the TCP stack to send periodic TCP
+	  keep-alive probes. Enables SO_KEEPALIVE, TCP_KEEPIDLE, TCP_KEEPINTVL
+	  and TCP_KEEPCNT options processing.
+
+config NET_TCP_KEEPIDLE_DEFAULT
+	int "TCP_KEEPIDLE default value"
+	depends on NET_TCP_KEEPALIVE
+	default 7200
+	help
+	  The time (in seconds) the connection needs to remain idle before TCP
+	  starts sending keepalive probes, if the socket option SO_KEEPALIVE has
+	  been set on this socket.
+
+config NET_TCP_KEEPINTVL_DEFAULT
+	int "TCP_KEEPINTVL default value"
+	depends on NET_TCP_KEEPALIVE
+	default 75
+	help
+	  The time (in seconds) between individual keepalive probes.
+
+config NET_TCP_KEEPCNT_DEFAULT
+	int "TCP_KEEPCNT default value"
+	depends on NET_TCP_KEEPALIVE
+	default 9
+	help
+	  The maximum number of keepalive probes TCP should send before dropping
+	  the connection.
+
+config NET_TCP_ISN_RFC6528
+	bool "Use ISN algorithm from RFC 6528"
+	default y
+	depends on NET_TCP
+	depends on PSA_WANT_ALG_SHA_256
+	help
+	  Implement Initial Sequence Number calculation as described in
+	  RFC 6528 chapter 3. https://tools.ietf.org/html/rfc6528
+	  If this is not set, then sys_rand32_get() is used for ISN value.
+
+config NET_TCP_REJECT_CONN_WITH_RST
+	bool "Reject connection attempts on unbound TCP ports with RST"
+	default y
+	help
+	  If enabled, TCP stack will reject connection attempts on unbound ports
+	  with TCP RST packet.
+
+config NET_TCP_IPV6_ND_REACHABILITY_HINT
+	bool "Provide a reachability hint for IPv6 Neighbor Discovery"
+	depends on NET_TCP
+	depends on NET_IPV6_ND
+	help
+	  If enabled, TCP stack will inform the IPv6 Neighbor Discovery process
+	  about the active link to a specific neighbor by signaling recent
+	  "forward progress" event as described in RFC 4861.
+
+endif # NET_TCP

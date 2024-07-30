@@ -1,0 +1,15 @@
+# Copyright (c) 2019 Centaur Analytics, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 system window watchdog
+
+compatible: "st,stm32-window-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true

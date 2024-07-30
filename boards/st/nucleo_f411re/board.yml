@@ -1,0 +1,5 @@
+board:
+  name: nucleo_f411re
+  vendor: st
+  socs:
+    - name: stm32f411xe

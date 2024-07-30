@@ -1,0 +1,67 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PLL node binding for STM32H7 devices
+
+  It can be used to describe 3 different PLLs: PLL1 (Main PLL), PLL2 and PLL3.
+  Only PLL1 and PLL3 are supported for now.
+
+  These PLLs could take one of clk_hse, clk_hsi or clk_csi as input clock, with
+  an input frequency from 1 to 16 MHz. PLLM factor is used to set the input
+  clock in this acceptable range.
+
+  Each PLL can have up to 3 output clocks and for each output clock, the
+  frequency can be computed with the following formulae:
+
+    f(PLL_Px) = f(VCOx clock) / PLLPx   -> pllx_p_ck ((pll1_p_ck : sys_ck))
+    f(PLL_Qx) = f(VCOx clock) / PLLQx   -> pllx_q_ck
+    f(PLL_Rx) = f(VCOx clock) / PLLRx   -> pllx_r_ck
+
+      with f(VCOx clock) = f(REFx_CK) × (PLLNx / PLLMx)
+
+  The PLL output frequency must not exceed 80 MHz.
+
+compatible: "st,stm32h7-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for PLLx
+        input clock
+        Valid range: 1 - 63
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCOx
+        Valid range: 4 - 512
+
+  div-p:
+    type: int
+    description: |
+        PLL division factor for pllx_p_ck
+        Valid range: 1 - 128
+
+  div-q:
+    type: int
+    description: |
+        PLL division factor for pllx_q_ck
+        Valid range: 1 - 128
+
+  div-r:
+    type: int
+    description: |
+        PLL division factor for pllx_r_ck
+        Valid range: 1 - 128

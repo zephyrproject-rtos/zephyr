@@ -1,0 +1,16 @@
+identifier: nsim/nsim_hs/mpuv6
+name: HS (with MPU v6) nSIM simulator
+type: sim
+simulation: nsim
+simulation_exec: nsimdrv
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+  - arcmwdt
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

@@ -1,0 +1,67 @@
+# Subsystem configuration options
+
+# Copyright (c) 2016-2017 Intel Corporation
+# Copyright (c) 2021 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Subsystems and OS Services"
+
+# zephyr-keep-sorted-start
+source "subsys/bindesc/Kconfig"
+source "subsys/bluetooth/Kconfig"
+source "subsys/canbus/Kconfig"
+source "subsys/console/Kconfig"
+source "subsys/dap/Kconfig"
+source "subsys/debug/Kconfig"
+source "subsys/demand_paging/Kconfig"
+source "subsys/dfu/Kconfig"
+source "subsys/disk/Kconfig"
+source "subsys/dsp/Kconfig"
+source "subsys/emul/Kconfig"
+source "subsys/fb/Kconfig"
+source "subsys/fs/Kconfig"
+source "subsys/input/Kconfig"
+source "subsys/ipc/Kconfig"
+source "subsys/jwt/Kconfig"
+source "subsys/llext/Kconfig"
+source "subsys/logging/Kconfig"
+source "subsys/lorawan/Kconfig"
+source "subsys/mem_mgmt/Kconfig"
+source "subsys/mgmt/Kconfig"
+source "subsys/modbus/Kconfig"
+source "subsys/modem/Kconfig"
+source "subsys/net/Kconfig"
+source "subsys/pm/Kconfig"
+source "subsys/portability/Kconfig"
+source "subsys/random/Kconfig"
+source "subsys/retention/Kconfig"
+source "subsys/rtio/Kconfig"
+source "subsys/sd/Kconfig"
+source "subsys/sensing/Kconfig"
+source "subsys/settings/Kconfig"
+source "subsys/shell/Kconfig"
+source "subsys/sip_svc/Kconfig"
+source "subsys/stats/Kconfig"
+source "subsys/storage/Kconfig"
+source "subsys/task_wdt/Kconfig"
+source "subsys/testsuite/Kconfig"
+source "subsys/timing/Kconfig"
+source "subsys/tracing/Kconfig"
+source "subsys/usb/device/Kconfig"
+source "subsys/usb/device_next/Kconfig"
+source "subsys/usb/host/Kconfig"
+source "subsys/usb/usb_c/Kconfig"
+source "subsys/zbus/Kconfig"
+# zephyr-keep-sorted-stop
+
+config MODULES
+	bool "Make tristate Kconfig options and an 'm' selection available"
+	help
+	  Zephyr supports dynamically loadable code, e.g. using llext. Code,
+	  that can either be built as a part of the system image or as a
+	  loadable extension, can use tristate Kconfig options. For this to work
+	  the CONFIG_MODULES option must be enabled by the project. Enabling
+	  this option alone doesn't change the build on its own, it only allows
+	  using 'm' for tristate Kconfig options.
+
+endmenu

@@ -1,0 +1,18 @@
+identifier: nucleo_h7a3zi_q
+name: ST Nucleo H7A3ZI-Q
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 1280
+flash: 2048
+supported:
+  - arduino_gpio
+  - uart
+  - gpio
+  - pwm
+  - adc
+  - backup_sram
+vendor: st

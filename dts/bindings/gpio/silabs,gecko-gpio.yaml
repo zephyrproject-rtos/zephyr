@@ -1,0 +1,16 @@
+description: SiLabs Gecko GPIO node
+
+compatible: "silabs,gecko-gpio"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  location-swo:
+    type: int
+    description: Serial Wire Output (SWO) PIN location

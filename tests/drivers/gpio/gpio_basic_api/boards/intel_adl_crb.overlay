@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
+ * Connect loopback between GPP_B_14 and GPP_B_15.
+ * BIOS settings to mark these two pins as GPIO
+ * Under Intel Advanced Menu > PCH-IO Configuration
+ * Enable Timed GPIO0 > Disable
+ * Enable Timed GPIO1 > Disable
+ * ISH Configuration > GP_6 > Unchecked [ ]
+ * ISH Configuration > GP_7 > Unchecked [ ]
+ */
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+
+		out-gpios = <&gpio_b 14 0>;
+		in-gpios  = <&gpio_b 15 0>;
+	};
+};

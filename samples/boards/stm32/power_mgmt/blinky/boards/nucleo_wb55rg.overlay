@@ -1,0 +1,9 @@
+ /*
+  * give a prescaler to the lptim clock : LSE / 32 = 1024Hz
+  * so that the sleep period is of 64s in the sample application
+  * with a LPTIM1 prescaler of <1> to <8>, CONFIG_SYS_CLOCK_TICKS_PER_SEC is 4096
+  * with a LPTIM1 prescaler >= <16>, CONFIG_SYS_CLOCK_TICKS_PER_SEC is LSE / prescaler
+  */
+&stm32_lp_tick_source {
+	st,prescaler = <32>;
+};

@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2022 Leica Geosystems AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	smartbattery: sbs_gauge@b {
+		compatible = "sbs,sbs-gauge";
+		reg = <0x0B>;
+		status = "okay";
+	};
+};

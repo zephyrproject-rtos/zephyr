@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2020 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/wl/stm32wl.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32wl55", "st,stm32wl", "simple-bus";
+	};
+};

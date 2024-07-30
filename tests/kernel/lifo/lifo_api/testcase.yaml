@@ -1,0 +1,3 @@
+tests:
+  kernel.lifo:
+    tags: kernel

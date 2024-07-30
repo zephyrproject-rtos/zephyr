@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config QEMU_CORTEX_A53_ETH_E1000
+	bool
+	default y if !NET_TEST
+	depends on BOARD_QEMU_CORTEX_A53 && NETWORKING && DT_HAS_INTEL_E1000_ENABLED
+	select ETH_E1000
+	select NET_L2_ETHERNET
+	select PCIE
+	select PCIE_CONTROLLER
+	select PCIE_ECAM

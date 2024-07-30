@@ -1,0 +1,153 @@
+# Sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2024 Croxel Inc
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SENSOR
+	bool "Sensor drivers"
+	help
+	  Include sensor drivers in system config
+
+if SENSOR
+
+module = SENSOR
+module-str = sensor
+source "subsys/logging/Kconfig.template.log_config"
+
+config SENSOR_INIT_PRIORITY
+	int "Sensor init priority"
+	default 90
+	help
+	  Sensor initialization priority.
+
+config SENSOR_ASYNC_API
+	bool "Async Sensor API"
+	select RTIO
+	select RTIO_SYS_MEM_BLOCKS
+	select RTIO_CONSUME_SEM
+	select RTIO_WORKQ
+	help
+	  Enables the asynchronous sensor API by leveraging the RTIO subsystem.
+
+config SENSOR_SHELL
+	bool "Sensor shell"
+	depends on SHELL
+	select CBPRINTF_FP_SUPPORT
+	select SENSOR_ASYNC_API
+	help
+	  This shell provides access to basic sensor data.
+
+config SENSOR_SHELL_STREAM
+	bool "Sensor shell 'stream' command"
+	depends on SENSOR_SHELL
+	help
+	  Add the 'stream' subcommand to the sensor shell. When run on drivers that
+	  support streaming (usually hardware FIFO backed), the shell will continue
+	  to print new values as they come until the stream is closed.
+
+config SENSOR_SHELL_THREAD_STACK_SIZE
+	int "Stack size for the sensor shell data processing thread"
+	depends on SENSOR_SHELL_STREAM
+	default 1024
+	help
+	  The sensor shell uses a dedicated thread to process data coming from the
+	  sensors in either one-shot or streaming mode. Use this config to control
+	  the size of that thread's stack.
+
+config SENSOR_SHELL_BATTERY
+	bool "Sensor shell 'battery' command"
+	depends on SHELL
+	help
+	  This enables the 'battery' command which reports charging information
+	  in a convenient format. It makes use of a fuel gauge to read its
+	  information.
+
+config SENSOR_SHELL_TRIG_PRINT_TIMEOUT_MS
+	int "Timeout for printing the average sensor sample value"
+	default 5000
+	depends on SENSOR_SHELL
+	help
+	  Control the frequency of the sampling window over which the sensor
+	  interrupt handler will collect data.
+
+config SENSOR_SHELL_MAX_TRIGGER_DEVICES
+	int "Maximum number of sensor devices that can have enabled triggers in shell"
+	default 1
+	depends on SENSOR_SHELL
+	help
+	  Maximum number of sensor devices that the shell cmd can have
+	  enabled triggers for.
+
+config SENSOR_INFO
+	bool "Sensor Info iterable section"
+
+comment "Device Drivers"
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/adi/Kconfig"
+source "drivers/sensor/ams/Kconfig"
+source "drivers/sensor/aosong/Kconfig"
+source "drivers/sensor/asahi_kasei/Kconfig"
+source "drivers/sensor/bosch/Kconfig"
+source "drivers/sensor/espressif/Kconfig"
+source "drivers/sensor/honeywell/Kconfig"
+source "drivers/sensor/infineon/Kconfig"
+source "drivers/sensor/ite/Kconfig"
+source "drivers/sensor/maxim/Kconfig"
+source "drivers/sensor/meas/Kconfig"
+source "drivers/sensor/microchip/Kconfig"
+source "drivers/sensor/nordic/Kconfig"
+source "drivers/sensor/nuvoton/Kconfig"
+source "drivers/sensor/nxp/Kconfig"
+source "drivers/sensor/rohm/Kconfig"
+source "drivers/sensor/seeed/Kconfig"
+source "drivers/sensor/sensirion/Kconfig"
+source "drivers/sensor/silabs/Kconfig"
+source "drivers/sensor/st/Kconfig"
+source "drivers/sensor/ti/Kconfig"
+source "drivers/sensor/vishay/Kconfig"
+source "drivers/sensor/wsen/Kconfig"
+# zephyr-keep-sorted-stop
+
+source "drivers/sensor/a01nyub/Kconfig"
+source "drivers/sensor/amd_sb_tsi/Kconfig"
+source "drivers/sensor/amg88xx/Kconfig"
+source "drivers/sensor/apds9960/Kconfig"
+source "drivers/sensor/current_amp/Kconfig"
+source "drivers/sensor/ens160/Kconfig"
+source "drivers/sensor/explorir_m/Kconfig"
+source "drivers/sensor/f75303/Kconfig"
+source "drivers/sensor/fcx_mldx5/Kconfig"
+source "drivers/sensor/grow_r502a/Kconfig"
+source "drivers/sensor/hp206c/Kconfig"
+source "drivers/sensor/hs300x/Kconfig"
+source "drivers/sensor/tdk/icm42605/Kconfig"
+source "drivers/sensor/tdk/icm42670/Kconfig"
+source "drivers/sensor/tdk/icm42688/Kconfig"
+source "drivers/sensor/tdk/icp10125/Kconfig"
+source "drivers/sensor/isl29035/Kconfig"
+source "drivers/sensor/ist8310/Kconfig"
+source "drivers/sensor/lm35/Kconfig"
+source "drivers/sensor/lm75/Kconfig"
+source "drivers/sensor/lm77/Kconfig"
+source "drivers/sensor/ltrf216a/Kconfig"
+source "drivers/sensor/mc3419/Kconfig"
+source "drivers/sensor/mhz19b/Kconfig"
+source "drivers/sensor/tdk/mpu6050/Kconfig"
+source "drivers/sensor/tdk/mpu9250/Kconfig"
+source "drivers/sensor/nct75/Kconfig"
+source "drivers/sensor/ntc_thermistor/Kconfig"
+source "drivers/sensor/pms7003/Kconfig"
+source "drivers/sensor/qdec_sam/Kconfig"
+source "drivers/sensor/rpi_pico_temp/Kconfig"
+source "drivers/sensor/s11059/Kconfig"
+source "drivers/sensor/sbs_gauge/Kconfig"
+source "drivers/sensor/sx9500/Kconfig"
+source "drivers/sensor/th02/Kconfig"
+source "drivers/sensor/tsic_xx6/Kconfig"
+source "drivers/sensor/veaa_x_3/Kconfig"
+source "drivers/sensor/voltage_divider/Kconfig"
+source "drivers/sensor/ene_tach_kb1200/Kconfig"
+
+endif # SENSOR

@@ -1,0 +1,15 @@
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: LiteX Ethernet
+
+compatible: "litex,eth0"
+
+include: ethernet-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

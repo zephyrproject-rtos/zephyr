@@ -1,0 +1,19 @@
+# ESP32 WDT configuration
+
+# Copyright (C) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_ESP32
+	bool "ESP32 Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Enable WDT driver for ESP32.
+
+config WDT_XT_ESP32
+	bool "ESP32 Watchdog for External 32K Crystal Driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_XT_WDT_ENABLED
+	help
+	  Enable WDT driver for ESP32.

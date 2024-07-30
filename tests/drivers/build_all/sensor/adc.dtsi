@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2023 FTP Technologies
+ * Copyright (c) 2023, Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for ADC devices
+ */
+
+test_adc_mcp9700a: mcp9700a {
+	status = "okay";
+	compatible = "microchip,mcp970x";
+	family = "MCP9700/9700A";
+	io-channels = <&test_adc 0>;
+};
+
+test_voltage: voltage {
+	status = "okay";
+	compatible = "voltage-divider";
+	io-channels = <&test_adc 1>;
+	io-channel-names = "VOLTAGE";
+	output-ohms = <47000>; /* R1 */
+	full-ohms = <(100000 + 47000)>; /* R2 + R1 */
+	power-gpios = <&test_gpio 0 0>;
+};
+
+test_current: current_amp {
+	status = "okay";
+	compatible = "current-sense-amplifier";
+	io-channels = <&test_adc 2>;
+	io-channel-names = "CURRENT_AMP";
+	sense-resistor-micro-ohms = <10>;
+	sense-gain-mult = <1>;
+	sense-gain-div = <1>;
+};
+
+test_adc_emul: adc-emul {
+	compatible = "zephyr,adc-emul";
+	nchannels = <2>;
+	ref-internal-mv = <3300>;
+	ref-external1-mv = <5000>;
+	#io-channel-cells = <1>;
+	status = "okay";
+};
+
+test_adc_ntc_thermistor_generic: ntc-thermistor-generic {
+	compatible = "ntc-thermistor-generic";
+	io-channels = <&test_adc 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+	zephyr,compensation-table = <0 0>, <1 1>;
+};
+
+test_adc_epcos_b57861s0103a039: epcos-b57861s0103a039 {
+	compatible = "epcos,b57861s0103a039";
+	io-channels = <&test_adc 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+};
+
+test_murata_ncp15wb473: murata-ncp15wb473 {
+	compatible = "murata,ncp15wb473";
+	io-channels = <&test_adc 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+};
+
+test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {
+	compatible = "tdk,ntcg163jf103ft1";
+	io-channels = <&adc0 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+};
+
+test_lm35: lm35 {
+	compatible = "lm35";
+	io-channels = <&adc0 0>;
+	status = "okay";
+};
+
+test_murata_ncp15xh103: murata-ncp15xh103 {
+	compatible = "murata,ncp15xh103";
+	io-channels = <&test_adc 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+};

@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NSIM_ARC_V_RMX100
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 5000000
+
+endif # BOARD_NSIM_ARC_V_RMX100

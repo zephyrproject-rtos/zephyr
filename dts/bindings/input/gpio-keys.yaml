@@ -1,0 +1,57 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Zephyr Input GPIO KEYS parent node
+
+  This defines a group of buttons that can generate input events. Each button
+  is defined in a child node of the gpio-keys node and defines a specific key
+  code.
+
+  For example:
+
+  #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+  / {
+         buttons {
+                 compatible = "gpio-keys";
+                 button_0 {
+                         gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+                         zephyr,code = <INPUT_KEY_0>;
+                 };
+         };
+  };
+
+
+compatible: "gpio-keys"
+
+include: base.yaml
+
+properties:
+  debounce-interval-ms:
+    type: int
+    default: 30
+    description: |
+       Debouncing interval time in milliseconds.
+       If not specified defaults to 30.
+
+  polling-mode:
+    type: boolean
+    description: |
+      Do not use interrupts for the key GPIOs, poll the pin periodically at the
+      specified debounce-interval-ms instead.
+
+child-binding:
+  description: GPIO KEYS child node
+  properties:
+    gpios:
+      type: phandle-array
+      required: true
+
+    label:
+      type: string
+      description: Descriptive name of the key
+
+    zephyr,code:
+      type: int
+      description: Key code to emit.

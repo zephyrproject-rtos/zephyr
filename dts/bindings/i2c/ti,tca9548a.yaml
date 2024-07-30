@@ -1,0 +1,10 @@
+# Binding for TI TCA9548A, compatible with NXP PCA9548A
+
+description: Texas Instruments TCA9548A binding
+
+compatible: "ti,tca9548a"
+
+include: ti,tca954x-base.yaml
+
+child-binding:
+  compatible: "ti,tca9548a-channel"

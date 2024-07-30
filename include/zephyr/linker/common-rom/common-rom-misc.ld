@@ -1,0 +1,70 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <zephyr/linker/iterable_sections.h>
+
+#if defined(CONFIG_EC_HOST_CMD)
+	ITERABLE_SECTION_ROM(ec_host_cmd_handler, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_SETTINGS)
+	ITERABLE_SECTION_ROM(settings_handler_static, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_SENSING)
+	ITERABLE_SECTION_ROM(sensing_sensor_info, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_SENSOR_INFO)
+	ITERABLE_SECTION_ROM(sensor_info, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_SENSOR_ASYNC_API)
+	ITERABLE_SECTION_ROM(sensor_decoder_api, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_MCUMGR)
+	ITERABLE_SECTION_ROM(mcumgr_handler, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_INPUT)
+	ITERABLE_SECTION_ROM(input_callback, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_EMUL)
+	ITERABLE_SECTION_ROM(emul, Z_LINK_ITERABLE_SUBALIGN)
+#endif /* CONFIG_EMUL */
+
+#if defined(CONFIG_ZBUS)
+	ITERABLE_SECTION_ROM(zbus_channel, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_ROM(zbus_observer, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_ROM(zbus_channel_observation, Z_LINK_ITERABLE_SUBALIGN)
+#endif /* CONFIG_ZBUS */
+
+#ifdef CONFIG_LLEXT
+	ITERABLE_SECTION_ROM(llext_const_symbol, Z_LINK_ITERABLE_SUBALIGN)
+#endif /* CONFIG_LLEXT */
+
+	SECTION_DATA_PROLOGUE(symbol_to_keep,,)
+	{
+		__symbol_to_keep_start = .;
+		KEEP(*(SORT(.symbol_to_keep*)));
+		__symbol_to_keep_end = .;
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	ITERABLE_SECTION_ROM(shell, Z_LINK_ITERABLE_SUBALIGN)
+
+	ITERABLE_SECTION_ROM(shell_root_cmds, Z_LINK_ITERABLE_SUBALIGN)
+
+	ITERABLE_SECTION_ROM(shell_subcmds, Z_LINK_ITERABLE_SUBALIGN)
+
+	ITERABLE_SECTION_ROM(shell_dynamic_subcmds, Z_LINK_ITERABLE_SUBALIGN)
+
+	ITERABLE_SECTION_ROM(cfb_font, Z_LINK_ITERABLE_SUBALIGN)
+
+#if defined(CONFIG_GNSS)
+	ITERABLE_SECTION_ROM(gnss_data_callback, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_GNSS_SATELLITES)
+	ITERABLE_SECTION_ROM(gnss_satellites_callback, Z_LINK_ITERABLE_SUBALIGN)
+#endif

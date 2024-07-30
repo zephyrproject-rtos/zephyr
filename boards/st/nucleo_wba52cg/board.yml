@@ -1,0 +1,5 @@
+board:
+  name: nucleo_wba52cg
+  vendor: st
+  socs:
+    - name: stm32wba52xx

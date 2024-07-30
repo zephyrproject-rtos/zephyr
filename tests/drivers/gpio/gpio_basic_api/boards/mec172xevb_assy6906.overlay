@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+
+		/*
+		 * Connect the JP71 pin 11 and 13 to test the GPIO loopback
+		 */
+		in-gpios  = <MCHP_GPIO_DECODE_156 0>; /* GPIO_156, JP71 Pin 11 */
+		out-gpios = <MCHP_GPIO_DECODE_157 0>; /* GPIO_157, JP71 Pin 13 */
+	};
+};

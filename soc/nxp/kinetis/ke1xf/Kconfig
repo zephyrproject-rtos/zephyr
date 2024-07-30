@@ -1,0 +1,68 @@
+# Kinetis KE1xF series MCU
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KINETIS_KE1XF
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_NXP_MPU
+	select CPU_HAS_FPU
+	select CLOCK_CONTROL
+	select HAS_MCUX
+	select HAS_MCUX_CACHE
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_LPI2C
+	select HAS_MCUX_LPSPI
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_PCC
+	select HAS_MCUX_RTC
+	select HAS_MCUX_SIM
+	select HAS_MCUX_ADC12
+	select HAS_MCUX_SCG
+	select HAS_MCUX_WDOG32
+	select HAS_MCUX_FTM
+	select HAS_MCUX_LPTMR
+	select HAS_MCUX_DAC32
+	select HAS_MCUX_EDMA
+	select HAS_MCUX_ACMP
+	select HAS_MCUX_PWT
+	select HAS_MCUX_RCM
+	select PLATFORM_SPECIFIC_INIT
+	select HAS_PM
+
+config SOC_MKE16F16
+	select HAS_MCUX
+	select HAS_MCUX_FLEXCAN
+
+config SOC_MKE18F16
+	select HAS_MCUX
+	select HAS_MCUX_FLEXCAN
+
+if SOC_SERIES_KINETIS_KE1XF
+
+config WDOG_ENABLE_AT_BOOT
+	bool "Keep watchdog timer enabled at boot"
+	help
+	  Keep the watchdog timer enabled at boot with the internal
+	  128kHz LPO clock (and a prescaler of 256) as clock
+	  source. The application can take over control of the
+	  watchdog timer after boot and install a different timeout,
+	  if needed.
+
+config WDOG_INITIAL_TIMEOUT
+	int "Initial timeout for the watchdog timer in milliseconds"
+	depends on WDOG_ENABLE_AT_BOOT && WDOG_INIT
+	range 2 131070
+	default 2048
+	help
+	  Initial timeout value for the watchdog timer in
+	  milliseconds.
+
+config KINETIS_KE1XF_ENABLE_CODE_CACHE
+	bool "Code cache"
+	default y
+
+endif # SOC_SERIES_KINETIS_KE1XF

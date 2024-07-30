@@ -1,0 +1,28 @@
+# Copyright 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Richtek RT1718S TCPC chip GPIO port
+
+    "richtek,rt1718s-gpio-port" node handles GPIO feature of the RT1718S TCPC
+    chip.
+
+    Example:
+      &i2c2_0 {
+          rt1718s_port0: rt1718s@40 {
+              compatible = "richtek,rt1718s";
+              reg = <0x40>;
+
+              rt1718s_gpio_port0: rt1718s_gpio {
+                  compatible = "richtek,rt1718s-gpio-port";
+
+                  gpio-controller;
+                  #gpio-cells = <2>;
+                  ngpios = <3>;
+              };
+          };
+      };
+
+include: [gpio-controller.yaml, base.yaml]
+
+compatible: "richtek,rt1718s-gpio-port"

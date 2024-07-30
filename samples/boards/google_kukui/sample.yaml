@@ -1,0 +1,6 @@
+sample:
+  name: Kukui general features
+tests:
+  sample.board.google_kukui:
+    platform_allow: google_kukui
+    tags: ec

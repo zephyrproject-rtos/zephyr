@@ -1,0 +1,39 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nPM1300 LED controller
+
+  The nPM1300 has three LED outputs.
+  Each LED can automatically display error or charging status,
+  or be controlled by software.
+
+compatible: "nordic,npm1300-led"
+
+properties:
+  nordic,led0-mode:
+    type: string
+    required: true
+    enum:
+    - error
+    - charging
+    - host
+    description: LED 0 mode
+
+  nordic,led1-mode:
+    type: string
+    required: true
+    enum:
+    - error
+    - charging
+    - host
+    description: LED 1 mode
+
+  nordic,led2-mode:
+    type: string
+    required: true
+    enum:
+    - error
+    - charging
+    - host
+    description: LED 2 mode

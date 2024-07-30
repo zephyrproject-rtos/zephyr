@@ -1,0 +1,499 @@
+# x86 general configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "X86 Architecture Options"
+	depends on X86
+
+config ARCH
+	default "x86"
+
+#
+# CPU Families - the SoC configuration should select the right one.
+#
+
+config CPU_ATOM
+	bool
+	select CPU_HAS_FPU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_CPU_HAS_SSE3
+	select CPU_HAS_DCACHE
+	help
+	  This option signifies the use of a CPU from the Atom family.
+
+config CPU_APOLLO_LAKE
+	bool
+	select CPU_HAS_FPU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
+	select X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_CPU_HAS_SSE3
+	select X86_CPU_HAS_SSSE3
+	select X86_CPU_HAS_SSE41
+	select X86_CPU_HAS_SSE42
+	select CPU_HAS_DCACHE
+	help
+	  This option signifies the use of a CPU from the Apollo Lake family.
+
+config CPU_LAKEMONT
+	bool
+	select CPU_HAS_FPU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_CPU_HAS_SSE3
+	select X86_CPU_HAS_SSSE3
+	select CPU_HAS_DCACHE
+	help
+	  This option signifies the use of a CPU from the Lakemont family.
+
+#
+# Configuration common to both IA32 and Intel64 sub-architectures.
+#
+
+config X86_64
+	bool "Run in 64-bit mode"
+	select 64BIT
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select SCHED_IPI_SUPPORTED
+	select X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_MMX
+	select X86_SSE
+	select X86_SSE2
+
+menu "x86 Features"
+
+config X86_CPU_HAS_MMX
+	bool
+
+config X86_CPU_HAS_SSE
+	bool
+
+config X86_CPU_HAS_SSE2
+	bool
+
+config X86_CPU_HAS_SSE3
+	bool
+
+config X86_CPU_HAS_SSSE3
+	bool
+
+config X86_CPU_HAS_SSE41
+	bool
+
+config X86_CPU_HAS_SSE42
+	bool
+
+config X86_CPU_HAS_SSE4A
+	bool
+
+if FPU || X86_64
+
+config X86_MMX
+	bool "MMX Support"
+	depends on X86_CPU_HAS_MMX
+	help
+	  This option enables MMX support, and the use of MMX registers
+	  by threads.
+
+config X86_SSE
+	bool "SSE Support"
+	depends on X86_CPU_HAS_SSE
+	help
+	  This option enables SSE support, and the use of SSE registers
+	  by threads.
+
+config X86_SSE2
+	bool "SSE2 Support"
+	depends on X86_CPU_HAS_SSE2
+	select X86_SSE
+	help
+	  This option enables SSE2 support.
+
+config X86_SSE3
+	bool "SSE3 Support"
+	depends on X86_CPU_HAS_SSE3
+	select X86_SSE
+	help
+	  This option enables SSE3 support.
+
+config X86_SSSE3
+	bool "SSSE3 (Supplemental SSE3) Support"
+	depends on X86_CPU_HAS_SSSE3
+	select X86_SSE
+	help
+	  This option enables Supplemental SSE3 support.
+
+config X86_SSE41
+	bool "SSE4.1 Support"
+	depends on X86_CPU_HAS_SSE41
+	select X86_SSE
+	help
+	  This option enables SSE4.1 support.
+
+config X86_SSE42
+	bool "SSE4.2 Support"
+	depends on X86_CPU_HAS_SSE42
+	select X86_SSE
+	help
+	  This option enables SSE4.2 support.
+
+config X86_SSE4A
+	bool "SSE4A Support"
+	depends on X86_CPU_HAS_SSE4A
+	select X86_SSE
+	help
+	  This option enables SSE4A support.
+
+config X86_SSE_FP_MATH
+	bool "Compiler-generated SSEx instructions for floating point math"
+	depends on X86_SSE
+	help
+	  This option allows the compiler to generate SSEx instructions for
+	  performing floating point math. This can greatly improve performance
+	  when exactly the same operations are to be performed on multiple
+	  data objects; however, it can also significantly reduce performance
+	  when preemptive task switches occur because of the larger register
+	  set that must be saved and restored.
+
+	  Disabling this option means that the compiler utilizes only the
+	  x87 instruction set for floating point operations.
+
+endif # FPU || X86_64
+
+endmenu
+
+config SRAM_OFFSET
+	default 0x100000 if X86_PC_COMPATIBLE
+	help
+	  A lot of x86 that resemble PCs have many reserved physical memory
+	  regions within the first megabyte. Specify an offset from the
+	  beginning of RAM to load the kernel in physical memory, avoiding these
+	  regions.
+
+	  Note that this does not include the "locore" which contains real mode
+	  bootstrap code within the first 64K of physical memory.
+
+	  This value normally need to be page-aligned.
+
+config KERNEL_VM_OFFSET
+	default 0x100000 if MMU
+
+config MAX_IRQ_LINES
+	int "Number of IRQ lines"
+	default 128
+	range 0 224
+	help
+	  This option specifies the number of IRQ lines in the system. It
+	  determines the size of the _irq_to_interrupt_vector_table, which
+	  is used to track the association between vectors and IRQ numbers.
+
+config IRQ_OFFLOAD_VECTOR
+	int "IDT vector to use for IRQ offload"
+	default 33
+	range 32 $(UINT8_MAX)
+	depends on IRQ_OFFLOAD
+
+config PIC_DISABLE
+	bool "Disable PIC"
+	help
+	  This option disables all interrupts on the legacy i8259 PICs at boot.
+
+choice
+	prompt "Reboot implementation"
+	depends on REBOOT
+	default REBOOT_RST_CNT
+
+	config REBOOT_RST_CNT
+		bool "Reboot via RST_CNT register"
+		help
+		  Reboot via the RST_CNT register, going back to BIOS.
+endchoice
+
+config PCIE_MMIO_CFG
+	bool "Use MMIO PCI configuration space access"
+	select ACPI
+	help
+	  Selects the use of the memory-mapped PCI Express Extended
+	  Configuration Space instead of the traditional 0xCF8/0xCFC
+	  IO Port registers.
+
+config KERNEL_VM_SIZE
+	default 0x40000000 if ACPI
+
+config X86_PC_COMPATIBLE
+	bool
+	default y
+	select ARCH_HAS_RESERVED_PAGE_FRAMES
+	select HAS_SRAM_OFFSET
+	help
+	  Hidden option to signal building for PC-compatible platforms
+	  with BIOS, ACPI, etc.
+
+config X86_MEMMAP
+	bool "Use memory map"
+	select ARCH_HAS_RESERVED_PAGE_FRAMES
+	help
+	  Enable the use of memory map to identify regions of memory.
+
+	  The memory map can be populated via Multiboot
+	  (CONFIG_MULTIBOOT=y and CONFIG_MULTIBOOT_MEMMAP=y) or
+	  can be manually defined via x86_memmap[].
+
+config X86_MEMMAP_ENTRIES
+	int "Number of memory map entries"
+	depends on X86_MEMMAP
+	range 1 256
+	default 1 if !MULTIBOOT_MEMMAP
+	default 64 if MULTIBOOT_MEMMAP
+	help
+	  Maximum number of memory regions to hold in the memory map.
+
+config MULTIBOOT
+	bool "Generate multiboot header"
+	depends on X86_PC_COMPATIBLE
+	default y
+	help
+	  Embed a multiboot header in the output executable. This is used
+	  by some boot loaders (e.g., GRUB) when loading Zephyr. It is safe
+	  to leave this option on if you're not sure. It only expands the
+	  text segment by 12-16 bytes and is typically ignored if not needed.
+
+if MULTIBOOT
+
+config MULTIBOOT_INFO
+	bool "Preserve multiboot information structure"
+	help
+	  Multiboot passes a pointer to an information structure to the
+	  kernel entry point. Some drivers (e.g., the multiboot framebuffer
+	  display driver) need to refer to information in this structure,
+	  and so set this option to preserve the data in a permanent location.
+
+config MULTIBOOT_MEMMAP
+	bool "Use multiboot memory map if provided"
+	select MULTIBOOT_INFO
+	select X86_MEMMAP
+	help
+	  Use the multiboot memory map if the loader provides one.
+
+endif # MULTIBOOT
+
+config X86_VERY_EARLY_CONSOLE
+	bool "Support very early boot printk"
+	depends on PRINTK
+	help
+	  Non-emulated X86 devices often require special hardware to attach
+	  a debugger, which may not be easily available. This option adds a
+	  very minimal serial driver which gets initialized at the very
+	  beginning of z_cstart(), via arch_kernel_init(). This driver enables
+	  printk to emit messages to the 16550 UART port 0 instance in device
+	  tree. This mini-driver assumes I/O to the UART is done via ports.
+
+config X86_MMU
+	bool "Memory Management Unit"
+	select MMU
+	help
+	  This options enables the memory management unit present in x86
+	  and creates a set of page tables at boot time that is runtime-
+	  mutable.
+
+config X86_COMMON_PAGE_TABLE
+	bool "Use a single page table for all threads"
+	default n
+	depends on USERSPACE
+	depends on !SMP
+	depends on !X86_KPTI
+	help
+	  If this option is enabled, userspace memory domains will not have their
+	  own page tables. Instead, context switching operations will modify
+	  page tables in place. This is much slower, but uses much less RAM
+	  for page tables.
+
+config X86_MAX_ADDITIONAL_MEM_DOMAINS
+	int "Maximum number of memory domains"
+	default 3
+	depends on X86_MMU && USERSPACE && !X86_COMMON_PAGE_TABLE
+	help
+	  The initial page tables at boot are pre-allocated, and used for the
+	  default memory domain. Instantiation of additional memory domains
+	  if common page tables are in use requires a pool of free pinned
+	  memory pages for constructing page tables.
+
+	  Zephyr test cases assume 3 additional domains can be instantiated.
+
+config X86_EXTRA_PAGE_TABLE_PAGES
+	int "Reserve extra pages in page table"
+	default 1 if X86_PAE && (KERNEL_VM_BASE != SRAM_BASE_ADDRESS)
+	default 0
+	depends on X86_MMU
+	help
+	  The whole page table is pre-allocated at build time and is
+	  dependent on the range of address space. This allows reserving
+	  extra pages (of size CONFIG_MMU_PAGE_SIZE) to the page table
+	  so that gen_mmu.py can make use of these extra pages.
+
+	  Says 0 unless absolutely sure that this is necessary.
+
+config X86_NO_MELTDOWN
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Meltdown CPU vulnerability,
+	  as described in CVE-2017-5754.
+
+config X86_NO_SPECTRE_V1
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V1, V1.1, V1.2, and
+	  swapgs CPU vulnerabilities as described in CVE-2017-5753,
+	  CVE-2018-3693, and CVE-2019-1125.
+
+config X86_NO_SPECTRE_V2
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V2 CPU
+	  vulnerability, as described in CVE-2017-5715.
+
+config X86_NO_SPECTRE_V4
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V4 CPU
+	  vulnerability, as described in CVE-2018-3639.
+
+config X86_NO_LAZY_FP
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate
+	  that a particular SOC is not vulnerable to the Lazy FP CPU
+	  vulnerability, as described in CVE-2018-3665.
+
+config X86_NO_SPECULATIVE_VULNERABILITIES
+	bool
+	select X86_NO_MELTDOWN
+	select X86_NO_SPECTRE_V1
+	select X86_NO_SPECTRE_V2
+	select X86_NO_SPECTRE_V4
+	select X86_NO_LAZY_FP
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC does not perform any kind of speculative execution,
+	  or is a newer chip which is immune to the class of vulnerabilities
+	  which exploit speculative execution side channel attacks.
+
+config X86_DISABLE_SSBD
+	bool "Disable Speculative Store Bypass"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V4
+	help
+	  This option will disable Speculative Store Bypass in order to
+	  mitigate against certain kinds of side channel attacks.  Quoting
+	  the "Speculative Execution Side Channels" document, version 2.0:
+
+	      When SSBD is set, loads will not execute speculatively
+	      until the addresses of all older stores are known.  This
+	      ensure s that a load does not speculatively consume stale
+	      data values due to bypassing an older store on the same
+	      logical processor.
+
+	  If enabled, this applies to all threads in the system.
+
+	  Even if enabled, will have no effect on CPUs that do not
+	  require this feature.
+
+config DISABLE_SSBD
+	bool "Disable Speculative Store Bypass [DEPRECATED]"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V4
+	select X86_DISABLE_SSBD
+	select DEPRECATED
+	help
+	  Deprecated. Use CONFIG_X86_DISABLE_SSBD instead.
+
+config X86_ENABLE_EXTENDED_IBRS
+	bool "Extended IBRS"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V2
+	help
+	  This option will enable the Extended Indirect Branch Restricted
+	  Speculation 'always on' feature. This mitigates Indirect Branch
+	  Control vulnerabilities (aka Spectre V2).
+
+config ENABLE_EXTENDED_IBRS
+	bool "Extended IBRS [DEPRECATED]"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V2
+	select X86_ENABLE_EXTENDED_IBRS
+	select DEPRECATED
+	help
+	  Deprecated. Use CONFIG_X86_ENABLE_EXTENDED_IBRS instead.
+
+config X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	bool
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V1
+	select BOUNDS_CHECK_BYPASS_MITIGATION
+	help
+	  Hidden config to select arch-independent option to enable
+	  Spectre V1 mitigations by default if the CPU is not known
+	  to be immune to it.
+
+config X86_KPTI
+	bool "Kernel page table isolation"
+	default y
+	depends on USERSPACE
+	depends on !X86_NO_MELTDOWN
+	help
+	  Implements kernel page table isolation to mitigate Meltdown exploits
+	  to read Kernel RAM. Incurs a significant performance cost for
+	  user thread interrupts and system calls, and significant footprint
+	  increase for additional page tables and trampoline stacks.
+
+config X86_EFI
+	bool "EFI"
+	default y
+	depends on BUILD_OUTPUT_EFI
+	help
+	  Enable EFI support. This means you build your image with zefi
+	  support. See arch/x86/zefi/README.txt for more information.
+
+config X86_EFI_CONSOLE
+	bool
+	depends on X86_EFI && X86_64 && !X86_VERY_EARLY_CONSOLE
+	select EFI_CONSOLE
+	default y if !UART_CONSOLE
+	help
+	  This enables the use of the UEFI console device as the
+	  Zephyr printk handler.  It requires that no interferences
+	  with hardware used by the firmware console (e.g. a UART or
+	  framebuffer) happens from Zephyr code, and that all memory
+	  used by the firmware environment and its page tables be
+	  separate and preserved.  In general this is safe to assume,
+	  but no automatic checking exists at runtime to verify.
+	  Likewise be sure to disable any other console/printk
+	  drivers!
+
+config PRIVILEGED_STACK_SIZE
+	# Must be multiple of CONFIG_MMU_PAGE_SIZE
+	default 4096 if X86_MMU
+
+source "arch/x86/core/Kconfig.ia32"
+source "arch/x86/core/Kconfig.intel64"
+
+endmenu

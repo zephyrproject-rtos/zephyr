@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+tests:
+  mgmt.mcumgr.cb.notifications:
+    platform_allow:
+      - qemu_cortex_m3
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64
+    tags:
+      - cb_notifications
+      - mcumgr

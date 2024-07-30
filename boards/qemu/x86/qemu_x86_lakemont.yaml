@@ -1,0 +1,16 @@
+identifier: qemu_x86_lakemont
+name: QEMU Emulation for X86 (Lakemont)
+type: qemu
+simulation: qemu
+arch: x86
+toolchain:
+  - zephyr
+  - xtools
+  - llvm
+testing:
+  default: true
+  only_tags:
+    - kernel
+  ignore_tags:
+    - benchmark
+vendor: qemu

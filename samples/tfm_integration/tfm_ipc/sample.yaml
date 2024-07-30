@@ -1,0 +1,44 @@
+sample:
+  description: This app provides an example of using TF-M on the secure side, with
+    Zephyr on the NS side, using IPC.
+  name: TF-M IPC example
+tests:
+  sample.tfm_ipc:
+    tags:
+      - introduction
+      - trusted-firmware-m
+      - mcuboot
+    platform_allow:
+      - mps2/an521/cpu0/ns
+      - nrf5340dk/nrf5340/cpuapp/ns
+      - nrf9160dk/nrf9160/ns
+      - nucleo_l552ze_q/stm32l552xx/ns
+      - stm32l562e_dk/stm32l562xx/ns
+      - v2m_musca_s1/musca_s1/ns
+      - bl5340_dvk/nrf5340/cpuapp/ns
+      - b_u585i_iot02a/stm32u585xx/ns
+    integration_platforms:
+      - mps2/an521/cpu0/ns
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "TF-M IPC on .*"
+        - "The version of the PSA Framework API is"
+        - "The PSA Crypto service minor version is"
+        - "Generating 256 bytes of random data"
+  sample.tfm_ipc.no_bl2:
+    tags:
+      - introduction
+      - trusted-firmware-m
+    platform_allow: mps2/an521/cpu0/ns
+    extra_configs:
+      - CONFIG_TFM_BL2=n
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "TF-M IPC on .*"
+        - "The version of the PSA Framework API is"
+        - "The PSA Crypto service minor version is"
+        - "Generating 256 bytes of random data"

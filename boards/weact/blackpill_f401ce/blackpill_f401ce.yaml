@@ -1,0 +1,17 @@
+identifier: blackpill_f401ce
+name: WeAct Studio Black Pill V3.0 (F401CE)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - spi
+  - usb
+  - i2c
+  - uart
+  - pwm
+  - adc
+vendor: weact

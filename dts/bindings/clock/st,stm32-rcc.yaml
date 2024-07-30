@@ -1,0 +1,136 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Reset and Clock controller node.
+  This node is in charge of system clock ('SYSCLK') source selection and controlling
+  clocks for AHB (Advanced High Performance) and APB (Advanced Peripheral) bus domains.
+
+  Configuring STM32 Reset and Clock controller node:
+
+  System clock source should be selected amongst the clock nodes available in "clocks"
+  node (typically 'clk_hse, clk_hsi', 'pll', ...).
+  Core clock frequency should also be defined, using "clock-frequency" property.
+  Note:
+          Core clock frequency  = SYSCLK / AHB prescaler
+  Last, peripheral bus clocks (typically PCLK1, PCLK2) should be configured using matching
+  prescaler properties.
+  Here is an example of correctly configured rcc node:
+  &rcc {
+           clocks = <&pll>;  /* Select 80MHz pll as SYSCLK source */
+           ahb-prescaler = <2>;
+           clock-frequency = <DT_FREQ_M(40)>; /* = SYSCLK / AHB prescaler */
+           apb1-presacler = <1>;
+           apb2-presacler = <1>;
+  }
+
+  Specifying a gated clock:
+
+  To specify a gated clock, a peripheral should define a "clocks" property encoded
+  in the following way:
+  ... {
+           ...
+           clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
+           ...
+  }
+  After the phandle referring to rcc node, the first index specifies the registers of
+  the bus controlling the peripheral and the second index specifies the bit used to
+  control the peripheral clock in that bus register.
+  The gated clock is required when accessing to the peripheral controller is needed
+  (generally for configuring the device). If dual clock domain is not used, it is
+  also used for peripheral operation.
+
+  Specifying a domain clock source:
+
+  Specifying a domain source clock could be done by adding a clock specifier to the
+  clock property:
+  ... {
+           ...
+           clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>,
+                        <&rcc STM32_SRC_HSI I2C1_SEL(2)>;
+           ...
+  }
+  In this example, I2C1 device is assigned HSI as domain clock source.
+  Domain clock is independent from the bus/gated clock and allows access to the device's
+  register while the gated clock is off. As it doesn't feed the peripheral's controller, it
+  allows peripheral operation, but can't be used for peripheral configuration.
+  It is peripheral driver's responsibility to query and use clock source information in
+  accordance with clock_control API specifications.
+
+  Since the peripheral subsystem rate is dictated by the clock used for peripheral
+  operation, same clock should be used in calls to `clock_control_get_rate()`
+
+  Note 1: No additional specifier means gating clock is also the clock source (ie
+          'PCLK/PCLK1/PCLK2' depending on the device). There is no need to add a second
+          cell to explicitly set it.
+  Note 2: Default peripheral clock configuration (ie the one provided in *.dsti files)
+          should be the one matching SoC reset state. Confere reference manual to check
+          what is the reset value of the clock source for each peripheral.
+
+compatible: "st,stm32-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for clock output
+
+  ahb-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        AHB prescaler. Defines actual core clock frequency (HCLK)
+        based on system frequency input.
+        The HCLK clocks CPU, AHB, memories and DMA.
+
+  apb1-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  apb2-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  undershoot-prevention:
+    type: boolean
+    description: |
+      On some parts, it could be required to set up highest core frequencies
+      (>80MHz) in two steps in order to prevent undershoot.
+      This is done by applying an intermediate AHB prescaler before switching
+      System Clock source to PLL. Once done, prescaler is set back to expected
+      value.
+
+clock-cells:
+  - bus
+  - bits

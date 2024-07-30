@@ -1,0 +1,45 @@
+# WiFi drivers configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI
+	bool "Wi-Fi drivers"
+
+if WIFI
+
+module = WIFI
+module-dep = LOG
+module-str = Log level for Wi-Fi driver
+module-help = Sets log level for Wi-Fi Device Drivers.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config WIFI_INIT_PRIORITY
+	int "Wi-Fi driver init priority"
+	default 80
+	help
+	  Wi-Fi device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+config WIFI_OFFLOAD
+	bool "Support offloaded Wi-Fi device drivers"
+	select NET_OFFLOAD
+	help
+	  Enable support for Full-MAC Wi-Fi devices.
+
+config WIFI_USE_NATIVE_NETWORKING
+	bool
+	help
+	  When selected, this hidden configuration enables Wi-Fi driver
+	  to use native ethernet stack interface.
+
+source "drivers/wifi/winc1500/Kconfig.winc1500"
+source "drivers/wifi/simplelink/Kconfig.simplelink"
+source "drivers/wifi/eswifi/Kconfig.eswifi"
+source "drivers/wifi/esp_at/Kconfig.esp_at"
+source "drivers/wifi/esp32/Kconfig.esp32"
+source "drivers/wifi/infineon/Kconfig.airoc"
+
+endif # WIFI

@@ -1,0 +1,12 @@
+# S11059 color sensor
+
+# Copyright (c) 2022 Hiroki Tada
+# SPDX-License-Identifier: Apache-2.0
+
+config S11059
+	bool "S11059 color sensor"
+	default y
+	depends on DT_HAS_HAMAMATSU_S11059_ENABLED
+	select I2C
+	help
+		Enable driver for S11059 color sensor

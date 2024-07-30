@@ -1,0 +1,33 @@
+family:
+- name: arm
+  series:
+  - name: mps2
+    socs:
+    - name: an385
+    - name: an521
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
+  - name: mps3
+    socs:
+    - name: an547
+  - name: musca
+    socs:
+    - name: musca_b1
+    - name: musca_s1
+  - name: designstart
+    socs:
+    - name: designstart_fpga_cortex_m1
+    - name: designstart_fpga_cortex_m3
+- name: arm64
+  series:
+  - name: fvp_aemv8a
+    socs:
+    - name: fvp_base_revc_2xaemv8a
+  - name: fvp_aemv8r
+    socs:
+    - name: fvp_aemv8r_aarch64
+    - name: fvp_aemv8r_aarch32
+  socs:
+  - name: qemu_cortex_a53
+  - name: qemu_virt_arm64

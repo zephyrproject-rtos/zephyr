@@ -1,0 +1,19 @@
+identifier: nucleo_l053r8
+name: ST Nucleo L053R8
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - gpio
+  - i2c
+  - spi
+  - eeprom
+ram: 8
+flash: 64
+vendor: st

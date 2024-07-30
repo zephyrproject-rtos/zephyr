@@ -1,0 +1,51 @@
+# DMA configuration options
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_MCUX_EDMA
+	bool "MCUX DMA driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_EDMA_ENABLED
+	imply NOCACHE_MEMORY if HAS_MCUX_CACHE
+	help
+	  DMA driver for MCUX series SoCs.
+
+config DMA_MCUX_EDMA_V3
+	bool "MCUX DMA v3 driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_EDMA_V3_ENABLED
+	help
+	  DMA version 3 driver for MCUX series SoCs.
+
+config DMA_MCUX_EDMA_V4
+	bool "MCUX DMA v4 driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_EDMA_V4_ENABLED
+	help
+	  DMA version 4 driver for MCUX series SoCs.
+
+if DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4
+
+config DMA_TCD_QUEUE_SIZE
+	int "number of TCD in a queue for SG mode"
+	default 2
+	help
+	  number of TCD in a queue for SG mode
+
+config DMA_MCUX_TEST_SLOT_START
+	int "test slot start num"
+	depends on (SOC_SERIES_KINETIS_K6X || SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_S32K3)
+	default 58 if SOC_SERIES_KINETIS_K6X
+	default 60 if SOC_SERIES_KINETIS_KE1XF
+	default 62 if SOC_SERIES_S32K3
+	help
+	  test slot start num
+
+config DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
+	bool "Use DTCM for DMA descriptors"
+	help
+	  When this option is activated, the descriptors for DMA transfer are
+	  located in the DTCM (Data Tightly Coupled Memory).
+
+endif # DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4

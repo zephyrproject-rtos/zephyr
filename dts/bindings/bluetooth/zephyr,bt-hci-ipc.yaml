@@ -1,0 +1,17 @@
+description: Bluetooth HCI using the IPC subsystem
+
+compatible: "zephyr,bt-hci-ipc"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "IPC"
+  bt-hci-bus:
+    default: "BT_HCI_BUS_IPM"
+  bt-hci-quirks:
+    default: ["BT_HCI_QUIRK_NO_AUTO_DLE"]
+  bt-hci-ipc-name:
+    type: string
+    default: "nrf_bt_hci"
+    description: IPC endpoint name

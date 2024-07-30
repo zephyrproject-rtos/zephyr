@@ -1,0 +1,14 @@
+# Infineon CAT1 Watchdog configuration options
+
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_INFINEON_CAT1
+	bool "Infineon CAT1 Watchdog Driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_WATCHDOG_ENABLED
+	select USE_INFINEON_WDT
+	help
+	  Enable Watchdog driver for Infineon CAT1 devices.

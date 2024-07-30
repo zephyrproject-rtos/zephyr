@@ -1,0 +1,37 @@
+# M5StickC PLUS board configuration
+
+# Copyright (c) 2022 AVSystem Sławomir Wolf Sp.j. (AVSystem)
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_M5STICKC_PLUS_ESP32_PROCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default $(UINT16_MAX) if WIFI && BT
+	default 51200 if WIFI
+	default 40960 if BT
+	default 4096
+
+config GPIO_HOGS_INIT_PRIORITY
+	default 70
+
+config MFD_INIT_PRIORITY
+	default 70
+
+config REGULATOR_AXP192_INIT_PRIORITY
+	default 71
+
+config GPIO_AXP192_INIT_PRIORITY
+	default 72
+
+config REGULATOR_FIXED_INIT_PRIORITY
+	default 75
+
+endif # BOARD_M5STICKC_PLUS_ESP32_PROCPU
+
+if BOARD_M5STICKC_PLUS_ESP32_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_M5STICKC_PLUS_ESP32_APPCPU

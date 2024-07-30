@@ -1,0 +1,43 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic PDM (Pulse Density Modulation interface)
+
+compatible: "nordic,nrf-pdm"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  clock-source:
+    type: string
+    default: "PCLK32M_HFXO"
+    description: |
+      Clock source to be used by the PDM peripheral. The following options
+      are available:
+      - "PCLK32M": 32 MHz peripheral clock, synchronous to HFCLK
+      - "PCLK32M_HFXO": PCLK32M running off the 32 MHz crystal oscillator
+        (HFXO) for better clock accuracy and jitter performance
+      - "ACLK": Audio PLL clock with configurable frequency (frequency for
+        this clock must be set via the "hfclkaudio-frequency" property
+        in the "nordic,nrf-clock" node); this clock source is only available
+        in the nRF53 Series SoCs and it requires the use of HFXO
+    enum:
+      - "PCLK32M"
+      - "PCLK32M_HFXO"
+      - "ACLK"
+
+  queue-size:
+    type: int
+    default: 4
+    description: |
+      Size of the queue of received audio data blocks to be used
+      by the driver.

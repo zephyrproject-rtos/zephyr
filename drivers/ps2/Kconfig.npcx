@@ -1,0 +1,28 @@
+# NPCX PS2 configuration options
+
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PS2_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) PS2 driver"
+	depends on DT_HAS_NUVOTON_NPCX_PS2_CHANNEL_ENABLED
+	default y
+	help
+	  Enable the NPCX family PS2 driver. It provides four PS/2 channels.
+	  Each channel has two quasi-bidirectional signals that serve as
+	  direct interfaces to an external keyboard, mouse or any other
+	  PS/2-compatible pointing device.The driver also depends on the KBC
+	  8042 keyboard controller.
+
+if PS2_NPCX
+
+config PS2_CHANNEL_INIT_PRIORITY
+	int "PS/2 channel driver init priority"
+	default 41
+	help
+	  PS/2 channel device driver initialization priority.
+	  This should be lower than the PS2_INIT_PRIORITY as
+	  NPCX PS/2 controller device driver should initialize
+	  prior to channel device driver.
+
+endif # PS2_NPCX

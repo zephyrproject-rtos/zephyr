@@ -1,0 +1,21 @@
+# BUILD-TEST: required to do build tests of zephyr
+#
+# things used by twister or other things like code coverage or python
+# testing
+
+# used by twister for ansi color
+colorama
+
+# python lex/yex used by twister
+ply>=3.10
+
+# used for code coverage
+gcovr>=6.0
+coverage
+
+# used for west-command testing
+pytest
+mypy
+
+# used for mocking functions in pytest
+mock>=4.0.1

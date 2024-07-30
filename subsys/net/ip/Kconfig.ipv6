@@ -1,0 +1,292 @@
+# IPv6 Options
+
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_IPV6
+	bool "IPv6"
+	default y
+	help
+	  Enable IPv6 support. This should be selected by default as there
+	  is limited set of network bearers provided that support IPv4.
+
+if NET_IPV6
+
+config NET_IF_MAX_IPV6_COUNT
+	int "Max number of IPv6 network interfaces in the system"
+	default NET_VLAN_COUNT if NET_VLAN
+	default 2 if NET_LOOPBACK
+	default 1
+	help
+	  This tells how many network interfaces there will be in the system
+	  that will have IPv6 enabled.
+
+config NET_IF_UNICAST_IPV6_ADDR_COUNT
+	int "Max number of unicast IPv6 addresses per network interface"
+	default 6 if NET_L2_OPENTHREAD
+	default 3 if NET_LOOPBACK
+	default 2
+
+config NET_IF_MCAST_IPV6_ADDR_COUNT
+	int "Max number of multicast IPv6 addresses per network interface"
+	default 8 if NET_L2_OPENTHREAD
+	default 3
+
+config NET_IF_IPV6_PREFIX_COUNT
+	int "Max number of IPv6 prefixes per network interface"
+	default 2
+
+if NET_NATIVE_IPV6
+
+config NET_IPV6_MTU
+	int "Initial IPv6 MTU value"
+	default 1280
+	range 1280 1500
+	help
+	  The value should normally be 1280 which is the minimum IPv6 packet
+	  size that implementations need to support without fragmentation.
+
+config NET_INITIAL_HOP_LIMIT
+	int "Initial IPv6 hop limit value for unicast packets"
+	default 64
+	range 0 $(UINT8_MAX)
+	help
+	  The value should normally be > 0. The device receiving the IPv6
+	  packet will decrement the value and will drop the packet if the hop
+	  limit value is 0. When sending, the packet is dropped before
+	  transmitting to network if hop limit is 0.
+
+config NET_INITIAL_MCAST_HOP_LIMIT
+	int "Initial IPv6 hop limit value for multicast packets"
+	default 1
+	range 0 $(UINT8_MAX)
+	help
+	  The value should normally be > 0. The device receiving the IPv6
+	  packet will decrement the value and will drop the packet if the hop
+	  limit value is 0. When sending, the packet is dropped before
+	  transmitting to network if hop limit is 0.
+	  The default is 1 (same as in IPv4) which means that multicast packets
+	  don't leave the local network unless the application explicitly
+	  requests it.
+
+config NET_IPV6_MAX_NEIGHBORS
+	int "How many IPv6 neighbors are supported"
+	default 8
+	range 1 254
+	help
+	  The value depends on your network needs.
+
+config NET_IPV6_FRAGMENT
+	bool "Support IPv6 fragmentation"
+	help
+	  IPv6 fragmentation is disabled by default. This saves memory and
+	  should not cause issues normally as we support anyway the minimum
+	  length IPv6 packets (1280 bytes). If you enable fragmentation
+	  support, please increase amount of RX data buffers so that larger
+	  than 1280 byte packets can be received.
+
+config NET_IPV6_FRAGMENT_MAX_COUNT
+	int "How many packets to reassemble at a time"
+	range 1 16
+	default 1
+	depends on NET_IPV6_FRAGMENT
+	help
+	  How many fragmented IPv6 packets can be waiting reassembly
+	  simultaneously. Each fragment count might use up to 1280 bytes
+	  of memory so you need to plan this and increase the network buffer
+	  count.
+
+config NET_IPV6_FRAGMENT_MAX_PKT
+	int "How many fragments can be handled to reassemble a packet"
+	default 2
+	depends on NET_IPV6_FRAGMENT
+	help
+	  Incoming fragments are stored in per-packet queue before being
+	  reassembled. This value defines the number of fragments that
+	  can be handled at the same time to reassemble a single packet.
+
+	  We do not have to accept IPv6 packets larger than 1500 bytes
+	  (RFC 2460 ch 5). This means that we should receive everything
+	  within the first two fragments. The first one being 1280 bytes and
+	  the second one 220 bytes.
+
+	  You can increase this value if you expect packets with more
+	  than two fragments.
+
+config NET_IPV6_FRAGMENT_TIMEOUT
+	int "How long to wait the fragments to receive"
+	range 1 60
+	default 5
+	depends on NET_IPV6_FRAGMENT
+	help
+	  How long to wait for IPv6 fragment to arrive before the reassembly
+	  will timeout. RFC 2460 chapter 4.5 tells to wait for 60 seconds but
+	  this might be too long in memory constrained devices. This value
+	  is in seconds.
+
+config NET_IPV6_MLD
+	bool "Multicast Listener Discovery support"
+	default y
+	help
+	  The value depends on your network needs. MLD should normally
+	  be active. Currently we support only MLDv2. See RFC 3810 for
+	  details.
+
+config NET_IPV6_NBR_CACHE
+	bool "Neighbor cache"
+	default y
+	help
+	  The value depends on your network needs. Neighbor cache should
+	  normally be active.
+
+config NET_IPV6_ND
+	bool "Activate neighbor discovery"
+	depends on NET_IPV6_NBR_CACHE
+	select NET_IPV6_MLD if !NET_TEST
+	default y
+	help
+	  The value depends on your network needs. ND should normally
+	  be active.
+
+config NET_IPV6_DAD
+	bool "Activate duplicate address detection"
+	depends on NET_IPV6_NBR_CACHE
+	default y
+	help
+	  The value depends on your network needs. DAD should normally
+	  be active.
+
+config NET_IPV6_RA_RDNSS
+	bool "Support RA RDNSS option"
+	depends on NET_IPV6_ND
+	depends on DNS_RESOLVER
+	default y
+	help
+	  Support Router Advertisement Recursive DNS Server option.
+	  See RFC 6106 for details. The value depends on your network needs.
+
+config NET_IPV6_PE
+	bool "Privacy extension (RFC 8981) support [EXPERIMENTAL]"
+	select MBEDTLS
+	select MBEDTLS_MD
+	select EXPERIMENTAL
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	help
+	  This enables IPv6 privacy extension (RFC 8981) support.
+	  The interface identifier is randomized and SLAAC addresses
+	  generated from it will expire. This requires that applications are
+	  prepared to use new IPv6 addresses when old ones will expire.
+	  Note that you should make sure that the value of config option
+	  CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT should be large enough so that
+	  two PE generated IPv6 addresses can be added to the network interface
+	  at the same time.
+
+if NET_IPV6_PE
+
+config NET_IPV6_PE_FILTER_PREFIX_COUNT
+	int "Size of the IPv6 prefix filter list"
+	default 0
+	help
+	  Size of the allow/deny filter list of IPv6 prefixes. User can
+	  set filters at runtime and it is possible to enable or disable
+	  privacy extension support according to this filter list.
+	  By default no filters are enabled.
+
+config NET_IPV6_PE_PREFER_PUBLIC_ADDRESSES
+	bool "Prefer public preferred address over temporary one"
+	help
+	  Prefer public addresses over temporary addresses.
+
+config NET_IPV6_PE_TEMP_VALID_LIFETIME
+	int "Max lifetime for temporary address (in minutes)"
+	default 1440
+	help
+	  No temporary address should ever remain valid for longer than this
+	  value. The value is in minutes. Default value is 1 day (24*60).
+
+config NET_IPV6_PE_TEMP_PREFERRED_LIFETIME
+	int "Max preferred lifetime for temporary address (in minutes)"
+	default 1380
+	help
+	  No temporary address should ever remain preferred for longer than this
+	  value. The value is in minutes. Default value is 23 hours (23*60).
+
+config NET_IPV6_PE_TEMP_IDGEN_RETRIES
+	int "Max amount of failed DAD attempts"
+	default 3
+	help
+	  The node MUST perform duplicate address detection (DAD) on the
+	  generated temporary address. If after TEMP_IDGEN_RETRIES consecutive
+	  attempts no non-unique address was generated then there will be no
+	  attempt to generate temporary addresses for that interface.
+
+endif
+
+config NET_6LO
+	bool "6lowpan IPv6 Compression library"
+	default y if NET_L2_IEEE802154
+	help
+	  6lowpan compression and fragmentation. It is enabled by default
+	  if 802.15.4 is present, since using IPv6 on it requires it.
+
+	  You may disable this option if you wish to implement a non-IP
+	  custom protocol on top of the 802.15.4 MAC (L2) layer.
+
+config NET_6LO_CONTEXT
+	bool "6lowpan context based compression"
+	depends on NET_6LO
+	help
+	  Enables 6lowpan context based compression based on information
+	  received in Router Advertisement (RA) message.
+
+config NET_MAX_6LO_CONTEXTS
+	int "Number of supported 6CO (6lowpan contexts options)"
+	depends on NET_6LO_CONTEXT
+	default 1
+	range 1 16
+	help
+	  6lowpan context options table size. The value depends on your
+	  network and memory consumption. More 6CO options uses more memory.
+
+if NET_6LO
+module = NET_6LO
+module-dep = NET_LOG
+module-str = Log level for 6LoWPAN library
+module-help = Enables 6LoWPAN code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_6LO
+
+module = NET_IPV6
+module-dep = NET_LOG
+module-str = Log level for core IPv6
+module-help = Enables core IPv6 code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_IPV6_ND
+module-dep = NET_LOG
+module-str = Log level for IPv6 Neighbor Discovery
+module-help = Enables IPv6 Neighbor Discovery code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_IPV6_PE
+module-dep = NET_LOG
+module-str = Log level for IPv6 Privacy Extension
+module-help = Enables IPv6 Privacy Extension code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_ICMPV6
+module-dep = NET_LOG
+module-str = Log level for ICMPv6
+module-help = Enables ICMPv6 code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_IPV6_NBR_CACHE
+module-dep = NET_LOG
+module-str = Log level for IPv6 neighbor cache
+module-help = Enables IPv6 Neighbor Cache code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_NATIVE_IPV6
+endif # NET_IPV6

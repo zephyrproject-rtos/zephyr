@@ -1,0 +1,35 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* I2C bus pins are exposed on the ST morpho header.
+ *
+ *  Bus        SDA               SCL
+ *          Pin   Hdr         Pin   Hdr
+ *  i2c1    PB9   CN10:5      PB8   CN10:3
+ *  i2c2    PA12  CN10:12     PA11  CN10:14
+ *
+ * Short Pin PB9 to PA12, and PB8 to PA11, for the test to pass.
+ */
+
+&i2c1 {
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+
+&i2c2 {
+	/* i2c2 is disabled by default because of pin conflict with can1 */
+	status = "okay";
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};
+
+&can1 {
+	/* can1 shares the pins with i2c2 and must be disabled */
+	status = "disabled";
+};

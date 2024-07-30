@@ -1,0 +1,62 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Logging levels filtering"
+
+config LOG_RUNTIME_FILTERING
+	bool "Runtime filtering reconfiguration"
+	depends on !LOG_MODE_MINIMAL
+	help
+	  Allow runtime configuration of maximal, independent severity
+	  level for instance.
+
+config LOG_DEFAULT_LEVEL
+	int "Default log level"
+	default 3
+	range 0 4
+	help
+	  Sets log level for modules which don't specify it explicitly. When
+	  set to 0 it means log will not be activated for those modules.
+	  Levels are:
+
+	  - 0 OFF, do not write by default
+	  - 1 ERROR, default to only write LOG_LEVEL_ERR
+	  - 2 WARNING, default to write LOG_LEVEL_WRN
+	  - 3 INFO, default to write LOG_LEVEL_INFO
+	  - 4 DEBUG, default to write LOG_LEVEL_DBG
+
+config LOG_OVERRIDE_LEVEL
+	int "Override lowest log level"
+	default 0
+	range 0 4
+	help
+	  Forces a minimum log level for all modules. Modules use their
+	  specified level if it is greater than this option, otherwise they use
+	  the level specified by this option instead of their default or
+	  whatever was manually set.
+	  Levels are:
+
+	  - 0 OFF, do not override
+	  - 1 ERROR, override to write LOG_LEVEL_ERR
+	  - 2 WARNING, override to write LOG_LEVEL_WRN
+	  - 3 INFO, override to write LOG_LEVEL_INFO
+	  - 4 DEBUG, override to write LOG_LEVEL_DBG
+
+config LOG_MAX_LEVEL
+	int "Maximal log level compiled in the system"
+	default 4
+	range 0 4
+	help
+	  Forces a maximal log level for all modules. Modules saturates their
+	  specified level if it is greater than this option, otherwise they use
+	  the level specified by this option instead of their default or
+	  whatever was manually set.
+	  Levels are:
+
+	  - 0 OFF, logging is turned off
+	  - 1 ERROR, maximal level set to LOG_LEVEL_ERR
+	  - 2 WARNING, maximal level set to LOG_LEVEL_WRN
+	  - 3 INFO, maximal level set to LOG_LEVEL_INFO
+	  - 4 DEBUG, maximal level set to LOG_LEVEL_DBG
+
+endmenu

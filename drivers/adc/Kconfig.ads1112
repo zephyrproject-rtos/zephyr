@@ -1,0 +1,12 @@
+# ADS1112 ADC configuration options
+
+# Copyright (c) 2023 Cruise, LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADS1112
+	bool "Texas Instruments ADS1112 ADC driver"
+	depends on DT_HAS_TI_ADS1112_ENABLED
+	select I2C
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the driver implementation for the ADS1112

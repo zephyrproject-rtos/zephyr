@@ -1,0 +1,16 @@
+/*
+ * Copyright 2022 Dronetag
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/{
+	coex_gpio: coex {
+		compatible = "gpio-radio-coex";
+		grant-gpios = <&gpio1 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_LOW)>;
+		grant-delay-us = <150>;
+	};
+};
+
+&radio {
+	coex = <&coex_gpio>;
+};

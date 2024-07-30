@@ -1,0 +1,69 @@
+# Copyright (c) 2020 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Twister TestSuite
+
+on:
+  push:
+    branches:
+    - main
+    - v*-branch
+    - collab-*
+    paths:
+    - 'scripts/pylib/**'
+    - 'scripts/twister'
+    - 'scripts/tests/twister/**'
+    - '.github/workflows/twister_tests.yml'
+    - 'scripts/schemas/twister/'
+  pull_request:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/pylib/**'
+    - 'scripts/twister'
+    - 'scripts/tests/twister/**'
+    - '.github/workflows/twister_tests.yml'
+    - 'scripts/schemas/twister/'
+
+jobs:
+  twister-tests:
+    name: Twister Unit Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+        os: [ubuntu-22.04]
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: cache-pip-linux
+      if: startsWith(runner.os, 'Linux')
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}
+    - name: install-packages
+      run: |
+        pip3 install -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt -r scripts/requirements-run-test.txt
+    - name: Run pytest for twisterlib
+      env:
+        ZEPHYR_BASE: ./
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      run: |
+        echo "Run twister tests"
+        PYTHONPATH=./scripts/tests pytest ./scripts/tests/twister
+    - name: Run pytest for pytest-twister-harness
+      env:
+        ZEPHYR_BASE: ./
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+        PYTHONPATH: ./scripts/pylib/pytest-twister-harness/src:${PYTHONPATH}
+      run: |
+        echo "Run twister tests"
+        pytest ./scripts/pylib/pytest-twister-harness/tests

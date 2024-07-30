@@ -1,0 +1,79 @@
+common:
+  tags: shell
+  min_ram: 32
+  integration_platforms:
+    - native_sim
+
+tests:
+  shell.core:
+    min_flash: 64
+
+  shell.min:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min.conf
+    build_only: true
+
+  shell.min_cmds:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_cmds.conf
+    build_only: true
+
+  shell.min_cmds_all:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_cmds_all.conf
+    build_only: true
+
+  shell.min_cmds_resize:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_cmds_resize.conf
+    build_only: true
+
+  shell.min_cmds_select:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_cmds_select.conf
+    build_only: true
+
+  shell.min_colors:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_colors.conf
+    build_only: true
+
+  shell.min_help:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_help.conf
+    build_only: true
+
+  shell.min_help_all:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_help_all.conf
+    build_only: true
+
+  shell.min_history:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_history.conf
+    build_only: true
+
+  shell.min_log_backend:
+    min_flash: 64
+    extra_args: CONF_FILE=shell_min_log_backend.conf
+    build_only: true
+
+  shell.min_metakeys:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_metakeys.conf
+    build_only: true
+
+  shell.min_tab:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_tab.conf
+    build_only: true
+
+  shell.min_tab_auto:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_tab_auto.conf
+    build_only: true
+
+  shell.min_wildcards:
+    min_flash: 32
+    extra_args: CONF_FILE=shell_min_wildcards.conf
+    build_only: true

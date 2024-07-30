@@ -1,0 +1,127 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMPE811 I2C touchscreen controller
+
+compatible: "st,stmpe811"
+
+include: i2c-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt GPIO. Used by the controller to signal touch data is
+      available. Active low.
+
+  screen-width:
+    type: int
+    default: 0
+    description: |
+      Screen width for scaling the reported coordinates.
+      Default: raw touchscreen resolution.
+
+  screen-height:
+    type: int
+    default: 0
+    description: |
+      Screen height for scaling the reported coordinates.
+      Default: raw touchscreen resolution.
+
+  raw-x-min:
+    type: int
+    description: |
+      Signed raw X axis start for scaling the reported coordinates.
+      No effect if screen size is not set.
+
+  raw-y-min:
+    type: int
+    description: |
+      Signed raw Y axis start for scaling the reported coordinates.
+      No effect if screen size is not set.
+
+  raw-x-max:
+    type: int
+    description: |
+      Raw X axis end for scaling the reported coordinates.
+      No effect if screen size is not set.
+
+  raw-y-max:
+    type: int
+    description: |
+      Raw Y axis end for scaling the reported coordinates.
+      No effect if screen size is not set.
+
+  panel-driver-settling-time-us:
+    type: int
+    enum:
+      - 10
+      - 100
+      - 500
+      - 1000
+      - 5000
+      - 10000
+      - 50000
+      - 100000
+    required: true
+    description: |
+      Panel driver settling time (microseconds). For large panels (> 6"), a capacitor of 10 nF
+      is recommended at the touchscreen terminals for noise filtering.
+      As a general rule, 1-5 nF capacitors require around 500 us settling time, and 5-10 nF need
+      around 1 ms. When a larger capacitor is used, this value should be changed, as it can
+      lead to inaccuracy of the measurement.
+
+  touch-detect-delay-us:
+    type: int
+    enum:
+      - 10
+      - 50
+      - 100
+      - 500
+      - 1000
+      - 5000
+      - 10000
+      - 50000
+    required: true
+    description: |
+      Touch detect delay (microseconds) is the delay from the activation of the pull-up resistor
+      in the X+ line to the time the device performs touch detection.
+      If no capacitor, or a smaller capacitor is used, this value can be lowered to
+      minimize detection latency, but it could lower the position stability.
+
+  touch-average-control:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+    required: true
+    description: |
+      Average control (number of samples).
+      This parameter can be set to any of the possible values.
+      Higher values result in more filtering of noise, but also introduce
+      more latency in the touch detection process.
+
+      Use cases that require low touch detection latency
+      may benefit from using a lower value for this parameter,
+      at the cost of less noise filtering.
+
+  tracking-index:
+    type: int
+    enum:
+      - 0
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 92
+      - 127
+    required: true
+    description: |
+      Tracking index determines the minimal distance between
+      the current touch position and the previous touch position.
+      If the distance is shorter than the tracking index, it is discarded.
+      Lowering the tracking index increases the frequency of touch events,
+      but also increases the load on the system.

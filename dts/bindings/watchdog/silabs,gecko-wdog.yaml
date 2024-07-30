@@ -1,0 +1,21 @@
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) Oane Kingma
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silicon Labs Gecko Family Watchdog driver
+
+compatible: "silabs,gecko-wdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  peripheral-id:
+    type: int
+    description: peripheral ID
+    required: true

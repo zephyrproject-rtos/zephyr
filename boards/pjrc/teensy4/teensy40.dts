@@ -1,0 +1,192 @@
+/*
+ * Copyright (c) 2020, Bernhard Kraemer
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt1060.dtsi>
+#include "teensy4-pinctrl.dtsi"
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	model = "PJRC TEENSY 4.0 board";
+	compatible = "nxp,mimxrt1062";
+
+	aliases {
+		led0 = &board_led;
+	};
+
+	chosen {
+		zephyr,flash-controller = &w25q16jvuxim;
+		zephyr,flash = &w25q16jvuxim;
+		zephyr,sram = &ocram;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &lpuart6; /* Teensy Pins 0(RX1) 1(TX1) */
+		zephyr,shell-uart = &lpuart6;
+		zephyr,canbus = &flexcan1; /* Teensy Pins 23(CRX1) 22(CTX1) */
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		board_led: led-1 {
+			gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
+			label = "User LED Pin 13";
+		};
+	};
+};
+
+&flexspi {
+	status = "okay";
+
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(2)>;
+	/* WINBOND flash memory*/
+	w25q16jvuxim: w25q16jvuxim@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(2 * 8)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
+		status = "okay";
+		jedec-id = [ef 40 15];
+
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+	};
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&lpuart6 {
+	status = "okay";
+	current-speed = < 115200 >;
+};
+
+&edma0 {
+	status = "okay";
+};
+
+/* Pinmux settings */
+&enet_mac {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+&flexcan1 {
+	pinctrl-0 = <&pinmux_flexcan1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&pinmux_flexcan2>;
+	pinctrl-names = "default";
+};
+
+&flexcan3 {
+	pinctrl-0 = <&pinmux_flexcan3>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+&lpi2c3 {
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-names = "default";
+};
+
+&lpi2c4 {
+	pinctrl-0 = <&pinmux_lpi2c4>;
+	pinctrl-names = "default";
+};
+
+&lpspi3 {
+	pinctrl-0 = <&pinmux_lpspi3>;
+	pinctrl-names = "default";
+};
+
+&lpspi4 {
+	pinctrl-0 = <&pinmux_lpspi4>;
+	pinctrl-names = "default";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart3 {
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart4 {
+	pinctrl-0 = <&pinmux_lpuart4>;
+	pinctrl-1 = <&pinmux_lpuart4_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart5 {
+	pinctrl-0 = <&pinmux_lpuart5>;
+	pinctrl-1 = <&pinmux_lpuart5_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart6 {
+	pinctrl-0 = <&pinmux_lpuart6>;
+	pinctrl-1 = <&pinmux_lpuart6_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart7 {
+	pinctrl-0 = <&pinmux_lpuart7>;
+	pinctrl-1 = <&pinmux_lpuart7_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart8 {
+	pinctrl-0 = <&pinmux_lpuart8>;
+	pinctrl-1 = <&pinmux_lpuart8_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&usdhc1 {
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+};
+
+&systick {
+	status = "okay";
+};

@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2018 Markus Roppelt
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l4/stm32l432.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l433", "st,stm32l4", "simple-bus";
+
+		pinctrl: pin-controller@48000000 {
+			gpiod: gpio@48000c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48000c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000008>;
+			};
+
+			gpioe: gpio@48001000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48001000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
+			};
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <36 5>;
+			status = "disabled";
+		};
+
+		usart3: serial@40004800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			resets = <&rctl STM32_RESET(APB1L, 18U)>;
+			interrupts = <39 0>;
+			status = "disabled";
+		};
+
+		sdmmc1: sdmmc@40012800 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x40012800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+			interrupts = <49 0>;
+			status = "disabled";
+		};
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
+	};
+};

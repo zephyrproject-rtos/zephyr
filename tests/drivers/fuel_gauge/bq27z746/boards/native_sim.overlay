@@ -1,0 +1,11 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	bq27z746: bq27z746@55 {
+		compatible = "ti,bq27z746";
+		reg = <0x55>;
+		status = "okay";
+	};
+};

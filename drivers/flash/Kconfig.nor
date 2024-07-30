@@ -1,0 +1,93 @@
+# Copyright (c) 2018 Savoir-Faire Linux.
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_NOR
+	bool "SPI NOR Flash"
+	default y
+	depends on DT_HAS_JEDEC_SPI_NOR_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_JESD216
+	select FLASH_HAS_EX_OP
+	select SPI
+
+if SPI_NOR
+
+choice SPI_NOR_SFDP
+	prompt "Source for Serial Flash Discoverable Parameters"
+	default SPI_NOR_SFDP_MINIMAL
+
+config SPI_NOR_SFDP_MINIMAL
+	bool "Fixed flash configuration"
+	help
+	  Synthesize a minimal configuration assuming 256 By page size (or as
+	  set by the page-size devicetree property) and
+	  standard 4 KiBy and 64 KiBy erase instructions.  Requires the size and
+	  jedec-id properties in the devicetree jedec,spi-nor node.
+
+config SPI_NOR_SFDP_DEVICETREE
+	bool "Basic Flash Parameters from devicetree node"
+	help
+	  The JESD216 Basic Flash Parameters table must be provided in the
+	  sfdp-bfp property in devicetree.  The size and jedec-id properties are
+	  also required.
+
+config SPI_NOR_SFDP_RUNTIME
+	bool "Read flash parameters at runtime"
+	help
+	  Read all flash device characteristics from the device at runtime.
+	  This option is the most flexible as it should provide functionality
+	  for all supported JESD216-compatible devices.
+
+endchoice
+
+config SPI_NOR_INIT_PRIORITY
+	int
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+config SPI_NOR_CS_WAIT_DELAY
+	int "Delay time in us"
+	default 0
+	help
+	  This is the wait delay (in us) to allow for CS switching to take effect
+
+config SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
+	bool "Sleep while waiting for flash operations to complete"
+	default y
+	help
+	  Flash operations can take anywhere from 1ms to 240 seconds to
+	  complete. Enabling this option adds a delay between polls on the
+	  status register for slow operations. Disabling this option can
+	  result in significant flash savings if this driver is the only user
+	  of "k_sleep". This can be the case when building as a bootloader.
+
+config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	int "Page size to use for FLASH_LAYOUT feature"
+	default 65536
+	help
+	  When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support
+	  that API.  By default the page size corresponds to the block
+	  size (65536).  Other options include the 32K-byte erase size
+	  (32768), the sector size (4096), or any non-zero multiple of the
+	  sector size.
+
+config SPI_NOR_IDLE_IN_DPD
+	bool "Use Deep Power-Down mode when flash is not being accessed."
+	help
+	  Where supported deep power-down mode can reduce current draw
+	  to as little as 0.1% of standby current.  However it takes
+	  some milliseconds to enter and exit from this mode.
+
+	  Select this option for applications where device power
+	  management is not enabled, the flash remains inactive for
+	  long periods, and when used the impact of waiting for mode
+	  enter and exit delays is acceptable.
+
+endif # SPI_NOR

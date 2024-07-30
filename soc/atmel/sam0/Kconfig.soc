@@ -1,0 +1,21 @@
+# Copyright (c) 2017 Google LLC.
+# Copyright (c) 2022-2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ATMEL_SAM0
+	bool
+
+config SOC_FAMILY
+	default "atmel_sam0" if SOC_FAMILY_ATMEL_SAM0
+
+config SOC_SERIES_REVISION_N
+	bool
+	depends on SOC_FAMILY_ATMEL_SAM0
+
+config SOC_SERIES_REVISION
+	string
+	default "n" if SOC_SERIES_REVISION_N
+	default ""
+	depends on SOC_FAMILY_ATMEL_SAM0
+
+rsource "*/Kconfig.soc"

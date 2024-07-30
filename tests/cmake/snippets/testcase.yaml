@@ -1,0 +1,36 @@
+common:
+  tags: snippets
+  platform_allow:
+  - native_posix
+  - native_sim
+  - qemu_x86
+  - qemu_x86_64
+  - qemu_cortex_m3
+  integration_platforms:
+  - native_sim
+
+tests:
+  # Test the initial state with no snippets applied
+  buildsystem.snippets.none:
+    extra_configs:
+    - CONFIG_TEST_TYPE_NONE=y
+  # Test the `foo` snippet from the default application snippet root
+  buildsystem.snippets.foo:
+    extra_args: SNIPPET="foo"
+    extra_configs:
+    - CONFIG_TEST_TYPE_FOO=y
+  # Test the `bar` snippet from an extra snippet root
+  buildsystem.snippets.bar:
+    extra_args: SNIPPET="bar"
+    extra_configs:
+    - CONFIG_TEST_TYPE_BAR=y
+  # Test the snippet processing order (1. foo, 2. bar)
+  buildsystem.snippets.foo_bar:
+    extra_args: SNIPPET="foo;bar"
+    extra_configs:
+    - CONFIG_TEST_TYPE_FOO_BAR=y
+  # Test the snippet processing order (1. bar, 2. foo)
+  buildsystem.snippets.bar_foo:
+    extra_args: SNIPPET="bar;foo"
+    extra_configs:
+    - CONFIG_TEST_TYPE_BAR_FOO=y

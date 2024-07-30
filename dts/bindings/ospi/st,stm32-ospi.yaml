@@ -1,0 +1,166 @@
+# Copyright (c) 2022 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 OSPI device representation. Enabling a stm32 octospi node in a board
+    description would typically requires this:
+
+        &octospi {
+            pinctrl-0 = <&octospi_clk_pe9 &octospi_ncs_pe10 &octospi_dqs_pe11
+                         &octospi_io0_pe12 &octospi_io1_pe13
+                         &octospi_io2_pe14 &octospi_io3_pe15
+                         &octospi_io4_pe16 &octospi_io5_pe17
+                         &octospi_io6_pe18 &octospi_io7_pe19>;
+
+            dmas = <&dma1 5 41 0x10000>;
+            dma-names = "tx_rx";
+
+            status = "okay";
+        };
+
+compatible: "st,stm32-ospi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: ospi
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-names:
+    required: true
+
+  dmas:
+    description: |
+      Optional DMA channel specifier, required for DMA transactions.
+      For example dmas for TX/RX on OSPI
+         dmas = <&dma1 5 41 0x10000>;
+
+      With, in each cell of the dmas specifier:
+      - &dma1: dma controller phandle
+      - 5: channel number (0 to Max-Channel minus 1). From 0 to 15 on stm32u5x.
+      - 41: slot number (request which could be given by the DMAMUX)
+      - 0x10000: channel configuration (only for srce/dest data size, priority)
+
+      Notes:
+        - On series supporting DMAMUX, the DMA phandle should be provided
+          but DMAMUX node should also be enabled in the DTS.
+        - For channel configuration, only the config bits priority and
+          periph/mem datasize are used. The periph/mem datasize must be equal,
+          0 is a correct value.
+         - There is no Fifo used by this DMA peripheral.
+
+      For example dmas for TX/RX on OSPI
+         dmas = <&dma1 5 41 0x10000>;
+
+  dma-names:
+    description: |
+      DMA channel name. If DMA should be used, expected value is "tx_rx".
+
+      For example
+         dma-names = "tx_rx";
+
+  dlyb-bypass:
+    type: boolean
+    description: |
+      Enables Delay Block (DLYB) Bypass.
+
+  ssht-enable:
+    type: boolean
+    description: |
+      Enables Sample Shifting half-cycle.
+
+      It is recommended to be enabled in STR mode and disabled in DTR mode.
+
+  io-low-port:
+    type: string
+    enum:
+      - "IOPORT_NONE"
+      - "IOPORT_1_LOW"
+      - "IOPORT_1_HIGH"
+      - "IOPORT_2_LOW"
+      - "IOPORT_2_HIGH"
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the IO[3:0] pins.
+
+      If absent, then `IOPORT_<n>_LOW` is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  io-high-port:
+    type: string
+    enum:
+      - "IOPORT_NONE"
+      - "IOPORT_1_LOW"
+      - "IOPORT_1_HIGH"
+      - "IOPORT_2_LOW"
+      - "IOPORT_2_HIGH"
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the IO[7:4] pins.
+
+      If absent, then `IOPORT_<n>_HIGH` is used where `n` is the OSPI
+      instance number.
+
+      Can be set to `IOPORT_NONE` for Single SPI, Dual SPI and Quad SPI.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  clk-port:
+    type: int
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the clk pin.
+
+      If absent, then n is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  dqs-port:
+    type: int
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the dqs pin.
+
+      If absent, then n is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  ncs-port:
+    type: int
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the ncs pin.
+
+      If absent, then n is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.

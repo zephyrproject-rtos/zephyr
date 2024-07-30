@@ -1,0 +1,11 @@
+identifier: imx8qxp_mek/mimx8qx6/adsp
+name: NXP i.MX 8QXP Audio DSP
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  only_tags:
+    - kernel
+    - sof
+vendor: nxp

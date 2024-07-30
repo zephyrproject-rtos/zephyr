@@ -1,0 +1,24 @@
+# STM32H573I DISCOVERY KIT board configuration
+#
+# Copyright (c) 2023 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32H573I_DK
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+if DISK_DRIVER_SDMMC
+
+config SDMMC_STM32_CLOCK_CHECK
+	default n
+
+endif # DISK_DRIVER_SDMMC
+
+endif # BOARD_STM32H573I_DK

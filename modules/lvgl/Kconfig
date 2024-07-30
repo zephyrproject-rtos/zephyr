@@ -1,0 +1,144 @@
+# Copyright (c) 2023 Fabian Blatz <fabianblatz@gmail.com>
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_LVGL_MODULE
+	bool
+
+config LVGL
+	bool "LVGL support"
+	help
+	  This option enables the LVGL graphics library.
+
+if LVGL
+
+config LV_USE_MONKEY
+	bool
+
+config LV_DPI_DEF
+	int
+
+config LV_CONF_SKIP
+	bool
+	default n
+
+config LV_USE_LOG
+	bool
+
+config LV_LOG_LEVEL_NONE
+	bool
+
+config LV_LOG_LEVEL_ERROR
+	bool
+
+config LV_LOG_LEVEL_WARN
+	bool
+
+config LV_LOG_LEVEL_INFO
+	bool
+
+config LV_LOG_LEVEL_USER
+	bool
+
+config LV_LOG_LEVEL_TRACE
+	bool
+
+config LV_Z_LOG_LEVEL
+	int
+	default 0 if LV_LOG_LEVEL_NONE || !LV_USE_LOG
+	default 1 if LV_LOG_LEVEL_ERROR
+	default 2 if LV_LOG_LEVEL_WARN
+	default 3 if LV_LOG_LEVEL_INFO
+	default 3 if LV_LOG_LEVEL_USER
+	default 4 if LV_LOG_LEVEL_TRACE
+
+config LV_Z_USE_ROUNDER_CB
+	bool
+	default y if LV_Z_AREA_X_ALIGNMENT_WIDTH != 1 || LV_Z_AREA_Y_ALIGNMENT_WIDTH != 1
+
+config APP_LINK_WITH_LVGL
+	bool "Link 'app' with LVGL"
+	default y
+	help
+	  Add LVGL header files to the 'app' include path. It may be
+	  disabled if the include paths for LVGL are causing aliasing
+	  issues for 'app'.
+
+config LV_Z_USE_FILESYSTEM
+	bool "LVGL file system support"
+	depends on FILE_SYSTEM
+	default y if FILE_SYSTEM
+	help
+	  Enable LittlevGL file system
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+	prompt "Color depth (bits per pixel)"
+
+	config LV_COLOR_DEPTH_32
+		bool "32: ARGB8888"
+	config LV_COLOR_DEPTH_16
+		bool "16: RGB565"
+	config LV_COLOR_DEPTH_8
+		bool "8: RGB232"
+	config LV_COLOR_DEPTH_1
+		bool "1: monochrome"
+endchoice
+
+config LV_COLOR_16_SWAP
+	bool
+
+config LV_Z_FLUSH_THREAD
+	bool "Flush LVGL frames in a separate thread"
+	help
+	  Flush LVGL frames in a separate thread, while the primary thread
+	  renders the next LVGL frame. Can be disabled if the performance
+	  gain this approach offers is not required
+
+if LV_Z_FLUSH_THREAD
+
+config LV_Z_FLUSH_THREAD_STACK_SIZE
+	int "Stack size for flushing thread"
+	default 1024
+	help
+	  Stack size for LVGL flush thread, which will call display_write
+
+config LV_Z_FLUSH_THREAD_PRIO
+	int "LVGL flush thread priority"
+	default 0
+	help
+	  Cooperative priority of LVGL flush thread.
+
+endif # LV_Z_FLUSH_THREAD
+
+config LV_Z_AREA_X_ALIGNMENT_WIDTH
+	int "Frame X alignment size"
+	default 1
+	help
+	  Number of pixels, X axis should be rounded to. Should be used to override
+	  the current frame dimensions to meet display and/or LCD host
+	  controller requirements. The value must be power of 2.
+
+config LV_Z_AREA_Y_ALIGNMENT_WIDTH
+	int "Frame Y alignment size"
+	default 1
+	help
+	  Number of pixels, Y axis should be rounded to. Should be used to override
+	  the current frame dimensions to meet display and/or LCD host
+	  controller requirements. The value must be power of 2.
+
+config LV_USE_GPU_STM32_DMA2D
+	bool
+
+config LV_GPU_DMA2D_CMSIS_INCLUDE
+	string
+	help
+	  Must be defined to include path of CMSIS header of target processor
+	  e.g. "stm32f769xx.h" or "stm32f429xx.h"
+
+rsource "Kconfig.memory"
+rsource "Kconfig.input"
+rsource "Kconfig.shell"
+
+
+endif

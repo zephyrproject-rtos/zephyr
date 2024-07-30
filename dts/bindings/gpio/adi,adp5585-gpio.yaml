@@ -1,0 +1,30 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADP5585 GPIO Controller
+
+compatible: "adi,adp5585-gpio"
+
+include: gpio-controller.yaml
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    const: 13
+    description: |
+      Number of GPIOs available on port expander.
+
+  gpio-reserved-ranges:
+    required: true
+    const: [5, 3]
+    description: |
+      Ranges of GPIOs reserved unavailable on port expander.
+      The ADP5585 has 10 GPIO lines divided in 2 groups. GPIO number
+      5, 6, 7 is reserved. That's to say, GPIO R0~R4 occupy line
+      number 0~4, GPIO C0~C4 occupy line number 8~12.
+
+gpio-cells:
+  - pin
+  - flags

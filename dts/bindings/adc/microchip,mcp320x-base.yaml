@@ -1,0 +1,10 @@
+# Common fields for Microchip MCP3204/MCP3208
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

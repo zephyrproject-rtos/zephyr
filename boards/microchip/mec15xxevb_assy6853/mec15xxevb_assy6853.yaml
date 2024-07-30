@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2019, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mec15xxevb_assy6853
+name: MEC15XX EVB ASSY 6853
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32
+flash: 224
+supported:
+  - adc
+  - counter
+  - espi
+  - gpio
+  - i2c
+  - pwm
+  - watchdog
+  - kscan
+vendor: microchip

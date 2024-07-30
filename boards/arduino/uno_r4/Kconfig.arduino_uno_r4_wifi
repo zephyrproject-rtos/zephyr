@@ -1,0 +1,5 @@
+# Copyright (c) 2024 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_UNO_R4_WIFI
+	select SOC_R7FA4M1AB3CFM

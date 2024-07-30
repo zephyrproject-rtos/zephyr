@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2023 Andriy Gelman
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This sample requires several connections listed below. However, no external pull-ups
+ * are needed.
+ * P3.8, P3.7, P1.9, P3.15 must all be connected (sda related pins)
+ * P0.13, P1.8, P5.2 must all be connected (scl related pins)
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+&usic2ch0 {
+	compatible = "infineon,xmc4xxx-i2c";
+	status = "okay";
+
+	/* node is currently configured as arduino_spi */
+	/delete-property/ miso-src;
+
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c_scl_p5_2_u2c0 &i2c_sda_dx0_p3_7_u2c0 &i2c_sda_dout0_p3_8_u2c0>;
+	pinctrl-names = "default";
+
+	scl-src = "DX1A";
+	sda-src = "DX0C";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&arduino_i2c {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c_scl_p0_13_u1c1 &i2c_scl_dout1_p1_8_u1c1
+		     &i2c_sda_dout0_p1_9_u1c1 &i2c_sda_p3_15_u1c1>;
+
+	scl-src = "DX1B";
+	sda-src = "DX0A";
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};
+
+&i2c_scl_p5_2_u2c0 {
+	drive-strength = "strong-soft-edge";
+	drive-open-drain;
+	hwctrl = "disabled";
+};
+
+&i2c_sda_dout0_p3_8_u2c0 {
+	drive-strength = "strong-soft-edge";
+	drive-open-drain;
+	hwctrl = "disabled";
+};
+
+&i2c_sda_dx0_p3_7_u2c0 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+	bias-pull-up;
+};
+
+&i2c_sda_p3_15_u1c1 {
+	/delete-property/ drive-open-drain;
+	bias-pull-up;
+};
+
+&i2c_sda_dout0_p1_9_u1c1 {
+	drive-strength = "strong-soft-edge";
+	drive-open-drain;
+	hwctrl = "disabled";
+};
+
+&i2c_scl_p0_13_u1c1 {
+	/delete-property/ drive-open-drain;
+	bias-pull-up;
+};
+
+&i2c_scl_dout1_p1_8_u1c1 {
+	drive-strength = "strong-soft-edge";
+	drive-open-drain;
+	hwctrl = "disabled";
+};

@@ -1,0 +1,15 @@
+common:
+  platform_allow:
+    - native_sim
+    - qemu_cortex_m3
+  integration_platforms:
+    - native_sim
+tests:
+  usb.device_next:
+    tags: usb
+  usb.device_next.build_all:
+    tags: usb
+    extra_args:
+      - CONF_FILE="build_all.conf"
+      - EXTRA_DTC_OVERLAY_FILE="build_all.overlay"
+    build_only: true

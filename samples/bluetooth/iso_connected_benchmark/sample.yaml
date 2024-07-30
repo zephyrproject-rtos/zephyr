@@ -1,0 +1,10 @@
+sample:
+  name: BLE ISO Connected
+  description: Bluetooth Low Energy ISO Connected Benchmark sample
+tests:
+  sample.bluetooth.iso_connected_benchmark:
+    build_only: true
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    tags: bluetooth

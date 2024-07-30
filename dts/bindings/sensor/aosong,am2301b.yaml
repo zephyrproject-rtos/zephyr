@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2024 Nathan Olff
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Aosong AM2301B (Digital-output Humidity and Temperature Sensor)
+
+    The Asosong AM2301B sensor provides temperature and humidity
+    measurements through an I2C bus.
+
+compatible: "aosong,am2301b"
+
+include: [sensor-device.yaml, i2c-device.yaml]

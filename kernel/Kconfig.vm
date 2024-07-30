@@ -1,0 +1,210 @@
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Virtual Memory Support"
+
+config KERNEL_VM_SUPPORT
+	bool
+	help
+	  Hidden option to enable virtual memory Kconfigs.
+
+if KERNEL_VM_SUPPORT
+
+DT_CHOSEN_Z_SRAM := zephyr,sram
+
+config KERNEL_VM_BASE
+	hex "Virtual address space base address"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
+	help
+	  Define the base of the kernel's address space.
+
+	  By default, this is the same as the DT_CHOSEN_Z_SRAM physical base SRAM
+	  address from DTS, in which case RAM will be identity-mapped. Some
+	  architectures may require RAM to be mapped in this way; they may have
+	  just one RAM region and doing this makes linking much simpler, as
+	  at least when the kernel boots all virtual RAM addresses are the same
+	  as their physical address (demand paging at runtime may later modify
+	  this for non-pinned page frames).
+
+	  Otherwise, if RAM isn't identity-mapped:
+	  1. It is the architecture's responsibility to transition the
+	  instruction pointer to virtual addresses at early boot before
+	  entering the kernel at z_cstart().
+	  2. The underlying architecture may impose constraints on the bounds of
+	  the kernel's address space, such as not overlapping physical RAM
+	  regions if RAM is not identity-mapped, or the virtual and physical
+	  base addresses being aligned to some common value (which allows
+	  double-linking of paging structures to make the instruction pointer
+	  transition simpler).
+
+	  Zephyr does not implement a split address space and if multiple
+	  page tables are in use, they all have the same virtual-to-physical
+	  mappings (with potentially different permissions).
+
+config KERNEL_VM_OFFSET
+	hex "Kernel offset within address space"
+	default 0
+	help
+	  Offset that the kernel image begins within its address space,
+	  if this is not the same offset from the beginning of RAM.
+
+	  Some care may need to be taken in selecting this value. In certain
+	  build-time cases, or when a physical address cannot be looked up
+	  in page tables, the equation:
+
+	      virt = phys + ((KERNEL_VM_BASE + KERNEL_VM_OFFSET) -
+	                     (SRAM_BASE_ADDRESS + SRAM_OFFSET))
+
+	  Will be used to convert between physical and virtual addresses for
+	  memory that is mapped at boot.
+
+	  This uncommon and is only necessary if the beginning of VM and
+	  physical memory have dissimilar alignment.
+
+config KERNEL_VM_SIZE
+	hex "Size of kernel address space in bytes"
+	default 0x800000
+	help
+	  Size of the kernel's address space. Constraining this helps control
+	  how much total memory can be used for page tables.
+
+	  The difference between KERNEL_VM_BASE and KERNEL_VM_SIZE indicates the
+	  size of the virtual region for runtime memory mappings. This is needed
+	  for mapping driver MMIO regions, as well as special RAM mapping use-cases
+	  such as VSDO pages, memory mapped thread stacks, and anonymous memory
+	  mappings. The kernel itself will be mapped in here as well at boot.
+
+	  Systems with very large amounts of memory (such as 512M or more)
+	  will want to use a 64-bit build of Zephyr, there are no plans to
+	  implement a notion of "high" memory in Zephyr to work around physical
+	  RAM size larger than the defined bounds of the virtual address space.
+
+config KERNEL_DIRECT_MAP
+	bool "Memory region direct-map support"
+	depends on MMU
+	help
+	  This enables the direct-map support, namely the region can be 1:1
+	  mapping between virtual address and physical address.
+
+	  If the specific memory region is in the virtual memory space and
+	  there isn't overlap with the existed mappings, it will reserve the
+	  region from the virtual memory space and do the mapping, otherwise
+	  it will fail. And any attempt across the boundary of the virtual
+	  memory space will fail.
+
+	  Note that this is for compatibility and portable apps shouldn't
+	  be using it.
+
+endif # KERNEL_VM_SUPPORT
+
+menuconfig MMU
+	bool "MMU features"
+	depends on CPU_HAS_MMU
+	select KERNEL_VM_SUPPORT
+	help
+	  This option is enabled when the CPU's memory management unit is active
+	  and the arch_mem_map() API is available.
+
+if MMU
+config MMU_PAGE_SIZE
+	hex "Size of smallest granularity MMU page"
+	default 0x1000
+	help
+	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
+	  support multiple page sizes, put the smallest one here.
+
+menuconfig DEMAND_PAGING
+	bool "Demand paging [EXPERIMENTAL]"
+	depends on ARCH_HAS_DEMAND_PAGING
+	help
+	  Enable demand paging. Requires architecture support in how the kernel
+	  is linked and the implementation of an eviction algorithm and a
+	  backing store for evicted pages.
+
+if DEMAND_PAGING
+config DEMAND_PAGING_ALLOW_IRQ
+	bool "Allow interrupts during page-ins/outs"
+	help
+	  Allow interrupts to be serviced while pages are being evicted or
+	  retrieved from the backing store. This is much better for system
+	  latency, but any code running in interrupt context that page faults
+	  will cause a kernel panic. Such code must work with exclusively pinned
+	  code and data pages.
+
+	  The scheduler is still disabled during this operation.
+
+	  If this option is disabled, the page fault servicing logic
+	  runs with interrupts disabled for the entire operation. However,
+	  ISRs may also page fault.
+
+config DEMAND_PAGING_PAGE_FRAMES_RESERVE
+	int "Number of page frames reserved for paging"
+	default 32 if !LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
+	default 0
+	help
+	  This sets the number of page frames that will be reserved for
+	  paging that do not count towards free memory. This is to
+	  ensure that there are some page frames available for paging
+	  code and data. Otherwise, it would be possible to exhaust
+	  all page frames via anonymous memory mappings.
+
+config DEMAND_PAGING_STATS
+	bool "Gather Demand Paging Statistics"
+	help
+	  This enables gathering various statistics related to demand paging,
+	  e.g. number of pagefaults. This is useful for tuning eviction
+	  algorithms and optimizing backing store.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	bool "Use Timing Functions to Gather Demand Paging Statistics"
+	select TIMING_FUNCTIONS_NEED_AT_BOOT
+	help
+	  Use timing functions to gather various demand paging statistics.
+
+config DEMAND_PAGING_THREAD_STATS
+	bool "Gather per Thread Demand Paging Statistics"
+	depends on DEMAND_PAGING_STATS
+	help
+	  This enables gathering per thread statistics related to demand
+	  paging.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_TIMING_HISTOGRAM
+	bool "Gather Demand Paging Execution Timing Histogram"
+	depends on DEMAND_PAGING_STATS
+	help
+	  This gathers the histogram of execution time on page eviction
+	  selection, and backing store page in and page out.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS
+	int "Number of bins (buckets) in Demand Paging Timing Histogram"
+	depends on DEMAND_PAGING_TIMING_HISTOGRAM
+	default 10
+	help
+	  Defines the number of bins (buckets) in the histogram used for
+	  gathering execution timing information for demand paging.
+
+	  This requires k_mem_paging_eviction_histogram_bounds[] and
+	  k_mem_paging_backing_store_histogram_bounds[] to define
+	  the upper bounds for each bin. See kernel/statistics.c for
+	  information.
+
+endif # DEMAND_PAGING
+endif # MMU
+
+config KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK
+	bool
+	help
+	  Use custom memory range check functions instead of the generic
+	  checks in k_mem_phys_addr() and k_mem_virt_addr().
+
+	  sys_mm_is_phys_addr_in_range() and
+	  sys_mm_is_virt_addr_in_range() must be implemented.
+
+endmenu # Virtual Memory Support

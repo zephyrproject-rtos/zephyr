@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2018 Seitz & Associates
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/f3/stm32f302.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(16)>;
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(64)>;
+			};
+		};
+
+		rtc@40002800 {
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <20>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+/delete-node/ &spi1;

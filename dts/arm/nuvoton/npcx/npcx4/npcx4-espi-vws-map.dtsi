@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2023 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common eSPI Virtual Wire (VW) mapping configurations in npcx family */
+#include <nuvoton/npcx/npcx-espi-vws-map.dtsi>
+
+/*
+ *   Specific eSPI Virtual Wire (VW) mapping configurations in npcx4 series
+ * |--------------------------------------------------------------------------|
+ * | VW idx | SLV reg | Wire Bit 3   | Wire Bit 2   | Wire Bit 1| Wire Bit 0  |
+ * |--------------------------------------------------------------------------|
+ * |       Output (Slave-to-Master) Virtual Wires (High at reset state)       |
+ * |--------------------------------------------------------------------------|
+ * | 50h[P] | VWGPSM0 | SLV_GPIO_3   | SLV_GPIO_2   | SLV_GPIO_1| SLV_GPIO_0  |
+ * | 51h[P] | VWGPSM1 | SLV_GPIO_7   | SLV_GPIO_6   | SLV_GPIO_5| SLV_GPIO_4  |
+ * |--------------------------------------------------------------------------|
+ *  [S] System-/[P] Platform-Specific Virtual Wires
+ */
+
+/ {
+	npcx-espi-vws-map {
+		compatible = "nuvoton,npcx-espi-vw-conf";
+
+		/*
+		 * Virtual wires for platform level usage (High at Reset state)
+		 */
+		/* index 50h (Out) */
+		vw_slv_gpio_0 {
+			vw-reg = <NPCX_VWGPSM0 0x01>;
+		};
+		vw_slv_gpio_1 {
+			vw-reg = <NPCX_VWGPSM0 0x02>;
+		};
+		vw_slv_gpio_2 {
+			vw-reg = <NPCX_VWGPSM0 0x04>;
+		};
+		vw_slv_gpio_3 {
+			vw-reg = <NPCX_VWGPSM0 0x08>;
+		};
+
+		/* index 51h (Out) */
+		vw_slv_gpio_4 {
+			vw-reg = <NPCX_VWGPSM1 0x01>;
+		};
+		vw_slv_gpio_5 {
+			vw-reg = <NPCX_VWGPSM1 0x02>;
+		};
+		vw_slv_gpio_6 {
+			vw-reg = <NPCX_VWGPSM1 0x04>;
+		};
+		vw_slv_gpio_7 {
+			vw-reg = <NPCX_VWGPSM1 0x08>;
+		};
+	};
+};

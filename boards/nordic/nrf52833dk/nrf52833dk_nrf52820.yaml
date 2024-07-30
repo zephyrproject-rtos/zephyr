@@ -1,0 +1,19 @@
+identifier: nrf52833dk/nrf52820
+name: nRF52833-DK-NRF52820
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 256
+supported:
+  - usb_device
+  - usbd
+  - ble
+  - gpio
+  - watchdog
+  - counter
+  - netif:openthread
+vendor: nordic

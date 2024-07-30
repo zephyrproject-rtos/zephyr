@@ -1,0 +1,243 @@
+#
+# Schema to validate a YAML file describing a Zephyr test platform
+#
+# We load this with pykwalify
+# (http://pykwalify.readthedocs.io/en/unstable/validation-rules.html),
+# a YAML structure validator, to validate the YAML files that describe
+# Zephyr test platforms
+#
+# The original spec comes from Zephyr's twister script
+#
+schema;scenario-schema:
+  type: map
+  # has to be not-required, otherwise the parser gets
+  # confused and things it never found it
+  required: false
+  mapping:
+    "arch_exclude":
+      type: any
+      required: false
+    "arch_allow":
+      type: any
+      required: false
+    "testcases":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "build_only":
+      type: bool
+      required: false
+    "build_on_all":
+      type: bool
+      required: false
+    "depends_on":
+      type: any
+      required: false
+    "extra_args":
+      type: any
+      required: false
+    "extra_configs":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "extra_conf_files":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "extra_overlay_confs":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "extra_dtc_overlay_files":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "extra_sections":
+      type: any
+      required: false
+    "required_snippets":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "filter":
+      type: str
+      required: false
+    "levels":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+          enum: ["smoke", "unit", "integration", "acceptance", "system", "regression"]
+    "integration_platforms":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "ignore_faults":
+      type: bool
+      required: false
+    "ignore_qemu_crash":
+      type: bool
+      required: false
+    "harness":
+      type: str
+      required: false
+    "harness_config":
+      type: map
+      required: false
+      mapping:
+        "type":
+          type: str
+          required: false
+        "fixture":
+          type: str
+          required: false
+        "ordered":
+          type: bool
+          required: false
+        "pytest_root":
+          type: seq
+          required: false
+          sequence:
+            - type: str
+        "pytest_args":
+          type: seq
+          required: false
+          sequence:
+            - type: str
+        "pytest_dut_scope":
+          type: str
+          enum: ["function", "class", "module", "package", "session"]
+          required: false
+        "regex":
+          type: seq
+          required: false
+          sequence:
+            - type: str
+        "robot_testsuite":
+          type: any
+          required: false
+        "robot_option":
+          type: any
+          required: false
+        "record":
+          type: map
+          required: false
+          mapping:
+            "regex":
+              type: str
+              required: true
+            "as_json":
+              type: seq
+              required: false
+              sequence:
+                - type: str
+        "bsim_exe_name":
+          type: str
+          required: false
+    "min_ram":
+      type: int
+      required: false
+    "min_flash":
+      type: int
+      required: false
+    "modules":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "platform_exclude":
+      type: any
+      required: false
+    "platform_allow":
+      type: any
+      required: false
+    "platform_type":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+          enum: ["mcu", "qemu", "sim", "unit", "native"]
+    "platform_key":
+      required: false
+      type: seq
+      matching: "all"
+      sequence:
+        - type: str
+    "simulation_exclude":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+          enum:
+            [
+              "qemu",
+              "simics",
+              "xt-sim",
+              "renode",
+              "nsim",
+              "mdb-nsim",
+              "tsim",
+              "armfvp",
+              "native",
+              "custom",
+            ]
+    "tags":
+      type: any
+      required: false
+    "timeout":
+      type: int
+      required: false
+    "toolchain_exclude":
+      type: any
+      required: false
+    "toolchain_allow":
+      type: any
+      required: false
+    "type":
+      type: str
+      enum: ["unit"]
+    "skip":
+      type: bool
+      required: false
+    "slow":
+      type: bool
+      required: false
+    "sysbuild":
+      type: bool
+      required: false
+
+type: map
+mapping:
+  "common":
+    include: scenario-schema
+  # The sample descriptor, if present
+  "sample":
+    type: map
+    required: false
+    mapping:
+      "name":
+        type: str
+        required: true
+      "description":
+        type: str
+        required: false
+  # The list of testcases -- IDK why this is a sequence of
+  # maps maps, shall just be a sequence of maps
+  # maybe it is just an artifact?
+  "tests":
+    type: map
+    required: true
+    matching-rule: "any"
+    mapping:
+      # The key for the testname is any, so
+      # regex;(([a-zA-Z0-9_]+)) for this to work, note below we
+      # make it required: false
+      regex;(([a-zA-Z0-9_]+)):
+        include: scenario-schema

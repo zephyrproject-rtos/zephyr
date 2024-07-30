@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: nPM1300 EK
+tests:
+  sample.shields.npm1300_ek:
+    platform_allow: nrf52dk/nrf52832
+    harness: shield
+    tags: shield
+    extra_args: SHIELD=npm1300_ek
+    depends_on: arduino_i2c

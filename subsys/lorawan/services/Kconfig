@@ -1,0 +1,172 @@
+# LoRaWAN Services configuration
+#
+# Copyright (c) 2022 Martin Jäger <martin@libre.solar>
+# Copyright (c) 2022 tado GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LORAWAN_SERVICES
+	bool "LoRaWAN Services backend"
+	depends on LORAWAN
+	select ENTROPY_GENERATOR
+	help
+	  Enables the LoRaWAN background services, e.g. used for
+	  firmware-upgrade over the air (FUOTA).
+
+	  The services use a dedicated thread and a work queue.
+
+if LORAWAN_SERVICES
+
+module = LORAWAN_SERVICES
+module-str = lorawan_services
+source "subsys/logging/Kconfig.template.log_config"
+
+config LORAWAN_SERVICES_THREAD_STACK_SIZE
+	int "Services thread stack size"
+	default 2048
+	help
+	  Stack size of thread running LoRaWAN background services.
+
+config LORAWAN_SERVICES_THREAD_PRIORITY
+	int "Services thread priority"
+	default 2
+	help
+	  Priority of the thread running LoRaWAN background services.
+
+config LORAWAN_APP_CLOCK_SYNC
+	bool "Application Layer Clock Synchronization"
+	help
+	  Enables the LoRaWAN Application Layer Clock Synchronization service
+	  according to LoRa Alliance TS003-2.0.0.
+
+	  The service uses the default port 202.
+
+config LORAWAN_APP_CLOCK_SYNC_PERIODICITY
+	int "Application Layer Clock Synchronization periodicity"
+	depends on LORAWAN_APP_CLOCK_SYNC
+	range 128 4194304
+	default 86400
+	help
+	  Initial setting for clock synchronization periodicity in seconds.
+
+	  The value can be updated remotely by the application server within a
+	  range from 128 (0x80) to 4194304 (0x400000).
+
+	  Default setting: 24h.
+
+config LORAWAN_FRAG_TRANSPORT
+	bool "Fragmented Data Block Transport"
+	select FLASH_MAP
+	select FLASH_PAGE_LAYOUT
+	select IMG_MANAGER
+	help
+	  Enables the LoRaWAN Fragmented Data Block Transport service
+	  according to TS004-1.0.0 as published by the LoRa Alliance.
+
+	  The used default port for this service is 201.
+
+choice LORAWAN_FRAG_TRANSPORT_DECODER
+	bool "Fragmented Data Block Transport decoder implementation"
+	depends on LORAWAN_FRAG_TRANSPORT
+	default LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
+
+config LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
+	bool "Semtech"
+	help
+	  The default decoder implementation from LoRaMAC-node.
+
+config LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM
+	bool "Low Memory Footprint Algorithm"
+	help
+	  Alternate implementation with reduced RAM footprint.
+
+endchoice # LORAWAN_FRAG_TRANSPORT_DECODER
+
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config LORAWAN_FRAG_TRANSPORT_IMAGE_SIZE
+	int "Total size of firmware image"
+	depends on LORAWAN_FRAG_TRANSPORT
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_CODE_PARTITION))
+	help
+	  Size of the flash partition for the application firmware image
+	  in bytes.
+
+	  The minimum number of fragments to be transferred is calculated from
+	  this value divided by the fragment size.
+
+	  This setting has significant influence on RAM usage.
+
+config LORAWAN_FRAG_TRANSPORT_MAX_FRAG_SIZE
+	int "Maximum size of transported fragments"
+	depends on LORAWAN_FRAG_TRANSPORT
+	range 1 239
+	default 232
+	help
+	  Maximum size of one fragment transferred during the fragmented data
+	  block transport session of the FUOTA process. It is chosen on the
+	  server side.
+
+	  The fragment has to fit into the LoRaWAN payload, which can be up to
+	  242 bytes depending on the region and frequency settings. 3 bytes of
+	  the payload are consumed for protocol information.
+
+	  For some MCUs like the STM32WL the fragment size has to be a multiple
+	  of 8 (see flash driver for further information).
+
+	  This setting has significant influence on RAM usage. If the exact
+	  fragment size is known, use that value for MIN and MAX config to
+	  reduce memory consumption.
+
+config LORAWAN_FRAG_TRANSPORT_MIN_FRAG_SIZE
+	int "Minimum size of transported fragments"
+	depends on LORAWAN_FRAG_TRANSPORT
+	range 1 239
+	default 48
+	help
+	  Minimum size of one fragment transferred during the fragmented data
+	  block transport session of the FUOTA process. It is chosen on the
+	  server side.
+
+	  The fragment has to fit into the LoRaWAN payload, which can be up to
+	  242 bytes depending on the region and frequency settings. 3 bytes of
+	  the payload are consumed for protocol information.
+
+	  For some MCUs like the STM32WL the fragment size has to be a multiple
+	  of 8 (see flash driver for further information).
+
+	  This setting has significant influence on RAM usage. If the exact
+	  fragment size is known, use that value for MIN and MAX config to
+	  reduce memory consumption.
+
+config LORAWAN_FRAG_TRANSPORT_MAX_REDUNDANCY
+	int "Percentage of redundant fragments"
+	depends on LORAWAN_FRAG_TRANSPORT
+	range 1 100
+	default 20
+	help
+	  The built-in forward error correction (FEC) mechanism allows to
+	  reconstruct missed packages from additional redundant packages
+	  sent by the server after all packages have been sent.
+
+	  This parameter specifies the maximum amount of packet loss (in
+	  percent) for which it should be possible to reconstruct the full
+	  firmware image.
+
+	  This setting has significant influence on RAM usage.
+
+config LORAWAN_REMOTE_MULTICAST
+	bool "Remote Multicast Setup"
+	depends on LORAWAN_APP_CLOCK_SYNC
+	depends on !LORAWAN_NVM_NONE
+	help
+	  Enables the LoRaWAN Remote Multicast Setup service according to
+	  TS005-1.0.0 as published by the LoRa Alliance.
+
+	  The service is run automatically in the background. It is responsible
+	  for multicast session key exchange and setting up a class C session.
+	  The exchanged keys are stored in the non-volatile memory.
+
+	  The used default port for this service is 200.
+
+endif # LORAWAN_SERVICES

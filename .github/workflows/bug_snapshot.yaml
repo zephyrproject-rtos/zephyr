@@ -1,0 +1,67 @@
+# Copyright (c) 2021, 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Make a snapshot of open bugs as a python pickle file, compressed
+# using xz. Upload the xz file to Amazon S3.
+
+name: Bug Snapshot
+
+on:
+  workflow_dispatch:
+    branches: [main]
+  schedule:
+  # Run daily at 14:05
+  - cron: '5 14 * * *'
+
+jobs:
+  make_bugs_pickle:
+    name: Make bugs pickle
+    runs-on: ubuntu-22.04
+    if: github.repository_owner == 'zephyrproject-rtos'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Python dependencies
+      run: |
+        sudo pip3 install -U setuptools wheel pip
+        pip3 install -U pygithub
+
+    - name: Snapshot bugs
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        BUGS_PICKLE_FILENAME="zephyr-bugs-$(date -I).pickle.xz"
+        BUGS_PICKLE_PATH="${RUNNER_TEMP}/${BUGS_PICKLE_FILENAME}"
+
+        set -euo pipefail
+        python3 scripts/make_bugs_pickle.py | xz > ${BUGS_PICKLE_PATH}
+
+        echo "BUGS_PICKLE_FILENAME=${BUGS_PICKLE_FILENAME}" >> ${GITHUB_ENV}
+        echo "BUGS_PICKLE_PATH=${BUGS_PICKLE_PATH}" >> ${GITHUB_ENV}
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ vars.AWS_BUILDS_ZEPHYR_BUG_SNAPSHOT_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_BUG_SNAPSHOT_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to AWS S3
+      run: |
+        REPOSITORY_NAME="${GITHUB_REPOSITORY#*/}"
+
+        PUBLISH_BUCKET="builds.zephyrproject.org"
+        PUBLISH_DOMAIN="builds.zephyrproject.io"
+        if [ "${{github.event_name}}" = "schedule" ]; then
+          PUBLISH_ROOT="${REPOSITORY_NAME}/bug-snapshot/daily"
+        else
+          PUBLISH_ROOT="${REPOSITORY_NAME}/bug-snapshot"
+        fi
+
+        PUBLISH_UPLOAD_URI="s3://${PUBLISH_BUCKET}/${PUBLISH_ROOT}/${BUGS_PICKLE_FILENAME}"
+        PUBLISH_DOWNLOAD_URI="https://${PUBLISH_DOMAIN}/${PUBLISH_ROOT}/${BUGS_PICKLE_FILENAME}"
+
+        aws s3 cp --quiet ${BUGS_PICKLE_PATH} ${PUBLISH_UPLOAD_URI}
+        echo "Bug pickle is available at: ${PUBLISH_DOWNLOAD_URI}" >> ${GITHUB_STEP_SUMMARY}

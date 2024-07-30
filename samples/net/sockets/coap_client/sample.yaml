@@ -1,0 +1,12 @@
+common:
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+sample:
+  description: TBD
+  name: TBD
+tests:
+  sample.net.sockets.coap_client:
+    harness: net
+    tags:
+      - net
+      - socket
+    platform_allow: qemu_x86

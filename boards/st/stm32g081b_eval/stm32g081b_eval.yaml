@@ -1,0 +1,17 @@
+identifier: stm32g081b_eval
+name: ST STM32G081B Evaluation
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 128
+supported:
+  - adc
+  - uart
+  - gpio
+  - watchdog
+  - tcpc
+vendor: st

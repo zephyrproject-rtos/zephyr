@@ -1,0 +1,8 @@
+common:
+  tags:
+    - bluetooth
+    - bt_ctrl_hci
+    - bt_ull_llcp
+tests:
+  bluetooth.controller.ctrl_hci.test:
+    type: unit

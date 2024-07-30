@@ -1,0 +1,15 @@
+identifier: nsim/nsim_hs/flash_xip
+name: HS nSIM simulator (FLASH XIP)
+type: sim
+simulation: nsim
+simulation_exec: nsimdrv
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+  - arcmwdt
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

@@ -1,0 +1,89 @@
+# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_INFINEON_MODULE
+	bool
+
+if SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_PSOC6_LEGACY
+
+config USE_INFINEON_ADC
+	bool
+	help
+	  Enable Analog-to-Digital Converter (ADC) HAL module driver for Infineon devices
+
+config USE_INFINEON_I2C
+	bool
+	help
+	  Enable Inter-Integrated Circuit Interface (I2C) HAL module driver for Infineon devices
+
+config USE_INFINEON_RTC
+	bool
+	help
+	  Enable Real-Time Clock (RTC) HAL module driver for Infineon devices
+
+config USE_INFINEON_SDIO
+	bool
+	help
+	  Enable Secure Digital Input/Output interface (SDIO) HAL module for Infineon devices
+	  driver
+
+config USE_INFINEON_SDHC
+	bool
+	help
+	  Enable SDHC HAL module for Infineon devices
+	  driver
+
+config USE_INFINEON_SPI
+	bool
+	help
+	  Enable Serial Peripheral Interface (SPI) HAL module driver for Infineon devices
+
+
+config USE_INFINEON_TIMER
+	bool
+	help
+	  Enable Timer (Timer/Counter) HAL module driver for Infineon devices
+
+config USE_INFINEON_LPTIMER
+	bool
+	help
+	  Enable Low-Power Timer (LPTimer) HAL module driver for Infineon devices
+
+config USE_INFINEON_TRNG
+	bool
+	help
+	  Enable True Random Number Generator (TRNG) HAL module driver for Infineon devices
+
+config USE_INFINEON_UART
+	bool
+	help
+	  Enable Universal Asynchronous Receiver/Transmitter (UART) HAL module
+	  driver for Infineon devices
+
+config USE_INFINEON_PWM
+	bool
+	help
+	  Enable Pulse Width Modulator (PWM) HAL module
+	  driver for Infineon devices
+
+config USE_INFINEON_WDT
+	bool
+	help
+	  Enable WATCHDOG TIMER (WDT) HAL module
+	  driver for Infineon devices
+
+config USE_INFINEON_FLASH
+	bool
+	help
+	  Enable Flash HAL module driver for Infineon devices
+
+config USE_INFINEON_ABSTRACTION_RTOS
+	bool "Abstraction RTOS component (Zephyr support)"
+	help
+	  Enable Abstraction RTOS component with Zephyr support
+config USE_INFINEON_SMIF
+	bool
+	help
+	  Enable SMIF HAL driver for Infineon devices
+
+endif # SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_PSOC6_LEGACY

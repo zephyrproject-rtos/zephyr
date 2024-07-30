@@ -1,0 +1,44 @@
+/ {
+	test_reg: test_reg {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&gpio0 0 0>;
+	};
+
+	test_reg_chained: test_reg_chained {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&gpio0 1 0>;
+		power-domain = <&test_reg>;
+	};
+
+	test_reg_chained_auto: test_reg_chained_auto {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&gpio0 2 0>;
+		power-domain = <&test_reg>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	test_reg_auto: test_reg_auto {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&gpio0 3 0>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	test_reg_auto_chained: test_reg_auto_chained {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&gpio0 4 0>;
+		power-domain = <&test_reg_auto>;
+	};
+
+	test_reg_auto_chained_auto: test_reg_auto_chained_auto {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&gpio0 5 0>;
+		power-domain = <&test_reg_auto>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	test_reg_disabled: test_reg_disabled {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&gpio0 6 0>;
+		status = "disabled";
+	};
+};

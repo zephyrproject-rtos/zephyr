@@ -1,0 +1,10 @@
+sample:
+  description: Demonstration of the IS31FL3194 LED driver
+  name: is31fl3194 sample
+tests:
+  sample.drivers.led.is31fl3194:
+    filter: dt_compat_enabled("issi,is31fl3194")
+    tags: LED
+    depends_on: i2c
+    integration_platforms:
+      - arduino_nicla_sense_me

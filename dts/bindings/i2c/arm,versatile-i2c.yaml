@@ -1,0 +1,12 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM SBCon two-wire serial bus interface
+
+compatible: "arm,versatile-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,19 @@
+# Copyright (c) 2019 - 2021 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CANOPEN
+	bool "CANopen protocol support"
+	depends on CAN
+	select CANOPENNODE
+	help
+	  Enable CANopen (EN 50325-4) (CiA 301) protocol
+	  support. Support is provided by the 3rd party CANopenNode
+	  protocol stack.
+
+if CANOPEN
+
+module = CANOPEN
+module-str = CANopen
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CANOPEN

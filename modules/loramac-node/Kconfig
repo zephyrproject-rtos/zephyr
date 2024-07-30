@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2019 Manivannan Sadhasivam
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config ZEPHYR_LORAMAC_NODE_MODULE
+	bool
+
+config HAS_SEMTECH_RADIO_DRIVERS
+	bool "Semtech LoRa Radio Drivers"
+	help
+	  This option enables the use of Semtech's Radio drivers
+
+config HAS_SEMTECH_SX1272
+	bool
+	select HAS_SEMTECH_RADIO_DRIVERS
+
+config HAS_SEMTECH_SX1276
+	bool
+	select HAS_SEMTECH_RADIO_DRIVERS
+
+config HAS_SEMTECH_SX126X
+	bool
+	select HAS_SEMTECH_RADIO_DRIVERS
+
+config HAS_SEMTECH_LORAMAC
+	bool "Semtech LoRaMac Stack"
+	depends on HAS_SEMTECH_RADIO_DRIVERS
+	help
+	  This option enables the use of Semtech's LoRaMac stack
+
+config HAS_SEMTECH_SOFT_SE
+	bool "Semtech Secure Element software implementation"
+	depends on HAS_SEMTECH_LORAMAC
+	help
+	  This option enables the use of Semtech's Secure Element
+	  software implementation

@@ -1,0 +1,10 @@
+# Heltec Wireless Stick Lite (V3) board configuration
+
+# Copyright (c) 2021 Instituto de Pesquisas Eldorado (eldorado.org.br)
+# Copyright (c) 2023 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_HELTEC_WIRELESS_STICK_LITE_V3
+	select SOC_ESP32S3_FN8
+	select SOC_ESP32S3_PROCPU if BOARD_HELTEC_WIRELESS_STICK_LITE_V3_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_HELTEC_WIRELESS_STICK_LITE_V3_ESP32S3_APPCPU

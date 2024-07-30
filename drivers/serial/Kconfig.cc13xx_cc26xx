@@ -1,0 +1,13 @@
+# TI CC13xx / CC26xx UART configuration options
+
+# Copyright (c) 2019 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_CC13XX_CC26XX
+	bool "TI SimpleLink CC13xx / CC26xx UART driver"
+	default y
+	depends on DT_HAS_TI_CC13XX_CC26XX_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the TI SimpleLink CC13xx / CC26xx UART driver.

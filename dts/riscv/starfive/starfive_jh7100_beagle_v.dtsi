@@ -1,0 +1,188 @@
+/*
+ * Copyright (C) 2021 StarFive, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "starfive_jh7100_clk.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	compatible = "sifive,freedom-u74-arty";
+	model = "sifive,freedom-u74-arty";
+
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "starfive,fu74-g000";
+		cpu@0 {
+			clock-frequency = <0>;
+			compatible = "starfive,rocket0", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <64>;
+			d-cache-size = <32768>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <32>;
+			device_type = "cpu";
+			i-cache-block-size = <64>;
+			i-cache-sets = <64>;
+			i-cache-size = <32768>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <32>;
+			mmu-type = "riscv,sv39";
+			next-level-cache = <&cachectrl>;
+			reg = <0>;
+			riscv,isa = "rv64gc";
+			starfive,itim = <&itim0>;
+			status = "okay";
+			tlb-split;
+			cpu0intctrl: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+
+		cpu@1 {
+			clock-frequency = <0>;
+			compatible = "starfive,rocket0", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <64>;
+			d-cache-size = <32768>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <32>;
+			device_type = "cpu";
+			i-cache-block-size = <64>;
+			i-cache-sets = <64>;
+			i-cache-size = <32768>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <32>;
+			mmu-type = "riscv,sv39";
+			next-level-cache = <&cachectrl>;
+			reg = <1>;
+			riscv,isa = "rv64gc";
+			starfive,itim = <&itim1>;
+			status = "okay";
+			tlb-split;
+			cpu1intctrl: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	ram0:memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x2 0x0>;
+	};
+
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		#clock-cells = <1>;
+		compatible = "starfive,freedom-u74-arty", "simple-bus";
+		ranges;
+
+		cachectrl: cache-controller@2010000 {
+			cache-block-size = <64>;
+			cache-level = <2>;
+			cache-sets = <2048>;
+			cache-size = <2097152>;
+			cache-unified;
+			compatible = "sifive,fu540-c000-ccache", "starfive,ccache0", "cache";
+			interrupt-parent = <&plic>;
+			interrupts = <128 1>, <131 1>, <129 1>, <130 1>;
+			/*next-level-cache = <&L40 &L36>;*/
+			reg = <0x0 0x2010000 0x0 0x1000 0x0 0x8000000 0x0 0x2000000>;
+			reg-names = "control", "sideband";
+		};
+
+		itim0: itim@1808000 {
+			compatible = "starfive,itim0";
+			reg = <0x0 0x1808000 0x0 0x8000>;
+			reg-names = "mem";
+		};
+
+		itim1: itim@1820000 {
+			compatible = "starfive,itim0";
+			reg = <0x0 0x1820000 0x0 0x8000>;
+			reg-names = "mem";
+		};
+
+		clint: clint@2000000 {
+			compatible = "starfive,jh7100-clint", "sifive,clint0";
+			interrupts-extended = <&cpu0intctrl 3 &cpu0intctrl 7
+					       &cpu1intctrl 3 &cpu1intctrl 7>;
+			reg = <0x0 0x2000000 0x0 0x10000>;
+		};
+
+		plic: plic@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&cpu0intctrl 11 &cpu0intctrl 9
+					       &cpu1intctrl 11 &cpu1intctrl 9 >;
+			reg = <0x0 0x0c000000 0x0 0x04000000>;
+			riscv,max-priority = <7>;
+			riscv,ndev = <127>;
+		};
+
+		uart3: serial@12440000 {
+			compatible = "ns16550", "snps,dw-apb-uart";
+			interrupt-parent = <&plic>;
+			interrupts = <73 1>;
+			reg = <0x0 0x12440000 0x0 0x10000>;
+			reg-shift = <2>;
+			clocks = <&uartclk>, <&apb2clk>;
+			clock-names = "baudclk", "apb_pclk";
+			clock-frequency = <100000000>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart2: serial@12430000 {
+			compatible = "ns16550", "snps,dw-apb-uart";
+			interrupt-parent = <&plic>;
+			interrupts = <72 1>;
+			reg = <0x0 0x12430000 0x0 0x10000>;
+			reg-shift = <2>;
+			clocks = <&uartclk>, <&apb2clk>;
+			clock-names = "baudclk", "apb_pclk";
+			clock-frequency = <100000000>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart1: hs_serial@11880000 {
+			compatible = "ns16550", "snps,dw-apb-uart";
+			interrupt-parent = <&plic>;
+			interrupts = <93 1>;
+			reg = <0x0 0x11880000 0x0 0x10000>;
+			reg-shift = <2>;
+			clocks = <&hs_uartclk>, <&apb1clk>;
+			clock-names = "baudclk","apb_pclk";
+			clock-frequency = <74250000>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart0: hs_serial@11870000 {
+			compatible = "ns16550", "snps,dw-apb-uart";
+			interrupt-parent = <&plic>;
+			interrupts = <92 1>;
+			reg = <0x0 0x11870000 0x0 0x10000>;
+			reg-shift = <2>;
+			clocks = <&hs_uartclk>, <&apb1clk>;
+			clock-names = "baudclk", "apb_pclk";
+			clock-frequency = <74250000>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+	};
+};

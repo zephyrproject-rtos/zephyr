@@ -1,0 +1,25 @@
+tests:
+  kernel.timer.monotonic:
+    tags:
+      - kernel
+      - timer
+    # FIXME: This test may fail for qemu_arc/qemu_arc_hs on certain host systems.
+    #        See foss-for-synopsys-dwc-arc-processors/qemu#67.
+    platform_exclude: qemu_arc/qemu_arc_hs
+  kernel.timer.monotonic.apic.tsc:
+    tags:
+      - kernel
+      - timer
+      - apic_tsc
+    platform_allow: intel_ehl_crb
+    extra_configs:
+      - CONFIG_APIC_TSC_DEADLINE_TIMER=y
+      - CONFIG_HPET_TIMER=n
+  kernel.timer.monotonic.icount_off:
+    # Extra test for GH-48608
+    tags:
+      - kernel
+      - timer
+    platform_allow: mps2/an385
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=n

@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2021 Leonard Pollak
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+sample:
+  name: TI INA219 power/current monitor
+  description: Demonstration of the INA219 I2C power/current monitor
+tests:
+  sample.drivers.ina219:
+    build_only: true
+    platform_allow: blackpill_f411ce
+    tags: sensors

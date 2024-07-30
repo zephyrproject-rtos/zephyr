@@ -1,0 +1,46 @@
+# Copyright (c) 2023 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: This binding gives a base representation of the ITE gpio
+
+compatible: "ite,it8xxx2-gpio-v2"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  has-volt-sel:
+    type: array
+    description: |
+      Selection of support input voltage 3.3V or 1.8V.
+
+  wuc-base:
+    type: array
+    description: |
+      WUCs are mapped to the pins of GPIO.
+      The WUC groups internal and external inputs, and asserts
+      a wake-up signal to the INTC, allowing the CPU to exit
+      Doze/Deep Doze/Sleep modes.
+
+  wuc-mask:
+    type: array
+
+  keyboard-controller:
+    type: boolean
+    description: |
+      When set, this GPIO controller has pins associated with the
+      keyboard controller. In this case the reg_gpcr property is
+      overloaded and used to write the keyboard GCTRL register.
+      This setting will be found in the gpio_ite_configure function
+      when the judgment of gpio_config->ksb_ctrl is true.
+      The GPIO control register that will be set for these three
+      nodes is as follows:
+      gpioksi:  0xf01d40-0xf01d47
+      gpioksol: 0xf01d48-0xf01d4f
+      gpioksoh: 0xf01d50-0xf01d57
+
+gpio-cells:
+  - pin
+  - flags

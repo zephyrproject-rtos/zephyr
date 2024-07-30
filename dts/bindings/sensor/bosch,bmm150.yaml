@@ -1,0 +1,13 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for BMM150
+
+include: sensor-device.yaml
+
+properties:
+  drdy-gpios:
+    type: phandle-array
+    description: |
+      This property specifies the connection for data ready pin.
+      The polarity default is active high when sensor data is ready.

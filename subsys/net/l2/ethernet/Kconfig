@@ -1,0 +1,140 @@
+# Copyright (c) 2018 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_L2_ETHERNET
+	bool "Ethernet support"
+	help
+	  Add support for Ethernet, enabling selecting relevant hardware drivers.
+	  If NET_SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully
+	  simulate Ethernet through SLIP.
+
+if NET_L2_ETHERNET
+
+module = NET_L2_ETHERNET
+module-dep = NET_LOG
+module-str = Log level for Ethernet L2 layer
+module-help = Enables Ethernet L2 to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_L2_ETHERNET_MGMT
+	bool "Ethernet network management interface"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Enable support net_mgmt Ethernet interface which can be used to
+	  configure at run-time Ethernet drivers and L2 settings.
+
+config NET_VLAN
+	bool "Virtual LAN support"
+	select NET_L2_VIRTUAL
+	help
+	  Enables virtual lan (VLAN) support for Ethernet.
+
+config NET_VLAN_COUNT
+	int "Max VLAN tags supported in the system"
+	default 1
+	range 1 $(UINT8_MAX)
+	depends on NET_VLAN
+	help
+	  How many VLAN tags can be configured.
+
+config NET_VLAN_TXRX_DEBUG
+	bool "Debug received and sent packets in VLAN"
+	depends on NET_L2_ETHERNET_LOG_LEVEL_DBG && NET_VLAN
+	help
+	  Enables printing of received and sent network packets.
+	  This can produce lot of output so it is disabled by default.
+
+config NET_ARP
+	bool "ARP"
+	default y
+	depends on NET_IPV4
+	help
+	  Enable ARP support. This is necessary on hardware that requires it to
+	  get IPv4 working (like Ethernet devices).
+
+config NET_ARP_TABLE_SIZE
+	int "Number of entries in ARP table."
+	depends on NET_ARP
+	default 2
+	help
+	  Each entry in the ARP table consumes 48 bytes of memory.
+
+config NET_ARP_GRATUITOUS
+	bool "Support gratuitous ARP requests/replies."
+	depends on NET_ARP
+	default y
+	help
+	  Gratuitous in this case means a ARP request or reply that is not
+	  normally needed according to the ARP specification but could be used
+	  in some cases. A gratuitous ARP request is a ARP request packet where
+	  the source and destination IP are both set to the IP of the machine
+	  issuing the packet and the destination MAC is the broadcast address
+	  ff:ff:ff:ff:ff:ff. Ordinarily, no reply packet will occur.
+	  A gratuitous ARP reply is a reply to which no request has been made.
+
+config NET_ARP_GRATUITOUS_TRANSMISSION
+	bool "Transmit gratuitous ARP requests"
+	depends on NET_ARP_GRATUITOUS
+	depends on NET_MGMT_EVENT
+	depends on NET_MGMT_EVENT_INFO
+	help
+	  Transmit gratuitous ARP requests, as defined in RFC 5227.
+
+config NET_ARP_GRATUITOUS_INTERVAL
+	int "Time interval (in seconds) between sending gratuitous ARP requests"
+	depends on NET_ARP_GRATUITOUS_TRANSMISSION
+	default 60
+
+if NET_ARP
+module = NET_ARP
+module-dep = NET_LOG
+module-str = Log level for IPv4 ARP
+module-help = Enables core ARP code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_ARP
+
+source "subsys/net/l2/ethernet/gptp/Kconfig"
+source "subsys/net/l2/ethernet/lldp/Kconfig"
+
+config NET_ETHERNET_BRIDGE
+	bool "Ethernet Bridging support"
+	select NET_PROMISCUOUS_MODE
+	help
+	  Enables Ethernet bridging where packets can be transparently
+	  forwarded across interfaces registered to a bridge.
+
+if NET_ETHERNET_BRIDGE
+module = NET_ETHERNET_BRIDGE
+module-dep = NET_LOG
+module-str = Log level for Ethernet Bridging
+module-help = Enables Ethernet Bridge code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_ETHERNET_BRIDGE
+
+config NET_ETHERNET_BRIDGE_SHELL
+	bool "Ethernet Bridging management shell"
+	depends on NET_ETHERNET_BRIDGE
+	select SHELL
+	help
+	  Enables shell utility to manage bridge configuration interactively.
+
+config NET_ETHERNET_BRIDGE_DEFAULT
+	bool "Declare one bridge instance for shell usage"
+	depends on NET_ETHERNET_BRIDGE_SHELL
+	default y
+	help
+	  If the bridge shell is the sole user of the bridge code then
+	  it needs at least one bridge instance to be useful.
+	  Say y if this is the case. If you only want to inspect
+	  existing bridge instances then say n.
+
+config NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE
+	bool "Forward unrecognized EtherType frames further into net stack"
+	default y if NET_SOCKETS_PACKET
+	help
+	  When enabled, the Ethernet L2 will forward even those frames for which
+	  it does not recognize the EtherType in the header. By default, such
+	  frames are dropped at the L2 processing.
+
+endif # NET_L2_ETHERNET

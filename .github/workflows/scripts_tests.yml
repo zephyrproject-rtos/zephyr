@@ -1,0 +1,71 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+name: Scripts tests
+
+on:
+  push:
+    branches:
+      - main
+      - v*-branch
+    paths:
+      - 'scripts/build/**'
+      - '.github/workflows/scripts_tests.yml'
+  pull_request:
+    branches:
+      - main
+      - v*-branch
+    paths:
+      - 'scripts/build/**'
+      - '.github/workflows/scripts_tests.yml'
+
+jobs:
+  scripts-tests:
+    name: Scripts tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+        os: [ubuntu-20.04]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Rebase
+        continue-on-error: true
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git config --global user.email "actions@zephyrproject.org"
+          git config --global user.name "Github Actions"
+          git rebase origin/${BASE_REF}
+          git log --graph --oneline HEAD...${PR_HEAD}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: cache-pip-linux
+        if: startsWith(runner.os, 'Linux')
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}
+
+      - name: install-packages
+        run: |
+          pip3 install -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt
+
+      - name: Run pytest
+        env:
+          ZEPHYR_BASE: ./
+        run: |
+          echo "Run script tests"
+          pytest ./scripts/build

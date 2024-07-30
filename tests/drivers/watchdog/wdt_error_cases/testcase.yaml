@@ -1,0 +1,15 @@
+common:
+  tags:
+    - drivers
+    - watchdog
+  depends_on: watchdog
+  harness: ztest
+
+tests:
+  drivers.watchdog.wdt_error_cases:
+    platform_allow:
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+    integration_platforms:
+      - nrf54l15pdk/nrf54l15/cpuapp

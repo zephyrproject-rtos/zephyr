@@ -1,0 +1,24 @@
+# Copyright (c) 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_IMX
+	bool "Pin controller driver for iMX MCUs"
+	depends on DT_HAS_NXP_IMX_IOMUXC_ENABLED
+	depends on HAS_MCUX_IOMUXC || HAS_IMX_IOMUXC
+	default y
+	help
+	  Enable pin controller driver for NXP iMX series MCUs
+
+config PINCTRL_IMX_SCU
+	bool "Pin controller driver for SCU-based i.MX SoCs"
+	depends on DT_HAS_NXP_IMX_IOMUXC_SCU_ENABLED
+	default y
+	help
+	  Enable pin controller driver for SCU-based NXP i.MX SoCs.
+
+# TODO: Find better place for this option
+config MCUX_XBARA
+	bool "MCUX XBARA driver"
+	depends on HAS_MCUX_XBARA
+	help
+	  Enable the MCUX XBARA driver.

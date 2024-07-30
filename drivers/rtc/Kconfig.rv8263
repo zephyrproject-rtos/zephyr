@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Daniel Kampert
+# Author: Daniel Kampert <DanielKampert@Kampis-Elektroecke.de>
+
+config RTC_RV8263
+	bool "Micro Crystal RV-8263-C8 RTC driver"
+	default y
+	depends on DT_HAS_MICROCRYSTAL_RV_8263_C8_ENABLED
+	select I2C
+	help
+		Micro Crystal RV-8263-C8 RTC driver.

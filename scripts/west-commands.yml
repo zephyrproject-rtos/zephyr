@@ -1,0 +1,78 @@
+# Keep the help strings in sync with the values in the .py files!
+west-commands:
+  - file: scripts/west_commands/completion.py
+    commands:
+      - name: completion
+        class: Completion
+        help: output shell completion scripts
+  - file: scripts/west_commands/boards.py
+    commands:
+      - name: boards
+        class: Boards
+        help: display information about supported boards
+  - file: scripts/west_commands/shields.py
+    commands:
+      - name: shields
+        class: Shields
+        help: display list of supported shields
+  - file: scripts/west_commands/build.py
+    commands:
+      - name: build
+        class: Build
+        help: compile a Zephyr application
+  - file: scripts/west_commands/twister_cmd.py
+    commands:
+      - name: twister
+        class: Twister
+        help: west twister wrapper
+  - file: scripts/west_commands/sign.py
+    commands:
+      - name: sign
+        class: Sign
+        help: sign a Zephyr binary for bootloader chain-loading
+  - file: scripts/west_commands/flash.py
+    commands:
+      - name: flash
+        class: Flash
+        help: flash and run a binary on a board
+  - file: scripts/west_commands/debug.py
+    commands:
+      - name: debug
+        class: Debug
+        help: flash and interactively debug a Zephyr application
+      - name: debugserver
+        class: DebugServer
+        help: connect to board and launch a debug server
+      - name: attach
+        class: Attach
+        help: interactively debug a board
+  - file: scripts/west_commands/export.py
+    commands:
+      - name: zephyr-export
+        class: ZephyrExport
+        help: export Zephyr installation as a CMake config package
+  - file: scripts/west_commands/spdx.py
+    commands:
+      - name: spdx
+        class: ZephyrSpdx
+        help: create SPDX bill of materials
+  - file: scripts/west_commands/blobs.py
+    commands:
+      - name: blobs
+        class: Blobs
+        help: work with binary blobs
+  - file: scripts/west_commands/bindesc.py
+    commands:
+      - name: bindesc
+        class: Bindesc
+        help: work with Binary Descriptors
+  - file: scripts/west_commands/robot.py
+    commands:
+      - name: robot
+        class: Robot
+        help: run RobotFramework test suites
+  - file: scripts/west_commands/simulate.py
+    commands:
+      - name: simulate
+        class: Simulate
+        help: simulate board

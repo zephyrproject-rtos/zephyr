@@ -1,0 +1,305 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_adc: adc@adc0adc0 {
+			compatible = "vnd,adc";
+			reg = <0xadc0adc0 0x1000>;
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			channel@0 {
+				reg = <0>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_VDD_1";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			};
+		};
+
+		test_gpio: gpio@0 {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0x0 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		adc-keys {
+			compatible = "adc-keys";
+			io-channels = <&test_adc 0>;
+			keyup-threshold-mv = <0>;
+			button_0 {
+				press-thresholds-mv = <1500>, <1750>;
+				zephyr,code = <0>;
+			};
+			button_1 {
+				press-thresholds-mv = <2500>, <1750>;
+				zephyr,code = <1>;
+			};
+		};
+
+		gpio-keys {
+			compatible = "gpio-keys";
+			debounce-interval-ms = <30>;
+			button_0 {
+				gpios = <&test_gpio 0 0>;
+				zephyr,code = <0>;
+			};
+		};
+
+		gpio-keys-polled {
+			compatible = "gpio-keys";
+			debounce-interval-ms = <30>;
+			button_0 {
+				gpios = <&test_gpio 0 0>;
+				zephyr,code = <0>;
+			};
+			polling-mode;
+		};
+
+		evdev {
+			compatible = "zephyr,native-linux-evdev";
+		};
+
+		kbd-matrix-0 {
+			compatible = "gpio-kbd-matrix";
+			row-gpios = <&test_gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+				    <&test_gpio 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			col-gpios = <&test_gpio 2 GPIO_ACTIVE_LOW>,
+				    <&test_gpio 3 GPIO_ACTIVE_LOW>,
+				    <&test_gpio 4 GPIO_ACTIVE_LOW>;
+			actual-key-mask = <0x0f 0x0a 0x0b>;
+
+			keymap {
+				compatible = "input-keymap";
+				keymap = <0 1 2>;
+				row-size = <2>;
+				col-size = <2>;
+			};
+		};
+
+		kbd-matrix-1 {
+			compatible = "gpio-kbd-matrix";
+			row-gpios = <&test_gpio 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+				    <&test_gpio 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+				    <&test_gpio 2 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			col-gpios = <&test_gpio 3 GPIO_ACTIVE_HIGH>,
+				    <&test_gpio 4 GPIO_ACTIVE_HIGH>;
+			col-drive-inactive;
+			idle-mode = "poll";
+		};
+
+		kbd-matrix-2 {
+			compatible = "gpio-kbd-matrix";
+			row-gpios = <&test_gpio 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+				    <&test_gpio 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+				    <&test_gpio 2 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			col-gpios = <&test_gpio 3 GPIO_ACTIVE_HIGH>,
+				    <&test_gpio 4 GPIO_ACTIVE_HIGH>;
+			poll-timeout-ms = <0>;
+			idle-mode = "scan";
+		};
+
+		qdec-gpio {
+			compatible = "gpio-qdec";
+			gpios = <&test_gpio 0 0>, <&test_gpio 1 0>;
+			steps-per-period = <4>;
+			zephyr,axis = <0>;
+			sample-time-us = <2000>;
+			idle-timeout-ms = <200>;
+		};
+
+		qdec-gpio-polled {
+			compatible = "gpio-qdec";
+			gpios = <&test_gpio 0 0>, <&test_gpio 1 0>;
+			led-gpios = <&test_gpio 2 0>;
+			led-pre-us = <5>;
+			steps-per-period = <4>;
+			zephyr,axis = <0>;
+			sample-time-us = <2000>;
+			idle-timeout-ms = <200>;
+			idle-poll-time-us = <5000>;
+		};
+
+		analog_axis {
+			compatible = "analog-axis";
+			axis-x {
+				io-channels = <&test_adc 0>;
+				out-min = <(-127)>;
+				out-max = <127>;
+				in-deadzone = <8>;
+				in-min = <(-100)>;
+				in-max = <100>;
+				zephyr,axis = <0>;
+				invert-input;
+				invert-output;
+			};
+		};
+
+		longpress: longpress {
+			input = <&longpress>;
+			compatible = "zephyr,input-longpress";
+			input-codes = <0>;
+			short-codes = <0>;
+			long-codes = <0>;
+			long-delay-ms = <100>;
+		};
+
+		i2c@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x1 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			ft5336@0 {
+				compatible = "focaltech,ft5336";
+				reg = <0x0>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
+			gt911@1 {
+				compatible = "goodix,gt911";
+				reg = <0x1>;
+				irq-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 1 0>;
+			};
+
+			cst816s@2 {
+				compatible = "hynitron,cst816s";
+				reg = <0x2>;
+				irq-gpios = <&test_gpio 0 0>;
+				rst-gpios = <&test_gpio 1 0>;
+			};
+
+			cap1203@3 {
+				compatible = "microchip,cap1203";
+				reg = <0x3>;
+				int-gpios = <&test_gpio 0 0>;
+				input-codes = <0 1 2>;
+			};
+
+			stmpe811@4 {
+				compatible = "st,stmpe811";
+				reg = <0x4>;
+				int-gpios = <&test_gpio 0 0>;
+				panel-driver-settling-time-us = <10>;
+				touch-detect-delay-us = <10>;
+				touch-average-control = <1>;
+				tracking-index = <0>;
+			};
+
+			pat@5 {
+				compatible = "pixart,pat912x";
+				reg = <0x5>;
+				motion-gpios = <&test_gpio 0 0>;
+				zephyr,axis-x = <0>;
+				zephyr,axis-y = <1>;
+				res-x-cpi = <0>;
+				res-y-cpi = <0>;
+				invert-x;
+				invert-y;
+				sleep1-enable;
+				sleep2-enable;
+			};
+
+			cf1133@6 {
+				compatible = "sitronix,cf1133";
+				reg = <0x6>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
+			chsc6x@7 {
+				compatible = "chipsemi,chsc6x";
+				reg = <0x7>;
+				irq-gpios = <&test_gpio 0 0>;
+			};
+
+			pinnacle@2a {
+				compatible = "cirque,pinnacle";
+				reg = <0x2a>;
+				data-ready-gpios = <&test_gpio 0 0>;
+				data-mode = "relative";
+				primary-tap-enable;
+				swap-xy;
+			};
+		};
+
+		spi@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x2 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every devices */
+			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 1 0>,
+				   <&test_gpio 2 0>,
+				   <&test_gpio 3 0>;
+
+			xpt2046@0 {
+				compatible = "xptek,xpt2046";
+				spi-max-frequency = <0>;
+				reg = <0x0>;
+				int-gpios = <&test_gpio 0 0>;
+				touchscreen-size-x = <10>;
+				touchscreen-size-y = <10>;
+				min-x = <0>;
+				min-y = <0>;
+				max-x = <1>;
+				max-y = <1>;
+			};
+
+			pmw3610@1 {
+				compatible = "pixart,pmw3610";
+				spi-max-frequency = <0>;
+				reg = <0x1>;
+				motion-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 1 0>;
+				zephyr,axis-x = <0>;
+				zephyr,axis-y = <1>;
+				invert-x;
+				invert-y;
+				force-awake;
+				smart-mode;
+			};
+
+			pinnacle@2 {
+				compatible = "cirque,pinnacle";
+				reg = <0x2>;
+				spi-max-frequency = <0>;
+				data-ready-gpios = <&test_gpio 0 0>;
+				data-mode = "absolute";
+				idle-packets-count = <20>;
+				clipping-enable;
+				scaling-enable;
+				invert-x;
+				invert-y;
+			};
+
+			paw32xx@3 {
+				compatible = "pixart,paw32xx";
+				reg = <3>;
+				spi-max-frequency = <0>;
+				motion-gpios = <&test_gpio 0 0>;
+				zephyr,axis-x = <0>;
+				zephyr,axis-y = <1>;
+				invert-x;
+				invert-y;
+				res-cpi = <800>;
+			};
+		};
+	};
+};

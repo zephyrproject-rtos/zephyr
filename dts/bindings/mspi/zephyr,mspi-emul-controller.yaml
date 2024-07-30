@@ -1,0 +1,12 @@
+# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr MSPI Emulation controller
+
+compatible: "zephyr,mspi-emul-controller"
+
+include: mspi-controller.yaml
+
+properties:
+  reg:
+    required: true

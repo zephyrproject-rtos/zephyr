@@ -1,0 +1,100 @@
+# Copyright (c) 2022, Valerio Setti <vsetti@baylibre.com
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 quadrature decoder
+
+compatible: "st,stm32-qdec"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  st,encoder-mode:
+    type: int
+    description: |
+      Set encoder mode.
+      The following modes are supported:
+      0x1: Encoder mode 1 (Default)
+      0x2: Encoder mode 2
+      0x3: Encoder mode 3
+      Some MCUs supports additional modes:
+      0x10002: Encoder mode: Clock plus direction, x2 mode
+      0x10003: Encoder mode: Clock plus direction, x1 mode
+      0x10004: Encoder mode: Directional Clock, x2 mode
+      0x10005: Encoder mode: Directional Clock, x1 mode
+      0x10006: Quadrature encoder mode: x1 mode, counting on tim_ti1fp1
+      0x10007: Quadrature encoder mode: x1 mode, counting on tim_ti2fp2
+      Default value complies with stm32 low level timer encoder init value.
+    default: 0x1
+    enum:
+      - 0x1
+      - 0x2
+      - 0x3
+      - 0x10002
+      - 0x10003
+      - 0x10004
+      - 0x10005
+      - 0x10006
+      - 0x10007
+
+  st,input-polarity-inverted:
+    type: boolean
+    description: Encoder is triggered by a falling edge on the input pin
+
+  st,input-filter-level:
+    type: int
+    description: |
+      Intensity of the filter applied to the input signal. This is
+      implemented by scaling the sampling frequency and adding a counter
+      in which N consecutive samples with same value are needed to validate
+      a transition.
+      Mapping is as follows (F_clk is the timer's clock):
+      0: No filter, sampling is done at F_dts (default value)
+      1: Fs = F_clk, N=2
+      2: Fs = F_clk, N=4
+      3: Fs = F_clk, N=8
+      4: Fs = F_clk/2, N=6
+      5: Fs = F_clk/2, N=8
+      6: Fs = F_clk/4, N=6
+      7: Fs = F_clk/4, N=8
+      8: Fs = F_clk/8, N=6
+      9: Fs = F_clk/8, N=8
+      10: Fs = F_clk/16, N=5
+      11: Fs = F_clk/16, N=6
+      12: Fs = F_clk/16, N=8
+      13: Fs = F_clk/32, N=5
+      14: Fs = F_clk/32, N=6
+      15: Fs = F_clk/32, N=8
+      Default value is set by hardware at reset
+    default: 0
+    enum:
+      - 0  # No filter
+      - 1  # FDIV1_N2
+      - 2  # FDIV1_N4
+      - 3  # FDIV1_N8
+      - 4  # FDIV2_N6
+      - 5  # FDIV2_N8
+      - 6  # FDIV4_N6
+      - 7  # FDIV4_N8
+      - 8  # FDIV8_N6
+      - 9  # FDIV8_N8
+      - 10 # FDIV16_N5
+      - 11 # FDIV16_N6
+      - 12 # FDIV16_N8
+      - 13 # FDIV32_N5
+      - 14 # FDIV32_N6
+      - 15 # FDIV32_N8
+
+  st,counts-per-revolution:
+    type: int
+    required: true
+    description: |
+      This is a number >= 1 that is used to determine how many revolutions
+      were done based on the current counter's value.

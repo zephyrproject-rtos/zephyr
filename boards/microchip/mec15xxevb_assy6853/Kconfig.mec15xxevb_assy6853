@@ -1,0 +1,5 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MEC15XXEVB_ASSY6853
+	select SOC_MEC1501_HSZ

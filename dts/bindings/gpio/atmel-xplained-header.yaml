@@ -1,0 +1,45 @@
+# Copyright (C) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on Atmel Xplained headers.
+
+    The Xplained layout provide a standard 10 pin header.  A board can have
+    one or more headers and can share pins.  This connector was developed to
+    match with Atmel AVR XMEGA devices GPIO port plus power signals.  The Atmel
+    Xplained Pro standard connector keep compatibility with this header and it
+    can be defined on every board with an Xplained Pro Connector extension and
+    every pin can be defined as general purpose GPIO.
+
+    The AVR XMEGA port was designed as:
+
+    Signal  Main Function
+       Px0  SDA
+       Px1  SCL
+       Px2  RX
+       Px3  TX
+       Px4  SS
+       Px5  MOSI
+       Px6  MISO
+       Px7  SCK
+       GND
+       VDD
+
+    Documentation:
+    https://www.microchip.com/development-tools/xplained-boards
+    http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-42091-Atmel-Xplained-Pro-Hardware-Development-Kit_User%20Guide.pdf
+
+    This binding provides a nexus mapping for 10 pins where pins are disposed
+    to have a even and odd column:
+
+                           Connector
+    Bind      Pin Name     Pin   Pin  Pin Name        Bind
+      0          I2C(SDA)  1       2  I2C(SCL)         1
+      2          UART(RX)  3       4  UART(TX)         3
+      4          SPI(CS0)  5       6  SPI(MOSI)        5
+      6         SPI(MISO)  7       8  SPI(SCK)         7
+                      GND  9      10  VDD(+3.3V)
+
+compatible: "atmel-xplained-header"
+
+include: [gpio-nexus.yaml, base.yaml]

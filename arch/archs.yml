@@ -1,0 +1,21 @@
+archs:
+  - name: arc
+    path: arc
+  - name: arm
+    path: arm
+  - name: arm64
+    path: arm64
+  - name: mips
+    path: mips
+  - name: nios2
+    path: nios2
+  - name: posix
+    path: posix
+  - name: riscv
+    path: riscv
+  - name: sparc
+    path: sparc
+  - name: xtensa
+    path: xtensa
+  - name: x86
+    path: x86

@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Jamie McCrae
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_HD44780
+	bool "Hitachi HD44780 LCD driver"
+	default y
+	depends on DT_HAS_HIT_HD44780_ENABLED
+	help
+	  Enable driver for Hitachi HD44780 and compatible LCDs.

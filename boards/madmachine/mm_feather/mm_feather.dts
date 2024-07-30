@@ -1,0 +1,181 @@
+/*
+ * Copyright (c) 2021, MADMACHINE LIMITED
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt1060.dtsi>
+#include "mm_feather-pinctrl.dtsi"
+
+/ {
+	model = "MM MM-FEATHER board";
+	compatible = "nxp,mimxrt1062";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		led2 = &blue_led;
+		sdhc0 = &usdhc1;
+	};
+
+	chosen {
+		zephyr,sram = &sdram0;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,flash = &is25wp064;
+	};
+
+	sdram0: memory@80000000 {
+		/* Micron MT48LC16M16A2B4-6AIT:G */
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(32)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio1 9 0>;
+			label = "RGB R";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio1 10 0>;
+			label = "RGB G";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpio1 11 0>;
+			label = "RGB B";
+		};
+	};
+};
+
+
+&flexspi {
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	is25wp064: is25wp064@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <67108864>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [9d 70 17];
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart4 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart8 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpi2c1 {
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpi2c3 {
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpspi3 {
+	status = "okay";
+	pcs-sck-delay = <2>;
+	sck-pcs-delay = <2>;
+	transfer-delay = <2>;
+};
+
+&lpspi4 {
+	status = "okay";
+	pcs-sck-delay = <2>;
+	sck-pcs-delay = <2>;
+	transfer-delay = <2>;
+};
+
+&flexpwm1_pwm3 {
+	status = "okay";
+};
+
+&flexpwm2_pwm0 {
+	status = "okay";
+};
+
+&flexpwm2_pwm1 {
+	status = "okay";
+};
+
+&flexpwm2_pwm2 {
+	status = "okay";
+};
+
+&flexpwm2_pwm3 {
+	status = "okay";
+};
+
+&flexpwm4_pwm0 {
+	status = "okay";
+};
+
+&flexpwm4_pwm1 {
+	status = "okay";
+};
+
+&flexpwm4_pwm2 {
+	status = "okay";
+};
+
+&flexpwm4_pwm3 {
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+	no-1-8-v;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};

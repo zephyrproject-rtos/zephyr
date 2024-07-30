@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2021 Leonard Pollak
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "SGP40/SHT4X sample application"
+
+config APP_USE_COMPENSATION
+	bool "Use the T/RH compensation feature of the SGP40"
+	default y
+
+config APP_USE_HEATER
+	bool "Use the Heater on the SHT4X"
+	default n
+	help
+		Maximum duty cycle for using the heater is 5%
+
+config APP_HEATER_HUMIDITY_THRESH
+	int "RH [%] threshold above which the heater will be activated"
+	range 0 99
+	default 65
+	depends on APP_USE_HEATER
+
+config APP_HEATER_PULSE_POWER
+	int "Heater Power Setting"
+	range 0 2
+	default 2
+	depends on APP_USE_HEATER
+	help
+		0 -> High power heater pulse -> ~200 mW  @3.3V
+		1 -> Medium power heater pulse -> ~110 mW  @3.3V
+		2 -> Low power heater pulse -> ~20 mW  @3.3V
+
+config APP_HEATER_PULSE_DURATION
+	int "Heater Pulse Length Setting"
+	range 0 1
+	default 1
+	depends on APP_USE_HEATER
+	help
+		0 -> Long heater pulse -> 1.1s
+		1 -> Short heater pulse -> 0.11s
+
+source "Kconfig.zephyr"

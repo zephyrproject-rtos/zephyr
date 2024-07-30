@@ -1,0 +1,1012 @@
+# Kernel configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "General Kernel Options"
+
+module = KERNEL
+module-str = kernel
+source "subsys/logging/Kconfig.template.log_config"
+
+config MULTITHREADING
+	bool "Multi-threading" if ARCH_HAS_SINGLE_THREAD_SUPPORT
+	default y
+	help
+	  If disabled, only the main thread is available, so a main() function
+	  must be provided. Interrupts are available. Kernel objects will most
+	  probably not behave as expected, especially with regards to pending,
+	  since the main thread cannot pend, it being the only thread in the
+	  system.
+
+	  Many drivers and subsystems will not work with this option
+	  set to 'n'; disable only when you REALLY know what you are
+	  doing.
+
+config NUM_COOP_PRIORITIES
+	int "Number of coop priorities" if MULTITHREADING
+	default 1 if !MULTITHREADING
+	default 16
+	range 0 128
+	help
+	  Number of cooperative priorities configured in the system. Gives access
+	  to priorities:
+
+		K_PRIO_COOP(0) to K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+
+	  or seen another way, priorities:
+
+		-CONFIG_NUM_COOP_PRIORITIES to -1
+
+	  This can be set to zero to disable cooperative scheduling. Cooperative
+	  threads always preempt preemptible threads.
+
+	  The total number of priorities is
+
+	   NUM_COOP_PRIORITIES + NUM_PREEMPT_PRIORITIES + 1
+
+	  The extra one is for the idle thread, which must run at the lowest
+	  priority, and be the only thread at that priority.
+
+config NUM_PREEMPT_PRIORITIES
+	int "Number of preemptible priorities" if MULTITHREADING
+	default 0 if !MULTITHREADING
+	default 15
+	range 0 128
+	help
+	  Number of preemptible priorities available in the system. Gives access
+	  to priorities 0 to CONFIG_NUM_PREEMPT_PRIORITIES - 1.
+
+	  This can be set to 0 to disable preemptible scheduling.
+
+	  The total number of priorities is
+
+	   NUM_COOP_PRIORITIES + NUM_PREEMPT_PRIORITIES + 1
+
+	  The extra one is for the idle thread, which must run at the lowest
+	  priority, and be the only thread at that priority.
+
+config MAIN_THREAD_PRIORITY
+	int "Priority of initialization/main thread"
+	default -2 if !PREEMPT_ENABLED
+	default 0
+	help
+	  Priority at which the initialization thread runs, including the start
+	  of the main() function. main() can then change its priority if desired.
+
+config COOP_ENABLED
+	def_bool (NUM_COOP_PRIORITIES != 0)
+
+config PREEMPT_ENABLED
+	def_bool (NUM_PREEMPT_PRIORITIES != 0)
+
+config PRIORITY_CEILING
+	int "Priority inheritance ceiling"
+	default -127
+	help
+	  This defines the minimum priority value (i.e. the logically
+	  highest priority) that a thread will acquire as part of
+	  k_mutex priority inheritance.
+
+config NUM_METAIRQ_PRIORITIES
+	int "Number of very-high priority 'preemptor' threads"
+	default 0
+	help
+	  This defines a set of priorities at the (numerically) lowest
+	  end of the range which have "meta-irq" behavior.  Runnable
+	  threads at these priorities will always be scheduled before
+	  threads at lower priorities, EVEN IF those threads are
+	  otherwise cooperative and/or have taken a scheduler lock.
+	  Making such a thread runnable in any way thus has the effect
+	  of "interrupting" the current task and running the meta-irq
+	  thread synchronously, like an exception or system call.  The
+	  intent is to use these priorities to implement "interrupt
+	  bottom half" or "tasklet" behavior, allowing driver
+	  subsystems to return from interrupt context but be guaranteed
+	  that user code will not be executed (on the current CPU)
+	  until the remaining work is finished.  As this breaks the
+	  "promise" of non-preemptibility granted by the current API
+	  for cooperative threads, this tool probably shouldn't be used
+	  from application code.
+
+config SCHED_DEADLINE
+	bool "Earliest-deadline-first scheduling"
+	help
+	  This enables a simple "earliest deadline first" scheduling
+	  mode where threads can set "deadline" deltas measured in
+	  k_cycle_get_32() units.  Priority decisions within (!!) a
+	  single priority will choose the next expiring deadline and
+	  not simply the least recently added thread.
+
+config SCHED_CPU_MASK
+	bool "CPU mask affinity/pinning API"
+	depends on SCHED_DUMB
+	help
+	  When true, the application will have access to the
+	  k_thread_cpu_mask_*() APIs which control per-CPU affinity masks in
+	  SMP mode, allowing applications to pin threads to specific CPUs or
+	  disallow threads from running on given CPUs.  Note that as currently
+	  implemented, this involves an inherent O(N) scaling in the number of
+	  idle-but-runnable threads, and thus works only with the DUMB
+	  scheduler (as SCALABLE and MULTIQ would see no benefit).
+
+	  Note that this setting does not technically depend on SMP and is
+	  implemented without it for testing purposes, but for obvious reasons
+	  makes sense as an application API only where there is more than one
+	  CPU.  With one CPU, it's just a higher overhead version of
+	  k_thread_start/stop().
+
+config SCHED_CPU_MASK_PIN_ONLY
+	bool "CPU mask variant with single-CPU pinning only"
+	depends on SMP && SCHED_CPU_MASK
+	help
+	  When true, enables a variant of SCHED_CPU_MASK where only
+	  one CPU may be specified for every thread.  Effectively, all
+	  threads have a single "assigned" CPU and they will never be
+	  scheduled symmetrically.  In general this is not helpful,
+	  but some applications have a carefully designed threading
+	  architecture and want to make their own decisions about how
+	  to assign work to CPUs.  In that circumstance, some moderate
+	  optimizations can be made (e.g. having a separate run queue
+	  per CPU, keeping the list length shorter). When selected,
+	  the CPU mask becomes an immutable thread attribute. It can
+	  only be modified before a thread is started.  Most
+	  applications don't want this.
+
+config MAIN_STACK_SIZE
+	int "Size of stack for initialization and main thread"
+	default 2048 if COVERAGE_GCOV
+	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC || NIOS2)
+	default 1024
+	help
+	  When the initialization is complete, the thread executing it then
+	  executes the main() routine, so as to reuse the stack used by the
+	  initialization, which would be wasted RAM otherwise.
+
+	  After initialization is complete, the thread runs main().
+
+config IDLE_STACK_SIZE
+	int "Size of stack for idle thread"
+	default 2048 if COVERAGE_GCOV
+	default 1024 if XTENSA
+	default 512 if RISCV
+	default 384 if DYNAMIC_OBJECTS
+	default 320 if ARC || (ARM && CPU_HAS_FPU) || (X86 && MMU)
+	default 256
+	help
+	  Depending on the work that the idle task must do, most likely due to
+	  power management but possibly to other features like system event
+	  logging (e.g. logging when the system goes to sleep), the idle thread
+	  may need more stack space than the default value.
+
+config ISR_STACK_SIZE
+	int "ISR and initialization stack size (in bytes)"
+	default 2048
+	help
+	  This option specifies the size of the stack used by interrupt
+	  service routines (ISRs), and during kernel initialization.
+
+config THREAD_STACK_INFO
+	bool "Thread stack info"
+	help
+	  This option allows each thread to store the thread stack info into
+	  the k_thread data structure.
+
+config THREAD_STACK_MEM_MAPPED
+	bool "Stack to be memory mapped at runtime"
+	depends on MMU && ARCH_SUPPORTS_MEM_MAPPED_STACKS
+	select THREAD_STACK_INFO
+	select THREAD_ABORT_NEED_CLEANUP
+	help
+	  This option changes behavior where the thread stack is memory
+	  mapped with guard pages on both ends to catch undesired
+	  accesses.
+
+config THREAD_ABORT_HOOK
+	bool
+	help
+	  Used by portability layers to modify locally managed status mask.
+
+config THREAD_ABORT_NEED_CLEANUP
+	bool
+	help
+	  This option enables the bits to clean up the current thread if
+	  k_thread_abort(_current) is called, as the cleanup cannot be
+	  running in the current thread stack.
+
+config THREAD_CUSTOM_DATA
+	bool "Thread custom data"
+	help
+	  This option allows each thread to store 32 bits of custom data,
+	  which can be accessed using the k_thread_custom_data_xxx() APIs.
+
+config THREAD_USERSPACE_LOCAL_DATA
+	bool
+	depends on USERSPACE
+	default y if ERRNO && !ERRNO_IN_TLS && !LIBC_ERRNO
+
+config USERSPACE_THREAD_MAY_RAISE_PRIORITY
+	bool "Thread can raise own priority"
+	depends on USERSPACE
+	depends on TEST # This should only be enabled by tests.
+	help
+	  Thread can raise its own priority in userspace mode.
+
+config DYNAMIC_THREAD
+	bool "Support for dynamic threads [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on THREAD_STACK_INFO
+	select DYNAMIC_OBJECTS if USERSPACE
+	select THREAD_MONITOR
+	help
+	  Enable support for dynamic threads and stacks.
+
+if DYNAMIC_THREAD
+
+config DYNAMIC_THREAD_STACK_SIZE
+	int "Size of each pre-allocated thread stack"
+	default 1024 if !64BIT
+	default 2048 if 64BIT
+	help
+	  Default stack size (in bytes) for dynamic threads.
+
+config DYNAMIC_THREAD_ALLOC
+	bool "Support heap-allocated thread objects and stacks"
+	help
+	  Select this option to enable allocating thread object and
+	  thread stacks from the system heap.
+
+	  Only use this type of allocation in situations
+	  where malloc is permitted.
+
+config DYNAMIC_THREAD_POOL_SIZE
+	int "Number of statically pre-allocated threads"
+	default 0
+	range 0 8192
+	help
+	  Pre-allocate a fixed number of thread objects and
+	  stacks at build time.
+
+	  This type of "dynamic" stack is usually suitable in
+	  situations where malloc is not permitted.
+
+choice DYNAMIC_THREAD_PREFER
+	prompt "Preferred dynamic thread allocator"
+	default DYNAMIC_THREAD_PREFER_POOL
+	help
+	  If both CONFIG_DYNAMIC_THREAD_ALLOC=y and
+	  CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0, then the user may
+	  specify the order in which allocation is attempted.
+
+config DYNAMIC_THREAD_PREFER_ALLOC
+	bool "Prefer heap-based allocation"
+	depends on DYNAMIC_THREAD_ALLOC
+	help
+	  Select this option to attempt a heap-based allocation
+	  prior to any pool-based allocation.
+
+config DYNAMIC_THREAD_PREFER_POOL
+	bool "Prefer pool-based allocation"
+	help
+	  Select this option to attempt a pool-based allocation
+	  prior to any heap-based allocation.
+
+endchoice # DYNAMIC_THREAD_PREFER
+
+endif # DYNAMIC_THREADS
+
+choice SCHED_ALGORITHM
+	prompt "Scheduler priority queue algorithm"
+	default SCHED_DUMB
+	help
+	  The kernel can be built with several choices for the
+	  ready queue implementation, offering different choices between
+	  code size, constant factor runtime overhead and performance
+	  scaling when many threads are added.
+
+config SCHED_DUMB
+	bool "Simple linked-list ready queue"
+	help
+	  When selected, the scheduler ready queue will be implemented
+	  as a simple unordered list, with very fast constant time
+	  performance for single threads and very low code size.
+	  Choose this on systems with constrained code size that will
+	  never see more than a small number (3, maybe) of runnable
+	  threads in the queue at any given time.  On most platforms
+	  (that are not otherwise using the red/black tree) this
+	  results in a savings of ~2k of code size.
+
+config SCHED_SCALABLE
+	bool "Red/black tree ready queue"
+	help
+	  When selected, the scheduler ready queue will be implemented
+	  as a red/black tree.  This has rather slower constant-time
+	  insertion and removal overhead, and on most platforms (that
+	  are not otherwise using the rbtree somewhere) requires an
+	  extra ~2kb of code.  But the resulting behavior will scale
+	  cleanly and quickly into the many thousands of threads.  Use
+	  this on platforms where you may have many threads (very
+	  roughly: more than 20 or so) marked as runnable at a given
+	  time.  Most applications don't want this.
+
+config SCHED_MULTIQ
+	bool "Traditional multi-queue ready queue"
+	depends on !SCHED_DEADLINE
+	help
+	  When selected, the scheduler ready queue will be implemented
+	  as the classic/textbook array of lists, one per priority.
+	  This corresponds to the scheduler algorithm used in Zephyr
+	  versions prior to 1.12.  It incurs only a tiny code size
+	  overhead vs. the "dumb" scheduler and runs in O(1) time
+	  in almost all circumstances with very low constant factor.
+	  But it requires a fairly large RAM budget to store those list
+	  heads, and the limited features make it incompatible with
+	  features like deadline scheduling that need to sort threads
+	  more finely, and SMP affinity which need to traverse the list
+	  of threads.  Typical applications with small numbers of runnable
+	  threads probably want the DUMB scheduler.
+
+endchoice # SCHED_ALGORITHM
+
+choice WAITQ_ALGORITHM
+	prompt "Wait queue priority algorithm"
+	default WAITQ_DUMB
+	help
+	  The wait_q abstraction used in IPC primitives to pend
+	  threads for later wakeup shares the same backend data
+	  structure choices as the scheduler, and can use the same
+	  options.
+
+config WAITQ_SCALABLE
+	bool "Use scalable wait_q implementation"
+	help
+	  When selected, the wait_q will be implemented with a
+	  balanced tree.  Choose this if you expect to have many
+	  threads waiting on individual primitives.  There is a ~2kb
+	  code size increase over WAITQ_DUMB (which may be shared with
+	  SCHED_SCALABLE) if the rbtree is not used elsewhere in the
+	  application, and pend/unpend operations on "small" queues
+	  will be somewhat slower (though this is not generally a
+	  performance path).
+
+config WAITQ_DUMB
+	bool "Simple linked-list wait_q"
+	help
+	  When selected, the wait_q will be implemented with a
+	  doubly-linked list.  Choose this if you expect to have only
+	  a few threads blocked on any single IPC primitive.
+
+endchoice # WAITQ_ALGORITHM
+
+menu "Misc Kernel related options"
+config LIBC_ERRNO
+	bool
+	help
+	  Use external libc errno, not the internal one. This eliminates any
+	  locally allocated errno storage and usage.
+
+config ERRNO
+	bool "Errno support"
+	default y
+	help
+	  Enable per-thread errno in the kernel. Application and library code must
+	  include errno.h provided by the C library (libc) to use the errno
+	  symbol. The C library must access the per-thread errno via the
+	  z_errno() symbol.
+
+config ERRNO_IN_TLS
+	bool "Store errno in thread local storage (TLS)"
+	depends on ERRNO && THREAD_LOCAL_STORAGE && !LIBC_ERRNO
+	default y
+	help
+	  Use thread local storage to store errno instead of storing it in
+	  the kernel thread struct. This avoids a syscall if userspace is enabled.
+
+config CURRENT_THREAD_USE_NO_TLS
+	bool
+	help
+	  Hidden symbol to not use thread local storage to store current
+	  thread.
+
+config CURRENT_THREAD_USE_TLS
+	bool "Store current thread in thread local storage (TLS)"
+	depends on THREAD_LOCAL_STORAGE && !CURRENT_THREAD_USE_NO_TLS
+	default y
+	help
+	  Use thread local storage to store the current thread. This avoids a
+	  syscall if userspace is enabled.
+
+endmenu
+
+menu "Kernel Debugging and Metrics"
+
+config INIT_STACKS
+	bool "Initialize stack areas"
+	help
+	  This option instructs the kernel to initialize stack areas with a
+	  known value (0xaa) before they are first used, so that the high
+	  water mark can be easily determined. This applies to the stack areas
+	  for threads, as well as to the interrupt stack.
+
+config SKIP_BSS_CLEAR
+	bool
+	help
+	  This option disables software .bss section zeroing during Zephyr
+	  initialization. Such boot-time optimization could be used for
+	  platforms where .bss section is zeroed-out externally.
+	  Please pay attention that when this option is enabled
+	  the responsibility for .bss zeroing in all possible scenarios
+	  (mind e.g. SW reset) is delegated to the external SW or HW.
+
+config BOOT_BANNER
+	bool "Boot banner"
+	default y
+	select PRINTK
+	select EARLY_CONSOLE
+	help
+	  This option outputs a banner to the console device during boot up.
+
+config BOOT_BANNER_STRING
+	string "Boot banner string"
+	depends on BOOT_BANNER
+	default "Booting Zephyr OS build"
+	help
+	  Use this option to set the boot banner.
+
+config BOOT_DELAY
+	int "Boot delay in milliseconds"
+	depends on MULTITHREADING
+	default 0
+	help
+	  This option delays bootup for the specified amount of
+	  milliseconds. This is used to allow serial ports to get ready
+	  before starting to print information on them during boot, as
+	  some systems might boot to fast for a receiving endpoint to
+	  detect the new USB serial bus, enumerate it and get ready to
+	  receive before it actually gets data. A similar effect can be
+	  achieved by waiting for DCD on the serial port--however, not
+	  all serial ports have DCD.
+
+config BOOT_CLEAR_SCREEN
+	bool "Clear screen"
+	help
+	  Use this option to clear the screen before printing anything else.
+	  Using a VT100 enabled terminal on the client side is required for this to work.
+
+config THREAD_MONITOR
+	bool "Thread monitoring"
+	help
+	  This option instructs the kernel to maintain a list of all threads
+	  (excluding those that have not yet started or have already
+	  terminated).
+
+config THREAD_NAME
+	bool "Thread name"
+	help
+	  This option allows to set a name for a thread.
+
+config THREAD_MAX_NAME_LEN
+	int "Max length of a thread name"
+	default 32
+	default 64 if ZTEST
+	range 8 128
+	depends on THREAD_NAME
+	help
+	  Thread names get stored in the k_thread struct. Indicate the max
+	  name length, including the terminating NULL byte. Reduce this value
+	  to conserve memory.
+
+config INSTRUMENT_THREAD_SWITCHING
+	bool
+
+menuconfig THREAD_RUNTIME_STATS
+	bool "Thread runtime statistics"
+	help
+	  Gather thread runtime statistics.
+
+	  For example:
+	    - Thread total execution cycles
+	    - System total execution cycles
+
+if THREAD_RUNTIME_STATS
+
+config THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	bool "Use timing functions to gather statistics"
+	select TIMING_FUNCTIONS_NEED_AT_BOOT
+	help
+	  Use timing functions to gather thread runtime statistics.
+
+	  Note that timing functions may use a different timer than
+	  the default timer for OS timekeeping.
+
+config SCHED_THREAD_USAGE
+	bool "Collect thread runtime usage"
+	default y
+	select INSTRUMENT_THREAD_SWITCHING if !USE_SWITCH
+	help
+	  Collect thread runtime info at context switch time
+
+config SCHED_THREAD_USAGE_ANALYSIS
+	bool "Analyze the collected thread runtime usage statistics"
+	default n
+	depends on SCHED_THREAD_USAGE
+	select INSTRUMENT_THREAD_SWITCHING if !USE_SWITCH
+	help
+	  Collect additional timing information related to thread scheduling
+	  for analysis purposes. This includes the total time that a thread
+	  has been scheduled, the longest time for which it was scheduled and
+	  others.
+
+config SCHED_THREAD_USAGE_ALL
+	bool "Collect total system runtime usage"
+	default y if SCHED_THREAD_USAGE
+	depends on SCHED_THREAD_USAGE
+	help
+	  Maintain a sum of all non-idle thread cycle usage.
+
+config SCHED_THREAD_USAGE_AUTO_ENABLE
+	bool "Automatically enable runtime usage statistics"
+	default y
+	depends on SCHED_THREAD_USAGE
+	help
+	  When set, this option automatically enables the gathering of both
+	  the thread and CPU usage statistics.
+
+endif # THREAD_RUNTIME_STATS
+
+endmenu
+
+rsource "Kconfig.obj_core"
+
+menu "System Work Queue Options"
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	int "System workqueue stack size"
+	default 4096 if COVERAGE_GCOV
+	default 2560 if WIFI_NM_WPA_SUPPLICANT
+	default 1024
+
+config SYSTEM_WORKQUEUE_PRIORITY
+	int "System workqueue priority"
+	default -2 if COOP_ENABLED && !PREEMPT_ENABLED
+	default  0 if !COOP_ENABLED
+	default -1
+	help
+	  By default, system work queue priority is the lowest cooperative
+	  priority. This means that any work handler, once started, won't
+	  be preempted by any other thread until finished.
+
+config SYSTEM_WORKQUEUE_NO_YIELD
+	bool "Select whether system work queue yields"
+	help
+	  By default, the system work queue yields between each work item, to
+	  prevent other threads from being starved.  Selecting this removes
+	  this yield, which may be useful if the work queue thread is
+	  cooperative and a sequence of work items is expected to complete
+	  without yielding.
+
+endmenu
+
+menu "Barrier Operations"
+config BARRIER_OPERATIONS_BUILTIN
+	bool
+	help
+	  Use the compiler builtin functions for barrier operations. This is
+	  the preferred method. However, support for all arches in GCC is
+	  incomplete.
+
+config BARRIER_OPERATIONS_ARCH
+	bool
+	help
+	  Use when there isn't support for compiler built-ins, but you have
+	  written optimized assembly code under arch/ which implements these.
+endmenu
+
+menu "Atomic Operations"
+config ATOMIC_OPERATIONS_BUILTIN
+	bool
+	help
+	  Use the compiler builtin functions for atomic operations. This is
+	  the preferred method. However, support for all arches in GCC is
+	  incomplete.
+
+config ATOMIC_OPERATIONS_ARCH
+	bool
+	help
+	  Use when there isn't support for compiler built-ins, but you have
+	  written optimized assembly code under arch/ which implements these.
+
+config ATOMIC_OPERATIONS_C
+	bool
+	help
+	  Use atomic operations routines that are implemented entirely
+	  in C by locking interrupts. Selected by architectures which either
+	  do not have support for atomic operations in their instruction
+	  set, or haven't been implemented yet during bring-up, and also
+	  the compiler does not have support for the atomic __sync_* builtins.
+endmenu
+
+menu "Timer API Options"
+
+config TIMESLICING
+	bool "Thread time slicing"
+	default y
+	depends on SYS_CLOCK_EXISTS && (NUM_PREEMPT_PRIORITIES != 0)
+	help
+	  This option enables time slicing between preemptible threads of
+	  equal priority.
+
+config TIMESLICE_SIZE
+	int "Time slice size (in ms)"
+	default 0
+	range 0 $(INT32_MAX)
+	depends on TIMESLICING
+	help
+	  This option specifies the maximum amount of time a thread can execute
+	  before other threads of equal priority are given an opportunity to run.
+	  A time slice size of zero means "no limit" (i.e. an infinitely large
+	  time slice).
+
+config TIMESLICE_PRIORITY
+	int "Time slicing thread priority ceiling"
+	default 0
+	range 0 NUM_PREEMPT_PRIORITIES
+	depends on TIMESLICING
+	help
+	  This option specifies the thread priority level at which time slicing
+	  takes effect; threads having a higher priority than this ceiling are
+	  not subject to time slicing.
+
+config TIMESLICE_PER_THREAD
+	bool "Support per-thread timeslice values"
+	depends on TIMESLICING
+	help
+	  When set, this enables an API for setting timeslice values on
+	  a per-thread basis, with an application callback invoked when
+	  a thread reaches the end of its timeslice.
+
+endmenu
+
+menu "Other Kernel Object Options"
+
+config POLL
+	bool "Async I/O Framework"
+	help
+	  Asynchronous notification framework. Enable the k_poll() and
+	  k_poll_signal_raise() APIs.  The former can wait on multiple events
+	  concurrently, which can be either directly triggered or triggered by
+	  the availability of some kernel objects (semaphores and FIFOs).
+
+config MEM_SLAB_TRACE_MAX_UTILIZATION
+	bool "Getting maximum slab utilization"
+	help
+	  This adds variable to the k_mem_slab structure to hold
+	  maximum utilization of the slab.
+
+config NUM_MBOX_ASYNC_MSGS
+	int "Maximum number of in-flight asynchronous mailbox messages"
+	default 10
+	help
+	  This option specifies the total number of asynchronous mailbox
+	  messages that can exist simultaneously, across all mailboxes
+	  in the system.
+
+	  Setting this option to 0 disables support for asynchronous
+	  mailbox messages.
+
+config EVENTS
+	bool "Event objects"
+	help
+	  This option enables event objects. Threads may wait on event
+	  objects for specific events, but both threads and ISRs may deliver
+	  events to event objects.
+
+	  Note that setting this option slightly increases the size of the
+	  thread structure.
+
+config PIPES
+	bool "Pipe objects"
+	help
+	  This option enables kernel pipes. A pipe is a kernel object that
+	  allows a thread to send a byte stream to another thread. Pipes can
+	  be used to synchronously transfer chunks of data in whole or in part.
+
+	  Note that setting this option slightly increases the size of the
+	  thread structure.
+
+config KERNEL_MEM_POOL
+	bool "Use Kernel Memory Pool"
+	default y
+	help
+	  Enable the use of kernel memory pool.
+
+	  Say y if unsure.
+
+if KERNEL_MEM_POOL
+
+config HEAP_MEM_POOL_SIZE
+	int "Heap memory pool size (in bytes)"
+	default 0
+	help
+	  This option specifies the size of the heap memory pool used when
+	  dynamically allocating memory using k_malloc(). The maximum size of
+	  the memory pool is only limited to available memory. If subsystems
+	  specify HEAP_MEM_POOL_ADD_SIZE_* options, these will be added together
+	  and the sum will be compared to the HEAP_MEM_POOL_SIZE value.
+	  If the sum is greater than the HEAP_MEM_POOL_SIZE option (even if this
+	  has the default 0 value), then the actual heap size will be rounded up
+	  to the sum of the individual requirements (unless the
+	  HEAP_MEM_POOL_IGNORE_MIN option is enabled). If the final value, after
+	  considering both this option as well as sum of the custom
+	  requirements, ends up being zero, then no system heap will be
+	  available.
+
+config HEAP_MEM_POOL_IGNORE_MIN
+	bool "Ignore the minimum heap memory pool requirement"
+	help
+	  This option can be set to force setting a smaller heap memory pool
+	  size than what's specified by enabled subsystems. This can be useful
+	  when optimizing memory usage and a more precise minimum heap size
+	  is known for a given application.
+
+endif # KERNEL_MEM_POOL
+
+endmenu
+
+config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	bool
+	help
+	  It's possible that an architecture port cannot use _Swap() to swap to
+	  the _main() thread, but instead must do something custom. It must
+	  enable this option in that case.
+
+config SWAP_NONATOMIC
+	bool
+	help
+	  On some architectures, the _Swap() primitive cannot be made
+	  atomic with respect to the irq_lock being released.  That
+	  is, interrupts may be received between the entry to _Swap
+	  and the completion of the context switch.  There are a
+	  handful of workaround cases in the kernel that need to be
+	  enabled when this is true.  Currently, this only happens on
+	  ARM when the PendSV exception priority sits below that of
+	  Zephyr-handled interrupts.
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	bool
+	help
+	  It's possible that an architecture port cannot or does not want to use
+	  the provided k_busy_wait(), but instead must do something custom. It must
+	  enable this option in that case.
+
+config SYS_CLOCK_TICKS_PER_SEC
+	int "System tick frequency (in ticks/second)"
+	default 100 if QEMU_TARGET || SOC_POSIX
+	default 10000 if TICKLESS_KERNEL
+	default 100
+	help
+	  This option specifies the nominal frequency of the system clock in Hz.
+
+	  For asynchronous timekeeping, the kernel defines a "ticks" concept. A
+	  "tick" is the internal count in which the kernel does all its internal
+	  uptime and timeout bookkeeping. Interrupts are expected to be delivered
+	  on tick boundaries to the extent practical, and no fractional ticks
+	  are tracked.
+
+	  The choice of tick rate is configurable by this option. Also the number
+	  of cycles per tick should be chosen so that 1 millisecond is exactly
+	  represented by an integral number of ticks. Defaults on most hardware
+	  platforms (ones that support setting arbitrary interrupt timeouts) are
+	  expected to be in the range of 10 kHz, with software emulation
+	  platforms and legacy drivers using a more traditional 100 Hz value.
+
+	  Note that when available and enabled, in "tickless" mode
+	  this config variable specifies the minimum available timing
+	  granularity, not necessarily the number or frequency of
+	  interrupts delivered to the kernel.
+
+	  A value of 0 completely disables timer support in the kernel.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int "System clock's h/w timer frequency"
+	help
+	  This option specifies the frequency of the hardware timer used for the
+	  system clock (in Hz). This option is set by the SOC's or board's Kconfig file
+	  and the user should generally avoid modifying it via the menu configuration.
+
+config SYS_CLOCK_EXISTS
+	bool "System clock exists and is enabled"
+	default y
+	help
+	  This option specifies that the kernel has timer support.
+
+	  Some device configurations can eliminate significant code if
+	  this is disabled.  Obviously timeout-related APIs will not
+	  work when disabled.
+
+config TIMEOUT_64BIT
+	bool "Store kernel timeouts in 64 bit precision"
+	default y
+	help
+	  When this option is true, the k_ticks_t values passed to
+	  kernel APIs will be a 64 bit quantity, allowing the use of
+	  larger values (and higher precision tick rates) without fear
+	  of overflowing the 32 bit word.  This feature also gates the
+	  availability of absolute timeout values (which require the
+	  extra precision).
+
+config SYS_CLOCK_MAX_TIMEOUT_DAYS
+	int "Max timeout (in days) used in conversions"
+	default 365
+	help
+	  Value is used in the time conversion static inline function to determine
+	  at compile time which algorithm to use. One algorithm is faster, takes
+	  less code but may overflow if multiplication of source and target
+	  frequency exceeds 64 bits. Second algorithm prevents that. Faster
+	  algorithm is selected for conversion if maximum timeout represented in
+	  source frequency domain multiplied by target frequency fits in 64 bits.
+
+config BUSYWAIT_CPU_LOOPS_PER_USEC
+	int "Number of CPU loops per microsecond for crude busy looping"
+	depends on !SYS_CLOCK_EXISTS && !ARCH_HAS_CUSTOM_BUSY_WAIT
+	default 500
+	help
+	  Calibration for crude CPU based busy loop duration. The default
+	  is assuming 1 GHz CPU and 2 cycles per loop. Reality is certainly
+	  much worse but all we want here is a ball-park figure that ought
+	  to be good enough for the purpose of being able to configure out
+	  system timer support. If accuracy is very important then
+	  implementing arch_busy_wait() should be considered.
+
+config XIP
+	bool "Execute in place"
+	help
+	  This option allows the kernel to operate with its text and read-only
+	  sections residing in ROM (or similar read-only memory). Not all boards
+	  support this option so it must be used with care; you must also
+	  supply a linker command file when building your image. Enabling this
+	  option increases both the code and data footprint of the image.
+
+
+menu "Security Options"
+
+config STACK_CANARIES
+	bool "Compiler stack canaries"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	help
+	  This option enables compiler stack canaries.
+
+	  If stack canaries are supported by the compiler, it will emit
+	  extra code that inserts a canary value into the stack frame when
+	  a function is entered and validates this value upon exit.
+	  Stack corruption (such as that caused by buffer overflow) results
+	  in a fatal error condition for the running entity.
+	  Enabling this option can result in a significant increase
+	  in footprint and an associated decrease in performance.
+
+	  If stack canaries are not supported by the compiler an error
+	  will occur at build time.
+
+if STACK_CANARIES
+
+config STACK_CANARIES_TLS
+	bool "Stack canaries using thread local storage"
+	depends on THREAD_LOCAL_STORAGE
+	depends on ARCH_HAS_STACK_CANARIES_TLS
+	help
+	  This option enables compiler stack canaries on TLS.
+
+	  Stack canaries will leave in the thread local storage and
+	  each thread will have its own canary. This makes harder
+	  to predict the canary location and value.
+
+	  When enabled this causes an additional performance penalty
+	  during thread creations because it needs a new random value
+	  per thread.
+endif
+
+config EXECUTE_XOR_WRITE
+	bool "W^X for memory partitions"
+	depends on USERSPACE
+	depends on ARCH_HAS_EXECUTABLE_PAGE_BIT
+	default y
+	help
+	  When enabled, will enforce that a writable page isn't executable
+	  and vice versa.  This might not be acceptable in all scenarios,
+	  so this option is given for those unafraid of shooting themselves
+	  in the foot.
+
+	  If unsure, say Y.
+
+config STACK_POINTER_RANDOM
+	int "Initial stack pointer randomization bounds"
+	depends on !STACK_GROWS_UP
+	depends on MULTITHREADING
+	depends on TEST_RANDOM_GENERATOR || ENTROPY_HAS_DRIVER
+	default 0
+	help
+	  This option performs a limited form of Address Space Layout
+	  Randomization by offsetting some random value to a thread's
+	  initial stack pointer upon creation. This hinders some types of
+	  security attacks by making the location of any given stack frame
+	  non-deterministic.
+
+	  This feature can waste up to the specified size in bytes the stack
+	  region, which is carved out of the total size of the stack region.
+	  A reasonable minimum value would be around 100 bytes if this can
+	  be spared.
+
+	  This is currently only implemented for systems whose stack pointers
+	  grow towards lower memory addresses.
+
+config BOUNDS_CHECK_BYPASS_MITIGATION
+	bool "Bounds check bypass mitigations for speculative execution"
+	depends on USERSPACE
+	help
+	  Untrusted parameters from user mode may be used in system calls to
+	  index arrays during speculative execution, also known as the Spectre
+	  V1 vulnerability. When enabled, various macros defined in
+	  misc/speculation.h will insert fence instructions or other appropriate
+	  mitigations after bounds checking any array index parameters passed
+	  in from untrusted sources (user mode threads). When disabled, these
+	  macros do nothing.
+endmenu
+
+rsource "Kconfig.mem_domain"
+rsource "Kconfig.smp"
+
+config TICKLESS_KERNEL
+	bool "Tickless kernel"
+	default y if TICKLESS_CAPABLE
+	depends on TICKLESS_CAPABLE
+	help
+	  This option enables a fully event driven kernel. Periodic system
+	  clock interrupt generation would be stopped at all times.
+
+config TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	bool
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE)" = "y"
+	help
+	  Hidden option to signal that toolchain supports generating code
+	  with thread local storage.
+
+config THREAD_LOCAL_STORAGE
+	bool "Thread Local Storage (TLS)"
+	depends on ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	select NEED_LIBC_MEM_PARTITION if (CPU_CORTEX_M && USERSPACE)
+	help
+	  This option enables thread local storage (TLS) support in kernel.
+
+config KERNEL_WHOLE_ARCHIVE
+	bool
+	help
+	  This option forces every object file in the libkernel.a archive
+	  to be included, rather than searching the archive for required object files.
+
+config TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
+	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
+	# initialization of static objects, new toolchains can be added
+	# here if required.
+	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+
+config STATIC_INIT_GNU
+	bool "Support GNU-compatible initializers and constructors"
+	default y if CPP || NATIVE_LIBRARY || COVERAGE
+	depends on TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
+	depends on !CMAKE_LINKER_GENERATOR
+	help
+	  GNU-compatible initialization of static objects. This is required for
+	  C++ constructor support as well as for initializer functions as
+	  defined by GNU-compatible toolchains. This increases the size
+	  of Zephyr binaries by around 100 bytes. If you know your
+	  application doesn't need any initializers, you can disable this
+	  option.
+	  The ARC MWDT toolchain, does not support or use this setting,
+	  and has instead separate C++ constructor initialization code.
+	  Note the option CMAKE_LINKER_GENERATOR does not yet support this feature
+	  or CPP.
+
+endmenu
+
+rsource "Kconfig.device"
+rsource "Kconfig.vm"

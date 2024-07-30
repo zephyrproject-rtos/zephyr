@@ -1,0 +1,53 @@
+# Copyright (c), 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nPM6001 PMIC
+
+  The PMIC has four buck converters and two LDOs. All need to be defined as
+  children nodes, strictly following the BUCK0..3, LDO0..1 node names. For
+  example:
+
+  pmic@70 {
+    reg = <0x70>;
+    ...
+    regulators {
+      compatible = "nordic,npm6001-regulator";
+
+      BUCK0 {
+        /* all properties for BUCK0 */
+      };
+      BUCK1 {
+        /* all properties for BUCK1 */
+      };
+      BUCK2 {
+        /* all properties for BUCK2 */
+      };
+      BUCK3 {
+        /* all properties for BUCK3 */
+      };
+      LDO0 {
+        /* all properties for LDO0 */
+      };
+      LDO1 {
+        /* all properties for LDO1 */
+      };
+    };
+  };
+
+compatible: "nordic,npm6001-regulator"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-boot-off
+        - regulator-max-microamp
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-allowed-modes
+        - regulator-initial-mode

@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for ACPI informed based devices
+
+properties:
+  acpi-hid:
+    type: string
+    description: Used to supply OSPM with the device’s PNP ID or ACPI ID.
+        A node is consder as acpi based or not based on whether this property
+        is present or not.
+
+  acpi-uid:
+    type: string
+    description: |
+        Provides OSPM with a logical device ID that does not change
+        across reboots. This object is optional, but is required when the device
+        has no other way to report a persistent unique device ID. The _UID must be
+        unique across all devices with either a common _HID or _CID.
+
+  acpi-comp-id:
+    type: string-array
+    description: Used to supply OSPM with a device’s Plug and Play-Compatible Device ID

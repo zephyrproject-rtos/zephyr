@@ -1,0 +1,14 @@
+# Copyright 2017,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_LPC
+
+config SERIAL_INIT_PRIORITY
+	default 55 if SERIAL
+
+config BUILD_WITH_TFM
+	default y if TRUSTED_EXECUTION_NONSECURE
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_LPC

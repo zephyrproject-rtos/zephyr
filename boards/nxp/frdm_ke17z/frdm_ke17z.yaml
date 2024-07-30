@@ -1,0 +1,15 @@
+identifier: frdm_ke17z
+name: NXP FRDM-KE17Z
+type: mcu
+arch: arm
+ram: 32
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - uart
+  - i2c
+vendor: nxp

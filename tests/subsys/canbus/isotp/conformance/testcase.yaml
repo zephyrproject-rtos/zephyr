@@ -1,0 +1,54 @@
+#
+# There are 4 different test cases that have to be considered:
+#
+# | Case # | Controller type        | Selected mode        |  Example board |
+# +--------+------------------------+----------------------+----------------+
+# |    1   | Classical CAN only     | CONFIG_CAN_FD_MODE=n | nucleo_f072    |
+# |    2   | Classical CAN only     | CONFIG_CAN_FD_MODE=y | nucleo_f072    |
+# |    3   | Classical CAN + CAN FD | CONFIG_CAN_FD_MODE=n | native_sim     |
+# |    4   | Classical CAN + CAN FD | CONFIG_CAN_FD_MODE=y | native_sim     |
+#
+# The test-specific CONFIG_TEST_USE_CAN_FD_MODE is used to decide if the test should use
+# CAN FD independent of CONFIG_CAN_FD_MODE configuration.
+#
+
+tests:
+  # cases 1, 3
+  canbus.isotp.conformance:
+    tags:
+      - can
+      - isotp
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")
+  # case 2
+  canbus.isotp.conformance.fd.unused:
+    tags:
+      - can
+      - isotp
+    extra_configs:
+      - CONFIG_TEST_USE_CAN_FD_MODE=n
+      - CONFIG_CAN_FD_MODE=y
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")
+  # case 4
+  canbus.isotp.conformance.fd.txdl_32:
+    tags:
+      - can
+      - isotp
+    extra_configs:
+      - CONFIG_TEST_USE_CAN_FD_MODE=y
+      - CONFIG_TEST_ISOTP_TX_DL=32
+      - CONFIG_CAN_FD_MODE=y
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")
+  # case 4
+  canbus.isotp.conformance.fd.txdl_64:
+    tags:
+      - can
+      - isotp
+    extra_configs:
+      - CONFIG_TEST_USE_CAN_FD_MODE=y
+      - CONFIG_TEST_ISOTP_TX_DL=64
+      - CONFIG_CAN_FD_MODE=y
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")

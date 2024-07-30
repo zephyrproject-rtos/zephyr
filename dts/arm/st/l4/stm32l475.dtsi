@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l4/stm32l471.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l475", "st,stm32l4", "simple-bus";
+
+		usbotg_fs: otgfs@50000000 {
+			compatible = "st,stm32-otgfs";
+			reg = <0x50000000 0x40000>;
+			interrupts = <67 0>;
+			interrupt-names = "otgfs";
+			num-bidir-endpoints = <6>;
+			ram-size = <1280>;
+			maximum-speed = "full-speed";
+			phys = <&otgfs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00001000>,
+				 <&rcc STM32_SRC_MSI CLK48_SEL(3)>;
+			status = "disabled";
+		};
+	};
+
+	otgfs_phy: otgfs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+};

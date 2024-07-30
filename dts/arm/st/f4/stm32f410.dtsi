@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2020 Hans Unzner
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/stm32f410_clock.h>
+#include <st/f4/stm32f4.dtsi>
+
+/ {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
+	soc {
+		compatible = "st,stm32f410", "st,stm32f4", "simple-bus";
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <36 5>;
+			status = "disabled";
+		};
+
+		spi5: spi@40015000 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			interrupts = <85 5>;
+			status = "disabled";
+		};
+
+		i2s1: i2s@40013000 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			interrupts = <35 5>;
+			dmas = <&dma2 3 3 0x400 0x3
+				&dma2 2 3 0x400 0x3>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		i2s2: i2s@40003800 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <36 5>;
+			dmas = <&dma1 4 0 0x400 0x3
+				&dma1 3 0 0x400 0x3>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		i2s5: i2s@40015000 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			interrupts = <85 5>;
+			dmas = <&dma2 6 7 0x400 0x3
+				&dma2 5 7 0x400 0x3>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			resets = <&rctl STM32_RESET(APB1, 4U)>;
+			interrupts = <54 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		rng: rng@40080000 {
+			compatible = "st,stm32-rng";
+			reg = <0x40080000 0x400>;
+			interrupts = <80 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x80000000>;
+			status = "disabled";
+		};
+	};
+
+	die_temp: dietemp {
+		io-channels = <&adc1 18>;
+	};
+};

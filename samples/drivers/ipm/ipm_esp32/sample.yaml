@@ -1,0 +1,11 @@
+sample:
+  name: ESP32 IPM Sample
+tests:
+  sample.ipm.ipm_esp32:
+    platform_allow:
+      - esp32_devkitc_wroom/esp32/procpu
+      - esp32_devkitc_wrover/esp32/procpu
+    tags:
+      - samples
+      - ipm
+    skip: true

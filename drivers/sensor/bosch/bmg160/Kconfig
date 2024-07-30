@@ -1,0 +1,112 @@
+# Bosch BMG160 gyroscope configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMG160
+	bool "Bosch BMG160 gyroscope support"
+	default y
+	depends on DT_HAS_BOSCH_BMG160_ENABLED
+	select I2C
+	help
+	  Enable Bosch BMG160 gyroscope support.
+
+if BMG160
+
+choice
+	prompt "BMG160 I2C bus speed"
+	default BMG160_I2C_SPEED_STANDARD
+
+config BMG160_I2C_SPEED_STANDARD
+	bool "Standard"
+	help
+	  Standard bus speed of up to 100kHz.
+
+config BMG160_I2C_SPEED_FAST
+	bool "Fast"
+	help
+	  Fast bus speed of up to 400KHz.
+endchoice
+
+choice
+	prompt "Trigger mode"
+	default BMG160_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config BMG160_TRIGGER_NONE
+	bool "No trigger"
+
+config BMG160_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select BMG160_TRIGGER
+
+config BMG160_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select BMG160_TRIGGER
+endchoice
+
+config BMG160_TRIGGER
+	bool
+
+config BMG160_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on BMG160_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  The priority of the thread used for handling interrupts.
+
+config BMG160_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on BMG160_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  The thread stack size.
+
+choice
+	prompt "Gyroscope range setting."
+	default BMG160_RANGE_RUNTIME
+
+config BMG160_RANGE_RUNTIME
+	bool "Set at runtime."
+
+config BMG160_RANGE_2000DPS
+	bool "2000 DPS"
+
+config BMG160_RANGE_1000DPS
+	bool "1000 DPS"
+
+config BMG160_RANGE_500DPS
+	bool "500 DPS"
+
+config BMG160_RANGE_250DPS
+	bool "250 DPS"
+
+config BMG160_RANGE_125DPS
+	bool "125 DPS"
+endchoice
+
+choice
+	prompt "Gyroscope sampling frequency."
+	default BMG160_ODR_RUNTIME
+
+config BMG160_ODR_RUNTIME
+	bool "Set at runtime."
+
+config BMG160_ODR_100
+	bool "100 Hz"
+
+config BMG160_ODR_200
+	bool "200 Hz"
+
+config BMG160_ODR_400
+	bool "400 Hz"
+
+config BMG160_ODR_1000
+	bool "1000 Hz"
+
+config BMG160_ODR_2000
+	bool "2000 Hz"
+endchoice
+
+endif # BMG160

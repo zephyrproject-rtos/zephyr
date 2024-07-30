@@ -1,0 +1,38 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if INPUT
+
+menu "Input drivers"
+
+# zephyr-keep-sorted-start
+source "drivers/input/Kconfig.adc_keys"
+source "drivers/input/Kconfig.analog_axis"
+source "drivers/input/Kconfig.cap1203"
+source "drivers/input/Kconfig.cf1133"
+source "drivers/input/Kconfig.chsc6x"
+source "drivers/input/Kconfig.cst816s"
+source "drivers/input/Kconfig.esp32"
+source "drivers/input/Kconfig.evdev"
+source "drivers/input/Kconfig.ft5336"
+source "drivers/input/Kconfig.gpio_kbd_matrix"
+source "drivers/input/Kconfig.gpio_keys"
+source "drivers/input/Kconfig.gpio_qdec"
+source "drivers/input/Kconfig.gt911"
+source "drivers/input/Kconfig.it8xxx2"
+source "drivers/input/Kconfig.kbd_matrix"
+source "drivers/input/Kconfig.npcx"
+source "drivers/input/Kconfig.pat912x"
+source "drivers/input/Kconfig.paw32xx"
+source "drivers/input/Kconfig.pinnacle"
+source "drivers/input/Kconfig.pmw3610"
+source "drivers/input/Kconfig.sbus"
+source "drivers/input/Kconfig.sdl"
+source "drivers/input/Kconfig.stmpe811"
+source "drivers/input/Kconfig.xec"
+source "drivers/input/Kconfig.xpt2046"
+# zephyr-keep-sorted-stop
+
+endmenu # Input Drivers
+
+endif # INPUT

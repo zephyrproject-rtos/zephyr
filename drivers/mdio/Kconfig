@@ -1,0 +1,49 @@
+# MDIO configuration options
+
+# Copyright (c) 2021 IP-Logix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# MDIO options
+#
+menuconfig MDIO
+	bool "Management Data Input/Output (MDIO) drivers"
+	help
+	  Enable MDIO Driver Configuration
+
+if MDIO
+
+config MDIO_SHELL
+	bool "MDIO Shell"
+	depends on SHELL
+	help
+	  Enable MDIO Shell.
+
+	  The MDIO shell currently supports scanning and device
+	  read/write.
+
+# Include these first so that any properties (e.g. defaults) below can be
+# overridden (by defining symbols in multiple locations)
+source "drivers/mdio/Kconfig.esp32"
+source "drivers/mdio/Kconfig.sam"
+source "drivers/mdio/Kconfig.nxp_s32_netc"
+source "drivers/mdio/Kconfig.nxp_s32_gmac"
+source "drivers/mdio/Kconfig.adin2111"
+source "drivers/mdio/Kconfig.gpio"
+source "drivers/mdio/Kconfig.nxp_enet"
+source "drivers/mdio/Kconfig.stm32_hal"
+source "drivers/mdio/Kconfig.xmc4xxx"
+source "drivers/mdio/Kconfig.nxp_enet_qos"
+
+config MDIO_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  MDIO device driver initialization priority.
+
+
+module = MDIO
+module-str = mdio
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MDIO

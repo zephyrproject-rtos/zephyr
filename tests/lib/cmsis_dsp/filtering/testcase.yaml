@@ -1,0 +1,126 @@
+common:
+  toolchain_exclude: llvm
+
+tests:
+  libraries.cmsis_dsp.filtering:
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
+      ) or CONFIG_ARCH_POSIX
+    tags: cmsis-dsp
+    skip: true
+  libraries.cmsis_dsp.filtering.biquad:
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
+      ) or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - frdm_k64f
+      - sam_e70_xplained/same70q21
+      - mps2/an521/cpu0
+      - native_sim
+    tags: cmsis_dsp
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_FILTERING_BIQUAD=y
+  libraries.cmsis_dsp.filtering.biquad.fpu:
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU
+      and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - mps2/an521/cpu1
+      - mps3/an547
+    tags:
+      - cmsis-dsp
+      - fpu
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_FILTERING_BIQUAD=y
+      - CONFIG_FPU=y
+  libraries.cmsis_dsp.filtering.decim:
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
+      ) or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - frdm_k64f
+      - sam_e70_xplained/same70q21
+      - mps2/an521/cpu0
+      - native_sim
+    tags: cmsis-dsp
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_FILTERING_DECIM=y
+  libraries.cmsis_dsp.filtering.decim.fpu:
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU
+      and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - mps2/an521/cpu1
+      - mps3/an547
+    tags:
+      - cmsis-dsp
+      - fpu
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_FILTERING_DECIM=y
+      - CONFIG_FPU=y
+  libraries.cmsis_dsp.filtering.fir:
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
+      ) or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - frdm_k64f
+      - sam_e70_xplained/same70q21
+      - mps2/an521/cpu0
+      - native_sim
+    tags: cmsis-dsp
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_FILTERING_FIR=y
+  libraries.cmsis_dsp.filtering.fir.fpu:
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU
+      and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - mps2/an521/cpu1
+      - mps3/an547
+    tags:
+      - cmsis-dsp
+      - fpu
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_FILTERING_FIR=y
+      - CONFIG_FPU=y
+  libraries.cmsis_dsp.filtering.misc:
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
+      ) or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - frdm_k64f
+      - sam_e70_xplained/same70q21
+      - mps2/an521/cpu0
+      - native_sim
+    tags: cmsis-dsp
+    min_flash: 256
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_FILTERING_MISC=y
+  libraries.cmsis_dsp.filtering.misc.fpu:
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU
+      and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - mps2/an521/cpu1
+    platform_exclude:
+      - mps3/an547
+    tags:
+      - cmsis-dsp
+      - fpu
+    min_flash: 256
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_FILTERING_MISC=y
+      - CONFIG_FPU=y

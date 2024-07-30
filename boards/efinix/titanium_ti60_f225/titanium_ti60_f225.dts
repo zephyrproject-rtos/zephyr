@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2023 Efinix Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <efinix/sapphire_soc.dtsi>
+
+/ {
+	model = "Efinix Titanium Ti60 F225";
+	compatible = "efinix,titanium-ti60-f225";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram0;
+	};
+
+	aliases {
+		led0 = &green_led;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led: led_0 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			label = "Green LED 3";
+		};
+
+
+		red_led: led_1 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "Red LED 2";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 1";
+		};
+
+	};
+
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&gpio0 {
+	status = "okay";
+};

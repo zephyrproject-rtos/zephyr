@@ -1,0 +1,130 @@
+# Random configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Random Number Generators"
+
+config TEST_RANDOM_GENERATOR
+	bool "Allow non-random number generator"
+	help
+	  This option signifies that a non-random number generator is allowed to
+	  be used and the kernel's random number APIs are permitted to return
+	  values that are not truly random.
+
+	  This capability is provided for testing purposes when a truly random
+	  number generator is not available. The non-random number generator
+	  should not be used in a production environment.
+
+	  This option is intended to be selected only by application-level
+	  configurations (e.g. in tests and samples) to indicate that the
+	  application is allowed to run with a random number generator that is not
+	  truly random. Board-level configurations must not select this option
+	  unless the sole purpose of the board is testing (e.g. QEMU emulation
+	  boards).
+
+	  Note that this option does not imply that a non-random number generator
+	  is selected -- that is indicated by RNG_GENERATOR_CHOICE. An entropy
+	  device-backed random number generator, if available, will be selected by
+	  default even when CONFIG_TEST_RANDOM_GENERATOR=y.
+
+config TIMER_RANDOM_INITIAL_STATE
+	int "Initial state used by clock based number generator"
+	default 123456789
+	help
+	  Initial state value used by TIMER_RANDOM_GENERATOR and
+	  early random number genenator.
+
+
+choice RNG_GENERATOR_CHOICE
+	prompt "Random generator"
+	default ENTROPY_DEVICE_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER
+	default TIMER_RANDOM_GENERATOR if TEST_RANDOM_GENERATOR
+	depends on ENTROPY_HAS_DRIVER || TEST_RANDOM_GENERATOR
+	help
+	  Platform dependent non-cryptographically secure random number support.
+
+	  If the entropy support of the platform has sufficient performance
+	  to support random request then select that. Otherwise, select the
+	  XOSHIRO algorithm
+
+config TIMER_RANDOM_GENERATOR
+	bool "System timer clock based number generator"
+	depends on TEST_RANDOM_GENERATOR
+	help
+	  This options enables number generator based on system timer
+	  clock. This number generator is not random and used for
+	  testing only.
+
+config ENTROPY_DEVICE_RANDOM_GENERATOR
+	bool "Use entropy driver to generate random numbers"
+	depends on ENTROPY_HAS_DRIVER
+	help
+	  Enables a random number generator that uses the enabled hardware
+	  entropy gathering driver to generate random numbers. Should only be
+	  selected if hardware entropy driver is designed to be a random
+	  number generator source.
+
+config XOSHIRO_RANDOM_GENERATOR
+	bool "Use Xoshiro128++ as PRNG"
+	depends on ENTROPY_HAS_DRIVER
+	help
+	  Enables the Xoshiro128++ pseudo-random number generator, that uses
+	  the entropy driver as a seed source. This is a fast general-purpose
+	  non-cryptographically secure random number generator.
+
+endchoice # RNG_GENERATOR_CHOICE
+
+#
+# Implied dependency on a cryptographically secure entropy source when
+# enabling CS generators. ENTROPY_HAS_DRIVER is the flag indicating the
+# CS entropy source.
+#
+config CSPRNG_ENABLED
+	bool
+	default y
+	depends on ENTROPY_HAS_DRIVER
+
+choice CSPRNG_GENERATOR_CHOICE
+	prompt "Cryptographically secure random generator"
+	default HARDWARE_DEVICE_CS_GENERATOR
+	help
+	  Platform dependent cryptographically secure random number support.
+
+	  If the hardware entropy support of the platform has sufficient
+	  performance to support CSRNG then select that. Otherwise, select
+	  CTR-DRBG CSPRNG as that is a FIPS140-2 recommended CSPRNG.
+
+config HARDWARE_DEVICE_CS_GENERATOR
+	bool "Use hardware random driver for CS random numbers"
+	depends on ENTROPY_HAS_DRIVER
+	help
+	  Enables a cryptographically secure random number generator that
+	  uses the enabled hardware random number driver to generate
+	  random numbers.
+
+config CTR_DRBG_CSPRNG_GENERATOR
+	bool "Use CTR-DRBG CSPRNG"
+	depends on MBEDTLS || TINYCRYPT
+	depends on ENTROPY_HAS_DRIVER
+	select MBEDTLS_CIPHER_AES_ENABLED if MBEDTLS
+	select TINYCRYPT_CTR_PRNG if TINYCRYPT
+	select TINYCRYPT_AES if TINYCRYPT
+	help
+	  Enables the CTR-DRBG pseudo-random number generator. This CSPRNG
+	  shall use the entropy API for an initialization seed. The CTR-DRBG
+	  is a FIPS140-2 recommended cryptographically secure random number
+	  generator.
+
+endchoice # CSPRNG_GENERATOR_CHOICE
+
+config CS_CTR_DRBG_PERSONALIZATION
+	string "CTR-DRBG Personalization string"
+	default "zephyr ctr-drbg seed"
+	depends on CTR_DRBG_CSPRNG_GENERATOR
+	help
+	  Personalization data can be provided in addition to the entropy
+	  source to make the initialization of the CTR-DRBG as unique as
+	  possible.
+
+endmenu

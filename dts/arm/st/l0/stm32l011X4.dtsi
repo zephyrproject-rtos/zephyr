@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2019 Grinn
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/l0/stm32l010.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(2)>;
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(16)>;
+			};
+		};
+
+		eeprom: eeprom@8080000{
+			reg = <0x08080000 512>;
+		};
+	};
+};

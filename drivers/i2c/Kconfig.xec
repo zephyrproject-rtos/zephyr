@@ -1,0 +1,18 @@
+# Microchip XEC I2C configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_XEC
+	bool "XEC Microchip I2C driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_I2C_ENABLED
+	help
+	  Enable the Microchip XEC I2C driver.
+
+config I2C_XEC_V2
+	bool "XEC Microchip I2C driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_I2C_V2_ENABLED
+	help
+	  Enable the Microchip XEC I2C V2 driver.

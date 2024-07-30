@@ -1,0 +1,39 @@
+# Copyright (c) 2020 Richard Osterloh
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on Adafruit Feather headers.
+
+    The Feather layout provides two headers, one each along
+    opposite edges of the board.
+    Proceeding counter-clockwise:
+    * A 16-pin header.  12 pins on this header are exposed
+      by this binding.
+    * A 12-pin header.  9 pins on this header are exposed
+      by this binding.
+
+    This binding provides a nexus mapping for 21 pins where parent pins 0
+    through 5 correspond to A0 through A5, and parent pins 6 through 20
+    correspond as depicted below:
+
+        - RESET
+        - 3V3
+        - 3V3
+        - GND
+        0 A0                     - VBAT
+        1 A1                     - EN
+        2 A2                     - VBUS
+        3 A3                     D13  20
+        4 A4                     D12  19
+        5 A5                     D11  18
+        6 SCK                    D10  17
+        7 MOSI                   D9   16
+        8 MISO                   D6   15
+        9 RX                     D5   14
+       10 TX                     SCL  13
+       11 D4                     SDA  12
+
+
+compatible: "adafruit-feather-header"
+
+include: [gpio-nexus.yaml, base.yaml]

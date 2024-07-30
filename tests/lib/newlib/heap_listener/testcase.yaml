@@ -1,0 +1,10 @@
+tests:
+  libraries.libc.newlib.heap_listener:
+    tags:
+      - clib
+      - newlib
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    arch_exclude: posix
+    integration_platforms:
+      - mps2/an385
+      - qemu_x86

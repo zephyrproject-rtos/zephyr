@@ -1,0 +1,108 @@
+/*
+ * Copyright (c) 2021 Florin Stancu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "boosterpack_connector.dtsi"
+#include "launchxl-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
+
+/ {
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &btn0;
+		sw1 = &btn1;
+		watchdog0 = &wdt0;
+		mcuboot-led0 = &led1;
+		mcuboot-button0 = &btn1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		btn0: btn_0 {
+			gpios = <&gpio0 15 BTN_GPIO_FLAGS>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		btn1: btn_1 {
+			gpios = <&gpio0 14 BTN_GPIO_FLAGS>;
+			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&trng {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_default &i2c0_sda_default>;
+	pinctrl-1 = <&i2c0_scl_sleep &i2c0_sda_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_sck_default &spi0_mosi_default
+				 &spi0_miso_default &spi0_cs_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+};
+
+&radio {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&ieee802154g {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};

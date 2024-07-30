@@ -1,0 +1,18 @@
+common:
+  harness: net
+  tags:
+    - net
+    - lldp
+sample:
+  description: Test LLDP functionality
+  name: LLDP sample app
+tests:
+  sample.net.lldp:
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    depends_on: eth

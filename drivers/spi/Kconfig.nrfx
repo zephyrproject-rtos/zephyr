@@ -1,0 +1,116 @@
+# Copyright (c) 2017 - 2018, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_NRFX
+	bool "nRF SPI nrfx drivers"
+	default y
+	depends on SOC_FAMILY_NORDIC_NRF
+	depends on MULTITHREADING
+	select PINCTRL
+	help
+	  Enable support for nrfx SPI drivers for nRF MCU series.
+
+if SPI_NRFX
+
+config SPI_NRFX_SPI
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_SPI_ENABLED
+	select NRFX_SPI0 if HAS_HW_NRF_SPI0
+	select NRFX_SPI1 if HAS_HW_NRF_SPI1
+	select NRFX_SPI2 if HAS_HW_NRF_SPI2
+
+config SPI_NRFX_SPIM
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_SPIM_ENABLED
+	select NRFX_SPIM0 if HAS_HW_NRF_SPIM0
+	select NRFX_SPIM1 if HAS_HW_NRF_SPIM1
+	select NRFX_SPIM2 if HAS_HW_NRF_SPIM2
+	select NRFX_SPIM3 if HAS_HW_NRF_SPIM3
+	select NRFX_SPIM4 if HAS_HW_NRF_SPIM4
+	select NRFX_SPIM00 if HAS_HW_NRF_SPIM00
+	select NRFX_SPIM20 if HAS_HW_NRF_SPIM20
+	select NRFX_SPIM21 if HAS_HW_NRF_SPIM21
+	select NRFX_SPIM22 if HAS_HW_NRF_SPIM22
+	select NRFX_SPIM30 if HAS_HW_NRF_SPIM30
+	select NRFX_SPIM120 if HAS_HW_NRF_SPIM120
+	select NRFX_SPIM121 if HAS_HW_NRF_SPIM121
+	select NRFX_SPIM130 if HAS_HW_NRF_SPIM130
+	select NRFX_SPIM131 if HAS_HW_NRF_SPIM131
+	select NRFX_SPIM132 if HAS_HW_NRF_SPIM132
+	select NRFX_SPIM133 if HAS_HW_NRF_SPIM133
+	select NRFX_SPIM134 if HAS_HW_NRF_SPIM134
+	select NRFX_SPIM135 if HAS_HW_NRF_SPIM135
+	select NRFX_SPIM136 if HAS_HW_NRF_SPIM136
+	select NRFX_SPIM137 if HAS_HW_NRF_SPIM137
+
+config SPI_NRFX_SPIS
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_SPIS_ENABLED
+	select SPI_SLAVE
+	select NRFX_SPIS0 if HAS_HW_NRF_SPIS0
+	select NRFX_SPIS1 if HAS_HW_NRF_SPIS1
+	select NRFX_SPIS2 if HAS_HW_NRF_SPIS2
+	select NRFX_SPIS3 if HAS_HW_NRF_SPIS3
+	select NRFX_SPIS00 if HAS_HW_NRF_SPIS00
+	select NRFX_SPIS20 if HAS_HW_NRF_SPIS20
+	select NRFX_SPIS21 if HAS_HW_NRF_SPIS21
+	select NRFX_SPIS22 if HAS_HW_NRF_SPIS22
+	select NRFX_SPIS30 if HAS_HW_NRF_SPIS30
+	select NRFX_SPIS120 if HAS_HW_NRF_SPIS120
+	select NRFX_SPIS130 if HAS_HW_NRF_SPIS130
+	select NRFX_SPIS131 if HAS_HW_NRF_SPIS131
+	select NRFX_SPIS132 if HAS_HW_NRF_SPIS132
+	select NRFX_SPIS133 if HAS_HW_NRF_SPIS133
+	select NRFX_SPIS134 if HAS_HW_NRF_SPIS134
+	select NRFX_SPIS135 if HAS_HW_NRF_SPIS135
+	select NRFX_SPIS136 if HAS_HW_NRF_SPIS136
+	select NRFX_SPIS137 if HAS_HW_NRF_SPIS137
+
+config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+	depends on SOC_NRF52832
+	select NRFX_PPI
+	bool "Allow enabling the SPIM driver despite PAN 58"
+	help
+	  Allow enabling the nRF SPI Master with EasyDMA, despite
+	  Product Anomaly Notice 58 (SPIM: An additional byte is
+	  clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1).
+	  Without this override, the SPI Master is only available
+	  without EasyDMA. Note that the 'SPIM' and 'SPIS' drivers
+	  use EasyDMA, while the 'SPI' driver does not.
+	  When used in conjunction with nRF SPIM Devicetree property
+	  'anomaly-58-workaround' a workaround can be enabled per SPIM
+	  instance.  If you are certain that transactions with
+	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed
+	  then nRF52832 PPI and GPIOTE resources can be saved by not
+	  enabling 'anomaly-58-workaround' via the Devicetree.
+
+config SPI_NRFX_RAM_BUFFER_SIZE
+	int "Size of RAM buffers for SPIM peripherals"
+	default 8
+	depends on SPI_NRFX_SPIM
+	help
+	  Because of using EasyDMA, SPIM peripherals cannot use transmit and
+	  receive buffers from all memory locations. They are restricted to
+	  buffers located in certain RAM memories only. Therefore, each SPIM
+	  driver instance needs to use an intermediate local RAM buffer,
+	  to transfer data in chunks not exceeding the size of that buffer,
+	  and to copy those chunks between the local buffer and the one
+	  specified in the transfer request if the latter is not accessible
+	  by EasyDMA.
+
+	  This option specifies the size in bytes of such local RAM buffers
+	  for both TX and RX paths. A size of 0 means that this feature should
+	  be disabled and the driver user must take care of not making transfer
+	  requests with buffers not accessible by EasyDMA since such transfers
+	  will fail.
+
+config SPI_NRFX_WAKE_TIMEOUT_US
+	int "Maximum time to wait for SPI slave to wake up"
+	default 200
+	help
+	  Maximum amount of time (in microseconds) that SPI master should wait
+	  for SPI slave to wake up after the WAKE line is asserted. Used only
+	  by instances that have the WAKE line configured (see the wake-gpios
+	  devicetree property).
+
+endif # SPI_NRFX

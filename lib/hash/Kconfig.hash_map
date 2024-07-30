@@ -1,0 +1,70 @@
+# Copyright (c) 2022 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Hashmap (Hash Table) Support"
+
+config SYS_HASH_MAP
+	bool "Hashmap support"
+	help
+	  Support for Hashmaps (a.k.a. Hash Tables).
+
+	  Hashmaps are data structures that are used when insertion, removal, and
+	  lookup of key-value pairs must be done in O(1) time (on average).
+
+if SYS_HASH_MAP
+
+config SYS_HASH_MAP_SC
+	bool "Separate-Chaining Hashmap"
+	help
+	  Separate-Chaining Hashmaps implement each bucket as a linked-list.
+
+	  They are perhaps more useful on resource-constrained systems where
+	  large contiguous memory regions are scarce.
+
+	  The main disadvantage of Separate-Chaining Hashmaps are that their
+	  use tends to incur more cache-misses as nodes are spread throughout
+	  the heap.
+
+config SYS_HASH_MAP_OA_LP
+	bool "Open-Addressing / Linear Probe Hashmap"
+	help
+	  Open-Addressing Hashmaps do not chain entries together but instead
+	  store all entries in the table itself which is a contiguously allocated
+	  memory region.
+
+	  The main advantage of Open-Addressing Hashmaps are due to their
+	  contiguous allocation which improves performance on systems with
+	  memory caching.
+
+config SYS_HASH_MAP_CXX
+	bool "C++ Hashmap"
+	select CPP
+	select REQUIRES_FULL_LIBCPP
+	select CPP_EXCEPTIONS
+	help
+	  This enables a C wrapper around the C++ std::unordered_map.
+
+	  It is mainly used for benchmarking purposes.
+
+choice SYS_HASH_MAP_CHOICE
+	prompt "Default hashmap implementation"
+	default SYS_HASH_MAP_CHOICE_SC
+
+config SYS_HASH_MAP_CHOICE_SC
+	bool "Default hash is Separate-Chaining"
+	select SYS_HASH_MAP_SC
+
+config SYS_HASH_MAP_CHOICE_OA_LP
+	bool "Default hash is Open-Addressing / Linear Probe"
+	select SYS_HASH_MAP_OA_LP
+
+config SYS_HASH_MAP_CHOICE_CXX
+	bool "Default hash is C++"
+	select SYS_HASH_MAP_CXX
+
+endchoice # SYS_HASH_MAP_CHOICE
+
+endif
+
+endmenu

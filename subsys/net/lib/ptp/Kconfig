@@ -1,0 +1,286 @@
+# Copyright (c) 2024 BayLibre
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PTP
+	bool "IEEE 1588 (PTP) support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select EVENTFD
+	select NET_SOCKETS
+	select NET_CONTEXT_PRIORITY
+	select NET_L2_PTP
+	depends on NET_L2_ETHERNET
+	depends on !NET_GPTP
+	help
+	  Enable PTP Stack that send and receives PTP packets
+	  and handles network packet timestamps. The protocol's implementation
+	  supports only one PTP Instance in the PTP Node.
+
+if PTP
+
+module = PTP
+module-dep = NET_LOG
+module-str = Log level for PTP
+module-help = Enable logs for the PTP stack.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config PTP_STACK_SIZE
+	int "PTP thread stack size"
+	default 2048
+	help
+	  Set the PTP thread stack size in bytes. The PTP thread handles the
+	  PTP state machine. There is one PTP thread in the system.
+
+config PTP_INIT_PRIO
+	int "Startup priority for the PTP stack init"
+	default 96
+
+config PTP_SERVICE_THREAD_PRIO
+	int "Priority of the PTP service thread"
+	default NUM_PREEMPT_PRIORITIES
+	help
+	  Set the priority of the PTP. This handler polls the sockets and checks
+	  timers, depending on received PTP messages or timeouts actions defined
+	  in the standard are taken. The value should be selected carefully.
+
+config PTP_MSG_POLL_SIZE
+	int "Number of messages available for allocation"
+	default 10
+	help
+	  PTP messages are allocated dynamically from memory slab. The Kconfig symbol
+	  defines number of blocks in the memory slab.
+
+choice
+	prompt "PTP Clock Type"
+	default PTP_ORDINARY_CLOCK
+	help
+	  Specifies type of PTP Clock implemented on the target device
+
+	config PTP_ORDINARY_CLOCK
+		bool "Ordinary Clock"
+
+	config PTP_BOUNDARY_CLOCK
+		bool "Boundary Clock"
+
+	config PTP_TRANSPARENT_P2P_CLOCK
+		bool "Transparent Peer-to-Peer Clock"
+
+	config PTP_TRANSPARENT_E2E_CLOCK
+		bool "Transparent End-to-End Clock"
+endchoice
+
+config PTP_CLOCK_TYPE
+	hex
+	default 0x00 if PTP_ORDINARY_CLOCK
+	default 0x01 if PTP_BOUNDARY_CLOCK
+	default 0x02 if PTP_TRANSPARENT_P2P_CLOCK
+	default 0x03 if PTP_TRANSPARENT_E2E_CLOCK
+
+config PTP_NUM_PORTS
+	int "Number of PTP Ports"
+	default 1 if PTP_ORDINARY_CLOCK
+	default 2 if PTP_BOUNDARY_CLOCK || PTP_TRANSPARENT_P2P_CLOCK || PTP_TRANSPARENT_E2E_CLOCK
+	range 1 32 if PTP_ORDINARY_CLOCK
+	range 2 32 if PTP_BOUNDARY_CLOCK || PTP_TRANSPARENT_P2P_CLOCK || PTP_TRANSPARENT_E2E_CLOCK
+	help
+	  Configures the PTP stack to work with the given number of ports.
+	  The port concept is the same thing as network interface.
+
+choice
+	prompt "PTP Networking Protocol used by PTP Stack"
+	default PTP_UDP_IPv4_PROTOCOL
+
+	config PTP_UDP_IPv4_PROTOCOL
+		bool "UDP with IPv4"
+		select NET_IPV4_IGMP
+
+	config PTP_UDP_IPv6_PROTOCOL
+		bool "UDP with IPv6"
+		select NET_IPV6_MLD
+endchoice
+
+choice
+	prompt "PTP Clock Accuracy"
+	default PTP_CLOCK_ACCURACY_UNKNOWN
+	help
+	  Specify the accuracy of the clock. This setting should reflect
+	  the actual capabilities of the hardware.
+	  See 7.6.2.5 of IEEE 1588-2019 for more info.
+
+	config PTP_CLOCK_ACCURACY_UNKNOWN
+		bool "Unknown"
+	config PTP_CLOCK_ACCURACY_25NS
+		bool "25ns"
+	config PTP_CLOCK_ACCURACY_100NS
+		bool "100ns"
+	config PTP_CLOCK_ACCURACY_250NS
+		bool "250ns"
+	config PTP_CLOCK_ACCURACY_1US
+		bool "1us"
+	config PTP_CLOCK_ACCURACY_2_5US
+		bool "2.5us"
+	config PTP_CLOCK_ACCURACY_10US
+		bool "10us"
+	config PTP_CLOCK_ACCURACY_25US
+		bool "25us"
+	config PTP_CLOCK_ACCURACY_100US
+		bool "100us"
+	config PTP_CLOCK_ACCURACY_250US
+		bool "250us"
+	config PTP_CLOCK_ACCURACY_1MS
+		bool "1ms"
+	config PTP_CLOCK_ACCURACY_2_5MS
+		bool "1.5ms"
+	config PTP_CLOCK_ACCURACY_10MS
+		bool "10ms"
+	config PTP_CLOCK_ACCURACY_25MS
+		bool "25ms"
+	config PTP_CLOCK_ACCURACY_100MS
+		bool "100ms"
+	config PTP_CLOCK_ACCURACY_250MS
+		bool "250ms"
+	config PTP_CLOCK_ACCURACY_1S
+		bool "1s"
+	config PTP_CLOCK_ACCURACY_10S
+		bool "10s"
+	config PTP_CLOCK_ACCURACY_GT_10S
+		bool "> 10s"
+endchoice
+
+config PTP_CLOCK_ACCURACY
+	hex
+	default 0x20 if PTP_CLOCK_ACCURACY_25NS
+	default 0x21 if PTP_CLOCK_ACCURACY_100NS
+	default 0x22 if PTP_CLOCK_ACCURACY_250NS
+	default 0x23 if PTP_CLOCK_ACCURACY_1US
+	default 0x24 if PTP_CLOCK_ACCURACY_2_5US
+	default 0x25 if PTP_CLOCK_ACCURACY_10US
+	default 0x26 if PTP_CLOCK_ACCURACY_25US
+	default 0x27 if PTP_CLOCK_ACCURACY_100US
+	default 0x28 if PTP_CLOCK_ACCURACY_250US
+	default 0x29 if PTP_CLOCK_ACCURACY_1MS
+	default 0x2a if PTP_CLOCK_ACCURACY_2_5MS
+	default 0x2b if PTP_CLOCK_ACCURACY_10MS
+	default 0x2c if PTP_CLOCK_ACCURACY_25MS
+	default 0x2d if PTP_CLOCK_ACCURACY_100MS
+	default 0x2e if PTP_CLOCK_ACCURACY_250MS
+	default 0x2f if PTP_CLOCK_ACCURACY_1S
+	default 0x30 if PTP_CLOCK_ACCURACY_10S
+	default 0x31 if PTP_CLOCK_ACCURACY_GT_10S
+	default 0xfe
+
+config PTP_PRIORITY1
+	int "Value used in the Best TimeTransmitter Clock Algorithm (BTCA)"
+	default 128
+	range 0 $(UINT8_MAX)
+
+config PTP_PRIORITY2
+	int "Value used in the Best TimeTransmitter Clock Algorithm (BTCA)"
+	default 128
+	range 0 $(UINT8_MAX)
+
+config PTP_TIME_RECEIVER_ONLY
+	bool "Configure Clock as timeReceiver PTP Instance"
+	depends on PTP_ORDINARY_CLOCK
+	help
+	  An Oridinary Clock may be designed to ba a timeReceiver PTP Instance. In that state
+	  the instance can never enter the TIME_TRANSMITTER state.
+
+config PTP_ANNOUNCE_RECV_TIMEOUT
+	int "Number of announce intervals to wait"
+	default 3
+	range 2 10
+	help
+	  Defines the number of announce intervals to wait without receiving
+	  an Announce message before assuming that the timeTransmitter is no longer
+	  transmitting Announce messages and rising timeout event.
+
+config PTP_ANNOUNCE_LOG_INTERVAL
+	int "Interval between successive Announce messages"
+	default 1
+	range 0 4
+	help
+	  Defines mean time interval between successive Announce messages. The value should be
+	  uniform through PTP domain. For more check IEEE 1588-2019 Section 7.7.2.2.
+	  The value is the converted to nanoseconds as follow: nanoseconds = (10^9) * 2^(value)
+
+config PTP_MIN_DELAY_REQ_LOG_INTERVAL
+	int "Interval between successive Delay_Req messages"
+	default 0
+	range 0 5
+	help
+	  The minimum time interval between Delay_Req messages.
+	  The value is the converted to nanoseconds as follow: nanoseconds = (10^9) * 2^(value)
+
+config PTP_SYNC_LOG_INTERVAL
+	int "Interval between successive Sync messages"
+	default 0
+	range -1 1
+	help
+	  Specify mean time interval between successive Sync messages,
+	  when transmitted as multicast messages. The value is the converted
+	  to nanoseconds as follow: nanoseconds = (10^9) * 2^(value)
+
+config PTP_MIN_PDELAY_REQ_LOG_INTERVAL
+	int "PDelay Req interval in Log2 base"
+	default 0
+	range 0 5
+	help
+	  Specifies minimum permitted mean time interval between successive Pdelay_Req messages.
+	  The value is the converted to nanoseconds as follow: nanoseconds = (10^9) * 2^(value)
+
+config PTP_DISABLED_PRESENT
+	bool
+	default y
+
+config PTP_FAULTY_PRESENT
+	bool
+	default y
+
+config PTP_LISTENING_PRESENT
+	bool
+	default y
+
+config PTP_PRE_TIME_TRANSMITTER_PRESENT
+	bool
+	default y
+
+config PTP_UNCALIBRATED_PRESENT
+	bool
+	default n
+
+config PTP_FOREIGN_TIME_TRANSMITTER_FEATURE
+	bool
+	default y
+
+config PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE
+	int "Size of an array that stores foreign timeTransmitters data"
+	depends on PTP_FOREIGN_TIME_TRANSMITTER_FEATURE
+	default 5
+	help
+	  The IEEE 1588-2019 standard states that minimum size of the list
+	  is 5 foreign timeTransmitter records per PTP Port. Kconfig does not allow for math
+	  operation so if PTP_FOREIGN_TIME_TRANSMITTER_FEATURE is enabled and PTP_NUM_PORTS
+	  is bigger than 1 the option value should be adjusted accordingly.
+
+choice PTP_DSCP_PRIORITY
+	prompt "Priority of PTP packets classification"
+	default PTP_DSCP_NONE_PRIORITY
+
+	config PTP_DSCP_HIGH_PRIORITY
+		bool "High priority of PTP packet classification"
+
+	config PTP_DSCP_MEDIUM_PRIORITY
+		bool "Medium priority of PTP packet classification"
+
+	config PTP_DSCP_NONE_PRIORITY
+		bool "Default priority of PTP packet classification"
+endchoice
+
+config PTP_DSCP_VALUE
+	int
+	default 56 if PTP_DSCP_HIGH_PRIORITY
+	default 46 if PTP_DSCP_MEDIUM_PRIORITY
+	default 0 if PTP_DSCP_NONE_PRIORITY
+	range 0 63
+
+endif # PTP

@@ -1,0 +1,60 @@
+# Copyright (c) 2023 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments TCAN4x5x SPI CAN FD controller.
+
+  Example:
+    &spi0 {
+      tcan4x5x: can@0 {
+        compatible = ti,tcan4x5x";
+        reg = <0>;
+        spi-max-frequency = <18000000>;
+        clock-frequency = <40000000>;
+        device-state-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+        device-wake-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+        int-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+        bosch,mram-cfg = <0x0 15 15 5 5 0 10 10>;
+        status = "okay";
+
+        can-transceiver {
+          max-bitrate = <8000000>;
+        };
+      };
+    };
+
+compatible: "ti,tcan4x5x"
+
+include: ["bosch,m_can-base.yaml", "spi-device.yaml"]
+
+properties:
+  clock-frequency:
+    type: int
+    enum:
+      - 20000000
+      - 40000000
+    required: true
+    description: |
+      TCAN4x5x oscillator clock frequency in Hz (20MHz or 40MHz).
+
+  device-state-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the TCAN4x5x nWKRQ output. This signal is active low.
+
+  device-wake-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the TCAN4x5x WAKE input. This signal is high-voltage, active high.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the TCAN4x5x RST input. This signal is active high.
+
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the TCAN4x5x nINT interrupt output. This signal is open-drain, active low.

@@ -1,0 +1,44 @@
+# General configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "POSIX (native) Options"
+	depends on ARCH_POSIX
+
+config ARCH
+	default "posix"
+
+config ARCH_POSIX_RECOMMENDED_STACK_SIZE
+	int
+	default 44 if 64BIT && STACK_SENTINEL
+	default 40 if 64BIT
+	default 28 if STACK_SENTINEL
+	default 24
+	help
+	  In bytes, stack size for Zephyr threads meant only for the POSIX
+	  architecture.
+	  (In this architecture only part of the thread status is kept in the Zephyr
+	  thread stack, the real stack is the native underlying pthread stack.
+	  Therefore the allocated stack can be limited to this size)
+
+config ARCH_POSIX_LIBFUZZER
+	bool "Build fuzz test target"
+	help
+	  Build as an LLVM libfuzzer target. Requires
+	  support from the toolchain (currently only clang works, and
+	  only on native_{posix,sim}[//64]), and should normally be used in
+	  concert with some of CONFIG_ASAN/UBSAN/MSAN for validation.
+	  The application needs to implement the
+	  LLVMFuzzerTestOneInput() entry point, which runs in the host
+	  environment "outside" the OS.  See Zephyr documentation and
+	  sample and https://llvm.org/docs/LibFuzzer.html for more
+	  information.
+
+config ARCH_POSIX_TRAP_ON_FATAL
+	bool "Raise a SIGTRAP on fatal error"
+	help
+	  Raise a SIGTRAP signal on fatal error before exiting.
+	  This automatically suspends the target if a debugger is attached.
+
+endmenu

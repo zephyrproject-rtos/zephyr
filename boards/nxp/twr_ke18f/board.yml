@@ -1,0 +1,5 @@
+board:
+  name: twr_ke18f
+  vendor: nxp
+  socs:
+    - name: mke18f16

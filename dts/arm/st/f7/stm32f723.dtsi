@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2018 Aurelien Jarno
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f7/stm32f722.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32f723", "st,stm32f7", "simple-bus";
+
+		usbphyc: usbphyc@40017c00 {
+			compatible = "st,stm32-usbphyc";
+			reg = <0x40017c00 0x400>;
+			#phy-cells = <0>;
+		};
+
+		usbotg_hs: usb@40040000 {
+			phys = <&usbphyc>;
+			maximum-speed = "high-speed";
+		};
+	};
+};
+
+/delete-node/ &otghs_fs_phy;

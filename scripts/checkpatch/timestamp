@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+#
+# Copyright (c) 2015 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+exe_name=$(basename $0)
+
+# outputs the date and time in pre-set formats
+# default format is: 20150114-181112
+# usage: timestamp [-a] [-d] [-u] [-s] [-S]
+# where: -a changes default to: 2015-01-14-18-11-56
+#        -d changes default to: 20150114
+#        -u changes default to: 20150114_181201
+#        -s changes default to: 20150114-1812.04
+#        -S changes default to: 20150114-1812
+# Some switches can be mixed and matched, eg. -Sa gives 2015-01-14-18-13
+
+date_format="%Y%m%d"
+time_format="%H%M"
+seconds_format="%S"
+seconds_separator=""
+date_time_separator="-"
+
+function usage {
+	printf "usage: %s [-a] [-d] [-u] [-s] [-S]\n" $exe_name >&2
+}
+
+function fail {
+	usage
+	exit -1
+}
+
+function get_opts {
+	declare -r optstr="adusSh"
+	while getopts ${optstr} opt; do
+		case ${opt} in
+		a) all_separated=1 ;;
+		d) date_only=1 ;;
+		u) date_time_separator="_" ;;
+		s) seconds_separator="." ;;
+		S) no_seconds=1 ;;
+		h) usage; exit 0 ;;
+		*) fail ;;
+		esac
+	done
+}
+
+get_opts $@
+
+if [ x${all_separated} == x1 ]; then
+	date_format="%Y-%m-%d"
+	time_format="%H-%M"
+	seconds_separator="-"
+fi
+
+if [ x${date_only} == x1 ]; then
+	date_time_separator=""
+	time_format=""
+	seconds_format=""
+	seconds_separator=""
+fi
+
+if [ x${no_seconds} == x1 ]; then
+	seconds_format=""
+	seconds_separator=""
+fi
+
+output_date=${date_format}${date_time_separator}
+output_time=${time_format}${seconds_separator}${seconds_format}
+output=$(date +${output_date}${output_time})
+
+echo ${output}

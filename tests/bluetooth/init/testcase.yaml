@@ -1,0 +1,353 @@
+common:
+  build_only: true
+  tags: bluetooth
+tests:
+  bluetooth.init.test:
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_0:
+    extra_args: CONF_FILE=prj_0.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_1:
+    extra_args: CONF_FILE=prj_1.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_10:
+    extra_args: CONF_FILE=prj_10.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_11:
+    extra_args: CONF_FILE=prj_11.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_12:
+    extra_args: CONF_FILE=prj_12.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_13:
+    extra_args: CONF_FILE=prj_13.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_14:
+    extra_args: CONF_FILE=prj_14.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_15:
+    extra_args: CONF_FILE=prj_15.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_16:
+    extra_args: CONF_FILE=prj_16.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_17:
+    extra_args: CONF_FILE=prj_17.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_18:
+    extra_args: CONF_FILE=prj_18.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_19:
+    extra_args: CONF_FILE=prj_19.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_2:
+    extra_args: CONF_FILE=prj_2.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_20:
+    extra_args: CONF_FILE=prj_20.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_21:
+    extra_args: CONF_FILE=prj_21.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_22:
+    extra_args: CONF_FILE=prj_22.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_3:
+    extra_args: CONF_FILE=prj_3.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_4:
+    extra_args: CONF_FILE=prj_4.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_5:
+    extra_args: CONF_FILE=prj_5.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_6:
+    extra_args: CONF_FILE=prj_6.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_7:
+    extra_args: CONF_FILE=prj_7.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_8:
+    extra_args: CONF_FILE=prj_8.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_9:
+    extra_args: CONF_FILE=prj_9.conf
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_ctlr:
+    extra_args: CONF_FILE=prj_ctlr.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+  bluetooth.init.test_ctlr_4_0:
+    extra_args: CONF_FILE=prj_ctlr_4_0.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_4_0_dbg:
+    extra_args: CONF_FILE=prj_ctlr_4_0_dbg.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_tiny:
+    extra_args: CONF_FILE=prj_ctlr_tiny.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_dbg:
+    extra_args:
+      - CONF_FILE=prj_ctlr_dbg.conf
+      - DTC_OVERLAY_FILE=pa_lna.overlay
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+  bluetooth.init.test_ctlr_5_x_dbg:
+    extra_args:
+      - CONF_FILE=prj_ctlr_5_x_dbg.conf
+      - DTC_OVERLAY_FILE=pa_lna.overlay
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+  bluetooth.init.test_ctlr_sw_switch_single_timer:
+    extra_args:
+      - CONF_FILE=prj_ctlr.conf
+      - CONFIG_BT_CTLR_ADVANCED_FEATURES=y
+      - CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER=y
+    platform_allow:
+      - nrf5340dk/nrf5340/cpunet
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpunet
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+  bluetooth.init.test_ctlr_ticker:
+    extra_args:
+      - CONF_FILE=prj_ctlr_ticker.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+  bluetooth.init.test_ctlr_broadcaster:
+    extra_args: CONF_FILE=prj_ctlr_broadcaster.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+  bluetooth.init.test_ctlr_peripheral:
+    extra_args: CONF_FILE=prj_ctlr_peripheral.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+  bluetooth.init.test_ctlr_peripheral_priv:
+    extra_args: CONF_FILE=prj_ctlr_peripheral_priv.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+  bluetooth.init.test_ctlr_observer:
+    extra_args: CONF_FILE=prj_ctlr_observer.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+    integration_platforms:
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+  bluetooth.init.test_ctlr_central:
+    extra_args: CONF_FILE=prj_ctlr_central.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+    integration_platforms:
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+  bluetooth.init.test_ctlr_central_priv:
+    extra_args: CONF_FILE=prj_ctlr_central_priv.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+    integration_platforms:
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+  bluetooth.init.test_ctlr_broadcaster_ext:
+    extra_args: CONF_FILE=prj_ctlr_broadcaster_ext.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_peripheral_ext:
+    extra_args: CONF_FILE=prj_ctlr_peripheral_ext.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_peripheral_ext_priv:
+    extra_args: CONF_FILE=prj_ctlr_peripheral_ext_priv.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_oberver_ext:
+    extra_args: CONF_FILE=prj_ctlr_observer_ext.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_central_ext:
+    extra_args: CONF_FILE=prj_ctlr_central_ext.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_central_ext_priv:
+    extra_args: CONF_FILE=prj_ctlr_central_ext_priv.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_per_adv:
+    extra_args: CONF_FILE=prj_ctlr_per_adv.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_per_adv_no_adi:
+    extra_args: CONF_FILE=prj_ctlr_per_adv_no_adi.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_per_sync:
+    extra_args: CONF_FILE=prj_ctlr_per_sync.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_per_sync_no_adi:
+    extra_args: CONF_FILE=prj_ctlr_per_sync_no_adi.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_per_sync_no_filter:
+    extra_args: CONF_FILE=prj_ctlr_per_sync_no_filter.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_peripheral_iso:
+    extra_args: CONF_FILE=prj_ctlr_peripheral_iso.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_ctlr_central_iso:
+    extra_args: CONF_FILE=prj_ctlr_central_iso.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf51dk/nrf51822
+  bluetooth.init.test_h5:
+    extra_args:
+      - CONF_FILE=prj_h5.conf
+      - DTC_OVERLAY_FILE=h5.overlay
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_h5_dbg:
+    extra_args:
+      - CONF_FILE=prj_h5_dbg.conf
+      - DTC_OVERLAY_FILE=h5.overlay
+    platform_allow: qemu_cortex_m3
+  bluetooth.init.test_llcp:
+    extra_args: CONF_FILE=prj_llcp.conf
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+  bluetooth.init.test_config_bt_recv_workq_bt:
+    extra_args:
+      - CONF_FILE=prj_ctlr.conf
+      - CONFIG_BT_RECV_WORKQ_BT=y
+    platform_allow:
+      - nrf52840dk/nrf52840

@@ -1,0 +1,134 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Misc"
+
+config LOG_CMDS
+	bool "Shell commands"
+	depends on SHELL
+	depends on !LOG_FRONTEND_ONLY && !LOG_MODE_MINIMAL
+
+config LOG_TEST_CLEAR_MESSAGE_SPACE
+	bool "Clear message after allocation"
+	default y
+	depends on ZTEST
+	help
+	  Used in testing to simplify message comparision if message contains
+	  paddings.
+
+config LOG_USE_VLA
+	bool "Using variable length arrays"
+	default y if !MISRA_SANE
+	help
+	  Using VLA slightly decreases stack usage in some cases it may not be
+	  supported. Note that VLA are used for arrays which size is resolved at
+	  compile time so at runtime arrays have fixed size.
+
+config LOG_SIMPLE_MSG_OPTIMIZE
+	bool "Optimize simple messages for size"
+	depends on !64BIT && !CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	default y
+	help
+	  Dedicated code for handling simple log messages (0-2 32 bit word arguments).
+	  Approximately, 70%-80% log messages in the application fit into that category.
+	  Depending on the architecture code size reduction is from 0-40% (highest seen on
+	  RISCV32) and execution time also up to 40%.
+
+config LOG_ALWAYS_RUNTIME
+	bool "Always use runtime message creation (v2)"
+	default y if NO_OPTIMIZATIONS
+	default y if LOG_MODE_IMMEDIATE
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xcc"
+	help
+	  If enabled, runtime method is always used for message creation. Static
+	  creation relies on compiler being able to optimize and remove code
+	  based on information known at compile time. Runtime only approach must
+	  be used when optimization is disabled because some compilers
+	  (seen on arm_cortex_m and x86) were using unrealistic amount of stack
+	  for dead code. It is also required in immediate mode since it requires
+	  less stack than static message creation and speed has lower priority
+	  in that mode.
+
+config LOG_FMT_SECTION
+	bool "Keep log strings in dedicated section"
+	help
+	  When enabled, logs are kept in dedicated memory section. It allows
+	  removing strings from final binary and should be used for dictionary
+	  logging.
+
+config LOG_FMT_SECTION_STRIP
+	bool "Strip log strings from binary"
+	depends on LOG_DICTIONARY_SUPPORT
+	depends on LOG_FMT_SECTION
+	depends on LINKER_DEVNULL_SUPPORT
+	depends on !LOG_ALWAYS_RUNTIME
+	depends on !LOG_OUTPUT
+	imply LINKER_DEVNULL_MEMORY
+	imply LOG_FMT_STRING_VALIDATE
+
+config LOG_FMT_STRING_VALIDATE
+	bool "Validate logging strings"
+	help
+	  Logging strings cannot use %p with character pointers. They should be
+	  casted to the pointer of another type (e.g. void *). With this feature
+	  enabled, at compile time, the preprocessor detects strings with %p
+	  without casting and reports an error at runtime.
+
+config LOG_USE_TAGGED_ARGUMENTS
+	bool "Using tagged arguments for packaging"
+	depends on !PICOLIBC
+	select CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
+	select LOG_ALWAYS_RUNTIME
+	help
+	  If enabled, packaging uses tagged arguments.
+
+config LOG_MEM_UTILIZATION
+	bool "Tracking maximum memory utilization"
+	depends on LOG_MODE_DEFERRED
+	default y if LOG_CMDS
+	help
+	  When enabled, maximum usage of memory used for log messages in deferred
+	  mode is tracked. It can be used to trim LOG_BUFFER_SIZE.
+
+config LOG_DICTIONARY_DB
+	bool
+
+config LOG_DICTIONARY_DB_TARGET
+	bool "Only generated log dictionary database from target"
+	depends on LOG_DICTIONARY_DB
+	help
+	  Enable this option to make generating the log dictionary database
+	  only done by its own build target.
+	  This removes the target from the ALL make target and the target
+	  'log_dict_db_gen' has to be called in addition.
+
+config LOG_MSG_APPEND_RO_STRING_LOC
+	bool
+	help
+	  Enable this option to force log messages to always append location of
+	  read-only string arguments in the package. This should be selected by
+	  backends if required.
+
+config LOG_FAILURE_REPORT_PERIOD
+	int "Failure report period (in milliseconds)"
+	default 1000
+	depends on LOG_MODE_DEFERRED
+	help
+	  Determines how often failures are reported. Report contains number
+	  of dropped messages. It may contain additional information depending
+	  on the mode.
+
+config LOG_DOMAIN_NAME
+	string "Domain name"
+	default ""
+
+if LOG_MULTIDOMAIN
+
+config LOG_REMOTE_DOMAIN_MAX_COUNT
+	int "Maximum number of link domains"
+	default 4
+	help
+	  Number of domains that can be handled by a link
+
+endif
+endmenu

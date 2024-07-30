@@ -1,0 +1,37 @@
+# BASE: required to build or create images with zephyr
+#
+# While technically west isn't required it's considered in base since it's
+# part of the recommended workflow
+
+# used by various build scripts
+pyelftools>=0.29
+
+# used by dts generation to parse binding YAMLs, also used by
+# twister to parse YAMLs, by west, zephyr_module,...
+PyYAML>=6.0
+
+# YAML validation. Used by zephyr_module.
+pykwalify
+
+# used by west_commands
+canopen
+packaging
+progress
+psutil
+pylink-square
+pyserial
+requests
+
+# for ram/rom reports
+anytree
+
+# intelhex used by mergehex.py
+intelhex
+
+# it's west
+# Keep the version identical to the minimum required in cmake/modules/west.cmake
+west>=0.14.0
+
+# used for windows based 'menuconfig'
+# "win32" is used for 64-bit Windows as well
+windows-curses; sys_platform == "win32"

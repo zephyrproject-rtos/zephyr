@@ -1,0 +1,37 @@
+# Copyright 2022-2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DSI_MCUX
+	bool "NXP MCUX MIPI-DSI Host Controller"
+	default y
+	depends on DT_HAS_NXP_IMX_MIPI_DSI_ENABLED
+	help
+	  NXP MIPI DSI controller driver
+
+config MIPI_DSI_MCUX_2L
+	bool "NXP MCUX MIPI-DSI 2L Controller"
+	default y
+	depends on DT_HAS_NXP_MIPI_DSI_2L_ENABLED
+	help
+	  NXP MIPI DSI 2L controller driver
+
+if MIPI_DSI_MCUX_2L
+
+config MIPI_DSI_MCUX_2L_SMARTDMA
+	bool "Use smartDMA controller with MIPI DSI"
+	default y
+	depends on DMA_MCUX_SMARTDMA
+	help
+	  Use SMARTDMA. This accelerator will automatically
+	  convert RGB565 input data to BGR565 (little endian to big endian),
+	  and write it to the MIPI DSI.
+
+config MIPI_DSI_MCUX_2L_SWAP16
+	bool "Swap 16 byte color"
+	help
+	  Swap 16 byte color data from little to big endian format. When
+	  this Kconfig is enabled, the DSI expects RGB565 data in little endian
+	  format, which will then be byte swapped.
+
+
+endif # MIPI_DSI_MCUX_2L

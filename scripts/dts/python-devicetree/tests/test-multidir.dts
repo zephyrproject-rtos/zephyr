@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2019, Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+/*
+ * Used by test_edtlib.py. Dedicated file for testing having multiple binding
+ * directories.
+ */
+
+/dts-v1/;
+
+/ {
+	in-dir-1 {
+		compatible = "in-dir-1";
+	};
+	in-dir-2 {
+		compatible = "in-dir-2";
+	};
+};

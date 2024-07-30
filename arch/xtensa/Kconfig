@@ -1,0 +1,289 @@
+# XTENSA architecture configuration options
+
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "XTENSA Options"
+	depends on XTENSA
+
+config ARCH
+	default "xtensa"
+
+config SIMULATOR_XTENSA
+	bool "Simulator Target"
+	help
+	  Enable if building to run on simulator.
+
+config XTENSA_RESET_VECTOR
+	bool "Build reset vector code"
+	default y
+	help
+	  This option controls whether the initial reset vector code is built.
+	  This is always needed for the simulator. Real boards may already
+	  implement this in boot ROM.
+
+config XTENSA_GEN_HANDLERS
+	bool "Automatically generate interrupt handlers"
+	default n
+	help
+	  When set, an "xtensa_handlers.h" file is generated
+	  containing definitions for the interrupt entry code of the
+	  target Xtensa core, based automatically on the details in
+	  the core-isa.h file.  This replaces the previous scheme
+	  where a _soc_inthandlers.h file would be generated offline.
+
+config XTENSA_USE_CORE_CRT1
+	bool "Use crt1.S from core"
+	default y
+	help
+	  SoC or boards might define their own __start by setting this setting
+	  to false.
+
+config XTENSA_ENABLE_BACKTRACE
+	bool "Backtrace on panic exception"
+	default y
+	depends on SOC_SERIES_ESP32 || SOC_FAMILY_INTEL_ADSP || SOC_XTENSA_DC233C
+	help
+	  Enable this config option to print backtrace on panic exception
+
+config XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	bool "Workaround for small vector table entries"
+	help
+	  This option enables a small indirection to bypass the size
+	  constraint of the vector table entry and moved the default
+	  handlers to the end of vector table, renaming them to
+	  _Level\LVL\()VectorHelper.
+
+config XTENSA_RPO_CACHE
+	bool "Cached/uncached RPO mapping"
+	help
+	  Support Cached/uncached RPO mapping.
+
+	  A design trick on multi-core hardware is to map memory twice
+	  so that it can be seen in both (incoherent) cached mappings
+	  and a coherent "shared" area.
+
+if XTENSA_RPO_CACHE
+config XTENSA_CACHED_REGION
+	int "Cached RPO mapping"
+	range 0 7
+	help
+	  This specifies which 512M region (0-7, as defined by the Xtensa
+	  Region Protection Option) contains the "cached" mapping.
+
+config XTENSA_UNCACHED_REGION
+	int "Uncached RPO mapping"
+	range 0 7
+	help
+	  As for XTENSA_CACHED_REGION, this specifies which 512M
+	  region (0-7) contains the "uncached" mapping.
+
+endif
+
+config XTENSA_CCOUNT_HZ
+	int "CCOUNT cycle rate"
+	default 1000000
+	help
+	  Rate in HZ of the Xtensa core as measured by the value of
+	  the CCOUNT register.
+
+config XTENSA_MORE_SPIN_RELAX_NOPS
+	bool "Use Xtensa specific arch_spin_relax() with more NOPs"
+	help
+	  Some Xtensa SoCs, especially under SMP, may need extra
+	  NOPs after failure to lock a spinlock. This gives
+	  the bus extra time to synchronize the RCW transaction
+	  among CPUs.
+
+config XTENSA_NUM_SPIN_RELAX_NOPS
+	int "Number of NOPs to be used in arch_spin_relax()"
+	default 1
+	depends on XTENSA_MORE_SPIN_RELAX_NOPS
+	help
+	  Specify the number of NOPs in Xtensa specific
+	  arch_spin_relax().
+
+config XTENSA_BREAK_ON_UNRECOVERABLE_EXCEPTIONS
+	bool "Use BREAK instruction on unrecoverable exceptions"
+	help
+	  Use BREAK instruction when unrecoverable exceptions are
+	  encountered. This requires a debugger attached to catch
+	  the BREAK.
+
+menu "Xtensa HiFi Options"
+
+config XTENSA_CPU_HAS_HIFI
+	bool
+
+config XTENSA_CPU_HAS_HIFI3
+	select XTENSA_CPU_HAS_HIFI
+	bool
+
+config XTENSA_CPU_HAS_HIFI4
+	select XTENSA_CPU_HAS_HIFI
+	bool
+
+# Selected when at least one XTENSA_HIFIn version has been configured
+config XTENSA_HIFI
+	bool
+
+if XTENSA_CPU_HAS_HIFI
+
+config XTENSA_HIFI3
+	bool "HiFi3 AudioEngine instructions"
+	depends on XTENSA_CPU_HAS_HIFI3
+	default y
+	select XTENSA_HIFI
+	help
+	  This option enables HiFi 3 instruction support.
+
+config XTENSA_HIFI4
+	bool "HiFi4 AudioEngine instructions"
+	depends on XTENSA_CPU_HAS_HIFI4
+	default y
+	select XTENSA_HIFI
+	help
+	  This option enables HiFi 4 instruction support.
+
+config XTENSA_HIFI_SHARING
+	bool "HiFi register sharing"
+	depends on XTENSA_HIFI
+	help
+	  This option enables preservation of the hardware HiFi registers
+	  across context switches to allow multiple threads to perform
+	  concurrent HiFi operations.
+
+endif    # XTENSA_CPU_HAS_HIFI
+
+endmenu  # Xtensa HiFi Options
+
+if CPU_HAS_MMU
+
+config XTENSA_MMU
+	bool "Xtensa MMU Support"
+	select MMU
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	select KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK if XTENSA_RPO_CACHE
+	select CURRENT_THREAD_USE_NO_TLS if USERSPACE
+	help
+	  Enable support for Xtensa Memory Management Unit.
+
+if XTENSA_MMU
+
+choice
+	prompt "PageTable virtual address"
+	default XTENSA_MMU_PTEVADDR_20000000
+	help
+	  The virtual address for Xtensa page table (PTEVADDR).
+
+config XTENSA_MMU_PTEVADDR_20000000
+	bool "0x20000000"
+
+endchoice
+
+config XTENSA_MMU_PTEVADDR
+	hex
+	default 0x20000000 if XTENSA_MMU_PTEVADDR_20000000
+	help
+	  The virtual address for Xtensa page table (PTEVADDR).
+
+config XTENSA_MMU_PTEVADDR_SHIFT
+	int
+	default 29 if XTENSA_MMU_PTEVADDR_20000000
+	help
+	  The bit shift number for the virtual address for Xtensa
+	  page table (PTEVADDR).
+
+config XTENSA_MMU_NUM_L1_TABLES
+	int "Number of L1 page tables"
+	default 1 if !USERSPACE
+	default 4
+	help
+	  This option specifies the maximum number of traslation tables.
+	  Translation tables are directly related to the number of
+	  memory domains in the target, considering the kernel itself requires one.
+
+config XTENSA_MMU_NUM_L2_TABLES
+	int "Number of L2 page tables"
+	default 20 if USERSPACE
+	default 10
+	help
+	  Each table can address up to 4MB memory address.
+
+config XTENSA_MMU_DOUBLE_MAP
+	bool "Map memory in cached and uncached region"
+	help
+	  This option specifies that the memory is mapped in two
+	  distinct region, cached and uncached.
+
+	config XTENSA_INVALIDATE_MEM_DOMAIN_TLB_ON_SWAP
+		bool
+		help
+		  This invalidates all TLBs referred by the incoming thread's
+		  memory domain when swapping page tables.
+
+config PRIVILEGED_STACK_SIZE
+	# Must be multiple of CONFIG_MMU_PAGE_SIZE
+	default 4096
+
+endif # XTENSA_MMU
+
+endif # CPU_HAS_MMU
+
+if CPU_HAS_MPU
+
+menuconfig XTENSA_MPU
+	bool "Xtensa MPU Support"
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select CURRENT_THREAD_USE_NO_TLS if USERSPACE
+	select EXPERIMENTAL
+	# TODO: the target the MPU code developed on (basically sample_controller
+	#       plus MPU minus s32c1i) does not have cache or SMP capability.
+	#       Need to verify functionalities with targets supporting these.
+	depends on !CACHE && !SMP
+	help
+	  Enable support for Xtensa Memory Protection Unit.
+
+if XTENSA_MPU
+
+config XTENSA_MPU_DEFAULT_MEM_TYPE
+	hex "Default Memory Type"
+	default 0x18
+	help
+	  Default memory type for memory regions: non-cacheable memory,
+	  non-shareable, non-bufferable and interruptible.
+
+	  If userspace is enabled, it will be used to restore the memory type of
+	  the region being removed from a memory domain.
+
+config XTENSA_MPU_ONLY_SOC_RANGES
+	bool
+	help
+	  Enable this by the SoC to indicate to the architecture code to use
+	  the MPU ranges specified by SoC only, and skip the common ranges
+	  defined in the core architecture code. This gives total control to
+	  the SoC on the MPU ranges.
+
+endif # XTENSA_MPU
+
+endif # CPU_HAS_MPU
+
+config XTENSA_SYSCALL_USE_HELPER
+	bool "Use userspace syscall helper"
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
+	depends on (XTENSA_MMU || XTENSA_MPU) && USERSPACE
+	help
+	  Use syscall helpers for passing more then 3 arguments.
+	  This is a workaround for toolchains where they have
+	  issue modeling register usage.
+
+config XTENSA_INSECURE_USERSPACE
+	bool
+	default y
+	depends on (XTENSA_MMU || XTENSA_MPU) && USERSPACE
+
+endmenu

@@ -1,0 +1,11 @@
+identifier: nrf52_sparkfun
+name: Sparkfun nRF52832 breakout
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+vendor: sparkfun

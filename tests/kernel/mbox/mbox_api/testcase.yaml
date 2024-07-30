@@ -1,0 +1,5 @@
+tests:
+  kernel.mailbox.api:
+    tags:
+      - kernel
+      - mailbox

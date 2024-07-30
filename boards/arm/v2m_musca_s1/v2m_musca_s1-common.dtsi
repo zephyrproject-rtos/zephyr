@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2019-2020 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+mhu0: mhu@3000 {
+	compatible = "arm,mhu";
+	reg = <0x3000 0x1000>;
+	interrupts = <6 3>;
+};
+
+mhu1: mhu@4000 {
+	compatible = "arm,mhu";
+	reg = <0x4000 0x1000>;
+	interrupts = <7 3>;
+};
+
+timer: timer@10b000 {
+	compatible = "arm,cmsdk-timer";
+	reg = <0x10b000 0x1000>;
+	interrupts = <33 3>;
+};
+
+uart0: uart@101000 {
+	compatible = "arm,pl011";
+	reg = <0x101000 0x1000>;
+	interrupts = <39 3 40 3 41 3 43 3>;
+	interrupt-names = "rx", "tx", "rxtim", "err";
+	clocks = <&sysclk>;
+	current-speed = <115200>;
+};
+
+uart1: uart@102000 {
+	compatible = "arm,pl011";
+	reg = <0x102000 0x1000>;
+	interrupts = <45 3 46 3 47 3 49 3>;
+	interrupt-names = "rx", "tx", "rxtim", "err";
+	clocks = <&sysclk>;
+	current-speed = <115200>;
+};
+
+gpio: gpio@110000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x110000 0x1000>;
+	interrupts = <67 3					/* combined */
+				  51 3 52 3 53 3 54 3	/* PINS 0:3 */
+				  55 3 56 3 57 3 58 3	/* PINS 4:7 */
+				  59 3 60 3 61 3 62 3	/* PINS 8:11 */
+				  63 3 64 3 65 3 66 3>;	/* PINS 12:15 */
+	gpio-controller;
+	#gpio-cells = <2>;
+};

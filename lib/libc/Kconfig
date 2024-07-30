@@ -1,0 +1,151 @@
+# C library
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config REQUIRES_FULL_LIBC
+	prompt "Require complete C library"
+	bool
+	help
+	  Select a C library implementation that provides a complete C library
+	  implementation, rather than the subset provided by MINIMAL_LIBC.
+
+config REQUIRES_FLOAT_PRINTF
+	bool "Requires floating point support in printf"
+	select CBPRINTF_FP_SUPPORT if MINIMAL_LIBC
+	select NEWLIB_LIBC_FLOAT_PRINTF if NEWLIB_LIBC
+	help
+	  Select a printf implementation that provides a complete
+	  implementation including floating point support.
+
+config FULL_LIBC_SUPPORTED
+	bool
+	help
+	  Selected when the target has at least one C library that offers a
+	  complete implementation and which would be selected when
+	  REQUIRES_FULL_LIBC is set.
+
+config MINIMAL_LIBC_SUPPORTED
+	bool
+	default y
+	help
+	  Selected when the target has support for the minimal C library
+
+config NEWLIB_LIBC_SUPPORTED
+	bool
+	default y
+	depends on "$(TOOLCHAIN_HAS_NEWLIB)" = "y"
+	select FULL_LIBC_SUPPORTED
+	help
+	  Selected when the target has support for the newlib C library
+
+# Picolibc with C++ support in Zephyr SDK is handled by Zephyr SDK's own Kconfig.
+config PICOLIBC_SUPPORTED
+	bool
+	depends on !NATIVE_APPLICATION
+	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (ZEPHYR_PICOLIBC_MODULE && !REQUIRES_FULL_LIBCPP)
+	default y
+	select FULL_LIBC_SUPPORTED
+	help
+	  Selected when the target has support for picolibc.
+
+config NATIVE_LIBC_INCOMPATIBLE
+	bool
+	help
+	  Other Kconfig options can select this, if they are not compatible with the
+	  native/host libC, and should only be compiled with an embedded libC
+
+menu "C Library"
+
+choice LIBC_IMPLEMENTATION
+	prompt "C Library Implementation"
+	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && NATIVE_LIBC_INCOMPATIBLE)
+	default PICOLIBC
+	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
+	default MINIMAL_LIBC
+
+config MINIMAL_LIBC
+	bool "Minimal C library"
+	depends on !NATIVE_APPLICATION
+	depends on !REQUIRES_FULL_LIBC
+	depends on MINIMAL_LIBC_SUPPORTED
+	imply COMPILER_FREESTANDING
+	select COMMON_LIBC_ABORT
+	select COMMON_LIBC_STRNLEN
+	imply COMMON_LIBC_MALLOC
+	imply COMMON_LIBC_CALLOC
+	imply COMMON_LIBC_REALLOCARRAY
+	help
+	  Build with minimal C library.
+
+config PICOLIBC
+	bool "Picolibc library"
+	select COMMON_LIBC_ABORT
+	imply THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	select LIBC_ERRNO if THREAD_LOCAL_STORAGE
+	select NEED_LIBC_MEM_PARTITION
+	imply COMMON_LIBC_MALLOC
+	depends on !NATIVE_APPLICATION
+	depends on PICOLIBC_SUPPORTED
+	help
+	  Build with picolibc library. The picolibc library is built as
+	  a module if PICOLIBC_MODULE is set, otherwise picolibc is
+	  expected to be provided by the toolchain.
+
+config NEWLIB_LIBC
+	bool "Newlib C library"
+	select COMMON_LIBC_ABORT
+	depends on !NATIVE_APPLICATION
+	depends on NEWLIB_LIBC_SUPPORTED
+	select NEED_LIBC_MEM_PARTITION
+	imply POSIX_DEVICE_IO_ALIAS_CLOSE
+	imply POSIX_DEVICE_IO_ALIAS_OPEN
+	imply POSIX_DEVICE_IO_ALIAS_READ
+	imply POSIX_DEVICE_IO_ALIAS_WRITE
+	imply POSIX_FD_MGMT_ALIAS_LSEEK
+	imply POSIX_FILE_SYSTEM_ALIAS_FSTAT
+	imply POSIX_MULTI_PROCESS_ALIAS_GETPID
+	help
+	  Build with newlib library. The newlib library is expected to be
+	  part of the SDK in this case.
+
+config ARCMWDT_LIBC
+	bool "ARC MWDT C library"
+	depends on !NATIVE_APPLICATION
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
+	help
+	  C library provided by ARC MWDT toolchain.
+
+config EXTERNAL_LIBC
+	bool "External C library"
+	help
+	  Build with external/user provided C library.
+
+endchoice # LIBC_IMPLEMENTATION
+
+config HAS_NEWLIB_LIBC_NANO
+	bool
+
+rsource "common/Kconfig"
+rsource "minimal/Kconfig"
+rsource "newlib/Kconfig"
+rsource "picolibc/Kconfig"
+
+config STDOUT_CONSOLE
+	bool "Send stdout to console"
+	depends on CONSOLE_HAS_DRIVER
+	depends on !(NATIVE_APPLICATION || (NATIVE_LIBRARY && EXTERNAL_LIBC))
+	default y
+	help
+	  This option directs standard output (e.g. printf) to the console
+	  device, rather than suppressing it entirely. See also EARLY_CONSOLE
+	  option.
+
+config NEED_LIBC_MEM_PARTITION
+	bool
+	help
+	  Hidden option to signal that a memory partition is needed for
+	  the C library even though it would not have been enabled
+	  otherwise.
+
+endmenu

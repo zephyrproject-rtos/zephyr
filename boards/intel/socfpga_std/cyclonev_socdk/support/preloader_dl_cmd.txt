@@ -1,0 +1,9 @@
+# Copyright (c) 2022-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+# Description:
+# Helper file to download the GSRD preloader to the board before the application
+
+restore boards/intel/socfpga_std/cyclonev_socdk/support/u-boot-spl
+symbol-file -readnow boards/intel/socfpga_std/cyclonev_socdk/support/u-boot-spl
+thbreak spl_boot_device
+jump _start

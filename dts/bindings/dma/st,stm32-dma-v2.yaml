@@ -1,0 +1,91 @@
+# Copyright (c) 2019, Song Qiang <songqiang1304521@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 DMA controller (V2)
+
+  It is present on stm32 devices like stm32L4 or stm32WB.
+  This DMA controller includes several channels with different requests.
+  DMA clients connected to the STM32 DMA controller must use the format
+  described in the dma.txt file, using a four-cell specifier for each
+  capable of supporting 5 or 6 or 7 or 8 independent DMA channels.
+  DMA clients connected to the STM32 DMA controller must use the format
+  described in the dma.txt file, using a 3-cell specifier for each
+  channel: a phandle to the DMA controller plus the following four integer cells:
+    1. channel: the dma stream from 1 to <dma-requests>
+    2. slot: DMA periph request ID, which is written in the DMAREQ_ID of the DMAMUX_CxCR
+    this value is 0 for Memory-to-memory transfers
+    or a value between <1> .. <dma-generators> (not supported yet)
+    or a value between <dma-generators>+1  ..  <dma-generators>+<dma-requests>
+    3. channel-config: A 32bit mask specifying the DMA channel configuration
+    A name custom DMA flags for channel configuration is used
+    which is device dependent. See stm32_dma.h:
+      -bit 5 : DMA  cyclic mode config
+                0x0: STM32_DMA_MODE_NORMAL
+                0x1: STM32_DMA_MODE_CYCLIC
+      -bit 6-7 : Direction (see dma.h)
+                0x0: STM32_DMA_MEMORY_TO_MEMORY: MEM to MEM
+                0x1: STM32_DMA_MEMORY_TO_PERIPH: MEM to PERIPH
+                0x2: STM32_DMA_PERIPH_TO_MEMORY: PERIPH to MEM
+                0x3: reserved for PERIPH to PERIPH
+      -bit 9 : Peripheral Increment Address
+               0x0: STM32_DMA_PERIPH_NO_INC: no address increment between transfers
+               0x1: STM32_DMA_PERIPH_INC: increment address between transfers
+      -bit 10 : Memory Increment Address
+               0x0: STM32_DMA_MEM_NO_INC: no address increment between transfers
+               0x1: STM32_DMA_MEM_INC: increment address between transfers
+      -bit 11-12 : Peripheral data size
+               0x0: STM32_DMA_PERIPH_8BITS: Byte (8 bits)
+               0x1: STM32_DMA_PERIPH_16BITS: Half-word (16 bits)
+               0x2: STM32_DMA_PERIPH_32BITS: Word (32 bits)
+               0x3: reserved
+      -bit 13-14 : Memory data size
+               0x0: STM32_DMA_MEM_8BITS: Byte (8 bits)
+               0x1: STM32_DMA_MEM_16BITS: Half-word (16 bits)
+               0x2: STM32_DMA_MEM_32BITS: Word (32 bits)
+               0x3: reserved
+      -bit 15: Reserved
+      -bit 16-17 : Priority level
+               0x0: STM32_DMA_PRIORITY_LOW: low
+               0x1: STM32_DMA_PRIORITY_MEDIUM: medium
+               0x2: STM32_DMA_PRIORITY_HIGH: high
+               0x3: STM32_DMA_PRIORITY_VERY_HIGH: very high
+
+  Example of dma usual combination for peripheral transfer
+       #define STM32_DMA_PERIPH_TX	(STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC)
+       #define STM32_DMA_PERIPH_RX	(STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC)
+
+  Example of dma node for stm32wb55x
+     dma2: dma-controller@40020400 {
+         compatible = "st,stm32-dma-v2";
+         ...
+         dma-requests = <7>;
+         status = "disabled";
+        };
+
+  For the client part, example for stm32l476 on DMA1 instance
+    Tx using channel 3 with request 1
+    Rx using channel 2 with request 1
+    spi1 {
+     compatible = "st,stm32-spi";
+     dmas = <&dma1 3 1 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+            <&dma1 2 1 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+     dma-names = "tx", "rx";
+    };
+
+compatible: "st,stm32-dma-v2"
+
+include: st,stm32-dma.yaml
+
+properties:
+  "#dma-cells":
+    const: 3
+
+# Parameter syntax of stm32 follows the dma client dts syntax
+# in the Linux kernel declared in
+# https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/plain/Bindings/dma/st,stm32-dma.yaml
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config

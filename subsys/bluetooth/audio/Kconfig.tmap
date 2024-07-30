@@ -1,0 +1,17 @@
+# Bluetooth Audio - Telephony and Media Audio Profile (TMAP) options
+#
+# Copyright 2023 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_TMAP
+	bool "Telephony and Media Audio Profile"
+	depends on BT_CAP_ACCEPTOR || BT_CAP_INITIATOR
+	help
+	  Enabling this will enable TMAP.
+
+parent-module = BT
+module = BT_TMAP
+module-str = "Telephony and Media Audio Profile"
+source "subsys/logging/Kconfig.template.log_config_inherit"

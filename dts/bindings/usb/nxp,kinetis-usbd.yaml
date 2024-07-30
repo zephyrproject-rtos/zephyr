@@ -1,0 +1,16 @@
+# Copyright (c) 2018 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    NPX Kinetis USBFSOTG Controller in device mode
+
+compatible: "nxp,kinetis-usbd"
+
+include: usb-ep.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

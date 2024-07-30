@@ -1,0 +1,26 @@
+# NPCX UART driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+DT_UART_NPCX:=$(dt_nodelabel_path,uart1)
+
+config UART_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) serial driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UART driver for NPCX family of
+	  processors.
+	  Say y if you wish to use serial port on NPCX MCU.
+
+# Expose this option when the reg porperty has two register base address.
+# i.e. One UART register bass address and one MDMA register base address.
+config UART_NPCX_USE_MDMA
+	bool "Nuvoton NPCX embedded controller (EC) serial driver DMA support"
+	depends on UART_NPCX && "$(dt_node_reg_addr_hex,$(DT_UART_NPCX),1)" != 0
+	select SERIAL_SUPPORT_ASYNC
+	help
+	  Enable support for npcx UART DMA mode.

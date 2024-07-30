@@ -1,0 +1,62 @@
+# Copyright (c) 2018, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+include: display-controller.yaml
+
+properties:
+  segment-offset:
+    type: int
+    required: true
+    description: 8-bit column start address for Page Addressing Mode
+
+  page-offset:
+    type: int
+    required: true
+    description: Start address for Page Addressing Mode
+
+  display-offset:
+    type: int
+    required: true
+    description: mapping of the display start line to one of COM0 .. COM63
+
+  multiplex-ratio:
+    type: int
+    required: true
+    description: Multiplex Ratio
+
+  segment-remap:
+    type: boolean
+    description: Last column address is mapped to first segment
+
+  com-invdir:
+    type: boolean
+    description: Scan direction is from last COM output to first COM output
+
+  com-sequential:
+    type: boolean
+    description: Sequential COM pin configuration
+
+  prechargep:
+    type: int
+    required: true
+    description: Duration of the pre-charge period
+
+  reset-gpios:
+    type: phandle-array
+    description: RESET pin.
+
+      The RESET pin of SSD1306 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting
+
+  ready-time-ms:
+    type: int
+    default: 10
+    description: |
+      Time it takes for the device from power up to become responsive and
+      accepting commands. Defaults to 10ms (found by trial and error) if not
+      provided.

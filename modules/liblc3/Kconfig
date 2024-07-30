@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Bose Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_LIBLC3_MODULE
+	bool
+
+config LIBLC3
+	bool "liblc3 Support"
+	depends on FPU
+	select REQUIRES_FULL_LIBC
+	help
+	  This option enables the Android liblc3 library for Bluetooth LE Audio

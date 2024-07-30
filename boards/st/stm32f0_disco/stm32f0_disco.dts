@@ -1,0 +1,138 @@
+/*
+ * Copyright (c) 2018 Nathan Tsoi <nathan@vertile.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f0/stm32f051X8.dtsi>
+#include <st/f0/stm32f051r8tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32F0DISCOVERY board";
+	compatible = "st,stm32f058r8-discovery";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_3: led_3 {
+			gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+		blue_led_4: led_4 {
+			gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "Key";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_3;
+		led1 = &blue_led_4;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	prediv = <1>;
+	mul = <6>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+/* Due to limited available memory, don't enable gpiod and gpiof */
+&gpiod {status = "disabled";};
+&gpiof {status = "disabled";};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(8)>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x2000 and ending at
+		 * offset 0x3999 is reserved for use by the application.
+		 */
+
+		slot0_partition: partition@4000 {
+			label = "image-0";
+			reg = <0x00004000 DT_SIZE_K(16)>;
+		};
+		slot1_partition: partition@8000 {
+			label = "image-1";
+			reg = <0x00008000 DT_SIZE_K(16)>;
+		};
+		scratch_partition: partition@c000 {
+			label = "image-scratch";
+			reg = <0x0000C000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
+};

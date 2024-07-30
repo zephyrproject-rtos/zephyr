@@ -1,0 +1,74 @@
+common:
+  tags: cpp
+  toolchain_exclude: xcc
+  integration_platforms:
+    - mps2/an385
+    - qemu_cortex_a53
+
+tests:
+  cpp.main.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  cpp.main.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    min_ram: 32
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  cpp.main.newlib_nano:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_HAS_NEWLIB_LIBC_NANO
+    min_ram: 24
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_NEWLIB_LIBC_NANO=y
+  cpp.main.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+
+  # Note: the -std= variants below exclude the host compilers, which
+  # aren't part of the SDK and can't be managed as part of the test
+  # suite. (e.g. as of commit time the g++ used in CI didn't support
+  # C++20/2B and emits a command line error when presented with
+  # -Wno-pointer-sign or -Werror=implicit-int in C++ mode with
+  # -std=c++98)
+  cpp.main.cpp98:
+    arch_exclude: posix
+    # Exclude nRF54L15 and nRF54H20 as Nordic HAL is not compatible with C++98.
+    # Exclude EK_RA8M1 as Renesas RA HAL is not compatible with C++98.
+    platform_exclude:
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - ek_ra8m1
+    build_only: true
+    extra_configs:
+      - CONFIG_STD_CPP98=y
+  # Note: no "cpp.main.cpp11" as that's the default standard tested above
+  cpp.main.cpp14:
+    arch_exclude: posix
+    build_only: true
+    extra_configs:
+      - CONFIG_STD_CPP14=y
+  cpp.main.cpp17:
+    arch_exclude: posix
+    build_only: true
+    extra_configs:
+      - CONFIG_STD_CPP17=y
+  cpp.main.cpp2A:
+    arch_exclude: posix
+    build_only: true
+    extra_configs:
+      - CONFIG_STD_CPP2A=y
+  cpp.main.cpp20:
+    arch_exclude: posix
+    build_only: true
+    extra_configs:
+      - CONFIG_STD_CPP20=y
+  cpp.main.cpp2B:
+    arch_exclude: posix
+    toolchain_exclude:
+      - xt-clang
+    build_only: true
+    extra_configs:
+      - CONFIG_STD_CPP2B=y

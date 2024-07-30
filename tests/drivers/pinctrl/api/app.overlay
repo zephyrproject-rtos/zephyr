@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	pinctrl {
+		compatible = "vnd,pinctrl-test";
+
+		/* default state for device 0 */
+		test_device0_default: test_device0_default {
+			group1 {
+				pins = <0>;
+				bias-pull-up;
+			};
+			group2 {
+				pins = <1>;
+				bias-pull-down;
+			};
+		};
+
+		/* sleep state for device 0 */
+		test_device0_sleep: test_device0_sleep {
+			group1 {
+				pins = <0>, <1>;
+			};
+		};
+
+		/* alternative default state for device 0 */
+		test_device0_alt_default: test_device0_alt_default {
+			group1 {
+				pins = <2>;
+				bias-pull-down;
+			};
+			group2 {
+				pins = <3>;
+				bias-pull-up;
+			};
+		};
+
+		/* alternative sleep state for device 0 */
+		test_device0_alt_sleep: test_device0_alt_sleep {
+			group1 {
+				pins = <2>, <3>;
+			};
+		};
+
+		/* default state for device 1 */
+		test_device1_default: test_device1_default {
+			group1 {
+				pins = <10>, <11>, <12>;
+			};
+		};
+
+		/* custom state "mystate" for device 1 */
+		test_device1_mystate: test_device1_mystate {
+			group1 {
+				pins = <10>;
+			};
+			group2 {
+				pins = <11>;
+				bias-pull-up;
+			};
+			group3 {
+				pins = <12>;
+				bias-pull-down;
+			};
+		};
+	};
+
+	zephyr,user {
+		test_device0_alt_default = <&test_device0_alt_default>;
+		test_device0_alt_sleep = <&test_device0_alt_sleep>;
+	};
+
+	test_device0: test_device@0 {
+		compatible = "vnd,pinctrl-device";
+		reg = <0x0 0x1>;
+		pinctrl-0 = <&test_device0_default>;
+		pinctrl-1 = <&test_device0_sleep>;
+		pinctrl-names = "default", "sleep";
+	};
+
+	test_device1: test_device@1 {
+		compatible = "vnd,pinctrl-device";
+		reg = <0x1 0x1>;
+		pinctrl-0 = <&test_device1_default>;
+		pinctrl-1 = <&test_device1_mystate>;
+		pinctrl-names = "default", "mystate";
+	};
+};

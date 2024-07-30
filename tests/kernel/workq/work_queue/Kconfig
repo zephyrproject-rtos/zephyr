@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_WORK_ITEM_WAIT_MS
+	int "Test item working time, msec."
+	default 100
+
+config TEST_SUBMIT_WAIT_MS
+	int "Test item submission interval, msec."
+	default 50

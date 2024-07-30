@@ -1,0 +1,31 @@
+# Copyright (c) 2022-2023 Dronetag s.r.o.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Generic representation of Coexistence pin interface for radios. This
+    interface is usually available on Wifi/Bluetooth/LTE modules to
+    interact with each other when sharing the same antenna. This prevents
+    any collisions between transmissions from different modules. The grant
+    signal should signal that the external transceiver/module is not
+    transmitting. Therefore you are free to perform any TX operations as
+    required. When grant pin becomes inactive then you have time to
+    finish all of the ongoing TX operations before the external
+    transceiver begins their transmission. This is specified by the
+    grant-delay-us property.
+
+compatible: "gpio-radio-coex"
+
+include: base.yaml
+
+properties:
+  grant-gpios:
+    type: phandle-array
+    required: true
+    description: |
+        GPIO input from the external transceiver
+
+  grant-delay-us:
+    type: int
+    required: true
+    description: |
+        Delay after assertion for the external transceiver operation

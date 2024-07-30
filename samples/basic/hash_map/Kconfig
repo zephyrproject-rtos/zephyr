@@ -1,0 +1,25 @@
+# Copyright (c) 2022 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_LIB_HASH_MAP_MAX_ENTRIES
+	int "Maximum number of Hashmap entries"
+	default 40
+	help
+	  When benchmarking the performance of the Hashmap, it helps to be able
+	  to vary the number of entries to insert or remove from the hash table
+	  in a convenient way. This option translates to MANY in the test sources.
+
+	  CONFIG_TEST_LIB_HASH_MAP_MAX_ENTRIES
+
+	  Of course, using realloc(), we are limited by the amount of available
+	  heap memory. For test scenarios using the Minimal C library, the heap
+	  size is controlled via
+
+	  CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
+
+config TEST_LIB_HASH_MAP_DURATION_S
+	int "Duration of test (in seconds)"
+	default 3
+
+source "Kconfig.zephyr"

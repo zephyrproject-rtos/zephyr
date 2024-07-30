@@ -1,0 +1,40 @@
+{% extends "!layout.html" %}
+{% block document %}
+  {% if is_release %}
+    <div class="wy-alert wy-alert-danger" data-nosnippet>
+      The <a href="/latest/{{ pagename }}.html">latest development version</a>
+      of this page may be more current than this released {{ version }} version.
+    </div>
+  {% else %}
+    <div class="wy-alert wy-alert-danger" data-nosnippet>
+     This is the documentation for the latest (main) development branch of
+     Zephyr. If you are looking for the documentation of previous releases, use
+     the drop-down list at the bottom of the left panel and select the desired version.
+    </div>
+  {% endif %}
+  {{ super() }}
+{% endblock %}
+{% block menu %}
+  <div data-nosnippet>
+    {% include "zversions.html" %}
+    {{ super() }}
+    {% if reference_links %}
+    <div class="toctree-wrapper compound">
+      <p class="caption"><span class="caption-text">Reference</span></p>
+      <ul>
+        {% for title, url in reference_links.items() %}
+        <li class="toctree-l1">
+          <a class="reference internal" href="{{ url }}">{{ title }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+{% endblock %}
+{% block extrahead %}
+  <meta name="color-scheme" content="dark light">
+  {# Light/Dark stylesheets added here due to https://github.com/readthedocs/sphinx_rtd_theme/issues/1100 #}
+  <link rel="stylesheet" href="{{ pathto('_static/css/light.css', 1) }}" type="text/css" media="(prefers-color-scheme: light)"/>
+  <link rel="stylesheet" href="{{ pathto('_static/css/dark.css', 1) }}" type="text/css" media="(prefers-color-scheme: dark)"/>
+{% endblock %}

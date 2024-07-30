@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_gpio_leds {
+			compatible = "gpio-leds";
+			test_gpio_led0: test_gpio_led_0 {
+				gpios = <&test_gpio 0 0>;
+			};
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			ht16k33@1 {
+				compatible = "holtek,ht16k33";
+				reg = <0x1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			lp3943@2 {
+				compatible = "ti,lp3943";
+				reg = <0x2>;
+			};
+
+			lp5009@3 {
+				compatible = "ti,lp5009";
+				reg = <0x3>;
+			};
+
+			lp5012@4 {
+				compatible = "ti,lp5012";
+				reg = <0x4>;
+			};
+
+			lp5018@5 {
+				compatible = "ti,lp5018";
+				reg = <0x5>;
+			};
+
+			lp5024@6 {
+				compatible = "ti,lp5024";
+				reg = <0x6>;
+			};
+
+			lp5030@7 {
+				compatible = "ti,lp5030";
+				reg = <0x7>;
+			};
+
+			lp5036@8 {
+				compatible = "ti,lp5036";
+				reg = <0x8>;
+			};
+
+			lp5562@9 {
+				compatible = "ti,lp5562";
+				reg = <0x9>;
+			};
+
+			lp5569@a {
+				compatible = "ti,lp5569";
+				reg = <0xa>;
+			};
+
+			pca9633@b {
+				compatible = "nxp,pca9633";
+				reg = <0xb>;
+			};
+
+			tlc59108@c {
+				compatible = "ti,tlc59108";
+				reg = <0xc>;
+			};
+
+			ncp5623@d {
+				compatible = "onnn,ncp5623";
+				reg = <0xd>;
+			};
+		};
+	};
+};

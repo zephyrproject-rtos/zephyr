@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8mm_m4.dtsi>
+
+#include "imx8mm_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX8M Mini EVK board";
+	compatible = "nxp,mimx8mm_evk";
+
+	aliases {
+		uart-4 = &uart4;
+	};
+
+	chosen {
+		zephyr,flash = &tcml_code;
+		zephyr,sram = &tcmu_sys;
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+};
+
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+&mailbox0 {
+	status = "okay";
+};

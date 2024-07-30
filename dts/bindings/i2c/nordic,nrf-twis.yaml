@@ -1,0 +1,39 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nRF family TWIS (TWI slave with EasyDMA).
+
+  Note: for Zephyr users, the I2C slave API is not available for
+  these devices. See this issue for more details and a HAL-based
+  workaround:
+
+      https://github.com/zephyrproject-rtos/zephyr/issues/21445
+
+  This binding can be used for nodes which can represent TWIS
+  peripherals. A single SoC peripheral ID is often associated with
+  multiple I2C peripherals, like a TWIM and a TWIS. You can choose
+  TWIS by setting the node's "compatible" to "nordic,nrf-twis"
+  and its "status" to "okay", e.g. using an overlay file like this:
+
+      /* This is for TWIS0 -- change to "i2c1" for TWIS1, etc. */
+      &i2c0 {
+              compatible = "nordic,nrf-twis";
+              status = "okay";
+              /* other property settings can go here */
+      };
+
+  This works on any supported SoC, for all TWIS instances.
+
+compatible: "nordic,nrf-twis"
+
+include: ["nordic,nrf-twi-common.yaml", "memory-region.yaml"]
+
+properties:
+  address-0:
+    type: int
+    description: TWI slave address 0
+
+  address-1:
+    type: int
+    description: TWI slave address 1

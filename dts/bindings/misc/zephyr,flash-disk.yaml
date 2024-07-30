@@ -1,0 +1,38 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Block storage device on flash partition
+
+compatible: "zephyr,flash-disk"
+
+include: base.yaml
+
+properties:
+  partition:
+    type: phandle
+    required: true
+    description: |
+      Backing storage flash map partition.
+
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.
+
+  sector-size:
+    type: int
+    default: 512
+    description: |
+      Emulated block device sector size in bytes.
+
+  cache-size:
+    type: int
+    required: true
+    description: |
+      Size of statically allocated buffer size in bytes. The size should be
+      adequately chosen. On storage backends with uniform erase-blocks it
+      should be at least the erase-block-size, on storage backends with
+      non-uniform erase-blocks it should be at least the largest
+      erase-block-size. The cache-size property is ignored if the partition
+      is read-only.

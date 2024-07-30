@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2023 Fr. Sauter AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/efr32mg24.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(256)>;
+	};
+
+	soc {
+		compatible = "silabs,efr32mg24b220f1536im48",
+					 "silabs,efr32mg24", "silabs,efr32",
+					 "simple-bus";
+
+		flash-controller@50030000 {
+			flash0: flash@0 {
+				reg = <0 DT_SIZE_K(1536)>;
+			};
+		};
+	};
+};

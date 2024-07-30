@@ -1,0 +1,79 @@
+# DMA configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# DMA options
+#
+menuconfig DMA
+	bool "Direct Memory Access (DMA) drivers"
+
+if DMA
+config DMA_64BIT
+	bool "DMA 64 bit address support"
+	help
+	  When this option is true, 64 bit source and dest
+	  DMA addresses are supported.
+
+config DMA_INIT_PRIORITY
+	int "DMA init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  DMA driver device initialization priority.
+
+module = DMA
+module-str = dma
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/dma/Kconfig.stm32"
+
+source "drivers/dma/Kconfig.sam_xdmac"
+
+source "drivers/dma/Kconfig.dw"
+
+source "drivers/dma/Kconfig.nios2_msgdma"
+
+source "drivers/dma/Kconfig.sam0"
+
+source "drivers/dma/Kconfig.mcux_edma"
+
+source "drivers/dma/Kconfig.mcux_lpc"
+
+source "drivers/dma/Kconfig.dma_pl330"
+
+source "drivers/dma/Kconfig.iproc_pax"
+
+source "drivers/dma/Kconfig.intel_adsp_gpdma"
+
+source "drivers/dma/Kconfig.intel_adsp_hda"
+
+source "drivers/dma/Kconfig.gd32"
+
+source "drivers/dma/Kconfig.esp32"
+
+source "drivers/dma/Kconfig.xec"
+
+source "drivers/dma/Kconfig.xmc4xxx"
+
+source "drivers/dma/Kconfig.rpi_pico"
+
+source "drivers/dma/Kconfig.intel_lpss"
+
+source "drivers/dma/Kconfig.mcux_pxp"
+
+source "drivers/dma/Kconfig.mcux_smartdma"
+
+source "drivers/dma/Kconfig.andes_atcdmac300"
+
+source "drivers/dma/Kconfig.sedi"
+
+source "drivers/dma/Kconfig.smartbond"
+
+source "drivers/dma/Kconfig.nxp_sof_host_dma"
+
+source "drivers/dma/Kconfig.emul"
+
+source "drivers/dma/Kconfig.nxp_edma"
+
+endif # DMA

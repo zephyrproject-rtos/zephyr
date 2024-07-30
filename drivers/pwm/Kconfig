@@ -1,0 +1,109 @@
+# PWM configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PWM
+	bool "Pulse Width Modulation (PWM) drivers"
+	help
+	  Enable config options for PWM drivers.
+
+if PWM
+
+module = PWM
+module-str = pwm
+source "subsys/logging/Kconfig.template.log_config"
+
+config PWM_INIT_PRIORITY
+	int "PWM initialization priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  System initialization priority for PWM drivers.
+
+config PWM_SHELL
+	bool "PWM shell"
+	depends on SHELL
+	help
+	  Enable the PWM related shell commands.
+
+config PWM_CAPTURE
+	bool "Provide API for PWM capture"
+	help
+	  This option extends the Zephyr PWM API with the ability to capture PWM
+	  period/pulse widths.
+
+source "drivers/pwm/Kconfig.b91"
+
+source "drivers/pwm/Kconfig.cc13xx_cc26xx_timer"
+
+source "drivers/pwm/Kconfig.stm32"
+
+source "drivers/pwm/Kconfig.sifive"
+
+source "drivers/pwm/Kconfig.nrf_sw"
+
+source "drivers/pwm/Kconfig.nrfx"
+
+source "drivers/pwm/Kconfig.mcux_ftm"
+
+source "drivers/pwm/Kconfig.imx"
+
+source "drivers/pwm/Kconfig.it8xxx2"
+
+source "drivers/pwm/Kconfig.esp32"
+
+source "drivers/pwm/Kconfig.sam"
+
+source "drivers/pwm/Kconfig.mcux"
+
+source "drivers/pwm/Kconfig.mcux_sctimer"
+
+source "drivers/pwm/Kconfig.mcux_qtmr"
+
+source "drivers/pwm/Kconfig.xec"
+
+source "drivers/pwm/Kconfig.litex"
+
+source "drivers/pwm/Kconfig.rv32m1_tpm"
+
+source "drivers/pwm/Kconfig.mcux_tpm"
+
+source "drivers/pwm/Kconfig.sam0"
+
+source "drivers/pwm/Kconfig.npcx"
+
+source "drivers/pwm/Kconfig.xlnx"
+
+source "drivers/pwm/Kconfig.mcux_pwt"
+
+source "drivers/pwm/Kconfig.gecko"
+
+source "drivers/pwm/Kconfig.gd32"
+
+source "drivers/pwm/Kconfig.rcar"
+
+source "drivers/pwm/Kconfig.pca9685"
+
+source "drivers/pwm/Kconfig.max31790"
+
+source "drivers/pwm/Kconfig.test"
+
+source "drivers/pwm/Kconfig.rpi_pico"
+
+source "drivers/pwm/Kconfig.intel_blinky"
+
+source "drivers/pwm/Kconfig.xmc4xxx_ccu4"
+
+source "drivers/pwm/Kconfig.xmc4xxx_ccu8"
+
+source "drivers/pwm/Kconfig.mcux_ctimer"
+
+source "drivers/pwm/Kconfig.numaker"
+
+source "drivers/pwm/Kconfig.nxp_s32_emios"
+
+source "drivers/pwm/Kconfig.nxp_flexio"
+
+source "drivers/pwm/Kconfig.ene"
+
+endif # PWM

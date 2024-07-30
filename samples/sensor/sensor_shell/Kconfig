@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config SAMPLES_SENSOR_SHELL_FAKE_SENSOR
+	bool "Enable fake sensor"
+	help
+	  On boards that do not have a sensor, enabling this will build a fake
+	  sensor that can be interacted with via the sensor shell.
+
+source "Kconfig.zephyr"

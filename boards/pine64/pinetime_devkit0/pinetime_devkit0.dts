@@ -1,0 +1,238 @@
+/*
+ * Copyright (c) 2020 Stephane Dorre <stephane.dorre@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * DTS for Pine64 PineTime DevKit-0 board
+ * Further info: https://wiki.pine64.org/index.php/PineTime
+ *
+ */
+
+/dts-v1/;
+#include <nordic/nrf52832_qfaa.dtsi>
+#include "pinetime_devkit0-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	model = "Pine64 PineTime DevKit0";
+	compatible = "pine64,pinetime-devkit0";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &st7789v;
+	};
+
+	aliases {
+		led0 = &blled0;	/* backlight low */
+		led1 = &blled1;	/* backlight mid */
+		led2 = &blled2;	/* backlight high */
+		led3 = &statusled;	/* status led, may be not populated */
+		sw0 = &key_in;  /* key in */
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blled0: bl_led_0 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "Backlight Low";
+		};
+		blled1: bl_led_1 {
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			label = "Backlight Medium";
+		};
+		blled2: bl_led_2 {
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			label = "Backlight High";
+		};
+		statusled: led_3 {
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			label = "Status Led";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		key_in: button_0 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			label = "Key in";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&cst816s>;
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 7>;
+		output-ohms = <1000000>;
+		full-ohms = <(1000000 + 1000000)>;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi1>;
+		dc-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;	/* DET */
+		reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;	/* RESX reset */
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		/* Sitronix ST7789V LCD */
+		st7789v: st7789v@1 {
+			compatible = "sitronix,st7789v";
+			reg = <1>;
+			mipi-max-frequency = <8000000>; /* 8MHz */
+			width = <240>;
+			height = <240>;
+			x-offset = <0>;
+			y-offset = <0>;
+			vcom = <0x19>;
+			gctrl = <0x35>;
+			vrhs = <0x12>;
+			vdvs = <0x20>;
+			mdac = <0x00>;
+			gamma = <0x01>;
+			colmod = <0x05>;
+			lcm = <0x2c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 01];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
+			nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
+			ram-param = [00 F0];
+			rgb-param = [CD 08 14];
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+		};
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&uicr {
+	gpio-as-nreset;
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&uicr {
+	nfct-pins-as-gpios;
+};
+
+&gpio0 {
+	status = "okay";
+
+	key-out {
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>; /* 400KHz */
+
+	/* BOSCH BMA421 Triaxial Acceleration Sensor (1000KHz) */
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+	bma421: bma421@18 {
+		compatible = "bosch,bma4xx";
+		reg = <0x18>;
+		int1-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+	};
+
+	/* TianYiHeXin HRS3300 PPG Hear Rate Sensor (800KHz) */
+	hrs3300: hrs3300@44 {
+		compatible = "tian-yi-he-xin-hrs3300";
+		reg = <0x44>;
+	};
+
+	/* Hynitron CST816S Capacitive Touch Controller (400KHz) */
+	cst816s: cst816s@15 {
+		compatible = "hynitron,cst816s";
+		reg = <0x15>;
+		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		rst-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>, <&gpio0 25 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+	xt25fb32: xt25fb32@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <8000000>; /* 8MHz */
+		jedec-id = [0b 40 16];
+		size = <DT_SIZE_M(32)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* next firmware update */
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 0x74000>;
+			};
+
+			/* to be used in firmware */
+			storage_partition: partition@300000 {
+				label = "storage";
+				reg = <0x00300000 0x00100000>;
+			};
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* MCUboot bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+
+		/* main firmware partition */
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x74000>;
+		};
+	};
+};

@@ -1,0 +1,76 @@
+# Copyright (c) 2024 BayLibre SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "POSIX memory"
+
+config POSIX_PAGE_SIZE
+	hex
+	# TODO: something similar and arch-independent for MPUs
+	default MMU_PAGE_SIZE if MMU
+	default 0x40
+	help
+	  This option is not user-configurable.
+
+config POSIX_SHARED_MEMORY_OBJECTS
+	bool "POSIX shared memory objects [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select SYS_HASH_FUNC32
+	select SYS_HASH_FUNC32_DJB2
+	select FDTABLE
+	select POSIX_MAPPED_FILES
+	help
+	  Select 'y' here and Zephyr will provide implementations of shm_open() and shm_unlink().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html#tag_24_03_04
+
+config POSIX_MAPPED_FILES
+	bool "POSIX memory-mapped files [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	imply MMU
+	help
+	  Select 'y' here and Zephyr will provide support for mmap(), msync(), and munmap().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html#tag_24_03_04
+
+if POSIX_MAPPED_FILES
+
+config POSIX_MEMLOCK
+	bool "POSIX memory locking [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Select 'y' here and Zephyr will provide support for mlockall() and munlockall().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html#tag_24_03_04
+
+config POSIX_MEMLOCK_RANGE
+	bool "POSIX range memory locking [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	imply MMU
+	imply DEMAND_PAGING
+	help
+	  Select 'y' here and Zephyr will provide support for mlock() and munlock().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html#tag_24_03_04
+
+endif
+
+config POSIX_MEMORY_PROTECTION
+	bool "POSIX memory protection [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Select 'y' here and Zephyr will provide support for mprotect().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html#tag_24_03_04
+
+endmenu

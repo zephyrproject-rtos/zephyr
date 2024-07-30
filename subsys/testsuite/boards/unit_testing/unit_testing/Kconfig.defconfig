@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2022 Nordic Semiconductor
+
+# Controller HCI support requires e.g. devicetree, which isn't available
+# for unit tests.
+config BT_CTLR_HCI
+	default n
+
+# Bluetooth unit tests assume HCI vendor extensions are available
+config BT_HAS_HCI_VS
+	default y

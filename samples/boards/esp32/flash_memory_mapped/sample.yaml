@@ -1,0 +1,14 @@
+sample:
+  description: Sample application to test memory-mapped flash region
+  name: flash_memory_mapped
+tests:
+  sample.board.esp32.flash_memory_mapped:
+    platform_allow:
+      - esp32_devkitc_wroom/esp32/procpu
+      - esp32c3_devkitm
+      - esp32s3_devkitm/esp32s3/procpu
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "memory-mapped reading matches flash API read"

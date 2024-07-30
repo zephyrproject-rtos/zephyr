@@ -1,0 +1,15 @@
+common:
+  platform_allow:
+    - nrf52840dk/nrf52840
+    - native_posix
+    - native_posix/native/64
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - nrf52840dk/nrf52840
+tests:
+  dfu.image_util:
+    tags: dfu_image_util
+  dfu.image_util.progressive:
+    extra_args: OVERLAY_CONFIG=progressively_overlay.conf
+    tags: dfu_image_util

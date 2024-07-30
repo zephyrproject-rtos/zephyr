@@ -1,0 +1,26 @@
+tests:
+  drivers.entropy:
+    filter: CONFIG_ENTROPY_HAS_DRIVER
+    tags:
+      - drivers
+      - entropy
+  drivers.entropy.bt_hci:
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpunet
+    extra_args:
+      - DTC_OVERLAY_FILE=./entropy_bt_hci.overlay
+      - OVERLAY_CONFIG=./entropy_bt_hci.conf
+    tags:
+      - driver
+      - entropy
+      - bluetooth
+  drivers.entropy.psa_crypto:
+    filter: CONFIG_BUILD_WITH_TFM
+    extra_args:
+      - DTC_OVERLAY_FILE=./entropy_psa_crypto.overlay
+      - OVERLAY_CONFIG=./entropy_psa_crypto.conf
+    tags:
+      - driver
+      - entropy
+      - psa-crypto

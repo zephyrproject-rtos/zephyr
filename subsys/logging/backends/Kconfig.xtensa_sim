@@ -1,0 +1,27 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_XTENSA_SIM
+	bool "Xtensa simulator backend"
+	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_XTENSA_DC233C || SOC_FAMILY_INTEL_ADSP
+	default y if SOC_XTENSA_SAMPLE_CONTROLLER || SOC_XTENSA_DC233C
+	select LOG_OUTPUT
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  Enable backend in xtensa simulator
+
+config LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE
+	int "Size of the output buffer"
+	default 16
+	depends on LOG_BACKEND_XTENSA_SIM
+	help
+	  Buffer is used by log_output module for preparing output data (e.g.
+	  string formatting).
+
+if LOG_BACKEND_XTENSA_SIM
+
+backend = XTENSA_SIM
+backend-str = xtensa_sim
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_XTENSA_SIM

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.input.kscan_input:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - drivers
+      - kscan
+      - input
+    integration_platforms:
+      - native_sim

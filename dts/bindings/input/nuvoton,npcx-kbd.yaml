@@ -1,0 +1,37 @@
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NPCX keyboard scan controller
+
+compatible: "nuvoton,npcx-kbd"
+
+include: [kbd-matrix-common.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  wui-maps:
+    type: phandles
+    required: true
+    description: |
+        Mapping table between Wake-Up Input (WUI) and KSIs.
+
+        For example the WUI mapping on 8 KSI pads would be
+           wui-maps = <&wui_io30 &wui_io31 &wui_io27 &wui_io26
+                       &wui_io25 &wui_io24 &wui_io23 &wui_io22>;
+
+  row-size:
+    required: true
+
+  col-size:
+    required: true

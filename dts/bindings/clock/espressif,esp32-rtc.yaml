@@ -1,0 +1,45 @@
+# Copyright (c) 2020, Mohamed ElShahawi
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 RTC (Power & Clock Controller Module) Module
+
+compatible: "espressif,esp32-rtc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  fast-clk-src:
+    type: int
+    required: true
+    description: |
+      RTC fast clock source.
+      - 0: ESP32_RTC_FAST_CLK_SRC_XTAL_D2 - Main XTAL divided by 2 (C3/S3)
+      ESP32_RTC_FAST_CLK_SRC_XTAL_D4 Main XTAL divided by 4 (ESP32/S2)
+      - 1: ESP32_RTC_FAST_CLK_SRC_RC_FAST - 8 MHz
+    enum:
+      - 0
+      - 1
+
+  slow-clk-src:
+    type: int
+    required: true
+    description: |
+      RTC slow clock source. Default to
+      - 0: ESP32_RTC_SLOW_CLK_SRC_RC_SLOW - 136 KHz (C3/S3) - 90 kHz (S2) - 150 kHz (ESP32)
+      - 1: ESP32_RTC_SLOW_CLK_SRC_XTAL32K - 32,768U KHz
+      - 2: ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256 - 17,5 MHz
+      - 9: ESP32_RTC_SLOW_CLK_32K_EXT_OSC - External 32k oscillator connected to 32K_XP pin
+    enum:
+      - 0
+      - 1
+      - 2
+      - 9
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - offset  # Index of the peripheral in esp32 modules list (Check esp32_clock.h)

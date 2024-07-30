@@ -1,0 +1,5 @@
+board:
+  name: raytac_mdbt50q_db_40
+  vendor: raytac
+  socs:
+  - name: nrf52840

@@ -1,0 +1,40 @@
+# MCUXpresso SDK SPI
+
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# Copyright (c) 2017, 2021, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCUX_DSPI
+	bool "MCUX SPI driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_DSPI_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable support for mcux spi driver.
+
+if SPI_MCUX_DSPI
+
+config DSPI_MCUX_EDMA
+	bool "ENABLE EDMA for DSPI driver"
+	depends on HAS_MCUX && HAS_MCUX_EDMA
+	help
+	  Enable the MCUX DSPI driver.
+
+if DSPI_MCUX_EDMA
+
+config MCUX_DSPI_BUFFER_SIZE
+	int "buffer size"
+	default 144
+	help
+	  data buffer size
+
+config MCUX_DSPI_EDMA_SHUFFLE_DATA
+	bool "use the internal data process"
+	default y
+	help
+	  TX data need pre-fix with command, user can choose not to use it
+
+endif # DSPI_MCUX_EDMA
+
+endif # SPI_MCUX_DSPI

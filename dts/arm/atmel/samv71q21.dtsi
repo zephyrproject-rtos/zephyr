@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2019 Gerson Fernando Budke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <atmel/samv71x21.dtsi>

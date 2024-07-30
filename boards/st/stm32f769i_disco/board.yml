@@ -1,0 +1,5 @@
+board:
+  name: stm32f769i_disco
+  vendor: st
+  socs:
+    - name: stm32f769xx

@@ -1,0 +1,148 @@
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    When setting the accel-pm, accel-range, accel-odr, gyro-pm, gyro-range,
+    gyro-odr properties in a .dts or .dtsi file you may include lsm6dso.h
+    and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lsm6dso.h>
+
+    lsm6dso: lsm6dso@0 {
+      ...
+
+      accel-pm = <LSM6DSO_DT_XL_ULP_MODE>;
+      accel-range = <LSM6DSO_DT_FS_8G>;
+      accel-odr = <LSM6DSO_DT_ODR_1Hz6>;
+      gyro-pm = <LSM6DSO_DT_GY_NORMAL_MODE>;
+      gyro-range = <LSM6DSO_DT_FS_2000DPS>;
+      gyro-odr = <LSM6DSO_DT_ODR_6667Hz>;
+    };
+
+include: sensor-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      DRDY pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int-pin:
+    type: int
+    default: 1
+    enum:
+      - 1 # drdy is generated from INT1
+      - 2 # drdy is generated from INT2
+    description: |
+      Select DRDY pin number (1 or 2).
+
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 1 which is the
+      configuration at power-up.
+
+  accel-pm:
+    type: int
+    default: 0
+    description: |
+      Specify the accelerometer power mode.
+      Default is power-up configuration.
+
+      - 0 # LSM6DSO_DT_XL_HP_MODE
+      - 1 # LSM6DSO_DT_XL_LP_NORMAL_MODE
+      - 2 # LSM6DSO_DT_XL_ULP_MODE
+
+    enum: [0, 1, 2]
+
+  accel-range:
+    type: int
+    default: 0
+    description: |
+      Range in g. Default is power-up configuration.
+
+      - 0 # LSM6DSO_DT_FS_2G  (0.061 mg/LSB) (LSM6DSO32 will be double these values)
+      - 1 # LSM6DSO_DT_FS_16G (0.488 mg/LSB)
+      - 2 # LSM6DSO_DT_FS_4G  (0.122 mg/LSB)
+      - 3 # LSM6DSO_DT_FS_8G  (0.244 mg/LSB)
+
+    enum: [0, 1, 2, 3]
+
+  accel-odr:
+    type: int
+    default: 0
+    description: |
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      Default is power-up configuration.
+
+      - 0  # LSM6DSO_DT_ODR_OFF
+      - 1  # LSM6DSO_DT_ODR_12Hz5
+      - 2  # LSM6DSO_DT_ODR_26H
+      - 3  # LSM6DSO_DT_ODR_52Hz
+      - 4  # LSM6DSO_DT_ODR_104Hz
+      - 5  # LSM6DSO_DT_ODR_208Hz
+      - 6  # LSM6DSO_DT_ODR_417Hz
+      - 7  # LSM6DSO_DT_ODR_833Hz
+      - 8  # LSM6DSO_DT_ODR_1667Hz
+      - 9  # LSM6DSO_DT_ODR_3333Hz
+      - 10 # LSM6DSO_DT_ODR_6667Hz
+      - 11 # LSM6DSO_DT_ODR_1Hz6
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+  gyro-pm:
+    type: int
+    default: 0
+    description: |
+      Specify the gyrometer power mode.
+      Default is power-up configuration.
+
+      - 0 # LSM6DSO_DT_GY_HP_MODE
+      - 1 # LSM6DSO_DT_GY_NORMAL_MODE
+
+    enum: [0, 1]
+
+  gyro-range:
+    type: int
+    default: 0
+    description: |
+      Range in dps. Default is power-up configuration.
+
+      - 0 # LSM6DSO_DT_FS_250DPS  (8.75 mdps/LSB)
+      - 1 # LSM6DSO_DT_FS_125DPS  (4.375 mdps/LSB)
+      - 2 # LSM6DSO_DT_FS_500DPS  (17.50 mdps/LSB)
+      - 4 # LSM6DSO_DT_FS_1000DPS (35 mdps/LSB)
+      - 6 # LSM6DSO_DT_FS_2000DPS (70 mdps/LSB)
+
+    enum: [0, 1, 2, 4, 6]
+
+  gyro-odr:
+    type: int
+    default: 0
+    description: |
+      Specify the default gyro output data rate expressed in samples per second (Hz).
+      Default is power-up configuration.
+
+      - 0  # LSM6DSO_DT_ODR_OFF
+      - 1  # LSM6DSO_DT_ODR_12Hz5
+      - 2  # LSM6DSO_DT_ODR_26H
+      - 3  # LSM6DSO_DT_ODR_52Hz
+      - 4  # LSM6DSO_DT_ODR_104Hz
+      - 5  # LSM6DSO_DT_ODR_208Hz
+      - 6  # LSM6DSO_DT_ODR_417Hz
+      - 7  # LSM6DSO_DT_ODR_833Hz
+      - 8  # LSM6DSO_DT_ODR_1667Hz
+      - 9  # LSM6DSO_DT_ODR_3333Hz
+      - 10 # LSM6DSO_DT_ODR_6667Hz
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.

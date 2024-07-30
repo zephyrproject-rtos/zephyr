@@ -1,0 +1,20 @@
+tests:
+  drivers.dma.chan_blen_transfer:
+    min_ram: 16
+    depends_on:
+      - dma
+    tags:
+      - dma
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    filter: dt_nodelabel_enabled("tst_dma0")
+  drivers.dma.chan_blen_transfer.low_footprint:
+    tags:
+      - dma
+    min_ram: 12
+    depends_on:
+      - dma
+    filter: dt_nodelabel_enabled("tst_dma0")
+    platform_allow:
+      - nucleo_c031c6

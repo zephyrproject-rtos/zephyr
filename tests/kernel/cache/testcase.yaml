@@ -1,0 +1,32 @@
+tests:
+  kernel.cache.api:
+    tags:
+      - kernel
+      - cache
+    filter: CONFIG_CACHE_MANAGEMENT
+    platform_exclude:
+      - bcm958402m2/bcm58402/m7
+      - bcm958401m2
+    integration_platforms:
+      - qemu_xtensa
+      - qemu_cortex_a53
+      - nsim/nsim_em
+      - qemu_x86
+      - qemu_x86_64
+  kernel.cache.api.minimallibc:
+    tags:
+      - kernel
+      - cache
+      - libc
+    filter: CONFIG_CACHE_MANAGEMENT and CONFIG_MINIMAL_LIBC_SUPPORTED
+    platform_exclude:
+      - bcm958402m2/bcm58402/m7
+      - bcm958401m2
+    integration_platforms:
+      - qemu_xtensa
+      - qemu_cortex_a53
+      - nsim/nsim_em
+      - qemu_x86
+      - qemu_x86_64
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y

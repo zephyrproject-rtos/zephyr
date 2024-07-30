@@ -1,0 +1,14 @@
+boards:
+
+  - name: demo_board_1
+    vendor: zephyr
+    socs:
+      - name: unit_testing
+  - name: demo_board_2
+    vendor: zephyr
+    socs:
+      - name: unit_testing
+  - name: demo_board_3
+    vendor: zephyr
+    socs:
+      - name: unit_testing

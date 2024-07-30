@@ -1,0 +1,13 @@
+common:
+  depends_on: netif
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
+tests:
+  net.socket.get_name_info:
+    min_ram: 21
+    tags:
+      - net
+      - socket
+      - userspace

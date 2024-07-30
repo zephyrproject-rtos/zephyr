@@ -1,0 +1,32 @@
+common:
+  tags:
+    - drivers
+    - gpio
+  depends_on: gpio
+  harness: ztest
+  harness_config:
+    fixture: gpio_loopback
+
+tests:
+  drivers.gpio.2pin:
+    min_flash: 34
+    filter: dt_compat_enabled("test-gpio-basic-api")
+
+  drivers.gpio.nrf_sense_edge:
+    platform_allow: nrf52840dk/nrf52840 nrf52_bsim
+    extra_args: "DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay;\
+                 boards/nrf52840dk_nrf52840_sense_edge.overlay"
+
+  drivers.gpio.mr_canhubk3_wkpu:
+    platform_allow: mr_canhubk3
+    extra_args: "DTC_OVERLAY_FILE=boards/mr_canhubk3_wkpu.overlay"
+
+  drivers.gpio.2pin_ke17z_fgpio:
+    min_flash: 34
+    filter: dt_compat_enabled("test-gpio-basic-api")
+    platform_allow:
+      - frdm_ke17z
+      - frdm_ke17z512
+    extra_args: "DTC_OVERLAY_FILE=boards/frdm_ke17z_fgpio.overlay"
+    harness_config:
+      fixture: fgpio_loopback

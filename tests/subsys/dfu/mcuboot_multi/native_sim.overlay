@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/delete-node/ &scratch_partition;
+/delete-node/ &storage_partition;
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000C000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x00069000>;
+		};
+		slot1_partition: partition@75000 {
+			label = "image-1";
+			reg = <0x00075000 0x00069000>;
+		};
+		slot2_partition: partition@DE000 {
+			label = "image-2";
+			reg = <0x000DE000 0x00069000>;
+		};
+		slot3_partition: partition@146000 {
+			label = "image-3";
+			reg = <0x00146000 0x00069000>;
+		};
+	};
+};

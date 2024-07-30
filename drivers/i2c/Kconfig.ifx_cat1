@@ -1,0 +1,29 @@
+# Infineon CAT1 I2C configuration options
+
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_INFINEON_CAT1
+	bool "Infineon CAT1 I2C driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_I2C_ENABLED
+	select USE_INFINEON_I2C
+	help
+	  This option enables the I2C driver for Infineon CAT1 family.
+
+config I2C_INFINEON_CAT1_TARGET_BUF
+	int "I2C Target data buffer length"
+	depends on I2C_INFINEON_CAT1
+	range 1 1024
+	default 64
+	help
+	  Buffer to receive data as an I2C Target.
+
+config I2C_INFINEON_CAT1_ASYNC
+	bool "Support Asynchronous I2C driver"
+	default y
+	depends on I2C_INFINEON_CAT1
+	help
+	  Configure the I2C driver to be non-blocking/Asynchronous mode.

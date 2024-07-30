@@ -1,0 +1,11 @@
+# ST Microelectronics STM32L562XX MCU
+
+# Copyright (c) 2020 Yestin Sun
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L562XX
+
+config NUM_IRQS
+	default 109
+
+endif # SOC_STM32L562XX

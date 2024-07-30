@@ -1,0 +1,53 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCUMGR
+	bool "mcumgr Support"
+	depends on NET_BUF
+	depends on ZCBOR
+	help
+	  This option enables the mcumgr management library.
+
+if MCUMGR
+
+module = MCUMGR
+module-str = mcumgr
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "mgmt/Kconfig"
+
+rsource "smp/Kconfig"
+
+config MCUMGR_SMP_LEGACY_RC_BEHAVIOUR
+	bool "Legacy rc (result code) response behaviour"
+	depends on MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	help
+	  This will enable legacy result code response behaviour of having rc
+	  present in responses when the status is 0. With this option disabled,
+	  mcumgr acts with new behaviour and will only return rc is the result
+	  code is non-zero (i.e. an error occurred).
+
+	  If a command only returns a result code, this will mean that the
+	  response will be empty with the new behaviour enabled, as opposed to
+	  the old behaviour where the rc field will be present in the response.
+
+menu "SMP Client"
+
+rsource "smp_client/Kconfig"
+
+endmenu
+
+menu "Command Handlers"
+
+rsource "grp/Kconfig"
+
+endmenu
+
+menu "Transports and Transport Related Configuration Options"
+
+rsource "transport/Kconfig"
+
+endmenu
+
+endif # MCUMGR

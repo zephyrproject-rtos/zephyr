@@ -1,0 +1,24 @@
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - posix
+    - getopt
+  integration_platforms:
+    - qemu_x86
+tests:
+  portability.posix.getopt:
+    min_flash: 64
+    min_ram: 32
+  portability.posix.getopt.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  portability.posix.getopt.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  portability.posix.getopt.logger:
+    extra_configs:
+      - CONFIG_LOG=y
+    build_only: true

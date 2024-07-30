@@ -1,0 +1,22 @@
+# Private config options for charger sample app
+
+# Copyright (c) 2024 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Charger application"
+
+if CHARGER_DISCHAGRE_CURRENT_NOTIFICATIONS
+
+config APP_DISCHARGE_CURRENT_NOTIFICATION_THRESHOLD_UA
+	int "Discharge notification threshold in µA"
+
+config APP_DISCHARGE_CURRENT_NOTIFICATION_DURATION_US
+	int "Excess discharge duration in µsec"
+
+endif # CHARGER_DISCHAGRE_CURRENT_NOTIFICATIONS
+
+config APP_SYSTEM_VOLTAGE_NOTIFICATION_THRESHOLD_UV
+	int "System voltage notification falling threshold in µV"
+	depends on CHARGER_SYSTEM_VOLTAGE_NOTIFICATIONS
+
+source "Kconfig.zephyr"

@@ -1,0 +1,21 @@
+sample:
+  description: BSD Sockets API multithreaded dumb HTTP server example
+  name: socket_dumb_http_server_mt
+common:
+  harness: net
+  depends_on: netif
+  min_ram: 128
+  min_flash: 128
+  tags:
+    - net
+    - socket
+    - http
+  # native_posix does not work with CONFIG_POSIX_API
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
+tests:
+  sample.net.sockets.dumb_http_server_mt:
+    extra_configs:
+      - CONFIG_POSIX_API=y
+    platform_exclude: esp32s2_saola

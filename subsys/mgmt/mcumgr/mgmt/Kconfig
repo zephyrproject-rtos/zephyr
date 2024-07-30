@@ -1,0 +1,40 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig is dedicated to mgmt subsystem of MCUmgr. Kconfig options defined
+# here affect behaviour of services provided by source code of mcumgr/mgmt/
+# directory, like management group registration or overall hooks support.
+#
+# All Kconfig options defined with this file should begin with prefix:
+#  MCUMGR_MGMT_
+
+config MCUMGR_MGMT_NOTIFICATION_HOOKS
+	bool "MCUmgr notification hook support"
+	help
+	  With this enabled, applications and parts of code can register for MCUmgr event
+	  notifications which will result in callbacks when a registered event occurs. Note that
+	  this enables the base notification functionality but itself does not enable any
+	  notifications, which must be enabled by selecting other Kconfig options.
+
+	  To enable notifications in code, mgmt_callback_register() must be called with the
+	  callback function and events that want to be received. Multiple handlers can be
+	  registered and will all be called when registered events occur.
+
+	  Some callbacks support notifying the calling function of a status, in which to accept
+	  or decline the current operation, by returning false this will signal to the calling
+	  function that the request should be denied, for informal-only notifications or
+	  acceptable, true must be returned by all the registered notification handlers.
+
+config MCUMGR_MGMT_HANDLER_USER_DATA
+	bool "MCUmgr mgmt handler user data support"
+	help
+	  This will add an extra field to the struct mgmt_handler that will allow a user
+	  to pass user_data when the defined handler is called.
+
+config MCUMGR_MGMT_CUSTOM_PAYLOAD
+	bool "MCUmgr custom payload"
+	help
+	  When this config is enabled, a user can use the field `custom_payload` in `mgmt_handler` to
+	  skip the generation of the cbor start- and end byte in `smp_handle_single_payload` and
+	  instead use a user defined payload in SMP messages.

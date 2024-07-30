@@ -1,0 +1,673 @@
+/*
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+/* Macros for device tree declarations of npcx soc family */
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/npcx_clock.h>
+#include <zephyr/dt-bindings/flash_controller/npcx_fiu_qspi.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pinctrl/npcx-pinctrl.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/sensor/npcx_tach.h>
+#include <freq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+			cpu-power-states = <&suspend_to_idle0 &suspend_to_idle1>;
+		};
+
+		power-states {
+			suspend_to_idle0: suspend-to-idle0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <0>;
+				min-residency-us = <1000>;
+			};
+
+			suspend_to_idle1: suspend-to-idle1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <201000>;
+			};
+		};
+	};
+
+	def-io-conf-list {
+		compatible = "nuvoton,npcx-pinctrl-def";
+		/* Change default functional pads to GPIOs
+		 * no_spip - PIN95.97.A1.A3
+		 * no_fpip - PIN96.A0.A2.A4 - Internal flash only
+		 * no_pwrgd - PIN72
+		 * no_lpc_espi - PIN46.47.51.52.53.54.55.57
+		 * no_peci_en - PIN81
+		 * npsl_in1_sl - PIND2
+		 * npsl_in2_sl - PIN00
+		 * no_ksi0-7 - PIN31.30.27.26.25.24.23.22
+		 * no_ks000-17 - PIN21.20.17.16.15.14.13.12.11.10.07.06.05.04.
+		 *                  82.83.03.B1
+		 */
+		pinmux = <>;
+	};
+
+	/** Dummy pinctrl node. It will be initialized with defaults based on the SoC series.
+	 *  Then, the user can override the pin control options at the board level.
+	 */
+	pinctrl: pinctrl {
+		compatible = "nuvoton,npcx-pinctrl";
+		status = "okay";
+	};
+
+	/* Dummy node of IOs that have leakage current. The user can override
+	 * 'leak-gpios' prop. at board DT file to save more power consumption.
+	 */
+	power_leakage_io: power-leakage-io {
+		compatible = "nuvoton,npcx-leakage-io";
+		status = "okay";
+	};
+
+	soc {
+		pcc: clock-controller@4000d000 {
+			compatible = "nuvoton,npcx-pcc";
+			/* Cells for bus type, clock control reg and bit */
+			#clock-cells = <3>;
+			/* First reg region is Power Management Controller */
+			/* Second reg region is Core Domain Clock Generator */
+			reg = <0x4000d000 0x2000
+			       0x400b5000 0x2000>;
+			reg-names = "pmc", "cdcg";
+		};
+
+		scfg: scfg@400c3000 {
+			compatible = "nuvoton,npcx-scfg";
+			/* First reg region is System Configuration Device */
+			/* Second reg region is Debugger Interface Device */
+			/* Third reg region is System Glue Device */
+			reg = <0x400c3000 0x70
+			       0x400c3070 0x30
+			       0x400a5000 0x2000>;
+			reg-names = "scfg", "dbg", "glue";
+			#alt-cells = <3>;
+			#lvol-cells = <2>;
+		};
+
+		mdc: mdc@4000c000 {
+			compatible = "syscon";
+			reg = <0x4000c000 0xa>;
+			reg-io-width = <1>;
+		};
+
+		mdc_header: mdc@4000c00a {
+			compatible = "syscon";
+			reg = <0x4000c00a 0x4>;
+			reg-io-width = <2>;
+		};
+
+		miwu0: miwu@400bb000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400bb000 0x2000>;
+			index = <0>;
+			#miwu-cells = <2>;
+		};
+
+		miwu1: miwu@400bd000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400bd000 0x2000>;
+			index = <1>;
+			#miwu-cells = <2>;
+		};
+
+		miwu2: miwu@400bf000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400bf000 0x2000>;
+			index = <2>;
+			#miwu-cells = <2>;
+		};
+
+		gpio0: gpio@40081000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40081000 0x2000>;
+			gpio-controller;
+			index = <0x0>;
+			#gpio-cells=<2>;
+		};
+
+		gpio1: gpio@40083000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40083000 0x2000>;
+			gpio-controller;
+			index = <0x1>;
+			#gpio-cells=<2>;
+		};
+
+		gpio2: gpio@40085000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40085000 0x2000>;
+			gpio-controller;
+			index = <0x2>;
+			#gpio-cells=<2>;
+		};
+
+		gpio3: gpio@40087000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40087000 0x2000>;
+			gpio-controller;
+			index = <0x3>;
+			#gpio-cells=<2>;
+		};
+
+		gpio4: gpio@40089000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40089000 0x2000>;
+			gpio-controller;
+			index = <0x4>;
+			#gpio-cells=<2>;
+		};
+
+		gpio5: gpio@4008b000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4008b000 0x2000>;
+			gpio-controller;
+			index = <0x5>;
+			#gpio-cells=<2>;
+		};
+
+		gpio6: gpio@4008d000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4008d000 0x2000>;
+			gpio-controller;
+			index = <0x6>;
+			#gpio-cells=<2>;
+		};
+
+		gpio7: gpio@4008f000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4008f000 0x2000>;
+			gpio-controller;
+			index = <0x7>;
+			#gpio-cells=<2>;
+		};
+
+		gpio8: gpio@40091000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40091000 0x2000>;
+			gpio-controller;
+			index = <0x8>;
+			#gpio-cells=<2>;
+		};
+
+		gpio9: gpio@40093000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40093000 0x2000>;
+			gpio-controller;
+			index = <0x9>;
+			#gpio-cells=<2>;
+		};
+
+		gpioa: gpio@40095000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40095000 0x2000>;
+			gpio-controller;
+			index = <0xA>;
+			#gpio-cells=<2>;
+		};
+
+		gpiob: gpio@40097000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40097000 0x2000>;
+			gpio-controller;
+			index = <0xB>;
+			#gpio-cells=<2>;
+		};
+
+		gpioc: gpio@40099000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40099000 0x2000>;
+			gpio-controller;
+			index = <0xC>;
+			#gpio-cells=<2>;
+		};
+
+		gpiod: gpio@4009b000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4009b000 0x2000>;
+			gpio-controller;
+			index = <0xD>;
+			#gpio-cells=<2>;
+		};
+
+		gpioe: gpio@4009d000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4009d000 0x2000>;
+			gpio-controller;
+			index = <0xE>;
+			#gpio-cells=<2>;
+		};
+
+		gpiof: gpio@4009f000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4009f000 0x2000>;
+			gpio-controller;
+			index = <0xF>;
+			#gpio-cells=<2>;
+		};
+
+		pwm0: pwm@40080000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x40080000 0x2000>;
+			pwm-channel = <0>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 0>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@40082000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x40082000 0x2000>;
+			pwm-channel = <1>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 1>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@40084000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x40084000 0x2000>;
+			pwm-channel = <2>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 2>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@40086000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x40086000 0x2000>;
+			pwm-channel = <3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 3>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm4: pwm@40088000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x40088000 0x2000>;
+			pwm-channel = <4>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 4>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm5: pwm@4008a000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x4008a000 0x2000>;
+			pwm-channel = <5>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 5>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm6: pwm@4008c000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x4008c000 0x2000>;
+			pwm-channel = <6>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 6>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm7: pwm@4008e000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x4008e000 0x2000>;
+			pwm-channel = <7>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 7>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		adc0: adc@400d1000 {
+			compatible = "nuvoton,npcx-adc";
+			#io-channel-cells = <1>;
+			reg = <0x400d1000 0x2000>;
+			interrupts = <10 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 4>;
+			vref-mv = <2816>;
+			status = "disabled";
+		};
+
+		twd0: watchdog@400d8000 {
+			compatible = "nuvoton,npcx-watchdog";
+			reg = <0x400d8000 0x2000>;
+			t0-out = <&wui_t0out>;
+		};
+
+		espi0: espi@4000a000 {
+			compatible = "nuvoton,npcx-espi";
+			reg = <0x4000a000 0x2000>;
+			interrupts = <18 3>; /* Interrupt for eSPI Bus */
+
+			/* clocks for eSPI modules */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL6 7>;
+			/* WUI maps for eSPI signals */
+			espi-rst-wui = <&wui_espi_rst>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#vw-cells = <3>;
+			status = "disabled";
+		};
+
+		host_sub: lpc@400c1000 {
+			compatible = "nuvoton,npcx-host-sub";
+			/* host sub-module register address & size */
+			reg = <0x400c1000 0x2000
+			       0x40010000 0x2000
+			       0x4000e000 0x2000
+			       0x400c7000 0x2000
+			       0x400c9000 0x2000
+			       0x400cb000 0x2000>;
+			reg-names = "mswc", "shm", "c2h", "kbc", "pm_acpi",
+				    "pm_hcmd";
+
+			/* host sub-module IRQ and priority */
+			interrupts = <25 3>, /* KBC Input-Buf-Full (IBF) */
+				     <56 3>, /* KBC Output-Buf-Empty (OBE) */
+				     <26 3>, /* PMCH Input-Buf-Full (IBF) */
+				     <3 3>,  /* PMCH Output-Buf-Empty (OBE) */
+				     <6 3>;  /* Port80 FIFO Not Empty */
+			interrupt-names = "kbc_ibf", "kbc_obe", "pmch_ibf",
+					  "pmch_obe", "p80_fifo";
+
+			/* WUI map for accessing host sub-modules */
+			host-acc-wui = <&wui_host_acc>;
+
+			/* clocks for host sub-modules */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 3>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
+		};
+
+		/* I2c Controllers - Do not use them as i2c node directly */
+		i2c_ctrl0: i2c@40009000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x40009000 0x1000>;
+			interrupts = <13 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
+			status = "disabled";
+		};
+
+		i2c_ctrl1: i2c@4000b000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x4000b000 0x1000>;
+			interrupts = <14 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
+			status = "disabled";
+		};
+
+		i2c_ctrl2: i2c@400c0000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x400c0000 0x1000>;
+			interrupts = <36 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 2>;
+			status = "disabled";
+		};
+
+		i2c_ctrl3: i2c@400c2000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x400c2000 0x1000>;
+			interrupts = <37 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 3>;
+			status = "disabled";
+		};
+
+		i2c_ctrl4: i2c@40008000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x40008000 0x1000>;
+			interrupts = <19 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
+			status = "disabled";
+		};
+
+		i2c_ctrl5: i2c@40017000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x40017000 0x1000>;
+			interrupts = <20 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 0>;
+			status = "disabled";
+		};
+
+		i2c_ctrl6: i2c@40018000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x40018000 0x1000>;
+			interrupts = <16 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 1>;
+			status = "disabled";
+		};
+
+		i2c_ctrl7: i2c@40019000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x40019000 0x1000>;
+			interrupts = <8 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 2>;
+			status = "disabled";
+		};
+
+		tach1: tach@400e1000 {
+			compatible = "nuvoton,npcx-tach";
+			reg = <0x400e1000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 5>;
+			status = "disabled";
+		};
+
+		tach2: tach@400e3000 {
+			compatible = "nuvoton,npcx-tach";
+			reg = <0x400e3000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 6>;
+			status = "disabled";
+		};
+
+		ps2_ctrl0: ps2@400b1000 {
+			compatible = "nuvoton,npcx-ps2-ctrl";
+			reg = <0x400b1000 0x1000>;
+			interrupts = <21 4>;
+			clocks = <&pcc NPCX_CLOCK_BUS_FREERUN NPCX_PWDWN_CTL1 3>;
+
+			/* PS2 Channels - Please use them as PS2 node */
+			ps2_channel0: io_ps2_channel0 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x00>;
+				status = "disabled";
+			};
+
+			ps2_channel1: io_ps2_channel1 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x01>;
+				status = "disabled";
+			};
+
+			ps2_channel2: io_ps2_channel2 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x02>;
+				status = "disabled";
+			};
+
+			ps2_channel3: io_ps2_channel3 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x03>;
+				status = "disabled";
+			};
+		};
+
+		/* Dedicated Quad-SPI interface to access SPI flashes */
+		qspi_fiu0: quadspi@40020000 {
+			compatible = "nuvoton,npcx-fiu-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40020000 0x2000>;
+		};
+
+		peci0: peci@400d4000 {
+			compatible = "nuvoton,npcx-peci";
+			reg = <0x400d4000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <4 4>;
+			clocks = <&pcc NPCX_CLOCK_BUS_FMCLK NPCX_PWDWN_CTL4 5>;
+			status = "disabled";
+		};
+
+		kbd: kbd@400a3000 {
+			compatible = "nuvoton,npcx-kbd";
+			reg = <0x400a3000 0x2000>;
+			interrupts = <49 4>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL1 0>;
+			wui-maps = <&wui_io31 &wui_io30 &wui_io27 &wui_io26
+				    &wui_io25 &wui_io24 &wui_io23 &wui_io22>;
+			status = "disabled";
+		};
+
+		spip0: spi@400d2000 {
+			compatible = "nuvoton,npcx-spip";
+			reg = <0x400d2000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <57 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL4 7>;
+			status = "disabled";
+
+		};
+	};
+
+	soc-if {
+		/* Soc specific peripheral interface phandles which don't contain
+		 * 'reg' prop. Please overwrite 'status' prop. to 'okay' if you
+		 * want to switch the interface from io to specific peripheral.
+		 */
+		host_uart: io_host_uart {
+			compatible = "nuvoton,npcx-host-uart";
+			status = "disabled";
+		};
+
+		i2c0_0: io_i2c_ctrl0_port0 {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <0x00>;
+			controller = <&i2c_ctrl0>;
+			status = "disabled";
+		};
+
+		i2c1_0: io_i2c_ctrl1_port0 {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <0x10>;
+			controller = <&i2c_ctrl1>;
+			status = "disabled";
+		};
+
+		i2c2_0: io_i2c_ctrl2_port0 {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <0x20>;
+			controller = <&i2c_ctrl2>;
+			status = "disabled";
+		};
+
+		i2c3_0: io_i2c_ctrl3_port0 {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <0x30>;
+			controller = <&i2c_ctrl3>;
+			status = "disabled";
+		};
+
+		i2c4_1: io_i2c_ctrl4_port1 {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <0x41>;
+			controller = <&i2c_ctrl4>;
+			status = "disabled";
+		};
+
+		i2c5_0: io_i2c_ctrl5_port0 {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <0x50>;
+			controller = <&i2c_ctrl5>;
+			status = "disabled";
+		};
+
+		i2c5_1: io_i2c_ctrl5_port1 {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <0x51>;
+			controller = <&i2c_ctrl5>;
+			status = "disabled";
+		};
+
+		i2c6_0: io_i2c_ctrl6_port0 {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <0x60>;
+			controller = <&i2c_ctrl6>;
+			status = "disabled";
+		};
+
+		i2c6_1: io_i2c_ctrl6_port1 {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <0x61>;
+			controller = <&i2c_ctrl6>;
+			status = "disabled";
+		};
+
+		i2c7_0: io_i2c_ctrl7_port0 {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <0x70>;
+			controller = <&i2c_ctrl7>;
+			status = "disabled";
+		};
+
+		power_ctrl_psl: power-ctrl-psl {
+			compatible = "nuvoton,npcx-power-psl";
+			status = "disabled";
+		};
+	};
+
+	soc-id {
+		compatible = "nuvoton,npcx-soc-id";
+		family-id = <0x20>;
+	};
+
+	booter-variant {
+		compatible = "nuvoton,npcx-booter-variant";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

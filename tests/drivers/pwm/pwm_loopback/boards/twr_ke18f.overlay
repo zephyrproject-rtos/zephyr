@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2020-2021 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	pwt_default: pwt_default {
+		group0 {
+			pinmux = <PWT_IN1_PTE11>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	ftm2_default: ftm2_default {
+		group0 {
+			pinmux = <FTM2_CH6_PTE15>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&ftm2 6 0 PWM_POLARITY_NORMAL>, /* PTE15, J20 pin 5 */
+		       <&pwt 1 0 PWM_POLARITY_NORMAL>;  /* PTE11, J20 pin 8 */
+	};
+};
+
+&pwt {
+	status = "okay";
+	prescaler = <32>;
+	pinctrl-0 = <&pwt_default>;
+	pinctrl-names = "default";
+};
+
+&ftm2 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	prescaler = <128>;
+	#pwm-cells = <3>;
+	pinctrl-0 = <&ftm2_default>;
+	pinctrl-names = "default";
+	clock-source = "fixed";
+};

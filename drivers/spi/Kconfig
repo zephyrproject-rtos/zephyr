@@ -1,0 +1,161 @@
+# SPI driver configuration options
+
+# Copyright (c) 2015-2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# SPI Drivers
+#
+menuconfig SPI
+	bool "Serial Peripheral Interface (SPI) bus drivers"
+	help
+	  Enable support for the SPI hardware bus.
+
+if SPI
+
+config SPI_SHELL
+	bool "SPI Shell"
+	depends on SHELL
+	help
+	  Enable SPI Shell.
+
+	  The currently SPI shell supports simple SPI write/read (transceive)
+	  operation.
+
+config SPI_ASYNC
+	bool "Asynchronous call support"
+	select POLL
+	help
+	  This option enables the asynchronous API calls.
+
+config SPI_RTIO
+	bool "RTIO support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select RTIO
+	help
+	  This option enables the RTIO API calls. RTIO support is
+	  experimental as the API itself is unstable.
+
+config SPI_SLAVE
+	bool "Slave support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enables Driver SPI slave operations. Slave support depends
+	  on the driver and the hardware it runs on.
+
+config SPI_EXTENDED_MODES
+	bool "Extended modes [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enables extended operations in the SPI API. Currently, this
+	  enables the possibility to select the line mode (single/dual/
+	  quad/octal), though none of these mode are really supported as
+	  it would require more features exposed into the SPI buffer.
+
+config SPI_INIT_PRIORITY
+	int "Init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Device driver initialization priority.
+
+config SPI_COMPLETION_TIMEOUT_TOLERANCE
+	int "Completion timeout tolerance (ms)"
+	default 200
+	help
+	  The tolerance value in ms for the SPI completion timeout logic.
+
+config SPI_STATS
+	bool "SPI device statistics"
+	depends on STATS
+	help
+	  Enable SPI device statistics.
+
+module = SPI
+module-str = spi
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/spi/Kconfig.b91"
+
+source "drivers/spi/Kconfig.stm32"
+
+source "drivers/spi/Kconfig.dw"
+
+source "drivers/spi/Kconfig.mcux_dspi"
+
+source "drivers/spi/Kconfig.mcux_ecspi"
+
+source "drivers/spi/Kconfig.mcux_flexcomm"
+
+source "drivers/spi/Kconfig.mcux_flexio"
+
+source "drivers/spi/Kconfig.mcux_lpspi"
+
+source "drivers/spi/Kconfig.rv32m1_lpspi"
+
+source "drivers/spi/Kconfig.sam"
+
+source "drivers/spi/Kconfig.sam0"
+
+source "drivers/spi/Kconfig.sifive"
+
+source "drivers/spi/Kconfig.spi_emul"
+
+source "drivers/spi/Kconfig.nrfx"
+
+source "drivers/spi/Kconfig.cc13xx_cc26xx"
+
+source "drivers/spi/Kconfig.litex"
+
+source "drivers/spi/Kconfig.oc_simple"
+
+source "drivers/spi/Kconfig.xec_qmspi"
+
+source "drivers/spi/Kconfig.gecko"
+
+source "drivers/spi/Kconfig.xlnx"
+
+source "drivers/spi/Kconfig.esp32"
+
+source "drivers/spi/Kconfig.test"
+
+source "drivers/spi/Kconfig.psoc6"
+
+source "drivers/spi/Kconfig.bitbang"
+
+source "drivers/spi/Kconfig.gd32"
+
+source "drivers/spi/Kconfig.mchp_mss_qspi"
+
+source "drivers/spi/Kconfig.pl022"
+
+source "drivers/spi/Kconfig.andes_atcspi200"
+
+source "drivers/spi/Kconfig.nxp_s32"
+
+source "drivers/spi/Kconfig.xmc4xxx"
+
+source "drivers/spi/Kconfig.pw"
+
+source "drivers/spi/Kconfig.smartbond"
+
+source "drivers/spi/Kconfig.opentitan"
+
+source "drivers/spi/Kconfig.numaker"
+
+source "drivers/spi/Kconfig.ambiq"
+
+source "drivers/spi/Kconfig.rpi_pico"
+
+source "drivers/spi/Kconfig.ifx_cat1"
+
+source "drivers/spi/Kconfig.sedi"
+
+source "drivers/spi/Kconfig.npcx"
+
+source "drivers/spi/Kconfig.mchp_mss"
+
+source "drivers/spi/Kconfig.grlib_spimctrl"
+
+source "drivers/spi/Kconfig.max32"
+
+endif # SPI

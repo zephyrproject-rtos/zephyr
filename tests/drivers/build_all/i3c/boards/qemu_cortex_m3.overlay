@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2022 Meta Platforms
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	i3c0: i3c@88888888 {
+		compatible = "cdns,i3c";
+		#address-cells = <3>;
+		#size-cells = <0>;
+		reg = <0x88888888 0x400>;
+		interrupt-parent = <&nvic>;
+		interrupts = <4 1>;
+		input-clock-frequency = <200000000>;
+		i3c-scl-hz = <12500000>;
+		i2c-scl-hz = <400000>;
+	};
+};

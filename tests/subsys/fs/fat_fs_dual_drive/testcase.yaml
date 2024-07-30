@@ -1,0 +1,12 @@
+tests:
+  filesystem.fat.dual_drive:
+    platform_allow:
+      - qemu_x86
+      - native_posix
+      - native_sim
+      - qemu_leon3
+      - qemu_riscv32
+      - qemu_riscv64
+    tags: filesystem
+    integration_platforms:
+      - native_sim

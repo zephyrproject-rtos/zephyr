@@ -1,0 +1,58 @@
+/*
+ * Copyright (C) 2023, Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <skeleton.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "intel,niosv", "riscv";
+			riscv,isa = "rv32ia_zicsr_zifencei";
+			reg = <0>;
+			clock-frequency = <50000000>;
+
+			/* Platform interrupts IRQs index start from 16 */
+			intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&intc>;
+		ranges;
+
+		sram0: memory@0 {
+			compatible = "mmio-sram";
+		};
+
+		mtimer: machine-timer@90000 {
+			compatible = "niosv-machine-timer";
+			reg = <0x90000 0x10>;
+			interrupts = <7>;
+		};
+
+		uart0: serial@90078 {
+			compatible = "altr,jtag-uart";
+			interrupts = <16>;
+			status = "disabled";
+		};
+	};
+};

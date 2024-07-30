@@ -1,0 +1,116 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP S32 Enhanced Modular IO SubSystem (eMIOS) node for S32 SoCs.
+  eMIOS provides independent unified channels (UCs), some of channels
+  have internal counter that either can be used independently or used
+  as a reference timebase (master bus) for other channels.
+
+compatible: "nxp,s32-emios"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-divider:
+    type: int
+    required: true
+    description: |
+      Clock divider value for the global prescaler. Could be in range [1 ... 256]
+
+  internal-cnt:
+    type: int
+    required: true
+    description: |
+      A mask for channels that have internal counter, lsb is channel 0.
+
+child-binding:
+  child-binding:
+    description: |
+      Node for eMIOS master bus. Each channel is capable to become a master bus has
+      a node defined in root devicetree but is disabled by default. To allow using
+      the master bus, the devicetree node should be enabled and dts properties
+      should be configured as required by application.
+
+      For example, to enable bus A of eMIOS instance 0 that can be used as timebase
+      for channels from 0 to 22, freezed in debug mode:
+        master_bus {
+          emios0_bus_a: emios0_bus_a {
+            channel = <23>;
+            bus-type = "BUS_A";
+            channel-mask = <0x07FFFFF>;
+            prescaler = <1>;
+            period = <65535>;
+            mode = <MCB_UP_COUNTER>;
+            freeze;
+            status = "okay";
+          };
+        };
+
+    properties:
+      channel:
+        type: int
+        required: true
+        description: |
+          Channel identifier for the master bus.
+
+      channel-mask:
+        type: int
+        required: true
+        description: |
+          A channel mask for channels that by hardware design can use this master bus
+          as timebase for the operation, lsb is channel 0. The mask bit for this master bus
+          must always 0 because a master bus should not do other thing than a base timer.
+
+      prescaler:
+        type: int
+        required: true
+        description: |
+          Clock divider value for internal UC prescaler.
+          Clock for internal counter = (eMIOS clock / global prescaler) / internal prescaler.
+        enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+      bus-type:
+        type: string
+        required: true
+        description: |
+          Master bus type.
+        enum:
+          - "BUS_A"
+          - "BUS_B"
+          - "BUS_C"
+          - "BUS_D"
+          - "BUS_E"
+          - "BUS_F"
+
+      mode:
+        type: string
+        required: true
+        description: |
+          Master bus mode.
+        enum:
+          - "MCB_UP_COUNTER"
+          - "MCB_UP_DOWN_COUNTER"
+
+      period:
+        type: int
+        required: true
+        description: |
+          Default period (in ticks) for master bus at boot time. This determines PWM period
+          for channels use this bus as reference timebase. Could be in range [2 ... 65535]
+
+      freeze:
+        type: boolean
+        description: Freeze internal counter when the chip enters Debug mode.

@@ -1,0 +1,1076 @@
+# General configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.constants"
+
+osource "${APPLICATION_SOURCE_DIR}/VERSION"
+
+# Include Kconfig.defconfig files first so that they can override defaults and
+# other symbol/choice properties by adding extra symbol/choice definitions.
+# After merging all definitions for a symbol/choice, Kconfig picks the first
+# property (e.g. the first default) with a satisfied condition.
+#
+# Shield defaults should have precedence over board defaults, which should have
+# precedence over SoC defaults, so include them in that order.
+#
+# $ARCH and $BOARD_DIR will be glob patterns when building documentation.
+# This loads custom shields defconfigs (from BOARD_ROOT)
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig"
+# This loads Zephyr base shield defconfigs
+source "boards/shields/*/Kconfig.defconfig"
+
+osource "$(BOARD_DIR)/Kconfig.defconfig"
+
+# This loads Zephyr specific SoC root defconfigs
+source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.defconfig"
+
+# This loads the toolchain defconfigs
+osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
+# This loads the testsuite defconfig
+source "subsys/testsuite/Kconfig.defconfig"
+
+# This should be early since the autogen Kconfig.dts symbols may get
+# used by modules
+source "dts/Kconfig"
+
+menu "Modules"
+
+source "modules/Kconfig"
+
+endmenu
+
+source "boards/Kconfig"
+source "soc/Kconfig"
+source "arch/Kconfig"
+source "kernel/Kconfig"
+source "drivers/Kconfig"
+source "lib/Kconfig"
+source "subsys/Kconfig"
+
+osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig"
+
+menu "Build and Link Features"
+
+menu "Linker Options"
+
+choice LINKER_ORPHAN_CONFIGURATION
+	prompt "Linker Orphan Section Handling"
+	default LINKER_ORPHAN_SECTION_WARN
+
+config LINKER_ORPHAN_SECTION_PLACE
+	bool "Place"
+	help
+	  Linker puts orphan sections in place without warnings
+	  or errors.
+
+config LINKER_ORPHAN_SECTION_WARN
+	bool "Warn"
+	help
+	  Linker places the orphan sections in output and issues
+	  warning about those sections.
+
+config LINKER_ORPHAN_SECTION_ERROR
+	bool "Error"
+	help
+	  Linker exits with error when an orphan section is found.
+
+endchoice
+
+config HAS_FLASH_LOAD_OFFSET
+	bool
+	help
+	  This option is selected by targets having a FLASH_LOAD_OFFSET
+	  and FLASH_LOAD_SIZE.
+
+if HAS_FLASH_LOAD_OFFSET
+
+config USE_DT_CODE_PARTITION
+	bool "Link application into /chosen/zephyr,code-partition from devicetree"
+	help
+	  When enabled, the application will be linked into the flash partition
+	  selected by the zephyr,code-partition property in /chosen in devicetree.
+	  When this is disabled, the flash load offset and size can be set manually
+	  below.
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config FLASH_LOAD_OFFSET
+	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
+	hex "Kernel load offset" if !USE_DT_CODE_PARTITION
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
+	default 0
+	help
+	  This option specifies the byte offset from the beginning of flash that
+	  the kernel should be loaded into. Changing this value from zero will
+	  affect the Zephyr image's link, and will decrease the total amount of
+	  flash available for use by application code.
+
+	  If unsure, leave at the default value 0.
+
+config FLASH_LOAD_SIZE
+	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
+	hex "Kernel load size" if !USE_DT_CODE_PARTITION
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
+	default 0
+	help
+	  If non-zero, this option specifies the size, in bytes, of the flash
+	  area that the Zephyr image will be allowed to occupy.  If zero, the
+	  image will be able to occupy from the FLASH_LOAD_OFFSET to the end of
+	  the device.
+
+	  If unsure, leave at the default value 0.
+
+endif # HAS_FLASH_LOAD_OFFSET
+
+config ROM_START_OFFSET
+	hex
+	prompt "ROM start offset" if !BOOTLOADER_MCUBOOT
+	default 0x200 if BOOTLOADER_MCUBOOT
+	default 0
+	help
+	  If the application is built for chain-loading by a bootloader this
+	  variable is required to be set to value that leaves sufficient
+	  space between the beginning of the image and the start of the first
+	  section to store an image header or any other metadata.
+	  In the particular case of the MCUboot bootloader this reserves enough
+	  space to store the image header, which should also meet vector table
+	  alignment requirements on most ARM targets, although some targets
+	  may require smaller or larger values.
+
+config ROM_END_OFFSET
+	hex "ROM end offset"
+	default 0
+	help
+	  If non-zero, this option reduces the maximum size that the Zephyr image is allowed to
+	  occupy, this is to allow for additional image storage which can be created and used by
+	  other systems such as bootloaders (for MCUboot, this would include the image swap
+	  fields and TLV storage at the end of the image).
+
+	  If unsure, leave at the default value 0.
+
+config LD_LINKER_SCRIPT_SUPPORTED
+	bool
+	default y
+
+choice LINKER_SCRIPT
+	prompt "Linker script"
+	default LD_LINKER_TEMPLATE if LD_LINKER_SCRIPT_SUPPORTED
+
+config LD_LINKER_TEMPLATE
+	bool "LD template"
+	depends on LD_LINKER_SCRIPT_SUPPORTED
+	help
+	  Select this option to use the LD linker script templates.
+	  The templates are pre-processed by the C pre-processor to create the
+	  final LD linker script.
+
+config CMAKE_LINKER_GENERATOR
+	bool "CMake generator"
+	depends on ARM
+	help
+	  Select this option to use the Zephyr CMake linker script generator.
+	  The linker configuration is written in CMake and the final linker
+	  script will be generated by the toolchain specific linker generator.
+	  For LD based linkers, this will be the ld generator, for ARMClang /
+	  armlink based linkers it will be the scatter generator.
+
+endchoice
+
+config HAVE_CUSTOM_LINKER_SCRIPT
+	bool "Custom linker script provided"
+	help
+	  Set this option if you have a custom linker script which needed to
+	  be define in CUSTOM_LINKER_SCRIPT.
+
+config CUSTOM_LINKER_SCRIPT
+	string "Path to custom linker script"
+	depends on HAVE_CUSTOM_LINKER_SCRIPT
+	help
+	  Path to the linker script to be used instead of the one define by the
+	  board.
+
+	  The linker script must be based on a version provided by Zephyr since
+	  the kernel can expect a certain layout/certain regions.
+
+	  This is useful when an application needs to add sections into the
+	  linker script and avoid having to change the script provided by
+	  Zephyr.
+
+config KERNEL_ENTRY
+	string "Kernel entry symbol"
+	default "__start"
+	help
+	  Code entry symbol, to be set at linking phase.
+
+config LINKER_SORT_BY_ALIGNMENT
+	bool "Sort input sections by alignment"
+	default y
+	help
+	  This turns on the linker flag to sort sections by alignment
+	  in decreasing size of symbols. This helps to minimize
+	  padding between symbols.
+
+config SRAM_VECTOR_TABLE
+	bool "Place the vector table in SRAM instead of flash"
+	help
+	  The option specifies that the vector table should be placed at the
+	  start of SRAM instead of the start of flash.
+
+config HAS_SRAM_OFFSET
+	bool
+	help
+	  This option is selected by targets that require SRAM_OFFSET.
+
+config SRAM_OFFSET
+	hex "Kernel SRAM offset" if HAS_SRAM_OFFSET
+	default 0
+	help
+	  This option specifies the byte offset from the beginning of SRAM
+	  where the kernel begins. Changing this value from zero will affect
+	  the Zephyr image's link, and will decrease the total amount of
+	  SRAM available for use by application code.
+
+	  If unsure, leave at the default value 0.
+
+menu "Linker Sections"
+
+config LINKER_USE_BOOT_SECTION
+	bool "Use Boot Linker Section"
+	help
+	  If enabled, the symbols which are needed for the boot process
+	  will be put into another linker section reserved for these
+	  symbols.
+
+	  Requires that boot sections exist in the architecture, SoC,
+	  board or custom linker script.
+
+config LINKER_USE_PINNED_SECTION
+	bool "Use Pinned Linker Section"
+	help
+	  If enabled, the symbols which need to be pinned in memory
+	  will be put into another linker section reserved for pinned
+	  symbols. During boot, the corresponding memory will be marked
+	  as pinned.
+
+	  Requires that pinned sections exist in the architecture, SoC,
+	  board or custom linker script.
+
+config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
+	bool "Generic sections are present at boot" if DEMAND_PAGING && LINKER_USE_PINNED_SECTION
+	default y
+	help
+	  When disabled, the linker sections other than the boot and
+	  pinned sections will be marked as not present in the page
+	  tables. This allows kernel to pull in data pages on demand
+	  as required by current execution context when demand paging
+	  is enabled. There is no need to load all code and data into
+	  memory at once.
+
+	  If unsure, say Y.
+
+config LINKER_LAST_SECTION_ID
+	bool "Last section identifier"
+	default y
+	depends on ARM || ARM64 || RISCV
+	help
+	  If enabled, the last section will contain an identifier.
+	  This ensures that the '_flash_used' linker symbol will always be
+	  correctly calculated, even in cases where the location counter may
+	  have been incremented for alignment purposes but no data is placed
+	  after alignment.
+
+	  Note: in cases where the flash is fully used, for example application
+	  specific data is written at the end of the flash area, then writing a
+	  last section identifier may cause rom region overflow.
+	  In such cases this setting should be disabled.
+
+config LINKER_LAST_SECTION_ID_PATTERN
+	hex "Last section identifier pattern"
+	default "0xE015E015"
+	depends on LINKER_LAST_SECTION_ID
+	help
+	  Pattern to fill into last section as identifier.
+	  Default pattern is 0xE015 (end of last section), but any pattern can
+	  be used.
+	  The size of the pattern must not exceed 4 bytes.
+
+config LINKER_USE_NO_RELAX
+	bool
+	help
+	  Hidden symbol to allow features to force the use of no relax.
+
+config LINKER_USE_RELAX
+	bool "Linker optimization of call addressing"
+	depends on !LINKER_USE_NO_RELAX
+	default y
+	help
+	  This option performs global optimizations that become possible when the linker resolves
+	  addressing in the program, such as relaxing address modes and synthesizing new
+	  instructions in the output object file. For ld and lld, this enables `--relax`.
+	  On platforms where this is not supported, `--relax' is accepted, but ignored.
+	  Disabling it can reduce performance, as the linker is no longer able to substiture long /
+	  in-effective jump calls to shorter / more effective instructions.
+
+endmenu # "Linker Sections"
+
+config LINKER_ITERABLE_SUBALIGN
+	int
+	default 8 if 64BIT
+	default 4
+	help
+	  Hidden option for the default subalignment of iterable sections.
+
+config LINKER_DEVNULL_SUPPORT
+	bool
+	default y if CPU_CORTEX_M || (RISCV && !64BIT)
+
+config LINKER_DEVNULL_MEMORY
+	bool "Devnull region"
+	depends on LINKER_DEVNULL_SUPPORT
+	help
+	  Devnull region is created. It is stripped from final binary but remains
+	  in byproduct elf file.
+
+config LINKER_DEVNULL_MEMORY_SIZE
+	int "Devnull region size"
+	depends on LINKER_DEVNULL_MEMORY
+	default 262144
+	help
+	  Size can be adjusted so it fits all data placed in that region.
+
+endmenu
+
+menu "Compiler Options"
+
+config REQUIRES_STD_C99
+	bool
+	help
+	  Hidden option to select compiler support C99 standard or higher.
+
+config REQUIRES_STD_C11
+	bool
+	select REQUIRES_STD_C99
+	help
+	  Hidden option to select compiler support C11 standard or higher.
+
+config REQUIRES_STD_C17
+	bool
+	select REQUIRES_STD_C11
+	help
+	  Hidden option to select compiler support C17 standard or higher.
+
+config REQUIRES_STD_C23
+	bool
+	select REQUIRES_STD_C17
+	help
+	  Hidden option to select compiler support C23 standard or higher.
+
+choice STD_C
+	prompt "C Standard"
+	default STD_C23 if REQUIRES_STD_C23
+	default STD_C17 if REQUIRES_STD_C17
+	default STD_C11 if REQUIRES_STD_C11
+	default STD_C99
+	help
+	  C Standards.
+
+config STD_C90
+	bool "C90"
+	depends on !REQUIRES_STD_C99
+	help
+	  1989 C standard as completed in 1989 and ratified by ISO/IEC
+	  as ISO/IEC 9899:1990. This version is known as "ANSI C".
+
+config STD_C99
+	bool "C99"
+	depends on !REQUIRES_STD_C11
+	help
+	  1999 C standard.
+
+config STD_C11
+	bool "C11"
+	depends on !REQUIRES_STD_C17
+	help
+	  2011 C standard.
+
+config STD_C17
+	bool "C17"
+	depends on !REQUIRES_STD_C23
+	help
+	  2017 C standard, addresses defects in C11 without introducing
+	  new language features.
+
+config STD_C23
+	bool "C23"
+	help
+	  2023 C standard.
+
+endchoice
+
+config TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+	bool
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	help
+	  Hidden option to signal that toolchain supports GNU Extensions.
+
+config GNU_C_EXTENSIONS
+	bool "GNU C Extensions"
+	depends on TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+	help
+	  Enable GNU C Extensions. GNU C provides several language features
+	  not found in ISO standard C.
+
+config CODING_GUIDELINE_CHECK
+	bool "Enforce coding guideline rules"
+	help
+	  Use available compiler flags to check coding guideline rules during
+	  the build.
+
+config NATIVE_LIBC
+	bool
+	select FULL_LIBC_SUPPORTED
+	help
+	  Zephyr will use the host system C library.
+
+config NATIVE_LIBCPP
+	bool
+	select FULL_LIBCPP_SUPPORTED
+	help
+	  Zephyr will use the host system C++ library
+
+config NATIVE_BUILD
+	bool
+	select NATIVE_LIBC if EXTERNAL_LIBC
+	select NATIVE_LIBCPP if EXTERNAL_LIBCPP
+	help
+	  Zephyr will be built targeting the host system for debug and
+	  development purposes.
+
+config NATIVE_APPLICATION
+	bool
+	default y if ARCH_POSIX
+	depends on !NATIVE_LIBRARY
+	select NATIVE_BUILD
+	help
+	  Build as a native application that can run on the host and using
+	  resources and libraries provided by the host.
+
+config NATIVE_LIBRARY
+	bool
+	select NATIVE_BUILD
+	help
+	  Build as a prelinked library for the native host target.
+	  This library can later be built into an executable for the host.
+
+config COMPILER_FREESTANDING
+	bool "Build in a freestanding compiler mode"
+	help
+	  Configure the compiler to operate in freestanding mode according to
+	  the C and C++ language specifications. Freestanding mode reduces the
+	  requirements of the compiler and language environment, which can
+	  negatively impact the ability for the compiler to detect errors and
+	  perform optimizations.
+
+choice COMPILER_OPTIMIZATIONS
+	prompt "Optimization level"
+	default NO_OPTIMIZATIONS    if COVERAGE
+	default DEBUG_OPTIMIZATIONS if DEBUG
+	default SIZE_OPTIMIZATIONS_AGGRESSIVE if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
+	default SIZE_OPTIMIZATIONS
+	help
+	  Note that these flags shall only control the compiler
+	  optimization level, and that no extra debug code shall be
+	  conditionally compiled based on them.
+
+config SIZE_OPTIMIZATIONS
+	bool "Optimize for size"
+	help
+	  Compiler optimizations will be set to -Os independently of other
+	  options.
+
+config SIZE_OPTIMIZATIONS_AGGRESSIVE
+	bool "Aggressively optimize for size"
+	help
+	  Compiler optimizations wil be set to -Oz independently of other
+	  options.
+
+config SPEED_OPTIMIZATIONS
+	bool "Optimize for speed"
+	help
+	  Compiler optimizations will be set to -O2 independently of other
+	  options.
+
+config DEBUG_OPTIMIZATIONS
+	bool "Optimize debugging experience"
+	help
+	  Compiler optimizations will be set to -Og independently of other
+	  options.
+
+config NO_OPTIMIZATIONS
+	bool "Optimize nothing"
+	help
+	  Compiler optimizations will be set to -O0 independently of other
+	  options.
+
+	  Selecting this option will likely require manual tuning of the
+	  default stack sizes in order to avoid stack overflows.
+endchoice
+
+config LTO
+	bool "Link Time Optimization [EXPERIMENTAL]"
+	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
+	depends on !NATIVE_LIBRARY
+	depends on !CODE_DATA_RELOCATION
+	select EXPERIMENTAL
+	help
+	  This option enables Link Time Optimization.
+
+config COMPILER_WARNINGS_AS_ERRORS
+	bool "Treat warnings as errors"
+	help
+	  Turn on "warning as error" toolchain flags
+
+config COMPILER_SAVE_TEMPS
+	bool "Save temporary object files"
+	help
+	  Instruct the compiler to save the temporary intermediate files
+	  permanently. These can be useful for troubleshooting build issues.
+
+config COMPILER_TRACK_MACRO_EXPANSION
+	bool "Track macro expansion"
+	default y
+	help
+	  When enabled, locations of tokens across macro expansions will be
+	  tracked. Disabling this option may be useful to debug long macro
+	  expansion chains.
+
+config COMPILER_COLOR_DIAGNOSTICS
+	bool "Colored diagnostics"
+	default y
+	help
+	  Compiler diagnostic messages are colorized.
+
+choice COMPILER_SECURITY_FORTIFY
+	prompt "Detect buffer overflows in libc calls"
+	default FORTIFY_SOURCE_NONE if NO_OPTIMIZATIONS || MINIMAL_LIBC || NATIVE_BUILD
+	default FORTIFY_SOURCE_COMPILE_TIME
+	help
+	  Buffer overflow checking in libc calls. Supported by Clang and
+	  GCC when using Picolibc or Newlib. Requires compiler optimization
+	  to be enabled.
+
+config FORTIFY_SOURCE_NONE
+	bool "No detection"
+	help
+	  Disables both compile-time and run-time checking.
+
+config FORTIFY_SOURCE_COMPILE_TIME
+	bool "Compile-time detection"
+	help
+	  Enables only compile-time checking. Compile-time checking
+	  doesn't increase executable size or reduce performance, it
+	  limits checking to what can be done with information available
+	  at compile time.
+
+config FORTIFY_SOURCE_RUN_TIME
+	bool "Compile-time and run-time detection"
+	help
+	  Enables both compile-time and run-time checking. Run-time
+	  checking increases coverage at the expense of additional code,
+	  and means that applications will raise a runtime exception
+	  when buffer overflow is detected.
+
+endchoice
+
+config COMPILER_OPT
+	string "Custom compiler options"
+	help
+	  This option is a free-form string that is passed to the compiler
+	  when building all parts of a project (i.e. kernel).
+	  The compiler options specified by this string supplement the
+	  predefined set of compiler supplied by the build system,
+	  and can be used to change compiler optimization, warning and error
+	  messages, and so on.
+
+config MISRA_SANE
+	bool "MISRA standards compliance features"
+	help
+	  Causes the source code to build in "MISRA" mode, which
+	  disallows some otherwise-permitted features of the C
+	  standard for safety reasons.  Specifically variable length
+	  arrays are not permitted (and gcc will enforce this).
+
+endmenu
+
+choice
+	prompt "Error checking behavior for CHECK macro"
+	default RUNTIME_ERROR_CHECKS
+
+config ASSERT_ON_ERRORS
+	bool "Assert on all errors"
+	help
+	  Assert on errors covered with the CHECKIF() macro.
+
+config NO_RUNTIME_CHECKS
+	bool "No runtime error checks"
+	help
+	  Do not do any runtime checks or asserts when using the CHECKIF() macro.
+
+config RUNTIME_ERROR_CHECKS
+	bool "Runtime error checks"
+	help
+	  Always perform runtime checks covered with the CHECKIF() macro. This
+	  option is the default and the only option used during testing.
+
+endchoice
+
+menu "Build Options"
+
+config KERNEL_BIN_NAME
+	string "The kernel binary name"
+	default "zephyr"
+	help
+	  This option sets the name of the generated kernel binary.
+
+config OUTPUT_STAT
+	bool "Create a statistics file"
+	default y
+	help
+	  Create a stat file using readelf -e <elf>
+
+config OUTPUT_SYMBOLS
+	bool "Create a symbol file"
+	help
+	  Create a symbol file using nm <elf>
+
+config OUTPUT_DISASSEMBLY
+	bool "Create a disassembly file"
+	help
+	  Create an .lst file with the assembly listing of the firmware.
+
+config OUTPUT_DISASSEMBLE_ALL
+	bool "Disassemble all sections with source. Fill zeros."
+	default n
+	depends on OUTPUT_DISASSEMBLY
+	help
+	  The .lst file will contain complete disassembly of the firmware
+	  not just those expected to contain instructions including zeros
+
+config OUTPUT_DISASSEMBLY_WITH_SOURCE
+	bool "Include source code in output disassembly file"
+	default y
+	depends on OUTPUT_DISASSEMBLY && !OUTPUT_DISASSEMBLE_ALL
+	help
+	  The .lst file will also contain the source code. Having
+	  control over this can be useful for reproducible builds
+	  since it can be used to remove one of the elements of
+	  the .lst file that can vary across platforms because
+	  of reasons such as having ".." include paths.
+
+config OUTPUT_PRINT_MEMORY_USAGE
+	bool "Print memory usage to stdout"
+	default y
+	help
+	  If the toolchain supports it, this option will pass
+	  --print-memory-region to the linker when it is doing it's first
+	  linker pass. Note that the memory regions are symbolic concepts
+	  defined by the linker scripts and do not necessarily map
+	  directly to the real physical address space. Take also note that
+	  some platforms do two passes of the linker so the results do not
+	  match exactly to the final elf file. See also rom_report,
+	  ram_report and
+	  https://sourceware.org/binutils/docs/ld/MEMORY.html
+
+config CLEANUP_INTERMEDIATE_FILES
+	bool "Remove all intermediate files"
+	help
+	  Delete intermediate files to save space and cleanup clutter resulting
+	  from the build process. Note this breaks incremental builds, west spdx
+	  (Software Bill of Material generation), and maybe others.
+
+config BUILD_NO_GAP_FILL
+	bool "Don't fill gaps in generated hex/bin/s19 files."
+
+config BUILD_OUTPUT_HEX
+	bool "Build a binary in HEX format"
+	help
+	  Build an Intel HEX binary zephyr/zephyr.hex in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_BIN
+	bool "Build a binary in BIN format"
+	default y
+	help
+	  Build a "raw" binary zephyr/zephyr.bin in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_EFI
+	bool "Build as an EFI application"
+	default n
+	depends on X86_64
+	help
+	  Build as an EFI application.
+
+	  This works by creating a "zephyr.efi" EFI binary containing a zephyr
+	  image extracted from a built zephyr.elf file.  EFI applications are
+	  relocatable, and cannot be placed at specific locations in memory.
+	  Instead, the stub code will copy the embedded zephyr sections to the
+	  appropriate locations at startup, clear any zero-filled (BSS, etc...)
+	  areas, then jump into the 64 bit entry point.
+
+config BUILD_OUTPUT_EXE
+	bool "Build a binary in ELF format with .exe extension"
+	help
+	  Build an ELF binary that can run in the host system at
+	  zephyr/zephyr.exe in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_S19
+	bool "Build a binary in S19 format"
+	help
+	  Build an S19 binary zephyr/zephyr.s19 in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_UF2
+	bool "Build a binary in UF2 format"
+	depends on BUILD_OUTPUT_BIN
+	help
+	  Build a UF2 binary zephyr/zephyr.uf2 in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+if BUILD_OUTPUT_UF2
+
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	string "UF2 device family ID"
+	default "0x1c5f21b0" if SOC_SERIES_ESP32
+	default "0x621e937a" if SOC_NRF52833_QIAA
+	default "0xada52840" if SOC_NRF52840_QIAA
+	default "0x4fb2d5bd" if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+	default "0x2abc77ec" if SOC_SERIES_LPC55XXX
+	default "0xe48bff56" if SOC_SERIES_RP2XXX
+	default "0x68ed2b88" if SOC_SERIES_SAMD21
+	default "0x55114460" if SOC_SERIES_SAMD51
+	default "0x647824b6" if SOC_SERIES_STM32F0X
+	default "0x5d1a0a2e" if SOC_SERIES_STM32F2X
+	default "0x6b846188" if SOC_SERIES_STM32F3X
+	default "0x53b80f00" if SOC_SERIES_STM32F7X
+	default "0x300f5633" if SOC_SERIES_STM32G0X
+	default "0x4c71240a" if SOC_SERIES_STM32G4X
+	default "0x6db66082" if SOC_SERIES_STM32H7X
+	default "0x202e3a91" if SOC_SERIES_STM32L0X
+	default "0x1e1f432d" if SOC_SERIES_STM32L1X
+	default "0x00ff6919" if SOC_SERIES_STM32L4X
+	default "0x04240bdf" if SOC_SERIES_STM32L5X
+	default "0x70d16653" if SOC_SERIES_STM32WBX
+	default "0x5ee21072" if SOC_STM32F103XE
+	default "0x57755a57" if SOC_SERIES_STM32F4X && (!SOC_STM32F407XE) && (!SOC_STM32F407XG)
+	default "0x6d0922fa" if SOC_STM32F407XE
+	default "0x8fb060fe" if SOC_STM32F407XG
+	help
+	  UF2 bootloaders only accept UF2 files with a matching family ID.
+	  This can be either a hex, e.g. 0x68ed2b88, or well-known family
+	  name string. If the SoC in use is known by UF2, the Family ID will
+	  be pre-filled with the known value.
+
+config BUILD_OUTPUT_UF2_USE_FLASH_BASE
+	bool
+	default n
+
+config BUILD_OUTPUT_UF2_USE_FLASH_OFFSET
+	bool
+	default n
+
+endif # BUILD_OUTPUT_UF2
+
+config BUILD_OUTPUT_STRIPPED
+	bool "Build a stripped binary"
+	help
+	  Build a stripped binary zephyr/zephyr.strip in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS
+	bool "Compress debug sections in the ELF file"
+	help
+	  Compress debug sections in the ELF file to reduce the file size.
+
+config BUILD_OUTPUT_ADJUST_LMA
+	string
+	help
+	  This will adjust the LMA address in the final ELF and hex files with
+	  the value provided.
+	  This will not affect the internal address symbols inside the image but
+	  can be useful when adjusting the LMA address for flash tools or multi
+	  stage loaders where a pre-loader may copy image to a second location
+	  before booting a second core.
+	  The value will be evaluated as a math expression, this means that
+	  following are valid expression
+	  - 1024
+	  - 0x1000
+	  - -0x1000
+	  - 0x20000000 - 0x10000000
+	  Note: negative numbers are valid.
+	  To adjust according to a chosen flash partition one can specify a
+	  default as:
+	  DT_CHOSEN_IMAGE_<name> := <name>,<name>-partition
+	  DT_CHOSEN_Z_FLASH := zephyr,flash
+	  config BUILD_OUTPUT_ADJUST_LMA
+	    default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4))-\
+	             $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))"
+
+config BUILD_OUTPUT_INFO_HEADER
+	bool "Create a image information header"
+	help
+	  Create an image information header which will contain image
+	  information from the Zephyr binary.
+	  Example of information contained in the header file:
+	  - Number of segments in the image
+	  - LMA address of each segment
+	  - VMA address of each segment
+	  - Size of each segment
+
+config BUILD_ALIGN_LMA
+	bool "Align LMA in output image"
+	default y if BUILD_OUTPUT_ADJUST_LMA!=""
+	help
+	  Ensure that the LMA for each section in the output image respects
+	  the alignment requirements of that section. This is required for
+	  some tooling, such as objcopy, to be able to adjust the LMA of the
+	  ELF file.
+
+config APPLICATION_DEFINED_SYSCALL
+	bool "Scan application folder for any syscall definition"
+	help
+	  Scan additional folders inside application source folder
+	  for application defined syscalls.
+
+config MAKEFILE_EXPORTS
+	bool "Generate build metadata files named Makefile.exports"
+	help
+	  Generates a file with build information that can be read by
+	  third party Makefile-based build systems.
+
+config BUILD_OUTPUT_META
+	bool "Create a build meta file"
+	help
+	  Create a build meta file in the build directory containing lists of:
+	  - Zephyr: path and revision (if git repo)
+	  - Zephyr modules: name, path, and revision (if git repo)
+	  - West:
+	    - manifest: path and revision
+	    - projects: path and revision
+	  - Workspace:
+	    - dirty: one or more repositories are marked dirty
+	    - extra: extra Zephyr modules are manually included in the build
+	    - off:   the SHA of one or more west projects are not what the manifest
+	             defined when `west update` was run the last time (`manifest-rev`).
+	             The off state is only present if a west workspace is found.
+	  File extension is .meta
+
+config BUILD_OUTPUT_META_STATE_PROPAGATE
+	bool "Propagate module and project state"
+	depends on BUILD_OUTPUT_META
+	help
+	  Propagate to state of each module to the Zephyr revision field.
+	  If west is used the state of each west project is also propagated to
+	  the Zephyr revision field.
+	  West manifest repo revision field will also
+	  be marked with the same state as the Zephyr revision.
+	  The final revision will become: <SHA>-<state1>-<state2>-<state3>...
+	  If no states are appended to the SHA it means the build is of a clean
+	  tree.
+	  - dirty: one or more repositories are marked dirty
+	  - extra: extra Zephyr modules are manually included in the build
+	  - off:   the SHA of one or more west projects are not what the manifest
+	           defined when `west update` was run the last time (`manifest-rev`).
+	           The off state is only present if a west workspace is found.
+
+config BUILD_OUTPUT_STRIP_PATHS
+	bool "Strip absolute paths from binaries"
+	default y
+	help
+	  If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
+	  __FILE__ macro used in __ASSERT*, in the
+	  .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
+	  application code.
+	  This saves some memory, stops leaking user locations in binaries, makes
+	  failure logs more deterministic and most importantly makes builds more
+	  deterministic.
+	  Debuggers usually have a path mapping feature to ensure the files are
+	  still found.
+
+config CHECK_INIT_PRIORITIES
+	bool "Build time initialization priorities check"
+	default y
+	# If we are building a native_simulator target, we can only check the init priorities
+	# if we are building the final output but we are not assembling several images together
+	depends on !(NATIVE_LIBRARY && (!BUILD_OUTPUT_EXE || NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS != ""))
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "armclang"
+	help
+	  Check the build for initialization priority issues by comparing the
+	  initialization priority in the build with the device dependency
+	  derived from the devicetree definition.
+
+	  Fails the build on priority errors (dependent devices, inverted
+	  priority).
+
+config EMIT_ALL_SYSCALLS
+	bool "Emit all possible syscalls in the tree"
+	help
+	  This tells the build system to emit all possible syscalls found
+	  in the tree, instead of only those syscalls associated with enabled
+	  drivers and subsystems.
+
+endmenu
+
+config DEPRECATED
+	bool
+	help
+	  Symbol that must be selected by a feature or module if it is
+	  considered to be deprecated.
+
+config WARN_DEPRECATED
+	bool
+	default y
+	prompt "Warn on deprecated usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any deprecated
+	  features are enabled.
+
+config EXPERIMENTAL
+	bool
+	help
+	  Symbol that must be selected by a feature if it is considered to be
+	  at an experimental implementation stage.
+
+config WARN_EXPERIMENTAL
+	bool
+	prompt "Warn on experimental usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any experimental
+	  features are enabled.
+
+config TAINT
+	bool
+	help
+	  Symbol that must be selected by a feature or module if the Zephyr
+	  build is considered tainted.
+
+config ENFORCE_ZEPHYR_STDINT
+	bool
+	prompt "Enforce Zephyr convention for stdint"
+	depends on !ARCH_POSIX
+	default y
+	help
+	  This enforces the Zephyr stdint convention where int32_t = int,
+	  int64_t = long long, and intptr_t = long so that short string
+	  format length modifiers can be used universally across ILP32
+	  and LP64 architectures. Sometimes this is not possible e.g. when
+	  linking against a binary-only C++ library whose type mangling
+	  is incompatible with the Zephyr convention, or if the build
+	  environment doesn't allow such enforcement, in which case this
+	  should be turned off with the caveat that argument type validation
+	  on Zephyr code will be skipped.
+
+endmenu
+
+
+menu "Boot Options"
+
+config IS_BOOTLOADER
+	bool "Act as a bootloader"
+	depends on XIP
+	depends on ARM
+	help
+	  This option indicates that Zephyr will act as a bootloader to execute
+	  a separate Zephyr image payload.
+
+config BOOTLOADER_SRAM_SIZE
+	int "SRAM reserved for bootloader [DEPRECATED]"
+	default 0
+	depends on !XIP || IS_BOOTLOADER
+	depends on ARM || XTENSA
+	help
+	  This option specifies the amount of SRAM (measure in kB) reserved for
+	  a bootloader image, when either:
+	  - the Zephyr image itself is to act as the bootloader, or
+	  - Zephyr is a !XIP image, which implicitly assumes existence of a
+	  bootloader that loads the Zephyr !XIP image onto SRAM.
+
+	  This option is deprecated, users should transition to using DTS to set this, if needed.
+	  To be removed after Zephyr 3.7 release.
+
+config BOOTLOADER_SRAM_SIZE_DEPRECATED
+	bool
+	default y
+	select DEPRECATED
+	depends on BOOTLOADER_SRAM_SIZE != 0
+	depends on !XIP || IS_BOOTLOADER
+	depends on ARM || XTENSA
+	help
+	  Non-prompt symbol to indicate that the deprecated BOOTLOADER_SRAM_SIZE Kconfig has a
+	  non-0 value. Please transition to using devicetree.
+
+config BOOTLOADER_BOSSA
+	bool "BOSSA bootloader support"
+	select USE_DT_CODE_PARTITION
+
+	help
+	  Signifies that the target uses a BOSSA compatible bootloader.  If CDC
+	  ACM USB support is also enabled then the board will reboot into the
+	  bootloader automatically when bossac is run.
+
+config BOOTLOADER_BOSSA_DEVICE_NAME
+	string "BOSSA CDC ACM device name"
+	depends on BOOTLOADER_BOSSA && CDC_ACM_DTE_RATE_CALLBACK_SUPPORT
+	default "CDC_ACM_0"
+	help
+	  Sets the CDC ACM port to watch for reboot commands.
+
+choice
+	prompt "BOSSA bootloader variant"
+	depends on BOOTLOADER_BOSSA
+
+config BOOTLOADER_BOSSA_LEGACY
+	bool "Legacy"
+	help
+	  Select the Legacy variant of the BOSSA bootloader.  This is defined
+	  for compatibility mode only.  The recommendation is use newer
+	  versions like Arduino or Adafruit UF2.
+
+config BOOTLOADER_BOSSA_ARDUINO
+	bool "Arduino"
+	help
+	  Select the Arduino variant of the BOSSA bootloader.  Uses 0x07738135
+	  as the magic value to enter the bootloader.
+
+config BOOTLOADER_BOSSA_ADAFRUIT_UF2
+	bool "Adafruit UF2"
+	help
+	  Select the Adafruit UF2 variant of the BOSSA bootloader.  Uses
+	  0xf01669ef as the magic value to enter the bootloader.
+
+endchoice
+
+endmenu
+
+menu "Compatibility"
+
+config LEGACY_GENERATED_INCLUDE_PATH
+	bool "Legacy include path for generated headers"
+	default y
+	help
+	  Allow applications and libraries to use the Zephyr legacy include
+	  path for the generated headers which does not use the `zephyr/` prefix.
+
+	  From now on, i.e., the preferred way to include the `version.h` header is to
+	  use <zephyr/version.h>, this Kconfig is currently enabled by default so that
+	  user applications won't immediately fail to compile.
+
+	  This Kconfig will be deprecated and eventually removed in the future releases.
+
+endmenu

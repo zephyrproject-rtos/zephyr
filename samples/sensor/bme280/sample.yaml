@@ -1,0 +1,40 @@
+sample:
+  name: BME280 Sensor sample
+tests:
+  sample.sensor.bme280:
+    harness: console
+    tags: sensors
+    platform_allow:
+      - adafruit_feather_m0_basic_proto
+      - rpi_pico
+    integration_platforms:
+      - adafruit_feather_m0_basic_proto
+    harness_config:
+      type: one_line
+      regex:
+        - "temp: (.*); press: (.*); humidity: (.*)"
+      fixture: fixture_i2c_bme280
+  sample.sensor.bme280.spi:
+    harness: console
+    tags: sensors
+    depends_on:
+      - spi
+      - bme280
+    extra_args: "DTC_OVERLAY_FILE=arduino_spi.overlay"
+    harness_config:
+      type: one_line
+      regex:
+        - "temp: (.*); press: (.*); humidity: (.*)"
+      fixture: fixture_spi_bme280
+  sample.sensor.bme280.rpi_pico.pio:
+    harness: console
+    tags: sensors
+    platform_allow: rpi_pico
+    integration_platforms:
+      - rpi_pico
+    extra_args: "DTC_OVERLAY_FILE=rpi_pico_spi_pio.overlay"
+    harness_config:
+      type: one_line
+      regex:
+        - "temp: (.*); press: (.*); humidity: (.*)"
+      fixture: fixture_rpi_pico_pio_spi_bme280

@@ -1,0 +1,17 @@
+identifier: em_starterkit@2.2/emsk_em7d
+name: EM Starterkit EM7D (rev. 2.2)
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+  - xtools
+supported:
+  - i2c
+  - spi
+  - gpio
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

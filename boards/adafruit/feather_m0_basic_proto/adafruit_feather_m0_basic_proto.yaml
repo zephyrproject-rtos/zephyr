@@ -1,0 +1,11 @@
+identifier: adafruit_feather_m0_basic_proto
+name: Adafruit Feather M0 Basic Proto
+type: mcu
+arch: arm
+ram: 32
+flash: 232
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+vendor: adafruit

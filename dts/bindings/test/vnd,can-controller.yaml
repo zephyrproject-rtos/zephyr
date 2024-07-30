@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test CAN controller node
+
+compatible: "vnd,can-controller"
+
+include: can-controller.yaml

@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2018 Roman Tataurov <diytronic@yandex.ru>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf51822_qfac.dtsi>
+#include "nrf51_ble400-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Waveshare BLE400";
+	compatible = "waveshare,BLE400";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		led4 = &led4;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 18 0>;
+			label = "Red LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 19 0>;
+			label = "Red LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 20 0>;
+			label = "Red LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpio0 21 0>;
+			label = "Red LED 3";
+		};
+		led4: led_4 {
+			gpios = <&gpio0 22 0>;
+			label = "Red LED 4";
+		};
+	};
+
+	buttons {
+		/* Push button switch 0 KEY1 */
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		/* Push button switch 1 KEY2 */
+		button1: button_1 {
+			gpios = <&gpio0 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	/* smba-pin = <2>; */
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	cs-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};

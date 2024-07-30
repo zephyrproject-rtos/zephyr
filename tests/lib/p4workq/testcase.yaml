@@ -1,0 +1,7 @@
+tests:
+  libraries.p4wq:
+    tags:
+      - kernel
+    integration_platforms:
+      - qemu_x86
+      - native_sim

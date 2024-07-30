@@ -1,0 +1,84 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COMMON_LIBC_ABORT
+	bool
+	help
+	  common implementation of abort().
+
+config COMMON_LIBC_GMTIME_R
+	bool
+	help
+	  common implementation of gmtime_r().
+
+config COMMON_LIBC_TIME
+	bool
+	help
+	  common implementation of time().
+
+config COMMON_LIBC_MALLOC
+	bool "Common C library malloc implementation"
+	select NEED_LIBC_MEM_PARTITION if COMMON_LIBC_MALLOC_ARENA_SIZE != 0
+	help
+	  Common implementation of malloc family that uses the kernel heap
+	  API.
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	int "Size of the common C library malloc arena"
+	depends on COMMON_LIBC_MALLOC
+	default 0 if MINIMAL_LIBC
+	default 16384 if MMU
+	default 2048 if USERSPACE && MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	default 16384 if ARCH_POSIX
+	default -1
+	help
+	  Indicate the size in bytes of the memory arena used for
+	  common C library malloc() implementation.
+
+	  If set to zero, then no malloc() heap will be available.
+
+	  If set to -1, then all remaining system RAM will be used for this
+	  area.
+
+	  If user mode is enabled, and MPU hardware has requirements that
+	  regions be sized to a power of two and aligned to their size,
+	  then this must be defined as a power of two or a compile error
+	  will result.
+
+	  When using the minimal C library, the default is to have no
+	  malloc heap. Otherwise, on systems with an MMU the default is
+	  16kB and all other systems will default to using all remaining
+	  ram for the malloc heap.
+
+config COMMON_LIBC_CALLOC
+	bool "Common C library calloc"
+	depends on COMMON_LIBC_MALLOC
+	default n if MINIMAL_LIBC
+	default y
+	help
+	  Enable the common C library trivial implementation of calloc,
+	  which forwards to malloc and memset.
+
+config COMMON_LIBC_REALLOCARRAY
+	bool "Common C library reallocarray"
+	depends on COMMON_LIBC_MALLOC
+	default n if MINIMAL_LIBC
+	default y
+	help
+	  Enable the common C library trivial implementation of
+	  reallocarray, which forwards to realloc.
+
+config COMMON_LIBC_STRNLEN
+	bool
+	help
+	  common implementation of strnlen().
+
+config COMMON_LIBC_THRD
+	bool "C11 <threads.h> API support"
+	depends on DYNAMIC_THREAD
+	# Note: the POSIX_API dependency is only necessary until common elements
+	# of C11 threads and POSIX API can be abstracted out to a common library.
+	depends on POSIX_API
+	default y
+	help
+	  Common implementation of C11 <threads.h> API.

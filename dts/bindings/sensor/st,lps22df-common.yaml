@@ -1,0 +1,87 @@
+# Copyright (c) 2023 STMicroelectronics
+# Copyright (c) 2023 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    When setting the odr, lpf, avg properties in a .dts or .dtsi file
+    you may include lps22df.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lps22df.h>
+
+    lps22df@5d {
+      ...
+
+      odr = <LPS2xDF_DT_ODR_10HZ>;
+      lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
+      avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
+    };
+
+include: sensor-device.yaml
+
+properties:
+  drdy-gpios:
+    type: phandle-array
+    description: |
+      DRDY pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.
+
+  odr:
+    type: int
+    default: 0
+    description: |
+        Specify the output data rate expressed in samples per second (Hz).
+        The default is the power-on reset value.
+
+        - 0 # LPS2xDF_DT_ODR_POWER_DOWN
+        - 1 # LPS2xDF_DT_ODR_1HZ
+        - 2 # LPS2xDF_DT_ODR_4HZ
+        - 3 # LPS2xDF_DT_ODR_10HZ
+        - 4 # LPS2xDF_DT_ODR_25HZ
+        - 5 # LPS2xDF_DT_ODR_50HZ
+        - 6 # LPS2xDF_DT_ODR_75HZ
+        - 7 # LPS2xDF_DT_ODR_100HZ
+        - 8 # LPS2xDF_DT_ODR_200HZ
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+  lpf:
+    type: int
+    default: 0
+    description: |
+        Specify the low pass filter value to be applied to pressure data.
+        The default is the power-on reset value.
+
+        - 0 # LPS2xDF_DT_LP_FILTER_OFF
+        - 1 # LPS2xDF_DT_LP_FILTER_ODR_4
+        - 3 # LPS2xDF_DT_LP_FILTER_ODR_9
+
+    enum: [0, 1, 3]
+
+  avg:
+    type: int
+    default: 0
+    description: |
+        Specify the average filter value (i.e. number of samples) to be applied
+        to pressure and temperature data.
+        The default is the power-on reset value.
+
+        - 0 # LPS2xDF_DT_AVG_4_SAMPLES
+        - 1 # LPS2xDF_DT_AVG_8_SAMPLES
+        - 2 # LPS2xDF_DT_AVG_16_SAMPLES
+        - 3 # LPS2xDF_DT_AVG_32_SAMPLES
+        - 4 # LPS2xDF_DT_AVG_64_SAMPLES
+        - 5 # LPS2xDF_DT_AVG_128_SAMPLES
+        - 6 # LPS2xDF_DT_AVG_256_SAMPLES
+        - 7 # LPS2xDF_DT_AVG_512_SAMPLES
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]

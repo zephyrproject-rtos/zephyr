@@ -1,0 +1,41 @@
+spi1: &scb3 {
+	compatible = "infineon,cat1-spi";
+	status = "okay";
+
+	pinctrl-0 = <&p6_0_scb3_spi_m_mosi &p6_1_scb3_spi_m_miso &p6_2_scb3_spi_m_clk>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt6 3 GPIO_ACTIVE_LOW>;
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <3000000>;
+	};
+};
+
+&gpio_prt6 {
+	status = "okay";
+};
+
+&pinctrl {
+	/* Configure pin control bias mode for SPI pins */
+	p6_0_scb3_spi_m_mosi: p6_0_scb3_spi_m_mosi {
+		pinmux = <DT_CAT1_PINMUX(6, 0, HSIOM_SEL_ACT_8)>;
+		drive-push-pull;
+	};
+
+	p6_1_scb3_spi_m_miso: p6_1_scb3_spi_m_miso {
+		pinmux = <DT_CAT1_PINMUX(6, 1, HSIOM_SEL_ACT_8)>;
+		input-enable;
+	};
+
+	p6_2_scb3_spi_m_clk: p6_2_scb3_spi_m_clk {
+		pinmux = <DT_CAT1_PINMUX(6, 2, HSIOM_SEL_ACT_8)>;
+		drive-push-pull;
+	};
+};

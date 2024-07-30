@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# 32kHz clock source
+CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable RTT
+CONFIG_USE_SEGGER_RTT=y
+
+# Enable GPIO
+CONFIG_GPIO=y

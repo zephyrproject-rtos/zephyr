@@ -1,0 +1,18 @@
+identifier: actinius_icarus_bee/nrf9160
+name: Actinius Icarus Bee
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 88
+flash: 256
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - counter
+vendor: actinius

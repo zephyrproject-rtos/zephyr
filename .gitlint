@@ -1,0 +1,61 @@
+# All these sections are optional, edit this file as you like.
+# Zephyr-specific defaults are located in scripts/gitlint/zephyr_commit_rules.py
+[general]
+ignore=title-trailing-punctuation, T3, title-max-length, T1, body-hard-tab, B3, B1
+# verbosity should be a value between 1 and 3, the commandline -v flags take precedence over this
+verbosity = 3
+# By default gitlint will ignore merge commits. Set to 'false' to disable.
+ignore-merge-commits=false
+ignore-revert-commits=false
+ignore-fixup-commits=false
+ignore-squash-commits=false
+# Enable debug mode (prints more output). Disabled by default
+debug = false
+
+# Set the extra-path where gitlint will search for user defined rules
+# See http://jorisroovers.github.io/gitlint/user_defined_rules for details
+extra-path=scripts/gitlint
+
+[title-max-length-no-revert]
+# line-length=75
+
+[body-min-line-count]
+# min-line-count=1
+
+[body-max-line-count]
+# max-line-count=200
+
+[title-starts-with-subsystem]
+regex = ^(?!subsys:)(?!treewide:)(([^:]+):)(\s([^:]+):)*\s(.+)$
+
+[title-must-not-contain-word]
+# Comma-separated list of words that should not occur in the title. Matching is case
+# insensitive. It's fine if the keyword occurs as part of a larger word (so "WIPING"
+# will not cause a violation, but "WIP: my title" will.
+words=wip
+
+[title-match-regex]
+# python like regex (https://docs.python.org/2/library/re.html) that the
+# commit-msg title must be matched to.
+# Note that the regex can contradict with other rules if not used correctly
+# (e.g. title-must-not-contain-word).
+#regex=^US[0-9]*
+
+[max-line-length-with-exceptions]
+# B1 = body-max-line-length
+# line-length=75
+
+[body-min-length]
+min-length=3
+
+[body-is-missing]
+# Whether to ignore this rule on merge commits (which typically only have a title)
+# default = True
+ignore-merge-commits=false
+
+[body-changed-file-mention]
+# List of files that need to be explicitly mentioned in the body when they are changed
+# This is useful for when developers often erroneously edit certain files or git submodules.
+# By specifying this rule, developers can only change the file when they explicitly reference
+# it in the commit message.
+#files=gitlint/rules.py,README.md

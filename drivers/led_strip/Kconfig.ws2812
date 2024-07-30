@@ -1,0 +1,54 @@
+# Copyright (c) 2017 Linaro Limited
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# The following blog post is an excellent resource about pulse timing:
+#
+# https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
+
+config WS2812_STRIP_SPI
+	bool "WS2812 LED strip SPI driver"
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_SPI_ENABLED
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_WORLDSEMI_WS2812_SPI),spi)
+	help
+	  Enable driver for WS2812 (and compatibles) LED strip using SPI.
+	  The SPI driver is portable, but requires significantly more
+	  memory (1 byte of overhead per bit of pixel data).
+
+config WS2812_STRIP_I2S
+	bool "WS2812 LED strip I2S driver"
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_I2S_ENABLED
+	select I2S if $(dt_compat_on_bus,$(DT_COMPAT_WORLDSEMI_WS2812_I2S),i2s)
+	help
+	  Enable driver for WS2812 (and compatibles) LED strip using I2S.
+	  Uses the I2S peripheral, memory usage is 4 bytes per color,
+	  times the number of pixels. A few more for the start and end
+	  delay. The reset delay has a coarse resolution of ~20us.
+
+config WS2812_STRIP_GPIO
+	bool "WS2812 LED strip GPIO driver"
+	# Only an Cortex-M0 inline assembly implementation for the nRF51
+	# is supported currently.
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_GPIO_ENABLED
+	depends on SOC_SERIES_NRF51X
+	select LED_STRIP_RGB_SCRATCH
+	help
+	  Enable driver for WS2812 (and compatibles) LED strip directly controlling with GPIO.
+	  The GPIO driver does bit-banging with inline assembly,
+	  and is not available on all SoCs.
+
+	  Note that this driver is not compatible with the Everlight B1414
+	  controller.
+
+config WS2812_STRIP_RPI_PICO_PIO
+	bool "WS2812 LED strip Raspberry Pi Pico PIO driver"
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_RPI_PICO_PIO_ENABLED
+	select PICOSDK_USE_PIO
+	help
+	  Enable driver for WS2812 (and compatibles) LED strip using
+	  the RaspberryPi Pico's PIO.

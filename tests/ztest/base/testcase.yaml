@@ -1,0 +1,35 @@
+common:
+  tags:
+    - test_framework
+tests:
+  testing.ztest.base:
+    type: unit
+  testing.ztest.base.cpp:
+    extra_args: CONF_FILE=prj_cpp.conf
+    platform_allow:
+      - native_posix
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+  testing.ztest.base.verbose_0:
+    extra_args: CONF_FILE=prj_verbose_0.conf
+    integration_platforms:
+      - native_sim
+  testing.ztest.base.verbose_0_userspace:
+    filter: CONFIG_USERSPACE
+    extra_args: CONF_FILE=prj_verbose_0.conf
+    tags:
+      - userspace
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+    integration_platforms:
+      - qemu_x86
+  testing.ztest.base.verbose_1:
+    extra_args: CONF_FILE=prj_verbose_1.conf
+    integration_platforms:
+      - native_sim
+  testing.ztest.base.verbose_2:
+    extra_args: CONF_FILE=prj_verbose_2.conf
+    integration_platforms:
+      - native_sim

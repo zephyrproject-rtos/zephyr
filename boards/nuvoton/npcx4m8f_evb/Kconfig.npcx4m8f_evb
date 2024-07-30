@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NPCX4M8F_EVB
+	select SOC_NPCX4M8F

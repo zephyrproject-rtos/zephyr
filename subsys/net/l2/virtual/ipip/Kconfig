@@ -1,0 +1,36 @@
+# Copyright (c) 2018 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_L2_IPIP
+	bool "IP-to-IP tunneling support"
+	depends on NET_L2_VIRTUAL
+	help
+	  Add a IP-to-IP tunnel driver. If this is enabled, then a network
+	  interface will be created that will tunnel traffic on top of
+	  existing network interface. Application needs to attach the IPIP
+	  driver at runtime to correct network interface.
+	  Also application needs to setup IP addresses etc. to the IP-to-IP
+	  network interface.
+
+if NET_L2_IPIP
+
+config NET_L2_IPIP_TUNNEL_COUNT
+	int "Max number of IPIP tunnels"
+	default 1
+	help
+	  Tells how many IPIP tunnels are supported.
+
+module = NET_L2_IPIP
+module-dep = NET_LOG
+module-str = Log level for IP-to-IP tunnel
+module-help = Enables IP-to-IP driver to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_L2_IPIP_TXRX_DEBUG
+	bool "Debug received and sent packets"
+	depends on NET_L2_IPIP_LOG_LEVEL_DBG
+	help
+	  Enables printing of received and sent network packets.
+	  This can produce lot of output so it is disabled by default.
+
+endif # NET_L2_IPIP

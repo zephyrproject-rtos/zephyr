@@ -1,0 +1,133 @@
+# Watchdog configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# Copyright (c) 2017 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WATCHDOG
+	bool "Watchdog drivers"
+	help
+	  Include support for watchdogs.
+
+if WATCHDOG
+
+config HAS_WDT_DISABLE_AT_BOOT
+	bool
+
+config WDT_DISABLE_AT_BOOT
+	bool "Disable at boot"
+	depends on HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Disable watchdog at Zephyr system startup.
+
+module = WDT
+module-str = watchdog
+source "subsys/logging/Kconfig.template.log_config"
+
+config HAS_WDT_MULTISTAGE
+	bool
+
+config WDT_MULTISTAGE
+	bool "Multistage timeouts"
+	depends on HAS_WDT_MULTISTAGE
+	help
+	  Enable multistage operation of watchdog timeouts.
+
+config WDT_COUNTER
+	bool "Counter based watchdog"
+	default y
+	depends on DT_HAS_ZEPHYR_COUNTER_WATCHDOG_ENABLED
+	select COUNTER
+	help
+	  Watchdog emulated with counter device. If counter device supports using
+	  zero latency interrupts (ZLI) then expiration callback can be called from
+	  that context. This watchdog can be used along hardware watchdog to
+	  overcome hardware  watchdog limitations, e.g. Nordic devices reset
+	  unconditionally at fixed time after hitting watchdog interrupt, leaving
+	  no time to print debug information. Watchdog has limitations since it
+	  cannot interrupt same or higher priorities so it cannot fully replace
+	  hardware based watchdog.
+
+if WDT_COUNTER
+
+config WDT_COUNTER_CH_COUNT
+	int "Maximum number of supported channel"
+	default 4
+	range 1 $(UINT8_MAX)
+	help
+	  Note that actual channel count will be limited to number of channels
+	  supported by the counter device which is used for watchdog.
+
+endif # WDT_COUNTER
+
+source "drivers/watchdog/Kconfig.stm32"
+
+source "drivers/watchdog/Kconfig.cmsdk_apb"
+
+source "drivers/watchdog/Kconfig.sam"
+
+source "drivers/watchdog/Kconfig.esp32"
+
+source "drivers/watchdog/Kconfig.sam0"
+
+source "drivers/watchdog/Kconfig.nrfx"
+
+source "drivers/watchdog/Kconfig.mcux"
+
+source "drivers/watchdog/Kconfig.mcux_imx"
+
+source "drivers/watchdog/Kconfig.xec"
+
+source "drivers/watchdog/Kconfig.gecko"
+
+source "drivers/watchdog/Kconfig.sifive"
+
+source "drivers/watchdog/Kconfig.npcx"
+
+source "drivers/watchdog/Kconfig.cc32xx"
+
+source "drivers/watchdog/Kconfig.cc13xx_cc26xx"
+
+source "drivers/watchdog/Kconfig.it8xxx2"
+
+source "drivers/watchdog/Kconfig.rpi_pico"
+
+source "drivers/watchdog/Kconfig.gd32"
+
+source "drivers/watchdog/Kconfig.npm1300"
+
+source "drivers/watchdog/Kconfig.npm6001"
+
+source "drivers/watchdog/Kconfig.nxp_s32"
+
+source "drivers/watchdog/Kconfig.dw"
+
+source "drivers/watchdog/Kconfig.intel_adsp"
+
+source "drivers/watchdog/Kconfig.smartbond"
+
+source "drivers/watchdog/Kconfig.ti_tps382x"
+
+source "drivers/watchdog/Kconfig.tco"
+
+source "drivers/watchdog/Kconfig.xlnx"
+
+source "drivers/watchdog/Kconfig.ifx_cat1"
+
+source "drivers/watchdog/Kconfig.opentitan"
+
+source "drivers/watchdog/Kconfig.andes_atcwdt200"
+
+source "drivers/watchdog/Kconfig.nxp_fs26"
+
+source "drivers/watchdog/Kconfig.ambiq"
+
+source "drivers/watchdog/Kconfig.shell"
+
+source "drivers/watchdog/Kconfig.xmc4xxx"
+
+source "drivers/watchdog/Kconfig.numaker"
+
+source "drivers/watchdog/Kconfig.ene"
+
+endif # WATCHDOG

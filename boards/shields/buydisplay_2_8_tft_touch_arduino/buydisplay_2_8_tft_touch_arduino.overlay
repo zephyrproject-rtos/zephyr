@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2020 Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/ili9xxx.h>
+
+/ {
+	chosen {
+		zephyr,display = &ili9340_buydisplay_2_8_tft_touch_arduino;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336_buydisplay_2_8_tft_touch_arduino>;
+		swap-xy;
+		invert-x;
+		invert-y;
+	};
+
+	buydisplay_2_8_tft_touch_arduino_mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>; /* D7 */
+		reset-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+		spi-dev = <&arduino_spi>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ili9340_buydisplay_2_8_tft_touch_arduino: ili9340@0 {
+			compatible = "ilitek,ili9340";
+			mipi-max-frequency = <25000000>;
+			reg = <0>;
+			width = <240>;
+			height = <320>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			rotation = <0>;
+			frmctr1 = [00 18];
+			pwctrl1 = [23 00];
+			vmctrl1 = [3e 28];
+			vmctrl2 = [86];
+			pgamctrl = [0f 31 2b 0c 0e 08 4e f1 37 07 10 03 0e 09 00];
+			ngamctrl = [00 0e 14 03 11 07 31 c1 48 08 0f 0c 31 36 0f];
+		};
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
+};
+
+&arduino_i2c {
+	ft5336_buydisplay_2_8_tft_touch_arduino: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		/* Uncomment if IRQ line is available (requires to solder jumper) */
+		/* int-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>; */ /* D5 */
+	};
+};

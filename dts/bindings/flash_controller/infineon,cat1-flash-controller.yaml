@@ -1,0 +1,5 @@
+description: Infineon CAT1 flash controller
+
+compatible: "infineon,cat1-flash-controller"
+
+include: flash-controller.yaml

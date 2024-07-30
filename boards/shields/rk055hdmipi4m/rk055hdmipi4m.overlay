@@ -1,0 +1,88 @@
+/*
+ * Copyright 2023, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+/{
+	chosen {
+		zephyr,display = &lcdif;
+	};
+
+	en_mipi_display: enable-mipi-display {
+		compatible = "regulator-fixed";
+		regulator-name = "en_mipi_display";
+		enable-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911_rk055hdmipi4m>;
+	};
+};
+
+&nxp_mipi_i2c {
+	status = "okay";
+	gt911_rk055hdmipi4m: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&zephyr_lcdif {
+	status = "okay";
+	width = <720>;
+	height = <1280>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <8>;
+		hfront-porch = <32>;
+		hback-porch = <32>;
+		vsync-len = <2>;
+		vfront-porch = <16>;
+		vback-porch = <14>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <1>;
+		pixelclk-active = <0>;
+		/*
+		 * Pixel clock is given by the following formula:
+		 * (height + vsync-len + vfront-porch + vback-porch) *
+		 * (width + hsync-len + hfront-porch + hback-porch) * frame rate
+		 */
+		clock-frequency = <62346240>;
+	};
+	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
+	data-bus-width = "24-bit";
+	backlight-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;
+};
+
+&zephyr_mipi_dsi {
+	status = "okay";
+	nxp,lcdif = <&lcdif>;
+	dpi-color-coding = "24-bit";
+	dpi-pixel-packet = "24-bit";
+	dpi-video-mode = "burst";
+	dpi-bllp-mode = "low-power";
+	autoinsert-eotp;
+	/*
+	 * PHY clock is given by the following formula:
+	 * (pixel clock * bits per pixel) / MIPI data lanes
+	 */
+	phy-clock = <748154880>;
+	rm68200@0 {
+		status = "okay";
+		compatible = "raydium,rm68200";
+		reg = <0x0>;
+		reset-gpios = <&nxp_mipi_connector 21 GPIO_ACTIVE_HIGH>;
+		data-lanes = <2>;
+		width = <720>;
+		height = <1280>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+	};
+};

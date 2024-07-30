@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for spi devices
+ */
+
+test_spi_fpga_ice40_gpio: ice40@0 {
+	status = "okay";
+	compatible = "lattice,ice40-fpga";
+
+	reg = <0>;
+	spi-max-frequency = <1000000>;
+
+	load-mode = <0>;
+	cdone-gpios = <&test_gpio 0 0>;
+	creset-gpios = <&test_gpio 0 0>;
+	config-delay-us = <3900>;
+};
+
+test_spi_fpga_ice40_spi: ice40@1 {
+	status = "okay";
+	compatible = "lattice,ice40-fpga";
+
+	reg = <1>;
+	spi-max-frequency = <1000000>;
+
+	load-mode = <1>;
+	cdone-gpios = <&test_gpio 0 0>;
+	creset-gpios = <&test_gpio 0 0>;
+	clk-gpios = <&test_gpio 0 0>;
+	pico-gpios = <&test_gpio 0 0>;
+	gpios-set-reg = <0>;
+	gpios-clear-reg = <0>;
+	config-delay-us = <3900>;
+};

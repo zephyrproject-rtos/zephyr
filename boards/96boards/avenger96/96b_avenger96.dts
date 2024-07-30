@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2019 Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/mp1/stm32mp157.dtsi>
+#include <st/mp1/stm32mp157aacx-pinctrl.dtsi>
+
+/ {
+	model = "Arrow Electronics STM32MP157A Avenger96 board";
+	compatible = "arrow,stm32mp157a-avenger96";
+
+	chosen {
+		/*
+		 * By default, Zephyr console and shell are assigned to
+		 * remoteproc. To enable console and shell over UART, uncomment
+		 * following lines and set the correct config in
+		 * 96b_avenger96_defconfig. Refer "Serial Port" section in
+		 * Zephyr board documentation.
+		 * zephyr,console = &uart7;
+		 * zephyr,shell-uart = &uart7;
+		 */
+		zephyr,flash = &retram;
+		zephyr,sram = &mcusram;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_0: led_0 {
+			gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
+			label = "USR0 LED";
+		};
+		green_led_1: led_1 {
+			gpios = <&gpiog 0 GPIO_ACTIVE_HIGH>;
+			label = "USR1 LED";
+		};
+		green_led_2: led_2 {
+			gpios = <&gpiog 1 GPIO_ACTIVE_HIGH>;
+			label = "USR2 LED";
+		};
+	};
+
+	aliases {
+		led0 = &green_led_0;
+		led1 = &green_led_1;
+		led2 = &green_led_2;
+	};
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(209)>;
+};
+
+&mailbox {
+	status = "okay";
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pd1 &uart4_rx_pb2>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};

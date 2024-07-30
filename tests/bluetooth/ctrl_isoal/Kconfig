@@ -1,0 +1,60 @@
+# Bluetooth Controller configuration options for ISO-AL Unit Tests
+
+# Copyright (c) 2022 Oticon A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_CTLR_CONN_ISO
+	bool "LE Connected Isochronous Streams (for unit tests)"
+
+config BT_CTLR_CONN_ISO_GROUPS
+	int "LE Connected Isochronous Groups (for unit tests)"
+	depends on BT_CTLR_CONN_ISO
+	range 1 240
+	default 1
+
+parent-module = BT
+module = BT_CTLR_ISOAL
+module-str = "Bluetooth Controller ISO-AL"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+config BT_CTLR_ISOAL_LOG_DBG_VERBOSE
+	bool "ISO-AL verbose debug logging"
+	depends on BT_CTLR_ISOAL_LOG_LEVEL = 4
+	default n
+	help
+	  Use this option to enable ISO-AL verbose debug logging.
+
+config BT_CTLR_ISOAL_SINKS
+	int "Number of Isochronous Adaptation Layer sinks (for unit tests)"
+
+config BT_CTLR_ISOAL_SOURCES
+	int "Number of Isochronous Adaptation Layer sinks (for unit tests)"
+
+config BT_CTLR_ISO_RX_SDU_BUFFERS
+	int "Number of SDU fragments that the ISO-AL can buffer"
+	depends on BT_CTLR_ISO_RX_BUFFER_SDUS
+	default 0
+	range 0 64
+	help
+	  Set the number of Isochronous Rx SDU fragments to be buffered in the
+	  ISO-AL per channel. Buffering is required to compute the size of the
+	  received SDU across all the fragments before each is released. The
+	  number of buffers and maximum SDU fragment size will limit the maximum
+	  size of an SDU that can be accurately declared in the HCI ISO Data
+	  header.
+
+config BT_CTLR_ISO_TX_SEG_PLAYLOAD_MIN
+	int "Minimum number of playload data bytes in a new segment"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	default 1
+	range 1 64
+	help
+	  Minimum number of payload bytes that would make inserting a new
+	  segment into a PDU worthwhile.
+
+config BT_CTLR_ISOAL_SN_STRICT
+	bool "Enforce Strict Tx ISO Data Sequence Number use"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	default y
+
+source "Kconfig.zephyr"

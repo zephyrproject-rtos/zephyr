@@ -1,0 +1,27 @@
+sample:
+  name: Shell Sensor Module Sample
+common:
+  tags:
+    - sensor
+    - shell
+
+tests:
+  sample.sensor.shell:
+    integration_platforms:
+      - frdm_k64f
+    # TODO Remove once #63414 is resolved
+    platform_exclude: gd32l233r_eval
+    filter: ( CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT )
+    harness: keyboard
+    min_ram: 20
+    min_flash: 33
+  sample.sensor.shell.pytest:
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
+    min_ram: 40
+    harness: pytest
+    timeout: 180
+    extra_configs:
+      - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_SAMPLES_SENSOR_SHELL_FAKE_SENSOR=y
+    integration_platforms:
+      - native_sim

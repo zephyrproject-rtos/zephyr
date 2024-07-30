@@ -1,0 +1,36 @@
+common:
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+  harness: net
+  tags: net
+  depends_on: netif
+  build_only: true
+  platform_allow: frdm_k64f
+  integration_platforms:
+    - frdm_k64f
+sample:
+  description: hawkBit Firmware Over-the-Air (FOTA)
+  name: hawkbit
+tests:
+  sample.net.hawkbit.default: {}
+  sample.net.hawkbit.manual:
+    extra_configs:
+      - CONFIG_HAWKBIT_MANUAL=y
+  sample.net.hawkbit.shell:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_HAWKBIT_SHELL=y
+  sample.net.hawkbit.ddi.target:
+    extra_configs:
+      - CONFIG_HAWKBIT_DDI_TARGET_SECURITY=y
+      - CONFIG_HAWKBIT_DDI_SECURITY_TOKEN="abcd1234"
+  sample.net.hawkbit.ddi.gateway:
+    extra_configs:
+      - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=y
+      - CONFIG_HAWKBIT_DDI_SECURITY_TOKEN="abcd1234"
+  sample.net.hawkbit.tls:
+    extra_configs:
+      - CONFIG_HAWKBIT_USE_TLS=y
+      - CONFIG_NET_SOCKETS_SOCKOPT_TLS=y
+  sample.net.hawkbit.set_settings_runtime:
+    extra_configs:
+      - CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME=y

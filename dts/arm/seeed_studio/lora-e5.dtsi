@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2021 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/wl/stm32wle5Xc.dtsi>
+#include <st/wl/stm32wle5jcix-pinctrl.dtsi>
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(32)>;
+	hse-tcxo;
+};
+
+&clk_lse {
+	clock-frequency = <32768>;
+};
+
+&subghzspi {
+	status = "okay";
+	lora: radio@0 {
+		status = "okay";
+		tx-enable-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+		rx-enable-gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V7>;
+		tcxo-power-startup-delay-ms = <5>;
+		power-amplifier-output = "rfo-hp";
+		rfo-hp-max-power = <22>;
+	};
+};

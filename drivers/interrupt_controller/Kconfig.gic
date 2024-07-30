@@ -1,0 +1,66 @@
+# ARM Generic Interrupt Controller (GIC) configuration
+
+# Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+if CPU_CORTEX
+
+config GIC
+	bool
+
+config GIC_V1
+	def_bool DT_HAS_ARM_GIC_V1_ENABLED
+	select GIC
+	help
+	  The ARM Generic Interrupt Controller v1 (e.g. PL390) works with the
+	  ARM Cortex-family processors.
+
+config GIC_V2
+	def_bool DT_HAS_ARM_GIC_V2_ENABLED
+	select GIC
+	help
+	  The ARM Generic Interrupt Controller v2 (e.g. GIC-400) works with the
+	  ARM Cortex-family processors.
+
+config GIC_V3
+	def_bool DT_HAS_ARM_GIC_V3_ENABLED
+	select GIC
+	help
+	  The ARM Generic Interrupt Controller v3 (e.g. GIC-500 and GIC-600)
+	  works with the ARM Cortex-family processors.
+
+config GIC_VER
+	int
+	depends on GIC
+	default 1 if GIC_V1
+	default 2 if GIC_V2
+	default 3 if GIC_V3
+
+config GIC_SINGLE_SECURITY_STATE
+	bool
+	depends on GIC_V3
+	help
+	  Some ARM Cortex-family processors only supports single security
+	  state.
+
+config GIC_V3_RDIST_MATCHING_AFF0_ONLY
+	bool
+	depends on GIC_V3
+	default y if CPU_CORTEX_R52
+	help
+	  Some platforms only use aff0 to match mpdir and GICR.aff. With this
+	  enabled, we find the target redistributor by comparing the aff0 only.
+
+config GIC_V3_ITS
+	bool "GIC v3 Interrupt Translation Service"
+	depends on GIC_V3
+	# ITS generates Non-secure Group 1 LPI interrupts, requiring EL1NS
+	select ARMV8_A_NS
+	select DYNAMIC_INTERRUPTS
+	help
+	  Support for the optional Interrupt Translation Service used to translate
+	  hardware interrupt from PCIe MSI messages for example. Please note
+	  that ITS uses dynamic memory, so HEAP_MEM_POOL_SIZE should be
+	  enough to allocate ITS tables (size is probed at runtime).
+
+endif # CPU_CORTEX

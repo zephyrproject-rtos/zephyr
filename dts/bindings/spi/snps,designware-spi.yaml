@@ -1,0 +1,46 @@
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# Copyright (c) 2023 Meta Platforms All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys DesignWare SPI node
+
+compatible: "snps,designware-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  aux-reg:
+    type: boolean
+    description: |
+      This value is used for auxiliary register access. For
+      other platform, this value should be default 0.
+
+  fifo-depth:
+    type: int
+    description: |
+      RX/TX FIFO depth. Corresponds to the SSI_TX_FIFO_DEPTH
+      and SSI_RX_FIFO_DEPTH of the DesignWare Synchronous
+      Serial Interface. Depth ranges from 2-256.
+
+  serial-target:
+    type: boolean
+    description: |
+      True if it is a Serial Target. False if it is a Serial
+      Master. Corresponds to SSI_IS_MASTER of the Designware
+      Synchronous Serial Interface.
+
+  max-xfer-size:
+    type: int
+    description: |
+      Maximum transfer size. Corresponds to SPI_MAX_XFER_SIZE
+      of the DesignWare Synchronous Serial Interface. Only
+      values of 16 and 32 are supported.
+    enum:
+      - 16
+      - 32

@@ -1,0 +1,14 @@
+sample:
+  description: A simple application that demonstrates
+    basic sanity of the kernel.
+  name: Synchronization Sample
+tests:
+  sample.kernel.synchronization:
+    tags: synchronization
+    build_on_all: true
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "thread_a: Hello World from (.*)!"
+        - "thread_b: Hello World from (.*)!"

@@ -1,0 +1,33 @@
+# Copyright (c) 2023 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADIN1110 standalone 10BASE-T1L Ethernet controller with SPI interface.
+
+  An example:
+
+  adin1110: adin1110@0 {
+          compatible = "adi,adin1110";
+          reg = <0x0>;
+          spi-max-frequency = <25000000>;
+          int-gpios   = <&gpioe 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+          reset-gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
+          port1 {
+              local-mac-address = [ CA 2F B7 10 23 63 ];
+          };
+          mdio: mdio {
+                  compatible = "adi,adin2111-mdio";
+                  status = "okay";
+                  #address-cells = <1>;
+                  #size-cells = <0>;
+                  ethernet-phy@1 {
+                    reg = <0x1>;
+                    compatible = "adi,adin2111-phy";
+                    status = "okay";
+                  };
+          };
+  };
+
+compatible: "adi,adin1110"
+
+include: adi,adin2111.yaml

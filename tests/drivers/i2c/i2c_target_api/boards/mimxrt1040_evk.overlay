@@ -1,0 +1,31 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/*
+ * Note: this sample requires the board to be modified! Populate resistors
+ * R362 and R356.
+ * To test this sample, connect J17.9<->J17.3 (SDA), J17.10<->J17.6 (SCL)
+ */
+
+
+&lpi2c1 {
+	status = "okay";
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&lpi2c3 {
+	status = "okay";
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

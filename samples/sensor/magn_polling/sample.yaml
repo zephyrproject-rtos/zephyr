@@ -1,0 +1,13 @@
+sample:
+  name: Magnetometer Polling Sample
+tests:
+  sample.sensor.magn_polling:
+    harness: sensor
+    tags: sensors
+    filter: dt_alias_exists("magn0")
+    integration_platforms:
+      - frdm_k64f               # fxos8700
+      - thingy53/nrf5340/cpuapp # bmm150
+      - sensortile_box          # lis2mdl
+      - stm32f411e_disco        # lsm303agr_magn
+      - stm32f3_disco           # lsm303dlhc_magn

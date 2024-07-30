@@ -1,0 +1,10 @@
+tests:
+  kernel.objects.tracking:
+    tags: kernel
+    platform_exclude: qemu_x86_tiny
+  kernel.objects.tracking.minimallibc:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags: kernel libc
+    platform_exclude: qemu_x86_tiny
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y

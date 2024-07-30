@@ -1,0 +1,221 @@
+#!/usr/bin/env python3
+# vim: set syntax=python ts=4 :
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+"""Zephyr Test Runner (twister)
+
+Also check the "User and Developer Guides" at https://docs.zephyrproject.org/
+
+This script scans for the set of unit test applications in the git
+repository and attempts to execute them. By default, it tries to
+build each test case on one platform per architecture, using a precedence
+list defined in an architecture configuration file, and if possible
+run the tests in any available emulators or simulators on the system.
+
+Test cases are detected by the presence of a 'testcase.yaml' or a sample.yaml
+files in the application's project directory. This file may contain one or more
+blocks, each identifying a test scenario. The title of the block is a name for
+the test case, which only needs to be unique for the test cases specified in
+that testsuite meta-data. The full canonical name for each test case is <path to
+test case>/<block>.
+
+Each test block in the testsuite meta data can define the following key/value
+pairs:
+
+  tags: <list of tags> (required)
+    A set of string tags for the testsuite. Usually pertains to
+    functional domains but can be anything. Command line invocations
+    of this script can filter the set of tests to run based on tag.
+
+  skip: <True|False> (default False)
+    skip testsuite unconditionally. This can be used for broken tests.
+
+  slow: <True|False> (default False)
+    Don't build or run this test case unless --enable-slow was passed
+    in on the command line. Intended for time-consuming test cases
+    that are only run under certain circumstances, like daily
+    builds.
+
+  extra_args: <list of extra arguments>
+    Extra cache entries to pass to CMake when building or running the
+    test case.
+
+  extra_configs: <list of extra configurations>
+    Extra configuration options to be merged with a master prj.conf
+    when building or running the test case.
+
+  required_snippets: <list of snippets>
+    Snippets that must be applied for the test case to run.
+
+  sysbuild: <True|False> (default False)
+    If true, build the sample using the sysbuild infrastructure. Filtering
+    will only be enabled for the main project, and is not supported for
+    other projects included by sysbuild.
+
+  build_only: <True|False> (default False)
+    If true, don't try to run the test even if the selected platform
+    supports it.
+
+  build_on_all: <True|False> (default False)
+    If true, attempt to build test on all available platforms.
+
+  depends_on: <list of features>
+    A board or platform can announce what features it supports, this option
+    will enable the test only those platforms that provide this feature.
+
+  min_ram: <integer>
+    minimum amount of RAM needed for this test to build and run. This is
+    compared with information provided by the board metadata.
+
+  min_flash: <integer>
+    minimum amount of ROM needed for this test to build and run. This is
+    compared with information provided by the board metadata.
+
+  modules: <list of modules>
+    Add list of modules needed for this sample to build and run.
+
+  timeout: <number of seconds>
+    Length of time to run test in emulator before automatically killing it.
+    Default to 60 seconds.
+
+  arch_allow: <list of arches, such as x86, arm, arc>
+    Set of architectures that this test case should only be run for.
+
+  arch_exclude: <list of arches, such as x86, arm, arc>
+    Set of architectures that this test case should not run on.
+
+  platform_allow: <list of platforms>
+    Set of platforms that this test case should only be run for.
+
+  platform_exclude: <list of platforms>
+    Set of platforms that this test case should not run on.
+
+  simulation_exclude: <list of simulators>
+    Set of simulators that this test case should not run on.
+
+  extra_sections: <list of extra binary sections>
+    When computing sizes, twister will report errors if it finds
+    extra, unexpected sections in the Zephyr binary unless they are named
+    here. They will not be included in the size calculation.
+
+  filter: <expression>
+    Filter whether the testsuite should be run by evaluating an expression
+    against an environment containing the following values:
+
+    { ARCH : <architecture>,
+      PLATFORM : <platform>,
+      <all CONFIG_* key/value pairs in the test's generated defconfig>,
+      <all DT_* key/value pairs in the test's generated device tree file>,
+      <all CMake key/value pairs in the test's generated CMakeCache.txt file>,
+      *<env>: any environment variable available
+    }
+
+    The grammar for the expression language is as follows:
+
+    expression ::= expression "and" expression
+                 | expression "or" expression
+                 | "not" expression
+                 | "(" expression ")"
+                 | symbol "==" constant
+                 | symbol "!=" constant
+                 | symbol "<" number
+                 | symbol ">" number
+                 | symbol ">=" number
+                 | symbol "<=" number
+                 | symbol "in" list
+                 | symbol ":" string
+                 | symbol
+
+    list ::= "[" list_contents "]"
+
+    list_contents ::= constant
+                    | list_contents "," constant
+
+    constant ::= number
+               | string
+
+
+    For the case where expression ::= symbol, it evaluates to true
+    if the symbol is defined to a non-empty string.
+
+    Operator precedence, starting from lowest to highest:
+
+        or (left associative)
+        and (left associative)
+        not (right associative)
+        all comparison operators (non-associative)
+
+    The ':' operator compiles the string argument as a regular expression,
+    and then returns a true value only if the symbol's value in the environment
+    matches. For example, if CONFIG_SOC="stm32f107xc" then
+
+        filter = CONFIG_SOC : "stm.*"
+
+    Would match it.
+
+    Note that arch_allow, arch_exclude, platform_allow, platform_exclude
+    are not just syntactic sugar for filter expressions. For instance
+
+        arch_exclude = x86 arc
+
+    Can appear at first glance to have a similar effect to
+
+        filter = not ARCH in ["x86", "arc"]
+
+    but unlike "filter", these cause platforms to be filtered already during the testplan
+    generation. While "filter" does not exclue platforms at the testplan generation, and instead
+    relies on the result of running the build configuration stage. That is, to evaluate the filter
+    expression, cmake is run for that target, and then the filter evaluated as a gate for the
+    build and run steps.
+    Therefore filtering by using {platform|arch}_{exclude|allow} is much faster.
+
+The set of test cases that actually run depends on directives in the testsuite
+files and options passed in on the command line. If there is any confusion,
+running with -v or examining the test plan report (testplan.json)
+can help show why particular test cases were skipped.
+
+To load arguments from a file, write '+' before the file name, e.g.,
++file_name. File content must be one or more valid arguments separated by
+line break instead of white spaces.
+
+Most everyday users will run with no arguments.
+
+"""
+
+import os
+import sys
+from pathlib import Path
+
+
+ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
+if not ZEPHYR_BASE:
+    # This file has been zephyr/scripts/twister for years,
+    # and that is not going to change anytime soon. Let the user
+    # run this script as ./scripts/twister without making them
+    # set ZEPHYR_BASE.
+    ZEPHYR_BASE = str(Path(__file__).resolve().parents[1])
+
+    # Propagate this decision to child processes.
+    os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
+
+    print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
+
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
+
+from twisterlib.environment import add_parse_arguments, parse_arguments
+from twisterlib.twister_main import main
+
+if __name__ == "__main__":
+    ret = 0
+    try:
+        parser = add_parse_arguments()
+        options = parse_arguments(parser, sys.argv[1:])
+        default_options = parse_arguments(parser, [], on_init=False)
+        ret = main(options, default_options)
+    finally:
+        if (os.name != "nt") and os.isatty(1):
+            # (OS is not Windows) and (stdout is interactive)
+            os.system("stty sane <&1")
+
+    sys.exit(ret)

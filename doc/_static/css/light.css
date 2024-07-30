@@ -1,0 +1,94 @@
+/**
+ * Copyright (c) 2019-2020, Juan Linietsky, Ariel Manzur and the Godot community
+ * Copyright (c) 2021, Teslabs Engineering S.L.
+ * SPDX-License-Identifier: CC-BY-3.0
+ *
+ * Light theme colors
+ */
+
+:root {
+    --body-color: #404040;
+    --content-wrap-background-color: #efefef;
+    --content-background-color: #fcfcfc;
+    --logo-opacity: 1.0;
+    --navbar-background-color: #333f67;
+    --navbar-background-color-hover: #29355c;
+    --navbar-background-color-active: #212d51;
+    --navbar-current-background-color: #212d51;
+    --navbar-current-background-color-hover: #182343;
+    --navbar-current-background-color-active: #131e3b;
+    --navbar-level-1-color: #c3e3ff;
+    --navbar-level-2-color: #b8d6f0;
+    --navbar-level-3-color: #a3c4e1;
+    --navbar-heading-color: #af7fe4;
+    --navbar-scrollbar-color: #af7fe4;
+    --navbar-scrollbar-hover-color: #9454db;
+    --navbar-scrollbar-active-color: #7929d2;
+    --navbar-scrollbar-background: #131e2b;
+
+    --link-color: #2980b9;
+    --link-color-hover: #3091d1;
+    --link-color-active: #105078;
+    --link-color-visited: #9b59b6;
+    --external-reference-icon: url("data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjEyIiB3aWR0aD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjk4MGI5Ij48cGF0aCBkPSJtNy41IDcuMXYzLjRoLTZ2LTZoMy40Ii8+PHBhdGggZD0ibTUuNzY1IDFoNS4yMzV2NS4zOWwtMS41NzMgMS41NDctMS4zMS0xLjMxLTIuNzI0IDIuNzIzLTIuNjktMi42ODggMi44MS0yLjgwOC0xLjMxMy0xLjMxeiIvPjwvZz48L3N2Zz4K");
+    --classref-badge-text-color: hsl(0, 0%, 45%);
+
+    --hr-color: #e1e4e5;
+    --table-row-odd-background-color: #f3f6f6;
+    --code-background-color: #fff;
+    --code-border-color: #e1e4e5;
+    --code-literal-color: #d04c60;
+    --input-background-color: #fcfcfc;
+    --input-focus-border-color: #5f8cff;
+
+    --search-input-background-color: #e6eef3; /* derived from --input-background-color */
+    --search-match-color: #2c6b96; /* derived from --link-color */
+    --search-match-background-color: #e3f2fd; /* derived from --link-color */
+    --search-active-color: #efefef;
+    --search-credits-background-color: #333f67; /* derived from --navbar-background-color */
+    --search-credits-color: #b3b3b3; /* derived from --footer-color */
+    --search-credits-link-color: #4392c5; /* derived from --link-color */
+
+    --highlight-background-color: #f0f2f4;
+    --highlight-background-emph-color: #dbe6c3;
+    --highlight-default-color: #404040;
+    --highlight-comment-color: #408090;
+    --highlight-keyword-color: #007020;
+    --highlight-keyword2-color: #902000;
+    --highlight-number-color: #208050;
+    --highlight-decorator-color: #4070a0;
+    --highlight-type-color: #007020;
+    --highlight-type2-color: #0e84b5;
+    --highlight-function-color: #06287e;
+    --highlight-operator-color: #666666;
+    --highlight-string-color: #4070a0;
+
+    --admonition-note-background-color: #e7f2fa;
+    --admonition-note-color: #404040;
+    --admonition-note-title-background-color: #6ab0de;
+    --admonition-note-title-color: #fff;
+    --admonition-attention-background-color: #ffedcc;
+    --admonition-attention-color: #404040;
+    --admonition-attention-title-background-color: #f0b37e;
+    --admonition-attention-title-color: #fff;
+    --admonition-danger-background-color: #fcf3f2;
+    --admonition-danger-color: #404040;
+    --admonition-danger-title-background-color: #e9a499;
+    --admonition-danger-title-color: #fff;
+    --admonition-tip-background-color: #dbfaf4;
+    --admonition-tip-color: #404040;
+    --admonition-tip-title-background-color: #1abc9c;
+    --admonition-tip-title-color: #fff;
+
+    --kbd-background-color: #fafbfc;
+    --kbd-outline-color: #d1d5da;
+    --kbd-shadow-color: #b0b7bf;
+    --kbd-text-color: #444d56;
+
+    --guiitems-background-color: #e7f2fa;
+    --guiitems-border-color: #7fbbe3;
+
+    --btn-neutral-background-color: #f3f6f6;
+    --btn-neutral-hover-background-color: #e5ebeb;
+    --footer-color: #808080;
+}

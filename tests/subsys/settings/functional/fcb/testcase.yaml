@@ -1,0 +1,28 @@
+tests:
+  settings.functional.fcb:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+      - mr_canhubk3
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    tags:
+      - settings
+      - fcb
+  settings.functional.fcb.chosen:
+    extra_args: DTC_OVERLAY_FILE=./chosen.overlay
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+      - mr_canhubk3
+    integration_platforms:
+      - native_sim
+    tags:
+      - settings
+      - fcb

@@ -1,0 +1,30 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+tst_dma0: &dmamux1 {
+	status = "okay";
+};
+
+/* The BDMA driver expects the SRAM4 region
+ * to be non-cachable.
+ */
+&sram4 {
+	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+};
+
+&bdma1 {
+	status = "okay";
+};
+
+tst_dma1: &dmamux2 {
+	status = "okay";
+};

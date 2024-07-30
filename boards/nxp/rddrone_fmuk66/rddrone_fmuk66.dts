@@ -1,0 +1,384 @@
+/*
+ * Copyright (c) 2021, Electromaticus LLC, 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_k66.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "rddrone_fmuk66-pinctrl.dtsi"
+#include <freq.h>
+
+/ {
+	model = "NXP RDDRONE FMUK66 board";
+	compatible = "nxp,mk66f18", "nxp,k66f", "nxp,k6x";
+
+	aliases {
+		led0 = &amber_led;
+		led1 = &green_led;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		magn0 = &bmm150;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+	};
+
+	chosen {
+		/*
+		 * Note: when using DMA, the SRAM region must be set to
+		 * a memory region that is not cached by the chip. If the chosen
+		 * sram region is changed and DMA is in use, you will
+		 * encounter issues!
+		 */
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+		zephyr,uart-pipe = &lpuart0;
+		zephyr,canbus = &flexcan0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		amber_led: led_0 {
+			gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
+			label = "LED_AMB";
+		};
+		green_led: led_1 {
+			gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
+			label = "LED_GRN";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&ftm3 1 15625000 PWM_POLARITY_INVERTED>;
+		};
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&ftm3 4 15625000 PWM_POLARITY_INVERTED>;
+		};
+		green_pwm_led: green_pwm_led {
+			pwms = <&ftm3 5 15625000 PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "nxp,tja1042", "can-transceiver-gpio";
+		max-bitrate = <5000000>;
+		standby-gpios = <&gpioc 19 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+	};
+
+	transceiver1: can-phy1 {
+		compatible = "nxp,tja1042", "can-transceiver-gpio";
+		max-bitrate = <5000000>;
+		standby-gpios = <&gpioc 18 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+	};
+
+	/* This regulator enables the 3V3_S line, which powers sensors on-board. */
+	reg-3v3-s {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-s";
+		enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <2000>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator enables the onboard Ethernet PHY */
+	reg-3v3-neth {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-neth";
+		enable-gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator enables the onboard SD card support */
+	reg-3v3-sd {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-sd";
+		enable-gpios = <&gpiod 6 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
+	};
+};
+
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_RTC>;
+};
+
+&cpu0 {
+	clock-frequency = <160000000>;
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};
+
+&temp1 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+	voltage-reference = <2>;
+};
+
+/* PWM header is powered by FlexTimer 0 for channels 1 to 4 */
+&ftm0 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&ftm0_default>;
+	pinctrl-names = "default";
+	clock-source = "fixed";
+};
+
+
+/* RGB LED powered by FlexTimer 3, and PWM headers for channel 5 and 6 */
+&ftm3 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&ftm3_default>;
+	pinctrl-names = "default";
+	clock-source = "fixed";
+};
+
+/* LPUART connected to debug header */
+&lpuart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbotg {
+	compatible = "nxp,kinetis-usbd";
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};
+
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+&usbotg {
+	compatible = "nxp,kinetis-usbd";
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		 * of the primary slot0 for swap status and move.
+		 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 (DT_SIZE_K(928) + DT_SIZE_K(8))>;
+		};
+		slot1_partition: partition@FA000 {
+			label = "image-1";
+			reg = <0x000FA000 DT_SIZE_K(928)>;
+		};
+		storage_partition: partition@1E2000 {
+			label = "storage";
+			reg = <0x001E2000 DT_SIZE_K(120)>;
+		};
+	};
+};
+
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&enet_default>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&flexcan0_default>;
+	pinctrl-names = "default";
+	phys = <&transceiver0>;
+};
+
+&flexcan1 {
+	status = "okay";
+	pinctrl-0 = <&flexcan1_default>;
+	pinctrl-names = "default";
+	phys = <&transceiver1>;
+};
+
+/* external i2c port */
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+/* magnetometer (bmm150), barometer (bmp280), pressure (mpl3115),
+ * secure element (a7102ch) i2c bus
+ */
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	/*
+	 * This board does not have a BME280, it has a BMP280.
+	 * The two parts are incredibly similar, so the BME280 driver works for
+	 * BMP280 as well.
+	 */
+	bme280@76 {
+		compatible = "bosch,bme280";
+		status = "okay";
+		reg = <0x76>;
+	};
+
+	bmm150: bmm150@10 {
+		compatible = "bosch,bmm150";
+		status = "okay";
+		reg = <0x10>;
+	};
+};
+
+/* f-ram spi port */
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+/* flash (w25x40), accel, magneto (fxos8700), gyro (fxas2100) */
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	/*
+	 * cs-gpios needs to be populated as per the schematics
+	 * fxos8700  - CS#0
+	 * fxas21002 - CS#1
+	 */
+	cs-gpios = <&gpiob 10 GPIO_ACTIVE_LOW>,
+		   <&gpiob 9 GPIO_ACTIVE_LOW>;
+	clock-frequency = <DT_FREQ_M(1)>;
+
+
+	fxos8700@0 {
+		compatible = "nxp,fxos8700";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reset-gpios = <&gpioa 25 GPIO_ACTIVE_HIGH>;
+		int1-gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	fxas21002@1 {
+		compatible = "nxp,fxas21002";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reset-gpios = <&gpiod 12 GPIO_ACTIVE_LOW>;
+		int1-gpios = <&gpioe 7 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+};
+
+/* external spi */
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-names = "default";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&pit0 {
+	status = "okay";
+};

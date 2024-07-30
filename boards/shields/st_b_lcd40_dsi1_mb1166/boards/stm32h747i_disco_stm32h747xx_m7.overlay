@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2023 bytes at work AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
+		invert-y;
+	};
+
+	chosen {
+		zephyr,display = &ltdc;
+	};
+};
+
+&sdram2 {
+	/* Frame buffer memory cache will cause screen flickering. */
+	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+};
+
+&ltdc {
+	status = "okay";
+	ext-sdram = <&sdram2>;
+	width = <800>;
+	height = <480>;
+	def-back-color-red = <0>;
+	def-back-color-green = <0>;
+	def-back-color-blue = <0>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+};
+
+/* ltdc uses pll3_r as pixel clock */
+&pll3 {
+	status = "okay";
+	clocks = <&clk_hse>;
+	div-m = <5>;
+	mul-n = <132>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <24>; /* 27.5 MHz */
+};
+
+&mipi_dsi {
+	status = "okay";
+
+	/* DSI HOST dedicated PLL
+	 * F_VCO = CLK_IN / pll-idf * 2 * pll-ndiv
+	 * PHI = F_VCO / 2 / (1 << pll-odf) = lane_byte_clk
+	 *     = 25 MHz / 5 * 2 * 100 / 2 / (1<<0) / 8 = 62.5 MHz
+	 */
+	pll-ndiv = <100>;
+	pll-idf = <5>;
+	pll-odf = <0>;
+
+	vs-active-high;
+	hs-active-high;
+	de-active-high;
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+	};
+};

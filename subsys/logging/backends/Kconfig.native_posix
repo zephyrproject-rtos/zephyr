@@ -1,0 +1,19 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_NATIVE_POSIX
+	bool "Native backend"
+	depends on ARCH_POSIX
+	default y
+	select LOG_OUTPUT
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  Enable backend in native_posix
+
+if LOG_BACKEND_NATIVE_POSIX
+
+backend = NATIVE_POSIX
+backend-str = native_posix
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_NATIVE_POSIX

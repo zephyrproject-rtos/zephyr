@@ -1,0 +1,24 @@
+# Copyright (c) 2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Current the use of X86 is for consistency with old testsuite/ztest which
+# defined CONFIG_X86 manually. To consider, is NATIVE_POSIX a better choice?
+config X86
+	bool
+	default y
+	help
+	  The unit_testing architecture identifies itself as X86 for basic
+	  ztest and kernel support.
+
+if CONSOLE
+
+config POSIX_ARCH_CONSOLE
+	bool
+	default y
+	select CONSOLE_HAS_DRIVER
+	help
+	  The unit testing architecture is expected to always have access to a
+	  standard terminal for printing.
+
+endif # CONSOLE

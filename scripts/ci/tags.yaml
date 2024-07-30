@@ -1,0 +1,91 @@
+# This file contains information on what files are associated with which
+# twister tag.
+#
+# File format
+# ###########
+#
+# "tag" (the quotes are only needed for titles with special characters,
+#  like colons):
+#     files:
+#         List of paths and/or glob patterns giving the files in the tag,
+#         relative to the root directory.
+#
+#         If a path or glob pattern ends in a '/', it matches all files within
+#         the given directory or directories. Otherwise, an exact match is
+#         required.
+#
+#         Paths to directories should always have a trailing '/'.
+#
+#     files-regex:
+#         List of regular expressions applied to paths to determine if they
+#         belong to the tag. The regular expression may match anywhere within
+#         the path, but can be anchored with ^ and $ as usual.
+#
+#         Can be combined with a 'files' key.
+#
+#         Note: Prefer plain 'files' patterns where possible. get_maintainer.py
+#         will check that they match some file, but won't check regexes
+#         (because it might be slow).
+#
+#     files-exclude:
+#         Like 'files', but any matching files will be excluded from the tag.
+#
+#     files-regex-exclude:
+#         Like 'files-regex', but any matching files will be excluded from the
+#         tag.
+#
+# All tags must have a 'files' and/or 'files-regex' key.
+
+# 1. Avoid putting include/ in entries as any include/ change we want
+#    to get test coverage as broad as possible.
+# 2. Keep tag entries sorted alphabetically
+
+bluetooth:
+  files:
+    - drivers/bluetooth/
+    - subsys/bluetooth/
+    - subsys/net/l2/bluetooth/
+
+net:
+  files:
+    - subsys/net/
+    - include/zephyr/net/
+    - drivers/wifi/
+    - drivers/net/
+    - drivers/ethernet/
+    - drivers/ieee802154/
+    - drivers/ptp_clock/
+
+test_framework:
+  files:
+    - subsys/testsuite/
+    - samples/subsys/testsuite/
+    - tests/subsys/testsuite/
+    - tests/ztest/
+
+cmsis_dsp:
+  files:
+    - modules/Kconfig.cmsis_dsp
+    # we have no means of telling file changes in a module, so for assume any
+    # change to west.yml is updating something we need to re-test for.
+    - west.yml
+
+mcumgr:
+  files:
+    - subsys/mgmt/mcumgr/
+    - tests/subsys/mgmt/mcumgr/
+    - samples/subsys/mgmt/mcumgr/
+    - include/zephyr/mgmt/mcumgr/
+kernel:
+  files:
+    - kernel/
+    - arch/
+
+posix:
+  files:
+    - lib/posix/
+
+# cbprintf:
+#    files:
+#        - lib/os/cbprintf*
+#        - lib/posix

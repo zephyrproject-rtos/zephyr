@@ -1,0 +1,51 @@
+# Intel ADSP HDA configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_INTEL_ADSP_HDA_HOST_IN
+	bool "Intel ADSP HDA Host In DMA drivers"
+	default y
+	depends on DT_HAS_INTEL_ADSP_HDA_HOST_IN_ENABLED
+	depends on DMA
+	select DMA_INTEL_ADSP_HDA
+	help
+	  Intel ADSP Host HDA DMA driver.
+
+config DMA_INTEL_ADSP_HDA_HOST_OUT
+	bool "Intel ADSP HDA Host Out DMA drivers"
+	default y
+	depends on DT_HAS_INTEL_ADSP_HDA_HOST_OUT_ENABLED
+	select DMA_INTEL_ADSP_HDA
+	help
+	  Intel ADSP Host HDA DMA driver.
+
+config DMA_INTEL_ADSP_HDA_LINK_IN
+	bool "Intel ADSP HDA Link In DMA drivers"
+	default y
+	depends on DT_HAS_INTEL_ADSP_HDA_LINK_IN_ENABLED
+	select DMA_INTEL_ADSP_HDA
+	help
+	  Intel ADSP Link In HDA DMA driver.
+
+config DMA_INTEL_ADSP_HDA_LINK_OUT
+	bool "Intel ADSP HDA Link Out DMA drivers"
+	default y
+	depends on DT_HAS_INTEL_ADSP_HDA_LINK_OUT_ENABLED
+	select DMA_INTEL_ADSP_HDA
+	help
+	  Intel ADSP Link Out HDA DMA driver.
+
+config DMA_INTEL_ADSP_HDA
+	bool
+	depends on DMA_INTEL_ADSP_HDA_LINK_OUT || DMA_INTEL_ADSP_HDA_LINK_IN || DMA_INTEL_ADSP_HDA_HOST_OUT || DMA_INTEL_ADSP_HDA_HOST_IN
+	help
+	  Intel ADSP HDA DMA driver.
+
+config DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
+	bool "Intel ADSP HDA Host L1 Exit Interrupt"
+	default y if SOC_INTEL_ACE15_MTPM
+	default y if SOC_INTEL_ACE20_LNL
+	depends on DMA_INTEL_ADSP_HDA_HOST_IN || DMA_INTEL_ADSP_HDA_HOST_OUT
+	help
+	  Intel ADSP HDA Host Interrupt for L1 exit.

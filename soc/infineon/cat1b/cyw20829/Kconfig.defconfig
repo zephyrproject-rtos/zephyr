@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon CYW20829 based MCU default configuration
+
+if SOC_DIE_CYW20829
+
+config NUM_IRQS
+	default 70
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+# add additional die specific params
+
+endif # SOC_DIE_CYW20829

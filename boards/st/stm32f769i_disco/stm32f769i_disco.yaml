@@ -1,0 +1,21 @@
+identifier: stm32f769i_disco
+name: ST STM32F769I Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 384
+flash: 2048
+supported:
+  - arduino_i2c
+  - i2c
+  - spi
+  - arduino_spi
+  - gpio
+  - arduino_gpio
+  - netif:eth
+  - memc
+  - kscan:touch
+vendor: st

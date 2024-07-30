@@ -1,0 +1,8 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: This is a representation of ARM Cortex-A55 CPU.
+
+compatible: "arm,cortex-a55"
+
+include: cpu.yaml

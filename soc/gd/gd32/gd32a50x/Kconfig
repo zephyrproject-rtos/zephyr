@@ -1,0 +1,12 @@
+# Copyright (c) 2022 YuLong Yao <feilongphone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32A50X
+	select ARM
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select CPU_CORTEX_M33
+	select GD32_HAS_AF_PINMUX
+	select GD32_HAS_IRC_40K
+	select PLATFORM_SPECIFIC_INIT

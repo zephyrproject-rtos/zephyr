@@ -1,0 +1,16 @@
+# NXP MCUX CSI driver configuration options
+
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MCUX_CSI
+	bool "NXP MCUX CMOS Sensor Interface (CSI) driver"
+	default y
+	depends on DT_HAS_NXP_IMX_CSI_ENABLED
+
+config VIDEO_MCUX_CSI_INIT_PRIORITY
+	int "NXP MCUX CSI init priority"
+	default 61
+	depends on VIDEO_MCUX_CSI
+	help
+	  Initialization priority for the CSI interface on an NXP MCUX device.

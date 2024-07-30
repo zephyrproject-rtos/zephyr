@@ -1,0 +1,61 @@
+common:
+  tags:
+    - adc
+    - drivers
+    - userspace
+tests:
+  drivers.adc:
+    depends_on: adc
+    min_flash: 40
+  drivers.adc.b_u585i_iot02a_adc4:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
+    platform_allow:
+      - b_u585i_iot02a
+  drivers.adc.dma_st_stm32:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-dma-stm32.conf"
+    depends_on:
+      - adc
+      - dma
+    min_flash: 40
+    platform_allow:
+      - b_u585i_iot02a
+      - disco_l475_iot1
+      - nucleo_f091rc
+      - nucleo_f207zg
+      - nucleo_f401re
+      - nucleo_f429zi
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h743zi
+      - nucleo_l073rz
+      - nucleo_l152re
+      - nucleo_l476rg
+      - nucleo_u575zi_q
+      - nucleo_wb55rg
+      - nucleo_wba52cg
+      - nucleo_wl55jc
+      - stm32f3_disco
+      - stm32h573i_dk
+  drivers.adc.dma_nxp_kinetis:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-dma-kinetis.conf"
+    depends_on:
+      - adc
+      - dma
+    min_flash: 40
+    platform_allow:
+      - frdm_k64f
+      - frdm_k82f
+    integration_platforms:
+      - frdm_k82f
+  drivers.adc.dma_espressif:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-dma-esp32.conf"
+    depends_on:
+      - adc
+      - dma
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu

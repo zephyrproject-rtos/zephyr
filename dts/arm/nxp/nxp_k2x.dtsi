@@ -1,0 +1,389 @@
+/*
+ * Copyright (c) 2018 Prevas A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/kinetis_sim.h>
+#include <zephyr/dt-bindings/clock/kinetis_mcg.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	chosen {
+		zephyr,entropy = &rnga;
+		zephyr,flash-controller = &ftfe;
+	};
+
+	aliases {
+		watchdog0 = &wdog;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	/* The on-chip SRAM is split into SRAM_L and SRAM_U regions that form a
+	 * contiguous block in the memory map, however misaligned accesses
+	 * across the 0x2000_0000 boundary are not supported in the Arm
+	 * Cortex-M4 architecture. For clarity and to avoid the temptation for
+	 * someone to extend sram0 without solving this issue, we define two
+	 * separate memory nodes here and only use the upper one for now. A
+	 * potential solution has been proposed in binutils:
+	 * https://sourceware.org/ml/binutils/2017-02/msg00250.html
+	 */
+	sram_l: memory@1fff0000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x1fff0000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "SRAML";
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(64)>;
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
+	};
+
+	soc {
+		mcg: clock-controller@40064000 {
+			compatible = "nxp,kinetis-mcg";
+			reg = <0x40064000 0xd>;
+			#clock-cells = <1>;
+		};
+
+		osc: clock-controller@40065000 {
+			compatible = "nxp,k22f-osc";
+			reg = <0x40065000 0x4>;
+
+			enable-external-reference;
+		};
+
+		rtc: rtc@4003d000 {
+			compatible = "nxp,k22f-rtc";
+			reg = <0x4003d000 0x808>;
+			clock-frequency = <32768>;
+		};
+
+		sim: sim@40047000 {
+			compatible = "nxp,kinetis-sim";
+			reg = <0x40047000 0x1060>;
+			#clock-cells = <3>;
+
+			core_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clock-div = <1>;
+				#clock-cells = <0>;
+			};
+
+			bus_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clock-div = <2>;
+				#clock-cells = <0>;
+			};
+
+			flexbus_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clock-div = <3>;
+				#clock-cells = <0>;
+			};
+
+			flash_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clock-div = <3>;
+				#clock-cells = <0>;
+			};
+		};
+
+		ftfe: flash-controller@40020000 {
+			compatible = "nxp,kinetis-ftfe";
+			reg = <0x40020000 0x18>;
+			interrupts = <18 0>, <19 0>;
+			interrupt-names = "command-complete", "read-collision";
+			status = "okay";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_M(1)>;
+				erase-block-size = <2048>;
+				write-block-size = <8>;
+			};
+		};
+
+		i2c0: i2c@40066000 {
+			compatible = "nxp,kinetis-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40066000 0x1000>;
+			interrupts = <24 0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 6>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40067000 {
+			compatible = "nxp,kinetis-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40067000 0x1000>;
+			interrupts = <25 0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 7>;
+			status = "disabled";
+		};
+
+		uart0: uart@4006a000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006a000 0x1000>;
+			interrupts = <31 0>, <32 0>;
+			interrupt-names = "status", "error";
+			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 10>;
+
+			status = "disabled";
+		};
+
+		uart1: uart@4006b000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006b000 0x1000>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "status", "error";
+			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 11>;
+
+			status = "disabled";
+		};
+
+		uart2: uart@4006c000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006c000 0x1000>;
+			interrupts = <35 0>, <36 0>;
+			interrupt-names = "status", "error";
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 12>;
+
+			status = "disabled";
+		};
+
+		uart3: uart@4006d000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006d000 0x1000>;
+			interrupts = <37 0>, <38 0>;
+			interrupt-names = "status", "error";
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 13>;
+
+			status = "disabled";
+		};
+
+		porta: pinmux@40049000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x40049000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+		};
+
+		portb: pinmux@4004a000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004a000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+		};
+
+		portc: pinmux@4004b000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004b000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+		};
+
+		portd: pinmux@4004c000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004c000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+		};
+
+		porte: pinmux@4004d000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004d000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+		};
+
+		gpioa: gpio@400ff000 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x400ff000 0x40>;
+			interrupts = <59 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porta>;
+		};
+
+		gpiob: gpio@400ff040 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x400ff040 0x40>;
+			interrupts = <60 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portb>;
+		};
+
+		gpioc: gpio@400ff080 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x400ff080 0x40>;
+			interrupts = <61 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portc>;
+		};
+
+		gpiod: gpio@400ff0c0 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x400ff0c0 0x40>;
+			interrupts = <62 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portd>;
+		};
+
+		gpioe: gpio@400ff100 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x400ff100 0x40>;
+			interrupts = <63 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porte>;
+		};
+
+		spi0: spi@4002c000 {
+			compatible = "nxp,kinetis-dspi";
+			reg = <0x4002c000 0x88>;
+			interrupts = <26 3>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@4002d000 {
+			compatible = "nxp,kinetis-dspi";
+			reg = <0x4002d000 0x88>;
+			interrupts = <27 3>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		wdog: watchdog@40052000 {
+			compatible = "nxp,kinetis-wdog";
+			reg = <0x40052000 16>;
+			interrupts = <22 0>;
+			clocks = <&sim KINETIS_SIM_LPO_CLK 0 0>;
+		};
+
+		ftm0: ftm@40038000{
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40038000 0x98>;
+			interrupts = <42 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
+					 <&sim KINETIS_SIM_BUS_CLK 0x103C 24>;
+			prescaler = <16>;
+			status = "disabled";
+		};
+
+		ftm1: ftm@40039000{
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40039000 0x98>;
+			interrupts = <43 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
+					 <&sim KINETIS_SIM_BUS_CLK 0x103C 25>;
+			prescaler = <16>;
+			status = "disabled";
+		};
+
+		ftm2: ftm@4003a000{
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x4003a000 0x98>;
+			interrupts = <44 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
+					 <&sim KINETIS_SIM_BUS_CLK 0x103C 26>;
+			prescaler = <16>;
+			status = "disabled";
+		};
+
+		ftm3: ftm@400b9000{
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x400b9000 0x98>;
+			interrupts = <71 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
+					 <&sim KINETIS_SIM_BUS_CLK 0x103C 6>;
+			prescaler = <16>;
+			status = "disabled";
+		};
+
+		adc0: adc@4003b000{
+			compatible = "nxp,kinetis-adc16";
+			reg = <0x4003b000 0x70>;
+			interrupts = <39 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		dac0: dac@4003f000 {
+			compatible = "nxp,kinetis-dac";
+			reg = <0x4003f000 0x1000>;
+			interrupts = <56 0>;
+			voltage-reference = <1>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		dac1: dac@40028000 {
+			compatible = "nxp,kinetis-dac";
+			reg = <0x40028000 0x1000>;
+			interrupts = <72 0>;
+			voltage-reference = <1>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		usbotg: usbd@40072000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x40072000 0x1000>;
+			interrupts = <53 1>;
+			interrupt-names = "usb_otg";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
+		rnga: random@40029000 {
+			compatible = "nxp,kinetis-rnga";
+			reg = <0x40029000 0x1000>;
+			status = "okay";
+			interrupts = <23 0>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

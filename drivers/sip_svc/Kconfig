@@ -1,0 +1,31 @@
+# Silicon vendor Provided Supervisory call driver for sip_svc subsystem
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ARM_SIP_SVC_DRIVER
+	bool "ARM SIP SVC driver"
+	depends on ARM64
+	help
+	  ARM supervisory call driver for communicating with EL2 or EL3 firmware
+
+if ARM_SIP_SVC_DRIVER
+
+module = ARM_SIP_SVC_DRIVER
+module-str = arm_sip_svc_driver
+source "subsys/logging/Kconfig.template.log_config"
+
+config ARM_SIP_SVC_DRIVER_INIT_PRIORITY
+	int "Initialization priority"
+	default 50
+
+config ARM_SIP_SVC_HAS_DRIVER
+	bool
+	help
+	   This is an option to be enabled by individual sip svc driver
+	   to signal that there is a sip svc driver. This is used by other
+	   modules which depends on sip svc driver.
+
+source "drivers/sip_svc/Kconfig.sip_smc_agilex"
+
+endif # ARM_SIP_SVC_DRIVER

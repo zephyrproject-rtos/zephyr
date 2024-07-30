@@ -1,0 +1,33 @@
+# Microchip MEC MCU series configuration options
+
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MEC172X
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	# All NVIC external sources.
+	default 181
+
+rsource "Kconfig.defconfig.mec172x*"
+
+if RTOS_TIMER
+
+config SOC_HAS_TIMING_FUNCTIONS
+	default y if !CORTEX_M_DWT
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
+endif # RTOS_TIMER
+
+config CORTEX_M_SYSTICK
+	depends on !RTOS_TIMER
+
+config PS2_XEC
+	default y
+	depends on PS2
+
+endif # SOC_SERIES_MEC172X

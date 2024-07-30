@@ -1,0 +1,29 @@
+# Copyright (c) 2022 ithinx GmbH
+# 2023 Amrith Venkat Kesavamoorthi <amrith@mr-beam.org>
+# 2023 Mr Beam Lasers GmbH.
+# SPDX-License-Identifier: Apache-2.0
+
+description: PCF857x 8/16-bit I2C-based I/O expander
+
+compatible: "nxp,pcf857x"
+
+include: [i2c-device.yaml, gpio-controller.yaml]
+
+properties:
+  ngpios:
+    required: true
+    enum:
+      - 8
+      - 16
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the controller INT pin. This pin is active-low.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

@@ -1,0 +1,14 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX EDMA version 3 controller
+
+compatible: "nxp,mcux-edma-v3"
+
+include: nxp,mcux-edma.yaml
+
+properties:
+  no-error-irq:
+    type: boolean
+    description: |
+      If the SoCs don't have a separate interrupt id for error IRQ.

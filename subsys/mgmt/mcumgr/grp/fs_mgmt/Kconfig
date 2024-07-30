@@ -1,0 +1,195 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2023. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to File System management group of
+# of MCUmgr subsystem and provides Kconfig options to configure
+# group commands behaviour and other aspects.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_GRP_FS_ -- general group options;
+#
+# When adding Kconfig options, that control the same feature,
+# try to group them together by the same stem after prefix.
+
+menuconfig MCUMGR_GRP_FS
+	bool "MCUmgr handlers for file management"
+	depends on FILE_SYSTEM
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	help
+	  Enables MCUmgr handlers for file management
+
+	  This option allows MCUmgr clients to access anything in the
+	  file system, including application-stored secrets like
+	  private keys. Use of this feature in production without adequate
+	  protection mechanisms is strongly discouraged (applications can
+	  enable MCUMGR_GRP_FS_FILE_ACCESS_HOOK and register to receive
+	  callbacks when file access is attempted, which they can then filter,
+	  allow, deny or rewrite paths).
+
+if MCUMGR_GRP_FS
+
+choice MCUMGR_GRP_FS_MAX_FILE_SIZE
+	prompt "Maximum file size that could be uploaded/downloaded"
+	default MCUMGR_GRP_FS_MAX_FILE_SIZE_64KB
+	help
+	  Maximum file size that will be allowed to be downloaded from
+	  device.
+	  This option decides on number of bytes that are reserved in
+	  CBOR frame for storage of offset/size of file downloaded.
+
+config MCUMGR_GRP_FS_MAX_FILE_SIZE_64KB
+	bool "<= 64KB"
+	help
+	  Files that have size up to 64KB require 1 to 3 bytes to encode
+	  size/offset within CBOR frame with file chunk.
+
+config MCUMGR_GRP_FS_MAX_FILE_SIZE_4GB
+	bool "<= 4GB"
+	help
+	  Files that have size up to 4GB require 1 to 5 bytes to encode
+	  size/offset within CBOR frame with file chunk.
+
+endchoice
+
+config MCUMGR_GRP_FS_MAX_OFFSET_LEN
+	int
+	default	3 if MCUMGR_GRP_FS_MAX_FILE_SIZE_64KB
+	default 5 if MCUMGR_GRP_FS_MAX_FILE_SIZE_4GB
+	help
+	  Maximal byte length of encoded offset/size, within transferred
+	  CBOR frame containing chunk of downloaded file.
+	  This value affects how much of data will fit into download buffer,
+	  as it selects sizes of fields within headers.
+	  NOTE: This option is hidden intentionally as it is intended
+	  to be assigned from limited set of allowed values, depending on
+	  the selection made in MCUMGR_GRP_FS_MAX_FILE_SIZE menu.
+
+config MCUMGR_GRP_FS_DL_CHUNK_SIZE_LIMIT
+	bool "Setting custom size of download file chunk"
+	help
+	  By default file chunk, that will be read off storage and fit into
+	  MCUmgr frame, is automatically calculated to fit into buffer
+	  of size MCUGMR_TRANSPORT_NETBUF_SIZE with all headers.
+	  Enabling this option allows to set MAXIMUM value that will be
+	  allowed for such chunk.
+	  Look inside fs_mgmt_config.h for details.
+
+if MCUMGR_GRP_FS_DL_CHUNK_SIZE_LIMIT
+
+config MCUMGR_GRP_FS_DL_CHUNK_SIZE
+	int "Maximum chunk size for file downloads"
+	range 65 MCUMGR_TRANSPORT_NETBUF_SIZE
+	default MCUMGR_TRANSPORT_NETBUF_SIZE
+	help
+	  Sets the MAXIMUM size of chunk which will be rounded down to
+	  number of bytes that, with all the required headers, will fit
+	  into MCUMGR_TRANSPORT_NETBUF_SIZE. This means that actual value
+	  might be lower then selected, in which case compiler warning will
+	  be issued.  Look inside fs_mgmt_config.h for details.
+	  Note that header sizes are affected by MCUMGR_GRP_FS_MAX_OFFSET_LEN.
+
+endif
+
+config MCUMGR_GRP_FS_FILE_STATUS
+	bool "File status command"
+	default y
+	help
+	  This command allows a remote device to retrieve the status of a file,
+	  at present only the size of the file is returned (if it exists).
+
+config MCUMGR_GRP_FS_CHECKSUM_HASH
+	bool "Checksum/hash MCUmgr functions"
+	help
+	  Enable this to support the hash/checksum MCUmgr functionality,
+	  individual checksum and hash types need to be enabled below.
+	  Note that this requires enough stack space to buffer data
+	  from the file being read and generate the output hash/checksum.
+
+if MCUMGR_GRP_FS_CHECKSUM_HASH
+
+config MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE
+	int "Checksum calculation buffer size"
+	range 32 16384
+	default 128
+	help
+	  Chunk size of buffer to use when calculating file checksum or hash
+	  (uses stack).
+
+config MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32
+	bool "IEEE CRC32 checksum support"
+	select CRC
+	default y
+	help
+	  Enable IEEE CRC32 checksum support for MCUmgr.
+
+config MCUMGR_GRP_FS_HASH_SHA256
+	bool "SHA256 hash support"
+	depends on BUILD_WITH_TFM || MBEDTLS_SHA256
+	select PSA_WANT_ALG_SHA_256 if BUILD_WITH_TFM
+	help
+	  Enable SHA256 hash support for MCUmgr.
+
+config MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_CMD
+	bool "Supported hash/checksum command"
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3 if ZCBOR_CANONICAL
+	help
+	  Enable the supported hash/checksum command which will return details on
+	  supported hash and checksum types that can be used.
+
+config MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES
+	int "Predicted maximum number of types to return on supported list"
+	default 10
+	depends on MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_CMD
+	help
+	  This is used for defining CBOR map holding supported hash/checksum info.
+	  The value does not affect memory allocation, it is used by zcbor to
+	  figure out how to encode map depending on its predicted size.
+
+endif
+
+config MCUMGR_GRP_FS_PATH_LEN
+	int "Maximum file path length"
+	default 64
+	help
+	  Limits the maximum path length for file operations, in bytes.  A buffer
+	  of this size gets allocated on the stack during handling of file upload
+	  and download commands.
+
+config MCUMGR_GRP_FS_FILE_ACCESS_HOOK
+	bool "File access hooks"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  Allows applications to control file access (e.g. for uploading and
+	  downloading of files) by registering for a callback which is then
+	  triggered whenever a files are accessed using the FS management group
+	  function. This also, optionally, allows re-writing or changing of
+	  supplied file paths.
+	  Note that this may be called multiple times for each file read and
+	  write due to MCUmgr's method of operation with a single file state.
+
+config MCUMGR_GRP_FS_FILE_SEMAPHORE_TAKE_TIME
+	int "File handle semaphore take time (ms)"
+	default 100
+	help
+	  Maximum time (in ms) to acquire the file handle semaphore when a file
+	  upload/download command is used. If unable to acquire the semaphore,
+	  then MGMT_ERR_EBUSY will be returned.
+
+	  Can specify 0 to not wait for the lock and return instantly if it
+	  cannot be acquired.
+
+config MCUMGR_GRP_FS_FILE_AUTOMATIC_IDLE_CLOSE_TIME
+	int "Automatic file handle close time (ms)"
+	default 4000
+	range 1 99999999
+	help
+	  Time (in ms) for a file upload/download to be declared aborted and
+	  file handle cleaned up. Each access to the file will reset the idle
+	  time to 0.
+
+module = MCUMGR_GRP_FS
+module-str = mcumgr_grp_fs
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

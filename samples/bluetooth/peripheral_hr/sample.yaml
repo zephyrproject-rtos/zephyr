@@ -1,0 +1,75 @@
+sample:
+  name: Bluetooth Peripheral HR
+  description: Demonstrates the HR (Heart Rate) GATT Service
+tests:
+  sample.bluetooth.peripheral_hr:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54l15pdk/nrf54l15/cpuapp
+    integration_platforms:
+      - qemu_cortex_m3
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54l15pdk/nrf54l15/cpuapp
+    tags: bluetooth
+  sample.bluetooth.peripheral_hr.minimal:
+    harness: bluetooth
+    platform_allow:
+      - bbc_microbit
+    integration_platforms:
+      - bbc_microbit
+    extra_args: EXTRA_CONF_FILE=prj_minimal.conf
+    tags: bluetooth
+  sample.bluetooth.peripheral_hr.bt_ll_sw_split.extended:
+    harness: bluetooth
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    extra_args: EXTRA_CONF_FILE=overlay-extended.conf
+    tags: bluetooth
+  sample.bluetooth.peripheral_hr.bt_ll_sw_split.phy_coded:
+    harness: bluetooth
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    extra_args: EXTRA_CONF_FILE=overlay-phy_coded.conf
+    tags: bluetooth
+  sample.bluetooth.peripheral_hr_rv32m1_vega_openisa_rv32m1_ri5cy:
+    platform_allow: rv32m1_vega/openisa_rv32m1/ri5cy
+    tags: bluetooth
+    build_only: true
+  sample.bluetooth.peripheral_hr.frdm_kw41z_shield:
+    harness: bluetooth
+    depends_on: arduino_serial
+    tags: bluetooth
+    extra_args: SHIELD=frdm_kw41z

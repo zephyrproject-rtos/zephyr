@@ -1,0 +1,22 @@
+description: Infineon XMC4XXX series Interrupt Controller
+
+compatible: "infineon,xmc4xxx-intc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  port-line-mapping:
+    type: array
+    required: true
+    description: |
+      An array to store the Event Request Unit (ERU) configuration for a given port/pin
+      combintation. The array elements are opaque fields set using the macro
+      XMC4XXX_INTC_SET_LINE_MAP(port, pin, eru_src, line);
+      eru_src defines where the specific port/pin combination is connected in the ERU.
+      line defines the SR line that will be raised by the event.
+
+  interrupts:
+    required: true

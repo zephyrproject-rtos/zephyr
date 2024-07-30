@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2020, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt685_evk/mimxrt685s/cm33
+name: NXP MIMXRT685-EVK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 4608
+flash: 65536
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - counter
+  - dma
+  - pwm
+  - gpio
+  - hwinfo
+  - i2c
+  - i3c
+  - i2s
+  - sdhc
+  - spi
+  - watchdog
+  - usb_device
+  - usbd
+vendor: nxp

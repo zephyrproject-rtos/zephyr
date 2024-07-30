@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2023 Antmicro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi2 {
+	status = "okay";
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+		spi-max-frequency = <20000000>;
+	};
+};

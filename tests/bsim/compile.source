@@ -1,0 +1,87 @@
+# Copyright 2018 Oticon A/S
+# SPDX-License-Identifier: Apache-2.0
+
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
+: "${BSIM_COMPONENTS_PATH:?BSIM_COMPONENTS_PATH must be defined}"
+
+WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
+
+function print_error_info(){
+  echo -e "\033[0;31mFailure building ${app} ${conf_file} for ${BOARD}\033[0m\n\
+  You can rebuild it with\n\
+  "${cmake_cmd[@]@Q}" && ninja ${ninja_args}"
+}
+
+function _compile(){
+  : "${app:?app must be defined}"
+
+  local app_root="${app_root:-${ZEPHYR_BASE}}"
+  local BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
+  local conf_file="${conf_file:-prj.conf}"
+  local extra_conf_file="${extra_conf_file:-""}"
+  local conf_overlay="${conf_overlay:-""}"
+
+  default_cmake_args=(-DCONFIG_COVERAGE=y -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_ASSERT=y)
+  local cmake_args=(${cmake_args:-"${default_cmake_args[@]}"})
+  local cmake_extra_args="${cmake_extra_args:-""}"
+  local ninja_args="${ninja_args:-""}"
+  local cc_flags="${cc_flags:-""}"
+
+  if [ "${conf_overlay}" ]; then
+    overlay_basename="${conf_overlay##*/}"
+    overlay_file="${overlay_basename//;/_}"
+    local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${overlay_file}}"
+  else
+    local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
+  fi
+
+  local exe_basename=$(echo ${exe_basename} | tr \"/\\.\; _ )
+  local exe_name=${BSIM_OUT_PATH}/bin/$exe_basename
+  local map_file_name=${exe_name}.Tsymbols
+
+  local this_dir=${WORK_DIR}/${app}/${exe_basename}
+
+  local modules_arg="${ZEPHYR_MODULES:+-DZEPHYR_MODULES=${ZEPHYR_MODULES}}"
+
+  echo "Building $exe_name"
+
+  local ret=0
+
+  local cmake_cmd=(cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD})
+  if [ $conf_file != "prj.conf" ]; then
+    local cmake_cmd+=( -DCONF_FILE=${conf_file})
+  fi
+  orifs="$IFS"; IFS=
+  local cmake_cmd+=( -DOVERLAY_CONFIG="${conf_overlay}" \
+            -DEXTRA_CONF_FILE="${extra_conf_file}" \
+            ${modules_arg} \
+            "${cmake_args[@]}" ${cc_flags:+-DCMAKE_C_FLAGS=${cc_flags}} ${cmake_extra_args})
+  if [ -v sysbuild ]; then
+    local cmake_cmd+=( -DAPP_DIR=${app_root}/${app} ${ZEPHYR_BASE}/share/sysbuild/)
+  else
+    local cmake_cmd+=( ${app_root}/${app})
+  fi
+  IFS="$orifs"
+
+  # Set INCR_BUILD when calling to only do an incremental build
+  if [ ! -v INCR_BUILD ] || [ ! -d "${this_dir}" ]; then
+      [ -d "${this_dir}" ] && rm "${this_dir}" -rf
+      mkdir -p "${this_dir}" && cd "${this_dir}"
+      "${cmake_cmd[@]}" &> cmake.out || \
+      { ret="$?"; print_error_info ; cat cmake.out && return $ret; }
+  else
+      cd "${this_dir}"
+  fi
+  ninja ${ninja_args} &> ninja.out || \
+  { ret="$?"; print_error_info ; cat ninja.out && return $ret; }
+  cp ${this_dir}/zephyr/zephyr.exe ${exe_name}
+
+  nm ${exe_name} | grep -v " [U|w] " | sort | cut -d" " -f1,3 > ${map_file_name}
+  sed -i "1i $(wc -l ${map_file_name} | cut -d" " -f1)" ${map_file_name}
+}
+
+function compile(){
+  run_in_background _compile
+}

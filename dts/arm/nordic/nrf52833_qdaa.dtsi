@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nordic/nrf52833.dtsi>
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(512)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(128)>;
+};
+
+/ {
+	soc {
+		compatible = "nordic,nrf52833-qdaa", "nordic,nrf52833",
+			     "nordic,nrf52", "simple-bus";
+	};
+};

@@ -1,0 +1,53 @@
+# nrfx I2C support
+
+# Copyright (c) 2018, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_NRFX
+	bool "nRF TWI nrfx drivers"
+	default y
+	depends on SOC_FAMILY_NORDIC_NRF
+	depends on MULTITHREADING
+	select PINCTRL
+	help
+	  Enable support for nrfx TWI drivers for nRF MCU series.
+
+if I2C_NRFX
+
+config I2C_NRFX_TWI
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_TWI_ENABLED
+	select HAS_I2C_RTIO
+	select NRFX_TWI0 if HAS_HW_NRF_TWI0
+	select NRFX_TWI1 if HAS_HW_NRF_TWI1
+
+config I2C_NRFX_TWIM
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_TWIM_ENABLED
+	select NRFX_TWIM0 if HAS_HW_NRF_TWIM0
+	select NRFX_TWIM1 if HAS_HW_NRF_TWIM1
+	select NRFX_TWIM2 if HAS_HW_NRF_TWIM2
+	select NRFX_TWIM3 if HAS_HW_NRF_TWIM3
+	select NRFX_TWIM20 if HAS_HW_NRF_TWIM20
+	select NRFX_TWIM21 if HAS_HW_NRF_TWIM21
+	select NRFX_TWIM22 if HAS_HW_NRF_TWIM22
+	select NRFX_TWIM30 if HAS_HW_NRF_TWIM30
+	select NRFX_TWIM120 if HAS_HW_NRF_TWIM120
+	select NRFX_TWIM130 if HAS_HW_NRF_TWIM130
+	select NRFX_TWIM131 if HAS_HW_NRF_TWIM131
+	select NRFX_TWIM132 if HAS_HW_NRF_TWIM132
+	select NRFX_TWIM133 if HAS_HW_NRF_TWIM133
+	select NRFX_TWIM134 if HAS_HW_NRF_TWIM134
+	select NRFX_TWIM135 if HAS_HW_NRF_TWIM135
+	select NRFX_TWIM136 if HAS_HW_NRF_TWIM136
+	select NRFX_TWIM137 if HAS_HW_NRF_TWIM137
+
+config I2C_NRFX_TRANSFER_TIMEOUT
+	int "Transfer timeout [ms]"
+	default 500
+	help
+	  Timeout in milliseconds used for each I2C transfer.
+	  0 means that the driver should use the K_FOREVER value,
+	  i.e. it should wait as long as necessary.
+
+endif # I2C_NRFX

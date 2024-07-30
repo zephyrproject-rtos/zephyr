@@ -1,0 +1,34 @@
+/*
+ * Copyright 2021 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_ls1046a.dtsi>
+
+/ {
+	model = "NXP ls1046a RDB";
+	compatible = "nxp,ls1046ardb";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+	};
+
+	cpus {
+		/delete-node/ cpu@0;
+		/delete-node/ cpu@1;
+		/delete-node/ cpu@2;
+	};
+
+};
+
+/delete-node/ &psci;
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};

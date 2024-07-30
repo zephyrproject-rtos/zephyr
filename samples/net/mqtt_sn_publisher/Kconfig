@@ -1,0 +1,18 @@
+# Configuration options for MQTT-SN sample
+
+# Copyright (c) 2022 René Beckmann
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "MQTT-SN sample application"
+
+config NET_SAMPLE_MQTT_SN_GATEWAY_IP
+	string "IP of the MQTT-SN gateway"
+
+config NET_SAMPLE_MQTT_SN_GATEWAY_PORT
+	int "Port of the MQTT-SN gateway"
+
+config NET_SAMPLE_MQTT_SN_BUFFER_SIZE
+	int "Size of the TX and RX buffers"
+	default 255
+
+source "Kconfig.zephyr"

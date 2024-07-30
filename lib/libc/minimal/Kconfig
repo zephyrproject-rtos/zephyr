@@ -1,0 +1,63 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if MINIMAL_LIBC
+
+config MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
+	bool "Non-reentrant functions"
+	default y if !USERSPACE
+	select NEED_LIBC_MEM_PARTITION
+	help
+	  Enable non-reentrant functions that make use of the globals; e.g.
+	  rand() and gmtime(). The globals must be put into a dedicated C
+	  library memory partition when CONFIG_USERSPACE=y, and enabling this
+	  option may require an additional memory protection region.
+
+config MINIMAL_LIBC_LL_PRINTF
+	bool "Build with minimal libc long long printf" if !64BIT
+	default y if 64BIT
+	help
+	  Build with long long printf enabled. This will increase the size of
+	  the image.
+
+config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
+	bool "Use size optimized string functions"
+	default y if SIZE_OPTIMIZATIONS || SIZE_OPTIMIZATIONS_AGGRESSIVE
+	help
+	  Enable smaller but potentially slower implementations of memcpy and
+	  memset. On the Cortex-M0+ this reduces the total code size by 120 bytes.
+
+config MINIMAL_LIBC_RAND
+	bool "Rand and srand functions"
+	help
+	  Enable rand_r() for the minimal libc.
+
+	  In order to make use of the non-reentrant rand() and srand(), it is
+	  necessary to set CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y.
+
+config MINIMAL_LIBC_TIME
+	bool "Time functions"
+	select COMMON_LIBC_TIME if POSIX_TIMERS
+	select COMMON_LIBC_GMTIME_R
+	default y
+	help
+	  Enable time() and gmtime_r() for the minimal libc.
+
+	  time() requires CONFIG_POSIX_TIMERS=y because it relies on the POSIX
+	  clock_gettime() function.
+
+	  In order to make use of the non-reentrant gmtime(), it is necessary
+	  to set CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y.
+
+config MINIMAL_LIBC_STRING_ERROR_TABLE
+	bool "String error table for strerror() and strerror_r()"
+	help
+	  Select this option to ensure that streror(), strerror_r()
+	  produce strings corresponding to the descriptions in errno.h.
+
+	  The string error table can add ~2kiB to ROM. As such, it is
+	  disabled by default. In this case, strerror() and strerror_r()
+	  symbols are still present, but the functions produce an empty
+	  string.
+
+endif # MINIMAL_LIBC

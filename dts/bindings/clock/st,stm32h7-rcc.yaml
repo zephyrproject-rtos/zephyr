@@ -1,0 +1,126 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Reset and Clock controller node for STM32H7 devices
+  This node is in charge of system clock ('SYSCLK') source selection and
+  System Clock Generation.
+
+  Configuring STM32 Reset and Clock controller node:
+
+  System clock source should be selected amongst the clock nodes available in "clocks"
+  node (typically 'clk_hse, clk_csi', 'pll', ...).
+  As part of this node configuration, SYSCLK frequency should also be defined, using
+  "clock-frequency" property.
+  Last, bus clocks (typically HCLK, PCLK1, PCLK2) should be configured using matching
+  prescaler properties.
+  Here is an example of correctly configured rcc node:
+  &rcc {
+           clocks = <&pll>;  /* Set pll as SYSCLK source */
+           clock-frequency = <DT_FREQ_M(480)>; /* SYSCLK runs at 480MHz */
+           d1cpre = <1>;
+           hpre = <1>;
+           d1ppre = <1>;
+           d2ppre1 = <1>;
+           d2ppre2 = <1>;
+           d3ppre = <1>;
+  }
+
+  Confere st,stm32-rcc binding for information about domain clocks configuration.
+
+compatible: "st,stm32h7-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for clock output
+
+  d1cpre:
+    type: int
+    required: true
+    enum:
+      - 1
+    description: |
+        D1 Domain, CPU1 clock prescaler. Sets a HCLK frequency (feeding Cortex-M Systick)
+        lower than SYSCLK frequency (actual core frequency).
+        Zephyr doesn't make a difference today between these two clocks.
+        Changing this prescaler is not allowed until it is made possible to
+        use them independently in Zephyr clock subsystem.
+
+  hpre:
+    type: int
+    required: true
+    description: |
+        D2 domain, CPU2 core clock and AHB(1/2/3/4) peripheral prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 128
+      - 256
+      - 512
+
+  d1ppre:
+    type: int
+    required: true
+    description: |
+        D1 domain, APB3 peripheral prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  d2ppre1:
+    type: int
+    required: true
+    description: |
+        D2 domain, APB1 peripheral prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  d2ppre2:
+    type: int
+    required: true
+    description: |
+        D2 domain, APB2 peripheral prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  d3ppre:
+    type: int
+    required: true
+    description: |
+        D3 domain, APB4 peripheral prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+clock-cells:
+  - bus
+  - bits

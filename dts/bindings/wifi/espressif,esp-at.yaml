@@ -1,0 +1,27 @@
+# Copyright (c) 2019 Tobias Svehagen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Espressif ESP8266/ESP32 WiFi modem (AT Commands)
+
+compatible: "espressif,esp-at"
+
+include: uart-device.yaml
+
+properties:
+  power-gpios:
+    type: phandle-array
+
+  reset-gpios:
+    type: phandle-array
+
+  external-reset:
+    type: boolean
+    description:
+      Modem is reset by an external source. In most situations this will
+      be the microcontroller and the ESP modem on a common reset line.
+
+  target-speed:
+    type: int
+    description:
+      UART baudrate which will be requested using AT commands and to which
+      UART interface will be reconfigured during initialization phase.

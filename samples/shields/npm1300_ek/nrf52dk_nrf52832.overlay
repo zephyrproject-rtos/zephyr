@@ -1,0 +1,41 @@
+/*
+ * Copyright (C) 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+ &i2c0_default {
+	group1 {
+		bias-pull-up;
+	};
+};
+
+&npm1300_ek_regulators {
+	dvs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>,
+		    <&gpio0 18 GPIO_ACTIVE_LOW>;
+};
+
+&npm1300_ek_buck1 {
+	regulator-init-microvolt = <2000000>;
+};
+
+&npm1300_ek_buck2 {
+	regulator-init-microvolt = <3300000>;
+	retention-microvolt = <2500000>;
+	enable-gpios = <&npm1300_ek_gpio 1 GPIO_ACTIVE_LOW>;
+	retention-gpios = <&npm1300_ek_gpio 2 GPIO_ACTIVE_HIGH>;
+	pwm-gpios = <&npm1300_ek_gpio 2 GPIO_ACTIVE_LOW>;
+};
+
+&npm1300_ek_ldo1 {
+	regulator-initial-mode = <NPM1300_LDSW_MODE_LDO>;
+	enable-gpios = <&npm1300_ek_gpio 2 GPIO_ACTIVE_LOW>;
+};
+
+&npm1300_ek_ldo2 {
+	regulator-initial-mode = <NPM1300_LDSW_MODE_LDSW>;
+	enable-gpios = <&npm1300_ek_gpio 2 GPIO_ACTIVE_LOW>;
+};
+
+&npm1300_ek_pmic {
+	host-int-gpios = <&gpio0 22 0>;
+	pmic-int-pin = <3>;
+};

@@ -1,0 +1,5 @@
+boards:
+  - name: xg27_dk2602a
+    vendor: silabs
+    socs:
+      - name: efr32bg27c140f768im40

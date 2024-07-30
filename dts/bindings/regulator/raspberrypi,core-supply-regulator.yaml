@@ -1,0 +1,48 @@
+# Copyright (c), 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RaspberryPi Pico core supply regurator
+
+compatible: "raspberrypi,core-supply-regulator"
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-always-on
+      - regulator-boot-on
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+      - regulator-allowed-modes
+      - regulator-initial-mode
+
+properties:
+  raspberrypi,brown-out-detection:
+    type: boolean
+    description:
+      Enable brown-out detection
+
+  raspberrypi,brown-out-threshold:
+    type: int
+    default: 860000
+    enum:
+      - 473000
+      - 516000
+      - 559000
+      - 602000
+      - 645000
+      - 688000
+      - 731000
+      - 774000
+      - 817000
+      - 860000
+      - 903000
+      - 946000
+      - 989000
+      - 1032000
+      - 1075000
+      - 1118000
+    description: |
+      Reset if the core voltage drops below this threshold for a particular time
+      (determined by the 'brown-out detection assertion delay').

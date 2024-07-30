@@ -1,0 +1,69 @@
+sample:
+  name: Zbus Benchmark
+tests:
+  sample.zbus.benchmark_async:
+    tags: zbus
+    min_ram: 16
+    filter: CONFIG_SYS_CLOCK_EXISTS and not (CONFIG_ARCH_POSIX and not CONFIG_BOARD_NATIVE_POSIX)
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "I: Benchmark 1 to 8 using LISTENERS to transmit with message size: 256 bytes"
+        - "I: Bytes sent = 262144, received = 262144"
+        - "I: Average data rate: (\\d+).(\\d+)MB/s"
+        - "I: Duration: (\\d+).(\\d+)s"
+        - "@(.*)"
+    extra_configs:
+      - CONFIG_BM_ONE_TO=8
+      - CONFIG_BM_MESSAGE_SIZE=256
+      - CONFIG_BM_LISTENERS=y
+      - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_IDLE_STACK_SIZE=1024
+    integration_platforms:
+      - qemu_x86
+  sample.zbus.benchmark_async_msg_sub:
+    tags: zbus
+    min_ram: 16
+    filter: CONFIG_SYS_CLOCK_EXISTS and not (CONFIG_ARCH_POSIX and not CONFIG_BOARD_NATIVE_POSIX)
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "I: Benchmark 1 to 8 using MSG_SUBSCRIBERS to transmit with message size: 256 bytes"
+        - "I: Bytes sent = 262144, received = 262144"
+        - "I: Average data rate: (\\d+).(\\d+)MB/s"
+        - "I: Duration: (\\d+).(\\d+)s"
+        - "@(.*)"
+    extra_configs:
+      - CONFIG_BM_ONE_TO=8
+      - CONFIG_BM_MESSAGE_SIZE=256
+      - CONFIG_BM_MSG_SUBSCRIBERS=y
+      - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_IDLE_STACK_SIZE=1024
+    integration_platforms:
+      - qemu_x86
+  sample.zbus.benchmark_sync:
+    tags: zbus
+    min_ram: 16
+    filter: CONFIG_SYS_CLOCK_EXISTS and not (CONFIG_ARCH_POSIX and not CONFIG_BOARD_NATIVE_POSIX)
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "I: Benchmark 1 to 8 using SUBSCRIBERS to transmit with message size: 256 bytes"
+        - "I: Bytes sent = 262144, received = 262144"
+        - "I: Average data rate: (\\d+).(\\d+)MB/s"
+        - "I: Duration: (\\d+).(\\d+)s"
+        - "@(.*)"
+    extra_configs:
+      - CONFIG_BM_ONE_TO=8
+      - CONFIG_BM_MESSAGE_SIZE=256
+      - CONFIG_BM_SUBSCRIBERS=y
+      - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_IDLE_STACK_SIZE=1024
+    integration_platforms:
+      - qemu_x86

@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022, Intel Corporation
+
+config IPM_CALLBACK_ASYNC
+	bool "Deliver callbacks asynchronously"
+	default y if IPM_CAVS_HOST
+	help
+	  When selected, the driver supports "asynchronous" command
+	  delivery.  Commands will stay active after the ISR returns,
+	  until the application expressly "completes" the command
+	  later.
+
+config IPM_CAVS_HOST
+	bool "cAVS DSP/host communication"
+	select INTEL_ADSP_IPC
+	help
+	  Driver for host/DSP communication on intel_adsp devices
+
+if IPM_CAVS_HOST
+
+config IPM_CAVS_HOST_INBOX_OFFSET
+	hex "Byte offset of cAVS inbox window"
+	depends on INTEL_ADSP_IPC
+	default 0x6000
+	help
+	  Location of the host-writable inbox window within the
+	  HP_SRAM_RESERVE region.  This location must be synchronized
+	  with host driver and SOF source code (must match
+	  SRAM_INBOX_BASE).  Be careful.
+
+config IPM_CAVS_HOST_OUTBOX_OFFSET
+	hex "Byte offset of cAVS outbox memory"
+	depends on INTEL_ADSP_IPC
+	default 0x1000
+	help
+	  Location of the "outbox" region for SOF IPC3/4 message
+	  within the pre-existing window 0 (this is not the same as
+	  the HP_SRAM_RESERVE region used for INBOX_OFFSET).  This
+	  location must be synchronized with host driver and SOF
+	  source code (where it must equal SRAM_SW_REG_SIZE).  Be
+	  careful.
+
+config IPM_CAVS_HOST_REGWORD
+	bool "Store first 4 bytes in IPC register"
+	depends on INTEL_ADSP_IPC
+	help
+	  Protocol variant.  When true, the first four bytes of a
+	  message are passed in the cAVS IDR/TDR register pair instead
+	  of in the SRAM window.  Only available on cAVS 1.8+.
+
+endif # IPM_CAVS_HOST

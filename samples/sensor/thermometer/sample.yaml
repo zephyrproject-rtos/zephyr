@@ -1,0 +1,12 @@
+sample:
+  name: Temperature Sensor
+tests:
+  sample.sensor.thermometer:
+    tags: sensors
+    harness: sensor
+    filter: dt_alias_exists("ambient-temp0")
+    integration_platforms:
+      - nrf52840dk/nrf52840   # mcp9700a
+      - frdm_k22f             # tcn75a
+      - robokit1              # ntc_thermistor
+      - adi_eval_adin1110ebz  # adt7420

@@ -1,0 +1,33 @@
+# DAC configuration options
+
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_AD56XX
+	bool "Analog Devices AD56xx DAC driver"
+	default y
+	select SPI
+	depends on DT_HAS_ADI_AD5628_ENABLED \
+		|| DT_HAS_ADI_AD5648_ENABLED \
+		|| DT_HAS_ADI_AD5668_ENABLED \
+		|| DT_HAS_ADI_AD5672_ENABLED \
+		|| DT_HAS_ADI_AD5674_ENABLED \
+		|| DT_HAS_ADI_AD5676_ENABLED \
+		|| DT_HAS_ADI_AD5679_ENABLED \
+		|| DT_HAS_ADI_AD5684_ENABLED \
+		|| DT_HAS_ADI_AD5686_ENABLED \
+		|| DT_HAS_ADI_AD5687_ENABLED \
+		|| DT_HAS_ADI_AD5689_ENABLED
+	help
+	  Enable the driver for the Analog Devices AD56xx DAC
+
+if DAC_AD56XX
+
+config DAC_AD56XX_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Analog Devices AD56xx DAC device driver initialization priority.
+
+endif # DAC_AD56XX

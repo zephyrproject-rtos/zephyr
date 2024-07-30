@@ -1,0 +1,16 @@
+identifier: nucleo_l031k6
+name: ST Nucleo L031K6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+  - eeprom
+ram: 8
+flash: 32
+vendor: st

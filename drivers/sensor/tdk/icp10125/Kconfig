@@ -1,0 +1,23 @@
+# ICP10125 barometric pressure/temperature sensor configuration options
+
+# Copyright (c) 2022 Mizuki Agawa <agawa.mizuki@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ICP10125
+	bool "ICP10125 Barometric Pressure & Temperature Sensor"
+	default y
+	depends on DT_HAS_INVENSENSE_ICP10125_ENABLED
+	select I2C
+	help
+	  Enable driver for ICP10125 barometric pressure/temperature sensor.
+
+if ICP10125
+
+config ICP10125_CHECK_CRC
+	bool "Check the CRC of measument data"
+	imply CRC
+	default y
+	help
+	  Verify the CRC checksum that appended to the measurement data.
+
+endif # ICP10125

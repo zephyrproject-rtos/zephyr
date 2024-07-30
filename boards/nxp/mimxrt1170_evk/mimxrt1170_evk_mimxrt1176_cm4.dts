@@ -1,0 +1,72 @@
+/*
+ * Copyright 2021,2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt11xx_cm4.dtsi>
+#include "mimxrt1170_evk.dtsi"
+
+/ {
+	model = "NXP MIMXRT1170-EVK board";
+	compatible = "nxp,mimxrt1176";
+
+	chosen {
+		/*
+		 * Note: when using DMA, the SRAM region must be set to
+		 * a memory region that is not cached by the chip. If the chosen
+		 * sram region is changed and DMA is in use, you will
+		 * encounter issues!
+		 */
+		zephyr,sram = &sram1;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,canbus = &flexcan2;
+		zephyr,flash-controller = &is25wp128;
+		zephyr,flash = &sram0;
+		nxp,m4-partition = &slot1_partition;
+		zephyr,ipc = &mailbox_b;
+	};
+
+	sdram0: memory@80000000 {
+		/* Winbond W9825G6KH-5I */
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(64)>;
+	};
+};
+
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpi2c1 {
+	status = "okay";
+};
+
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
+ */
+&gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+&sai1 {
+	status = "okay";
+};
+
+&edma_lpsr0 {
+	status = "okay";
+};
+
+&mailbox_b {
+	status = "okay";
+};

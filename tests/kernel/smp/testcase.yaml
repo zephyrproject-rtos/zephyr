@@ -1,0 +1,26 @@
+common:
+  timeout: 120
+tests:
+  kernel.multiprocessing.smp:
+    tags:
+      - kernel
+      - smp
+    ignore_faults: true
+    filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
+  kernel.multiprocessing.smp.minimallibc:
+    tags:
+      - kernel
+      - smp
+      - libc
+    ignore_faults: true
+    filter: (CONFIG_MP_MAX_NUM_CPUS > 1) and CONFIG_MINIMAL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  kernel.multiprocessing.smp.affinity:
+    tags:
+      - kernel
+      - smp
+    ignore_faults: true
+    filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y

@@ -1,0 +1,84 @@
+# Copyright (c) 2022 Meta Platforms, Inc. and its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+description: BMI08X Accel inertial measurement unit
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      This property specifies the connection for INT, because the
+      Zephyr driver maps all interrupts to INT.  The signal defaults
+      to output low when produced by the sensor.
+
+  int1-map-io:
+    type: int
+    description: |
+      Bit[0]: Map Interrupt A to INT1, Accel Data Ready
+      Bit[1]: Map Interrupt B to INT1
+      Bit[2]: Map Interrupt C to INT1
+
+  int2-map-io:
+    type: int
+    description: |
+      Bit[0]: Map Interrupt A to INT2, Accel Data Ready
+      Bit[1]: Map Interrupt B to INT2
+      Bit[2]: Map Interrupt C to INT2
+
+  int1-conf-io:
+    type: int
+    description: |
+      Bit[0]: reserved
+      Bit[1]: if set to 1, INT1 is active high, otherwise it's active low
+      Bit[2]: if set to 1, INT1 is open-drain, otherwise it's push-pull
+      Bit[3]: if set to 1, enable INT1 as an output pin
+      Bit[4]: if set to 1, enable INT1 as an input pin
+      Bit[7:5] : reserved
+
+  int2-conf-io:
+    type: int
+    description: |
+      Bit[0]: reserved
+      Bit[1]: if set to 1, INT2 is active high, otherwise it's active low
+      Bit[2]: if set to 1, INT2 is open-drain, otherwise it's push-pull
+      Bit[3]: if set to 1, enable INT2 as an output pin
+      Bit[4]: if set to 1, enable INT2 as an input pin
+      Bit[7:5] : reserved
+
+  accel-hz:
+    type: string
+    required: true
+    description: |
+      Default frequency of accelerometer. (Unit - Hz)
+    enum:
+      - "12.5"
+      - "25"
+      - "50"
+      - "100"
+      - "200"
+      - "400"
+      - "800"
+      - "1600"
+
+  accel-fs:
+    type: int
+    required: true
+    description: |
+      Default full scale of accelerometer. (Unit - g)
+    enum:
+      - 2
+      - 3
+      - 4
+      - 6
+      - 8
+      - 12
+      - 16
+      - 24
+
+  data-sync:
+    type: phandle
+    description: |
+      Enables data sync if defined. This is to point to the bmi08x-gyro definition
+      that is within the same IC as the bmi08x-accel.

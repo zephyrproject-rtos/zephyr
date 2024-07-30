@@ -1,0 +1,26 @@
+common:
+  depends_on: spi
+  tags: drivers spi
+  harness: ztest
+  harness_config:
+    fixture: gpio_spi_loopback
+tests:
+  drivers.spi.spi_error_cases:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
+  drivers.spi.spi_error_cases.fast:
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.spi_error_cases.nrf54h20_cpuppr:
+    platform_allow: nrf54h20dk/nrf54h20/cpuppr
+    sysbuild: true
+    extra_args:
+      - vpr_launcher_DTC_OVERLAY_FILE="../../../tests/drivers/spi/spi_error_cases/boards/nrf54h20dk_nrf54h20_cpuppr_launcher.overlay"
+      - SB_CONFIG_VPR_LAUNCHER=y
+      # Disable asserts to fit in limited code memory
+      - CONFIG_ASSERT=n

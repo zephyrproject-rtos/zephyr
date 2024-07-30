@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2023-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_INTEL_NIOSV
+	bool
+
+config SOC_FAMILY
+	default "intel_niosv" if SOC_FAMILY_INTEL_NIOSV
+
+rsource "*/Kconfig.soc"

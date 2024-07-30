@@ -1,0 +1,18 @@
+common:
+  depends_on: netif
+  # We can only run this in platforms that support PTP clock
+  platform_allow:
+    - frdm_k64f
+    - sam_e70_xplained/same70q21
+    - native_posix
+    - native_sim
+  integration_platforms:
+    - native_sim
+tests:
+  net.ptp.clock:
+    min_ram: 32
+    tags:
+      - net
+      - ptp
+      - gptp
+      - userspace

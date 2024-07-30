@@ -1,0 +1,113 @@
+common:
+  tags:
+    - drivers
+    - uart
+  depends_on: gpio
+  harness: ztest
+  platform_allow:
+    - nrf52840dk/nrf52840
+    - nrf9160dk/nrf9160
+    - nrf5340dk/nrf5340/cpuapp
+    - nrf54l15pdk/nrf54l15/cpuapp
+    - nrf54h20dk/nrf54h20/cpuapp
+    - nrf54h20dk/nrf54h20/cpurad
+    - nrf52_bsim
+  integration_platforms:
+    - nrf52840dk/nrf52840
+  harness_config:
+    fixture: gpio_loopback
+tests:
+  drivers.uart.uart_mix_poll:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
+
+  drivers.uart.uart_mix_poll_fifo:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
+
+  drivers.uart.uart_mix_poll_async_api:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
+
+  drivers.uart.uart_mix_poll_async_api_const:
+    extra_args: TEST_CONST_BUFFER=1
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_0_TX_CACHE_SIZE=2
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
+    tags: bsim_skip_CI # We skip a few tests to save CI time, as they give little extra coverage
+
+  drivers.uart.uart_mix_poll_with_ppi:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
+    tags: bsim_skip_CI
+
+  drivers.uart.uart_mix_poll_fifo_with_ppi:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
+    tags: bsim_skip_CI
+
+  drivers.uart.uart_mix_poll_async_api_with_ppi:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
+    tags: bsim_skip_CI
+
+  drivers.uart.legacy.uart_mix_poll:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
+    platform_exclude:
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+
+  drivers.uart.legacy.uart_mix_poll_fifo:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
+    platform_exclude:
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+
+  drivers.uart.legacy.uart_mix_poll_async_api:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
+    platform_exclude:
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad

@@ -1,0 +1,102 @@
+# Timer driver configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+if SYS_CLOCK_EXISTS
+
+menu "Timer drivers"
+
+config TIMER_HAS_64BIT_CYCLE_COUNTER
+	bool
+	help
+	  When this option is true, the k_cycle_get_64() call is
+	  available to provide values from a 64-bit cycle counter.
+
+config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	bool "Timer queries its hardware to find its frequency at runtime"
+	help
+	  The drivers select this option automatically when needed. Do not modify
+	  this unless you have a very good reason for it.
+
+config SYSTEM_CLOCK_SLOPPY_IDLE
+	bool "Timer allowed to skew uptime clock during idle"
+	help
+	  When true, the timer driver is not required to maintain a
+	  correct system uptime count when the system enters idle.
+	  Some platforms may take advantage of this to reduce the
+	  overhead from regular interrupts required to handle counter
+	  wraparound conditions.
+
+config SYSTEM_CLOCK_INIT_PRIORITY
+	int "System clock driver initialization priority"
+	default 0
+	help
+	  This options can be used to set a specific initialization priority
+	  value for the system clock driver. As driver initialization  might need
+	  the clock to be running already, you should let the default value as it
+	  is (0).
+
+# Hidden option to be selected by individual SoC.
+config TICKLESS_CAPABLE
+	bool
+	help
+	  Timer drivers should select this flag if they are capable of
+	  supporting tickless operation.  That is, a call to
+	  sys_clock_set_timeout() with a number of ticks greater than
+	  one should be expected not to produce a call to
+	  sys_clock_announce() (really, not to produce an interrupt at
+	  all) until the specified expiration.
+
+config SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	bool
+	help
+	  This option should be selected by drivers implementing support for
+	  sys_clock_disable() API.
+
+config SYSTEM_CLOCK_LOCK_FREE_COUNT
+	bool
+	help
+	  This option should be selected by drivers implementing a lock free
+	  cycle count accessor. This is needed for instrumenting spin lock
+	  hold times.
+
+source "drivers/timer/Kconfig.altera_avalon"
+source "drivers/timer/Kconfig.ambiq"
+source "drivers/timer/Kconfig.x86"
+source "drivers/timer/Kconfig.arcv2"
+source "drivers/timer/Kconfig.arm_arch"
+source "drivers/timer/Kconfig.cavs"
+source "drivers/timer/Kconfig.cc13xx_cc26xx_rtc"
+source "drivers/timer/Kconfig.cortex_m_systick"
+source "drivers/timer/Kconfig.esp32"
+source "drivers/timer/Kconfig.gecko"
+source "drivers/timer/Kconfig.ite_it8xxx2"
+source "drivers/timer/Kconfig.leon_gptimer"
+source "drivers/timer/Kconfig.litex"
+source "drivers/timer/Kconfig.mchp_xec_rtos"
+source "drivers/timer/Kconfig.mcux_gpt"
+source "drivers/timer/Kconfig.mcux_lptmr"
+source "drivers/timer/Kconfig.mcux_os"
+source "drivers/timer/Kconfig.mips_cp0"
+source "drivers/timer/Kconfig.native_posix"
+source "drivers/timer/Kconfig.npcx_itim"
+source "drivers/timer/Kconfig.nrf_rtc"
+source "drivers/timer/Kconfig.nrf_grtc"
+source "drivers/timer/Kconfig.nrf_xrtc"
+source "drivers/timer/Kconfig.rcar_cmt"
+source "drivers/timer/Kconfig.riscv_machine"
+source "drivers/timer/Kconfig.rv32m1_lptmr"
+source "drivers/timer/Kconfig.sam0_rtc"
+source "drivers/timer/Kconfig.smartbond"
+source "drivers/timer/Kconfig.stm32_lptim"
+source "drivers/timer/Kconfig.ti_dm_timer"
+source "drivers/timer/Kconfig.xlnx_psttc"
+source "drivers/timer/Kconfig.xtensa"
+source "drivers/timer/Kconfig.mtk_adsp"
+
+endmenu
+
+endif # SYS_CLOCK_EXISTS

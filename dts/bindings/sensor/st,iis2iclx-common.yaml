@@ -1,0 +1,74 @@
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    When setting the range, odr properties in a .dts or .dtsi file you may
+    include iis2iclx.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/iis2iclx.h>
+
+    iis2iclx: iis2iclx@0 {
+      ...
+
+      range = <IIS2ICLX_DT_FS_2G>;
+      odr = <IIS2ICLX_DT_ODR_833Hz>;
+    };
+
+include: sensor-device.yaml
+
+properties:
+  drdy-gpios:
+    type: phandle-array
+    description: |
+      DRDY pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int-pin:
+    type: int
+    default: 1
+    enum: [1, 2]
+    description: |
+      Select DRDY pin number (1 or 2).
+
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 1 which is the
+      configuration at power-up.
+
+      - 1 # drdy is generated from INT1
+      - 2 # drdy is generated from INT2
+
+  range:
+    type: int
+    default: 3
+    description: |
+      Range in g. Default is power-up configuration.
+
+      - 0 # IIS2ICLX_DT_FS_500mG (0.015 mg/LSB)
+      - 1 # IIS2ICLX_DT_FS_3G    (0.122 mg/LSB)
+      - 2 # IIS2ICLX_DT_FS_1G    (0.031 mg/LSB)
+      - 3 # IIS2ICLX_DT_FS_2G    (0.061 mg/LSB)
+
+    enum: [0, 1, 2, 3]
+
+  odr:
+    type: int
+    default: 0
+    description: |
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      Default is power-up configuration.
+
+      - 0  # IIS2ICLX_DT_ODR_OFF
+      - 1  # IIS2ICLX_DT_ODR_12Hz5
+      - 2  # IIS2ICLX_DT_ODR_26H
+      - 3  # IIS2ICLX_DT_ODR_52Hz
+      - 4  # IIS2ICLX_DT_ODR_104Hz
+      - 5  # IIS2ICLX_DT_ODR_208Hz
+      - 6  # IIS2ICLX_DT_ODR_416Hz
+      - 7  # IIS2ICLX_DT_ODR_833Hz
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]

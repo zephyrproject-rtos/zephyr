@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+ #include <adi/max32/max32680.dtsi>
+ #include <adi/max32/max32680-pinctrl.dtsi>
+ #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	 model = "Analog Devices MAX32680EVKIT";
+	 compatible = "adi,max32680evkit";
+
+	 chosen {
+		 zephyr,console = &uart1;
+		 zephyr,shell-uart = &uart1;
+		 zephyr,sram = &sram2;
+		 zephyr,flash = &flash0;
+	 };
+
+	 leds {
+		 compatible = "gpio-leds";
+		 led1: led_1 {
+			 gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			 label = "Red LED";
+		 };
+		 led2: led_2 {
+			 gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			 label = "Blue LED";
+		 };
+	 };
+
+	 buttons {
+		 compatible = "gpio-keys";
+		 pb1: pb1 {
+			 gpios = <&gpio0 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			 label = "SW1";
+			 zephyr,code = <INPUT_KEY_0>;
+		 };
+		 pb2: pb2 {
+			 gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			 label = "SW2";
+			 zephyr,code = <INPUT_KEY_1>;
+		 };
+	 };
+
+	 /* These aliases are provided for compatibility with samples */
+	 aliases {
+		led0 = &led1;
+		led1 = &led2;
+		sw0 = &pb1;
+		sw1 = &pb2;
+	 };
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1a_tx_p0_13 &uart1a_rx_p0_12>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};

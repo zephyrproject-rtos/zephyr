@@ -1,0 +1,14 @@
+tests:
+  drivers.mbox_data:
+    tags:
+      - drivers
+      - mbox
+    sysbuild: true
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - lpcxpresso55s69/lpc55s69/cpu0
+    integration_platforms:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+      - lpcxpresso55s69/lpc55s69/cpu0

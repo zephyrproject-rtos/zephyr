@@ -1,0 +1,5 @@
+board:
+  name: faze
+  vendor: seagate
+  socs:
+    - name: lpc11u67

@@ -1,0 +1,15 @@
+# Watchdog configuration options
+#
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) 2019 Oane Kingma
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_GECKO
+	bool "Gecko series Watchdog (WDOG) Driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_WDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	select SOC_GECKO_WDOG
+	help
+	  Enable WDOG driver for Silicon Labs Gecko MCUs.

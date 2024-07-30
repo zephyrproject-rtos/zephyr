@@ -1,0 +1,143 @@
+common:
+  harness: net
+  tags:
+    - net
+    - socket
+  depends_on: netif
+  min_flash: 140
+sample:
+  description: Test network sockets using a client/server sample
+  name: Socket Echo Server
+tests:
+  sample.net.sockets.echo_server:
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+      - sam_e70_xplained/same70q21
+      - frdm_k64f
+      - qemu_cortex_m3
+      - frdm_kw41z
+      - qemu_cortex_a53
+      - native_sim
+    integration_platforms:
+      - qemu_x86
+  sample.net.sockets.echo_server.802154:
+    extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
+    platform_allow: qemu_x86
+    integration_platforms:
+      - qemu_x86
+  sample.net.sockets.echo_server.802154.rf2xx.xplained:
+    extra_args:
+      - SHIELD=atmel_rf2xx_xplained
+      - OVERLAY_CONFIG="overlay-802154.conf"
+    platform_allow: sam4s_xplained
+  sample.net.sockets.echo_server.802154.rf2xx.xpro:
+    extra_args:
+      - SHIELD=atmel_rf2xx_xpro
+      - OVERLAY_CONFIG="overlay-802154.conf"
+    platform_allow:
+      - sam4e_xpro
+      - sam_v71_xult/samv71q21
+    integration_platforms:
+      - sam_v71_xult/samv71q21
+  sample.net.sockets.echo_server.802154.rf2xx.legacy:
+    extra_args:
+      - SHIELD=atmel_rf2xx_legacy
+      - OVERLAY_CONFIG="overlay-802154.conf"
+    platform_allow:
+      - sam4e_xpro
+      - sam_v71_xult/samv71q21
+    integration_platforms:
+      - sam_v71_xult/samv71q21
+  sample.net.sockets.echo_server.802154.rf2xx.arduino:
+    extra_args:
+      - SHIELD=atmel_rf2xx_arduino
+      - OVERLAY_CONFIG="overlay-802154.conf"
+    platform_allow:
+      - sam_v71_xult/samv71q21
+      - frdm_k64f
+      - nucleo_f767zi
+    integration_platforms:
+      - sam_v71_xult/samv71q21
+  sample.net.sockets.echo_server.802154.rf2xx.mikrobus:
+    extra_args:
+      - SHIELD=atmel_rf2xx_mikrobus
+      - OVERLAY_CONFIG="overlay-802154.conf"
+    platform_allow: lpcxpresso55s69/lpc55s69/cpu0/ns
+  sample.net.sockets.echo_server.mcr20a:
+    extra_args:
+      - SHIELD=frdm_cr20a
+      - OVERLAY_CONFIG=overlay-802154.conf
+    platform_allow: frdm_k64f
+  sample.net.sockets.echo_server.nrf_802154:
+    extra_args: OVERLAY_CONFIG="overlay-802154.conf"
+    platform_allow: nrf52840dk/nrf52840
+  sample.net.sockets.echo_server.b91_802154:
+    extra_args: OVERLAY_CONFIG="overlay-802154.conf"
+    platform_allow: tlsr9518adk80d
+  sample.net.sockets.echo_server.usbnet:
+    depends_on: usb_device
+    harness: net
+    extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
+    tags:
+      - net
+      - usb
+    # native_sim usb driver does not work with CONFIG_POSIX_API
+    platform_exclude:
+      - native_sim
+      - native_sim/native/64
+      - native_posix
+      - native_posix/native/64
+  sample.net.sockets.echo_server.nrf_openthread:
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
+    slow: true
+    tags:
+      - net
+      - openthread
+    platform_allow: nrf52840dk/nrf52840
+    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+  sample.net.sockets.echo_server.b91_openthread:
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
+    slow: true
+    tags:
+      - net
+      - openthread
+    platform_allow: tlsr9518adk80d
+    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+  sample.net.sockets.echo_server.kw41z_openthread:
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
+    slow: true
+    tags:
+      - net
+      - openthread
+    platform_allow: frdm_kw41z
+    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+  sample.net.sockets.echo_server.e1000:
+    extra_args: OVERLAY_CONFIG="overlay-e1000.conf"
+    tags: net
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+  sample.net.sockets.echo_server.stellaris:
+    extra_args: OVERLAY_CONFIG="overlay-qemu_cortex_m3_eth.conf"
+    tags: net
+    platform_allow: qemu_cortex_m3
+  sample.net.sockets.echo_server.smsc911x:
+    extra_args: OVERLAY_CONFIG="overlay-smsc911x.conf"
+    tags: net
+    platform_allow: mps2/an385
+  sample.net.sockets.echo_server.userspace:
+    extra_args:
+      - CONFIG_USERSPACE=y
+      - OVERLAY_CONFIG="overlay-e1000.conf"
+      - CONFIG_MAX_THREAD_BYTES=3
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86
+  sample.net.sockets.echo_server.nsos:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - OVERLAY_CONFIG="overlay-nsos.conf"

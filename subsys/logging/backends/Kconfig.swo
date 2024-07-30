@@ -1,0 +1,60 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_SWO
+	bool "Serial Wire Output (SWO) backend"
+	depends on HAS_SWO
+	select LOG_OUTPUT
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  When enabled, backend will use SWO for logging.
+
+if LOG_BACKEND_SWO
+
+config LOG_BACKEND_SWO_REF_FREQ_HZ
+	int "SWO reference clock frequency"
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,itm),swo-ref-frequency) if $(dt_nodelabel_enabled,itm)
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if $(dt_node_has_prop,/cpus/cpu@0,clock-frequency)
+	default 0
+	help
+	  Set SWO reference frequency. In most cases it is equal to CPU
+	  frequency.
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	int "Set SWO output frequency"
+	default 0
+	help
+	  Set SWO output frequency. Value 0 will select maximum frequency
+	  supported by the given MCU. Not all debug probes support high
+	  frequency SWO operation. In this case the frequency has to be set
+	  manually.
+
+	  SWO value defined by this option will be configured at boot. Most SWO
+	  viewer programs will configure SWO frequency when attached to the
+	  debug probe. Such configuration will persist only until the device
+	  reset. To ensure flawless operation the frequency configured here and
+	  by the SWO viewer program has to match.
+
+choice
+	prompt "SWO protocol"
+	default LOG_BACKEND_SWO_PROTOCOL_NRZ
+
+config LOG_BACKEND_SWO_PROTOCOL_NRZ
+	bool "NRZ encoding"
+	help
+	  Use UART-like NRZ encoding. This is the most common option, but requires the SWO output
+	  frequency to be known on the receiving side.
+
+config LOG_BACKEND_SWO_PROTOCOL_MANCHESTER
+	bool "Manchester encoding"
+	help
+	  Use Manchester encoding. This is less widely supported, but permits the clock to be
+	  recovered automatically on the receiving side.
+
+endchoice
+
+backend = SWO
+backend-str = swo
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_SWO

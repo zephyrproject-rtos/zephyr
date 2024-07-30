@@ -1,0 +1,6 @@
+# Copyright (c) 2024 Joel Guittet
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_MAIN_STACK_SIZE=2048
+CONFIG_CLOCK_CONTROL=y
+CONFIG_MINIMAL_LIBC=y

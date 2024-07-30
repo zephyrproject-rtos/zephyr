@@ -1,0 +1,30 @@
+# Ambiq SDK I2C
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2C_AMBIQ
+	bool "AMBIQ I2C driver"
+	default y
+	depends on DT_HAS_AMBIQ_I2C_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_I2C
+	help
+	  Enable driver for Ambiq I2C.
+
+if I2C_AMBIQ
+
+config I2C_AMBIQ_DMA
+	bool "AMBIQ APOLLO I2C DMA Support"
+	help
+	  Enable DMA for Ambiq I2C.
+
+config I2C_DMA_TCB_BUFFER_SIZE
+	int "DMA Transfer Control Buffer size in words."
+	default 1024
+	help
+	  DMA Transfer Control Buffer size in words
+
+endif # I2C_AMBIQ

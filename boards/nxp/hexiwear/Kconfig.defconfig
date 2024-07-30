@@ -1,0 +1,39 @@
+# Hexiwear K64 board
+
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# Copyright 2017,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_HEXIWEAR_MK64F12
+
+config OSC_XTAL0_FREQ
+	default 12000000
+
+config MCG_PRDIV0
+	default 0x02
+
+config MCG_VDIV0
+	default 0x06
+
+config MCG_FCRDIV
+	default 1
+
+config REGULATOR
+	default y if ADC || SENSOR
+
+endif # BOARD_HEXIWEAR_MK64F12
+
+# Hexiwear KW40Z board
+
+if BOARD_HEXIWEAR_MKW40Z4
+
+config OSC_XTAL0_FREQ
+	default 32000000
+
+config MCG_FRDIV
+	default 5
+
+config MCG_FCRDIV
+	default 0
+
+endif # BOARD_HEXIWEAR_MKW40Z4

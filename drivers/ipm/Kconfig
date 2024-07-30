@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IPM
+	bool "Inter-Processor Mailbox (IPM) drivers"
+	help
+	  Include interrupt-based inter-processor mailboxes
+	  drivers in system configuration
+
+if IPM
+
+config IPM_MHU
+	bool "IPM MHU driver"
+	default y
+	depends on DT_HAS_ARM_MHU_ENABLED
+	help
+	  Driver for SSE 200 MHU (Message Handling Unit)
+
+config IPM_NRFX
+	bool "IPM NRF driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_IPC_ENABLED
+	select NRFX_IPC
+	help
+	  Driver for Nordic nRF messaging unit, based
+	  on nRF IPC peripheral HW.
+
+config IPM_NRF_SINGLE_INSTANCE
+	bool "Single instance of IPM device"
+	help
+	  Enable this option if the IPM device should have
+	  a single instance, instead of one per IPC
+	  message channel.
+
+config ESP32_SOFT_IPM
+	bool "ESP32 Software IPM driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_IPM_ENABLED
+	help
+	  Interprocessor driver for ESP32 when using AMP.
+
+config IPM_IVSHMEM
+	bool "IPM driver based on IVSHMEM-Doorbell"
+	default y
+	depends on DT_HAS_LINARO_IVSHMEM_IPM_ENABLED
+	depends on IVSHMEM
+	depends on IVSHMEM_DOORBELL
+	help
+	  Interprocessor driver using IVSHMEM Doorbell mechanism.
+
+config XLNX_IPI
+	bool "AMD-Xilinx IPM driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_IPI_MAILBOX_ENABLED
+	help
+	  Inter Processor Interrupt driver for AMD-Xilinx
+	  platforms such as ZynqMP Ultrascale+.
+
+source "drivers/ipm/Kconfig.nrfx"
+source "drivers/ipm/Kconfig.imx"
+source "drivers/ipm/Kconfig.stm32"
+source "drivers/ipm/Kconfig.intel_adsp"
+source "drivers/ipm/Kconfig.ivshmem"
+source "drivers/ipm/Kconfig.sedi"
+
+
+module = IPM
+module-str = ipm
+source "subsys/logging/Kconfig.template.log_config"
+
+endif #IPM

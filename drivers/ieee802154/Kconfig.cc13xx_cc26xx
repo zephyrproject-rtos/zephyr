@@ -1,0 +1,106 @@
+# TI CC13xx / CC26xx IEEE 802.15.4 configuration options
+
+# Copyright (c) 2019 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_CC13XX_CC26XX
+	bool "TI CC13xx / CC26xx IEEE 802.15.4 driver support"
+	select CRC
+	default y
+	depends on DT_HAS_TI_CC13XX_CC26XX_IEEE802154_ENABLED
+
+if IEEE802154_CC13XX_CC26XX
+
+config IEEE802154_CC13XX_CC26XX_INIT_PRIO
+	int "TI CC13xx / CC26xx IEEE 802.15.4 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number.
+
+config IEEE802154_CC13XX_CC26XX_RADIO_TX_RETRIES
+	int "Radio Transmission attempts"
+	default NET_L2_IEEE802154_RADIO_TX_RETRIES if NET_L2_IEEE802154
+	default 3
+	range 1 7
+	help
+	  Number of transmission attempts radio driver should do, before
+	  replying it could not send the packet.
+
+config IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MAX_BO
+	int "CSMA maximum backoffs"
+	default NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO if NET_L2_IEEE802154_RADIO_CSMA_CA
+	default 4
+	range 1 5
+	help
+	  The maximum number of backoffs the CSMA-CA algorithm will attempt
+	  before declaring a channel access failure.
+
+config IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MIN_BE
+	int "CSMA MAC minimum backoff exponent"
+	default NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE if NET_L2_IEEE802154_RADIO_CSMA_CA
+	default 3
+	range 1 8
+	help
+	  The minimum value of the backoff exponent (BE) in the CSMA-CA
+	  algorithm.
+
+config IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MAX_BE
+	int "CSMA MAC maximum backoff exponent"
+	default NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE if NET_L2_IEEE802154_RADIO_CSMA_CA
+	default 5
+	range 1 8
+	help
+	  The maximum value of the backoff exponent (BE) in the CSMA-CA
+	  algorithm.
+
+endif # IEEE802154_CC13XX_CC26XX
+
+menuconfig IEEE802154_CC13XX_CC26XX_SUB_GHZ
+	bool "TI CC13xx / CC26xx IEEE 802.15.4g driver support"
+	default y
+	depends on DT_HAS_TI_CC13XX_CC26XX_IEEE802154_SUBGHZ_ENABLED
+
+if IEEE802154_CC13XX_CC26XX_SUB_GHZ
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_NUM_RX_BUF
+	int "TI CC13xx / CC26xx IEEE 802.15.4g receive buffer count"
+	default 2
+	help
+	  This option allows the user to configure the number of
+	  receive buffers.
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_CS_THRESHOLD
+	int "TI CC13xx / CC26xx IEEE 802.15.4g Carrier Sense ED Threshold in dBm"
+	default -80 # Based on SUN FSK, 200 kHz bit rate, no FEC, see IEEE 802.15.4-2020, section 19.6.7
+	help
+	  This option sets the energy detection (ED) threshold for
+	  clear channel assessment (CCA) modes 1 or 3 in the CSMA/CA
+	  algorithm. Except for the SUN O-QPSK PHY, the ED threshold
+	  shall correspond to a received signal power of at most 10 dB
+	  greater than the specified receiver sensitivity for that PHY,
+	  or in accordance with local regulations (see IEEE 802.15.4-2020,
+	  section 10.2.8). For the SUN O-QPSK PHY, the ED threshold shall
+	  comply with IEEE 802.15.4-2020, section 21.5.13.
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO
+	int "TI CC13xx / CC26xx IEEE 802.15.4g initialization priority"
+	default 80
+	help
+	  Set the initialization priority number.
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_RADIO_SETUP
+	bool "Use custom radio setup structures (advanced)"
+	default n
+	help
+	  Imports the radio setup structure from an external module instead of using
+	  the default one.
+	  Allows overriding the RF modulation / protocol settings.
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_POWER_TABLE
+	bool "Use custom power table structure (advanced)"
+	default n
+	help
+	  Imports the radio power table from an external module.
+	  Allows overriding the RF modulation settings.
+
+endif # IEEE802154_CC13XX_CC26XX_SUB_GHZ

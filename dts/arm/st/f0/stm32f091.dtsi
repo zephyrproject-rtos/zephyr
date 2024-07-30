@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) Bobby Noelte
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f0/stm32f071.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32f091", "st,stm32f0", "simple-bus";
+
+		/*
+		 * USARTs 3-8 share the same IRQ on stm32f091xx devices. This
+		 * configuration is not currently supported, so at most one of
+		 * these may be enabled at a time. Enabling more than one will
+		 * result in a build failure.
+		 */
+		usart5: serial@40005000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			resets = <&rctl STM32_RESET(APB1, 20U)>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		usart6: serial@40011400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40011400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
+			resets = <&rctl STM32_RESET(APB2, 5U)>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		usart7: serial@40011800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40011800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000040>;
+			resets = <&rctl STM32_RESET(APB2, 6U)>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		usart8: serial@40011c00 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40011c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
+			resets = <&rctl STM32_RESET(APB2, 7U)>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		can1: can@40006400 {
+			compatible = "st,stm32-bxcan";
+			reg = <0x40006400 0x400>;
+			interrupts = <30 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			status = "disabled";
+		};
+
+		dma2: dma@40020400 {
+			compatible = "st,stm32-dma-v2bis";
+			#dma-cells = <2>;
+			reg = <0x40020400 0x400>;
+			interrupts = <10 0 10 0 11 0 11 0 11 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
+			status = "disabled";
+		};
+	};
+};

@@ -1,0 +1,20 @@
+common:
+  tags:
+    - net
+    - http
+    - http_client
+    - websocket_client
+    - websocket
+  min_ram: 35
+  depends_on: netif
+  # native_posix does not work with CONFIG_POSIX_API
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
+sample:
+  description: Websocket client sample
+  name: websocket_client
+tests:
+  sample.net.sockets.websocket_client:
+    platform_exclude: intel_adsp/cavs25
+    harness: net

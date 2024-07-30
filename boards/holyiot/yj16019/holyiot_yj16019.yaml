@@ -1,0 +1,14 @@
+identifier: holyiot_yj16019
+name: Holyiot YJ-16019
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - ble
+  - pwm
+  - watchdog
+ram: 64
+flash: 512

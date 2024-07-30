@@ -1,0 +1,33 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pit1_channel0 {
+	status = "okay";
+};
+
+&pit1_channel1 {
+	status = "okay";
+};
+
+/* channel 2 disabled to test disabled channel not breaking things */
+
+&pit1_channel3 {
+	status = "okay";
+};
+
+&pit2_channel0 {
+	status = "okay";
+};
+
+&pit2_channel1 {
+	status = "okay";
+};
+
+/* channel 2 disabled to test disabled channel not breaking things */
+
+&pit2_channel3 {
+	status = "okay";
+};

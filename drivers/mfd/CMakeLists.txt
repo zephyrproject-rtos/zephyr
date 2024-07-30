@@ -1,0 +1,18 @@
+# Copyright 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library()
+
+zephyr_library_sources_ifdef(CONFIG_MFD_ADP5585 mfd_adp5585.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_MAX20335 mfd_max20335.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_NCT38XX mfd_nct38xx.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_NPM1300 mfd_npm1300.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_NPM6001 mfd_npm6001.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_AXP192 mfd_axp192.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_AD559X mfd_ad559x.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_AD559X_BUS_I2C mfd_ad559x_i2c.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_AD559X_BUS_SPI mfd_ad559x_spi.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_MAX31790 mfd_max31790.c)
+zephyr_library_sources_ifdef(CONFIG_NXP_LP_FLEXCOMM mfd_nxp_lp_flexcomm.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_BD8LB600FS mfd_bd8lb600fs.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_TLE9104 mfd_tle9104.c)

@@ -1,0 +1,73 @@
+description: stm32 sdmmc disk access
+
+compatible: "st,stm32-sdmmc"
+
+include: [mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  reg:
+    required: true
+
+  resets:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  cd-gpios:
+    type: phandle-array
+    description: Card Detect pin
+
+  pwr-gpios:
+    type: phandle-array
+    description: Power pin
+
+  bus-width:
+    type: int
+    default: 1
+    description: |
+        bus width for SDMMC access, defaults to the minimum necessary
+        number of bus lines
+    enum:
+      - 1
+      - 4
+      - 8
+
+  clk-div:
+    type: int
+    default: 0
+    description: |
+        Clock division factor for SDMMC. Typically the clock operates at 25MHz so
+        a division factor of 2 would be 25MHz / 2 = 12.5MHz.
+
+  idma:
+    type: boolean
+    description: |
+      SDMMC device has an internal DMA. Internal DMA doesn't require any additional
+      configuration using "dmas" property.
+      Delete this property to use interrupt driven mode.
+
+  dmas:
+    description: |
+      Optional DMA channel specifier. If DMA should be used, specifier should
+      hold a phandle reference to the dma controller, the channel number,
+      the slot number, channel configuration and finally features.
+
+      Only priority bits are used in the configuration. There are no feature
+      flags.
+
+      For example dmas for TX/RX on SDMMC
+         dmas = <&dma2 4 6 0x30000 0x00>, <&dma2 4 3 0x30000 0x00>;
+
+  dma-names:
+    description: |
+      DMA channel name. If DMA should be used, expected value is "tx", "rx".
+
+      For example
+         dma-names = "tx", "rx";

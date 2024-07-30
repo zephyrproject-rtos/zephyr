@@ -1,0 +1,18 @@
+identifier: thingy53/nrf5340/cpuapp/ns
+name: Thingy53-NRF5340-application-MCU-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 192
+flash: 192
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - watchdog
+  - usb_device
+  - netif:openthread
+vendor: nordic

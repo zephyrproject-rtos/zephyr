@@ -1,0 +1,27 @@
+# Copyright (c) 2023 ITE Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_IT82XX2
+	bool "IT82XX2 USB device controller driver"
+	default y
+	depends on DT_HAS_ITE_IT82XX2_USB_ENABLED
+	help
+	  IT82xx2 USB device controller driver.
+
+if UDC_IT82XX2
+
+config UDC_IT82xx2_EVENT_COUNT
+	int "UDC IT82xx2 event count"
+	range 4 64
+	default 8
+	help
+	  IT82xx2 event count.
+
+config UDC_IT82xx2_STACK_SIZE
+	int "IT82xx2 UDC driver internal thread stack size"
+	default 1024
+	help
+	  Size of the stack used in the driver for IT82xx2 USBD ISR event
+	  handling.
+
+endif # UDC_IT82XX2

@@ -1,0 +1,11 @@
+sample:
+  description: SNTP client sample
+  name: sntp_client
+common:
+  harness: net
+  tags: net
+tests:
+  sample.net.sockets.sntp_client:
+    platform_allow:
+      - qemu_x86
+      - native_sim

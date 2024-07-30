@@ -1,0 +1,23 @@
+sample:
+  description: Code data relocation nocopy Sample
+  name: code relocation nocopy
+tests:
+  sample.application_development.code_relocation_nocopy:
+    platform_allow:
+      - qemu_cortex_m3
+      - nrf5340dk/nrf5340/cpuapp
+      - stm32f769i_disco
+      - stm32h7b3i_dk
+      - stm32h573i_dk
+      - b_u585i_iot02a
+      - stm32h745i_disco/stm32h745xx/m7
+      - stm32h750b_dk
+      - stm32f746g_disco
+    integration_platforms:
+      - qemu_cortex_m3
+    tags: linker
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World! (.*)"

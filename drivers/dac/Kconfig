@@ -1,0 +1,62 @@
+# DAC configuration options
+
+# Copyright (c) 2020 Libre Solar Technologies GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# DAC options
+#
+menuconfig DAC
+	bool "Digital-to-Analog Converter (DAC) drivers"
+	help
+	  Enable DAC (Digital to Analog Converter) driver configuration.
+
+if DAC
+
+module = DAC
+module-str = DAC
+source "subsys/logging/Kconfig.template.log_config"
+
+config DAC_SHELL
+	bool "DAC shell"
+	depends on SHELL
+	help
+	  Enable DAC related shell commands.
+
+config DAC_INIT_PRIORITY
+	int "DAC init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  DAC driver device initialization priority.
+
+source "drivers/dac/Kconfig.mcux"
+
+source "drivers/dac/Kconfig.stm32"
+
+source "drivers/dac/Kconfig.sam"
+
+source "drivers/dac/Kconfig.sam0"
+
+source "drivers/dac/Kconfig.dacx0501"
+
+source "drivers/dac/Kconfig.dacx0508"
+
+source "drivers/dac/Kconfig.dacx3608"
+
+source "drivers/dac/Kconfig.ltc166x"
+
+source "drivers/dac/Kconfig.mcp4725"
+
+source "drivers/dac/Kconfig.mcp4728"
+
+source "drivers/dac/Kconfig.gd32"
+
+source "drivers/dac/Kconfig.esp32"
+
+source "drivers/dac/Kconfig.ad56xx"
+
+source "drivers/dac/Kconfig.ad559x"
+
+source "drivers/dac/Kconfig.ad569x"
+
+endif # DAC

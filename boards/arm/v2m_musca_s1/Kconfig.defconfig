@@ -1,0 +1,13 @@
+# Copyright (c) 2019-2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_V2M_MUSCA_S1
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+endif # BOARD_V2M_MUSCA_S1

@@ -1,0 +1,217 @@
+/*
+ * Copyright (c) 2023 Andes Technology Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <andes/andes_v5_ae350.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Andes ADP-XC7K AE350";
+	compatible = "andestech,adp_xc7k_ae350";
+
+	aliases {
+		gpio-0 = &gpio0;
+		counter-0 = &pit0;
+		i2c-0 = &i2c0;
+		led0 = &seg7_led1_g;
+		led1 = &seg7_led2_g;
+		sw0 = &user_button1;
+		eeprom-0 = &eeprom;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &dram;
+		zephyr,flash = &mx25u16;
+		zephyr,flash-controller = &mx25u16;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		seg7_led1_a: led_1 {
+			label = "7SEG LED1 A";
+			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led1_b: led_2 {
+			label = "7SEG LED1 B";
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led1_c: led_3 {
+			label = "7SEG LED1 C";
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led1_d: led_4 {
+			label = "7SEG LED1 D";
+			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led1_e: led_5 {
+			label = "7SEG LED1 E";
+			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led1_f: led_6 {
+			label = "7SEG LED1 F";
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led1_g: led_7 {
+			label = "7SEG LED1 G";
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led1_dp: led_8 {
+			label = "7SEG LED1 DP";
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		};
+
+		seg7_led2_a: led_9 {
+			label = "7SEG LED2 A";
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led2_b: led_10 {
+			label = "7SEG LED2 B";
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led2_c: led_11 {
+			label = "7SEG LED2 C";
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led2_d: led_12 {
+			label = "7SEG LED2 D";
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led2_e: led_13 {
+			label = "7SEG LED2 E";
+			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led2_f: led_14 {
+			label = "7SEG LED2 F";
+			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led2_g: led_15 {
+			label = "7SEG LED2 G";
+			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+		};
+		seg7_led2_dp: led_16 {
+			label = "7SEG LED2 DP";
+			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button1: button_1 {
+			label = "User SW1";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button2: button_2 {
+			label = "User SW2";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		user_button3: button_3 {
+			label = "User SW3";
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+		user_button4: button_4 {
+			label = "User SW4";
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_3>;
+		};
+		user_button5: button_5 {
+			label = "User SW5";
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_4>;
+		};
+		user_button6: button_6 {
+			label = "User SW6";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_5>;
+		};
+		user_button7: button_7 {
+			label = "User SW7";
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_6>;
+		};
+	};
+};
+
+&l2_cache {
+	status = "okay";
+};
+
+&syscon {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	clock-frequency = <19660800>;
+	current-speed = <115200>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pit0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	mx25u16: qspi-nor-flash@0 {
+		compatible = "jedec,spi-nor", "andestech,qspi-nor";
+		size = <16777216>;
+		spi-max-frequency = <10000000>;
+		jedec-id = [c2 25 35];
+		status = "okay";
+		reg = <0>;
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 00  44 eb 08 6b  08 3b 04 bb
+			fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c 20 0f 52
+			10 d8 00 ff
+		];
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_K(1024)>;
+			};
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	eeprom: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		status = "okay";
+		size = <16384>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	cs-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+};
+
+&wdt {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};

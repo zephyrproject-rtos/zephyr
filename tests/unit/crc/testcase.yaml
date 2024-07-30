@@ -1,0 +1,5 @@
+tests:
+  utilities.crc:
+    tags:
+      - crc
+    type: unit

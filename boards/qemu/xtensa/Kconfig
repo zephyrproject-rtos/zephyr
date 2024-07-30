@@ -1,0 +1,9 @@
+# XTENSA board configuration
+
+# Copyright (c) 2017, 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_XTENSA
+	select QEMU_TARGET
+	select ARCH_SUPPORTS_COREDUMP
+	select XTENSA_MMU if BOARD_QEMU_XTENSA_DC233C_MMU

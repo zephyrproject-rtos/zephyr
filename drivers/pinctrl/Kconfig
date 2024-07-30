@@ -1,0 +1,72 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PINCTRL
+	bool "Pin controller drivers"
+
+if PINCTRL
+
+module = PINCTRL
+module-str = PINCTRL
+source "subsys/logging/Kconfig.template.log_config"
+
+config PINCTRL_STORE_REG
+	bool
+	help
+	  This option must be selected by drivers that require access to the device
+	  register address. This can happen, for example, if certain pin control
+	  actions are device dependent or require access to device specific
+	  registers
+
+config PINCTRL_NON_STATIC
+	bool
+	help
+	  This option can be selected if the pin control configuration defined by
+	  a driver has to be accessed externally. This can happen, for example, when
+	  dynamic pin control is enabled or in testing environments.
+
+config PINCTRL_DYNAMIC
+	bool "Dynamic configuration of pins"
+	select PINCTRL_NON_STATIC
+	help
+	  When this option is enabled pin control configuration can be changed at
+	  runtime. This can be useful, for example, to change the pins assigned to a
+	  peripheral at early boot stages depending on a certain input.
+
+source "drivers/pinctrl/Kconfig.b91"
+source "drivers/pinctrl/Kconfig.ambiq"
+source "drivers/pinctrl/Kconfig.gd32"
+source "drivers/pinctrl/Kconfig.it8xxx2"
+source "drivers/pinctrl/Kconfig.npcx"
+source "drivers/pinctrl/Kconfig.numicro"
+source "drivers/pinctrl/Kconfig.nrf"
+source "drivers/pinctrl/Kconfig.rpi_pico"
+source "drivers/pinctrl/Kconfig.sam"
+source "drivers/pinctrl/Kconfig.sam0"
+source "drivers/pinctrl/Kconfig.stm32"
+source "drivers/pinctrl/Kconfig.kinetis"
+source "drivers/pinctrl/Kconfig.xec"
+source "drivers/pinctrl/Kconfig.imx"
+source "drivers/pinctrl/Kconfig.sifive"
+source "drivers/pinctrl/Kconfig.lpc_iocon"
+source "drivers/pinctrl/Kconfig.cc13xx_cc26xx"
+source "drivers/pinctrl/Kconfig.esp32"
+source "drivers/pinctrl/Kconfig.rv32m1"
+source "drivers/pinctrl/Kconfig.ifx_cat1"
+source "drivers/pinctrl/Kconfig.xlnx"
+source "drivers/pinctrl/Kconfig.xmc4xxx"
+source "drivers/pinctrl/Kconfig.nxp_s32"
+source "drivers/pinctrl/Kconfig.gecko"
+source "drivers/pinctrl/Kconfig.ti_k3"
+source "drivers/pinctrl/Kconfig.emsdp"
+source "drivers/pinctrl/Kconfig.ti_cc32xx"
+source "drivers/pinctrl/Kconfig.numaker"
+source "drivers/pinctrl/Kconfig.eos_s3"
+source "drivers/pinctrl/Kconfig.mci_io_mux"
+source "drivers/pinctrl/Kconfig.ene"
+source "drivers/pinctrl/Kconfig.zynqmp"
+source "drivers/pinctrl/Kconfig.max32"
+
+rsource "renesas/Kconfig"
+
+endif # PINCTRL

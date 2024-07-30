@@ -1,0 +1,5 @@
+board:
+  name: cc1352r1_launchxl
+  vendor: ti
+  socs:
+  - name: cc1352r

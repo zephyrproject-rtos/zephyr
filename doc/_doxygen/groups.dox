@@ -1,0 +1,82 @@
+/**
+
+@defgroup internal_api Internal and System API
+@brief Internal and System API
+@{
+
+@}
+
+@defgroup os_services Operating System Services
+@brief Operating System Services
+@{
+
+@brief MCUmgr
+@defgroup mcumgr MCUmgr
+@{
+@}
+
+@}
+
+@brief Device Driver APIs
+@defgroup io_interfaces Device Driver APIs
+@{
+@}
+
+@brief Miscellaneous Drivers APIs
+@defgroup misc_interfaces Miscellaneous Drivers APIs
+@ingroup io_interfaces
+@{
+@}
+
+@brief Multi Function Device Drivers APIs
+@defgroup mfd_interfaces Multi Function Device Drivers APIs
+@ingroup io_interfaces
+@{
+@}
+
+@brief Testing
+@defgroup testing Testing
+@{
+@}
+
+@brief Connectivity
+@defgroup connectivity Connectivity
+@{
+@}
+
+@brief USB
+@defgroup usb USB
+@ingroup connectivity
+@{
+@}
+
+@brief Utilities
+@defgroup utilities Utilities
+@{
+
+@brief Data Structure APIs
+@defgroup datastructure_apis Data Structure APIs
+@{
+@}
+
+@}
+
+@brief APIs to interact with third-party services or applications
+@defgroup third_party Third-party
+@{
+@}
+
+@brief Modem APIs
+@defgroup modem Modem APIs
+@ingroup connectivity
+@since 3.5
+@version 0.1.0
+@{
+@}
+
+@brief Memory Management APIs
+@defgroup mem_mgmt Memory Management APIs
+@{
+@}
+
+*/

@@ -1,0 +1,58 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_CELLULAR
+	bool "Generic cellular modem support"
+	select MODEM_MODULES
+	select MODEM_PPP
+	select MODEM_CMUX
+	select MODEM_CHAT
+	select MODEM_PIPE
+	select MODEM_PIPELINK
+	select MODEM_BACKEND_UART
+	select RING_BUFFER
+	select NET_L2_PPP_OPTION_MRU
+	select NET_L2_PPP_PAP
+	depends on (DT_HAS_QUECTEL_BG95_ENABLED || \
+		    DT_HAS_SIMCOM_SIM7080_ENABLED || DT_HAS_U_BLOX_SARA_R4_ENABLED || \
+		    DT_HAS_U_BLOX_SARA_R5_ENABLED || DT_HAS_SWIR_HL7800_ENABLED || \
+		    DT_HAS_TELIT_ME910G1_ENABLED || DT_HAS_QUECTEL_EG25_G_ENABLED || \
+		    DT_HAS_NORDIC_NRF91_SLM_ENABLED || DT_HAS_SQN_GM02S_ENABLED)
+	help
+	  This driver uses the generic 3gpp AT commands, along
+	  with the standard protocols CMUX and PPP, to configure
+	  cellular modems to establish a point-to-point
+	  network connection. It is a template for tailored
+	  drivers for the ublox, quectel and other modems, which
+	  include power management and more complex device specific
+	  features.
+
+if MODEM_CELLULAR
+
+config MODEM_CELLULAR_APN
+	string "APN"
+	default "internet"
+
+config MODEM_CELLULAR_PERIODIC_SCRIPT_MS
+	int "Periodic script interval in milliseconds"
+	default 2000
+
+config MODEM_CELLULAR_UART_BUFFER_SIZES
+	int "The UART receive and transmit buffer sizes in bytes."
+	default 512
+
+config MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE
+	int "The maximum CMUX frame size in bytes."
+	default 128
+	help
+	  This value affects the size of buffers used to receive and transmit CMUX frames.
+
+config MODEM_CELLULAR_CHAT_BUFFER_SIZES
+	int "The size of the buffers used for the chat scripts in bytes."
+	default 128
+
+config MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES
+	int "The size of the buffers used for each user pipe in bytes."
+	default 128
+
+endif

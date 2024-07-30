@@ -1,0 +1,11 @@
+# ST STM32F756XX MCU configuration options
+
+# Copyright (c) 2018 AJ Palmer
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F756XX
+
+config NUM_IRQS
+	default 98
+
+endif # SOC_STM32F756XX

@@ -1,0 +1,15 @@
+common:
+  tags:
+    - drivers
+    - console
+  platform_allow: hifive1 hifive_unleashed
+  harness: robot
+
+tests:
+  drivers.console.line_splitting:
+    harness_config:
+      robot_testsuite: line_splitting.robot
+  drivers.console.line_splitting.plus.some_option:
+    harness_config:
+      robot_testsuite: line_splitting.robot
+      robot_option: --exclude some_flag

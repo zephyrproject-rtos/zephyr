@@ -1,0 +1,46 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_ZPERF
+	bool "zperf shell utility"
+	select NET_CONTEXT_RCVTIMEO if NET_NATIVE_UDP
+	select NET_SOCKETS_SERVICE
+	select NET_SOCKETS
+	help
+	  This option enables zperf shell utility, which allows to generate
+	  network traffic and evaluate network bandwidth.
+
+if NET_ZPERF
+
+config ZPERF_WORK_Q_THREAD_PRIORITY
+	int "zperf work queue thread priority"
+	default NUM_PREEMPT_PRIORITIES
+	help
+	  Priority of the thread that handles zperf work queue.
+
+config ZPERF_WORK_Q_STACK_SIZE
+	int "zperf work queue thread stack size"
+	default 2048
+	help
+	  Stack size of the thread that handles zperf work queue.
+
+module = NET_ZPERF
+module-dep = NET_LOG
+module-str = Log level for zperf
+module-help = Enable debug message of zperf library.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_ZPERF_MAX_PACKET_SIZE
+	int "Maximum packet size"
+	default 1024
+	help
+	  Upper size limit for packets sent by zperf.
+
+config NET_ZPERF_MAX_SESSIONS
+	int "Maximum number of zperf sessions"
+	default 4
+	help
+	  Upper size limit for connections handled by zperf.
+
+endif

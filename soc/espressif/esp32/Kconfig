@@ -1,0 +1,127 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32
+	select XTENSA
+	select CLOCK_CONTROL
+	select DYNAMIC_INTERRUPTS
+	select ARCH_HAS_GDBSTUB
+	select ARCH_SUPPORTS_COREDUMP
+	select PINCTRL
+	select XIP if !MCUBOOT
+	select HAS_ESPRESSIF_HAL
+	select CPU_HAS_FPU
+	select HAS_PM
+	select HAS_POWEROFF
+
+if SOC_SERIES_ESP32
+
+config IDF_TARGET_ESP32
+	bool "ESP32 as target board"
+	default y
+
+config ESP32_APPCPU_IRAM
+	hex "ESP32 APPCPU IRAM size"
+	depends on SOC_ESP32_PROCPU || SOC_ESP32_APPCPU
+	default 0x20000
+	help
+	  Defines APPCPU IRAM area in bytes.
+
+config ESP32_APPCPU_DRAM
+	hex "ESP32 APPCPU DRAM size"
+	depends on SOC_ESP32_PROCPU || SOC_ESP32_APPCPU
+	default 0x10000
+	help
+	  Defines APPCPU DRAM area in bytes.
+
+config SOC_ENABLE_APPCPU
+	bool
+	default y
+	depends on IPM && SOC_ESP32_PROCPU
+	help
+	  This hidden configuration lets PROCPU core to map and start APPCPU whenever IPM is enabled.
+
+config ESP32_BT_RESERVE_DRAM
+	hex "Bluetooth controller reserved RAM region"
+	default 0xdb5c if BT
+	default 0
+
+config ESP_HEAP_MEM_POOL_REGION_1_SIZE
+	int "Internal DRAM region 1 mempool size"
+	default 0 if MCUBOOT
+	default 1024 if SOC_ESP32_PROCPU
+	default 49152
+	help
+	  ESP32 has two banks of size 192K and 128K which can be used
+	  as DRAM, system heap allocates area from region 0.
+	  This configuration can be used to add memory from region 1
+	  to heap and can be allocated using k_malloc.
+
+config ESP32_DEEP_SLEEP_WAKEUP_DELAY
+	int "Extra delay in deep sleep wake stub (in us)"
+	default 2000
+	range 0 5000
+	help
+	  When ESP32 exits deep sleep, the CPU and the flash chip are powered on
+	  at the same time. CPU will run deep sleep stub first, and then
+	  proceed to load code from flash. Some flash chips need sufficient
+	  time to pass between power on and first read operation. By default,
+	  without any extra delay, this time is approximately 900us, although
+	  some flash chip types need more than that.
+
+	  By default extra delay is set to 2000us. When optimizing startup time
+	  for applications which require it, this value may be reduced.
+
+	  If you are seeing "flash read err, 1000" message printed to the
+	  console after deep sleep reset, try increasing this value.
+
+config ESP32_PHY_MAX_WIFI_TX_POWER
+	int "Max WiFi/BLE TX power (dBm)"
+	range 10 20
+	default 20
+	help
+	  Set maximum transmit power for WiFi radio. Actual transmit power for high
+	  data rates may be lower than this setting.
+
+config ESP32_PHY_MAX_TX_POWER
+	int
+	default ESP32_PHY_MAX_WIFI_TX_POWER
+
+config ESP32_EMAC
+	bool
+	default y if ETH_ESP32
+	default y if MDIO_ESP32
+	default n
+	help
+	  Hidden option to enable the ESP32 Ethernet MAC driver.
+	  Both Ethernet and MDIO depend on this driver.
+	  This option allows enabling MDIO independently of Ethernet.
+
+if ESP32_EMAC
+
+config ETH_DMA_BUFFER_SIZE
+	int "Ethernet DMA buffer size (Byte)"
+	range 256 1600
+	default 512
+	help
+	  Set the size of each buffer used by Ethernet MAC DMA.
+
+config ETH_DMA_RX_BUFFER_NUM
+	int "Amount of Ethernet DMA Rx buffers"
+	range 3 30
+	default 10
+	help
+	  Number of DMA receive buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
+	  Larger number of buffers could increase throughput somehow.
+
+config ETH_DMA_TX_BUFFER_NUM
+	int "Amount of Ethernet DMA Tx buffers"
+	range 3 30
+	default 10
+	help
+	  Number of DMA transmit buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
+	  Larger number of buffers could increase throughput somehow.
+
+endif # ESP32_EMAC config
+
+endif # SOC_SERIES_ESP32

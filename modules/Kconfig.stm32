@@ -1,0 +1,809 @@
+# STM32CUBE HAL config
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_STM32LIB
+	bool
+
+config HAS_STM32CUBE
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_STM32
+
+if HAS_STM32CUBE
+
+config USE_STM32_HAL_ADC
+	bool
+	help
+	  Enable STM32Cube Analog-to-Digital Converter (ADC) HAL module driver
+
+config USE_STM32_HAL_ADC_EX
+	bool
+	help
+	  Enable STM32Cube Extended Analog-to-Digital Converter (ADC) HAL
+	  module driver
+
+config USE_STM32_HAL_CAN
+	bool
+	help
+	  Enable STM32Cube Controller Area Network (CAN) HAL module driver
+
+config USE_STM32_HAL_CEC
+	bool
+	help
+	  Enable STM32Cube HDMI-CEC controller (CEC) HAL module driver
+
+config USE_STM32_HAL_COMP
+	bool
+	help
+	  Enable STM32Cube Ultra Low Power Comparator channels (COMP) HAL module
+	  driver
+
+config USE_STM32_HAL_CORDIC
+	bool
+	help
+	  Enable STM32Cube CORDIC co-processor (CORDIC) functions HAL module
+	  driver
+
+config USE_STM32_HAL_CORTEX
+	bool
+	help
+	  Enable STM32Cube CORTEX HAL module driver
+
+config USE_STM32_HAL_CRC
+	bool
+	help
+	  Enable STM32Cube Cyclic redundancy check calculation unit (CRC) HAL
+	  module driver
+
+config USE_STM32_HAL_CRC_EX
+	bool
+	help
+	  Enable STM32Cube Extended Cyclic redundancy check calculation unit
+	  (CRC) HAL module driver
+
+config USE_STM32_HAL_CRYP
+	bool
+	help
+	  Enable STM32Cube Cryptographic processor (CRYP) HAL module driver
+
+config USE_STM32_HAL_CRYP_EX
+	bool
+	help
+	  Enable STM32Cube Extended Cryptographic processor (CRYP) HAL module
+	  driver
+
+config USE_STM32_HAL_DAC
+	bool
+	help
+	  Enable STM32Cube Digital-to-analog converter (DAC) HAL module driver
+
+config USE_STM32_HAL_DAC_EX
+	bool
+	help
+	  Enable STM32Cube Extended Digital-to-analog converter (DAC) HAL module
+	  driver
+
+config USE_STM32_HAL_DCACHE
+	bool
+	help
+	  Enable STM32Cube data cache (DCACHE) HAL module driver
+
+config USE_STM32_HAL_DCMI
+	bool
+	help
+	  Enable STM32Cube Digital camera interface (DCM) HAL module driver
+
+config USE_STM32_HAL_DCMI_EX
+	bool
+	help
+	  Enable STM32Cube Extended Digital camera interface (DCM) HAL module
+	  driver
+
+config USE_STM32_HAL_DFSDM
+	bool
+	help
+	  Enable STM32Cube Digital filter for sigma delta modulators (DFSDM) HAL
+	  module driver
+
+config USE_STM32_HAL_DFSDM_EX
+	bool
+	help
+	  Enable STM32Cube Extended Digital filter for sigma delta modulators
+	  (DFSDM) HAL module driver
+
+config USE_STM32_HAL_DMA
+	bool
+	help
+	  Enable STM32Cube Direct Memory Access controller (DMA) HAL module
+	  driver
+
+config USE_STM32_HAL_DMA2D
+	bool
+	help
+	  Enable STM32Cube Chrom-Art Accelerator™ controller (DMA2D) HAL module
+	  driver
+
+config USE_STM32_HAL_DMA_EX
+	bool
+	help
+	  Enable STM32Cube Extended Direct Memory Access controller (DMA) HAL
+	  module driver
+
+config USE_STM32_HAL_DSI
+	bool
+	help
+	  Enable STM32Cube Display Serial Interface Host (DSI) HAL module driver
+
+config USE_STM32_HAL_DTS
+	bool
+	help
+	  Enable STM32Cube Digital temperature sensor (DTS) HAL module driver
+
+config USE_STM32_HAL_ETH
+	bool
+	help
+	  Enable STM32Cube Ethernet (ETH) HAL module driver
+
+config USE_STM32_HAL_ETH_EX
+	bool
+	help
+	  Enable STM32Cube Extended Ethernet (ETH) HAL module driver
+
+config USE_STM32_HAL_EXTI
+	bool
+	help
+	  Enable STM32Cube Extended interrupt and event controller (EXTI) HAL
+	  module driver
+
+config USE_STM32_HAL_FDCAN
+	bool
+	help
+	  Enable STM32Cube Controller area network with flexible data rate
+	  (FDCAN) HAL module driver
+
+config USE_STM32_HAL_FIREWALL
+	bool
+	help
+	  Enable STM32Cube Firewall HAL module driver
+
+config USE_STM32_HAL_FLASH
+	bool
+	help
+	  Enable STM32Cube Embedded Flash Memory (FLASH) HAL module driver
+
+config USE_STM32_HAL_FLASH_EX
+	bool
+	help
+	  Enable STM32Cube Extended Embedded Flash Memory (FLASH) HAL module
+	  driver
+
+config USE_STM32_HAL_FLASH_RAMFUNC
+	bool
+	help
+	  Enable STM32Cube Embedded Flash Memory RAM functions (FLASH_RAMFUNC)
+	  HAL module driver
+
+config USE_STM32_HAL_FMAC
+	bool
+	help
+	  Enable STM32Cube Filter Math Accelerator (FMAC) HAL module driver
+
+config USE_STM32_HAL_FMPI2C
+	bool
+	help
+	  Enable STM32Cube Fast-mode Plus Inter-integrated circuit (FMPI2C)
+	  HAL module driver
+
+config USE_STM32_HAL_FMPI2C_EX
+	bool
+	help
+	  Enable STM32Cube Extended Fast-mode Plus Inter-integrated circuit
+	  (FMPI2C) HAL module driver
+
+config USE_STM32_HAL_GFXMMU
+	bool
+	help
+	  Enable STM32Cube Chrom-GRCTM (GFXMMU) HAL module driver
+
+config USE_STM32_HAL_GPIO
+	bool
+	help
+	  Enable STM32Cube General-purpose I/Os (GPIO) HAL module driver
+
+config USE_STM32_HAL_GPIO_EX
+	bool
+	help
+	  Enable STM32Cube Extended General-purpose I/Os (GPIO) HAL module
+	  driver
+
+config USE_STM32_HAL_GPU2D
+	bool
+	help
+	  Enable STM32Cube Neo-Chrom graphic processor (GPU2D) HAL module
+	  driver
+
+config USE_STM32_HAL_GTZC
+	bool
+	help
+	  Enable STM32Cube Global TrustZone controller (GTZC) HAL module
+	  driver
+
+config USE_STM32_HAL_HASH
+	bool
+	help
+	  Enable STM32Cube Hash processor (HASH) HAL module driver
+
+config USE_STM32_HAL_HASH_EX
+	bool
+	help
+	  Enable STM32Cube Extended Hash processor (HASH) HAL module driver
+
+config USE_STM32_HAL_HCD
+	bool
+	help
+	  Enable STM32Cube Host Controller device (HCD) HAL module driver
+
+config USE_STM32_HAL_HRTIM
+	bool
+	help
+	  Enable STM32Cube High-Resolution Timer (HRTIM) HAL module driver
+
+config USE_STM32_HAL_HSEM
+	bool
+	help
+	  Enable STM32Cube Hardware Semaphore (HSEM) HAL module driver
+
+config USE_STM32_HAL_I2C
+	bool
+	help
+	  Enable STM32Cube Inter-integrated circuit (I2C) interface HAL module
+	  driver
+
+config USE_STM32_HAL_I2C_EX
+	bool
+	help
+	  Enable STM32Cube Extended Inter-integrated circuit (I2C) interface HAL
+	  module driver
+
+config USE_STM32_HAL_I2S
+	bool
+	help
+	  Enable STM32Cube Inter-IC sound (I2S) HAL module driver
+
+config USE_STM32_HAL_I2S_EX
+	bool
+	help
+	  Enable STM32Cube Extended Inter-IC sound (I2S) HAL module driver
+
+config USE_STM32_HAL_I3C
+	bool
+	help
+	  Enable STM32Cube Improved inter-integrated circuit (I3C) HAL module
+	  driver
+
+config USE_STM32_HAL_ICACHE
+	bool
+	help
+	  Enable STM32Cube Instruction cache (ICACHE) HAL module driver
+
+config USE_STM32_HAL_IPCC
+	bool
+	help
+	  Enable STM32Cube Inter-Processor communication controller (IPCC) HAL
+	  module driver
+
+config USE_STM32_HAL_IRDA
+	bool
+	help
+	  Enable STM32Cube Infrared Data Association (IRDA) HAL module driver
+
+config USE_STM32_HAL_IWDG
+	bool
+	help
+	  Enable STM32Cube Independent watchdog (IWDG) HAL module driver
+
+config USE_STM32_HAL_JPEG
+	bool
+	help
+	  Enable STM32Cube Jpeg codec (JPEG) HAL module driver
+
+config USE_STM32_HAL_LCD
+	bool
+	help
+	  Enable STM32Cube LCD controller (LCD) HAL module driver
+
+config USE_STM32_HAL_LPTIM
+	bool
+	help
+	  Enable STM32Cube Low Power Timer (LPTIM) HAL module driver
+
+config USE_STM32_HAL_LTDC
+	bool
+	help
+	  Enable STM32Cube LCD-TFT controller (LTDC) HAL module driver
+
+config USE_STM32_HAL_LTDC_EX
+	bool
+	help
+	  Enable STM32Cube Extended LCD-TFT controller (LTDC) HAL module driver
+
+config USE_STM32_HAL_MDF
+	bool
+	help
+	  Enable STM32Cube Multi-function digital filter (MDF) HAL module driver
+
+config USE_STM32_HAL_MDIOS
+	bool
+	help
+	  Enable STM32Cube Management data input/output (MDIOS) HAL module
+	  driver
+
+config USE_STM32_HAL_MDMA
+	bool
+	help
+	  Enable STM32Cube Master Direct Memory Access controller (MDMA) HAL
+	  module driver
+
+config USE_STM32_HAL_MMC
+	bool
+	help
+	  Enable STM32Cube MultiMediaCard interface (SDMMC) HAL module driver
+
+config USE_STM32_HAL_MMC_EX
+	bool
+	help
+	  Enable STM32Cube Extended MultiMediaCard interface (SDMMC) HAL module
+	  driver
+
+config USE_STM32_HAL_MSP
+	bool
+	help
+	  Enable STM32Cube MCU Support Package (MSP) HAL module driver
+
+config USE_STM32_HAL_NAND
+	bool
+	help
+	  Enable STM32Cube NAND Controller (NAND) HAL module driver
+
+config USE_STM32_HAL_NOR
+	bool
+	help
+	  Enable STM32Cube NOR Controller (NOR) HAL module driver
+
+config USE_STM32_HAL_OPAMP
+	bool
+	help
+	  Enable STM32Cube Operational amplifiers (OPAMP) HAL module driver
+
+config USE_STM32_HAL_OPAMP_EX
+	bool
+	help
+	  Enable STM32Cube Extended Operational amplifiers (OPAMP) HAL module
+	  driver
+
+config USE_STM32_HAL_OSPI
+	bool
+	help
+	  Enable STM32Cube Octo-SPI interface (OSPI) HAL module driver
+
+config USE_STM32_HAL_OTFDEC
+	bool
+	help
+	  Enable STM32Cube On-the-fly decryption engine (OTFDEC) HAL module
+	  driver
+
+config USE_STM32_HAL_PCCARD
+	bool
+	help
+	  Enable STM32Cube PCCard memories (PCCARD) HAL module driver
+
+config USE_STM32_HAL_PCD
+	bool
+	help
+	  Enable STM32Cube USB Peripheral Controller (PCD) HAL module driver
+
+config USE_STM32_HAL_PCD_EX
+	bool
+	help
+	  Enable STM32Cube Extended USB Peripheral Controller (PCD) HAL module
+	  driver
+
+config USE_STM32_HAL_PKA
+	bool
+	help
+	  Enable STM32Cube Public key accelerator (PKA) HAL module driver
+
+config USE_STM32_HAL_PSSI
+	bool
+	help
+	  Enable STM32Cube Parallel Synchronous Slave Interface (PSSI)
+	  HAL module driver
+
+config USE_STM32_HAL_PWR
+	bool
+	help
+	  Enable STM32Cube Power control (PWR) HAL module driver
+
+config USE_STM32_HAL_PWR_EX
+	bool
+	help
+	  Enable STM32Cube Extended Power control (PWR) HAL module driver
+
+config USE_STM32_HAL_QSPI
+	bool
+	help
+	  Enable STM32Cube Quad-SPI interface (QSPI) HAL module driver
+
+config USE_STM32_HAL_RAMCFG
+	bool
+	help
+	  Enable STM32Cube RAMs configuration controller (RAMCFG) HAL module
+	  driver
+
+config USE_STM32_HAL_RAMECC
+	bool
+	help
+	  Enable STM32Cube RAM ECC monitoring (RAMECC) HAL module driver
+
+config USE_STM32_HAL_RAMCFG
+	bool
+	help
+	  Enable STM32Cube RAM config (RAMCFG) HAL module driver
+
+config USE_STM32_HAL_RNG
+	bool
+	help
+	  Enable STM32Cube True random number generator (RNG) HAL module driver
+
+config USE_STM32_HAL_RTC
+	bool
+	help
+	  Enable STM32Cube Real-time clock (RTC) HAL module driver
+
+config USE_STM32_HAL_RTC_EX
+	bool
+	help
+	  Enable STM32Cube Extended Real-time clock (RTC) HAL module driver
+
+config USE_STM32_HAL_SAI
+	bool
+	help
+	  Enable STM32Cube Serial audio interface (SAI) HAL module driver
+
+config USE_STM32_HAL_SAI_EX
+	bool
+	help
+	  Enable STM32Cube Extended Serial audio interface (SAI) HAL module
+	  driver
+
+config USE_STM32_HAL_SD
+	bool
+	help
+	  Enable STM32Cube Secure digital input/output MultiMediaCard interface
+	  (SDMMC) HAL module driver
+
+config USE_STM32_HAL_SD_EX
+	bool
+	help
+	  Enable STM32Cube Extended Secure digital input/output MultiMediaCard
+	  interface (SDMMC) HAL module driver
+
+config USE_STM32_HAL_SDADC
+	bool
+	help
+	  Enable STM32Cube SDADC HAL module driver
+
+config USE_STM32_HAL_SDRAM
+	bool
+	help
+	  Enable STM32Cube SDRAM controller (SDRAM) HAL module driver
+
+config USE_STM32_HAL_SMARTCARD
+	bool
+	help
+	  Enable STM32Cube Smartcard controller (SMARTCARD) HAL module driver
+
+config USE_STM32_HAL_SMARTCARD_EX
+	bool
+	help
+	  Enable STM32Cube Extended Smartcard controller (SMARTCARD) HAL module
+	  driver
+
+config USE_STM32_HAL_SMBUS
+	bool
+	help
+	  Enable STM32Cube System Management Bus (SMBus) HAL module driver
+
+config USE_STM32_HAL_SPDIFRX
+	bool
+	help
+	  Enable STM32Cube SPDIF receiver interface (SPDIFRX) HAL module driver
+
+config USE_STM32_HAL_SPI
+	bool
+	help
+	  Enable STM32Cube Serial peripheral interface (SPI) HAL module driver
+
+config USE_STM32_HAL_SPI_EX
+	bool
+	help
+	  Enable STM32Cube Extended Serial peripheral interface (SPI) HAL module
+	  driver
+
+config USE_STM32_HAL_SRAM
+	bool
+	help
+	  Enable STM32Cube SRAM controller (SRAM) HAL module driver
+
+config USE_STM32_HAL_SWPMI
+	bool
+	help
+	  Enable STM32Cube Single Wire Protocol Master Interface (SWPMI) HAL
+	  module
+
+config USE_STM32_HAL_TIM
+	bool
+	help
+	  Enable STM32Cube Timer (TIM) HAL module driver
+
+config USE_STM32_HAL_TIM_EX
+	bool
+	help
+	  Enable STM32Cube Extended Timer (TIM) HAL module driver
+
+config USE_STM32_HAL_TSC
+	bool
+	help
+	  Enable STM32Cube Touch sensing controller (TSC) HAL module driver
+
+config USE_STM32_HAL_UART
+	bool
+	help
+	  Enable STM32Cube Universal asynchronous receiver transmitter (USART)
+	  HAL module driver
+
+config USE_STM32_HAL_UART_EX
+	bool
+	help
+	  Enable STM32Cube Extended Universal asynchronous receiver transmitter
+	  (USART) HAL module driver
+
+config USE_STM32_HAL_USART
+	bool
+	help
+	  Enable STM32Cube Universal synchronous asynchronous receiver
+	  transmitter (USART) HAL module driver
+
+config USE_STM32_HAL_USART_EX
+	bool
+	help
+	  Enable STM32Cube Extended Universal synchronous asynchronous receiver
+	  transmitter (USART) HAL module driver
+
+config USE_STM32_HAL_WWDG
+	bool
+	help
+	  Enable STM32Cube System window watchdog (WWDG) HAL module driver
+
+config USE_STM32_HAL_XSPI
+	bool
+	help
+	  Enable STM32Cube OctoSPI (XSPI) HAL module driver
+
+config USE_STM32_LL_ADC
+	bool
+	help
+	  Enable STM32Cube Analog-to-Digital Converter (ADC) LL module driver
+
+config USE_STM32_LL_BDMA
+	bool
+	help
+	  Enable STM32Cube Basic direct memory access controller (BDMA) LL
+	  module driver
+
+config USE_STM32_LL_COMP
+	bool
+	help
+	  Enable STM32Cube Ultra Low Power Comparator channels (COMP) LL module
+	  driver
+
+config USE_STM32_LL_CORDIC
+	bool
+	help
+	  Enable STM32Cube CORDIC co-processor (CORDIC) functions LL module
+	  driver
+
+config USE_STM32_LL_CRC
+	bool
+	help
+	  Enable STM32Cube Cyclic redundancy check calculation unit (CRC) LL
+	  module driver
+
+config USE_STM32_LL_CRS
+	bool
+	help
+	  Enable STM32Cube Clock recovery system (CRS) LL module driver
+
+config USE_STM32_LL_DAC
+	bool
+	help
+	  Enable STM32Cube Digital-to-analog converter (DAC) LL module driver
+
+config USE_STM32_LL_DELAYBLOCK
+	bool
+	help
+	  Enable STM32Cube DelayBlock (DELAYBLOCK) LL module driver (stm32H7 or stm32MP1)
+
+config USE_STM32_LL_DLYB
+	bool
+	help
+	  Enable STM32Cube DelayBlock (DELAYBLOCK) LL module driver (stm32U5)
+
+config USE_STM32_LL_DMA
+	bool
+	help
+	  Enable STM32Cube Direct Memory Access controller (DMA) LL module
+	  driver
+
+config USE_STM32_LL_DMA2D
+	bool
+	help
+	  Enable STM32Cube Chrom-Art Accelerator™ controller (DMA2D) LL module
+	  driver
+
+config USE_STM32_LL_EXTI
+	bool
+	help
+	  Enable STM32Cube Extended interrupt and event controller (EXTI) LL
+	  module driver
+
+config USE_STM32_LL_FMAC
+	bool
+	help
+	  Enable STM32Cube Filter Math Accelerator (FMAC) LL module driver
+
+config USE_STM32_LL_FMC
+	bool
+	help
+	  Enable STM32Cube Flexible memory controller (FMC) LL module driver
+
+config USE_STM32_LL_FSMC
+	bool
+	help
+	  Enable STM32Cube Flexible static memory controller (FSMC) LL module
+	  driver
+
+config USE_STM32_LL_GPIO
+	bool
+	help
+	  Enable STM32Cube Extended General-purpose I/Os (GPIO) LL module driver
+
+config USE_STM32_LL_HRTIM
+	bool
+	help
+	  Enable STM32Cube High-Resolution Timer (HRTIM) LL module driver
+
+config USE_STM32_LL_I2C
+	bool
+	help
+	  Enable STM32Cube Inter-integrated circuit (I2C) interface LL module
+	  driver
+
+config USE_STM32_LL_I3C
+	bool
+	help
+	  Enable STM32Cube Improved inter-integrated circuit (I3C) LL module
+	  driver
+
+config USE_STM32_LL_ICACHE
+	bool
+	help
+	  Enable STM32Cube Instruction cache (ICACHE) LL module driver
+
+config USE_STM32_LL_IPCC
+	bool
+	help
+	  Enable STM32Cube Inter-Processor communication controller (IPCC) LL
+	  module driver
+
+config USE_STM32_LL_LPGPIO
+	bool
+	help
+	  Enable STM32Cube Low-power general-purpose I/Os (LPGPIO) LL
+	  module driver
+
+config USE_STM32_LL_LPTIM
+	bool
+	help
+	  Enable STM32Cube Low Power Timer (LPTIM) LL module driver
+
+config USE_STM32_LL_LPUART
+	bool
+	help
+	  Enable STM32Cube Low-power universal asynchronous receiver
+	  transmitter (LPUART) LL module driver
+
+config USE_STM32_LL_MDMA
+	bool
+	help
+	  Enable STM32Cube Master Direct Memory Access controller (MDMA) LL
+	  module driver
+
+config USE_STM32_LL_OPAMP
+	bool
+	help
+	  Enable STM32Cube Operational amplifiers (OPAMP) LL module driver
+
+config USE_STM32_LL_PKA
+	bool
+	help
+	  Enable STM32Cube Public key accelerator (PKA) LL module driver
+
+config USE_STM32_LL_PWR
+	bool
+	help
+	  Enable STM32Cube Power control (PWR) LL module driver
+
+config USE_STM32_LL_RCC
+	bool
+	help
+	  Enable STM32Cube Reset and Clock Control (RCC) LL module driver
+
+config USE_STM32_LL_RNG
+	bool
+	help
+	  Enable STM32Cube True random number generator (RNG) LL module driver
+
+config USE_STM32_LL_RTC
+	bool
+	help
+	  Enable STM32Cube Real-time clock (RTC) LL module driver
+
+config USE_STM32_LL_SDMMC
+	bool
+	help
+	  Enable STM32Cube SD/SDIO/MMC card host interface (SDMMC) LL module
+	  driver
+
+config USE_STM32_LL_SPI
+	bool
+	help
+	  Enable STM32Cube Serial peripheral interface (SPI) LL module driver
+
+config USE_STM32_LL_SWPMI
+	bool
+	help
+	  Enable STM32Cube Single Wire Protocol Master Interface (SWPMI) LL
+	  module driver
+
+config USE_STM32_LL_TIM
+	bool
+	help
+	  Enable STM32Cube Timer (TIM) LL module driver
+
+config USE_STM32_LL_UCPD
+	bool
+	help
+	  Enable STM32Cube USB Power Delivery device interface
+	  (UCPD) LL module driver
+
+config USE_STM32_LL_USART
+	bool
+	help
+	  Enable STM32Cube Universal synchronous asynchronous receiver
+	  transmitter (USART) LL module driver
+
+config USE_STM32_LL_USB
+	bool
+	help
+	  Enable STM32Cube Universal serial bus full-speed device interface
+	  (USB) LL module driver
+
+config USE_STM32_LL_UTILS
+	bool
+	help
+	  Enable STM32Cube Utility functions (UTILS) LL module driver
+
+endif # HAS_STM32CUBE

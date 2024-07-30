@@ -1,0 +1,30 @@
+# Copyright (c) 2023, Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+properties:
+  zephyr,memory-region:
+    type: string
+    description: |
+      Signify that this node should result in a dedicated linker script
+      memory region in the final executable. The region address and size
+      is taken from the <reg> property, while the name is the value of
+      this property.
+
+  zephyr,memory-region-mpu:
+    type: string
+    deprecated: true
+    description: |
+      Signify that this node should result in a dedicated MPU region.
+      Deprecated in favor of 'zephyr,memory-attr'.
+
+  zephyr,memory-attr:
+    type: int
+    description: |
+      Attribute or set of attributes (bitmask) for the memory region. See
+      'include/zephyr/dt-bindings/memory-attr/memory-attr.h' for a
+      comprehensive list with description of possible values.
+
+  reg:
+    required: true

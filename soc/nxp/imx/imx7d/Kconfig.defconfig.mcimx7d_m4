@@ -1,0 +1,27 @@
+# iMX7 M4 core series
+
+# Copyright 2017,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MCIMX7D_M4
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 200000000
+
+config GPIO
+	default y
+
+#-By default ROM_START is relocated to address 0 in a 1K region, allowing imx_rproc
+#  to translate it to OCRAM_S address
+#-Select the relocation if the chosen flash is not the OCRAM_S
+#-Disable this option if you use the bin format as this choice will enlarge it.
+#  This is due to relocation of the irq-vectors in a different memory region than
+#  the chosen zephyr,flash and all the address span in between
+#  will be filled in the bin file.
+config ROMSTART_RELOCATION_ROM
+	default n
+
+config ROMSTART_REGION_ADDRESS
+	default $(dt_nodelabel_reg_addr_hex,ocram_s_code)
+
+endif # SOC_MCIMX7D_M4

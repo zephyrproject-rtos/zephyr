@@ -1,0 +1,29 @@
+identifier: stm32mp157c_dk2
+name: ST STM32MP157C-DK2 Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - arduino_i2c
+  - arduino_gpio
+  - gpio
+  - shell
+  - i2c
+  - spi
+testing:
+  ignore_tags:
+    - cmsis_rtos_v2
+    - net
+    - mpu
+    - tinycrypt
+    - crypto
+    - aes
+    - cmm
+    - LED
+    - nfc
+ram: 256
+flash: 64
+vendor: st

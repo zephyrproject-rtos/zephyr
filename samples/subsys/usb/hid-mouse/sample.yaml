@@ -1,0 +1,29 @@
+sample:
+  name: USB HID mouse sample
+common:
+  harness: button
+  filter: dt_alias_exists("sw0") and dt_alias_exists("led0")
+  depends_on:
+    - gpio
+tests:
+  sample.usb.hid-mouse:
+    depends_on:
+      - usb_device
+    platform_exclude:
+      - frdm_mcxn947/mcxn947/cpu0
+    tags: usb
+  sample.usb_device_next.hid-mouse:
+    depends_on:
+      - usbd
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
+      - frdm_k64f
+      - stm32f723e_disco
+      - nucleo_f413zh
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt1060_evk
+    extra_args:
+      - CONF_FILE="usbd_next_prj.conf"
+      - EXTRA_DTC_OVERLAY_FILE="usbd_next.overlay"
+    tags: usb

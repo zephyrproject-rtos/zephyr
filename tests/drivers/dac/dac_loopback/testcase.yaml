@@ -1,0 +1,33 @@
+common:
+  tags:
+    - dac
+    - drivers
+tests:
+  drivers.dac.loopback:
+    depends_on:
+      - dac
+      - adc
+    harness: ztest
+    harness_config:
+      fixture: dac_adc_loopback
+    platform_allow:
+      - frdm_k22f
+      - frdm_k64f
+      - nucleo_f207zg
+      - nucleo_l073rz
+      - nucleo_l152re
+      - twr_ke18f
+      - bl652_dvk
+      - bl653_dvk
+      - bl654_dvk
+      - bl5340_dvk/nrf5340/cpuapp
+      - stm32f3_disco
+      - stm32l562e_dk
+      - nucleo_l552ze_q
+      - nucleo_f429zi
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_wl55jc
+      - lpcxpresso55s36
+    integration_platforms:
+      - nucleo_f207zg

@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Marko Sagadin
+# SPDX-License-Identifier: Apache-2.0
+config UART_NATIVE_TTY
+	bool "UART driver for interacting with host serial ports"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_TTY_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT

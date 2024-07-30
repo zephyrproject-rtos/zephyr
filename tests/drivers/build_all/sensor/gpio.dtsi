@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2020, Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for gpio devices
+ */
+
+test_gpio_sm351lt: sm351lt0 {
+	compatible = "honeywell,sm351lt";
+	gpios = <&test_gpio 0 0>;
+};
+
+test_gpio_dht22: dht22 {
+	compatible = "aosong,dht";
+	status = "okay";
+	dio-gpios = <&test_gpio 0 0>;
+	/* dht22; */
+};

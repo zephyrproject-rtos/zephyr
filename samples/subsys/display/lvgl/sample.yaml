@@ -1,0 +1,94 @@
+sample:
+  description: LVGL sample application
+  name: lvgl
+tests:
+  sample.display.lvgl.gui:
+    filter: dt_chosen_enabled("zephyr,display")
+    # flash usage varies depending on the platform, but ~200K are the bare
+    # minimum, give some room by adding 50K more. RAM usage depends largerly on
+    # the display buffer, but a minimum is also required for the system itself.
+    # ~25K seem to be sufficient for most cases, rounded to 32K.
+    min_flash: 250
+    min_ram: 32
+    harness: none
+    tags:
+      - samples
+      - display
+      - gui
+      - lvgl
+    modules:
+      - lvgl
+    integration_platforms:
+      - native_sim/native/64
+  sample.display.lvgl.rk055hdmipi4m:
+    # This sample is intended to test the RT1170 and RT595, which require
+    # a display shield to work with LVGL
+    min_flash: 250
+    # The minimum RAM needed for this display is actually around 8MB,
+    # but the RT595 uses external PSRAM for the display buffer
+    min_ram: 32
+    harness: none
+    tags:
+      - samples
+      - display
+      - gui
+    modules:
+      - lvgl
+    extra_args: SHIELD="rk055hdmipi4m"
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt595_evk/mimxrt595s/cm33
+    integration_platforms:
+      - mimxrt1170_evk/mimxrt1176/cm7
+  sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166:
+    filter: dt_compat_enabled("orisetech,otm8009a")
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
+    extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui
+  sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166_a09:
+    filter: dt_compat_enabled("frida,nt35510")
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
+    extra_args: SHIELD=st_b_lcd40_dsi1_mb1166_a09
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui
+  samples.subsys.display.lvgl.rk043fn66hs_ctg:
+    platform_allow:
+      - mimxrt1064_evk
+      - mimxrt1060_evk
+      - mimxrt1050_evk
+      - mimxrt1040_evk
+    tags: display
+    harness: console
+    extra_args: SHIELD=rk043fn66hs_ctg
+    harness_config:
+      fixture: fixture_display
+  samples.subsys.display.lvgl.rk043fn02h_ct:
+    platform_allow:
+      - mimxrt1064_evk
+      - mimxrt1060_evk
+      - mimxrt1050_evk
+      - mimxrt1040_evk
+    tags: display
+    harness: console
+    extra_args: SHIELD=rk043fn02h_ct
+    harness_config:
+      fixture: fixture_display

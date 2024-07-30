@@ -1,0 +1,12 @@
+# Mi-V UART configuration option
+
+# Copyright (c) 2018 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_MIV
+	bool "Mi-V serial driver"
+	default y
+	depends on DT_HAS_MICROCHIP_COREUART_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the Mi-V serial driver.

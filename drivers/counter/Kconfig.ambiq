@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+
+
+config COUNTER_AMBIQ
+	bool "Ambiq Counter Driver"
+	default y
+	depends on DT_HAS_AMBIQ_COUNTER_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_TIMER
+	help
+	  Enables the Counter driver for Ambiq devices.

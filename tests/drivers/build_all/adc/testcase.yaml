@@ -1,0 +1,41 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - adc
+tests:
+  drivers.adc.build:
+    # will cover I2C, SPI, and emul based drivers
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args: "CONFIG_GPIO=y"
+  drivers.adc.cc32xx.build:
+    platform_allow: cc3220sf_launchxl
+  drivers.adc.ite.it8xxx2.build:
+    platform_allow: it8xxx2_evb
+  drivers.adc.mcux.adc12.build:
+    platform_allow: twr_ke18f
+  drivers.adc.mcux.adc16.build:
+    platform_allow: frdm_k22f
+  drivers.adc.mcux.lpadc.build:
+    platform_allow: lpcxpresso55s28
+  drivers.adc.mcp320x.build:
+    platform_allow: lpcxpresso55s16
+    extra_args: SHIELD=mikroe_adc_click
+  drivers.adc.npcx.build:
+    platform_allow: npcx7m6fb_evb
+  drivers.adc.nrf.build:
+    platform_allow: nrf51dk/nrf51822
+  drivers.adc.nrf.saadc.build:
+    platform_allow: nrf21540dk/nrf52840
+  drivers.adc.sam0.build:
+    platform_allow: same54_xpro
+  drivers.adc.sam.afec.build:
+    platform_allow: sam_e70_xplained/same70q21
+  drivers.adc.stm32.build:
+    platform_allow: disco_l475_iot1
+  drivers.adc.xec.build:
+    platform_allow: mec15xxevb_assy6853
+  drivers.adc.test.build:
+    platform_allow: qemu_cortex_m3

@@ -1,0 +1,31 @@
+common:
+  ignore_faults: true
+  tags:
+    - kernel
+    - security
+    - userspace
+tests:
+  kernel.memory_protection:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
+    platform_exclude:
+      - twr_ke18f
+      - ucans32k1sic
+    extra_args:
+      - CONFIG_TEST_HW_STACK_PROTECTION=n
+      - CONFIG_MINIMAL_LIBC=y
+  kernel.memory_protection.gap_filling.arc:
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+    arch_allow: arc
+    extra_args: CONFIG_MPU_GAP_FILLING=y
+  kernel.memory_protection.gap_filling.arm:
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+    arch_allow: arm
+    platform_allow:
+      - slwrb4180a
+      - mps3/an547
+      - nrf9160dk/nrf9160
+    integration_platforms:
+      - mps3/an547
+    extra_args: CONFIG_MPU_GAP_FILLING=y

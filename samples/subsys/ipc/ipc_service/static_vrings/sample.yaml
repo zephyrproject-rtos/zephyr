@@ -1,0 +1,25 @@
+sample:
+  name: IPC Service example integration (OpenAMP static_vrings backend)
+tests:
+  sample.ipc.static_vrings:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+    tags: ipc
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "IPC-service HOST \\[INST 0 - ENDP A\\] demo started"
+        - "IPC-service HOST \\[INST 0 - ENDP B\\] demo started"
+        - "IPC-service HOST \\[INST 1\\] demo started"
+        - "IPC-service HOST \\[INST 0 - ENDP A\\] demo ended\\."
+        - "IPC-service HOST \\[INST 0 - ENDP B\\] demo ended\\."
+        - "IPC-service HOST \\[INST 1\\] demo ended\\."

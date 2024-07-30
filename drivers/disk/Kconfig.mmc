@@ -1,0 +1,38 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_MMC
+	bool "MMC card driver"
+	depends on DT_HAS_ZEPHYR_MMC_DISK_ENABLED
+	default y
+	help
+	  MMC card driver.
+
+if DISK_DRIVER_MMC
+
+config SD_INIT_PRIORITY
+	int "Init priority"
+	default 90
+	help
+	  MMC controller driver initialization priority.
+
+config MMC_VOLUME_NAME
+	string "MMC Disk mount point or drive name"
+	default "SD" if FAT_FILESYSTEM_ELM
+	default "MMC"
+	help
+	  Disk name as per file system naming guidelines.
+
+config MMC_SUBSYS
+	bool "MMC access via SD subsystem"
+	select MMC_STACK
+	default y
+	depends on DT_HAS_ZEPHYR_MMC_DISK_ENABLED
+	help
+	  Enable MMC access via SD subsystem.
+
+module = MMC
+module-str = mmc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_MMC

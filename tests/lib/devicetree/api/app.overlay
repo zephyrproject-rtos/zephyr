@@ -1,0 +1,762 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing the devicetree.h API.
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	aliases {
+		test-alias = &test_nodelabel;
+	};
+
+	chosen {
+		ztest,gpio = &test_nodelabel;
+	};
+
+	zephyr,user {
+		ph = <&test_gpio_1>;
+		string = "foo";
+	};
+
+	test {
+		#address-cells = < 0x1 >;
+		#size-cells = < 0x1 >;
+		interrupt-parent = <&test_intc>;
+
+		test_cpu_intc: interrupt-controller  {
+			compatible = "vnd,cpu-intc";
+			#address-cells = <0>;
+			#interrupt-cells = < 0x01 >;
+			interrupt-controller;
+		};
+
+		test_pinctrl: pin-controller {
+			compatible = "vnd,pinctrl";
+			test_pincfg_a: pincfg-a {};
+			test_pincfg_b: pincfg-b {};
+			test_pincfg_c: pincfg-c {};
+			test_pincfg_d: pincfg-d {};
+		};
+
+		test_arrays: array-holder {
+			/*
+			 * vnd,undefined-compat is for DT_NODE_HAS_COMPAT_STATUS(..,okay).
+			 * There should only be one vnd,array-holder in the entire DTS.
+			 */
+			compatible = "vnd,array-holder", "vnd,undefined-compat";
+			a = <1000 2000 3000>;
+			b = [aa bb cc dd];
+			c = "bar", "baz";
+		};
+
+		test_phandles: phandle-holder-0 {
+			/*
+			 * There should only be one vnd,phandle-holder in the entire DTS.
+			 */
+			compatible = "vnd,phandle-holder";
+			/*
+			 * At least one of these phandles must refer to
+			 * test_gpio_1, or dependency ordinal tests may fail.
+			 */
+			ph = <&test_gpio_1>;
+			phs = <&test_i2c &test_spi>;
+			phs-or = <&test_enum_default_0 &test_enum_default_1>;
+			gpios = <&test_gpio_1 10 20>, <&test_gpio_2 30 40>;
+			pha-gpios = <&test_gpio_1 50 60>, <0>, <&test_gpio_3 70>, <&test_gpio_2 80 90>;
+			foos = <&test_gpio_1 100>, <&test_gpio_2 110>;
+			foo-names = "A", "b-c";
+			pwms = <&test_pwm1 8 200 3>, <&test_pwm2 5 100 1>;
+			pwm-names = "red", "green";
+			bar = <&test_gpio_1 200>, <&test_gpio_2 210>;
+			baz-names = "john", "doe";
+		};
+
+		test_enum_0: enum-0 {
+			compatible = "vnd,enum-holder";
+			val = "zero";
+		};
+
+		test_enum_1: enum-1 {
+			compatible = "vnd,enum-holder";
+			val = "two";
+		};
+
+		test_enum_default_0: enum-2 {
+			compatible = "vnd,enum-required-false-holder";
+			val = "one";
+		};
+
+		test_enum_default_1: enum-3 {
+			compatible = "vnd,enum-required-false-holder";
+		};
+
+		test_enum_int_default_0: enum-4 {
+			compatible = "vnd,enum-int-required-false-holder";
+			val = < 5 >;
+		};
+
+		test_enum_int_default_1: enum-5 {
+			compatible = "vnd,enum-int-required-false-holder";
+		};
+
+		enum-6 {
+			compatible = "vnd,enum-holder-inst";
+			val = "zero";
+		};
+
+		enum-7 {
+			compatible = "vnd,enum-required-false-holder-inst";
+		};
+
+		/*
+		 * disabled/reserved should be the only nodes with their
+		 * compatible in the tree.
+		 */
+		disabled-node@0 {
+			compatible = "vnd,disabled-compat";
+			reg = < 0x0 0x1000 >;
+			status = "disabled";
+		};
+
+		reserved-node@0 {
+			compatible = "vnd,reserved-node";
+			reg = < 0x0 0x1000 >;
+			status = "reserved";
+		};
+
+		disabled_gpio: gpio@0 {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0x0 0x1000 >;
+			interrupts = <3 1>;
+			#gpio-cells = < 0x2 >;
+			status = "disabled";
+		};
+
+		reserved_gpio: gpio@1 {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0x1 0x1000 >;
+			interrupts = <3 1>;
+			#gpio-cells = < 0x2 >;
+			status = "reserved";
+		};
+
+		test_no_status: intc_no_status@0 {
+			compatible = "vnd,intc";
+			reg = <0x0 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
+		test_nodelabel: TEST_NODELABEL_ALLCAPS: test_gpio_1: gpio@deadbeef {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0xdeadbeef 0x1000 >;
+			#gpio-cells = < 0x2 >;
+			#foo-cells = < 0x1 >;
+			#baz-cells = < 0x1 >;
+			interrupts = <4 3>;
+			status = "okay";
+			ngpios = <100>;
+
+			test_gpio_hog_1 {
+				gpio-hog;
+				gpios = <0x0 0x00>, <0x1 0x10>;
+				output-high;
+			};
+
+			test_gpio_hog_2 {
+				gpio-hog;
+				gpios = <0x3 0x20>;
+				output-low;
+			};
+		};
+
+		test_gpio_2: gpio@abcd1234 {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0xabcd1234 0x500 0x98765432 0xff >;
+			reg-names = "one", "two";
+			#gpio-cells = < 0x2 >;
+			#foo-cells = < 0x1 >;
+			#baz-cells = < 0x1 >;
+			interrupts = <5 2>;
+			status = "okay";
+			ngpios = <200>;
+
+			test_gpio_hog_3 {
+				gpio-hog;
+				gpios = <0x4 0x30>;
+				input;
+				line-name = "TEST_GPIO_HOG_3";
+			};
+		};
+
+		test_gpio_3: gpio@1234 {
+			compatible = "vnd,gpio-one-cell";
+			gpio-controller;
+			reg = < 0x1234 0x500 >;
+			#gpio-cells = < 0x1 >;
+			status = "okay";
+		};
+
+		test_gpio_4: gpio@1234abcd {
+			compatible = "vnd,gpio-intc-device";
+			reg = <0x1234abcd 0x500>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			interrupt-controller;
+			#interrupt-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = < 1 >;
+			#size-cells = < 0 >;
+			compatible = "vnd,i2c";
+			reg = < 0x11112222 0x1000 >;
+			status = "okay";
+			clock-frequency = < 100000 >;
+			interrupts = <6 2 7 1>;
+			interrupt-names = "status", "error";
+
+			test-i2c-dev@10 {
+				compatible = "vnd,i2c-device";
+				reg = < 0x10 >;
+			};
+
+			gpio@11 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				compatible = "vnd,gpio-expander";
+				reg = <0x11>;
+			};
+
+			test_i2c_mux: i2c-mux@12 {
+				compatible = "vnd,i2c-mux";
+				reg = <0x12>;
+				i2c-mux-ctlr-1 {
+					compatible = "vnd,i2c-mux-controller";
+					#address-cells = <1>;
+					#size-cells = <0>;
+					test_muxed_i2c_dev_1: muxed-i2c-dev@10 {
+						compatible = "vnd,i2c-device";
+						status = "disabled";
+						reg = <0x10>;
+					};
+				};
+				i2c-mux-ctlr-2 {
+					compatible = "vnd,i2c-mux-controller";
+					#address-cells = <1>;
+					#size-cells = <0>;
+					test_muxed_i2c_dev_2: muxed-i2c-dev@10 {
+						compatible = "vnd,i2c-device";
+						status = "disabled";
+						reg = <0x10>;
+					};
+				};
+			};
+		};
+
+		test_i2c_no_reg: i2c {
+			#address-cells = < 1 >;
+			#size-cells = < 0 >;
+			compatible = "vnd,i2c";
+			status = "okay";
+			clock-frequency = < 100000 >;
+
+			test-i2c-dev@12 {
+				compatible = "vnd,i2c-device";
+				reg = < 0x12 >;
+			};
+		};
+
+		test_i3c: i3c@88889999 {
+			#address-cells = < 3 >;
+			#size-cells = < 0 >;
+			compatible = "vnd,i3c";
+			reg = < 0x88889999 0x1000 >;
+			status = "okay";
+
+			test-i3c-dev@420000ABCD12345678 {
+				compatible = "vnd,i3c-device";
+				reg = < 0x42 0xABCD 0x12345678 >;
+			};
+
+			test-i3c-i2c-dev@380000000000000050 {
+				compatible = "vnd,i3c-i2c-device";
+				reg = < 0x38 0x0 0x50 >;
+			};
+		};
+
+		test_mbox: mbox {
+			compatible = "vnd,mbox";
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
+		test_mbox_zero_cell: mbox_zero_cell {
+			compatible = "vnd,mbox-zero-cell";
+			#mbox-cells = <0>;
+			status = "okay";
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = < 1 >;
+			#size-cells = < 0 >;
+			compatible = "vnd,spi";
+			reg = < 0x33334444 0x1000 >;
+			interrupts = <8 3 9 0 10 1>;
+			status = "okay";
+			clock-frequency = < 2000000 >;
+
+			cs-gpios = <&test_gpio_1 0x10 0x20>,
+					<&test_gpio_2 0x30 0x40>,
+					<&test_gpio_2 0x50 0x60>;
+
+			/* all vnd,spi-device instances should have CS */
+
+			test-spi-dev@0 {
+				compatible = "vnd,spi-device";
+				reg = <0>;
+				spi-max-frequency = < 2000000 >;
+			};
+
+			test-spi-dev@1 {
+				compatible = "vnd,spi-device";
+				reg = <1>;
+				spi-max-frequency = < 2000000 >;
+			};
+
+			gpio@2 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				compatible = "vnd,gpio-expander";
+				reg = <2>;
+				spi-max-frequency = <(1 * 1000 * 1000)>;
+			};
+		};
+
+		test_spi_no_cs: spi@55556666 {
+			#address-cells = < 1 >;
+			#size-cells = < 0 >;
+			compatible = "vnd,spi";
+			reg = < 0x55556666 0x1000 >;
+			status = "okay";
+			clock-frequency = < 2000000 >;
+
+			/*
+			 * There should only be one spi-device-2 node.
+			 * It should not have a CS GPIO.
+			 */
+			test_spi_dev_no_cs: test-spi-dev@0 {
+				compatible = "vnd,spi-device-2";
+				reg = <0>;
+				spi-max-frequency = < 2000000 >;
+			};
+		};
+
+		test_i2c_1: i2c@77778888 {
+			#address-cells = < 1 >;
+			#size-cells = < 0 >;
+			compatible = "vnd,i2c";
+			reg = < 0x77778888 0x1000 >;
+			status = "okay";
+			clock-frequency = < 100000 >;
+			interrupts = <11 3 12 2>;
+			interrupt-names = "status", "error";
+		};
+
+		test_adc_1: adc@10002000 {
+			reg = <0x10002000 0x1000>;
+			compatible = "vnd,adc";
+			status = "okay";
+			#io-channel-cells = <1>;
+		};
+
+		test_adc_2: adc@10003000 {
+			reg = <0x10003000 0x1000>;
+			compatible = "vnd,adc";
+			status = "okay";
+			#io-channel-cells = <1>;
+		};
+
+		/* there should only be one of these */
+		test_temp_sensor: temperature-sensor {
+			compatible = "vnd,adc-temp-sensor";
+			io-channels = <&test_adc_1 10>, <&test_adc_2 20>;
+			io-channel-names = "ch1", "ch2";
+			dmas = <&test_dma1 1 2>, <&test_dma2 3 4>;
+			dma-names = "tx", "rx";
+			clocks = <&test_clk 3 7>, <&test_fixed_clk>, <&test_clk 8 2>;
+			clock-names = "clk-a", "clk-fixed", "clk-b";
+			resets = <&test_reset 10>, <&test_reset 20>;
+			reset-names = "reset-a", "reset-b";
+			pinctrl-0 = <&test_pincfg_a &test_pincfg_b>;
+			pinctrl-1 = <&test_pincfg_c &test_pincfg_d>;
+			pinctrl-2 = <&test_pincfg_d>;
+			pinctrl-names = "default", "sleep", "f.o.o2";
+			mboxes = <&test_mbox 1>, <&test_mbox 2>, <&test_mbox_zero_cell>;
+			mbox-names = "tx", "rx", "zero";
+		};
+
+		/* there should only be one of these */
+		test_reg: reg-holder@9999aaaa {
+			compatible = "vnd,reg-holder";
+			reg = < 0x9999aaaa 0x1000 0xbbbbcccc 0x3f >;
+			status = "okay";
+			reg-names = "first", "second";
+			misc-prop = <1234>;
+		};
+
+		test_vendor: vendor {
+			compatible = "vnd,model1", "gpio", "zephyr,model2";
+			status = "okay";
+		};
+
+		test_intc: interrupt-controller@bbbbcccc  {
+			compatible = "vnd,intc";
+			reg = <0xbbbbcccc 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <11 0>;
+			interrupt-parent = <&test_cpu_intc>;
+		};
+
+		/* same as `test_intc` but extends a different L1 interrupt.
+		 * Required for testing if interrupts are encoded properly for
+		 * nodes consuming interrupts from different aggregators.
+		 */
+		test_intc2: interrupt-controller@bbbbdccc {
+			compatible = "vnd,intc";
+			reg = <0xbbbbdccc 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <12 0>;
+			interrupt-parent = <&test_cpu_intc>;
+		};
+
+		/* there should only be one of these */
+		test_irq: interrupt-holder {
+			compatible = "vnd,interrupt-holder";
+			status = "okay";
+			interrupts = <30 3 40 5 60 7>;
+			interrupt-parent = <&test_intc>;
+			interrupt-names = "err", "stat", "done";
+		};
+
+		/* there should only be one of these */
+		test_irq_extended: interrupt-holder-extended {
+			compatible = "vnd,interrupt-holder-extended";
+			status = "okay";
+			interrupts-extended = <&test_intc 70 7>,
+					      <&test_gpio_4 30 3>,
+					      <&test_intc2 42 7>;
+			interrupt-names = "int1", "int2", "int3";
+		};
+
+		test_fixed_clk: test-fixed-clock {
+			compatible = "fixed-clock";
+			clock-frequency = <25000000>;
+			#clock-cells = <0>;
+		};
+
+		test_clk: test-clock {
+			compatible = "vnd,clock";
+			#clock-cells = <2>;
+		};
+
+		test_reset: test-reset@abcd1234 {
+			compatible = "vnd,reset";
+			reg-width = <4>;
+			reg = <0xabcd1234 0x100>;
+			#reset-cells = <1>;
+		};
+
+		test_dma1: dma@44443333 {
+			compatible = "vnd,dma";
+			#dma-cells = <2>;
+			reg = < 0x44443333 0x1000 >;
+			interrupts = <11 3>;
+			status = "okay";
+		};
+
+		test_dma2: dma@44442222 {
+			compatible = "vnd,dma";
+			#dma-cells = <2>;
+			reg = < 0x44442222 0x1000 >;
+			interrupts = <12 3>;
+			status = "okay";
+		};
+
+		test_pwm1: pwm@55551111 {
+			compatible = "vnd,pwm";
+			#pwm-cells = <3>;
+			reg = < 0x55551111 0x1000 >;
+			status = "okay";
+		};
+
+		test_pwm2: pwm@55552222 {
+			compatible = "vnd,pwm";
+			#pwm-cells = <3>;
+			reg = < 0x55552222 0x1000 >;
+			status = "okay";
+		};
+
+		test_transceiver0: can-phy0 {
+			compatible = "vnd,can-transceiver";
+			status = "okay";
+			#phy-cells = <0>;
+			min-bitrate = <10000>;
+			max-bitrate = <5000000>;
+		};
+
+		test_transceiver1: can-phy1 {
+			compatible = "vnd,can-transceiver";
+			status = "okay";
+			#phy-cells = <0>;
+			max-bitrate = <1000000>;
+		};
+
+		test_can0: can@55553333 {
+			compatible = "vnd,can-controller";
+			reg = < 0x55553333 0x1000 >;
+			status = "okay";
+			phys = <&test_transceiver0>;
+		};
+
+		test_can1: can@55554444 {
+			compatible = "vnd,can-controller";
+			reg = < 0x55554444 0x1000 >;
+			status = "okay";
+
+			can-transceiver {
+				min-bitrate = <50000>;
+				max-bitrate = <2000000>;
+			};
+		};
+
+		test_can2: can@55555555 {
+			compatible = "vnd,can-controller";
+			reg = < 0x55555555 0x1000 >;
+			status = "okay";
+
+			can-transceiver {
+				max-bitrate = <1000000>;
+			};
+		};
+
+		test_can3: can@55557777 {
+			compatible = "vnd,can-controller";
+			reg = < 0x55556666 0x1000 >;
+			status = "okay";
+			phys = <&test_transceiver1>;
+		};
+
+		/* there should only be one of these */
+		test_children: test-children {
+			compatible = "vnd,child-bindings";
+
+			test_child_a: child-a {
+				val = <0>;
+				status = "okay";
+			};
+			test_child_b: child-b {
+				val = <1>;
+				status = "okay";
+			};
+			test_child_c: child-c {
+				val = <2>;
+				status = "disabled";
+			};
+		};
+
+		test-great-grandchildren {
+			compatible = "vnd,great-grandchild-bindings";
+
+			child {
+				grandchild {
+					test_ggc: great-grandchild {
+						ggc-prop = <42>;
+					};
+				};
+			};
+		};
+
+		test-ranges {
+			#address-cells = <2>;
+			#size-cells = <1>;
+
+			test_ranges_pcie: pcie@0 {
+				compatible = "vnd,pcie";
+				reg = <0 0 1>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+
+				ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+					 <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+					 <0x3000000 0x80 0 0x80 0 0x80 0>;
+			};
+
+			test_ranges_other: other@1 {
+				reg = <0 1 1>;
+				#address-cells = <2>;
+				#size-cells = <1>;
+
+				ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+					 <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+			};
+
+			test_ranges_empty: empty@2 {
+				reg = <0 2 1>;
+				#address-cells = <2>;
+				#size-cells = <1>;
+
+				ranges;
+			};
+		};
+
+		device-with-props-0 {
+			compatible = "vnd,device-with-props";
+			status = "okay";
+			foo = <1>;
+			bar = <2>;
+		};
+
+		device-with-props-1 {
+			compatible = "vnd,device-with-props";
+			status = "okay";
+			foo = <2>;
+		};
+
+		device-with-props-2 {
+			compatible = "vnd,device-with-props";
+			status = "disabled";
+			baz = <1>;
+		};
+
+		test_string_token_0: string-token-0 {
+			compatible = "vnd,string-token";
+			val = "token_zero";
+		};
+
+		test_string_token_1: string-token-1 {
+			compatible = "vnd,string-token";
+			val = "token_one";
+		};
+
+		test_string_token_2: string-token-2 {
+			compatible = "vnd,string-token";
+			val = "token_two";
+		};
+
+		test_str_array_token_0: string-array-token-0 {
+			compatible = "vnd,string-array-token";
+			val = "token_first_idx_zero",
+			      "token_first_idx_one",
+			      "token_first_idx_two";
+		};
+
+		test_str_array_token_1: string-array-token-1 {
+			compatible = "vnd,string-array-token";
+			val = "token_second_idx_zero",
+			      "token_second_idx_one",
+			      "token_second_idx_two",
+			      "token_second_idx_three";
+		};
+
+		test_str_unquoted_f0: string-unquoted-f0 {
+			compatible = "vnd,string-unquoted";
+			val = "0.1234";
+		};
+
+		test_str_unquoted_f1: string-unquoted-f1 {
+			compatible = "vnd,string-unquoted";
+			val = "0.9e-3";
+		};
+
+		test_str_unquoted_t: string-unquoted-t {
+			compatible = "vnd,string-unquoted";
+			val = "XA XPLUS XB";
+		};
+
+		test_stra_unquoted_f0: string-array-unquoted-f0 {
+			compatible = "vnd,string-array-unquoted";
+			val = "1.0e2", "2.0e2", "3.0e2", "4.0e2";
+		};
+
+		test_stra_unquoted_f1: string-array-unquoted-f1 {
+			compatible = "vnd,string-array-unquoted";
+			val = "0.01", "0.1", "1.0", "10.0";
+		};
+
+		test_stra_unquoted_t: string-array-unquoted-t {
+			compatible = "vnd,string-array-unquoted";
+			val = "XA XPLUS XB", "XC XPLUS XD", "XA XMINUS XB", "XC XMINUS XD";
+		};
+
+		test-mtd@ffeeddcc {
+			reg = < 0xffeeddcc 0x1000 >;
+			#address-cells = < 1 >;
+			#size-cells = < 1 >;
+
+			flash@20000000 {
+				compatible = "soc-nv-flash";
+				reg = < 0x20000000 0x100 >;
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = < 1 >;
+					#size-cells = < 1 >;
+
+					partition@0 {
+						reg = < 0x0 0xc0 >;
+						label = "test-partition-0";
+					};
+					partition@c0 {
+						reg = < 0xc0 0x40 >;
+						label = "test-partition-1";
+					};
+				};
+			};
+		};
+
+		test-mtd@33221100 {
+			reg = < 0x33221100 0x1000 >;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = < 1 >;
+				#size-cells = < 1 >;
+
+				partition@6ff80 {
+					reg = < 0x6ff80 0x80 >;
+					label = "test-partition-2";
+				};
+			};
+		};
+	};
+
+	test_64 {
+		#address-cells = < 2 >;
+		#size-cells = < 0 >;
+
+		test_reg_64: reg-holder-64@ffffffff11223344 {
+			compatible = "vnd,reg-holder-64";
+			reg = < 0xffffffff 0x11223344>;
+			status = "okay";
+			reg-names = "test_name";
+		};
+	};
+
+	non-deprecated-label {
+		compatible = "vnd,non-deprecated-label";
+		label = "FOO";
+	};
+};

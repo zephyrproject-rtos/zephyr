@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2020 Hans Unzner
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/f4/stm32f410.dtsi>
+
+/delete-node/ &sdmmc1;
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(32)>;
+	};
+
+	soc {
+		flash-controller@40023c00 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(128)>;
+			};
+		};
+	};
+};

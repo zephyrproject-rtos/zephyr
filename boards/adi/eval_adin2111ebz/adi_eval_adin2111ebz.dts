@@ -1,0 +1,203 @@
+/*
+ * Copyright (c) 2024 BayLibre
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/l4/stm32l4s5Xi.dtsi>
+#include <st/l4/stm32l4s5qiix-pinctrl.dtsi>
+
+/ {
+	model = "Analog Devices Inc. EVAL-ADIN2111EBZ board";
+	compatible = "adi,eval-adin2111ebz";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: uC_led1 {
+			gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+			label = "Debug led uC1";
+		};
+		net_red_led: led_NET1 {
+			gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
+			label = "NET led 1";
+		};
+		net_green_led: led_NET2 {
+			gpios = <&gpiob 11 GPIO_ACTIVE_LOW>;
+			label = "NET led 2";
+		};
+		mod_red_led: led_MOD1 {
+			gpios = <&gpioe 2 GPIO_ACTIVE_LOW>;
+			label = "Mod led 1";
+		};
+		mod_green_led: led_MOD2 {
+			gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
+			label = "Mod led 2";
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		watchdog0 = &iwdg;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <4>;
+	mul-n = <40>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(80)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x10000 and ending at
+		 * offset 0x1ffff is reserved for use by the application.
+		 */
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(432)>;
+		};
+		slot1_partition: partition@8c000 {
+			label = "image-1";
+			reg = <0x0008C000 DT_SIZE_K(432)>;
+		};
+		scratch_partition: partition@f8000 {
+			label = "image-scratch";
+			reg = <0x000F8000 DT_SIZE_K(16)>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&usart1 { /* USB FT232 */
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+
+	flash_ext: flash@0 {
+		compatible = "issi,is25lp128", "jedec,spi-nor";
+		size = <134217728>;
+		jedec-id = [96 60 18];
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+	};
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+	dmas = <&dmamux1 2 13 (STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC |
+		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>,
+		       <&dmamux1 3 12 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC |
+		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>;
+	dma-names = "tx", "rx";
+
+	adin2111: adin2111@0 {
+		compatible = "adi,adin2111";
+		reg = <0x0>;
+		spi-max-frequency = <25000000>;
+		int-gpios = <&gpioa 12 GPIO_ACTIVE_LOW>;
+		status = "okay";
+		spi-oa;
+		spi-oa-protection;
+
+		port1 {
+			local-mac-address = [ 00 E0 22 FE DA C9 ];
+		};
+		port2 {
+			local-mac-address = [ 00 E0 22 FE DA D9 ];
+		};
+		mdio {
+			compatible = "adi,adin2111-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			ethernet-phy@1 {
+				reg = <0x1>;
+				compatible = "adi,adin2111-phy";
+				status = "okay";
+			};
+			ethernet-phy@2 {
+				reg = <0x2>;
+				compatible = "adi,adin2111-phy";
+				status = "okay";
+			};
+		};
+	};
+};

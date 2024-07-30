@@ -1,0 +1,3 @@
+tests:
+  kernel.events:
+    tags: kernel

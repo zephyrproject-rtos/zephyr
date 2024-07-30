@@ -1,0 +1,43 @@
+# Copyright (c) 2018, Aapo Vienamo
+# Copyright (c) 2021, Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+description: TCA9538 GPIO node
+
+compatible: "ti,tca9538"
+
+include: [i2c-device.yaml, gpio-controller.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    required: true
+    const: 8
+    description: |
+      Number of GPIOs available on port expander.
+
+  nint-gpios:
+    type: phandle-array
+    description: |
+      Connection for the NINT signal. This signal is active-low when
+      produced by tca9538 GPIO node.
+
+  input-latch:
+    type: int
+    description: |
+      Input latch register bit is 0 by default and the input pin state
+      is not latched. When input latch register bit is 1 and the input
+      pin state is latched.
+
+  interrupt-mask:
+    type: int
+    description: |
+      Interrupt mask register is set to logic 1 by default without
+      enabling interrupts. Setting corresponding mask bits to logic
+      0 to enable the interrupts.
+
+gpio-cells:
+  - pin
+  - flags

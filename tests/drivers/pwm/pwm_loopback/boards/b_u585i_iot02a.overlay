@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		/* first index must be a 32-Bit timer */
+		pwms = <&pwm4 1 0 PWM_POLARITY_NORMAL>,
+			<&pwm3 2 0 PWM_POLARITY_NORMAL>;
+	};
+};

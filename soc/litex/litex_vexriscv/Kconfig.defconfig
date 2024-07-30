@@ -1,0 +1,16 @@
+# Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LITEX_VEXRISCV
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config NUM_IRQS
+	default 12
+
+config REBOOT
+	depends on DT_HAS_LITEX_SOC_CONTROLLER_ENABLED
+	default y
+
+endif # SOC_LITEX_VEXRISCV

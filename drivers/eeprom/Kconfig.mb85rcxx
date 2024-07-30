@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_MB85RCXX
+	bool "FUJITSU mb85rcxx i2c FRAM"
+	default y
+	depends on DT_HAS_FUJITSU_MB85RCXX_ENABLED
+	select I2C
+	help
+	  Enable FUJITSU mb85rcxx i2c FRAM

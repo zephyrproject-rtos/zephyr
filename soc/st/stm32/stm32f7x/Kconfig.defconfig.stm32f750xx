@@ -1,0 +1,11 @@
+# ST STM32F750XX MCU configuration options
+
+# Copyright (c) 2022, Rtone.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F750XX
+
+config NUM_IRQS
+	default 98
+
+endif # SOC_STM32F750XX

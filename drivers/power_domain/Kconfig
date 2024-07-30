@@ -1,0 +1,75 @@
+# Copyright (c) 2022, CSIRO.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig POWER_DOMAIN
+	bool "Power domain drivers"
+	help
+	  Include drivers for power domains in system config
+
+if POWER_DOMAIN
+
+module = POWER_DOMAIN
+module-str = power_domain
+source "subsys/logging/Kconfig.template.log_config"
+
+config POWER_DOMAIN_INIT_PRIORITY
+	int "Power domain init priority"
+	default 75
+	help
+	  Power domain initialization priority.
+
+config POWER_DOMAIN_GPIO
+	bool "GPIO controlled power domain"
+	default y
+	depends on DT_HAS_POWER_DOMAIN_GPIO_ENABLED
+	depends on GPIO
+	depends on PM_DEVICE || !PM_DEVICE_POWER_DOMAIN
+	depends on TIMEOUT_64BIT
+	select DEVICE_DEPS
+
+if POWER_DOMAIN_GPIO
+
+config POWER_DOMAIN_GPIO_INIT_PRIORITY
+	int "GPIO power domain init priority"
+	default POWER_DOMAIN_INIT_PRIORITY
+	help
+	  GPIO power domain initialization priority.
+
+endif #POWER_DOMAIN_GPIO_MONITOR
+
+config POWER_DOMAIN_INTEL_ADSP
+	bool "Use Intel ADSP power gating mechanisms"
+	default y
+	depends on DT_HAS_INTEL_ADSP_POWER_DOMAIN_ENABLED
+	select DEVICE_DEPS
+	help
+	  Include Intel ADSP power domain control mechanisms
+
+if POWER_DOMAIN_INTEL_ADSP
+
+config POWER_DOMAIN_INTEL_ADSP_INIT_PRIORITY
+	int "Intel ADSP power domain init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Intel ADSP power domain initialization priority.
+
+endif #POWER_DOMAIN_INTEL_ADSP
+
+config POWER_DOMAIN_GPIO_MONITOR
+	bool "GPIO monitor for sensing power on rail"
+	default y
+	depends on DT_HAS_POWER_DOMAIN_GPIO_MONITOR_ENABLED
+	depends on GPIO
+	select DEVICE_DEPS
+
+if POWER_DOMAIN_GPIO_MONITOR
+
+config POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY
+	int "GPIO monitor power domain init priority"
+	default POWER_DOMAIN_INIT_PRIORITY
+	help
+	  GPIO monitor power domain initialization priority.
+
+endif #POWER_DOMAIN_GPIO_MONITOR
+
+endif

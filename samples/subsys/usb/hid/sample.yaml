@@ -1,0 +1,24 @@
+sample:
+  name: USB HID sample
+tests:
+  sample.usb.hid:
+    depends_on: usb_device
+    tags: usb
+    arch_exclude: posix
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "main: HID Device: dev"
+        - "main: Starting application"
+  sample.usb.hid.buildonly:
+    depends_on: usb_device
+    tags: usb
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+    build_only: true
+    integration_platforms:
+      - native_sim

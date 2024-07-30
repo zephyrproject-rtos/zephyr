@@ -1,0 +1,3 @@
+name: rtt-console
+append:
+  EXTRA_CONF_FILE: rtt-console.conf

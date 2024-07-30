@@ -1,0 +1,36 @@
+#
+# Copyright (c) 2020 Geanix ApS
+# Copyright (c) 2021 Peter Johanson
+# Copyright (c) 2021 metraTec GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+include: [gpio-controller.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  int-gpios:
+    type: phandle-array
+    description: |
+        GPIO connected to the controller INT pin. This pin is active-low.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+        GPIO connected to the controller RESET pin. This pin is active-low.
+
+  ngpios:
+    type: int
+    enum:
+      - 8
+      - 16
+    required: true
+    description: |
+      Number of gpios supported by the chip.
+
+gpio-cells:
+  - pin
+  - flags

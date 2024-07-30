@@ -1,0 +1,104 @@
+#
+# Copyright 2021 Grinn
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    TI INA237 Bidirectional Current and Power Monitor.
+    The <zephyr/dt-bindings/sensor/ina237.h> file should be included in the
+    DeviceTree and it provides macros that can be used for initializing the
+    configuration registers.
+
+compatible: "ti,ina237"
+
+include: ti,ina23x-common.yaml
+
+properties:
+  config:
+    type: int
+    deprecated: true
+    default: 0x0000
+    description: |
+      Value of the configuration register
+      e.g shunt voltage and bus voltage ADC conversion
+      times and averaging, operating mode for INA230 or
+      delay for initial ADC conversion, shunt full scale range
+      for INA237.
+
+      Deprecated, please use new properties instead.
+
+  adc-config:
+    type: int
+    deprecated: true
+    default: 0x0000
+    description: |
+      Value of the ADC configuration register (ADC conversion times,
+      averaging, operating mode and etc).
+
+      Deprecated, please use new properties instead.
+
+  alert-config:
+    type: int
+    description: Diag alert register, default matches the power-on reset value
+
+  adc-mode:
+    type: string
+    description: |
+      ADC channel conversion configuration.
+      Default is the power-on reset value.
+    default: "Temperature, bus, and shunt voltage continuous"
+    enum:
+      - "Shutdown single shot"
+      - "Bus Voltage single shot"
+      - "Shunt Voltage single shot"
+      - "Bus and Shunt Voltage single shot"
+      - "Temperature Single shot"
+      - "Temperature and bus voltage single shot"
+      - "Temperature and shunt voltage single shot"
+      - "Temperature, bus, and shunt voltage single shot"
+      - "Shutdown continuous"
+      - "Bus voltage continuous"
+      - "Shunt voltage continuous"
+      - "Bus and shunt voltage continuous"
+      - "Temperature continuous"
+      - "Temperature and bus voltage continuous"
+      - "Temperature and shunt voltage continuous"
+      - "Temperature, bus, and shunt voltage continuous"
+
+  vbus-conversion-time-us:
+    type: int
+    description: |
+      Vbus conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  vshunt-conversion-time-us:
+    type: int
+    description: |
+      Vshunt conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  temp-conversion-time-us:
+    type: int
+    description: |
+      Temperature conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  avg-count:
+    type: int
+    description: |
+      Number of samples to average (applies to all inputs).
+      Default is the power-on reset value.
+    default: 1
+    enum: [1, 4, 16, 64, 128, 256, 512, 1024]
+
+  high-precision:
+    type: boolean
+    description: |
+      Enable high precision mode (4x the resolution).

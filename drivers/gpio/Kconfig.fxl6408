@@ -1,0 +1,24 @@
+# Copyright (c) 2021 Abel Sensors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_FXL6408
+	bool "FXL6408 I2C-based GPIO chip"
+	default y
+	depends on DT_HAS_FCS_FXL6408_ENABLED
+	depends on I2C
+	help
+	  Enable driver for FXL6408 I2C-based GPIO chip.
+
+if GPIO_FXL6408
+
+config GPIO_FXL6408_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Device driver initialization priority.
+
+module = FXL6408
+module-str = fxl6408
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # GPIO_FXL6408

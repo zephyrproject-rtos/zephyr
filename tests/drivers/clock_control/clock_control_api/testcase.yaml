@@ -1,0 +1,30 @@
+common:
+  tags:
+    - drivers
+    - clock_control
+tests:
+  drivers.clock.clock_control_api_default:
+    platform_allow:
+      - esp32_devkitc_wroom/esp32/procpu
+      - esp32_devkitc_wrover/esp32/procpu
+      - esp32c3_devkitm
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
+  drivers.clock.clock_control_nrf5:
+    platform_allow:
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+      - nrf9160dk/nrf9160
+      - nrf54l15pdk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf51dk/nrf51822
+  drivers.clock.clock_control_nrf5_lfclk_rc:
+    platform_allow:
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf51dk/nrf51822
+    extra_args: CONF_FILE="nrf_lfclk_rc.conf"

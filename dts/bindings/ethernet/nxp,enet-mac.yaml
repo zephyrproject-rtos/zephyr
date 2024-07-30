@@ -1,0 +1,42 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP ENET MAC/L2 Device
+
+compatible: "nxp,enet-mac"
+
+include: ["ethernet-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  interrupts:
+    required: true
+
+  nxp,mdio:
+    type: phandle
+    required: true
+    description: |
+      Corresponding mdio device
+
+  nxp,ptp-clock:
+    type: phandle
+    required: true
+    description: |
+      Corresponding ptp clock device
+
+  nxp,unique-mac:
+    type: boolean
+    description: |
+      Use part of the unique silicon ID to generate the MAC.
+      This property will be overridden if the node has
+      zephyr,random-mac-address or local-mac-address also.
+      This option is intended for cases where a very low likelihood
+      that the mac address is the same as another on the network
+      is sufficient, such as, testing, bringup, demos, etc.
+      The first 3 bytes will be the freescale OUI and the next
+      3 bytes will come from the chip's unique ID.
+
+  nxp,fused-mac:
+    type: boolean
+    description: |
+      Use the MAC address from fuse shadow register.
+      Not all platforms have a fusable MAC address.

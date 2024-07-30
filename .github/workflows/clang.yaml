@@ -1,0 +1,164 @@
+name: Build with Clang/LLVM
+
+on: pull_request_target
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clang-build:
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      options: '--entrypoint /bin/bash'
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ["native_sim"]
+    env:
+      CCACHE_DIR: /node-cache/ccache-zephyr
+      CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
+      CCACHE_REMOTE_ONLY: "true"
+      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
+      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.base_ref }}
+    outputs:
+      report_needed: ${{ steps.twister.outputs.report_needed }}
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Print cloud service information
+        run: |
+          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+          echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+          echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /repo-cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Environment Setup
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Bot"
+          rm -fr ".git/rebase-apply"
+          git rebase origin/${BASE_REF}
+          git log  --pretty=oneline | head -n 10
+          west init -l . || true
+          west config --global update.narrow true
+          west config manifest.group-filter -- +ci,+optional
+          # In some cases modules are left in a state where they can't be
+          # updated (i.e. when we cancel a job and the builder is killed),
+          # So first retry to update, if that does not work, remove all modules
+          # and start over. (Workaround until we implement more robust module
+          # west caching).
+          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west2.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
+      - name: Check Environment
+        run: |
+          cmake --version
+          ${LLVM_TOOLCHAIN_PATH}/bin/clang --version
+          gcc --version
+          ls -la
+
+      - name: Set up ccache
+        run: |
+          mkdir -p ${CCACHE_DIR}
+          ccache -M 10G
+          ccache -p
+          ccache -z -s -vv
+
+      - name: Update BabbleSim to manifest revision
+        run: |
+          export BSIM_VERSION=$( west list bsim -f {revision} )
+          echo "Manifest points to bsim sha $BSIM_VERSION"
+          cd /opt/bsim_west/bsim
+          git fetch -n origin ${BSIM_VERSION}
+          git -c advice.detachedHead=false checkout ${BSIM_VERSION}
+          west update
+          make everything -s -j 8
+
+      - name: Run Tests with Twister
+        id: twister
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=llvm
+
+          # check if we need to run a full twister or not based on files changed
+          python3 ./scripts/ci/test_plan.py --platform ${{ matrix.platform }} -c origin/${BASE_REF}..
+
+          # We can limit scope to just what has changed
+          if [ -s testplan.json ]; then
+            echo "report_needed=1" >> $GITHUB_OUTPUT
+            # Full twister but with options based on changes
+            ./scripts/twister --force-color --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2
+          else
+            # if nothing is run, skip reporting step
+            echo "report_needed=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Print ccache stats
+        if: always()
+        run: |
+          ccache -s -vv
+
+      - name: Upload Unit Test Results
+        if: always() && steps.twister.outputs.report_needed != 0
+        uses: actions/upload-artifact@v4
+        with:
+          name: Unit Test Results (Subset ${{ matrix.platform }})
+          path: twister-out/twister.xml
+
+  clang-build-results:
+    name: "Publish Unit Tests Results"
+    needs: clang-build
+    runs-on: ubuntu-22.04
+    if: (success() || failure() ) && needs.clang-build.outputs.report_needed != 0
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Merge Test Results
+        run: |
+          pip3 install junitparser junit2html
+          junitparser merge artifacts/*/twister.xml junit.xml
+          junit2html junit.xml junit-clang.html
+
+      - name: Upload Unit Test Results in HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HTML Unit Test Results
+          if-no-files-found: ignore
+          path: |
+            junit-clang.html
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: Unit Test Results
+          files: "**/twister.xml"
+          comment_mode: off

@@ -1,0 +1,30 @@
+common:
+  tags:
+    - drivers
+    - input
+  build_only: true
+  platform_allow:
+    - native_posix
+    - native_sim
+tests:
+  drivers.input.default: {}
+
+  # Touchscreen drivers, non-default option
+  drivers.input.touchscreen_interrupt:
+    extra_configs:
+      - CONFIG_INPUT_CST816S_INTERRUPT=n
+      - CONFIG_INPUT_FT5336_INTERRUPT=y
+      - CONFIG_INPUT_GT911_INTERRUPT=y
+
+  drivers.input.kbd_16_bit:
+    extra_configs:
+      - CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW=y
+
+  drivers.input.analog_axis:
+    extra_configs:
+      - CONFIG_ADC=y
+      - CONFIG_SETTINGS=y
+
+  drivers.input.adc_keys:
+    extra_configs:
+      - CONFIG_ADC=y

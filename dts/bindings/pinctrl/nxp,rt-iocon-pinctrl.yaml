@@ -1,0 +1,94 @@
+# Copyright 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RT600/RT500 pin control node. This node defines pin configurations in pin
+  groups, and has the 'pinctrl' node identifier in the SOC's devicetree. Each
+  group within the pin configuration defines a peripheral's pin configuration.
+  Each numbered subgroup represents pins with shared configuration for that
+  peripheral. The 'pinmux' property of each group selects the pins to be
+  configured with these properties. For example, here is a configuration
+  for FLEXCOMM0 pins:
+
+  pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
+    group0 {
+      pinmux = <FC0_TXD_SCL_MISO_WS_PIO0_1>,
+              <FC0_RXD_SDA_MOSI_DATA_PIO0_2>;
+      slew-rate = "normal";
+      drive-strength = "normal";
+    };
+  };
+
+  If only the required properties are supplied, the ICON_PIO register will
+  be assigned the following values:
+  IOCON_FUNC=<pin mux selection>,
+  IOCON_PUPDENA = 0,
+  IOCON_PUPDSEL = 0,
+  IOCON_IBENA = 0,
+  IOCON_SLEWRATE = <slew-rate selection>,
+  IOCON_FULLDRIVE = <drive-strength selection>,
+  IOCON_AMENA = 0,
+  IOCON_ODENA = 0,
+  IOCON_IIENA = 0,
+
+  Note the inherited pinctrl properties defined below have the following effects:
+  drive-open-drain: IOCON_ODENA=1
+  bias-pull-up: IOCON_PUPDENA=1, IOCON_PUPSEL=1
+  bias-pull-down: IOCON_PUPDENA=1, IOCON_PUPSEL=0
+  input-enable: IOCON_IBENA=1
+
+compatible: "nxp,rt-iocon-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: iMX RT IOCON pin controller pin group
+  child-binding:
+    description: |
+      iMX RT IOCON pin controller pin configuration node
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-open-drain
+          - bias-pull-up
+          - bias-pull-down
+          - input-enable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Pin mux selection for this group. See the SOC level pinctrl header
+          file in NXP's HAL for a defined list of these options.
+      slew-rate:
+        required: true
+        type: string
+        enum:
+          - "normal"
+          - "slow"
+        description: |
+          Pin output slew rate. Sets the SLEWRATE field in the IOCON register.
+          0 SLEWRATE_0- normal mode, output slew rate is standard
+          1 SLEWRATE_1- slow mode, output slew rate is slower
+      drive-strength:
+        required: true
+        type: string
+        enum:
+          - "normal"
+          - "high"
+        description: |
+          Pin output drive strength. Sets the FULLDRIVE field in the
+          IOCON register.
+          0 FULLDRIVE_0- Normal output drive mode
+          1 FULLDRIVE_1- Full output drive mode, output strength is twice
+          the drive strength of normal drive mode.
+      nxp,invert:
+        type: boolean
+        description: |
+          Invert the pin input logic level
+      nxp,analog-mode:
+        type: boolean
+        description: |
+          Set the pin to analog mode. Sets AMENA=1

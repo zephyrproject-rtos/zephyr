@@ -1,0 +1,10 @@
+# Copyright (c) 2021, Aurelien Jarno <aurel32@aurel32.net>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TE Connectivity MS5607 digital pressure and temperature sensor.
+    The Datasheet is at https://www.te.com/usa-en/product-CAT-BLPS0035.html
+
+compatible: "meas,ms5607"
+
+include: [sensor-device.yaml, i2c-device.yaml]

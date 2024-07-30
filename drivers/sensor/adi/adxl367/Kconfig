@@ -1,0 +1,133 @@
+# Micropower, 3-Axis, +/-200g Digital Accelerometer
+
+# Copyright (c) 2023 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ADXL367
+	bool "ADXL367 Three Axis High-g I2C/SPI accelerometer"
+	default y
+	depends on DT_HAS_ADI_ADXL367_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL367),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL367),spi)
+	help
+	  Enable driver for ADXL367 Three-Axis Digital Accelerometers.
+
+if ADXL367
+
+choice ADXL367_OP_MODE
+	prompt "Operating mode"
+	default ADXL367_MEASUREMENT_MODE
+
+config ADXL367_MEASUREMENT_MODE
+	bool "Measurement Mode"
+	help
+	  In this mode, acceleration data is provided continuously at the
+	  output data rate (ODR).
+
+endchoice
+
+config ADXL367_ACTIVITY_THRESHOLD
+	int "Activity threshold in raw value"
+	range 0 8191
+	default 100
+	help
+	  Threshold for activity detection.
+
+config ADXL367_INACTIVITY_THRESHOLD
+	int "In-activity threshold in raw value"
+	range 0 8191
+	default 100
+	help
+	  Threshold for in-activity detection.
+
+config ADXL367_ACTIVITY_TIME
+	int "Activity time"
+	range 0 $(UINT8_MAX)
+	default 100
+	help
+	  The activity timer implements a robust activity detection that
+	  minimizes false positive motion triggers. When the timer is used,
+	  only sustained motion can trigger activity detection. Value is the
+	  number of samples. For example, at 100Hz ODR, 100 value translates
+	  to 1 second.
+
+config ADXL367_INACTIVITY_TIME
+	int "In-activity time"
+	range 0 $(UINT16_MAX)
+	default 100
+	help
+	  The time that all enabled axes must be lower than the inactivity
+	  threshold for an inactivity event to be detected. Value is the
+	  number of samples. For example, at 100Hz ODR, 100 value translates
+	  to 1 second.
+
+config ADXL367_ACTIVITY_DETECTION_MODE
+	bool "Use activity detection"
+	default y
+	help
+	  Enable Activity detection.
+
+config ADXL367_INACTIVITY_DETECTION_MODE
+	bool "Use inactivity detection"
+	default y
+	help
+	  Enable Inactivity detection.
+
+
+config ADXL367_REFERENCED_ACTIVITY_DETECTION_MODE
+	bool "Use referenced activity detection"
+	default y
+	help
+	  Activity detection can be configured as referenced or absolute.
+	  When using absolute activity detection, acceleration samples are
+	  compared directly to a user set threshold to determine whether
+	  motion is present.
+
+config ADXL367_REFERENCED_INACTIVITY_DETECTION_MODE
+	bool "Use referenced inactivity detection"
+	default y
+	help
+	  Inactivity detection can be configured as referenced or absolute.
+	  When using absolute inactivity detection, acceleration samples are
+	  compared directly to a user set threshold to determine whether
+	  motion is present.
+
+choice ADXL367_TRIGGER_MODE
+	prompt "Trigger mode"
+	default ADXL367_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config ADXL367_TRIGGER_NONE
+	bool "No trigger"
+
+config ADXL367_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ADXL367_TRIGGER
+
+config ADXL367_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ADXL367_TRIGGER
+
+endchoice
+
+config ADXL367_TRIGGER
+	bool
+
+config ADXL367_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ADXL367_TRIGGER_OWN_THREAD && ADXL367_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ADXL367_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ADXL367_TRIGGER_OWN_THREAD && ADXL367_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ADXL367

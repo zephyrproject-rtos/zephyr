@@ -1,0 +1,13 @@
+# NPCX Pin Controller configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+
+config PINCTRL_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) pin controller driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_PINCTRL_ENABLED
+	help
+	  This option enables the pin controller driver for NPCX family of
+	  processors.

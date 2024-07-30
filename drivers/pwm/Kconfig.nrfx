@@ -1,0 +1,22 @@
+# Copyright (c) 2018, Cue Health Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_NRFX
+	bool "nRF PWM nrfx driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_PWM_ENABLED
+	select NRFX_PWM0 if HAS_HW_NRF_PWM0
+	select NRFX_PWM1 if HAS_HW_NRF_PWM1
+	select NRFX_PWM2 if HAS_HW_NRF_PWM2
+	select NRFX_PWM3 if HAS_HW_NRF_PWM3
+	select NRFX_PWM20 if HAS_HW_NRF_PWM20
+	select NRFX_PWM21 if HAS_HW_NRF_PWM21
+	select NRFX_PWM22 if HAS_HW_NRF_PWM22
+	select NRFX_PWM120 if HAS_HW_NRF_PWM120
+	select NRFX_PWM130 if HAS_HW_NRF_PWM130
+	select NRFX_PWM131 if HAS_HW_NRF_PWM131
+	select NRFX_PWM132 if HAS_HW_NRF_PWM132
+	select NRFX_PWM133 if HAS_HW_NRF_PWM133
+	select PINCTRL
+	help
+	  Enable support for nrfx Hardware PWM driver for nRF52 MCU series.

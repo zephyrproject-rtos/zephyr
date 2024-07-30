@@ -1,0 +1,169 @@
+# Copyright (c) 2020 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HAWKBIT
+	bool "Eclipse hawkBit Firmware Over-the-Air support"
+	depends on SETTINGS
+	depends on FLASH
+	depends on REBOOT
+	depends on HWINFO
+	depends on NET_TCP
+	depends on NET_SOCKETS
+	depends on IMG_MANAGER
+	depends on NETWORKING
+	depends on HTTP_CLIENT
+	depends on DNS_RESOLVER
+	depends on JSON_LIBRARY
+	depends on BOOTLOADER_MCUBOOT
+	select MPU_ALLOW_FLASH_WRITE
+	select IMG_ENABLE_IMAGE_CHECK
+	select IMG_ERASE_PROGRESSIVELY
+	help
+	  hawkBit is a domain independent back-end framework for polling out
+	  software updates to constrained edge devices as well as more powerful
+	  controllers and gateways connected to IP based networking infrastructure.
+
+if HAWKBIT
+config HAWKBIT_POLL_INTERVAL
+	int "Time to poll interval (in minutes)"
+	default 5
+	range 1 43200
+	help
+	  Set the interval that the hawkbit update server will be polled.
+	  This time interval is zero and 43200 minutes(30 days). This will be overridden
+	  by the value configured in the settings of the hawkBit server.
+
+config HAWKBIT_SHELL
+	bool "hawkBit shell utilities"
+	depends on SHELL
+	help
+	  Activate shell module that provides hawkBit commands.
+
+config HAWKBIT_SERVER
+	string "User address for the hawkbit server"
+	help
+	  Configure the hawkbit server address.
+
+config HAWKBIT_PORT
+	int "Port number for the hawkbit server"
+	default 8080
+	help
+	  Configure the hawkbit port number.
+
+config HAWKBIT_SET_SETTINGS_RUNTIME
+	bool "Set hawkbit settings at runtime"
+	help
+	  Enable to set hawkbit settings at runtime.
+
+choice HAWKBIT_DDI_SECURITY
+	prompt "hawkBit DDI API authentication modes"
+	default HAWKBIT_DDI_NO_SECURITY
+
+config HAWKBIT_DDI_NO_SECURITY
+	bool "No authentication security"
+	help
+	  No authentication security for the hawkBit DDI API.
+
+config HAWKBIT_DDI_TARGET_SECURITY
+	bool "Use target security token authentication"
+	help
+	  Use target security token authentication for the hawkBit DDI API.
+
+config HAWKBIT_DDI_GATEWAY_SECURITY
+	bool "Use gateway security token authentication"
+	help
+	  Use gateway security token authentication for the hawkBit DDI API.
+
+endchoice
+
+config HAWKBIT_DDI_SECURITY_TOKEN
+	string "Authentication security token"
+	depends on HAWKBIT_DDI_TARGET_SECURITY || HAWKBIT_DDI_GATEWAY_SECURITY
+	default ""
+	help
+	  Authentication security token for the configured hawkBit DDI
+	  authentication mode.
+
+config HAWKBIT_CUSTOM_ATTRIBUTES
+	bool "Custom device attributes"
+	help
+	  Use custom definition of device attributes.
+
+config HAWKBIT_STATUS_BUFFER_SIZE
+	int "hawkBit status buffer size"
+	default 200
+	help
+	  Set the size of the buffer, which is used to store the
+	  json strings, that are sent to the hawkBit server. It might
+	  be increased if the custom attributes are used extensively.
+
+config HAWKBIT_CUSTOM_DEVICE_ID
+	bool "Custom device id through callback function"
+	help
+	  Be able to customize the device id during runtime to a custom value,
+	  by configuring the callback function. See `hawkbit_set_device_identity_cb`
+
+config HAWKBIT_DEVICE_ID_MAX_LENGTH
+	int "Maximum length of the device id"
+	depends on HAWKBIT_CUSTOM_DEVICE_ID
+	range 1 128
+	default 32
+	help
+	  Maximum length of the device id.
+
+config HAWKBIT_USE_TLS
+	bool "Use TLS for hawkBit server connection"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Use TLS for hawkBit connection.
+
+if HAWKBIT_USE_TLS
+
+choice HAWKBIT_CERT_TAG
+	prompt "hawkBit certificate tag"
+	default HAWKBIT_USE_STATIC_CERT_TAG
+
+config HAWKBIT_USE_STATIC_CERT_TAG
+	bool "Use static certificate tag"
+	help
+	  Use static certificate tag for TLS connection to the hawkBit server.
+
+config HAWKBIT_USE_DYNAMIC_CERT_TAG
+	bool "Use dynamic certificate tag"
+	depends on HAWKBIT_SET_SETTINGS_RUNTIME
+	help
+	  Use dynamic certificate tag for TLS connection to the hawkBit server.
+
+endchoice
+
+config HAWKBIT_STATIC_CERT_TAG
+	int "Static certificate tag"
+	depends on HAWKBIT_USE_STATIC_CERT_TAG
+	default 1
+	help
+	  Static certificate tag for TLS connection to the hawkBit server.
+
+endif
+
+choice HAWKBIT_REBOOT_MODE
+	prompt "Reboot mode after update"
+	default HAWKBIT_REBOOT_WARM
+
+config HAWKBIT_REBOOT_WARM
+	bool "Warm reboot after update"
+	help
+	  Do a warm reboot after the update.
+
+config HAWKBIT_REBOOT_COLD
+	bool "Cold reboot after update"
+	help
+	  Do a cold reboot after the update.
+
+endchoice
+
+module = HAWKBIT
+module-str = Log Level for hawkbit
+module-help = Enables logging for hawkBit code.
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

@@ -1,0 +1,30 @@
+common:
+  tags:
+    - net
+    - socket
+    - userspace
+  depends_on: netif
+  min_ram: 21
+  platform_exclude:
+    - native_posix/native/64
+    - native_posix
+    # See #61246 for info about these next two excludes
+    - vmu_rt1170/mimxrt1176/cm7
+    - mimxrt1160_evk/mimxrt1166/cm7
+tests:
+  net.socket.socketpair: {}
+  net.socket.socketpair.newlib:
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_REQUIRES_FULL_LIBC=y
+  net.socket.socketpair.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  net.socket.socketpair.high_mem:
+    min_ram: 64
+    extra_configs:
+      # Low buffer sizes (e.g., 8192) will verify the crash fix, but tests will still
+      # fail due to insufficient memory. So, use high buffer sizes.
+      - CONFIG_NET_SOCKETPAIR_BUFFER_SIZE=4096
+      - CONFIG_HEAP_MEM_POOL_SIZE=32768

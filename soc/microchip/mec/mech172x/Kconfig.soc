@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Microchip MECH172x MCU core series
+
+config SOC_SERIES_MECH172X
+	bool
+	select SOC_FAMILY_MICROCHIP_MEC
+	help
+	  Enable support for Microchip MEC Cortex-M4F MCU series
+
+config SOC_SERIES
+	default "mech172x" if SOC_SERIES_MECH172X
+
+config SOC_MECH1723_NLJ
+	bool
+	select SOC_SERIES_MECH172X
+
+config SOC_MECH1723_NSZ
+	bool
+	select SOC_SERIES_MECH172X
+
+config SOC
+	default "mech1723_nlj" if SOC_MECH1723_NLJ
+	default "mech1723_nsz" if SOC_MECH1723_NSZ

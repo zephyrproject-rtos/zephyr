@@ -1,0 +1,16 @@
+# STMicroelectronics STM32H7RS MCU series
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32H7RSX
+	select ARM
+	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select HAS_STM32CUBE
+	select CPU_HAS_ARM_MPU
+	select HAS_SWO
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE

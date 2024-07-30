@@ -1,0 +1,296 @@
+# Bluetooth ATT/GATT configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ATT and GATT Options"
+
+config BT_ATT_ERR_TO_STR
+	bool "Print ATT error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of ATT error
+	  codes represented as strings.
+	  See bt_att_err_to_str() for more details.
+
+config BT_ATT_TX_COUNT
+	int "Number of ATT buffers"
+	default BT_BUF_ACL_TX_COUNT
+	default 3
+	range 1 $(UINT8_MAX)
+	help
+	  These buffers are only used for sending anything over ATT.
+	  Requests, responses, indications, confirmations, notifications.
+
+config BT_ATT_PREPARE_COUNT
+	int "Number of ATT prepare write buffers"
+	default 0
+	range 0 64
+	help
+	  Number of buffers available for ATT prepare write, setting
+	  this to 0 disables GATT long/reliable writes.
+
+config BT_ATT_RETRY_ON_SEC_ERR
+	bool "Automatic security elevation and retry on security errors"
+	default y
+	depends on BT_SMP
+	help
+	  If an ATT request fails due to insufficient security, the host will
+	  try to elevate the security level and retry the ATT request.
+
+config BT_EATT
+	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
+	depends on BT_L2CAP_ECRED
+	select EXPERIMENTAL
+	select BT_GATT_READ_MULT_VAR_LEN
+	help
+	  This option enables support for Enhanced ATT bearers support. When
+	  enabled additional L2CAP channels can be connected as bearers enabling
+	  multiple outstanding request.
+
+if BT_EATT
+
+config BT_EATT_MAX
+	int "Maximum number of Enhanced ATT bearers"
+	default 3
+	range 1 16
+
+	help
+	  Number of Enhanced ATT bearers available.
+
+
+config BT_EATT_AUTO_CONNECT
+	bool "Automatically connect EATT bearers when a link is established"
+	default y
+	help
+	  The device will try to connect BT_EATT_MAX enhanced ATT bearers when a
+	  connection to a peer is established.
+
+endif # BT_EATT
+
+config BT_GATT_AUTO_RESUBSCRIBE
+	bool "Automatic re-subscription to characteristics"
+	default y
+	imply BT_GATT_AUTO_SEC_REQ
+	depends on BT_GATT_CLIENT
+	help
+	  Quirk: upon re-establishing a bonded connection, assumes the remote
+	  forgot the CCC values and sets them again. If this behavior is not
+	  desired for a particular subscription, set the
+	  `BT_GATT_SUBSCRIBE_FLAG_NO_RESUB` flag.
+	  This also means that upon a reconnection, the application will get an
+	  unprompted call to its `subscribe` callback.
+
+config BT_GATT_AUTO_SEC_REQ
+	bool "Automatic security re-establishment request as a peripheral"
+	default y
+	depends on BT_SMP
+	help
+	  This option requests security re-establishment automatically whenever
+	  a reconnection to a GATT client is established and
+	  there are notifiable or indicatable characteristics for which security
+	  is required. This configuration option only applies to the peripheral
+	  role, which sends a Security Request for this purpose.
+	  When disabled, it is the application's responsibility to call
+	  bt_conn_set_security() to re-establish security prior to sending any
+	  notifications or indications on the characteristics that require
+	  security (unless the central does that first).
+	  This option has been introduced to avoid interoperability issues with
+	  commercially available central devices that react negatively to
+	  receiving a Security Request immediately after reconnection.
+
+config BT_GATT_SERVICE_CHANGED
+	bool "GATT Service Changed support"
+	default y
+	help
+	  This option enables support for the service changed characteristic.
+
+config BT_GATT_DYNAMIC_DB
+	bool "GATT dynamic database support"
+	depends on BT_GATT_SERVICE_CHANGED
+	help
+	  This option enables registering/unregistering services at runtime.
+
+config BT_GATT_CACHING
+	bool "GATT Caching support"
+	default y
+	depends on BT_GATT_SERVICE_CHANGED
+	select TINYCRYPT if !BT_USE_PSA_API
+	select TINYCRYPT_AES if !BT_USE_PSA_API
+	select TINYCRYPT_AES_CMAC if !BT_USE_PSA_API
+	select PSA_WANT_KEY_TYPE_AES if BT_USE_PSA_API
+	select PSA_WANT_ALG_CMAC if BT_USE_PSA_API
+	help
+	  This option enables support for GATT Caching. When enabled the stack
+	  will register Client Supported Features and Database Hash
+	  characteristics which can be used by clients to detect if anything has
+	  changed on the GATT database.
+
+if BT_GATT_CACHING
+
+config BT_GATT_NOTIFY_MULTIPLE
+	bool "GATT Notify Multiple Characteristic Values support"
+	depends on BT_GATT_CACHING
+	help
+	  This option enables support for the GATT Notify Multiple
+	  Characteristic Values procedure.
+
+if BT_GATT_NOTIFY_MULTIPLE
+
+config BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS
+	int "Delay for batching multiple notifications in a single PDU."
+	default 1
+	range 0 4000
+	help
+	  Sets the time (in milliseconds) during which consecutive GATT
+	  notifications will be tentatively appended to form a single
+	  ATT_MULTIPLE_HANDLE_VALUE_NTF PDU.
+
+	  If set to 0, batching is disabled. Then, the only way to send
+	  ATT_MULTIPLE_HANDLE_VALUE_NTF PDUs is to use bt_gatt_notify_multiple.
+
+	  See the documentation of bt_gatt_notify() for more details.
+
+endif # BT_GATT_NOTIFY_MULTIPLE
+
+config BT_GATT_ENFORCE_CHANGE_UNAWARE
+	bool "GATT Enforce change-unaware state"
+	depends on BT_GATT_CACHING
+	help
+	  When enable this option blocks notification and indications to client
+	  to conform to the following statement from the Bluetooth 5.1
+	  specification:
+	  '...the server shall not send notifications and indications to such
+	  a client until it becomes change-aware."
+	  In case the service cannot deal with sudden errors (-EAGAIN) then it
+	  shall not use this option.
+
+endif # BT_GATT_CACHING
+
+config BT_GATT_ENFORCE_SUBSCRIPTION
+	bool "GATT Enforce characteristic subscription"
+	default y
+	help
+	  When enabled, this option will make the server block sending
+	  notifications and indications to a device which has not subscribed to
+	  the supplied characteristic.
+
+config BT_GATT_CLIENT
+	bool "GATT client support"
+	help
+	  This option enables support for the GATT Client role.
+
+config BT_GATT_READ_MULTIPLE
+	bool "GATT Read Multiple Characteristic Values support"
+	default y
+	help
+	  This option enables support for the GATT Read Multiple Characteristic
+	  Values procedure.
+
+config BT_GATT_READ_MULT_VAR_LEN
+	bool "GATT Read Multiple Variable Length Characteristic Values support"
+	default y
+	help
+	  This option enables support for the GATT Read Multiple Variable Length
+	  Characteristic Values procedure. Mandatory if EATT is enabled, optional
+	  otherwise (Core spec v5.3, Vol 3, Part G, Section 4.2, Table 4.1).
+
+config BT_GATT_AUTO_DISCOVER_CCC
+	bool "Support to automatic discover the CCC handles of characteristics"
+	depends on BT_GATT_CLIENT
+	help
+	  This option enables support for GATT to initiate discovery for CCC
+	  handles if the CCC handle is unknown by the application.
+
+config BT_GATT_AUTO_UPDATE_MTU
+	bool "Automatically send ATT MTU exchange request on connect"
+	depends on BT_GATT_CLIENT
+	help
+	  This option if enabled allows automatically sending request for ATT
+	  MTU exchange.
+
+config BT_GAP_AUTO_UPDATE_CONN_PARAMS
+	bool "Automatic Update of Connection Parameters"
+	default y
+	depends on BT_PERIPHERAL
+	help
+	  This option if enabled allows automatically sending request for connection
+	  parameters update after GAP recommended 5 seconds of connection as
+	  peripheral.
+
+config BT_GAP_PERIPHERAL_PREF_PARAMS
+	bool "Configure peripheral preferred connection parameters"
+	default y
+	depends on BT_PERIPHERAL
+	help
+	  This allows to configure peripheral preferred connection parameters.
+	  Enabling this option results in adding PPCP characteristic in GAP.
+	  If disabled it is up to application to set expected connection parameters.
+
+if BT_GAP_PERIPHERAL_PREF_PARAMS
+config BT_PERIPHERAL_PREF_MIN_INT
+	int "Peripheral preferred minimum connection interval in 1.25ms units"
+	default 24
+	range 6 $(UINT16_MAX) if !BT_CONN_PARAM_ANY
+	help
+	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
+
+config BT_PERIPHERAL_PREF_MAX_INT
+	int "Peripheral preferred maximum connection interval in 1.25ms units"
+	default 40
+	range 6 $(UINT16_MAX) if !BT_CONN_PARAM_ANY
+	help
+	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
+
+config BT_PERIPHERAL_PREF_LATENCY
+	int "Peripheral preferred peripheral latency in Connection Intervals"
+	default 0
+	range 0 499 if !BT_CONN_PARAM_ANY
+
+config BT_PERIPHERAL_PREF_TIMEOUT
+	int "Peripheral preferred supervision timeout in 10ms units"
+	default 42
+	range 10 $(UINT16_MAX) if !BT_CONN_PARAM_ANY
+	help
+	  It is up to user to provide valid timeout which pass required minimum
+	  value: in milliseconds it shall be larger than
+	  "(1+ Conn_Latency) * Conn_Interval_Max * 2"
+	  where Conn_Interval_Max is given in milliseconds.
+	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
+endif # BT_GAP_PERIPHERAL_PREF_PARAMS
+
+config BT_DEVICE_NAME_GATT_WRITABLE
+	bool "Allow to write name by remote GATT clients"
+	depends on BT_DEVICE_NAME_DYNAMIC
+	default y
+	help
+	  Enabling this option allows remote GATT clients to write to device
+	  name GAP characteristic.
+
+if BT_DEVICE_NAME_GATT_WRITABLE
+config DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+	bool "Encryption required to write name by remote GATT clients"
+	default y
+	help
+	  Enabling this option requires the connection to be encrypted to write
+	  to the device name GAP characteristic.
+
+
+config DEVICE_NAME_GATT_WRITABLE_AUTHEN
+	bool "Authentication required to write name by remote GATT clients"
+	help
+	  Enabling this option requires the connection to be encrypted and
+	  authenticated to write to the device name GAP characteristic.
+
+endif #BT_DEVICE_NAME_GATT_WRITABLE
+
+config BT_GATT_AUTHORIZATION_CUSTOM
+	bool "Custom authorization of GATT operations [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option allows the user to define application-specific
+	  authorization logic for GATT operations that can be registered
+	  with the bt_gatt_authorization_cb_register API. See the API
+	  documentation for more details.
+
+endmenu

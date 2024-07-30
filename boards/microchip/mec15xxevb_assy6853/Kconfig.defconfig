@@ -1,0 +1,42 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MEC15XXEVB_ASSY6853
+
+config INPUT
+	default y if KSCAN
+
+config ESPI_XEC
+	default y
+	depends on ESPI
+
+if RTOS_TIMER
+
+# XEC RTOS timer HW frequency is fixed at 32768
+# The driver requires tickless mode and ticks per
+# second to be 32768 for accurate operation.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768
+
+endif # RTOS_TIMER
+
+if !RTOS_TIMER
+
+# If RTOS timer is not enabled we use ARM Cortex-M
+# SYSTICK. SYSTICK frequency is 48MHz divided by
+# SOC_MEC1501_PROC_CLK_DIV.
+#
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+endif # RTOS_TIMER
+
+endif # BOARD_MEC15XXEVB_ASSY6853

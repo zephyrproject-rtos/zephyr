@@ -1,0 +1,349 @@
+#
+# Copyright (c) 2021, Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Xilinx GEM Ethernet controller
+
+compatible: "xlnx,gem"
+
+include: ethernet-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Specifies the base clock frequency from which the GEM's TX clock
+      frequency will be derived using two dividers in the respective GEM's
+      clock control register in the CRL_APB. The GEM's TX clock frequency
+      is determined by the current link speed reported by the PHY, to
+      which it will be adjusted at run-time. Therefore, the value of this
+      item must be set to the clock frequency of the PLL supplying the
+      respective GEM's TX clock - by default, this is the IO PLL.
+
+  mdc-divider:
+    type: int
+    required: true
+    description: |
+      The MDC clock divider for the respective GEM. This is the divider
+      applied to the LPD_LSBUS clock in order to derive MDIO interface
+      clock driving communications with the attached PHY. Refer to the
+      ZynqMP register documentation (ug1087), network_config (GEM) Register
+      Description, bits [20:18] to determine the appropriate divider for
+      the current target's LPD LSBUS clock frequency.
+
+  init-mdio-phy:
+    type: boolean
+    description: |
+      Activates the management of a PHY associated with the controller in-
+      stance. If this parameter is activated at the board level, the de-
+      fault values of the associated parameters mdio-phy-address, phy-poll-
+      interval, link-speed and advertise-lower-link-speeds should be checked
+      and overwritten at the board level if required.
+
+  mdio-phy-address:
+    type: int
+    required: true
+    description: |
+      The address on the MDIO bus of the PHY associated with the controller
+      instance. Set the address to 0 for auto-detection (first responding
+      PHY will be claimed by the driver, watch out in case of shared MDIO
+      use), or to a fixed address between 1 and 32.
+
+  phy-poll-interval:
+    type: int
+    required: true
+    description: |
+      PHY status polling interval in milliseconds for a driver instance
+      managing an associated PHY.
+
+  link-speed:
+    type: int
+    required: true
+    description: |
+      Nominal link speed. If no PHY is managed by an instance of this driver,
+      the respective controller will be configured to match the link speed
+      specified here. If a PHY is managed by the driver, advertisement of
+      the link speed specified here will be requested. If the optional pro-
+      perty advertise-lower-link-speeds is set, advertisement of the link
+      speed specified here plus any valid link speed below this value will
+      be requested.
+    enum:
+      - 1
+      - 2
+      - 3
+
+  advertise-lower-link-speeds:
+    type: boolean
+    description: |
+      Indicates to a driver instance which manages an associated PHY on
+      the MDIO bus to include link speeds lower than the nominal value
+      set in the link-speed property in the advertisement when requesting
+      link speed auto-negotiation with a peer system.
+
+  handle-rx-in-isr:
+    type: boolean
+    description: |
+      Moves the handling of the frame received interrupt including the
+      transfer of packet data from the DMA to network packet buffers and
+      the subsequent propagation of the received packets to the network
+      stack into the context of the ISR. Due to the unpredictability of
+      the runtime of the ISR whenever large amounts of data are received,
+      handling of the RX interrupt is normally deferred to the context
+      of the system work queue.
+
+  handle-tx-in-workq:
+    type: boolean
+    description: |
+      Moves the handling of the frame transmission done interrupt into the
+      context of the system work queue. By default, TX done handling is per-
+      formed in the context of the ISR, as it only involves a limited number
+      of memory accesses. This option CAN NOT be used if any component ex-
+      ists within the current system setup that triggers the transmission
+      of packets from within the context of the system work queue!
+
+  amba-ahb-dbus-width:
+    type: int
+    required: true
+    description: AMBA AHB data bus width.
+    enum:
+      - 0
+      - 1
+      - 2
+
+  amba-ahb-burst-length:
+    type: int
+    required: true
+    description: AMBA AHB burst length for DMA operations.
+    enum:
+      - 1
+      - 4
+      - 8
+      - 16
+
+  hw-rx-buffer-size:
+    type: int
+    required: true
+    description: |
+      Hardware RX buffer size, scalable between 1 kB and 8 kB, where the full
+      8 kB should be the default.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  hw-rx-buffer-offset:
+    type: int
+    required: true
+    description: |
+      Data offset in the hardware RX packet buffer (in bytes). Valid range is
+      0-3 bytes.
+
+  hw-tx-buffer-size-full:
+    type: boolean
+    description: |
+      When set, the hardware TX data buffer will make use of the full 4 kB
+      that are available. If unset, the hardware TX data buffer will be
+      limited to 2 kB.
+
+  rx-buffer-descriptors:
+    type: int
+    required: true
+    description: |
+      The number of descriptors to be allocated in the RX buffer descriptor
+      ring. Must be <= 255.
+
+  rx-buffer-size:
+    type: int
+    required: true
+    description: |
+      The size of each receive data buffer, must be a multiple of 8, highest
+      valid value is 16320, values less than 64 are not really useful.
+
+  tx-buffer-descriptors:
+    type: int
+    required: true
+    description: |
+      The number of descriptors to be allocated in the TX buffer descriptor
+      ring. Must be <= 255.
+
+  tx-buffer-size:
+    type: int
+    required: true
+    description: |
+      The size of each transmit data buffer, highest valid value is 16380,
+      values less than 64 are not really useful.
+
+  ignore-ipg-rxer:
+    type: boolean
+    description: |
+      Optional feature flag - Ignore IPG rx_er. When set, rx_er has no
+      effect on the GEM's operation when rx_dv is low. Set this when using
+      the RGMII wrapper in half-duplex mode.
+
+  disable-reject-nsp:
+    type: boolean
+    description: |
+      Optional feature flag - Receive bad preamble. When set, frames with
+      non-standard preamble will not be rejected.
+
+  ipg-stretch:
+    type: boolean
+    description: |
+      Optional feature flag - Enable IPG stretch. When set, the transmit
+      IPG can be increased above 96 bit times depending on the previous
+      frame length using the IPG stretch register.
+
+  sgmii-mode:
+    type: boolean
+    description: |
+      Optional feature flag - Enable SGMII mode. Changes the behaviour of
+      the auto-negotiation advertisement and link partner ability registers
+      to meet the requirements of SGMII and reduces the duration of the link
+      timer from 10 ms to 1.6 ms.
+
+  disable-reject-fcs-crc-errors:
+    type: boolean
+    description: |
+      Optional feature flag - Disable rejection of FCS/CRC errors.
+      When set, frames with FCS/CRC errors will not be rejected. FCS error
+      statistics will still be collected for frames with bad FCS and FCS
+      status will be recorded in the frame's DMA descriptor. This option
+      should not be activated for normal operation.
+
+  rx-halfdup-while-tx:
+    type: boolean
+    description: |
+      Optional feature flag - Enable frames to be received in half-duplex
+      mode while transmitting.
+
+  rx-checksum-offload:
+    type: boolean
+    description: |
+      Optional feature flag - Enable RX IP/TCP/UDP checksum offload to
+      hardware. Frames with bad IP, TCP or UDP checksums will be discarded.
+      This option is NOT supported by the QEMU implementation of the GEM!
+
+  tx-checksum-offload:
+    type: boolean
+    description: |
+      Optional feature flag - Enable TX IP/TCP/UDP checksum offload to
+      hardware. This option is NOT supported by the QEMU implementation
+      of the GEM!
+
+  disable-pause-copy:
+    type: boolean
+    description: |
+      Optional feature flag - Do not copy received pause frames to memory.
+      Set this option in order to prevent valid pause frames from being
+      copied to memory. When set, pause frames are not copied to memory
+      regardless of the state of the copy all frames bit, whether a hash
+      match is found or whether a type ID match is identified. If a desti-
+      nation address match is found the pause frame will be copied to
+      memory. Note that valid pause frames received will still increment
+      pause statistics and pause the transmission of frames as required.
+
+  discard-rx-fcs:
+    type: boolean
+    description: |
+      Optional feature flag - Remove FCS of received frames.
+      When set, received frames will be written to memory without their
+      frame check sequence (last 4 bytes). The frame length indicated will
+      be reduced by four bytes in this mode.
+
+  discard-rx-length-errors:
+    type: boolean
+    description: |
+      Optional feature flag - Discard frames with length field errors.
+      When set, frames with a measured length shorter than the extracted
+      length field (as indicated by bytes 13 and 14 in a non-VLAN tagged
+      frame) will be discarded. This only applies to frames with a length
+      field less than 0x0600.
+
+  pause-frame:
+    type: boolean
+    description: |
+      Optional feature flag - Enable pause. When set, transmission will
+      pause if a non zero 802.3 classic pause frame is received and PFC
+      has not been negotiated.
+
+  tbi:
+    type: boolean
+    description: |
+      Optional feature flag - Enable TBI. When set, the TBI interface is en-
+      bled instead of the GMII/MII interface.
+
+  ext-address-match:
+    type: boolean
+    description: |
+      Optional feature flag - Enable external address match. When set, the
+      external address match interface can be used to copy frames to memory.
+
+  long-frame-rx-support:
+    type: boolean
+    description: |
+      Optional feature flag - Enable reception of 1536 byte frames.
+      Normally, the GEM rejects any frame above 1518 bytes.
+
+  unicast-hash:
+    type: boolean
+    description: |
+      Optional feature flag - Enable unicast hash. When set, unicast frames
+      will be accepted when the 6 bit hash function of the destination
+      address points to a bit that is set in the hash register.
+
+  multicast-hash:
+    type: boolean
+    description: |
+      Optional feature flag - Enable multicast hash. When set, multicast
+      frames will be accepted when the 6 bit hash function of the desti-
+      nation address points to a bit that is set in the hash register.
+
+  reject-broadcast:
+    type: boolean
+    description: |
+      Optional feature flag - Reject broadcast frames. When set, frames
+      addressed to the all-ones broadcast address will be rejected.
+
+  promiscuous-mode:
+    type: boolean
+    description: |
+      Optional feature flag - Enable promiscuous mode. When set, all valid
+      frames will be accepted.
+
+  discard-non-vlan:
+    type: boolean
+    description: Optional feature flag - Discard non-VLAN frames. When set,
+      only VLAN tagged frames will be passed to the address matching logic.
+
+  full-duplex:
+    type: boolean
+    description: |
+      Optional feature flag - Enables full duplex reception and transmission.
+
+  discard-rx-frame-ahb-unavail:
+    type: boolean
+    description: |
+      Optional feature flag - Discard received packets when no AHB resource
+      is available.
+
+  ahb-packet-endian-swap:
+    type: boolean
+    description: |
+      Optional feature flag - Enable AHB packet data endianness swap to big
+      endian. If this flag is not set, data will be little endian.
+
+  ahb-md-endian-swap:
+    type: boolean
+    description: |
+      Optional feature flag - Enable AHB management descriptor data endian-
+      ness swap to big endian. If this flag is not set, data will be little
+      endian.

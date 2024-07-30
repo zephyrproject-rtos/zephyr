@@ -1,0 +1,20 @@
+common:
+  tags:
+    - dns
+    - net
+  depends_on: netif
+  timeout: 600
+  min_ram: 21
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
+tests:
+  net.dns.resolve:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.dns.resolve.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.dns.resolve.no_ipv6:
+    extra_args: CONF_FILE=prj-no-ipv6.conf
+    min_ram: 16

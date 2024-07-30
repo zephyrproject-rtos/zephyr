@@ -1,0 +1,23 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ucans32k1sic
+name: NXP UCANS32K1SIC
+vendor: nxp
+type: mcu
+arch: arm
+ram: 124
+flash: 1024
+toolchain:
+  - zephyr
+supported:
+  - mpu
+  - gpio
+  - uart
+  - pinctrl
+  - i2c
+  - spi
+  - pwm
+  - can
+  - watchdog
+  - counter

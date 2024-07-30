@@ -1,0 +1,11 @@
+# Nordic Semiconductor nRF52840 MCU
+
+# Copyright (c) 2016 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF52840_QIAA
+
+config NUM_IRQS
+	default 48
+
+endif # SOC_NRF52840_QIAA

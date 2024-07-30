@@ -1,0 +1,55 @@
+# FDC2X1X Capacitance-to-Digital Converter configuration options
+
+# Copyright (c) 2020 arithmetics.io
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FDC2X1X
+	bool "FDC2X1X Capacitance-to-Digital Converter"
+	default y
+	depends on DT_HAS_TI_FDC2X1X_ENABLED
+	depends on FULL_LIBC_SUPPORTED || EXTERNAL_LIBC
+	select I2C
+	help
+	  Enable driver for FDC2X1X Capacitance-to-Digital Converter.
+
+if FDC2X1X
+
+choice
+	prompt "Trigger mode"
+	default FDC2X1X_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config FDC2X1X_TRIGGER_NONE
+	bool "No trigger"
+
+config FDC2X1X_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select FDC2X1X_TRIGGER
+
+config FDC2X1X_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select FDC2X1X_TRIGGER
+
+endchoice
+
+config FDC2X1X_TRIGGER
+	bool
+
+config FDC2X1X_THREAD_PRIORITY
+	int "Thread priority"
+	depends on FDC2X1X_TRIGGER_OWN_THREAD && FDC2X1X_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config FDC2X1X_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on FDC2X1X_TRIGGER_OWN_THREAD && FDC2X1X_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # FDC2X1X

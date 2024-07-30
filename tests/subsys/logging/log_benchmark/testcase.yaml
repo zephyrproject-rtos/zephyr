@@ -1,0 +1,25 @@
+common:
+  integration_platforms:
+    - native_sim
+  tags: logging
+tests:
+  logging.benchmark:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+  logging.benchmark_speed:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_LOG_SPEED=y
+  logging.benchmark_user:
+    integration_platforms:
+      - qemu_x86
+    platform_allow:
+      - qemu_x86
+      - native_posix
+      - native_sim
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_TEST_USERSPACE=y

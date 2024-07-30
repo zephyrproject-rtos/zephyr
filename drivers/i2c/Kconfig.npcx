@@ -1,0 +1,21 @@
+# NPCX I2C driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) I2C driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_I2C_PORT_ENABLED
+	help
+	  This option enables the I2C driver for NPCX family of
+	  processors.
+	  Say y if you wish to use I2C modules on NPCX MCU.
+
+config I2C_NPCX_PORT_INIT_PRIORITY
+	int "NPCX I2C port init priority"
+	default 51
+	depends on I2C_NPCX
+	help
+	  Initialization priority for the I2C port on an NPCX device, must be
+	  set to a lower priority than the controller one (I2C_INIT_PRIORITY).

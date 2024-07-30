@@ -1,0 +1,16 @@
+common:
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+sample:
+  name: Grove Light Sensor
+tests:
+  sample.sensor.grove_light:
+    tags:
+      - drivers
+      - sensor
+      - grove
+      - light
+    platform_allow: nrf52dk/nrf52832
+    integration_platforms:
+      - nrf52dk/nrf52832
+    harness: grove
+    depends_on: adc

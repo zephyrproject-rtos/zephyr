@@ -1,0 +1,9 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_NXP_MAILBOX
+	bool "NXP Mailbox driver for MBOX"
+	default y
+	depends on DT_HAS_NXP_MBOX_MAILBOX_ENABLED
+	help
+	  Driver for NXP Mailbox Unit around MBOX.

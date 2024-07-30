@@ -1,0 +1,39 @@
+common:
+  tags:
+    - trusted-firmware-m
+    - mcuboot
+  modules:
+    - psa-arch-tests
+  platform_allow:
+    - nrf5340dk/nrf5340/cpuapp/ns
+    - nrf9160dk/nrf9160/ns
+    - nrf9161dk/nrf9161/ns
+    - v2m_musca_s1/musca_s1/ns
+  integration_platforms:
+    - nrf5340dk/nrf5340/cpuapp/ns
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "Non-Secure system starting..."
+      - "\\#\\#\\#\\# Execute test suites for the Non-secure area \\#\\#\\#\\#"
+      - "\\*\\*\\* End of Non-secure test suites \\*\\*\\*"
+
+sample:
+  name: "TFM Regression Test"
+
+tests:
+  sample.tfm.regression_ipc_lvl1:
+    extra_args:
+      - CONFIG_TFM_IPC=y
+      - CONFIG_TFM_ISOLATION_LEVEL=1
+    timeout: 200
+
+  sample.tfm.regression_ipc_lvl2:
+    timeout: 200
+
+  sample.tfm.regression_sfn:
+    extra_args:
+      - CONFIG_TFM_SFN=y
+      - CONFIG_TFM_ISOLATION_LEVEL=1
+    timeout: 200

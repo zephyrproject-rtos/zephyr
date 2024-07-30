@@ -1,0 +1,26 @@
+sample:
+  description: Bluetooth Low Energy Audio Unicast Client sample
+  name: Bluetooth Low Energy Audio Unicast Client sample
+tests:
+  sample.bluetooth.audio_unicast_client:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+      - native_sim
+    tags: bluetooth
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+    sysbuild: true
+  sample.bluetooth.audio_unicast_client.bt_ll_sw_split:
+    harness: bluetooth
+    platform_allow:
+      - nrf52_bsim
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52dk/nrf52832
+    extra_args: OVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
+    tags: bluetooth

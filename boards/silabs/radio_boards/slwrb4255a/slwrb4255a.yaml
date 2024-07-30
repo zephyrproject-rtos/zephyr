@@ -1,0 +1,22 @@
+identifier: slwrb4255a
+name: EFR32FG13 2400/915 MHz 19 dBm Dual Band Radio Board (SLWRB4255A)
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - nvs
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

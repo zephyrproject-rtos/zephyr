@@ -1,0 +1,13 @@
+identifier: stm3210c_eval
+name: ST STM3210C Evaluation
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 256
+supported:
+  - watchdog
+vendor: st

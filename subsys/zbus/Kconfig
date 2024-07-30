@@ -1,0 +1,79 @@
+# Copyright (c) 2022 Rodrigo Peixoto <rodrigopex@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ZBUS
+	bool "Zbus support"
+	depends on MULTITHREADING
+	help
+	  Enables support for Zephyr message bus.
+
+if ZBUS
+
+config ZBUS_CHANNELS_SYS_INIT_PRIORITY
+	default 5
+	int "The priority used during the SYS_INIT procedure."
+
+config ZBUS_CHANNEL_NAME
+	bool "Channel name field"
+
+config ZBUS_OBSERVER_NAME
+	bool "Observer name field"
+
+config ZBUS_MSG_SUBSCRIBER
+	select NET_BUF
+	bool "Message subscribers will receive all messages in sequence."
+
+if ZBUS_MSG_SUBSCRIBER
+
+choice ZBUS_MSG_SUBSCRIBER_BUF_ALLOC
+	prompt "ZBus msg_subscribers buffer allocation"
+	default ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC
+
+config ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC
+	bool "Use heap to allocate msg_subscriber buffers data"
+
+config ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
+	bool "Use fixed data size for msg_subscriber buffers pool"
+
+endchoice
+
+config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION
+	default n
+	bool "Use isolated pools instead of only using the global pool."
+
+config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE
+	default 16
+	int "The count of net_buf available to be used simutaneously."
+
+if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
+
+config ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE
+	int "The size of the biggest message used with ZBus."
+
+endif # ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
+
+endif # ZBUS_MSG_SUBSCRIBER
+
+config ZBUS_RUNTIME_OBSERVERS
+	bool "Runtime observers support."
+
+config ZBUS_PRIORITY_BOOST
+	bool "ZBus priority boost algorithm"
+	default y
+	help
+	  ZBus implements the Highest Locker Protocol that relies on the observers’ thread priority
+	  to determine a temporary publisher priority.
+
+config ZBUS_ASSERT_MOCK
+	bool "Zbus assert mock for test purposes."
+	help
+	  This configuration enables the developer to change the _ZBUS_ASSERT behavior. When this configuration is
+	  enabled, _ZBUS_ASSERT returns -EFAULT instead of assert. It makes it more straightforward to test invalid
+	  parameters.
+
+
+module = ZBUS
+module-str = zbus
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ZBUS

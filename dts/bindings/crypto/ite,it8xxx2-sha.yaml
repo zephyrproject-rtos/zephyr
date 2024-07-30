@@ -1,0 +1,12 @@
+# Copyright (c) 2023, ITE Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8XXX2 Crypto SHA accelerator.
+
+compatible: "ite,it8xxx2-sha"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

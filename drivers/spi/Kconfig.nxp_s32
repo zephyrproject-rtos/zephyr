@@ -1,0 +1,20 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_S32_SPI
+	bool "NXP S32 SPI driver"
+	default y
+	depends on DT_HAS_NXP_S32_SPI_ENABLED
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  Enable support for NXP S32 SPI driver.
+
+if NXP_S32_SPI
+
+config NXP_S32_SPI_INTERRUPT
+	bool "NXP S32 SPI Interrupt Support"
+	default y
+	help
+	  Enable Interrupt support for SPI communication.
+
+endif # NXP_S32_SPI

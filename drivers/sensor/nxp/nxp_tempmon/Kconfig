@@ -1,0 +1,12 @@
+# NXP temperature monitor (TEMPMON)
+
+# Copyright (c) 2023 Centralp
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_TEMPMON
+	bool "NXP temperature monitor (TEMPMON)"
+	default y
+	depends on DT_HAS_NXP_TEMPMON_ENABLED
+	help
+	  Enable driver for the NXP temperature monitor (TEMPMON).
+	  This is used to retrieve on-die operational temperature.

@@ -1,0 +1,137 @@
+# Statistics Options
+
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_STATISTICS
+	bool "Network statistics"
+	help
+	  Manage statistics accounting. This takes memory so say 'n' if unsure.
+
+if NET_STATISTICS
+
+module = NET_STATISTICS
+module-dep = NET_LOG
+module-str = Log level for network statistics
+module-help = Enables statistics module to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_STATISTICS_PER_INTERFACE
+	bool "Collect statistics per network interface"
+	default y
+	help
+	  Collect statistics also for each network interface.
+
+config NET_STATISTICS_USER_API
+	bool "Expose statistics through NET MGMT API"
+	select NET_MGMT
+	help
+	  Enable this if you need to grab relevant statistics in your code,
+	  via calling net_mgmt() with relevant NET_REQUEST_STATS_GET_* command.
+
+config NET_STATISTICS_PERIODIC_OUTPUT
+	bool "Simple periodic output"
+	depends on NET_LOG
+	help
+	  Print out all the statistics periodically through logging.
+	  This is meant for testing mostly.
+
+config NET_STATISTICS_IPV4
+	bool "IPv4 statistics"
+	depends on NET_IPV4
+	default y
+	help
+	  Keep track of IPv4 related statistics
+
+config NET_STATISTICS_IPV6
+	bool "IPv6 statistics"
+	depends on NET_IPV6
+	default y
+	help
+	  Keep track of IPv6 related statistics
+
+config NET_STATISTICS_IPV6_ND
+	bool "IPv6 statistics"
+	depends on NET_IPV6_ND
+	default y
+	help
+	  Keep track of IPv6 Neighbor Discovery related statistics
+
+config NET_STATISTICS_ICMP
+	bool "ICMP statistics"
+	depends on NET_IPV6 || NET_IPV4
+	default y
+	help
+	  Keep track of ICMPv4/6 related statistics, depending whether IPv4
+	  and/or IPv6 is/are enabled.
+
+config NET_STATISTICS_UDP
+	bool "UDP statistics"
+	depends on NET_UDP
+	default y
+	help
+	  Keep track of UDP related statistics
+
+config NET_STATISTICS_TCP
+	bool "TCP statistics"
+	depends on NET_TCP
+	default y
+	help
+	  Keep track of TCP related statistics
+
+config NET_STATISTICS_MLD
+	bool "Multicast Listener Discovery (MLD) statistics"
+	depends on NET_IPV6_MLD
+	default y
+	help
+	  Keep track of MLD related statistics
+
+config NET_STATISTICS_IGMP
+	bool "Internet Group Management Protocol (IGMP) statistics"
+	depends on NET_IPV4_IGMP
+	default y
+	help
+	  Keep track of IGMP related statistics
+
+config NET_STATISTICS_PPP
+	bool "Point-to-point (PPP) statistics"
+	depends on NET_L2_PPP
+	default y
+	help
+	  Keep track of PPP related statistics
+
+config NET_STATISTICS_ETHERNET
+	bool "Ethernet statistics"
+	depends on NET_L2_ETHERNET
+	default y
+	help
+	  Keep track of Ethernet related statistics. Note that this
+	  requires support from the ethernet driver. The driver needs
+	  to collect the statistics.
+
+config NET_STATISTICS_ETHERNET_VENDOR
+	bool "Vendor specific Ethernet statistics"
+	depends on NET_STATISTICS_ETHERNET
+	help
+	  Allows Ethernet drivers to provide statistics information
+	  from vendor specific hardware registers in a form of
+	  key-value pairs. Deciphering the information may require
+	  vendor documentation.
+
+config NET_STATISTICS_POWER_MANAGEMENT
+	bool "Power management statistics"
+	depends on NET_POWER_MANAGEMENT
+	help
+	  This will provide how many time a network interface went
+	  suspended, for how long the last time and on average.
+
+config NET_STATISTICS_WIFI
+	bool "Wi-Fi statistics"
+	depends on NET_L2_WIFI_MGMT
+	default y
+	help
+	  Keep track of Wi-Fi related statistics. Note that this
+	  requires support from the Wi-Fi driver. The driver needs
+	  to collect the statistics.
+
+endif # NET_STATISTICS

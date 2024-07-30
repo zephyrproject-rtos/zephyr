@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2021 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Arduino Header pins: MOSI:D11, MISO:D12 */
+&spi1 {
+	dmas = <&dma2 5 3 0x28440 0x03
+		&dma2 2 3 0x28480 0x03>;
+	dma-names = "tx", "rx";
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
+
+&dma2 {
+	status = "okay";
+};

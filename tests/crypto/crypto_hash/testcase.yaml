@@ -1,0 +1,9 @@
+tests:
+  crypto.hash:
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_args: EXTRA_CONF_FILE=prj_mtls_shim.conf
+    tags: crypto

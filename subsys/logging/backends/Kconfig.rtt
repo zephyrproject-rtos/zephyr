@@ -1,0 +1,109 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_RTT
+	bool "Segger J-Link RTT backend"
+	depends on USE_SEGGER_RTT
+	default y if !SHELL_BACKEND_RTT
+	select SEGGER_RTT_CUSTOM_LOCKING
+	select LOG_OUTPUT
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  When enabled, backend will use RTT for logging. This backend works on a per
+	  message basis. Only a whole message (terminated with a carriage return: '\r')
+	  is transferred to up-buffer at once depending on available space and
+	  selected mode.
+	  In panic mode backend always blocks and waits until there is space
+	  in up-buffer for a message and message is transferred to host.
+
+if LOG_BACKEND_RTT
+
+choice LOG_BACKEND_RTT_MODE
+	prompt "Logger behavior"
+	default LOG_BACKEND_RTT_MODE_BLOCK
+
+config LOG_BACKEND_RTT_MODE_DROP
+	bool "Drop messages that do not fit in up-buffer."
+	help
+	  If there is not enough space in up-buffer for a message, drop it.
+	  Number of dropped messages will be logged.
+	  Increase up-buffer size helps to reduce dropping of messages.
+
+config LOG_BACKEND_RTT_MODE_BLOCK
+	bool "Block until message is transferred to host."
+	help
+	  Waits until there is enough space in the up-buffer for a message.
+
+config LOG_BACKEND_RTT_MODE_OVERWRITE
+	bool "Overwrite messages if up-buffer full"
+	help
+	  If there is not enough space in up-buffer for a message overwrite
+	  oldest one.
+
+endchoice
+
+backend = RTT
+backend-str = rtt
+source "subsys/logging/Kconfig.template.log_format_config"
+
+config LOG_BACKEND_RTT_MESSAGE_SIZE
+	int "Size of internal buffer for storing messages."
+	range 32 256
+	default 128
+	depends on LOG_BACKEND_RTT_MODE_DROP
+	help
+	  This option defines maximum message size transferable to up-buffer.
+
+if LOG_BACKEND_RTT_MODE_BLOCK
+
+config LOG_BACKEND_RTT_OUTPUT_BUFFER_SIZE
+	int "Size of the output buffer"
+	default 16
+	help
+	  Buffer is used by log_output module for preparing output data (e.g.
+	  string formatting).
+
+config LOG_BACKEND_RTT_RETRY_CNT
+	int "Number of retries"
+	default 4
+	help
+	  Number of TX retries before dropping the data and assuming that
+	  RTT session is inactive.
+
+config LOG_BACKEND_RTT_RETRY_DELAY_MS
+	int "Delay between TX retries in milliseconds"
+	default 5
+	help
+	  Sleep period between TX retry attempts. During RTT session, host pulls
+	  data periodically. Period starts from 1-2 milliseconds and can be
+	  increased if traffic on RTT increases (also from host to device). In
+	  case of heavy traffic data can be lost and it may be necessary to
+	  increase delay or number of retries.
+
+endif # LOG_BACKEND_RTT_MODE_BLOCK
+
+config LOG_BACKEND_RTT_BUFFER
+	int "Buffer number used for logger output."
+	range 0 SEGGER_RTT_MAX_NUM_UP_BUFFERS
+	default 0
+	help
+	  Select index of up-buffer used for logger output, by default it uses
+	  terminal up-buffer and its settings.
+
+config LOG_BACKEND_RTT_BUFFER_SIZE
+	int "Size of reserved up-buffer for logger output."
+	default 1024
+	depends on LOG_BACKEND_RTT_BUFFER > 0
+	help
+	  Specify reserved size of up-buffer used for logger output.
+
+# Enable processing of printk calls using log if terminal buffer is used.
+# Same buffer is used by RTT console. If printk would go through RTT console
+# that will lead to corruption of RTT data which is not protected against being
+# interrupted by an interrupt.
+config LOG_BACKEND_RTT_FORCE_PRINTK
+	bool
+	default y if LOG_BACKEND_RTT_BUFFER = 0 && RTT_CONSOLE
+	select LOG_PRINTK
+
+endif # LOG_BACKEND_RTT

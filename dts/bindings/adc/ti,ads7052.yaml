@@ -1,0 +1,17 @@
+# Copyright (c) 2023, Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instrument Single Channel SPI ADC
+
+compatible: "ti,ads7052"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+on-bus: spi
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

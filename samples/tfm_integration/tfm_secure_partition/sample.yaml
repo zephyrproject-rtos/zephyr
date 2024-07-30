@@ -1,0 +1,29 @@
+common:
+  tags:
+    - trusted-firmware-m
+  platform_allow:
+    - mps2/an521/cpu0/ns
+    - v2m_musca_s1/musca_s1/ns
+    - nrf5340dk/nrf5340/cpuapp/ns
+    - nrf9160dk/nrf9160/ns
+    - lpcxpresso55s69/lpc55s69/cpu0/ns
+  integration_platforms:
+    - mps2/an521/cpu0/ns
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "Digest: be45cb2605bf36bebde684841a28f0fd43c69850a3dce5fedba69928ee3a8991"
+      - "Digest: 1452c8f04245d355722fdbfb03c69bcfd380b7dff911a3e425013397251f6a4e"
+      - "Digest: d3b4349010abb691b9584b6fd6b41ec54596ef7b98d853fb4f5bfa690f50f222"
+      - "Digest: 5afbcfede855ca834ff5b4e8a44a32206a51381f3cf52f5001a3241f017ac41a"
+      - "Digest: 983318380c325099da63de2e7ca57c1630693b28b4754e08817533295dbfcfbb"
+      - "No valid secret for key, received expected error code"
+sample:
+  name: "TFM Secure Partition Sample"
+
+tests:
+  sample.tfm.secure_partition:
+    tags:
+      - trusted-firmware-m
+      - mcuboot

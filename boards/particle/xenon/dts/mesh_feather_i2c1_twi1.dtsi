@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Add I2C1 support on Particle Mesh via nRF52840 TWI1
+ *
+ * NOTE: This file is replicated in particle_{argon,xenon}.
+ * Changes should be made in all instances. */
+
+&pinctrl {
+	i2c1_default: i2c1_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 1)>,
+				<NRF_PSEL(TWIM_SCL, 1, 2)>;
+		};
+	};
+
+	i2c1_sleep: i2c1_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 1)>,
+				<NRF_PSEL(TWIM_SCL, 1, 2)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c1 { /* feather I2C1 */
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+

@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&xspi1 {
+	/* request 57 for XSPI1 */
+	dmas = <&gpdma1 4 57 STM32_DMA_PERIPH_TX
+		&gpdma1 5 57 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+};
+
+&gpdma1 {
+	status = "okay";
+};

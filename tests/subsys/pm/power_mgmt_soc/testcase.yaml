@@ -1,0 +1,16 @@
+tests:
+  pm.soc:
+    platform_allow:
+      - cc26x2r1_launchxl
+      - cc1352r1_launchxl
+      - mec15xxevb_assy6853
+      - mec1501modular_assy6885
+      - nucleo_f429zi
+      - nucleo_wb55rg
+      - nucleo_l476rg
+      - twr_ke18f
+      - mimxrt595_evk/mimxrt595s/cm33
+      - rd_rw612_bga
+    tags: pm
+    integration_platforms:
+      - mec15xxevb_assy6853
