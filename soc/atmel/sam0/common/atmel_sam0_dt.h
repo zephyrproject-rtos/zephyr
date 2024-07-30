@@ -14,8 +14,8 @@
 #ifndef _ATMEL_SAM0_DT_H_
 #define _ATMEL_SAM0_DT_H_
 
-#define MCLK_APBAMASK_EIC_BIT_MASK (_UINT32_(0x1) << MCLK_APBAMASK_EIC_Pos) 
-#define GCLK_PCHCTRL_CHEN_BIT_MASK (_UINT32_(0x1) << GCLK_PCHCTRL_CHEN_Pos) 
+#define MCLK_APBAMASK_EIC_BIT_MASK (0x1 << MCLK_APBAMASK_EIC_Pos) 
+#define GCLK_PCHCTRL_CHEN_BIT_MASK (0x1 << GCLK_PCHCTRL_CHEN_Pos) 
 
 /* Helper macro to get MCLK register address for corresponding
  * that has corresponding clock enable bit.
