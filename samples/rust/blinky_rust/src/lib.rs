@@ -19,6 +19,8 @@ extern "C" fn rust_main() {
     let mut led0 = zephyr::devicetree::aliases::led0::get_instance();
     led0.configure(GPIO_OUTPUT_ACTIVE);
 
+    // README: To test user mode, remove the following line -> accessing the GPIO driver
+    // in user mode will fail and lead to a kernel oops.
     object_access_grant(&led0, &Thread::current_get());
 
     Thread::user_mode_enter(move || {

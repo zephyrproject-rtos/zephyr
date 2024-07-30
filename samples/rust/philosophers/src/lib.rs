@@ -60,6 +60,8 @@ extern "C" fn rust_main() {
         let fork1 = forks[fork_id1].clone();
         let fork2 = forks[fork_id2].clone();
 
+        // README: To test user mode, remove K_INHERIT_PERMS -> accessing the mutex created
+        // by this thread will fail and lead to a kernel oops.
         let thread = Thread::new(move || {
             philosopher(phil_id, fork1.as_ref(), fork2.as_ref());
         }, 2048, 5, K_USER | K_INHERIT_PERMS, Duration::ZERO).unwrap();

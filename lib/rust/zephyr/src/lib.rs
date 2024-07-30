@@ -71,8 +71,9 @@ mod heap;
 // If we have allocation, we can also support logging.
 #[cfg(CONFIG_RUST_ALLOC)]
 pub mod log {
-    #[cfg(CONFIG_LOG)]
-    compile_error!("Rust with CONFIG_LOG is not yet supported");
+    // Allow CONFIG_LOG for now to see kernel messages when panicking.
+    //#[cfg(CONFIG_LOG)]
+    //compile_error!("Rust with CONFIG_LOG is not yet supported");
 
     mod log_printk;
 
