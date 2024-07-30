@@ -34,3 +34,5 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_DFD_SRV dfd.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI od_priv_proxy.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOL_PDU_RPL_CLI sol_pdu_rpl.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_BRG_CFG_CLI brg_cfg.c)
