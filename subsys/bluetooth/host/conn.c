@@ -2738,6 +2738,9 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 		info->le.data_len = &conn->le.data_len;
 #endif
+#if defined(CONFIG_BT_SUBRATING)
+		info->le.subrate = &conn->le.subrate;
+#endif
 		if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_SC)) {
 			info->security.flags |= BT_SECURITY_FLAG_SC;
 		}
@@ -3021,6 +3024,109 @@ int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool reporting_ena
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE, buf, NULL);
 }
 #endif /* CONFIG_BT_PATH_LOSS_MONITORING */
+
+#if defined(CONFIG_BT_SUBRATING)
+void notify_subrate_change(struct bt_conn *conn,
+			   const struct bt_conn_le_subrate_changed params)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->subrate_changed) {
+			callback->subrate_changed(conn, &params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->subrate_changed) {
+			cb->subrate_changed(conn, &params);
+		}
+	}
+}
+
+static bool le_subrate_common_params_valid(const struct bt_conn_le_subrate_param *param)
+{
+	/* All limits according to BT Core spec 5.4 [Vol 4, Part E, 7.8.123] */
+
+	if (param->subrate_min < 0x0001 || param->subrate_min > 0x01F4 ||
+	    param->subrate_max < 0x0001 || param->subrate_max > 0x01F4 ||
+	    param->subrate_min > param->subrate_max) {
+		return false;
+	}
+
+	if (param->max_latency > 0x01F3 ||
+	    param->subrate_max * (param->max_latency + 1) > 500) {
+		return false;
+	}
+
+	if (param->continuation_number > 0x01F3 ||
+	    param->continuation_number >= param->subrate_max) {
+		return false;
+	}
+
+	if (param->supervision_timeout < 0x000A ||
+	    param->supervision_timeout > 0xC80) {
+		return false;
+	}
+
+	return true;
+}
+
+int bt_conn_le_subrate_set_defaults(const struct bt_conn_le_subrate_param *params)
+{
+	struct bt_hci_cp_le_set_default_subrate *cp;
+	struct net_buf *buf;
+
+	if (!IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		return -ENOTSUP;
+	}
+
+	if (!le_subrate_common_params_valid(params)) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_DEFAULT_SUBRATE, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->subrate_min = sys_cpu_to_le16(params->subrate_min);
+	cp->subrate_max = sys_cpu_to_le16(params->subrate_max);
+	cp->max_latency = sys_cpu_to_le16(params->max_latency);
+	cp->continuation_number = sys_cpu_to_le16(params->continuation_number);
+	cp->supervision_timeout = sys_cpu_to_le16(params->supervision_timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_DEFAULT_SUBRATE, buf, NULL);
+}
+
+int bt_conn_le_subrate_request(struct bt_conn *conn,
+			       const struct bt_conn_le_subrate_param *params)
+{
+	struct bt_hci_cp_le_subrate_request *cp;
+	struct net_buf *buf;
+
+	if (!le_subrate_common_params_valid(params)) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SUBRATE_REQUEST, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->subrate_min = sys_cpu_to_le16(params->subrate_min);
+	cp->subrate_max = sys_cpu_to_le16(params->subrate_max);
+	cp->max_latency = sys_cpu_to_le16(params->max_latency);
+	cp->continuation_number = sys_cpu_to_le16(params->continuation_number);
+	cp->supervision_timeout = sys_cpu_to_le16(params->supervision_timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SUBRATE_REQUEST, buf, NULL);
+}
+#endif /* CONFIG_BT_SUBRATING */
 
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)

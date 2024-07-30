@@ -114,6 +114,10 @@ struct bt_conn_le {
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 	struct bt_conn_le_data_len_info data_len;
 #endif
+
+#if defined(CONFIG_BT_SUBRATING)
+	struct bt_conn_le_subrating_info subrate;
+#endif
 };
 
 #if defined(CONFIG_BT_CLASSIC)
@@ -473,6 +477,9 @@ void notify_tx_power_report(struct bt_conn *conn,
 
 void notify_path_loss_threshold_report(struct bt_conn *conn,
 				       struct bt_conn_le_path_loss_threshold_report report);
+
+void notify_subrate_change(struct bt_conn *conn,
+			   struct bt_conn_le_subrate_changed params);
 
 #if defined(CONFIG_BT_SMP)
 /* If role specific LTK is present */
