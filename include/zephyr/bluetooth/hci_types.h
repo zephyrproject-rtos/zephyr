@@ -704,6 +704,26 @@ struct bt_hci_cp_le_set_path_loss_reporting_enable {
 #define BT_HCI_LE_PATH_LOSS_REPORTING_ENABLE        0x01
 #define BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE BT_OP(BT_OGF_LE, 0x0079) /* 0x2079 */
 
+struct bt_hci_cp_le_set_default_subrate {
+	uint16_t subrate_min;
+	uint16_t subrate_max;
+	uint16_t max_latency;
+	uint16_t continuation_number;
+	uint16_t supervision_timeout;
+} __packed;
+
+struct bt_hci_cp_le_subrate_request {
+	uint16_t handle;
+	uint16_t subrate_min;
+	uint16_t subrate_max;
+	uint16_t max_latency;
+	uint16_t continuation_number;
+	uint16_t supervision_timeout;
+} __packed;
+
+#define BT_HCI_OP_LE_SET_DEFAULT_SUBRATE BT_OP(BT_OGF_LE, 0x007D) /* 0x207D */
+#define BT_HCI_OP_LE_SUBRATE_REQUEST     BT_OP(BT_OGF_LE, 0x007E) /* 0x207E */
+
 #define BT_HCI_CTL_TO_HOST_FLOW_DISABLE         0x00
 #define BT_HCI_CTL_TO_HOST_FLOW_ENABLE          0x01
 #define BT_HCI_OP_SET_CTL_TO_HOST_FLOW          BT_OP(BT_OGF_BASEBAND, 0x0031) /* 0x0c31 */
@@ -3098,6 +3118,16 @@ struct bt_hci_evt_le_biginfo_adv_report {
 	uint8_t  encryption;
 } __packed;
 
+#define BT_HCI_EVT_LE_SUBRATE_CHANGE            0x23
+struct bt_hci_evt_le_subrate_change {
+	uint8_t status;
+	uint16_t handle;
+	uint16_t subrate_factor;
+	uint16_t peripheral_latency;
+	uint16_t continuation_number;
+	uint16_t supervision_timeout;
+} __packed;
+
 /* Event mask bits */
 
 #define BT_EVT_BIT(n) (1ULL << (n))
@@ -3178,6 +3208,7 @@ struct bt_hci_evt_le_biginfo_adv_report {
 #define BT_EVT_MASK_LE_PATH_LOSS_THRESHOLD       BT_EVT_BIT(31)
 #define BT_EVT_MASK_LE_TRANSMIT_POWER_REPORTING  BT_EVT_BIT(32)
 #define BT_EVT_MASK_LE_BIGINFO_ADV_REPORT        BT_EVT_BIT(33)
+#define BT_EVT_MASK_LE_SUBRATE_CHANGE            BT_EVT_BIT(34)
 
 #define BT_EVT_MASK_LE_PER_ADV_SYNC_ESTABLISHED_V2 BT_EVT_BIT(35)
 #define BT_EVT_MASK_LE_PER_ADVERTISING_REPORT_V2   BT_EVT_BIT(36)
