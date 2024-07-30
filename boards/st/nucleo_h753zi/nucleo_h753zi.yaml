@@ -20,5 +20,6 @@ supported:
   - netif:eth
   - spi
   - usb_device
+  - watchdog
   - can
 vendor: st
