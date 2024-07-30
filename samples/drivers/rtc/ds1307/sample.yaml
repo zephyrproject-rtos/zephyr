@@ -1,0 +1,12 @@
+sample:
+  name: LSM303DLHC Magnetometer and Accelerometer data Monitor
+tests:
+  sample.rtc.ds1307:
+    harness: rtc
+    tags:
+      - samples
+      - sensor
+    depends_on:
+      - i2c
+      - rtc
+      - ds1307
