@@ -320,7 +320,7 @@
 #define MBEDTLS_GENPRIME
 #endif
 
-#if defined(CONFIG_MBEDTLS_ENTROPY_ENABLED)
+#if defined(CONFIG_MBEDTLS_ENTROPY_C)
 #define MBEDTLS_ENTROPY_C
 #endif
 
