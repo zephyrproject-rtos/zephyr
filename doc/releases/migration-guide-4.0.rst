@@ -104,6 +104,12 @@ Bluetooth Crypto
 Networking
 **********
 
+* The CoAP public API functions :c:func:`coap_get_block1_option` and
+  :c:func:`coap_get_block2_option` have changed. The ``block_number`` pointer
+  type has changed from ``uint8_t *`` to ``uint32_t *``. Additionally,
+  :c:func:`coap_get_block2_option` now accepts an additional ``bool *has_more``
+  parameter, to store the value of the more flag. (:github:`76052`)
+
 Other Subsystems
 ****************
 
