@@ -86,6 +86,8 @@ source "drivers/adc/Kconfig.cc32xx"
 
 source "drivers/adc/Kconfig.cc13xx_cc26xx"
 
+source "drivers/adc/Kconfig.cc23x0"
+
 source "drivers/adc/Kconfig.adc_emul"
 
 source "drivers/adc/Kconfig.vf610"

@@ -1,0 +1,10 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_CC23X0
+	bool "CC23X0 ADC driver"
+	default y
+	depends on DT_HAS_TI_CC23X0_ADC_ENABLED
+	select PINCTRL
+	help
+	  Enable the TI CC23X0 ADC driver.
