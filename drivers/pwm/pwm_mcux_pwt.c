@@ -320,6 +320,11 @@ static int mcux_pwt_init(const struct device *dev)
 		return err;
 	}
 
+	/* Clear all interrupts */
+	PWT_DisableInterrupts(config->base, PWT_CS_PWTIE_MASK |
+			     kPWT_PulseWidthReadyInterruptEnable |
+			     kPWT_CounterOverflowInterruptEnable);
+
 	config->irq_config_func(dev);
 
 	return 0;
