@@ -11,6 +11,7 @@
 
 pub mod align;
 pub mod object;
+pub mod sync;
 pub mod sys;
 
 // Bring in the generated kconfig module
