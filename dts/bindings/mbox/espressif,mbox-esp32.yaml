@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 soft mailbox bindings
+
+compatible: "espressif,mbox-esp32"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  shared-memory:
+    required: true
+    type: phandle
+
+  shared-memory-size:
+    required: true
+    type: int
+
+  interrupts:
+    required: true
+
+mbox-cells:
+  - channel
