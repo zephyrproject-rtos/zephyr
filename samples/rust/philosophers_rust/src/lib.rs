@@ -3,15 +3,18 @@
 
 #![no_std]
 
+extern crate alloc;
+
+use alloc::sync::Arc;
 use zephyr::{
     printkln,
     kernel_stack_define,
     kernel_thread_define,
     sys_mutex_define,
+    sync::Mutex,
 };
 use zephyr::object::KobjInit;
 use zephyr_sys::{
-    k_timeout_t,
     k_msleep,
 };
 
@@ -30,11 +33,13 @@ extern "C" fn rust_main() {
     */
     FORK1.init();
     let fork = FORK1.get();
+    let fork = Arc::new(Mutex::new(1, fork));
 
     printkln!("Pre fork");
     // PHIL_THREAD.simple_spawn(PHIL_STACK.token(), phil_thread);
+    let child_fork = fork.clone();
     PHIL_THREAD.spawn(PHIL_STACK.token(), move || {
-        phil_thread(1);
+        phil_thread(1, child_fork);
     });
     printkln!("Post fork");
 
@@ -46,28 +51,28 @@ extern "C" fn rust_main() {
     }
     loop {
         printkln!("stealing fork");
-        fork.lock(FOREVER);
-        printkln!("fork stolen");
-            // k_busy_wait(1_000_000);
-        unsafe { k_msleep(1_000) };
-        printkln!("Main: giving up fork");
-
-        fork.unlock();
+        {
+            let mut lock = fork.lock().unwrap();
+            let current = *lock;
+            *lock += 1;
+            printkln!("fork stolen: {}", current);
+            unsafe { k_msleep(1_000) };
+            printkln!("Main: giving up fork");
+        };
         unsafe { k_msleep(1) };
     }
 }
 
-const FOREVER: k_timeout_t = k_timeout_t { ticks: !0 };
-
-fn phil_thread(n: usize) {
+fn phil_thread(n: usize, fork: Arc<Mutex<usize>>) {
     printkln!("Child {} started", n);
-    let fork = FORK1.get();
-    // Print out periodically.
     loop {
-        fork.lock(FOREVER);
-        printkln!("Child eat");
-        fork.unlock();
-        unsafe { k_msleep(500) };
+        {
+            let mut lock = fork.lock().unwrap();
+            let current = *lock;
+            *lock += 1;
+            printkln!("Child eat: {}", current);
+            unsafe { k_msleep(500) };
+        }
     }
 }
 
