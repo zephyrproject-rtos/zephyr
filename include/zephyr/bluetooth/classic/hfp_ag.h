@@ -131,6 +131,15 @@ struct bt_hfp_ag_cb {
 	 */
 	void (*incoming)(struct bt_hfp_ag *ag, const char *number);
 
+	/** HF incoming call is held Callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  incoming call is held but not accepted.
+	 *
+	 *  @param ag HFP AG object.
+	 */
+	void (*incoming_held)(struct bt_hfp_ag *ag);
+
 	/** HF ringing Callback
 	 *
 	 *  If this callback is provided it will be called whenever the
@@ -280,6 +289,16 @@ int bt_hfp_ag_disconnect(struct bt_hfp_ag *ag);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_ag_remote_incoming(struct bt_hfp_ag *ag, const char *number);
+
+/** @brief Put the incoming call on hold
+ *
+ *  Put the incoming call on hold.
+ *
+ *  @param ag HFP AG object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_hold_incoming(struct bt_hfp_ag *ag);
 
 /** @brief Reject the incoming call
  *
