@@ -1,0 +1,12 @@
+common:
+  tags:
+    - kernel
+    - mmu
+    - demand_paging
+tests:
+  kernel.demand_paging.ondemand_section.arm64_semihost:
+    platform_allow:
+      - qemu_cortex_a53
+    extra_configs:
+      - CONFIG_SEMIHOST=y
+      - CONFIG_BACKING_STORE_ONDEMAND_SEMIHOST=y
