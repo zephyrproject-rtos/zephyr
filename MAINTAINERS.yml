@@ -3739,6 +3739,7 @@ STM32 Platforms:
     - gautierg-st
     - GeorgeCGV
     - marwaiehm-st
+    - mathieuchopstm
   files:
     - boards/st/
     - drivers/*/*stm32*.c
