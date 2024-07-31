@@ -82,8 +82,9 @@ macro_rules! kernel_thread_define {
         // Since the static object has an atomic that we assume is initialized, let the compiler put
         // this in the data section it finds appropriate (probably .bss if it is initialized to zero).
         // This only matters when the objects are being checked.
-        #[cfg_attr(not(CONFIG_RUST_CHECK_KOBJ_INIT),
-                   link_section = concat!(".noinit.", stringify!($name), ".", file!(), line!()))]
+        // TODO: This doesn't seem to work with the config.
+        // #[cfg_attr(not(CONFIG_RUST_CHECK_KOBJ_INIT),
+        //            link_section = concat!(".noinit.", stringify!($name), ".", file!(), line!()))]
         static $name: $crate::object::StaticKernelObject<$crate::raw::k_thread> =
             $crate::object::StaticKernelObject::new();
         // static $name: $crate::sys::thread::Thread = unsafe { ::core::mem::zeroed() };
