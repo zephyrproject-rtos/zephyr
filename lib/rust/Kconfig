@@ -22,11 +22,22 @@ config RUST
 if RUST
 
 config RUST_ALLOC
-       bool "Support an allocator in Rust code"
-       help
-         If enabled, the Rust zephyr rust support library will include support for an allocator.
-         This allocator will use the currently configured Zephyr allocator (malloc/free). With this
-         enabled, Rust applications can use the `alloc` crate.
+	bool "Support an allocator in Rust code"
+	help
+	  If enabled, the Rust zephyr rust support library will include support for an allocator.
+	  This allocator will use the currently configured Zephyr allocator (malloc/free). With this
+	  enabled, Rust applications can use the `alloc` crate.
+
+config RUST_CHECK_KOBJ_INIT
+	bool "Check at runtime that static kobjects are initialized"
+	help
+	  If enabled, the static kobject support in Rust will use an atomic
+	  variable to check that the kobject has had the appropriate
+	  initialization done to it.
+
+	  This adds a 32-bit value to each kobject and requires that these kobjects be placed in zero
+	  initialized memory. Accesses to the shared variable will invoke an atomic read, and the
+	  initializer will have a few atomic operations.
 
 endif # RUST
 
