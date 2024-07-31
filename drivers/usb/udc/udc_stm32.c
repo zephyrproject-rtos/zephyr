@@ -991,8 +991,8 @@ static int priv_clock_enable(void)
 		LL_AHB3_GRP1_DisableClock(LL_AHB3_GRP1_PERIPH_PWR);
 	}
 
+	/* Set the OTG PHY reference clock selection (through SYSCFG) block */
 	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_SYSCFG);
-	/* Set the OTG PHY reference clock selection */
 	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(SYSCFG_OTG_HS_PHY_CLK_SELECT_1);
 	/* Configuring the SYSCFG registers OTG_HS PHY : OTG_HS PHY enable*/
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
@@ -1066,6 +1066,11 @@ static int priv_clock_enable(void)
 	 */
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
+	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
+	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
+						LL_AHB2_GRP1_PERIPH_USBPHY);
 #else
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
