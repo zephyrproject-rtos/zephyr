@@ -6,6 +6,7 @@ zephyr_library()
 
 zephyr_library_sources(i2c_common.c)
 
+zephyr_library_sources_ifdef(CONFIG_I2C_CONTEXT i2c_context.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RTIO i2c_rtio.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SHELL		i2c_shell.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_BITBANG		i2c_bitbang.c)

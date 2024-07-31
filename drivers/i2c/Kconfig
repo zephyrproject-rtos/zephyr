@@ -13,6 +13,19 @@ menuconfig I2C
 
 if I2C
 
+config I2C_CONTEXT
+	bool
+	help
+	  Support I2C context used internally by drivers
+
+if I2C_CONTEXT
+
+config I2C_CONTEXT_TRANSFER_TIMEOUT_MS
+	int "Transfer timeout in milliseconds"
+	default 500
+
+endif # I2C_CONTEXT
+
 config I2C_SHELL
 	bool "I2C Shell"
 	depends on SHELL
