@@ -483,16 +483,33 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 	bool "Use a cryptographically secure driver as random source"
 	depends on CSPRNG_ENABLED
 	help
-	  Use cryptographically secure random generator to provide random data
-	  instead of legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG).
+	  Use a cryptographically secure random generator to provide random data
+	  instead of legacy Mbed TLS modules. This has a smaller footprint
+	  than its legacy counterpart MBEDTLS_PSA_CRYPTO_LEGACY_RNG, but it
+	  requires a cryptographically secure random number generator (CSPRNG)
+	  to be available in the system. If no CSPRNG is available:
+	  - there is no fallback to weak entropy random generators.
+	  - the initialization of PSA crypto will fail and none of its API
+	    will be available.
 
 config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Use legacy modules to generate random data"
 	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_ENABLED
 	help
-	  Use legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG) as random
-	  source generators.
+	  Use legacy Mbed TLS modules to generate random data. In this
+	  configuration the entropy module is used to gather some data and then
+	  either ctr_drbg or hmac_drbg are applied on top of it to improve
+	  the randomness.
+	  Security level in this case really depends on the type of entropy
+	  sources which are enabled in the system: if weak entropy sources are
+	  used, then the generated data will only be pseudo random. Strong
+	  entropy sources are strongly recommended (if possible) to have real
+	  random data.
+	  Another difference betwen this implementation and the
+	  MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG counterpart is the memory footprint:
+	  this implementation brings in legacy modules which are not required
+	  in the "external" version, so the footprint is larger.
 
 endchoice
 
