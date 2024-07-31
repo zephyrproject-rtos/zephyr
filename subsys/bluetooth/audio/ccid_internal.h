@@ -22,7 +22,7 @@
  *
  * @return uint8_t A content control ID value.
  */
-uint8_t bt_ccid_get_value(void);
+uint8_t bt_ccid_alloc_value(void);
 
 /**
  * @brief Get the GATT attribute of a CCID value
