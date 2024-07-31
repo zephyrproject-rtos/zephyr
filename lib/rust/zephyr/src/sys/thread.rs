@@ -13,6 +13,13 @@ use core::{ffi::c_void, ptr::{addr_of, null_mut}};
 
 use crate::{align::AlignAs, object::StaticKernelObject};
 
+#[cfg(CONFIG_RUST_ALLOC)]
+extern crate alloc;
+#[cfg(CONFIG_RUST_ALLOC)]
+use alloc::boxed::Box;
+#[cfg(CONFIG_RUST_ALLOC)]
+use core::mem::ManuallyDrop;
+
 /// Adjust the stack size for alignment.  Note that, unlike the C code, we don't include the
 /// reservation in this, as it has its own fields in the struct.
 pub const fn stack_len(size: usize) -> usize {
@@ -114,6 +121,31 @@ impl StaticKernelObject<k_thread> {
             }
         })
     }
+
+    #[cfg(CONFIG_RUST_ALLOC)]
+    /// Spawn a thread, running a closure.  The closure will be boxed to give to the new thread.
+    /// The new thread runs immediately.
+    pub fn spawn<F: FnOnce() + Send + 'static>(&self, stack: StackToken, child: F) {
+        let child: closure::Closure = Box::new(child);
+        let child = Box::into_raw(Box::new(closure::ThreadData {
+            closure: ManuallyDrop::new(child),
+        }));
+        self.init_help(move |raw| {
+            unsafe {
+                k_thread_create(
+                    raw,
+                    stack.base,
+                    stack.size,
+                    Some(closure::child),
+                    child as *mut c_void,
+                    null_mut(),
+                    null_mut(),
+                    5,
+                    0,
+                    FOREVER);
+            }
+        });
+    }
 }
 
 const FOREVER: k_timeout_t = k_timeout_t { ticks: !0 };
@@ -125,4 +157,24 @@ unsafe extern "C" fn simple_child(
 ) {
     let child: fn() -> () = core::mem::transmute(arg);
     (child)();
+}
+
+#[cfg(CONFIG_RUST_ALLOC)]
+/// Handle the closure case.  This invokes a double box to rid us of the fat pointer.  I'm not sure
+/// this is actually necessary.
+mod closure {
+    use core::{ffi::c_void, mem::ManuallyDrop};
+    use super::Box;
+
+    pub type Closure = Box<dyn FnOnce()>;
+
+    pub struct ThreadData {
+        pub closure: ManuallyDrop<Closure>,
+    }
+
+    pub unsafe extern "C" fn child(child: *mut c_void, _p2: *mut c_void, _p3: *mut c_void) {
+        let mut thread_data: Box<ThreadData> = unsafe { Box::from_raw(child as *mut ThreadData) };
+        let closure = unsafe { ManuallyDrop::take(&mut (*thread_data).closure) };
+        closure();
+    }
 }
