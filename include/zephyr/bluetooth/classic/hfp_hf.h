@@ -396,6 +396,21 @@ int bt_hfp_hf_terminate(struct bt_conn *conn);
  */
 int bt_hfp_hf_number_call(struct bt_conn *conn, const char *number);
 
+/** @brief Handsfree HF memory dialing call
+ *
+ *  Initiate outgoing voice calls using the memory dialing feature
+ *  of the AG.
+ *  Send the ATD>Nan... command to start memory dialing.
+ *  The result of the command will be notified through the callback
+ *  `dialing`.
+ *
+ *  @param conn Connection object.
+ *  @param location Memory location.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_memory_dial(struct bt_conn *conn, const char *location);
+
 /** @brief Handsfree HF setup audio connection
  *
  *  Setup audio conenction by sending AT+BCC.
