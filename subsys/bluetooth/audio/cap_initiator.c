@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/audio/ccid.h>
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -30,7 +31,6 @@
 
 #include "bap_endpoint.h"
 #include "cap_internal.h"
-#include "ccid_internal.h"
 #include "csip_internal.h"
 
 LOG_MODULE_REGISTER(bt_cap_initiator, CONFIG_BT_CAP_INITIATOR_LOG_LEVEL);
@@ -91,13 +91,14 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 		}
 
 		metadata_param->stream_context_found = true;
-	} else if (IS_ENABLED(CONFIG_BT_CCID) && data->type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
+	} else if (IS_ENABLED(CONFIG_BT_CONN) && data->type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
 		/* If the application supplies a CCID list, we verify that the CCIDs exist on our
 		 * device
+		 * This is guarded by CONFIG_BT_CONN as without that we do not have a GATT DB to
+		 * check.
 		 */
 		for (uint8_t i = 0U; i < data->data_len; i++) {
 			const uint8_t ccid = data->data[i];
-
 			if (bt_ccid_find_attr(ccid) == NULL) {
 				LOG_DBG("Unknown characteristic for CCID 0x%02X", ccid);
 				metadata_param->valid = false;
