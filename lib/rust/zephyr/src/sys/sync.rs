@@ -6,6 +6,7 @@ use zephyr_sys::{
 
 use crate::object::{KobjInit, StaticKernelObject};
 
+#[derive(Clone)]
 pub struct Mutex {
     pub item: *mut k_mutex,
 }
