@@ -136,6 +136,7 @@ config XTENSA
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	select ARCH_HAS_DIRECTED_IPIS
 	select THREAD_STACK_INFO
+	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	help
 	  Xtensa architecture
 
