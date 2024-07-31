@@ -1604,6 +1604,63 @@ int bt_hfp_hf_memory_dial(struct bt_conn *conn, const char *location)
 	return err;
 }
 
+static int bldn_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+
+	LOG_DBG("AT+BLDN (result %d) on %p", result, hf);
+
+	if (!atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_DIALING)) {
+		LOG_WRN("No dialing call");
+	}
+
+	if (result == AT_RESULT_CME_ERROR) {
+		err = bt_hfp_ag_get_cme_err(cme_err);
+	} else if (result == AT_RESULT_ERROR) {
+		err = -ENOTSUP;
+	} else {
+		err = 0;
+	}
+
+	if (bt_hf && bt_hf->dialing) {
+		bt_hf->dialing(hf->acl, err);
+	}
+	return 0;
+}
+
+int bt_hfp_hf_redial(struct bt_conn *conn)
+{
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_DIALING)) {
+		LOG_ERR("Outgoing call is started");
+		return -EBUSY;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, bldn_finish, "AT+BLDN");
+	if (err < 0) {
+		LOG_ERR("Fail to start memory dialing on %p", hf);
+	}
+
+	return err;
+}
+
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 static int bcc_finish(struct at_client *hf_at, enum at_result result,
 		   enum at_cme cme_err)
