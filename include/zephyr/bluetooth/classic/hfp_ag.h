@@ -95,6 +95,22 @@ struct bt_hfp_ag_cb {
 	 */
 	int (*memory_dial)(struct bt_hfp_ag *ag, const char *location, char **number);
 
+	/** HF phone number calling request Callback
+	 *
+	 *  If this callback is provided it will be called whenever a
+	 *  new call is requested with specific phone number from HFP unit.
+	 *  When the callback is triggered, the application needs to start
+	 *  dialing the number with the passed phone number.
+	 *  If the callback is invalid, the phone number dialing from HFP unit
+	 *  cannot be supported.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param number Dialing number
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*number_call)(struct bt_hfp_ag *ag, const char *number);
+
 	/** HF outgoing Callback
 	 *
 	 *  If this callback is provided it will be called whenever a
