@@ -223,6 +223,18 @@ struct bt_hfp_ag_cb {
 	 *  @param gain HF speaker gain value.
 	 */
 	void (*vgs)(struct bt_hfp_ag *ag, uint8_t gain);
+
+	/** HF ECNR turns off callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  ECNR turning off request is received from HF.
+	 *  If the callback is NULL or @kconfig{CONFIG_BT_HFP_AG_ECNR}
+	 *  is not enabled, the response result code of AT command
+	 *  will be an AT ERROR.
+	 *
+	 *  @param ag HFP AG object.
+	 */
+	void (*ecnr_turn_off)(struct bt_hfp_ag *ag);
 };
 
 /** @brief Register HFP AG profile
