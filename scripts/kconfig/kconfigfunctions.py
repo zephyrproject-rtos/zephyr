@@ -963,6 +963,10 @@ def arith(kconf, name, *args):
         return str(int(functools.reduce(operator.truediv, intarray)))
     elif name == "mod":
         return str(int(functools.reduce(operator.mod, intarray)))
+    elif name == "max":
+        return str(int(functools.reduce(max, intarray)))
+    elif name == "min":
+        return str(int(functools.reduce(min, intarray)))
     else:
         assert False
 
@@ -1046,6 +1050,8 @@ functions = {
         "mul": (arith, 1, 255),
         "div": (arith, 1, 255),
         "mod": (arith, 1, 255),
+        "max": (arith, 1, 255),
+        "min": (arith, 1, 255),
         "inc": (inc_dec, 1, 255),
         "dec": (inc_dec, 1, 255),
 }
