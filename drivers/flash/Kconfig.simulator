@@ -94,4 +94,21 @@ config FLASH_SIMULATOR_STAT_PAGE_COUNT
 	  This is why it's not possible to calculate the number of pages with
 	  preprocessor using DT properties.
 
+config FLASH_SIMULATOR_SEMIHOST
+	bool "Use semihosting for simulated flash"
+	select SEMIHOST
+	help
+	  Enabling this function leverages semihosting feature available on RISC-V and ARM
+	  and allows to simulate flash storage greater than RAM. The simulated flash memory
+	  is stored on a host computer as a binary file.
+
+if FLASH_SIMULATOR_SEMIHOST
+config FLASH_SIMULATOR_SEMIHOST_FILENAME
+	string "Name of binary file used as simulated flash"
+	default "flash_simulator.bin"
+
+config FLASH_SIMULATION_SEMIHOST_ERASE_AT_BOOT
+	bool "Erase flash content at the system initialization"
+endif
+
 endif # FLASH_SIMULATOR
