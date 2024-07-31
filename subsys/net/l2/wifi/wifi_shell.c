@@ -458,7 +458,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	struct getopt_state *state;
 	int opt;
 	bool secure_connection = false;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{"ssid", required_argument, 0, 's'},
 		{"passphrase", required_argument, 0, 'p'},
 		{"key-mgmt", required_argument, 0, 'k'},
@@ -1400,7 +1400,7 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 {
 	struct getopt_state *state;
 	int opt;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{"max_inactivity", required_argument, 0, 'i'},
 		{"max_num_sta", required_argument, 0, 's'},
 		{"help", no_argument, 0, 'h'},
@@ -1970,7 +1970,7 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{"peer", required_argument, 0, 'p'},
 		{"role", required_argument, 0, 'r'},
 		{"configurator", required_argument, 0, 'c'},
@@ -2018,7 +2018,7 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{"own", required_argument, 0, 'i'},
 		{"freq", required_argument, 0, 'f'},
 		{0, 0, 0, 0}};
@@ -2054,7 +2054,7 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{"role", required_argument, 0, 'r'},
 		{"freq", required_argument, 0, 'f'},
 		{0, 0, 0, 0}};
@@ -2090,7 +2090,7 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{"type", required_argument, 0, 't'},
 		{"opclass", required_argument, 0, 'o'},
 		{"channel", required_argument, 0, 'h'},
@@ -2152,7 +2152,7 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{"configurator", required_argument, 0, 'c'},
 		{"mode", required_argument, 0, 'm'},
 		{"ssid", required_argument, 0, 's'},
