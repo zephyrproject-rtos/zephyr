@@ -29,6 +29,16 @@ properties:
     description:
       Display rotation (CW) in degrees.
       If not defined, rotation is off by default.
+  
+  x-mirrored:
+    type: boolean
+    description:
+      Display content is mirrored along the x-axis.
+
+  y-mirrored:
+    type: boolean
+    description:
+      Display content is mirrored along the y-axis.
 
   display-inversion:
     type: boolean
