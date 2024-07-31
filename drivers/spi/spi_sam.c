@@ -657,16 +657,17 @@ static void spi_sam_iodev_start(const struct device *dev)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		ret = spi_sam_rx(dev, cfg->regs, sqe->buf, sqe->buf_len);
+		ret = spi_sam_rx(dev, cfg->regs, sqe->rx.buf, sqe->rx.buf_len);
 		break;
 	case RTIO_OP_TX:
-		ret = spi_sam_tx(dev, cfg->regs, sqe->buf, sqe->buf_len);
+		ret = spi_sam_tx(dev, cfg->regs, sqe->tx.buf, sqe->tx.buf_len);
 		break;
 	case RTIO_OP_TINY_TX:
-		ret = spi_sam_tx(dev, cfg->regs, sqe->tiny_buf, sqe->tiny_buf_len);
+		ret = spi_sam_tx(dev, cfg->regs, sqe->tiny_tx.buf, sqe->tiny_tx.buf_len);
 		break;
 	case RTIO_OP_TXRX:
-		ret = spi_sam_txrx(dev, cfg->regs, sqe->tx_buf, sqe->rx_buf, sqe->txrx_buf_len);
+		ret = spi_sam_txrx(dev, cfg->regs, sqe->txrx.tx_buf, sqe->txrx.rx_buf,
+			sqe->txrx.buf_len);
 		break;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
