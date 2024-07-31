@@ -3,10 +3,10 @@
 	status = "okay";
 };
 
-/ {
-	zephyr,user {
-		/* Select MCO pin to use. */
-		pinctrl-0 = <&rcc_mco_pa8>;
-		pinctrl-names = "default";
-	};
+&mco1 {
+	status = "okay";
+	source = <STM32_SRC_LSE>;
+	prescaler = <1>;
+	pinctrl-0 = <&rcc_mco_pa8>;
+	pinctrl-names = "default";
 };
