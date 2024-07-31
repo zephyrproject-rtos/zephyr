@@ -70,15 +70,18 @@ void *z_x86_userspace_prepare_thread(struct k_thread *thread)
 {
 	void *initial_entry;
 
-	struct z_x86_thread_stack_header *header =
+	if (z_stack_is_user_capable(thread->stack_obj)) {
+		struct z_x86_thread_stack_header *header =
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
-		(struct z_x86_thread_stack_header *)thread->stack_info.mapped.addr;
+			(struct z_x86_thread_stack_header *)thread->stack_info.mapped.addr;
 #else
-		(struct z_x86_thread_stack_header *)thread->stack_obj;
+			(struct z_x86_thread_stack_header *)thread->stack_obj;
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
-	thread->arch.psp =
-		header->privilege_stack + sizeof(header->privilege_stack);
+		thread->arch.psp = header->privilege_stack + sizeof(header->privilege_stack);
+	} else {
+		thread->arch.psp = NULL;
+	}
 
 #ifndef CONFIG_X86_COMMON_PAGE_TABLE
 	/* Important this gets cleared, so that arch_mem_domain_* APIs
