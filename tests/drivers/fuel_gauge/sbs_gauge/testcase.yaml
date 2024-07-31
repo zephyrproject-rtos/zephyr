@@ -13,6 +13,7 @@ tests:
     platform_exclude:
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
+      - hifive_unmatched/fu740/u74/smp
       - qemu_cortex_a53
       - qemu_cortex_a53/qemu_cortex_a53/smp
       - qemu_kvm_arm64

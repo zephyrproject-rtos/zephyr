@@ -17,6 +17,13 @@ clint:
 machine LoadPlatformDescriptionFromString $platform
 machine PyDevFromFile @scripts/pydev/flipflop.py 0x10000000 0x100 True
 showAnalyzer uart0
+emulation SetGlobalSerialExecution true
+
+sysbus.s7 EnableZephyrMode
+sysbus.u74_1 EnableZephyrMode
+sysbus.u74_2 EnableZephyrMode
+sysbus.u74_3 EnableZephyrMode
+sysbus.u74_4 EnableZephyrMode
 
 macro reset
 """
