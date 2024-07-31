@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(adc_cc23x0, CONFIG_ADC_LOG_LEVEL);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
@@ -64,6 +63,16 @@ struct adc_cc23x0_config {
 #endif
 };
 
+#ifdef CONFIG_PM_DEVICE
+struct adc_cc23x0_mem_cfg {
+	bool configured;
+	uint8_t ch;
+	uint32_t ref;
+	uint32_t clkdiv_field;
+	uint16_t clk_cycles;
+};
+#endif
+
 struct adc_cc23x0_data {
 	struct adc_context ctx;
 	const struct device *dev;
@@ -75,10 +84,11 @@ struct adc_cc23x0_data {
 	uint8_t ch_count;
 	uint8_t mem_index;
 	uint16_t *buffer;
-#ifdef CONFIG_PM_DEVICE
-	bool configured;
-#endif
+	#ifdef CONFIG_PM_DEVICE
+	struct adc_cc23x0_mem_cfg mem_cfg[ADC_CC23X0_MEM_COUNT];
+	#endif
 };
+
 
 static inline void adc_cc23x0_pm_policy_state_lock_get(void)
 {
@@ -124,12 +134,6 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	int ret;
 
-	ret = pm_device_runtime_get(cfg->dma_dev);
-	if (ret) {
-		LOG_ERR("Failed to resume DMA (%d)", ret);
-		return;
-	}
-
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (ret) {
 		LOG_ERR("Failed to configure DMA (%d)", ret);
@@ -142,21 +146,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 #else
 	data->mem_index = 0;
 #endif
-
 	adc_cc23x0_pm_policy_state_lock_get();
 
-	/* Set trigger source to software */
-	ADCSetTriggerSource(ADC_TRIGGER_SOURCE_SOFTWARE);
-
-	/* Set sampling mode to automatic, to use the sample duration configured
-	 *  with ADCSetSampleDuration()
-	 */
-	ADCSetSamplingMode(ADC_SAMPLE_MODE_AUTO);
-
-	/* Enable conversion. The ADC will wait for the software trigger */
-	ADCEnableConversion();
-
-	ADCStartConversion();
+	ADCManualTrigger();
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
@@ -177,9 +169,6 @@ static void adc_cc23x0_isr(const struct device *dev)
 #endif
 
 #ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
-	const struct adc_cc23x0_config *cfg = dev->config;
-	int ret;
-
 	/*
 	 * In DMA mode, do not compensate for the ADC internal gain with
 	 * ADCAdjustValueForGain() function. To perform this compensation,
@@ -188,13 +177,6 @@ static void adc_cc23x0_isr(const struct device *dev)
 	 */
 	ADCClearInterrupt(ADC_INT_DMADONE);
 	LOG_DBG("DMA done");
-
-	ret = pm_device_runtime_put(cfg->dma_dev);
-	if (ret) {
-		LOG_ERR("Failed to suspend DMA (%d)", ret);
-		return;
-	}
-
 	adc_cc23x0_pm_policy_state_lock_put();
 	adc_context_on_sampling_done(&data->ctx, dev);
 #else
@@ -232,8 +214,10 @@ static void adc_cc23x0_isr(const struct device *dev)
 #endif
 }
 
-static int adc_cc23x0_read_common(const struct device *dev, const struct adc_sequence *sequence,
-				  bool asynchronous, struct k_poll_signal *sig)
+static int adc_cc23x0_read_common(const struct device *dev,
+				  const struct adc_sequence *sequence,
+				  bool asynchronous,
+				  struct k_poll_signal *sig)
 {
 #ifndef CONFIG_ADC_CC23X0_DMA_DRIVEN
 	const struct adc_cc23x0_config *cfg = dev->config;
@@ -261,9 +245,6 @@ static int adc_cc23x0_read_common(const struct device *dev, const struct adc_seq
 		LOG_ERR("Resolution is not valid");
 		return -EINVAL;
 	}
-
-	/* Make sure conversion is disabled to allow configuration changes */
-	ADCDisableConversion();
 
 	ADCSetResolution(data->res);
 
@@ -350,13 +331,15 @@ static int adc_cc23x0_read_common(const struct device *dev, const struct adc_seq
 	return ret;
 }
 
-static int adc_cc23x0_read(const struct device *dev, const struct adc_sequence *sequence)
+static int adc_cc23x0_read(const struct device *dev,
+			   const struct adc_sequence *sequence)
 {
 	return adc_cc23x0_read_common(dev, sequence, false, NULL);
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_cc23x0_read_async(const struct device *dev, const struct adc_sequence *sequence,
+static int adc_cc23x0_read_async(const struct device *dev,
+				 const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
 	return adc_cc23x0_read_common(dev, sequence, true, async);
@@ -505,6 +488,14 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 		clk_cycles = 1;
 	}
 
+#ifdef CONFIG_PM_DEVICE
+	data->mem_cfg[data->mem_index].configured = true;
+	data->mem_cfg[data->mem_index].ch = ch;
+	data->mem_cfg[data->mem_index].ref = ref;
+	data->mem_cfg[data->mem_index].clkdiv_field = adc_cc23x0_clkdiv_to_field(clk_div);
+	data->mem_cfg[data->mem_index].clk_cycles = clk_cycles;
+#endif
+
 	if (!data->clk_cycles) {
 		data->clk_div = clk_div;
 		data->clk_cycles = clk_cycles;
@@ -513,10 +504,6 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 		LOG_ERR("Multiple sample durations are not supported");
 		return -EINVAL;
 	}
-
-#ifdef CONFIG_PM_DEVICE
-	data->configured = true;
-#endif
 
 	return 0;
 }
@@ -546,12 +533,6 @@ static int adc_cc23x0_init(const struct device *dev)
 	if (!device_is_ready(cfg->dma_dev)) {
 		return -ENODEV;
 	}
-
-	ret = pm_device_runtime_enable(cfg->dma_dev);
-	if (ret) {
-		LOG_ERR("Failed to enable DMA runtime PM");
-		return ret;
-	}
 #endif
 
 	adc_context_unlock_unconditionally(&data->ctx);
@@ -564,6 +545,7 @@ static int adc_cc23x0_init(const struct device *dev)
 static int adc_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct adc_cc23x0_data *data = dev->data;
+	int i = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -573,10 +555,14 @@ static int adc_cc23x0_pm_action(const struct device *dev, enum pm_device_action 
 		CLKCTLEnable(CLKCTL_BASE, CLKCTL_ADC0);
 		ADCEnableInterrupt(ADC_CC23X0_INT_MASK);
 
-		/* Restore context if needed */
-		if (data->configured) {
-			ADCSetSampleDuration(adc_cc23x0_clkdiv_to_field(data->clk_div),
-					     data->clk_cycles);
+		/* Restore context for the channels that were configured before */
+		ARRAY_FOR_EACH_PTR(data->mem_cfg, mem_data) {
+			if (mem_data->configured) {
+				ADCSetInput(mem_data->ref, mem_data->ch, i);
+				ADCSetAdjustmentOffset(mem_data->ref);
+				ADCSetSampleDuration(mem_data->clkdiv_field, mem_data->clk_cycles);
+			}
+			i++;
 		}
 
 		return 0;
@@ -587,9 +573,9 @@ static int adc_cc23x0_pm_action(const struct device *dev, enum pm_device_action 
 
 #endif /* CONFIG_PM_DEVICE */
 
-static DEVICE_API(adc, adc_cc23x0_driver_api) = {
-	.channel_setup = adc_cc23x0_channel_setup,
-	.read = adc_cc23x0_read,
+static DEVICE_API(adc, adc_lpf3_driver_api) = {
+	.channel_setup = adc_lpf3_channel_setup,
+	.read = adc_lpf3_read,
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = adc_cc23x0_read_async,
 #endif
@@ -597,9 +583,9 @@ static DEVICE_API(adc, adc_cc23x0_driver_api) = {
 };
 
 #ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
-#define ADC_CC23X0_DMA_INIT(n)                                                                     \
-	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(n, dma)),                              \
-	.dma_channel = TI_CC23X0_DT_INST_DMA_CHANNEL(n, dma),                                      \
+#define ADC_CC23X0_DMA_INIT(n)						\
+	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(n, dma)),	\
+	.dma_channel = TI_CC23X0_DT_INST_DMA_CHANNEL(n, dma),		\
 	.dma_trigsrc = TI_CC23X0_DT_INST_DMA_TRIGSRC(n, dma),
 #else
 #define ADC_CC23X0_DMA_INIT(n)
@@ -607,7 +593,8 @@ static DEVICE_API(adc, adc_cc23x0_driver_api) = {
 
 #define CC23X0_ADC_INIT(n)							\
 	PINCTRL_DT_INST_DEFINE(n);						\
-	PM_DEVICE_DT_INST_DEFINE(n, adc_cc23x0_pm_action);			\
+	PM_DEVICE_DT_INST_DEFINE(n, adc_cc23x0_pm_action);                      \
+
 										\
 	static void adc_cc23x0_cfg_func_##n(void)				\
 	{									\
@@ -632,8 +619,8 @@ static DEVICE_API(adc, adc_cc23x0_driver_api) = {
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-			      adc_cc23x0_init,					\
-			      PM_DEVICE_DT_INST_GET(n),				\
+			      &adc_cc23x0_init,					\
+			      PM_DEVICE_DT_INST_GET(n);                         \
 			      &adc_cc23x0_data_##n,				\
 			      &adc_cc23x0_config_##n,				\
 			      POST_KERNEL,					\
