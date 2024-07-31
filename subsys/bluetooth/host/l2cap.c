@@ -717,7 +717,9 @@ int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 		return -EINVAL;
 	}
 
-	make_closure(pdu->user_data, cb, user_data);
+	make_closure(net_buf_push(pdu, sizeof(struct closure)), cb, user_data);
+	pdu->type_id = 0x1337;
+
 	LOG_DBG("push: pdu %p len %d cb %p userdata %p", pdu, pdu->len, cb, user_data);
 
 	net_buf_put(&le_chan->tx_queue, pdu);
@@ -906,8 +908,29 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		return NULL;
 	}
 
+	bool first_frag = (lechan->_pdu_remaining == 0);
+	bool first_seg = !lechan->_tx_sdu_in_progress;
+
+	/* Stash the application callback and its metadata */
+	if (first_frag && first_seg) {
+		lechan->_tx_sdu_in_progress = true;
+
+		/* At this point, `pdu` contains a complete application data
+		 * payload, with callback and its (cb + contextual data).
+		 */
+
+		/* Verify the buffer is really what we just said above */
+		__ASSERT_NO_MSG(pdu->type_id == 0x1337);
+
+		pdu->type_id = 0; /* unlock `pdu` */
+		void *storage = net_buf_pull_mem(pdu, sizeof(struct closure));
+
+		lechan->app_cb.cb = closure_cb(storage);
+		lechan->app_cb.ud = closure_data(storage);
+	}
+
 	/* Add PDU header */
-	if (lechan->_pdu_remaining == 0) {
+	if (first_frag) {
 		struct bt_l2cap_hdr *hdr;
 		uint16_t pdu_len = get_pdu_len(lechan, pdu);
 
@@ -933,21 +956,37 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	 */
 	bool last_seg = lechan->_pdu_remaining == pdu->len;
 
+	if (last_frag) {
+		/* L2CAP CoC is special:
+		 * - intermediate K-frames don't have a callback
+		 * - only the last K-frame uses the callback set by `bt_l2cap_dyn_chan_send`
+		 *
+		 * For static chans, last_frag == last_seg.
+		 *
+		 * So we can generalize: the application callback shall only be
+		 * called for the last "segment".
+		 */
+		void *cb, *ud;
+
+		if (last_seg) {
+			cb = lechan->app_cb.cb;
+			ud = lechan->app_cb.ud;
+		} else {
+			cb = NULL;
+			ud = NULL;
+		}
+
+		make_closure(net_buf_push(pdu, sizeof(struct closure)), cb, ud);
+		/* Type is now: last frag of L2CAP PDU w/ app (cb + contextual data) */
+		pdu->type_id = 0x69;
+	}
+
 	if (last_frag && last_seg) {
 		LOG_DBG("last frag of last seg, dequeuing %p", pdu);
 		__maybe_unused struct net_buf *b = k_fifo_get(&lechan->tx_queue, K_NO_WAIT);
 
 		__ASSERT_NO_MSG(b == pdu);
-	}
-
-	if (last_frag && L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
-		bool sdu_end = last_frag && last_seg;
-
-		LOG_DBG("adding %s callback", sdu_end ? "`sdu_sent`" : "NULL");
-		/* No user callbacks for SDUs */
-		make_closure(pdu->user_data,
-			     sdu_end ? l2cap_chan_sdu_sent : NULL,
-			     sdu_end ? UINT_TO_POINTER(lechan->tx.cid) : NULL);
+		lechan->_tx_sdu_in_progress = false;
 	}
 
 	if (last_frag) {
@@ -3142,6 +3181,10 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 	 * | 0x0016      | 0x4040        | 22 bytes of data    |
 	 */
 	net_buf_push_le16(buf, sdu_len);
+
+	make_closure(net_buf_push(buf, sizeof(struct closure)),
+		     l2cap_chan_sdu_sent, UINT_TO_POINTER(le_chan->tx.cid));
+	buf->type_id = 0x1337;
 
 	/* Put buffer on TX queue */
 	net_buf_put(&le_chan->tx_queue, buf);

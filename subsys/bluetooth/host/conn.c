@@ -946,9 +946,13 @@ static void acl_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf,
 {
 	__ASSERT_NO_MSG(is_acl_conn(conn));
 
-	*cb = closure_cb(buf->user_data);
-	*ud = closure_data(buf->user_data);
-	memset(buf->user_data, 0, buf->user_data_size);
+	/* Type should be: last frag of L2CAP PDU w/ app (cb + contextual data) */
+	__ASSERT_NO_MSG(buf->type_id == 0x69);
+
+	buf->type_id = 0;
+	void *storage = net_buf_pull_mem(buf, sizeof(struct closure));
+	*cb = closure_cb(storage);
+	*ud = closure_data(storage);
 }
 #endif	/* defined(CONFIG_BT_CONN) */
 
@@ -1048,10 +1052,10 @@ void bt_conn_tx_processor(void)
 
 	bool last_buf = conn_mtu(conn) >= buf_len;
 
+	/* The last fragment _will always_ start with an application callback
+	 * and contextual data. I.e. first n bytes.
+	 */
 	if (last_buf) {
-		/* Only pull the callback info from the last buffer.
-		 * We still allocate one TX context per-fragment though.
-		 */
 		conn->get_and_clear_cb(conn, buf, &cb, &ud);
 		LOG_DBG("pop: cb %p userdata %p", cb, ud);
 	}
