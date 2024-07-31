@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,14 +15,16 @@
 #include <zephyr/bluetooth/gatt.h>
 
 /**
- * @brief Gets a free CCID value.
+ * @brief Allocates a CCID value.
  *
- * The maximum number of CCID values that can retrieved on the device is 0xFE,
- * one less than per the GSS specification.
+ * This should always be called right before registering a GATT service that contains a
+ * @ref BT_UUID_CCID characteristic. Allocating a CCID without registering the characteristic
+ * may (in very rare cases) result in duplicated CCIDs on the device.
  *
- * @return uint8_t A content control ID value.
+ * @retval ccid 8-bit unsigned CCID value on success
+ * @retval -ENOMEM if no more CCIDs can be allocated
  */
-uint8_t bt_ccid_alloc_value(void);
+int bt_ccid_alloc_value(void);
 
 /**
  * @brief Get the GATT attribute of a CCID value
