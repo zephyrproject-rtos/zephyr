@@ -63,6 +63,7 @@ config BT_STM32_IPM
 	depends on DT_HAS_ST_STM32WB_RF_ENABLED
 	select USE_STM32_HAL_CORTEX
 	select HAS_STM32LIB
+	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  TODO
 
