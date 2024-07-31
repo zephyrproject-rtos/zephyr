@@ -72,11 +72,11 @@ backend.
 
 **csi_save_start**
     This gets called when starting a save of all current settings using
-    :c:func:`settings_save()`.
+    :c:func:`settings_save()` or :c:func:`settings_save_subtree()`.
 
 **csi_save_end**
     This gets called after having saved of all current settings using
-    :c:func:`settings_save()`.
+    :c:func:`settings_save()` or :c:func:`settings_save_subtree()`.
 
 Zephyr Storage Backends
 ***********************
