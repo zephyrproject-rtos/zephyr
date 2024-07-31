@@ -95,22 +95,62 @@ struct bt_hfp_hf_cb {
 	 *  @param value service indicator value received from the AG.
 	 */
 	void (*service)(struct bt_conn *conn, uint32_t value);
-	/** HF indicator Callback
+	/** HF call outgoing Callback
 	 *
-	 *  This callback provides call indicator value to the application
-	 *
-	 *  @param conn Connection object.
-	 *  @param value call indicator value received from the AG.
-	 */
-	void (*call)(struct bt_conn *conn, uint32_t value);
-	/** HF indicator Callback
-	 *
-	 *  This callback provides call setup indicator value to the application
+	 *  This callback provides the outgoing call status to
+	 *  the application.
 	 *
 	 *  @param conn Connection object.
-	 *  @param value call setup indicator value received from the AG.
 	 */
-	void (*call_setup)(struct bt_conn *conn, uint32_t value);
+	void (*outgoing)(struct bt_conn *conn);
+	/** HF call outgoing call is ringing Callback
+	 *
+	 *  This callback provides the outgoing call is ringing
+	 *  status to the application.
+	 *
+	 *  @param conn Connection object.
+	 */
+	void (*remote_ringing)(struct bt_conn *conn);
+	/** HF call incoming Callback
+	 *
+	 *  This callback provides the incoming call status to
+	 *  the application.
+	 *
+	 *  @param conn Connection object.
+	 */
+	void (*incoming)(struct bt_conn *conn);
+	/** HF incoming call on hold Callback
+	 *
+	 *  This callback provides the incoming call on hold status to
+	 *  the application.
+	 *
+	 *  @param conn Connection object.
+	 */
+	void (*incoming_held)(struct bt_conn *conn);
+	/** HF call accept Callback
+	 *
+	 *  This callback provides the incoming/outgoing call active
+	 *  status to the application.
+	 *
+	 *  @param conn Connection object.
+	 */
+	void (*accept)(struct bt_conn *conn);
+	/** HF call reject Callback
+	 *
+	 *  This callback provides the incoming/outgoing call reject
+	 *  status to the application.
+	 *
+	 *  @param conn Connection object.
+	 */
+	void (*reject)(struct bt_conn *conn);
+	/** HF call terminate Callback
+	 *
+	 *  This callback provides the incoming/outgoing call terminate
+	 *  status to the application.
+	 *
+	 *  @param conn Connection object.
+	 */
+	void (*terminate)(struct bt_conn *conn);
 	/** HF indicator Callback
 	 *
 	 *  This callback provides call held indicator value to the application
@@ -365,6 +405,8 @@ int bt_hfp_hf_get_operator(struct bt_conn *conn);
 /** @brief Handsfree HF accept the incoming call
  *
  *  Send the ATA command to accept the incoming call.
+ *  OR, send the AT+BTRH=1 command to accept a held incoming
+ *  call.
  *
  *  @param conn Connection object.
  *
@@ -375,6 +417,8 @@ int bt_hfp_hf_accept(struct bt_conn *conn);
 /** @brief Handsfree HF reject the incoming call
  *
  *  Send the AT+CHUP command to reject the incoming call.
+ *  OR, send the AT+BTRH=2 command to reject a held incoming
+ *  call.
  *
  *  @param conn Connection object.
  *
@@ -391,6 +435,30 @@ int bt_hfp_hf_reject(struct bt_conn *conn);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_terminate(struct bt_conn *conn);
+
+/** @brief Handsfree HF put the incoming call on hold
+ *
+ *  Send the AT+BTRH=0 command to put the incoming call on hold.
+ *  If the incoming call has been held, the callback `on_hold` will
+ *  be triggered.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_hold_incoming(struct bt_conn *conn);
+
+/** @brief Handsfree HF query respond and hold status of AG
+ *
+ *  Send the AT+BTRH? command to query respond and hold status of AG.
+ *  The status respond and hold will be notified through callback
+ *  `on_hold`.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_query_respond_hold_status(struct bt_conn *conn);
 
 /** @brief Handsfree HF phone number call
  *

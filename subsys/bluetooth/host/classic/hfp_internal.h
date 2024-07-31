@@ -126,12 +126,14 @@
 
 /* bt_hfp_hf flags: the flags defined here represent hfp hf parameters */
 enum {
-	BT_HFP_HF_FLAG_CONNECTED,  /* HFP HF SLC Established */
-	BT_HFP_HF_FLAG_TX_ONGOING, /* HFP HF TX is ongoing */
-	BT_HFP_HF_FLAG_INCOMING,   /* HFP HF call incoming */
-	BT_HFP_HF_FLAG_ACTIVE,     /* HFP HF call active */
-	BT_HFP_HF_FLAG_DIALING,    /* HFP HF call dialing */
-	BT_HFP_HF_FLAG_CODEC_CONN, /* HFP HF codec connection setup */
+	BT_HFP_HF_FLAG_CONNECTED,     /* HFP HF SLC Established */
+	BT_HFP_HF_FLAG_TX_ONGOING,    /* HFP HF TX is ongoing */
+	BT_HFP_HF_FLAG_INCOMING,      /* HFP HF call incoming */
+	BT_HFP_HF_FLAG_INCOMING_HELD, /* HFP HF call incoming is held */
+	BT_HFP_HF_FLAG_QUERY_HOLD,    /* HFP HF query response and hold status */
+	BT_HFP_HF_FLAG_ACTIVE,        /* HFP HF call active */
+	BT_HFP_HF_FLAG_DIALING,       /* HFP HF call dialing */
+	BT_HFP_HF_FLAG_CODEC_CONN,    /* HFP HF codec connection setup */
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_HF_NUM_FLAGS,
 };
@@ -175,3 +177,8 @@ enum hfp_hf_ag_indicators {
 #define BT_HFP_CALL_SETUP_INCOMING        1
 #define BT_HFP_CALL_SETUP_OUTGOING        2
 #define BT_HFP_CALL_SETUP_REMOTE_ALERTING 3
+
+/* HFP incoming call status */
+#define BT_HFP_BTRH_ON_HOLD  0
+#define BT_HFP_BTRH_ACCEPTED 1
+#define BT_HFP_BTRH_REJECTED 2
