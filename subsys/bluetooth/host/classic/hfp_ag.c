@@ -1421,6 +1421,14 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		}
 	} else {
 		number = &buf->data[0];
+		if (bt_ag && bt_ag->number_call) {
+			err = bt_ag->number_call(ag, &buf->data[0]);
+			if (err) {
+				return err;
+			}
+		} else {
+			return -ENOTSUP;
+		}
 	}
 
 	len = strlen(number);
