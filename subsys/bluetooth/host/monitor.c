@@ -174,8 +174,15 @@ static void encode_drops(struct bt_monitor_hdr *hdr, uint8_t type,
 
 static uint32_t monitor_ts_get(void)
 {
-	return (k_cycle_get_32() /
-		(sys_clock_hw_cycles_per_sec() / MONITOR_TS_FREQ));
+	uint64_t cycle;
+
+	if (IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
+		cycle = k_cycle_get_64();
+	} else {
+		cycle = k_cycle_get_32();
+	}
+
+	return (cycle / (sys_clock_hw_cycles_per_sec() / MONITOR_TS_FREQ));
 }
 
 static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint32_t timestamp,
