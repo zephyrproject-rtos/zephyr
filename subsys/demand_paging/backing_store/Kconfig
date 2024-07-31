@@ -28,6 +28,16 @@ config BACKING_STORE_QEMU_X86_TINY_FLASH
 	  the symbols outside of boot and pinned sections into the flash
 	  area, allowing testing of the demand paging mechanism on
 	  code and data.
+
+config BACKING_STORE_ONDEMAND_SEMIHOST
+	bool "Backing store for on-demand linker section using semihosting"
+	depends on SEMIHOST && LINKER_USE_ONDEMAND_SECTION
+	help
+	  This is used to do on-demand paging of code and data marked with
+	  __ondemand_func and __ondemand_rodata tags respectively. The compiled
+	  zephyr.bin on the host is used to retrieve needed data with the
+	  semihosting I/O facility.
+
 endchoice
 
 if BACKING_STORE_RAM
