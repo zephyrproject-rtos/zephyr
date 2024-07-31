@@ -3208,6 +3208,8 @@ ADI Platforms:
   maintainers:
     - MaureenHelm
   collaborators:
+    - ozersa
+    - ttmut
     - galak
     - microbuilder
   files:
@@ -4383,6 +4385,7 @@ West:
     - MaureenHelm
   collaborators:
     - ozersa
+    - ttmut
   files: []
   labels:
     - "platform: ADI"
