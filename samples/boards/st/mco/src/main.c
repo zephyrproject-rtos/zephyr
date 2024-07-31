@@ -7,15 +7,24 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 
-/* Define the pinctrl information for the MCO pin. */
-PINCTRL_DT_DEFINE(DT_PATH(zephyr_user));
-
 int main(void)
 {
-	/* Configure the MCO pin using pinctrl in order to set the alternate function of the pin. */
-	const struct pinctrl_dev_config *pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_PATH(zephyr_user));
-	(void)pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+	const struct device *dev;
 
-	printk("\nMCO pin configured, end of example.\n");
+	/* This sample demonstrates MCO usage via Device Tree.
+	 * MCO configuration is performed in the Device Tree overlay files.
+	 * Each MCO will be enabled automatically by the driver during device
+	 * initialization. This sample checks that all MCOs are ready - if so,
+	 * the selected clock should be visible on the chosen GPIO pin.
+	 */
+	dev = DEVICE_DT_GET(DT_NODELABEL(mco1));
+	if (device_is_ready(dev)) {
+		printk("MCO1 device successfully configured\n");
+	} else {
+		printk("MCO1 device not ready\n");
+		return -1;
+	}
+
+	printk("\nDisplayed the status of all MCO devices - end of example.\n");
 	return 0;
 }
