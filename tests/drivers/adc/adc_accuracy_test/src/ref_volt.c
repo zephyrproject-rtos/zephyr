@@ -20,6 +20,7 @@ static int test_ref_to_adc(void)
 	struct adc_sequence sequence = {
 		.buffer      = &sample_buffer,
 		.buffer_size = sizeof(sample_buffer),
+		.calibrate = true,
 	};
 
 	const struct adc_dt_spec *adc_channel = get_adc_channel();
