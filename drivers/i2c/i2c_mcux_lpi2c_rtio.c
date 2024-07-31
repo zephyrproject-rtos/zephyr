@@ -192,13 +192,13 @@ static bool mcux_lpi2c_start(const struct device *dev)
 	switch (sqe->op) {
 	case RTIO_OP_RX:
 		return mcux_lpi2c_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
-				      sqe->buf, sqe->buf_len, dt_spec->addr);
+				      sqe->rx.buf, sqe->rx.buf_len, dt_spec->addr);
 	case RTIO_OP_TINY_TX:
 		return mcux_lpi2c_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-				      sqe->tiny_buf, sqe->tiny_buf_len, dt_spec->addr);
+				      sqe->tiny_tx.buf, sqe->tiny_tx.buf_len, dt_spec->addr);
 	case RTIO_OP_TX:
 		return mcux_lpi2c_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-				      sqe->buf, sqe->buf_len, dt_spec->addr);
+				      sqe->tx.buf, sqe->tx.buf_len, dt_spec->addr);
 	case RTIO_OP_I2C_CONFIGURE:
 		res = mcux_lpi2c_do_configure(dev, sqe->i2c_config);
 		return i2c_rtio_complete(data->ctx, res);

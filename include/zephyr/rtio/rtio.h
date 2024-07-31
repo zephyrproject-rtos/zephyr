@@ -253,30 +253,36 @@ struct rtio_sqe {
 
 	union {
 
-		/** OP_TX, OP_RX */
+		/** OP_TX */
 		struct {
 			uint32_t buf_len; /**< Length of buffer */
-			uint8_t *buf; /**< Buffer to use*/
-		};
+			const uint8_t *buf; /**< Buffer to write from */
+		} tx;
+
+		/** OP_RX */
+		struct {
+			uint32_t buf_len; /**< Length of buffer */
+			uint8_t *buf; /**< Buffer to read into */
+		} rx;
 
 		/** OP_TINY_TX */
 		struct {
-			uint8_t tiny_buf_len; /**< Length of tiny buffer */
-			uint8_t tiny_buf[7]; /**< Tiny buffer */
-		};
+			uint8_t buf_len; /**< Length of tiny buffer */
+			uint8_t buf[7]; /**< Tiny buffer */
+		} tiny_tx;
 
 		/** OP_CALLBACK */
 		struct {
 			rtio_callback_t callback;
 			void *arg0; /**< Last argument given to callback */
-		};
+		} callback;
 
 		/** OP_TXRX */
 		struct {
-			uint32_t txrx_buf_len;
-			uint8_t *tx_buf;
-			uint8_t *rx_buf;
-		};
+			uint32_t buf_len; /**< Length of tx and rx buffers */
+			const uint8_t *tx_buf; /**< Buffer to write from */
+			uint8_t *rx_buf; /**< Buffer to read into */
+		} txrx;
 
 		/** OP_I2C_CONFIGURE */
 		uint32_t i2c_config;
@@ -504,8 +510,8 @@ static inline void rtio_sqe_prep_read(struct rtio_sqe *sqe,
 	sqe->op = RTIO_OP_RX;
 	sqe->prio = prio;
 	sqe->iodev = iodev;
-	sqe->buf_len = len;
-	sqe->buf = buf;
+	sqe->rx.buf_len = len;
+	sqe->rx.buf = buf;
 	sqe->userdata = userdata;
 }
 
@@ -536,7 +542,7 @@ static inline void rtio_sqe_prep_read_multishot(struct rtio_sqe *sqe,
 static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
 				       const struct rtio_iodev *iodev,
 				       int8_t prio,
-				       uint8_t *buf,
+				       const uint8_t *buf,
 				       uint32_t len,
 				       void *userdata)
 {
@@ -544,8 +550,8 @@ static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
 	sqe->op = RTIO_OP_TX;
 	sqe->prio = prio;
 	sqe->iodev = iodev;
-	sqe->buf_len = len;
-	sqe->buf = buf;
+	sqe->tx.buf_len = len;
+	sqe->tx.buf = buf;
 	sqe->userdata = userdata;
 }
 
@@ -566,14 +572,14 @@ static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe *sqe,
 					    uint8_t tiny_write_len,
 					    void *userdata)
 {
-	__ASSERT_NO_MSG(tiny_write_len <= sizeof(sqe->tiny_buf));
+	__ASSERT_NO_MSG(tiny_write_len <= sizeof(sqe->tiny_tx.buf));
 
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_TINY_TX;
 	sqe->prio = prio;
 	sqe->iodev = iodev;
-	sqe->tiny_buf_len = tiny_write_len;
-	memcpy(sqe->tiny_buf, tiny_write_data, tiny_write_len);
+	sqe->tiny_tx.buf_len = tiny_write_len;
+	memcpy(sqe->tiny_tx.buf, tiny_write_data, tiny_write_len);
 	sqe->userdata = userdata;
 }
 
@@ -594,8 +600,8 @@ static inline void rtio_sqe_prep_callback(struct rtio_sqe *sqe,
 	sqe->op = RTIO_OP_CALLBACK;
 	sqe->prio = 0;
 	sqe->iodev = NULL;
-	sqe->callback = callback;
-	sqe->arg0 = arg0;
+	sqe->callback.callback = callback;
+	sqe->callback.arg0 = arg0;
 	sqe->userdata = userdata;
 }
 
@@ -605,7 +611,7 @@ static inline void rtio_sqe_prep_callback(struct rtio_sqe *sqe,
 static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 					    const struct rtio_iodev *iodev,
 					    int8_t prio,
-					    uint8_t *tx_buf,
+					    const uint8_t *tx_buf,
 					    uint8_t *rx_buf,
 					    uint32_t buf_len,
 					    void *userdata)
@@ -614,9 +620,9 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 	sqe->op = RTIO_OP_TXRX;
 	sqe->prio = prio;
 	sqe->iodev = iodev;
-	sqe->txrx_buf_len = buf_len;
-	sqe->tx_buf = tx_buf;
-	sqe->rx_buf = rx_buf;
+	sqe->txrx.buf_len = buf_len;
+	sqe->txrx.tx_buf = tx_buf;
+	sqe->txrx.rx_buf = rx_buf;
 	sqe->userdata = userdata;
 }
 
@@ -1040,9 +1046,9 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 	if (iodev_sqe->sqe.op == RTIO_OP_RX && iodev_sqe->sqe.flags & RTIO_SQE_MEMPOOL_BUFFER) {
 		struct rtio *r = iodev_sqe->r;
 		struct sys_mem_blocks *mem_pool = r->block_pool;
-		int blk_index = (iodev_sqe->sqe.buf - mem_pool->buffer) >>
+		int blk_index = (iodev_sqe->sqe.rx.buf - mem_pool->buffer) >>
 				mem_pool->info.blk_sz_shift;
-		int blk_count = iodev_sqe->sqe.buf_len >> mem_pool->info.blk_sz_shift;
+		int blk_count = iodev_sqe->sqe.rx.buf_len >> mem_pool->info.blk_sz_shift;
 
 		flags = RTIO_CQE_FLAG_PREP_MEMPOOL(blk_index, blk_count);
 	}
@@ -1189,19 +1195,19 @@ static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32
 	if (sqe->op == RTIO_OP_RX && sqe->flags & RTIO_SQE_MEMPOOL_BUFFER) {
 		struct rtio *r = iodev_sqe->r;
 
-		if (sqe->buf != NULL) {
-			if (sqe->buf_len < min_buf_len) {
+		if (sqe->rx.buf != NULL) {
+			if (sqe->rx.buf_len < min_buf_len) {
 				return -ENOMEM;
 			}
-			*buf = sqe->buf;
-			*buf_len = sqe->buf_len;
+			*buf = sqe->rx.buf;
+			*buf_len = sqe->rx.buf_len;
 			return 0;
 		}
 
 		int rc = rtio_block_pool_alloc(r, min_buf_len, max_buf_len, buf, buf_len);
 		if (rc == 0) {
-			sqe->buf = *buf;
-			sqe->buf_len = *buf_len;
+			sqe->rx.buf = *buf;
+			sqe->rx.buf_len = *buf_len;
 			return 0;
 		}
 
@@ -1211,12 +1217,12 @@ static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32
 	ARG_UNUSED(max_buf_len);
 #endif
 
-	if (sqe->buf_len < min_buf_len) {
+	if (sqe->rx.buf_len < min_buf_len) {
 		return -ENOMEM;
 	}
 
-	*buf = sqe->buf;
-	*buf_len = sqe->buf_len;
+	*buf = sqe->rx.buf;
+	*buf_len = sqe->rx.buf_len;
 	return 0;
 }
 
