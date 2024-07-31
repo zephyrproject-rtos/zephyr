@@ -3686,7 +3686,7 @@ Renesas RA Platforms:
     - dts/bindings/*/*renesas,ra*
     - soc/renesas/ra/
   labels:
-    - "platforms: Renesas RA"
+    - "platform: Renesas RA"
   description: >-
     Renesas RA SOCs, dts files, and related drivers. Boards based
     on Renesas RA SoCs.
