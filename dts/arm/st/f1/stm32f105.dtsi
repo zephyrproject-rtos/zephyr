@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/clock/stm32f10x_clock.h>
 #include <st/f1/stm32f1.dtsi>
 
 / {

@@ -17,7 +17,11 @@
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
 #include <zephyr/dt-bindings/clock/stm32f0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE)
+#include <zephyr/dt-bindings/clock/stm32f10x_clock.h>
+#else
 #include <zephyr/dt-bindings/clock/stm32f1_clock.h>
+#endif
 #elif defined(CONFIG_SOC_SERIES_STM32F3X)
 #include <zephyr/dt-bindings/clock/stm32f3_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
