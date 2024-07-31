@@ -15,6 +15,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/ccid.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -33,7 +34,6 @@
 
 #include "audio_internal.h"
 #include "tbs_internal.h"
-#include "ccid_internal.h"
 
 LOG_MODULE_REGISTER(bt_tbs, CONFIG_BT_TBS_LOG_LEVEL);
 
