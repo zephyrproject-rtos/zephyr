@@ -391,6 +391,34 @@ int cind_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
+static void ag_indicator_handle_call(struct bt_hfp_hf *hf, uint32_t value)
+{
+	struct bt_conn *conn = hf->acl;
+
+	atomic_set_bit_to(hf->flags, BT_HFP_HF_FLAG_ACTIVE, value);
+	if (value) {
+		if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD)) {
+			if (bt_hf->incoming_held) {
+				bt_hf->incoming_held(conn);
+			}
+		} else {
+			if (bt_hf->accept) {
+				bt_hf->accept(conn);
+			}
+		}
+	} else {
+		if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD)) {
+			if (bt_hf->reject) {
+				bt_hf->reject(conn);
+			}
+		} else {
+			if (bt_hf->terminate) {
+				bt_hf->terminate(conn);
+			}
+		}
+	}
+}
+
 void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 				uint32_t value)
 {
@@ -417,18 +445,24 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 		}
 		break;
 	case HF_CALL_IND:
-		atomic_set_bit_to(hf->flags, BT_HFP_HF_FLAG_ACTIVE, value);
-
-		if (bt_hf->call) {
-			bt_hf->call(conn, value);
-		}
+		ag_indicator_handle_call(hf, value);
 		break;
 	case HF_CALL_SETUP_IND:
 		atomic_set_bit_to(hf->flags, BT_HFP_HF_FLAG_INCOMING,
 		    value == BT_HFP_CALL_SETUP_INCOMING);
 
-		if (bt_hf->call_setup) {
-			bt_hf->call_setup(conn, value);
+		if (value == BT_HFP_CALL_SETUP_INCOMING) {
+			if (bt_hf->incoming) {
+				bt_hf->incoming(conn);
+			}
+		} else if (value == BT_HFP_CALL_SETUP_OUTGOING) {
+			if (bt_hf->outgoing) {
+				bt_hf->outgoing(conn);
+			}
+		} else if (value == BT_HFP_CALL_SETUP_REMOTE_ALERTING) {
+			if (bt_hf->remote_ringing) {
+				bt_hf->remote_ringing(conn);
+			}
 		}
 		break;
 	case HF_CALL_HELD_IND:
@@ -667,6 +701,40 @@ int bcs_handle(struct at_client *hf_at)
 }
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 
+static int btrh_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	uint32_t on_hold;
+	int err;
+
+	err = at_get_number(hf_at, &on_hold);
+	if (err < 0) {
+		LOG_ERR("Error getting value");
+		return err;
+	}
+
+	if (on_hold == BT_HFP_BTRH_ON_HOLD) {
+		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_HOLD);
+		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD);
+	} else if (on_hold == BT_HFP_BTRH_ACCEPTED) {
+		if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_ACTIVE) &&
+			atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD)) {
+			if (bt_hf && bt_hf->accept) {
+				bt_hf->accept(hf->acl);
+			}
+		}
+	} else if (on_hold == BT_HFP_BTRH_REJECTED) {
+		if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_ACTIVE) &&
+			atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD)) {
+			if (bt_hf && bt_hf->reject) {
+				bt_hf->reject(hf->acl);
+			}
+		}
+	}
+
+	return 0;
+}
+
 static const struct unsolicited {
 	const char *cmd;
 	enum at_cmd_type type;
@@ -685,6 +753,7 @@ static const struct unsolicited {
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 	{ "BCS", AT_CMD_TYPE_UNSOLICITED, bcs_handle },
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+	{ "BTRH", AT_CMD_TYPE_UNSOLICITED, btrh_handle },
 };
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
@@ -1381,6 +1450,16 @@ static int ata_finish(struct at_client *hf_at, enum at_result result,
 	return 0;
 }
 
+static int btrh_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+BTRH (result %d) on %p", result, hf);
+
+	return 0;
+}
+
 int bt_hfp_hf_accept(struct bt_conn *conn)
 {
 	struct bt_hfp_hf *hf;
@@ -1399,17 +1478,25 @@ int bt_hfp_hf_accept(struct bt_conn *conn)
 		return -ENOTCONN;
 	}
 
-	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING)) {
-		LOG_ERR("No incoming call setup in progress");
-		return -EINVAL;
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING)) {
+		err = hfp_hf_send_cmd(hf, NULL, ata_finish, "ATA");
+		if (err < 0) {
+			LOG_ERR("Fail to accept the incoming call on %p", hf);
+		}
+		return err;
 	}
 
-	err = hfp_hf_send_cmd(hf, NULL, ata_finish, "ATA");
-	if (err < 0) {
-		LOG_ERR("Fail to accept the incoming call on %p", hf);
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD) &&
+		atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_ACTIVE)) {
+		err = hfp_hf_send_cmd(hf, NULL, btrh_finish, "AT+BTRH=%d",
+			BT_HFP_BTRH_ACCEPTED);
+		if (err < 0) {
+			LOG_ERR("Fail to accept the held incoming call on %p", hf);
+		}
+		return err;
 	}
 
-	return err;
+	return -EINVAL;
 }
 
 static int chup_finish(struct at_client *hf_at, enum at_result result,
@@ -1440,17 +1527,25 @@ int bt_hfp_hf_reject(struct bt_conn *conn)
 		return -ENOTCONN;
 	}
 
-	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING)) {
-		LOG_ERR("No incoming call setup in progress");
-		return -EINVAL;
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING)) {
+		err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
+		if (err < 0) {
+			LOG_ERR("Fail to reject the incoming call on %p", hf);
+		}
+		return err;
 	}
 
-	err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
-	if (err < 0) {
-		LOG_ERR("Fail to reject the incoming call on %p", hf);
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD) &&
+		atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_ACTIVE)) {
+		err = hfp_hf_send_cmd(hf, NULL, btrh_finish, "AT+BTRH=%d",
+			BT_HFP_BTRH_REJECTED);
+		if (err < 0) {
+			LOG_ERR("Fail to reject the held incoming call on %p", hf);
+		}
+		return err;
 	}
 
-	return err;
+	return -EINVAL;
 }
 
 int bt_hfp_hf_terminate(struct bt_conn *conn)
@@ -1474,6 +1569,81 @@ int bt_hfp_hf_terminate(struct bt_conn *conn)
 	err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
 	if (err < 0) {
 		LOG_ERR("Fail to terminate the active call on %p", hf);
+	}
+
+	return err;
+}
+
+int bt_hfp_hf_hold_incoming(struct bt_conn *conn)
+{
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING)) {
+		LOG_ERR("No incoming call setup in progress");
+		return -EINVAL;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, btrh_finish, "AT+BTRH=%d",
+		BT_HFP_BTRH_ON_HOLD);
+	if (err < 0) {
+		LOG_ERR("Fail to hold the incoming call on %p", hf);
+	}
+
+	return err;
+}
+
+static int query_btrh_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+BTRH? (result %d) on %p", result, hf);
+
+	if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_HOLD) &&
+		bt_hf->incoming_held) {
+		bt_hf->incoming_held(hf->acl);
+	}
+
+	return 0;
+}
+
+int bt_hfp_hf_query_respond_hold_status(struct bt_conn *conn)
+{
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_HOLD);
+
+	err = hfp_hf_send_cmd(hf, NULL, query_btrh_finish, "AT+BTRH?");
+	if (err < 0) {
+		LOG_ERR("Fail to query respond and hold status of AG on %p", hf);
 	}
 
 	return err;
