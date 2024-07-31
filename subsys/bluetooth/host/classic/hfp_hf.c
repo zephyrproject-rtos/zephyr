@@ -1800,6 +1800,64 @@ int bt_hfp_hf_set_codecs(struct bt_conn *conn, uint8_t codec_ids)
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 }
 
+#if defined(CONFIG_BT_HFP_HF_ECNR)
+static int nrec_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+
+	LOG_DBG("AT+NREC=0 (result %d) on %p", result, hf);
+
+	if (result == AT_RESULT_CME_ERROR) {
+		err = bt_hfp_ag_get_cme_err(cme_err);
+	} else if (result == AT_RESULT_ERROR) {
+		err = -ENOTSUP;
+	} else {
+		err = 0;
+	}
+
+	if (bt_hf && bt_hf->ecnr_turn_off) {
+		bt_hf->ecnr_turn_off(hf->acl, err);
+	}
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_ECNR */
+
+int bt_hfp_hf_turn_off_ecnr(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_HFP_HF_ECNR)
+	struct bt_hfp_hf *hf;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_ECNR)) {
+		LOG_ERR("EC and/or NR functions is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (hf->chan.sco) {
+		LOG_ERR("Audio conenction has been connected");
+		return -EBUSY;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, nrec_finish, "AT+NREC=0");
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_ECNR */
+}
+
 static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
