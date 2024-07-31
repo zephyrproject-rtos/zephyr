@@ -13,7 +13,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 
@@ -30,9 +29,9 @@ static int iis3dhhc_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	iis3dhhc_acceleration_raw_get(data->ctx, raw_accel);
-	data->acc[0] = sys_le16_to_cpu(raw_accel[0]);
-	data->acc[1] = sys_le16_to_cpu(raw_accel[1]);
-	data->acc[2] = sys_le16_to_cpu(raw_accel[2]);
+	data->acc[0] = raw_accel[0];
+	data->acc[1] = raw_accel[1];
+	data->acc[2] = raw_accel[2];
 
 	return 0;
 }
