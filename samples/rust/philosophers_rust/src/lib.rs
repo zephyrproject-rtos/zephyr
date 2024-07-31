@@ -31,7 +31,10 @@ extern "C" fn rust_main() {
         }
     }
 
-    PHIL_THREAD.simple_spawn(PHIL_STACK.token(), phil_thread);
+    // PHIL_THREAD.simple_spawn(PHIL_STACK.token(), phil_thread);
+    PHIL_THREAD.spawn(PHIL_STACK.token(), move || {
+        phil_thread(1);
+    });
 
     // Steal the fork long enough to make this interesting.
     unsafe {
@@ -55,8 +58,8 @@ extern "C" fn rust_main() {
 
 const FOREVER: k_timeout_t = k_timeout_t { ticks: !0 };
 
-fn phil_thread() {
-    printkln!("Child started");
+fn phil_thread(n: usize) {
+    printkln!("Child {} started", n);
     // Print out periodically.
     loop {
         unsafe {
