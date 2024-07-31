@@ -7,7 +7,14 @@
 //! In addition, there are some convenience operations available that require allocation to be
 //! available.
 
-use zephyr_sys::{k_thread, k_thread_create, k_timeout_t, z_thread_stack_element, ZR_STACK_ALIGN, ZR_STACK_RESERVED};
+use zephyr_sys::{
+    k_thread,
+    k_thread_create,
+    k_timeout_t,
+    z_thread_stack_element,
+    ZR_STACK_ALIGN,
+    ZR_STACK_RESERVED,
+};
 
 use core::{ffi::c_void, ptr::{addr_of, null_mut}};
 

@@ -1,6 +1,7 @@
 //! Simple sys bindings for Zephyr.
 
 pub mod thread;
+pub mod sync;
 
 pub mod gpio {
     //! Higher level bindings to the GPIO interface.
