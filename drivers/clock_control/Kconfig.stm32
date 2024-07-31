@@ -47,6 +47,10 @@ config CLOCK_STM32_MUX
 	  CLK48 clock
 
 # Micro-controller Clock output configuration options
+config CLOCK_STM32_MCO
+	bool "STM32 clock mco driver"
+	default y
+	depends on DT_HAS_ST_STM32_CLOCK_MCO_ENABLED
 
 choice
 	prompt "STM32 MCO1 Clock Source"
