@@ -12,7 +12,6 @@
 
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/sensor.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
@@ -63,7 +62,7 @@ static int iis2mdc_set_hard_iron(const struct device *dev,
 	int16_t offset[3];
 
 	for (i = 0U; i < 3; i++) {
-		offset[i] = sys_cpu_to_le16(val->val1);
+		offset[i] = val->val1;
 		val++;
 	}
 
@@ -185,9 +184,9 @@ static int iis2mdc_sample_fetch_mag(const struct device *dev)
 		return -EIO;
 	}
 
-	iis2mdc->mag[0] = sys_le16_to_cpu(raw_mag[0]);
-	iis2mdc->mag[1] = sys_le16_to_cpu(raw_mag[1]);
-	iis2mdc->mag[2] = sys_le16_to_cpu(raw_mag[2]);
+	iis2mdc->mag[0] = raw_mag[0];
+	iis2mdc->mag[1] = raw_mag[1];
+	iis2mdc->mag[2] = raw_mag[2];
 
 	return 0;
 }
@@ -205,7 +204,7 @@ static int iis2mdc_sample_fetch_temp(const struct device *dev)
 	}
 
 	/* formula is temp = 25 + (temp / 8) C */
-	temp = sys_le16_to_cpu(raw_temp);
+	temp = raw_temp;
 	iis2mdc->temp_sample = 2500 + (temp * 100) / 8;
 
 	return 0;
