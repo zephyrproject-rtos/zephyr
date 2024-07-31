@@ -1,0 +1,2 @@
+[*.{pts,bls}]
+end_of_line = crlf
