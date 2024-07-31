@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Enable the internal SMPS regulator
-CONFIG_POWER_SUPPLY_DIRECT_SMPS=y
+CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO=y
 
 # Enable GPIO
 CONFIG_GPIO=y
