@@ -2353,7 +2353,7 @@ int media_proxy_pl_init(void)
 #endif /* CONFIG_BT_MCS */
 
 	/* Get a Content Control ID */
-	media_player.content_ctrl_id = bt_ccid_get_value();
+	media_player.content_ctrl_id = bt_ccid_alloc_value();
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 	/* Initialize the object content buffer */

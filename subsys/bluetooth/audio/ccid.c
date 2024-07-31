@@ -17,7 +17,7 @@
 
 #include "ccid_internal.h"
 
-uint8_t bt_ccid_get_value(void)
+uint8_t bt_ccid_alloc_value(void)
 {
 	static uint8_t ccid_value;
 

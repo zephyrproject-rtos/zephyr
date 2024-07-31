@@ -1515,7 +1515,7 @@ static int tbs_inst_init_and_register(struct tbs_inst *inst, struct bt_gatt_serv
 
 	LOG_DBG("inst %p index 0x%02x", inst, inst_index(inst));
 
-	inst->ccid = bt_ccid_get_value();
+	inst->ccid = bt_ccid_alloc_value();
 	(void)utf8_lcpy(inst->provider_name, param->provider_name, sizeof(inst->provider_name));
 	(void)utf8_lcpy(inst->uci, param->uci, sizeof(inst->uci));
 	(void)utf8_lcpy(inst->uri_scheme_list, param->uri_schemes_supported,
