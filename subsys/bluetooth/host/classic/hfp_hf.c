@@ -1573,6 +1573,37 @@ int bt_hfp_hf_number_call(struct bt_conn *conn, const char *number)
 	return err;
 }
 
+int bt_hfp_hf_memory_dial(struct bt_conn *conn, const char *location)
+{
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_DIALING)) {
+		LOG_ERR("Outgoing call is started");
+		return -EBUSY;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, atd_finish, "ATD>%s", location);
+	if (err < 0) {
+		LOG_ERR("Fail to start memory dialing on %p", hf);
+	}
+
+	return err;
+}
+
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 static int bcc_finish(struct at_client *hf_at, enum at_result result,
 		   enum at_cme cme_err)
