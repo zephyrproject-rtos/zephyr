@@ -208,7 +208,7 @@ void thread_analyzer_print(unsigned int cpu)
 void thread_analyzer_auto(void *a, void *b, void *c)
 {
 	unsigned int cpu = IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES) ?
-		(unsigned int) a : 0;
+		(unsigned int)(uintptr_t) a : 0;
 
 	for (;;) {
 		thread_analyzer_print(cpu);
