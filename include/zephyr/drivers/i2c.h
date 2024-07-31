@@ -840,6 +840,13 @@ static inline int i2c_transfer_cb(const struct device *dev,
 		return -ENOSYS;
 	}
 
+	if (!num_msgs) {
+		cb(dev, 0, userdata);
+		return 0;
+	}
+
+	msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
+
 	return api->transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
 }
 
