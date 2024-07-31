@@ -152,6 +152,14 @@
 			clk-prescale = <0>;
 			status = "disabled";
 		};
+
+		adc0: adc@40050000 {
+			compatible = "ti,cc23x0-adc";
+			reg = <0x40050000 0xe30>;
+			interrupts = <15 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
