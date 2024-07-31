@@ -62,6 +62,7 @@ enum {
 	BT_HFP_AG_INBAND_RING,   /* In-band ring */
 	BT_HFP_AG_COPS_SET,      /* Query Operator selection */
 	BT_HFP_AG_INCOMING_CALL, /* Incoming call */
+	BT_HFP_AG_INCOMING_HELD, /* Incoming call held */
 	BT_HFP_AG_AUDIO_CONN,    /* Audio connection */
 	BT_HFP_AG_CODEC_CONN,    /* Codec connection is ongoing */
 	BT_HFP_AG_CODEC_CHANGED, /* Codec Id Changed */
