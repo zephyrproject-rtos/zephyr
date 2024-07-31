@@ -144,6 +144,12 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					      K_KERNEL_STACK_RESERVED +
 					      CONFIG_PRIVILEGED_STACK_SIZE);
 
+#ifdef CONFIG_INIT_STACKS
+	/* Initialize the privileged stack */
+	(void)memset((void *)_current->arch.priv_stack_start, 0xaa,
+		     Z_STACK_PTR_ALIGN(K_KERNEL_STACK_RESERVED + CONFIG_PRIVILEGED_STACK_SIZE));
+#endif /* CONFIG_INIT_STACKS */
+
 	top_of_user_stack = Z_STACK_PTR_ALIGN(
 				_current->stack_info.start +
 				_current->stack_info.size -
