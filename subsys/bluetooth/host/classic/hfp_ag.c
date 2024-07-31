@@ -1565,6 +1565,42 @@ static int bt_hfp_ag_vgs_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return err;
 }
 
+static int bt_hfp_ag_nrec_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	uint32_t disable;
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_number(buf, &disable);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (!(ag->ag_features & BT_HFP_AG_SDP_FEATURE_3WAY_CALL)) {
+		return -ENOTSUP;
+	}
+
+	if (disable) {
+		LOG_ERR("Only support EC NR disable");
+		return -ENOTSUP;
+	}
+
+#if defined(CONFIG_BT_HFP_AG_ECNR)
+	if (bt_ag && bt_ag->ecnr_turn_off) {
+		bt_ag->ecnr_turn_off(ag);
+		return 0;
+	}
+#endif /* CONFIG_BT_HFP_AG_ECNR */
+	return -ENOTSUP;
+}
+
 static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+BRSF", bt_hfp_ag_brsf_handler}, {"AT+BAC", bt_hfp_ag_bac_handler},
 	{"AT+CIND", bt_hfp_ag_cind_handler}, {"AT+CMER", bt_hfp_ag_cmer_handler},
@@ -1575,7 +1611,7 @@ static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+BCC", bt_hfp_ag_bcc_handler},   {"AT+BCS", bt_hfp_ag_bcs_handler},
 	{"ATD", bt_hfp_ag_atd_handler},      {"AT+BLDN", bt_hfp_ag_bldn_handler},
 	{"AT+CLIP", bt_hfp_ag_clip_handler}, {"AT+VGM", bt_hfp_ag_vgm_handler},
-	{"AT+VGS", bt_hfp_ag_vgs_handler},
+	{"AT+VGS", bt_hfp_ag_vgs_handler},   {"AT+NREC", bt_hfp_ag_nrec_handler},
 };
 
 static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)
