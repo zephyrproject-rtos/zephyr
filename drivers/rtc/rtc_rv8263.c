@@ -264,7 +264,7 @@ static int rv8263c8_time_get(const struct device *dev, struct rtc_time *timeptr)
 
 	/* Return an error when the oscillator is stopped. */
 	if (regs[0] & RV8263_BM_OS) {
-		return -ECANCELED;
+		return -ENODATA;
 	}
 
 	timeptr->tm_sec = bcd2bin(regs[0] & SECONDS_BITS);
