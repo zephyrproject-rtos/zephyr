@@ -176,12 +176,12 @@ void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu)
 		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES))
 			k_thread_foreach_unlocked_filter_by_cpu(cpu, thread_analyze_cb, &ud);
 		else
-			k_thread_foreach_unlocked(thread_analyze_cb, cb);
+			k_thread_foreach_unlocked(thread_analyze_cb, &ud);
 	} else {
 		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES))
 			k_thread_foreach_filter_by_cpu(cpu, thread_analyze_cb, &ud);
 		else
-			k_thread_foreach(thread_analyze_cb, cb);
+			k_thread_foreach(thread_analyze_cb, &ud);
 	}
 
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_ISR_STACK_USAGE)) {
