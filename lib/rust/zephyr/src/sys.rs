@@ -1,7 +1,14 @@
 //! Simple sys bindings for Zephyr.
 
+use zephyr_sys::k_timeout_t;
+
 pub mod thread;
 pub mod sync;
+
+// These constants don't make it through bindgen very well.
+// This does rely on two's complement integers.
+pub const K_FOREVER: k_timeout_t = k_timeout_t { ticks: -1 };
+pub const K_NO_WAIT: k_timeout_t = k_timeout_t { ticks: 0 };
 
 pub mod gpio {
     //! Higher level bindings to the GPIO interface.

@@ -10,7 +10,6 @@
 use zephyr_sys::{
     k_thread,
     k_thread_create,
-    k_timeout_t,
     z_thread_stack_element,
     ZR_STACK_ALIGN,
     ZR_STACK_RESERVED,
@@ -26,6 +25,8 @@ extern crate alloc;
 use alloc::boxed::Box;
 #[cfg(CONFIG_RUST_ALLOC)]
 use core::mem::ManuallyDrop;
+
+use super::K_NO_WAIT;
 
 /// Adjust the stack size for alignment.  Note that, unlike the C code, we don't include the
 /// reservation in this, as it has its own fields in the struct.
@@ -125,7 +126,7 @@ impl StaticKernelObject<k_thread> {
                     null_mut(),
                     5,
                     0,
-                    FOREVER);
+                    K_NO_WAIT);
             }
         })
     }
@@ -150,13 +151,11 @@ impl StaticKernelObject<k_thread> {
                     null_mut(),
                     5,
                     0,
-                    FOREVER);
+                    K_NO_WAIT);
             }
         });
     }
 }
-
-const FOREVER: k_timeout_t = k_timeout_t { ticks: !0 };
 
 unsafe extern "C" fn simple_child(
     arg: *mut c_void,
