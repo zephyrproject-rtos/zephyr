@@ -35,7 +35,7 @@ struct usb_cdc_ecm_config {
 	struct usb_if_descriptor if0;
 	struct cdc_header_descriptor if0_header;
 	struct cdc_union_descriptor if0_union;
-	struct cdc_ecm_descriptor if0_netfun_ecm;
+	struct cdc_eth_functional_descriptor if0_netfun_ecm;
 	struct usb_ep_descriptor if0_int_ep;
 
 	struct usb_if_descriptor if1_0;
@@ -86,7 +86,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	},
 	/* Ethernet Networking Functional descriptor */
 	.if0_netfun_ecm = {
-		.bFunctionLength = sizeof(struct cdc_ecm_descriptor),
+		.bFunctionLength = sizeof(struct cdc_eth_functional_descriptor),
 		.bDescriptorType = USB_DESC_CS_INTERFACE,
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC,
 		.iMACAddress = 4,

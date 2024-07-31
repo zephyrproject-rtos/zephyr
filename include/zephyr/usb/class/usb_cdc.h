@@ -28,11 +28,13 @@
 #define ACM_SUBCLASS			0x02
 #define ECM_SUBCLASS			0x06
 #define EEM_SUBCLASS			0x0c
+#define NCM_SUBCLASS			0x0d
 
 /** Communications Class Protocol Codes */
 #define AT_CMD_V250_PROTOCOL		0x01
 #define EEM_PROTOCOL			0x07
 #define ACM_VENDOR_PROTOCOL		0xFF
+#define NCM_DATA_PROTOCOL		1
 
 /**
  * @brief Data Class Interface Codes
@@ -50,6 +52,7 @@
 #define ACM_FUNC_DESC			0x02
 #define UNION_FUNC_DESC			0x06
 #define ETHERNET_FUNC_DESC		0x0F
+#define ETHERNET_FUNC_DESC_NCM		0x1a
 
 /**
  * @brief PSTN Subclass Specific Requests
@@ -199,7 +202,7 @@ struct cdc_acm_notification {
 } __packed;
 
 /** Ethernet Networking Functional Descriptor */
-struct cdc_ecm_descriptor {
+struct cdc_eth_functional_descriptor {
 	uint8_t bFunctionLength;
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
@@ -208,6 +211,14 @@ struct cdc_ecm_descriptor {
 	uint16_t wMaxSegmentSize;
 	uint16_t wNumberMCFilters;
 	uint8_t bNumberPowerFilters;
+} __packed;
+
+struct cdc_ncm_functional_descriptor {
+	uint8_t bFunctionLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint16_t bcdNcmVersion;
+	uint8_t bmNetworkCapabilities;
 } __packed;
 
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_CDC_H_ */
