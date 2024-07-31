@@ -15,7 +15,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 
@@ -204,8 +203,8 @@ static int iis2iclx_sample_fetch_accel(const struct device *dev)
 		return -EIO;
 	}
 
-	data->acc[0] = sys_le16_to_cpu(buf[0]);
-	data->acc[1] = sys_le16_to_cpu(buf[1]);
+	data->acc[0] = buf[0];
+	data->acc[1] = buf[1];
 
 	return 0;
 }
@@ -222,7 +221,7 @@ static int iis2iclx_sample_fetch_temp(const struct device *dev)
 		return -EIO;
 	}
 
-	data->temp_sample = sys_le16_to_cpu(buf);
+	data->temp_sample = buf;
 
 	return 0;
 }
