@@ -402,6 +402,13 @@ int retention_write(const struct device *dev, off_t offset, const uint8_t *buffe
 #endif /* ANY_HAS_PREFIX */
 
 finish:
+#if defined(ANY_HAS_WRITE32)
+	/* Validate any incomplete word by writing it again */
+	rc = retained_mem_write(config->parent,
+			(config->offset + config->prefix_len + (size_t)offset),
+			buffer,
+			size);
+#endif /* ANY_HAS_WRITE32 */
 	retention_lock_release(dev);
 
 	return rc;
