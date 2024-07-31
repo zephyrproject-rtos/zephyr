@@ -83,6 +83,22 @@ jobs:
         cd ..
         west build -b tlsr9118bdk40d             -d build_sock_simple_ipv6_w91          zephyr/samples/boards/tlsr9x/sock_simple                 -- -DCONFIG_APP_SOCKET_UDP_IPV6=y
 
+    - name: Build W91 key_matrix
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_key_matrix                    zephyr/samples/boards/tlsr9x/key_matrix
+
+    - name: Build W91 key_pool
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_key_pool                      zephyr/samples/boards/tlsr9x/key_pool
+
+    - name: Build W91 led_pool
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_led_pool                      zephyr/samples/boards/tlsr9x/led_pool/
+
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
@@ -92,6 +108,12 @@ jobs:
         cp ../build_nvs_w91/zephyr/zephyr.bin                       telink_build_artifacts/w91_nvs.bin
         cp ../build_mcuboot_w91/zephyr/zephyr.bin                   telink_build_artifacts/w91_mcuboot.bin
         cp ../build_blinky_dfu_w91/zephyr/zephyr.signed.bin         telink_build_artifacts/w91_blinky_dfu.signed.bin
+        cp ../build_bt_peripheral_ht_w91/zephyr/zephyr.bin          telink_build_artifacts/w91_bt_peripheral_ht.bin
+        cp ../build_sock_simple_ipv4_w91/zephyr/zephyr.bin          telink_build_artifacts/w91_wifi_socket_udp_ipv4.bin
+        cp ../build_sock_simple_ipv6_w91/zephyr/zephyr.bin          telink_build_artifacts/w91_wifi_socket_udp_ipv6.bin
+        cp ../build_key_matrix/zephyr/zephyr.bin                    telink_build_artifacts/w91_key_matrix.bin
+        cp ../build_key_pool/zephyr/zephyr.bin                      telink_build_artifacts/w91_key_pool.bin
+        cp ../build_led_pool/zephyr/zephyr.bin                      telink_build_artifacts/w91_led_pool.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v3
