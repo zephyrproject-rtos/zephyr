@@ -47,44 +47,6 @@ static void init_heap(void)
 #define init_heap(...)
 #endif /* CONFIG_MBEDTLS_ENABLE_HEAP && MBEDTLS_MEMORY_BUFFER_ALLOC_C */
 
-#if defined(CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR)
-static const struct device *const entropy_dev =
-			DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
-
-int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len,
-			  size_t *olen)
-{
-	int ret;
-	uint16_t request_len = len > UINT16_MAX ? UINT16_MAX : len;
-
-	ARG_UNUSED(data);
-
-	if (output == NULL || olen == NULL || len == 0) {
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-	}
-
-	if (!IS_ENABLED(CONFIG_ENTROPY_HAS_DRIVER)) {
-		sys_rand_get(output, len);
-		*olen = len;
-
-		return 0;
-	}
-
-	if (!device_is_ready(entropy_dev)) {
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-	}
-
-	ret = entropy_get_entropy(entropy_dev, (uint8_t *)output, request_len);
-	if (ret < 0) {
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-	}
-
-	*olen = request_len;
-
-	return 0;
-}
-#endif /* CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR */
-
 static int _mbedtls_init(void)
 {
 
@@ -122,20 +84,62 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
 	return (mbedtls_ms_time_t)k_uptime_get();
 }
 
+#if defined(CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR) || defined(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+static int get_random_data(uint8_t *output, size_t output_size, bool allow_non_cs)
+{
+	int ret = MBEDTLS_ERR_ENTROPY_NO_SOURCES_DEFINED;
+
+#if defined(CONFIG_CSPRNG_ENABLED)
+	ret = sys_csrand_get(output, output_size);
+	if (ret == 0) {
+		return 0;
+	}
+#endif /* CONFIG_CSPRNG_ENABLED */
+
+	if (allow_non_cs) {
+		sys_rand_get(output, output_size);
+		ret = 0;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR || CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG */
+
+#if defined(CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR)
+int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len,
+			  size_t *olen)
+{
+	int ret;
+	uint16_t request_len = len > UINT16_MAX ? UINT16_MAX : len;
+
+	ARG_UNUSED(data);
+
+	if (output == NULL || olen == NULL || len == 0) {
+		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+	}
+
+	ret = get_random_data(output, len, true);
+	if (ret < 0) {
+		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+	}
+
+	*olen = request_len;
+
+	return 0;
+}
+#endif /* CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR */
+
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
-/* MBEDTLS_PSA_CRYPTO_C requires a random generator to work and this can
- * be achieved through either legacy MbedTLS modules
- * (ENTROPY + CTR_DRBG/HMAC_DRBG) or provided externally by enabling the
- * CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG. In the latter case the following
- * callback functions needs to be defined.
- */
 psa_status_t mbedtls_psa_external_get_random(
 	mbedtls_psa_external_random_context_t *context,
 	uint8_t *output, size_t output_size, size_t *output_length)
 {
 	(void) context;
+	int ret;
 
-	if (sys_csrand_get(output, output_size) != 0) {
+	ret = get_random_data(output, output_size,
+		IS_ENABLED(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG));
+	if (ret != 0) {
 		return PSA_ERROR_GENERIC_ERROR;
 	}
 
@@ -143,4 +147,4 @@ psa_status_t mbedtls_psa_external_get_random(
 
 	return PSA_SUCCESS;
 }
-#endif
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG */

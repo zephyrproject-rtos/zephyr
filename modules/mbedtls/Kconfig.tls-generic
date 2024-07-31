@@ -481,7 +481,6 @@ choice MBEDTLS_PSA_CRYPTO_RND_SOURCE
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 	bool "Use a cryptographically secure driver as random source"
-	depends on CSPRNG_ENABLED
 	help
 	  Use a cryptographically secure random generator to provide random data
 	  instead of legacy Mbed TLS modules. This has a smaller footprint
@@ -512,6 +511,18 @@ config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	  in the "external" version, so the footprint is larger.
 
 endchoice
+
+config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG
+	bool "Allow non cryptographically secure random sources (for test only!)"
+	depends on MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+	help
+	  MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG is by default limited to rely only
+	  on cryptographically secure random number generators. However, only
+	  for test purposes, it might be useful to enable external random
+	  number generation, but have it using weak random sources (non
+	  cryptographically secure).
+	  Warning: this is meant to be enabled only for tests, not in production
+	  as the generated values are not cryptographically secure!
 
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"

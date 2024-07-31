@@ -11,6 +11,20 @@ zephyr_interface_library_named(mbedTLS)
       message(WARNING "No entropy device on the system, using fake entropy source!")
     endif()
 
+    if(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+      if(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG)
+        message(WARNING "
+          Non cryptographycally secure sources are enabled for psa_generate_random().
+          This is meant to be used only for tests, not in production!")
+      else()
+        if(NOT CONFIG_CSPRNG_ENABLED)
+          message(FATAL_ERROR "
+            MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG is set but there is
+            no CSPRNG enabled.")
+        endif()
+      endif()
+    endif()
+
     # Add the config-file entry point
     target_compile_definitions(mbedTLS INTERFACE
         MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
