@@ -68,6 +68,10 @@ struct aci_set_ble_addr {
 	uint8_t value[6];
 } __packed;
 
+#if defined(CONFIG_BT_HCI_SETUP)
+static int bt_ipm_setup(const struct device *dev, const struct bt_hci_setup_params *params);
+#endif
+
 #ifdef CONFIG_BT_HCI_HOST
 #define ACI_WRITE_SET_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0xFC0F)
 #define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
@@ -565,6 +569,18 @@ static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
+	hci->recv = recv;
+
+	LOG_DBG("IPM Channel Open Completed");
+
+	return 0;
+}
+
+static int bt_ipm_setup(const struct device *dev, const struct bt_hci_setup_params *params)
+{
+	ARG_UNUSED(params);
+	int err;
+
 #ifdef CONFIG_BT_HCI_HOST
 	err = bt_ipm_ble_init();
 	if (err) {
@@ -572,9 +588,7 @@ static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
 	}
 #endif /* CONFIG_BT_HCI_HOST */
 
-	hci->recv = recv;
-
-	LOG_DBG("IPM Channel Open Completed");
+	LOG_DBG("IPM Channel Setup Completed");
 
 	return 0;
 }
@@ -613,6 +627,9 @@ static const struct bt_hci_driver_api drv = {
 	.close          = bt_ipm_close,
 #endif
 	.send           = bt_ipm_send,
+#if defined(CONFIG_BT_HCI_SETUP)
+	.setup = bt_ipm_setup,
+#endif
 };
 
 static int _bt_ipm_init(const struct device *dev)
