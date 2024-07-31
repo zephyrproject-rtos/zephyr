@@ -20,6 +20,17 @@ config SOC_NRF54L15_ENGA_CPUAPP
 	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_POWEROFF
 
+config SOC_NRF54L20_ENGA_CPUAPP
+	select ARM
+	select ARMV8_M_DSP
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ICACHE
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+	select HAS_HW_NRF_RADIO_IEEE802154
+	select HAS_POWEROFF
+
 config SOC_NRF54L15_ENGA_CPUFLPR
 	depends on RISCV_CORE_NORDIC_VPR
 
@@ -45,6 +56,13 @@ config SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE
 	help
 	  With this option, the glitch detector is not disabled during system initialization.
 	  The CPU runs with the default state of glitch detector.
+
+config SOC_NRF54LX_SKIP_TAMPC_SETUP
+	bool "Skip setting up tamper controller"
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  With this option, the tamper controller is not enabled during system initialization.
+	  The CPU runs with the default state of tamper controller.
 
 config SOC_NRF_FORCE_CONSTLAT
 	bool "Force constant-latency mode"

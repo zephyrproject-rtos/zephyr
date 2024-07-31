@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf54l20.dtsi>
+
+cpu: &cpuapp {};
+systick: &cpuapp_systick {};
+nvic: &cpuapp_nvic {};
+
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_controller;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&cpuapp_nvic>;
+		ranges;
+	};
+
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "disabled";
+	};
+};
+
+&bt_hci_controller {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&cpuapp_ppb {
+	compatible = "simple-bus";
+	ranges;
+};
+
+&grtc {
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+	interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>,
+#else
+	interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>,
+#endif
+		<229 NRF_DEFAULT_IRQ_PRIORITY>; /* reserved for Zero Latency IRQs */
+};
+
+&gpiote20 {
+	interrupts = <219 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&gpiote30 {
+	interrupts = <269 NRF_DEFAULT_IRQ_PRIORITY>;
+};
