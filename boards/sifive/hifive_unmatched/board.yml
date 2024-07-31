@@ -3,4 +3,7 @@ board:
   full_name: HiFive Unmatched
   vendor: sifive
   socs:
-    - name: fu740
+    - name: 'fu740'
+      variants:
+        - name: 'smp'
+          cpucluster: 'u74'
