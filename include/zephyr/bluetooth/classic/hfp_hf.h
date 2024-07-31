@@ -411,6 +411,20 @@ int bt_hfp_hf_number_call(struct bt_conn *conn, const char *number);
  */
 int bt_hfp_hf_memory_dial(struct bt_conn *conn, const char *location);
 
+/** @brief Handsfree HF redial last number
+ *
+ *  Initiate outgoing voice calls by recalling the last number
+ *  dialed by the AG.
+ *  Send the AT+BLDN command to recall the last number.
+ *  The result of the command will be notified through the callback
+ *  `dialing`.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_redial(struct bt_conn *conn);
+
 /** @brief Handsfree HF setup audio connection
  *
  *  Setup audio conenction by sending AT+BCC.
