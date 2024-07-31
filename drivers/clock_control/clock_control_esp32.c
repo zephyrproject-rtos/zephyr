@@ -123,6 +123,21 @@ static void esp32_clock_perip_init(void)
 
 		usb_serial_jtag_ll_enable_bus_clock(false);
 	}
+
+	if ((rst_reason == RESET_REASON_CHIP_POWER_ON) ||
+	    (rst_reason == RESET_REASON_CHIP_BROWN_OUT) ||
+	    (rst_reason == RESET_REASON_SYS_RTC_WDT) ||
+	    (rst_reason == RESET_REASON_SYS_SUPER_WDT)) {
+
+		periph_ll_disable_clk_set_rst(PERIPH_LP_I2C0_MODULE);
+
+		CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_RNG_CK_EN);
+		CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_UART_CK_EN);
+		CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_OTP_DBG_CK_EN);
+		CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_EXT_I2C_CK_EN);
+		CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_CPU_CK_EN);
+		WRITE_PERI_REG(LP_CLKRST_LP_CLK_PO_EN_REG, 0);
+	}
 }
 #else
 static void esp32_clock_perip_init(void)
