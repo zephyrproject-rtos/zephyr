@@ -9,6 +9,8 @@
 #![no_std]
 #![allow(unexpected_cfgs)]
 
+pub mod align;
+pub mod object;
 pub mod sys;
 
 // Bring in the generated kconfig module
