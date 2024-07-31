@@ -35,9 +35,22 @@ extern int errno;
  */
 #ifdef CONFIG_CPU_CORTEX_M
   #if !(defined(CONFIG_FP_HARDAI) || defined(FORCE_FP_HARDABI))
-    #define __SOFTFP__
+    #ifndef __SOFTFP__
+      #define __SOFTFP__
+    #endif
   #endif
 #endif
 
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/thread_stack.h>
 #include <zephyr/drivers/gpio.h>
+
+/*
+ * bindgen will only output #defined constants that resolve to simple numbers.  These are some
+ * symbols that we want exported that, at least in some situations, are more complex, usually with a
+ * type cast.
+ *
+ * We'll use the prefix "ZR_" to avoid conflicts with other symbols.
+ */
+const uintptr_t ZR_STACK_ALIGN = Z_KERNEL_STACK_OBJ_ALIGN;
+const uintptr_t ZR_STACK_RESERVED = K_KERNEL_STACK_RESERVED;

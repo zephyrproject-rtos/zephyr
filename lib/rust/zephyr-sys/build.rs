@@ -46,6 +46,9 @@ fn main() -> Result<()> {
         .allowlist_function("k_.*")
         .allowlist_function("gpio_.*")
         .allowlist_item("GPIO_.*")
+        .allowlist_item("Z_.*")
+        .allowlist_item("ZR_.*")
+        .allowlist_item("K_.*")
         // Each DT node has a device entry that is a static.
         .allowlist_item("__device_dts_ord.*")
         .allowlist_function("device_.*")
