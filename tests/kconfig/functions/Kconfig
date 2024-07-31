@@ -89,4 +89,28 @@ config KCONFIG_ARITHMETIC_ADD_INC_1_1
 	int
 	default $(add, $(inc, 1, 1))
 
+config KCONFIG_MIN_10
+	int
+	default $(min, 10)
+
+config KCONFIG_MIN_10_3
+	int
+	default $(min, 10, 3)
+
+config KCONFIG_MIN_10_3_2
+	int
+	default $(min, 10, 3, 2)
+
+config KCONFIG_MAX_10
+	int
+	default $(max, 10)
+
+config KCONFIG_MAX_10_3
+	int
+	default $(max, 10, 3)
+
+config KCONFIG_MAX_10_3_2
+	int
+	default $(max, 10, 3, 2)
+
 source "Kconfig.zephyr"

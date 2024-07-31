@@ -35,4 +35,14 @@ ZTEST(test_kconfig_functions, test_arithmetic)
 	zassert_equal(CONFIG_KCONFIG_ARITHMETIC_ADD_INC_1_1, (1 + 1) + (1 + 1));
 }
 
+ZTEST(test_kconfig_functions, test_min_max)
+{
+	zassert_equal(CONFIG_KCONFIG_MIN_10, 10);
+	zassert_equal(CONFIG_KCONFIG_MIN_10_3, MIN(10, 3));
+	zassert_equal(CONFIG_KCONFIG_MIN_10_3_2, MIN(MIN(10, 3), 2));
+	zassert_equal(CONFIG_KCONFIG_MAX_10, 10);
+	zassert_equal(CONFIG_KCONFIG_MAX_10_3, MAX(10, 3));
+	zassert_equal(CONFIG_KCONFIG_MAX_10_3_2, MAX(MAX(10, 3), 2));
+}
+
 ZTEST_SUITE(test_kconfig_functions, NULL, NULL, NULL, NULL, NULL);
