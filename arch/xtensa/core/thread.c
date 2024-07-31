@@ -72,6 +72,18 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 	frame->bsa.ps = PS_WOE | PS_UM | PS_CALLINC(1);
 #ifdef CONFIG_USERSPACE
 	if ((thread->base.user_options & K_USER) == K_USER) {
+#ifdef CONFIG_INIT_STACKS
+		/* setup_thread_stack() does not initialize the architecture specific
+		 * privileged stack. So we need to do it manually here as this function
+		 * is called by arch_new_thread() via z_setup_new_thread() after
+		 * setup_thread_stack() but before thread starts running.
+		 *
+		 * Note that only user threads have privileged stacks and kernel
+		 * only threads do not.
+		 */
+		(void)memset(&header->privilege_stack[0], 0xaa, sizeof(header->privilege_stack));
+#endif
+
 		frame->bsa.pc = (uintptr_t)arch_user_mode_enter;
 	} else {
 		frame->bsa.pc = (uintptr_t)z_thread_entry;
