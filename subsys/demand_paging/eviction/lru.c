@@ -111,8 +111,10 @@ static void lru_pf_remove(uint32_t pf_idx)
 
 	lru_pf_unlink(pf_idx);
 
-	if (was_head && (LRU_PF_HEAD != 0)) {
-		/* make new head PF unaccessible */
+	/* make new head PF unaccessible if it exists and it is not alone */
+	if (was_head &&
+	    (LRU_PF_HEAD != 0) &&
+	    (lru_pf_queue[LRU_PF_HEAD].next != 0)) {
 		struct k_mem_page_frame *pf = idx_to_pf(LRU_PF_HEAD);
 		uintptr_t flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, true);
 
