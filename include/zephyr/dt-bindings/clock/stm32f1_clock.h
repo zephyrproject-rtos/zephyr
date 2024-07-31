@@ -23,9 +23,15 @@
 
 /** Fixed clocks  */
 /* Low speed clocks defined in stm32_common_clocks.h */
-#define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
-#define STM32_SRC_HSE		(STM32_SRC_HSI + 1)
-
+#define STM32_SRC_HSI               (STM32_SRC_LSI + 1)
+#define STM32_SRC_HSE               (STM32_SRC_HSI + 1)
+#define STM32_SRC_PLLCLK_DIV2       (STM32_SRC_HSE + 1)
+#ifdef SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+#define STM32_SRC_EXT_HSE           (STM32_SRC_PLLCLK_DIV2 + 1)
+#define STM32_SRC_PLL2CLK           (STM32_SRC_EXT_HSE + 1)
+#define STM32_SRC_PLLI2SCLK         (STM32_SRC_PLL2CLK + 1)
+#define STM32_SRC_PLLI2SCLK_DIV2    (STM32_SRC_PLLI2SCLK + 1)
+#endif
 
 #define STM32_CLOCK_REG_MASK    0xFFU
 #define STM32_CLOCK_REG_SHIFT   0U
