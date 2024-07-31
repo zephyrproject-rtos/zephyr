@@ -1,7 +1,7 @@
 common:
   ignore_faults: true
 tests:
-  kernel.demand_paging:
+  kernel.demand_paging.mem_map:
     tags:
       - kernel
       - mmu
@@ -12,7 +12,7 @@ tests:
       - qemu_x86_tiny
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
-  kernel.demand_paging.timing_funcs:
+  kernel.demand_paging.mem_map.timing_funcs:
     tags:
       - kernel
       - mmu
