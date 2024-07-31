@@ -373,9 +373,9 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	key = irq_lock();
 
 	/* Set number of packets and transfer size */
-	sys_write32((is_periodic ? usb_dwc2_set_deptsizn_mc(1 + addnl) : 0) |
-		    usb_dwc2_set_deptsizn_pktcnt(pktcnt) |
-		    usb_dwc2_set_deptsizn_xfersize(len), dieptsiz_reg);
+	sys_write32((is_periodic ? usb_dwc2_set_dieptsizn_mc(1 + addnl) : 0) |
+		    usb_dwc2_set_dieptsizn_pktcnt(pktcnt) |
+		    usb_dwc2_set_dieptsizn_xfersize(len), dieptsiz_reg);
 
 	if (priv->bufferdma) {
 		if (!dwc2_dma_buffer_ok_to_use(dev, buf->data, len, cfg->mps)) {
@@ -505,8 +505,8 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 	xfersize = dwc2_rx_xfer_size(priv, cfg, buf);
 
 	pktcnt = DIV_ROUND_UP(xfersize, udc_mps_ep_size(cfg));
-	doeptsiz = usb_dwc2_set_deptsizn_pktcnt(pktcnt) |
-		   usb_dwc2_set_deptsizn_xfersize(xfersize);
+	doeptsiz = usb_dwc2_set_doeptsizn_pktcnt(pktcnt) |
+		   usb_dwc2_set_doeptsizn_xfersize(xfersize);
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
 		/* Use 1 to allow 8 byte long buffers for SETUP data */
 		doeptsiz |= (1 << USB_DWC2_DOEPTSIZ0_SUPCNT_POS);
@@ -892,7 +892,7 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 
 			/* Prepare next read only when transfer finished */
 			doeptsiz = sys_read32((mem_addr_t)&base->out_ep[evt.ep].doeptsiz);
-			if (usb_dwc2_get_deptsizn_xfersize(doeptsiz) == 0) {
+			if (usb_dwc2_get_doeptsizn_xfersize(doeptsiz) == 0) {
 				dwc2_prep_rx(dev, buf, ep_cfg, 0);
 			}
 		} else {
@@ -1001,7 +1001,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	 * every byte stored.
 	 */
 	evt.bcnt = dwc2_rx_xfer_size(priv, ep_cfg, buf) -
-		usb_dwc2_get_deptsizn_xfersize(doeptsiz);
+		usb_dwc2_get_doeptsizn_xfersize(doeptsiz);
 
 	if (priv->bufferdma) {
 		sys_cache_data_invd_range(buf->data, evt.bcnt);
