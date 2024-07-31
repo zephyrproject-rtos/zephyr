@@ -255,6 +255,17 @@ struct bt_hfp_hf_cb {
 	 *  @param id Negotiated Codec ID.
 	 */
 	void (*codec_negotiate)(struct bt_conn *conn, uint8_t id);
+	/** HF ECNR turns off callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  response of ECNR turning off is received from AG.
+	 *  If @kconfig{CONFIG_BT_HFP_HF_ECNR} is not enabled, the
+	 *  callback will not be notified.
+	 *
+	 *  @param conn Connection object.
+	 *  @param err The result of request.
+	 */
+	void (*ecnr_turn_off)(struct bt_conn *conn, int err);
 };
 
 /** @brief Register HFP HF profile
@@ -468,6 +479,20 @@ int bt_hfp_hf_select_codec(struct bt_conn *conn, uint8_t codec_id);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_set_codecs(struct bt_conn *conn, uint8_t codec_ids);
+
+/** @brief Handsfree HF turns off AG's EC and NR
+ *
+ *  Turn off the AG's EC and NR by sending `AT+NREC=0`.
+ *  The result of the command is notified through the callback
+ *  `ecnr_turn_off`.
+ *  If @kconfig{CONFIG_BT_HFP_HF_ECNR} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_turn_off_ecnr(struct bt_conn *conn);
 
 #ifdef __cplusplus
 }

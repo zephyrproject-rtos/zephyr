@@ -96,6 +96,11 @@ config BT_HFP_HF_CODEC_NEG
 	help
 	  This option enables Codec Negotiation for HFP HF
 
+config BT_HFP_HF_ECNR
+	bool "EC and/or NR function for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables EC and/or NR function for HFP HF
+
 if BT_HFP_HF_CODEC_NEG
 config BT_HFP_HF_CODEC_MSBC
 	bool "Support Codec mSBC for HFP HF [EXPERIMENTAL]"
