@@ -92,7 +92,14 @@ config STM32WB0_LSI_RUNTIME_MEASUREMENT_INTERVAL
 
 endmenu # DT_HAS_ST_STM32WB0_LSI_CLOCK_ENABLED
 
-# Micro-controller Clock output configuration options
+# Micro-controller Clock Output (MCO) configuration options
+config CLOCK_STM32_MCO
+	bool
+	default y
+	depends on DT_HAS_ST_STM32_CLOCK_MCO_ENABLED || DT_HAS_ST_STM32F1_CLOCK_MCO_ENABLED
+	# MCO configuration via Kconfig takes priority over Device Tree.
+	# Prevent DT-based MCO driver from compiling when Kconfig is used.
+	depends on CLOCK_STM32_MCO1_SRC_NOCLOCK && CLOCK_STM32_MCO2_SRC_NOCLOCK
 
 choice
 	prompt "STM32 MCO1 Clock Source"
