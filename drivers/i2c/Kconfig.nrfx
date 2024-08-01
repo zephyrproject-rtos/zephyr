@@ -25,6 +25,7 @@ config I2C_NRFX_TWI
 config I2C_NRFX_TWIM
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_TWIM_ENABLED
+	select I2C_CONTEXT
 	select NRFX_TWIM0 if HAS_HW_NRF_TWIM0
 	select NRFX_TWIM1 if HAS_HW_NRF_TWIM1
 	select NRFX_TWIM2 if HAS_HW_NRF_TWIM2
@@ -42,13 +43,5 @@ config I2C_NRFX_TWIM
 	select NRFX_TWIM135 if HAS_HW_NRF_TWIM135
 	select NRFX_TWIM136 if HAS_HW_NRF_TWIM136
 	select NRFX_TWIM137 if HAS_HW_NRF_TWIM137
-
-config I2C_NRFX_TRANSFER_TIMEOUT
-	int "Transfer timeout [ms]"
-	default 500
-	help
-	  Timeout in milliseconds used for each I2C transfer.
-	  0 means that the driver should use the K_FOREVER value,
-	  i.e. it should wait as long as necessary.
 
 endif # I2C_NRFX
