@@ -85,18 +85,39 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
  * PCLK192M frequency"), but after that operation is complete, the default
  * divider needs to be restored to avoid increased current consumption.
  */
-/* To prevent anomaly 159, use only divider /1 for HFCLK192M. */
+#if (INST_0_SCK_FREQUENCY >= NRF_QSPI_BASE_CLOCK_FREQ)
+/* For requested SCK >= 96 MHz, use HFCLK192M / 1 / (2*1) = 96 MHz */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
-#if (QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 4))
-/* For requested SCK >= 24 MHz, use HFCLK192M / 1 / (2*4) = 24 MHz */
-#define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV4
+#define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
+/* If anomaly 159 is to be prevented, only /1 divider can be used. */
+#elif NRF53_ERRATA_159_ENABLE_WORKAROUND
+#define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
+#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ, \
+				     INST_0_SCK_FREQUENCY) - 1)
+#elif (INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 2))
+/* For 96 MHz > SCK >= 48 MHz, use HFCLK192M / 2 / (2*1) = 48 MHz */
+#define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
+#define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
+#elif (INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 3))
+/* For 48 MHz > SCK >= 32 MHz, use HFCLK192M / 1 / (2*3) = 32 MHz */
+#define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
+#define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV3
 #else
-/* For requested SCK < 24 MHz, calculate the configuration value. */
+/* For requested SCK < 32 MHz, use divider /2 for HFCLK192M. */
+#define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
 #define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ / 2, \
 				     QSPI_IF_DEVICE_FREQUENCY) - 1)
 #endif
+
+#if BASE_CLOCK_DIV == NRF_CLOCK_HFCLK_DIV_1
+/* For 8 MHz, use HFCLK192M / 1 / (2*12) */
+#define INST_0_SCK_CFG_WAKE NRF_QSPI_FREQ_DIV12
+#elif BASE_CLOCK_DIV == NRF_CLOCK_HFCLK_DIV_2
 /* For 8 MHz, use HFCLK192M / 2 / (2*6) */
 #define INST_0_SCK_CFG_WAKE NRF_QSPI_FREQ_DIV6
+#else
+#error "Unsupported base clock divider for wake-up frequency."
+#endif
 
 #else
 /*
