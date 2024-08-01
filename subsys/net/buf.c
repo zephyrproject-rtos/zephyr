@@ -338,6 +338,7 @@ success:
 	buf->flags = 0U;
 	buf->frags = NULL;
 	buf->size  = size;
+	buf->type_id = 0;
 	net_buf_reset(buf);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)

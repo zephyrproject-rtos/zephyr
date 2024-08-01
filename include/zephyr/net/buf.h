@@ -1022,6 +1022,9 @@ struct net_buf {
 	/** Size of user data on this buffer */
 	uint8_t user_data_size;
 
+	/** Now with more magic */
+	uintptr_t type_id;
+
 	/** Union for convenience access to the net_buf_simple members, also
 	 * preserving the old API.
 	 */
@@ -1623,6 +1626,7 @@ static inline void net_buf_reserve(struct net_buf *buf, size_t reserve)
  */
 static inline void *net_buf_add(struct net_buf *buf, size_t len)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_add(&buf->b, len);
 }
 
@@ -1641,6 +1645,7 @@ static inline void *net_buf_add(struct net_buf *buf, size_t len)
 static inline void *net_buf_add_mem(struct net_buf *buf, const void *mem,
 				    size_t len)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_add_mem(&buf->b, mem, len);
 }
 
@@ -1657,6 +1662,7 @@ static inline void *net_buf_add_mem(struct net_buf *buf, const void *mem,
  */
 static inline uint8_t *net_buf_add_u8(struct net_buf *buf, uint8_t val)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_add_u8(&buf->b, val);
 }
 
@@ -1852,6 +1858,7 @@ static inline void net_buf_add_be64(struct net_buf *buf, uint64_t val)
  */
 static inline void *net_buf_remove_mem(struct net_buf *buf, size_t len)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_mem(&buf->b, len);
 }
 
@@ -1867,6 +1874,7 @@ static inline void *net_buf_remove_mem(struct net_buf *buf, size_t len)
  */
 static inline uint8_t net_buf_remove_u8(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_u8(&buf->b);
 }
 
@@ -1882,6 +1890,7 @@ static inline uint8_t net_buf_remove_u8(struct net_buf *buf)
  */
 static inline uint16_t net_buf_remove_le16(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_le16(&buf->b);
 }
 
@@ -1897,6 +1906,7 @@ static inline uint16_t net_buf_remove_le16(struct net_buf *buf)
  */
 static inline uint16_t net_buf_remove_be16(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_be16(&buf->b);
 }
 
@@ -1912,6 +1922,7 @@ static inline uint16_t net_buf_remove_be16(struct net_buf *buf)
  */
 static inline uint32_t net_buf_remove_be24(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_be24(&buf->b);
 }
 
@@ -1927,6 +1938,7 @@ static inline uint32_t net_buf_remove_be24(struct net_buf *buf)
  */
 static inline uint32_t net_buf_remove_le24(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_le24(&buf->b);
 }
 
@@ -1942,6 +1954,7 @@ static inline uint32_t net_buf_remove_le24(struct net_buf *buf)
  */
 static inline uint32_t net_buf_remove_le32(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_le32(&buf->b);
 }
 
@@ -1957,6 +1970,7 @@ static inline uint32_t net_buf_remove_le32(struct net_buf *buf)
  */
 static inline uint32_t net_buf_remove_be32(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_be32(&buf->b);
 }
 
@@ -1972,6 +1986,7 @@ static inline uint32_t net_buf_remove_be32(struct net_buf *buf)
  */
 static inline uint64_t net_buf_remove_le40(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_le40(&buf->b);
 }
 
@@ -1987,6 +2002,7 @@ static inline uint64_t net_buf_remove_le40(struct net_buf *buf)
  */
 static inline uint64_t net_buf_remove_be40(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_be40(&buf->b);
 }
 
@@ -2002,6 +2018,7 @@ static inline uint64_t net_buf_remove_be40(struct net_buf *buf)
  */
 static inline uint64_t net_buf_remove_le48(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_le48(&buf->b);
 }
 
@@ -2017,6 +2034,7 @@ static inline uint64_t net_buf_remove_le48(struct net_buf *buf)
  */
 static inline uint64_t net_buf_remove_be48(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_be48(&buf->b);
 }
 
@@ -2032,6 +2050,7 @@ static inline uint64_t net_buf_remove_be48(struct net_buf *buf)
  */
 static inline uint64_t net_buf_remove_le64(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_le64(&buf->b);
 }
 
@@ -2047,6 +2066,7 @@ static inline uint64_t net_buf_remove_le64(struct net_buf *buf)
  */
 static inline uint64_t net_buf_remove_be64(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_remove_be64(&buf->b);
 }
 
@@ -2063,6 +2083,7 @@ static inline uint64_t net_buf_remove_be64(struct net_buf *buf)
  */
 static inline void *net_buf_push(struct net_buf *buf, size_t len)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_push(&buf->b, len);
 }
 
@@ -2081,6 +2102,7 @@ static inline void *net_buf_push(struct net_buf *buf, size_t len)
 static inline void *net_buf_push_mem(struct net_buf *buf, const void *mem,
 				     size_t len)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_push_mem(&buf->b, mem, len);
 }
 
@@ -2278,6 +2300,7 @@ static inline void net_buf_push_be64(struct net_buf *buf, uint64_t val)
  */
 static inline void *net_buf_pull(struct net_buf *buf, size_t len)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull(&buf->b, len);
 }
 
@@ -2294,6 +2317,7 @@ static inline void *net_buf_pull(struct net_buf *buf, size_t len)
  */
 static inline void *net_buf_pull_mem(struct net_buf *buf, size_t len)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull_mem(&buf->b, len);
 }
 
@@ -2309,6 +2333,7 @@ static inline void *net_buf_pull_mem(struct net_buf *buf, size_t len)
  */
 static inline uint8_t net_buf_pull_u8(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull_u8(&buf->b);
 }
 
@@ -2324,6 +2349,7 @@ static inline uint8_t net_buf_pull_u8(struct net_buf *buf)
  */
 static inline uint16_t net_buf_pull_le16(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull_le16(&buf->b);
 }
 
@@ -2339,6 +2365,7 @@ static inline uint16_t net_buf_pull_le16(struct net_buf *buf)
  */
 static inline uint16_t net_buf_pull_be16(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull_be16(&buf->b);
 }
 
@@ -2354,6 +2381,7 @@ static inline uint16_t net_buf_pull_be16(struct net_buf *buf)
  */
 static inline uint32_t net_buf_pull_le24(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull_le24(&buf->b);
 }
 
@@ -2369,6 +2397,7 @@ static inline uint32_t net_buf_pull_le24(struct net_buf *buf)
  */
 static inline uint32_t net_buf_pull_be24(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull_be24(&buf->b);
 }
 
@@ -2384,6 +2413,7 @@ static inline uint32_t net_buf_pull_be24(struct net_buf *buf)
  */
 static inline uint32_t net_buf_pull_le32(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull_le32(&buf->b);
 }
 
@@ -2399,6 +2429,7 @@ static inline uint32_t net_buf_pull_le32(struct net_buf *buf)
  */
 static inline uint32_t net_buf_pull_be32(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull_be32(&buf->b);
 }
 
@@ -2414,6 +2445,7 @@ static inline uint32_t net_buf_pull_be32(struct net_buf *buf)
  */
 static inline uint64_t net_buf_pull_le40(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull_le40(&buf->b);
 }
 
@@ -2429,6 +2461,7 @@ static inline uint64_t net_buf_pull_le40(struct net_buf *buf)
  */
 static inline uint64_t net_buf_pull_be40(struct net_buf *buf)
 {
+	__ASSERT_NO_MSG(buf->type_id == 0);
 	return net_buf_simple_pull_be40(&buf->b);
 }
 
