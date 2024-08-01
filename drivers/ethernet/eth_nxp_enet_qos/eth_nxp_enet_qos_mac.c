@@ -577,7 +577,7 @@ static const struct ethernet_api api_funcs = {
 
 #define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)						\
 	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||				\
-			DT_INST_NODE_HAS_PROP(n, zephyr_random_mac_address),		\
+			DT_INST_PROP(n, zephyr_random_mac_address),			\
 			"MAC address not specified on ENET QOS DT node");
 
 #define NXP_ENET_QOS_CONNECT_IRQS(node_id, prop, idx)					\
