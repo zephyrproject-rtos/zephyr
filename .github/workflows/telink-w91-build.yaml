@@ -98,6 +98,11 @@ jobs:
         cd ..
         west build -b tlsr9118bdk40d             -d build_led_pool                      zephyr/samples/boards/tlsr9x/led_pool/
 
+    - name: Build W91 pwm_pool
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_pwm_pool                      zephyr/samples/boards/tlsr9x/pwm_pool/
+
 
     - name: Collect artifacts
       run: |
@@ -114,6 +119,7 @@ jobs:
         cp ../build_key_matrix/zephyr/zephyr.bin                    telink_build_artifacts/w91_key_matrix.bin
         cp ../build_key_pool/zephyr/zephyr.bin                      telink_build_artifacts/w91_key_pool.bin
         cp ../build_led_pool/zephyr/zephyr.bin                      telink_build_artifacts/w91_led_pool.bin
+        cp ../build_pwm_pool/zephyr/zephyr.bin                      telink_build_artifacts/w91_pwm_pool.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v3
