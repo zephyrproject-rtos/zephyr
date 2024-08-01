@@ -3,3 +3,22 @@ description: Nordic nRF family UARTE (UART with EasyDMA)
 compatible: "nordic,nrf-uarte"
 
 include: ["nordic,nrf-uart-common.yaml", "memory-region.yaml"]
+
+properties:
+  short-endtx-stoptx:
+    type: boolean
+    description: |
+      UARTE has ENDTX_STOPTX HW short.
+  frame-timeout:
+    type: boolean
+    description: |
+      UARTE has RX frame timeout HW feature.
+  base-frequency:
+    type: int
+    description: |
+      Frequency that UARTE is clocked in MHz. If not provided then assuming 16MHz.
+      Baudrate value is recalculated by the ratio between that frequency and 16MHz.
+    enum:
+      - 16
+      - 128
+      - 320

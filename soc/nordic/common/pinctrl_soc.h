@@ -38,7 +38,8 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 ((NRF_PULL_UP * DT_PROP(node_id, bias_pull_up)) << NRF_PULL_POS) |    \
 	 (DT_PROP(node_id, nordic_drive_mode) << NRF_DRIVE_POS) |	       \
 	 ((NRF_LP_ENABLE * DT_PROP(node_id, low_power_enable)) << NRF_LP_POS) |\
-	 (DT_PROP(node_id, nordic_invert) << NRF_INVERT_POS)		       \
+	 (DT_PROP(node_id, nordic_invert) << NRF_INVERT_POS) |		       \
+	 (DT_PROP(node_id, nordic_clock_enable) << NRF_CLOCK_ENABLE_POS)       \
 	),
 
 /**
@@ -58,6 +59,13 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param pincfg Pin configuration bit field.
  */
 #define NRF_GET_FUN(pincfg) (((pincfg) >> NRF_FUN_POS) & NRF_FUN_MSK)
+
+/**
+ * @brief Utility macro to obtain pin clock enable flag.
+ *
+ * @param pincfg Pin configuration bit field.
+ */
+#define NRF_GET_CLOCK_ENABLE(pincfg) (((pincfg) >> NRF_CLOCK_ENABLE_POS) & NRF_CLOCK_ENABLE_MSK)
 
 /**
  * @brief Utility macro to obtain pin inversion flag.

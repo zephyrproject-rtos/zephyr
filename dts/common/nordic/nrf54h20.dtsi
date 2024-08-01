@@ -492,7 +492,10 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0x8e6000 0x1000>;
 				status = "disabled";
-				interrupts = <229 NRF_DEFAULT_IRQ_PRIORITY>;
+				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
+				short-endtx-stoptx;
+				frame-timeout;
+				base-frequency = <320>;
 			};
 
 			spi121: spi@8e7000 {
@@ -787,6 +790,8 @@
 				reg = <0x9a5000 0x1000>;
 				status = "disabled";
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 			i2c131: i2c@9a6000 {
@@ -817,6 +822,8 @@
 				reg = <0x9a6000 0x1000>;
 				status = "disabled";
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 			dppic134: dppic@9b1000 {
@@ -881,6 +888,8 @@
 				reg = <0x9b5000 0x1000>;
 				status = "disabled";
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 			i2c133: i2c@9b6000 {
@@ -911,6 +920,8 @@
 				reg = <0x9b6000 0x1000>;
 				status = "disabled";
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 			dppic135: dppic@9c1000 {
@@ -975,6 +986,8 @@
 				reg = <0x9c5000 0x1000>;
 				status = "disabled";
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 			i2c135: i2c@9c6000 {
@@ -1005,6 +1018,8 @@
 				reg = <0x9c6000 0x1000>;
 				status = "disabled";
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 			dppic136: dppic@9d1000 {
@@ -1069,6 +1084,8 @@
 				reg = <0x9d5000 0x1000>;
 				status = "disabled";
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 			i2c137: i2c@9d6000 {
@@ -1099,6 +1116,8 @@
 				reg = <0x9d6000 0x1000>;
 				status = "disabled";
 				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 		};
 	};

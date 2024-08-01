@@ -135,6 +135,9 @@
 				reg = <0x4a000 0x1000>;
 				interrupts = <74 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+				short-endtx-stoptx;
+				frame-timeout;
+				base-frequency = <128>;
 			};
 
 			cpuflpr_vpr: vpr@4c000 {
@@ -265,6 +268,8 @@
 				reg = <0xc6000 0x1000>;
 				interrupts = <198 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 			i2c21: i2c@c7000 {
@@ -302,6 +307,8 @@
 				reg = <0xc7000 0x1000>;
 				interrupts = <199 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 			i2c22: i2c@c8000 {
@@ -339,6 +346,8 @@
 				reg = <0xc8000 0x1000>;
 				interrupts = <200 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 			egu20: egu@c9000 {
@@ -533,6 +542,8 @@
 				reg = <0x104000 0x1000>;
 				interrupts = <260 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+				short-endtx-stoptx;
+				frame-timeout;
 			};
 
 #ifdef USE_NON_SECURE_ADDRESS_MAP
