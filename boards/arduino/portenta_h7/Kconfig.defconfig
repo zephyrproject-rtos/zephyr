@@ -5,6 +5,9 @@ if BOARD_ARDUINO_PORTENTA_H7
 
 if NETWORKING
 
+config REGULATOR
+	default y
+
 config NET_L2_ETHERNET
 	default y
 
