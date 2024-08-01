@@ -2,9 +2,9 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-project(buf_simple)
-
 find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
+
+project(buf_simple)
 
 add_subdirectory(${ZEPHYR_BASE}/tests/net/mocks net_mocks)
 
