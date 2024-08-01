@@ -53,7 +53,7 @@
 			riscv,max-priority = <7>;
 		};
 		uart0: serial@e0001800 {
-			compatible = "litex,uart0";
+			compatible = "litex,uart";
 			interrupt-parent = <&intc0>;
 			interrupts = <2 10>;
 			reg = <0xe0001800 0x4
