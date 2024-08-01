@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2018, Nordic Semiconductor ASA
+ * Copyright (c) 2018-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -12,22 +11,15 @@
 #include <soc.h>
 #include <nrfx_twi.h>
 #include "i2c_nrfx_twi_common.h"
+#include "i2c_context.h"
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
 
-#if CONFIG_I2C_NRFX_TRANSFER_TIMEOUT
-#define I2C_TRANSFER_TIMEOUT_MSEC K_MSEC(CONFIG_I2C_NRFX_TRANSFER_TIMEOUT)
-#else
-#define I2C_TRANSFER_TIMEOUT_MSEC K_FOREVER
-#endif
-
 struct i2c_nrfx_twi_data {
 	uint32_t dev_config;
-	struct k_sem transfer_sync;
-	struct k_sem completion_sync;
-	volatile nrfx_err_t res;
+	struct i2c_context ctx;
 };
 
 /* Enforce dev_config matches the same offset as the common structure,
@@ -38,97 +30,109 @@ BUILD_ASSERT(
 	offsetof(struct i2c_nrfx_twi_common_data, dev_config)
 );
 
+static int twi_init_transfer_handler(struct i2c_context *ctx)
+{
+	const struct device *dev = ctx->dev;
+	const struct i2c_nrfx_twi_config *config = dev->config;
+
+	nrfx_twi_enable(&config->twi);
+	return 0;
+}
+
+static void twi_start_transfer_handler(struct i2c_context *ctx)
+{
+	const struct device *dev = i2c_context_get_dev(ctx);
+	uint8_t msg_idx = i2c_context_get_transfer_msg_idx(ctx);
+	uint8_t num_msgs = i2c_context_get_transfer_num_msgs(ctx);
+	struct i2c_msg *msgs = i2c_context_get_transfer_msgs(ctx);
+	uint16_t addr = i2c_context_get_transfer_addr(ctx);
+	int ret;
+
+	bool more_msgs = msg_idx < (num_msgs - 1) &&
+			 !(msgs[msg_idx + 1].flags & I2C_MSG_RESTART);
+
+	ret = i2c_nrfx_twi_msg_transfer(dev,
+					msgs[msg_idx].flags,
+					msgs[msg_idx].buf,
+					msgs[msg_idx].len,
+					addr,
+					more_msgs);
+
+	if (ret) {
+		i2c_context_cancel_transfer(ctx);
+	}
+}
+
+static void twi_post_transfer_handler(struct i2c_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+
+static void twi_deinit_transfer_handler(struct i2c_context *ctx)
+{
+	const struct device *dev = i2c_context_get_dev(ctx);
+	const struct i2c_nrfx_twi_config *config = dev->config;
+	int result = i2c_context_get_transfer_result(ctx);
+
+	nrfx_twi_disable(&config->twi);
+
+	if (result) {
+		/* Try to recover bus in case of error */
+		(void)i2c_nrfx_twi_recover_bus(dev);
+	}
+}
+
 static int i2c_nrfx_twi_transfer(const struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr)
 {
-	const struct i2c_nrfx_twi_config *config = dev->config;
 	struct i2c_nrfx_twi_data *data = dev->data;
-	int ret = 0;
 
-	k_sem_take(&data->transfer_sync, K_FOREVER);
-
-	/* Dummy take on completion_sync sem to be sure that it is empty */
-	k_sem_take(&data->completion_sync, K_NO_WAIT);
-
-	nrfx_twi_enable(&config->twi);
-
-	for (size_t i = 0; i < num_msgs; i++) {
-		bool more_msgs = ((i < (num_msgs - 1)) &&
-				  !(msgs[i + 1].flags & I2C_MSG_RESTART));
-
-		ret = i2c_nrfx_twi_msg_transfer(dev, msgs[i].flags,
-						msgs[i].buf,
-						msgs[i].len, addr,
-						more_msgs);
-		if (ret) {
-			break;
-		}
-
-		ret = k_sem_take(&data->completion_sync,
-				 I2C_TRANSFER_TIMEOUT_MSEC);
-		if (ret != 0) {
-			/* Whatever the frequency, completion_sync should have
-			 * been given by the event handler.
-			 *
-			 * If it hasn't, it's probably due to an hardware issue
-			 * on the I2C line, for example a short between SDA and
-			 * GND.
-			 * This is issue has also been when trying to use the
-			 * I2C bus during MCU internal flash erase.
-			 *
-			 * In many situation, a retry is sufficient.
-			 * However, some time the I2C device get stuck and need
-			 * help to recover.
-			 * Therefore we always call i2c_nrfx_twi_recover_bus()
-			 * to make sure everything has been done to restore the
-			 * bus from this error.
-			 */
-			nrfx_twi_disable(&config->twi);
-			(void)i2c_nrfx_twi_recover_bus(dev);
-			ret = -EIO;
-			break;
-		}
-
-		if (data->res != NRFX_SUCCESS) {
-			ret = -EIO;
-			break;
-		}
-	}
-
-	nrfx_twi_disable(&config->twi);
-	k_sem_give(&data->transfer_sync);
-
-	return ret;
+	return i2c_context_start_transfer(&data->ctx,
+					  msgs,
+					  num_msgs,
+					  addr);
 }
+
+#if defined(CONFIG_I2C_CALLBACK)
+static int i2c_nrfx_twi_transfer_cb(const struct device *dev,
+				    struct i2c_msg *msgs,
+				    uint8_t num_msgs,
+				    uint16_t addr,
+				    i2c_callback_t cb,
+				    void *userdata)
+{
+	struct i2c_nrfx_twi_data *data = dev->data;
+
+	return i2c_context_start_transfer_cb(&data->ctx,
+					     msgs,
+					     num_msgs,
+					     addr,
+					     cb,
+					     userdata);
+}
+#endif
 
 static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
 {
 	const struct device *dev = p_context;
-	struct i2c_nrfx_twi_data *dev_data = (struct i2c_nrfx_twi_data *)dev->data;
+	struct i2c_nrfx_twi_data *data = (struct i2c_nrfx_twi_data *)dev->data;
+	struct i2c_context *ctx = &data->ctx;
 
-	switch (p_event->type) {
-	case NRFX_TWI_EVT_DONE:
-		dev_data->res = NRFX_SUCCESS;
-		break;
-	case NRFX_TWI_EVT_ADDRESS_NACK:
-		dev_data->res = NRFX_ERROR_DRV_TWI_ERR_ANACK;
-		break;
-	case NRFX_TWI_EVT_DATA_NACK:
-		dev_data->res = NRFX_ERROR_DRV_TWI_ERR_DNACK;
-		break;
-	default:
-		dev_data->res = NRFX_ERROR_INTERNAL;
-		break;
+	if (p_event->type == NRFX_TWI_EVT_DONE) {
+		i2c_context_continue_transfer(ctx);
+	} else {
+		i2c_context_cancel_transfer(ctx);
 	}
-
-	k_sem_give(&dev_data->completion_sync);
 }
 
 static const struct i2c_driver_api i2c_nrfx_twi_driver_api = {
 	.configure   = i2c_nrfx_twi_configure,
 	.transfer    = i2c_nrfx_twi_transfer,
 	.recover_bus = i2c_nrfx_twi_recover_bus,
+#if defined(CONFIG_I2C_CALLBACK)
+	.transfer_cb = i2c_nrfx_twi_transfer_cb,
+#endif
 };
 
 #define I2C_NRFX_TWI_DEVICE(idx)					       \
@@ -146,14 +150,16 @@ static const struct i2c_driver_api i2c_nrfx_twi_driver_api = {
 		if (err < 0) {						       \
 			return err;					       \
 		}							       \
+		struct i2c_nrfx_twi_data *data = dev->data;		       \
+		i2c_context_init(&data->ctx,				       \
+				 dev,					       \
+				 twi_init_transfer_handler,		       \
+				 twi_start_transfer_handler,		       \
+				 twi_post_transfer_handler,		       \
+				 twi_deinit_transfer_handler);		       \
 		return i2c_nrfx_twi_init(dev);				       \
 	}								       \
-	static struct i2c_nrfx_twi_data twi_##idx##_data = {		       \
-		.transfer_sync = Z_SEM_INITIALIZER(                            \
-			twi_##idx##_data.transfer_sync, 1, 1),                 \
-		.completion_sync = Z_SEM_INITIALIZER(                          \
-			twi_##idx##_data.completion_sync, 0, 1)		       \
-	};								       \
+	static struct i2c_nrfx_twi_data twi_##idx##_data;		       \
 	PINCTRL_DT_DEFINE(I2C(idx));					       \
 	static const struct i2c_nrfx_twi_config twi_##idx##z_config = {	       \
 		.twi = NRFX_TWI_INSTANCE(idx),				       \
