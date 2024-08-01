@@ -342,6 +342,9 @@ struct bt_l2cap_chan_ops {
 	 *  @param chan The channel receiving data.
 	 *  @param buf Buffer containing incoming data.
 	 *
+	 *  If the application returns -EINPROGRESS, the reference
+	 *  @p buf was moved.
+	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 *  @return -EINPROGRESS in case where user has to confirm once the data
 	 *                       has been processed by calling
