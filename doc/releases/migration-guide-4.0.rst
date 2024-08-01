@@ -42,6 +42,9 @@ Device Drivers and Devicetree
 * The ``compatible`` of the LiteX ethernet controller has been renamed from
   ``litex,eth0`` to :dtcompatible:`litex,liteeth`. (:github:`75433`)
 
+* The ``compatible`` of the LiteX uart controller has been renamed from
+  ``litex,uart0`` to :dtcompatible:`litex,uart`. (:github:`74522`)
+
 Controller Area Network (CAN)
 =============================
 
