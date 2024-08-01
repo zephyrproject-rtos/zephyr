@@ -34,8 +34,8 @@ LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 #define W5500_SPI_WRITE_CONTROL(addr)   \
 	((W5500_SPI_BLOCK_SELECT(addr) << 3) | BIT(2))
 
-static int w5500_spi_read(const struct device *dev, uint32_t addr,
-			  uint8_t *data, uint32_t len)
+int w5500_spi_read(const struct device *dev, uint32_t addr,
+		   uint8_t *data, uint32_t len)
 {
 	const struct w5500_config *cfg = dev->config;
 	int ret;
