@@ -734,7 +734,6 @@ static int ubx_m10_set_enabled_systems(const struct device *dev, gnss_systems_t 
 	for (int i = 0; i < payload->num_config_blocks; ++i) {
 		ret = ubx_m10_ubx_gnss_id_to_gnss_system(dev, payload->config_blocks[i].gnss_id);
 		if (ret < 0) {
-			ret = -EINVAL;
 			goto unlock;
 		}
 
