@@ -18,6 +18,12 @@ config STEPPER_INIT_PRIORITY
 	help
 	  Stepper motor controller initialization priority.
 
+config STEPPER_SHELL
+	bool "Stepper shell"
+	depends on SHELL
+	help
+	  Enable stepper shell for testing.
+
 comment "Stepper Drivers"
 
 rsource "gpio_stepper/Kconfig"
