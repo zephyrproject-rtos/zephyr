@@ -87,3 +87,9 @@ zephyr_link_libraries(
 	-Wl,--wrap,mbedtls_ecp_self_test
 )
 endif()
+
+if(CONFIG_TELINK_W91_FETCH_N22_BIN)
+	set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+		${ZEPHYR_BASE}/scripts/utils/telink_w91_post_build ${ZEPHYR_BINARY_DIR} ${CONFIG_TELINK_W91_FETCH_N22_BIN_REVISION}
+	)
+endif()

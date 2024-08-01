@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Copyright (c) 2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+"""
+Download Telink N22 core firmware
+###############################################
+
+telink_w91_post_build <1> <2>
+
+1 - zephyr output binary folder
+2 - N22 core git revision
+"""
+
+import sys
+import os
+import requests
+
+N22_URL_FORMAT = f'https://wiki.telink-semi.cn/wiki/protocols/Zephyr/binaries/public/w91_n22/w91_n22_%s.bin'
+
+def main():
+	bin_path = None
+	try:
+		bin_path = sys.argv[1]
+	except:
+		pass
+
+	n22_revision = None
+	try:
+		n22_revision = sys.argv[2]
+	except:
+		pass
+
+	if bin_path is None or n22_revision is None:
+		print('error: Invalid arguments.')
+		return
+
+	if not os.path.exists(bin_path) or not os.path.isdir(bin_path):
+		print(f'error: Invalid binary path \'{bin_path}\'.')
+		return
+
+	n22_bin_url = N22_URL_FORMAT % n22_revision
+	print('fetching %s ...' % n22_bin_url)
+
+	try:
+		response = requests.get(n22_bin_url)
+	except:
+		print(f'error: Can\'t fetch.')
+		return
+
+	if response.status_code != 200:
+		print(f'error: Can\'t fetch.')
+		return
+
+	n22_bin_name = os.path.join(bin_path, 'n22.bin')
+
+	try:
+		n22_bin = open(n22_bin_name, 'w+b');
+	except:
+		print(f'error: Can\'t create file \'{n22_bin_name}\'.')
+		return
+
+	n22_bin.write(response.content)
+	n22_bin.close()
+	print(f'saved N22 firmware into \'{n22_bin_name}\'')
+
+if __name__ == "__main__":
+	main()

@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config TELINK_W91_FETCH_N22_BIN
+	bool "Fetch N22 binary after build"
+	default y
+	depends on SOC_SERIES_RISCV_TELINK_W91
+	help
+		This option fetching N22 binary after build.
+
+config TELINK_W91_FETCH_N22_BIN_REVISION
+	string "N22 binaries revision"
+	default "69008e84e68282a98c3f18f7a1f85700d9e603c7"
+	depends on TELINK_W91_FETCH_N22_BIN
+	help
+		This option sets N22 binary revision.

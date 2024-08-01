@@ -120,6 +120,7 @@ jobs:
         cp ../build_key_pool/zephyr/zephyr.bin                      telink_build_artifacts/w91_key_pool.bin
         cp ../build_led_pool/zephyr/zephyr.bin                      telink_build_artifacts/w91_led_pool.bin
         cp ../build_pwm_pool/zephyr/zephyr.bin                      telink_build_artifacts/w91_pwm_pool.bin
+        cp ../build_blinky_w91/zephyr/n22.bin                       telink_build_artifacts/n22.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v3
