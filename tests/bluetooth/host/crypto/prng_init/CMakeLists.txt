@@ -7,9 +7,9 @@ set(SOURCES
   src/test_suite_invalid_inputs.c
 )
 
-project(prng_init)
-
 find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+project(prng_init)
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host host_mocks)
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host/crypto mocks)
