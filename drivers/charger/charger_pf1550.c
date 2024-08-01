@@ -332,7 +332,7 @@ static int pf1550_led_config(const struct device *dev)
 
 	cfg->enabled = true;
 
-	if (cfg->behaviour == MANUAL_OFF) {
+	if (cfg->behaviour == LED_MANUAL_OFF) {
 		cfg->manual = true;
 		cfg->enabled = false;
 	}
