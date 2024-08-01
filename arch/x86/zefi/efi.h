@@ -10,6 +10,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <stdbool.h>
+#include <zephyr/autoconf.h>
 
 #define __abi __attribute__((ms_abi))
 
