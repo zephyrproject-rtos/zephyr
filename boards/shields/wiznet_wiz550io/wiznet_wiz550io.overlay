@@ -1,0 +1,26 @@
+/* Copyright (c) 2024 Grant Ramsay
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+
+	eth_w5500: eth_w5500@0 {
+		compatible = "wiznet,w5500";
+		reg = <0x0>;
+		/* W5500 SCLK theoretical design speed is 80MHz.
+		 * The minimum guaranteed speed is 33.3MHz.
+		 */
+		spi-max-frequency = <DT_FREQ_M(33)>;
+		int-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;    /* D9 */
+	};
+};
+
+/ {
+	wiz550io {
+		compatible = "wiznet,wiz550io";
+		wiznet,w5500 = <&eth_w5500>;
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;  /* D8 */
+		ready-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>; /* D7 */
+	};
+};
