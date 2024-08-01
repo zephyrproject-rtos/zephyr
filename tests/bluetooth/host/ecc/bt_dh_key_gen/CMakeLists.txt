@@ -7,9 +7,9 @@ set(SOURCES
   src/test_suite_invalid_inputs.c
 )
 
-project(bt_dh_key_gen)
-
 find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
+
+project(bt_dh_key_gen)
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host host_mocks)
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host/ecc mocks)

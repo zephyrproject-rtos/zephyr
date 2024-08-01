@@ -6,9 +6,9 @@ set(SOURCES
   src/main.c
 )
 
-project(bt_pub_key_is_debug)
-
 find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
+
+project(bt_pub_key_is_debug)
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host host_mocks)
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host/ecc mocks)
