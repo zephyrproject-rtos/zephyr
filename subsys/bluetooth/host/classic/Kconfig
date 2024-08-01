@@ -132,6 +132,11 @@ config BT_HFP_AG_ECNR
 	help
 	  This option enables EC and/or NR function for HFP AG
 
+config BT_HFP_AG_ECS
+	bool "Enhanced call status for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Enhanced call status for HFP AG
+
 config BT_HFP_AG_TX_BUF_COUNT
 	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"
 	default BT_RFCOMM_TX_MAX
