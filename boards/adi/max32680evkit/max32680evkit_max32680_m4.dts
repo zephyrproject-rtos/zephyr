@@ -85,3 +85,15 @@
 &trng {
 	status = "okay";
 };
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0a_scl_p0_10 &i2c0a_sda_p0_11>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1a_scl_p0_16 &i2c1a_sda_p0_17>;
+	pinctrl-names = "default";
+};
