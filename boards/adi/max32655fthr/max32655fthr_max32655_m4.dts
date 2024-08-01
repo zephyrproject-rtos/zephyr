@@ -129,3 +129,9 @@
 &trng {
 	status = "okay";
 };
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_scl_p0_30 &i2c2_sda_p0_31>;
+	pinctrl-names = "default";
+};
