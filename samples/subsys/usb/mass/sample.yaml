@@ -73,7 +73,7 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
-      - adafruit_feather/nrf52840
+      - adafruit_feather_nrf52840_sense
     integration_platforms:
       - nrf52840dk/nrf52840
     extra_configs:
@@ -98,7 +98,7 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
-      - adafruit_feather/nrf52840
+      - adafruit_feather_nrf52840_sense
     integration_platforms:
       - nrf52840dk/nrf52840
     extra_args: CONF_FILE="usbd_next_prj.conf"
@@ -169,7 +169,7 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
-      - adafruit_feather/nrf52840
+      - adafruit_feather_nrf52840_sense
     integration_platforms:
       - nrf52840dk/nrf52840
     extra_configs:
