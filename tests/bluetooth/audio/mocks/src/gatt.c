@@ -9,18 +9,21 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <sys/types.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/types.h>
-#include <zephyr/bluetooth/gatt.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/fff.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <ztest_test.h>
-#include <ztest_assert.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
+#include <zephyr/ztest_test.h>
+#include <zephyr/ztest_assert.h>
 
 #include "gatt.h"
 #include "conn.h"
@@ -245,8 +248,6 @@ static void foreach_attr_type_dyndb(uint16_t start_handle, uint16_t end_handle,
 {
 	size_t i;
 	struct bt_gatt_service *svc;
-
-	LOG_DBG("foreach_attr_type_dyndb");
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&db, svc, node) {
 		struct bt_gatt_service *next;
