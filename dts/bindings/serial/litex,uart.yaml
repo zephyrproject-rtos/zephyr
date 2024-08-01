@@ -3,7 +3,7 @@
 
 description: LiteX UART
 
-compatible: "litex,uart0"
+compatible: "litex,uart"
 
 include: uart-controller.yaml
 
