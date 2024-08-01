@@ -336,7 +336,7 @@ _context_switch:
 
 _oops:
     /*
-     * Pass the exception frame to z_do_kernel_oops.  r0 contains the
+     * Pass the exception frame to z_do_kernel_oops.  r1 contains the
      * exception reason.
      */
     cps #MODE_SYS
