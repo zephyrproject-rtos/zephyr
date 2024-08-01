@@ -289,22 +289,38 @@ static uint8_t get_sm_state(void)
 	return state;
 }
 
+/** Handle state transition when we have lost the connection. */
 static void sm_handle_timeout_state(enum sm_engine_state sm_state)
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
 	enum lwm2m_rd_client_event event = LWM2M_RD_CLIENT_EVENT_NONE;
 
-	/* Don't send BOOTSTRAP_REG_FAILURE event, that is only emitted from
-	 * do_network_error() once we are out of retries.
-	 */
-	if (client.engine_state == ENGINE_REGISTRATION_SENT) {
+	switch (client.engine_state) {
+	case ENGINE_DO_BOOTSTRAP_REG:
+	case ENGINE_BOOTSTRAP_REG_SENT:
+	case ENGINE_BOOTSTRAP_REG_DONE:
+	case ENGINE_BOOTSTRAP_TRANS_DONE:
+		/* Don't send BOOTSTRAP_REG_FAILURE event, that is only emitted from
+		 * do_network_error() once we are out of retries.
+		 */
+		break;
+
+	case ENGINE_SEND_REGISTRATION:
+	case ENGINE_REGISTRATION_SENT:
+	case ENGINE_REGISTRATION_DONE:
+	case ENGINE_REGISTRATION_DONE_RX_OFF:
+	case ENGINE_UPDATE_REGISTRATION:
+	case ENGINE_UPDATE_SENT:
 		event = LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT;
-	} else if (client.engine_state == ENGINE_UPDATE_SENT) {
-		event = LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT;
-	} else if (client.engine_state == ENGINE_DEREGISTER_SENT) {
+		break;
+
+	case ENGINE_DEREGISTER:
+	case ENGINE_DEREGISTER_SENT:
 		event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
-	} else {
-		/* TODO: unknown timeout state */
+		break;
+	default:
+		/* No default events for socket errors */
+		break;
 	}
 
 	set_sm_state(sm_state);
@@ -315,6 +331,7 @@ static void sm_handle_timeout_state(enum sm_engine_state sm_state)
 	k_mutex_unlock(&client.mutex);
 }
 
+/** Handle state transition where server have rejected the connection. */
 static void sm_handle_failure_state(enum sm_engine_state sm_state)
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
@@ -374,7 +391,7 @@ static void socket_fault_cb(int error)
 		sm_handle_timeout_state(ENGINE_NETWORK_ERROR);
 	} else if (client.engine_state != ENGINE_SUSPENDED &&
 		   !client.server_disabled) {
-		sm_handle_failure_state(ENGINE_IDLE);
+		sm_handle_timeout_state(ENGINE_IDLE);
 	}
 }
 
