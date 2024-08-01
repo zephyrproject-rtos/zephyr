@@ -5,10 +5,6 @@
  */
 
 &i2c0 {
-	status = "okay";
-	pinctrl-0 = <&i2c0_scl_p0_10 &i2c0_sda_p0_11>;
-	pinctrl-names = "default";
-
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
