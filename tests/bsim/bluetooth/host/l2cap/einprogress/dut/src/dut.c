@@ -25,11 +25,6 @@
 
 LOG_MODULE_REGISTER(dut, CONFIG_APP_LOG_LEVEL);
 
-#define NUM_TESTERS CONFIG_BT_MAX_CONN
-
-/* Build with the minimum possible amount of RX buffers */
-BUILD_ASSERT(CONFIG_BT_BUF_ACL_RX_COUNT == (CONFIG_BT_MAX_CONN + 1));
-
 struct tester_t {
 	size_t sdu_count;
 	struct bt_conn *conn;
@@ -38,13 +33,14 @@ struct tester_t {
 };
 
 static atomic_t acl_pool_refs_held[CONFIG_BT_BUF_ACL_RX_COUNT];
-static struct tester_t testers[NUM_TESTERS];
+static struct tester_t tester;
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_BT_TESTING));
 BUILD_ASSERT(IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL));
 void bt_testing_trace_event_acl_pool_destroy(struct net_buf *destroyed_buf)
 {
 	int buf_id = net_buf_id(destroyed_buf);
+
 	__ASSERT_NO_MSG(0 <= buf_id && buf_id < ARRAY_SIZE(acl_pool_refs_held));
 	TEST_ASSERT(acl_pool_refs_held[buf_id] == 0,
 		    "ACL buf was destroyed while tester still held a reference");
@@ -53,6 +49,7 @@ void bt_testing_trace_event_acl_pool_destroy(struct net_buf *destroyed_buf)
 static void acl_pool_refs_held_add(struct net_buf *buf)
 {
 	int buf_id = net_buf_id(buf);
+
 	__ASSERT_NO_MSG(0 <= buf_id && buf_id < CONFIG_BT_BUF_ACL_RX_COUNT);
 	atomic_inc(&acl_pool_refs_held[buf_id]);
 }
@@ -60,6 +57,7 @@ static void acl_pool_refs_held_add(struct net_buf *buf)
 static void acl_pool_refs_held_remove(struct net_buf *buf)
 {
 	int buf_id = net_buf_id(buf);
+
 	__ASSERT_NO_MSG(0 <= buf_id && buf_id < ARRAY_SIZE(acl_pool_refs_held));
 	atomic_val_t old = atomic_dec(&acl_pool_refs_held[buf_id]);
 
@@ -68,18 +66,11 @@ static void acl_pool_refs_held_remove(struct net_buf *buf)
 
 static struct tester_t *get_tester(struct bt_conn *conn)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(testers); i++) {
-		if (testers[i].conn == conn) {
-			return &testers[i];
-		}
+	if (tester.conn == conn) {
+		return &tester;
 	}
 
 	return NULL;
-}
-
-static void sent_cb(struct bt_l2cap_chan *chan)
-{
-	TEST_FAIL("Tester should not send data");
 }
 
 static int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -100,24 +91,11 @@ static int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return -EINPROGRESS;
 }
 
-static void l2cap_chan_connected_cb(struct bt_l2cap_chan *chan)
-{
-	LOG_DBG("%p", chan);
-}
-
-static void l2cap_chan_disconnected_cb(struct bt_l2cap_chan *chan)
-{
-	LOG_DBG("%p", chan);
-}
-
 static int server_accept_cb(struct bt_conn *conn, struct bt_l2cap_server *server,
 			    struct bt_l2cap_chan **chan)
 {
 	static struct bt_l2cap_chan_ops ops = {
-		.connected = l2cap_chan_connected_cb,
-		.disconnected = l2cap_chan_disconnected_cb,
 		.recv = recv_cb,
-		.sent = sent_cb,
 	};
 
 	struct tester_t *tester = get_tester(conn);
@@ -172,27 +150,20 @@ static bool all_data_transferred(void)
 {
 	size_t total_sdu_count = 0;
 
-	for (size_t i = 0; i < ARRAY_SIZE(testers); i++) {
-		total_sdu_count += testers[i].sdu_count;
-	}
+	total_sdu_count += tester.sdu_count;
 
-	TEST_ASSERT(total_sdu_count <= (SDU_NUM * NUM_TESTERS), "Received more SDUs than expected");
+	TEST_ASSERT(total_sdu_count <= SDU_NUM, "Received more SDUs than expected");
 
-	return total_sdu_count == (SDU_NUM * NUM_TESTERS);
+	return total_sdu_count == SDU_NUM;
 }
 
 void entrypoint_dut(void)
 {
-	/* Multilink Host Flow Control (HFC) test
-	 *
-	 * Test purpose:
-	 *
-	 * Verifies that we are able to do L2CAP recombination on multiple links
-	 * when we have the smallest possible amount of ACL buffers.
+	/* Test reference counting in Host when using L2CAP -EINPROGRESS feature.
 	 *
 	 * Devices:
-	 * - `dut`: receives L2CAP PDUs from testers
-	 * - `tester`: send ACL packets (parts of large L2CAP PDU) very slowly
+	 * - `dut`: receives L2CAP PDUs from tester
+	 * - `tester`: send L2CAP packets
 	 *
 	 * Procedure:
 	 *
@@ -201,10 +172,12 @@ void entrypoint_dut(void)
 	 * - [acl connected]
 	 * - establish L2CAP channel
 	 * - [l2 connected]
-	 * - receive L2CAP PDUs until SDU_NUM is reached
+	 * - receive one L2CAP SDU, returning EINPROGRESS
+	 * - monitor that our SDU reference is respected
+	 * - return the buf to the stack using bt_l2cap_chan_recv_complete
 	 * - mark test as passed and terminate simulation
 	 *
-	 * tester 0/1/2:
+	 * tester 0:
 	 * - scan & connect ACL
 	 * - [acl connected]
 	 * - [l2cap dynamic channel connected]
@@ -214,8 +187,7 @@ void entrypoint_dut(void)
 	 * - exit loop when SDU_NUM sent
 	 *
 	 * [verdict]
-	 * - dut application is able to receive all expected L2CAP packets from
-	 *   the testers
+	 * - retained SDU buffer reference from recv() is respected by stack
 	 */
 	int err;
 
@@ -232,26 +204,23 @@ void entrypoint_dut(void)
 
 	LOG_DBG("Registered server PSM %x", psm);
 
-	for (size_t i = 0; i < ARRAY_SIZE(testers); i++) {
-		LOG_DBG("Connecting tester %d", i);
-		testers[i].sdu_count = 0;
-		testers[i].conn = connect_tester();
-	}
+	LOG_DBG("Connecting tester");
+	tester.sdu_count = 0;
+	tester.conn = connect_tester();
 
 	LOG_DBG("Connected all testers");
 
 	while (!all_data_transferred()) {
+		struct net_buf *ack_buf;
+
 		/* Wait until we have received all expected data. */
 		k_sleep(K_MSEC(100));
 
-		for (size_t i = 0; i < ARRAY_SIZE(testers); i++) {
-			struct net_buf *ack_buf = net_buf_get(&testers[i].ack_todo, K_NO_WAIT);
-			if (ack_buf) {
-				acl_pool_refs_held_remove(ack_buf);
-				err = bt_l2cap_chan_recv_complete(&testers[i].le_chan.chan,
-								  ack_buf);
-				TEST_ASSERT(!err);
-			}
+		ack_buf = net_buf_get(&tester.ack_todo, K_NO_WAIT);
+		if (ack_buf) {
+			acl_pool_refs_held_remove(ack_buf);
+			err = bt_l2cap_chan_recv_complete(&tester.le_chan.chan, ack_buf);
+			TEST_ASSERT(!err);
 		}
 	}
 
