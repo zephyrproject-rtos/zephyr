@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 Arduino SA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CHARGER_PF1550_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CHARGER_PF1550_H_
+
+#define LED_ON_IN_CHARGING_FLASH_IN_FAULT 0
+#define LED_FLASH_IN_CHARGING_ON_IN_FAULT 1
+#define LED_MANUAL_OFF                    2
+
+#define LED_FREQUENCY_1_HZ   0
+#define LED_FREQUENCY_0_5_HZ 1
+#define LED_FREQUENCY_256_HZ 2
+#define LED_FREQUENCY_8_HZ   3
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CHARGER_PF1550_H_ */
