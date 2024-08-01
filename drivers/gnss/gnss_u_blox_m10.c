@@ -752,6 +752,11 @@ static int ubx_m10_set_enabled_systems(const struct device *dev, gnss_systems_t 
 	/* Prepare payload (payload) for sending CFG-GNSS for enabling the gnss systems. */
 	payload = malloc(sizeof(*payload) +
 		sizeof(struct ubx_cfg_gnss_payload_config_block) * UBX_M10_GNSS_SUPP_SYS_CNT);
+	if (!payload) {
+		ret = -ENOMEM;
+		goto unlock;
+	}
+
 	payload->num_config_blocks = UBX_M10_GNSS_SUPP_SYS_CNT;
 
 	ubx_cfg_gnss_payload_default(payload);
