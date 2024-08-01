@@ -574,6 +574,8 @@ static int do_update_reply_cb(const struct coap_packet *response,
 	    (code == COAP_RESPONSE_CODE_CREATED)) {
 		/* remember the last reg time */
 		client.last_update = k_uptime_get();
+		client.server_disabled = false;
+		client.retries = 0;
 		set_sm_state(ENGINE_REGISTRATION_DONE);
 		LOG_INF("Update Done");
 		return 0;
