@@ -119,6 +119,14 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #error "Unsupported base clock divider for wake-up frequency."
 #endif
 
+/* After the base clock divider is changed, some time is needed for the new
+ * setting to take effect. This value specifies the delay (in microseconds)
+ * to be applied to ensure that the clock is ready when the QSPI operation
+ * starts. It was measured with a logic analyzer (unfortunately, the nRF5340
+ * specification does not provide any numbers in this regard).
+ */
+#define BASE_CLOCK_SWITCH_DELAY_US 7
+
 #else
 /*
  * On nRF52 Series SoCs, the base clock divider is not configurable,
@@ -374,6 +382,7 @@ static inline void qspi_lock(const struct device *dev)
 	 */
 #if defined(CONFIG_SOC_SERIES_NRF53X)
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, BASE_CLOCK_DIV);
+	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
 }
 
@@ -383,6 +392,7 @@ static inline void qspi_unlock(const struct device *dev)
 	/* Restore the default base clock divider to reduce power consumption.
 	 */
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
+	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
 
 #ifdef CONFIG_MULTITHREADING
@@ -673,6 +683,7 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 
 	/* Configure physical interface */
 	initstruct->phy_if.sck_freq = INST_0_SCK_CFG;
+
 	/* Using MHZ fails checkpatch constant check */
 	if (QSPI_IF_DEVICE_FREQUENCY >= 16000000) {
 		qspi_cfg->qspi_slave_latency = 1;
@@ -708,6 +719,7 @@ static int qspi_nrfx_configure(const struct device *dev)
 	 * divider.
 	 */
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, BASE_CLOCK_DIV);
+	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
 
 	nrfx_err_t res = _nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
@@ -715,6 +727,7 @@ static int qspi_nrfx_configure(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_NRF53X)
 	/* Restore the default /4 divider after the QSPI initialization. */
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
+	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
 
 	int ret = qspi_get_zephyr_ret_code(res);
