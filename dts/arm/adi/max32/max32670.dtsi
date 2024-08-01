@@ -20,6 +20,10 @@
 	clock-frequency = <DT_FREQ_K(80)>;
 };
 
+&i2c2 {
+	clocks = <&gcr ADI_MAX32_CLOCK_BUS1 21>;
+};
+
 /delete-node/ &rtc_counter;
 
 /* MAX32670 extra peripherals. */
