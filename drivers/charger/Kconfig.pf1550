@@ -1,0 +1,12 @@
+# Copyright 2024 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_PF1550
+	bool "NXP PF1550 battery charger driver"
+	default y
+	depends on DT_HAS_NXP_PF1550_CHARGER_ENABLED
+	select GPIO
+	select I2C
+	select MFD
+	help
+	  Enable the NXP PF1550 battery charger driver.
