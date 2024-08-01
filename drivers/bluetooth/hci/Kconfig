@@ -131,6 +131,7 @@ config BT_NXP
 	default y
 	depends on DT_HAS_NXP_HCI_BLE_ENABLED
 	select BT_HCI_SETUP
+	select USE_DT_CODE_PARTITION if !NXP_MONOLITHIC_BT
 	help
 	  NXP HCI bluetooth interface
 
