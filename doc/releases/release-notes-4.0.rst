@@ -148,6 +148,8 @@ Drivers and Sensors
 
 * Serial
 
+  * LiteX: Renamed the ``compatible`` from ``litex,uart0`` to :dtcompatible:`litex,uart`.
+
 * SPI
 
 * USB
