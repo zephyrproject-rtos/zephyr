@@ -12,6 +12,8 @@
  * for the Nordic Semiconductor nRF54L family processor.
  */
 
+#include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
