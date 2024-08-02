@@ -437,6 +437,7 @@ Bluetooth Mesh:
     - akredalen
     - HaavardRei
     - omkar3141
+    - KyraLengfeld
   files:
     - doc/connectivity/bluetooth/api/mesh/
     - include/zephyr/bluetooth/mesh/
