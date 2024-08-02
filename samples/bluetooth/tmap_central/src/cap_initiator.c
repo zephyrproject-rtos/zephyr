@@ -43,7 +43,7 @@ static K_SEM_DEFINE(sem_discover_source, 0, 1);
 static K_SEM_DEFINE(sem_audio_start, 0, 1);
 
 static void unicast_stream_configured(struct bt_bap_stream *stream,
-				      const struct bt_audio_codec_qos_pref *pref)
+				      const struct bt_bap_qos_cfg_pref *pref)
 {
 	printk("Configured stream %p\n", stream);
 

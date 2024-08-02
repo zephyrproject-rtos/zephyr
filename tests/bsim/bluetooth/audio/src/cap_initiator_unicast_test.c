@@ -129,7 +129,7 @@ static const struct named_lc3_preset lc3_unicast_presets[] = {
 };
 
 static void unicast_stream_configured(struct bt_bap_stream *stream,
-				      const struct bt_audio_codec_qos_pref *pref)
+				      const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_cap_stream *cap_stream = cap_stream_from_bap_stream(stream);
 	printk("Configured stream %p\n", stream);
@@ -902,8 +902,8 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_p
 	struct bt_bap_unicast_group_stream_param src_group_stream_params[CAP_AC_MAX_SRC] = {0};
 	struct bt_bap_unicast_group_stream_pair_param pair_params[CAP_AC_MAX_PAIR] = {0};
 	struct bt_bap_unicast_group_param group_param = {0};
-	struct bt_audio_codec_qos *snk_qos[CAP_AC_MAX_SNK];
-	struct bt_audio_codec_qos *src_qos[CAP_AC_MAX_SRC];
+	struct bt_bap_qos_cfg *snk_qos[CAP_AC_MAX_SNK];
+	struct bt_bap_qos_cfg *src_qos[CAP_AC_MAX_SRC];
 	size_t snk_stream_cnt = 0U;
 	size_t src_stream_cnt = 0U;
 	size_t pair_cnt = 0U;

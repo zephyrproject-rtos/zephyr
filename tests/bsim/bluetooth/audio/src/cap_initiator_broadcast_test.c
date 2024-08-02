@@ -727,7 +727,7 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	struct bt_cap_initiator_broadcast_create_param create_param = {0};
 	struct bt_cap_broadcast_source *broadcast_source;
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	struct bt_le_ext_adv *adv;
 	int err;
 

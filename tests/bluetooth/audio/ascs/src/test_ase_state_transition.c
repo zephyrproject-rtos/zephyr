@@ -29,8 +29,8 @@
 #define test_sink_ase_state_transition_fixture test_ase_state_transition_fixture
 #define test_source_ase_state_transition_fixture test_ase_state_transition_fixture
 
-static const struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+static const struct bt_bap_qos_cfg_pref qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
 struct test_ase_state_transition_fixture {
 	struct bt_conn conn;

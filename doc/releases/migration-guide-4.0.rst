@@ -317,6 +317,11 @@ Bluetooth Audio
   unregistered with :c:func:`bt_tbs_unregister_bearer`.
   (:github:`76108`)
 
+* There has been a rename from ``bt_audio_codec_qos`` to ``bt_bap_qos_cfg``. This effects all
+  structs, enums and defines that used the ``bt_audio_codec_qos`` name. To use the new naming simply
+  do a search-and-replace for ``bt_audio_codec_qos`` to ``bt_bap_qos_cfg`` and
+  ``BT_AUDIO_CODEC_QOS`` to ``BT_BAP_QOS_CFG``. (:github:`76633`)
+
 Bluetooth Classic
 =================
 
