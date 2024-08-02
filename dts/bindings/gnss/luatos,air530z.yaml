@@ -1,0 +1,15 @@
+# Copyright 2024 Jerónimo Agulló
+# SPDX-License-Identifier: Apache-2.0
+
+description: AIR530Z Luatos GNSS modem
+
+compatible: "luatos,air530z"
+
+include:
+  - uart-device.yaml
+
+properties:
+  on-off-gpios:
+    type: phandle-array
+    description: |
+      Identifies the On-Off pin for entering into low-power mode.

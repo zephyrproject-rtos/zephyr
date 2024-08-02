@@ -31,7 +31,7 @@
  *
  * PDC = 0, PC = 0 => DISCONNECTED (0)
  * PDC = 0, PC = 1 => GPIO INPUT (1)
- * PDC = 1, PC = 0 => GPIO OUTUT (2)
+ * PDC = 1, PC = 0 => GPIO OUTPUT (2)
  * PDC = 1, PC = 1 => ESAI (3)
  */
 #define ESAI_PIN_DISCONNECTED 0

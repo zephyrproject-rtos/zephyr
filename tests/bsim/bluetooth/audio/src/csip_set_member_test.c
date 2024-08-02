@@ -4,11 +4,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifdef CONFIG_BT_CSIP_SET_MEMBER
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
+#include "bstests.h"
 #include "common.h"
-
+#ifdef CONFIG_BT_CSIP_SET_MEMBER
 static struct bt_csip_set_member_svc_inst *svc_inst;
 extern enum bst_result_t bst_result;
 static volatile bool g_locked;
@@ -18,8 +28,8 @@ struct bt_csip_set_member_register_param param = {
 	.rank = 1,
 	.lockable = true,
 	/* Using the CSIS test sample SIRK */
-	.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-		      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+	.sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
+		  0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
 };
 
 static void csip_lock_changed_cb(struct bt_conn *conn,
@@ -70,21 +80,21 @@ static void bt_ready(int err)
 		return;
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 	}
 }
 
-static void test_set_sirk(void)
+static void test_sirk(void)
 {
-	const uint8_t new_set_sirk[] = {0xff, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-					0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45};
-	uint8_t tmp_sirk[BT_CSIP_SET_SIRK_SIZE];
+	const uint8_t new_sirk[] = {0xff, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
+				    0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45};
+	uint8_t tmp_sirk[BT_CSIP_SIRK_SIZE];
 	int err;
 
 	printk("Setting new SIRK\n");
-	err = bt_csip_set_member_set_sirk(svc_inst, new_set_sirk);
+	err = bt_csip_set_member_sirk(svc_inst, new_sirk);
 	if (err != 0) {
 		FAIL("Failed to set SIRK: %d\n", err);
 		return;
@@ -97,7 +107,7 @@ static void test_set_sirk(void)
 		return;
 	}
 
-	if (memcmp(new_set_sirk, tmp_sirk, BT_CSIP_SET_SIRK_SIZE) != 0) {
+	if (memcmp(new_sirk, tmp_sirk, BT_CSIP_SIRK_SIZE) != 0) {
 		FAIL("The SIRK set and the SIRK set were different\n");
 		return;
 	}
@@ -193,7 +203,7 @@ static void test_new_sirk(void)
 	backchannel_sync_send_all();
 	backchannel_sync_wait_all();
 
-	test_set_sirk();
+	test_sirk();
 
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
@@ -223,8 +233,8 @@ static void test_args(int argc, char *argv[])
 
 			argn++;
 
-			len = hex2bin(argv[argn], strlen(argv[argn]),
-				      param.set_sirk, sizeof(param.set_sirk));
+			len = hex2bin(argv[argn], strlen(argv[argn]), param.sirk,
+				      sizeof(param.sirk));
 			if (len == 0) {
 				FAIL("Could not parse SIRK");
 				return;
@@ -238,28 +248,28 @@ static void test_args(int argc, char *argv[])
 static const struct bst_test_instance test_connect[] = {
 	{
 		.test_id = "csip_set_member",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "csip_set_member_release",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_force_release,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "csip_set_member_enc",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_csip_enc,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "csip_set_member_new_sirk",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_new_sirk,
 		.test_args_f = test_args,

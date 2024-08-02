@@ -33,13 +33,7 @@
 #endif
 
 #define K_NUM_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + CONFIG_NUM_COOP_PRIORITIES + 1)
-
-#if defined(CONFIG_64BIT)
-#define PRIQ_BITMAP_SIZE (DIV_ROUND_UP(K_NUM_THREAD_PRIO, 8 * sizeof(uint64_t)))
-#else
-#define PRIQ_BITMAP_SIZE (DIV_ROUND_UP(K_NUM_THREAD_PRIO, 8 * sizeof(uint32_t)))
-#endif
-
+#define PRIQ_BITMAP_SIZE  (DIV_ROUND_UP(K_NUM_THREAD_PRIO, BITS_PER_LONG))
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,11 +121,7 @@ struct _priq_rb {
  */
 struct _priq_mq {
 	sys_dlist_t queues[K_NUM_THREAD_PRIO];
-#ifdef CONFIG_64BIT
-	uint64_t bitmask[PRIQ_BITMAP_SIZE];
-#else
-	uint32_t bitmask[PRIQ_BITMAP_SIZE];
-#endif
+	unsigned long bitmask[PRIQ_BITMAP_SIZE];
 };
 
 struct _ready_q {
@@ -250,8 +240,8 @@ struct z_kernel {
 #endif
 
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	/* Need to signal an IPI at the next scheduling point */
-	bool pending_ipi;
+	/* Identify CPUs to send IPIs to at the next scheduling point */
+	atomic_t pending_ipi;
 #endif
 };
 

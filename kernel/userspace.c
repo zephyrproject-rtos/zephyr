@@ -82,7 +82,7 @@ static void clear_perms_cb(struct k_object *ko, void *ctx_ptr);
 const char *otype_to_str(enum k_objects otype)
 {
 	const char *ret;
-	/* -fdata-sections doesn't work right except in very very recent
+	/* -fdata-sections doesn't work right except in very recent
 	 * GCC and these literal strings would appear in the binary even if
 	 * otype_to_str was omitted by the linker
 	 */
@@ -94,7 +94,7 @@ const char *otype_to_str(enum k_objects otype)
 	case K_OBJ_ANY:
 		ret = "generic";
 		break;
-#include <otype-to-str.h>
+#include <zephyr/otype-to-str.h>
 	default:
 		ret = "?";
 		break;
@@ -134,7 +134,7 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 /*
  * Note that dyn_obj->data is where the kernel object resides
  * so it is the one that actually needs to be aligned.
- * Due to the need to get the the fields inside struct dyn_obj
+ * Due to the need to get the fields inside struct dyn_obj
  * from kernel object pointers (i.e. from data[]), the offset
  * from data[] needs to be fixed at build time. Therefore,
  * data[] is declared with __aligned(), such that when dyn_obj
@@ -192,7 +192,7 @@ static size_t obj_size_get(enum k_objects otype)
 	size_t ret;
 
 	switch (otype) {
-#include <otype-to-size.h>
+#include <zephyr/otype-to-size.h>
 	default:
 		ret = sizeof(const struct device);
 		break;
@@ -221,7 +221,7 @@ static size_t obj_align_get(enum k_objects otype)
 	return ret;
 }
 
-static struct dyn_obj *dyn_object_find(void *obj)
+static struct dyn_obj *dyn_object_find(const void *obj)
 {
 	struct dyn_obj *node;
 	k_spinlock_key_t key;
@@ -277,8 +277,10 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 		if (idx != 0) {
 			*tidx = base + (idx - 1);
 
-			sys_bitfield_clear_bit((mem_addr_t)_thread_idx_map,
-					       *tidx);
+			/* Clear the bit. We already know the array index,
+			 * and the bit to be cleared.
+			 */
+			_thread_idx_map[i] &= ~(BIT(idx - 1));
 
 			/* Clear permission from all objects */
 			k_object_wordlist_foreach(clear_perms_cb,
@@ -308,7 +310,11 @@ static void thread_idx_free(uintptr_t tidx)
 	/* To prevent leaked permission when index is recycled */
 	k_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
 
-	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
+	/* Figure out which bits to set in _thread_idx_map[] and set it. */
+	int base = tidx / NUM_BITS(_thread_idx_map[0]);
+	int offset = tidx % NUM_BITS(_thread_idx_map[0]);
+
+	_thread_idx_map[base] |= BIT(offset);
 }
 
 static struct k_object *dynamic_object_create(enum k_objects otype, size_t align,
@@ -391,7 +397,7 @@ static void *z_object_alloc(enum k_objects otype, size_t size)
 	struct k_object *zo;
 	uintptr_t tidx = 0;
 
-	if (otype <= K_OBJ_ANY || otype >= K_OBJ_LAST) {
+	if ((otype <= K_OBJ_ANY) || (otype >= K_OBJ_LAST)) {
 		LOG_ERR("bad object type %d requested", otype);
 		return NULL;
 	}
@@ -490,7 +496,7 @@ struct k_object *k_object_find(const void *obj)
 		 * 11.8 but is justified since we know dynamic objects
 		 * were not declared with a const qualifier.
 		 */
-		dyn = dyn_object_find((void *)obj);
+		dyn = dyn_object_find(obj);
 		if (dyn != NULL) {
 			ret = &dyn->kobj;
 		}
@@ -586,7 +592,7 @@ static void wordlist_cb(struct k_object *ko, void *ctx_ptr)
 	struct perm_ctx *ctx = (struct perm_ctx *)ctx_ptr;
 
 	if (sys_bitfield_test_bit((mem_addr_t)&ko->perms, ctx->parent_id) &&
-				  (struct k_thread *)ko->name != ctx->parent) {
+				  ((struct k_thread *)ko->name != ctx->parent)) {
 		sys_bitfield_set_bit((mem_addr_t)&ko->perms, ctx->child_id);
 	}
 }
@@ -727,7 +733,7 @@ int k_object_validate(struct k_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
 	if (unlikely((ko == NULL) ||
-		(otype != K_OBJ_ANY && ko->type != otype))) {
+		((otype != K_OBJ_ANY) && (ko->type != otype)))) {
 		return -EBADF;
 	}
 
@@ -981,6 +987,12 @@ static uintptr_t handler_bad_syscall(uintptr_t bad_id, uintptr_t arg2,
 				     uintptr_t arg5, uintptr_t arg6,
 				     void *ssf)
 {
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	ARG_UNUSED(arg4);
+	ARG_UNUSED(arg5);
+	ARG_UNUSED(arg6);
+
 	LOG_ERR("Bad system call id %" PRIuPTR " invoked", bad_id);
 	arch_syscall_oops(ssf);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
@@ -990,9 +1002,16 @@ static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
 				    uintptr_t arg3, uintptr_t arg4,
 				    uintptr_t arg5, uintptr_t arg6, void *ssf)
 {
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	ARG_UNUSED(arg4);
+	ARG_UNUSED(arg5);
+	ARG_UNUSED(arg6);
+
 	LOG_ERR("Unimplemented system call");
 	arch_syscall_oops(ssf);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
-#include <syscall_dispatch.c>
+#include <zephyr/syscall_dispatch.c>

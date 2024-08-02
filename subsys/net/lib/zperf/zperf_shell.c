@@ -361,6 +361,9 @@ static void udp_session_cb(enum zperf_status status,
 	case ZPERF_SESSION_ERROR:
 		shell_fprintf(sh, SHELL_ERROR, "UDP session error.\n");
 		break;
+
+	default:
+		break;
 	}
 }
 
@@ -476,7 +479,7 @@ static void shell_udp_upload_print_stats(const struct shell *sh,
 					 struct zperf_results *results)
 {
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
-		unsigned int rate_in_kbps, client_rate_in_kbps;
+		uint64_t rate_in_kbps, client_rate_in_kbps;
 
 		shell_fprintf(sh, SHELL_NORMAL, "-\nUpload completed!\n");
 
@@ -540,7 +543,7 @@ static void shell_tcp_upload_print_stats(const struct shell *sh,
 					 struct zperf_results *results)
 {
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
-		unsigned int client_rate_in_kbps;
+		uint64_t client_rate_in_kbps;
 
 		shell_fprintf(sh, SHELL_NORMAL, "-\nUpload completed!\n");
 
@@ -569,6 +572,37 @@ static void shell_tcp_upload_print_stats(const struct shell *sh,
 	}
 }
 
+static void shell_tcp_upload_print_periodic(const struct shell *sh,
+					    struct zperf_results *results)
+{
+	if (IS_ENABLED(CONFIG_NET_TCP)) {
+		uint64_t client_rate_in_kbps;
+
+		if (results->client_time_in_us != 0U) {
+			client_rate_in_kbps = (uint32_t)
+				(((uint64_t)results->nb_packets_sent *
+				  (uint64_t)results->packet_size * (uint64_t)8 *
+				  (uint64_t)USEC_PER_SEC) /
+				 (results->client_time_in_us * 1000U));
+		} else {
+			client_rate_in_kbps = 0U;
+		}
+
+		shell_fprintf(sh, SHELL_NORMAL, "Duration: ");
+		print_number_64(sh, results->client_time_in_us,
+			     TIME_US, TIME_US_UNIT);
+		shell_fprintf(sh, SHELL_NORMAL, " | ");
+		shell_fprintf(sh, SHELL_NORMAL, "Packets: %6u | ",
+			      results->nb_packets_sent);
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "Errors: %6u | ",
+			      results->nb_packets_errors);
+		shell_fprintf(sh, SHELL_NORMAL, "Rate: ");
+		print_number(sh, client_rate_in_kbps, KBPS, KBPS_UNIT);
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
+	}
+}
+
 static void udp_upload_cb(enum zperf_status status,
 			  struct zperf_results *result,
 			  void *user_data)
@@ -587,6 +621,9 @@ static void udp_upload_cb(enum zperf_status status,
 	case ZPERF_SESSION_ERROR:
 		shell_fprintf(sh, SHELL_ERROR, "UDP upload failed\n");
 		break;
+
+	default:
+		break;
 	}
 }
 
@@ -598,6 +635,10 @@ static void tcp_upload_cb(enum zperf_status status,
 
 	switch (status) {
 	case ZPERF_SESSION_STARTED:
+		break;
+
+	case ZPERF_SESSION_PERIODIC_RESULT:
+		shell_tcp_upload_print_periodic(sh, result);
 		break;
 
 	case ZPERF_SESSION_FINISHED: {
@@ -644,7 +685,8 @@ static void send_ping(const struct shell *sh,
 		return;
 	}
 
-	memcpy(&dest_addr.sin6_addr, addr, sizeof(struct in6_addr));
+	dest_addr.sin6_family = AF_INET6;
+	net_ipv6_addr_copy_raw((uint8_t *)&dest_addr.sin6_addr, (uint8_t *)addr);
 
 	k_sem_init(&sem_wait, 0, 1);
 
@@ -866,6 +908,24 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			opt_cnt += 2;
 			break;
 
+		case 'i':
+			int seconds = parse_arg(&i, argc, argv);
+
+			if (is_udp) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "UDP does not support -i option\n");
+				return -ENOEXEC;
+			}
+			if (seconds < 0 || seconds > UINT16_MAX) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			param.options.report_interval_ms = seconds * MSEC_PER_SEC;
+			opt_cnt += 2;
+			break;
+
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unrecognized argument: %s\n", argv[i]);
@@ -1081,6 +1141,24 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			opt_cnt += 2;
 			break;
 
+		case 'i':
+			int seconds = parse_arg(&i, argc, argv);
+
+			if (is_udp) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "UDP does not support -i option\n");
+				return -ENOEXEC;
+			}
+			if (seconds < 0 || seconds > UINT16_MAX) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			param.options.report_interval_ms = seconds * MSEC_PER_SEC;
+			opt_cnt += 2;
+			break;
+
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unrecognized argument: %s\n", argv[i]);
@@ -1250,6 +1328,9 @@ static void tcp_session_cb(enum zperf_status status,
 	case ZPERF_SESSION_ERROR:
 		shell_fprintf(sh, SHELL_ERROR, "TCP session error.\n");
 		break;
+
+	default:
+		break;
 	}
 }
 
@@ -1390,6 +1471,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
+		  "-i sec: Periodic reporting interval in seconds (async only)\n"
 		  "-n: Disable Nagle's algorithm\n"
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
@@ -1409,12 +1491,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
+		  "-i sec: Periodic reporting interval in seconds (async only)\n"
+		  "-n: Disable Nagle's algorithm\n"
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
 		  "Example: tcp upload2 v6 1 1K\n"
 		  "Example: tcp upload2 v4\n"
-		  "-n: Disable Nagle's algorithm\n"
 #if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR_SET)
 		  "Default IPv6 address is " MY_IP6ADDR
 		  ", destination [" DST_IP6ADDR "]:" DEF_PORT_STR "\n"

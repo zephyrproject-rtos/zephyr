@@ -111,10 +111,10 @@ static const struct {
 	uint8_t page;
 } comp_data_pages[] = {
 	{ "bt/mesh/cmp/0", 0, },
-#if IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)
+#if defined(CONFIG_BT_MESH_COMP_PAGE_1)
 	{ "bt/mesh/cmp/1", 1, },
 #endif
-#if IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_2)
+#if defined(CONFIG_BT_MESH_COMP_PAGE_2)
 	{ "bt/mesh/cmp/2", 2, },
 #endif
 };
@@ -1487,12 +1487,13 @@ static int element_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple
 	}
 
 	if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
-		LOG_ERR("Wrong key");
+		LOG_DBG("Model at 0x%04x is not bound to app idx %d", elem->rt->addr, ctx->app_idx);
 		return ACCESS_STATUS_WRONG_KEY;
 	}
 
 	if (!model_has_dst(model, ctx->recv_dst, ctx->uuid)) {
-		LOG_ERR("Invalid address 0x%02x", ctx->recv_dst);
+		LOG_DBG("Dst addr 0x%02x is invalid for model at 0x%04x", ctx->recv_dst,
+			elem->rt->addr);
 		return ACCESS_STATUS_INVALID_ADDRESS;
 	}
 
@@ -1907,26 +1908,6 @@ static int mod_set_sub(const struct bt_mesh_model *mod, size_t len_rd,
 
 	LOG_DBG("Decoded %zu subscribed group addresses for model", len / sizeof(mod->groups[0]));
 
-#if !IS_ENABLED(CONFIG_BT_MESH_LABEL_NO_RECOVER) && (CONFIG_BT_MESH_LABEL_COUNT > 0)
-	/* If uuids[0] is NULL, then either the model is not subscribed to virtual addresses or
-	 * uuids are not yet recovered.
-	 */
-	if (mod->uuids[0] == NULL) {
-		int i, j = 0;
-
-		for (i = 0; i < mod->groups_cnt && j < CONFIG_BT_MESH_LABEL_COUNT; i++) {
-			if (BT_MESH_ADDR_IS_VIRTUAL(mod->groups[i])) {
-				/* Recover from implementation where uuid was not stored for
-				 * virtual address. It is safe to pick first matched label because
-				 * previously the stack wasn't able to store virtual addresses with
-				 * collisions.
-				 */
-				mod->uuids[j] = bt_mesh_va_uuid_get(mod->groups[i], NULL, NULL);
-				j++;
-			}
-		}
-	}
-#endif
 	return 0;
 }
 
@@ -1996,21 +1977,6 @@ static int mod_set_pub(const struct bt_mesh_model *mod, size_t len_rd,
 		return 0;
 	}
 
-	if (!IS_ENABLED(CONFIG_BT_MESH_LABEL_NO_RECOVER)) {
-		err = bt_mesh_settings_set(read_cb, cb_arg, &pub, sizeof(pub.base));
-		if (!err) {
-			/* Recover from implementation where uuid was not stored for virtual
-			 * address. It is safe to pick first matched label because previously the
-			 * stack wasn't able to store virtual addresses with collisions.
-			 */
-			if (BT_MESH_ADDR_IS_VIRTUAL(pub.base.addr)) {
-				mod->pub->uuid = bt_mesh_va_uuid_get(pub.base.addr, NULL, NULL);
-			}
-
-			goto pub_base_set;
-		}
-	}
-
 	err = bt_mesh_settings_set(read_cb, cb_arg, &pub, sizeof(pub));
 	if (err) {
 		LOG_ERR("Failed to set \'model-pub\'");
@@ -2021,7 +1987,6 @@ static int mod_set_pub(const struct bt_mesh_model *mod, size_t len_rd,
 		mod->pub->uuid = bt_mesh_va_get_uuid_by_idx(pub.uuidx);
 	}
 
-pub_base_set:
 	mod->pub->addr = pub.base.addr;
 	mod->pub->key = pub.base.key;
 	mod->pub->cred = pub.base.cred;
@@ -2652,7 +2617,7 @@ void bt_mesh_comp_data_clear(void)
 
 int bt_mesh_models_metadata_change_prepare(void)
 {
-#if IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
 	return bt_mesh_models_metadata_store();
 #else
 	return -ENOTSUP;

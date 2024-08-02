@@ -107,28 +107,56 @@ arduino_serial: &lpuart2 {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(64)>;
+				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* Note slot 0 has one additional sector,
-			 * this is intended for use with the swap move algorithm
+			/* The MCUBoot swap-move algorithm uses the last 2 sectors
+			 * of the primary slot0 for swap status and move.
 			 */
-			slot0_partition: partition@10000 {
+			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00010000 (DT_SIZE_M(3) + DT_SIZE_K(4))>;
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(8))>;
 			};
-			slot1_partition: partition@311000 {
+			slot1_partition: partition@322000 {
 				label = "image-1";
-				reg = <0x00311000 DT_SIZE_M(3)>;
+				reg = <0x00322000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@611000 {
+			storage_partition: partition@622000 {
 				label = "storage";
-				reg = <0x00611000 DT_SIZE_K(1980)>;
+				reg = <0x00622000 (DT_SIZE_M(2) - DT_SIZE_K(136))>;
 			};
 		};
 	};
+};
+
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "microchip,ksz8081";
+		reg = <0>;
+		status = "okay";
+		reset-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
+	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+	pinctrl-0 = <&pinmux_ptp>;
+	pinctrl-names = "default";
 };
 
 &lpi2c1 {

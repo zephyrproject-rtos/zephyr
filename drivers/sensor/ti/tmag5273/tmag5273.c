@@ -65,7 +65,7 @@ struct tmag5273_config {
 
 	struct gpio_dt_spec int_gpio;
 
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 	bool crc_enabled;
 #endif
 };
@@ -102,17 +102,17 @@ static int tmag5273_reset_device_status(const struct device *dev)
 /**
  * @brief checks for DIAG_FAIL errors and reads out the DEVICE_STATUS register if necessary
  *
- * Prints a human readable representation to the log, if \c CONFIG_LOG is activated.
- *
- * @param drv_cfg[in] driver instance configuration
- * @param device_status[out] DEVICE_STATUS register if DIAG_FAIL is set
+ * @param[in] drv_cfg driver instance configuration
+ * @param[out] device_status DEVICE_STATUS register if DIAG_FAIL is set
  *
  * @retval 0 on success
- * @retval "!= 0" on error (see @ref i2c_reg_read_byte for error codes)
+ * @retval "!= 0" on error
+ *                  - \c -EIO on any set error device status bit
+ *                  - see @ref i2c_reg_read_byte for error codes
  *
  * @note
- * If tmag5273_config.ignore_diag_fail is se
- *   -  \a device_status will be always set to \c 0,
+ * If tmag5273_config.ignore_diag_fail is set
+ *   - \a device_status will be always set to \c 0,
  *   - the function always returns \c 0.
  */
 static int tmag5273_check_device_status(const struct tmag5273_config *drv_cfg,
@@ -144,23 +144,23 @@ static int tmag5273_check_device_status(const struct tmag5273_config *drv_cfg,
 	}
 
 	if ((*device_status & TMAG5273_VCC_UV_ER_MSK) == TMAG5273_VCC_UV_ERR) {
-		LOG_WRN("VCC undervoltage detected");
+		LOG_ERR("VCC under voltage detected");
 	}
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 	if (drv_cfg->crc_enabled &&
 	    ((*device_status & TMAG5273_OTP_CRC_ER_MSK) == TMAG5273_OTP_CRC_ERR)) {
-		LOG_WRN("OTP CRC error detected");
+		LOG_ERR("OTP CRC error detected");
 	}
 #endif
 	if ((*device_status & TMAG5273_INT_ER_MSK) == TMAG5273_INT_ERR) {
-		LOG_WRN("INT pin error detected");
+		LOG_ERR("INT pin error detected");
 	}
 
 	if ((*device_status & TMAG5273_OSC_ER_MSK) == TMAG5273_OSC_ERR) {
-		LOG_WRN("Oscillator error detected");
+		LOG_ERR("Oscillator error detected");
 	}
 
-	return 0;
+	return -EIO;
 }
 
 /**
@@ -387,7 +387,7 @@ static inline int tmag5273_attr_get_xyz_calc(const struct device *dev, struct se
 static inline uint8_t tmag5273_get_fetch_block_size(const struct tmag5273_config *drv_cfg,
 						    uint8_t remaining_bytes)
 {
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 	if (drv_cfg->crc_enabled && (remaining_bytes > TMAG5273_CRC_DATA_BYTES)) {
 		return TMAG5273_CRC_DATA_BYTES;
 	}
@@ -398,10 +398,13 @@ static inline uint8_t tmag5273_get_fetch_block_size(const struct tmag5273_config
 /** @brief returns the size of the CRC field if active */
 static inline uint8_t tmag5273_get_crc_size(const struct tmag5273_config *drv_cfg)
 {
+#ifdef CONFIG_CRC
 	if (drv_cfg->crc_enabled) {
 		return TMAG5273_CRC_I2C_SIZE;
 	}
-
+#else
+	ARG_UNUSED(drv_cfg);
+#endif
 	return 0;
 }
 
@@ -624,7 +627,7 @@ static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel c
 
 	uint32_t nb_bytes = end_address - start_address + 1;
 
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 	/* if CRC is enabled multiples of TMAG5273_CRC_DATA_BYTES need to be read */
 	if (drv_cfg->crc_enabled && ((nb_bytes % TMAG5273_CRC_DATA_BYTES) != 0)) {
 		const uint8_t diff = TMAG5273_CRC_DATA_BYTES - (nb_bytes % TMAG5273_CRC_DATA_BYTES);
@@ -659,7 +662,7 @@ static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel c
 			return -EIO;
 		}
 
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 		/* check data validity, if activated */
 		if (drv_cfg->crc_enabled) {
 			const uint8_t crc = crc8_ccitt(0xFF, &i2c_buffer[offset], block_size);
@@ -684,11 +687,6 @@ static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel c
 		drv_cfg, &i2c_buffer[TMAG5273_REG_CONV_STATUS - TMAG5273_REG_RESULT_BEGIN]);
 	if (retval < 0) {
 		return retval;
-	}
-
-	if ((i2c_buffer[TMAG5273_REG_CONV_STATUS - TMAG5273_REG_RESULT_BEGIN] &
-	     TMAG5273_DIAG_STATUS_MSK) == TMAG5273_DIAG_FAIL) {
-		return -EIO;
 	}
 
 	bool all_channels = (chan == SENSOR_CHAN_ALL);
@@ -891,7 +889,7 @@ static inline int tmag5273_init_device_config(const struct device *dev)
 	/* REG_DEVICE_CONFIG_1 */
 	regdata = 0;
 
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 	if (drv_cfg->crc_enabled) {
 		regdata |= TMAG5273_CRC_ENABLE;
 	}
@@ -1115,7 +1113,7 @@ static int tmag5273_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	tmag5273_check_device_status(drv_cfg, &regdata);
+	(void)tmag5273_check_device_status(drv_cfg, &regdata);
 
 	retval = tmag5273_reset_device_status(dev);
 	if (retval < 0) {

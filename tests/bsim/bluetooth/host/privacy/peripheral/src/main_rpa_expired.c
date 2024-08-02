@@ -13,13 +13,13 @@ void dut_rpa_expired_procedure(void);
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "central_rpa_check",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = tester_verify_rpa_procedure,
 	},
 	{
 		.test_id = "peripheral_rpa_expired",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = dut_rpa_expired_procedure,
 	},

@@ -50,7 +50,7 @@ for the 40 pin FPC interface
 Programming
 ***********
 
-Set ``-DSHIELD=g1120b0mipi`` when you invoke ``west build``. For
+Set ``--shield g1120b0mipi`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::

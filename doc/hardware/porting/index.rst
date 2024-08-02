@@ -9,5 +9,6 @@ These pages document how to port Zephyr to new hardware.
    :maxdepth: 1
 
    arch.rst
+   soc_porting.rst
    board_porting.rst
    shields.rst

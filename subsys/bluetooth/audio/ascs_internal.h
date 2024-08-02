@@ -7,6 +7,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef BT_ASCS_INTERNAL_H
+#define BT_ASCS_INTERNAL_H
+
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/conn.h>
+
 #define BT_ASCS_ASE_ID_NONE              0x00
 
 /* The number of ASEs in the notification when the opcode is unsupported or the length of the
@@ -349,3 +356,5 @@ int bt_ascs_disable_ase(struct bt_bap_ep *ep);
 int bt_ascs_release_ase(struct bt_bap_ep *ep);
 
 void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);
+
+#endif /* BT_ASCS_INTERNAL_H */

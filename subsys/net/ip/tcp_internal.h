@@ -448,6 +448,21 @@ static inline void net_tcp_reply_rst(struct net_pkt *pkt)
 }
 #endif
 
+/**
+ * @brief Get the TCP connection endpoint information.
+ *
+ * @param context Network context
+ * @param local TCP connection local socket information is copied here
+ * @param peer TCP connection peer socket information is copied here
+ * @param addrlen Size of the sockaddr struct. Copied size is returned.
+ *
+ * @return <0 if there was an error, 0 if ok
+ */
+int net_tcp_endpoint_copy(struct net_context *ctx,
+			  struct sockaddr *local,
+			  struct sockaddr *peer,
+			  socklen_t *addrlen);
+
 #ifdef __cplusplus
 }
 #endif

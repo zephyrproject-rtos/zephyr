@@ -189,25 +189,29 @@ zephyr_udc0: &usbd {
 &i2c {
 	status = "okay";
 	pinctrl-0 = <&i2c_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&i2c_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c2 {
 	status = "okay";
 	pinctrl-0 = <&i2c2_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi {
 	status = "okay";
 	pinctrl-0 = <&spi_controller>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&spi_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi2 {
 	status = "okay";
 	pinctrl-0 = <&spi2_controller>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 mikrobus_1_i2c: &i2c {};

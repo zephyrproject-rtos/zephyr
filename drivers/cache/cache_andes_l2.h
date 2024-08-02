@@ -208,7 +208,7 @@ static ALWAYS_INLINE int nds_l2_cache_init(void)
 {
 	unsigned long line_size;
 
-#if IS_ENABLED(CONFIG_SYSCON)
+#if defined(CONFIG_SYSCON)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(syscon), andestech_atcsmu100, okay)
 	uint32_t system_cfg;
 	const struct device *syscon_dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
@@ -228,7 +228,7 @@ static ALWAYS_INLINE int nds_l2_cache_init(void)
 		return 0;
 	}
 #endif /* andestech_atcsmu100 dts node status okay */
-#endif /* IS_ENABLED(CONFIG_SYSCON) */
+#endif /* defined(CONFIG_SYSCON) */
 
 	uint32_t l2c_ctrl;
 

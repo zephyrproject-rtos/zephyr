@@ -183,7 +183,7 @@ static void setup(void)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
@@ -269,25 +269,25 @@ static void test_main_mixed(void)
 static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server_none",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_none,
 	},
 	{
 		.test_id = "gatt_server_unenhanced",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_unenhanced,
 	},
 	{
 		.test_id = "gatt_server_enhanced",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_enhanced,
 	},
 	{
 		.test_id = "gatt_server_mixed",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_mixed,
 	},

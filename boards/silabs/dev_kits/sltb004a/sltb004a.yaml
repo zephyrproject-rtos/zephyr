@@ -1,0 +1,21 @@
+identifier: sltb004a
+name: Thunderboard Sense 2 (SLTB004A, BRD4166A)
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - nvs
+  - spi
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

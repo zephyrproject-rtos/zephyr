@@ -5,6 +5,7 @@
  */
 
 #include "mimxrt1160_evk-pinctrl.dtsi"
+#include <nxp/nxp_rt1160.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -66,7 +67,7 @@
 
 &lpi2c5 {
 	status = "okay";
-	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-0 = <&pinmux_lpi2c5>;
 	pinctrl-names = "default";
 
 	fxos8700: fxos8700@1f {
@@ -91,7 +92,7 @@
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
 	is25wp128: is25wp128@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <134217728>;
+		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
@@ -103,25 +104,24 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* Note slot 0 has one additional sector,
-			 * this is intended for use with the swap move algorithm
+			/* The MCUBoot swap-move algorithm uses the last 3 sectors
+			 * of the primary slot0 for swap status and move.
 			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 0x301000>;
+				reg = <0x00020000 (DT_SIZE_M(7) + DT_SIZE_K(12))>;
 			};
-			slot1_partition: partition@321000 {
+			slot1_partition: partition@723000 {
 				label = "image-1";
-				reg = <0x00321000 0x300000>;
+				reg = <0x00723000 DT_SIZE_M(7)>;
 			};
-			storage_partition: partition@621000 {
+			storage_partition: partition@E23000 {
 				label = "storage";
-				reg = <0x00621000 DT_SIZE_K(1984)>;
+				reg = <0x00E23000 (DT_SIZE_M(2) - DT_SIZE_K(140))>;
 			};
 		};
 	};
@@ -150,9 +150,9 @@
 		compatible = "microchip,ksz8081";
 		reg = <0>;
 		status = "okay";
-		mc,reset-gpio = <&gpio12 12 GPIO_ACTIVE_HIGH>;
-		mc,interrupt-gpio = <&gpio9 11 GPIO_ACTIVE_HIGH>;
-		mc,interface-type = "rmii";
+		reset-gpios = <&gpio12 12 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpio9 11 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
 	};
 };
 
@@ -178,7 +178,7 @@
 };
 
 &lpi2c1 {
-	pinctrl-0 =<&pinmux_lpi2c5>;
+	pinctrl-0 =<&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 };
 

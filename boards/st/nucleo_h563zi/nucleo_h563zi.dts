@@ -22,6 +22,7 @@
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &fdcan1;
 	};
 
 	aliases {
@@ -40,14 +41,24 @@
 
 &mac {
 	status = "okay";
-	pinctrl-0 = <&eth_mdc_pc1
-		     &eth_rxd0_pc4
+	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
-		     &eth_mdio_pa2
 		     &eth_crs_dv_pa7
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pb15>;
 	pinctrl-names = "default";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+		status = "okay";
+	};
 };

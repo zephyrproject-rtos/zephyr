@@ -117,6 +117,11 @@ int settings_delete(const char *name)
 
 int settings_save(void)
 {
+	return settings_save_subtree(NULL);
+}
+
+int settings_save_subtree(const char *subtree)
+{
 	struct settings_store *cs;
 	int rc;
 	int rc2;
@@ -132,6 +137,9 @@ int settings_save(void)
 	rc = 0;
 
 	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+		if (subtree && !settings_name_steq(ch->name, subtree, NULL)) {
+			continue;
+		}
 		if (ch->h_export) {
 			rc2 = ch->h_export(settings_save_one);
 			if (!rc) {
@@ -143,6 +151,9 @@ int settings_save(void)
 #if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 	struct settings_handler *ch;
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+		if (subtree && !settings_name_steq(ch->name, subtree, NULL)) {
+			continue;
+		}
 		if (ch->h_export) {
 			rc2 = ch->h_export(settings_save_one);
 			if (!rc) {

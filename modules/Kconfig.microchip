@@ -8,6 +8,9 @@ config HAS_MEC_HAL
 config HAS_MPFS_HAL
 	bool "Microchip MPFS HAL drivers support"
 
+config HAS_MEC5_HAL
+	bool "Microchip MEC5 HAL drivers support"
+
 config HAS_PIC32C_HAL
 	bool "Microchip PIC32C HAL drivers support"
 

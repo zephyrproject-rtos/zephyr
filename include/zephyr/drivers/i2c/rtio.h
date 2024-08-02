@@ -22,7 +22,7 @@ struct i2c_rtio {
 	struct k_sem lock;
 	struct k_spinlock slock;
 	struct rtio *r;
-	struct rtio_mpsc io_q;
+	struct mpsc io_q;
 	struct rtio_iodev iodev;
 	struct rtio_iodev_sqe *txn_head;
 	struct rtio_iodev_sqe *txn_curr;
@@ -34,7 +34,7 @@ struct i2c_rtio {
  *
  * @param _name Symbolic name of the context
  * @param _sq_sz Submission queue entry pool size
- * @param _cq_sz Completeion queue entry pool size
+ * @param _cq_sz Completion queue entry pool size
  */
 #define I2C_RTIO_DEFINE(_name, _sq_sz, _cq_sz)		\
 	RTIO_DEFINE(CONCAT(_name, _r), _sq_sz, _cq_sz);	\
@@ -43,7 +43,7 @@ struct i2c_rtio {
 	};
 
 /**
- * @brief Copy an an array of i2c_msgs to rtio submissions and a transaction
+ * @brief Copy an array of i2c_msgs to rtio submissions and a transaction
  *
  * @retval sqe Last sqe setup in the copy
  * @retval NULL Not enough memory to copy the transaction

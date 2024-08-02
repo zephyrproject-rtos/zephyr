@@ -27,6 +27,16 @@ config EVICTION_NRU
 	   - not recently accessed, dirty
 	   - not recently accessed, clean
 
+config EVICTION_LRU
+	bool "Least Recently Used (LRU) page eviction algorithm"
+	help
+	  This implements a Least Recently Used page eviction algorithm.
+	  Usage is tracked based on MMU protection making pages unaccessible
+	  and causing a fault when actually used, using such event to reorder
+	  the page eviction queue. This is more efficient than the NRU
+	  algorithm: all operations are O(1), the accessed flag is cleared on
+	  one page at a time and only when there is a page eviction request.
+
 endchoice
 
 if EVICTION_NRU

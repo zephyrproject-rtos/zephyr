@@ -8,8 +8,10 @@ menuconfig SOC_FLASH_NRF_RRAM
 	bool "Nordic Semiconductor flash driver for nRF RRAM"
 	default y
 	depends on DT_HAS_NORDIC_RRAM_CONTROLLER_ENABLED
+	select NRFX_RRAMC
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_NO_EXPLICIT_ERASE
 	select FLASH_NRF_FORCE_ALT
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
@@ -59,11 +61,24 @@ endchoice
 config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
 	int "Multiplier for flash operation timeouts [x0.1]"
 	depends on !SOC_FLASH_NRF_RADIO_SYNC_NONE
-	default 1
+	default 15
 	help
 	  This is a multiplier that will be divided by 10 that is applied
 	  to the flash erase and write operations timeout. The base for
 	  the multiplication would allow erasing all nRF flash pages in
 	  blocking mode.
+
+config NRF_RRAM_REGION_ADDRESS_RESOLUTION
+	hex
+	default 0x400
+	help
+	  RRAMC's region protection address resolution.
+	  Applies to region with configurable start address.
+
+config NRF_RRAM_REGION_SIZE_UNIT
+	hex
+	default 0x400
+	help
+	  Base unit for the size of RRAMC's region protection.
 
 endif # SOC_FLASH_NRF_RRAM

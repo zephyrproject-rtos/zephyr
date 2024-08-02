@@ -13,6 +13,9 @@
 #include <zephyr/input/input_analog_axis.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(analog_axis, CONFIG_INPUT_LOG_LEVEL);
@@ -38,13 +41,18 @@ struct analog_axis_config {
 };
 
 struct analog_axis_data {
-	struct k_mutex cal_lock;
+	struct k_sem cal_lock;
 	analog_axis_raw_data_t raw_data_cb;
 	struct k_timer timer;
 	struct k_thread thread;
 
 	K_KERNEL_STACK_MEMBER(thread_stack,
 			      CONFIG_INPUT_ANALOG_AXIS_THREAD_STACK_SIZE);
+
+#ifdef CONFIG_PM_DEVICE
+	atomic_t suspended;
+	struct k_sem wakeup;
+#endif
 };
 
 int analog_axis_num_axes(const struct device *dev)
@@ -66,9 +74,9 @@ int analog_axis_calibration_get(const struct device *dev,
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->cal_lock, K_FOREVER);
+	k_sem_take(&data->cal_lock, K_FOREVER);
 	memcpy(out_cal, cal, sizeof(struct analog_axis_calibration));
-	k_mutex_unlock(&data->cal_lock);
+	k_sem_give(&data->cal_lock);
 
 	return 0;
 }
@@ -77,9 +85,9 @@ void analog_axis_set_raw_data_cb(const struct device *dev, analog_axis_raw_data_
 {
 	struct analog_axis_data *data = dev->data;
 
-	k_mutex_lock(&data->cal_lock, K_FOREVER);
+	k_sem_take(&data->cal_lock, K_FOREVER);
 	data->raw_data_cb = cb;
-	k_mutex_unlock(&data->cal_lock);
+	k_sem_give(&data->cal_lock);
 }
 
 int analog_axis_calibration_set(const struct device *dev,
@@ -94,9 +102,9 @@ int analog_axis_calibration_set(const struct device *dev,
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->cal_lock, K_FOREVER);
+	k_sem_take(&data->cal_lock, K_FOREVER);
 	memcpy(cal, new_cal, sizeof(struct analog_axis_calibration));
-	k_mutex_unlock(&data->cal_lock);
+	k_sem_give(&data->cal_lock);
 
 	return 0;
 }
@@ -171,7 +179,7 @@ static void analog_axis_loop(const struct device *dev)
 		return;
 	}
 
-	k_mutex_lock(&data->cal_lock, K_FOREVER);
+	k_sem_take(&data->cal_lock, K_FOREVER);
 
 	for (i = 0; i < cfg->num_channels; i++) {
 		const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[i];
@@ -203,7 +211,7 @@ static void analog_axis_loop(const struct device *dev)
 		axis_data->last_out = out;
 	}
 
-	k_mutex_unlock(&data->cal_lock);
+	k_sem_give(&data->cal_lock);
 }
 
 static void analog_axis_thread(void *arg1, void *arg2, void *arg3)
@@ -229,11 +237,13 @@ static void analog_axis_thread(void *arg1, void *arg2, void *arg3)
 		}
 	}
 
-	k_timer_init(&data->timer, NULL, NULL);
-	k_timer_start(&data->timer,
-		      K_MSEC(cfg->poll_period_ms), K_MSEC(cfg->poll_period_ms));
-
 	while (true) {
+#ifdef CONFIG_PM_DEVICE
+		if (atomic_get(&data->suspended) == 1) {
+			k_sem_take(&data->wakeup, K_FOREVER);
+		}
+#endif
+
 		analog_axis_loop(dev);
 		k_timer_status_sync(&data->timer);
 	}
@@ -244,7 +254,12 @@ static int analog_axis_init(const struct device *dev)
 	struct analog_axis_data *data = dev->data;
 	k_tid_t tid;
 
-	k_mutex_init(&data->cal_lock);
+	k_sem_init(&data->cal_lock, 1, 1);
+	k_timer_init(&data->timer, NULL, NULL);
+
+#ifdef CONFIG_PM_DEVICE
+	k_sem_init(&data->wakeup, 0, 1);
+#endif
 
 	tid = k_thread_create(&data->thread, data->thread_stack,
 			      K_KERNEL_STACK_SIZEOF(data->thread_stack),
@@ -258,8 +273,53 @@ static int analog_axis_init(const struct device *dev)
 
 	k_thread_name_set(&data->thread, dev->name);
 
+#ifndef CONFIG_PM_DEVICE_RUNTIME
+	const struct analog_axis_config *cfg = dev->config;
+
+	k_timer_start(&data->timer,
+		      K_MSEC(cfg->poll_period_ms), K_MSEC(cfg->poll_period_ms));
+#else
+	int ret;
+
+	atomic_set(&data->suspended, 1);
+
+	pm_device_init_suspended(dev);
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable runtime power management");
+		return ret;
+	}
+#endif
+
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int analog_axis_pm_action(const struct device *dev,
+				 enum pm_device_action action)
+{
+	const struct analog_axis_config *cfg = dev->config;
+	struct analog_axis_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		atomic_set(&data->suspended, 1);
+		k_timer_stop(&data->timer);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		k_timer_start(&data->timer,
+			      K_MSEC(cfg->poll_period_ms),
+			      K_MSEC(cfg->poll_period_ms));
+		atomic_set(&data->suspended, 0);
+		k_sem_give(&data->wakeup);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
 
 #define ANALOG_AXIS_CHANNEL_CFG_DEF(node_id) \
 	{ \
@@ -301,7 +361,9 @@ static int analog_axis_init(const struct device *dev)
 												\
 	static struct analog_axis_data analog_axis_data_##inst;					\
 												\
-	DEVICE_DT_INST_DEFINE(inst, analog_axis_init, NULL,					\
+	PM_DEVICE_DT_INST_DEFINE(inst, analog_axis_pm_action);					\
+												\
+	DEVICE_DT_INST_DEFINE(inst, analog_axis_init, PM_DEVICE_DT_INST_GET(inst),		\
 			      &analog_axis_data_##inst, &analog_axis_cfg_##inst,		\
 			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 

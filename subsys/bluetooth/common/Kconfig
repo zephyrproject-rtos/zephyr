@@ -80,7 +80,7 @@ config BT_BUF_ACL_RX_SIZE
 config BT_BUF_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default 6
-	range 1 64
+	range 2 256
 	help
 	  Number or incoming ACL data buffers sent from the Controller to the
 	  Host.
@@ -94,9 +94,13 @@ config BT_BUF_ACL_RX_COUNT
 	  When Controller to Host flow control is not enabled the Controller
 	  can assume that the Host has infinite amount of buffers.
 
+	  For both configurations, there is an additional requirement that is
+	  enforced by a build-time check: BT_BUF_ACL_RX_COUNT needs to be at
+	  least one greater than BT_MAX_CONN.
+
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
-	default 255 if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX
+	default 255 if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX || BT_CLASSIC
 	# LE Read Supported Commands command complete event.
 	default 68
 	range 68 255
@@ -175,8 +179,12 @@ config BT_BUF_CMD_TX_COUNT
 
 endmenu
 
+# Workaround to have commas on function arguments
+ZEPHYR_BT_HCI := zephyr,bt-hci
+
 config BT_HAS_HCI_VS
 	bool
+	default $(dt_chosen_bool_prop,$(ZEPHYR_BT_HCI),bt-hci-vs-ext)
 	help
 	  This option is set by the Bluetooth controller to indicate support
 	  for the Zephyr HCI Vendor-Specific Commands and Event.
@@ -190,32 +198,16 @@ config BT_HCI_VS
 	  Host and/or Controller. This enables Set Version Information,
 	  Supported Commands, Supported Features vendor commands.
 
-config BT_HCI_VS_EXT
-	bool "Zephyr HCI Vendor-Specific Extensions"
-	depends on BT_HCI_VS
-	default y
-	help
-	  Enable support for the Zephyr HCI Vendor-Specific Extensions in the
-	  Host and/or Controller. This enables  Write BD_ADDR, Read Build Info,
-	  Read Static Addresses and Read Key Hierarchy Roots vendor commands.
-
-config BT_HCI_VS_EVT
-	bool "Zephyr HCI Vendor-Specific Events"
-	depends on BT_HCI_VS_EXT
-	help
-	  Enable support for the Zephyr HCI Vendor-Specific Events in the
-	  Host and/or Controller.
-
 config BT_HCI_VS_FATAL_ERROR
 	bool "Allow vendor specific HCI event Zephyr Fatal Error"
-	depends on BT_HCI_VS_EXT
+	depends on BT_HCI_VS
 	help
-	  Enable emiting HCI Vendor-Specific events for system and Controller
+	  Enable emitting HCI Vendor-Specific events for system and Controller
 	  errors that are unrecoverable.
 
 config BT_HCI_VS_EXT_DETECT
 	bool "Use heuristics to guess HCI vendor extensions support in advance"
-	depends on BT_HCI_VS_EXT && !BT_CTLR
+	depends on BT_HCI_VS && !BT_CTLR
 	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3 || BOARD_NATIVE_POSIX
 	help
 	  Use some heuristics to try to guess in advance whether the controller
@@ -265,6 +257,14 @@ config BT_ASSERT_PANIC
 
 endif # BT_ASSERT
 
+config BT_HCI_ERR_TO_STR
+	bool "Print HCI error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of HCI error
+	  codes represented as strings.
+	  See bt_hci_err_to_str() for more details.
+
 config BT_MONITOR
 	bool
 	select LOG_OUTPUT
@@ -277,17 +277,6 @@ config BT_DEBUG_NONE
 	bool "No debug log"
 	help
 	  Select this to disable all Bluetooth debug logs.
-
-config BT_DEBUG_LOG
-	bool "[DEPRECATED] Normal printf-style to console"
-	select DEPRECATED
-	select LOG
-	imply LOG_FUNC_NAME_PREFIX_INF
-	imply LOG_FUNC_NAME_PREFIX_WRN
-	imply LOG_FUNC_NAME_PREFIX_ERR
-	help
-	  This option enables Bluetooth debug going to standard
-	  serial console.
 
 config BT_DEBUG_MONITOR_UART
 	bool "Monitor protocol over UART"

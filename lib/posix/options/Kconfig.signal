@@ -2,24 +2,32 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Signal support"
+menu "POSIX signals"
 
-# needed outside of if clause above to define constants & types in signal.h
+config POSIX_REALTIME_SIGNALS
+	bool "POSIX realtime signals [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support for POSIX realtime signals.
+
+if POSIX_REALTIME_SIGNALS
+
 config POSIX_RTSIG_MAX
 	int "Maximum number of realtime signals"
-	default 31 if POSIX_SIGNAL
-	default 0
+	default 8
 	help
 	  Define the maximum number of realtime signals (RTSIG_MAX).
 	  The range of realtime signals is [SIGRTMIN .. (SIGRTMIN+RTSIG_MAX)]
 
-config POSIX_SIGNAL
-	bool "Support for POSIX signal APIs"
-	default y if POSIX_API
-	help
-	  Enable support for POSIX signal APIs.
+endif # POSIX_REALTIME_SIGNALS
 
-if POSIX_SIGNAL
+config POSIX_SIGNALS
+	bool "POSIX signals [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support for POSIX signals.
+
+if POSIX_SIGNALS
 
 config POSIX_SIGNAL_STRING_DESC
 	bool "Use full description for the strsignal API"
@@ -27,13 +35,6 @@ config POSIX_SIGNAL_STRING_DESC
 	help
 	  Use full description for the strsignal API.
 	  Will use 256 bytes of ROM.
-
-config POSIX_LIMITS_RTSIG_MAX
-	int "_POSIX_RTSIG_MAX value in limits.h"
-	default 8
-	help
-	  Define the _POSIX_RTSIG_MAX value in limits.h.
-	  IEEE 1003.1 defines this to be 8.
 
 endif
 

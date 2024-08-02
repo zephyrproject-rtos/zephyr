@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_chat, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
@@ -142,6 +145,42 @@ static void modem_chat_script_clear_response_matches(struct modem_chat *chat)
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = 0;
 }
 
+static bool modem_chat_script_chat_has_request(struct modem_chat *chat)
+{
+	const struct modem_chat_script_chat *script_chat =
+		&chat->script->script_chats[chat->script_chat_it];
+
+	return script_chat->request_size > 0;
+}
+
+static bool modem_chat_script_chat_has_matches(struct modem_chat *chat)
+{
+	const struct modem_chat_script_chat *script_chat =
+		&chat->script->script_chats[chat->script_chat_it];
+
+	return script_chat->response_matches_size > 0;
+}
+
+static uint16_t modem_chat_script_chat_get_send_timeout(struct modem_chat *chat)
+{
+	const struct modem_chat_script_chat *script_chat =
+		&chat->script->script_chats[chat->script_chat_it];
+
+	return script_chat->timeout;
+}
+
+static bool modem_chat_script_chat_has_send_timeout(struct modem_chat *chat)
+{
+	return modem_chat_script_chat_get_send_timeout(chat) > 0;
+}
+
+static void modem_chat_script_chat_schedule_send_timeout(struct modem_chat *chat)
+{
+	uint16_t timeout = modem_chat_script_chat_get_send_timeout(chat);
+
+	k_work_schedule(&chat->script_send_timeout_work, K_MSEC(timeout));
+}
+
 static void modem_chat_script_next(struct modem_chat *chat, bool initial)
 {
 	const struct modem_chat_script_chat *script_chat;
@@ -166,13 +205,15 @@ static void modem_chat_script_next(struct modem_chat *chat, bool initial)
 
 	script_chat = &chat->script->script_chats[chat->script_chat_it];
 
-	/* Check if request must be sent */
-	if (script_chat->request_size > 0) {
+	/* Continue script */
+	if (modem_chat_script_chat_has_request(chat)) {
 		LOG_DBG("sending: %.*s", script_chat->request_size, script_chat->request);
 		modem_chat_script_clear_response_matches(chat);
 		modem_chat_script_send(chat);
-	} else {
+	} else if (modem_chat_script_chat_has_matches(chat)) {
 		modem_chat_script_set_response_matches(chat);
+	} else {
+		modem_chat_script_chat_schedule_send_timeout(chat);
 	}
 }
 
@@ -226,22 +267,6 @@ static void modem_chat_script_abort_handler(struct k_work *item)
 	modem_chat_script_stop(chat, MODEM_CHAT_SCRIPT_RESULT_ABORT);
 }
 
-static bool modem_chat_script_chat_is_no_response(struct modem_chat *chat)
-{
-	const struct modem_chat_script_chat *script_chat =
-		&chat->script->script_chats[chat->script_chat_it];
-
-	return (script_chat->response_matches_size == 0);
-}
-
-static uint16_t modem_chat_script_chat_get_send_timeout(struct modem_chat *chat)
-{
-	const struct modem_chat_script_chat *script_chat =
-		&chat->script->script_chats[chat->script_chat_it];
-
-	return script_chat->timeout;
-}
-
 /* Returns true when request part has been sent */
 static bool modem_chat_send_script_request_part(struct modem_chat *chat)
 {
@@ -286,7 +311,6 @@ static bool modem_chat_send_script_request_part(struct modem_chat *chat)
 static void modem_chat_script_send_handler(struct k_work *item)
 {
 	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, script_send_work);
-	uint16_t timeout;
 
 	if (chat->script == NULL) {
 		return;
@@ -313,15 +337,12 @@ static void modem_chat_script_send_handler(struct k_work *item)
 		break;
 	}
 
-	if (modem_chat_script_chat_is_no_response(chat)) {
-		timeout = modem_chat_script_chat_get_send_timeout(chat);
-		if (timeout == 0) {
-			modem_chat_script_next(chat, false);
-		} else {
-			k_work_schedule(&chat->script_send_timeout_work, K_MSEC(timeout));
-		}
-	} else {
+	if (modem_chat_script_chat_has_matches(chat)) {
 		modem_chat_script_set_response_matches(chat);
+	} else if (modem_chat_script_chat_has_send_timeout(chat)) {
+		modem_chat_script_chat_schedule_send_timeout(chat);
+	} else {
+		modem_chat_script_next(chat, false);
 	}
 }
 
@@ -338,8 +359,27 @@ static void modem_chat_script_send_timeout_handler(struct k_work *item)
 	modem_chat_script_next(chat, false);
 }
 
+#if CONFIG_MODEM_STATS
+static uint32_t get_receive_buf_length(struct modem_chat *chat)
+{
+	return chat->receive_buf_len;
+}
+
+static void advertise_receive_buf_stats(struct modem_chat *chat)
+{
+	uint32_t length;
+
+	length = get_receive_buf_length(chat);
+	modem_stats_buffer_advertise_length(&chat->receive_buf_stats, length);
+}
+#endif
+
 static void modem_chat_parse_reset(struct modem_chat *chat)
 {
+#if CONFIG_MODEM_STATS
+	advertise_receive_buf_stats(chat);
+#endif
+
 	/* Reset parameters used for parsing */
 	chat->receive_buf_len = 0;
 	chat->delimiter_match_len = 0;
@@ -667,6 +707,21 @@ static void modem_chat_process_bytes(struct modem_chat *chat)
 	}
 }
 
+#if CONFIG_MODEM_STATS
+static uint32_t get_work_buf_length(struct modem_chat *chat)
+{
+	return chat->work_buf_len;
+}
+
+static void advertise_work_buf_stats(struct modem_chat *chat)
+{
+	uint32_t length;
+
+	length = get_work_buf_length(chat);
+	modem_stats_buffer_advertise_length(&chat->work_buf_stats, length);
+}
+#endif
+
 static void modem_chat_process_handler(struct k_work *item)
 {
 	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, receive_work);
@@ -680,6 +735,10 @@ static void modem_chat_process_handler(struct k_work *item)
 
 	/* Save received data length */
 	chat->work_buf_len = (size_t)ret;
+
+#if CONFIG_MODEM_STATS
+	advertise_work_buf_stats(chat);
+#endif
 
 	/* Process data */
 	modem_chat_process_bytes(chat);
@@ -704,6 +763,34 @@ static void modem_chat_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_ev
 		break;
 	}
 }
+
+static bool modem_chat_validate_array(const void *array, size_t size)
+{
+	return ((array == NULL) && (size == 0)) ||
+	       ((array != NULL) && (size > 0));
+}
+
+#if CONFIG_MODEM_STATS
+static uint32_t get_receive_buf_size(struct modem_chat *chat)
+{
+	return chat->receive_buf_size;
+}
+
+static uint32_t get_work_buf_size(struct modem_chat *chat)
+{
+	return sizeof(chat->work_buf);
+}
+
+static void init_buf_stats(struct modem_chat *chat)
+{
+	uint32_t size;
+
+	size = get_receive_buf_size(chat);
+	modem_stats_buffer_init(&chat->receive_buf_stats, "chat_rx", size);
+	size = get_work_buf_size(chat);
+	modem_stats_buffer_init(&chat->work_buf_stats, "chat_work", size);
+}
+#endif
 
 int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *config)
 {
@@ -741,6 +828,10 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 	k_work_init_delayable(&chat->script_send_timeout_work,
 			      modem_chat_script_send_timeout_handler);
 
+#if CONFIG_MODEM_STATS
+	init_buf_stats(chat);
+#endif
+
 	return 0;
 }
 
@@ -773,7 +864,8 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 	/* Validate script commands */
 	for (uint16_t i = 0; i < script->script_chats_size; i++) {
 		if ((script->script_chats[i].request_size == 0) &&
-		    (script->script_chats[i].response_matches_size == 0)) {
+		    (script->script_chats[i].response_matches_size == 0) &&
+		    (script->script_chats[i].timeout == 0)) {
 			return -EINVAL;
 		}
 	}
@@ -785,6 +877,8 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 		return -EBUSY;
 	}
 
+	k_sem_reset(&chat->script_stopped_sem);
+
 	chat->pending_script = script;
 	k_work_submit(&chat->script_run_work);
 	return 0;
@@ -793,8 +887,6 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 int modem_chat_run_script(struct modem_chat *chat, const struct modem_chat_script *script)
 {
 	int ret;
-
-	k_sem_reset(&chat->script_stopped_sem);
 
 	ret = modem_chat_run_script_async(chat, script);
 	if (ret < 0) {
@@ -845,4 +937,143 @@ void modem_chat_release(struct modem_chat *chat)
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_ABORT] = 0;
 	chat->matches[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = NULL;
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = 0;
+}
+
+void modem_chat_match_init(struct modem_chat_match *chat_match)
+{
+	memset(chat_match, 0, sizeof(struct modem_chat_match));
+}
+
+int modem_chat_match_set_match(struct modem_chat_match *chat_match, const char *match)
+{
+	size_t size;
+
+	size = strnlen(match, UINT8_MAX + 1);
+
+	if (size == (UINT8_MAX + 1)) {
+		return -ENOMEM;
+	}
+
+	chat_match->match = match;
+	chat_match->match_size = (uint8_t)size;
+	return 0;
+}
+
+int modem_chat_match_set_separators(struct modem_chat_match *chat_match, const char *separators)
+{
+	size_t size;
+
+	size = strnlen(separators, UINT8_MAX + 1);
+
+	if (size == (UINT8_MAX + 1)) {
+		return -ENOMEM;
+	}
+
+	chat_match->separators = separators;
+	chat_match->separators_size = (uint8_t)size;
+	return 0;
+}
+
+void modem_chat_match_set_callback(struct modem_chat_match *match,
+				   modem_chat_match_callback callback)
+{
+	match->callback = callback;
+}
+
+void modem_chat_match_set_partial(struct modem_chat_match *match, bool partial)
+{
+	match->partial = partial;
+}
+
+void modem_chat_match_enable_wildcards(struct modem_chat_match *match, bool enable)
+{
+	match->wildcards = enable;
+}
+
+void modem_chat_script_chat_init(struct modem_chat_script_chat *script_chat)
+{
+	memset(script_chat, 0, sizeof(struct modem_chat_script_chat));
+}
+
+int modem_chat_script_chat_set_request(struct modem_chat_script_chat *script_chat,
+				       const char *request)
+{
+	size_t size;
+
+	size = strnlen(request, UINT16_MAX + 1);
+
+	if (size == (UINT16_MAX + 1)) {
+		return -ENOMEM;
+	}
+
+	script_chat->request = request;
+	script_chat->request_size = (uint16_t)size;
+	return 0;
+}
+
+int modem_chat_script_chat_set_response_matches(struct modem_chat_script_chat *script_chat,
+						const struct modem_chat_match *response_matches,
+						uint16_t response_matches_size)
+{
+	if (!modem_chat_validate_array(response_matches, response_matches_size)) {
+		return -EINVAL;
+	}
+
+	script_chat->response_matches = response_matches;
+	script_chat->response_matches_size = response_matches_size;
+	return 0;
+}
+
+void modem_chat_script_chat_set_timeout(struct modem_chat_script_chat *script_chat,
+					uint16_t timeout)
+{
+	script_chat->timeout = timeout;
+}
+
+void modem_chat_script_init(struct modem_chat_script *script)
+{
+	memset(script, 0, sizeof(struct modem_chat_script));
+	script->name = "";
+}
+
+void modem_chat_script_set_name(struct modem_chat_script *script, const char *name)
+{
+	script->name = name;
+}
+
+int modem_chat_script_set_script_chats(struct modem_chat_script *script,
+				       const struct modem_chat_script_chat *script_chats,
+				       uint16_t script_chats_size)
+{
+	if (!modem_chat_validate_array(script_chats, script_chats_size)) {
+		return -EINVAL;
+	}
+
+	script->script_chats = script_chats;
+	script->script_chats_size = script_chats_size;
+	return 0;
+}
+
+int modem_chat_script_set_abort_matches(struct modem_chat_script *script,
+					const struct modem_chat_match *abort_matches,
+					uint16_t abort_matches_size)
+{
+	if (!modem_chat_validate_array(abort_matches, abort_matches_size)) {
+		return -EINVAL;
+	}
+
+	script->abort_matches = abort_matches;
+	script->abort_matches_size = abort_matches_size;
+	return 0;
+}
+
+void modem_chat_script_set_callback(struct modem_chat_script *script,
+				    modem_chat_script_callback callback)
+{
+	script->callback = callback;
+}
+
+void modem_chat_script_set_timeout(struct modem_chat_script *script, uint32_t timeout_s)
+{
+	script->timeout = timeout_s;
 }

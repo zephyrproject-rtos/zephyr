@@ -2,18 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig POSIX_FS
+menuconfig POSIX_FILE_SYSTEM
 	bool "POSIX file system API support"
 	default y if POSIX_API
-	depends on FILE_SYSTEM
+	select FILE_SYSTEM
 	select FDTABLE
 	help
 	  This enables POSIX style file system related APIs.
 
-config POSIX_MAX_OPEN_FILES
-	int "Maximum number of open file descriptors"
-	default 16
-	depends on POSIX_FS
+if POSIX_FILE_SYSTEM
+
+config POSIX_FILE_SYSTEM_ALIAS_FSTAT
+	bool
 	help
-	  Maximum number of open files. Note that this setting
-	  is additionally bounded by CONFIG_POSIX_MAX_FDS.
+	  Select 'y' here and Zephyr will provide an alias for fstat() as _fstat().
+
+endif # POSIX_FILE_SYSTEM

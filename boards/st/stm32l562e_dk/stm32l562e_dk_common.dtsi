@@ -32,10 +32,13 @@
 	};
 
 	aliases {
-		spi-flash0 = &mx25lm51245;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+	};
+
+	chosen {
+		zephyr,bt-hci = &hci_spi;
 	};
 };
 
@@ -114,7 +117,7 @@ stm32_lp_tick_source: &lptim1 {
 	cs-gpios = <&gpiog 5 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
-	spbtle-rf@0 {
+	hci_spi: spbtle-rf@0 {
 		compatible = "st,hci-spi-v1";
 		reg = <0>;
 		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
@@ -172,13 +175,13 @@ stm32_lp_tick_source: &lptim1 {
 		];
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       reg = <0x00000000 DT_SIZE_M(64)>;
-			   };
+			partition@0 {
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
 		};
 	};
 };

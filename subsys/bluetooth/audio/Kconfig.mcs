@@ -13,7 +13,6 @@ config BT_MCS
 	depends on MCTL_LOCAL_PLAYER_REMOTE_CONTROL
 	depends on UTF8
 	select BT_CCID
-	select EXPERIMENTAL
 	select BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for the Media Control Service.
@@ -24,7 +23,6 @@ config BT_MCC
 	bool "Media Control Client Support"
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
-	select EXPERIMENTAL
 	help
 	  This option enables support for the Media Control Client.
 
@@ -62,7 +60,7 @@ config BT_MCC_SEGMENT_NAME_MAX
 	default 25
 	range 1 255
 	help
-	  Sets the the maximum number of bytes (including the null termination)
+	  Sets the maximum number of bytes (including the null termination)
 	  of the name of any track segment in the media player. If the name is
 	  longer, the media control client will truncate the name when reading
 	  it.

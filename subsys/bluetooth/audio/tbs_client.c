@@ -5,30 +5,41 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
-#include <zephyr/sys/check.h>
-
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/types.h>
+#include <zephyr/sys/check.h>
 
 #include "tbs_internal.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_tbs_client, CONFIG_BT_TBS_CLIENT_LOG_LEVEL);
 /* TODO TBS client attempts to subscribe to all characteristics at once if the MTU is large enough.
  * This requires a significant amount of buffers, and should be optimized.
  */
 
-/* Calculate the requiered buffers for TBS Client discovery */
+/* Calculate the required buffers for TBS Client discovery */
 #define TBS_CLIENT_BUF_COUNT                                                                       \
 	(1 /* Discover buffer */ + 1 /* terminate reason */ +                                      \
 	 IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) +                                   \
@@ -52,7 +63,7 @@ struct bt_tbs_server_inst {
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 #if defined(CONFIG_BT_TBS_CLIENT_GTBS)
 	struct bt_tbs_instance gtbs_inst;
-#endif /* IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) */
+#endif /* defined(CONFIG_BT_TBS_CLIENT_GTBS) */
 	struct bt_gatt_discover_params discover_params;
 	struct bt_tbs_instance *current_inst;
 };
@@ -1543,14 +1554,14 @@ static uint8_t discover_func(struct bt_conn *conn,
 				err = bt_gatt_subscribe(conn, sub_params);
 				if (err != 0 && err != -EALREADY) {
 					LOG_DBG("Could not subscribe to "
-					       "characterstic at handle 0x%04X"
+					       "characteristic at handle 0x%04X"
 					       "(%d)",
 					       sub_params->value_handle, err);
 					tbs_client_discover_complete(conn, err);
 
 					return BT_GATT_ITER_STOP;
 				} else {
-					LOG_DBG("Subscribed to characterstic at "
+					LOG_DBG("Subscribed to characteristic at "
 					       "handle 0x%04X",
 					       sub_params->value_handle);
 				}
@@ -1737,7 +1748,7 @@ static int primary_discover_gtbs(struct bt_conn *conn)
 
 	return bt_gatt_discover(conn, params);
 }
-#endif /* IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) */
+#endif /* defined(CONFIG_BT_TBS_CLIENT_GTBS) */
 
 /****************************** PUBLIC API ******************************/
 

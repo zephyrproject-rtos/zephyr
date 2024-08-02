@@ -62,7 +62,7 @@ def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
-def main(options):
+def main(options, default_options):
     start_time = time.time()
 
     # Configure color output
@@ -73,7 +73,7 @@ def main(options):
 
     previous_results = None
     # Cleanup
-    if options.no_clean or options.only_failed or options.test_only:
+    if options.no_clean or options.only_failed or options.test_only or options.report_summary is not None:
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
     elif options.last_metrics:
@@ -94,6 +94,9 @@ def main(options):
                     print("Renaming output directory to {}".format(new_out))
                     shutil.move(options.outdir, new_out)
                     break
+            else:
+                sys.exit(f"Too many '{options.outdir}.*' directories. Run either with --no-clean, "
+                         "or --clobber-output, or delete these directories manually.")
 
     previous_results_file = None
     os.makedirs(options.outdir, exist_ok=True)
@@ -105,7 +108,7 @@ def main(options):
     VERBOSE = options.verbose
     setup_logging(options.outdir, options.log_file, VERBOSE, options.timestamps)
 
-    env = TwisterEnv(options)
+    env = TwisterEnv(options, default_options)
     env.discover()
 
     hwm = HardwareMap(env)
@@ -158,6 +161,13 @@ def main(options):
 
     if options.save_tests:
         report.json_report(options.save_tests)
+        return 0
+
+    if options.report_summary is not None:
+        if options.report_summary < 0:
+            logger.error("The report summary value cannot be less than 0")
+            return 1
+        report.synopsis()
         return 0
 
     if options.device_testing and not options.build_only:

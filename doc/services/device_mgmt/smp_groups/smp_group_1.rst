@@ -204,7 +204,7 @@ where:
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
     | "rsn"            | optional string that clarifies reason for an error; specifically useful |
-    |                  | when ``rc`` is :c:enum:`MGMT_ERR_EUNKNOWN`.                             |
+    |                  | when ``rc`` is :c:enumerator:`MGMT_ERR_EUNKNOWN`.                       |
     +------------------+-------------------------------------------------------------------------+
 
 .. note::
@@ -407,7 +407,7 @@ where:
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
     | "rsn"            | optional string that clarifies reason for an error; specifically useful |
-    |                  | when ``rc`` is :c:enum:`MGMT_ERR_EUNKNOWN`.                             |
+    |                  | when ``rc`` is :c:enumerator:`MGMT_ERR_EUNKNOWN`.                       |
     +------------------+-------------------------------------------------------------------------+
 
 The "off" field is only included in responses to successfully processed requests;
@@ -509,10 +509,10 @@ where:
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
     | "rsn"            | optional string that clarifies reason for an error; specifically useful |
-    |                  | when ``rc`` is :c:enum:`MGMT_ERR_EUNKNOWN`.                             |
+    |                  | when ``rc`` is :c:enumerator:`MGMT_ERR_EUNKNOWN`.                       |
     +------------------+-------------------------------------------------------------------------+
 
 .. note::
     Response from Zephyr running device may have "rc" value of
-    :c:enum:`MGMT_ERR_EBADSTATE`, which means that the secondary
+    :c:enumerator:`MGMT_ERR_EBADSTATE`, which means that the secondary
     image has been marked for next boot already and may not be erased.

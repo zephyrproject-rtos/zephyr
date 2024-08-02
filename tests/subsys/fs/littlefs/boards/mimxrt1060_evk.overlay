@@ -12,27 +12,23 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(64)>;
+			reg = <0x00000000 DT_SIZE_K(128)>;
 		};
-		slot0_partition: partition@10000 {
+		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00010000 DT_SIZE_M(3)>;
+			reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(8))>;
 		};
-		large_partition: partition@310000 {
+		large_partition: partition@322000 {
 			label = "large";
-			reg = <0x00310000 DT_SIZE_M(3)>;
+			reg = <0x00322000 DT_SIZE_M(3)>;
 		};
-		scratch_partition: partition@610000 {
-			label = "image-scratch";
-			reg = <0x00610000 DT_SIZE_K(128)>;
-		};
-		small_partition: partition@630000 {
-			label = "small";
-			reg = <0x00630000 DT_SIZE_K(64)>;
-		};
-		medium_partition: partition@640000 {
+		medium_partition: partition@622000 {
 			label = "medium";
-			reg = <0x00640000 DT_SIZE_K(960)>;
+			reg = <0x00622000 DT_SIZE_K(960)>;
+		};
+		small_partition: partition@712000 {
+			label = "small";
+			reg = <0x00712000 DT_SIZE_K(64)>;
 		};
 	};
 };

@@ -316,6 +316,13 @@ config LINKER_USE_RELAX
 
 endmenu # "Linker Sections"
 
+config LINKER_ITERABLE_SUBALIGN
+	int
+	default 8 if 64BIT
+	default 4
+	help
+	  Hidden option for the default subalignment of iterable sections.
+
 config LINKER_DEVNULL_SUPPORT
 	bool
 	default y if CPU_CORTEX_M || (RISCV && !64BIT)
@@ -471,6 +478,7 @@ choice COMPILER_OPTIMIZATIONS
 	prompt "Optimization level"
 	default NO_OPTIMIZATIONS    if COVERAGE
 	default DEBUG_OPTIMIZATIONS if DEBUG
+	default SIZE_OPTIMIZATIONS_AGGRESSIVE if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
 	default SIZE_OPTIMIZATIONS
 	help
 	  Note that these flags shall only control the compiler
@@ -481,6 +489,12 @@ config SIZE_OPTIMIZATIONS
 	bool "Optimize for size"
 	help
 	  Compiler optimizations will be set to -Os independently of other
+	  options.
+
+config SIZE_OPTIMIZATIONS_AGGRESSIVE
+	bool "Aggressively optimize for size"
+	help
+	  Compiler optimizations wil be set to -Oz independently of other
 	  options.
 
 config SPEED_OPTIMIZATIONS
@@ -777,6 +791,11 @@ config BUILD_OUTPUT_STRIPPED
 	  Build a stripped binary zephyr/zephyr.strip in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS
+	bool "Compress debug sections in the ELF file"
+	help
+	  Compress debug sections in the ELF file to reduce the file size.
+
 config BUILD_OUTPUT_ADJUST_LMA
 	string
 	help
@@ -1034,5 +1053,22 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 	  0xf01669ef as the magic value to enter the bootloader.
 
 endchoice
+
+endmenu
+
+menu "Compatibility"
+
+config LEGACY_GENERATED_INCLUDE_PATH
+	bool "Legacy include path for generated headers"
+	default y
+	help
+	  Allow applications and libraries to use the Zephyr legacy include
+	  path for the generated headers which does not use the `zephyr/` prefix.
+
+	  From now on, i.e., the preferred way to include the `version.h` header is to
+	  use <zephyr/version.h>, this Kconfig is currently enabled by default so that
+	  user applications won't immediately fail to compile.
+
+	  This Kconfig will be deprecated and eventually removed in the future releases.
 
 endmenu

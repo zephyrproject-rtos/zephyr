@@ -5,6 +5,7 @@ config IPM_MCUX
 	bool "MCUX IPM driver"
 	default y
 	depends on DT_HAS_NXP_LPC_MAILBOX_ENABLED
+	select RESET
 	help
 	  Driver for MCUX mailbox
 

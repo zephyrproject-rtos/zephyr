@@ -21,6 +21,8 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/reset.h>
+
 #include <soc.h>
 
 #define LOG_MODULE_NAME counter_mrt
@@ -55,6 +57,7 @@ struct nxp_mrt_config {
 	void (*irq_config_func)(const struct device *dev);
 	struct nxp_mrt_channel_data *const *data;
 	const struct device *const *channels;
+	const struct reset_dt_spec reset;
 };
 
 static int nxp_mrt_stop(const struct device *dev)
@@ -210,6 +213,17 @@ static int nxp_mrt_init(const struct device *dev)
 	const struct nxp_mrt_config *config = dev->config;
 	MRT_Type *base = config->base;
 	uint32_t num_channels = (base->MODCFG & MRT_MODCFG_NOC_MASK) >> MRT_MODCFG_NOC_SHIFT;
+	int ret = 0;
+
+	if (!device_is_ready(config->reset.dev)) {
+		LOG_ERR("Reset device not ready");
+		return -ENODEV;
+	}
+
+	ret = reset_line_toggle(config->reset.dev, config->reset.id);
+	if (ret) {
+		return ret;
+	}
 
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
@@ -331,6 +345,7 @@ struct counter_driver_api nxp_mrt_api = {
 		.irq_config_func = nxp_mrt_##n##_irq_config_func,		\
 		.data = nxp_mrt_##n##_channel_datas,				\
 		.channels = nxp_mrt_##n##_channels,				\
+		.reset = RESET_DT_SPEC_INST_GET(n),				\
 	};									\
 										\
 	/* Init parent device in order to handle ISR and init. */		\

@@ -132,6 +132,13 @@ def main():
                 out_dt_define(f"{node.z_path_id}_CHILD_IDX",
                               node.parent.child_index(node))
 
+            out_comment("Helpers for dealing with node labels:")
+            out_dt_define(f"{node.z_path_id}_NODELABEL_NUM", len(node.labels))
+            out_dt_define(f"{node.z_path_id}_FOREACH_NODELABEL(fn)",
+                          " ".join(f"fn({nodelabel})" for nodelabel in node.labels))
+            out_dt_define(f"{node.z_path_id}_FOREACH_NODELABEL_VARGS(fn, ...)",
+                          " ".join(f"fn({nodelabel}, __VA_ARGS__)" for nodelabel in node.labels))
+
             write_children(node)
             write_dep_info(node)
             write_idents_and_existence(node)
@@ -416,6 +423,7 @@ def write_regs(node):
             idx_vals.append((idx_macro,
                              f"{reg.addr} /* {hex(reg.addr)} */"))
             if reg.name:
+                name_vals.append((f"{path_id}_REG_NAME_{reg.name}_EXISTS", 1))
                 name_macro = f"{path_id}_REG_NAME_{reg.name}_VAL_ADDRESS"
                 name_vals.append((name_macro, f"DT_{idx_macro}"))
 
@@ -523,6 +531,15 @@ def write_children(node):
     # Writes helper macros for dealing with node's children.
 
     out_comment("Helper macros for child nodes of this node.")
+
+    out_dt_define(f"{node.z_path_id}_CHILD_NUM", len(node.children))
+
+    ok_nodes_num = 0
+    for child in node.children.values():
+        if child.status == "okay":
+            ok_nodes_num = ok_nodes_num + 1
+
+    out_dt_define(f"{node.z_path_id}_CHILD_NUM_STATUS_OKAY", ok_nodes_num)
 
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD(fn)",
             " ".join(f"fn(DT_{child.z_path_id})" for child in

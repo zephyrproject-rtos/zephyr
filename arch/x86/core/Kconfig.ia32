@@ -166,7 +166,9 @@ endmenu
 config X86_EXCEPTION_STACK_TRACE
 	bool
 	default y
-	depends on EXCEPTION_STACK_TRACE
+	select DEBUG_INFO
+	select THREAD_STACK_INFO
+	depends on !OMIT_FRAME_POINTER
 	help
 	  Internal config to enable runtime stack traces on fatal exceptions.
 

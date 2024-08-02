@@ -138,26 +138,26 @@ enum net_sock_type {
 /** IPv6 address struct */
 struct in6_addr {
 	union {
-		uint8_t s6_addr[16];
-		uint16_t s6_addr16[8]; /* In big endian */
-		uint32_t s6_addr32[4]; /* In big endian */
+		uint8_t s6_addr[16];   /**< IPv6 address buffer */
+		uint16_t s6_addr16[8]; /**< In big endian */
+		uint32_t s6_addr32[4]; /**< In big endian */
 	};
 };
 
-/* Binary size of the IPv6 address */
+/** Binary size of the IPv6 address */
 #define NET_IPV6_ADDR_SIZE 16
 
 /** IPv4 address struct */
 struct in_addr {
 	union {
-		uint8_t s4_addr[4];
-		uint16_t s4_addr16[2]; /* In big endian */
-		uint32_t s4_addr32[1]; /* In big endian */
-		uint32_t s_addr; /* In big endian, for POSIX compatibility. */
+		uint8_t s4_addr[4];    /**< IPv4 address buffer */
+		uint16_t s4_addr16[2]; /**< In big endian */
+		uint32_t s4_addr32[1]; /**< In big endian */
+		uint32_t s_addr; /**< In big endian, for POSIX compatibility. */
 	};
 };
 
-/* Binary size of the IPv4 address */
+/** Binary size of the IPv4 address */
 #define NET_IPV4_ADDR_SIZE 4
 
 /** Socket address family type */
@@ -176,51 +176,56 @@ typedef size_t socklen_t;
 
 /** Socket address struct for IPv6. */
 struct sockaddr_in6 {
-	sa_family_t		sin6_family;   /* AF_INET6               */
-	uint16_t		sin6_port;     /* Port number            */
-	struct in6_addr		sin6_addr;     /* IPv6 address           */
-	uint8_t			sin6_scope_id; /* interfaces for a scope */
-};
-
-struct sockaddr_in6_ptr {
-	sa_family_t		sin6_family;   /* AF_INET6               */
-	uint16_t		sin6_port;     /* Port number            */
-	struct in6_addr		*sin6_addr;    /* IPv6 address           */
-	uint8_t			sin6_scope_id; /* interfaces for a scope */
+	sa_family_t		sin6_family;   /**< AF_INET6               */
+	uint16_t		sin6_port;     /**< Port number            */
+	struct in6_addr		sin6_addr;     /**< IPv6 address           */
+	uint8_t			sin6_scope_id; /**< Interfaces for a scope */
 };
 
 /** Socket address struct for IPv4. */
 struct sockaddr_in {
-	sa_family_t		sin_family;    /* AF_INET      */
-	uint16_t		sin_port;      /* Port number  */
-	struct in_addr		sin_addr;      /* IPv4 address */
-};
-
-struct sockaddr_in_ptr {
-	sa_family_t		sin_family;    /* AF_INET      */
-	uint16_t		sin_port;      /* Port number  */
-	struct in_addr		*sin_addr;     /* IPv4 address */
+	sa_family_t		sin_family;    /**< AF_INET      */
+	uint16_t		sin_port;      /**< Port number  */
+	struct in_addr		sin_addr;      /**< IPv4 address */
 };
 
 /** Socket address struct for packet socket. */
 struct sockaddr_ll {
-	sa_family_t sll_family;   /* Always AF_PACKET                   */
-	uint16_t    sll_protocol; /* Physical-layer protocol            */
-	int         sll_ifindex;  /* Interface number                   */
-	uint16_t    sll_hatype;   /* ARP hardware type                  */
-	uint8_t     sll_pkttype;  /* Packet type                        */
-	uint8_t     sll_halen;    /* Length of address                  */
-	uint8_t     sll_addr[8];  /* Physical-layer address, big endian */
+	sa_family_t sll_family;   /**< Always AF_PACKET                   */
+	uint16_t    sll_protocol; /**< Physical-layer protocol            */
+	int         sll_ifindex;  /**< Interface number                   */
+	uint16_t    sll_hatype;   /**< ARP hardware type                  */
+	uint8_t     sll_pkttype;  /**< Packet type                        */
+	uint8_t     sll_halen;    /**< Length of address                  */
+	uint8_t     sll_addr[8];  /**< Physical-layer address, big endian */
 };
 
+/** @cond INTERNAL_HIDDEN */
+
+/** Socket address struct for IPv6 where address is a pointer */
+struct sockaddr_in6_ptr {
+	sa_family_t		sin6_family;   /**< AF_INET6               */
+	uint16_t		sin6_port;     /**< Port number            */
+	struct in6_addr		*sin6_addr;    /**< IPv6 address           */
+	uint8_t			sin6_scope_id; /**< interfaces for a scope */
+};
+
+/** Socket address struct for IPv4 where address is a pointer */
+struct sockaddr_in_ptr {
+	sa_family_t		sin_family;    /**< AF_INET      */
+	uint16_t		sin_port;      /**< Port number  */
+	struct in_addr		*sin_addr;     /**< IPv4 address */
+};
+
+/** Socket address struct for packet socket where address is a pointer */
 struct sockaddr_ll_ptr {
-	sa_family_t sll_family;   /* Always AF_PACKET                   */
-	uint16_t    sll_protocol; /* Physical-layer protocol            */
-	int         sll_ifindex;  /* Interface number                   */
-	uint16_t    sll_hatype;   /* ARP hardware type                  */
-	uint8_t     sll_pkttype;  /* Packet type                        */
-	uint8_t     sll_halen;    /* Length of address                  */
-	uint8_t     *sll_addr;    /* Physical-layer address, big endian */
+	sa_family_t sll_family;   /**< Always AF_PACKET                   */
+	uint16_t    sll_protocol; /**< Physical-layer protocol            */
+	int         sll_ifindex;  /**< Interface number                   */
+	uint16_t    sll_hatype;   /**< ARP hardware type                  */
+	uint8_t     sll_pkttype;  /**< Packet type                        */
+	uint8_t     sll_halen;    /**< Length of address                  */
+	uint8_t     *sll_addr;    /**< Physical-layer address, big endian */
 };
 
 struct sockaddr_can_ptr {
@@ -228,33 +233,39 @@ struct sockaddr_can_ptr {
 	int         can_ifindex;
 };
 
+/** @endcond */
+
 #if !defined(HAVE_IOVEC)
+/** IO vector array element */
 struct iovec {
-	void  *iov_base;
-	size_t iov_len;
+	void  *iov_base; /**< Pointer to data */
+	size_t iov_len;  /**< Length of the data */
 };
 #endif
 
+/** Message struct */
 struct msghdr {
-	void         *msg_name;       /* optional socket address, big endian */
-	socklen_t     msg_namelen;    /* size of socket address */
-	struct iovec *msg_iov;        /* scatter/gather array */
-	size_t        msg_iovlen;     /* number of elements in msg_iov */
-	void         *msg_control;    /* ancillary data */
-	size_t        msg_controllen; /* ancillary data buffer len */
-	int           msg_flags;      /* flags on received message */
+	void         *msg_name;       /**< Optional socket address, big endian */
+	socklen_t     msg_namelen;    /**< Size of socket address */
+	struct iovec *msg_iov;        /**< Scatter/gather array */
+	size_t        msg_iovlen;     /**< Number of elements in msg_iov */
+	void         *msg_control;    /**< Ancillary data */
+	size_t        msg_controllen; /**< Ancillary data buffer len */
+	int           msg_flags;      /**< Flags on received message */
 };
 
+/** Control message ancillary data */
 struct cmsghdr {
-	socklen_t cmsg_len;    /* Number of bytes, including header */
-	int       cmsg_level;  /* Originating protocol */
-	int       cmsg_type;   /* Protocol-specific type */
-	/* Flexible array member to force alignment of cmsghdr */
-	z_max_align_t cmsg_data[];
+	socklen_t cmsg_len;    /**< Number of bytes, including header */
+	int       cmsg_level;  /**< Originating protocol */
+	int       cmsg_type;   /**< Protocol-specific type */
+	z_max_align_t cmsg_data[]; /**< Flexible array member to force alignment of cmsghdr */
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Alignment for headers and data. These are arch specific but define
- * them here atm if not found alredy.
+ * them here atm if not found already.
  */
 #if !defined(ALIGN_H)
 #define ALIGN_H(x) ROUND_UP(x, __alignof__(struct cmsghdr))
@@ -263,13 +274,24 @@ struct cmsghdr {
 #define ALIGN_D(x) ROUND_UP(x, __alignof__(z_max_align_t))
 #endif
 
+/** @endcond */
+
 #if !defined(CMSG_FIRSTHDR)
+/**
+ * Returns a pointer to the first cmsghdr in the ancillary data buffer
+ * associated with the passed msghdr.  It returns NULL if there isn't
+ * enough space for a cmsghdr in the buffer.
+ */
 #define CMSG_FIRSTHDR(msghdr)					\
 	((msghdr)->msg_controllen >= sizeof(struct cmsghdr) ?	\
 	 (struct cmsghdr *)((msghdr)->msg_control) : NULL)
 #endif
 
 #if !defined(CMSG_NXTHDR)
+/**
+ * Returns the next valid cmsghdr after the passed cmsghdr. It returns NULL
+ * when there isn't enough space left in the buffer.
+ */
 #define CMSG_NXTHDR(msghdr, cmsg)					 \
 	(((cmsg) == NULL) ? CMSG_FIRSTHDR(msghdr) :			 \
 	 (((uint8_t *)(cmsg) + ALIGN_H((cmsg)->cmsg_len) +		 \
@@ -281,14 +303,30 @@ struct cmsghdr {
 #endif
 
 #if !defined(CMSG_DATA)
+/**
+ * Returns a pointer to the data portion of a cmsghdr.  The pointer returned
+ * cannot be assumed to be suitably aligned for accessing arbitrary payload
+ * data types. Applications should not cast it to a pointer type matching
+ * the payload, but should instead use memcpy(3) to copy data to or from a
+ * suitably declared object.
+ */
 #define CMSG_DATA(cmsg) ((uint8_t *)(cmsg) + ALIGN_D(sizeof(struct cmsghdr)))
 #endif
 
 #if !defined(CMSG_SPACE)
+/**
+ * Returns the number of bytes an ancillary element with payload of the passed
+ * data length occupies.
+ */
 #define CMSG_SPACE(length) (ALIGN_D(sizeof(struct cmsghdr)) + ALIGN_H(length))
 #endif
 
 #if !defined(CMSG_LEN)
+/**
+ * Returns the value to store in the cmsg_len member of the cmsghdr structure,
+ * taking into account any necessary alignment.
+ * It takes the data length as an argument.
+ */
 #define CMSG_LEN(length) (ALIGN_D(sizeof(struct cmsghdr)) + length)
 #endif
 
@@ -345,8 +383,10 @@ struct cmsghdr {
 
 /** Generic sockaddr struct. Must be cast to proper type. */
 struct sockaddr {
-	sa_family_t sa_family;
+	sa_family_t sa_family; /**< Address family */
+/** @cond INTERNAL_HIDDEN */
 	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
+/** @endcond */
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -376,15 +416,30 @@ struct net_addr {
 	};
 };
 
-#define IN6ADDR_ANY_INIT { { { 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-				0, 0, 0, 0, 0, 0, 0 } } }
-#define IN6ADDR_LOOPBACK_INIT { { { 0, 0, 0, 0, 0, 0, 0, \
-				0, 0, 0, 0, 0, 0, 0, 0, 1 } } }
-
+/** A pointer to IPv6 any address (all values zero) */
 extern const struct in6_addr in6addr_any;
+
+/** A pointer to IPv6 loopback address (::1) */
 extern const struct in6_addr in6addr_loopback;
 
 /** @endcond */
+
+/** IPv6 address initializer */
+#define IN6ADDR_ANY_INIT { { { 0, 0, 0, 0, 0, 0, 0, 0, 0, \
+				0, 0, 0, 0, 0, 0, 0 } } }
+
+/** IPv6 loopback address initializer */
+#define IN6ADDR_LOOPBACK_INIT { { { 0, 0, 0, 0, 0, 0, 0, \
+				0, 0, 0, 0, 0, 0, 0, 0, 1 } } }
+
+/** IPv4 any address */
+#define INADDR_ANY 0
+
+/** IPv4 address initializer */
+#define INADDR_ANY_INIT { { { INADDR_ANY } } }
+
+/** IPv6 loopback address initializer */
+#define INADDR_LOOPBACK_INIT  { { { 127, 0, 0, 1 } } }
 
 /** Max length of the IPv4 address as a string. Defined by POSIX. */
 #define INET_ADDRSTRLEN 16
@@ -399,13 +454,9 @@ extern const struct in6_addr in6addr_loopback;
 #define NET_IPV6_ADDR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")
 #define NET_IPV4_ADDR_LEN sizeof("xxx.xxx.xxx.xxx")
 
-#define INADDR_ANY 0
-#define INADDR_ANY_INIT { { { INADDR_ANY } } }
-
-#define INADDR_LOOPBACK_INIT  { { { 127, 0, 0, 1 } } }
-
 /** @endcond */
 
+/** @brief IP Maximum Transfer Unit */
 enum net_ip_mtu {
 	/** IPv6 MTU length. We must be able to receive this size IPv6 packet
 	 * without fragmentation.
@@ -422,7 +473,7 @@ enum net_ip_mtu {
 	NET_IPV4_MTU = 576,
 };
 
-/** Network packet priority settings described in IEEE 802.1Q Annex I.1 */
+/** @brief Network packet priority settings described in IEEE 802.1Q Annex I.1 */
 enum net_priority {
 	NET_PRIORITY_BK = 1, /**< Background (lowest)                */
 	NET_PRIORITY_BE = 0, /**< Best effort (default)              */
@@ -434,9 +485,9 @@ enum net_priority {
 	NET_PRIORITY_NC = 7  /**< Network control (highest)          */
 } __packed;
 
-#define NET_MAX_PRIORITIES 8 /* How many priority values there are */
+#define NET_MAX_PRIORITIES 8 /**< How many priority values there are */
 
-/** IPv6/IPv4 network connection tuple */
+/** @brief IPv6/IPv4 network connection tuple */
 struct net_tuple {
 	struct net_addr *remote_addr;  /**< IPv6/IPv4 remote address */
 	struct net_addr *local_addr;   /**< IPv6/IPv4 local address  */
@@ -445,7 +496,7 @@ struct net_tuple {
 	enum net_ip_protocol ip_proto; /**< IP protocol              */
 };
 
-/** What is the current state of the network address */
+/** @brief What is the current state of the network address */
 enum net_addr_state {
 	NET_ADDR_ANY_STATE = -1, /**< Default (invalid) address type */
 	NET_ADDR_TENTATIVE = 0,  /**< Tentative address              */
@@ -453,7 +504,7 @@ enum net_addr_state {
 	NET_ADDR_DEPRECATED,     /**< Deprecated address             */
 } __packed;
 
-/** How the network address is assigned to network interface */
+/** @brief How the network address is assigned to network interface */
 enum net_addr_type {
 	/** Default value. This is not a valid value. */
 	NET_ADDR_ANY = 0,
@@ -687,7 +738,7 @@ static inline bool net_ipv6_is_prefix(const uint8_t *addr1,
 	}
 
 	/* Create a mask that has remaining most significant bits set */
-	mask = ((0xff << (8 - remain)) ^ 0xff) << remain;
+	mask = (uint8_t)((0xff << (8 - remain)) ^ 0xff) << remain;
 
 	return (addr1[bytes] & mask) == (addr2[bytes] & mask);
 }
@@ -1071,7 +1122,7 @@ static inline bool net_ipv6_is_addr_solicited_node(const struct in6_addr *addr)
 static inline bool net_ipv6_is_addr_mcast_scope(const struct in6_addr *addr,
 						int scope)
 {
-	return (addr->s6_addr[0] == 0xff) && (addr->s6_addr[1] == scope);
+	return (addr->s6_addr[0] == 0xff) && ((addr->s6_addr[1] & 0xF) == scope);
 }
 
 /**
@@ -1709,11 +1760,52 @@ static inline uint8_t net_priority2vlan(enum net_priority priority)
  */
 const char *net_family2str(sa_family_t family);
 
+/**
+ * @brief Add IPv6 prefix as a privacy extension filter.
+ *
+ * @details Note that the filters can either allow or deny listing.
+ *
+ * @param addr IPv6 prefix
+ * @param is_denylist Tells if this filter is for allowing or denying listing.
+ *
+ * @return 0 if ok, <0 if error
+ */
+#if defined(CONFIG_NET_IPV6_PE)
+int net_ipv6_pe_add_filter(struct in6_addr *addr, bool is_denylist);
+#else
+static inline int net_ipv6_pe_add_filter(struct in6_addr *addr,
+					 bool is_denylist)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(is_denylist);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_IPV6_PE */
+
+/**
+ * @brief Delete IPv6 prefix from privacy extension filter list.
+ *
+ * @param addr IPv6 prefix
+ *
+ * @return 0 if ok, <0 if error
+ */
+#if defined(CONFIG_NET_IPV6_PE)
+int net_ipv6_pe_del_filter(struct in6_addr *addr);
+#else
+static inline int net_ipv6_pe_del_filter(struct in6_addr *addr)
+{
+	ARG_UNUSED(addr);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_IPV6_PE */
+
 #ifdef __cplusplus
 }
 #endif
 
-#include <syscalls/net_ip.h>
+#include <zephyr/syscalls/net_ip.h>
 
 /**
  * @}

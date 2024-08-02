@@ -3,13 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/has.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/sys/util_macro.h>
 
+#include "bstests.h"
 #include "common.h"
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(has_test, LOG_LEVEL_DBG);
 
 extern enum bst_result_t bst_result;
@@ -31,6 +39,19 @@ static const struct bt_has_preset_ops preset_ops = {
 	.select = preset_select,
 };
 
+static void start_adv(void)
+{
+	int err;
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
+	if (err) {
+		FAIL("Advertising failed to start (err %d)\n", err);
+		return;
+	}
+
+	LOG_DBG("Advertising successfully started");
+}
+
 static void test_common(void)
 {
 	struct bt_has_features_param has_param = {0};
@@ -46,13 +67,7 @@ static void test_common(void)
 
 	LOG_DBG("Bluetooth initialized");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, AD_SIZE, NULL, 0);
-	if (err) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	LOG_DBG("Advertising successfully started");
+	start_adv();
 
 	has_param.type = BT_HAS_HEARING_AID_TYPE_BINAURAL;
 	has_param.preset_sync_support = true;
@@ -115,6 +130,7 @@ static void test_offline_behavior(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 	WAIT_FOR_UNSET_FLAG(flag_connected);
+	start_adv();
 
 	preset_param.index = test_preset_index_3;
 	preset_param.properties = test_preset_properties;
@@ -150,13 +166,13 @@ static void test_offline_behavior(void)
 static const struct bst_test_instance test_has[] = {
 	{
 		.test_id = "has",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
 	{
 		.test_id = "has_offline_behavior",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_offline_behavior,
 	},

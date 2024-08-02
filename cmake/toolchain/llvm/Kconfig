@@ -19,7 +19,7 @@ config LLVM_USE_LLD
 endchoice
 
 config TOOLCHAIN_LLVM_SUPPORTS_THREAD_LOCAL_STORAGE
-	depends on RISCV
+	depends on RISCV || ARM || ARM64
 	def_bool y
 	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 

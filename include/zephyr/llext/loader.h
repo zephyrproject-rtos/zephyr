@@ -15,20 +15,33 @@ extern "C" {
 #endif
 
 /**
- * @brief Loader context for llext
- * @defgroup llext_loader Loader context for llext
- * @ingroup llext
+ * @file
+ * @brief LLEXT ELF loader context types.
+ *
+ * The following types are used to define the context of the ELF loader
+ * used by the \ref llext subsystem.
+ *
+ * @defgroup llext_loader_apis ELF loader context
+ * @ingroup llext_apis
  * @{
  */
 
 #include <zephyr/llext/llext.h>
 
+/** @cond ignore */
+struct llext_elf_sect_map; /* defined in llext_priv.h */
+/** @endcond */
+
 /**
  * @brief Linkable loadable extension loader context
+ *
+ * This object is used to access the ELF file data and cache its contents
+ * while an extension is being loaded by the LLEXT subsystem. Once the
+ * extension is loaded, this object is no longer needed.
  */
 struct llext_loader {
 	/**
-	 * @brief Read (copy) from the loader
+	 * @brief Function to read (copy) from the loader
 	 *
 	 * Copies len bytes into buf from the current position of the
 	 * loader.
@@ -37,13 +50,12 @@ struct llext_loader {
 	 * @param[in] out Output location
 	 * @param[in] len Length to copy into the output location
 	 *
-	 * @retval 0 Success
-	 * @retval -errno Error reading (any errno)
+	 * @returns 0 on success, or a negative error code.
 	 */
 	int (*read)(struct llext_loader *ldr, void *out, size_t len);
 
 	/**
-	 * @brief Seek to a new absolute location
+	 * @brief Function to seek to a new absolute location in the stream.
 	 *
 	 * Changes the location of the loader position to a new absolute
 	 * given position.
@@ -51,34 +63,33 @@ struct llext_loader {
 	 * @param[in] ldr Loader
 	 * @param[in] pos Position in stream to move loader
 	 *
-	 * @retval 0 Success
-	 * @retval -errno Error reading (any errno)
+	 * @returns 0 on success, or a negative error code.
 	 */
 	int (*seek)(struct llext_loader *ldr, size_t pos);
 
 	/**
-	 * @brief Peek at an absolute location
+	 * @brief Optional function to peek at an absolute location in the ELF.
 	 *
 	 * Return a pointer to the buffer at specified offset.
 	 *
 	 * @param[in] ldr Loader
 	 * @param[in] pos Position to obtain a pointer to
 	 *
-	 * @retval pointer into the buffer
+	 * @returns a pointer into the buffer or `NULL` if not supported
 	 */
 	void *(*peek)(struct llext_loader *ldr, size_t pos);
-
-	/** Total calculated .data size for relocatable extensions */
-	size_t prog_data_size;
 
 	/** @cond ignore */
 	elf_ehdr_t hdr;
 	elf_shdr_t sects[LLEXT_MEM_COUNT];
-	enum llext_mem *sect_map;
+	elf_shdr_t *sect_hdrs;
+	bool sect_hdrs_on_heap;
+	struct llext_elf_sect_map *sect_map;
 	uint32_t sect_cnt;
 	/** @endcond */
 };
 
+/** @cond ignore */
 static inline int llext_read(struct llext_loader *l, void *buf, size_t len)
 {
 	return l->read(l, buf, len);
@@ -97,6 +108,7 @@ static inline void *llext_peek(struct llext_loader *l, size_t pos)
 
 	return NULL;
 }
+/* @endcond */
 
 /**
  * @}

@@ -121,7 +121,7 @@ For more information about the Waveshare Pico UPS-B:
 Programming
 ***********
 
-Set ``-DSHIELD=waveshare_pico_ups_b`` when you invoke ``west build`` or ``cmake`` in your Zephyr application. For
+Set ``--shield waveshare_pico_ups_b`` when you invoke ``west build`` or ``cmake`` in your Zephyr application. For
 example:
 
 .. zephyr-app-commands::

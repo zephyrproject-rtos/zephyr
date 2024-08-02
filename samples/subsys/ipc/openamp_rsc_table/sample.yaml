@@ -11,4 +11,6 @@ tests:
     integration_platforms:
       - stm32mp157c_dk2
       - imx8mp_evk/mimx8ml8/adsp
-    tags: ipm
+    tags:
+      - ipm
+      - openamp

@@ -210,7 +210,7 @@ static inline void *lll_adv_sync_extra_data_curr_get(struct lll_adv_sync *lll)
 /* Release PDU and all linked PDUs, shall only be called from ULL */
 void lll_adv_pdu_linked_release_all(struct pdu_adv *pdu_first);
 
-static inline struct pdu_adv *lll_adv_pdu_linked_next_get(struct pdu_adv *pdu)
+static inline struct pdu_adv *lll_adv_pdu_linked_next_get(const struct pdu_adv *pdu)
 {
 	return PDU_ADV_NEXT_PTR(pdu);
 }

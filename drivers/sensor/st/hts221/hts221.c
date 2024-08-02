@@ -191,8 +191,6 @@ int hts221_init(const struct device *dev)
 		LOG_ERR("Failed to initialize interrupt.");
 		return status;
 	}
-#else
-	LOG_INF("Cannot enable trigger without drdy-gpios");
 #endif
 
 	return 0;

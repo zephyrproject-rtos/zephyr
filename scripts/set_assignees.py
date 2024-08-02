@@ -70,15 +70,12 @@ def process_pr(gh, maintainer_file, number):
     all_areas = set()
     fn = list(pr.get_files())
 
-    manifest_change = False
     for changed_file in fn:
         if changed_file.filename in ['west.yml','submanifests/optional.yaml']:
-            manifest_change = True
             break
 
-    # one liner PRs should be trivial
-    if pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1) and not manifest_change:
-        labels = {'Trivial'}
+    if pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1):
+        labels = {'size: XS'}
 
     if len(fn) > 500:
         log(f"Too many files changed ({len(fn)}), skipping....")
@@ -125,36 +122,33 @@ def process_pr(gh, maintainer_file, number):
     log(f"Submitted by: {pr.user.login}")
     log(f"candidate maintainers: {_all_maintainers}")
 
-    maintainers = list(_all_maintainers.keys())
-    assignee = None
+    assignees = []
+    tmp_assignees = []
 
     # we start with areas with most files changed and pick the maintainer from the first one.
     # if the first area is an implementation, i.e. driver or platform, we
-    # continue searching for any other areas
+    # continue searching for any other areas involved
     for area, count in area_counter.items():
         if count == 0:
             continue
         if len(area.maintainers) > 0:
-            assignee = area.maintainers[0]
+            tmp_assignees = area.maintainers
+            if pr.user.login in area.maintainers:
+                # submitter = assignee, try to pick next area and
+                # assign someone else other than the submitter
+                continue
+            else:
+                assignees = area.maintainers
 
             if 'Platform' not in area.name:
                 break
 
-    # if the submitter is the same as the maintainer, check if we have
-    # multiple maintainers
-    if len(maintainers) > 1 and pr.user.login == assignee:
-        log("Submitter is same as Assignee, trying to find another assignee...")
-        aff = list(area_counter.keys())[0]
-        for area in all_areas:
-            if area == aff:
-                if len(area.maintainers) > 1:
-                    assignee = area.maintainers[1]
-                else:
-                    log(f"This area has only one maintainer, keeping assignee as {assignee}")
+    if tmp_assignees and not assignees:
+        assignees = tmp_assignees
 
-    if assignee:
-        prop = (found_maintainers[assignee] / num_files) * 100
-        log(f"Picked assignee: {assignee} ({prop:.2f}% ownership)")
+    if assignees:
+        prop = (found_maintainers[assignees[0]] / num_files) * 100
+        log(f"Picked assignees: {assignees} ({prop:.2f}% ownership)")
         log("+++++++++++++++++++++++++")
 
     # Set labels
@@ -220,10 +214,11 @@ def process_pr(gh, maintainer_file, number):
 
     ms = []
     # assignees
-    if assignee and not pr.assignee:
+    if assignees and not pr.assignee:
         try:
-            u = gh.get_user(assignee)
-            ms.append(u)
+            for assignee in assignees:
+                u = gh.get_user(assignee)
+                ms.append(u)
         except GithubException:
             log(f"Error: Unknown user")
 

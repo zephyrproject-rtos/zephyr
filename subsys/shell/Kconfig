@@ -132,7 +132,7 @@ config SHELL_ASCII_FILTER
 
 config SHELL_WILDCARD
 	bool "Wildcard support in shell"
-	select FNMATCH
+	select POSIX_C_LIB_EXT
 	default y if !SHELL_MINIMAL
 	help
 	  Enables using wildcards: * and ? in the shell.
@@ -176,7 +176,7 @@ config SHELL_VT100_COLORS
 
 config SHELL_GETOPT
 	bool "Threadsafe getopt support in shell"
-	select GETOPT
+	select POSIX_C_LIB_EXT
 	help
 	  This config creates a separate getopt_state for the shell instance.
 	  It ensures that using getopt with shell is thread safe.

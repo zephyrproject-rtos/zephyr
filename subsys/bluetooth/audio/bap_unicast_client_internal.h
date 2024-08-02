@@ -6,6 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/net/buf.h>
+
 int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 				 const struct bt_audio_codec_cfg *codec_cfg);
 
@@ -20,6 +28,7 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 int bt_bap_unicast_client_disable(struct bt_bap_stream *stream);
 
 int bt_bap_unicast_client_start(struct bt_bap_stream *stream);
+int bt_bap_unicast_client_connect(struct bt_bap_stream *stream);
 
 int bt_bap_unicast_client_stop(struct bt_bap_stream *stream);
 

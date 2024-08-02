@@ -282,11 +282,6 @@ config HAS_MCUX_SMC
 	help
 	  Set if the SMC  module is present in the SoC.
 
-config HAS_MCUX_CSI
-	bool
-	help
-	  Set if the CMOS Sensor Interface module is present in the SoC.
-
 config HAS_MCUX_LPTMR
 	bool
 	help
@@ -373,5 +368,23 @@ config HAS_MCUX_XBARA
 	bool
 	help
 	  Set if the XBARA module is present on the SoC.
+
+config NXP_FW_LOADER
+	bool "Include firmware loader component"
+	help
+	   The firmware loader is used to load firmwares to embedded tranceivers.
+	   It is needed to enable connectivity features.
+
+config NXP_MONOLITHIC_BT
+	bool "BT firmware monolithic build"
+	help
+	   If enabled, the BT firmware used by the device will be linked with the
+	   application directly.
+
+config NXP_RF_IMU
+	bool "Include RF_IMU adapter for intercore messaging"
+	select EVENTS
+	help
+	   RF_IMU adapter is needed for intercore messaging.
 
 endif # HAS_MCUX

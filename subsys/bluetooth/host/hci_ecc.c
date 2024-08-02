@@ -13,15 +13,25 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/byteorder.h>
+
+#if defined(CONFIG_BT_USE_PSA_API)
+#include <psa/crypto.h>
+#else /* !CONFIG_BT_USE_PSA_API */
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
+#endif /* CONFIG_BT_USE_PSA_API*/
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+#include <zephyr/drivers/bluetooth.h>
+#else
 #include <zephyr/drivers/bluetooth/hci_driver.h>
+#endif
 
 #include "common/bt_str.h"
 
@@ -92,9 +102,61 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 	evt->opcode = sys_cpu_to_le16(opcode);
 	evt->status = status;
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	bt_hci_recv(bt_dev.hci, buf);
+#else
 	bt_recv(buf);
+#endif
 }
 
+#if defined(CONFIG_BT_USE_PSA_API)
+static void set_key_attributes(psa_key_attributes_t *attr)
+{
+	psa_set_key_type(attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(attr, 256);
+	psa_set_key_usage_flags(attr, PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_DERIVE);
+	psa_set_key_algorithm(attr, PSA_ALG_ECDH);
+}
+
+static uint8_t generate_keys(void)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id;
+	uint8_t tmp_pub_key_buf[BT_PUB_KEY_LEN + 1];
+	size_t tmp_len;
+
+	set_key_attributes(&attr);
+
+	if (psa_generate_key(&attr, &key_id) != PSA_SUCCESS) {
+		LOG_ERR("Failed to generate ECC key");
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	if (psa_export_public_key(key_id, tmp_pub_key_buf, sizeof(tmp_pub_key_buf),
+				&tmp_len) != PSA_SUCCESS) {
+		LOG_ERR("Failed to export ECC public key");
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+	/* secp256r1 PSA exported public key has an extra 0x04 predefined byte at
+	 * the beginning of the buffer which is not part of the coordinate so
+	 * we remove that.
+	 */
+	memcpy(ecc.public_key_be, &tmp_pub_key_buf[1], BT_PUB_KEY_LEN);
+
+	if (psa_export_key(key_id, ecc.private_key_be, BT_PRIV_KEY_LEN,
+			&tmp_len) != PSA_SUCCESS) {
+		LOG_ERR("Failed to export ECC private key");
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	if (psa_destroy_key(key_id) != PSA_SUCCESS) {
+		LOG_ERR("Failed to destroy ECC key ID");
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	return 0;
+}
+#else
 static uint8_t generate_keys(void)
 {
 	do {
@@ -116,6 +178,7 @@ static uint8_t generate_keys(void)
 
 	return 0;
 }
+#endif /* CONFIG_BT_USE_PSA_API */
 
 static void emulate_le_p256_public_key_cmd(void)
 {
@@ -154,7 +217,11 @@ static void emulate_le_p256_public_key_cmd(void)
 
 	atomic_clear_bit(flags, PENDING_PUB_KEY);
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	bt_hci_recv(bt_dev.hci, buf);
+#else
 	bt_recv(buf);
+#endif
 }
 
 static void emulate_le_generate_dhkey(void)
@@ -163,21 +230,55 @@ static void emulate_le_generate_dhkey(void)
 	struct bt_hci_evt_le_meta_event *meta;
 	struct bt_hci_evt_hdr *hdr;
 	struct net_buf *buf;
-	int ret;
+	int ret = 0;
+	bool use_debug = atomic_test_bit(flags, USE_DEBUG_KEY);
 
+#if defined(CONFIG_BT_USE_PSA_API)
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id;
+	/* PSA expects secp256r1 public key to start with a predefined 0x04 byte
+	 * at the beginning the buffer.
+	 */
+	uint8_t tmp_pub_key_buf[BT_PUB_KEY_LEN + 1] = { 0x04 };
+	size_t tmp_len;
+
+	set_key_attributes(&attr);
+
+	if (psa_import_key(&attr, use_debug ? debug_private_key_be : ecc.private_key_be,
+				BT_PRIV_KEY_LEN, &key_id) != PSA_SUCCESS) {
+		ret = -EIO;
+		LOG_ERR("Failed to import the private key for key agreement");
+		goto exit;
+	}
+
+	memcpy(&tmp_pub_key_buf[1], ecc.public_key_be, BT_PUB_KEY_LEN);
+	if (psa_raw_key_agreement(PSA_ALG_ECDH, key_id, tmp_pub_key_buf,
+				sizeof(tmp_pub_key_buf), ecc.dhkey_be, BT_DH_KEY_LEN,
+				&tmp_len) != PSA_SUCCESS) {
+		ret = -EIO;
+		LOG_ERR("Raw key agreement failed");
+		goto exit;
+	}
+
+	if (psa_destroy_key(key_id) != PSA_SUCCESS) {
+		LOG_ERR("Failed to destroy the key");
+		ret = -EIO;
+	}
+
+#else /* !CONFIG_BT_USE_PSA_API */
 	ret = uECC_valid_public_key(ecc.public_key_be, &curve_secp256r1);
 	if (ret < 0) {
 		LOG_ERR("public key is not valid (ret %d)", ret);
-		ret = TC_CRYPTO_FAIL;
-	} else {
-		bool use_debug = atomic_test_bit(flags, USE_DEBUG_KEY);
-
-		ret = uECC_shared_secret(ecc.public_key_be,
-					 use_debug ? debug_private_key_be :
-						     ecc.private_key_be,
-					 ecc.dhkey_be, &curve_secp256r1);
+		ret = -EIO;
+		goto exit;
 	}
+	ret = uECC_shared_secret(ecc.public_key_be,
+				use_debug ? debug_private_key_be : ecc.private_key_be,
+				ecc.dhkey_be, &curve_secp256r1);
+	ret = (ret == TC_CRYPTO_FAIL) ? -EIO : 0;
+#endif /* CONFIG_BT_USE_PSA_API */
 
+exit:
 	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
@@ -189,7 +290,7 @@ static void emulate_le_generate_dhkey(void)
 
 	evt = net_buf_add(buf, sizeof(*evt));
 
-	if (ret == TC_CRYPTO_FAIL) {
+	if (ret != 0) {
 		evt->status = BT_HCI_ERR_UNSPECIFIED;
 		(void)memset(evt->dhkey, 0xff, sizeof(evt->dhkey));
 	} else {
@@ -202,7 +303,11 @@ static void emulate_le_generate_dhkey(void)
 
 	atomic_clear_bit(flags, PENDING_DHKEY);
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	bt_hci_recv(bt_dev.hci, buf);
+#else
 	bt_recv(buf);
+#endif
 }
 
 static void ecc_process(struct k_work *work)
@@ -327,7 +432,11 @@ int bt_hci_ecc_send(struct net_buf *buf)
 		}
 	}
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	return bt_hci_send(bt_dev.hci, buf);
+#else
 	return bt_dev.drv->send(buf);
+#endif
 }
 
 void bt_hci_ecc_supported_commands(uint8_t *supported_commands)

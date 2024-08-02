@@ -94,10 +94,10 @@ static struct udc_rpi_ep_state *udc_rpi_get_ep_state(uint8_t ep)
 	return ep_state_base + USB_EP_GET_IDX(ep);
 }
 
-static int udc_rpi_start_xfer(uint8_t ep, const void *data, size_t len)
+static int udc_rpi_start_xfer(uint8_t ep, const void *data, const size_t len)
 {
 	struct udc_rpi_ep_state *ep_state = udc_rpi_get_ep_state(ep);
-	uint32_t val = len | USB_BUF_CTRL_AVAIL;
+	uint32_t val = len;
 
 	if (*ep_state->buf_ctl & USB_BUF_CTRL_AVAIL) {
 		LOG_WRN("ep 0x%02x was already armed", ep);
@@ -121,6 +121,14 @@ static int udc_rpi_start_xfer(uint8_t ep, const void *data, size_t len)
 
 	ep_state->next_pid ^= 1u;
 	*ep_state->buf_ctl = val;
+	/*
+	 * By default, clk_sys runs at 125MHz, wait 3 nop instructions before
+	 * setting the AVAILABLE bit. See 4.1.2.5.1. Concurrent access.
+	 */
+	arch_nop();
+	arch_nop();
+	arch_nop();
+	*ep_state->buf_ctl = val | USB_BUF_CTRL_AVAIL;
 
 	return 0;
 }
@@ -787,7 +795,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data,
 	}
 
 	LOG_DBG("ep 0x%02x, %u bytes, %u+%u, %p", ep, max_data_len, ep_state->read_offset,
-		read_count, data);
+		read_count, (void *)data);
 
 	if (data) {
 		read_count = MIN(read_count, max_data_len);

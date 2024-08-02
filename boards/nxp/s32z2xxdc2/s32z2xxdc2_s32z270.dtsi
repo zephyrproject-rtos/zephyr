@@ -34,14 +34,10 @@
 &can0 {
 	pinctrl-0 = <&can0_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	status = "okay";
 };
 
 &can1 {
 	pinctrl-0 = <&can1_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };

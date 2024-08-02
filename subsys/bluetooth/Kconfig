@@ -154,11 +154,11 @@ config BT_DATA_LEN_UPDATE
 
 config BT_PER_ADV_SYNC_TRANSFER_RECEIVER
 	bool "Periodic Advertising Sync Transfer receiver"
-	depends on BT_PER_ADV_SYNC && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
+	depends on BT_PER_ADV_SYNC && BT_CONN && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
 
 config BT_PER_ADV_SYNC_TRANSFER_SENDER
 	bool "Periodic Advertising Sync Transfer sender"
-	depends on (BT_PER_ADV_SYNC || BT_PER_ADV) && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT)
+	depends on (BT_PER_ADV_SYNC || BT_PER_ADV) && BT_CONN && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT)
 
 config BT_SCA_UPDATE
 	bool "Sleep Clock Accuracy Update"
@@ -174,6 +174,13 @@ config BT_TRANSMIT_POWER_CONTROL
 	  Enable support for LE Power Control Request feature that is defined in the
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.31.
 
+config BT_PATH_LOSS_MONITORING
+	bool "LE Path Loss Monitoring"
+	depends on !BT_CTLR || BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
+	help
+	  Enable support for LE Path Loss Monitoring feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
+
 endif # BT_CONN
 
 rsource "Kconfig.iso"
@@ -184,6 +191,13 @@ rsource "shell/Kconfig"
 rsource "crypto/Kconfig"
 rsource "lib/Kconfig"
 rsource "Kconfig.logging"
+
+config BT_USE_PSA_API
+	bool "Use PSA APIs instead of TinyCrypt for crypto operations"
+	depends on BT_CRYPTO || BT_HOST_CRYPTO || BT_ECC
+	depends on PSA_CRYPTO_CLIENT
+	help
+	  Use PSA APIs instead of TinyCrypt for crypto operations
 
 endif # BT_HCI
 

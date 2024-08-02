@@ -21,16 +21,13 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,canbus = &twai;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	aliases {
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
 	};
-};
-
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_160M>;
 };
 
 &uart0 {
@@ -83,7 +80,6 @@
 	status = "okay";
 	pinctrl-0 = <&twai_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 };
 
 &wifi {
@@ -122,4 +118,8 @@
 			reg = <0x00250000 0x00006000>;
 		};
 	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
 };

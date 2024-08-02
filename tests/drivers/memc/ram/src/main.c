@@ -44,6 +44,9 @@ BUF_DEF(sram1);
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(sram2), okay)
 BUF_DEF(sram2);
 #endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+BUF_DEF(psram);
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ram0), okay)
 #define RAM_SIZE DT_REG_SIZE(DT_NODELABEL(ram0))
@@ -92,6 +95,15 @@ ZTEST(test_ram, test_sram2)
 {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(sram2), okay)
 	test_ram_rw(buf_sram2, BUF_SIZE);
+#else
+	ztest_test_skip();
+#endif
+}
+
+ZTEST(test_ram, test_psram)
+{
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+	test_ram_rw(buf_psram, BUF_SIZE);
 #else
 	ztest_test_skip();
 #endif

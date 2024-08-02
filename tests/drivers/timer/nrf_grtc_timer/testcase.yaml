@@ -3,5 +3,7 @@ tests:
     tags: drivers
     platform_allow:
       - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15pdk/nrf54l15/cpuflpr
+      - nrf54l15bsim/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad

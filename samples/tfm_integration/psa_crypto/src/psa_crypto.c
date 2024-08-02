@@ -510,7 +510,7 @@ void crp_generate_csr(void)
 	LOG_INF("Certificate Signing Request in JSON:\n");
 	al_dump_log();
 
-	printf("%s\n", json_encoded_buf);
+	printf("%s\n\n", json_encoded_buf);
 
 	/* Close the key to free up the volatile slot. */
 	status = al_psa_status(

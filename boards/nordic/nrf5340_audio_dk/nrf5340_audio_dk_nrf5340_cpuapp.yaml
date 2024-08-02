@@ -9,12 +9,15 @@ toolchain:
 ram: 448
 flash: 1024
 supported:
+  - arduino_adc
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - gpio
   - i2s
   - spi
   - i2c
   - pwm
   - watchdog
-  - usb_cdc
   - usb_device
 vendor: nordic

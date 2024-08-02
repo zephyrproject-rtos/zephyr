@@ -5,6 +5,6 @@
  */
 
 &dac0 {
-    /* To align reference voltage with ADC. */
-    voltage-reference = <1>;
+	/* To align reference voltage with ADC. */
+	voltage-reference = <1>;
 };

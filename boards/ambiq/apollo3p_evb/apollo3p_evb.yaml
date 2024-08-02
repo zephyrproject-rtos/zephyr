@@ -1,0 +1,21 @@
+identifier: apollo3p_evb
+name: Apollo3 Blue Plus EVB
+type: mcu
+arch: arm
+ram: 768
+flash: 2000
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - watchdog
+  - counter
+  - gpio
+  - spi
+  - i2c
+  - mspi
+testing:
+  ignore_tags:
+    - net
+vendor: ambiq

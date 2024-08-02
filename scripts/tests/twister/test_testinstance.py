@@ -227,6 +227,37 @@ def test_testinstance_init(all_testsuites_dict, class_testplan, platforms_list, 
 
 
 @pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'sample'}], indirect=True)
+def test_testinstance_record(testinstance):
+    testinstance.testcases = [mock.Mock()]
+    recording = [ {'field_1':  'recording_1_1', 'field_2': 'recording_1_2'},
+                  {'field_1':  'recording_2_1', 'field_2': 'recording_2_2'}
+                ]
+    with mock.patch(
+        'builtins.open',
+        mock.mock_open(read_data='')
+    ) as mock_file, \
+        mock.patch(
+        'csv.DictWriter.writerow',
+        mock.Mock()
+    ) as mock_writeheader, \
+        mock.patch(
+        'csv.DictWriter.writerows',
+        mock.Mock()
+    ) as mock_writerows:
+        testinstance.record(recording)
+
+    print(mock_file.mock_calls)
+
+    mock_file.assert_called_with(
+        os.path.join(testinstance.build_dir, 'recording.csv'),
+        'wt'
+    )
+
+    mock_writeheader.assert_has_calls([mock.call({ k:k for k in recording[0]})])
+    mock_writerows.assert_has_calls([mock.call(recording)])
+
+
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'sample'}], indirect=True)
 def test_testinstance_add_filter(testinstance):
     reason = 'dummy reason'
     filter_type = 'dummy type'
@@ -566,7 +597,7 @@ def test_testinstance_get_elf_file(caplog, tmp_path, testinstance, sysbuild, exp
     sysbuild_elf2 = zephyr_dir / 'dummy2.elf'
     sysbuild_elf2.write_bytes(b'0')
 
-    testinstance.testsuite.sysbuild = sysbuild
+    testinstance.sysbuild = sysbuild
     testinstance.domains = mock.Mock(
         get_default_domain=mock.Mock(
             return_value=mock.Mock(

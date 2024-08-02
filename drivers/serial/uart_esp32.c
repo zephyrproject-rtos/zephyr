@@ -25,6 +25,10 @@
 #include <esp32c3/rom/ets_sys.h>
 #include <esp32c3/rom/gpio.h>
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32C6)
+#include <esp32c6/rom/ets_sys.h>
+#include <esp32c6/rom/gpio.h>
+#include <zephyr/dt-bindings/clock/esp32c6_clock.h>
 #endif
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
@@ -43,19 +47,21 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 
-#ifndef CONFIG_SOC_SERIES_ESP32C3
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#else
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#else
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif
+
 #include <zephyr/drivers/clock_control.h>
 #include <errno.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(uart_esp32, CONFIG_UART_LOG_LEVEL);
 
-#ifdef CONFIG_SOC_SERIES_ESP32C3
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t
@@ -67,6 +73,8 @@ struct uart_esp32_config {
 	const clock_control_subsys_t clock_subsys;
 	int irq_source;
 	int irq_priority;
+	bool tx_invert;
+	bool rx_invert;
 #if CONFIG_UART_ASYNC_API
 	const struct device *dma_dev;
 	uint8_t tx_dma_channel;
@@ -108,8 +116,8 @@ struct uart_esp32_data {
 };
 
 #define UART_FIFO_LIMIT	    (UART_LL_FIFO_DEF_LEN)
-#define UART_TX_FIFO_THRESH 0x1
-#define UART_RX_FIFO_THRESH 0x16
+#define UART_TX_FIFO_THRESH (CONFIG_UART_ESP32_TX_FIFO_THRESH)
+#define UART_RX_FIFO_THRESH (CONFIG_UART_ESP32_RX_FIFO_THRESH)
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 static void uart_esp32_isr(void *arg);
@@ -255,7 +263,7 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
-	uart_hal_set_sclk(&data->hal, UART_SCLK_APB);
+	uart_hal_set_sclk(&data->hal, UART_SCLK_DEFAULT);
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
 	uart_hal_set_txfifo_empty_thr(&data->hal, UART_TX_FIFO_THRESH);
 	uart_hal_rxfifo_rst(&data->hal);
@@ -328,6 +336,13 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 
 	uart_hal_set_rx_timeout(&data->hal, 0x16);
 
+	if (config->tx_invert) {
+		uart_hal_inverse_signal(&data->hal, UART_SIGNAL_TXD_INV);
+	}
+
+	if (config->rx_invert) {
+		uart_hal_inverse_signal(&data->hal, UART_SIGNAL_RXD_INV);
+	}
 	return 0;
 }
 
@@ -879,7 +894,7 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 	/*Release next buffer*/
 	if (data->async.rx_next_len) {
 		evt.type = UART_RX_BUF_RELEASED;
-		evt.data.rx_buf.buf = data->async.rx_buf;
+		evt.data.rx_buf.buf = data->async.rx_next_buf;
 		if (data->async.cb) {
 			data->async.cb(dev, &evt, data->async.user_data);
 		}
@@ -1004,6 +1019,8 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
 		.irq_source = DT_INST_IRQN(idx),                                                   \
 		.irq_priority = UART_IRQ_PRIORITY,                                                 \
+		.tx_invert = DT_INST_PROP_OR(idx, tx_invert, false),                               \
+		.rx_invert = DT_INST_PROP_OR(idx, rx_invert, false),                               \
 		ESP_UART_DMA_INIT(idx)};                                                           \
                                                                                                    \
 	static struct uart_esp32_data uart_esp32_data_##idx = {                                    \

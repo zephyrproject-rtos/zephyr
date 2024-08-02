@@ -204,7 +204,7 @@ void z_riscv_fpu_enter_exc(void)
  * Note that the exception depth count was not incremented before this call
  * as no further exceptions are expected before returning to normal mode.
  */
-void z_riscv_fpu_trap(z_arch_esf_t *esf)
+void z_riscv_fpu_trap(struct arch_esf *esf)
 {
 	__ASSERT((esf->mstatus & MSTATUS_FS) == 0 &&
 		 (csr_read(mstatus) & MSTATUS_FS) == 0,
@@ -293,7 +293,7 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
  * This is called on every exception exit except for z_riscv_fpu_trap().
  * In that case the exception level of interest is 1 (soon to be 0).
  */
-void z_riscv_fpu_exit_exc(z_arch_esf_t *esf)
+void z_riscv_fpu_exit_exc(struct arch_esf *esf)
 {
 	if (fpu_access_allowed(1)) {
 		esf->mstatus &= ~MSTATUS_FS;

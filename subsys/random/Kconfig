@@ -107,12 +107,13 @@ config CTR_DRBG_CSPRNG_GENERATOR
 	bool "Use CTR-DRBG CSPRNG"
 	depends on MBEDTLS || TINYCRYPT
 	depends on ENTROPY_HAS_DRIVER
+	select MBEDTLS_CIPHER_AES_ENABLED if MBEDTLS
 	select TINYCRYPT_CTR_PRNG if TINYCRYPT
 	select TINYCRYPT_AES if TINYCRYPT
 	help
 	  Enables the CTR-DRBG pseudo-random number generator. This CSPRNG
 	  shall use the entropy API for an initialization seed. The CTR-DRBG
-	  is a a FIPS140-2 recommended cryptographically secure random number
+	  is a FIPS140-2 recommended cryptographically secure random number
 	  generator.
 
 endchoice # CSPRNG_GENERATOR_CHOICE

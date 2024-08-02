@@ -28,6 +28,7 @@ class BinaryAdapterBase(DeviceAdapter, abc.ABC):
             'stderr': subprocess.STDOUT,
             'stdin': subprocess.PIPE,
             'env': self.env,
+            'cwd': device_config.app_build_dir,
         }
 
     @abc.abstractmethod
@@ -118,7 +119,7 @@ class NativeSimulatorAdapter(BinaryAdapterBase):
 
     def generate_command(self) -> None:
         """Set command to run."""
-        self.command = [str(self.device_config.build_dir / 'zephyr' / 'zephyr.exe')]
+        self.command = [str(self.device_config.app_build_dir / 'zephyr' / 'zephyr.exe')]
 
 
 class UnitSimulatorAdapter(BinaryAdapterBase):
@@ -126,10 +127,10 @@ class UnitSimulatorAdapter(BinaryAdapterBase):
 
     def generate_command(self) -> None:
         """Set command to run."""
-        self.command = [str(self.device_config.build_dir / 'testbinary')]
+        self.command = [str(self.device_config.app_build_dir / 'testbinary')]
 
 
 class CustomSimulatorAdapter(BinaryAdapterBase):
     def generate_command(self) -> None:
         """Set command to run."""
-        self.command = [self.west, 'build', '-d', str(self.device_config.build_dir), '-t', 'run']
+        self.command = [self.west, 'build', '-d', str(self.device_config.app_build_dir), '-t', 'run']

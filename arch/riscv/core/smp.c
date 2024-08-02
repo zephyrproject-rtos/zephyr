@@ -7,6 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <ksched.h>
+#include <ipi.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/arch/riscv/irq.h>
@@ -86,20 +87,26 @@ static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 #define IPI_SCHED	0
 #define IPI_FPU_FLUSH	1
 
-void arch_sched_ipi(void)
+void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 {
 	unsigned int key = arch_irq_lock();
 	unsigned int id = _current_cpu->id;
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (unsigned int i = 0; i < num_cpus; i++) {
-		if (i != id && _kernel.cpus[i].arch.online) {
+		if ((i != id) && _kernel.cpus[i].arch.online &&
+		    ((cpu_bitmap & BIT(i)) != 0)) {
 			atomic_set_bit(&cpu_pending_ipi[i], IPI_SCHED);
 			MSIP(_kernel.cpus[i].arch.hartid) = 1;
 		}
 	}
 
 	arch_irq_unlock(key);
+}
+
+void arch_sched_broadcast_ipi(void)
+{
+	arch_sched_directed_ipi(IPI_ALL_CPUS_MASK);
 }
 
 #ifdef CONFIG_FPU_SHARING
@@ -165,5 +172,4 @@ int arch_smp_init(void)
 
 	return 0;
 }
-SYS_INIT(arch_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif /* CONFIG_SMP */

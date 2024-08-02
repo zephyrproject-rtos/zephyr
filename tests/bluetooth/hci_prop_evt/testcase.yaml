@@ -1,5 +1,7 @@
 tests:
   bluetooth.hci_prop_evt:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
     platform_allow:
       - qemu_x86
       - qemu_cortex_m3

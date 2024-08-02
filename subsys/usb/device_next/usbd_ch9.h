@@ -16,7 +16,7 @@
  *
  * @return true if USB device is in default state, false otherwise
  */
-static inline bool usbd_state_is_default(const struct usbd_contex *const uds_ctx)
+static inline bool usbd_state_is_default(const struct usbd_context *const uds_ctx)
 {
 	return (uds_ctx->ch9_data.state == USBD_STATE_DEFAULT) ?  true : false;
 }
@@ -28,7 +28,7 @@ static inline bool usbd_state_is_default(const struct usbd_contex *const uds_ctx
  *
  * @return true if USB device is in address state, false otherwise
  */
-static inline bool usbd_state_is_address(const struct usbd_contex *const uds_ctx)
+static inline bool usbd_state_is_address(const struct usbd_context *const uds_ctx)
 {
 	return (uds_ctx->ch9_data.state == USBD_STATE_ADDRESS) ?  true : false;
 }
@@ -40,7 +40,7 @@ static inline bool usbd_state_is_address(const struct usbd_contex *const uds_ctx
  *
  * @return true if USB device is in configured state, false otherwise
  */
-static inline bool usbd_state_is_configured(const struct usbd_contex *const uds_ctx)
+static inline bool usbd_state_is_configured(const struct usbd_context *const uds_ctx)
 {
 	return (uds_ctx->ch9_data.state == USBD_STATE_CONFIGURED) ?  true : false;
 }
@@ -52,7 +52,7 @@ static inline bool usbd_state_is_configured(const struct usbd_contex *const uds_
  *
  * @return current configuration value
  */
-static inline uint8_t usbd_get_config_value(const struct usbd_contex *const uds_ctx)
+static inline uint8_t usbd_get_config_value(const struct usbd_context *const uds_ctx)
 {
 	return uds_ctx->ch9_data.configuration;
 }
@@ -63,7 +63,7 @@ static inline uint8_t usbd_get_config_value(const struct usbd_contex *const uds_
  * @param[in] uds_ctx Pointer to a device context
  * @param[in] value   New configuration value
  */
-static inline void usbd_set_config_value(struct usbd_contex *const uds_ctx,
+static inline void usbd_set_config_value(struct usbd_context *const uds_ctx,
 					  const uint8_t value)
 {
 	uds_ctx->ch9_data.configuration = value;
@@ -78,7 +78,7 @@ static inline void usbd_set_config_value(struct usbd_contex *const uds_ctx,
  *
  * @return 0 on success, other values on fail.
  */
-static inline int usbd_get_alt_value(const struct usbd_contex *const uds_ctx,
+static inline int usbd_get_alt_value(const struct usbd_context *const uds_ctx,
 				     const uint8_t iface,
 				     uint8_t *const alt)
 {
@@ -100,7 +100,7 @@ static inline int usbd_get_alt_value(const struct usbd_contex *const uds_ctx,
  *
  * @return 0 on success, other values on fail.
  */
-static inline int usbd_set_alt_value(struct usbd_contex *const uds_ctx,
+static inline int usbd_set_alt_value(struct usbd_context *const uds_ctx,
 				     const uint8_t iface,
 				     const uint8_t alt)
 {
@@ -121,7 +121,7 @@ static inline int usbd_set_alt_value(struct usbd_contex *const uds_ctx,
  * @return Pointer to last received setup packet
  */
 static inline struct usb_setup_packet *
-usbd_get_setup_pkt(struct usbd_contex *const uds_ctx)
+usbd_get_setup_pkt(struct usbd_context *const uds_ctx)
 {
 	return &uds_ctx->ch9_data.setup;
 }
@@ -135,7 +135,7 @@ usbd_get_setup_pkt(struct usbd_contex *const uds_ctx)
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_handle_ctrl_xfer(struct usbd_contex *uds_ctx,
+int usbd_handle_ctrl_xfer(struct usbd_context *uds_ctx,
 			  struct net_buf *buf, int err);
 
 /**
@@ -145,7 +145,7 @@ int usbd_handle_ctrl_xfer(struct usbd_contex *uds_ctx,
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_init_control_pipe(struct usbd_contex *uds_ctx);
+int usbd_init_control_pipe(struct usbd_context *uds_ctx);
 
 
 #endif /* ZEPHYR_INCLUDE_USBD_CH9_H */

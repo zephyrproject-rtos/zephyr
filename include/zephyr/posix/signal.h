@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 
 #include "posix_types.h"
+#include "posix_features.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +45,6 @@ extern "C" {
 /* 30 not used */
 #define SIGSYS    31 /**< Bad system call */
 
-#define RTSIG_MAX CONFIG_POSIX_RTSIG_MAX
 #define SIGRTMIN 32
 #define SIGRTMAX (SIGRTMIN + RTSIG_MAX)
 #define _NSIG (SIGRTMAX + 1)
@@ -92,7 +92,6 @@ struct sigevent {
 	int sigev_signo;
 };
 
-#ifdef CONFIG_POSIX_SIGNAL
 char *strsignal(int signum);
 int sigemptyset(sigset_t *set);
 int sigfillset(sigset_t *set);
@@ -102,7 +101,6 @@ int sigismember(const sigset_t *set, int signo);
 int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 
 int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
-#endif /* CONFIG_POSIX_SIGNAL */
 
 #ifdef __cplusplus
 }

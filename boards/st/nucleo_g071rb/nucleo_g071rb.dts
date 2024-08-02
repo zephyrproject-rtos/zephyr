@@ -94,6 +94,10 @@
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
 };
 
 &iwdg {

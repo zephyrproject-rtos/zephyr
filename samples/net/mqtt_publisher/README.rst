@@ -84,9 +84,9 @@ following macros to specify those values:
 
 Max number of MQTT PUBLISH iterations is defined in Kconfig:
 
-.. code-block:: c
+.. code-block:: cfg
 
-	CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS	5
+	CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS=5
 
 On your Linux host computer, open a terminal window, locate the source code
 of this sample application (i.e., :zephyr_file:`samples/net/mqtt_publisher`) and type:
@@ -202,9 +202,9 @@ Sample output
 
 This is the output from the FRDM UART console, with:
 
-.. code-block:: c
+.. code-block:: cfg
 
-	CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS     5
+	CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS=5
 
 .. code-block:: console
 

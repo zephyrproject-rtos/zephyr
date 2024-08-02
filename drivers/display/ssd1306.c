@@ -455,7 +455,7 @@ static int ssd1306_init(const struct device *dev)
 	return 0;
 }
 
-static struct display_driver_api ssd1306_driver_api = {
+static const struct display_driver_api ssd1306_driver_api = {
 	.blanking_on = ssd1306_suspend,
 	.blanking_off = ssd1306_resume,
 	.write = ssd1306_write,

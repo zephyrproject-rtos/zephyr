@@ -10,7 +10,9 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_CCID_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_CCID_H_
 
-#include <zephyr/types.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/gatt.h>
 
 /**
  * @brief Gets a free CCID value.

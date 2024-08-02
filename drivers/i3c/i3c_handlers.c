@@ -35,7 +35,7 @@ static inline int z_vrfy_i3c_do_ccc(const struct device *dev,
 
 	return z_impl_i3c_do_ccc(dev, payload);
 }
-#include <syscalls/i3c_do_ccc_mrsh.c>
+#include <zephyr/syscalls/i3c_do_ccc_mrsh.c>
 
 static uint32_t copy_i3c_msgs_and_transfer(struct i3c_device_desc *target,
 					   const struct i3c_msg *msgs,
@@ -79,4 +79,4 @@ static inline int z_vrfy_i3c_transfer(struct i3c_device_desc *target,
 					  (struct i3c_msg *)msgs,
 					  (uint8_t)num_msgs);
 }
-#include <syscalls/i3c_transfer_mrsh.c>
+#include <zephyr/syscalls/i3c_transfer_mrsh.c>

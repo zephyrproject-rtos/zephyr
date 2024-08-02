@@ -13,5 +13,5 @@
 		debounce-down-ms = <40>;
 		debounce-up-ms = <80>;
 		poll-timeout-ms = <500>;
-        };
+	};
 };

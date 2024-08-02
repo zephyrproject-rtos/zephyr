@@ -39,19 +39,45 @@ static int lps22hh_sample_fetch(const struct device *dev,
 	uint32_t raw_press;
 	int16_t raw_temp;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL
+			|| chan == SENSOR_CHAN_PRESS
+			|| chan == SENSOR_CHAN_AMBIENT_TEMP);
 
-	if (lps22hh_pressure_raw_get(ctx, &raw_press) < 0) {
-		LOG_DBG("Failed to read sample");
-		return -EIO;
-	}
-	if (lps22hh_temperature_raw_get(ctx, &raw_temp) < 0) {
-		LOG_DBG("Failed to read sample");
-		return -EIO;
+	switch (chan) {
+	case SENSOR_CHAN_PRESS:
+		if (lps22hh_pressure_raw_get(ctx, &raw_press) < 0) {
+			LOG_DBG("Failed to read sample");
+			return -EIO;
+		}
+		break;
+	case SENSOR_CHAN_AMBIENT_TEMP:
+		if (lps22hh_temperature_raw_get(ctx, &raw_temp) < 0) {
+			LOG_DBG("Failed to read sample");
+			return -EIO;
+		}
+		break;
+	case SENSOR_CHAN_ALL:
+		if (lps22hh_pressure_raw_get(ctx, &raw_press) < 0) {
+			LOG_DBG("Failed to read sample");
+			return -EIO;
+		}
+		if (lps22hh_temperature_raw_get(ctx, &raw_temp) < 0) {
+			LOG_DBG("Failed to read sample");
+			return -EIO;
+		}
+		break;
+	default:
+		LOG_ERR("Unsupported sensor channel");
+		return -ENOTSUP;
 	}
 
-	data->sample_press = raw_press;
-	data->sample_temp = raw_temp;
+	/** Prevent overwriting values that weren't fetched */
+	if (chan == SENSOR_CHAN_PRESS || chan == SENSOR_CHAN_ALL) {
+		data->sample_press = raw_press;
+	}
+	if (chan == SENSOR_CHAN_AMBIENT_TEMP || chan == SENSOR_CHAN_ALL) {
+		data->sample_temp = raw_temp;
+	}
 
 	return 0;
 }

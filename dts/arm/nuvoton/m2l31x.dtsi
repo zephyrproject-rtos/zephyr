@@ -11,10 +11,15 @@
 #include <zephyr/dt-bindings/reset/numaker_m2l31x_reset.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	chosen {
 		zephyr,flash-controller = &rmc;
+	};
+
+	aliases {
+		rtc = &rtc;
 	};
 
 	cpus {
@@ -39,6 +44,7 @@
 			compatible = "nuvoton,numaker-scc";
 			reg = <0x40000200 0x100>;
 			#clock-cells = <0>;
+			lxt = "enable";
 			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
 					NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
 			core-clock = <DT_FREQ_M(72)>;
@@ -305,6 +311,88 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+		};
+
+		eadc0: eadc@40043000 {
+			compatible = "nuvoton,numaker-adc";
+			reg = <0x40043000 0xffc>;
+			interrupts = <42 0>;
+			resets = <&rst NUMAKER_EADC0_RST>;
+			clocks = <&pcc NUMAKER_EADC0_MODULE
+				  NUMAKER_CLK_CLKSEL0_EADC0SEL_HCLK
+				  NUMAKER_CLK_CLKDIV0_EADC0(2)>;
+			channels = <31>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		rtc: rtc@40041000 {
+			compatible = "nuvoton,numaker-rtc";
+			reg = <0x40041000 0x138>;
+			interrupts = <6 0>;
+			oscillator = "lxt";
+			clocks = <&pcc NUMAKER_RTC_MODULE 0 0>;
+			alarms-count = <1>;
+		};
+
+		epwm0: epwm@40058000 {
+			compatible = "nuvoton,numaker-pwm";
+			reg = <0x40058000 0x37c>;
+			interrupts = <25 0>, <26 0>, <27 0>;
+			interrupt-names = "pair0", "pair1", "pair2";
+			resets = <&rst NUMAKER_EPWM0_RST>;
+			prescaler = <19>;
+			clocks = <&pcc NUMAKER_EPWM0_MODULE NUMAKER_CLK_CLKSEL2_EPWM0SEL_PCLK0 0>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		epwm1: epwm@40059000 {
+			compatible = "nuvoton,numaker-pwm";
+			reg = <0x40059000 0x37c>;
+			interrupts = <29 0>, <30 0>, <31 0>;
+			interrupt-names = "pair0", "pair1", "pair2";
+			resets = <&rst NUMAKER_EPWM1_RST>;
+			prescaler = <19>;
+			clocks = <&pcc NUMAKER_EPWM1_MODULE NUMAKER_CLK_CLKSEL2_EPWM1SEL_PCLK1 0>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		canfd0: canfd@40020000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40020000 0x200>, <0x40020200 0x1800>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <112 0>, <113 0>;
+			interrupt-names = "int0", "int1";
+			resets = <&rst NUMAKER_CANFD0_RST>;
+			clocks = <&pcc NUMAKER_CANFD0_MODULE
+				  NUMAKER_CLK_CLKSEL0_CANFD0SEL_HCLK
+				  NUMAKER_CLK_CLKDIV5_CANFD0(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+		};
+
+		canfd1: canfd@40024000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40024000 0x200>, <0x40024200 0x1800>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <114 0>, <115 0>;
+			interrupt-names = "int0", "int1";
+			resets = <&rst NUMAKER_CANFD1_RST>;
+			clocks = <&pcc NUMAKER_CANFD1_MODULE
+				  NUMAKER_CLK_CLKSEL0_CANFD1SEL_HCLK
+				  NUMAKER_CLK_CLKDIV5_CANFD1(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+		};
+
+		wwdt: watchdog@40096000 {
+			compatible = "nuvoton,numaker-wwdt";
+			reg = <0x40096000 0x10>;
+			interrupts = <9 0>;
+			clocks = <&pcc NUMAKER_WWDT_MODULE NUMAKER_CLK_CLKSEL1_WWDTSEL_LIRC 0>;
+			status = "disabled";
 		};
 	};
 };

@@ -425,7 +425,7 @@ int net_capture_setup(const char *remote_addr, const char *my_local_addr,
 		(void)net_capture_cleanup(ctx->dev);
 
 		/* net_context is cleared by the cleanup so no need to goto
-		 * to fail label.
+		 * the fail label.
 		 */
 		return ret;
 	}

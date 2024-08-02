@@ -5,9 +5,9 @@
  */
 
 / {
-    resources {
-        compatible = "test-kernel-timer-behavior-external";
+	resources {
+		compatible = "test-kernel-timer-behavior-external";
 
-        timerout-gpios = <&gpioc 3 GPIO_ACTIVE_LOW>; /* Arduino D7 */
-    };
+		timerout-gpios = <&gpioc 3 GPIO_ACTIVE_LOW>; /* Arduino D7 */
+	};
 };

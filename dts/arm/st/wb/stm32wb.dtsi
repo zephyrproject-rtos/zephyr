@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Linaro Limited
  * Copyright (c) 2019 Centaur Analytics, Inc
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,12 +16,14 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32wb_l_reset.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
 
 / {
 	chosen {
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
+		zephyr,bt-hci = &ble_rf;
 	};
 
 	cpus {
@@ -285,6 +288,8 @@
 			interrupts = <41 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
 			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <17>;
 			status = "disabled";
 
 			bbram: backup_regs {
@@ -508,6 +513,29 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
 			interrupts = <51 0>;
 			status = "disabled";
+		};
+
+		pwr: power@58000400 {
+			compatible = "st,stm32-pwr";
+			reg = <0x58000400 0x400>; /* PWR register bank */
+			status = "disabled";
+
+			wkup-pins-nb = <5>; /* 5 system wake-up pins */
+			wkup-pins-pol;
+			wkup-pins-pupd;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			wkup-pin@1 {
+				reg = <0x1>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_SRC_0>;
+			};
+
+			wkup-pin@4 {
+				reg = <0x4>;
+				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_SRC_0>;
+			};
 		};
 	};
 

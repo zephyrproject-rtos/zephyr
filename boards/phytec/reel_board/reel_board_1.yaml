@@ -13,7 +13,6 @@ supported:
   - spi
   - gpio
   - usb_device
-  - usb_cdc
   - ble
   - pwm
   - arduino_i2c

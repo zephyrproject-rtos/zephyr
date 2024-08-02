@@ -25,8 +25,10 @@ supported:
   - gpio
   - i2c
   - netif:eth
+  - pwm
   - sdhc
   - spi
   - usb_device
+  - usbd
   - watchdog
 vendor: nxp

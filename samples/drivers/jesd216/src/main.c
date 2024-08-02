@@ -20,6 +20,8 @@
 #define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(st_stm32_qspi_nor)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_ospi_nor)
 #define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(st_stm32_ospi_nor)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_xspi_nor)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(st_stm32_xspi_nor)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_qspi_nor)
 #define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_s32_qspi_nor)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi_nor)

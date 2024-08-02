@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,9 +59,19 @@ int disk_access_init(const char *pdrv)
 	struct disk_info *disk = disk_access_get_di(pdrv);
 	int rc = -EINVAL;
 
-	if ((disk != NULL) && (disk->ops != NULL) &&
-				(disk->ops->init != NULL)) {
-		rc = disk->ops->init(disk);
+	if ((disk != NULL) && (disk->refcnt == 0U)) {
+		/* Disk has not been initialized, start it */
+		if ((disk->ops != NULL) && (disk->ops->init != NULL)) {
+			rc = disk->ops->init(disk);
+			if (rc == 0) {
+				/* Increment reference count */
+				disk->refcnt++;
+			}
+		}
+	} else if ((disk != NULL) && (disk->refcnt < UINT16_MAX)) {
+		/* Disk reference count is nonzero, simply increment it */
+		disk->refcnt++;
+		rc = 0;
 	}
 
 	return rc;
@@ -114,7 +125,41 @@ int disk_access_ioctl(const char *pdrv, uint8_t cmd, void *buf)
 
 	if ((disk != NULL) && (disk->ops != NULL) &&
 				(disk->ops->ioctl != NULL)) {
-		rc = disk->ops->ioctl(disk, cmd, buf);
+		switch (cmd) {
+		case DISK_IOCTL_CTRL_INIT:
+			if (disk->refcnt == 0U) {
+				rc = disk->ops->ioctl(disk, cmd, buf);
+				if (rc == 0) {
+					disk->refcnt++;
+				}
+			} else if (disk->refcnt < UINT16_MAX) {
+				disk->refcnt++;
+				rc = 0;
+			} else {
+				LOG_ERR("Disk reference count at max value");
+			}
+			break;
+		case DISK_IOCTL_CTRL_DEINIT:
+			if ((buf != NULL) && (*((bool *)buf))) {
+				/* Force deinit disk */
+				disk->refcnt = 0U;
+				disk->ops->ioctl(disk, cmd, buf);
+				rc = 0;
+			} else if (disk->refcnt == 1U) {
+				rc = disk->ops->ioctl(disk, cmd, buf);
+				if (rc == 0) {
+					disk->refcnt--;
+				}
+			} else if (disk->refcnt > 0) {
+				disk->refcnt--;
+				rc = 0;
+			} else {
+				LOG_WRN("Disk is already deinitialized");
+			}
+			break;
+		default:
+			rc = disk->ops->ioctl(disk, cmd, buf);
+		}
 	}
 
 	return rc;
@@ -136,6 +181,9 @@ int disk_access_register(struct disk_info *disk)
 		rc = -EINVAL;
 		goto reg_err;
 	}
+
+	/* Initialize reference count to zero */
+	disk->refcnt = 0U;
 
 	/*  append to the disk list */
 	sys_dlist_append(&disk_access_list, &disk->node);

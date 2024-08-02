@@ -10,9 +10,12 @@
 #include <zephyr/drivers/clock_control/smartbond_clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
-
-#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <DA1469xAB.h>
+#include <da1469x_pdc.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(counter_timer, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -22,11 +25,19 @@ LOG_MODULE_REGISTER(counter_timer, CONFIG_COUNTER_LOG_LEVEL);
 
 #define TIMER_TOP_VALUE		0xFFFFFF
 
+#define COUNTER_DT_DEVICE(_idx) DEVICE_DT_GET_OR_NULL(DT_NODELABEL(timer##_idx))
+
+#define PDC_XTAL_EN (DT_NODE_HAS_STATUS(DT_NODELABEL(xtal32m), okay) ? \
+					MCU_PDC_EN_XTAL : MCU_PDC_EN_NONE)
+
 struct counter_smartbond_data {
 	counter_alarm_callback_t callback;
 	void *user_data;
 	uint32_t guard_period;
 	uint32_t freq;
+#if defined(CONFIG_PM_DEVICE)
+	uint8_t pdc_idx;
+#endif
 };
 
 struct counter_smartbond_ch_data {
@@ -47,15 +58,101 @@ struct counter_smartbond_config {
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
 
+#if defined(CONFIG_PM_DEVICE)
+static void counter_smartbond_pm_policy_state_lock_get(const struct device *dev)
+{
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_device_runtime_get(dev);
+}
+
+static void counter_smartbond_pm_policy_state_lock_put(const struct device *dev)
+{
+	pm_device_runtime_put(dev);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+/*
+ * Routine to check whether the device is allowed to enter the sleep state or not.
+ * Entering the standby mode should be allowed for TIMER1/2 that are clocked by LP
+ * clock. Although, TIMER1/2 are powered by a distinct power domain,
+ * namely PD_TMR which is always enabled (used to generate the sleep tick count),
+ * the DIVN path which reflects the main crystal, that is XTAL32M, is turned off
+ * during sleep by PDC. It's worth noting that during sleep the clock source of
+ * a timer block will automatically be switched from DIVN to LP and vice versa.
+ */
+static inline bool counter_smartbond_is_sleep_allowed(const struct device *dev)
+{
+	const struct counter_smartbond_config *config = dev->config;
+
+	return (((dev == COUNTER_DT_DEVICE(1)) ||
+			 (dev == COUNTER_DT_DEVICE(2))) && !config->clock_src_divn);
+}
+
+/* Get the PDC trigger associated with the requested counter device */
+static uint8_t counter_smartbond_pdc_trigger_get(const struct device *dev)
+{
+	const struct counter_smartbond_config *config = dev->config;
+
+	switch ((uint32_t)config->timer) {
+	case (uint32_t)TIMER:
+		return MCU_PDC_TRIGGER_TIMER;
+	case (uint32_t)TIMER2:
+		return MCU_PDC_TRIGGER_TIMER2;
+	case (uint32_t)TIMER3:
+		return MCU_PDC_TRIGGER_TIMER3;
+	case (uint32_t)TIMER4:
+		return MCU_PDC_TRIGGER_TIMER4;
+	default:
+		return 0;
+	}
+}
+
+/*
+ * Add PDC entry so that the application core, which should be turned off during sleep,
+ * can get notified upon counter events. This routine is called for counter instances
+ * that are powered by PD_TMR and can operate during sleep.
+ */
+static void counter_smartbond_pdc_add(const struct device *dev)
+{
+	struct counter_smartbond_data *data = dev->data;
+	uint8_t trigger = counter_smartbond_pdc_trigger_get(dev);
+
+	data->pdc_idx = da1469x_pdc_add(trigger, MCU_PDC_MASTER_M33, PDC_XTAL_EN);
+	__ASSERT_NO_MSG(data->pdc_idx >= 0);
+
+	da1469x_pdc_set(data->pdc_idx);
+	da1469x_pdc_ack(data->pdc_idx);
+}
+
+static void counter_smartbond_pdc_del(const struct device *dev)
+{
+	struct counter_smartbond_data *data = dev->data;
+
+	da1469x_pdc_del(data->pdc_idx);
+}
+#endif
+
 static int counter_smartbond_start(const struct device *dev)
 {
 	const struct counter_smartbond_config *config = dev->config;
 	TIMER2_Type *timer = config->timer;
 
-	/* enable counter in free running mode */
-	timer->TIMER2_CTRL_REG |= TIMER_TIMER_CTRL_REG_TIM_CLK_EN_Msk |
-				  TIMER_TIMER_CTRL_REG_TIM_EN_Msk |
-				  TIMER_TIMER_CTRL_REG_TIM_FREE_RUN_MODE_EN_Msk;
+#if defined(CONFIG_PM_DEVICE)
+	if (!counter_smartbond_is_sleep_allowed(dev)) {
+		/*
+		 * Power mode constraints should be applied as long as the device
+		 * is up and running.
+		 */
+		counter_smartbond_pm_policy_state_lock_get(dev);
+	} else {
+		counter_smartbond_pdc_add(dev);
+	}
+#endif
+
+	/* Enable counter in free running mode */
+	timer->TIMER2_CTRL_REG |= (TIMER2_TIMER2_CTRL_REG_TIM_CLK_EN_Msk |
+				  TIMER2_TIMER2_CTRL_REG_TIM_EN_Msk |
+				  TIMER2_TIMER2_CTRL_REG_TIM_FREE_RUN_MODE_EN_Msk);
 
 	return 0;
 }
@@ -68,8 +165,17 @@ static int counter_smartbond_stop(const struct device *dev)
 
 	/* disable counter */
 	timer->TIMER2_CTRL_REG &= ~(TIMER2_TIMER2_CTRL_REG_TIM_EN_Msk |
-				    TIMER2_TIMER2_CTRL_REG_TIM_IRQ_EN_Msk);
+				    TIMER2_TIMER2_CTRL_REG_TIM_IRQ_EN_Msk |
+					TIMER2_TIMER2_CTRL_REG_TIM_CLK_EN_Msk);
 	data->callback = NULL;
+
+#if defined(CONFIG_PM_DEVICE)
+	if (!counter_smartbond_is_sleep_allowed(dev)) {
+		counter_smartbond_pm_policy_state_lock_put(dev);
+	} else {
+		counter_smartbond_pdc_del(dev);
+	}
+#endif
 
 	return 0;
 }
@@ -229,7 +335,7 @@ static int counter_smartbond_init_timer(const struct device *dev)
 
 	if (cfg->clock_src_divn) {
 		/* Timer clock source is DIVn 32MHz */
-		timer->TIMER2_CTRL_REG = TIMER_TIMER_CTRL_REG_TIM_SYS_CLK_EN_Msk;
+		timer->TIMER2_CTRL_REG = TIMER2_TIMER2_CTRL_REG_TIM_SYS_CLK_EN_Msk;
 		data->freq = DT_PROP(DT_NODELABEL(divn_clk), clock_frequency) /
 			     (cfg->prescaler + 1);
 	} else {
@@ -268,6 +374,13 @@ static int counter_smartbond_init_timer(const struct device *dev)
 	/* config/enable IRQ */
 	cfg->irq_config_func(dev);
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Make sure device state is marked as suspended */
+	pm_device_init_suspended(dev);
+
+	return pm_device_runtime_enable(dev);
+#endif
+
 	return 0;
 }
 
@@ -298,6 +411,45 @@ static uint32_t counter_smartbond_get_freq(const struct device *dev)
 
 	return data->freq;
 }
+
+#if defined(CONFIG_PM_DEVICE)
+static void counter_smartbond_resume(const struct device *dev)
+{
+	const struct counter_smartbond_config *cfg = dev->config;
+	TIMER2_Type *timer = cfg->timer;
+
+	/*
+	 * Resume only for block instances that are powered by PD_SYS
+	 * and so their register contents should reset after sleep.
+	 */
+	if (!counter_smartbond_is_sleep_allowed(dev)) {
+		if (cfg->clock_src_divn) {
+			timer->TIMER2_CTRL_REG = TIMER2_TIMER2_CTRL_REG_TIM_SYS_CLK_EN_Msk;
+		} else {
+			timer->TIMER2_CTRL_REG = 0;
+		}
+		timer->TIMER2_PRESCALER_REG = cfg->prescaler;
+		timer->TIMER2_RELOAD_REG = counter_get_max_top_value(dev);
+	}
+}
+
+static int counter_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		counter_smartbond_resume(dev);
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
 
 static const struct counter_driver_api counter_smartbond_driver_api = {
 	.start = counter_smartbond_start,
@@ -370,9 +522,10 @@ void counter_smartbond_irq_handler(const struct device *dev)
 		.irqn = DT_IRQN(TIMERN(idx)),					\
 	};									\
 										\
+	PM_DEVICE_DT_INST_DEFINE(idx, counter_smartbond_pm_action);	\
 	DEVICE_DT_INST_DEFINE(idx,						\
 			      counter_smartbond_init_timer,			\
-			      NULL,						\
+			      PM_DEVICE_DT_INST_GET(idx),	\
 			      &counter##idx##_data,				\
 			      &counter##idx##_config,				\
 			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,	\

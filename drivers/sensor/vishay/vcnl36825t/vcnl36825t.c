@@ -240,37 +240,21 @@ static int vcnl36825t_init_registers(const struct device *dev)
 	switch (config->proximity_it) {
 	case VCNL36825T_PROXIMITY_INTEGRATION_1T:
 		reg_value |= VCNL36825T_PS_IT_1T;
-		data->meas_timeout_us *= 1 * VCNL36825T_FORCED_FACTOR_SCALE;
-		break;
-	case VCNL36825T_PROXIMITY_INTEGRATION_1_5T:
-		reg_value |= VCNL36825T_PS_IT_1_5T;
-		data->meas_timeout_us *= 1.5 * VCNL36825T_FORCED_FACTOR_SCALE;
+		data->meas_timeout_us *= 1;
 		break;
 	case VCNL36825T_PROXIMITY_INTEGRATION_2T:
 		reg_value |= VCNL36825T_PS_IT_2T;
-		data->meas_timeout_us *= 2 * VCNL36825T_FORCED_FACTOR_SCALE;
-		break;
-	case VCNL36825T_PROXIMITY_INTEGRATION_2_5T:
-		reg_value |= VCNL36825T_PS_IT_2_5T;
-		data->meas_timeout_us *= 2.5 * VCNL36825T_FORCED_FACTOR_SCALE;
-		break;
-	case VCNL36825T_PROXIMITY_INTEGRATION_3T:
-		reg_value |= VCNL36825T_PS_IT_3T;
-		data->meas_timeout_us *= 3 * VCNL36825T_FORCED_FACTOR_SCALE;
-		break;
-	case VCNL36825T_PROXIMITY_INTEGRATION_3_5T:
-		reg_value |= VCNL36825T_PS_IT_3_5T;
-		data->meas_timeout_us *= 3.5 * VCNL36825T_FORCED_FACTOR_SCALE;
+		data->meas_timeout_us *= 2;
 		break;
 	case VCNL36825T_PROXIMITY_INTEGRATION_4T:
 		reg_value |= VCNL36825T_PS_IT_4T;
-		data->meas_timeout_us *= 4 * VCNL36825T_FORCED_FACTOR_SCALE;
+		data->meas_timeout_us *= 4;
 		break;
 	case VCNL36825T_PROXIMITY_INTEGRATION_8T:
 		__fallthrough;
 	default:
 		reg_value |= VCNL36825T_PS_IT_8T;
-		data->meas_timeout_us *= 8 * VCNL36825T_FORCED_FACTOR_SCALE;
+		data->meas_timeout_us *= 8;
 		break;
 	}
 
@@ -393,7 +377,7 @@ static int vcnl36825t_init_registers(const struct device *dev)
 	 */
 	data->meas_timeout_us =
 		(data->meas_timeout_us * VCNL36825T_FORCED_FACTOR_SUM) /
-			(VCNL36825T_FORCED_FACTOR_SCALE * VCNL36825T_FORCED_FACTOR_SCALE) +
+			(VCNL36825T_FORCED_FACTOR_SCALE) +
 		1;
 
 	return 0;
@@ -454,6 +438,9 @@ static const struct sensor_driver_api vcnl36825t_driver_api = {
 		DT_INST_PROP(inst, low_power) || (DT_INST_PROP(inst, measurement_period) <=        \
 						  VCNL36825T_PS_PERIOD_VALUE_MAX_MS),              \
 		"measurement-period must be less/equal 80 ms with deactivated low-power mode");    \
+	BUILD_ASSERT(!DT_INST_PROP(inst, low_power) || (DT_INST_ENUM_IDX(inst, operation_mode) ==  \
+							VCNL36825T_OPERATION_MODE_AUTO),           \
+		     "operation-mode \"force\" only available if low-power mode deactivated");     \
 	static struct vcnl36825t_data vcnl36825t_data_##inst;                                      \
 	static const struct vcnl36825t_config vcnl36825t_config_##inst = {                         \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \

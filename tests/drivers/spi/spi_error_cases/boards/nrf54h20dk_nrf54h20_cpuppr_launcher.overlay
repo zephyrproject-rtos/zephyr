@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi130 {
+	status = "reserved";
+	interrupt-parent = <&cpuppr_clic>;
+};
+
+&spi131 {
+	status = "reserved";
+	interrupt-parent = <&cpuppr_clic>;
+};
+
+&shared_ram3x_region {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "reserved";
+};

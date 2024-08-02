@@ -196,5 +196,5 @@ References
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 .. _nRF9151 website: https://www.nordicsemi.com/Products/nRF9151
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _Nordic Semiconductor TechDocs: https://docs.nordicsemi.com/
 .. _Trusted Firmware M: https://www.trustedfirmware.org/projects/tf-m/

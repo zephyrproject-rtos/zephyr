@@ -7,6 +7,7 @@ config WDT_XMC4XXX
 	bool "Infineon XMC4xxx MCU Family Watchdog (WDT) Driver"
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Enable WDT driver for Infineon XMC4xxx MCUs.
 

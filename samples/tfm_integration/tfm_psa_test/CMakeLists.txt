@@ -22,18 +22,7 @@ get_target_property(TFM_TOOLCHAIN_PREFIX     tfm TFM_TOOLCHAIN_PREFIX)
 get_target_property(TFM_TOOLCHAIN_NS_FILE    tfm TFM_TOOLCHAIN_NS_FILE)
 
 set(TFM_TEST_REPO_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tf-m-tests)
-set(TFM_PSA_ARCHTEST_REPO_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../psa-arch-tests)
-
-if (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
-# TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
-# or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
-# been manually downloaded by the user before starting the build.
-message(FATAL_ERROR "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION is not available "
-  "with TF-M 2.0.0 due to licensing issues with a dependent library. This "
-  "restriction will be removed once licensing issues have been resolved."
-  )
-endif()
-
+set(PSA_ARCH_TESTS_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../psa-arch-tests)
 
 set(TFM_TEST_DIR         "${TFM_TEST_REPO_PATH}/tests_psa_arch/spe/partitions")
 set(PSA_ARCH_TESTS_CONFIG_FILE "${TFM_TEST_REPO_PATH}/tests_psa_arch/spe/config/config_test_psa_api.cmake")
@@ -50,17 +39,13 @@ set(TFM_PSA_TEST_SUITE INITIAL_ATTESTATION)
 endif()
 
 if (NOT DEFINED TFM_PSA_TEST_SUITE)
-  message(FATAL_ERROR "Please define witch test suite to run:
-    CONFIG_TFM_PSA_TEST_CRYPTO
-    CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE
-    CONFIG_TFM_PSA_TEST_STORAGE
-    CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION")
+  message(FATAL_ERROR "Please define a test suite to run. Refer to the README to see the available test suites.")
 endif()
 set(TEST_PSA_API "${TFM_PSA_TEST_SUITE}")
 
 set_property(TARGET zephyr_property_target
              APPEND PROPERTY TFM_CMAKE_OPTIONS
-             -DPSA_ARCH_TESTS_PATH=${TFM_PSA_ARCHTEST_REPO_PATH}
+             -DPSA_ARCH_TESTS_PATH=${PSA_ARCH_TESTS_PATH}
 )
 
 set_property(TARGET zephyr_property_target

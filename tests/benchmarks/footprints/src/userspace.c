@@ -32,7 +32,7 @@ static inline int z_vrfy_dummy_syscall(void)
 {
 	return 0;
 }
-#include <syscalls/dummy_syscall_mrsh.c>
+#include <zephyr/syscalls/dummy_syscall_mrsh.c>
 
 int z_impl_validation_overhead_syscall(void)
 {
@@ -47,7 +47,7 @@ static inline int z_vrfy_validation_overhead_syscall(void)
 
 	return status_0 || status_1;
 }
-#include <syscalls/validation_overhead_syscall_mrsh.c>
+#include <zephyr/syscalls/validation_overhead_syscall_mrsh.c>
 
 
 void test_drop_to_user_mode_1(void *p1, void *p2, void *p3)

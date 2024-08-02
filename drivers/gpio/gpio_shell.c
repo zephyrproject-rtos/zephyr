@@ -134,16 +134,43 @@ DT_FOREACH_STATUS_OKAY_NODE(IS_GPIO_CTRL_PIN_GET)
 
 static const struct gpio_ctrl gpio_list[] = {DT_FOREACH_STATUS_OKAY_NODE(IS_GPIO_CTRL_LIST)};
 
-static const struct gpio_ctrl *get_gpio_ctrl(char *name)
+static const struct gpio_ctrl *get_gpio_ctrl_helper(const struct device *dev)
 {
-	const struct device *dev = device_get_binding(name);
 	size_t i;
+
+	if (dev == NULL) {
+		return NULL;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(gpio_list); i++) {
 		if (gpio_list[i].dev == dev) {
 			return &gpio_list[i];
 		}
 	}
+
+	return NULL;
+}
+
+/* Look up a device by some human-readable string identifier. We
+ * always search among device names. If the feature is available, we
+ * search by node label as well.
+ */
+static const struct gpio_ctrl *get_gpio_ctrl(char *id)
+{
+	const struct gpio_ctrl *ctrl;
+
+	ctrl = get_gpio_ctrl_helper(device_get_binding(id));
+	if (ctrl != NULL) {
+		return ctrl;
+	}
+
+#ifdef CONFIG_DEVICE_DT_METADATA
+	ctrl = get_gpio_ctrl_helper(device_get_by_dt_nodelabel(id));
+	if (ctrl != NULL) {
+		return ctrl;
+	}
+#endif	/* CONFIG_DEVICE_DT_METADATA */
+
 	return NULL;
 }
 
@@ -381,6 +408,55 @@ static int cmd_gpio_set(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_gpio_toggle(const struct shell *sh, size_t argc, char **argv)
+{
+	struct sh_gpio gpio;
+	int ret = 0;
+
+	ret = get_sh_gpio(sh, argv, &gpio);
+	if (ret != 0) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	ret = gpio_pin_toggle(gpio.dev, gpio.pin);
+	if (ret != 0) {
+		shell_error(sh, "error: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int cmd_gpio_devices(const struct shell *sh, size_t argc, char **argv)
+{
+	size_t i;
+
+	shell_fprintf(sh, SHELL_NORMAL, "%-16s Other names\n", "Device");
+
+	for (i = 0; i < ARRAY_SIZE(gpio_list); i++) {
+		const struct device *dev = gpio_list[i].dev;
+
+		shell_fprintf(sh, SHELL_NORMAL, "%-16s", dev->name);
+
+#ifdef CONFIG_DEVICE_DT_METADATA
+		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
+
+		if (nl->num_nodelabels > 0) {
+			for (size_t j = 0; j < nl->num_nodelabels; j++) {
+				const char *nodelabel = nl->nodelabels[j];
+
+				shell_fprintf(sh, SHELL_NORMAL, " %s", nodelabel);
+			}
+		}
+#endif
+
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
+	}
+
+	return 0;
+}
+
 /* 500 msec = 1/2 sec */
 #define SLEEP_TIME_MS   500
 
@@ -454,6 +530,7 @@ static void print_gpio_ctrl_info(const struct shell *sh, const struct gpio_ctrl 
 {
 	gpio_pin_t pin;
 	bool reserved;
+	const char *line_name;
 
 	shell_print(sh, " ngpios: %u", ctrl->ngpios);
 	shell_print(sh, " Reserved pin mask: 0x%08X", ctrl->reserved_mask);
@@ -461,14 +538,14 @@ static void print_gpio_ctrl_info(const struct shell *sh, const struct gpio_ctrl 
 	shell_print(sh, "");
 
 	shell_print(sh, " Reserved  Pin  Line Name");
-	for (pin = 0; pin < GPIO_MAX_PINS_PER_PORT; pin++) {
-		if ((pin >= ctrl->ngpios) && (pin >= ctrl->line_names_len)) {
-			/* Out of info */
-			break;
-		}
+	for (pin = 0; pin < ctrl->ngpios; pin++) {
 		reserved = (BIT64(pin) & ctrl->reserved_mask) != 0;
-		shell_print(sh, "     %c     %2u    %s", reserved ? '*' : ' ',
-			    pin, ctrl->line_names[pin]);
+		if (pin < ctrl->line_names_len) {
+			line_name = ctrl->line_names[pin];
+		} else {
+			line_name = "";
+		}
+		shell_print(sh, "     %c     %2u    %s", reserved ? '*' : ' ', pin, line_name);
 	}
 }
 
@@ -595,6 +672,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
 	SHELL_CMD_ARG(set, &sub_gpio_dev,
 		"Set GPIO pin value\n"
 		"Usage: gpio set <device> <pin> <level 0|1>", cmd_gpio_set, 4, 0),
+	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_TOGGLE_CMD, toggle, &sub_gpio_dev,
+		"Toggle GPIO pin\n"
+		"Usage: gpio toggle <device> <pin>", cmd_gpio_toggle, 3, 0),
+	SHELL_CMD(devices, NULL,
+		"List all GPIO devices\n"
+		"Usage: gpio devices", cmd_gpio_devices),
 	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_BLINK_CMD, blink, &sub_gpio_dev,
 		"Blink GPIO pin\n"
 		"Usage: gpio blink <device> <pin>", cmd_gpio_blink, 3, 0),

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Set div-q to get test clk freq into acceptable SPI freq range */
+&pll {
+	/delete-property/ div-q;
+	div-q = <8>;
+};
+
 &sram2 {
 	zephyr,memory-attr = < DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) >;
 };

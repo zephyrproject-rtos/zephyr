@@ -130,6 +130,21 @@
 
 	soc {
 
+		l1ccap: l1ccap@1fe80080 {
+			compatible = "intel,adsp-l1ccap";
+			reg = <0x1fe80080 0x4>;
+		};
+
+		l1ccfg: l1ccfg@1fe80084 {
+			compatible = "intel,adsp-l1ccfg";
+			reg = <0x1fe80084 0x4>;
+		};
+
+		l1pcfg: l1pcfg@1fe80088 {
+			compatible = "intel,adsp-l1pcfg";
+			reg = <0x1fe80088 0x4>;
+		};
+
 		lsbpm: lsbpm@71d80 {
 			compatible = "intel,adsp-lsbpm";
 			reg = <0x71d80 0x0008>;

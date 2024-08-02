@@ -28,15 +28,6 @@ LOG_MODULE_REGISTER(rcar_mmc, CONFIG_LOG_DEFAULT_LEVEL);
 #define MMC_POLL_FLAGS_TIMEOUT_US 100000
 #define MMC_POLL_FLAGS_ONE_CYCLE_TIMEOUT_US 1
 #define MMC_BUS_CLOCK_FREQ 800000000
-/*
- * SD/MMC clock for Gen3/Gen4 R-car boards can't be equal to 208 MHz,
- * but we can run SDR104 on lower frequencies:
- *    "SDR104: UHS-I 1.8V signaling, Frequency up to 208 MHz"
- * so according to SD card standard it is possible to use lower frequencies,
- * and we need to pass check of frequency in sdmmc in order to use sdr104 mode.
- * This is the reason why it is needed this correction.
- */
-#define MMC_MAX_FREQ_CORRECTION 8000000
 
 #ifdef CONFIG_RCAR_MMC_DMA_SUPPORT
 #define ALIGN_BUF_DMA __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT)
@@ -575,7 +566,7 @@ static int rcar_mmc_dma_rx_tx_data(const struct device *dev, struct sdhc_data *d
 	reg |= RCAR_MMC_EXTMODE_DMA_EN;
 	rcar_mmc_write_reg32(dev, RCAR_MMC_EXTMODE, reg);
 
-	dma_addr = z_mem_phys_addr(data->data);
+	dma_addr = k_mem_phys_addr(data->data);
 
 	rcar_mmc_write_reg32(dev, RCAR_MMC_DMA_ADDR_L, dma_addr);
 	rcar_mmc_write_reg32(dev, RCAR_MMC_DMA_ADDR_H, 0);
@@ -839,7 +830,7 @@ static int rcar_mmc_rx_tx_data(const struct device *dev, struct sdhc_data *data,
 	int ret = 0;
 
 #ifdef CONFIG_RCAR_MMC_DMA_SUPPORT
-	if (!(z_mem_phys_addr(data->data) >> 32)) {
+	if (!(k_mem_phys_addr(data->data) >> 32)) {
 		ret = rcar_mmc_dma_rx_tx_data(dev, data, is_read);
 	} else
 #endif
@@ -1941,7 +1932,7 @@ static void rcar_mmc_init_host_props(const struct device *dev)
 
 	/* Note: init only properties that are used for mmc/sdhc */
 
-	props->f_max = cfg->max_frequency + MMC_MAX_FREQ_CORRECTION;
+	props->f_max = cfg->max_frequency;
 	/*
 	 * note: actually, it's possible to get lower frequency
 	 *       if we use divider from cpg too
@@ -2054,7 +2045,7 @@ static int rcar_mmc_init_controller_regs(const struct device *dev)
 	reg |= RCAR_MMC_DMA_MODE_ADDR_INC | RCAR_MMC_DMA_MODE_WIDTH;
 	rcar_mmc_write_reg32(dev, RCAR_MMC_DMA_MODE, reg);
 
-	/* store version of of introductory IP */
+	/* store version of introductory IP */
 	data->ver = rcar_mmc_read_reg32(dev, RCAR_MMC_VERSION);
 	data->ver &= RCAR_MMC_VERSION_IP;
 
@@ -2176,7 +2167,7 @@ exit_disable_clk:
 
 exit_unmap:
 #if defined(DEVICE_MMIO_IS_IN_RAM) && defined(CONFIG_MMU)
-	z_phys_unmap((uint8_t *)DEVICE_MMIO_GET(dev), DEVICE_MMIO_ROM_PTR(dev)->size);
+	k_mem_unmap_phys_bare((uint8_t *)DEVICE_MMIO_GET(dev), DEVICE_MMIO_ROM_PTR(dev)->size);
 #endif
 	return ret;
 }

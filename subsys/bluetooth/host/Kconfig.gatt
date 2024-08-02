@@ -5,6 +5,14 @@
 
 menu "ATT and GATT Options"
 
+config BT_ATT_ERR_TO_STR
+	bool "Print ATT error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of ATT error
+	  codes represented as strings.
+	  See bt_att_err_to_str() for more details.
+
 config BT_ATT_TX_COUNT
 	int "Number of ATT buffers"
 	default BT_BUF_ACL_TX_COUNT
@@ -107,9 +115,11 @@ config BT_GATT_CACHING
 	bool "GATT Caching support"
 	default y
 	depends on BT_GATT_SERVICE_CHANGED
-	select TINYCRYPT
-	select TINYCRYPT_AES
-	select TINYCRYPT_AES_CMAC
+	select TINYCRYPT if !BT_USE_PSA_API
+	select TINYCRYPT_AES if !BT_USE_PSA_API
+	select TINYCRYPT_AES_CMAC if !BT_USE_PSA_API
+	select PSA_WANT_KEY_TYPE_AES if BT_USE_PSA_API
+	select PSA_WANT_ALG_CMAC if BT_USE_PSA_API
 	help
 	  This option enables support for GATT Caching. When enabled the stack
 	  will register Client Supported Features and Database Hash

@@ -116,7 +116,6 @@
 &can1 {
 	pinctrl-0 = <&can_rx_pa11 &can_tx_pa12>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	status = "okay";
 };
 

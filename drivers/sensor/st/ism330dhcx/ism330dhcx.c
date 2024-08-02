@@ -32,7 +32,7 @@ static int ism330dhcx_freq_to_odr_val(uint16_t freq)
 	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(ism330dhcx_odr_map); i++) {
-		if (freq == ism330dhcx_odr_map[i]) {
+		if (freq <= ism330dhcx_odr_map[i]) {
 			return i;
 		}
 	}
@@ -67,8 +67,30 @@ static int ism330dhcx_accel_range_to_fs_val(int32_t range)
 	return -EINVAL;
 }
 
-static const uint16_t ism330dhcx_gyro_fs_map[] = {250, 500, 1000, 2000, 125};
-static const uint16_t ism330dhcx_gyro_fs_sens[] = {2, 4, 8, 16, 1};
+/*
+ * Following arrays are initialized in order to mimic
+ * the ism330dhcx_fs_g_t enum:
+ *
+ * typedef enum
+ * {
+ *   ISM330DHCX_125dps = 2,
+ *   ISM330DHCX_250dps = 0,
+ *   ISM330DHCX_500dps = 4,
+ *   ISM330DHCX_1000dps = 8,
+ *   ISM330DHCX_2000dps = 12,
+ *   ISM330DHCX_4000dps = 1,
+ * } ism330dhcx_fs_g_t;
+ */
+static const uint16_t ism330dhcx_gyro_fs_map[] = {
+				250, 4000, 125, 0, 500,
+				0, 0, 0, 1000,
+				0, 0, 0, 2000
+				};
+static const uint16_t ism330dhcx_gyro_fs_sens[] = {
+				2, 32, 1, 0, 4,
+				0, 0, 0, 8,
+				0, 0, 0, 16
+				};
 
 static int ism330dhcx_gyro_range_to_fs_val(int32_t range)
 {

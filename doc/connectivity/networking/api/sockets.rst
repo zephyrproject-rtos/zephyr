@@ -185,13 +185,14 @@ Every offloaded socket implementation should also implement a set of socket
 APIs, specified in :c:struct:`socket_op_vtable` struct.
 
 The function registered for socket creation should allocate a new file
-descriptor using :c:func:`z_reserve_fd` function. Any additional actions,
-specific to the creation of a particular offloaded socket implementation should
-take place after the file descriptor is allocated. As a final step, if the
-offloaded socket was created successfully, the file descriptor should be
-finalized with :c:func:`z_finalize_fd` function. The finalize function allows
-to register a :c:struct:`socket_op_vtable` structure implementing socket APIs
-for an offloaded socket along with an optional socket context data pointer.
+descriptor using :c:func:`zvfs_reserve_fd` function. Any additional actions,
+specific to the creation of a particular offloaded socket implementation,
+should take place after the file descriptor is allocated. As a final step,
+if the offloaded socket was created successfully, the file descriptor should
+be finalized with :c:func:`zvfs_finalize_typed_fd`, or :c:func:`zvfs_finalize_fd`
+functions. The finalize function allows to register a
+:c:struct:`socket_op_vtable` structure implementing socket APIs for an
+offloaded socket along with an optional socket context data pointer.
 
 Finally, when an offloaded network interface is initialized, it should indicate
 that the interface is offloaded with :c:func:`net_if_socket_offload_set`

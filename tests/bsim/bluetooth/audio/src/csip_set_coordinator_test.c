@@ -4,10 +4,27 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifdef CONFIG_BT_CSIP_SET_COORDINATOR
-#include <zephyr/bluetooth/addr.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
+#include "bstests.h"
 #include "common.h"
+
+#ifdef CONFIG_BT_CSIP_SET_COORDINATOR
 
 static bool expect_rank = true;
 static bool expect_set_size = true;
@@ -169,7 +186,7 @@ static bool is_discovered(const bt_addr_le_t *addr)
 
 static bool csip_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csip_set_coordinator_is_set_member(primary_inst->info.set_sirk, data)) {
+	if (bt_csip_set_coordinator_is_set_member(primary_inst->info.sirk, data)) {
 		const bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
@@ -523,14 +540,14 @@ static void test_args(int argc, char *argv[])
 static const struct bst_test_instance test_connect[] = {
 	{
 		.test_id = "csip_set_coordinator",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "csip_set_coordinator_new_sirk",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_new_sirk,
 		.test_args_f = test_args,

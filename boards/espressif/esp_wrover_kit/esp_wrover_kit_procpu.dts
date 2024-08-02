@@ -36,6 +36,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &ili9341;
 		zephyr,sdhc = &sdhc1;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	leds {
@@ -92,14 +93,6 @@
 			height = <320>;
 		};
 	};
-};
-
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
 };
 
 &uart0 {
@@ -250,4 +243,8 @@
 			reg = <0x00250000 0x00006000>;
 		};
 	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
 };

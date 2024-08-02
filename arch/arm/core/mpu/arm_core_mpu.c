@@ -338,7 +338,7 @@ int arch_mem_domain_max_partitions_get(void)
 	return ARM_CORE_MPU_MAX_DOMAIN_PARTITIONS_GET(available_regions);
 }
 
-int arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	return arm_core_mpu_buffer_validate(addr, size, write);
 }

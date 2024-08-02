@@ -7,6 +7,7 @@ zephyr_syscall_header(
 
 zephyr_include_directories(
   ${ZEPHYR_BASE}/subsys/testsuite/include
+  ${ZEPHYR_BASE}/subsys/testsuite/coverage
   ${ZEPHYR_BASE}/subsys/testsuite/ztest/include
   )
 

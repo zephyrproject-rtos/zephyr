@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Raspberry Pi Pico GPIO
+  Raspberry Pi Pico DMA
 
   channel: Select channel for data transmitting
 
@@ -30,7 +30,7 @@ properties:
 
   irq0-channels:
     type: uint8-array
-    default: [0, 2, 4, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
+    default: [0, 2, 4, 6, 8, 10]
     description: Channels list that uses the irq0
 
   "#dma-cells":

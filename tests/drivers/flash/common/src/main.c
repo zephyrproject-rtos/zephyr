@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,11 +44,16 @@
 
 #define EXPECTED_SIZE	512
 
+#if !defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE) &&		\
+	!defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+#error There is no flash device enabled or it is missing Kconfig options
+#endif
+
 static const struct device *const flash_dev = TEST_AREA_DEVICE;
 static struct flash_pages_info page_info;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
-static const struct flash_parameters *flash_params;
 static uint8_t erase_value;
+static bool ebw_required;
 
 static void *flash_driver_setup(void)
 {
@@ -57,12 +62,22 @@ static void *flash_driver_setup(void)
 	TC_PRINT("Test will run on device %s\n", flash_dev->name);
 	zassert_true(device_is_ready(flash_dev));
 
-	flash_params = flash_get_parameters(flash_dev);
-	erase_value = flash_params->erase_value;
+	/* Check for erase is only needed when there is mix of devices */
+	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE)) {
+		const struct flash_parameters *fparams = flash_get_parameters(flash_dev);
 
-	/* For tests purposes use page (in nrf_qspi_nor page = 64 kB) */
-	flash_get_page_info_by_offs(flash_dev, TEST_AREA_OFFSET,
-				    &page_info);
+		erase_value = fparams->erase_value;
+		ebw_required = flash_params_get_erase_cap(fparams) & FLASH_ERASE_C_EXPLICIT;
+		/* For tests purposes use page (in nrf_qspi_nor page = 64 kB) */
+		flash_get_page_info_by_offs(flash_dev, TEST_AREA_OFFSET,
+					    &page_info);
+	} else {
+		TC_PRINT("No devices with erase requirement present\n");
+		erase_value = 0x55;
+		page_info.start_offset = TEST_AREA_OFFSET;
+		page_info.size = TEST_AREA_MAX - TEST_AREA_OFFSET;
+	}
+
 
 	/* Check if test region is not empty */
 	uint8_t buf[EXPECTED_SIZE];
@@ -85,23 +100,25 @@ static void *flash_driver_setup(void)
 		     "Test area exceeds flash size");
 
 	/* Check if flash is cleared */
-	bool is_buf_clear = true;
+	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
+		bool is_buf_clear = true;
 
-	for (off_t i = 0; i < EXPECTED_SIZE; i++) {
-		if (buf[i] != erase_value) {
-			is_buf_clear = false;
-			break;
+		for (off_t i = 0; i < EXPECTED_SIZE; i++) {
+			if (buf[i] != erase_value) {
+				is_buf_clear = false;
+				break;
+			}
 		}
-	}
 
-	if (!is_buf_clear) {
-		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
-		rc = flash_erase(flash_dev, page_info.start_offset,
-				(page_info.size *
-				((EXPECTED_SIZE + page_info.size - 1)
-				/ page_info.size)));
+		if (!is_buf_clear) {
+			/* Erase a nb of pages aligned to the EXPECTED_SIZE */
+			rc = flash_erase(flash_dev, page_info.start_offset,
+					(page_info.size *
+					((EXPECTED_SIZE + page_info.size - 1)
+					/ page_info.size)));
 
-		zassert_equal(rc, 0, "Flash memory not properly erased");
+			zassert_equal(rc, 0, "Flash memory not properly erased");
+		}
 	}
 
 	return NULL;
@@ -112,9 +129,23 @@ ZTEST(flash_driver, test_read_unaligned_address)
 	int rc;
 	uint8_t buf[EXPECTED_SIZE];
 	const uint8_t canary = erase_value;
+	uint32_t start;
+
+	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
+		start = page_info.start_offset;
+		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
+		rc = flash_erase(flash_dev, page_info.start_offset,
+				(page_info.size *
+				((EXPECTED_SIZE + page_info.size - 1)
+				/ page_info.size)));
+
+		zassert_equal(rc, 0, "Flash memory not properly erased");
+	} else {
+		start = TEST_AREA_OFFSET;
+	}
 
 	rc = flash_write(flash_dev,
-			 page_info.start_offset,
+			 start,
 			 expected, EXPECTED_SIZE);
 	zassert_equal(rc, 0, "Cannot write to flash");
 
@@ -129,7 +160,7 @@ ZTEST(flash_driver, test_read_unaligned_address)
 				buf[buf_o + len] = canary;
 				memset(buf + buf_o, 0, len);
 				rc = flash_read(flash_dev,
-						page_info.start_offset + ad_o,
+						start + ad_o,
 						buf + buf_o, len);
 				zassert_equal(rc, 0, "Cannot read flash");
 				zassert_equal(memcmp(buf + buf_o,
@@ -148,5 +179,79 @@ ZTEST(flash_driver, test_read_unaligned_address)
 		}
 	}
 }
+
+ZTEST(flash_driver, test_flash_fill)
+{
+	uint8_t buf[EXPECTED_SIZE];
+	int rc;
+	off_t i;
+
+	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
+		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
+		rc = flash_erase(flash_dev, page_info.start_offset,
+				(page_info.size *
+				((EXPECTED_SIZE + page_info.size - 1)
+				/ page_info.size)));
+
+		zassert_equal(rc, 0, "Flash memory not properly erased");
+	} else {
+		rc = flash_fill(flash_dev, 0x55, page_info.start_offset,
+				(page_info.size *
+				((EXPECTED_SIZE + page_info.size - 1)
+				/ page_info.size)));
+		zassert_equal(rc, 0, "Leveling memory with fill failed\n");
+	}
+
+	/* Fill the device with 0xaa */
+	rc = flash_fill(flash_dev, 0xaa, page_info.start_offset,
+			(page_info.size *
+			((EXPECTED_SIZE + page_info.size - 1)
+			/ page_info.size)));
+	zassert_equal(rc, 0, "Fill failed\n");
+
+	rc = flash_read(flash_dev, TEST_AREA_OFFSET,
+			buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	for (i = 0; i < EXPECTED_SIZE; i++) {
+		if (buf[i] != 0xaa) {
+			break;
+		}
+	}
+	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
+}
+
+ZTEST(flash_driver, test_flash_flatten)
+{
+	uint8_t buf[EXPECTED_SIZE];
+	int rc;
+	off_t i;
+
+	rc = flash_flatten(flash_dev, page_info.start_offset,
+			   (page_info.size *
+			   ((EXPECTED_SIZE + page_info.size - 1)
+			   / page_info.size)));
+
+	zassert_equal(rc, 0, "Flash not leveled not properly erased");
+
+	/* Fill the device with 0xaa */
+	rc = flash_fill(flash_dev, 0xaa, page_info.start_offset,
+			(page_info.size *
+			((EXPECTED_SIZE + page_info.size - 1)
+			/ page_info.size)));
+	zassert_equal(rc, 0, "Fill failed\n");
+
+	rc = flash_read(flash_dev, TEST_AREA_OFFSET,
+			buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	for (i = 0; i < EXPECTED_SIZE; i++) {
+		if (buf[i] != 0xaa) {
+			break;
+		}
+	}
+	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
+}
+
 
 ZTEST_SUITE(flash_driver, NULL, flash_driver_setup, NULL, NULL, NULL);

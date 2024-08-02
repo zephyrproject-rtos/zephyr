@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief API for monitoring network connections and interfaces.
+ */
+
 #ifndef ZEPHYR_INCLUDE_CONN_MGR_H_
 #define ZEPHYR_INCLUDE_CONN_MGR_H_
 

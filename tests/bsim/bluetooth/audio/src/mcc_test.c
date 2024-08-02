@@ -3,15 +3,27 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#ifdef CONFIG_BT_MCC
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/printk.h>
 
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_MCC
 extern enum bst_result_t bst_result;
 
 static struct bt_mcc_cb mcc_cb;
@@ -717,7 +729,7 @@ static void test_invalid_send_cmd(void)
 	}
 }
 
-/* Helper function to write commands to to the control point, including the
+/* Helper function to write commands to the control point, including the
  * flag handling.
  * Will FAIL on error to send the command.
  * Will WAIT for the required flags before returning.
@@ -1034,7 +1046,7 @@ static void test_cp_prev_track(void)
 	 * and can change between them.
 	 */
 
-	/* To verify that a track change has happeded, the test checks that the
+	/* To verify that a track change has happened, the test checks that the
 	 * current track object ID has changed.
 	 */
 
@@ -1208,7 +1220,7 @@ static void test_cp_prev_group(void)
 	 * and can change between them.
 	 */
 
-	/* To verify that a group change has happeded, the test checks that the
+	/* To verify that a group change has happened, the test checks that the
 	 * current group object ID has changed.
 	 */
 
@@ -2599,7 +2611,7 @@ void test_main(void)
 static const struct bst_test_instance test_mcs[] = {
 	{
 		.test_id = "mcc",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

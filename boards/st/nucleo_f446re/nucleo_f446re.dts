@@ -147,14 +147,12 @@
 	/* CAUTION: PB8 and PB9 may conflict with same pins of I2C1 */
 	pinctrl-0 = <&can1_rx_pb8 &can1_tx_pb9>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	status = "okay";
 };
 
 &can2 {
 	pinctrl-0 = <&can2_rx_pb12 &can2_tx_pb13>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	status = "okay";
 };
 

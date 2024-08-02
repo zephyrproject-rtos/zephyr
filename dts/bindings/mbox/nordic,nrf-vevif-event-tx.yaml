@@ -1,0 +1,40 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic VEVIF (VPR Event Interface) - EVENT TX MODE
+
+  VEVIF provides support for inter-domain software signaling. It implements a set of events
+  intended for signaling within the interprocessor communication (IPC) framework.
+  When used in the event tx mode, the VEVIF events are used to trigger IRQs from VPR
+  to a remote core.
+
+  Example definition:
+
+    cpuppr_vpr: vpr@deadbeef{
+      ...
+      cpuflpr_vevif_event_tx: mailbox {
+        compatible = "nordic,nrf-vevif-event-tx";
+        #mbox-cells = <1>;
+        nordic,events = <1>;
+        nordic,events-mask = <0x00008000>;
+      };
+    };
+
+compatible: "nordic,nrf-vevif-event-tx"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  nordic,events:
+    type: int
+    required: true
+    description: Number of events supported by the VEVIF instance.
+
+  nordic,events-mask:
+    type: int
+    required: true
+    description: Mask of events supported by the VEVIF instance.
+
+mbox-cells:
+  - channel

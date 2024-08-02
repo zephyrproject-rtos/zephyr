@@ -26,6 +26,7 @@ supported:
   - sdhc
   - spi
   - usb_device
+  - usbd
   - watchdog
   - adc
 vendor: nxp

@@ -8,50 +8,50 @@
  #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-    chosen {
-        zephyr,display = &ili9340;
-    };
+	chosen {
+		zephyr,display = &ili9340;
+	};
 
-    lvgl_pointer {
-        input = <&display_touch>;
-        status = "okay";
-        swap-xy;
-        invert-x;
-        invert-y;
-    };
+	lvgl_pointer {
+		input = <&display_touch>;
+		status = "okay";
+		swap-xy;
+		invert-x;
+		invert-y;
+	};
 };
 
 &i2c2 {
-    clock-frequency = <400000>;
+	clock-frequency = <400000>;
+	status = "okay";
 
-    display_touch: ft6206@38 {
-        compatible = "focaltech,ft5336";
-        status = "okay";
-        reg = <0x38>;
-        int-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
-    };
+	display_touch: ft6206@38 {
+		compatible = "focaltech,ft5336";
+		status = "okay";
+		reg = <0x38>;
+		int-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &lcdc {
-    compatible = "renesas,smartbond-mipi-dbi";
-    status = "okay";
-    reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-    spi-dev = <&spi2>;
-    pinctrl-0 = <&mipi_dbi_default>;
-    pinctrl-1 = <&mipi_dbi_read>;
-    pinctrl-2 = <&mipi_dbi_sleep>;
-    pinctrl-names = "default", "read", "sleep";
-    #address-cells = <1>;
-    #size-cells = <0>;
+	compatible = "renesas,smartbond-mipi-dbi";
+	status = "okay";
+	reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&mipi_dbi_default>;
+	pinctrl-1 = <&mipi_dbi_read>;
+	pinctrl-2 = <&mipi_dbi_sleep>;
+	pinctrl-names = "default", "read", "sleep";
+	#address-cells = <1>;
+	#size-cells = <0>;
 
-    ili9340: ili9340@0 {
-        compatible = "ilitek,ili9340";
-        mipi-max-frequency = <48000000>;
-        status = "okay";
-        reg = <0>;
-        width = <240>;
-        height = <320>;
-        pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
-        rotation = <0>;
-    };
+	ili9340: ili9340@0 {
+		compatible = "ilitek,ili9340";
+		mipi-max-frequency = <48000000>;
+		status = "okay";
+		reg = <0>;
+		width = <240>;
+		height = <320>;
+		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+		rotation = <0>;
+	};
 };

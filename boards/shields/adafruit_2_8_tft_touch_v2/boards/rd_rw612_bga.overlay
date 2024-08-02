@@ -16,6 +16,7 @@
 	 * directly and does not require the MIPI DBI SPI node
 	 */
 	/delete-node/ mipi_dbi;
+	/delete-node/ adafruit_2_8_tft_touch_v2_mipi_dbi;
 };
 
 &lcdic {

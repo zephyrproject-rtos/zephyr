@@ -1,0 +1,14 @@
+# EFR32MG SLTB004A board
+
+# Copyright (c) 2018, Diego Sueiro
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SLTB004A
+
+config CMU_HFXO_FREQ
+	default 40000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+endif # BOARD_SLTB004A

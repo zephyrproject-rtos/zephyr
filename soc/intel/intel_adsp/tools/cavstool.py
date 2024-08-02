@@ -11,6 +11,7 @@ import subprocess
 import ctypes
 import mmap
 import argparse
+import pty
 
 start_output = True
 
@@ -21,15 +22,23 @@ PAGESZ = 4096
 HUGEPAGESZ = 2 * 1024 * 1024
 HUGEPAGE_FILE = "/dev/hugepages/cavs-fw-dma.tmp."
 
-# SRAM windows.  Each appears in a 128k region starting at 512k.
+# SRAM windows. Base and stride varies depending on ADSP version
 #
 # Window 0 is the FW_STATUS area, and 4k after that the IPC "outbox"
 # Window 1 is the IPC "inbox" (host-writable memory, just 384 bytes currently)
-# Window 2 is unused by this script
+# Window 2 is used for debug slots (Zephyr shell is one user)
 # Window 3 is winstream-formatted log output
-OUTBOX_OFFSET    = (512 + (0 * 128)) * 1024 + 4096
-INBOX_OFFSET     = (512 + (1 * 128)) * 1024
-WINSTREAM_OFFSET = (512 + (3 * 128)) * 1024
+
+WINDOW_BASE = 0x80000
+WINDOW_STRIDE = 0x20000
+
+WINDOW_BASE_ACE = 0x180000
+WINDOW_STRIDE_ACE = 0x8000
+
+DEBUG_SLOT_SIZE = 4096
+DEBUG_SLOT_SHELL = 0
+SHELL_RX_SIZE = 256
+SHELL_MAX_VALID_SLOT_SIZE = 16777216
 
 # pylint: disable=duplicate-code
 
@@ -188,17 +197,35 @@ class HDAStream:
         self.debug()
         log.info(f"Reset stream {self.stream_id}")
 
+def adsp_is_cavs():
+    return cavs15 or cavs18 or cavs15
+
+def adsp_is_ace():
+    return ace15 or ace20 or ace30
+
+def adsp_mem_window_config():
+    if adsp_is_ace():
+        base = WINDOW_BASE_ACE
+        stride = WINDOW_STRIDE_ACE
+    else:
+        base = WINDOW_BASE
+        stride = WINDOW_STRIDE
+
+    return (base, stride)
 
 def map_regs():
     p = runx(f"grep -iEl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
     pcidir = os.path.dirname(p)
 
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
-    global cavs15, cavs18, cavs25
+    global cavs15, cavs18, cavs25, ace15, ace20, ace30
     did = int(open(f"{pcidir}/device").read().rstrip(), 16)
     cavs15 = did in [ 0x5a98, 0x1a98, 0x3198 ]
     cavs18 = did in [ 0x9dc8, 0xa348, 0x02c8, 0x06c8, 0xa3f0 ]
     cavs25 = did in [ 0xa0c8, 0x43c8, 0x4b55, 0x4b58, 0x7ad0, 0x51c8 ]
+    ace15 = did in [ 0x7e28 ]
+    ace20 = did in [ 0xa828 ]
+    ace30 = did in [ 0xe428 ]
 
     # Check sysfs for a loaded driver and remove it
     if os.path.exists(f"{pcidir}/driver"):
@@ -247,16 +274,33 @@ def map_regs():
 
     # Intel Audio DSP Registers
     global bar4_mmap
+    global bar4_mem
     (bar4_mem, bar4_mmap) = bar_map(pcidir, 4)
     dsp = Regs(bar4_mem)
-    dsp.ADSPCS         = 0x00004
-    dsp.HIPCTDR        = 0x00040 if cavs15 else 0x000c0
-    dsp.HIPCTDA        =                        0x000c4 # 1.8+ only
-    dsp.HIPCTDD        = 0x00044 if cavs15 else 0x000c8
-    dsp.HIPCIDR        = 0x00048 if cavs15 else 0x000d0
-    dsp.HIPCIDA        =                        0x000d4 # 1.8+ only
-    dsp.HIPCIDD        = 0x0004c if cavs15 else 0x000d8
-    dsp.SRAM_FW_STATUS = 0x80000 # Start of first SRAM window
+    if adsp_is_ace():
+        dsp.HFDSSCS        = 0x1000
+        dsp.HFPWRCTL       = 0x1d18 if ace20 else 0x1d20
+        dsp.HFPWRSTS       = 0x1d1c if ace20 else 0x1d24
+        dsp.DSP2CXCTL_PRIMARY = 0x178d04
+        dsp.HFIPCXTDR      = 0x73200
+        dsp.HFIPCXTDA      = 0x73204
+        dsp.HFIPCXIDR      = 0x73210
+        dsp.HFIPCXIDA      = 0x73214
+        dsp.HFIPCXCTL      = 0x73228
+        dsp.HFIPCXTDDY     = 0x73300
+        dsp.HFIPCXIDDY     = 0x73380
+        dsp.ROM_STATUS     = 0x163200 if ace15 else 0x160200
+        dsp.SRAM_FW_STATUS = WINDOW_BASE_ACE
+    else:
+        dsp.ADSPCS         = 0x00004
+        dsp.HIPCTDR        = 0x00040 if cavs15 else 0x000c0
+        dsp.HIPCTDA        =                        0x000c4 # 1.8+ only
+        dsp.HIPCTDD        = 0x00044 if cavs15 else 0x000c8
+        dsp.HIPCIDR        = 0x00048 if cavs15 else 0x000d0
+        dsp.HIPCIDA        =                        0x000d4 # 1.8+ only
+        dsp.HIPCIDD        = 0x0004c if cavs15 else 0x000d8
+        dsp.ROM_STATUS     = WINDOW_BASE # Start of first SRAM window
+        dsp.SRAM_FW_STATUS = WINDOW_BASE
     dsp.freeze()
 
     return (hda, sd, dsp, hda_ostream_id)
@@ -461,13 +505,135 @@ def load_firmware(fw_file):
     sd.CTL |= 1
     log.info(f"cAVS firmware load complete")
 
+def load_firmware_ace(fw_file):
+    try:
+        fw_bytes = open(fw_file, "rb").read()
+        # Resize fw_bytes for MTL
+        if len(fw_bytes) < 512 * 1024:
+            fw_bytes += b'\x00' * (512 * 1024 - len(fw_bytes))
+    except Exception as e:
+        log.error(f"Could not read firmware file: `{fw_file}'")
+        log.error(e)
+        sys.exit(1)
+
+    (magic, sz) = struct.unpack("4sI", fw_bytes[0:8])
+    if magic == b'$AE1':
+        log.info(f"Trimming {sz} bytes of extended manifest")
+        fw_bytes = fw_bytes[sz:len(fw_bytes)]
+
+    # This actually means "enable access to BAR4 registers"!
+    hda.PPCTL |= (1 << 30) # GPROCEN, "global processing enable"
+
+    log.info("Resetting HDA device")
+    hda.GCTL = 0
+    while hda.GCTL & 1: pass
+    hda.GCTL = 1
+    while not hda.GCTL & 1: pass
+
+    log.info("Turning of DSP subsystem")
+    dsp.HFDSSCS &= ~(1 << 16) # clear SPA bit
+    time.sleep(0.002)
+    # wait for CPA bit clear
+    while dsp.HFDSSCS & (1 << 24):
+        log.info("Waiting for DSP subsystem power off")
+        time.sleep(0.1)
+
+    log.info("Turning on DSP subsystem")
+    dsp.HFDSSCS |= (1 << 16) # set SPA bit
+    time.sleep(0.002) # needed as the CPA bit may be unstable
+    # wait for CPA bit
+    while not dsp.HFDSSCS & (1 << 24):
+        log.info("Waiting for DSP subsystem power on")
+        time.sleep(0.1)
+
+    log.info("Turning on Domain0")
+    dsp.HFPWRCTL |= 0x1 # set SPA bit
+    time.sleep(0.002) # needed as the CPA bit may be unstable
+    # wait for CPA bit
+    while not dsp.HFPWRSTS & 0x1:
+        log.info("Waiting for DSP domain0 power on")
+        time.sleep(0.1)
+
+    log.info("Turning off Primary Core")
+    dsp.DSP2CXCTL_PRIMARY &= ~(0x1) # clear SPA
+    time.sleep(0.002) # wait for CPA settlement
+    while dsp.DSP2CXCTL_PRIMARY & (1 << 8):
+        log.info("Waiting for DSP primary core power off")
+        time.sleep(0.1)
+
+    log.info(f"Configuring HDA stream {hda_ostream_id} to transfer firmware image")
+    (buf_list_addr, num_bufs) = setup_dma_mem(fw_bytes)
+    sd.CTL = 1
+    while (sd.CTL & 1) == 0: pass
+    sd.CTL = 0
+    while (sd.CTL & 1) == 1: pass
+    sd.CTL |= (1 << 20) # Set stream ID to anything non-zero
+    sd.BDPU = (buf_list_addr >> 32) & 0xffffffff
+    sd.BDPL = buf_list_addr & 0xffffffff
+    sd.CBL = len(fw_bytes)
+    sd.LVI = num_bufs - 1
+    hda.PPCTL |= (1 << hda_ostream_id)
+
+    # SPIB ("Software Position In Buffer") is an Intel HDA extension
+    # that puts a transfer boundary into the stream beyond which the
+    # other side will not read.  The ROM wants to poll on a "buffer
+    # full" bit on the other side that only works with this enabled.
+    hda.SPBFCTL |= (1 << hda_ostream_id)
+    hda.SD_SPIB = len(fw_bytes)
+
+
+    # Send the DSP an IPC message to tell the device how to boot.
+    # Note: with cAVS 1.8+ the ROM receives the stream argument as an
+    # index within the array of output streams (and we always use the
+    # first one by construction).  But with 1.5 it's the HDA index,
+    # and depends on the number of input streams on the device.
+    stream_idx = 0
+    ipcval = (  (1 << 31)            # BUSY bit
+                | (0x01 << 24)       # type = PURGE_FW
+                | (1 << 14)          # purge_fw = 1
+                | (stream_idx << 9)) # dma_id
+    log.info(f"Sending IPC command, HFIPCXIDR = 0x{ipcval:x}")
+    dsp.HFIPCXIDR = ipcval
+
+    log.info("Turning on Primary Core")
+    dsp.DSP2CXCTL_PRIMARY |= 0x1 # clear SPA
+    time.sleep(0.002) # wait for CPA settlement
+    while not dsp.DSP2CXCTL_PRIMARY & (1 << 8):
+        log.info("Waiting for DSP primary core power on")
+        time.sleep(0.1)
+
+    log.info("Waiting for IPC acceptance")
+    while dsp.HFIPCXIDR & (1 << 31):
+        log.info("Waiting for IPC busy bit clear")
+        time.sleep(0.1)
+
+    log.info("ACK IPC")
+    dsp.HFIPCXIDA |= (1 << 31)
+
+    log.info(f"Starting DMA, FW_STATUS = 0x{dsp.ROM_STATUS:x}")
+    sd.CTL |= 2 # START flag
+
+    wait_fw_entered()
+
+    # Turn DMA off and reset the stream.  Clearing START first is a
+    # noop per the spec, but absolutely required for stability.
+    # Apparently the reset doesn't stop the stream, and the next load
+    # starts before it's ready and kills the load (and often the DSP).
+    # The sleep too is required, on at least one board (a fast
+    # chromebook) putting the two writes next each other also hangs
+    # the DSP!
+    sd.CTL &= ~2 # clear START
+    time.sleep(0.1)
+    sd.CTL |= 1
+    log.info(f"ACE firmware load complete")
+
 def fw_is_alive():
-    return dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
+    return dsp.ROM_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
 
 def wait_fw_entered(timeout_s=2):
-    log.info("Waiting %s for firmware handoff, FW_STATUS = 0x%x",
+    log.info("Waiting %s for firmware handoff, ROM_STATUS = 0x%x",
              "forever" if timeout_s is None else f"{timeout_s} seconds",
-             dsp.SRAM_FW_STATUS)
+             dsp.ROM_STATUS)
     hertz = 100
     attempts = None if timeout_s is None else timeout_s * hertz
     while True:
@@ -481,32 +647,50 @@ def wait_fw_entered(timeout_s=2):
         time.sleep(1 / hertz)
 
     if not alive:
-        log.warning("Load failed?  FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+        log.warning("Load failed?  ROM_STATUS = 0x%x", dsp.ROM_STATUS)
     else:
-        log.info("FW alive, FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+        log.info("FW alive, ROM_STATUS = 0x%x", dsp.ROM_STATUS)
 
+def winstream_offset():
+    ( base, stride ) = adsp_mem_window_config()
+    return base + stride * 3
 
 # This SHOULD be just "mem[start:start+length]", but slicing an mmap
 # array seems to be unreliable on one of my machines (python 3.6.9 on
 # Ubuntu 18.04).  Read out bytes individually.
-def win_read(start, length):
+def win_read(base, start, length):
     try:
-        return b''.join(bar4_mmap[WINSTREAM_OFFSET + x].to_bytes(1, 'little')
+        return b''.join(bar4_mmap[base + x].to_bytes(1, 'little')
                         for x in range(start, start + length))
     except IndexError as ie:
         # A FW in a bad state may cause winstream garbage
-        log.error("IndexError in bar4_mmap[%d + %d]", WINSTREAM_OFFSET, start)
+        log.error("IndexError in bar4_mmap[%d + %d]", base, start)
         log.error("bar4_mmap.size()=%d", bar4_mmap.size())
         raise ie
 
-def win_hdr():
-    return struct.unpack("<IIII", win_read(0, 16))
+def winstream_reg_hdr(base):
+    hdr = Regs(bar4_mem + base)
+    hdr.WLEN  = 0x00
+    hdr.START = 0x04
+    hdr.END   = 0x08
+    hdr.SEQ   = 0x0c
+    hdr.freeze()
+    return hdr
+
+def win_hdr(hdr):
+    return ( hdr.WLEN, hdr.START, hdr.END, hdr.SEQ )
 
 # Python implementation of the same algorithm in sys_winstream_read(),
 # see there for details.
-def winstream_read(last_seq):
+def winstream_read(base, last_seq):
     while True:
-        (wlen, start, end, seq) = win_hdr()
+        hdr = winstream_reg_hdr(base)
+        (wlen, start, end, seq) = win_hdr(hdr)
+        if wlen > SHELL_MAX_VALID_SLOT_SIZE:
+            log.debug("DSP powered off at winstream_read")
+            return (seq, "")
+        if wlen == 0:
+            return (seq, "")
         if last_seq == 0:
             last_seq = seq if args.no_history else (seq - ((end - start) % wlen))
         if seq == last_seq or start == end:
@@ -516,19 +700,96 @@ def winstream_read(last_seq):
             return (seq, "")
         copy = (end - behind) % wlen
         suffix = min(behind, wlen - copy)
-        result = win_read(16 + copy, suffix)
+        result = win_read(base, 16 + copy, suffix)
         if suffix < behind:
-            result += win_read(16, behind - suffix)
-        (wlen, start1, end, seq1) = win_hdr()
+            result += win_read(base, 16, behind - suffix)
+        (wlen, start1, end, seq1) = win_hdr(hdr)
         if start1 == start and seq1 == seq:
             # Best effort attempt at decoding, replacing unusable characters
             # Found to be useful when it really goes wrong
             return (seq, result.decode("utf-8", "replace"))
 
+def idx_mod(wlen, idx):
+    if idx >= wlen:
+        return idx - wlen
+    return idx
+
+def idx_sub(wlen, a, b):
+    return idx_mod(wlen, a + (wlen - b))
+
+# Python implementation of the same algorithm in sys_winstream_write(),
+# see there for details.
+def winstream_write(base, msg):
+    hdr = winstream_reg_hdr(base)
+    (wlen, start, end, seq) = win_hdr(hdr)
+    if wlen > SHELL_MAX_VALID_SLOT_SIZE:
+        log.debug("DSP powered off at winstream_write")
+        return
+    if wlen == 0:
+        return
+    lenmsg = len(msg)
+    lenmsg0 = lenmsg
+    if len(msg) > wlen + 1:
+        start = end
+        lenmsg = wlen - 1
+    lenmsg = min(lenmsg, wlen)
+    if seq != 0:
+        avail = (wlen - 1) - idx_sub(wlen, end, start)
+        if lenmsg > avail:
+            hdr.START = idx_mod(wlen, start + (lenmsg - avail))
+    if lenmsg < lenmsg0:
+        hdr.START = end
+        drop = lenmsg0 - lenmsg
+        msg = msg[drop : lenmsg - drop]
+    suffix = min(lenmsg, wlen - end)
+    for c in range(0, suffix):
+        bar4_mmap[base + 16 + end + c] = msg[c]
+    if lenmsg > suffix:
+        for c in range(0, lenmsg - suffix):
+            bar4_mmap[base + 16 + c] = msg[suffix + c]
+    hdr.END = idx_mod(wlen, end + lenmsg)
+    hdr.SEQ += lenmsg0
+
+def debug_offset():
+    ( base, stride ) = adsp_mem_window_config()
+    return base + stride * 2
+
+def shell_base_offset():
+    return debug_offset() + DEBUG_SLOT_SIZE * (1 + DEBUG_SLOT_SHELL)
+
+def read_from_shell_memwindow_winstream(last_seq):
+    offset = shell_base_offset() + SHELL_RX_SIZE
+    (last_seq, output) = winstream_read(offset, last_seq)
+    if output:
+        os.write(shell_client_port, output.encode("utf-8"))
+    return last_seq
+
+def write_to_shell_memwindow_winstream():
+    msg = os.read(shell_client_port, 1)
+    if len(msg) > 0:
+        winstream_write(shell_base_offset(), msg)
+
+def create_shell_pty():
+    global shell_client_port
+    (shell_client_port, user_port) = pty.openpty()
+    name = os.ttyname(user_port)
+    log.info(f"shell PTY at: {name}")
+    asyncio.get_event_loop().add_reader(shell_client_port, write_to_shell_memwindow_winstream)
 
 async def ipc_delay_done():
     await asyncio.sleep(0.1)
-    dsp.HIPCTDA = 1<<31
+    if adsp_is_ace():
+        dsp.HFIPCXTDA = ~(1<<31) & dsp.HFIPCXTDA # Signal done
+    else:
+        dsp.HIPCTDA = 1<<31
+
+def inbox_offset():
+    ( base, stride ) = adsp_mem_window_config()
+    return base + stride
+
+def outbox_offset():
+    ( base, _ ) = adsp_mem_window_config()
+    return base + 4096
 
 ipc_timestamp = 0
 
@@ -554,8 +815,8 @@ def ipc_command(data, ext_data):
         ipc_timestamp = t
         send_msg = True
     elif data == 5: # copy word at outbox[ext_data >> 16] to inbox[ext_data & 0xffff]
-        src = OUTBOX_OFFSET + 4 * (ext_data >> 16)
-        dst =  INBOX_OFFSET + 4 * (ext_data & 0xffff)
+        src = outbox_offset() + 4 * (ext_data >> 16)
+        dst = inbox_offset() + 4 * (ext_data & 0xffff)
         for i in range(4):
             bar4_mmap[dst + i] = bar4_mmap[src + i]
     elif data == 6: # HDA RESET (init if not exists)
@@ -634,15 +895,37 @@ def ipc_command(data, ext_data):
 
             return
 
-    dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
-    if cavs18:
-        time.sleep(0.01) # Needed on 1.8, or the command below won't send!
+    if adsp_is_ace():
+        dsp.HFIPCXTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
+        if done:
+            dsp.HFIPCXTDA = ~(1<<31) & dsp.HFIPCXTDA # Signal done
+        if send_msg:
+            log.debug("ipc: sending msg 0x%08x" % ext_data)
+            dsp.HFIPCXIDDY = ext_data
+            dsp.HFIPCXIDR = (1<<31) | ext_data
+    else:
+        dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
+        if cavs18:
+            time.sleep(0.01) # Needed on 1.8, or the command below won't send!
+        if done and not cavs15:
+            dsp.HIPCTDA = 1<<31 # Signal done
+        if send_msg:
+            dsp.HIPCIDD = ext_data
+            dsp.HIPCIDR = (1<<31) | ext_data
 
-    if done and not cavs15:
-        dsp.HIPCTDA = 1<<31 # Signal done
-    if send_msg:
-        dsp.HIPCIDD = ext_data
-        dsp.HIPCIDR = (1<<31) | ext_data
+def handle_ipc():
+    if adsp_is_ace():
+        if dsp.HFIPCXIDA & 0x80000000:
+            log.debug("ipc: Ack DSP reply with IDA_DONE")
+            dsp.HFIPCXIDA = 1<<31 # must ACK any DONE interrupts that arrive!
+        if dsp.HFIPCXTDR & 0x80000000:
+            ipc_command(dsp.HFIPCXTDR & ~0x80000000, dsp.HFIPCXTDDY)
+        return
+
+    if dsp.HIPCIDA & 0x80000000:
+        dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
+    if dsp.HIPCTDR & 0x80000000:
+        ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
 
 async def main():
     #TODO this bit me, remove the globals, write a little FirmwareLoader class or something to contain.
@@ -664,25 +947,32 @@ async def main():
             log.error("Firmware file argument missing")
             sys.exit(1)
 
-        load_firmware(args.fw_file)
+        if adsp_is_ace():
+            load_firmware_ace(args.fw_file)
+        else:
+            load_firmware(args.fw_file)
         time.sleep(0.1)
+
         if not args.quiet:
             sys.stdout.write("--\n")
+
+    if args.shell_pty:
+        create_shell_pty()
 
     hda_streams = dict()
 
     last_seq = 0
+    last_seq_shell = 0
     while start_output is True:
         await asyncio.sleep(0.03)
-        (last_seq, output) = winstream_read(last_seq)
+        if args.shell_pty:
+            last_seq_shell = read_from_shell_memwindow_winstream(last_seq_shell)
+        (last_seq, output) = winstream_read(winstream_offset(), last_seq)
         if output:
             sys.stdout.write(output)
             sys.stdout.flush()
         if not args.log_only:
-            if dsp.HIPCIDA & 0x80000000:
-                dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
-            if dsp.HIPCTDR & 0x80000000:
-                ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
+            handle_ipc()
 
 
 ap = argparse.ArgumentParser(description="DSP loader/logger tool", allow_abbrev=False)
@@ -692,6 +982,8 @@ ap.add_argument("-v", "--verbose", action="store_true",
                 help="More loader output, DEBUG logging level")
 ap.add_argument("-l", "--log-only", action="store_true",
                 help="Don't load firmware, just show log output")
+ap.add_argument("-p", "--shell-pty", action="store_true",
+                help="Create a Zephyr shell pty if enabled in firmware")
 ap.add_argument("-n", "--no-history", action="store_true",
                 help="No current log buffer at start, just new output")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")

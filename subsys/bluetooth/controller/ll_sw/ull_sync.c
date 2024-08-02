@@ -412,7 +412,7 @@ uint8_t ll_sync_terminate(uint16_t handle)
 	/* Stop periodic sync ticker timeouts */
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_BASE + handle,
 					sync, &sync->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, handle, err);
 	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -726,7 +726,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	interval = sys_le16_to_cpu(si->interval);
 	interval_us = interval * PERIODIC_INT_UNIT_US;
 
-	/* Convert fromm 10ms units to interval units */
+	/* Convert from 10ms units to interval units */
 	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U *
 						  USEC_PER_MSEC), interval_us);
 
@@ -1504,7 +1504,7 @@ static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu)
 		return NULL;
 	}
 
-	/* Make sure there are no fields that are not allowd for AUX_SYNC_IND and AUX_CHAIN_IND */
+	/* Make sure there are no fields that are not allowed for AUX_SYNC_IND and AUX_CHAIN_IND */
 	LL_ASSERT(!hdr->adv_addr);
 	LL_ASSERT(!hdr->tgt_addr);
 

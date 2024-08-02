@@ -164,13 +164,13 @@ static void test_client_security_request(void)
 static const struct bst_test_instance client_tests[] = {
 	{
 		.test_id = "test_client",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_client,
 	},
 	{
 		.test_id = "test_client_security_request",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_client_security_request,
 	},

@@ -22,6 +22,12 @@ static void dyn_isr(const void *arg)
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
 extern struct _isr_table_entry _sw_isr_table[];
 
+#if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
+#define IRQ_OFFSET CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+#else
+#define IRQ_OFFSET 0
+#endif
+
 /**
  * @brief Test dynamic ISR installation
  *
@@ -55,8 +61,8 @@ ZTEST(interrupt_feature, test_isr_dynamic)
 	arch_irq_connect_dynamic(i + CONFIG_GEN_IRQ_START_VECTOR, 0, dyn_isr,
 				 argval, 0);
 
-	zassert_true(_sw_isr_table[i].isr == dyn_isr &&
-		     _sw_isr_table[i].arg == argval,
+	zassert_true(_sw_isr_table[i + IRQ_OFFSET].isr == dyn_isr &&
+		     _sw_isr_table[i + IRQ_OFFSET].arg == argval,
 		     "dynamic isr did not install successfully");
 }
 #else

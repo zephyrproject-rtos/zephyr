@@ -286,21 +286,17 @@ static int mcp251xfd_reg_check_value_wtimeout(const struct device *dev, uint16_t
 	return 0;
 }
 
-static int mcp251xfd_set_tdc(const struct device *dev, bool is_enabled, int tdc_offset)
+static int mcp251xfd_set_tdc(const struct device *dev, bool is_enabled)
 {
 	uint32_t *reg;
 	uint32_t tmp;
-
-	if (is_enabled &&
-	    (tdc_offset < MCP251XFD_REG_TDC_TDCO_MIN || tdc_offset > MCP251XFD_REG_TDC_TDCO_MAX)) {
-		return -EINVAL;
-	}
+	struct mcp251xfd_data *dev_data = dev->data;
 
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
 
 	if (is_enabled) {
 		tmp = FIELD_PREP(MCP251XFD_REG_TDC_TDCMOD_MASK, MCP251XFD_REG_TDC_TDCMOD_AUTO);
-		tmp |= FIELD_PREP(MCP251XFD_REG_TDC_TDCO_MASK, tdc_offset);
+		tmp |= FIELD_PREP(MCP251XFD_REG_TDC_TDCO_MASK, dev_data->tdco);
 	} else {
 		tmp = FIELD_PREP(MCP251XFD_REG_TDC_TDCMOD_MASK, MCP251XFD_REG_TDC_TDCMOD_DISABLED);
 	}
@@ -337,9 +333,9 @@ static int mcp251xfd_set_mode_internal(const struct device *dev, uint8_t request
 		if (requested_mode ==  MCP251XFD_REG_CON_MODE_CAN2_0 ||
 		    requested_mode ==  MCP251XFD_REG_CON_MODE_EXT_LOOPBACK ||
 		    requested_mode == MCP251XFD_REG_CON_MODE_INT_LOOPBACK) {
-			ret = mcp251xfd_set_tdc(dev, false, 0);
+			ret = mcp251xfd_set_tdc(dev, false);
 		} else if (requested_mode == MCP251XFD_REG_CON_MODE_MIXED) {
-			ret = mcp251xfd_set_tdc(dev, true, dev_data->tdco);
+			ret = mcp251xfd_set_tdc(dev, true);
 		}
 
 		if (ret < 0) {
@@ -470,7 +466,8 @@ static int mcp251xfd_set_timing_data(const struct device *dev, const struct can_
 
 	*reg = sys_cpu_to_le32(tmp);
 
-	dev_data->tdco = timing->prescaler * (timing->prop_seg + timing->phase_seg1);
+	/* actual TDCO minimum is -64 but driver implementation only sets >= 0 values */
+	dev_data->tdco = CAN_CALC_TDCO(timing, 0U, MCP251XFD_REG_TDC_TDCO_MAX);
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_DBTCFG, MCP251XFD_REG_SIZE);
 	if (ret < 0) {
@@ -1576,7 +1573,7 @@ static int mcp251xfd_init(const struct device *dev)
 		goto done;
 	}
 
-	ret = can_calc_timing(dev, &timing, dev_cfg->common.bus_speed,
+	ret = can_calc_timing(dev, &timing, dev_cfg->common.bitrate,
 			      dev_cfg->common.sample_point);
 	if (ret < 0) {
 		LOG_ERR("Can't find timing for given param");
@@ -1588,7 +1585,7 @@ static int mcp251xfd_init(const struct device *dev)
 	LOG_DBG("Sample-point err : %d", ret);
 
 #if defined(CONFIG_CAN_FD_MODE)
-	ret = can_calc_timing_data(dev, &timing_data, dev_cfg->common.bus_speed_data,
+	ret = can_calc_timing_data(dev, &timing_data, dev_cfg->common.bitrate_data,
 				   dev_cfg->common.sample_point_data);
 	if (ret < 0) {
 		LOG_ERR("Can't find data timing for given param");
@@ -1638,7 +1635,7 @@ static int mcp251xfd_init(const struct device *dev)
 		goto done;
 	}
 
-	ret = mcp251xfd_set_tdc(dev, false, 0);
+	ret = mcp251xfd_set_tdc(dev, false);
 	if (ret < 0) {
 		goto done;
 	}

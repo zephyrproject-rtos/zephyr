@@ -9,12 +9,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/class/usb_audio.h>
 
@@ -22,18 +35,21 @@
 #include <nrfx_clock.h>
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
-#include "shell/bt.h"
 #include "audio.h"
 
 LOG_MODULE_REGISTER(bap_usb, CONFIG_BT_BAP_STREAM_LOG_LEVEL);
 
-#define USB_ENQUEUE_COUNT     30U /* 30ms */
-#define USB_FRAME_DURATION_US 1000U
-#define USB_MONO_SAMPLE_SIZE                                                                       \
-	((USB_FRAME_DURATION_US * USB_SAMPLE_RATE * sizeof(int16_t)) / USEC_PER_SEC)
-#define USB_STEREO_SAMPLE_SIZE (USB_MONO_SAMPLE_SIZE * 2U)
-#define USB_RING_BUF_SIZE      (CONFIG_BT_ISO_RX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
+#define USB_ENQUEUE_COUNT      30U /* 30ms */
+#define USB_FRAME_DURATION_US  1000U
+#define USB_SAMPLE_CNT         ((USB_FRAME_DURATION_US * USB_SAMPLE_RATE) / USEC_PER_SEC)
+#define USB_BYTES_PER_SAMPLE   sizeof(int16_t)
+#define USB_MONO_FRAME_SIZE    (USB_SAMPLE_CNT * USB_BYTES_PER_SAMPLE)
+#define USB_CHANNELS           2U
+#define USB_STEREO_FRAME_SIZE  (USB_MONO_FRAME_SIZE * USB_CHANNELS)
+#define USB_OUT_RING_BUF_SIZE  (CONFIG_BT_ISO_RX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
+#define USB_IN_RING_BUF_SIZE   (USB_MONO_FRAME_SIZE * USB_ENQUEUE_COUNT)
 
+#if defined CONFIG_BT_AUDIO_RX
 struct decoded_sdu {
 	int16_t right_frames[MAX_CODEC_FRAMES_PER_SDU][LC3_MAX_NUM_SAMPLES_MONO];
 	int16_t left_frames[MAX_CODEC_FRAMES_PER_SDU][LC3_MAX_NUM_SAMPLES_MONO];
@@ -43,13 +59,13 @@ struct decoded_sdu {
 	uint32_t ts;
 } decoded_sdu;
 
-RING_BUF_DECLARE(usb_out_ring_buf, USB_RING_BUF_SIZE);
-NET_BUF_POOL_DEFINE(usb_tx_buf_pool, USB_ENQUEUE_COUNT, USB_STEREO_SAMPLE_SIZE, 0, net_buf_destroy);
+RING_BUF_DECLARE(usb_out_ring_buf, USB_OUT_RING_BUF_SIZE);
+NET_BUF_POOL_DEFINE(usb_out_buf_pool, USB_ENQUEUE_COUNT, USB_STEREO_FRAME_SIZE, 0, net_buf_destroy);
 
 /* USB consumer callback, called every 1ms, consumes data from ring-buffer */
 static void usb_data_request_cb(const struct device *dev)
 {
-	uint8_t usb_audio_data[USB_STEREO_SAMPLE_SIZE] = {0};
+	uint8_t usb_audio_data[USB_STEREO_FRAME_SIZE] = {0};
 	struct net_buf *pcm_buf;
 	uint32_t size;
 	int err;
@@ -59,7 +75,7 @@ static void usb_data_request_cb(const struct device *dev)
 		return;
 	}
 
-	pcm_buf = net_buf_alloc(&usb_tx_buf_pool, K_NO_WAIT);
+	pcm_buf = net_buf_alloc(&usb_out_buf_pool, K_NO_WAIT);
 	if (pcm_buf == NULL) {
 		LOG_WRN("Could not allocate pcm_buf");
 		return;
@@ -73,13 +89,13 @@ static void usb_data_request_cb(const struct device *dev)
 	if (size != 0) {
 		static size_t cnt;
 
-		if ((++cnt % bap_get_recv_stats_interval()) == 0U) {
+		if ((++cnt % bap_get_stats_interval()) == 0U) {
 			LOG_INF("[%zu]: Sending USB audio", cnt);
 		}
 	} else {
 		static size_t cnt;
 
-		if ((++cnt % bap_get_recv_stats_interval()) == 0U) {
+		if ((++cnt % bap_get_stats_interval()) == 0U) {
 			LOG_INF("[%zu]: Sending empty USB audio", cnt);
 		}
 	}
@@ -128,7 +144,7 @@ static void bap_usb_send_frames_to_usb(void)
 
 		/* Not enough space to store data */
 		if (ring_buf_space_get(&usb_out_ring_buf) < sizeof(stereo_frame)) {
-			if ((fail_cnt % bap_get_recv_stats_interval()) == 0U) {
+			if ((fail_cnt % bap_get_stats_interval()) == 0U) {
 				LOG_WRN("[%zu] Could not send more than %zu frames to USB",
 					fail_cnt, i);
 			}
@@ -174,7 +190,7 @@ static void bap_usb_send_frames_to_usb(void)
 		}
 	}
 
-	if ((++cnt % bap_get_recv_stats_interval()) == 0U) {
+	if ((++cnt % bap_get_stats_interval()) == 0U) {
 		LOG_INF("[%zu]: Sending %u USB audio frame", cnt, frame_cnt);
 	}
 
@@ -199,7 +215,7 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 
 	static size_t cnt;
 
-	if ((++cnt % bap_get_recv_stats_interval()) == 0U) {
+	if ((++cnt % bap_get_stats_interval()) == 0U) {
 		LOG_INF("[%zu]: Adding USB audio frame", cnt);
 	}
 
@@ -209,7 +225,7 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 		return -EINVAL;
 	}
 
-	if (get_chan_cnt(chan_allocation) != 1) {
+	if (bt_audio_get_chan_count(chan_allocation) != 1) {
 		LOG_DBG("Invalid channel allocation %d", chan_allocation);
 
 		return -EINVAL;
@@ -300,13 +316,221 @@ void bap_usb_clear_frames_to_usb(void)
 	decoded_sdu.left_frames_cnt = 0U;
 	decoded_sdu.ts = 0U;
 }
+#endif /* CONFIG_BT_AUDIO_RX */
+
+#if defined(CONFIG_BT_AUDIO_TX)
+BUILD_ASSERT((USB_IN_RING_BUF_SIZE % USB_MONO_FRAME_SIZE) == 0);
+static int16_t usb_in_left_ring_buffer[USB_IN_RING_BUF_SIZE];
+static int16_t usb_in_right_ring_buffer[USB_IN_RING_BUF_SIZE];
+static size_t write_index; /* Points to the oldest/uninitialized data */
+
+size_t bap_usb_get_read_cnt(const struct shell_stream *sh_stream)
+{
+	return (USB_SAMPLE_CNT * sh_stream->lc3_frame_duration_us) / USEC_PER_MSEC;
+}
+
+size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream)
+{
+	return USB_BYTES_PER_SAMPLE * bap_usb_get_read_cnt(sh_stream);
+}
+
+static void stream_cb(struct shell_stream *sh_stream, void *user_data)
+{
+	if (sh_stream->is_tx) {
+		const bool has_left =
+			(sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
+		const bool has_right =
+			(sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
+		const bool has_stereo = has_right && has_left;
+		const bool is_mono = sh_stream->lc3_chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO;
+		const size_t old_write_index = POINTER_TO_UINT(user_data);
+		const bool overflowed = write_index < old_write_index;
+		size_t read_idx;
+
+		if (has_stereo) {
+			/* These should always be the same */
+			read_idx = MIN(sh_stream->tx.left_read_idx, sh_stream->tx.right_read_idx);
+		} else if (has_left || is_mono) {
+			read_idx = sh_stream->tx.left_read_idx;
+		} else if (has_right) {
+			read_idx = sh_stream->tx.right_read_idx;
+		} else {
+			/* Not a valid USB stream */
+			return;
+		}
+
+		/* If we are overwriting data that the stream is currently pointing to, then we
+		 * need to update the index so that the stream will point to the oldest valid data
+		 */
+		if (read_idx > old_write_index) {
+			if (read_idx < write_index || (overflowed && read_idx < write_index)) {
+				sh_stream->tx.left_read_idx = write_index;
+				sh_stream->tx.right_read_idx = write_index;
+			}
+		}
+	}
+}
+
+static void usb_data_received_cb(const struct device *dev, struct net_buf *buf, size_t size)
+{
+	const size_t old_write_index = write_index;
+	static size_t cnt;
+	int16_t *pcm;
+
+	if (buf == NULL) {
+		return;
+	}
+
+	if (size != USB_STEREO_FRAME_SIZE) {
+		net_buf_unref(buf);
+
+		return;
+	}
+
+	pcm = (int16_t *)buf->data;
+
+	/* Split the data into left and right as LC3 uses LLLLRRRR instead of LRLRLRLR as USB
+	 *
+	 * Since the left and right buffer sizes are a factor of USB_SAMPLE_CNT, then we can always
+	 * add USB_SAMPLE_CNT in a single go without needing to check the remaining size as that
+	 * can be done once afterwards
+	 */
+	for (size_t i = 0U, j = 0U; i < USB_SAMPLE_CNT; i++, j += USB_CHANNELS) {
+		usb_in_left_ring_buffer[write_index + i] = pcm[j];
+		usb_in_right_ring_buffer[write_index + i] = pcm[j + 1];
+	}
+
+	write_index += USB_SAMPLE_CNT;
+
+	if (write_index == USB_IN_RING_BUF_SIZE) {
+		/* Overflow so that we start overwriting oldest */
+		write_index = 0U;
+	}
+
+	/* Update the read pointers of each stream to ensure that the new write index is not larger
+	 * than their read indexes
+	 */
+	bap_foreach_stream(stream_cb, UINT_TO_POINTER(old_write_index));
+
+	if ((++cnt % bap_get_stats_interval()) == 0U) {
+		LOG_DBG("USB Data received (count = %d)", cnt);
+	}
+
+	net_buf_unref(buf);
+}
+
+bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream)
+{
+	const bool has_left = (sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
+	const bool has_right =
+		(sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
+	const bool has_stereo = has_right && has_left;
+	const bool is_mono = sh_stream->lc3_chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO;
+	const uint32_t read_cnt = bap_usb_get_read_cnt(sh_stream);
+	const uint32_t retrieve_cnt = read_cnt * sh_stream->lc3_frame_blocks_per_sdu;
+	static bool failed_last_time;
+	size_t read_idx;
+	size_t buffer_cnt;
+
+	if (has_stereo) {
+		/* These should always be the same */
+		read_idx = MIN(sh_stream->tx.left_read_idx, sh_stream->tx.right_read_idx);
+	} else if (has_left || is_mono) {
+		read_idx = sh_stream->tx.left_read_idx;
+	} else if (has_right) {
+		read_idx = sh_stream->tx.right_read_idx;
+	} else {
+		return false;
+	}
+
+	if (read_idx <= write_index) {
+		buffer_cnt = write_index - read_idx;
+	} else {
+		/* Handle the case where the read spans across the end of the buffer */
+		buffer_cnt = write_index + (USB_IN_RING_BUF_SIZE - read_idx);
+	}
+
+	if (buffer_cnt < retrieve_cnt) {
+		/* Not enough for a frame yet */
+		if (!failed_last_time) {
+			LOG_WRN("Ring buffer (%u/%u) does not contain enough for an entire SDU %u",
+				buffer_cnt, USB_IN_RING_BUF_SIZE, retrieve_cnt);
+		}
+
+		failed_last_time = true;
+
+		return false;
+	}
+
+	failed_last_time = false;
+
+	return true;
+}
+
+/**
+ * Reads @p size octets from src, handling wrapping and returns the new idx
+ * (which is lower than @p idx in the case of wrapping)
+ *
+ * bap_usb_can_get_full_sdu should always be called before this to ensure that we are getting
+ * valid data
+ */
+static size_t usb_ring_buf_get(int16_t dest[], int16_t src[], size_t idx, size_t cnt)
+{
+	size_t new_idx;
+
+	if (idx >= USB_IN_RING_BUF_SIZE) {
+		LOG_ERR("Invalid idx %zu", idx);
+
+		return 0;
+	}
+
+	if ((idx + cnt) < USB_IN_RING_BUF_SIZE) {
+		/* Simply copy of the data and increment the index*/
+		memcpy(dest, &src[idx], cnt * USB_BYTES_PER_SAMPLE);
+		new_idx = idx + cnt;
+	} else {
+		/* Handle wrapping */
+		const size_t first_read_cnt = USB_IN_RING_BUF_SIZE - idx;
+		const size_t second_read_cnt = cnt - first_read_cnt;
+
+		memcpy(dest, &src[idx], first_read_cnt * USB_BYTES_PER_SAMPLE);
+		memcpy(&dest[first_read_cnt], &src[0], second_read_cnt * USB_BYTES_PER_SAMPLE);
+
+		new_idx = second_read_cnt;
+	}
+
+	return new_idx;
+}
+
+void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location chan_alloc,
+		       int16_t buffer[])
+{
+	const bool is_left = (chan_alloc & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
+	const bool is_right = (chan_alloc & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
+	const bool is_mono = chan_alloc == BT_AUDIO_LOCATION_MONO_AUDIO;
+	const uint32_t read_cnt = bap_usb_get_read_cnt(sh_stream);
+
+	if (is_left || is_mono) {
+		sh_stream->tx.left_read_idx = usb_ring_buf_get(
+			buffer, usb_in_left_ring_buffer, sh_stream->tx.left_read_idx, read_cnt);
+	} else if (is_right) {
+		sh_stream->tx.right_read_idx = usb_ring_buf_get(
+			buffer, usb_in_right_ring_buffer, sh_stream->tx.right_read_idx, read_cnt);
+	}
+}
+#endif /* CONFIG_BT_AUDIO_TX */
 
 int bap_usb_init(void)
 {
 	const struct device *hs_dev = DEVICE_DT_GET(DT_NODELABEL(hs_0));
 	static const struct usb_audio_ops usb_ops = {
+#if defined(CONFIG_BT_AUDIO_RX)
 		.data_request_cb = usb_data_request_cb,
 		.data_written_cb = usb_data_written_cb,
+#endif /* CONFIG_BT_AUDIO_RX */
+#if defined(CONFIG_BT_AUDIO_TX)
+		.data_received_cb = usb_data_received_cb,
+#endif /* CONFIG_BT_AUDIO_TX */
 	};
 	int err;
 

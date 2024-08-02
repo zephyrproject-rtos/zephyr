@@ -193,7 +193,7 @@ void config_wipe_fcb(struct flash_sector *fs, int cnt)
 	rc = flash_area_open(TEST_PARTITION_ID, &fap);
 
 	for (i = 0; i < cnt; i++) {
-		rc = flash_area_erase(fap, fs[i].fs_off, fs[i].fs_size);
+		rc = flash_area_flatten(fap, fs[i].fs_off, fs[i].fs_size);
 		zassert_true(rc == 0, "Can't get flash area");
 	}
 }

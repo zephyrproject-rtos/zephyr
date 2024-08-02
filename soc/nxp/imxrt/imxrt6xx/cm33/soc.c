@@ -30,7 +30,7 @@
 #include "flash_clock_setup.h"
 #endif
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 #include "usb_phy.h"
 #include "usb.h"
 #endif
@@ -68,7 +68,7 @@ const clock_audio_pll_config_t g_audioPllConfig = {
 };
 #endif
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 /* USB PHY condfiguration */
 #define BOARD_USB_PHY_D_CAL (0x0CU)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
@@ -124,7 +124,7 @@ __imx_boot_ivt_section void (* const image_vector_table[])(void)  = {
 };
 #endif /* CONFIG_NXP_IMXRT_BOOT_HEADER */
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 
 static void usb_device_clock_init(void)
 {
@@ -244,7 +244,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM0);
 #endif
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 	usb_device_clock_init();
 #endif
 
@@ -319,10 +319,6 @@ static ALWAYS_INLINE void clock_init(void)
 	 * for FlexSPI.
 	 */
 	flexspi_setup_clock(FLEXSPI, 1U, 9U);
-#endif
-
-#if CONFIG_COUNTER_NXP_MRT
-	RESET_PeripheralReset(kMRT0_RST_SHIFT_RSTn);
 #endif
 
 	/* Set SystemCoreClock variable. */

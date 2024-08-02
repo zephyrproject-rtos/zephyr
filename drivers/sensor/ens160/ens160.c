@@ -148,6 +148,7 @@ static int ens160_channel_get(const struct device *dev, enum sensor_channel chan
 	case SENSOR_CHAN_ENS160_AQI:
 		val->val1 = data->aqi;
 		val->val2 = 0;
+		break;
 	default:
 		return -ENOTSUP;
 	}

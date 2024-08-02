@@ -117,9 +117,6 @@ static void dai_dmic_update_bits(const struct dai_intel_dmic *dmic,
 {
 	uint32_t dest = dmic->reg_base + reg;
 
-	LOG_INF("%s base %x, reg %x, mask %x, value %x", __func__,
-			dmic->reg_base, reg, mask, val);
-
 	sys_write32((sys_read32(dest) & (~mask)) | (val & mask), dest);
 }
 
@@ -159,7 +156,7 @@ static inline void dai_dmic_release_ownership(const struct dai_intel_dmic *dmic)
 
 static inline uint32_t dai_dmic_base(const struct dai_intel_dmic *dmic)
 {
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL)
 	return dmic->hdamldmic_base;
 #else
 	return dmic->shim_base;
@@ -172,7 +169,7 @@ static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_in
 	uint32_t val = CONFIG_DAI_DMIC_HW_IOCLK / period - 1;
 	uint32_t base = dai_dmic_base(dmic);
 	/* DMIC Change sync period */
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL)
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | FIELD_PREP(DMICSYNC_SYNCPRD, val),
 		    base + DMICSYNC_OFFSET);
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPU,
@@ -286,7 +283,7 @@ static void dai_dmic_irq_handler(const void *data)
 static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Disable DMIC clock gating */
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+#if (CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30_PTL)
 	sys_write32((sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET) | DMICLVSCTL_DCGD),
 		    dmic->vshim_base + DMICLVSCTL_OFFSET);
 #else
@@ -298,10 +295,10 @@ static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 static inline void dai_dmic_en_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Enable DMIC clock gating */
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+#if (CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30_PTL)
 	sys_write32((sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET) & ~DMICLVSCTL_DCGD),
 		    dmic->vshim_base + DMICLVSCTL_OFFSET);
-#else
+#else /* All other CAVS and ACE platforms */
 	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) & ~DMICLCTL_DCGD),
 		    dmic->shim_base + DMICLCTL_OFFSET);
 #endif
@@ -312,7 +309,7 @@ static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmi
 						const struct dai_config *cfg,
 						uint32_t index)
 {
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL)
 	uint16_t pcmsycm = cfg->link_config;
 	uint32_t reg_add = dmic->shim_base + DMICXPCMSyCM_OFFSET + 0x0004*index;
 
@@ -321,7 +318,7 @@ static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmi
 	ARG_UNUSED(dmic);
 	ARG_UNUSED(cfg);
 	ARG_UNUSED(index);
-#endif /* defined(CONFIG_SOC_INTEL_ACE20_LNL) */
+#endif /* defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL) */
 }
 
 static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
@@ -331,7 +328,7 @@ static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 	sys_write32((sys_read32(base + DMICLCTL_OFFSET) | DMICLCTL_SPA),
 			base + DMICLCTL_OFFSET);
 
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL)
 	while (!(sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA)) {
 		k_sleep(K_USEC(100));
 	}
@@ -556,7 +553,12 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 
 	/* enable port */
 	key = k_spin_lock(&dmic->lock);
-	LOG_DBG("dmic_start(), dai_index = %d", dmic->dai_config_params.dai_index);
+
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
+	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++)
+		dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL, CIC_CONTROL_SOFT_RESET, 0);
+#endif
+
 	dmic->startcount = 0;
 
 	/* Compute unmute ramp gain update coefficient. */
@@ -570,18 +572,9 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	dai_dmic_start_fifo_packers(dmic, dmic->dai_config_params.dai_index);
 
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
-#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
-		dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
-				     CIC_CONTROL_SOFT_RESET, 0);
-
-		LOG_INF("dmic_start(), cic 0x%08x",
-			dai_dmic_read(dmic, dmic_base[i] + CIC_CONTROL));
-#endif
-
 		mic_a = dmic->enable[i] & 1;
 		mic_b = (dmic->enable[i] & 2) >> 1;
 		start_fir = dmic->enable[i] > 0;
-		LOG_INF("dmic_start(), pdm%d mic_a = %u, mic_b = %u", i, mic_a, mic_b);
 
 		/* If both microphones are needed start them simultaneously
 		 * to start them in sync. The reset may be cleared for another

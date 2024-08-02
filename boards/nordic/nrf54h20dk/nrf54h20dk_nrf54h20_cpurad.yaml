@@ -9,8 +9,11 @@ toolchain:
   - gnuarmemb
   - xtools
   - zephyr
+sysbuild: true
 ram: 192
 flash: 256
 supported:
+  - counter
   - gpio
   - pwm
+  - spi

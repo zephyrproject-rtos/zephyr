@@ -398,17 +398,19 @@ rate by following design tips:
 
 .. warning::
    ZBus uses :zephyr_file:`include/zephyr/net/buf.h` (network buffers) to exchange data with message
-   subscribers. So, chose carefully the configurations
+   subscribers. Thus, choose carefully the configurations
    :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` and
    :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`. They are crucial to a proper VDED execution
-   (delivery guarantee) considering message subscribers.
+   (delivery guarantee) considering message subscribers. If you want to keep an isolated pool for a
+   specific set of channels, you can use
+   :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` with a dedicated pool. Look
+   at the :zephyr:code-sample:`zbus-msg-subscriber` to see the isolation in action.
 
 .. warning::
    Subscribers will receive only the reference of the changing channel. A data loss may be perceived
    if the channel is published twice before the subscriber reads it. The second publication
    overwrites the value from the first. Thus, the subscriber will receive two notifications, but
    only the last data is there.
-
 
 
 .. _zbus delivery sequence:
@@ -898,6 +900,8 @@ Related configuration options:
   buffers;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` the available number of message
   buffers to be used simultaneously;
+* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` enables the developer to isolate
+  a pool for the message subscriber for a set of channels;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE` the biggest message of zbus
   channels to be transported into a message buffer;
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` enables the runtime observer registration.

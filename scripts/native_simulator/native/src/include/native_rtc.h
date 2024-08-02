@@ -43,7 +43,7 @@ extern "C" {
 uint64_t native_rtc_gettime_us(int clock_type);
 
 /**
- * @brief Get the value of a clock split in in nsec and seconds
+ * @brief Get the value of a clock split in nsec and seconds
  *
  * @param clock_type Which clock to measure from
  * @param nsec Pointer to store the nanoseconds

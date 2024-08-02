@@ -24,6 +24,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
+		zephyr,canbus = &flexcan0;
 	};
 
 	aliases{
@@ -55,6 +56,10 @@
 };
 
 &gpio0 {
+	status = "okay";
+};
+
+&gpio2 {
 	status = "okay";
 };
 
@@ -138,6 +143,42 @@
 	status = "okay";
 };
 
+&flexcan0 {
+	status = "okay";
+};
+
 &ctimer0 {
+	status = "okay";
+};
+
+&usdhc0 {
+	status = "okay";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&lpadc0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&lpcmp0 {
+	status = "okay";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
+&flexio0 {
 	status = "okay";
 };

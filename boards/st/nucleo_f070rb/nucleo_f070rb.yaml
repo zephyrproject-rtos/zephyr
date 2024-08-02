@@ -18,6 +18,7 @@ supported:
   - i2c
   - spi
   - watchdog
+  - rtc
 testing:
   ignore_tags:
     - net

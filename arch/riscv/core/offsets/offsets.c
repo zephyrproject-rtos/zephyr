@@ -13,6 +13,7 @@
  * structures.
  */
 
+#include <zephyr/arch/exception.h>
 #include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
 #include <gen_offset.h>
@@ -88,43 +89,43 @@ GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
 #endif /* CONFIG_FPU_SHARING */
 
 /* esf member offsets */
-GEN_OFFSET_SYM(z_arch_esf_t, ra);
-GEN_OFFSET_SYM(z_arch_esf_t, t0);
-GEN_OFFSET_SYM(z_arch_esf_t, t1);
-GEN_OFFSET_SYM(z_arch_esf_t, t2);
-GEN_OFFSET_SYM(z_arch_esf_t, a0);
-GEN_OFFSET_SYM(z_arch_esf_t, a1);
-GEN_OFFSET_SYM(z_arch_esf_t, a2);
-GEN_OFFSET_SYM(z_arch_esf_t, a3);
-GEN_OFFSET_SYM(z_arch_esf_t, a4);
-GEN_OFFSET_SYM(z_arch_esf_t, a5);
+GEN_OFFSET_STRUCT(arch_esf, ra);
+GEN_OFFSET_STRUCT(arch_esf, t0);
+GEN_OFFSET_STRUCT(arch_esf, t1);
+GEN_OFFSET_STRUCT(arch_esf, t2);
+GEN_OFFSET_STRUCT(arch_esf, a0);
+GEN_OFFSET_STRUCT(arch_esf, a1);
+GEN_OFFSET_STRUCT(arch_esf, a2);
+GEN_OFFSET_STRUCT(arch_esf, a3);
+GEN_OFFSET_STRUCT(arch_esf, a4);
+GEN_OFFSET_STRUCT(arch_esf, a5);
 
 #if !defined(CONFIG_RISCV_ISA_RV32E)
-GEN_OFFSET_SYM(z_arch_esf_t, t3);
-GEN_OFFSET_SYM(z_arch_esf_t, t4);
-GEN_OFFSET_SYM(z_arch_esf_t, t5);
-GEN_OFFSET_SYM(z_arch_esf_t, t6);
-GEN_OFFSET_SYM(z_arch_esf_t, a6);
-GEN_OFFSET_SYM(z_arch_esf_t, a7);
+GEN_OFFSET_STRUCT(arch_esf, t3);
+GEN_OFFSET_STRUCT(arch_esf, t4);
+GEN_OFFSET_STRUCT(arch_esf, t5);
+GEN_OFFSET_STRUCT(arch_esf, t6);
+GEN_OFFSET_STRUCT(arch_esf, a6);
+GEN_OFFSET_STRUCT(arch_esf, a7);
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 
-GEN_OFFSET_SYM(z_arch_esf_t, mepc);
-GEN_OFFSET_SYM(z_arch_esf_t, mstatus);
+GEN_OFFSET_STRUCT(arch_esf, mepc);
+GEN_OFFSET_STRUCT(arch_esf, mstatus);
 
-GEN_OFFSET_SYM(z_arch_esf_t, s0);
+GEN_OFFSET_STRUCT(arch_esf, s0);
 
 #ifdef CONFIG_USERSPACE
-GEN_OFFSET_SYM(z_arch_esf_t, sp);
+GEN_OFFSET_STRUCT(arch_esf, sp);
 #endif
 
 #if defined(CONFIG_RISCV_SOC_CONTEXT_SAVE)
-GEN_OFFSET_SYM(z_arch_esf_t, soc_context);
+GEN_OFFSET_STRUCT(arch_esf, soc_context);
 #endif
 #if defined(CONFIG_RISCV_SOC_OFFSETS)
 GEN_SOC_OFFSET_SYMS();
 #endif
 
-GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, sizeof(z_arch_esf_t));
+GEN_ABSOLUTE_SYM(__struct_arch_esf_SIZEOF, sizeof(struct arch_esf));
 
 #ifdef CONFIG_EXCEPTION_DEBUG
 GEN_ABSOLUTE_SYM(__callee_saved_t_SIZEOF, ROUND_UP(sizeof(_callee_saved_t), ARCH_STACK_PTR_ALIGN));

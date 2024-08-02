@@ -23,4 +23,5 @@ supported:
   - pwm
   - dma
   - nvs
+  - rtc
 vendor: st

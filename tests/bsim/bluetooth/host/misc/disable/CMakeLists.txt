@@ -12,3 +12,8 @@ zephyr_include_directories(
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   )
+
+add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/common/testlib testlib)
+target_link_libraries(app PRIVATE
+  testlib
+)

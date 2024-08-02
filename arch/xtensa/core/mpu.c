@@ -443,6 +443,8 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 
 				xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
 						     access_rights, memory_type);
+				first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 1;
+				goto end;
 			} else {
 				/*
 				 * Populate the last two entries to indicate
@@ -459,6 +461,8 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 				xtensa_mpu_entry_set(entry_slot_e, end_addr, false,
 						     XTENSA_MPU_ACCESS_P_NA_U_NA,
 						     CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE);
+				first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 2;
+				goto end;
 			}
 
 			ret = 0;
@@ -595,6 +599,7 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 		xtensa_mpu_entry_attributes_set(&entries[idx], access_rights, memory_type);
 	}
 
+end:
 	if (first_idx != NULL) {
 		*first_idx = first_enabled_idx;
 	}
@@ -969,7 +974,7 @@ out:
 	return ret;
 }
 
-int arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	uintptr_t aligned_addr;
 	size_t aligned_size, addr_offset;
@@ -983,6 +988,14 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += XCHAL_MPU_ALIGN) {
 		uint32_t probed = xtensa_pptlb_probe(aligned_addr + offset);
+
+		if ((probed & XTENSA_MPU_PROBE_VALID_ENTRY_MASK) == 0U) {
+			/* There is no foreground or background entry associated
+			 * with the region.
+			 */
+			ret = -EPERM;
+			goto out;
+		}
 
 		uint8_t access_rights = (probed & XTENSA_MPU_PPTLB_ACCESS_RIGHTS_MASK)
 					>> XTENSA_MPU_PPTLB_ACCESS_RIGHTS_SHIFT;
@@ -1031,6 +1044,95 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 out:
 	return ret;
 }
+
+bool xtensa_mem_kernel_has_access(void *addr, size_t size, int write)
+{
+	uintptr_t aligned_addr;
+	size_t aligned_size, addr_offset;
+	bool ret = true;
+
+	/* addr/size arbitrary, fix this up into an aligned region */
+	aligned_addr = ROUND_DOWN((uintptr_t)addr, XCHAL_MPU_ALIGN);
+	addr_offset = (uintptr_t)addr - aligned_addr;
+	aligned_size = ROUND_UP(size + addr_offset, XCHAL_MPU_ALIGN);
+
+	for (size_t offset = 0; offset < aligned_size;
+	     offset += XCHAL_MPU_ALIGN) {
+		uint32_t probed = xtensa_pptlb_probe(aligned_addr + offset);
+
+		if ((probed & XTENSA_MPU_PROBE_VALID_ENTRY_MASK) == 0U) {
+			/* There is no foreground or background entry associated
+			 * with the region.
+			 */
+			ret = false;
+			goto out;
+		}
+
+		uint8_t access_rights = (probed & XTENSA_MPU_PPTLB_ACCESS_RIGHTS_MASK)
+					>> XTENSA_MPU_PPTLB_ACCESS_RIGHTS_SHIFT;
+
+
+		if (write != 0) {
+			/* Need to check write permission. */
+			switch (access_rights) {
+			case XTENSA_MPU_ACCESS_P_RW_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_WO_U_WO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RWX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RW:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RWX:
+				/* These permissions are okay. */
+				break;
+			default:
+				ret = false;
+				goto out;
+			}
+		} else {
+			/* Only check read permission. */
+			switch (access_rights) {
+			case XTENSA_MPU_ACCESS_P_RO_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RX_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RWX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RO_U_RO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RX_U_RX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RW:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RWX:
+				/* These permissions are okay. */
+				break;
+			default:
+				ret = false;
+				goto out;
+			}
+		}
+	}
+
+out:
+	return ret;
+}
+
 
 void xtensa_user_stack_perms(struct k_thread *thread)
 {

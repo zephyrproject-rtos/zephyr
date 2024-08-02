@@ -29,6 +29,7 @@ tests:
       - CONFIG_HAWKBIT_DDI_SECURITY_TOKEN="abcd1234"
   sample.net.hawkbit.tls:
     extra_configs:
+      - CONFIG_HAWKBIT_USE_TLS=y
       - CONFIG_NET_SOCKETS_SOCKOPT_TLS=y
   sample.net.hawkbit.set_settings_runtime:
     extra_configs:

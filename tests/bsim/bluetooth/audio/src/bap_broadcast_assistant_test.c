@@ -4,14 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_BAP_BROADCAST_ASSISTANT
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+
 #include "../../../../../subsys/bluetooth/host/hci_core.h"
 #include "common.h"
 #include "bap_common.h"
+#include "bstests.h"
+
+#ifdef CONFIG_BT_BAP_BROADCAST_ASSISTANT
 
 extern enum bst_result_t bst_result;
 
@@ -82,7 +98,7 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 
 static bool metadata_entry(struct bt_data *data, void *user_data)
 {
-	char metadata[512];
+	char metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
 
 	(void)bin2hex(data->data, data->data_len, metadata, sizeof(metadata));
 
@@ -97,7 +113,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 	const struct bt_bap_scan_delegator_recv_state *state)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char bad_code[33];
+	char bad_code[BT_AUDIO_BROADCAST_CODE_SIZE * 2 + 1];
 
 	if (err != 0) {
 		FAIL("BASS recv state read failed (%d)\n", err);
@@ -120,7 +136,12 @@ static void bap_broadcast_assistant_recv_state_cb(
 	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? ", bad code" : "",
 	       bad_code);
 
-	for (int i = 0; i < state->num_subgroups; i++) {
+	if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+		FAIL("Encryption state is BT_BAP_BIG_ENC_STATE_BAD_CODE");
+		return;
+	}
+
+	for (uint8_t i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
@@ -136,6 +157,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 		}
 	}
 
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 		err = bt_le_per_adv_sync_transfer(g_pa_sync, conn,
 						  BT_UUID_BASS_VAL);
@@ -144,6 +166,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 			return;
 		}
 	}
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 
 	if (state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
 		SET_FLAG(flag_state_synced);
@@ -155,14 +178,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 	SET_FLAG(flag_recv_state_updated);
 }
 
-static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, int err,
-					      uint8_t src_id)
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
-	if (err != 0) {
-		FAIL("BASS recv state removed failed (%d)\n", err);
-		return;
-	}
-
 	printk("BASS recv state %u removed\n", src_id);
 	SET_FLAG(flag_cb_called);
 
@@ -628,19 +645,19 @@ static void test_main_server_sync_server_rem(void)
 static const struct bst_test_instance test_bass[] = {
 	{
 		.test_id = "bap_broadcast_assistant_client_sync",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_client_sync,
 	},
 	{
 		.test_id = "bap_broadcast_assistant_server_sync_client_rem",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_client_rem,
 	},
 	{
 		.test_id = "bap_broadcast_assistant_server_sync_server_rem",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_server_rem,
 	},

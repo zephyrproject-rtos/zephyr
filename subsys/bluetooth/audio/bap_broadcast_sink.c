@@ -6,27 +6,43 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/init.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "../host/conn_internal.h"
 #include "../host/iso_internal.h"
 
+#include "audio_internal.h"
 #include "bap_iso.h"
 #include "bap_endpoint.h"
-#include "audio_internal.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_bap_broadcast_sink, CONFIG_BT_BAP_BROADCAST_SINK_LOG_LEVEL);
 
@@ -283,6 +299,33 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 	}
 }
 
+/** Gets the "highest" state of all BIS in the broadcast sink */
+static enum bt_bap_ep_state broadcast_sink_get_state(struct bt_bap_broadcast_sink *sink)
+{
+	enum bt_bap_ep_state state = BT_BAP_EP_STATE_IDLE;
+	struct bt_bap_stream *stream;
+
+	if (sink == NULL) {
+		LOG_DBG("sink is NULL");
+
+		return state;
+	}
+
+	if (sys_slist_is_empty(&sink->streams)) {
+		LOG_DBG("Sink does not have any streams");
+
+		return state;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink->streams, stream, _node) {
+		if (stream->ep != NULL) {
+			state = MAX(state, stream->ep->status.state);
+		}
+	}
+
+	return state;
+}
+
 static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
@@ -290,7 +333,6 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 	struct bt_bap_broadcast_sink *sink;
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep = iso->rx.ep;
-	bool all_connected;
 
 	if (ep == NULL) {
 		LOG_ERR("iso %p not bound with ep", chan);
@@ -324,17 +366,7 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 		LOG_WRN("No callback for started set");
 	}
 
-	all_connected = true;
-	SYS_SLIST_FOR_EACH_CONTAINER(&sink->streams, stream, _node) {
-		__ASSERT(stream->ep, "Endpoint is NULL");
-
-		if (stream->ep->status.state != BT_BAP_EP_STATE_STREAMING) {
-			all_connected = false;
-			break;
-		}
-	}
-
-	if (all_connected) {
+	if (broadcast_sink_get_state(sink) != BT_BAP_EP_STATE_STREAMING) {
 		update_recv_state_big_synced(sink);
 	}
 }
@@ -573,39 +605,47 @@ static bool base_subgroup_bis_index_cb(const struct bt_bap_base_subgroup_bis *bi
 	sink_subgroup->bis_indexes |= BIT(bis->index);
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-	int err;
 
 	memcpy(&sink_bis->codec_cfg, data->subgroup_codec_cfg, sizeof(sink_bis->codec_cfg));
 
-	/* Merge subgroup codec configuration with the BIS configuration
-	 * As per the BAP spec, if a value exist at level 2 (subgroup) and 3 (BIS), then it is
-	 * the value at level 3 that shall be used
-	 */
-	if (sink_bis->codec_cfg.id == BT_HCI_CODING_FORMAT_LC3) {
-		memcpy(&sink_bis->codec_cfg, data->subgroup_codec_cfg, sizeof(sink_bis->codec_cfg));
-
-		err = bt_audio_data_parse(bis->data, bis->data_len, merge_bis_and_subgroup_data_cb,
-					  &sink_bis->codec_cfg);
-		if (err != 0) {
-			LOG_DBG("Could not merge BIS and subgroup config in codec_cfg: %d", err);
-
-			return false;
-		}
-	} else {
-		/* If it is not LC3, then we don't know how to merge the subgroup and BIS codecs,
-		 * so we just append them
+	if (bis->data_len > 0) {
+		/* Merge subgroup codec configuration with the BIS configuration
+		 * As per the BAP spec, if a value exist at level 2 (subgroup) and 3 (BIS), then it
+		 * is the value at level 3 that shall be used
 		 */
-		if (sink_bis->codec_cfg.data_len + bis->data_len >
-		    sizeof(sink_bis->codec_cfg.data)) {
-			LOG_DBG("Could not store BIS and subgroup config in codec_cfg (%u > %u)",
-				sink_bis->codec_cfg.data_len + bis->data_len,
-				sizeof(sink_bis->codec_cfg.data));
+		if (sink_bis->codec_cfg.id == BT_HCI_CODING_FORMAT_LC3) {
+			int err;
 
-			return false;
+			memcpy(&sink_bis->codec_cfg, data->subgroup_codec_cfg,
+			       sizeof(sink_bis->codec_cfg));
+
+			err = bt_audio_data_parse(bis->data, bis->data_len,
+						  merge_bis_and_subgroup_data_cb,
+						  &sink_bis->codec_cfg);
+			if (err != 0) {
+				LOG_DBG("Could not merge BIS and subgroup config in codec_cfg: %d",
+					err);
+
+				return false;
+			}
+		} else {
+			/* If it is not LC3, then we don't know how to merge the subgroup and BIS
+			 * codecs, so we just append them
+			 */
+			if (sink_bis->codec_cfg.data_len + bis->data_len >
+			    sizeof(sink_bis->codec_cfg.data)) {
+				LOG_DBG("Could not store BIS and subgroup config in codec_cfg (%u "
+					"> %u)",
+					sink_bis->codec_cfg.data_len + bis->data_len,
+					sizeof(sink_bis->codec_cfg.data));
+
+				return false;
+			}
+
+			memcpy(&sink_bis->codec_cfg.data[sink_bis->codec_cfg.data_len], bis->data,
+			       bis->data_len);
+			sink_bis->codec_cfg.data_len += bis->data_len;
 		}
-
-		memcpy(&sink_bis->codec_cfg.data[sink_bis->codec_cfg.data_len], bis->data,
-		       bis->data_len);
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
@@ -731,7 +771,7 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 	struct bt_bap_broadcast_sink *sink = (struct bt_bap_broadcast_sink *)user_data;
 	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
 	struct bt_bap_broadcast_sink_cb *listener;
-	size_t base_size;
+	int base_size;
 	int ret;
 
 	/* Base is NULL if the data does not contain a valid BASE */
@@ -777,11 +817,16 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 	}
 
 	/* We provide the BASE without the service data UUID */
-	base_size = data->data_len - BT_UUID_SIZE_16;
+	base_size = bt_bap_base_get_size(base);
+	if (base_size < 0) {
+		LOG_DBG("BASE get size failed (%d)", base_size);
+
+		return false;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->base_recv != NULL) {
-			listener->base_recv(sink, base, base_size);
+			listener->base_recv(sink, base, (size_t)base_size);
 		}
 	}
 
@@ -1249,8 +1294,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 
 int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 {
-	struct bt_bap_stream *stream;
-	sys_snode_t *head_node;
+	enum bt_bap_ep_state state;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -1263,21 +1307,9 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 		return -EALREADY;
 	}
 
-	head_node = sys_slist_peek_head(&sink->streams);
-	stream = CONTAINER_OF(head_node, struct bt_bap_stream, _node);
-
-	/* All streams in a broadcast source is in the same state,
-	 * so we can just check the first stream
-	 */
-	if (stream->ep == NULL) {
-		LOG_DBG("stream->ep is NULL");
-		return -EINVAL;
-	}
-
-	if (stream->ep->status.state != BT_BAP_EP_STATE_STREAMING &&
-	    stream->ep->status.state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_DBG("Broadcast sink stream %p invalid state: %u", stream,
-			stream->ep->status.state);
+	state = broadcast_sink_get_state(sink);
+	if (state != BT_BAP_EP_STATE_STREAMING && state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
+		LOG_DBG("Broadcast sink %p invalid state: %u", sink, state);
 		return -EBADMSG;
 	}
 
@@ -1295,25 +1327,17 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 
 int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 {
+	enum bt_bap_ep_state state;
+
 	CHECKIF(sink == NULL) {
 		LOG_DBG("sink is NULL");
 		return -EINVAL;
 	}
 
-	if (!sys_slist_is_empty(&sink->streams)) {
-		struct bt_bap_stream *stream;
-		sys_snode_t *head_node;
-
-		head_node = sys_slist_peek_head(&sink->streams);
-		stream = CONTAINER_OF(head_node, struct bt_bap_stream, _node);
-
-		/* All streams in a broadcast source is in the same state,
-		 * so we can just check the first stream
-		 */
-		if (stream->ep != NULL) {
-			LOG_DBG("Sink is not stopped");
-			return -EBADMSG;
-		}
+	state = broadcast_sink_get_state(sink);
+	if (state != BT_BAP_EP_STATE_IDLE) {
+		LOG_DBG("Broadcast sink %p invalid state: %u", sink, state);
+		return -EBADMSG;
 	}
 
 	/* Reset the broadcast sink */

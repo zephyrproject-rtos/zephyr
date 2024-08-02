@@ -422,7 +422,7 @@ static unsigned int get_gdb_exception_reason(unsigned int reason)
  * @param ctx   GDB context
  * @param stack Pointer to the stack frame
  */
-static void copy_to_ctx(struct gdb_ctx *ctx, const z_arch_esf_t *stack)
+static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 {
 	struct xtensa_register *reg;
 	int idx, num_laddr_regs;
@@ -513,7 +513,7 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const z_arch_esf_t *stack)
  * @param ctx   GDB context
  * @param stack Pointer to the stack frame
  */
-static void restore_from_ctx(struct gdb_ctx *ctx, const z_arch_esf_t *stack)
+static void restore_from_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 {
 	struct xtensa_register *reg;
 	int idx, num_laddr_regs;
@@ -913,7 +913,7 @@ out:
 	return ret;
 }
 
-void z_gdb_isr(z_arch_esf_t *esf)
+void z_gdb_isr(struct arch_esf *esf)
 {
 	uint32_t reg;
 

@@ -50,7 +50,7 @@ ZTEST_SUITE(bt_setup_random_id_addr_bt_settings_enabled, NULL, NULL, tc_setup, N
  *  Test reading controller static random address fails and no attempt to store settings.
  *
  *  Constraints:
- *   - bt_read_static_addr() returns zero
+ *   - vs_read_static_addr() returns zero
  *
  *  Expected behaviour:
  *   - ID count is set to 0 and bt_setup_random_id_addr() returns a negative error code
@@ -60,7 +60,7 @@ ZTEST(bt_setup_random_id_addr_bt_settings_enabled, test_bt_read_static_addr_retu
 {
 	int err;
 
-	/* This will force bt_read_static_addr() to fail */
+	/* This will force vs_read_static_addr() to fail */
 	bt_hci_cmd_send_sync_fake.return_val = 1;
 
 	err = bt_setup_random_id_addr();

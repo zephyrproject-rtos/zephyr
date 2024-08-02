@@ -8,7 +8,15 @@
 
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VOCS_INTERNAL_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VOCS_INTERNAL_
-#include <zephyr/types.h>
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 
 #if defined(CONFIG_BT_VOCS)
 #define BT_VOCS_MAX_DESC_SIZE CONFIG_BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE

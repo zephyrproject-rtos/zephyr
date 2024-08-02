@@ -126,6 +126,10 @@ int nsos_adapt_sendto(int fd, const void *buf, size_t len, int flags,
 int nsos_adapt_sendmsg(int fd, const struct nsos_mid_msghdr *msg_mid, int flags);
 int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
 			struct nsos_mid_sockaddr *addr, size_t *addrlen);
+int nsos_adapt_getsockopt(int fd, int level, int optname,
+			  void *optval, size_t *optlen);
+int nsos_adapt_setsockopt(int fd, int level, int optname,
+			  const void *optval, size_t optlen);
 
 void nsos_adapt_poll_add(struct nsos_mid_pollfd *pollfd);
 void nsos_adapt_poll_remove(struct nsos_mid_pollfd *pollfd);
@@ -133,6 +137,10 @@ void nsos_adapt_poll_update(struct nsos_mid_pollfd *pollfd);
 
 int nsos_adapt_fcntl_getfl(int fd);
 int nsos_adapt_fcntl_setfl(int fd, int flags);
+
+int nsos_adapt_fionread(int fd, int *avail);
+
+int nsos_adapt_dup(int oldfd);
 
 int nsos_adapt_getaddrinfo(const char *node, const char *service,
 			   const struct nsos_mid_addrinfo *hints,

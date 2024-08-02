@@ -172,7 +172,7 @@ directly into RAM and then boot it from the __start symbol.
 In order for this to work, your entire kernel must be located in RAM. Make sure
 the following config options are disabled:
 
-.. code-block:: console
+.. code-block:: cfg
 
    CONFIG_XIP=n
    CONFIG_INCLUDE_RESET_VECTOR=n
@@ -265,7 +265,7 @@ In order for this to work, execute-in-place must be disabled, since the GDB
 'load' command can only put text and data in RAM. Ensure this is in your
 configuration:
 
-.. code-block:: console
+.. code-block:: cfg
 
    CONFIG_XIP=n
 

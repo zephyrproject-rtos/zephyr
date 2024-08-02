@@ -17,7 +17,7 @@
 #if DT_PROP(VPR_CPU, nordic_bus_width) == 64
 
 #define SOC_ISR_STACKING_ESF_DECLARE                                                               \
-	struct __esf {                                                                             \
+	struct arch_esf {                                                                          \
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
 		unsigned long tp;                                                                  \
@@ -40,7 +40,7 @@
 #else /* DT_PROP(VPR_CPU, nordic_bus_width) == 32 */
 
 #define SOC_ISR_STACKING_ESF_DECLARE                                                               \
-	struct __esf {                                                                             \
+	struct arch_esf {                                                                          \
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
 		unsigned long tp;                                                                  \
@@ -73,7 +73,7 @@
 /*
  * Size of the SW managed part of the ESF in case of exception
  */
-#define ESF_SW_EXC_SIZEOF (__z_arch_esf_t_SIZEOF - ESF_HW_SIZEOF)
+#define ESF_SW_EXC_SIZEOF (__struct_arch_esf_SIZEOF - ESF_HW_SIZEOF)
 
 /*
  * Size of the SW managed part of the ESF in case of interrupt
@@ -90,17 +90,17 @@
 #define MEPC_SP_ALIGN_BIT_MASK (0x1UL)
 
 #define STORE_SP_ALIGN_BIT_FROM_MEPC				\
-	addi t1, sp, __z_arch_esf_t_soc_context_OFFSET;		\
-	lr t0, __z_arch_esf_t_mepc_OFFSET(sp);			\
+	addi t1, sp, __struct_arch_esf_soc_context_OFFSET;	\
+	lr t0, __struct_arch_esf_mepc_OFFSET(sp);		\
 	andi t0, t0, MEPC_SP_ALIGN_BIT_MASK;			\
 	sr t0, __soc_esf_t_sp_align_OFFSET(t1)
 
 #define RESTORE_SP_ALIGN_BIT_TO_MEPC				\
-	addi t1, sp, __z_arch_esf_t_soc_context_OFFSET;		\
+	addi t1, sp, __struct_arch_esf_soc_context_OFFSET;	\
 	lr t0, __soc_esf_t_sp_align_OFFSET(t1);			\
-	lr t1, __z_arch_esf_t_mepc_OFFSET(sp);			\
+	lr t1, __struct_arch_esf_mepc_OFFSET(sp);		\
 	or t2, t1, t0;						\
-	sr t2, __z_arch_esf_t_mepc_OFFSET(sp)
+	sr t2, __struct_arch_esf_mepc_OFFSET(sp)
 
 #define SOC_ISR_SW_STACKING			\
 	csrw mscratch, t0;			\

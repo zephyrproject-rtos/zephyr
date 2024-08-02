@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <zephyr/net/buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
@@ -27,7 +28,11 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+#include <zephyr/drivers/bluetooth.h>
+#else
 #include <zephyr/drivers/bluetooth/hci_driver.h>
+#endif
 
 #include "common/bt_str.h"
 #include "common/assert.h"
@@ -63,6 +68,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_core);
 
+#define BT_HCI_DEV  DT_CHOSEN(zephyr_bt_hci)
+#define BT_HCI_BUS  BT_DT_HCI_BUS_GET(BT_HCI_DEV)
+#define BT_HCI_NAME BT_DT_HCI_NAME_GET(BT_HCI_DEV)
+
+void bt_tx_irq_raise(void);
+
 #define HCI_CMD_TIMEOUT      K_SECONDS(10)
 
 /* Stacks for the threads */
@@ -72,8 +83,6 @@ static K_WORK_DEFINE(rx_work, rx_work_handler);
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 #endif /* CONFIG_BT_RECV_WORKQ_BT */
-static struct k_thread tx_thread_data;
-static K_KERNEL_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 
 static void init_work(struct k_work *work);
 
@@ -84,6 +93,9 @@ struct bt_dev bt_dev = {
 #endif
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	.appearance = CONFIG_BT_DEVICE_APPEARANCE,
+#endif
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	.hci = DEVICE_DT_GET(BT_HCI_DEV),
 #endif
 };
 
@@ -111,6 +123,28 @@ static struct cmd_data cmd_data[CONFIG_BT_BUF_CMD_TX_COUNT];
 
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
+
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+static bool drv_quirk_no_reset(void)
+{
+	return  ((BT_DT_HCI_QUIRKS_GET(DT_CHOSEN(zephyr_bt_hci)) & BT_HCI_QUIRK_NO_RESET) != 0);
+}
+
+__maybe_unused static bool drv_quirk_no_auto_dle(void)
+{
+	return  ((BT_DT_HCI_QUIRKS_GET(DT_CHOSEN(zephyr_bt_hci)) & BT_HCI_QUIRK_NO_AUTO_DLE) != 0);
+}
+#else
+static bool drv_quirk_no_reset(void)
+{
+	return  ((bt_dev.drv->quirks & BT_QUIRK_NO_RESET) != 0);
+}
+
+__maybe_unused static bool drv_quirk_no_auto_dle(void)
+{
+	return  ((bt_dev.drv->quirks & BT_QUIRK_NO_AUTO_DLE) != 0);
+}
+#endif
 
 void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       struct bt_hci_cmd_state_set *state,
@@ -253,8 +287,12 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	LOG_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
+	/* net_buf_alloc(K_FOREVER) can fail when run from the syswq */
 	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
-	__ASSERT_NO_MSG(buf);
+	if (!buf) {
+		LOG_DBG("Unable to allocate a command buffer");
+		return NULL;
+	}
 
 	LOG_DBG("buf %p", buf);
 
@@ -300,10 +338,12 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	}
 
 	net_buf_put(&bt_dev.cmd_tx_queue, buf);
+	bt_tx_irq_raise();
 
 	return 0;
 }
 
+static bool process_pending_cmd(k_timeout_t timeout);
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp)
 {
@@ -316,17 +356,60 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		if (!buf) {
 			return -ENOBUFS;
 		}
+	} else {
+		/* `cmd(buf)` depends on this  */
+		if (net_buf_pool_get(buf->pool_id) != &hci_cmd_pool) {
+			__ASSERT_NO_MSG(false);
+			return -EINVAL;
+		}
 	}
 
 	LOG_DBG("buf %p opcode 0x%04x len %u", buf, opcode, buf->len);
 
+	/* This local sem is just for suspending the current thread until the
+	 * command is processed by the LL. It is given (and we are awaken) by
+	 * the cmd_complete/status handlers.
+	 */
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
 
 	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
+	bt_tx_irq_raise();
 
+	/* TODO: disallow sending sync commands from syswq altogether */
+
+	/* Since the commands are now processed in the syswq, we cannot suspend
+	 * and wait. We have to send the command from the current context.
+	 */
+	if (k_current_get() == &k_sys_work_q.thread) {
+		/* drain the command queue until we get to send the command of interest. */
+		struct net_buf *cmd = NULL;
+
+		do {
+			cmd = k_fifo_peek_head(&bt_dev.cmd_tx_queue);
+			LOG_DBG("process cmd %p want %p", cmd, buf);
+
+			/* Wait for a response from the Bluetooth Controller.
+			 * The Controller may fail to respond if:
+			 *  - It was never programmed or connected.
+			 *  - There was a fatal error.
+			 *
+			 * See the `BT_HCI_OP_` macros in hci_types.h or
+			 * Core_v5.4, Vol 4, Part E, Section 5.4.1 and Section 7
+			 * to map the opcode to the HCI command documentation.
+			 * Example: 0x0c03 represents HCI_Reset command.
+			 */
+			__maybe_unused bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
+
+			BT_ASSERT_MSG(success, "command opcode 0x%04x timeout", opcode);
+		} while (buf != cmd);
+	}
+
+	/* Now that we have sent the command, suspend until the LL replies */
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
-	BT_ASSERT_MSG(err == 0, "command opcode 0x%04x timeout with err %d", opcode, err);
+	BT_ASSERT_MSG(err == 0,
+		      "Controller unresponsive, command opcode 0x%04x timeout with err %d",
+		      opcode, err);
 
 	status = cmd(buf)->status;
 	if (status) {
@@ -340,6 +423,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			return -ENOMEM;
 		case BT_HCI_ERR_INVALID_PARAM:
 			return -EINVAL;
+		case BT_HCI_ERR_CMD_DISALLOWED:
+			return -EACCES;
 		default:
 			return -EIO;
 		}
@@ -477,37 +562,29 @@ static void hci_num_completed_packets(struct net_buf *buf)
 		}
 
 		while (count--) {
-			struct bt_conn_tx *tx;
 			sys_snode_t *node;
-			unsigned int key;
 
-			key = irq_lock();
+			k_sem_give(bt_conn_get_pkts(conn));
 
-			if (conn->pending_no_cb) {
-				conn->pending_no_cb--;
-				irq_unlock(key);
-				k_sem_give(bt_conn_get_pkts(conn));
-				continue;
-			}
-
+			/* move the next TX context from the `pending` list to
+			 * the `complete` list.
+			 */
 			node = sys_slist_get(&conn->tx_pending);
-			irq_unlock(key);
 
 			if (!node) {
 				LOG_ERR("packets count mismatch");
+				__ASSERT_NO_MSG(0);
 				break;
 			}
 
-			tx = CONTAINER_OF(node, struct bt_conn_tx, node);
+			sys_slist_append(&conn->tx_complete, node);
 
-			key = irq_lock();
-			conn->pending_no_cb = tx->pending_no_cb;
-			tx->pending_no_cb = 0U;
-			sys_slist_append(&conn->tx_complete, &tx->node);
-			irq_unlock(key);
+			/* align the `pending` value */
+			__ASSERT_NO_MSG(atomic_get(&conn->in_ll));
+			atomic_dec(&conn->in_ll);
 
+			/* TX context free + callback happens in there */
 			k_work_submit(&conn->tx_complete_work);
-			k_sem_give(bt_conn_get_pkts(conn));
 		}
 
 		bt_conn_unref(conn);
@@ -1132,7 +1209,7 @@ static void conn_auto_initiate(struct bt_conn *conn)
 
 	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
 	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		if (IS_BT_QUIRK_NO_AUTO_DLE(&bt_dev)) {
+		if (drv_quirk_no_auto_dle()) {
 			uint16_t tx_octets, tx_time;
 
 			err = hci_le_read_max_data_len(&tx_octets, &tx_time);
@@ -1153,6 +1230,7 @@ static void conn_auto_initiate(struct bt_conn *conn)
 
 static void le_conn_complete_cancel(uint8_t err)
 {
+	int ret;
 	struct bt_conn *conn;
 
 	/* Handle create connection cancel.
@@ -1166,27 +1244,30 @@ static void le_conn_complete_cancel(uint8_t err)
 		return;
 	}
 
-	conn->err = err;
-
-	/* Handle cancellation of outgoing connection attempt. */
-	if (!IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
-		/* We notify before checking autoconnect flag
-		 * as application may choose to change it from
-		 * callback.
-		 */
-		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		/* Check if device is marked for autoconnect. */
-		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+		if (!IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
 			/* Restart passive scanner for device */
 			bt_conn_set_state(conn, BT_CONN_SCAN_BEFORE_INITIATING);
+		} else {
+			/* Restart FAL initiator after RPA timeout. */
+			ret = bt_le_create_conn(conn);
+			if (ret) {
+				LOG_ERR("Failed to restart initiator");
+			}
 		}
 	} else {
-		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
-			/* Restart FAL initiator after RPA timeout. */
-			bt_le_create_conn(conn);
-		} else {
-			/* Create connection canceled by timeout */
+		int busy_status = k_work_delayable_busy_get(&conn->deferred_work);
+
+		if (!(busy_status & (K_WORK_QUEUED | K_WORK_DELAYED))) {
+			LOG_WRN("Connection creation timeout triggered");
+			conn->err = err;
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		} else {
+			/* Restart initiator after RPA timeout. */
+			ret = bt_le_create_conn(conn);
+			if (ret) {
+				LOG_ERR("Failed to restart initiator");
+			}
 		}
 	}
 
@@ -1536,7 +1617,7 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 	update_conn(conn, &id_addr, (const struct bt_hci_evt_le_enh_conn_complete *)evt);
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
-	/* The connection is always initated on the same phy as the PAwR advertiser */
+	/* The connection is always initiated on the same phy as the PAwR advertiser */
 	conn->le.phy.tx_phy = sync->phy;
 	conn->le.phy.rx_phy = sync->phy;
 #endif
@@ -2378,6 +2459,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
 	if (cmd(buf)->sync) {
+		LOG_DBG("sync cmd released");
 		cmd(buf)->status = status;
 		k_sem_give(cmd(buf)->sync);
 	}
@@ -2418,6 +2500,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 	/* Allow next command to be sent */
 	if (ncmd) {
 		k_sem_give(&bt_dev.ncmd_sem);
+		bt_tx_irq_raise();
 	}
 }
 
@@ -2438,6 +2521,7 @@ static void hci_cmd_status(struct net_buf *buf)
 	/* Allow next command to be sent */
 	if (ncmd) {
 		k_sem_give(&bt_dev.ncmd_sem);
+		bt_tx_irq_raise();
 	}
 }
 
@@ -2462,6 +2546,19 @@ int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle)
 	return 0;
 }
 #endif /* CONFIG_BT_EXT_ADV */
+
+#if defined(CONFIG_BT_PER_ADV_SYNC)
+int bt_hci_get_adv_sync_handle(const struct bt_le_per_adv_sync *sync, uint16_t *sync_handle)
+{
+	if (!atomic_test_bit(sync->flags, BT_PER_ADV_SYNC_CREATED)) {
+		return -EINVAL;
+	}
+
+	*sync_handle = sync->handle;
+
+	return 0;
+}
+#endif
 
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)
 int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb)
@@ -2498,6 +2595,42 @@ void bt_hci_le_transmit_power_report(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
 
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+void bt_hci_le_path_loss_threshold_event(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_path_loss_threshold *evt;
+	struct bt_conn_le_path_loss_threshold_report report;
+	struct bt_conn *conn;
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+	if (evt->zone_entered > BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_HIGH) {
+		LOG_ERR("Invalid zone %u in bt_hci_evt_le_path_loss_threshold",
+			evt->zone_entered);
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
+	if (!conn) {
+		LOG_ERR("Unknown conn handle 0x%04X for path loss threshold report",
+		       sys_le16_to_cpu(evt->handle));
+		return;
+	}
+
+	if (evt->current_path_loss == BT_HCI_LE_PATH_LOSS_UNAVAILABLE) {
+		report.zone = BT_CONN_LE_PATH_LOSS_ZONE_UNAVAILABLE;
+		report.path_loss = BT_HCI_LE_PATH_LOSS_UNAVAILABLE;
+	} else {
+		report.zone = evt->zone_entered;
+		report.path_loss = evt->current_path_loss;
+	}
+
+	notify_path_loss_threshold_report(conn, report);
+
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
+
 static const struct event_handler vs_events[] = {
 #if defined(CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES)
 	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTIONLESS_IQ_REPORT,
@@ -2526,7 +2659,7 @@ static void hci_vendor_event(struct net_buf *buf)
 	}
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
-	if (IS_ENABLED(CONFIG_BT_HCI_VS_EVT) && !handled) {
+	if (IS_ENABLED(CONFIG_BT_HCI_VS) && !handled) {
 		struct bt_hci_evt_vs *evt;
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
@@ -2598,10 +2731,10 @@ static const struct event_handler meta_events[] = {
 		      sizeof(struct bt_hci_evt_le_per_advertising_report)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADV_SYNC_LOST, bt_hci_le_per_adv_sync_lost,
 		      sizeof(struct bt_hci_evt_le_per_adv_sync_lost)),
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_PAST_RECEIVED, bt_hci_le_past_received,
 		      sizeof(struct bt_hci_evt_le_past_received)),
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 #if defined(CONFIG_BT_ISO_UNICAST)
@@ -2647,6 +2780,10 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_TRANSMIT_POWER_REPORT, bt_hci_le_transmit_power_report,
 		      sizeof(struct bt_hci_evt_le_transmit_power_report)),
 #endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+	EVENT_HANDLER(BT_HCI_EVT_LE_PATH_LOSS_THRESHOLD, bt_hci_le_path_loss_threshold_event,
+		      sizeof(struct bt_hci_evt_le_path_loss_threshold)),
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2, bt_hci_le_per_adv_report_v2,
 		      sizeof(struct bt_hci_evt_le_per_advertising_report_v2)),
@@ -2809,19 +2946,15 @@ static void hci_event(struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-static void send_cmd(void)
+static void hci_core_send_cmd(void)
 {
 	struct net_buf *buf;
 	int err;
 
 	/* Get next command */
-	LOG_DBG("calling net_buf_get");
+	LOG_DBG("fetch cmd");
 	buf = net_buf_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
 	BT_ASSERT(buf);
-
-	/* Wait until ncmd > 0 */
-	LOG_DBG("calling sem_take_wait");
-	k_sem_take(&bt_dev.ncmd_sem, K_FOREVER);
 
 	/* Clear out any existing sent command */
 	if (bt_dev.sent_cmd) {
@@ -2840,47 +2973,7 @@ static void send_cmd(void)
 		k_sem_give(&bt_dev.ncmd_sem);
 		hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED, buf);
 		net_buf_unref(buf);
-	}
-}
-
-static void process_events(struct k_poll_event *ev, int count)
-{
-	LOG_DBG("count %d", count);
-
-	for (; count; ev++, count--) {
-		LOG_DBG("ev->state %u", ev->state);
-
-		switch (ev->state) {
-		case K_POLL_STATE_SIGNALED:
-			break;
-		case K_POLL_STATE_SEM_AVAILABLE:
-			/* After this fn is exec'd, `bt_conn_prepare_events()`
-			 * will be called once again, and this time buffers will
-			 * be available, so the FIFO will be added to the poll
-			 * list instead of the ctlr buffers semaphore.
-			 */
-			break;
-		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
-			if (ev->tag == BT_EVENT_CMD_TX) {
-				send_cmd();
-			} else if (IS_ENABLED(CONFIG_BT_CONN) ||
-				   IS_ENABLED(CONFIG_BT_ISO)) {
-				struct bt_conn *conn;
-
-				if (ev->tag == BT_EVENT_CONN_TX_QUEUE) {
-					conn = CONTAINER_OF(ev->fifo,
-							    struct bt_conn,
-							    tx_queue);
-					bt_conn_process_tx(conn);
-				}
-			}
-			break;
-		case K_POLL_STATE_NOT_READY:
-			break;
-		default:
-			LOG_WRN("Unexpected k_poll event state %u", ev->state);
-			break;
-		}
+		bt_tx_irq_raise();
 	}
 }
 
@@ -2901,43 +2994,6 @@ static void process_events(struct k_poll_event *ev, int count)
 #define EV_COUNT 1
 #endif /* CONFIG_BT_ISO */
 #endif /* CONFIG_BT_CONN */
-
-static void hci_tx_thread(void *p1, void *p2, void *p3)
-{
-	static struct k_poll_event events[EV_COUNT] = {
-		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-						K_POLL_MODE_NOTIFY_ONLY,
-						&bt_dev.cmd_tx_queue,
-						BT_EVENT_CMD_TX),
-	};
-
-	LOG_DBG("Started");
-
-	while (1) {
-		int ev_count, err;
-
-		events[0].state = K_POLL_STATE_NOT_READY;
-		ev_count = 1;
-
-		/* This adds the FIFO per-connection */
-		if (IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_ISO)) {
-			ev_count += bt_conn_prepare_events(&events[1]);
-		}
-
-		LOG_DBG("Calling k_poll with %d events", ev_count);
-
-		err = k_poll(events, ev_count, K_FOREVER);
-		BT_ASSERT(err == 0);
-
-		process_events(events, ev_count);
-
-		/* Make sure we don't hog the CPU if there's all the time
-		 * some ready events.
-		 */
-		k_yield();
-	}
-}
-
 
 static void read_local_ver_complete(struct net_buf *buf)
 {
@@ -3119,7 +3175,7 @@ static int common_init(void)
 	struct net_buf *rsp;
 	int err;
 
-	if (!(bt_dev.drv->quirks & BT_QUIRK_NO_RESET)) {
+	if (!drv_quirk_no_reset()) {
 		/* Send HCI_RESET */
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, &rsp);
 		if (err) {
@@ -3239,6 +3295,10 @@ static int le_set_event_mask(void)
 		}
 		if (IS_ENABLED(CONFIG_BT_TRANSMIT_POWER_CONTROL)) {
 			mask |= BT_EVT_MASK_LE_TRANSMIT_POWER_REPORTING;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_PATH_LOSS_MONITORING)) {
+			mask |= BT_EVT_MASK_LE_PATH_LOSS_THRESHOLD;
 		}
 	}
 
@@ -3665,7 +3725,7 @@ static void bt_dev_show_info(void)
 		bt_dev.lmp_version, bt_dev.lmp_subversion);
 }
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 static const char *vs_hw_platform(uint16_t platform)
 {
 	static const char * const plat_str[] = {
@@ -3803,7 +3863,7 @@ static void hci_vs_init(void)
 		net_buf_unref(rsp);
 	}
 }
-#endif /* CONFIG_BT_HCI_VS_EXT */
+#endif /* CONFIG_BT_HCI_VS */
 
 static int hci_init(void)
 {
@@ -3819,12 +3879,19 @@ static int hci_init(void)
 	}
 #endif /* defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR) */
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	err = bt_hci_setup(bt_dev.hci, &setup_params);
+	if (err && err != -ENOSYS) {
+		return err;
+	}
+#else
 	if (bt_dev.drv->setup) {
 		err = bt_dev.drv->setup(&setup_params);
 		if (err) {
 			return err;
 		}
 	}
+#endif
 #endif /* defined(CONFIG_BT_HCI_SETUP) */
 
 	err = common_init();
@@ -3858,7 +3925,7 @@ static int hci_init(void)
 		return err;
 	}
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 	hci_vs_init();
 #endif
 	err = bt_id_init();
@@ -3879,7 +3946,11 @@ int bt_send(struct net_buf *buf)
 		return bt_hci_ecc_send(buf);
 	}
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	return bt_hci_send(bt_dev.hci, buf);
+#else
 	return bt_dev.drv->send(buf);
+#endif
 }
 
 static const struct event_handler prio_events[] = {
@@ -3981,8 +4052,14 @@ static int bt_recv_unsafe(struct net_buf *buf)
 	}
 }
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+int bt_hci_recv(const struct device *dev, struct net_buf *buf)
+{
+	ARG_UNUSED(dev);
+#else
 int bt_recv(struct net_buf *buf)
 {
+#endif
 	int err;
 
 	k_sched_lock();
@@ -3992,6 +4069,8 @@ int bt_recv(struct net_buf *buf)
 	return err;
 }
 
+/* Old-style HCI driver registration */
+#if !DT_HAS_CHOSEN(zephyr_bt_hci)
 int bt_hci_driver_register(const struct bt_hci_driver *drv)
 {
 	if (bt_dev.drv) {
@@ -4011,6 +4090,7 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv)
 
 	return 0;
 }
+#endif /* !DT_HAS_CHOSEN(zephyr_bt_hci) */
 
 void bt_finalize_init(void)
 {
@@ -4124,7 +4204,8 @@ static void rx_work_handler(struct k_work *work)
 #if defined(CONFIG_BT_TESTING)
 k_tid_t bt_testing_tx_tid_get(void)
 {
-	return &tx_thread_data;
+	/* We now TX everything from the syswq */
+	return &k_sys_work_q.thread;
 }
 #endif
 
@@ -4132,10 +4213,19 @@ int bt_enable(bt_ready_cb_t cb)
 {
 	int err;
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	if (!device_is_ready(bt_dev.hci)) {
+		LOG_ERR("HCI driver is not ready");
+		return -ENODEV;
+	}
+
+	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, BT_HCI_BUS, BT_ADDR_ANY, BT_HCI_NAME);
+#else /* !DT_HAS_CHONSEN(zephyr_bt_hci) */
 	if (!bt_dev.drv) {
 		LOG_ERR("No HCI driver registered");
 		return -ENODEV;
 	}
+#endif
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
 
@@ -4167,13 +4257,6 @@ int bt_enable(bt_ready_cb_t cb)
 		k_sem_init(&bt_dev.ncmd_sem, 0, 1);
 	}
 	k_fifo_init(&bt_dev.cmd_tx_queue);
-	/* TX thread */
-	k_thread_create(&tx_thread_data, tx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(tx_thread_stack),
-			hci_tx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_HCI_TX_PRIO),
-			0, K_NO_WAIT);
-	k_thread_name_set(&tx_thread_data, "BT TX");
 
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* RX thread */
@@ -4184,7 +4267,11 @@ int bt_enable(bt_ready_cb_t cb)
 	k_thread_name_set(&bt_workq.thread, "BT RX WQ");
 #endif
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	err = bt_hci_open(bt_dev.hci, bt_hci_recv);
+#else
 	err = bt_dev.drv->open();
+#endif
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
 		return err;
@@ -4204,6 +4291,7 @@ int bt_disable(void)
 {
 	int err;
 
+#if !DT_HAS_CHOSEN(zephyr_bt_hci)
 	if (!bt_dev.drv) {
 		LOG_ERR("No HCI driver registered");
 		return -ENODEV;
@@ -4212,6 +4300,7 @@ int bt_disable(void)
 	if (!bt_dev.drv->close) {
 		return -ENOTSUP;
 	}
+#endif
 
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLE)) {
 		return -EALREADY;
@@ -4219,22 +4308,6 @@ int bt_disable(void)
 
 	/* Clear BT_DEV_READY before disabling HCI link */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
-
-	err = bt_dev.drv->close();
-	if (err) {
-		LOG_ERR("HCI driver close failed (%d)", err);
-
-		/* Re-enable BT_DEV_READY to avoid inconsistent stack state */
-		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-
-		return err;
-	}
-
-	/* Some functions rely on checking this bitfield */
-	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
-
-	/* If random address was set up - clear it */
-	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
 
 #if defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
@@ -4256,13 +4329,46 @@ int bt_disable(void)
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
 
-	/* Abort TX thread */
-	k_thread_abort(&tx_thread_data);
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	err = bt_hci_close(bt_dev.hci);
+	if (err == -ENOSYS) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
+		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+		return -ENOTSUP;
+	}
+#else
+	err = bt_dev.drv->close();
+#endif
+	if (err) {
+		LOG_ERR("HCI driver close failed (%d)", err);
+
+		/* Re-enable BT_DEV_READY to avoid inconsistent stack state */
+		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+
+		return err;
+	}
 
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* Abort RX thread */
 	k_thread_abort(&bt_workq.thread);
 #endif
+
+	/* Some functions rely on checking this bitfield */
+	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
+
+	/* Reset IDs and corresponding keys. */
+	bt_dev.id_count = 0;
+#if defined(CONFIG_BT_SMP)
+	bt_dev.le.rl_entries = 0;
+	bt_keys_reset();
+#endif
+
+	/* If random address was set up - clear it */
+	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
+
+	if (IS_ENABLED(CONFIG_BT_ISO)) {
+		bt_iso_reset();
+	}
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 
@@ -4522,4 +4628,42 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 	net_buf_unref(rsp);
 
 	return err;
+}
+
+/* Return `true` if a command was processed/sent */
+static bool process_pending_cmd(k_timeout_t timeout)
+{
+	if (!k_fifo_is_empty(&bt_dev.cmd_tx_queue)) {
+		if (k_sem_take(&bt_dev.ncmd_sem, timeout) == 0) {
+			hci_core_send_cmd();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void tx_processor(struct k_work *item)
+{
+	LOG_DBG("TX process start");
+	if (process_pending_cmd(K_NO_WAIT)) {
+		/* If we processed a command, let the scheduler run before
+		 * processing another command (or data).
+		 */
+		bt_tx_irq_raise();
+		return;
+	}
+
+	/* Hand over control to conn to process pending data */
+	if (IS_ENABLED(CONFIG_BT_CONN_TX)) {
+		bt_conn_tx_processor();
+	}
+}
+
+static K_WORK_DEFINE(tx_work, tx_processor);
+
+void bt_tx_irq_raise(void)
+{
+	LOG_DBG("kick TX");
+	k_work_submit(&tx_work);
 }

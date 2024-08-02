@@ -948,6 +948,6 @@ static inline bool pwm_is_ready_dt(const struct pwm_dt_spec *spec)
  * @}
  */
 
-#include <syscalls/pwm.h>
+#include <zephyr/syscalls/pwm.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PWM_H_ */

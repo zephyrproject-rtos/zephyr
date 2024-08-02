@@ -8,38 +8,26 @@ if CPU_CORTEX
 config GIC
 	bool
 
-# Selecting these symbols directly is deprecated: the GIC architecture version
-# should be specified by adding the appropriate compat (for example arm,gic-v2)
-# to the DT.
 config GIC_V1
 	def_bool DT_HAS_ARM_GIC_V1_ENABLED
 	select GIC
-	select DEPRECATED if !DT_HAS_ARM_GIC_V1_ENABLED
 	help
 	  The ARM Generic Interrupt Controller v1 (e.g. PL390) works with the
 	  ARM Cortex-family processors.
-	  Selecting this symbol directly is deprecated. Please add the arm,gic-v1
-	  compatible to the GIC node in your DT and remove the direct selection.
 
 config GIC_V2
 	def_bool DT_HAS_ARM_GIC_V2_ENABLED
 	select GIC
-	select DEPRECATED if !DT_HAS_ARM_GIC_V2_ENABLED
 	help
 	  The ARM Generic Interrupt Controller v2 (e.g. GIC-400) works with the
 	  ARM Cortex-family processors.
-	  Selecting this symbol directly is deprecated. Please add the arm,gic-v2
-	  compatible to the GIC node in your DT and remove the direct selection.
 
 config GIC_V3
 	def_bool DT_HAS_ARM_GIC_V3_ENABLED
 	select GIC
-	select DEPRECATED if !DT_HAS_ARM_GIC_V3_ENABLED
 	help
 	  The ARM Generic Interrupt Controller v3 (e.g. GIC-500 and GIC-600)
 	  works with the ARM Cortex-family processors.
-	  Selecting this symbol directly is deprecated. Please add the arm,gic-v3
-	  compatible to the GIC node in your DT and remove the direct selection.
 
 config GIC_VER
 	int

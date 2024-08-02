@@ -1,11 +1,26 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
 
 #include "cap_internal.h"
 #include "csip_internal.h"
@@ -17,7 +32,6 @@ LOG_MODULE_REGISTER(bt_cap_common, CONFIG_BT_CAP_COMMON_LOG_LEVEL);
 static struct bt_cap_common_client bt_cap_common_clients[CONFIG_BT_MAX_CONN];
 static const struct bt_uuid *cas_uuid = BT_UUID_CAS;
 static struct bt_cap_common_proc active_proc;
-static bt_cap_common_discover_func_t discover_cb_func;
 
 struct bt_cap_common_proc *bt_cap_common_get_active_proc(void)
 {
@@ -31,6 +45,8 @@ void bt_cap_common_clear_active_proc(void)
 
 void bt_cap_common_start_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt)
 {
+	LOG_DBG("Setting proc to %d for %zu streams", proc_type, proc_cnt);
+
 	atomic_set_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_ACTIVE);
 	active_proc.proc_cnt = proc_cnt;
 	active_proc.proc_type = proc_type;
@@ -41,6 +57,8 @@ void bt_cap_common_start_proc(enum bt_cap_common_proc_type proc_type, size_t pro
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
 void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type)
 {
+	LOG_DBG("Setting subproc to %d", subproc_type);
+
 	active_proc.proc_done_cnt = 0U;
 	active_proc.proc_initiated_cnt = 0U;
 	active_proc.subproc_type = subproc_type;
@@ -55,16 +73,23 @@ bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type)
 struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
 					      const union bt_cap_set_member *member)
 {
+	if (member == NULL) {
+		return NULL;
+	}
+
 	if (type == BT_CAP_SET_TYPE_CSIP) {
 		struct bt_cap_common_client *client;
 
 		/* We have verified that `client` won't be NULL in
 		 * `valid_change_volume_param`.
 		 */
+
 		client = bt_cap_common_get_client_by_csis(member->csip);
-		if (client != NULL) {
-			return client->conn;
+		if (client == NULL) {
+			return NULL;
 		}
+
+		return client->conn;
 	}
 
 	return member->member;
@@ -97,6 +122,8 @@ void bt_cap_common_abort_proc(struct bt_conn *conn, int err)
 		return;
 	}
 
+	LOG_DBG("Aborting proc %d for %p: %d", active_proc.proc_type, (void *)conn, err);
+
 	active_proc.err = err;
 	active_proc.failed_conn = conn;
 	atomic_set_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_ABORTED);
@@ -125,6 +152,7 @@ static bool active_proc_is_commander(void)
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_MUTE_CHANGE:
 	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_GAIN_CHANGE:
 	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_MUTE_CHANGE:
+	case BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START:
 		return true;
 	default:
 		return false;
@@ -222,47 +250,18 @@ bt_cap_common_get_client_by_csis(const struct bt_csip_set_coordinator_csis_inst 
 	return NULL;
 }
 
-struct bt_cap_common_client *bt_cap_common_get_client(enum bt_cap_set_type type,
-						      const union bt_cap_set_member *member)
-{
-	struct bt_cap_common_client *client = NULL;
-
-	if (type == BT_CAP_SET_TYPE_AD_HOC) {
-		CHECKIF(member->member == NULL) {
-			LOG_DBG("member->member is NULL");
-			return NULL;
-		}
-
-		client = bt_cap_common_get_client_by_acl(member->member);
-	} else if (type == BT_CAP_SET_TYPE_CSIP) {
-		CHECKIF(member->csip == NULL) {
-			LOG_DBG("member->csip is NULL");
-			return NULL;
-		}
-
-		client = bt_cap_common_get_client_by_csis(member->csip);
-		if (client == NULL) {
-			LOG_DBG("CSIS was not found for member");
-			return NULL;
-		}
-	}
-
-	if (client == NULL || !client->cas_found) {
-		LOG_DBG("CAS was not found for member %p", member);
-		return NULL;
-	}
-
-	return client;
-}
-
 static void cap_common_discover_complete(struct bt_conn *conn, int err,
+					 const struct bt_csip_set_coordinator_set_member *member,
 					 const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
-	if (discover_cb_func != NULL) {
-		const bt_cap_common_discover_func_t cb_func = discover_cb_func;
+	struct bt_cap_common_client *client;
 
-		discover_cb_func = NULL;
-		cb_func(conn, err, csis_inst);
+	client = bt_cap_common_get_client_by_acl(conn);
+	if (client != NULL && client->discover_cb_func != NULL) {
+		const bt_cap_common_discover_func_t cb_func = client->discover_cb_func;
+
+		client->discover_cb_func = NULL;
+		cb_func(conn, err, member, csis_inst);
 	}
 }
 
@@ -275,7 +274,7 @@ static void csis_client_discover_cb(struct bt_conn *conn,
 	if (err != 0) {
 		LOG_DBG("CSIS client discover failed: %d", err);
 
-		cap_common_discover_complete(conn, err, NULL);
+		cap_common_discover_complete(conn, err, NULL, NULL);
 
 		return;
 	}
@@ -287,10 +286,10 @@ static void csis_client_discover_cb(struct bt_conn *conn,
 	if (member == NULL || set_count == 0 || client->csis_inst == NULL) {
 		LOG_ERR("Unable to find CSIS for CAS");
 
-		cap_common_discover_complete(conn, -ENODATA, NULL);
+		cap_common_discover_complete(conn, -ENODATA, NULL, NULL);
 	} else {
 		LOG_DBG("Found CAS with CSIS");
-		cap_common_discover_complete(conn, 0, client->csis_inst);
+		cap_common_discover_complete(conn, 0, member, client->csis_inst);
 	}
 }
 
@@ -301,7 +300,7 @@ static uint8_t bt_cap_common_discover_included_cb(struct bt_conn *conn,
 	if (attr == NULL) {
 		LOG_DBG("CAS CSIS include not found");
 
-		cap_common_discover_complete(conn, 0, NULL);
+		cap_common_discover_complete(conn, 0, NULL, NULL);
 	} else {
 		const struct bt_gatt_include *included_service = attr->user_data;
 		struct bt_cap_common_client *client =
@@ -332,11 +331,15 @@ static uint8_t bt_cap_common_discover_included_cb(struct bt_conn *conn,
 			err = bt_csip_set_coordinator_discover(conn);
 			if (err != 0) {
 				LOG_DBG("Discover failed (err %d)", err);
-				cap_common_discover_complete(conn, err, NULL);
+				cap_common_discover_complete(conn, err, NULL, NULL);
 			}
 		} else {
+			const struct bt_csip_set_coordinator_set_member *member =
+				bt_csip_set_coordinator_set_member_by_conn(conn);
+
 			LOG_DBG("Found CAS with CSIS");
-			cap_common_discover_complete(conn, 0, client->csis_inst);
+
+			cap_common_discover_complete(conn, 0, member, client->csis_inst);
 		}
 	}
 
@@ -347,19 +350,18 @@ static uint8_t bt_cap_common_discover_cas_cb(struct bt_conn *conn, const struct 
 					     struct bt_gatt_discover_params *params)
 {
 	if (attr == NULL) {
-		cap_common_discover_complete(conn, -ENODATA, NULL);
+		cap_common_discover_complete(conn, -ENODATA, NULL, NULL);
 	} else {
 		const struct bt_gatt_service_val *prim_service = attr->user_data;
 		struct bt_cap_common_client *client =
 			CONTAINER_OF(params, struct bt_cap_common_client, param);
 		int err;
 
-		client->cas_found = true;
 		client->conn = bt_conn_ref(conn);
 
 		if (attr->handle == prim_service->end_handle) {
 			LOG_DBG("Found CAS without CSIS");
-			cap_common_discover_complete(conn, 0, NULL);
+			cap_common_discover_complete(conn, 0, NULL, NULL);
 
 			return BT_GATT_ITER_STOP;
 		}
@@ -376,7 +378,7 @@ static uint8_t bt_cap_common_discover_cas_cb(struct bt_conn *conn, const struct 
 		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 
-			cap_common_discover_complete(conn, err, NULL);
+			cap_common_discover_complete(conn, err, NULL, NULL);
 		}
 	}
 
@@ -386,24 +388,26 @@ static uint8_t bt_cap_common_discover_cas_cb(struct bt_conn *conn, const struct 
 int bt_cap_common_discover(struct bt_conn *conn, bt_cap_common_discover_func_t func)
 {
 	struct bt_gatt_discover_params *param;
+	struct bt_cap_common_client *client;
 	int err;
 
-	if (discover_cb_func != NULL) {
+	client = bt_cap_common_get_client_by_acl(conn);
+	if (client->discover_cb_func != NULL) {
 		return -EBUSY;
 	}
 
-	param = &bt_cap_common_clients[bt_conn_index(conn)].param;
+	param = &client->param;
 	param->func = bt_cap_common_discover_cas_cb;
 	param->uuid = cas_uuid;
 	param->type = BT_GATT_DISCOVER_PRIMARY;
 	param->start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	param->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
-	discover_cb_func = func;
+	client->discover_cb_func = func;
 
 	err = bt_gatt_discover(conn, param);
 	if (err != 0) {
-		discover_cb_func = NULL;
+		client->discover_cb_func = NULL;
 
 		/* Report expected possible errors */
 		if (err == -ENOTCONN || err == -ENOMEM) {

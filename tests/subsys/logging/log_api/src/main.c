@@ -80,6 +80,11 @@ static void flush_log(void)
 	}
 }
 
+static bool frontend_only(void)
+{
+	return NO_BACKENDS || IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY);
+}
+
 static void log_setup(bool backend2_enable)
 {
 	stamp = TIMESTAMP_INIT_VAL;
@@ -98,7 +103,7 @@ static void log_setup(bool backend2_enable)
 	test_source_id = log_source_id_get(STRINGIFY(test));
 	test2_source_id = log_source_id_get(STRINGIFY(test2));
 
-	if (NO_BACKENDS) {
+	if (frontend_only()) {
 		return;
 	}
 
@@ -220,11 +225,6 @@ ZTEST(test_log_api, test_log_various_messages)
 #undef TEST_MSG_0
 #undef TEST_MSG_0_PREFIX
 #undef TEST_MSG_1
-}
-
-static bool frontend_only(void)
-{
-	return NO_BACKENDS || IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY);
 }
 
 /*
@@ -730,14 +730,14 @@ ZTEST(test_log_api, test_log_printk_vs_raw)
 
 	mock_log_frontend_record(0, LOG_LEVEL_INTERNAL_RAW_STRING, "test 100\n");
 	mock_log_backend_record(&backend1, 0,
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				0, LOG_LEVEL_INTERNAL_RAW_STRING,
 				exp_timestamp++, "test 100\n");
 	LOG_PRINTK("test %d\n", 100);
 
 
 	mock_log_frontend_record(1, LOG_LEVEL_INTERNAL_RAW_STRING, "test 100\n");
 	mock_log_backend_record(&backend1, 1,
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				0, LOG_LEVEL_INTERNAL_RAW_STRING,
 				exp_timestamp++, "test 100\n");
 	LOG_RAW("test %d\n", 100);
 

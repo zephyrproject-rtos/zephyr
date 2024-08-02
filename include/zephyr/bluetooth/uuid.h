@@ -432,7 +432,7 @@ struct bt_uuid_128 {
 #define BT_UUID_CSC \
 	BT_UUID_DECLARE_16(BT_UUID_CSC_VAL)
 /**
- *  @brief Cyclicg Power Service UUID value
+ *  @brief Cycling Power Service UUID value
  */
 #define BT_UUID_CPS_VAL 0x1818
 /**
@@ -620,7 +620,7 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_ECS_VAL 0x183c
 /**
- *  @brief Energency Configuration Service
+ *  @brief Emergency Configuration Service
  */
 #define BT_UUID_ECS \
 	BT_UUID_DECLARE_16(BT_UUID_ECS_VAL)
@@ -1003,11 +1003,11 @@ struct bt_uuid_128 {
 #define BT_UUID_GAP_APPEARANCE \
 	BT_UUID_DECLARE_16(BT_UUID_GAP_APPEARANCE_VAL)
 /**
- *  @brief GAP Characteristic Peripheal Privacy Flag UUID value
+ *  @brief GAP Characteristic Peripheral Privacy Flag UUID value
  */
 #define BT_UUID_GAP_PPF_VAL 0x2a02
 /**
- *  @brief GAP Characteristic Peripheal Privacy Flag
+ *  @brief GAP Characteristic Peripheral Privacy Flag
  */
 #define BT_UUID_GAP_PPF \
 	BT_UUID_DECLARE_16(BT_UUID_GAP_PPF_VAL)
@@ -3546,7 +3546,7 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT_RCCP_VAL 0x2b1f
 /**
- *  @brief GATT Characteristic Reconnection Configurationn Control Point
+ *  @brief GATT Characteristic Reconnection Configuration Control Point
  */
 #define BT_UUID_GATT_RCCP \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_RCCP_VAL)
@@ -3569,11 +3569,11 @@ struct bt_uuid_128 {
 #define BT_UUID_GATT_IDD_S \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_IDD_S_VAL)
 /**
- *  @brief GATT Characteristic IDD Announciation Status UUID Value
+ *  @brief GATT Characteristic IDD Annunciation Status UUID Value
  */
 #define BT_UUID_GATT_IDD_AS_VAL 0x2b22
 /**
- *  @brief GATT Characteristic IDD Announciation Status
+ *  @brief GATT Characteristic IDD Annunciation Status
  */
 #define BT_UUID_GATT_IDD_AS \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_IDD_AS_VAL)
@@ -3857,7 +3857,7 @@ struct bt_uuid_128 {
 #define BT_UUID_GATT_SLP_AID \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_SLP_AID_VAL)
 /**
- *  @brief GATT Characteristic Sleep Actiity Summary Data UUID Value
+ *  @brief GATT Characteristic Sleep Activity Summary Data UUID Value
  */
 #define BT_UUID_GATT_SLP_ASD_VAL 0x2b42
 /**
@@ -3893,11 +3893,11 @@ struct bt_uuid_128 {
 #define BT_UUID_GATT_PHY_ASDESC \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_PHY_ASDESC_VAL)
 /**
- *  @brief GATT Characteristic Preffered Units UUID Value
+ *  @brief GATT Characteristic Preferred Units UUID Value
  */
 #define BT_UUID_GATT_PREF_U_VAL 0x2b46
 /**
- *  @brief GATT Characteristic Preffered Units
+ *  @brief GATT Characteristic Preferred Units
  */
 #define BT_UUID_GATT_PREF_U \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_PREF_U_VAL)
@@ -4120,12 +4120,11 @@ struct bt_uuid_128 {
 /**
  *  @brief Set Identity Resolving Key value
  */
-#define BT_UUID_CSIS_SET_SIRK_VAL 0x2b84
+#define BT_UUID_CSIS_SIRK_VAL 0x2b84
 /**
  *  @brief Set Identity Resolving Key
  */
-#define BT_UUID_CSIS_SET_SIRK \
-	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_SIRK_VAL)
+#define BT_UUID_CSIS_SIRK         BT_UUID_DECLARE_16(BT_UUID_CSIS_SIRK_VAL)
 /**
  *  @brief Set size value
  */

@@ -45,6 +45,8 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUPPR     NRF54H20_XXAA
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA       NRF54L15_ENGA_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUAPP NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUFLPR NRF_FLPR)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF54L15 NRF54L15_XXAA)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF54L15_CPUAPP NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9120             NRF9120_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
 
@@ -108,6 +110,7 @@ zephyr_library_sources_ifdef(CONFIG_NRFX_PWM     ${SRC_DIR}/nrfx_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_QDEC    ${SRC_DIR}/nrfx_qdec.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_QSPI    ${SRC_DIR}/nrfx_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_RNG     ${SRC_DIR}/nrfx_rng.c)
+zephyr_library_sources_ifdef(CONFIG_NRFX_RRAMC   ${SRC_DIR}/nrfx_rramc.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_RTC     ${SRC_DIR}/nrfx_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_SAADC   ${SRC_DIR}/nrfx_saadc.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_SPI     ${SRC_DIR}/nrfx_spi.c)
@@ -128,10 +131,6 @@ if(CONFIG_NRFX_TWI OR CONFIG_NRFX_TWIM)
   zephyr_library_sources(${SRC_DIR}/nrfx_twi_twim.c)
 endif()
 
-if (CONFIG_NRF_GRTC_TIMER AND CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT)
-  zephyr_compile_definitions(NRF_GRTC_HAS_EXTENDED=1)
-endif()
-
 # Inject HAL "CONFIG_NFCT_PINS_AS_GPIOS" definition if user requests to
 # configure the NFCT pins as GPIOS. Do the same with "CONFIG_GPIO_AS_PINRESET"
 # to configure the reset GPIO as nRESET. This way, the HAL will take care of
@@ -141,7 +140,10 @@ dt_nodelabel(uicr_path NODELABEL "uicr")
 if(DEFINED uicr_path)
   dt_prop(nfct_pins_as_gpios PATH ${uicr_path} PROPERTY "nfct-pins-as-gpios")
   if(${nfct_pins_as_gpios})
-    zephyr_library_compile_definitions(CONFIG_NFCT_PINS_AS_GPIOS)
+    zephyr_library_compile_definitions(
+      CONFIG_NFCT_PINS_AS_GPIOS
+      NRF_CONFIG_NFCT_PINS_AS_GPIOS
+    )
   endif()
 
   dt_prop(gpio_as_nreset PATH ${uicr_path} PROPERTY "gpio-as-nreset")

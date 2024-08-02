@@ -77,7 +77,7 @@ img_mgmt_state_flags(int query_slot)
 
 	flags = 0;
 
-	/* Determine if this is is pending or confirmed (only applicable for
+	/* Determine if this is pending or confirmed (only applicable for
 	 * unified images and loaders.
 	 */
 	swap_type = img_mgmt_swap_type(query_slot);

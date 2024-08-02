@@ -6,10 +6,11 @@
 
 /** @file icmp.h
  *
+ * @brief ICMP sending and receiving.
+ *
  * @defgroup icmp Send and receive IPv4 or IPv6 ICMP Echo Request messages.
  * @ingroup networking
  * @{
- * @brief ICMP sending and receiving.
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_ICMP_H_
@@ -27,10 +28,10 @@
 extern "C" {
 #endif
 
-#define NET_ICMPV4_ECHO_REQUEST 8
-#define NET_ICMPV4_ECHO_REPLY   0
-#define NET_ICMPV6_ECHO_REQUEST 128
-#define NET_ICMPV6_ECHO_REPLY   129
+#define NET_ICMPV4_ECHO_REQUEST 8    /**< ICMPv4 Echo-Request */
+#define NET_ICMPV4_ECHO_REPLY   0    /**< ICMPv4 Echo-Reply */
+#define NET_ICMPV6_ECHO_REQUEST 128  /**< ICMPv6 Echo-Request */
+#define NET_ICMPV6_ECHO_REPLY   129  /**< ICMPv6 Echo-Reply */
 
 struct net_icmp_ctx;
 struct net_icmp_ip_hdr;
@@ -136,7 +137,7 @@ struct net_icmp_ping_params {
 	/** Network packet priority. */
 	int priority;
 
-	/* Arbitrary payload data that will be included in the Echo Reply
+	/** Arbitrary payload data that will be included in the Echo Reply
 	 * verbatim. May be NULL.
 	 */
 	const void *data;

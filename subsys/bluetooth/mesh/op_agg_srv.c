@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(bt_mesh_op_agg_srv);
 
 NET_BUF_SIMPLE_DEFINE_STATIC(sdu, BT_MESH_TX_SDU_MAX);
 
-/** Mesh Opcodes Aggragator Server Model Context */
+/** Mesh Opcodes Aggregator Server Model Context */
 static struct bt_mesh_op_agg_srv {
 	/** Composition data model entry pointer. */
 	const struct bt_mesh_model *model;

@@ -28,16 +28,16 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     zephyr_library_sources(${RT1170_BOARD_DIR}/xip/${RT1170_BOARD_NAME}_flexspi_nor_config.c)
     zephyr_library_include_directories(${RT1170_BOARD_DIR}/xip)
   endif()
-  if(CONFIG_DEVICE_CONFIGURATION_DATA)
-    # Include device configuration data block for RT1170 EVK from NXP's HAL.
+  if(CONFIG_EXTERNAL_MEM_CONFIG_DATA)
+    # Include external memory configuration data block for RT1170 EVK from NXP's HAL.
     # This configuration block may need modification if another SDRAM chip
     # is used on your custom board.
-    zephyr_compile_definitions(XIP_BOOT_HEADER_DCD_ENABLE=1)
-    zephyr_library_sources(${RT1170_BOARD_DIR}/dcd.c)
+    zephyr_compile_definitions(XIP_BOOT_HEADER_XMCD_ENABLE=1)
+    zephyr_library_sources(${RT1170_BOARD_DIR}/xmcd/xmcd.c)
   else()
     if(CONFIG_SRAM_BASE_ADDRESS EQUAL 0x80000000)
-      message(WARNING "You are using SDRAM as RAM but no device "
-        "configuration data (DCD) is included. This configuration may not boot")
+      message(WARNING "You are using SDRAM as RAM but no external memory"
+        "configuration data (XMCD) is included. This configuration may not boot")
     endif()
   endif()
 endif()

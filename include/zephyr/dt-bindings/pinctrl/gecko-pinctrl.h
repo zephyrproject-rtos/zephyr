@@ -26,7 +26,7 @@
 /** Position of the function field. */
 #define GECKO_FUN_POS 24U
 /** Mask for the function field. */
-#define GECKO_FUN_MSK 0xFFFU
+#define GECKO_FUN_MSK 0xFFU
 
 /** Position of the pin field. */
 #define GECKO_PIN_POS 0U

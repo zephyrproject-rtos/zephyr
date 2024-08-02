@@ -37,6 +37,7 @@ include(CheckCXXCompilerFlag)
 # 7 Linkable loadable extensions (llext)
 # 7.1 llext_* configuration functions
 # 7.2 add_llext_* build control functions
+# 7.3 llext helper functions
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -504,7 +505,7 @@ function(zephyr_library_compile_options item)
   # library and link with it to obtain the flags.
   #
   # Linking with a dummy interface library will place flags later on
-  # the command line than the the flags from zephyr_interface because
+  # the command line than the flags from zephyr_interface because
   # zephyr_interface will be the first interface library that flags
   # are taken from.
 
@@ -704,9 +705,10 @@ endfunction()
 # This section provides glue between CMake and the Python code that
 # manages the runners.
 
+set(TYPES "FLASH" "DEBUG" "SIM" "ROBOT")
 function(_board_check_runner_type type) # private helper
-  if (NOT (("${type}" STREQUAL "FLASH") OR ("${type}" STREQUAL "DEBUG")))
-    message(FATAL_ERROR "invalid type ${type}; should be FLASH or DEBUG")
+  if (NOT "${type}" IN_LIST TYPES)
+    message(FATAL_ERROR "invalid type ${type}; should be one of: ${TYPES}")
   endif()
 endfunction()
 
@@ -722,8 +724,8 @@ endfunction()
 #
 # This would set the board's flash runner to "pyocd".
 #
-# In general, "type" is FLASH or DEBUG, and "runner" is the name of a
-# runner.
+# In general, "type" is FLASH, DEBUG, SIM or ROBOT and "runner" is
+# the name of a runner.
 function(board_set_runner type runner)
   _board_check_runner_type(${type})
   if (DEFINED BOARD_${type}_RUNNER)
@@ -762,6 +764,16 @@ endmacro()
 # A convenience macro for board_set_runner_ifnset(DEBUG ${runner}).
 macro(board_set_debugger_ifnset runner)
   board_set_runner_ifnset(DEBUG ${runner})
+endmacro()
+
+# A convenience macro for board_set_runner_ifnset(ROBOT ${runner}).
+macro(board_set_robot_runner_ifnset runner)
+  board_set_runner_ifnset(ROBOT ${runner})
+endmacro()
+
+# A convenience macro for board_set_runner_ifnset(SIM ${runner}).
+macro(board_set_sim_runner_ifnset runner)
+  board_set_runner_ifnset(SIM ${runner})
 endmacro()
 
 # This function is intended for board.cmake files and application
@@ -1170,6 +1182,7 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    ROM_START     Inside the first output section of the image. This option is
 #                  currently only available on ARM Cortex-M, ARM Cortex-R,
 #                  x86, ARC, openisa_rv32m1, and RISC-V.
+#    ROM_SECTIONS  Inside the ROMABLE_REGION GROUP, not initialized.
 #    RAM_SECTIONS  Inside the RAMABLE_REGION GROUP, not initialized.
 #    DATA_SECTIONS Inside the RAMABLE_REGION GROUP, initialized.
 #    RAMFUNC_SECTION Inside the RAMFUNC RAMABLE_REGION GROUP, not initialized.
@@ -1198,8 +1211,8 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    _mysection_end = .;
 #    _mysection_size = ABSOLUTE(_mysection_end - _mysection_start);
 #
-# When placing into SECTIONS, RAM_SECTIONS or DATA_SECTIONS, the files must
-# instead define their own output sections to achieve the same thing:
+# When placing into SECTIONS, ROM_SECTIONS, RAM_SECTIONS or DATA_SECTIONS, the
+# files must instead define their own output sections to achieve the same thing:
 #    SECTION_PROLOGUE(.mysection,,)
 #    {
 #        _mysection_start = .;
@@ -1219,6 +1232,7 @@ function(zephyr_linker_sources location)
   # the global linker.ld.
   set(snippet_base       "${__build_dir}/include/generated")
   set(sections_path      "${snippet_base}/snippets-sections.ld")
+  set(rom_sections_path  "${snippet_base}/snippets-rom-sections.ld")
   set(ram_sections_path  "${snippet_base}/snippets-ram-sections.ld")
   set(data_sections_path "${snippet_base}/snippets-data-sections.ld")
   set(rom_start_path     "${snippet_base}/snippets-rom-start.ld")
@@ -1238,6 +1252,7 @@ function(zephyr_linker_sources location)
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
   if (NOT DEFINED cleared)
     file(WRITE ${sections_path} "")
+    file(WRITE ${rom_sections_path} "")
     file(WRITE ${ram_sections_path} "")
     file(WRITE ${data_sections_path} "")
     file(WRITE ${rom_start_path} "")
@@ -1257,6 +1272,8 @@ function(zephyr_linker_sources location)
   # Choose destination file, based on the <location> argument.
   if ("${location}" STREQUAL "SECTIONS")
     set(snippet_path "${sections_path}")
+  elseif("${location}" STREQUAL "ROM_SECTIONS")
+    set(snippet_path "${rom_sections_path}")
   elseif("${location}" STREQUAL "RAM_SECTIONS")
     set(snippet_path "${ram_sections_path}")
   elseif("${location}" STREQUAL "DATA_SECTIONS")
@@ -1759,9 +1776,11 @@ function(zephyr_blobs_verify)
 
       message(VERBOSE "Verifying blob \"${path}\"")
 
-      # Each path that has a correct sha256 is prefixed with an A
-      if(NOT "A ${path}" IN_LIST BLOBS_LIST)
-        message(${msg_lvl} "Blob for path \"${path}\" isn't valid.")
+      if(NOT EXISTS "${path}")
+        message(${msg_lvl} "Blob for path \"${path}\" missing. Update with: west blobs fetch")
+      elseif(NOT "A ${path}" IN_LIST BLOBS_LIST)
+        # Each path that has a correct sha256 is prefixed with an A
+        message(${msg_lvl} "Blob for path \"${path}\" isn't valid. Update with: west blobs fetch")
       endif()
     endforeach()
   else()
@@ -1772,7 +1791,9 @@ function(zephyr_blobs_verify)
 
       message(VERBOSE "Verifying blob \"${path}\"")
 
-      if(NOT "${status}" STREQUAL "A")
+      if(NOT EXISTS "${path}")
+        message(${msg_lvl} "Blob for path \"${path}\" missing. Update with: west blobs fetch ${BLOBS_VERIFY_MODULE}")
+      elseif(NOT "${status}" STREQUAL "A")
         message(${msg_lvl} "Blob for path \"${path}\" isn't valid. Update with: west blobs fetch ${BLOBS_VERIFY_MODULE}")
       endif()
     endforeach()
@@ -2529,6 +2550,8 @@ endfunction()
 #                          to absolute path, relative from `APPLICATION_SOURCE_DIR`
 #                          Issue an error for any relative path not specified
 #                          by user with `-D<path>`
+#                          BASE_DIR <base-dir>: convert paths relative to <base-dir>
+#                                               instead of `APPLICATION_SOURCE_DIR`
 #
 # returns an updated list of absolute paths
 #
@@ -2582,7 +2605,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   endif()
 
   if(${ARGV0} STREQUAL APPLICATION_ROOT)
-    set(single_args APPLICATION_ROOT)
+    set(single_args APPLICATION_ROOT BASE_DIR)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options QUALIFIERS REQUIRED)
     set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX)
@@ -2595,6 +2618,10 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   endif()
 
   if(ZFILE_APPLICATION_ROOT)
+    if(NOT DEFINED ZFILE_BASE_DIR)
+      set(ZFILE_BASE_DIR ${APPLICATION_SOURCE_DIR})
+    endif()
+
     # Note: user can do: `-D<var>=<relative-path>` and app can at same
     # time specify `list(APPEND <var> <abs-path>)`
     # Thus need to check and update only CACHED variables (-D<var>).
@@ -2604,11 +2631,11 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
       # `set(<var> CACHE)`, so let's update current scope variable to absolute
       # path from  `APPLICATION_SOURCE_DIR`.
       if(NOT IS_ABSOLUTE ${path})
-        set(abs_path ${APPLICATION_SOURCE_DIR}/${path})
         list(FIND ${ZFILE_APPLICATION_ROOT} ${path} index)
+        cmake_path(ABSOLUTE_PATH path BASE_DIRECTORY ${ZFILE_BASE_DIR} NORMALIZE)
         if(NOT ${index} LESS 0)
           list(REMOVE_AT ${ZFILE_APPLICATION_ROOT} ${index})
-          list(INSERT ${ZFILE_APPLICATION_ROOT} ${index} ${abs_path})
+          list(INSERT ${ZFILE_APPLICATION_ROOT} ${index} ${path})
         endif()
       endif()
     endforeach()
@@ -2625,6 +2652,7 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       endif()
     endforeach()
 
+    list(REMOVE_DUPLICATES ${ZFILE_APPLICATION_ROOT})
     # This updates the provided argument in parent scope (callers scope)
     set(${ZFILE_APPLICATION_ROOT} ${${ZFILE_APPLICATION_ROOT}} PARENT_SCOPE)
   endif()
@@ -5316,24 +5344,11 @@ function(add_llext_target target_name)
   set(llext_pkg_output ${LLEXT_OUTPUT})
   set(source_files ${LLEXT_SOURCES})
 
-  # Convert the LLEXT_REMOVE_FLAGS list to a regular expression, and use it to
-  # filter out these flags from the Zephyr target settings
-  list(TRANSFORM LLEXT_REMOVE_FLAGS
-       REPLACE "(.+)" "^\\1$"
-       OUTPUT_VARIABLE llext_remove_flags_regexp
-  )
-  string(REPLACE ";" "|" llext_remove_flags_regexp "${llext_remove_flags_regexp}")
-  if ("${llext_remove_flags_regexp}" STREQUAL "")
-    # an empty regexp would match anything, we actually need the opposite
-    # so set it to match empty strings
-    set(llext_remove_flags_regexp "^$")
-  endif()
   set(zephyr_flags
       "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>"
   )
-  set(zephyr_filtered_flags
-      "$<FILTER:${zephyr_flags},EXCLUDE,${llext_remove_flags_regexp}>"
-  )
+  llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags}
+      zephyr_filtered_flags)
 
   # Compile the source file using current Zephyr settings but a different
   # set of flags to obtain the desired llext object type.
@@ -5380,6 +5395,7 @@ function(add_llext_target target_name)
 
   target_compile_definitions(${llext_lib_target} PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
+    LL_EXTENSION_BUILD
   )
   target_compile_options(${llext_lib_target} PRIVATE
     ${zephyr_filtered_flags}
@@ -5417,6 +5433,22 @@ function(add_llext_target target_name)
     COMMAND_EXPAND_LISTS
   )
 
+  # LLEXT ELF processing for importing via SLID
+  #
+  # This command must be executed as last step of the packaging process,
+  # to ensure that the ELF processed for binary generation contains SLIDs.
+  # If executed too early, it is possible that some tools executed to modify
+  # the ELF file (e.g., strip) undo the work performed here.
+  if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+    set(slid_inject_cmd
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/build/llext_inject_slids.py
+      --elf-file ${llext_pkg_output}
+    )
+  else()
+    set(slid_inject_cmd ${CMAKE_COMMAND} -E true)
+  endif()
+
   # Type-specific packaging of the built binary file into an .llext file
   if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
 
@@ -5424,6 +5456,7 @@ function(add_llext_target target_name)
     add_custom_command(
       OUTPUT ${llext_pkg_output}
       COMMAND ${CMAKE_COMMAND} -E copy ${llext_pkg_input} ${llext_pkg_output}
+      COMMAND ${slid_inject_cmd}
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
@@ -5439,6 +5472,7 @@ function(add_llext_target target_name)
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+      COMMAND ${slid_inject_cmd}
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
@@ -5453,6 +5487,7 @@ function(add_llext_target target_name)
               $<TARGET_PROPERTY:bintools,strip_flag_infile>${llext_pkg_input}
               $<TARGET_PROPERTY:bintools,strip_flag_outfile>${llext_pkg_output}
               $<TARGET_PROPERTY:bintools,strip_flag_final>
+      COMMAND ${slid_inject_cmd}
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
@@ -5552,4 +5587,36 @@ function(add_llext_command)
     ${LLEXT_UNPARSED_ARGUMENTS}
     COMMAND_EXPAND_LISTS
   )
+endfunction()
+
+# 7.3 llext helper functions
+
+# Usage:
+#   llext_filter_zephyr_flags(<filter> <flags> <outvar>)
+#
+# Filter out flags from a list of flags. The filter is a list of regular
+# expressions that will be used to exclude flags from the input list.
+#
+# The resulting generator expression will be stored in the variable <outvar>.
+#
+# Example:
+#   llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS zephyr_flags zephyr_filtered_flags)
+#
+function(llext_filter_zephyr_flags filter flags outvar)
+  list(TRANSFORM ${filter}
+       REPLACE "(.+)" "^\\1$"
+       OUTPUT_VARIABLE llext_remove_flags_regexp
+  )
+  list(JOIN llext_remove_flags_regexp "|" llext_remove_flags_regexp)
+  if ("${llext_remove_flags_regexp}" STREQUAL "")
+    # an empty regexp would match anything, we actually need the opposite
+    # so set it to match empty strings
+    set(llext_remove_flags_regexp "^$")
+  endif()
+
+  set(zephyr_filtered_flags
+      "$<FILTER:${flags},EXCLUDE,${llext_remove_flags_regexp}>"
+  )
+
+  set(${outvar} ${zephyr_filtered_flags} PARENT_SCOPE)
 endfunction()

@@ -71,7 +71,7 @@ void z_vrfy_k_event_init(struct k_event *event)
 	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(event, K_OBJ_EVENT));
 	z_impl_k_event_init(event);
 }
-#include <syscalls/k_event_init_mrsh.c>
+#include <zephyr/syscalls/k_event_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /**
@@ -190,7 +190,7 @@ uint32_t z_vrfy_k_event_post(struct k_event *event, uint32_t events)
 	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_post(event, events);
 }
-#include <syscalls/k_event_post_mrsh.c>
+#include <zephyr/syscalls/k_event_post_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 uint32_t z_impl_k_event_set(struct k_event *event, uint32_t events)
@@ -204,7 +204,7 @@ uint32_t z_vrfy_k_event_set(struct k_event *event, uint32_t events)
 	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_set(event, events);
 }
-#include <syscalls/k_event_set_mrsh.c>
+#include <zephyr/syscalls/k_event_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 uint32_t z_impl_k_event_set_masked(struct k_event *event, uint32_t events,
@@ -220,7 +220,7 @@ uint32_t z_vrfy_k_event_set_masked(struct k_event *event, uint32_t events,
 	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_set_masked(event, events, events_mask);
 }
-#include <syscalls/k_event_set_masked_mrsh.c>
+#include <zephyr/syscalls/k_event_set_masked_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 uint32_t z_impl_k_event_clear(struct k_event *event, uint32_t events)
@@ -234,7 +234,7 @@ uint32_t z_vrfy_k_event_clear(struct k_event *event, uint32_t events)
 	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_clear(event, events);
 }
-#include <syscalls/k_event_clear_mrsh.c>
+#include <zephyr/syscalls/k_event_clear_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
@@ -320,7 +320,7 @@ uint32_t z_vrfy_k_event_wait(struct k_event *event, uint32_t events,
 	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_wait(event, events, reset, timeout);
 }
-#include <syscalls/k_event_wait_mrsh.c>
+#include <zephyr/syscalls/k_event_wait_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /**
@@ -342,7 +342,7 @@ uint32_t z_vrfy_k_event_wait_all(struct k_event *event, uint32_t events,
 	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_wait_all(event, events, reset, timeout);
 }
-#include <syscalls/k_event_wait_all_mrsh.c>
+#include <zephyr/syscalls/k_event_wait_all_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_EVENT

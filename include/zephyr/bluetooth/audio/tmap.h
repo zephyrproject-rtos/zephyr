@@ -1,7 +1,9 @@
-/** @file
- *  @brief Header for Bluetooth TMAP.
+/**
+ * @file
+ * @brief Header for Bluetooth TMAP.
  *
  * Copyright 2023 NXP
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +11,10 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 /** Call Gateway (CG) supported */
 #define BT_TMAP_CG_SUPPORTED                                                                       \
@@ -45,24 +49,63 @@
 
 /** @brief TMAP Role characteristic */
 enum bt_tmap_role {
+	/**
+	 * @brief TMAP Call Gateway role
+	 *
+	 * This role is defined to telephone and VoIP applications using the Call Control Profile
+	 * to control calls on a remote TMAP Call Terminal.
+	 * Audio streams in this role are typically bi-directional.
+	 */
 	BT_TMAP_ROLE_CG = BIT(0),
+	/**
+	 * @brief TMAP Call Terminal role
+	 *
+	 * This role is defined to telephone and VoIP applications using the Call Control Profile
+	 * to expose calls to remote TMAP Call Gateways.
+	 * Audio streams in this role are typically bi-directional.
+	 */
 	BT_TMAP_ROLE_CT = BIT(1),
+	/**
+	 * @brief TMAP Unicast Media Sender role
+	 *
+	 * This role is defined send media audio to TMAP Unicast Media Receivers.
+	 * Audio streams in this role are typically uni-directional.
+	 */
 	BT_TMAP_ROLE_UMS = BIT(2),
+	/**
+	 * @brief TMAP Unicast Media Receiver role
+	 *
+	 * This role is defined receive media audio to TMAP Unicast Media Senders.
+	 * Audio streams in this role are typically uni-directional.
+	 */
 	BT_TMAP_ROLE_UMR = BIT(3),
+	/**
+	 * @brief TMAP Broadcast Media Sender role
+	 *
+	 * This role is defined send media audio to TMAP Broadcast Media Receivers.
+	 * Audio streams in this role are always uni-directional.
+	 */
 	BT_TMAP_ROLE_BMS = BIT(4),
+	/**
+	 * @brief TMAP Broadcast Media Receiver role
+	 *
+	 * This role is defined send media audio to TMAP Broadcast Media Senders.
+	 * Audio streams in this role are always uni-directional.
+	 */
 	BT_TMAP_ROLE_BMR = BIT(5),
 };
 
 /** @brief TMAP callback structure. */
 struct bt_tmap_cb {
-	/** @brief TMAP discovery complete callback
+	/**
+	 * @brief TMAP discovery complete callback
 	 *
-	 *  This callback notifies the application about the value of the
-	 *  TMAP Role characteristic on the peer.
+	 * This callback notifies the application about the value of the
+	 * TMAP Role characteristic on the peer.
 	 *
-	 *  @param role	    Peer TMAP role(s).
-	 *  @param conn     Pointer to the connection
-	 *  @param err      0 if success, ATT error received from server otherwise.
+	 * @param role	   Peer TMAP role(s).
+	 * @param conn     Pointer to the connection
+	 * @param err      0 if success, ATT error received from server otherwise.
 	 */
 	void (*discovery_complete)(enum bt_tmap_role role, struct bt_conn *conn, int err);
 };

@@ -45,25 +45,7 @@
 
 MEMORY
 {
-  sram0_0_seg  : org = 0x00002000, len = 0x178
-  sram0_1_seg  : org = 0x00002178, len = 0x8
-  sram0_2_seg  : org = 0x00002180, len = 0x38
-  sram0_3_seg  : org = 0x000021B8, len = 0x8
-  sram0_4_seg  : org = 0x000021C0, len = 0x38
-  sram0_5_seg  : org = 0x000021F8, len = 0x8
-  sram0_6_seg  : org = 0x00002200, len = 0x38
-  sram0_7_seg  : org = 0x00002238, len = 0x8
-  sram0_8_seg  : org = 0x00002240, len = 0x38
-  sram0_9_seg  : org = 0x00002278, len = 0x8
-  sram0_10_seg : org = 0x00002280, len = 0x38
-  sram0_11_seg : org = 0x000022B8, len = 0x8
-  sram0_12_seg : org = 0x000022C0, len = 0x38
-  sram0_13_seg : org = 0x000022F8, len = 0x8
-  sram0_14_seg : org = 0x00002300, len = 0x38
-  sram0_15_seg : org = 0x00002338, len = 0x8
-  sram0_16_seg : org = 0x00002340, len = 0x38
-  sram0_17_seg : org = 0x00002378, len = 0x48
-  sram0_18_seg : org = 0x000023C0, len = 0x40
+  vectors : org = 0x00002000, len = 0x2400
 #ifdef CONFIG_XTENSA_MMU
   vec_helpers  : org = 0x00002400, len = (PHYS_RAM_ADDR - 0x00002400)
 #endif
@@ -87,26 +69,7 @@ MEMORY
 
 PHDRS
 {
-  sram0_0_phdr PT_LOAD;
-  sram0_1_phdr PT_LOAD;
-  sram0_2_phdr PT_LOAD;
-  sram0_3_phdr PT_LOAD;
-  sram0_4_phdr PT_LOAD;
-  sram0_5_phdr PT_LOAD;
-  sram0_6_phdr PT_LOAD;
-  sram0_7_phdr PT_LOAD;
-  sram0_8_phdr PT_LOAD;
-  sram0_9_phdr PT_LOAD;
-  sram0_10_phdr PT_LOAD;
-  sram0_11_phdr PT_LOAD;
-  sram0_12_phdr PT_LOAD;
-  sram0_13_phdr PT_LOAD;
-  sram0_14_phdr PT_LOAD;
-  sram0_15_phdr PT_LOAD;
-  sram0_16_phdr PT_LOAD;
-  sram0_17_phdr PT_LOAD;
-  sram0_18_phdr PT_LOAD;
-
+  vectors_phdr PT_LOAD;
 #ifdef CONFIG_XTENSA_MMU
   vec_helpers_phdr PT_LOAD;
 #endif
@@ -150,142 +113,17 @@ SECTIONS
 
 #include <zephyr/linker/rel-sections.ld>
 
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
+
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
 #endif
 
-  .WindowVectors.text : ALIGN(4)
-  {
-    _WindowVectors_text_start = ABSOLUTE(.);
-    KEEP (*(.WindowVectors.text))
-    _WindowVectors_text_end = ABSOLUTE(.);
-  } >sram0_0_seg :sram0_0_phdr
-
-  .Level2InterruptVector.literal : ALIGN(4)
-  {
-    _Level2InterruptVector_literal_start = ABSOLUTE(.);
-    *(.Level2InterruptVector.literal)
-    _Level2InterruptVector_literal_end = ABSOLUTE(.);
-  } >sram0_1_seg :sram0_1_phdr
-
-  .Level2InterruptVector.text : ALIGN(4)
-  {
-    _Level2InterruptVector_text_start = ABSOLUTE(.);
-    KEEP (*(.Level2InterruptVector.text))
-    _Level2InterruptVector_text_end = ABSOLUTE(.);
-  } >sram0_2_seg :sram0_2_phdr
-
-  .Level3InterruptVector.literal : ALIGN(4)
-  {
-    _Level3InterruptVector_literal_start = ABSOLUTE(.);
-    *(.Level3InterruptVector.literal)
-    _Level3InterruptVector_literal_end = ABSOLUTE(.);
-  } >sram0_3_seg :sram0_3_phdr
-
-  .Level3InterruptVector.text : ALIGN(4)
-  {
-    _Level3InterruptVector_text_start = ABSOLUTE(.);
-    KEEP (*(.Level3InterruptVector.text))
-    _Level3InterruptVector_text_end = ABSOLUTE(.);
-  } >sram0_4_seg :sram0_4_phdr
-
-  .Level4InterruptVector.literal : ALIGN(4)
-  {
-    _Level4InterruptVector_literal_start = ABSOLUTE(.);
-    *(.Level4InterruptVector.literal)
-    _Level4InterruptVector_literal_end = ABSOLUTE(.);
-  } >sram0_5_seg :sram0_5_phdr
-
-  .Level4InterruptVector.text : ALIGN(4)
-  {
-    _Level4InterruptVector_text_start = ABSOLUTE(.);
-    KEEP (*(.Level4InterruptVector.text))
-    _Level4InterruptVector_text_end = ABSOLUTE(.);
-  } >sram0_6_seg :sram0_6_phdr
-
-  .Level5InterruptVector.literal : ALIGN(4)
-  {
-    _Level5InterruptVector_literal_start = ABSOLUTE(.);
-    *(.Level5InterruptVector.literal)
-    _Level5InterruptVector_literal_end = ABSOLUTE(.);
-  } >sram0_7_seg :sram0_7_phdr
-
-  .Level5InterruptVector.text : ALIGN(4)
-  {
-    _Level5InterruptVector_text_start = ABSOLUTE(.);
-    KEEP (*(.Level5InterruptVector.text))
-    _Level5InterruptVector_text_end = ABSOLUTE(.);
-  } >sram0_8_seg :sram0_8_phdr
-
-  .DebugExceptionVector.literal : ALIGN(4)
-  {
-    _DebugExceptionVector_literal_start = ABSOLUTE(.);
-    *(.DebugExceptionVector.literal)
-    _DebugExceptionVector_literal_end = ABSOLUTE(.);
-  } >sram0_9_seg :sram0_9_phdr
-
-  .DebugExceptionVector.text : ALIGN(4)
-  {
-    _DebugExceptionVector_text_start = ABSOLUTE(.);
-    KEEP (*(.DebugExceptionVector.text))
-    _DebugExceptionVector_text_end = ABSOLUTE(.);
-  } >sram0_10_seg :sram0_10_phdr
-
-  .NMIExceptionVector.literal : ALIGN(4)
-  {
-    _NMIExceptionVector_literal_start = ABSOLUTE(.);
-    *(.NMIExceptionVector.literal)
-    _NMIExceptionVector_literal_end = ABSOLUTE(.);
-  } >sram0_11_seg :sram0_11_phdr
-
-  .NMIExceptionVector.text : ALIGN(4)
-  {
-    _NMIExceptionVector_text_start = ABSOLUTE(.);
-    KEEP (*(.NMIExceptionVector.text))
-    _NMIExceptionVector_text_end = ABSOLUTE(.);
-  } >sram0_12_seg :sram0_12_phdr
-
-  .KernelExceptionVector.literal : ALIGN(4)
-  {
-    _KernelExceptionVector_literal_start = ABSOLUTE(.);
-    *(.KernelExceptionVector.literal)
-    _KernelExceptionVector_literal_end = ABSOLUTE(.);
-  } >sram0_13_seg :sram0_13_phdr
-
-  .KernelExceptionVector.text : ALIGN(4)
-  {
-    _KernelExceptionVector_text_start = ABSOLUTE(.);
-    KEEP (*(.KernelExceptionVector.text))
-    _KernelExceptionVector_text_end = ABSOLUTE(.);
-  } >sram0_14_seg :sram0_14_phdr
-
-  .UserExceptionVector.literal : ALIGN(4)
-  {
-    _UserExceptionVector_literal_start = ABSOLUTE(.);
-    *(.UserExceptionVector.literal)
-    _UserExceptionVector_literal_end = ABSOLUTE(.);
-  } >sram0_15_seg :sram0_15_phdr
-
-  .UserExceptionVector.text : ALIGN(4)
-  {
-    _UserExceptionVector_text_start = ABSOLUTE(.);
-    KEEP (*(.UserExceptionVector.text))
-    _UserExceptionVector_text_end = ABSOLUTE(.);
-  } >sram0_16_seg :sram0_16_phdr
-
-  .DoubleExceptionVector.literal : ALIGN(4)
-  {
-    _DoubleExceptionVector_literal_start = ABSOLUTE(.);
-    *(.DoubleExceptionVector.literal)
-    _DoubleExceptionVector_literal_end = ABSOLUTE(.);
-  } >sram0_17_seg :sram0_17_phdr
-
-  .DoubleExceptionVector.text : ALIGN(4)
-  {
-    _DoubleExceptionVector_text_start = ABSOLUTE(.);
-    KEEP (*(.DoubleExceptionVector.text))
-    _DoubleExceptionVector_text_end = ABSOLUTE(.);
-  } >sram0_18_seg :sram0_18_phdr
+/* Auto-generated vector linkage, to "vectors" memory region */
+#include <xtensa_vectors.ld>
+ >vectors :vectors_phdr
 
 #define LIB_OBJ_FUNC_IN_SECT(library, obj_file, func)		\
 	*##library##:##obj_file##(.literal.##func .text.##func)	\
@@ -397,6 +235,10 @@ SECTIONS
   } >RAMABLE_REGION
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 
 #include <zephyr/linker/thread-local-storage.ld>
 

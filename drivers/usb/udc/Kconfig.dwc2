@@ -5,8 +5,17 @@ config UDC_DWC2
 	bool "DWC2 USB device controller driver"
 	default y
 	depends on DT_HAS_SNPS_DWC2_ENABLED
+	select NRFS if NRFS_HAS_VBUS_DETECTOR_SERVICE
+	select NRFS_VBUS_DETECTOR_SERVICE_ENABLED if NRFS_HAS_VBUS_DETECTOR_SERVICE
 	help
 	  DWC2 USB device controller driver.
+
+config UDC_DWC2_DMA
+	bool "DWC2 USB DMA support"
+	default n
+	depends on UDC_DWC2
+	help
+	  Enable Buffer DMA if DWC2 USB controller supports Internal DMA.
 
 config UDC_DWC2_STACK_SIZE
 	int "UDC DWC2 driver internal thread stack size"

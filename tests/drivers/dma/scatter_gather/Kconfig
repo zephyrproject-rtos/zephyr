@@ -8,3 +8,7 @@ source "Kconfig.zephyr"
 config DMA_SG_CHANNEL_NR
 	int "DMA channel to use"
 	default 0
+
+config DMA_SG_XFER_SIZE
+	int "Number of bytes to transfer"
+	default 8192

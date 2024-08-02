@@ -56,7 +56,8 @@ static void efi_putchar(int c)
 		efi_putchar('\r');
 	}
 
-	efibuf[n++] = c;
+	efibuf[n] = c;
+	++n;
 
 	if (c == '\n' || n == PUTCHAR_BUFSZ) {
 		efibuf[n] = 0U;
@@ -134,6 +135,8 @@ static void disable_hpet(void)
  */
 uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 {
+	(void)img_handle;
+
 	efi = sys_tab;
 	z_putchar = efi_putchar;
 	printf("*** Zephyr EFI Loader ***\n");

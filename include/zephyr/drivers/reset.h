@@ -16,7 +16,7 @@
  * @brief Reset Controller Interface
  * @defgroup reset_controller_interface Reset Controller Interface
  * @since 3.1
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup io_interfaces
  * @{
  */
@@ -75,6 +75,27 @@ struct reset_dt_spec {
 	}
 
 /**
+ * @brief Like RESET_DT_SPEC_GET_BY_IDX(), with a fallback to a default value
+ *
+ * If the devicetree node identifier 'node_id' refers to a node with a
+ * 'resets' property, this expands to
+ * <tt>RESET_DT_SPEC_GET_BY_IDX(node_id, idx)</tt>. The @p
+ * default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id devicetree node identifier
+ * @param idx logical index into the 'resets' property
+ * @param default_value fallback value to expand to
+ * @return static initializer for a struct reset_dt_spec for the property,
+ *         or default_value if the node or property do not exist
+ */
+#define RESET_DT_SPEC_GET_BY_IDX_OR(node_id, idx, default_value)	\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, resets),			\
+		    (RESET_DT_SPEC_GET_BY_IDX(node_id, idx)),		\
+		    (default_value))
+
+/**
  * @brief Equivalent to RESET_DT_SPEC_GET_BY_IDX(node_id, 0).
  *
  * @param node_id devicetree node identifier
@@ -83,6 +104,18 @@ struct reset_dt_spec {
  */
 #define RESET_DT_SPEC_GET(node_id) \
 	RESET_DT_SPEC_GET_BY_IDX(node_id, 0)
+
+/**
+ * @brief Equivalent to
+ *	  RESET_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value).
+ *
+ * @param node_id devicetree node identifier
+ * @param default_value fallback value to expand to
+ * @return static initializer for a struct reset_dt_spec for the property,
+ *         or default_value if the node or property do not exist
+ */
+#define RESET_DT_SPEC_GET_OR(node_id, default_value)			\
+	RESET_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
 
 /**
  * @brief Static initializer for a @p reset_dt_spec from a DT_DRV_COMPAT
@@ -97,6 +130,21 @@ struct reset_dt_spec {
 	RESET_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
+ * @brief Static initializer for a @p reset_dt_spec from a DT_DRV_COMPAT
+ *	  instance's 'resets' property at an index, with fallback
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into the 'resets' property
+ * @param default_value fallback value to expand to
+ * @return static initializer for a struct reset_dt_spec for the property,
+ *         or default_value if the node or property do not exist
+ */
+#define RESET_DT_SPEC_INST_GET_BY_IDX_OR(inst, idx, default_value)	\
+	COND_CODE_1(DT_PROP_HAS_IDX(DT_DRV_INST(inst), resets, idx),	\
+		    (RESET_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)),	\
+		    (default_value))
+
+/**
  * @brief Equivalent to RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0).
  *
  * @param inst DT_DRV_COMPAT instance number
@@ -105,6 +153,18 @@ struct reset_dt_spec {
  */
 #define RESET_DT_SPEC_INST_GET(inst) \
 	RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0)
+
+/**
+ * @brief Equivalent to
+ *	  RESET_DT_SPEC_INST_GET_BY_IDX_OR(node_id, 0, default_value).
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param default_value fallback value to expand to
+ * @return static initializer for a struct reset_dt_spec for the property,
+ *         or default_value if the node or property do not exist
+ */
+#define RESET_DT_SPEC_INST_GET_OR(inst, default_value)			\
+	RESET_DT_SPEC_INST_GET_BY_IDX_OR(inst, 0, default_value)
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -324,6 +384,6 @@ static inline int reset_line_toggle_dt(const struct reset_dt_spec *spec)
 }
 #endif
 
-#include <syscalls/reset.h>
+#include <zephyr/syscalls/reset.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RESET_H_ */

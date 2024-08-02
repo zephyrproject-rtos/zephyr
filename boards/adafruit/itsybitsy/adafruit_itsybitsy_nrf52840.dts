@@ -8,6 +8,7 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "adafruit_itsybitsy_nrf52840-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 / {
 	model = "Adafruit ItsyBitsy nRF52840 Express";
@@ -47,7 +48,6 @@
 		led0 = &led0;
 		sw0 = &button0;
 		watchdog0 = &wdt0;
-		spi-flash0 = &gd25q16;
 		led-strip = &apa102;
 	};
 };
@@ -107,6 +107,10 @@
 		compatible = "apa,apa102";
 		reg = <0>;
 		spi-max-frequency = <5250000>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_BLUE
+				 LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED>;
 	};
 };
 

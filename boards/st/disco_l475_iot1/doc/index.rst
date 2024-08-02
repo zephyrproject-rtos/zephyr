@@ -131,6 +131,8 @@ The Zephyr Disco L475 IoT board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -144,6 +146,8 @@ Connections and IOs
 
 Disco L475 IoT Board has 8 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
+
+Note that LED LD1 and SPI1 SCK use the same GPIO pin and cannot be used simultaneously.
 
 Available pins:
 ---------------
@@ -161,8 +165,10 @@ Default Zephyr Peripheral Mapping:
 - SPI1 NSS/SCK/MISO/MOSI : PA2/PA5/PA6/PA7 (Arduino SPI)
 - SPI3 SCK/MISO/MOSI : PC10/PC11/PC12 (BT SPI bus)
 - PWM_2_CH1 : PA15
+- PWM_15_CH1 : PB14 (LD2)
 - USER_PB : PC13
-- LD2 : PA5
+- LD1 : PA5 (same as SPI1 SCK)
+- LD2 : PB14
 - ADC12_IN5 : PA0
 - ADC123_IN3 : PC2
 - ADC123_IN4 : PC3

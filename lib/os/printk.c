@@ -97,7 +97,8 @@ static int buf_char_out(int c, void *ctx_p)
 {
 	struct buf_out_context *ctx = ctx_p;
 
-	ctx->buf[ctx->buf_count++] = c;
+	ctx->buf[ctx->buf_count] = c;
+	++ctx->buf_count;
 	if (ctx->buf_count == CONFIG_PRINTK_BUFFER_SIZE) {
 		buf_flush(ctx);
 	}
@@ -178,7 +179,7 @@ static inline void z_vrfy_k_str_out(char *c, size_t n)
 	K_OOPS(K_SYSCALL_MEMORY_READ(c, n));
 	z_impl_k_str_out((char *)c, n);
 }
-#include <syscalls/k_str_out_mrsh.c>
+#include <zephyr/syscalls/k_str_out_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /**
@@ -225,16 +226,17 @@ struct str_context {
 
 static int str_out(int c, struct str_context *ctx)
 {
-	if (ctx->str == NULL || ctx->count >= ctx->max) {
-		ctx->count++;
+	if ((ctx->str == NULL) || (ctx->count >= ctx->max)) {
+		++ctx->count;
 		return c;
 	}
 
-	if (ctx->count == ctx->max - 1) {
-		ctx->str[ctx->count++] = '\0';
+	if (ctx->count == (ctx->max - 1)) {
+		ctx->str[ctx->count] = '\0';
 	} else {
-		ctx->str[ctx->count++] = c;
+		ctx->str[ctx->count] = c;
 	}
+	++ctx->count;
 
 	return c;
 }

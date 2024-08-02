@@ -1,17 +1,29 @@
 # Copyright (c) 2017 Intel Corporation
 # Copyright (c) 2023 Meta
+# Copyright (c) 2024 Tenstorrent
 #
 # SPDX-License-Identifier: Apache-2.0
 
-TYPE = PTHREAD_BARRIER
-type = pthread_barrier_t
-type-function = pthread_barrier_wait
-rsource "Kconfig.template.pooled_ipc_type"
+menuconfig POSIX_BARRIERS
+	bool "POSIX barriers"
+	help
+	  Select 'y' here to enable POSIX barriers.
 
-if PTHREAD_BARRIER
+	  For more information please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+if POSIX_BARRIERS
+
+config MAX_PTHREAD_BARRIER_COUNT
+	int "Maximum number of POSIX barriers"
+	default 5
+	help
+	  Maximum simultaneously active pthread_barrier_t in a POSIX application.
+
+	  Note: this is a non-standard option.
 
 config PTHREAD_CREATE_BARRIER
-	bool "Use a pthread_barrier_t to serialize pthread_create()"
+	bool "Use a POSIX barrier to serialize pthread_create()"
 	help
 	  When running several SMP applications in parallel instances of Qemu,
 	  e.g. via twister, explicit serialization may be required between
@@ -21,4 +33,8 @@ config PTHREAD_CREATE_BARRIER
 	  On such systems, say Y here to introduce explicit serialization
 	  via pthread_barrier_wait().
 
-endif
+module = PTHREAD_BARRIER
+module-str = POSIX thread barriers
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # POSIX_BARRIERS

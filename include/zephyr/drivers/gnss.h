@@ -123,9 +123,9 @@ typedef int (*gnss_get_supported_systems_t)(const struct device *dev, gnss_syste
 
 /** GNSS fix status */
 enum gnss_fix_status {
-	/** No GNSS fix aqcuired */
+	/** No GNSS fix acquired */
 	GNSS_FIX_STATUS_NO_FIX = 0,
-	/** GNSS fix aqcuired */
+	/** GNSS fix acquired */
 	GNSS_FIX_STATUS_GNSS_FIX = 1,
 	/** Differential GNSS fix acquired */
 	GNSS_FIX_STATUS_DGNSS_FIX = 2,
@@ -493,6 +493,6 @@ static inline int z_impl_gnss_get_supported_systems(const struct device *dev,
 }
 #endif
 
-#include <syscalls/gnss.h>
+#include <zephyr/syscalls/gnss.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GNSS_H_ */

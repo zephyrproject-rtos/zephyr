@@ -51,13 +51,13 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/test_helper_custom_ops.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/recording_micro_allocator.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_time.cc
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_string.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_profiler.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_utils.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/flatbuffer_utils.cc
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_graph.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/mock_micro_graph.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_interpreter.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_interpreter_context.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_interpreter_graph.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_allocator.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_context.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_log.cc
@@ -83,7 +83,6 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/flatbuffer_conversions.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/error_reporter.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/tensor_utils.cc
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/op_resolver.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/schema/schema_utils.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/activations.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/activations_common.cc

@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 #include <em_gpio.h>
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
@@ -63,9 +64,8 @@
 #define GECKO_GPIO_MODEH(pin, mode) (mode << ((pin - 8) * 4))
 
 
-#define member_size(type, member) sizeof(((type *)0)->member)
-#define NUMBER_OF_PORTS (member_size(GPIO_TypeDef, P) / \
-			 member_size(GPIO_TypeDef, P[0]))
+#define NUMBER_OF_PORTS (SIZEOF_FIELD(GPIO_TypeDef, P) / \
+			 SIZEOF_FIELD(GPIO_TypeDef, P[0]))
 
 struct gpio_gecko_common_config {
 };

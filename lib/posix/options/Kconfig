@@ -1,56 +1,38 @@
 # Copyright (c) 2018 Intel Corporation
 # Copyright (c) 2023 Meta
+# Copyright (c) 2024 Tenstorrent AI ULC
 #
 # SPDX-License-Identifier: Apache-2.0
 
 menu "POSIX Options"
 
-config POSIX_API
-	depends on !NATIVE_APPLICATION
-	bool "POSIX APIs"
-	select NATIVE_LIBC_INCOMPATIBLE
-	help
-	  Enable mostly-standards-compliant implementations of
-	  various POSIX (IEEE 1003.1) APIs.
-
-if POSIX_CLOCK
-
-config PTHREAD_IPC
-	bool "POSIX pthread IPC API"
-	default y if POSIX_API
-	help
-	  This enables a mostly-standards-compliant implementation of
-	  the pthread mutex, condition variable and barrier IPC
-	  mechanisms.
-
-endif # POSIX_CLOCK
+rsource "Kconfig.profile"
 
 rsource "Kconfig.aio"
 rsource "Kconfig.barrier"
-rsource "Kconfig.clock"
-rsource "Kconfig.cond"
-rsource "Kconfig.confstr"
-rsource "Kconfig.env"
-rsource "Kconfig.eventfd"
-rsource "Kconfig.fdtable"
-rsource "Kconfig.fnmatch"
+rsource "Kconfig.c_lib_ext"
+rsource "Kconfig.device_io"
+rsource "Kconfig.fd_mgmt"
 rsource "Kconfig.fs"
-rsource "Kconfig.getentropy"
-rsource "Kconfig.getopt"
-rsource "Kconfig.key"
+rsource "Kconfig.mem"
 rsource "Kconfig.mqueue"
-rsource "Kconfig.mutex"
 rsource "Kconfig.net"
+rsource "Kconfig.proc1"
+rsource "Kconfig.procN"
 rsource "Kconfig.pthread"
 rsource "Kconfig.rwlock"
 rsource "Kconfig.sched"
 rsource "Kconfig.semaphore"
 rsource "Kconfig.signal"
 rsource "Kconfig.spinlock"
-rsource "Kconfig.stropts"
-rsource "Kconfig.sysconf"
-rsource "Kconfig.syslog"
+rsource "Kconfig.sync_io"
 rsource "Kconfig.timer"
-rsource "Kconfig.uname"
+rsource "Kconfig.xsi"
+
+rsource "Kconfig.compat"
+
+rsource "Kconfig.deprecated"
+
+rsource "Kconfig.toolchain"
 
 endmenu # "POSIX Options"

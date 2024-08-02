@@ -59,6 +59,14 @@
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
 	};
 
+	octo_nor: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
+
 	transceiver0: can-phy0 {
 		compatible = "microchip,mcp2562fd", "can-transceiver-gpio";
 		standby-gpios = <&gpioh 8 GPIO_ACTIVE_HIGH>;
@@ -70,7 +78,6 @@
 		led0 = &blue_led;
 		led1 = &red_led;
 		sw0 = &user_button;
-		spi-flash0 = &mx25lm51245;
 	};
 };
 
@@ -156,8 +163,6 @@
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 	phys = <&transceiver0>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	status = "okay";
 };
 

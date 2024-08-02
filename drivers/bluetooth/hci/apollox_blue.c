@@ -14,7 +14,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_raw.h>
 
@@ -25,8 +25,13 @@ LOG_MODULE_REGISTER(bt_apollox_driver);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_ambiq.h>
 
+#include <am_mcu_apollo.h>
 #include "apollox_blue.h"
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 #include "am_devices_cooper.h"
+#elif (CONFIG_SOC_SERIES_APOLLO3X)
+#include "am_apollo3_bt_support.h"
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 #define HCI_SPI_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ambiq_bt_hci_spi)
 #define SPI_DEV_NODE DT_BUS(HCI_SPI_NODE)
@@ -44,6 +49,7 @@ LOG_MODULE_REGISTER(bt_apollox_driver);
 
 #define SPI_MAX_RX_MSG_LEN 258
 
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 static const struct gpio_dt_spec irq_gpio = GPIO_DT_SPEC_GET(HCI_SPI_NODE, irq_gpios);
 static const struct gpio_dt_spec rst_gpio = GPIO_DT_SPEC_GET(HCI_SPI_NODE, reset_gpios);
 static const struct gpio_dt_spec cs_gpio = GPIO_DT_SPEC_GET(SPI_DEV_NODE, cs_gpios);
@@ -54,10 +60,19 @@ static struct gpio_callback clkreq_gpio_cb;
 
 static const struct device *clk32m_dev = DEVICE_DT_GET(CLK_32M_NODE);
 static const struct device *clk32k_dev = DEVICE_DT_GET(CLK_32K_NODE);
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 extern void bt_packet_irq_isr(const struct device *unused1, struct gpio_callback *unused2,
 			      uint32_t unused3);
 
+void bt_apollo_rcv_isr_preprocess(void)
+{
+#if (CONFIG_SOC_SERIES_APOLLO3X)
+	am_apollo3_bt_isr_pre();
+#endif /* CONFIG_SOC_SERIES_APOLLO3X */
+}
+
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 static bool irq_pin_state(void)
 {
 	int pin_state;
@@ -117,10 +132,13 @@ static void bt_apollo_controller_reset(void)
 	/* Give the controller some time to boot */
 	k_sleep(K_MSEC(500));
 }
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 int bt_apollo_spi_send(uint8_t *data, uint16_t len, bt_spi_transceive_fun transceive)
 {
-	int ret;
+	int ret = -ENOTSUP;
+
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 	uint8_t command[1] = {SPI_WRITE};
 	uint8_t response[2] = {0, 0};
 	uint16_t fail_count = 0;
@@ -139,18 +157,24 @@ int bt_apollo_spi_send(uint8_t *data, uint16_t len, bt_spi_transceive_fun transc
 			break;
 		}
 	} while (fail_count++ < SPI_WRITE_TIMEOUT);
+#elif (CONFIG_SOC_SERIES_APOLLO3X)
+	ret = transceive(data, len, NULL, 0);
+	if ((ret) && (ret != AM_HAL_BLE_STATUS_SPI_NOT_READY)) {
+		LOG_ERR("SPI write error %d", ret);
+	}
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 	return ret;
 }
 
 int bt_apollo_spi_rcv(uint8_t *data, uint16_t *len, bt_spi_transceive_fun transceive)
 {
-	int ret;
-	uint8_t command[1] = {SPI_READ};
+	int ret = -ENOTSUP;
 	uint8_t response[2] = {0, 0};
 	uint16_t read_size = 0;
 
 	do {
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 		/* Skip if the IRQ pin is not in high state */
 		if (!irq_pin_state()) {
 			ret = -1;
@@ -158,10 +182,26 @@ int bt_apollo_spi_rcv(uint8_t *data, uint16_t *len, bt_spi_transceive_fun transc
 		}
 
 		/* Check the available packet bytes */
+		uint8_t command[1] = {SPI_READ};
 		ret = transceive(command, 1, response, 2);
 		if (ret) {
 			break;
 		}
+#elif (CONFIG_SOC_SERIES_APOLLO3X)
+		/* Skip if the IRQ bit is not set */
+		if (!BLEIFn(0)->BSTATUS_b.BLEIRQ) {
+			ret = -1;
+			break;
+		}
+
+		/* Check the available packet bytes */
+		ret = transceive(NULL, 0, response, 2);
+		if (ret) {
+			break;
+		}
+#else
+		break;
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 		/* Check if the read size is acceptable */
 		read_size = (uint16_t)(response[0] | response[1] << 8);
@@ -186,6 +226,7 @@ int bt_apollo_spi_rcv(uint8_t *data, uint16_t *len, bt_spi_transceive_fun transc
 
 bool bt_apollo_vnd_rcv_ongoing(uint8_t *data, uint16_t len)
 {
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 	/* The vendor specific handshake command/response is incompatible with
 	 * standard Bluetooth HCI format, need to handle the received packets
 	 * specifically.
@@ -196,14 +237,18 @@ bool bt_apollo_vnd_rcv_ongoing(uint8_t *data, uint16_t len)
 	} else {
 		return false;
 	}
+#else
+	return false;
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 }
 
 int bt_hci_transport_setup(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	int ret;
+	int ret = 0;
 
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 	/* Configure the XO32MHz and XO32kHz clocks.*/
 	clock_control_configure(clk32k_dev, NULL, NULL);
 	clock_control_configure(clk32m_dev, NULL, NULL);
@@ -256,13 +301,18 @@ int bt_hci_transport_setup(const struct device *dev)
 
 	/* Configure the interrupt edge for IRQ pin */
 	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_RISING);
+#elif (CONFIG_SOC_SERIES_APOLLO3X)
+	IRQ_CONNECT(DT_IRQN(SPI_DEV_NODE), DT_IRQ(SPI_DEV_NODE, priority), bt_packet_irq_isr, 0, 0);
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
-	return 0;
+	return ret;
 }
 
 int bt_apollo_controller_init(spi_transmit_fun transmit)
 {
-	int ret;
+	int ret = 0;
+
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 	am_devices_cooper_callback_t cb = {
 		.write = transmit,
 		.reset = bt_apollo_controller_reset,
@@ -277,10 +327,21 @@ int bt_apollo_controller_init(spi_transmit_fun transmit)
 		am_devices_cooper_set_initialize_state(AM_DEVICES_COOPER_STATE_INITIALIZE_FAIL);
 		LOG_ERR("BT controller initialization fail");
 	}
+#elif (CONFIG_SOC_SERIES_APOLLO3X)
+	ret = am_apollo3_bt_controller_init();
+	if (ret == AM_HAL_STATUS_SUCCESS) {
+		LOG_INF("BT controller initialized");
+	} else {
+		LOG_ERR("BT controller initialization fail");
+	}
+
+	irq_enable(DT_IRQN(SPI_DEV_NODE));
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 	return ret;
 }
 
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 static int bt_apollo_set_nvds(void)
 {
 	int ret;
@@ -334,19 +395,23 @@ static int bt_apollo_set_nvds(void)
 
 	return ret;
 }
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 int bt_apollo_vnd_setup(void)
 {
-	int ret;
+	int ret = 0;
 
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 	/* Set the NVDS parameters to BLE controller */
 	ret = bt_apollo_set_nvds();
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 	return ret;
 }
 
 int bt_apollo_dev_init(void)
 {
+#if (CONFIG_SOC_SERIES_APOLLO4X)
 	if (!gpio_is_ready_dt(&irq_gpio)) {
 		LOG_ERR("IRQ GPIO device not ready");
 		return -ENODEV;
@@ -361,6 +426,7 @@ int bt_apollo_dev_init(void)
 		LOG_ERR("CLKREQ GPIO device not ready");
 		return -ENODEV;
 	}
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 	return 0;
 }

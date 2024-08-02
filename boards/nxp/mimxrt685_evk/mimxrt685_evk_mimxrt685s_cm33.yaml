@@ -31,4 +31,5 @@ supported:
   - spi
   - watchdog
   - usb_device
+  - usbd
 vendor: nxp

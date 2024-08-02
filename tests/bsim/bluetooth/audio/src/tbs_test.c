@@ -5,18 +5,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_TBS
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/printk.h>
+
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_TBS
 extern enum bst_result_t bst_result;
-static uint8_t call_index;
+static uint8_t g_call_index;
 static volatile uint8_t call_state;
 
 CREATE_FLAG(is_connected);
 CREATE_FLAG(call_placed);
 CREATE_FLAG(call_held);
-CREATE_FLAG(call_id);
 CREATE_FLAG(call_terminated);
 CREATE_FLAG(call_accepted);
 CREATE_FLAG(call_retrieved);
@@ -24,7 +34,7 @@ CREATE_FLAG(call_joined);
 
 static void tbs_hold_call_cb(struct bt_conn *conn, uint8_t call_index)
 {
-	if (call_index == call_id) {
+	if (call_index == g_call_index) {
 		SET_FLAG(call_held);
 	}
 }
@@ -33,7 +43,7 @@ static bool tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index,
 				  const char *caller_id)
 {
 	printk("Placing call to remote with id %u to %s\n", call_index, caller_id);
-	call_id = call_index;
+	g_call_index = call_index;
 	SET_FLAG(call_placed);
 	return true;
 }
@@ -175,21 +185,21 @@ static int test_answer_terminate(void)
 
 	printk("%s\n", __func__);
 	printk("Placing call\n");
-	err = bt_tbs_originate(0, "tel:000000000001", &call_index);
+	err = bt_tbs_originate(0, "tel:000000000001", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate call: %d\n", err);
 		return err;
 	}
 
 	printk("Answering call\n");
-	err = bt_tbs_remote_answer(call_index);
+	err = bt_tbs_remote_answer(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not accept call: %d\n", err);
 		return err;
 	}
 
 	printk("Terminating call\n");
-	err = bt_tbs_terminate(call_index);
+	err = bt_tbs_terminate(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not terminate call: %d\n", err);
 		return err;
@@ -205,40 +215,40 @@ static int test_hold_retrieve(void)
 	int err;
 
 	printk("%s\n", __func__);
-	err = bt_tbs_originate(0, "tel:000000000001", &call_index);
+	err = bt_tbs_originate(0, "tel:000000000001", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate call: %d\n", err);
 		return err;
 	}
 
-	err = bt_tbs_remote_answer(call_index);
+	err = bt_tbs_remote_answer(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not accept call: %d\n", err);
 		return err;
 	}
 
 	printk("Holding call\n");
-	err = bt_tbs_hold(call_index);
+	err = bt_tbs_hold(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not terminate call: %d\n", err);
 		return err;
 	}
 
 	printk("Retrieving call\n");
-	err = bt_tbs_retrieve(call_index);
+	err = bt_tbs_retrieve(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not retrieve call: %d\n", err);
 		return err;
 	}
 
 	printk("Terminating call\n");
-	err = bt_tbs_terminate(call_index);
+	err = bt_tbs_terminate(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not terminate call: %d\n", err);
 		return err;
 	}
 
-	printk("Hold & retrieve test sucessfull\n");
+	printk("Hold & retrieve test successful\n");
 
 	return err;
 }
@@ -250,38 +260,38 @@ static int test_join(void)
 
 	printk("%s\n", __func__);
 	printk("Placing first call\n");
-	err = bt_tbs_originate(0, "tel:000000000001", &call_index);
+	err = bt_tbs_originate(0, "tel:000000000001", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate first call: %d\n", err);
 		return err;
 	}
 
 	printk("Answering first call\n");
-	err = bt_tbs_remote_answer(call_index);
+	err = bt_tbs_remote_answer(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not answer first call: %d\n", err);
 		return err;
 	}
 	printk("First call answered\n");
 
-	call_indexes[0] = (uint8_t)call_index;
+	call_indexes[0] = (uint8_t)g_call_index;
 
 	printk("Placing second call\n");
-	err = bt_tbs_originate(0, "tel:000000000002", &call_index);
+	err = bt_tbs_originate(0, "tel:000000000002", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate second call: %d\n", err);
 		return err;
 	}
 
 	printk("Answering second call\n");
-	err = bt_tbs_remote_answer(call_index);
+	err = bt_tbs_remote_answer(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not answer second call: %d\n", err);
 		return err;
 	}
 	printk("Second call answered\n");
 
-	call_indexes[1] = (uint8_t)call_index;
+	call_indexes[1] = (uint8_t)g_call_index;
 
 	printk("Joining calls\n");
 	err = bt_tbs_join(2, call_indexes);
@@ -302,7 +312,7 @@ static int test_join(void)
 		return err;
 	}
 
-	printk("Join calls test succesfull\n");
+	printk("Join calls test successful\n");
 
 	return err;
 }
@@ -346,27 +356,27 @@ static void test_main(void)
 
 	WAIT_FOR_COND(call_placed);
 
-	err = bt_tbs_remote_answer(call_id);
+	err = bt_tbs_remote_answer(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Remote could not answer call: %d\n", err);
 		return;
 	}
-	printk("Remote answered %u\n", call_id);
+	printk("Remote answered %u\n", g_call_index);
 
-	err = bt_tbs_remote_hold(call_id);
+	err = bt_tbs_remote_hold(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Remote could not hold call: %d\n", err);
 	}
-	printk("Remote held %u\n", call_id);
+	printk("Remote held %u\n", g_call_index);
 
 	WAIT_FOR_COND(call_held);
 
-	err = bt_tbs_remote_retrieve(call_id);
+	err = bt_tbs_remote_retrieve(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Remote could not answer call: %d\n", err);
 		return;
 	}
-	printk("Remote retrieved %u\n", call_id);
+	printk("Remote retrieved %u\n", g_call_index);
 
 	PASS("TBS Passed\n");
 }
@@ -390,13 +400,13 @@ static void tbs_test_server_only(void)
 static const struct bst_test_instance test_tbs[] = {
 	{
 		.test_id = "tbs_test_server_only",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = tbs_test_server_only
 	},
 	{
 		.test_id = "tbs",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

@@ -25,12 +25,13 @@ static struct k_spinlock obs_slock;
 
 NET_BUF_POOL_HEAP_DEFINE(_zbus_msg_subscribers_pool, CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE,
 			 sizeof(struct zbus_channel *), NULL);
+
 BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE > 0, "MSG_SUBSCRIBER feature requires heap memory pool.");
 
 static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, size_t size,
 						   k_timeout_t timeout)
 {
-	return net_buf_alloc_len(&_zbus_msg_subscribers_pool, size, timeout);
+	return net_buf_alloc_len(pool, size, timeout);
 }
 
 #else
@@ -47,7 +48,7 @@ static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, si
 		 "CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE must be greater or equal to "
 		 "%d",
 		 (int)size);
-	return net_buf_alloc(&_zbus_msg_subscribers_pool, timeout);
+	return net_buf_alloc(pool, timeout);
 }
 #endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC */
 
@@ -75,13 +76,7 @@ int _zbus_init(void)
 
 		++(curr->data->observers_end_idx);
 	}
-	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
-		k_sem_init(&chan->data->sem, 1, 1);
 
-#if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS)
-		sys_slist_init(&chan->data->observers);
-#endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
-	}
 	return 0;
 }
 SYS_INIT(_zbus_init, APPLICATION, CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY);
@@ -105,7 +100,6 @@ static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 		if (cloned_buf == NULL) {
 			return -ENOMEM;
 		}
-		memcpy(net_buf_user_data(cloned_buf), &chan, sizeof(struct zbus_channel *));
 
 		net_buf_put(obs->message_fifo, cloned_buf);
 
@@ -130,11 +124,16 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 	struct zbus_channel_observation_mask *observation_mask;
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER)
-	buf = _zbus_create_net_buf(&_zbus_msg_subscribers_pool, zbus_chan_msg_size(chan),
-				   sys_timepoint_timeout(end_time));
+	struct net_buf_pool *pool =
+		COND_CODE_1(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION,
+			    (chan->data->msg_subscriber_pool), (&_zbus_msg_subscribers_pool));
+
+	buf = _zbus_create_net_buf(pool, zbus_chan_msg_size(chan), sys_timepoint_timeout(end_time));
 
 	_ZBUS_ASSERT(buf != NULL, "net_buf zbus_msg_subscribers_pool is "
 				  "unavailable or heap is full");
+
+	memcpy(net_buf_user_data(buf), &chan, sizeof(struct zbus_channel *));
 
 	net_buf_add_mem(buf, zbus_chan_msg(chan), zbus_chan_msg_size(chan));
 #endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
@@ -178,7 +177,6 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 	struct zbus_observer_node *obs_nd, *tmp;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&chan->data->observers, obs_nd, tmp, node) {
-
 		const struct zbus_observer *obs = obs_nd->obs;
 
 		if (!obs->data->enabled) {
@@ -232,15 +230,7 @@ static inline void chan_update_hop(const struct zbus_channel *chan)
 
 static inline void update_all_channels_hop(const struct zbus_observer *obs)
 {
-	struct zbus_channel_observation *observation;
-
-	int count;
-
-	STRUCT_SECTION_COUNT(zbus_channel_observation, &count);
-
-	for (int16_t i = 0; i < count; ++i) {
-		STRUCT_SECTION_GET(zbus_channel_observation, i, &observation);
-
+	STRUCT_SECTION_FOREACH(zbus_channel_observation, observation) {
 		if (obs != observation->obs) {
 			continue;
 		}

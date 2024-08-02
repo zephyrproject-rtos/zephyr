@@ -124,6 +124,7 @@ included during the build process.
 
 CPU1 does not work without CPU0 enabling it.
 To enable it, run one of the following samples in ``subsys\ipc``:
+
 - ``ipm_mcux``
 - ``openamp``
 

@@ -2060,7 +2060,7 @@ static int protocol_check(int family, int type, int *proto)
 static int ztls_socket(int family, int type, int proto)
 {
 	enum net_ip_protocol_secure tls_proto = proto;
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 	int sock = -1;
 	int ret;
 	struct tls_context *ctx;
@@ -2090,8 +2090,8 @@ static int ztls_socket(int family, int type, int proto)
 	ctx->type = (proto == IPPROTO_TCP) ? SOCK_STREAM : SOCK_DGRAM;
 	ctx->sock = sock;
 
-	z_finalize_fd(
-		fd, ctx, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 
@@ -2099,7 +2099,7 @@ release_tls:
 	(void)tls_release(ctx);
 
 free_fd:
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 
 	return -1;
 }
@@ -2198,7 +2198,7 @@ int ztls_accept_ctx(struct tls_context *parent, struct sockaddr *addr,
 	struct tls_context *child = NULL;
 	int ret, err, fd, sock;
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
@@ -2218,8 +2218,8 @@ int ztls_accept_ctx(struct tls_context *parent, struct sockaddr *addr,
 		goto error;
 	}
 
-	z_finalize_fd(
-		fd, child, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, child, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	child->sock = sock;
 
@@ -2252,7 +2252,7 @@ error:
 		__ASSERT(err == 0, "Child socket close failed");
 	}
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 
 	errno = -ret;
 	return -1;
@@ -2457,7 +2457,7 @@ static ssize_t dtls_sendmsg_merge_and_send(struct tls_context *ctx,
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		struct iovec *vec = msg->msg_iov + i;
 
-		if (vec->iov_len >= 0) {
+		if (vec->iov_len > 0) {
 			if (len + vec->iov_len > sizeof(sendmsg_buf)) {
 				k_mutex_unlock(&sendmsg_lock);
 				errno = EMSGSIZE;
@@ -3000,7 +3000,7 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 		pfd->events &= ~ZSOCK_POLLIN;
 	}
 
-	obj = z_get_fd_obj_and_vtable(
+	obj = zvfs_get_fd_obj_and_vtable(
 		ctx->sock, (const struct fd_op_vtable **)&vtable, &lock);
 	if (obj == NULL) {
 		ret = -EBADF;
@@ -3009,7 +3009,7 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 
 	(void)k_mutex_lock(lock, K_FOREVER);
 
-	ret = z_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_PREPARE,
+	ret = zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_PREPARE,
 				   pfd, pev, pev_end);
 	if (ret != 0) {
 		goto exit;
@@ -3195,7 +3195,7 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 	int ret;
 	short events = pfd->events;
 
-	obj = z_get_fd_obj_and_vtable(
+	obj = zvfs_get_fd_obj_and_vtable(
 		ctx->sock, (const struct fd_op_vtable **)&vtable, &lock);
 	if (obj == NULL) {
 		return -EBADF;
@@ -3210,7 +3210,7 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 		 * to monitor the underlying socket now.
 		 */
 		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
-			ret = z_fdtable_call_ioctl(vtable, obj,
+			ret = zvfs_fdtable_call_ioctl(vtable, obj,
 						   ZFD_IOCTL_POLL_PREPARE,
 						   pfd, pev, *pev + 1);
 			if (ret != 0 && ret != -EALREADY) {
@@ -3232,7 +3232,7 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 		pfd->events &= ~ZSOCK_POLLIN;
 	}
 
-	ret = z_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_UPDATE,
+	ret = zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_UPDATE,
 				   pfd, pev);
 	if (ret != 0) {
 		goto exit;
@@ -3312,7 +3312,7 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
 
-		ctx = z_get_fd_obj(fds[i].fd,
+		ctx = zvfs_get_fd_obj(fds[i].fd,
 				   (const struct fd_op_vtable *)
 						     &tls_sock_fd_op_vtable,
 				   0);
@@ -3334,7 +3334,7 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 	}
 
 	/* Get offloaded sockets vtable. */
-	ctx = z_get_fd_obj_and_vtable(fds[0].fd,
+	ctx = zvfs_get_fd_obj_and_vtable(fds[0].fd,
 				      (const struct fd_op_vtable **)&vtable,
 				      NULL);
 	if (ctx == NULL) {
@@ -3349,7 +3349,7 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 			fds[i].revents = 0;
 		}
 
-		ret = z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_OFFLOAD,
+		ret = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_OFFLOAD,
 					   fds, nfds, remaining);
 		if (ret < 0) {
 			goto exit;
@@ -3359,7 +3359,7 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 		ret = 0;
 
 		for (i = 0; i < nfds; i++) {
-			ctx = z_get_fd_obj(fd_backup[i],
+			ctx = zvfs_get_fd_obj(fd_backup[i],
 					   (const struct fd_op_vtable *)
 							&tls_sock_fd_op_vtable,
 					   0);
@@ -3643,7 +3643,7 @@ mbedtls_ssl_context *ztls_get_mbedtls_ssl_context(int fd)
 {
 	struct tls_context *ctx;
 
-	ctx = z_get_fd_obj(fd, (const struct fd_op_vtable *)
+	ctx = zvfs_get_fd_obj(fd, (const struct fd_op_vtable *)
 					&tls_sock_fd_op_vtable, EBADF);
 	if (ctx == NULL) {
 		return NULL;
@@ -3677,7 +3677,7 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		void *fd_obj;
 		int ret;
 
-		fd_obj = z_get_fd_obj_and_vtable(ctx->sock,
+		fd_obj = zvfs_get_fd_obj_and_vtable(ctx->sock,
 				(const struct fd_op_vtable **)&vtable, &lock);
 		if (fd_obj == NULL) {
 			errno = EBADF;

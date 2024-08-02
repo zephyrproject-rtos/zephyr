@@ -92,7 +92,7 @@ static int coap_service_remove_observer(const struct coap_service *service,
 		/* Prefer addr+token to find the observer */
 		obs = coap_find_observer(service->data->observers, MAX_OBSERVERS, addr, token, tkl);
 	} else if (tkl > 0) {
-		/* Then try to to find the observer by token */
+		/* Then try to find the observer by token */
 		obs = coap_find_observer_by_token(service->data->observers, MAX_OBSERVERS, token,
 						  tkl);
 	} else if (addr != NULL) {

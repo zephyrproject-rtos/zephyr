@@ -259,7 +259,7 @@ __subsystem struct i2c_driver_api {
 typedef int (*i2c_target_api_register_t)(const struct device *dev);
 typedef int (*i2c_target_api_unregister_t)(const struct device *dev);
 
-struct i2c_target_driver_api {
+__subsystem struct i2c_target_driver_api {
 	i2c_target_api_register_t driver_register;
 	i2c_target_api_unregister_t driver_unregister;
 };
@@ -1634,6 +1634,6 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
  * @}
  */
 
-#include <syscalls/i2c.h>
+#include <zephyr/syscalls/i2c.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_H_ */

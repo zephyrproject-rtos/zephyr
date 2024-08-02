@@ -107,17 +107,17 @@ struct record_key_value_pair_m {
 
 struct record {
 	struct record_bn record_bn;
-	bool record_bn_present;
 	struct record_bt record_bt;
-	bool record_bt_present;
 	struct record_n record_n;
-	bool record_n_present;
 	struct record_t record_t;
-	bool record_t_present;
 	struct record_union_r record_union;
-	bool record_union_present;
 	struct record_key_value_pair_m record_key_value_pair_m[5];
 	size_t record_key_value_pair_m_count;
+	bool record_bn_present;
+	bool record_bt_present;
+	bool record_n_present;
+	bool record_t_present;
+	bool record_union_present;
 };
 
 struct lwm2m_senml {

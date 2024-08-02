@@ -59,7 +59,6 @@
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
-		spi-flash0 = &n25q128a1;
 	};
 };
 

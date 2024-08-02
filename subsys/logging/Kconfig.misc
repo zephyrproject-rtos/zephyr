@@ -3,14 +3,6 @@
 
 menu "Misc"
 
-config LOG_DOMAIN_ID
-	int "Domain ID [DEPRECATED]"
-	depends on !LOG_MODE_MINIMAL
-	default 0
-	range 0 7
-	help
-	  Deprecated. It is not used in the code.
-
 config LOG_CMDS
 	bool "Shell commands"
 	depends on SHELL
@@ -69,6 +61,8 @@ config LOG_FMT_SECTION_STRIP
 	depends on LOG_DICTIONARY_SUPPORT
 	depends on LOG_FMT_SECTION
 	depends on LINKER_DEVNULL_SUPPORT
+	depends on !LOG_ALWAYS_RUNTIME
+	depends on !LOG_OUTPUT
 	imply LINKER_DEVNULL_MEMORY
 	imply LOG_FMT_STRING_VALIDATE
 

@@ -785,7 +785,7 @@ enum gpio_int_trig {
 	GPIO_INT_TRIG_HIGH = GPIO_INT_HIGH_1,
 	/* Trigger detection on pin rising or falling edge. */
 	GPIO_INT_TRIG_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1,
-	/* Trigger a system wakup. */
+	/* Trigger a system wakeup. */
 	GPIO_INT_TRIG_WAKE = GPIO_INT_WAKEUP,
 };
 
@@ -1828,6 +1828,6 @@ static inline int z_impl_gpio_get_pending_int(const struct device *dev)
 }
 #endif
 
-#include <syscalls/gpio.h>
+#include <zephyr/syscalls/gpio.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_H_ */

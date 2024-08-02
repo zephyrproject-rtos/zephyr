@@ -5,7 +5,6 @@ tests:
     slow: true
     harness_config:
       pytest_dut_scope: module
-      pytest_args: []
     integration_platforms:
       - native_sim
     platform_allow:

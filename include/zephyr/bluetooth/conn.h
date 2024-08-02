@@ -234,7 +234,7 @@ void bt_conn_unref(struct bt_conn *conn);
 
 /** @brief Iterate through all bt_conn objects.
  *
- * Iterates trough all bt_conn objects that are alive in the Host allocator.
+ * Iterates through all bt_conn objects that are alive in the Host allocator.
  *
  * To find established connections, combine this with @ref bt_conn_get_info.
  * Check that @ref bt_conn_info.state is @ref BT_CONN_STATE_CONNECTED.
@@ -384,10 +384,6 @@ struct bt_security_info {
 	enum bt_security_flag flags;
 };
 
-/** Connection role (central or peripheral) */
-#define BT_CONN_ROLE_MASTER __DEPRECATED_MACRO BT_CONN_ROLE_CENTRAL
-#define BT_CONN_ROLE_SLAVE __DEPRECATED_MACRO BT_CONN_ROLE_PERIPHERAL
-
 /** Connection Info Structure */
 struct bt_conn_info {
 	/** Connection Type. */
@@ -515,6 +511,57 @@ struct bt_conn_le_tx_power_report {
 	int8_t delta;
 };
 
+/** @brief Path Loss zone that has been entered.
+ *
+ *  The path loss zone that has been entered in the most recent LE Path Loss Monitoring
+ *  Threshold Change event as documented in Core Spec. Version 5.4 Vol.4, Part E, 7.7.65.32.
+ *
+ *  @note BT_CONN_LE_PATH_LOSS_ZONE_UNAVAILABLE has been added to notify when path loss becomes
+ *        unavailable.
+ */
+enum bt_conn_le_path_loss_zone {
+	/** Low path loss zone entered. */
+	BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_LOW,
+	/** Middle path loss zone entered. */
+	BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_MIDDLE,
+	/** High path loss zone entered. */
+	BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_HIGH,
+	/** Path loss has become unavailable. */
+	BT_CONN_LE_PATH_LOSS_ZONE_UNAVAILABLE,
+};
+
+BUILD_ASSERT(BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_LOW == BT_HCI_LE_ZONE_ENTERED_LOW);
+BUILD_ASSERT(BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_MIDDLE == BT_HCI_LE_ZONE_ENTERED_MIDDLE);
+BUILD_ASSERT(BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_HIGH == BT_HCI_LE_ZONE_ENTERED_HIGH);
+
+/** @brief LE Path Loss Monitoring Threshold Change Report Structure. */
+struct bt_conn_le_path_loss_threshold_report {
+
+	/** Path Loss zone as documented in Core Spec. Version 5.4 Vol.4, Part E, 7.7.65.32. */
+	enum bt_conn_le_path_loss_zone zone;
+
+	/** Current path loss (dB). */
+	uint8_t path_loss;
+};
+
+/** @brief LE Path Loss Monitoring Parameters Structure as defined in Core Spec. Version 5.4
+ *         Vol.4, Part E, 7.8.119 LE Set Path Loss Reporting Parameters command.
+ */
+struct bt_conn_le_path_loss_reporting_param {
+	/** High threshold for the path loss (dB). */
+	uint8_t high_threshold;
+	/** Hysteresis value for the high threshold (dB). */
+	uint8_t high_hysteresis;
+	/** Low threshold for the path loss (dB). */
+	uint8_t low_threshold;
+	/** Hysteresis value for the low threshold (dB). */
+	uint8_t low_hysteresis;
+	/** Minimum time in number of connection events to be observed once the
+	 *  path loss crosses the threshold before an event is generated.
+	 */
+	uint16_t min_time_spent;
+};
+
 /** @brief Passkey Keypress Notification type
  *
  *  The numeric values are the same as in the Core specification for Pairing
@@ -600,6 +647,34 @@ int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
 int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
 					  bool local_enable,
 					  bool remote_enable);
+
+/** @brief Set Path Loss Monitoring Parameters.
+ *
+ *  Change the configuration for path loss threshold change events for a given conn handle.
+ *
+ *  @note To use this API @kconfig{CONFIG_BT_PATH_LOSS_MONITORING} must be set.
+ *
+ *  @param conn  Connection object.
+ *  @param param Path Loss Monitoring parameters
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_set_path_loss_mon_param(struct bt_conn *conn,
+				       const struct bt_conn_le_path_loss_reporting_param *param);
+
+/** @brief Enable or Disable Path Loss Monitoring.
+ *
+ * Enable or disable Path Loss Monitoring, which will decide whether Path Loss Threshold events
+ * are sent from the controller to the host.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_PATH_LOSS_MONITORING} must be set.
+ *
+ * @param conn   Connection Object.
+ * @param enable Enable/disable path loss reporting.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool enable);
 
 /** @brief Update the connection parameters.
  *
@@ -768,7 +843,8 @@ struct bt_conn_le_create_param {
  *  This uses the General Connection Establishment procedure.
  *
  *  The application must disable explicit scanning before initiating
- *  a new LE connection.
+ *  a new LE connection if @kconfig{CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL}
+ *  is not enabled.
  *
  *  @param[in]  peer         Remote address.
  *  @param[in]  create_param Create connection parameters.
@@ -821,7 +897,7 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
  *  This uses the Auto Connection Establishment procedure.
  *  The procedure will continue until a single connection is established or the
  *  procedure is stopped through @ref bt_conn_create_auto_stop.
- *  To establish connections to all devices in the the filter accept list the
+ *  To establish connections to all devices in the filter accept list the
  *  procedure should be started again in the connected callback after a
  *  new connection has been established.
  *
@@ -1154,7 +1230,22 @@ struct bt_conn_cb {
 				const struct bt_conn_le_tx_power_report *report);
 #endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
 
-	struct bt_conn_cb *_next;
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+	/** @brief LE Path Loss Threshold event.
+	 *
+	 *  This callback notifies the application that there has been a path loss threshold
+	 *  crossing or reporting the initial path loss threshold zone after using
+	 *  @ref bt_conn_le_set_path_loss_mon_enable.
+	 *
+	 *  @param conn Connection object.
+	 *  @param report Path loss threshold report.
+	 */
+	void (*path_loss_threshold_report)(struct bt_conn *conn,
+				const struct bt_conn_le_path_loss_threshold_report *report);
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
 };
 
 /** @brief Register connection callbacks.
@@ -1162,8 +1253,11 @@ struct bt_conn_cb {
  *  Register callbacks to monitor the state of connections.
  *
  *  @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EEXIST if @p cb was already registered.
  */
-void bt_conn_cb_register(struct bt_conn_cb *cb);
+int bt_conn_cb_register(struct bt_conn_cb *cb);
 
 /**
  * @brief Unregister connection callbacks.
@@ -1187,6 +1281,23 @@ int bt_conn_cb_unregister(struct bt_conn_cb *cb);
 	static const STRUCT_SECTION_ITERABLE(bt_conn_cb,		\
 						_CONCAT(bt_conn_cb_,	\
 							_name))
+
+/** Converts a security error to string.
+ *
+ * @return The string representation of the security error code.
+ *         If @kconfig{CONFIG_BT_SECURITY_ERR_TO_STR} is not enabled,
+ *         this just returns the empty string
+ */
+#if defined(CONFIG_BT_SECURITY_ERR_TO_STR)
+const char *bt_security_err_to_str(enum bt_security_err err);
+#else
+static inline const char *bt_security_err_to_str(enum bt_security_err err)
+{
+	ARG_UNUSED(err);
+
+	return "";
+}
+#endif
 
 /** @brief Enable/disable bonding.
  *

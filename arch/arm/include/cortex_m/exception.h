@@ -68,7 +68,7 @@ static ALWAYS_INLINE bool arch_is_in_isr(void)
  * @return true if execution state was in handler mode, before
  *              the current exception occurred, otherwise false.
  */
-static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
+static ALWAYS_INLINE bool arch_is_in_nested_exception(const struct arch_esf *esf)
 {
 	return (esf->basic.xpsr & IPSR_ISR_Msk) ? (true) : (false);
 }
@@ -80,7 +80,7 @@ static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
  * @param esf the exception stack frame (unused)
  * @return true if the current thread was in unprivileged mode
  */
-static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const z_arch_esf_t *esf)
+static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const struct arch_esf *esf)
 {
 	return z_arm_thread_is_in_user_mode();
 }

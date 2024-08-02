@@ -421,6 +421,7 @@ void llcp_ntf_set_pending(struct ll_conn *conn);
 void llcp_ntf_clear_pending(struct ll_conn *conn);
 bool llcp_ntf_pending(struct ll_conn *conn);
 void llcp_rx_node_retain(struct proc_ctx *ctx);
+void llcp_rx_node_release(struct proc_ctx *ctx);
 
 /*
  * ULL -> LLL Interface

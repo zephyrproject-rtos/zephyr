@@ -260,7 +260,7 @@ void free(void *ptr)
 	malloc_unlock();
 }
 
-SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_LIBC);
 #else /* No malloc arena */
 void *malloc(size_t size)
 {

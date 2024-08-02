@@ -297,6 +297,15 @@
 				#clock-cells = <0>;
 			};
 
+			sys-pll {
+				compatible = "nxp,imx-ccm-fnpll";
+				loop-div = <22>;
+				numerator = <0>;
+				denominator = <1>;
+				src = <0>;
+				#clock-cells = <0>;
+			};
+
 			#clock-cells = <3>;
 		};
 
@@ -823,6 +832,18 @@
 			interrupt-names = "usb_otg";
 			clocks = <&usbclk>;
 			num-bidir-endpoints = <8>;
+			status = "disabled";
+		};
+
+		usbphy1: usbphy@400d9000 {
+			compatible = "nxp,usbphy";
+			reg = <0x400D9000 0x1000>;
+			status = "disabled";
+		};
+
+		usbphy2: usbphy@400da000 {
+			compatible = "nxp,usbphy";
+			reg = <0x400DA000 0x1000>;
 			status = "disabled";
 		};
 

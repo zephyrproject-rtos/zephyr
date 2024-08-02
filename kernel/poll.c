@@ -434,7 +434,7 @@ oops_free:
 	k_free(events_copy);
 	K_OOPS(1);
 }
-#include <syscalls/k_poll_mrsh.c>
+#include <zephyr/syscalls/k_poll_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /* must be called with interrupts locked */
@@ -493,7 +493,7 @@ static inline void z_vrfy_k_poll_signal_init(struct k_poll_signal *sig)
 	K_OOPS(K_SYSCALL_OBJ_INIT(sig, K_OBJ_POLL_SIGNAL));
 	z_impl_k_poll_signal_init(sig);
 }
-#include <syscalls/k_poll_signal_init_mrsh.c>
+#include <zephyr/syscalls/k_poll_signal_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void z_impl_k_poll_signal_reset(struct k_poll_signal *sig)
@@ -521,7 +521,7 @@ void z_vrfy_k_poll_signal_check(struct k_poll_signal *sig,
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(result, sizeof(int)));
 	z_impl_k_poll_signal_check(sig, signaled, result);
 }
-#include <syscalls/k_poll_signal_check_mrsh.c>
+#include <zephyr/syscalls/k_poll_signal_check_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_k_poll_signal_raise(struct k_poll_signal *sig, int result)
@@ -556,14 +556,14 @@ static inline int z_vrfy_k_poll_signal_raise(struct k_poll_signal *sig,
 	K_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
 	return z_impl_k_poll_signal_raise(sig, result);
 }
-#include <syscalls/k_poll_signal_raise_mrsh.c>
+#include <zephyr/syscalls/k_poll_signal_raise_mrsh.c>
 
 static inline void z_vrfy_k_poll_signal_reset(struct k_poll_signal *sig)
 {
 	K_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
 	z_impl_k_poll_signal_reset(sig);
 }
-#include <syscalls/k_poll_signal_reset_mrsh.c>
+#include <zephyr/syscalls/k_poll_signal_reset_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
 

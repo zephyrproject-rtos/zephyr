@@ -140,8 +140,6 @@ void common_release_adv_set(struct ll_adv_set *adv_set)
  */
 void common_create_per_adv_chain(struct ll_adv_set *adv_set, uint8_t pdu_count)
 {
-	uint8_t hdr_data[ULL_ADV_HDR_DATA_LEN_SIZE +
-			 ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE];
 	struct pdu_adv *pdu_prev, *pdu, *pdu_new;
 	char pdu_buff[PDU_PAULOAD_BUFF_SIZE];
 	void *extra_data_prev, *extra_data;
@@ -161,16 +159,24 @@ void common_create_per_adv_chain(struct ll_adv_set *adv_set, uint8_t pdu_count)
 		ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data, 0, 0, NULL);
 	}
 
-	/* Create AUX_SYNC_IND PDU as a head of chain */
-	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
-					 (pdu_count > 1 ? ULL_ADV_PDU_HDR_FIELD_AUX_PTR :
-								ULL_ADV_PDU_HDR_FIELD_NONE),
-					 ULL_ADV_PDU_HDR_FIELD_NONE, hdr_data);
-	zassert_equal(err, 0, "Unexpected error during initialization of extended PDU, err: %d",
-		      err);
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
-		adi_in_sync_ind = ull_adv_sync_pdu_had_adi(pdu);
+		adi_in_sync_ind = ull_adv_sync_pdu_had_adi(pdu_prev);
+	}
+
+	/* Create AUX_SYNC_IND PDU as a head of chain */
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && adi_in_sync_ind) {
+		ull_adv_sync_pdu_init(pdu, (pdu_count > 1 ? ULL_ADV_PDU_HDR_FIELD_AUX_PTR |
+							    ULL_ADV_PDU_HDR_FIELD_ADI :
+							    ULL_ADV_PDU_HDR_FIELD_ADI),
+				      lll_sync->adv->phy_s,
+				      lll_sync->adv->phy_flags, NULL);
+
+	} else {
+		ull_adv_sync_pdu_init(pdu, (pdu_count > 1 ? ULL_ADV_PDU_HDR_FIELD_AUX_PTR :
+							    ULL_ADV_PDU_HDR_FIELD_NONE),
+				      lll_sync->adv->phy_s,
+				      lll_sync->adv->phy_flags, NULL);
+
 	}
 
 	/* Add some AD for testing */
@@ -247,7 +253,7 @@ void common_release_per_adv_chain(struct ll_adv_set *adv_set)
 /*
  * @brief Helper function that validates content of periodic advertising PDU.
  *
- * The function verifies if content of periodic advertising PDU as as expected. The function
+ * The function verifies if content of periodic advertising PDU as expected. The function
  * verifies two types of PDUs: AUX_SYNC_IND and AUX_CHAIN_IND. AUX_CHAIN_IND is validated
  * as if its superior PDU is AUX_SYNC_IND only.
  *

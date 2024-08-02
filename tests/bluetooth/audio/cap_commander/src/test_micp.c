@@ -91,9 +91,6 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_gain_setting)
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_micp_mic_ctlr *mic_ctlr; /* We don't care about this */
 
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-
 		err = bt_micp_mic_ctlr_discover(&fixture->conns[i], &mic_ctlr);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -127,9 +124,6 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_gain_setting_d
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_micp_mic_ctlr *mic_ctlr; /* We don't care about this */
 
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-
 		err = bt_micp_mic_ctlr_discover(&fixture->conns[i], &mic_ctlr);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -140,7 +134,7 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_gain_setting_d
 	zexpect_call_count("bt_cap_commander_cb.microphone_gain_setting_changed", 1,
 			   mock_cap_commander_microphone_gain_changed_cb_fake.call_count);
 
-	/* That that it still works as expected if we set the same value twice */
+	/* Test that it still works as expected if we set the same value twice */
 	err = bt_cap_commander_change_microphone_gain_setting(&param);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
@@ -197,7 +191,7 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_gain_setting_i
 	struct bt_cap_commander_change_microphone_gain_setting_member_param
 		member_params[ARRAY_SIZE(fixture->conns)];
 	const struct bt_cap_commander_change_microphone_gain_setting_param param = {
-		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.type = BT_CAP_SET_TYPE_CSIP,
 		.param = member_params,
 		.count = ARRAY_SIZE(member_params),
 	};
@@ -240,11 +234,6 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_gain_setting_i
 
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
-
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-	}
 
 	err = bt_cap_commander_change_microphone_gain_setting(&param);
 	zassert_equal(-EINVAL, err, "Unexpected return value %d", err);
@@ -313,9 +302,6 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_mute_state)
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_micp_mic_ctlr *mic_ctlr; /* We don't care about this */
 
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-
 		err = bt_micp_mic_ctlr_discover(&fixture->conns[i], &mic_ctlr);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -348,9 +334,6 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_mute_state_dou
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_micp_mic_ctlr *mic_ctlr; /* We don't care about this */
 
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-
 		err = bt_micp_mic_ctlr_discover(&fixture->conns[i], &mic_ctlr);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -361,7 +344,7 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_mute_state_dou
 	zexpect_call_count("bt_cap_commander_cb.microphone_mute_changed", 1,
 			   mock_cap_commander_microphone_mute_changed_cb_fake.call_count);
 
-	/* That that it still works as expected if we set the same value twice */
+	/* Test that it still works as expected if we set the same value twice */
 	err = bt_cap_commander_change_microphone_mute_state(&param);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
@@ -417,7 +400,7 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_mute_state_inv
 {
 	union bt_cap_set_member members[ARRAY_SIZE(fixture->conns)];
 	const struct bt_cap_commander_change_microphone_mute_state_param param = {
-		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.type = BT_CAP_SET_TYPE_CSIP,
 		.members = members,
 		.count = ARRAY_SIZE(fixture->conns),
 		.mute = true,
@@ -459,11 +442,6 @@ ZTEST_F(cap_commander_test_micp, test_commander_change_microphone_mute_state_inv
 
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
-
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-	}
 
 	err = bt_cap_commander_change_microphone_mute_state(&param);
 	zassert_equal(-EINVAL, err, "Unexpected return value %d", err);

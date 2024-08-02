@@ -1,2 +1,3 @@
 numpy
+grpcio-tools>=1.63.0
 logic2-automation

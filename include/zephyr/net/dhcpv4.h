@@ -40,6 +40,7 @@ enum net_dhcpv4_state {
 	NET_DHCPV4_RENEWING,
 	NET_DHCPV4_REBINDING,
 	NET_DHCPV4_BOUND,
+	NET_DHCPV4_DECLINE,
 } __packed;
 
 /** @endcond */
@@ -54,14 +55,14 @@ enum net_dhcpv4_state {
  * within corresponding changes to net_dhcpv4_msg_type_name.
  */
 enum net_dhcpv4_msg_type {
-	NET_DHCPV4_MSG_TYPE_DISCOVER	= 1,
-	NET_DHCPV4_MSG_TYPE_OFFER	= 2,
-	NET_DHCPV4_MSG_TYPE_REQUEST	= 3,
-	NET_DHCPV4_MSG_TYPE_DECLINE	= 4,
-	NET_DHCPV4_MSG_TYPE_ACK		= 5,
-	NET_DHCPV4_MSG_TYPE_NAK		= 6,
-	NET_DHCPV4_MSG_TYPE_RELEASE	= 7,
-	NET_DHCPV4_MSG_TYPE_INFORM	= 8,
+	NET_DHCPV4_MSG_TYPE_DISCOVER	= 1, /**< Discover message */
+	NET_DHCPV4_MSG_TYPE_OFFER	= 2, /**< Offer message */
+	NET_DHCPV4_MSG_TYPE_REQUEST	= 3, /**< Request message */
+	NET_DHCPV4_MSG_TYPE_DECLINE	= 4, /**< Decline message */
+	NET_DHCPV4_MSG_TYPE_ACK		= 5, /**< Acknowledge message */
+	NET_DHCPV4_MSG_TYPE_NAK		= 6, /**< Negative acknowledge message */
+	NET_DHCPV4_MSG_TYPE_RELEASE	= 7, /**< Release message */
+	NET_DHCPV4_MSG_TYPE_INFORM	= 8, /**< Inform message */
 };
 
 struct net_dhcpv4_option_callback;

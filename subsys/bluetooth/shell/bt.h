@@ -36,4 +36,14 @@ extern struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
 
 void conn_addr_str(struct bt_conn *conn, char *addr, size_t len);
 
+/**
+ * @brief Compares two strings without case sensitivity
+ *
+ * @param substr The substring
+ * @param str The string to find the substring in
+ *
+ * @return true if @substr is a substring of @p, else false
+ */
+bool is_substring(const char *substr, const char *str);
+
 #endif /* __BT_H */

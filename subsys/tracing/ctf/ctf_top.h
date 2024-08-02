@@ -11,9 +11,17 @@
 #include <string.h>
 #include <ctf_map.h>
 #include <zephyr/tracing/tracing_format.h>
+#include <zephyr/net/net_ip.h>
 
 /* Limit strings to 20 bytes to optimize bandwidth */
 #define CTF_MAX_STRING_LEN 20
+
+/* Increase the string length to be able to store IPv4/6 address */
+#if defined(CONFIG_NET_IPV6)
+#define CTF_NET_MAX_STRING_LEN INET6_ADDRSTRLEN
+#else
+#define CTF_NET_MAX_STRING_LEN CTF_MAX_STRING_LEN
+#endif
 
 /*
  * Obtain a field's size at compile-time.
@@ -102,7 +110,47 @@ typedef enum {
 	CTF_EVENT_TIMER_STOP = 0x30,
 	CTF_EVENT_TIMER_STATUS_SYNC_ENTER = 0x31,
 	CTF_EVENT_TIMER_STATUS_SYNC_BLOCKING = 0x32,
-	CTF_EVENT_TIMER_STATUS_SYNC_EXIT = 0x33
+	CTF_EVENT_TIMER_STATUS_SYNC_EXIT = 0x33,
+	CTF_EVENT_THREAD_USER_MODE_ENTER = 0x34,
+	CTF_EVENT_THREAD_WAKEUP = 0x35,
+	CTF_EVENT_SOCKET_INIT = 0x36,
+	CTF_EVENT_SOCKET_CLOSE_ENTER = 0x37,
+	CTF_EVENT_SOCKET_CLOSE_EXIT = 0x38,
+	CTF_EVENT_SOCKET_SHUTDOWN_ENTER = 0x39,
+	CTF_EVENT_SOCKET_SHUTDOWN_EXIT = 0x3A,
+	CTF_EVENT_SOCKET_BIND_ENTER = 0x3B,
+	CTF_EVENT_SOCKET_BIND_EXIT = 0x3C,
+	CTF_EVENT_SOCKET_CONNECT_ENTER = 0x3D,
+	CTF_EVENT_SOCKET_CONNECT_EXIT = 0x3E,
+	CTF_EVENT_SOCKET_LISTEN_ENTER = 0x3F,
+	CTF_EVENT_SOCKET_LISTEN_EXIT = 0x40,
+	CTF_EVENT_SOCKET_ACCEPT_ENTER = 0x41,
+	CTF_EVENT_SOCKET_ACCEPT_EXIT = 0x42,
+	CTF_EVENT_SOCKET_SENDTO_ENTER = 0x43,
+	CTF_EVENT_SOCKET_SENDTO_EXIT = 0x44,
+	CTF_EVENT_SOCKET_SENDMSG_ENTER = 0x45,
+	CTF_EVENT_SOCKET_SENDMSG_EXIT = 0x46,
+	CTF_EVENT_SOCKET_RECVFROM_ENTER = 0x47,
+	CTF_EVENT_SOCKET_RECVFROM_EXIT = 0x48,
+	CTF_EVENT_SOCKET_RECVMSG_ENTER = 0x49,
+	CTF_EVENT_SOCKET_RECVMSG_EXIT = 0x4A,
+	CTF_EVENT_SOCKET_FCNTL_ENTER = 0x4B,
+	CTF_EVENT_SOCKET_FCNTL_EXIT = 0x4C,
+	CTF_EVENT_SOCKET_IOCTL_ENTER = 0x4D,
+	CTF_EVENT_SOCKET_IOCTL_EXIT = 0x4E,
+	CTF_EVENT_SOCKET_POLL_ENTER = 0x4F,
+	CTF_EVENT_SOCKET_POLL_VALUE = 0x50,
+	CTF_EVENT_SOCKET_POLL_EXIT = 0x51,
+	CTF_EVENT_SOCKET_GETSOCKOPT_ENTER = 0x52,
+	CTF_EVENT_SOCKET_GETSOCKOPT_EXIT = 0x53,
+	CTF_EVENT_SOCKET_SETSOCKOPT_ENTER = 0x54,
+	CTF_EVENT_SOCKET_SETSOCKOPT_EXIT = 0x55,
+	CTF_EVENT_SOCKET_GETPEERNAME_ENTER = 0x56,
+	CTF_EVENT_SOCKET_GETPEERNAME_EXIT = 0x57,
+	CTF_EVENT_SOCKET_GETSOCKNAME_ENTER = 0x58,
+	CTF_EVENT_SOCKET_GETSOCKNAME_EXIT = 0x59,
+	CTF_EVENT_SOCKET_SOCKETPAIR_ENTER = 0x5A,
+	CTF_EVENT_SOCKET_SOCKETPAIR_EXIT = 0x5B,
 
 } ctf_event_t;
 
@@ -186,6 +234,19 @@ static inline void ctf_top_thread_name_set(uint32_t thread_id,
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_NAME_SET), thread_id,
 		  name);
+}
+
+
+static inline void ctf_top_thread_user_mode_enter(uint32_t thread_id, ctf_bounded_string_t name)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_USER_MODE_ENTER),
+		  thread_id, name);
+}
+
+static inline void ctf_top_thread_wakeup(uint32_t thread_id, ctf_bounded_string_t name)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_WAKEUP),
+		  thread_id, name);
 }
 
 static inline void ctf_top_isr_enter(void)
@@ -328,5 +389,224 @@ static inline void ctf_top_timer_status_sync_exit(uint32_t timer, uint32_t resul
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_STATUS_SYNC_EXIT), timer, result);
 }
 
+/* Network socket */
+typedef struct {
+	char buf[CTF_NET_MAX_STRING_LEN];
+} ctf_net_bounded_string_t;
+
+static inline void ctf_top_socket_init(int32_t sock, uint32_t family,
+				       uint32_t type, uint32_t proto)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_INIT), sock, family, type, proto);
+}
+
+static inline void ctf_top_socket_close_enter(int32_t sock)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_CLOSE_ENTER), sock);
+}
+
+static inline void ctf_top_socket_close_exit(int32_t sock, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_CLOSE_EXIT), sock, ret);
+}
+
+static inline void ctf_top_socket_shutdown_enter(int32_t sock, int32_t how)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SHUTDOWN_ENTER), sock, how);
+}
+
+static inline void ctf_top_socket_shutdown_exit(int32_t sock, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SHUTDOWN_EXIT), sock, ret);
+}
+
+static inline void ctf_top_socket_bind_enter(int32_t sock, ctf_net_bounded_string_t addr,
+					     uint32_t addrlen, uint16_t port)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_BIND_ENTER), sock, addr, addrlen, port);
+}
+
+static inline void ctf_top_socket_bind_exit(int32_t sock, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_BIND_EXIT), sock, ret);
+}
+
+static inline void ctf_top_socket_connect_enter(int32_t sock,
+						ctf_net_bounded_string_t addr,
+						uint32_t addrlen)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_CONNECT_ENTER), sock, addr, addrlen);
+}
+
+static inline void ctf_top_socket_connect_exit(int32_t sock, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_CONNECT_EXIT), sock, ret);
+}
+
+static inline void ctf_top_socket_listen_enter(int32_t sock, uint32_t backlog)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_LISTEN_ENTER), sock, backlog);
+}
+
+static inline void ctf_top_socket_listen_exit(int32_t sock, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_LISTEN_EXIT), sock, ret);
+}
+
+static inline void ctf_top_socket_accept_enter(int32_t sock)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_ACCEPT_ENTER), sock);
+}
+
+static inline void ctf_top_socket_accept_exit(int32_t sock, ctf_net_bounded_string_t addr,
+					      uint32_t addrlen, uint16_t port, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_ACCEPT_EXIT), sock, addr, addrlen,
+		  port, ret);
+}
+
+static inline void ctf_top_socket_sendto_enter(int32_t sock, uint32_t len, uint32_t flags,
+					       ctf_net_bounded_string_t addr, uint32_t addrlen)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SENDTO_ENTER), sock, len, flags,
+		  addr, addrlen);
+}
+
+static inline void ctf_top_socket_sendto_exit(int32_t sock, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SENDTO_EXIT), sock, ret);
+}
+
+static inline void ctf_top_socket_sendmsg_enter(int32_t sock, uint32_t flags, uint32_t msg,
+						ctf_net_bounded_string_t addr, uint32_t len)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SENDMSG_ENTER), sock, flags, msg,
+		  addr, len);
+}
+
+static inline void ctf_top_socket_sendmsg_exit(int32_t sock, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SENDMSG_EXIT), sock, ret);
+}
+
+static inline void ctf_top_socket_recvfrom_enter(int32_t sock, uint32_t max_len, uint32_t flags,
+						 uint32_t addr, uint32_t addrlen)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_RECVFROM_ENTER), sock, max_len, flags,
+		  addr, addrlen);
+}
+
+static inline void ctf_top_socket_recvfrom_exit(int32_t sock, ctf_net_bounded_string_t addr,
+						uint32_t addrlen, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_RECVFROM_EXIT), sock, addr, addrlen, ret);
+}
+
+static inline void ctf_top_socket_recvmsg_enter(int32_t sock, uint32_t msg, uint32_t max_len,
+						uint32_t flags)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_RECVMSG_ENTER), sock, msg, max_len, flags);
+}
+
+static inline void ctf_top_socket_recvmsg_exit(int32_t sock, uint32_t len,
+					       ctf_net_bounded_string_t addr, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_RECVMSG_EXIT), sock, len, addr, ret);
+}
+
+static inline void ctf_top_socket_fcntl_enter(int32_t sock, uint32_t cmd, uint32_t flags)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_FCNTL_ENTER), sock, cmd, flags);
+}
+
+static inline void ctf_top_socket_fcntl_exit(int32_t sock, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_FCNTL_EXIT), sock, ret);
+}
+
+static inline void ctf_top_socket_ioctl_enter(int32_t sock, uint32_t req)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_IOCTL_ENTER), sock, req);
+}
+
+static inline void ctf_top_socket_ioctl_exit(int32_t sock, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_IOCTL_EXIT), sock, ret);
+}
+
+static inline void ctf_top_socket_poll_enter(uint32_t fds, uint32_t nfds, int32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_POLL_ENTER), fds, nfds, timeout);
+}
+
+static inline void ctf_top_socket_poll_value(int32_t fd, uint16_t flag)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_POLL_VALUE), fd, flag);
+}
+
+static inline void ctf_top_socket_poll_exit(uint32_t fds, int nfds, int ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_POLL_EXIT), fds, nfds, ret);
+}
+
+static inline void ctf_top_socket_getsockopt_enter(int32_t sock, uint32_t level, uint32_t optname)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETSOCKOPT_ENTER), sock, level, optname);
+}
+
+static inline void ctf_top_socket_getsockopt_exit(int32_t sock, uint32_t level, uint32_t optname,
+						  uint32_t optval, uint32_t optlen, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETSOCKOPT_EXIT),
+		  sock, level, optname, optval, optlen, ret);
+}
+
+static inline void ctf_top_socket_setsockopt_enter(int32_t sock, uint32_t level, uint32_t optname,
+						   uint32_t optval, uint32_t optlen)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SETSOCKOPT_ENTER), sock, level,
+		  optname, optval, optlen);
+}
+
+static inline void ctf_top_socket_setsockopt_exit(int32_t sock, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SETSOCKOPT_EXIT), sock, ret);
+}
+
+static inline void ctf_top_socket_getpeername_enter(int32_t sock)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETPEERNAME_ENTER), sock);
+}
+
+static inline void ctf_top_socket_getpeername_exit(int32_t sock, ctf_net_bounded_string_t addr,
+						   uint32_t addrlen, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETPEERNAME_EXIT),
+		  sock, addr, addrlen, ret);
+}
+
+static inline void ctf_top_socket_getsockname_enter(int32_t sock)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETSOCKNAME_ENTER), sock);
+}
+
+static inline void ctf_top_socket_getsockname_exit(int32_t sock, ctf_net_bounded_string_t addr,
+						   uint32_t addrlen, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETSOCKNAME_EXIT),
+		  sock, addr, addrlen, ret);
+}
+
+static inline void ctf_top_socket_socketpair_enter(uint32_t family, uint32_t type,
+						   uint32_t proto, uint32_t sv)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SOCKETPAIR_ENTER), family, type,
+		  proto, sv);
+}
+
+static inline void ctf_top_socket_socketpair_exit(int32_t sock_A, int32_t sock_B, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SOCKETPAIR_EXIT), sock_A, sock_B, ret);
+}
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */

@@ -168,7 +168,7 @@ uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_
 /* notify adv_set that an aux instance has been created for it */
 void ull_adv_aux_created(struct ll_adv_set *adv);
 
-/* helper to get information whether ADI field is avaialbe in extended advertising PDU */
+/* helper to get information whether ADI field is available in extended advertising PDU */
 static inline bool ull_adv_sync_pdu_had_adi(const struct pdu_adv *pdu)
 {
 	return pdu->adv_ext_ind.ext_hdr.adi;
@@ -275,12 +275,35 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
 			       struct pdu_adv **ter_pdu_prev, struct pdu_adv **ter_pdu_new,
 			       void **extra_data_prev, void **extra_data_new, uint8_t *ter_idx);
 
-/* helper function to set/clear common extended header format fields
- * for AUX_SYNC_IND PDU.
- */
-uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync, struct pdu_adv *ter_pdu_prev,
-				   struct pdu_adv *ter_pdu, uint16_t hdr_add_fields,
-				   uint16_t hdr_rem_fields, void *hdr_data);
+/* helper function to copy PDU(s) content from prev to new PDU */
+uint8_t ull_adv_sync_duplicate(const struct pdu_adv *pdu_prev, struct pdu_adv *pdu_new);
+
+/* helper function to remove an entry with matching type from ACAD */
+uint8_t ull_adv_sync_remove_from_acad(struct lll_adv_sync *lll_sync,
+				      struct pdu_adv *pdu_prev,
+				      struct pdu_adv *pdu,
+				      uint8_t ad_type);
+
+/* helper function to get a pointer to the ACAD and its length */
+uint8_t *ull_adv_sync_get_acad(struct pdu_adv *pdu, uint8_t *acad_len);
+
+/* helper function to add some new adv data to the ACAD */
+uint8_t ull_adv_sync_add_to_acad(struct lll_adv_sync *lll_sync,
+				 struct pdu_adv *pdu_prev,
+				 struct pdu_adv *pdu,
+				 const uint8_t *new_ad,
+				 uint8_t new_ad_len);
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+uint8_t ull_adv_sync_add_cteinfo(struct lll_adv_sync *lll_sync,
+				 struct pdu_adv *pdu_prev,
+				 struct pdu_adv *pdu,
+				 const struct pdu_cte_info *cte_info,
+				 uint8_t cte_count);
+uint8_t ull_adv_sync_remove_cteinfo(struct lll_adv_sync *lll_sync,
+				    struct pdu_adv *pdu_prev,
+				    struct pdu_adv *pdu);
+#endif /* ull_adv_sync_add_cteinfo */
 
 /* helper function to update extra_data field */
 void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,

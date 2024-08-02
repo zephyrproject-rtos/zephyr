@@ -4,11 +4,16 @@
 
 if BT_AIROC
 
+config BT_CYW43XX
+	bool
+	default y if BT_AIROC && BT_H4
+
 choice  AIROC_PART
 	prompt "Select AIROC part"
 
 config CYW4343W
 	bool "CYW4343W"
+	depends on BT_H4
 	help
 	  Enable Infineon CYW4343W BLE connectivity,
 	  More information about CYW4343W device you can find on
@@ -16,6 +21,7 @@ config CYW4343W
 
 config CYW4373
 	bool "CYW4373"
+	depends on BT_H4
 	help
 	  Enable Infineon CYW4373 BLE connectivity,
 	  More information about CYW4373 device you can find on
@@ -23,6 +29,7 @@ config CYW4373
 
 config CYW43012
 	bool "CYW43012"
+	depends on BT_H4
 	help
 	  Enable Infineon CYW43012 BLE connectivity,
 	  More information about CYW43012 device you can find on
@@ -30,6 +37,7 @@ config CYW43012
 
 config CYW43438
 	bool "CYW43438"
+	depends on BT_H4
 	help
 	  Enable Infineon CYW43438 BLE connectivity,
 	  More information about CYW43438 device you can find on
@@ -37,10 +45,19 @@ config CYW43438
 
 config CYW43439
 	bool "CYW43439"
+	depends on BT_H4
 	help
 	  Enable Infineon CYW43439 BLE connectivity,
 	  More information about CYW43439 device you can find on
 	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw43439/
+
+config CYW20829
+	bool "CYW20829"
+	depends on BT_CYW208XX
+	help
+	  Enable Infineon CYW20829 BLE connectivity,
+	  More information about CYW20829 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-bluetooth-le-bluetooth-multiprotocol/airoc-bluetooth-le/cyw20829/
 
 config BT_AIROC_CUSTOM
 	bool "Custom AIROC device/module"
@@ -92,11 +109,11 @@ choice CYW4373_MODULE
 config CYW4373_STERLING_LWB5PLUS
 	bool "STERLING-LWB5plus"
 	help
-	  Laird Sterling LWB5+ 802.11ac / Bluetooth 5.0 M.2 Carrier Board
+	  Ezurio Sterling LWB5+ 802.11ac / Bluetooth 5.0 M.2 Carrier Board
 	  (E-Type Key w/ SDIO/UART)
 
 	  Detailed information about Type Sterling LWB5+ module you can find on
-	  https://www.lairdconnect.com/wireless-modules/wifi-modules-bluetooth/sterling-lwb5-plus-wifi-5-bluetooth-5-module
+	  https://www.ezurio.com/wireless-modules/wifi-modules-bluetooth/sterling-lwb5-plus-wifi-5-bluetooth-5-module
 
 endchoice
 
@@ -116,6 +133,61 @@ config CYW43439_MURATA_1YN
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1yn
 
 endchoice
+
+if CYW20829
+
+config CYW20829_BT_FW_TX10DBM_POWER
+	bool "CYW20829_BT_FW_TX10DBM_POWER"
+	help
+	  Enable 10dBm TX Power variant of CYW20829 FW patch.
+
+choice CYW20829_BT_FW
+	prompt "Select variant of default CYW20829 BT FW"
+	default CYW20829_BT_FW_ISOC_TX10 if BT_ISO &&  CYW20829_BT_FW_TX10DBM_POWER
+	default CYW20829_BT_FW_ISOC_TX0  if BT_ISO && !CYW20829_BT_FW_TX10DBM_POWER
+	default CYW20829_BT_FW_PAWR_TX10 if BT_PER_ADV_RSP &&  CYW20829_BT_FW_TX10DBM_POWER
+	default CYW20829_BT_FW_PAWR_TX0  if BT_PER_ADV_RSP && !CYW20829_BT_FW_TX10DBM_POWER
+	default CYW20829_BT_FW_TX10      if CYW20829_BT_FW_TX10DBM_POWER
+	default CYW20829_BT_FW_TX0
+
+config CYW20829_BT_FW_TX0
+	bool "CYW20829_BT_FW_TX0"
+	help
+	  Enable CYW20829 FW patch for 0dBm TX Power.
+	  This configuration should be used with non-PAWR and non-ISOC applications.
+
+config CYW20829_BT_FW_TX10
+	bool "CYW20829_BT_FW_TX10"
+	help
+	  Enable CYW20829 FW patch for 10dBm TX Power.
+	  This configuration should be used with non-PAwR and non-ISOC applications.
+
+config CYW20829_BT_FW_PAWR_TX0
+	bool "CYW20829_BT_FW_PAWR_TX0"
+	help
+	  Enable CYW20829 FW patch with PAwR support for 0dBm TX Power.
+	  This configuration should be used with PAwR applications.
+
+config CYW20829_BT_FW_PAWR_TX10
+	bool "CYW20829_BT_FW_PAWR_TX10"
+	help
+	  Enable CYW20829 FW patch for 10dBm TX Power.
+	  This configuration should be used with PAwR applications.
+
+config CYW20829_BT_FW_ISOC_TX0
+	bool "CYW20829_BT_FW_ISOC_TX0"
+	help
+	  Enable CYW20829 FW patch for 0dBm TX Power.
+	  This configuration should be used with ISOC applications.
+
+config CYW20829_BT_FW_ISOC_TX10
+	bool "CYW20829_BT_FW_ISOC_TX10"
+	help
+	  Enable CYW20829 FW patch for 10dBm TX Power.
+	  This configuration should be used with ISOC applications.
+
+endchoice
+endif # CYW20829
 
 config AIROC_CUSTOM_FIRMWARE_HCD_BLOB
 	depends on BT_AIROC_CUSTOM

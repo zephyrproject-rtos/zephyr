@@ -99,6 +99,8 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 #endif
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG1_STOP);
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG_STOP);
 #else
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_IWDG_STOP);
 #endif

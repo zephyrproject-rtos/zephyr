@@ -54,6 +54,8 @@ tests:
       - bl654_dvk
       - decawave_dwm1001_dev
       - segger_trb_stm32f407
+      - bytesensi_l
+      - bl654_dvk/nrf52840/pa
     arch_exclude:
       - posix
     tags:

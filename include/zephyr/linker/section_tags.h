@@ -103,6 +103,12 @@
 #define __isr
 #endif
 
+/* Symbol table section */
+#if defined(CONFIG_SYMTAB)
+#define __symtab_info		Z_GENERIC_SECTION(_SYMTAB_INFO_SECTION_NAME)
+#define __symtab_entry		Z_GENERIC_SECTION(_SYMTAB_ENTRY_SECTION_NAME)
+#endif /* CONFIG_SYMTAB */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_ */

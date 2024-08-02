@@ -91,11 +91,16 @@ zephyr_library_sources(
 
 zephyr_library_sources(
   hal/nrf5/cntr.c
-  hal/nrf5/ecb.c
   hal/nrf5/radio/radio.c
   hal/nrf5/mayfly.c
   hal/nrf5/ticker.c
   )
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CTLR_CRYPTO
+  hal/nrf5/ecb.c
+  )
+
 if(CONFIG_BT_CTLR_DF AND NOT CONFIG_SOC_SERIES_BSIM_NRFXX)
   zephyr_library_sources(
     hal/nrf5/radio/radio_df.c

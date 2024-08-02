@@ -4,7 +4,6 @@ tests:
   sample.usb.console:
     depends_on:
       - usb_device
-      - usb_cdc
     tags: usb
     harness: console
     harness_config:

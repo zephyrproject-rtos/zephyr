@@ -51,35 +51,37 @@ config EEPROM_AT2X_EMUL
 	  At present it only supports 8-bit addressing. The size of the EEPROM
 	  is given by the 'size' property. See the binding for further details.
 
-config EMUL_EEPROM_AT2X
-	bool "[DEPRECATED] Emulate an Atmel AT24 I2C chip"
-	select EEPROM_AT2X_EMUL
-	select DEPRECATED
-	help
-	  This is an emulator for the Atmel AT24 series of I2C-attached EEPROMs.
-
-	  At present it only supports 8-bit addressing. The size of the EEPROM
-	  is given by the 'size' property. See the binding for further details.
-
-	  [DEPRECATED] Select EEPROM_AT2X_EMUL instead.
-
 config EEPROM_AT24
-	bool "Atmel AT24 (and compatible) I2C EEPROM support"
+	bool "I2C EEPROMs compatible with Atmel's AT24 family"
 	default y
 	depends on DT_HAS_ATMEL_AT24_ENABLED
 	select I2C
 	select EEPROM_AT2X
 	help
-	  Enable support for Atmel AT24 (and compatible) I2C EEPROMs.
+	  Enable support for I2C EEPROMs compatible with Atmel's AT24 family.
+
+	  There are multiple vendors manufacturing I2C EEPROMs compatible with
+	  the programming model of the Atmel AT24.
+
+	  Examples of compatible EEPROM families:
+	  - Microchip AT24xxx
+	  - ST M24xxx
 
 config EEPROM_AT25
-	bool "Atmel AT25 (and compatible) SPI EEPROM support"
+	bool "SPI EEPROMs compatibile with Atmel's AT25 family"
 	default y
 	depends on DT_HAS_ATMEL_AT25_ENABLED
 	select SPI
 	select EEPROM_AT2X
 	help
-	  Enable support for Atmel AT25 (and compatible) SPI EEPROMs.
+	  Enable support for SPI EEPROMs compatible with Atmel's AT25 family.
+
+	  There are multiple vendors manufacturing SPI EEPROMs compatible with
+	  the programming model of the Atmel AT25.
+
+	  Examples of compatible EEPROM families:
+	  - Microchip AT25xxx
+	  - ST M95xxx
 
 config EEPROM_AT2X_INIT_PRIORITY
 	int "AT2X EEPROM init priority"

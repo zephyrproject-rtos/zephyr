@@ -18,7 +18,13 @@
 
 /* Enumeration of enabled in device tree Clock, uses for indexing clock info table */
 enum {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_imo), okay)
 	INFINEON_CAT1_CLOCK_IMO,
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_iho), okay)
+	INFINEON_CAT1_CLOCK_IHO,
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(path_mux0), okay)
 	INFINEON_CAT1_CLOCK_PATHMUX0,
@@ -58,6 +64,42 @@ enum {
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf4), okay)
 	INFINEON_CAT1_CLOCK_HF4,
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf5), okay)
+	INFINEON_CAT1_CLOCK_HF5,
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf6), okay)
+	INFINEON_CAT1_CLOCK_HF6,
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf7), okay)
+	INFINEON_CAT1_CLOCK_HF7,
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf8), okay)
+	INFINEON_CAT1_CLOCK_HF8,
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf9), okay)
+	INFINEON_CAT1_CLOCK_HF9,
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf10), okay)
+	INFINEON_CAT1_CLOCK_HF10,
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf11), okay)
+	INFINEON_CAT1_CLOCK_HF11,
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf12), okay)
+	INFINEON_CAT1_CLOCK_HF12,
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf13), okay)
+	INFINEON_CAT1_CLOCK_HF13,
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_fast), okay)
@@ -100,7 +142,13 @@ struct infineon_cat1_clock_info_t {
 static struct infineon_cat1_clock_info_t
 	clock_info_table[INFINEON_CAT1_ENABLED_CLOCK_COUNT] = {
 	/* We always have IMO */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_imo), okay)
 	[INFINEON_CAT1_CLOCK_IMO] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_imo)) },
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_iho), okay)
+	[INFINEON_CAT1_CLOCK_IHO] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_iho)) },
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(path_mux0), okay)
 	[INFINEON_CAT1_CLOCK_PATHMUX0] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux0)) },
@@ -140,6 +188,42 @@ static struct infineon_cat1_clock_info_t
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf4), okay)
 	[INFINEON_CAT1_CLOCK_HF4] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf4)) },
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf5), okay)
+	[INFINEON_CAT1_CLOCK_HF5] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf5)) },
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf6), okay)
+	[INFINEON_CAT1_CLOCK_HF6] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf6)) },
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf7), okay)
+	[INFINEON_CAT1_CLOCK_HF7] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf7)) },
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf8), okay)
+	[INFINEON_CAT1_CLOCK_HF8] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf8)) },
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf9), okay)
+	[INFINEON_CAT1_CLOCK_HF9] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf9)) },
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf10), okay)
+	[INFINEON_CAT1_CLOCK_HF10] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf10)) },
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf11), okay)
+	[INFINEON_CAT1_CLOCK_HF11] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf11)) },
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf12), okay)
+	[INFINEON_CAT1_CLOCK_HF12] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf12)) },
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf13), okay)
+	[INFINEON_CAT1_CLOCK_HF13] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf13)) },
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_fast), okay)
@@ -242,13 +326,67 @@ static cyhal_clock_t *_get_hal_obj_from_ord(uint32_t dt_ord)
 	return ret_obj;
 }
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dpll_hp), okay)
+__WEAK void cycfg_ClockStartupError(uint32_t error)
+{
+	(void)error; /* Suppress the compiler warning */
+	while (1) {
+	}
+}
+
+void Cy_SysClk_Dpll_Hp0_Init(void)
+{
+#define CY_CFG_SYSCLK_PLL_ERROR 3
+
+	static cy_stc_dpll_hp_config_t srss_0_clock_0_pll500m_0_hp_pllConfig = {
+		.pDiv = 0,
+		.nDiv = 15,
+		.kDiv = 1,
+		.nDivFract = 0,
+		.freqModeSel = CY_SYSCLK_DPLL_HP_CLK50MHZ_1US_CNT_VAL,
+		.ivrTrim = 0x8U,
+		.clkrSel = 0x1U,
+		.alphaCoarse = 0xCU,
+		.betaCoarse = 0x5U,
+		.flockThresh = 0x3U,
+		.flockWait = 0x6U,
+		.flockLkThres = 0x7U,
+		.flockLkWait = 0x4U,
+		.alphaExt = 0x14U,
+		.betaExt = 0x14U,
+		.lfEn = 0x1U,
+		.dcEn = 0x1U,
+		.outputMode = CY_SYSCLK_FLLPLL_OUTPUT_AUTO,
+	};
+	static cy_stc_pll_manual_config_t srss_0_clock_0_pll500m_0_pllConfig = {
+		.hpPllCfg = &srss_0_clock_0_pll500m_0_hp_pllConfig,
+	};
+
+#if !defined(CY_PDL_TZ_ENABLED)
+	if (Cy_SysClk_PllIsEnabled(SRSS_DPLL_HP_0_PATH_NUM)) {
+		return;
+	}
+#endif
+	Cy_SysClk_PllDisable(SRSS_DPLL_HP_0_PATH_NUM);
+	if (CY_SYSCLK_SUCCESS !=
+	    Cy_SysClk_PllManualConfigure(SRSS_DPLL_HP_0_PATH_NUM,
+					 &srss_0_clock_0_pll500m_0_pllConfig)) {
+		cycfg_ClockStartupError(CY_CFG_SYSCLK_PLL_ERROR);
+	}
+	if (CY_SYSCLK_SUCCESS != Cy_SysClk_PllEnable(SRSS_DPLL_HP_0_PATH_NUM, 10000u)) {
+		cycfg_ClockStartupError(CY_CFG_SYSCLK_PLL_ERROR);
+	}
+}
+#endif
+
 static int clock_control_infineon_cat1_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	cy_rslt_t rslt;
 	cyhal_clock_t *clock_obj = NULL;
 	cyhal_clock_t *clock_source_obj = NULL;
-	uint32 frequency;
+
+	__attribute__((unused)) uint32 frequency;
 	uint32 clock_div;
 
 	/* Configure IMO */
@@ -257,8 +395,16 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	if (cyhal_clock_get(clock_obj, &CYHAL_CLOCK_RSC_IMO)) {
 		return -EIO;
 	}
-#else
-	#error "IMO clock must be enabled"
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_iho), okay)
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_IHO].obj;
+	if (cyhal_clock_get(clock_obj, &CYHAL_CLOCK_RSC_IHO)) {
+		return -EIO;
+	}
+#endif
+#if !DT_NODE_HAS_STATUS(DT_NODELABEL(clk_imo), okay) && \
+	!DT_NODE_HAS_STATUS(DT_NODELABEL(clk_iho), okay)
+	#error "IMO clock or IHO clock must be enabled"
 #endif
 
 	/* Configure the PathMux[0] to source defined in tree device 'path_mux0' node */
@@ -403,6 +549,105 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	}
 #endif
 
+	/* Configure the HF[5] to source defined in tree device 'clk_hf5' node */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf5), okay)
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_HF5].obj;
+	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf5));
+	clock_div = DT_PROP(DT_NODELABEL(clk_hf5), clock_div);
+
+	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[5], clock_div)) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure the HF[6] to source defined in tree device 'clk_hf6' node */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf6), okay)
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_HF6].obj;
+	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf6));
+	clock_div = DT_PROP(DT_NODELABEL(clk_hf6), clock_div);
+
+	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[6], clock_div)) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure the HF[7] to source defined in tree device 'clk_hf7' node */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf7), okay)
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_HF7].obj;
+	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf7));
+	clock_div = DT_PROP(DT_NODELABEL(clk_hf7), clock_div);
+
+	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[7], clock_div)) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure the HF[8] to source defined in tree device 'clk_hf8' node */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf8), okay)
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_HF8].obj;
+	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf8));
+	clock_div = DT_PROP(DT_NODELABEL(clk_hf8), clock_div);
+
+	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[8], clock_div)) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure the HF[9] to source defined in tree device 'clk_hf9' node */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf9), okay)
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_HF9].obj;
+	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf9));
+	clock_div = DT_PROP(DT_NODELABEL(clk_hf9), clock_div);
+
+	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[9], clock_div)) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure the HF[10] to source defined in tree device 'clk_hf10' node */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf10), okay)
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_HF10].obj;
+	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf10));
+	clock_div = DT_PROP(DT_NODELABEL(clk_hf10), clock_div);
+
+	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[10], clock_div)) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure the HF[11] to source defined in tree device 'clk_hf11' node */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf11), okay)
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_HF11].obj;
+	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf11));
+	clock_div = DT_PROP(DT_NODELABEL(clk_hf11), clock_div);
+
+	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[11], clock_div)) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure the HF[12] to source defined in tree device 'clk_hf12' node */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf12), okay)
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_HF12].obj;
+	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf12));
+	clock_div = DT_PROP(DT_NODELABEL(clk_hf12), clock_div);
+
+	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[12], clock_div)) {
+		return -EIO;
+	}
+#endif
+
+	/* Configure the HF[13] to source defined in tree device 'clk_hf13' node */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_hf13), okay)
+	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_HF13].obj;
+	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf13));
+	clock_div = DT_PROP(DT_NODELABEL(clk_hf13), clock_div);
+
+	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[13], clock_div)) {
+		return -EIO;
+	}
+#endif
+
 	/* Configure the clock fast to source defined in tree device 'clk_fast' node */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_fast), okay)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_FAST].obj;
@@ -445,6 +690,11 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	}
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dpll_hp), okay)
+	Cy_SysClk_Dpll_Hp0_Init();
+	SystemCoreClockUpdate();
+#endif
+
 	return (int) rslt;
 }
 
@@ -463,11 +713,23 @@ static const struct clock_control_driver_api clock_control_infineon_cat1_api = {
 	.off = clock_control_infineon_cat_on_off
 };
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_imo), okay)
 DEVICE_DT_DEFINE(DT_NODELABEL(clk_imo),
-		 &clock_control_infineon_cat1_init,
+		 clock_control_infineon_cat1_init,
 		 NULL,
 		 NULL,
 		 NULL,
 		 PRE_KERNEL_1,
 		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_infineon_cat1_api);
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_iho), okay)
+DEVICE_DT_DEFINE(DT_NODELABEL(clk_iho),
+		 clock_control_infineon_cat1_init,
+		 NULL,
+		 NULL,
+		 NULL,
+		 PRE_KERNEL_1,
+		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		 &clock_control_infineon_cat1_api);
+#endif

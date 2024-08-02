@@ -122,7 +122,7 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 	ipv4_hdr->len   = htons(net_pkt_get_len(pkt));
 	ipv4_hdr->proto = next_header_proto;
 
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
 		ipv4_hdr->chksum = net_calc_chksum_ipv4(pkt);
 	}
 
@@ -196,7 +196,7 @@ int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
 			break;
 
 		case NET_IPV4_OPTS_EO:
-			/* Options length should be zero, when cursor reachs to
+			/* Options length should be zero, when cursor reaches to
 			 * End of options.
 			 */
 			if (total_opts_len) {
@@ -323,7 +323,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 		goto drop;
 	}
 
-	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER) &&
 	    net_calc_chksum_ipv4(pkt) != 0U) {
 		NET_DBG("DROP: invalid chksum");
 		goto drop;
@@ -448,5 +448,9 @@ void net_ipv4_init(void)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT)) {
 		net_ipv4_setup_fragment_buffers();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
+		net_ipv4_acd_init();
 	}
 }

@@ -4,10 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <nxp/nxp_rw6xx.dtsi>
 #include "rd_rw612_bga-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
+	model = "nxp,rd_rw612_bga";
+	compatible = "nxp,rd_rw612_bga";
 
 	aliases {
 		usart-0 = &flexcomm3;
@@ -116,6 +119,7 @@ arduino_i2c: &flexcomm2 {
 	ahb-cacheable;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
+	rx-clock-source-b = <3>;
 	pinctrl-0 = <&pinmux_flexspi>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -146,6 +150,16 @@ arduino_i2c: &flexcomm2 {
 				label = "image-0";
 				reg = <0x00020000 0x3e0000>;
 			};
+
+			/* This partition is reserved for connectivity firmwares storage
+			 * and shouldn't be moved.
+			 */
+			 fw_storage: partition@400000 {
+				label = "fw_storage";
+				reg = <0x400000 0x280000>;
+				read-only;
+			};
+
 			slot1_partition: partition@680000 {
 				label = "image-1";
 				reg = <0x680000 0x3e0000>;
@@ -155,6 +169,25 @@ arduino_i2c: &flexcomm2 {
 				reg = <0xa60000 0x35a0000>;
 			};
 		};
+	};
+	is66wvq8m4: is66wvq8m4@2 {
+		compatible = "nxp,imx-flexspi-is66wvq8m4";
+		/* IS66WVQ8M4 is 4MB, 32MBit pSRAM */
+		size = <DT_SIZE_M(32)>;
+		reg = <2>;
+		spi-max-frequency = <256000000>;
+		/* PSRAM cannot be enabled while board is in default XIP
+		 * configuration, as it will conflict with flash chip.
+		 */
+		status = "disabled";
+		cs-interval-unit = <1>;
+		cs-interval = <5>;
+		cs-hold-time = <2>;
+		cs-setup-time = <3>;
+		data-valid-time = <1>;
+		column-space = <14>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
 	};
 };
 
@@ -225,4 +258,27 @@ zephyr_udc0: &usb_otg {
 	reset-causes-en = <PMU_RESET_CM33_LOCKUP>,
 			  <PMU_RESET_ITRC>,
 			  <PMU_RESET_AP_RESET>;
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+};
+
+/* OS Timer is the wakeup source for PM mode 2 */
+&os_timer {
+	status = "okay";
+	wakeup-source;
+};
+
+&systick {
+	status = "disabled";
+};
+
+&hci {
+	status = "okay";
+	wakeup-source;
 };

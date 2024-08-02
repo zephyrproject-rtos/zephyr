@@ -5,8 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_HAS
-	bool "Hearing Access Service support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Hearing Access Service support"
 	select UTF8
 	select BT_GATT_DYNAMIC_DB
 	depends on BT_BAP_UNICAST_SERVER
@@ -56,8 +55,7 @@ endif # BT_HAS_PRESET_SUPPORT
 endif # BT_HAS
 
 config BT_HAS_CLIENT
-	bool "Hearing Access Service Client support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Hearing Access Service Client support"
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select BT_GATT_AUTO_UPDATE_MTU

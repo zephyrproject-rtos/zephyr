@@ -265,27 +265,26 @@ static int usb_dc_stm32_clock_enable(void)
 
 #endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)
+#if USB_OTG_HS_ULPI_PHY
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+#else
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
-#elif defined(CONFIG_SOC_SERIES_STM32H7X)
-#if !USB_OTG_HS_ULPI_PHY
-	/* Disable ULPI interface (for external high-speed PHY) clock in sleep
-	 * mode.
-	 */
-	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 #endif
-#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) */
-#if !USB_OTG_HS_ULPI_PHY
-	/* Disable ULPI interface (for external high-speed PHY) clock in low
-	 * power mode. It is disabled by default in run power mode, no need to
-	 * disable it.
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) /* USB_OTG_HS_ULPI_PHY */
+	/* Disable ULPI interface (for external high-speed PHY) clock in sleep/low-power mode. It is
+	 * disabled by default in run power mode, no need to disable it.
 	 */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+#else
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+#endif
+
+#if USB_OTG_HS_EMB_PHY
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#endif
 #endif /* USB_OTG_HS_ULPI_PHY */
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) */
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
 
 	return 0;
 }
@@ -884,7 +883,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	read_count = ep_state->read_count;
 
 	LOG_DBG("ep 0x%02x, %u bytes, %u+%u, %p", ep, max_data_len,
-		ep_state->read_offset, read_count, data);
+		ep_state->read_offset, read_count, (void *)data);
 
 	if (!USB_EP_DIR_IS_OUT(ep)) { /* check if OUT ep */
 		LOG_ERR("Wrong endpoint direction: 0x%02x", ep);

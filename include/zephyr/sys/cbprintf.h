@@ -302,6 +302,12 @@ typedef int (*cbprintf_cb)(int c, void *ctx);
 typedef int (*cbprintf_cb)(/* int c, void *ctx */);
 #endif
 
+/* Create local cbprintf_cb type to make calng-based compilers happy when handles
+ * OUTC() macro (see below). With strict rules (Wincompatible-function-pointer-types-strict)
+ * it's prohibited to pass arguments with mismatched types.
+ */
+typedef int (*cbprintf_cb_local)(int c, void *ctx);
+
 /** @brief Signature for a cbprintf multibyte callback function.
  *
  * @param buf data.
@@ -517,7 +523,7 @@ int cbprintf_package_convert(void *in_packaged,
 			     uint16_t *strl,
 			     size_t strl_len);
 
-/* @interal Context used for package copying. */
+/* @internal Context used for package copying. */
 struct z_cbprintf_buf_desc {
 	void *buf;
 	size_t size;

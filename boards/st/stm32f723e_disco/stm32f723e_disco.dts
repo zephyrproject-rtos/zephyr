@@ -52,7 +52,6 @@
 		led1 = &red_led;
 		led2 = &green_led;
 		sw0 = &user_button;
-		spi-flash0 = &mx25r512;
 	};
 };
 

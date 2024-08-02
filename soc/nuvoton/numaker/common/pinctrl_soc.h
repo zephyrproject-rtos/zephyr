@@ -25,6 +25,7 @@ typedef struct pinctrl_soc_pin_t {
 	uint32_t open_drain: 1;
 	uint32_t schmitt_enable: 1;
 	uint32_t slew_rate: 2;
+	uint32_t digital_disable: 1;
 } pinctrl_soc_pin_t;
 
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)						\
@@ -33,6 +34,7 @@ typedef struct pinctrl_soc_pin_t {
 		.open_drain = DT_PROP(node_id, drive_open_drain),				\
 		.schmitt_enable = DT_PROP(node_id, input_schmitt_enable),			\
 		.slew_rate = DT_ENUM_IDX(node_id, slew_rate),					\
+		.digital_disable = DT_PROP(node_id, digital_path_disable),			\
 	},
 
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)						\

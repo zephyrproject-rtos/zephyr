@@ -36,6 +36,21 @@
 	aliases {
 		watchdog0 = &wdog1;
 	};
+
+	/*
+	 * This node describes the GPIO pins mapping of the 44-pin camera
+	 * connector, J2 on the EVK. This camera interface is supported
+	 * on several NXP RT11xx EVKs, such as RT1170 and RT1160 EVK and
+	 * is used with an ov5640 camera module available as a Zephyr shield
+	 */
+	nxp_cam_connector: cam-connector {
+		compatible = "nxp,cam-44pins-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<9 0 &gpio11 15 0>,	/* Pin 9, RESETB */
+				<17 0 &gpio9 25  0>;	/* Pin 17, PWDN */
+	};
 };
 
 &lpuart1 {
@@ -45,8 +60,6 @@
 
 &flexcan3 {
 	status = "okay";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -99,3 +112,9 @@ zephyr_udc0: &usb1 {
 &pit2 {
 	status = "okay";
 };
+
+nxp_cam_i2c: &lpi2c6 {};
+
+nxp_mipi_csi: &mipi_csi2rx {};
+
+nxp_csi: &csi {};

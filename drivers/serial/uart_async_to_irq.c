@@ -42,7 +42,7 @@ static const struct uart_async_to_irq_config *get_config(const struct device *de
 /* Function calculates RX timeout based on baudrate. */
 static uint32_t get_rx_timeout(const struct device *dev)
 {
-	struct uart_config cfg;
+	struct uart_config cfg = { 0 };
 	int err;
 	uint32_t baudrate;
 

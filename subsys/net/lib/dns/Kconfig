@@ -4,6 +4,8 @@
 config DNS_RESOLVER
 	bool "DNS resolver"
 	depends on NET_NATIVE
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
 	select CRC
 	help
 	  This option enables the DNS client side support for Zephyr
@@ -31,16 +33,6 @@ config LLMNR_RESOLVER
 	  hosts. If you enable this option, then the DNS requests are ONLY sent
 	  to LLMNR well known multicast address 224.0.0.252:5355 or
 	  [ff02::1:3]:5355 and other DNS server addresses are ignored.
-
-
-config DNS_RESOLVER_ADDITIONAL_BUF_CTR
-	int "Additional DNS buffers"
-	default 0
-	help
-	  Number of additional buffers available for the DNS resolver.
-	  The DNS resolver requires at least one buffer. This option
-	  enables additional buffers required for multiple concurrent
-	  DNS connections.
 
 config DNS_RESOLVER_ADDITIONAL_QUERIES
 	int "Additional DNS queries"
@@ -164,6 +156,8 @@ config MDNS_RESPONDER
 	select NET_IPV6_MLD if NET_IPV6
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
 	depends on NET_HOSTNAME_ENABLE
 	help
 	  This option enables the mDNS responder support for Zephyr.
@@ -229,6 +223,8 @@ config LLMNR_RESPONDER
 	select NET_IPV6_MLD if NET_IPV6
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
 	depends on NET_HOSTNAME_ENABLE
 	help
 	  This option enables the LLMNR responder support for Zephyr.
@@ -288,3 +284,35 @@ module-help = Enables DNS Service Discovery code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 endif # DNS_SD
+
+# Note that we enable the DNS socket dispatcher always if either responder or
+# resolver support is enabled to simplify things. Strictly speaking the
+# dispatcher is really needed for supporting resolver and responder at the same
+# time.
+config DNS_SOCKET_DISPATCHER
+	bool
+	depends on (DNS_RESOLVER || MDNS_RESPONDER)
+	select NET_SOCKETS_SERVICE
+	default y
+	help
+	  A DNS socket dispatcher that allows both the DNS resolver and
+	  mDNS responder to be used at the same time.
+
+if DNS_SOCKET_DISPATCHER
+
+config DNS_RESOLVER_ADDITIONAL_BUF_CTR
+	int "Additional DNS buffers"
+	default 1
+	help
+	  Number of additional buffers available for the DNS resolver.
+	  The DNS resolver requires at least one buffer. This option
+	  enables additional buffers required for multiple concurrent
+	  DNS connections.
+
+module = DNS_SOCKET_DISPATCHER
+module-dep = NET_LOG
+module-str = Log level for DNS socket dispatcher
+module-help = Enables DNS socket dispatcher code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # DNS_SOCKET_DISPATCHER

@@ -8,7 +8,6 @@
 
 #include <nxp/nxp_rt1060.dtsi>
 #include "mimxrt1060_evk-pinctrl.dtsi"
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -30,13 +29,39 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan3;
-		zephyr,display = &lcdif;
 	};
 
 	sdram0: memory@80000000 {
 		/* Micron MT48LC16M16A2B4-6AIT:G */
 		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(32)>;
+	};
+
+	/*
+	 * This node describes the GPIO pins of the parallel FPC interface,
+	 * This interface is standard to several NXP EVKs, and is used with
+	 * several parallel LCD displays (available as zephyr shields)
+	 */
+	nxp_parallel_lcd_connector: parallel-connector {
+		compatible = "nxp,parallel-lcd-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio2 31 0>;	/* Pin 1, BL+ */
+	};
+
+	/*
+	 * This node describes the GPIO pins of the I2C display FPC interface,
+	 * This interface is standard to several NXP EVKs, and is used with
+	 * several parallel LCD displays (available as zephyr shields)
+	 */
+	nxp_i2c_touch_fpc: i2c-touch-connector {
+		compatible = "nxp,i2c-tsc-fpc";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<1  0 &gpio1 2 0>,	/* Pin 2, LCD touch RST */
+				<2  0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
 	};
 
 	leds {
@@ -61,11 +86,6 @@
 			gpios = <&gpio5 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336>;
 	};
 
 	arduino_header: connector {
@@ -96,15 +116,6 @@
 			   <20 0 &gpio1 17 0>,	/* D14 */
 			   <21 0 &gpio1 16 0>;	/* D15 */
 	};
-
-	panel {
-		compatible = "rocktech,rk043fn02h-ct";
-		port {
-			lcd_panel_in: endpoint {
-				remote-endpoint = <&lcd_panel_out>;
-			};
-		};
-	};
 };
 
 arduino_serial: &lpuart3 {
@@ -114,46 +125,17 @@ arduino_serial: &lpuart3 {
 	pinctrl-names = "default", "flowcontrol", "sleep";
 };
 
-&lcdif {
-	status = "okay";
-	width = <480>;
-	height = <272>;
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		hsync-len = <41>;
-		hfront-porch = <4>;
-		hback-porch = <8>;
-		vsync-len = <10>;
-		vfront-porch = <4>;
-		vback-porch = <2>;
-		de-active= <1>;
-		pixelclk-active = <1>;
-		hsync-active = <0>;
-		vsync-active = <0>;
-		clock-frequency = <9210240>;
-	};
-	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
-	data-bus-width = "16-bit";
+zephyr_lcdif: &lcdif {
 	pinctrl-0 = <&pinmux_lcdif>;
 	pinctrl-names = "default";
-	backlight-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
-	port {
-		lcd_panel_out: endpoint {
-			remote-endpoint = <&lcd_panel_in>;
-		};
-	};
 };
+
+nxp_touch_i2c: &lpi2c1 {};
 
 arduino_i2c: &lpi2c1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
-
-	ft5336: ft5336@38 {
-		compatible = "focaltech,ft5336";
-		reg = <0x38>;
-		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
-	};
 };
 
 &lpuart1 {
@@ -181,9 +163,9 @@ arduino_i2c: &lpi2c1 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
 		status = "okay";
-		mc,reset-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
-		mc,interrupt-gpio = <&gpio1 10 GPIO_ACTIVE_HIGH>;
-		mc,interface-type = "rmii";
+		reset-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
 	};
 };
 
@@ -201,6 +183,14 @@ arduino_i2c: &lpi2c1 {
 
 zephyr_udc0: &usb1 {
 	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <12>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
 };
 
 &flexpwm2_pwm3 {
@@ -242,8 +232,6 @@ zephyr_udc0: &usb1 {
 
 &flexcan3 {
 	status = "okay";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
 

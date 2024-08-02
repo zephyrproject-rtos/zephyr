@@ -8,21 +8,21 @@ config MODEM_CELLULAR
 	select MODEM_CMUX
 	select MODEM_CHAT
 	select MODEM_PIPE
+	select MODEM_PIPELINK
 	select MODEM_BACKEND_UART
 	select RING_BUFFER
 	select NET_L2_PPP_OPTION_MRU
 	select NET_L2_PPP_PAP
-	depends on (DT_HAS_QUECTEL_BG95_ENABLED || DT_HAS_ZEPHYR_GSM_PPP_ENABLED || \
+	depends on (DT_HAS_QUECTEL_BG95_ENABLED || \
 		    DT_HAS_SIMCOM_SIM7080_ENABLED || DT_HAS_U_BLOX_SARA_R4_ENABLED || \
 		    DT_HAS_U_BLOX_SARA_R5_ENABLED || DT_HAS_SWIR_HL7800_ENABLED || \
 		    DT_HAS_TELIT_ME910G1_ENABLED || DT_HAS_QUECTEL_EG25_G_ENABLED || \
-		    DT_HAS_NORDIC_NRF91_SLM_ENABLED)
+		    DT_HAS_NORDIC_NRF91_SLM_ENABLED || DT_HAS_SQN_GM02S_ENABLED)
 	help
 	  This driver uses the generic 3gpp AT commands, along
 	  with the standard protocols CMUX and PPP, to configure
 	  cellular modems to establish a point-to-point
-	  network connection. It is a plug-in replacement for the
-	  existing GSM_PPP driver, and a template for tailored
+	  network connection. It is a template for tailored
 	  drivers for the ublox, quectel and other modems, which
 	  include power management and more complex device specific
 	  features.
@@ -49,6 +49,10 @@ config MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE
 
 config MODEM_CELLULAR_CHAT_BUFFER_SIZES
 	int "The size of the buffers used for the chat scripts in bytes."
+	default 128
+
+config MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES
+	int "The size of the buffers used for each user pipe in bytes."
 	default 128
 
 endif

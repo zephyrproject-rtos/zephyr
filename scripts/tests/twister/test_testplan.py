@@ -110,7 +110,7 @@ TESTDATA_PART1 = [
     ("None", "None", "env", ['BSIM_OUT_PATH', 'demo_env'], "Environment (BSIM_OUT_PATH, demo_env) not satisfied"),
     ("build_on_all", True, None, None, "Platform is excluded on command line."),
     ("build_on_all", True, "level", "foobar", "Unknown test level 'foobar'"),
-    (None, None, "supported_toolchains", ['gcc'], "Not supported by the toolchain"),
+    (None, None, "supported_toolchains", ['gcc', 'xcc', 'xt-clang'], "Not supported by the toolchain"),
 ]
 
 
@@ -709,6 +709,7 @@ def test_testplan_load(
     testplan.testsuites['ts1'].name = 'ts1'
     testplan.testsuites['ts2'].name = 'ts2'
     testplan.options = mock.Mock(
+        report_summary=None,
         outdir=tmp_path,
         report_suffix=report_suffix,
         only_failed=only_failed,
@@ -1056,15 +1057,6 @@ def test_testplan_report_test_list(capfd):
            ' - 5.dummy.case.1\n' \
            ' - 5.dummy.case.2\n' \
            '10 total.' in out
-
-
-def test_testplan_config(caplog):
-    testplan = TestPlan(env=mock.Mock())
-    testplan.coverage_platform = 'dummy cov'
-
-    testplan.config()
-
-    assert 'coverage platform: dummy cov' in caplog.text
 
 
 def test_testplan_info(capfd):
@@ -1460,7 +1452,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     ts5.name = 'TestSuite 5'
 
     testplan = TestPlan(env=mock.Mock(outdir=os.path.join('out', 'dir')))
-    testplan.options = mock.Mock(device_testing=device_testing, test_only=True)
+    testplan.options = mock.Mock(device_testing=device_testing, test_only=True, report_summary=None)
     testplan.testsuites = {
         'TestSuite 1': ts1,
         'TestSuite 2': ts2,

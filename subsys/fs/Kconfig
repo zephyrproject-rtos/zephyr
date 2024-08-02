@@ -76,7 +76,7 @@ config FILE_SYSTEM_SHELL_BUFFER_SIZE
 	help
 	  Size of the buffer used for file system commands, will determine the
 	  maximum size that can be used with a read/write test. Note that this
-	  is is used on the stack.
+	  is used on the stack.
 
 endif # FILE_SYSTEM_SHELL
 

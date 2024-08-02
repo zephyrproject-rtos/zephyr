@@ -34,5 +34,7 @@ rsource "Kconfig.stm32"
 rsource "Kconfig.numaker"
 rsource "Kconfig.intel_socfpga"
 rsource "Kconfig.npcx"
+rsource "Kconfig.lpc_syscon"
+rsource "Kconfig.nxp_rstctl"
 
 endif # RESET

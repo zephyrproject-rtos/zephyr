@@ -1,5 +1,5 @@
 identifier: stm32f411e_disco@B
-name: ST STM32F411E Discovery
+name: ST STM32F411E Discovery (rev. B)
 type: mcu
 arch: arm
 toolchain:

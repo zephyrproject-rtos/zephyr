@@ -71,7 +71,7 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 }
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
-void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 /**
  *
@@ -98,7 +98,7 @@ void _arch_isr_direct_pm(void)
 
 	if (_kernel.idle) {
 		_kernel.idle = 0;
-		z_pm_save_idle_exit();
+		pm_system_resume();
 	}
 
 	irq_unlock(key);

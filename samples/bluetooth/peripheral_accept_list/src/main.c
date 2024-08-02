@@ -120,7 +120,7 @@ static void bt_ready(void)
 	bond_count = 0;
 	bt_foreach_bond(BT_ID_DEFAULT, add_bonded_addr_to_filter_list, NULL);
 
-	adv_param = *BT_LE_ADV_CONN;
+	adv_param = *BT_LE_ADV_CONN_ONE_TIME;
 
 	/* If we have got at least one bond, activate the filter */
 	if (bond_count) {

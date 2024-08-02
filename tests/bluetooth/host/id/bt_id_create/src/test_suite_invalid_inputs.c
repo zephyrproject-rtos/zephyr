@@ -152,7 +152,7 @@ ZTEST(bt_id_create_invalid_inputs, test_pa_address_exists_in_id_list)
  *
  *  Constraints:
  *   - A static random address is used
- *   - Input IRK is is filled with zeros
+ *   - Input IRK is filled with zeros
  *
  *  Expected behaviour:
  *   - '-EINVAL' error code is returned representing invalid values were used.

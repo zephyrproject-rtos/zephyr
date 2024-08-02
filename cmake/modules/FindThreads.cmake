@@ -26,7 +26,7 @@ include(FindPackageHandleStandardArgs)
 
 set(Threads_FOUND FALSE)
 
-if(DEFINED CONFIG_PTHREAD)
+if(DEFINED CONFIG_POSIX_THREADS)
   set(Threads_FOUND TRUE)
   set(CMAKE_THREAD_LIBS_INIT )
   set(CMAKE_USE_PTHREADS_INIT 1)

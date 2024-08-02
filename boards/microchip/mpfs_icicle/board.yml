@@ -3,3 +3,5 @@ board:
   vendor: microchip
   socs:
   - name: polarfire
+    variants:
+    - name: 'smp'

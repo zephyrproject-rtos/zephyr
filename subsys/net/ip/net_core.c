@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 
+#include <zephyr/net/ipv4_autoconf.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_pkt.h>
@@ -55,7 +56,6 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "connection.h"
 #include "udp_internal.h"
 #include "tcp_internal.h"
-#include "ipv4_autoconf_internal.h"
 
 #include "net_stats.h"
 
@@ -549,6 +549,8 @@ static inline int services_init(void)
 {
 	int status;
 
+	socket_service_init();
+
 	status = net_dhcpv4_init();
 	if (status) {
 		return status;
@@ -561,7 +563,10 @@ static inline int services_init(void)
 
 	net_dhcpv4_server_init();
 
+	dns_dispatcher_init();
 	dns_init_resolver();
+	mdns_init_responder();
+
 	websocket_init();
 
 	net_coap_init();

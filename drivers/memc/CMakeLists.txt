@@ -11,6 +11,7 @@ zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI memc_mcux_flexspi.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI_W956A8MBYA memc_mcux_flexspi_w956a8mbya.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI_S27KS0641 memc_mcux_flexspi_s27ks0641.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI_APS6408L memc_mcux_flexspi_aps6408l.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI_IS66WVQ8M4 memc_mcux_flexspi_is66wvq8m4.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_NXP_FLEXRAM memc_nxp_flexram.c)
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_SAM_SMC memc_sam_smc.c)
@@ -22,3 +23,7 @@ if((DEFINED CONFIG_FLASH_MCUX_FLEXSPI_XIP) AND (DEFINED CONFIG_FLASH))
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_NXP_S32_QSPI memc_nxp_s32_qspi.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_SMARTBOND memc_smartbond_nor_psram.c)
+
+zephyr_library_sources_ifdef(CONFIG_MEMC_MSPI_APS6404L memc_mspi_aps6404l.c)
+zephyr_library_include_directories_ifdef(CONFIG_MEMC_MSPI_APS6404L ${ZEPHYR_BASE}/drivers/mspi)

@@ -59,5 +59,6 @@ config CAN_MCUX_MCAN
 	depends on CLOCK_CONTROL
 	select CAN_MCAN
 	select PINCTRL
+	select RESET
 	help
 	  Enable support for mcux mcan driver.

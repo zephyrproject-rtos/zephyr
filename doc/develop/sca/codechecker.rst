@@ -74,3 +74,15 @@ Optional parser configuration arguments can be passed using the
 
     west build -b mimxrt1064_evk samples/basic/blinky -- -DZEPHYR_SCA_VARIANT=codechecker \
     -DCODECHECKER_EXPORT=html,json -DCODECHECKER_PARSE_OPTS="--trim-path-prefix;$PWD"
+
+Failing the build on CodeChecker issues
+***************************************
+
+By default, CodeChecker identified issues will not fail the build, only generate
+a report. To fail the build if any issues are found (for example, for use in
+CI), pass the ``CODECHECKER_PARSE_EXIT_STATUS=y`` parameter, e.g.
+
+.. code-block:: shell
+
+    west build -b mimxrt1064_evk samples/basic/blinky -- -DZEPHYR_SCA_VARIANT=codechecker \
+    -DCODECHECKER_PARSE_EXIT_STATUS=y

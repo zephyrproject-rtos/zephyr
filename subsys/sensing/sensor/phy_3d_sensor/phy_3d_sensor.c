@@ -159,7 +159,7 @@ static int phy_3d_sensor_attr_set(const struct device *dev,
 	return ret;
 }
 
-static int phy_3d_sensor_submit(const struct device *dev,
+static void phy_3d_sensor_submit(const struct device *dev,
 		struct rtio_iodev_sqe *sqe)
 {
 	struct sensing_submit_config *config = (struct sensing_submit_config *)sqe->sqe.iodev->data;
@@ -175,21 +175,21 @@ static int phy_3d_sensor_submit(const struct device *dev,
 			(uint8_t **)&sample, &buffer_len);
 	if (ret) {
 		rtio_iodev_sqe_err(sqe, ret);
-		return ret;
+		return;
 	}
 
 	ret = sensor_sample_fetch_chan(cfg->hw_dev, custom->chan_all);
 	if (ret) {
 		LOG_ERR("%s: sample fetch failed: %d", dev->name, ret);
 		rtio_iodev_sqe_err(sqe, ret);
-		return ret;
+		return;
 	}
 
 	ret = sensor_channel_get(cfg->hw_dev, custom->chan_all, value);
 	if (ret) {
 		LOG_ERR("%s: channel get failed: %d", dev->name, ret);
 		rtio_iodev_sqe_err(sqe, ret);
-		return ret;
+		return;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(value); ++i) {
@@ -206,7 +206,7 @@ static int phy_3d_sensor_submit(const struct device *dev,
 			sample->readings[0].z);
 
 	rtio_iodev_sqe_ok(sqe, 0);
-	return 0;
+	return;
 }
 
 static const struct sensor_driver_api phy_3d_sensor_api = {

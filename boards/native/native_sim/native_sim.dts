@@ -24,6 +24,7 @@
 		zephyr,display = &sdl_dc;
 		zephyr,canbus = &can_loopback0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_userchan;
 	};
 
 	aliases {
@@ -133,6 +134,15 @@
 		#size-cells = <0>;
 	};
 
+	mspi0: mspi@400 {
+		status = "okay";
+		compatible = "zephyr,mspi-emul-controller";
+		clock-frequency = <250000000>;
+		reg = <0x400 4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
 	uart0: uart {
 		status = "okay";
 		compatible = "zephyr,native-posix-uart";
@@ -161,10 +171,9 @@
 		compatible = "zephyr,native-posix-counter";
 	};
 
-	gpio0: gpio@800 {
+	gpio0: gpio_emul {
 		status = "okay";
 		compatible = "zephyr,gpio-emul";
-		reg = <0x800 0x4>;
 		rising-edge;
 		falling-edge;
 		high-level;
@@ -190,7 +199,6 @@
 	can_loopback0: can_loopback0 {
 		status = "okay";
 		compatible = "zephyr,can-loopback";
-		bus-speed = <125000>;
 	};
 
 	can0: can {
@@ -200,7 +208,6 @@
 		 * name, e.g.: sudo ip link property add dev vcan0 altname zcan0
 		 */
 		host-interface = "zcan0";
-		bus-speed = <125000>;
 	};
 
 	rtc: rtc {
@@ -220,5 +227,10 @@
 		compatible = "zephyr,dma-emul";
 		#dma-cells = <1>;
 		stack-size = <4096>;
+	};
+
+	bt_hci_userchan: bt_hci_userchan {
+		compatible = "zephyr,bt-hci-userchan";
+		status = "okay";
 	};
 };

@@ -21,6 +21,8 @@ properties:
 
       Defaults to sensor reset value.
 
+      Note: "force"-mode only available if low-power mode inactive.
+
   measurement-period:
     type: int
     default: 40
@@ -37,7 +39,7 @@ properties:
   proximity-it:
     type: string
     default: "1"
-    enum: ["1", "1.5", "2", "2.5", "3", "3.5", "4", "8"]
+    enum: ["1", "2", "4", "8"]
     description: |
       Proximity integration time in T.
       Defaults to sensor reset value.

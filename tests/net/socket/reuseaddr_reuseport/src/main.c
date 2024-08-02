@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
 
 #include "../../socket_helpers.h"
 
@@ -36,13 +37,15 @@ static void test_add_local_ip_address(sa_family_t family, const char *ip)
 {
 	if (family == AF_INET) {
 		struct sockaddr_in addr;
+		struct net_if_addr *ifaddr;
 
 		zsock_inet_pton(AF_INET, ip, &addr.sin_addr);
 
-		zassert_not_null(net_if_ipv4_addr_add(net_if_get_default(),
-						      &addr.sin_addr,
-						      NET_ADDR_MANUAL,
-						      0),
+		ifaddr = net_if_ipv4_addr_add(net_if_get_default(),
+					      &addr.sin_addr,
+					      NET_ADDR_MANUAL,
+					      0);
+		zassert_not_null(ifaddr,
 				 "Cannot add IPv4 address %s", ip);
 	} else if (family == AF_INET6) {
 		struct sockaddr_in6 addr;
@@ -102,16 +105,18 @@ static inline void prepare_sock_udp(sa_family_t family, const char *ip, uint16_t
 
 static void test_getsocketopt_reuseaddr(int sock, void *optval, socklen_t *optlen)
 {
-	zassert_equal(zsock_getsockopt(sock, SOL_SOCKET, SO_REUSEADDR, optval, optlen),
-		      0,
-		      "getsocketopt() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_getsockopt(sock, SOL_SOCKET, SO_REUSEADDR, optval, optlen);
+	zassert_equal(ret, 0, "getsocketopt() failed with error %d", errno);
 }
 
 static void test_setsocketopt_reuseaddr(int sock, void *optval, socklen_t optlen)
 {
-	zassert_equal(zsock_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, optval, optlen),
-		      0,
-		      "setsocketopt() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, optval, optlen);
+	zassert_equal(ret, 0, "setsocketopt() failed with error %d", errno);
 }
 
 static void test_enable_reuseaddr(int sock)
@@ -123,16 +128,18 @@ static void test_enable_reuseaddr(int sock)
 
 static void test_getsocketopt_reuseport(int sock, void *optval, socklen_t *optlen)
 {
-	zassert_equal(zsock_getsockopt(sock, SOL_SOCKET, SO_REUSEPORT, optval, optlen),
-		      0,
-		      "getsocketopt() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_getsockopt(sock, SOL_SOCKET, SO_REUSEPORT, optval, optlen);
+	zassert_equal(ret, 0, "getsocketopt() failed with error %d", errno);
 }
 
 static void test_setsocketopt_reuseport(int sock, void *optval, socklen_t optlen)
 {
-	zassert_equal(zsock_setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, optval, optlen),
-		      0,
-		      "setsocketopt() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, optval, optlen);
+	zassert_equal(ret, 0, "setsocketopt() failed with error %d", errno);
 }
 
 static void test_enable_reuseport(int sock)
@@ -144,16 +151,18 @@ static void test_enable_reuseport(int sock)
 
 static void test_bind_success(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(zsock_bind(sock, addr, addrlen),
-		      0,
-		      "bind() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_bind(sock, addr, addrlen);
+	zassert_equal(ret, 0, "bind() failed with error %d", errno);
 }
 
 static void test_bind_fail(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(zsock_bind(sock, addr, addrlen),
-		      -1,
-		      "bind() succeeded incorrectly");
+	int ret;
+
+	ret = zsock_bind(sock, addr, addrlen);
+	zassert_equal(ret, -1, "bind() succeeded incorrectly");
 
 	zassert_equal(errno, EADDRINUSE, "bind() returned unexpected errno (%d)", errno);
 }
@@ -167,9 +176,10 @@ static void test_listen(int sock)
 
 static void test_connect_success(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(zsock_connect(sock, addr, addrlen),
-		      0,
-		      "connect() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_connect(sock, addr, addrlen);
+	zassert_equal(ret, 0, "connect() failed with error %d", errno);
 
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
 		/* Let the connection proceed */
@@ -179,9 +189,10 @@ static void test_connect_success(int sock, const struct sockaddr *addr, socklen_
 
 static void test_connect_fail(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(zsock_connect(sock, addr, addrlen),
-		      -1,
-		      "connect() succeeded incorrectly");
+	int ret;
+
+	ret = zsock_connect(sock, addr, addrlen);
+	zassert_equal(ret, -1, "connect() succeeded incorrectly");
 
 	zassert_equal(errno, EADDRINUSE, "connect() returned unexpected errno (%d)", errno);
 }
@@ -198,41 +209,46 @@ static int test_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 static void test_sendto(int sock, const void *buf, size_t len, int flags,
 		       const struct sockaddr *dest_addr, socklen_t addrlen)
 {
-	zassert_equal(zsock_sendto(sock, buf, len, flags, dest_addr, addrlen),
-		      len,
-		      "sendto failed with error %d", errno);
+	int ret;
+
+	ret = zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
+	zassert_equal(ret, len, "sendto failed with error %d", errno);
 }
 
 static void test_recvfrom_success(int sock, void *buf, size_t max_len, int flags,
 			 struct sockaddr *src_addr, socklen_t *addrlen)
 {
-	zassert_equal(zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen),
-		      max_len,
-		      "recvfrom failed with error %d", errno);
+	int ret;
+
+	ret = zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+	zassert_equal(ret, max_len, "recvfrom failed with error %d", errno);
 }
 
 static void test_recvfrom_fail(int sock, void *buf, size_t max_len, int flags,
 			 struct sockaddr *src_addr, socklen_t *addrlen)
 {
-	zassert_equal(zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen),
-		      -1,
-		      "recvfrom succeeded incorrectly");
+	int ret;
+
+	ret = zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+	zassert_equal(ret, -1, "recvfrom succeeded incorrectly");
 
 	zassert_equal(errno, EAGAIN, "recvfrom() returned unexpected errno (%d)", errno);
 }
 
 static void test_recv_success(int sock, void *buf, size_t max_len, int flags)
 {
-	zassert_equal(zsock_recv(sock, buf, max_len, flags),
-		      max_len,
-		      "recv failed with error %d", errno);
+	int ret;
+
+	ret = zsock_recv(sock, buf, max_len, flags);
+	zassert_equal(ret, max_len, "recv failed with error %d", errno);
 }
 
 static void test_recv_fail(int sock, void *buf, size_t max_len, int flags)
 {
-	zassert_equal(zsock_recv(sock, buf, max_len, flags),
-		      -1,
-		      "recvfrom succeeded incorrectly");
+	int ret;
+
+	ret = zsock_recv(sock, buf, max_len, flags);
+	zassert_equal(ret, -1, "recvfrom succeeded incorrectly");
 
 	zassert_equal(errno, EAGAIN, "recv() returned unexpected errno (%d)", errno);
 }

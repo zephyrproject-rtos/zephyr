@@ -15,20 +15,18 @@ common:
       - "(.*)CANopen stack initialized"
 tests:
   sample.modules.canopennode:
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-      and dt_chosen_enabled("zephyr,flash-controller") and CONFIG_FLASH_HAS_DRIVER_ENABLED
-    platform_exclude:
-      - nucleo_h723zg
-      - nucleo_h743zi
-      - nucleo_h745zi_q/stm32h745xx/m7
-      - nucleo_h753zi
+    depends_on: nvs
   sample.modules.canopennode.program_download:
     sysbuild: true
+    depends_on: nvs
     platform_allow:
       - frdm_k64f
       - twr_ke18f
     integration_platforms:
       - frdm_k64f
-    extra_args: canopennode_CONF_FILE=prj_img_mgmt.conf
+    extra_args:
+      canopennode_CONF_FILE=prj_img_mgmt.conf
+      SB_CONFIG_BOOTLOADER_MCUBOOT=y
+
   sample.modules.canopennode.no_storage:
     extra_args: CONF_FILE=prj_no_storage.conf

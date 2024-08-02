@@ -10,7 +10,7 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_
 
-#include <syscall_list.h>
+#include <zephyr/syscall_list.h>
 
 /* All of this is build time magic, but LCOV gets confused. Disable coverage
  * for this whole file.

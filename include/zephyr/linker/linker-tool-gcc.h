@@ -89,7 +89,7 @@
  */
 #if defined(CONFIG_ARCH_POSIX)
 #define GROUP_LINK_IN(where)
-#elif !defined(Z_VM_KERNEL)
+#elif !defined(K_MEM_IS_VM_KERNEL)
 #define GROUP_LINK_IN(where) > where
 #endif
 
@@ -113,7 +113,7 @@
  */
 #if defined(CONFIG_ARCH_POSIX)
 #define GROUP_ROM_LINK_IN(vregion, lregion)
-#elif defined(Z_VM_KERNEL)
+#elif defined(K_MEM_IS_VM_KERNEL)
 #define GROUP_ROM_LINK_IN(vregion, lregion) > vregion AT > lregion
 #else
 #define GROUP_ROM_LINK_IN(vregion, lregion) > lregion
@@ -133,7 +133,7 @@
  */
 #if defined(CONFIG_ARCH_POSIX)
 #define GROUP_DATA_LINK_IN(vregion, lregion)
-#elif defined(CONFIG_XIP) || defined(Z_VM_KERNEL)
+#elif defined(CONFIG_XIP) || defined(K_MEM_IS_VM_KERNEL)
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
 #else
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
@@ -151,7 +151,7 @@
  */
 #if defined(CONFIG_ARCH_POSIX)
 #define GROUP_NOLOAD_LINK_IN(vregion, lregion)
-#elif defined(Z_VM_KERNEL)
+#elif defined(K_MEM_IS_VM_KERNEL)
 #define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion AT > lregion
 #elif defined(CONFIG_XIP)
 #define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion AT > vregion
@@ -172,7 +172,7 @@
  * @param align Alignment directives, such as SUBALIGN(). ALIGN() itself is
  *              not allowed. May be blank.
  */
-#ifdef Z_VM_KERNEL
+#ifdef K_MEM_IS_VM_KERNEL
 /* If we have a virtual memory map we need ALIGN_WITH_INPUT in all sections */
 #define SECTION_PROLOGUE(name, options, align) \
 	name options : ALIGN_WITH_INPUT align
@@ -200,7 +200,7 @@
  */
 #if defined(CONFIG_XIP)
 #define SECTION_DATA_PROLOGUE(name, options, align) \
-	name options : ALIGN_WITH_INPUT align
+	name options : ALIGN_WITH_INPUT
 #else
 #define SECTION_DATA_PROLOGUE(name, options, align) \
 	SECTION_PROLOGUE(name, options, align)

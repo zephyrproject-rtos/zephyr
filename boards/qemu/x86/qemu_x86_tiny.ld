@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 #include <zephyr/sys/util.h>
@@ -25,7 +25,7 @@
  * the same as its physical location, although an identity mapping for RAM
  * is still supported by setting CONFIG_KERNEL_VM_BASE=CONFIG_SRAM_BASE_ADDRESS.
  */
-#ifdef Z_VM_KERNEL
+#ifdef K_MEM_IS_VM_KERNEL
 
 #define KERNEL_BASE_ADDR \
 	(CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET)
@@ -55,7 +55,7 @@
 
 MEMORY
     {
-#if defined(Z_VM_KERNEL)
+#if defined(K_MEM_IS_VM_KERNEL)
     ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = PHYS_RAM_AVAIL
 #endif
     RAM (wx)        : ORIGIN = KERNEL_BASE_ADDR, LENGTH = KERNEL_RAM_SIZE
@@ -75,7 +75,7 @@ MEMORY
     IDT_LIST        : ORIGIN = 0xFFFF1000, LENGTH = 2K
     }
 
-#if defined(Z_VM_KERNEL)
+#if defined(K_MEM_IS_VM_KERNEL)
 	#define ROMABLE_REGION ROM
 	#define RAMABLE_REGION RAM
 #else
@@ -245,7 +245,7 @@ MEMORY
 	*mpsc_pbuf.c.obj(.##lsect)					\
 	*mpsc_pbuf.c.obj(.##lsect.*)
 
-epoint = Z_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
+epoint = K_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
 ENTRY(epoint)
 
 /* SECTIONS definitions */
@@ -253,6 +253,10 @@ SECTIONS
 	{
 
 #include <zephyr/linker/rel-sections.ld>
+
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
 
     /DISCARD/ :
 	{
@@ -416,6 +420,10 @@ SECTIONS
 	lnkr_pinned_rodata_start = .;
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 
 	SECTION_PROLOGUE(pinned.rodata,,)
@@ -645,6 +653,10 @@ SECTIONS
 
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 #endif
 

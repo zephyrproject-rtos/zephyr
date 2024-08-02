@@ -12,6 +12,7 @@
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "pinetime_devkit0-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
 	model = "Pine64 PineTime DevKit0";
@@ -76,6 +77,42 @@
 		io-channels = <&adc 7>;
 		output-ohms = <1000000>;
 		full-ohms = <(1000000 + 1000000)>;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi1>;
+		dc-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;	/* DET */
+		reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;	/* RESX reset */
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		/* Sitronix ST7789V LCD */
+		st7789v: st7789v@1 {
+			compatible = "sitronix,st7789v";
+			reg = <1>;
+			mipi-max-frequency = <8000000>; /* 8MHz */
+			width = <240>;
+			height = <240>;
+			x-offset = <0>;
+			y-offset = <0>;
+			vcom = <0x19>;
+			gctrl = <0x35>;
+			vrhs = <0x12>;
+			vdvs = <0x20>;
+			mdac = <0x00>;
+			gamma = <0x01>;
+			colmod = <0x05>;
+			lcm = <0x2c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 01];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
+			nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
+			ram-param = [00 F0];
+			rgb-param = [CD 08 14];
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+		};
 	};
 };
 
@@ -177,34 +214,6 @@
 				reg = <0x00300000 0x00100000>;
 			};
 		};
-	};
-
-	/* Sitronix ST7789V LCD */
-	st7789v: st7789v@1 {
-		compatible = "sitronix,st7789v";
-		reg = <1>;
-		spi-max-frequency = <8000000>; /* 8MHz */
-		cmd-data-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;	/* DET */
-		reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;	/* RESX reset */
-		width = <240>;
-		height = <240>;
-		x-offset = <0>;
-		y-offset = <0>;
-		vcom = <0x19>;
-		gctrl = <0x35>;
-		vrhs = <0x12>;
-		vdvs = <0x20>;
-		mdac = <0x00>;
-		gamma = <0x01>;
-		colmod = <0x05>;
-		lcm = <0x2c>;
-		porch-param = [0c 0c 00 33 33];
-		cmd2en-param = [5a 69 02 01];
-		pwctrl1-param = [a4 a1];
-		pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
-		nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
-		ram-param = [00 F0];
-		rgb-param = [CD 08 14];
 	};
 };
 

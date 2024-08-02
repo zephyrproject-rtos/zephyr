@@ -194,7 +194,9 @@ Flashing an application to SECO SBC-3.5-PX30
 
 First, connect the SECO SBC-3.5-PX30 to your host computer using
 CN56 connector to an ST-Link.
+
 The pinout is (1-8):
+
 - VDD
 - UART1_TX
 - UART1_RX

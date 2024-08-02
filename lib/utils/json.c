@@ -559,13 +559,18 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	}
 	case JSON_TOK_OBJECT_START: {
 		ptrdiff_t total = 0;
+		uint32_t align_shift = 0;
 		size_t i;
 
 		for (i = 0; i < descr->object.sub_descr_len; i++) {
 			total += get_elem_size(&descr->object.sub_descr[i]);
+
+			if (descr->object.sub_descr[i].align_shift > align_shift) {
+				align_shift = descr->object.sub_descr[i].align_shift;
+			}
 		}
 
-		return ROUND_UP(total, 1 << descr->align_shift);
+		return ROUND_UP(total, 1 << align_shift);
 	}
 	default:
 		return -EINVAL;
@@ -1002,6 +1007,13 @@ static int opaque_string_encode(struct json_obj_token *opaque, json_append_bytes
 	return append_bytes("\"", 1, data);
 }
 
+static int encoded_obj_encode(const char **str, json_append_bytes_t append_bytes, void *data)
+{
+	size_t len = strlen(*str);
+
+	return append_bytes(*str, len, data);
+}
+
 static int bool_encode(const bool *value, json_append_bytes_t append_bytes,
 		       void *data)
 {
@@ -1036,6 +1048,8 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 		return float_ascii_encode(ptr, append_bytes, data);
 	case JSON_TOK_OPAQUE:
 		return opaque_string_encode(ptr, append_bytes, data);
+	case JSON_TOK_ENCODED_OBJ:
+		return encoded_obj_encode(ptr, append_bytes, data);
 	default:
 		return -EINVAL;
 	}

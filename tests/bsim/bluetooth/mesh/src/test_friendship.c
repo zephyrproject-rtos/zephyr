@@ -47,16 +47,9 @@ static uint8_t test_va_col_uuid[][16] = {
 };
 static uint16_t test_va_col_addr = 0x809D;
 
-static void test_common_init(const struct bt_mesh_test_cfg *cfg)
-{
-	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
-
-	bt_mesh_test_cfg_set(cfg, WAIT_TIME);
-}
-
 static void test_friend_init(void)
 {
-	test_common_init(&friend_cfg);
+	bt_mesh_test_cfg_set(&friend_cfg, WAIT_TIME);
 }
 
 static void test_lpn_init(void)
@@ -67,12 +60,12 @@ static void test_lpn_init(void)
 	 */
 	lpn_cfg.addr = LPN_ADDR_START + get_device_nbr();
 	lpn_cfg.dev_key[0] = get_device_nbr();
-	test_common_init(&lpn_cfg);
+	bt_mesh_test_cfg_set(&lpn_cfg, WAIT_TIME);
 }
 
 static void test_other_init(void)
 {
-	test_common_init(&other_cfg);
+	bt_mesh_test_cfg_set(&other_cfg, WAIT_TIME);
 }
 
 static void friend_wait_for_polls(int polls)
@@ -104,7 +97,7 @@ static void friend_wait_for_polls(int polls)
 static void test_friend_est(void)
 {
 	bt_mesh_test_setup();
-
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
 	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
@@ -124,9 +117,7 @@ static void test_friend_est_multi(void)
 	int err;
 
 	bt_mesh_test_setup();
-
 	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
-
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
 	for (int i = 0; i < CONFIG_BT_MESH_FRIEND_LPN_COUNT; i++) {
@@ -152,7 +143,7 @@ static void test_friend_est_multi(void)
 static void test_friend_msg(void)
 {
 	bt_mesh_test_setup();
-
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
 	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
@@ -220,7 +211,7 @@ static void test_friend_msg(void)
 static void test_friend_overflow(void)
 {
 	bt_mesh_test_setup();
-
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
 	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
@@ -305,7 +296,7 @@ static void test_friend_group(void)
 	const struct bt_mesh_va *va;
 
 	bt_mesh_test_setup();
-
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
 	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
@@ -354,6 +345,7 @@ static void test_friend_group(void)
 static void test_friend_no_est(void)
 {
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
 	if (!bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
@@ -371,7 +363,7 @@ static void test_friend_va_collision(void)
 	const struct bt_mesh_va *va[2];
 
 	bt_mesh_test_setup();
-
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
 
 	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
@@ -446,6 +438,7 @@ static void test_friend_va_collision(void)
 static void test_lpn_est(void)
 {
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	/* This test is used to establish friendship with single lpn as well as
 	 * with many lpn devices. If legacy advertiser is used friendship with
@@ -477,7 +470,7 @@ static void test_lpn_est(void)
 static void test_lpn_msg_frnd(void)
 {
 	bt_mesh_test_setup();
-
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 	bt_mesh_lpn_set(true);
 
 	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
@@ -541,7 +534,7 @@ static void test_lpn_msg_frnd(void)
 static void test_lpn_msg_mesh(void)
 {
 	bt_mesh_test_setup();
-
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 	bt_mesh_lpn_set(true);
 
 	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
@@ -585,6 +578,7 @@ static void test_lpn_msg_mesh(void)
 static void test_lpn_re_est(void)
 {
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	for (int i = 0; i < 4; i++) {
 		bt_mesh_lpn_set(true);
@@ -609,6 +603,7 @@ static void test_lpn_re_est(void)
 static void test_lpn_poll(void)
 {
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	bt_mesh_lpn_set(true);
 	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
@@ -637,6 +632,7 @@ static void test_lpn_overflow(void)
 	int err;
 
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	bt_mesh_lpn_set(true);
 	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
@@ -751,6 +747,7 @@ static void test_lpn_group(void)
 	int err;
 
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
@@ -856,6 +853,7 @@ static void test_lpn_loopback(void)
 	int err;
 
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
@@ -927,6 +925,7 @@ static void test_other_msg(void)
 	int err;
 
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	/* When this device and a friend device receive segments from LPN both start
 	 * sending data. This device sends transport ack. Friend relays LPN's segment.
@@ -978,6 +977,7 @@ static void test_other_group(void)
 	const struct bt_mesh_va *va;
 
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	ASSERT_OK(bt_mesh_va_add(test_va_uuid, &va));
 
@@ -1001,6 +1001,7 @@ static void test_other_group(void)
 static void test_lpn_disable(void)
 {
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	bt_mesh_lpn_set(true);
 	bt_mesh_lpn_set(false);
@@ -1020,6 +1021,7 @@ static void test_lpn_disable(void)
 static void test_lpn_term_cb_check(void)
 {
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	bt_mesh_lpn_set(true);
 	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_POLLED,
@@ -1045,6 +1047,7 @@ static void test_lpn_va_collision(void)
 	int err;
 
 	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 
 	/* Subscripbe LPN on both virtual address with collision. */
 	for (int i = 0; i < ARRAY_SIZE(test_va_col_uuid); i++) {

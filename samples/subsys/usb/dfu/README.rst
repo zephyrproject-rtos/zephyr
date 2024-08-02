@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: usb-dfu
    :name: USB DFU (Device Firmware Upgrade)
-   :relevant-api: usbd_api _usb_device_core_api
+   :relevant-api: _usb_device_core_api
 
    Implement device firmware upgrade using the USB DFU class driver.
 

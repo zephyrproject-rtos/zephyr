@@ -23,14 +23,14 @@
 		cpu@0 {
 			device_type = "cpu";
 			compatible = "openisa,ri5cy", "riscv";
-			riscv,isa = "rv32ima_zicsr_zifencei";
+			riscv,isa = "rv32imc_zicsr_zifencei";
 			reg = <0>;
 		};
 
 		cpu@1 {
 			device_type = "cpu";
 			compatible = "openisa,zero-ri5cy", "riscv";
-			riscv,isa = "rv32ima_zicsr_zifencei";
+			riscv,isa = "rv32imc_zicsr_zifencei";
 			reg = <1>;
 		};
 	};
@@ -523,6 +523,11 @@
 				erase-block-size = <4096>;
 				write-block-size = <8>;
 			};
+		};
+
+		bt_hci_controller: bt_hci_controller {
+			compatible = "zephyr,bt-hci-ll-sw-split";
+			status = "disabled";
 		};
 	};
 };

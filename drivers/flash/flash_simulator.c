@@ -162,7 +162,12 @@ static const struct flash_driver_api flash_sim_api;
 
 static const struct flash_parameters flash_sim_parameters = {
 	.write_block_size = FLASH_SIMULATOR_PROG_UNIT,
-	.erase_value = FLASH_SIMULATOR_ERASE_VALUE
+	.erase_value = FLASH_SIMULATOR_ERASE_VALUE,
+	.caps = {
+#if !defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+		.no_explicit_erase = false,
+#endif
+	},
 };
 
 static int flash_range_is_valid(const struct device *dev, off_t offset,
@@ -226,8 +231,12 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 
 	FLASH_SIM_STATS_INC(flash_sim_stats, flash_write_calls);
 
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 	/* check if any unit has been already programmed */
 	memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
+#else
+	memcpy(buf, MOCK_FLASH(offset), sizeof(buf));
+#endif
 	for (uint32_t i = 0; i < len; i += FLASH_SIMULATOR_PROG_UNIT) {
 		if (memcmp(buf, MOCK_FLASH(offset + i), sizeof(buf))) {
 			FLASH_SIM_STATS_INC(flash_sim_stats, double_writes);
@@ -265,10 +274,14 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 #endif /* CONFIG_FLASH_SIMULATOR_STATS */
 
 		/* only pull bits to zero */
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 #if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
 		*(MOCK_FLASH(offset + i)) &= *((uint8_t *)data + i);
 #else
 		*(MOCK_FLASH(offset + i)) |= *((uint8_t *)data + i);
+#endif
+#else
+		*(MOCK_FLASH(offset + i)) = *((uint8_t *)data + i);
 #endif
 	}
 
@@ -491,6 +504,6 @@ void *z_vrfy_flash_simulator_get_memory(const struct device *dev,
 	return z_impl_flash_simulator_get_memory(dev, mock_size);
 }
 
-#include <syscalls/flash_simulator_get_memory_mrsh.c>
+#include <zephyr/syscalls/flash_simulator_get_memory_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */

@@ -20,6 +20,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	aliases {
@@ -36,10 +37,6 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
-};
-
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_160M>;
 };
 
 &uart0 {
@@ -93,7 +90,6 @@
 	status = "disabled";
 	pinctrl-0 = <&twai_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 };
 
 &flash0 {
@@ -133,4 +129,8 @@
 			reg = <0x00250000 0x00006000>;
 		};
 	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
 };

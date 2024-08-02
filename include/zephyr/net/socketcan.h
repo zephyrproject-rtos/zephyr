@@ -28,8 +28,10 @@ extern "C" {
  * @{
  */
 
-/* Protocols of the protocol family PF_CAN */
+/** Protocols of the protocol family PF_CAN */
 #define CAN_RAW 1
+
+/** @cond INTERNAL_HIDDEN */
 
 /* SocketCAN options */
 #define SOL_CAN_BASE 100
@@ -39,28 +41,35 @@ enum {
 	CAN_RAW_FILTER = 1,
 };
 
+/** @endcond */
+
 /* SocketCAN MTU size compatible with Linux */
 #ifdef CONFIG_CAN_FD_MODE
+/** SocketCAN max data length */
 #define SOCKETCAN_MAX_DLEN 64U
+/** CAN FD frame MTU */
 #define CANFD_MTU (sizeof(struct socketcan_frame))
+/** CAN frame MTU */
 #define CAN_MTU (CANFD_MTU - 56U)
 #else /* CONFIG_CAN_FD_MODE */
+/** SocketCAN max data length */
 #define SOCKETCAN_MAX_DLEN 8U
+/** CAN frame MTU */
 #define CAN_MTU (sizeof(struct socketcan_frame))
 #endif /* !CONFIG_CAN_FD_MODE */
 
 /* CAN FD specific flags from Linux Kernel (include/uapi/linux/can.h) */
-#define CANFD_BRS 0x01 /* bit rate switch (second bitrate for payload data) */
-#define CANFD_ESI 0x02 /* error state indicator of the transmitting node */
-#define CANFD_FDF 0x04 /* mark CAN FD for dual use of struct canfd_frame */
+#define CANFD_BRS 0x01 /**< Bit rate switch (second bitrate for payload data) */
+#define CANFD_ESI 0x02 /**< Error state indicator of the transmitting node */
+#define CANFD_FDF 0x04 /**< Mark CAN FD for dual use of struct canfd_frame */
 
 /**
  * struct sockaddr_can - The sockaddr structure for CAN sockets
  *
  */
 struct sockaddr_can {
-	sa_family_t can_family;
-	int         can_ifindex;
+	sa_family_t can_family;   /**< Address family */
+	int         can_ifindex;  /**< SocketCAN network interface index */
 };
 
 /**

@@ -1,0 +1,196 @@
+/*
+ * Copyright (c) 2023-2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/adi_max32_clock.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &flc0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	clocks {
+		clk_ipo: clk_ipo {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			status = "disabled";
+		};
+
+		clk_iso: clk_iso {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(60)>;
+			status = "disabled";
+		};
+
+		clk_inro: clk_inro {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_K(8)>;
+			status = "disabled";
+		};
+
+		clk_ibro: clk_ibro {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <7372800>;
+			status = "disabled";
+		};
+
+		clk_ertco: clk_ertco {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		clk_erfo: clk_erfo {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "disabled";
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(32)>;
+		};
+
+		flc0: flash_controller@40029000 {
+			compatible = "flash-controller";
+			reg = <0x40029000 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10000000 DT_SIZE_K(512)>;
+				write-block-size = <16>;
+				erase-block-size = <8192>;
+			};
+		};
+
+		gcr: clock-controller@40000000 {
+			reg = <0x40000000 0x400>;
+			compatible = "adi,max32-gcr";
+			#clock-cells = <2>;
+			clocks = <&clk_ipo>;
+			sysclk-prescaler = <1>;
+			status = "okay";
+		};
+
+		i2c0: i2c0@4001d000 {
+			compatible = "adi,max32-i2c";
+			reg = <0x4001d000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 13>;
+			interrupts = <13 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c1@4001e000 {
+			compatible = "adi,max32-i2c";
+			reg = <0x4001e000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 28>;
+			interrupts = <36 0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c2@4001f000 {
+			compatible = "adi,max32-i2c";
+			reg = <0x4001f000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 24>;
+			interrupts = <62 0>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@40008000 {
+			compatible = "adi,max32-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40008000 0x2000>;
+
+			gpio0: gpio@40008000 {
+				reg = <0x40008000 0x1000>;
+				compatible = "adi,max32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&gcr ADI_MAX32_CLOCK_BUS0 0>;
+				interrupts = <24 0>;
+				status = "disabled";
+			};
+
+			gpio1: gpio@40009000 {
+				reg = <0x40009000 0x1000>;
+				compatible = "adi,max32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupts = <25 0>;
+				clocks = <&gcr ADI_MAX32_CLOCK_BUS0 1>;
+				status = "disabled";
+			};
+		};
+
+		uart0: serial@40042000 {
+			compatible = "adi,max32-uart";
+			reg = <0x40042000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 9>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			interrupts = <14 0>;
+			status = "disabled";
+		};
+
+		uart1: serial@40043000 {
+			compatible = "adi,max32-uart";
+			reg = <0x40043000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 10>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			interrupts = <15 0>;
+			status = "disabled";
+		};
+
+		uart2: serial@40044000 {
+			compatible = "adi,max32-uart";
+			reg = <0x40044000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 1>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			interrupts = <34 0>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

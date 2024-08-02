@@ -1,0 +1,199 @@
+# Bluetooth Classic configuration options
+
+# Copyright (c) 2016-2020 Nordic Semiconductor ASA
+# Copyright (c) 2015-2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Bluetooth Classic Options"
+
+config BT_CLASSIC
+	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
+	depends on BT_HCI_HOST
+	select BT_PERIPHERAL
+	select BT_CENTRAL
+	select BT_SMP
+	select BT_L2CAP_DYNAMIC_CHANNEL
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth BR/EDR support
+
+if BT_CLASSIC
+config BT_MAX_SCO_CONN
+	int "Maximum number of simultaneous SCO connections"
+	default 1
+	range 1 3
+	help
+	  Maximum number of simultaneous Bluetooth synchronous connections
+	  supported. The minimum (and default) number is 1.
+
+config BT_RFCOMM
+	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth RFCOMM support
+
+config BT_RFCOMM_L2CAP_MTU
+	int "L2CAP MTU for RFCOMM frames"
+	depends on BT_RFCOMM
+	default BT_BUF_ACL_RX_SIZE
+	range 23 32767
+	help
+	  Maximum size of L2CAP PDU for RFCOMM frames.
+	  RX MTU will be truncated to account for the L2CAP PDU header.
+
+config BT_RFCOMM_TX_MAX
+	int "Maximum number of pending TX buffers for RFCOMM"
+	default BT_CONN_TX_MAX
+	range BT_CONN_TX_MAX 255
+	help
+	  Maximum number of pending TX buffers that have an associated
+	  sending buf. Normally this can be left to the default value, which
+	  is equal to the number of session in the stack-internal pool.
+
+config BT_RFCOMM_DLC_STACK_SIZE
+	int "Stack size of DLC for RFCOMM"
+	default 512 if BT_HFP_AG
+	default 256
+	help
+	  Stack size of DLC for RFCOMM. This is the context from which
+	  all data of upper layer are sent and disconnect
+	  callback to the upper layer. The default value is sufficient
+	  for basic operation, but if the application needs to do
+	  advanced things in its callbacks that require extra stack
+	  space, this value can be increased to accommodate for that.
+
+config BT_HFP_HF
+	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
+	depends on PRINTK
+	select BT_RFCOMM
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth HF support
+
+config BT_HFP_AG
+	bool "Bluetooth Handsfree profile AG Role support [EXPERIMENTAL]"
+	depends on PRINTK
+	select BT_RFCOMM
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth AG support
+
+if BT_HFP_AG
+config BT_HFP_AG_TX_BUF_COUNT
+	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"
+	default BT_RFCOMM_TX_MAX
+	range BT_RFCOMM_TX_MAX 255
+	help
+	  Maximum number of pending TX buffers that have an associated
+	  sending buf. Normally this can be left to the default value, which
+	  is equal to the number of session in the stack-internal pool.
+
+config BT_HFP_AG_THREAD_STACK_SIZE
+	int "Size of the HFP AG thread stack [EXPERIMENTAL]"
+	default 1024
+	help
+	  Stack size needed for executing thread for HFP AG.
+
+config BT_HFP_AG_THREAD_PRIO
+	# Hidden option for HFP AG thread priority
+	int
+	default 6
+
+config BT_HFP_AG_OUTGOING_TIMEOUT
+	int "Call outgoing timeout value for HFP AG [EXPERIMENTAL]"
+	default 3
+	range 1 10
+	help
+	  The option sets the timeout of call outgoing. If the call does
+	  not switch to alerting state before timeout, it will be
+	  stopped by the HFP AG. The unit is seconds.
+
+config BT_HFP_AG_INCOMING_TIMEOUT
+	int "Incoming call timeout value for HFP AG [EXPERIMENTAL]"
+	default 3
+	range 1 10
+	help
+	  The option sets the timeout of incoming call. If the call does
+	  not switch to ringing state before timeout, it will be
+	  stopped by the HFP AG. The unit is seconds.
+
+config BT_HFP_AG_ALERTING_TIMEOUT
+	int "Call alerting/ringing timeout value for HFP AG [EXPERIMENTAL]"
+	default 60
+	range 10 60
+	help
+	  The option sets the timeout of call alerting/ringing. If the
+	  call is not active before timeout, it will be stopped
+	  by the HFP AG. The unit is seconds.
+
+config BT_HFP_AG_PHONE_NUMBER_MAX_LEN
+	int "Supported max length of phone number for HFP AG [EXPERIMENTAL]"
+	default 32
+	range 1 255
+	help
+	  Supported max length of phone number for HFP AG.
+
+config BT_HFP_AG_RING_NOTIFY_INTERVAL
+	int "Ring notification interval [EXPERIMENTAL]"
+	default 3
+	help
+	  Ring notification interval if the call is in alert state.
+	  The unit is seconds.
+endif # BT_HFP_AG
+
+config BT_AVDTP
+	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth AVDTP support
+
+config BT_A2DP
+	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
+	select BT_AVDTP
+	select EXPERIMENTAL
+	help
+	  This option enables the A2DP profile
+
+if BT_AVDTP
+
+config BT_AVDTP_RTP_VERSION
+	int "Bluetooth AVDTP RTP version"
+	default 2
+	help
+	  This option sets the AVDTP RTP protocol version
+
+endif # BT_AVDTP
+
+if BT_A2DP
+
+config BT_A2DP_SOURCE
+	bool "Bluetooth A2DP Profile Source Function"
+	help
+	  This option enables the A2DP profile source function
+
+config BT_A2DP_SINK
+	bool "Bluetooth A2DP Profile Sink Function"
+	help
+	  This option enables the A2DP profile sink function
+
+endif # BT_A2DP
+
+config BT_PAGE_TIMEOUT
+	hex "Bluetooth Page Timeout"
+	default 0x2000
+	range 0x0001 0xffff
+	help
+	  This option sets the page timeout value. Value is selected as
+	  (N * 0.625) ms.
+
+config BT_COD
+	hex "Bluetooth Class of Device(CoD)"
+	default 0
+	help
+	  This option sets the class of device.For the list of possible values please
+	  consult the following link:
+	  https://www.bluetooth.com/specifications/assigned-numbers
+
+endif # BT_CLASSIC
+
+endmenu

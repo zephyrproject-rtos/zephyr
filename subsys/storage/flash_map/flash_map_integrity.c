@@ -11,6 +11,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <string.h>
 #include <sys/types.h>
 #include <zephyr/device.h>
 #include <zephyr/storage/flash_map.h>
@@ -18,26 +19,23 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY)
 #define SHA256_DIGEST_SIZE 32
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_TC)
-#include <tinycrypt/constants.h>
-#include <tinycrypt/sha256.h>
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
+#include <psa/crypto.h>
+#define SUCCESS_VALUE PSA_SUCCESS
 #else
-#include <mbedtls/md.h>
+#include <mbedtls/sha256.h>
+#define SUCCESS_VALUE 0
 #endif
-#include <string.h>
-#endif /* CONFIG_FLASH_AREA_CHECK_INTEGRITY */
 
 int flash_area_check_int_sha256(const struct flash_area *fa,
 				const struct flash_area_check *fac)
 {
 	unsigned char hash[SHA256_DIGEST_SIZE];
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_TC)
-	struct tc_sha256_state_struct sha;
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
+	psa_hash_operation_t hash_ctx;
 #else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
-	mbedtls_md_context_t mbed_hash_ctx;
-	const mbedtls_md_info_t *mbed_hash_info;
+	mbedtls_sha256_context hash_ctx;
 #endif
 	int to_read;
 	int pos;
@@ -52,24 +50,16 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_TC)
-	if (tc_sha256_init(&sha) != TC_CRYPTO_SUCCESS) {
-		return -ESRCH;
-	}
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
+	hash_ctx = psa_hash_operation_init();
+	rc = psa_hash_setup(&hash_ctx, PSA_ALG_SHA_256);
 #else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
-	mbed_hash_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
-
-	mbedtls_md_init(&mbed_hash_ctx);
-
-	if (mbedtls_md_setup(&mbed_hash_ctx, mbed_hash_info, 0) != 0) {
+	mbedtls_sha256_init(&hash_ctx);
+	rc = mbedtls_sha256_starts(&hash_ctx, false);
+#endif
+	if (rc != SUCCESS_VALUE) {
 		return -ESRCH;
 	}
-
-	if (mbedtls_md_starts(&mbed_hash_ctx)) {
-		rc = -ESRCH;
-		goto error;
-	}
-#endif
 
 	to_read = fac->rblen;
 
@@ -81,40 +71,35 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 		rc = flash_read(fa->fa_dev, (fa->fa_off + fac->off + pos),
 				fac->rbuf, to_read);
 		if (rc != 0) {
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_TC)
-			return rc;
-#else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
 			goto error;
-#endif
 		}
 
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_TC)
-		if (tc_sha256_update(&sha,
-				     fac->rbuf,
-				     to_read) != TC_CRYPTO_SUCCESS) {
-			return -ESRCH;
-		}
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
+		rc = psa_hash_update(&hash_ctx, fac->rbuf, to_read);
 #else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
-		if (mbedtls_md_update(&mbed_hash_ctx, fac->rbuf, to_read) != 0) {
+		rc = mbedtls_sha256_update(&hash_ctx, fac->rbuf, to_read);
+#endif
+		if (rc != SUCCESS_VALUE) {
 			rc = -ESRCH;
 			goto error;
 		}
-#endif
 	}
 
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_TC)
-	if (tc_sha256_final(hash, &sha) != TC_CRYPTO_SUCCESS) {
-		return -ESRCH;
-	}
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
+	size_t hash_len;
+
+	rc = psa_hash_finish(&hash_ctx, hash, sizeof(hash), &hash_len);
 #else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
-	if (mbedtls_md_finish(&mbed_hash_ctx, hash) != 0) {
+	rc = mbedtls_sha256_finish(&hash_ctx, hash);
+#endif
+	if (rc != SUCCESS_VALUE) {
 		rc = -ESRCH;
 		goto error;
 	}
-#endif
 
 	if (memcmp(hash, fac->match, SHA256_DIGEST_SIZE)) {
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_TC)
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
+		/* The operation has already been terminated. */
 		return -EILSEQ;
 #else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
 		rc = -EILSEQ;
@@ -122,9 +107,11 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 #endif
 	}
 
-#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS)
 error:
-	mbedtls_md_free(&mbed_hash_ctx);
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA)
+	psa_hash_abort(&hash_ctx);
+#else /* CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS */
+	mbedtls_sha256_free(&hash_ctx);
 #endif
 	return rc;
 }

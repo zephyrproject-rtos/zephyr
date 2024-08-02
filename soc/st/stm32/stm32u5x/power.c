@@ -12,6 +12,7 @@
 #include <stm32u5xx_ll_bus.h>
 #include <stm32u5xx_ll_cortex.h>
 #include <stm32u5xx_ll_pwr.h>
+#include <stm32u5xx_ll_icache.h>
 #include <stm32u5xx_ll_rcc.h>
 #include <stm32u5xx_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
@@ -24,6 +25,32 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_MSI
 #else
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_HSI
+#endif
+
+#ifdef CONFIG_STM32_STOP3_LP_MODE
+static void pwr_stop3_isr(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	/* Clear all wake-up flags */
+	LL_PWR_ClearFlag_WU();
+}
+
+static void disable_cache(void)
+{
+	/* Disabling ICACHE */
+	LL_ICACHE_Disable();
+	while (LL_ICACHE_IsEnabled() == 1U) {
+	}
+
+	/* Wait until ICACHE_SR.BUSYF is cleared */
+	while (LL_ICACHE_IsActiveFlag_BUSY() == 1U) {
+	}
+
+	/* Wait until ICACHE_SR.BSYENDF is set */
+	while (LL_ICACHE_IsActiveFlag_BSYEND() == 0U) {
+	}
+}
 #endif
 
 void set_mode_stop(uint8_t substate_id)
@@ -41,6 +68,25 @@ void set_mode_stop(uint8_t substate_id)
 	case 3: /* enter STOP2 mode */
 		LL_PWR_SetPowerMode(LL_PWR_STOP2_MODE);
 		break;
+#ifdef CONFIG_STM32_STOP3_LP_MODE
+	case 4: /* enter STOP3 mode */
+
+		LL_PWR_SetSRAM2SBRetention(LL_PWR_SRAM2_SB_FULL_RETENTION);
+		/* Enable RTC wakeup
+		 * This configures an internal pin that generates an event to wakeup the system
+		 */
+		LL_PWR_EnableWakeUpPin(LL_PWR_WAKEUP_PIN7);
+		LL_PWR_SetWakeUpPinSignal3Selection(LL_PWR_WAKEUP_PIN7);
+
+		/* Clear flags */
+		LL_PWR_ClearFlag_SB();
+		LL_PWR_ClearFlag_WU();
+
+		disable_cache();
+
+		LL_PWR_SetPowerMode(LL_PWR_STOP3_MODE);
+		break;
+#endif
 	default:
 		LOG_DBG("Unsupported power state substate-id %u", substate_id);
 		break;
@@ -85,6 +131,18 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		if (substate_id <= 3) {
 			LL_LPM_DisableSleepOnExit();
 			LL_LPM_EnableSleep();
+#ifdef CONFIG_STM32_STOP3_LP_MODE
+		} else if (substate_id == 4) {
+			stm32_clock_control_standby_exit();
+
+			LL_ICACHE_SetMode(LL_ICACHE_1WAY);
+			LL_ICACHE_Enable();
+			while (LL_ICACHE_IsEnabled() == 0U) {
+			}
+
+			LL_LPM_DisableSleepOnExit();
+			LL_LPM_EnableSleep();
+#endif
 		} else {
 			LOG_DBG("Unsupported power substate-id %u",
 							substate_id);
@@ -117,6 +175,12 @@ static int stm32_power_init(void)
 
 	/* enable Power clock */
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
+
+#ifdef CONFIG_STM32_STOP3_LP_MODE
+	IRQ_CONNECT(PWR_S3WU_IRQn, 0,
+		    pwr_stop3_isr, 0, 0);
+	irq_enable(PWR_S3WU_IRQn);
+#endif
 
 	return 0;
 }

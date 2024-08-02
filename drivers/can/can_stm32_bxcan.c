@@ -659,7 +659,7 @@ static int can_stm32_init(const struct device *dev)
 	/* Enable automatic bus-off recovery */
 	can->MCR |= CAN_MCR_ABOM;
 
-	ret = can_calc_timing(dev, &timing, cfg->common.bus_speed,
+	ret = can_calc_timing(dev, &timing, cfg->common.bitrate,
 			      cfg->common.sample_point);
 	if (ret == -EINVAL) {
 		LOG_ERR("Can't find timing for given param");

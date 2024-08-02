@@ -15,8 +15,6 @@ description: |
       interrupt-names = "common";
       clocks = <&ccm IMX_CCM_CAN_CLK 0x84 6>;
       clk-source = <2>;
-      bus-speed = <125000>;
-      bus-speed-data = <1000000>;
       pinctrl-0 = <&pinmux_flexcan3>;
       pinctrl-names = "default";
 

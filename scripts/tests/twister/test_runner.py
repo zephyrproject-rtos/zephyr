@@ -42,6 +42,7 @@ def mocked_instance(tmp_path):
     testsuite.source_dir: str = ''
     instance.testsuite = testsuite
     platform = mock.Mock()
+    platform.sysbuild = False
     platform.binaries: List[str] = []
     instance.platform = platform
     build_dir = tmp_path / 'build_dir'
@@ -131,7 +132,7 @@ def test_if_default_binaries_are_taken_properly(project_builder: ProjectBuilder)
         os.path.join('zephyr', 'zephyr.elf'),
         os.path.join('zephyr', 'zephyr.exe'),
     ]
-    project_builder.testsuite.sysbuild = False
+    project_builder.instance.sysbuild = False
     binaries = project_builder._get_binaries()
     assert sorted(binaries) == sorted(default_binaries)
 
@@ -139,7 +140,7 @@ def test_if_default_binaries_are_taken_properly(project_builder: ProjectBuilder)
 def test_if_binaries_from_platform_are_taken_properly(project_builder: ProjectBuilder):
     platform_binaries = ['spi_image.bin']
     project_builder.platform.binaries = platform_binaries
-    project_builder.testsuite.sysbuild = False
+    project_builder.instance.sysbuild = False
     platform_binaries_expected = [os.path.join('zephyr', bin) for bin in platform_binaries]
     binaries = project_builder._get_binaries()
     assert sorted(binaries) == sorted(platform_binaries_expected)
@@ -555,20 +556,6 @@ TESTDATA_3 = [
         {os.path.join('other', 'dummy.testsuite.name'): True}
     ),
     (
-        'other', ['other'], True,
-        False, ['--erase'], True,
-        'Dummy parse results', True,
-        None,
-        None,
-        {},
-        {},
-        None,
-        b'dummy edt pickle contents',
-        ['Sysbuild test will be skipped,' \
-         ' --erase is not supported with --west-flash'],
-        {os.path.join('other', 'dummy.testsuite.name'): True}
-    ),
-    (
         'other', ['other'], False,
         True, None, False,
         'Dummy parse results', True,
@@ -651,7 +638,7 @@ TESTDATA_3 = [
     ' expected_logs, expected_return',
     TESTDATA_3,
     ids=['unit testing', 'domain', 'kconfig', 'no cache',
-         'no west options', 'erase west flash option', 'no edt',
+         'no west options', 'no edt',
          'parse result', 'no parse result', 'no testsuite filter', 'parse err']
 )
 def test_filterbuilder_parse_generated(
@@ -712,7 +699,6 @@ def test_filterbuilder_parse_generated(
         return mock.Mock()
 
     testsuite_mock = mock.Mock()
-    testsuite_mock.sysbuild = 'sysbuild' if sysbuild else None
     testsuite_mock.name = 'dummy.testsuite.name'
     testsuite_mock.filter = testsuite_filter
     platform_mock = mock.Mock()
@@ -724,6 +710,7 @@ def test_filterbuilder_parse_generated(
     fb = FilterBuilder(testsuite_mock, platform_mock, source_dir, build_dir,
                        mocked_jobserver)
     instance_mock = mock.Mock()
+    instance_mock.sysbuild = 'sysbuild' if sysbuild else None
     fb.instance = instance_mock
     fb.env = mock.Mock()
     fb.env.options = mock.Mock()
@@ -1689,7 +1676,7 @@ def test_projectbuilder_cleanup_device_testing_artifacts(
     bins = [os.path.join('zephyr', 'file.bin')]
 
     instance_mock = mock.Mock()
-    instance_mock.testsuite.sysbuild = False
+    instance_mock.sysbuild = False
     build_dir = os.path.join('build', 'dir')
     instance_mock.build_dir = build_dir
     env_mock = mock.Mock()
@@ -1805,7 +1792,7 @@ def test_projectbuilder_get_binaries_from_runners(
 
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('builtins.open', mock.mock_open()), \
-         mock.patch('yaml.safe_load', return_value=runners_content):
+         mock.patch('yaml.load', return_value=runners_content):
         if domain:
             bins = pb._get_binaries_from_runners(domain)
         else:
@@ -2705,6 +2692,7 @@ def test_twisterrunner_execute(caplog):
 
     process_mock = mock.Mock()
     process_mock().join = mock.Mock(side_effect=mock_join)
+    process_mock().exitcode = 0
     pipeline_mock = mock.Mock()
     done_mock = mock.Mock()
 

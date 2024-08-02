@@ -1,5 +1,5 @@
 identifier: heltec_wireless_stick_lite_v3/esp32s3/appcpu
-name: ESP32-S3 DevKitM APPCPU
+name: Heltec Wireless Stick Lite (V3) APPCPU
 type: mcu
 arch: xtensa
 toolchain:

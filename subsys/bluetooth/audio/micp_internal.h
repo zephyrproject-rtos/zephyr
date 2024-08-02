@@ -12,7 +12,11 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_INTERNAL_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_INTERNAL_
 
-#include <zephyr/types.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 
 struct bt_micp_mic_ctlr {

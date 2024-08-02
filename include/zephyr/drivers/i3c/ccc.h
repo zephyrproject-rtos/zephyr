@@ -713,7 +713,7 @@ union i3c_ccc_getmxds {
 
 		/**
 		 * Defining Byte 0x91: CRHDLY
-		 * - Bit[2]: Set Bus Actibity State
+		 * - Bit[2]: Set Bus Activity State
 		 * - Bit[1:0]: Controller Handoff Activity State
 		 */
 		uint8_t crhdly1;
@@ -761,7 +761,7 @@ union i3c_ccc_getmxds {
 
 /** Get Max Data Speed (GETMXDS) - Max Sustained Data Rate bitmask. */
 #define I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_MASK			\
-	(0x07U << I3C_CCC_GET_MXDS_MAXWR_MAX_SDR_FSCL_SHIFT)
+	(0x07U << I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_SHIFT)
 
 /**
  * @brief Get Max Data Speed (GETMXDS) - maxWr - Max Sustained Data Rate
@@ -803,7 +803,7 @@ union i3c_ccc_getmxds {
 
 /** Get Max Data Speed (GETMXDS) - maxRd - Max Sustained Data Rate bitmask. */
 #define I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_MASK			\
-	(0x07U << I3C_CCC_GET_MXDS_MAXRD_MAX_SDR_FSCL_SHIFT)
+	(0x07U << I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_SHIFT)
 
 /**
  * @brief Get Max Data Speed (GETMXDS) - maxRd - Max Sustained Data Rate
@@ -826,7 +826,7 @@ union i3c_ccc_getmxds {
 
 /** Get Max Data Speed (GETMXDS) - CRDHLY1 - Controller Handoff Activity State bitmask. */
 #define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK	\
-	(0x03U << I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE_SHIFT)
+	(0x03U << I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_SHIFT)
 
 /**
  * @brief Get Max Data Speed (GETMXDS) - CRDHLY1 - Controller Handoff Activity State
@@ -838,29 +838,147 @@ union i3c_ccc_getmxds {
  */
 #define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE(crhdly1)	\
 	(((crhdly1) &						\
-	  I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE_MASK)	\
-	 >> I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE_SHIFT)
+	  I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK)	\
+	 >> I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_SHIFT)
+
+/**
+ * @brief Indicate which format of GETCAPS to use.
+ */
+enum i3c_ccc_getcaps_fmt {
+	/** GETCAPS Format 1 */
+	GETCAPS_FORMAT_1,
+
+	/** GETCAPS Format 2 */
+	GETCAPS_FORMAT_2,
+};
+
+/**
+ * @brief Enum for I3C Get Capabilities (GETCAPS) Format 2 Defining Byte Values.
+ */
+enum i3c_ccc_getcaps_defbyte {
+	/** Standard Target capabilities and features. */
+	GETCAPS_FORMAT_2_TGTCAPS = 0x00U,
+
+	/** Fixed 32b test pattern. */
+	GETCAPS_FORMAT_2_TESTPAT = 0x5AU,
+
+	/** Controller handoff capabilities and features. */
+	GETCAPS_FORMAT_2_CRCAPS = 0x91U,
+
+	/** Virtual Target capabilities and features. */
+	GETCAPS_FORMAT_2_VTCAPS = 0x93U,
+
+	/** Debug-capable Device capabilities and features. */
+	GETCAPS_FORMAT_2_DBGCAPS = 0xD7U,
+
+	/** Invalid defining byte. */
+	GETCAPS_FORMAT_2_INVALID = 0x100,
+};
 
 /**
  * @brief Payload for GETCAPS CCC (Get Optional Feature Capabilities).
  *
- * @note Only support GETCAPS Format 1.
+ * @note Only supports GETCAPS Format 1 and Format 2. In I3C v1.0 this was
+ * GETHDRCAP which only returned a single byte which is the same as the
+ * GETCAPS1 byte.
  */
-struct i3c_ccc_getcaps {
-	/**
-	 * GETCAP[1-4] bytes.
-	 */
-	uint8_t getcaps[4];
+union i3c_ccc_getcaps {
+	union {
+		/**
+		 * I3C v1.0 HDR Capabilities
+		 * - Bit[0]: HDR-DDR
+		 * - Bit[1]: HDR-TSP
+		 * - Bit[2]: HDR-TSL
+		 * - Bit[7:3]: Reserved
+		 */
+		uint8_t gethdrcap;
+
+		/**
+		 * I3C v1.1+ Device Capabilities
+		 * Byte 1 GETCAPS1
+		 * - Bit[0]: HDR-DDR
+		 * - Bit[1]: HDR-TSP
+		 * - Bit[2]: HDR-TSL
+		 * - Bit[3]: HDR-BT
+		 * - Bit[7:4]: Reserved
+		 * Byte 2 GETCAPS2
+		 * - Bit[3:0]: I3C 1.x Specification Version
+		 * - Bit[5:4]: Group Address Capabilities
+		 * - Bit[6]: HDR-DDR Write Abort
+		 * - Bit[7]: HDR-DDR Abort CRC
+		 * Byte 3 GETCAPS3
+		 * - Bit[0]: Multi-Lane (ML) Data Transfer Support
+		 * - Bit[1]: Device to Device Transfer (D2DXFER) Support
+		 * - Bit[2]: Device to Device Transfer (D2DXFER) IBI Capable
+		 * - Bit[3]: Defining Byte Support in GETCAPS
+		 * - Bit[4]: Defining Byte Support in GETSTATUS
+		 * - Bit[5]: HDR-BT CRC-32 Support
+		 * - Bit[6]: IBI MDB Support for Pending Read Notification
+		 * - Bit[7]: Reserved
+		 * Byte 4 GETCAPS4
+		 * - Bit[7:0]: Reserved
+		 */
+		uint8_t getcaps[4];
+	} fmt1;
+
+	union {
+		/**
+		 * Defining Byte 0x00: TGTCAPS
+		 *
+		 * @see i3c_ccc_getcaps::fmt1::getcaps
+		 */
+		uint8_t tgtcaps[4];
+
+		/**
+		 * Defining Byte 0x5A: TESTPAT
+		 *
+		 * @note should always be 0xA55AA55A in big endian
+		 */
+		uint32_t testpat;
+
+		/**
+		 * Defining Byte 0x91: CRCAPS
+		 * Byte 1 CRCAPS1
+		 * - Bit[0]: Hot-Join Support
+		 * - Bit[1]: Group Management Support
+		 * - Bit[2]: Multi-Lane Support
+		 * Byte 2 CRCAPS2
+		 * - Bit[0]: In-Band Interrupt Support
+		 * - Bit[1]: Controller Pass-Back
+		 * - Bit[2]: Deep Sleep Capable
+		 * - Bit[3]: Delayed Controller Handoff
+		 */
+		uint8_t crcaps[2];
+
+		/**
+		 * Defining Byte 0x93: VTCAPS
+		 * Byte 1 VTCAPS1
+		 * - Bit[2:0]: Virtual Target Type
+		 * - Bit[4]: Side Effects
+		 * - Bit[5]: Shared Peripheral Detect
+		 * Byte 2 VTCAPS2
+		 * - Bit[1:0]: Interrupt Requests
+		 * - Bit[2]: Address Remapping
+		 * - Bit[4:3]: Bus Context and Conditions
+		 */
+		uint8_t vtcaps[2];
+	} fmt2;
 } __packed;
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR-DDR mode bit. */
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR-DDR mode bit. */
 #define I3C_CCC_GETCAPS1_HDR_DDR				BIT(0)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR-BT mode bit. */
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR-TSP mode bit. */
+#define I3C_CCC_GETCAPS1_HDR_TSP				BIT(1)
+
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR-TSL mode bit. */
+#define I3C_CCC_GETCAPS1_HDR_TSL				BIT(2)
+
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR-BT mode bit. */
 #define I3C_CCC_GETCAPS1_HDR_BT					BIT(3)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) - HDR Mode
+ * @brief Get Optional Feature Capabilities Byte 1 (GETCAPS) - HDR Mode
  *
  * Get the bit corresponding to HDR mode.
  *
@@ -868,53 +986,53 @@ struct i3c_ccc_getcaps {
  */
 #define I3C_CCC_GETCAPS1_HDR_MODE(x)				BIT(x)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 0. */
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR Mode 0. */
 #define I3C_CCC_GETCAPS1_HDR_MODE0				BIT(0)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 1. */
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR Mode 1. */
 #define I3C_CCC_GETCAPS1_HDR_MODE1				BIT(1)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 2. */
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR Mode 2. */
 #define I3C_CCC_GETCAPS1_HDR_MODE2				BIT(2)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 3. */
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR Mode 3. */
 #define I3C_CCC_GETCAPS1_HDR_MODE3				BIT(3)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 4. */
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR Mode 4. */
 #define I3C_CCC_GETCAPS1_HDR_MODE4				BIT(4)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 5. */
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR Mode 5. */
 #define I3C_CCC_GETCAPS1_HDR_MODE5				BIT(5)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 6. */
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR Mode 6. */
 #define I3C_CCC_GETCAPS1_HDR_MODE6				BIT(6)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 7. */
+/** Get Optional Feature Capabilities Byte 1 (GETCAPS) Format 1 - HDR Mode 7. */
 #define I3C_CCC_GETCAPS1_HDR_MODE7				BIT(7)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 2 - HDR-DDR Write Abort bit. */
+/** Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 - HDR-DDR Write Abort bit. */
 #define I3C_CCC_GETCAPS2_HDRDDR_WRITE_ABORT			BIT(6)
 
-/** Get Optional Feature Capabilities (GETCAPS) Format 2 - HDR-DDR Abort CRC bit. */
+/** Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 - HDR-DDR Abort CRC bit. */
 #define I3C_CCC_GETCAPS2_HDRDDR_ABORT_CRC			BIT(7)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 -
+ * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 -
  *        Group Address Capabilities bit shift value.
  */
 #define I3C_CCC_GETCAPS2_GRPADDR_CAP_SHIFT			4
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 -
+ * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 -
  *        Group Address Capabilities bitmask.
  */
 #define I3C_CCC_GETCAPS2_GRPADDR_CAP_MASK			\
 	(0x03U << I3C_CCC_GETCAPS2_GRPADDR_CAP_SHIFT)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 - Group Address Capabilities.
+ * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 - Group Address Capabilities.
  *
- * Obtain Group Address Capabilities value from GETCAPS Format 2 value
+ * Obtain Group Address Capabilities value from GETCAPS Format 1 value
  * obtained via GETCAPS.
  *
  * @param getcaps2 GETCAPS2 value.
@@ -925,23 +1043,23 @@ struct i3c_ccc_getcaps {
 	 >> I3C_CCC_GETCAPS_GRPADDR_CAP_SHIFT)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 -
+ * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 -
  *        I3C 1.x Specification Version bit shift value.
  */
 #define I3C_CCC_GETCAPS2_SPEC_VER_SHIFT				0
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 -
+ * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 -
  *        I3C 1.x Specification Version bitmask.
  */
 #define I3C_CCC_GETCAPS2_SPEC_VER_MASK				\
 	(0x0FU << I3C_CCC_GETCAPS2_SPEC_VER_SHIFT)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 -
+ * @brief Get Optional Feature Capabilities Byte 2 (GETCAPS) Format 1 -
  *        I3C 1.x Specification Version.
  *
- * Obtain I3C 1.x Specification Version value from GETCAPS Format 2 value
+ * Obtain I3C 1.x Specification Version value from GETCAPS Format 1 value
  * obtained via GETCAPS.
  *
  * @param getcaps2 GETCAPS2 value.
@@ -952,46 +1070,196 @@ struct i3c_ccc_getcaps {
 	 >> I3C_CCC_GETCAPS_SPEC_VER_SHIFT)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ * @brief Get Optional Feature Capabilities Byte 3 (GETCAPS) Format 1 -
  *        Multi-Lane Data Transfer Support bit.
  */
 #define I3C_CCC_GETCAPS3_MLANE_SUPPORT				BIT(0)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ * @brief Get Optional Feature Capabilities Byte 3 (GETCAPS) Format 1 -
  *        Device to Device Transfer (D2DXFER) Support bit.
  */
 #define I3C_CCC_GETCAPS3_D2DXFER_SUPPORT			BIT(1)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ * @brief Get Optional Feature Capabilities Byte 3 (GETCAPS) Format 1 -
  *        Device to Device Transfer (D2DXFER) IBI Capable bit.
  */
 #define I3C_CCC_GETCAPS3_D2DXFER_IBI_CAPABLE			BIT(2)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ * @brief Get Optional Feature Capabilities Byte 3 (GETCAPS) Format 1 -
  *        Defining Byte Support in GETCAPS bit.
  */
 #define I3C_CCC_GETCAPS3_GETCAPS_DEFINING_BYTE_SUPPORT		BIT(3)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ * @brief Get Optional Feature Capabilities Byte 3 (GETCAPS) Format 1 -
  *        Defining Byte Support in GETSTATUS bit.
  */
 #define I3C_CCC_GETCAPS3_GETSTATUS_DEFINING_BYTE_SUPPORT	BIT(4)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ * @brief Get Optional Feature Capabilities Byte 3 (GETCAPS) Format 1 -
  *        HDR-BT CRC-32 Support bit.
  */
 #define I3C_CCC_GETCAPS3_HDRBT_CRC32_SUPPORT			BIT(5)
 
 /**
- * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ * @brief Get Optional Feature Capabilities Byte 3 (GETCAPS) Format 1 -
  *        IBI MDB Support for Pending Read Notification bit.
  */
 #define I3C_CCC_GETCAPS3_IBI_MDR_PENDING_READ_NOTIFICATION	BIT(6)
+
+/**
+ * @brief Get Fixed Test Pattern (GETCAPS) Format 2 -
+ *        Fixed Test Pattern Byte 1.
+ */
+#define I3C_CCC_GETCAPS_TESTPAT1				0xA5
+
+/**
+ * @brief Get Fixed Test Pattern (GETCAPS) Format 2 -
+ *        Fixed Test Pattern Byte 2.
+ */
+#define I3C_CCC_GETCAPS_TESTPAT2				0x5A
+
+/**
+ * @brief Get Fixed Test Pattern (GETCAPS) Format 2 -
+ *        Fixed Test Pattern Byte 3.
+ */
+#define I3C_CCC_GETCAPS_TESTPAT3				0xA5
+
+/**
+ * @brief Get Fixed Test Pattern (GETCAPS) Format 2 -
+ *        Fixed Test Pattern Byte 4.
+ */
+#define I3C_CCC_GETCAPS_TESTPAT4				0x5A
+
+/**
+ * @brief Get Fixed Test Pattern (GETCAPS) Format 2 -
+ *        Fixed Test Pattern Word in Big Endian.
+ */
+#define I3C_CCC_GETCAPS_TESTPAT					0xA55AA55A
+
+/**
+ * @brief Get Controller Handoff Capabilities Byte 1 (GETCAPS) Format 2 -
+ *        Hot-Join Support.
+ */
+#define I3C_CCC_GETCAPS_CRCAPS1_HJ_SUPPORT			BIT(0)
+
+/**
+ * @brief Get Controller Handoff Capabilities Byte 1 (GETCAPS) Format 2 -
+ *        Group Management Support.
+ */
+#define I3C_CCC_GETCAPS_CRCAPS1_GRP_MANAGEMENT_SUPPORT		BIT(1)
+
+/**
+ * @brief Get Controller Handoff Capabilities Byte 1 (GETCAPS) Format 2 -
+ *        Multi-Lane Support.
+ */
+#define I3C_CCC_GETCAPS_CRCAPS1_ML_SUPPORT			BIT(2)
+
+/**
+ * @brief Get Controller Handoff Capabilities Byte 2 (GETCAPS) Format 2 -
+ *        In-Band Interrupt Support.
+ */
+#define I3C_CCC_GETCAPS_CRCAPS2_IBI_TIR_SUPPORT			BIT(0)
+
+/**
+ * @brief Get Controller Handoff Capabilities Byte 2 (GETCAPS) Format 2 -
+ *        Controller Pass-Back.
+ */
+#define I3C_CCC_GETCAPS_CRCAPS2_CONTROLLER_PASSBACK		BIT(1)
+
+/**
+ * @brief Get Controller Handoff Capabilities Byte 2 (GETCAPS) Format 2 -
+ *        Deep Sleep Capable.
+ */
+#define I3C_CCC_GETCAPS_CRCAPS2_DEEP_SLEEP_CAPABLE		BIT(2)
+
+/**
+ * @brief Get Controller Handoff Capabilities Byte 2 (GETCAPS) Format 2 -
+ *        Deep Sleep Capable.
+ */
+#define I3C_CCC_GETCAPS_CRCAPS2_DELAYED_CONTROLLER_HANDOFF	BIT(3)
+
+/** Get Capabilities (GETCAPS) - VTCAP1 - Virtual Target Type bit shift value. */
+#define I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_SHIFT	0
+
+/** Get Capabilities (GETCAPS) - VTCAP1 - Virtual Target Type bitmask. */
+#define I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_MASK		\
+	(0x07U << I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_SHIFT)
+
+/**
+ * @brief Get Capabilities (GETCAPS) - VTCAP1 - Virtual Target Type
+ *
+ * Obtain Virtual Target Type value from VTCAP1 value
+ * obtained via GETCAPS format 2 VTCAP def byte.
+ *
+ * @param vtcap1 VTCAP1 value.
+ */
+#define I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE(vtcap1)	\
+	(((vtcap1) &						\
+	  I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_MASK)	\
+	 >> I3C_CCC_GETCAPS_VTCAP1_VITRUAL_TARGET_TYPE_SHIFT)
+
+/**
+ * @brief Get Virtual Target Capabilities Byte 1 (GETCAPS) Format 2 -
+ *        Side Effects.
+ */
+#define I3C_CCC_GETCAPS_VTCAP1_SIDE_EFFECTS			BIT(4)
+
+/**
+ * @brief Get Virtual Target Capabilities Byte 1 (GETCAPS) Format 2 -
+ *        Shared Peripheral Detect.
+ */
+#define I3C_CCC_GETCAPS_VTCAP1_SHARED_PERIPH_DETECT		BIT(5)
+
+/** Get Capabilities (GETCAPS) - VTCAP2 - Interrupt Requests bit shift value. */
+#define I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_SHIFT	0
+
+/** Get Capabilities (GETCAPS) - VTCAP2 - Interrupt Requests bitmask. */
+#define I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_MASK		\
+	(0x03U << I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_SHIFT)
+
+/**
+ * @brief Get Capabilities (GETCAPS) - VTCAP2 - Interrupt Requests
+ *
+ * Obtain Interrupt Requests value from VTCAP2 value
+ * obtained via GETCAPS format 2 VTCAP def byte.
+ *
+ * @param vtcap2 VTCAP2 value.
+ */
+#define I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS(vtcap2)	\
+	(((vtcap2) &						\
+	  I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_MASK)	\
+	 >> I3C_CCC_GETCAPS_VTCAP2_INTERRUPT_REQUESTS_SHIFT)
+
+/**
+ * @brief Get Virtual Target Capabilities Byte 2 (GETCAPS) Format 2 -
+ *        Address Remapping.
+ */
+#define I3C_CCC_GETCAPS_VTCAP2_ADDRESS_REMAPPING		BIT(2)
+
+/** Get Capabilities (GETCAPS) - VTCAP2 - Bus Context and Condition bit shift value. */
+#define I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_SHIFT	3
+
+/** Get Capabilities (GETCAPS) - VTCAP2 - Bus Context and Condition bitmask. */
+#define I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_MASK		\
+	(0x03U << I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_SHIFT)
+
+/**
+ * @brief Get Capabilities (GETCAPS) - VTCAP2 - Bus Context and Condition
+ *
+ * Obtain Bus Context and Condition value from VTCAP2 value
+ * obtained via GETCAPS format 2 VTCAP def byte.
+ *
+ * @param vtcap2 VTCAP2 value.
+ */
+#define I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND(vtcap2)	\
+	(((vtcap2) &						\
+	  I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_MASK)	\
+	 >> I3C_CCC_GETCAPS_VTCAP2_BUS_CONTEXT_AND_COND_SHIFT)
 
 /**
  * @brief Enum for I3C Reset Action (RSTACT) Defining Byte Values.
@@ -1309,6 +1577,65 @@ static inline int i3c_ccc_do_getstatus_fmt2(const struct i3c_device_desc *target
 				    GETSTATUS_FORMAT_2, defbyte);
 }
 
+/**
+ * @brief Single target GETCAPS to Get Target Status.
+ *
+ * Helper function to do GETCAPS (Get Capabilities) of
+ * one target.
+ *
+ * This should only be supported if Advanced Capabilities Bit of
+ * the BCR is set
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETCAPS payload.
+ * @param[in] fmt Which GETCAPS to use.
+ * @param[in] defbyte Defining Byte if using format 2.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_getcaps(const struct i3c_device_desc *target,
+			 union i3c_ccc_getcaps *caps,
+			 enum i3c_ccc_getcaps_fmt fmt,
+			 enum i3c_ccc_getcaps_defbyte defbyte);
+
+/**
+ * @brief Single target GETCAPS to Get Capabilities (Format 1).
+ *
+ * Helper function to do GETCAPS (Get Capabilities, format 1) of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETCAPS payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_getcaps_fmt1(const struct i3c_device_desc *target,
+					    union i3c_ccc_getcaps *caps)
+{
+	return i3c_ccc_do_getcaps(target, caps,
+				    GETCAPS_FORMAT_1,
+				    GETCAPS_FORMAT_2_INVALID);
+}
+
+/**
+ * @brief Single target GETCAPS to Get Capabilities (Format 2).
+ *
+ * Helper function to do GETCAPS (Get Capabilities, format 2) of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETCAPS payload.
+ * @param[in] defbyte Defining Byte for GETCAPS format 2.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_getcaps_fmt2(const struct i3c_device_desc *target,
+					    union i3c_ccc_getcaps *caps,
+					    enum i3c_ccc_getcaps_defbyte defbyte)
+{
+	return i3c_ccc_do_getcaps(target, caps,
+				    GETCAPS_FORMAT_2, defbyte);
+}
 
 #ifdef __cplusplus
 }

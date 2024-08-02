@@ -1,0 +1,162 @@
+/*
+ * Copyright (c) 2024 RAKwireless Technology Co., Ltd. <www.rakwireless.com>
+ * Sercan Erat <sercanerat@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/ambiq-apollo3-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0TX_P39>;
+		};
+		group2 {
+			pinmux = <UART0RX_P40>;
+			input-enable;
+		};
+	};
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <M0SCL_P5>, <M0SDAWIR3_P6>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <M1SCL_P8>, <M1SDAWIR3_P9>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c2_default: i2c2_default {
+		group1 {
+			pinmux = <M2SCL_P27>, <M2SDAWIR3_P25>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c3_default: i2c3_default {
+		group1 {
+			pinmux = <M3SCL_P42>, <M3SDAWIR3_P43>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c4_default: i2c4_default {
+		group1 {
+			pinmux = <M4SCL_P39>, <M4SDAWIR3_P40>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c5_default: i2c5_default {
+		group1 {
+			pinmux = <M5SCL_P48>, <M5SDAWIR3_P49>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <M0SCK_P5>, <M0MISO_P6>, <M0MOSI_P7>;
+		};
+		group2 {
+			pinmux = <NCE1_P1>;
+			drive-push-pull;
+			ambiq,iom-nce-module = <0>;
+			ambiq,iom-num = <0>;
+		};
+	};
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <M1SCK_P8>, <M1MISO_P9>, <M1MOSI_P10>;
+		};
+		group2 {
+			pinmux = <NCE11_P11>;
+			drive-push-pull;
+			ambiq,iom-nce-module = <1>;
+			ambiq,iom-num = <1>;
+		};
+	};
+	spi2_default: spi2_default {
+		group1 {
+			pinmux = <M2SCK_P27>, <M2MISO_P25>, <M2MOSI_P28>;
+		};
+		group2 {
+			pinmux = <NCE15_P15>;
+			drive-push-pull;
+			ambiq,iom-nce-module = <3>;
+			ambiq,iom-num = <2>;
+		};
+	};
+	spi3_default: spi3_default {
+		group1 {
+			pinmux = <M3SCK_P42>, <M3MISO_P43>, <M3MOSI_P38>;
+		};
+		group2 {
+			pinmux = <NCE12_P12>;
+			drive-push-pull;
+			ambiq,iom-nce-module = <0>;
+			ambiq,iom-num = <3>;
+		};
+	};
+	spi4_default: spi4_default {
+		group1 {
+			pinmux = <M4SCK_P39>, <M4MISO_P40>, <M4MOSI_P44>;
+		};
+		group2 {
+			pinmux = <NCE13_P13>;
+			drive-push-pull;
+			ambiq,iom-nce-module = <1>;
+			ambiq,iom-num = <4>;
+		};
+	};
+	spi5_default: spi5_default {
+		group1 {
+			pinmux = <M5SCK_P48>, <M5MISO_P49>, <M5MOSI_P47>;
+		};
+		group2 {
+			pinmux = <NCE16_P16>;
+			drive-push-pull;
+			ambiq,iom-nce-module = <0>;
+			ambiq,iom-num = <5>;
+		};
+	};
+
+	mspi0_default: mspi0_default{
+		group1 {
+			pinmux = <MSPI0_0_P22>,
+				 <MSPI0_1_P26>,
+				 <MSPI0_2_P4>,
+				 <MSPI0_3_P23>,
+				 <MSPI0_8_P24>;
+		};
+		group2 {
+			pinmux = <NCE19_P19>;
+			drive-push-pull;
+			drive-strength = "0.5";
+			ambiq,iom-nce-module = <0>;
+			ambiq,iom-num = <6>;
+		};
+	};
+
+	bleif_default: bleif_default{
+		group1 {
+			pinmux = <BLEIF_SCK_P30>,
+				 <BLEIF_MISO_P31>,
+				 <BLEIF_MOSI_P32>,
+				 <BLEIF_CSN_P33>,
+				 <BLEIF_STATUS_P35>,
+				 <BLEIF_IRQ_P41>;
+		};
+	};
+};

@@ -79,7 +79,8 @@ static ALWAYS_INLINE void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *th
 {
 	struct k_thread *t;
 
-	thread->base.order_key = pq->next_order_key++;
+	thread->base.order_key = pq->next_order_key;
+	++pq->next_order_key;
 
 	/* Renumber at wraparound.  This is tiny code, and in practice
 	 * will almost never be hit on real systems.  BUT on very
@@ -89,7 +90,8 @@ static ALWAYS_INLINE void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *th
 	 */
 	if (!pq->next_order_key) {
 		RB_FOR_EACH_CONTAINER(&pq->tree, t, base.qnode_rb) {
-			t->base.order_key = pq->next_order_key++;
+			t->base.order_key = pq->next_order_key;
+			++pq->next_order_key;
 		}
 	}
 

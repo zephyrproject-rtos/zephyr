@@ -1,4 +1,4 @@
-.. _mikroe_weather_click_shield:
+.. _mikroe_weather_click:
 
 MikroElektronika Weather Click
 ##############################
@@ -34,7 +34,7 @@ documentation:
 Programming
 ***********
 
-Set ``-DSHIELD=mikroe_weather_click`` when you invoke ``west build``. For
+Set ``--shield mikroe_weather_click`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::

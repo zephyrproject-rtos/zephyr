@@ -8,7 +8,7 @@ The USB device controller driver API is described in
 as the ``usb_dc`` API.
 
 This API has some limitations by design, it does not follow :ref:`device_model_api`
-and is being replaced by a new UDC driver API.
+and is being replaced by :ref:`udc_api`.
 
 API reference
 *************

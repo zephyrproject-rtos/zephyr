@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - can
   - dma
   - gpio
   - spi
@@ -23,4 +24,8 @@ supported:
   - watchdog
   - pwm
   - counter
+  - sdhc
+  - regulator
+  - adc
+  - usb_device
 vendor: nxp

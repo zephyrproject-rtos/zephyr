@@ -59,12 +59,22 @@ properties:
       For example
          dma-names = "tx_rx";
 
+  dual-flash:
+    type: boolean
+    description: |
+      configuration to enable the dual flash mode of the QSPI peripheral
+      where two external quad SPI Flash memories (FLASH 1 and FLASH 2) are used
+      in order to send/receive 8 bits (or 16 bits in DDR mode) every cycle,
+      effectively doubling the throughput as well as the capacity.
+      When true, the Flash ID number <flash-id> is useless.
+
   flash-id:
     type: int
     description: |
-      FLash ID number. This number, if defined, helps to select the right
-      QSPI GPIO banks (defined as 'quadspi_bk[12]' in pinctrl property)
+      Flash ID number. This number, if defined, helps to select the right
+      QSPI GPIO banks (defined as 'quadspi_bk[1/2]' in pinctrl property)
       to communicate with flash memory.
+      Valid only if the <dual-flash> is not set.
 
       For example
          flash-id = <2>;

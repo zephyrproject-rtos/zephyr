@@ -17,6 +17,11 @@ from pathlib import Path
 from git import Repo
 from west.manifest import Manifest
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
 
@@ -24,14 +29,14 @@ if "ZEPHYR_BASE" not in os.environ:
 # however, pylint complains that it doesn't recognized them when used (used-before-assignment).
 zephyr_base = Path(os.environ['ZEPHYR_BASE'])
 repository_path = zephyr_base
-repo_to_scan = zephyr_base
+repo_to_scan = Repo(zephyr_base)
 args = None
-
-
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+logging.getLogger("pykwalify.core").setLevel(50)
 
 sys.path.append(os.path.join(zephyr_base, 'scripts'))
 import list_boards
+
 
 def _get_match_fn(globs, regexes):
     # Constructs a single regex that tests for matches against the globs in
@@ -95,7 +100,7 @@ class Tag:
 
 class Filters:
     def __init__(self, modified_files, ignore_path, alt_tags, testsuite_root,
-                 pull_request=False, platforms=[], detailed_test_id=True):
+                 pull_request=False, platforms=[], detailed_test_id=True, quarantine_list=None, tc_roots_th=20):
         self.modified_files = modified_files
         self.testsuite_root = testsuite_root
         self.resolved_files = []
@@ -108,6 +113,8 @@ class Filters:
         self.detailed_test_id = detailed_test_id
         self.ignore_path = ignore_path
         self.tag_cfg_file = alt_tags
+        self.quarantine_list = quarantine_list
+        self.tc_roots_th = tc_roots_th
 
     def process(self):
         self.find_modules()
@@ -128,6 +135,9 @@ class Filters:
                 cmd+=["-T", root]
         if integration:
             cmd.append("--integration")
+        if self.quarantine_list:
+            for q in self.quarantine_list:
+                cmd += ["--quarantine-list", q]
 
         logging.info(" ".join(cmd))
         _ = subprocess.call(cmd)
@@ -139,7 +149,7 @@ class Filters:
             os.remove(fname)
 
     def find_modules(self):
-        if 'west.yml' in self.modified_files:
+        if 'west.yml' in self.modified_files and args.commits is not None:
             print(f"Manifest file 'west.yml' changed")
             print("=========")
             old_manifest_content = repo_to_scan.git.show(f"{args.commits[:-2]}:west.yml")
@@ -209,45 +219,50 @@ class Filters:
                 self.get_plan(_options, True)
 
     def find_boards(self):
-        boards = set()
-        all_boards = set()
-        resolved = []
+        changed_boards = set()
+        matched_boards = {}
+        resolved_files = []
 
-        for f in self.modified_files:
-            if f.endswith(".rst") or f.endswith(".png") or f.endswith(".jpg"):
+        for file in self.modified_files:
+            if file.endswith(".rst") or file.endswith(".png") or file.endswith(".jpg"):
                 continue
-            p = re.match(r"^boards\/[^/]+\/([^/]+)\/", f)
-            if p and p.groups():
-                boards.add(p.group(1))
-                resolved.append(f)
+            if file.startswith("boards/"):
+                changed_boards.add(file)
+                resolved_files.append(file)
 
         roots = [zephyr_base]
         if repository_path != zephyr_base:
             roots.append(repository_path)
 
         # Look for boards in monitored repositories
-        lb_args = argparse.Namespace(**{'arch_roots': roots, 'board_roots': roots, 'board': None,
+        lb_args = argparse.Namespace(**{'arch_roots': roots, 'board_roots': roots, 'board': None, 'soc_roots':roots,
                                         'board_dir': None})
-        known_boards = list_boards.find_boards(lb_args)
-        for b in boards:
-            name_re = re.compile(b)
-            for kb in known_boards:
-                if name_re.search(kb.name):
-                    all_boards.add(kb.name)
+        known_boards = list_boards.find_v2_boards(lb_args)
 
-        # If modified file is catched by "find_boards" workflow (change in "boards" dir AND board recognized)
+        for changed in changed_boards:
+            for board in known_boards:
+                c = (zephyr_base / changed).resolve()
+                if c.is_relative_to(board.dir.resolve()):
+                    for file in glob.glob(os.path.join(board.dir, f"{board.name}*.yaml")):
+                        with open(file, 'r') as f:
+                            b = yaml.load(f.read(), Loader=SafeLoader)
+                            matched_boards[b['identifier']] = board
+
+
+        logging.info(f"found boards: {','.join(matched_boards.keys())}")
+        # If modified file is caught by "find_boards" workflow (change in "boards" dir AND board recognized)
         # it means a proper testing scope for this file was found and this file can be removed
         # from further consideration
-        for board in all_boards:
-            self.resolved_files.extend(list(filter(lambda f: board in f, resolved)))
+        for _, board in matched_boards.items():
+            self.resolved_files.extend(list(filter(lambda f: str(board.dir.relative_to(zephyr_base)) in f, resolved_files)))
 
         _options = []
-        if len(all_boards) > 20:
-            logging.warning(f"{len(boards)} boards changed, this looks like a global change, skipping test handling, revert to default.")
+        if len(matched_boards) > 20:
+            logging.warning(f"{len(matched_boards)} boards changed, this looks like a global change, skipping test handling, revert to default.")
             self.full_twister = True
             return
 
-        for board in all_boards:
+        for board in matched_boards:
             _options.extend(["-p", board ])
 
         if _options:
@@ -288,7 +303,7 @@ class Filters:
         for t in tests:
             _options.extend(["-T", t ])
 
-        if len(tests) > 20:
+        if len(tests) > self.tc_roots_th:
             logging.warning(f"{len(tests)} tests changed, this looks like a global change, skipping test handling, revert to default")
             self.full_twister = True
             return
@@ -298,8 +313,6 @@ class Filters:
             if self.platforms:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
-            else:
-                _options.append("--all")
             self.get_plan(_options, use_testsuite_root=False)
 
     def find_tags(self):
@@ -392,6 +405,9 @@ def parse_args():
             help="Number of tests per builder")
     parser.add_argument('-n', '--default-matrix', default=10, type=int,
             help="Number of tests per builder")
+    parser.add_argument('--testcase-roots-threshold', default=20, type=int,
+            help="Threshold value for number of modified testcase roots, up to which an optimized scope is still applied."
+                 "When exceeded, full scope will be triggered")
     parser.add_argument('--detailed-test-id', action='store_true',
             help="Include paths to tests' locations in tests' names.")
     parser.add_argument("--no-detailed-test-id", dest='detailed_test_id', action="store_false",
@@ -410,6 +426,12 @@ def parse_args():
                 "testcase.yaml files under here will be processed. May be "
                 "called multiple times. Defaults to the 'samples/' and "
                 "'tests/' directories at the base of the Zephyr tree.")
+    parser.add_argument(
+            "--quarantine-list", action="append", metavar="FILENAME",
+            help="Load list of test scenarios under quarantine. The entries in "
+                "the file need to correspond to the test scenarios names as in "
+                "corresponding tests .yaml files. These scenarios "
+                "will be skipped with quarantine as the reason.")
 
     # Include paths in names by default.
     parser.set_defaults(detailed_test_id=True)
@@ -424,8 +446,8 @@ if __name__ == "__main__":
     errors = 0
     if args.repo_to_scan:
         repository_path = Path(args.repo_to_scan)
-    if args.commits:
         repo_to_scan = Repo(repository_path)
+    if args.commits:
         commit = repo_to_scan.git.diff("--name-only", args.commits)
         files = commit.split("\n")
     elif args.modified_files:
@@ -438,7 +460,8 @@ if __name__ == "__main__":
         print("=========")
 
     f = Filters(files, args.ignore_path, args.alt_tags, args.testsuite_root,
-                args.pull_request, args.platform, args.detailed_test_id)
+                args.pull_request, args.platform, args.detailed_test_id, args.quarantine_list,
+                args.testcase_roots_threshold)
     f.process()
 
     # remove dupes and filtered cases

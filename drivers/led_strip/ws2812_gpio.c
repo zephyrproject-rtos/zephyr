@@ -28,6 +28,7 @@ struct ws2812_gpio_cfg {
 	struct gpio_dt_spec gpio;
 	uint8_t num_colors;
 	const uint8_t *color_mapping;
+	size_t length;
 };
 
 /*
@@ -179,17 +180,16 @@ static int ws2812_gpio_update_rgb(const struct device *dev,
 	return send_buf(dev, (uint8_t *)pixels, num_pixels * config->num_colors);
 }
 
-static int ws2812_gpio_update_channels(const struct device *dev,
-				       uint8_t *channels,
-				       size_t num_channels)
+static size_t ws2812_gpio_length(const struct device *dev)
 {
-	LOG_ERR("update_channels not implemented");
-	return -ENOTSUP;
+	const struct ws2812_gpio_cfg *config = dev->config;
+
+	return config->length;
 }
 
 static const struct led_strip_driver_api ws2812_gpio_api = {
 	.update_rgb = ws2812_gpio_update_rgb,
-	.update_channels = ws2812_gpio_update_channels,
+	.length = ws2812_gpio_length,
 };
 
 /*
@@ -245,6 +245,7 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
 		.gpio = GPIO_DT_SPEC_INST_GET(idx, gpios),		\
 		.num_colors = WS2812_NUM_COLORS(idx),			\
 		.color_mapping = ws2812_gpio_##idx##_color_mapping,	\
+		.length = DT_INST_PROP(idx, chain_length),		\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(idx,					\

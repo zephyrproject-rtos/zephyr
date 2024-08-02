@@ -17,6 +17,11 @@
 #include <zephyr/device.h>
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(i2c_sbcon, CONFIG_I2C_LOG_LEVEL);
+
+#include "i2c-priv.h"
 #include "i2c_bitbang.h"
 
 /* SBCon hardware registers layout */
@@ -35,6 +40,7 @@ struct sbcon {
 /* Driver config */
 struct i2c_sbcon_config {
 	struct sbcon *sbcon;		/* Address of hardware registers */
+	uint32_t bitrate;		/* I2C bus speed in Hz */
 };
 
 /* Driver instance data */
@@ -84,6 +90,13 @@ static int i2c_sbcon_configure(const struct device *dev, uint32_t dev_config)
 	return i2c_bitbang_configure(&context->bitbang, dev_config);
 }
 
+static int i2c_sbcon_get_config(const struct device *dev, uint32_t *config)
+{
+	struct i2c_sbcon_context *context = dev->data;
+
+	return i2c_bitbang_get_config(&context->bitbang, config);
+}
+
 static int i2c_sbcon_transfer(const struct device *dev, struct i2c_msg *msgs,
 				uint8_t num_msgs, uint16_t slave_address)
 {
@@ -93,19 +106,35 @@ static int i2c_sbcon_transfer(const struct device *dev, struct i2c_msg *msgs,
 							slave_address);
 }
 
+static int i2c_sbcon_recover_bus(const struct device *dev)
+{
+	struct i2c_sbcon_context *context = dev->data;
+
+	return i2c_bitbang_recover_bus(&context->bitbang);
+}
+
 static const struct i2c_driver_api api = {
 	.configure = i2c_sbcon_configure,
+	.get_config = i2c_sbcon_get_config,
 	.transfer = i2c_sbcon_transfer,
+	.recover_bus = i2c_sbcon_recover_bus,
 };
 
 static int i2c_sbcon_init(const struct device *dev)
 {
 	struct i2c_sbcon_context *context = dev->data;
 	const struct i2c_sbcon_config *config = dev->config;
+	int ret;
 
 	i2c_bitbang_init(&context->bitbang, &io_fns, config->sbcon);
 
-	return 0;
+	ret = i2c_bitbang_configure(&context->bitbang,
+				    I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
+	if (ret != 0) {
+		LOG_ERR("failed to configure I2C bitbang: %d", ret);
+	}
+
+	return ret;
 }
 
 #define	DEFINE_I2C_SBCON(_num)						\
@@ -113,7 +142,8 @@ static int i2c_sbcon_init(const struct device *dev)
 static struct i2c_sbcon_context i2c_sbcon_dev_data_##_num;		\
 									\
 static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {	\
-	.sbcon		= (void *)DT_INST_REG_ADDR(_num), \
+	.sbcon		= (void *)DT_INST_REG_ADDR(_num),		\
+	.bitrate	= DT_INST_PROP(_num, clock_frequency),		\
 };									\
 									\
 I2C_DEVICE_DT_INST_DEFINE(_num,						\

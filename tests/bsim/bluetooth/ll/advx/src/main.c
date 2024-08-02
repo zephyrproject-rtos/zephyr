@@ -1300,7 +1300,7 @@ static struct bt_le_per_adv_sync_cb sync_cb = {
 static void test_scanx_main(void)
 {
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_ACTIVE,
+		.type       = BT_LE_SCAN_TYPE_ACTIVE,
 		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = 0x0004,
 		.window     = 0x0004,
@@ -1838,14 +1838,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "advx",
 		.test_descr = "Extended Advertising",
-		.test_post_init_f = test_advx_init,
+		.test_pre_init_f = test_advx_init,
 		.test_tick_f = test_advx_tick,
 		.test_main_f = test_advx_main
 	},
 	{
 		.test_id = "scanx",
 		.test_descr = "Extended scanning",
-		.test_post_init_f = test_advx_init,
+		.test_pre_init_f = test_advx_init,
 		.test_tick_f = test_advx_tick,
 		.test_main_f = test_scanx_main
 	},

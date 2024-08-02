@@ -6,9 +6,9 @@ Coding Guidelines
 The project TSC and the Safety Committee of the project agreed to implement
 a staged and incremental approach for complying with a set of coding rules (AKA
 Coding Guidelines) to improve quality and consistency of the code base. Below
-are the agreed upon stages and the approximate timelines:
+are the agreed upon stages:
 
-Stage I
+Stage I (COMPLETED)
   Coding guideline rules are available to be followed and referenced,
   but not enforced. Rules are not yet enforced in CI and pull-requests cannot be
   blocked by reviewers/approvers due to violations.
@@ -32,6 +32,13 @@ Stage IV
 
     Coding guideline rules may be removed/changed at any time by filing a
     GH issue/RFC.
+
+.. important::
+
+    **Current stage:**
+    The prerequisites for entering **Stage II** are currently being looked at:
+    The tooling is in evaluation, CI setup and `enforcement strategy
+    <https://github.com/zephyrproject-rtos/zephyr/issues/58903>`__ is being worked on.
 
 Main rules
 **********
@@ -1212,8 +1219,8 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
      -
 
    * - eSPI
-     - * ``master / slave`` => TBD
-     -
+     - * ``master / slave`` => ``controller / target``
+     - Refer to `eSPI Specification`_ for new terminology
 
    * - gPTP
      - * ``master / slave`` => TBD
@@ -1254,6 +1261,7 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
 .. _OSHWA Resolution to Redefine SPI Signal Names: https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/
 .. _CAN in Automation Inclusive Language news post: https://www.can-cia.org/news/archive/view/?tx_news_pi1%5Bnews%5D=699&tx_news_pi1%5Bday%5D=6&tx_news_pi1%5Bmonth%5D=12&tx_news_pi1%5Byear%5D=2020&cHash=784e79eb438141179386cf7c29ed9438
 .. _CAN in Automation Inclusive Language: https://can-newsletter.org/canopen/categories/
+.. _eSPI Specification: https://downloadmirror.intel.com/27055/327432%20espi_base_specification%20R1-5.pdf
 
 
 Rule A.3: Macro name collisions

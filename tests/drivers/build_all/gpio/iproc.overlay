@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2024, Meta Platforms
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing iproc driver builds
+ */
+
+/ {
+	test {
+		test_int_gpio {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupt-parent = <&test_nvic>;
+
+			test_nvic: interrupt-controller@bbbbcccc  {
+				compatible = "arm,v6m-nvic";
+				reg = <0xbbbbcccc 0xc00>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				arm,num-irq-priority-bits = <3>;
+			};
+
+			test_gpio_iproc: gpio@c10fee {
+				compatible = "brcm,iproc-gpio";
+				gpio-controller;
+				reg = <0xc10fee 0x4c>;
+				ngpios = <6>;
+				interrupts = <28 1>;
+				#gpio-cells = <0x2>;
+				status = "okay";
+			};
+		};
+	};
+};

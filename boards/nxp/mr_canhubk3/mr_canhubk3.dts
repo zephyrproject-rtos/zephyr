@@ -40,6 +40,7 @@
 		watchdog0 = &fs26_wdt;
 		/* For pwm test suites */
 		pwm-0 = &emios0_pwm;
+		pwm-1 = &flexio0_pwm;
 		red-pwm-led = &user_led1_red_pwm;
 		green-pwm-led = &user_led1_green_pwm;
 		blue-pwm-led = &user_led1_blue_pwm;
@@ -358,8 +359,6 @@
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy0>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	status = "okay";
 };
 
@@ -367,40 +366,30 @@
 	pinctrl-0 = <&flexcan1_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy1>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan2 {
 	pinctrl-0 = <&flexcan2_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy2>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan3 {
 	pinctrl-0 = <&flexcan3_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy3>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan4 {
 	pinctrl-0 = <&flexcan4_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy4>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan5 {
 	pinctrl-0 = <&flexcan5_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy5>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &lpi2c0 {
@@ -626,6 +615,27 @@
 			polarity = "ACTIVE_LOW";
 		};
 	};
+};
+
+&flexio0 {
+	status = "okay";
+
+	flexio0_pwm: flexio0_pwm {
+		pinctrl-0 = <&flexio0_pwm_default>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pwm_0 {
+			pin-id = <19>;
+			prescaler = <1>;
+		};
+
+		pwm_1 {
+			pin-id = <11>;
+			prescaler = <1>;
+		};
+	};
+
 };
 
 &lcu1 {

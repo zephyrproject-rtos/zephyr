@@ -7,6 +7,7 @@
 import argparse
 import collections
 from email.utils import parseaddr
+import json
 import logging
 import os
 from pathlib import Path
@@ -177,7 +178,6 @@ class ComplianceTest:
         fail = FmtdFailure(severity, title, file, line, col, desc)
         self._result(fail, fail.text)
         self.fmtd_failures.append(fail)
-
 
 class EndTest(Exception):
     """
@@ -801,7 +801,8 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             for sym_name in re.findall(regex, line):
                 sym_name = sym_name[7:]  # Strip CONFIG_
                 if sym_name not in defined_syms and \
-                   sym_name not in self.UNDEF_KCONFIG_ALLOWLIST:
+                   sym_name not in self.UNDEF_KCONFIG_ALLOWLIST and \
+                   not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms):
 
                     undef_to_locs[sym_name].append(f"{path}:{lineno}")
 
@@ -872,7 +873,6 @@ flagged.
         "COMPILER_RT_RTLIB",
         "BT_6LOWPAN",  # Defined in Linux, mentioned in docs
         "CMD_CACHE",  # Defined in U-Boot, mentioned in docs
-        "COUNTER_RTC_STM32_CLOCK_SRC",
         "CRC",  # Used in TI CC13x2 / CC26x2 SDK comment
         "DEEP_SLEEP",  # #defined by RV32M1 in ext/
         "DESCRIPTION",
@@ -910,6 +910,7 @@ flagged.
         "OPT",
         "OPT_0",
         "PEDO_THS_MIN",
+        "PSA_H", # This is used in config-psa.h as guard for the header file
         "REG1",
         "REG2",
         "RIMAGE_SIGNING_SCHEMA",  # Optional module
@@ -942,6 +943,9 @@ flagged.
         "ZEPHYR_TRY_MASS_ERASE", # MCUBoot setting described in sysbuild
                                  # documentation
         "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
+        "SUIT_MPI_GENERATE", # Used by nRF runners to program provisioning data, based on build configuration
+        "SUIT_MPI_APP_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
+        "SUIT_MPI_RAD_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
     }
 
 
@@ -1169,7 +1173,7 @@ class PyLint(ComplianceTest):
         else:
             python_environment["PYTHONPATH"] = check_script_dir
 
-        pylintcmd = ["pylint", "--rcfile=" + pylintrc,
+        pylintcmd = ["pylint", "--output-format=json2", "--rcfile=" + pylintrc,
                      "--load-plugins=argparse-checker"] + py_files
         logger.info(cmd2str(pylintcmd))
         try:
@@ -1181,21 +1185,19 @@ class PyLint(ComplianceTest):
                            env=python_environment)
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
-            regex = r'^\s*(\S+):(\d+):(\d+):\s*([A-Z]\d{4}):\s*(.*)$'
-
-            matches = re.findall(regex, output, re.MULTILINE)
-            for m in matches:
-                # https://pylint.pycqa.org/en/latest/user_guide/messages/messages_overview.html#
+            messages = json.loads(output)['messages']
+            for m in messages:
                 severity = 'unknown'
-                if m[3][0] in ('F', 'E'):
+                if m['messageId'][0] in ('F', 'E'):
                     severity = 'error'
-                elif m[3][0] in ('W','C', 'R', 'I'):
+                elif m['messageId'][0] in ('W','C', 'R', 'I'):
                     severity = 'warning'
-                self.fmtd_failure(severity, m[3], m[0], m[1], col=m[2],
-                        desc=m[4])
+                self.fmtd_failure(severity, m['messageId'], m['path'],
+                                  m['line'], col=str(m['column']), desc=m['message']
+                                  + f" ({m['symbol']})")
 
-            # If the regex has not matched add the whole output as a failure
-            if len(matches) == 0:
+            if len(messages) == 0:
+                # If there are no specific messages add the whole output as a failure
                 self.failure(output)
 
 

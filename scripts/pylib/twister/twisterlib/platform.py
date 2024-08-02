@@ -24,6 +24,8 @@ class Platform:
 
         self.name = ""
         self.normalized_name = ""
+        # if sysbuild to be used by default on a given platform
+        self.sysbuild = False
         self.twister = True
         # if no RAM size is specified by the board, take a default of 128K
         self.ram = 128
@@ -46,6 +48,8 @@ class Platform:
         self.env = []
         self.env_satisfied = True
         self.filter_data = dict()
+        self.uart = ""
+        self.resc = ""
 
     def load(self, platform_file):
         scp = TwisterConfigParser(platform_file, self.platform_schema)
@@ -54,6 +58,7 @@ class Platform:
 
         self.name = data['identifier']
         self.normalized_name = self.name.replace("/", "_")
+        self.sysbuild = data.get("sysbuild", False)
         self.twister = data.get("twister", True)
         # if no RAM size is specified by the board, take a default of 128K
         self.ram = data.get("ram", 128)
@@ -63,6 +68,9 @@ class Platform:
         self.only_tags = testing.get("only_tags", [])
         self.default = testing.get("default", False)
         self.binaries = testing.get("binaries", [])
+        renode = testing.get("renode", {})
+        self.uart = renode.get("uart", "")
+        self.resc = renode.get("resc", "")
         # if no flash size is specified by the board, take a default of 512K
         self.flash = data.get("flash", 512)
         self.supported = set()

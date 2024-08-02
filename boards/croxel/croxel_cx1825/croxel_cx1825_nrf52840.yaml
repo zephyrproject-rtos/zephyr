@@ -1,0 +1,17 @@
+identifier: croxel_cx1825/nrf52840
+name: Croxel-CX1825-NRF52840
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - watchdog
+vendor: croxel

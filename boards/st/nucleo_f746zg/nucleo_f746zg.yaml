@@ -26,4 +26,5 @@ supported:
   - dac
   - dma
   - backup_sram
+  - rtc
 vendor: st

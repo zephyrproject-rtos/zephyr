@@ -8,6 +8,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/cache.h>
+#include <ipi.h>
 
 /* IDC power up message to the ROM firmware.  This isn't documented
  * anywhere, it's basically just a magic number (except the high bit,
@@ -121,16 +122,27 @@ void soc_start_core(int cpu_num)
 	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP;
 }
 
-void arch_sched_ipi(void)
+static void send_ipi(uint32_t cpu_bitmap)
 {
 	uint32_t curr = arch_proc_id();
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int c = 0; c < num_cpus; c++) {
-		if (c != curr && soc_cpus_active[c]) {
+		if ((c != curr) && soc_cpus_active[c] &&
+		    ((cpu_bitmap & BIT(c)) != 0)) {
 			IDC[curr].core[c].itc = BIT(31);
 		}
 	}
+}
+
+void arch_sched_broadcast_ipi(void)
+{
+	send_ipi(IPI_ALL_CPUS_MASK);
+}
+
+void arch_sched_directed_ipi(uint32_t cpu_bitmap)
+{
+	send_ipi(cpu_bitmap);
 }
 
 void idc_isr(const void *param)

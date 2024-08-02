@@ -8,6 +8,7 @@ menuconfig I2C_MCUX_FLEXCOMM
 	default y
 	depends on DT_HAS_NXP_LPC_I2C_ENABLED
 	select PINCTRL
+	select RESET
 	help
 	  Enable the mcux flexcomm i2c driver.
 

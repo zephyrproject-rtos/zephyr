@@ -8,16 +8,15 @@ if BT
 config SPI
 	default y
 
-choice BT_HCI_BUS_TYPE
-	default BT_SPI
-endchoice
+config BT_SPI
+	default y
 
 config BT_BLUENRG_ACI
 	default y
 # Disable Flow control
 config BT_HCI_ACL_FLOW_CONTROL
 	default n
-config BT_HCI_VS_EXT
+config BT_HCI_VS
 	default n
 
 endif # BT

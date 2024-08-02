@@ -74,6 +74,11 @@ The board configuration supports the following hardware features:
    * - ADC
      - :kconfig:option:`CONFIG_ADC`
      - :dtcompatible:`gd,gd32-adc`
+   * - SPI
+     - :kconfig:option:`CONFIG_SPI`
+     - :dtcompatible:`gd,gd32-spi`
+
+The microSD card reader in Longan Nano board is connected to SPI1.
 
 Serial Port
 ===========

@@ -19,7 +19,6 @@
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		uart-2 = &uart2;
-		spi-flash0 = &w25q128bv;
 	};
 
 	chosen {

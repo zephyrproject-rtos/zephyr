@@ -73,6 +73,19 @@ config NET_ARP_GRATUITOUS
 	  ff:ff:ff:ff:ff:ff. Ordinarily, no reply packet will occur.
 	  A gratuitous ARP reply is a reply to which no request has been made.
 
+config NET_ARP_GRATUITOUS_TRANSMISSION
+	bool "Transmit gratuitous ARP requests"
+	depends on NET_ARP_GRATUITOUS
+	depends on NET_MGMT_EVENT
+	depends on NET_MGMT_EVENT_INFO
+	help
+	  Transmit gratuitous ARP requests, as defined in RFC 5227.
+
+config NET_ARP_GRATUITOUS_INTERVAL
+	int "Time interval (in seconds) between sending gratuitous ARP requests"
+	depends on NET_ARP_GRATUITOUS_TRANSMISSION
+	default 60
+
 if NET_ARP
 module = NET_ARP
 module-dep = NET_LOG

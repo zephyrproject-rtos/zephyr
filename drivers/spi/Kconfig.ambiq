@@ -1,11 +1,12 @@
 # Ambiq SDK SPI
 #
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
+# Copyright (c) 2024 Ambiq Micro Inc. <www.ambiq.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config SPI_AMBIQ
+menuconfig SPI_AMBIQ
 	bool "AMBIQ SPI driver"
 	default y
 	depends on DT_HAS_AMBIQ_SPI_ENABLED
@@ -13,6 +14,23 @@ config SPI_AMBIQ
 	select AMBIQ_HAL_USE_SPI
 	help
 	  Enable driver for Ambiq SPI.
+
+if SPI_AMBIQ
+
+config SPI_AMBIQ_DMA
+	bool "AMBIQ APOLLO SPI DMA Support"
+	depends on SPI_AMBIQ
+	help
+	  Enable DMA for Ambiq SPI.
+
+config SPI_DMA_TCB_BUFFER_SIZE
+	int "DMA Transfer Control Buffer size in words."
+	default 1024
+	depends on SPI_AMBIQ_DMA
+	help
+	  DMA Transfer Control Buffer size in words
+
+endif # SPI_AMBIQ
 
 config MSPI_AMBIQ
 	bool "AMBIQ MSPI driver"
@@ -22,3 +40,28 @@ config MSPI_AMBIQ
 	select AMBIQ_HAL_USE_MSPI
 	help
 	  Enable driver for Ambiq MSPI.
+
+config SPI_AMBIQ_BLEIF
+	bool "AMBIQ SPI-BLEIF driver"
+	default y
+	depends on DT_HAS_AMBIQ_SPI_BLEIF_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_BLEIF
+	help
+	  Enable driver for Ambiq Apollox Blue SOC (e.g. Apollo3 Blue)
+	  which uses internal designed BLEIF module (different from the
+	  general IOM module) for SPI transceiver. It is always used for
+	  the Bluetooth HCI communication.
+
+if SPI_AMBIQ_BLEIF
+
+config SPI_AMBIQ_BLEIF_TIMING_TRACE
+	bool "Ambiq SPI-BLEIF timing trace"
+	help
+	  The pins for the SPI transceiver are not exposed from the chips
+	  and no need for user to confiugre them. But the chips design the
+	  configurable BLEIF timing observation functions on other exposed
+	  pins. The user can enable it to configure the pins for timing
+	  trace purpose.
+
+endif # SPI_AMBIQ_BLEIF

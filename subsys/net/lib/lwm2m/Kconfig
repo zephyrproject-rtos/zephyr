@@ -134,6 +134,14 @@ config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 	help
 	  Enabling this setting allows the RD client to support bootstrap mode.
 
+config LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION
+	bool "LwM2M engine always report object version"
+	help
+	  According to LwM2M specification v1.0 and v1.1, non-core object versions other than 1.0
+	  'must' be provided, while all other versions 'may' be provided. With specification v1.2,
+	  a client 'can always attach Object Version Information'. Enable this configuration to
+	  always report all object versions.
+
 choice
 prompt "Socket handling at idle state"
 
@@ -219,7 +227,7 @@ config LWM2M_RD_CLIENT_MAX_RETRIES
 config LWM2M_RESOURCE_DATA_CACHE_SUPPORT
 	bool "Resource Time series data cache support"
 	depends on (LWM2M_RW_SENML_JSON_SUPPORT || LWM2M_RW_SENML_CBOR_SUPPORT)
-	depends on (POSIX_CLOCK && RING_BUFFER)
+	depends on (POSIX_TIMERS && RING_BUFFER)
 	help
 	  Enable time series data storage.
 	  Requires time() to provide current Unix timestamp.
@@ -370,7 +378,7 @@ config LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
 	default 3
 	help
 	  Maximum number of CoAP block contexts needed to split messages into blocks for
-	  sending. This limits the numer of messages that need block transfer that can be
+	  sending. This limits the number of messages that need block transfer that can be
 	  handled at the same time.
 
 config LWM2M_LOG_ENCODE_BUFFER_ALLOCATIONS
@@ -492,14 +500,6 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 	  This is also a minimum lifetime that client accepts. If server sets lifetime
 	  less than this value, client automatically raises it.
 
-config LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION
-	bool "LwM2M engine always report object version"
-	help
-	  According to LwM2M specification v1.0 and v1.1, non-core object versions other than 1.0
-	  'must' be provided, while all other versions 'may' be provided. With specification v1.2,
-	  a client 'can always attach Object Version Information'. Enable this configuration to
-	  always report all object versions.
-
 config LWM2M_UPDATE_PERIOD
 	int "LwM2M engine update period"
 	default 0
@@ -523,6 +523,7 @@ config LWM2M_SECONDS_TO_UPDATE_EARLY
 config LWM2M_SHELL
 	bool "LwM2M shell utilities"
 	select SHELL
+	select CRC
 	help
 	  Activate shell module that provides LwM2M commands like
 	  send to the console.

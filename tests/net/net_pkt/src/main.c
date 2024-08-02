@@ -818,6 +818,8 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 	net_pkt_set_captured(pkt, true);
 	net_pkt_set_eof(pkt, true);
 	net_pkt_set_ptp(pkt, true);
+	net_pkt_set_tx_timestamping(pkt, true);
+	net_pkt_set_rx_timestamping(pkt, true);
 	net_pkt_set_forwarding(pkt, true);
 
 	net_pkt_set_l2_bridged(pkt, true);
@@ -854,6 +856,14 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 
 	zassert_true(net_pkt_is_ptp(cloned_pkt),
 		     "Cloned pkt ptp_pkt flag mismatch");
+
+#if CONFIG_NET_PKT_TIMESTAMP
+	zassert_true(net_pkt_is_tx_timestamping(cloned_pkt),
+		     "Cloned pkt tx_timestamping flag mismatch");
+
+	zassert_true(net_pkt_is_rx_timestamping(cloned_pkt),
+		     "Cloned pkt rx_timestamping flag mismatch");
+#endif
 
 	zassert_true(net_pkt_forwarding(cloned_pkt),
 		     "Cloned pkt forwarding flag mismatch");
@@ -1265,7 +1275,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_append_buf_0)
 
 ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_append_buf_1)
 {
-	test_net_pkt_shallow_clone_append_buf(2);
+	test_net_pkt_shallow_clone_append_buf(1);
 }
 
 ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_append_buf_2)

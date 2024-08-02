@@ -103,7 +103,6 @@ static struct k_obj_core_stats_desc mem_slab_stats_desc = {
  */
 static int create_free_list(struct k_mem_slab *slab)
 {
-	uint32_t j;
 	char *p;
 
 	/* blocks must be word aligned */
@@ -113,12 +112,12 @@ static int create_free_list(struct k_mem_slab *slab)
 	}
 
 	slab->free_list = NULL;
-	p = slab->buffer;
+	p = slab->buffer + slab->info.block_size * (slab->info.num_blocks - 1);
 
-	for (j = 0U; j < slab->info.num_blocks; j++) {
+	while (p >= slab->buffer) {
 		*(char **)p = slab->free_list;
 		slab->free_list = p;
-		p += slab->info.block_size;
+		p -= slab->info.block_size;
 	}
 	return 0;
 }
@@ -172,7 +171,7 @@ SYS_INIT(init_mem_slab_obj_core_list, PRE_KERNEL_1,
 int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 		    size_t block_size, uint32_t num_blocks)
 {
-	int rc = 0;
+	int rc;
 
 	slab->info.num_blocks = num_blocks;
 	slab->info.block_size = block_size;
@@ -205,6 +204,18 @@ out:
 	return rc;
 }
 
+#if __ASSERT_ON
+static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
+{
+	const char *p = ptr;
+	ptrdiff_t offset = p - slab->buffer;
+
+	return (offset >= 0) &&
+	       (offset < (slab->info.block_size * slab->info.num_blocks)) &&
+	       ((offset % slab->info.block_size) == 0);
+}
+#endif
+
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
@@ -217,6 +228,10 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 		*mem = slab->free_list;
 		slab->free_list = *(char **)(slab->free_list);
 		slab->info.num_used++;
+		__ASSERT((slab->free_list == NULL &&
+			  slab->info.num_used == slab->info.num_blocks) ||
+			 slab_ptr_is_good(slab, slab->free_list),
+			 "slab corruption detected");
 
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
 		slab->info.max_used = MAX(slab->info.num_used,
@@ -254,14 +269,10 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
-	__ASSERT(((char *)mem >= slab->buffer) &&
-		 ((((char *)mem - slab->buffer) % slab->info.block_size) == 0) &&
-		 ((char *)mem <= (slab->buffer + (slab->info.block_size *
-						  (slab->info.num_blocks - 1)))),
-		 "Invalid memory pointer provided");
+	__ASSERT(slab_ptr_is_good(slab, mem), "Invalid memory pointer provided");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
-	if (slab->free_list == NULL && IS_ENABLED(CONFIG_MULTITHREADING)) {
+	if ((slab->free_list == NULL) && IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
 
 		if (pending_thread != NULL) {

@@ -211,8 +211,8 @@ ZTEST(log_links, test_log_runtime_level_set)
 
 ZTEST(log_links, test_log_domain_name_get)
 {
-	zassert_equal(strcmp(log_domain_name_get(0), ""), 0,
-			"Unexpected domain name");
+	zassert_str_equal(log_domain_name_get(0), "",
+			  "Unexpected domain name");
 	zassert_equal(strcmp(log_domain_name_get(1), "domain1"), 0,
 			"Unexpected domain name (%s)", log_domain_name_get(1));
 	zassert_equal(strcmp(log_domain_name_get(2), "domain2"), 0,

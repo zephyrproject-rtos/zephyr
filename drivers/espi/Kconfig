@@ -22,11 +22,11 @@ module = ESPI
 module-str = espi
 source "subsys/logging/Kconfig.template.log_config"
 
-config ESPI_SLAVE
-	bool "ESPI slave driver"
+config ESPI_TARGET
+	bool "ESPI target driver"
 	default y
 	help
-	  Enables eSPI driver in slave mode.
+	  Enables eSPI driver in target mode.
 
 config ESPI_INIT_PRIORITY
 	int "ESPI Controller driver initialization priority"
@@ -50,20 +50,20 @@ config ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
 	bool "Automatic acknowledge for eSPI HOST warnings"
 	default y
 	depends on ESPI_VWIRE_CHANNEL
-	depends on ESPI_SLAVE
+	depends on ESPI_TARGET
 	help
-	  Enable automatic acknowledgment from eSPI slave towards eSPI host
+	  Enable automatic acknowledgment from eSPI target towards eSPI controller
 	  whenever it receives suspend or reset warning.
 	  If this is disabled, it means the app wants to be give the opportunity
 	  to prepare for either HOST suspend or reset.
 
 config ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
-	bool "Automatic acknowledge slave boot status"
+	bool "Automatic acknowledge target boot status"
 	default y
 	depends on ESPI_VWIRE_CHANNEL
-	depends on ESPI_SLAVE
+	depends on ESPI_TARGET
 	help
-	  Enable automatic acknowledgment from slave basic configuration been
+	  Enable automatic acknowledgment from target basic configuration been
 	  completed by sending a virtual wire message to the eSPI master.
 	  This depends on SPI boot configuration. It could be either very
 	  early in the flow after the VW channel is configured. Or it could be
@@ -176,19 +176,19 @@ config ESPI_OOB_CHANNEL_RX_ASYNC
 	  Enables asynchronous handling for host-initiated OOB traffic.
 	  Otherwise OOB traffic is assumed to be always client-initiated.
 
-config ESPI_SAF
-	bool "ESPI SAF driver"
+config ESPI_TAF
+	bool "ESPI TAF driver"
 	depends on ESPI_FLASH_CHANNEL
 	help
-	  Enable Slave Attached Flash eSPI driver. SAF depends upon ESPI driver
+	  Enable Target Attached Flash eSPI driver. TAF depends upon ESPI driver
 	  and flash channel.
 
-config ESPI_SAF_INIT_PRIORITY
-	int "ESPI SAF driver initialization priority"
-	depends on ESPI_SAF
+config ESPI_TAF_INIT_PRIORITY
+	int "ESPI TAF driver initialization priority"
+	depends on ESPI_TAF
 	default 4
 	help
-	  Driver initialization priority for eSPI SAF driver. SAF driver must
+	  Driver initialization priority for eSPI TAF driver. TAF driver must
 	  initialize after the ESPI driver.
 
 endif # ESPI

@@ -157,8 +157,6 @@ struct bt_l2cap_le_endpoint {
 	uint16_t				mtu;
 	/** Endpoint Maximum PDU payload Size */
 	uint16_t				mps;
-	/** Endpoint initial credits */
-	uint16_t				init_credits;
 	/** Endpoint credits */
 	atomic_t			credits;
 };
@@ -171,7 +169,7 @@ struct bt_l2cap_le_chan {
 	 *
 	 *  If the application has set an alloc_buf channel callback for the
 	 *  channel to support receiving segmented L2CAP SDUs the application
-	 *  should inititalize the MTU of the Receiving Endpoint. Otherwise the
+	 *  should initialize the MTU of the Receiving Endpoint. Otherwise the
 	 *  MTU of the receiving endpoint will be initialized to
 	 *  @ref BT_L2CAP_SDU_RX_MTU by the stack.
 	 *
@@ -192,13 +190,9 @@ struct bt_l2cap_le_chan {
 	 * L2CAP_LE_CREDIT_BASED_CONNECTION_REQ/RSP or L2CAP_CONFIGURATION_REQ.
 	 */
 	struct bt_l2cap_le_endpoint	tx;
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	/** Channel Transmission queue */
+	/** Channel Transmission queue (for SDUs) */
 	struct k_fifo                   tx_queue;
-	/** Channel Pending Transmission buffer  */
-	struct net_buf                  *tx_buf;
-	/** Channel Transmission work  */
-	struct k_work_delayable		tx_work;
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/** Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
 	uint16_t			_sdu_len;
@@ -220,6 +214,13 @@ struct bt_l2cap_le_chan {
 	struct k_work_delayable		rtx_work;
 	struct k_work_sync		rtx_sync;
 #endif
+
+	/** @internal To be used with @ref bt_conn.upper_data_ready */
+	sys_snode_t			_pdu_ready;
+	/** @internal To be used with @ref bt_conn.upper_data_ready */
+	atomic_t			_pdu_ready_lock;
+	/** @internal Holds the length of the current PDU/segment */
+	size_t				_pdu_remaining;
 };
 
 /**
@@ -262,6 +263,13 @@ struct bt_l2cap_br_chan {
 	/* Response Timeout eXpired (RTX) timer */
 	struct k_work_delayable		rtx_work;
 	struct k_work_sync		rtx_sync;
+
+	/** @internal To be used with @ref bt_conn.upper_data_ready */
+	sys_snode_t			_pdu_ready;
+	/** @internal To be used with @ref bt_conn.upper_data_ready */
+	atomic_t			_pdu_ready_lock;
+	/** @internal Queue of net bufs not yet sent to lower layer */
+	struct k_fifo			_pdu_tx_queue;
 };
 
 /** @brief L2CAP Channel operations structure. */
@@ -599,6 +607,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  @return -EINVAL if `buf` or `chan` is NULL.
  *  @return -EINVAL if `chan` is not either BR/EDR or LE credit-based.
  *  @return -EINVAL if buffer doesn't have enough bytes reserved to fit header.
+ *  @return -EINVAL if buffer's reference counter != 1
  *  @return -EMSGSIZE if `buf` is larger than `chan`'s MTU.
  *  @return -ENOTCONN if underlying conn is disconnected.
  *  @return -ESHUTDOWN if L2CAP channel is disconnected.

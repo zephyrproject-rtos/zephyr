@@ -42,7 +42,7 @@ CMake prints the input and output file locations like this:
 
    -- Found BOARD.dts: .../zephyr/boards/arm/qemu_cortex_m3/qemu_cortex_m3.dts
    -- Generated zephyr.dts: .../zephyr/build/zephyr/zephyr.dts
-   -- Generated devicetree_generated.h: .../zephyr/build/zephyr/include/generated/devicetree_generated.h
+   -- Generated devicetree_generated.h: .../zephyr/build/zephyr/include/generated/zephyr/devicetree_generated.h
 
 The :file:`zephyr.dts` file is the final devicetree in DTS format.
 

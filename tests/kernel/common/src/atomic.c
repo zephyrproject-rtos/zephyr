@@ -343,7 +343,7 @@ ZTEST(atomic, test_threads_access_atomic)
  *		if incremented in atomic and non-atomic manner
  *
  * @details According to C standard the value of a signed variable
- *	is undefined in case of overflow. This test checks that the the value
+ *	is undefined in case of overflow. This test checks that the value
  *	of atomic_t will be the same in case of overflow if incremented in atomic
  *	and non-atomic manner. This allows us to increment an atomic variable
  *	in a non-atomic manner (as long as it is logically safe)

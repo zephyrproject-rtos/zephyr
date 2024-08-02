@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2023-2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &mt25ql512ab1;
+		zephyr,display = &ltdc;
 	};
 
 	sdram2: sdram@d0000000 {
@@ -27,6 +28,14 @@
 		reg = <0xd0000000 DT_SIZE_M(16)>; /* 128Mbit */
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(256)>; /* max addressable area */
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 
 	leds {
@@ -54,7 +63,6 @@
 		led0 = &green_led;
 		led1 = &red_led;
 		sw0 = &user_button;
-		spi-flash0 = &mt25ql512ab1;
 	};
 };
 
@@ -64,12 +72,65 @@
 	status = "okay";
 };
 
+&clk_lse {
+	status = "okay";
+};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r0_pi15 &ltdc_r1_pj0 &ltdc_r2_pj1 &ltdc_r3_ph9
+		&ltdc_r4_pj3 &ltdc_r5_pj4 &ltdc_r6_pj5 &ltdc_r7_pj6
+		&ltdc_g0_pj7 &ltdc_g1_pj8 &ltdc_g2_pj9 &ltdc_g3_pj10
+		&ltdc_g4_pj11 &ltdc_g5_pi0 &ltdc_g6_pi1 &ltdc_g7_pk2
+		&ltdc_b0_pj12 &ltdc_b1_pj13 &ltdc_b2_pj14 &ltdc_b3_pj15
+		&ltdc_b4_pk3 &ltdc_b5_pk4 &ltdc_b6_pk5 &ltdc_b7_pk6
+		&ltdc_de_pk7 &ltdc_clk_pi14 &ltdc_hsync_pi12 &ltdc_vsync_pi9>;
+	pinctrl-names = "default";
+
+	disp-on-gpios = <&gpiod 7 GPIO_ACTIVE_HIGH>;
+
+	ext-sdram = <&sdram2>;
+	status = "okay";
+
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>,
+		<&rcc STM32_SRC_PLL3_R NO_SEL>;
+
+	width = <480>;
+	height = <272>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <1>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <1>;
+		vsync-len = <10>;
+		hback-porch = <43>;
+		vback-porch = <12>;
+		hfront-porch = <8>;
+		vfront-porch = <4>;
+	};
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+};
+
 &pll {
 	div-m = <5>;
 	mul-n = <192>;
 	div-p = <2>;
 	div-q = <4>;
 	div-r = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll3 {
+	div-m = <5>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <20>;
+	div-r = <99>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -99,7 +160,7 @@
 		     &quadspi_bk1_io2_pf7 &quadspi_bk1_io3_pf6
 		     &quadspi_bk2_io0_ph2 &quadspi_bk2_io1_ph3
 		     &quadspi_bk2_io2_pg9 &quadspi_bk2_io3_pg14>;
-	flash-id = <1>;
+	dual-flash;
 	status = "okay";
 
 	mt25ql512ab1: qspi-nor-flash-1@90000000 {
@@ -110,13 +171,13 @@
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       reg = <0x0 DT_SIZE_M(64)>;
-			   };
+			partition@0 {
+				reg = <0x0 DT_SIZE_M(64)>;
+			};
 		};
 	};
 
@@ -162,4 +223,10 @@
 			st,sdram-timing = <2 7 4 7 2 2 2>;
 		};
 	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
 };

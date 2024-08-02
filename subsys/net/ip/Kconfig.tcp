@@ -93,7 +93,7 @@ config NET_TCP_RANDOMIZED_RTO
 	  due to a packet collision. If the transmission timeout is the same
 	  both stacks will retry at the same moment resulting in another
 	  collision. By introducing a randomized retry timeout, the chance of
-	  a second collision is reduced and it reduces furter the more
+	  a second collision is reduced and it reduces further the more
 	  retransmissions occur.
 
 config NET_TCP_RETRY_COUNT
@@ -229,9 +229,7 @@ config NET_TCP_ISN_RFC6528
 	bool "Use ISN algorithm from RFC 6528"
 	default y
 	depends on NET_TCP
-	select MBEDTLS
-	select MBEDTLS_MD
-	select MBEDTLS_MAC_MD5_ENABLED
+	depends on PSA_WANT_ALG_SHA_256
 	help
 	  Implement Initial Sequence Number calculation as described in
 	  RFC 6528 chapter 3. https://tools.ietf.org/html/rfc6528

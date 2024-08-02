@@ -30,8 +30,10 @@ menuconfig BUILD_WITH_TFM
 	depends on TFM_BOARD != ""
 	depends on ARM_TRUSTZONE_M
 	select BUILD_OUTPUT_HEX
+	select PSA_CRYPTO_CLIENT
 	imply INIT_ARCH_HW_AT_BOOT
 	imply ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	imply MBEDTLS
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionally generate a TF-M image for the Secure Execution
@@ -51,27 +53,8 @@ menuconfig BUILD_WITH_TFM
 
 if BUILD_WITH_TFM
 
-config TFM_KEY_FILE_S
-	string "Path to private key used to sign secure firmware images."
-	depends on BUILD_WITH_TFM
-	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-RSA-3072.pem"
-	help
-	  The path and filename for the .pem file containing the private key
-	  that should be used by the BL2 bootloader when signing secure
-	  firmware images.
-
-config TFM_KEY_FILE_NS
-	string "Path to private key used to sign non-secure firmware images."
-	depends on BUILD_WITH_TFM
-	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-RSA-3072_1.pem"
-	help
-	  The path and filename for the .pem file containing the private key
-	  that should be used by the BL2 bootloader when signing non-secure
-	  firmware images.
-
 config TFM_PROFILE
 	string
-	depends on BUILD_WITH_TFM
 	default "profile_small" if TFM_PROFILE_TYPE_SMALL
 	default "profile_medium" if TFM_PROFILE_TYPE_MEDIUM
 	default "profile_medium_arotless" if TFM_PROFILE_TYPE_AROTLESS
@@ -83,7 +66,6 @@ config TFM_PROFILE
 
 choice TFM_PROFILE_TYPE
 	prompt "TF-M build profile"
-	depends on BUILD_WITH_TFM
 	default TFM_PROFILE_TYPE_NOT_SET
 	help
 	  The TF-M build profile selection. Can be empty (not set),
@@ -111,7 +93,7 @@ endchoice
 choice TFM_CMAKE_BUILD_TYPE
 	prompt "The build type for TFM"
 	default TFM_CMAKE_BUILD_TYPE_RELEASE if SPEED_OPTIMIZATIONS && BUILD_OUTPUT_STRIPPED
-	default TFM_CMAKE_BUILD_TYPE_MINSIZEREL if SIZE_OPTIMIZATIONS
+	default TFM_CMAKE_BUILD_TYPE_MINSIZEREL if SIZE_OPTIMIZATIONS || SIZE_OPTIMIZATIONS_AGGRESSIVE
 	default TFM_CMAKE_BUILD_TYPE_DEBUG if DEBUG_OPTIMIZATIONS
 	default TFM_CMAKE_BUILD_TYPE_RELWITHDEBINFO
 
@@ -132,7 +114,6 @@ endchoice
 config TFM_ISOLATION_LEVEL
 	int "Isolation level setting." if (TFM_PROFILE_TYPE_NOT_SET && TFM_IPC)
 	range 1 3
-	depends on BUILD_WITH_TFM
 	default 1 if TFM_PROFILE_TYPE_SMALL || !TFM_IPC
 	default 2 if TFM_PROFILE_TYPE_MEDIUM
 	default 3 if TFM_PROFILE_TYPE_LARGE
@@ -211,7 +192,9 @@ config TFM_IMAGE_VERSION_S
 	help
 	  MCUBoot may be configured to prevent rollback prevention based on image
 	  versions of both the secure firmware and non-secure firmware. This sets
-	  the secure firmware's version for rollback prevention.
+	  the secure firmware's version for rollback prevention. This version is
+	  also used for merged secure + non-secure builds
+	  (TFM_MCUBOOT_IMAGE_NUMBER == 1).
 
 config TFM_IMAGE_VERSION_NS
 	string "Version of the Non-Secure Image"
@@ -256,6 +239,29 @@ config TFM_CONNECTION_BASED_SERVICE_API
 	  will result in compilation error.
 
 if TFM_BL2
+
+config TFM_MCUBOOT_SIGNATURE_TYPE
+	string "The signature type used to sign the secure and non-secure firmware images."
+	default "EC-P256"
+	help
+	  Available types: RSA-2048, RSA-3072, EC-P256, EC-P384.
+
+config TFM_KEY_FILE_S
+	string "Path to private key used to sign secure firmware images."
+	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE}.pem"
+	help
+	  The path and filename for the .pem file containing the private key
+	  that should be used by the BL2 bootloader when signing secure
+	  firmware images. This key file is also used for merged secure +
+	  non-secure builds (TFM_MCUBOOT_IMAGE_NUMBER == 1).
+
+config TFM_KEY_FILE_NS
+	string "Path to private key used to sign non-secure firmware images."
+	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE}_1.pem"
+	help
+	  The path and filename for the .pem file containing the private key
+	  that should be used by the BL2 bootloader when signing non-secure
+	  firmware images.
 
 config TFM_MCUBOOT_IMAGE_NUMBER
 	int "Granularity of FW updates of TFM and app"
@@ -391,6 +397,7 @@ config TFM_PSA_TEST_STORAGE
 config TFM_PSA_TEST_INITIAL_ATTESTATION
 	bool "Initial attestation tests"
 	depends on MAIN_STACK_SIZE >= 4096
+	select TFM_PARTITION_INITIAL_ATTESTATION
 	help
 	  Enable the PSA Initial Attestation test suite.
 

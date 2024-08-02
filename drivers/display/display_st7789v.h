@@ -68,6 +68,4 @@
 #define ST7789V_CMD_PVGAMCTRL			0xe0
 #define ST7789V_CMD_NVGAMCTRL			0xe1
 
-#define ST7789V_CMD_NONE			0xff
-
 #endif

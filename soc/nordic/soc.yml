@@ -48,52 +48,139 @@ runners:
     '--recover':
       - runners:
           - nrfjprog
+          - nrfutil
         run: first
         groups:
           - qualifiers:
-              - nrf51([0-9]{3})((.+)?)
+              - nrf51822
           - qualifiers:
-              - nrf52([0-9]{3})((.+)?)
+              - nrf52805
+          - qualifiers:
+              - nrf52810
+          - qualifiers:
+              - nrf52811
+          - qualifiers:
+              - nrf52820
+          - qualifiers:
+              - nrf52832
+          - qualifiers:
+              - nrf52833
+          - qualifiers:
+              - nrf52840
           - qualifiers:
               - nrf5340/cpunet
               - nrf5340/cpuapp
               - nrf5340/cpuapp/ns
           - qualifiers:
+              - nrf9131
+              - nrf9131/ns
+          - qualifiers:
+              - nrf9151
+              - nrf9151/ns
+          - qualifiers:
               - nrf9160
               - nrf9160/ns
+          - qualifiers:
+              - nrf9161
+              - nrf9161/ns
+          - qualifiers:
+              - nrf54l15/cpuapp
+              - nrf54l15/cpuflpr
+          - qualifiers:
+              - nrf54h20/cpuapp
+              - nrf54h20/cpurad
+              - nrf54h20/cpuppr
     '--erase':
       - runners:
           - nrfjprog
           - jlink
+          - nrfutil
         run: first
         groups:
           - qualifiers:
-              - nrf51([0-9]{3})((.+)?)
+              - nrf51822
           - qualifiers:
-              - nrf52([0-9]{3})((.+)?)
+              - nrf52805
+          - qualifiers:
+              - nrf52810
+          - qualifiers:
+              - nrf52811
+          - qualifiers:
+              - nrf52820
+          - qualifiers:
+              - nrf52832
+          - qualifiers:
+              - nrf52833
+          - qualifiers:
+              - nrf52840
           - qualifiers:
               - nrf5340/cpunet
           - qualifiers:
               - nrf5340/cpuapp
               - nrf5340/cpuapp/ns
           - qualifiers:
+              - nrf9131
+              - nrf9131/ns
+          - qualifiers:
+              - nrf9151
+              - nrf9151/ns
+          - qualifiers:
               - nrf9160
               - nrf9160/ns
+          - qualifiers:
+              - nrf9161
+              - nrf9161/ns
+          - qualifiers:
+              - nrf54l15/cpuapp
+              - nrf54l15/cpuflpr
+          - qualifiers:
+              - nrf54h20/cpuapp
+              - nrf54h20/cpurad
+              - nrf54h20/cpuppr
     '--reset':
       - runners:
           - nrfjprog
           - jlink
+          - nrfutil
         run: last
         groups:
           - qualifiers:
-              - nrf51([0-9]{3})((.+)?)
+              - nrf51822
           - qualifiers:
-              - nrf52([0-9]{3})((.+)?)
+              - nrf52805
+          - qualifiers:
+              - nrf52810
+          - qualifiers:
+              - nrf52811
+          - qualifiers:
+              - nrf52820
+          - qualifiers:
+              - nrf52832
+          - qualifiers:
+              - nrf52833
+          - qualifiers:
+              - nrf52840
           - qualifiers:
               - nrf5340/cpunet
           - qualifiers:
               - nrf5340/cpuapp
               - nrf5340/cpuapp/ns
           - qualifiers:
+              - nrf9131
+              - nrf9131/ns
+          - qualifiers:
+              - nrf9151
+              - nrf9151/ns
+          - qualifiers:
               - nrf9160
               - nrf9160/ns
+          - qualifiers:
+              - nrf9161
+              - nrf9161/ns
+          - qualifiers:
+              - nrf54l15/cpuapp
+              - nrf54l15/cpuflpr
+          - qualifiers:
+              - nrf54h20/cpuapp
+              - nrf54h20/cpurad
+              - nrf54h20/cpuppr

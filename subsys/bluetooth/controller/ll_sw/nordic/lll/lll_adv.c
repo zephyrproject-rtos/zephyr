@@ -361,7 +361,7 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 	void *p;
 
 	/* TODO: Make this unique mechanism to update last element in double
-	 *       buffer a re-usable utility function.
+	 *       buffer a reusable utility function.
 	 */
 	first = pdu->first;
 	last = pdu->last;
@@ -590,7 +590,7 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
 			/* There is no release of memory allocated by
 			 * adv_pdu_allocate because there is no memory leak.
 			 * If caller can recover from this error and subsequent
-			 * call to this function occures, no new memory will be
+			 * call to this function occurs, no new memory will be
 			 * allocated. adv_pdu_allocate will return already
 			 * allocated memory.
 			 */
@@ -648,7 +648,7 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
 		if (ed && (!MFIFO_ENQUEUE_IDX_GET(extra_data_free,
 						  &ed_free_idx))) {
 			/* No pdu_free_idx clean up is required, sobsequent
-			 * calls to MFIFO_ENQUEUE_IDX_GET return ther same
+			 * calls to MFIFO_ENQUEUE_IDX_GET return the same
 			 * index to memory that is in limbo state.
 			 */
 			return NULL;

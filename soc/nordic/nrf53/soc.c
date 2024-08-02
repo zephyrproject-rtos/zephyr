@@ -31,9 +31,6 @@
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include <hal/nrf_nvmc.h>
 #endif
-#if defined(CONFIG_PM_S2RAM)
-#include <hal/nrf_vmc.h>
-#endif
 #include <hal/nrf_wdt.h>
 #include <hal/nrf_rtc.h>
 #include <soc_secure.h>
@@ -61,34 +58,6 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-#if defined(CONFIG_PM_S2RAM)
-
-#if defined(CONFIG_SOC_NRF5340_CPUAPP)
-#define RAM_N_BLOCK	(8)
-#elif defined(CONFIG_SOC_NRF5340_CPUNET)
-#define RAM_N_BLOCK	(4)
-#endif /* CONFIG_SOC_NRF5340_CPUAPP || CONFIG_SOC_NRF5340_CPUNET */
-
-#define MASK_ALL_SECT	(VMC_RAM_POWER_S0RETENTION_Msk  | VMC_RAM_POWER_S1RETENTION_Msk  | \
-			 VMC_RAM_POWER_S2RETENTION_Msk  | VMC_RAM_POWER_S3RETENTION_Msk  | \
-			 VMC_RAM_POWER_S4RETENTION_Msk  | VMC_RAM_POWER_S5RETENTION_Msk  | \
-			 VMC_RAM_POWER_S6RETENTION_Msk  | VMC_RAM_POWER_S7RETENTION_Msk  | \
-			 VMC_RAM_POWER_S8RETENTION_Msk  | VMC_RAM_POWER_S9RETENTION_Msk  | \
-			 VMC_RAM_POWER_S10RETENTION_Msk | VMC_RAM_POWER_S11RETENTION_Msk | \
-			 VMC_RAM_POWER_S12RETENTION_Msk | VMC_RAM_POWER_S13RETENTION_Msk | \
-			 VMC_RAM_POWER_S14RETENTION_Msk | VMC_RAM_POWER_S15RETENTION_Msk)
-
-static void enable_ram_retention(void)
-{
-	/*
-	 * Enable RAM retention for *ALL* the SRAM
-	 */
-	for (size_t n = 0; n < RAM_N_BLOCK; n++) {
-		nrf_vmc_ram_block_retention_set(NRF_VMC, n, MASK_ALL_SECT);
-	}
-
-}
-#endif /* CONFIG_PM_S2RAM */
 
 #if defined(CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND)
 /* This code prevents the CPU from entering sleep again if it already
@@ -214,7 +183,7 @@ static void cpu_idle_prepare_monitor_begin(void)
 static bool cpu_idle_prepare_monitor_end(void)
 {
 	/* The value stored is irrelevant. If any exception took place after
-	 * cpu_idle_prepare_monitor_begin, the the local monitor is cleared and
+	 * cpu_idle_prepare_monitor_begin, the local monitor is cleared and
 	 * the store fails returning 1.
 	 * See Arm v8-M Architecture Reference Manual:
 	 *   Chapter B9.2 The local monitors
@@ -296,7 +265,7 @@ void z_arm_on_enter_cpu_idle_prepare(void)
 					 */
 					rtc_pretick_cc_set_on_time = false;
 				} else {
-					/* The written rtc_pretick_cc is guaranteed to to trigger
+					/* The written rtc_pretick_cc is guaranteed to trigger
 					 * compare event.
 					 */
 					rtc_pretick_cc_set_on_time = true;
@@ -573,10 +542,6 @@ static int nordicsemi_nrf53_init(void)
 	}
 
 #endif
-
-#if defined(CONFIG_PM_S2RAM)
-	enable_ram_retention();
-#endif /* CONFIG_PM_S2RAM */
 
 	return 0;
 }

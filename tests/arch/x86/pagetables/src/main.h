@@ -8,6 +8,6 @@
 
 __syscall void dump_my_ptables(void);
 
-#include <syscalls/main.h>
+#include <zephyr/syscalls/main.h>
 
 #endif

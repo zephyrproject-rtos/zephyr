@@ -76,8 +76,15 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	/* Finally we need to enable the cache in the Region
 	 * Protection Option "TLB" entries.  The hardware defaults
 	 * have this set to RW/uncached everywhere.
+	 *
+	 * If we have MMU enabled, we don't need to do this right now.
+	 * Let use the default configuration and properly configure the
+	 * MMU when running from RAM.
 	 */
+#ifndef CONFIG_MMU
 	ARCH_XTENSA_SET_RPO_TLB();
+#endif
+
 
 	/* Initialize ATOMCTL: Hardware defaults for S32C1I use
 	 * "internal" operations, meaning they are atomic only WRT the

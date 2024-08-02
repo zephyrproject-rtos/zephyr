@@ -75,6 +75,8 @@ struct net_socket_service_desc {
 	int *idx;
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 #define __z_net_socket_svc_get_name(_svc_id) __z_net_socket_service_##_svc_id
 #define __z_net_socket_svc_get_idx(_svc_id) __z_net_socket_service_idx_##_svc_id
 #define __z_net_socket_svc_get_owner __FILE__ ":" STRINGIFY(__LINE__)
@@ -87,17 +89,12 @@ extern void net_socket_service_callback(struct k_work *work);
 #define NET_SOCKET_SERVICE_OWNER
 #endif
 
-#define NET_SOCKET_SERVICE_CALLBACK_MODE(_flag)				\
-	IF_ENABLED(_flag,						\
-		   (.work = Z_WORK_INITIALIZER(net_socket_service_callback),))
-
-#define __z_net_socket_service_define(_name, _work_q, _cb, _count, _async, ...) \
+#define __z_net_socket_service_define(_name, _work_q, _cb, _count, ...) \
 	static int __z_net_socket_svc_get_idx(_name);			\
 	static struct net_socket_service_event				\
 			__z_net_socket_svc_get_name(_name)[_count] = {	\
 		[0 ... ((_count) - 1)] = {				\
 			.event.fd = -1, /* Invalid socket */		\
-			NET_SOCKET_SERVICE_CALLBACK_MODE(_async)	\
 			.callback = _cb,				\
 		}							\
 	};								\
@@ -110,43 +107,7 @@ extern void net_socket_service_callback(struct k_work *work);
 		.idx = &__z_net_socket_svc_get_idx(_name),		\
 	}
 
-/**
- * @brief Statically define a network socket service.
- *        The user callback is called asynchronously for this service meaning that
- *        the service API will not wait until the user callback returns before continuing
- *        with next socket service.
- *
- * The socket service can be accessed outside the module where it is defined using:
- *
- * @code extern struct net_socket_service_desc <name>; @endcode
- *
- * @note This macro cannot be used together with a static keyword.
- *       If such a use-case is desired, use NET_SOCKET_SERVICE_ASYNC_DEFINE_STATIC
- *       instead.
- *
- * @param name Name of the service.
- * @param work_q Pointer to workqueue where the work is done. Can be null in which case
- *        system workqueue is used.
- * @param cb Callback function that is called for socket activity.
- * @param count How many pollable sockets is needed for this service.
- */
-#define NET_SOCKET_SERVICE_ASYNC_DEFINE(name, work_q, cb, count)	\
-	__z_net_socket_service_define(name, work_q, cb, count, 1)
-
-/**
- * @brief Statically define a network socket service in a private (static) scope.
- *        The user callback is called asynchronously for this service meaning that
- *        the service API will not wait until the user callback returns before continuing
- *        with next socket service.
- *
- * @param name Name of the service.
- * @param work_q Pointer to workqueue where the work is done. Can be null in which case
- *        system workqueue is used.
- * @param cb Callback function that is called for socket activity.
- * @param count How many pollable sockets is needed for this service.
- */
-#define NET_SOCKET_SERVICE_ASYNC_DEFINE_STATIC(name, work_q, cb, count) \
-	__z_net_socket_service_define(name, work_q, cb, count, 1, static)
+/** @endcond */
 
 /**
  * @brief Statically define a network socket service.
@@ -169,7 +130,7 @@ extern void net_socket_service_callback(struct k_work *work);
  * @param count How many pollable sockets is needed for this service.
  */
 #define NET_SOCKET_SERVICE_SYNC_DEFINE(name, work_q, cb, count)	\
-	__z_net_socket_service_define(name, work_q, cb, count, 0)
+	__z_net_socket_service_define(name, work_q, cb, count)
 
 /**
  * @brief Statically define a network socket service in a private (static) scope.
@@ -184,7 +145,7 @@ extern void net_socket_service_callback(struct k_work *work);
  * @param count How many pollable sockets is needed for this service.
  */
 #define NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(name, work_q, cb, count)	\
-	__z_net_socket_service_define(name, work_q, cb, count, 0, static)
+	__z_net_socket_service_define(name, work_q, cb, count, static)
 
 /**
  * @brief Register pollable sockets.
@@ -237,7 +198,7 @@ void net_socket_service_foreach(net_socket_service_cb_t cb, void *user_data);
 }
 #endif
 
-#include <syscalls/socket_service.h>
+#include <zephyr/syscalls/socket_service.h>
 
 /**
  * @}

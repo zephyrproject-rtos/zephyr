@@ -38,6 +38,8 @@ static inline void log_stack_usage(const struct k_thread *thread)
 			thread, tname, unused, size - unused, size,
 			pcnt);
 	}
+#else
+	ARG_UNUSED(thread);
 #endif
 }
 #endif /* ZEPHYR_INCLUDE_DEBUG_STACK_H_ */

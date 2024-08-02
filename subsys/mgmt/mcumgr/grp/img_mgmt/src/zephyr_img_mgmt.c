@@ -186,7 +186,7 @@ img_mgmt_flash_area_id(int slot)
  * find any unused and non-active available (auto-select); any other positive
  * value is direct (slot + 1) to be used; if checks are positive, then area
  * ID is returned, -1 is returned otherwise.
- * Note that auto-selection is performed only between two two first slots.
+ * Note that auto-selection is performed only between the two first slots.
  */
 static int img_mgmt_get_unused_slot_area_id(int slot)
 {
@@ -226,14 +226,11 @@ static int img_mgmt_get_unused_slot_area_id(int slot)
 #endif
 }
 #elif CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
-static int img_mgmt_get_unused_slot_area_id(int image)
+static int img_mgmt_get_unused_slot_area_id(unsigned int image)
 {
 	int area_id = -1;
 	int slot = 0;
 
-	if (image == -1) {
-		image = 0;
-	}
 	slot = img_mgmt_get_opposite_slot(img_mgmt_active_slot(image));
 
 	if (!img_mgmt_slot_in_use(slot)) {
@@ -297,7 +294,7 @@ int img_mgmt_erase_slot(int slot)
 	rc = img_mgmt_flash_check_empty_inner(fa);
 
 	if (rc == 0) {
-		rc = flash_area_erase(fa, 0, fa->fa_size);
+		rc = flash_area_flatten(fa, 0, fa->fa_size);
 
 		if (rc != 0) {
 			LOG_ERR("Failed to erase flash area: %d", rc);
@@ -476,7 +473,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 
 	size_t erase_size = page.start_offset + page.size - fa->fa_off;
 
-	rc = flash_area_erase(fa, 0, erase_size);
+	rc = flash_area_flatten(fa, 0, erase_size);
 
 	if (rc != 0) {
 		LOG_ERR("image slot erase of 0x%zx bytes failed (err %d)", erase_size,
@@ -501,7 +498,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		off = page.start_offset - fa->fa_off;
 		erase_size = fa->fa_size - off;
 
-		rc = flash_area_erase(fa, off, erase_size);
+		rc = flash_area_flatten(fa, off, erase_size);
 		if (rc != 0) {
 			LOG_ERR("image slot trailer erase of 0x%zx bytes failed (err %d)",
 					erase_size, rc);

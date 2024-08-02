@@ -40,6 +40,8 @@ int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 	struct net_udp_hdr *udp_hdr;
 	uint16_t length = 0;
+	enum net_if_checksum_type type = net_pkt_family(pkt) == AF_INET6 ?
+		NET_IF_CHECKSUM_IPV6_UDP : NET_IF_CHECKSUM_IPV4_UDP;
 
 	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 	if (!udp_hdr) {
@@ -51,7 +53,7 @@ int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 
 	udp_hdr->len = htons(length);
 
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) || force_chksum) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), type) || force_chksum) {
 		udp_hdr->chksum = net_calc_chksum_udp(pkt);
 		net_pkt_set_chksum_done(pkt, true);
 	}
@@ -149,6 +151,8 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 				  struct net_pkt_data_access *udp_access)
 {
 	struct net_udp_hdr *udp_hdr;
+	enum net_if_checksum_type type = net_pkt_family(pkt) == AF_INET6 ?
+		NET_IF_CHECKSUM_IPV6_UDP : NET_IF_CHECKSUM_IPV4_UDP;
 
 	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, udp_access);
 	if (!udp_hdr || net_pkt_set_data(pkt, udp_access)) {
@@ -164,7 +168,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_UDP_CHECKSUM) &&
-	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) ||
+	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), type) ||
 	     net_pkt_is_ip_reassembled(pkt))) {
 		if (!udp_hdr->chksum) {
 			if (IS_ENABLED(CONFIG_NET_UDP_MISSING_CHECKSUM) &&

@@ -132,6 +132,16 @@ config ZTEST_VERIFY_RUN_ALL
 	help
 	  This rule will fail the project if not all tests have been run.
 
+
+config ZTEST_COVERAGE_RESET_BEFORE_TESTS
+	bool "Performs coverage counters reset"
+	depends on COVERAGE_GCOV
+	help
+	  This rule will reset gcov counters before running tests. This ensures
+	  that only code lines triggered by test itself are counted in the coverage report
+	  and all the board initialization code and pre-test bootstrap is not counted.
+	  This is useful when, for example, you are testing code that is also executed during bootup.
+
 config ZTEST_SHUFFLE
 	bool "Shuffle the order of tests and suites"
 	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER

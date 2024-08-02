@@ -26,9 +26,17 @@ tests:
       - nucleo_l152re
       - nucleo_wb55rg
       - rpi_pico
-      - efr32bg22_brd4184a
+      - sltb010a@0
       - mr_canhubk3
     integration_platforms:
       - nucleo_f091rc
     extra_configs:
       - CONFIG_APP_DUAL_ROLE_I2C=y
+  drivers.i2c.target_api.single_role:
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1040_evk
+      - mimxrt1060_evk
+      - frdm_ke17z512

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018 Friedt Professional Engineering Services, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,7 +58,7 @@ int z_vrfy___posix_clock_get_base(clockid_t clock_id, struct timespec *ts)
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(ts, sizeof(*ts)));
 	return z_impl___posix_clock_get_base(clock_id, ts);
 }
-#include <syscalls/__posix_clock_get_base_mrsh.c>
+#include <zephyr/syscalls/__posix_clock_get_base_mrsh.c>
 #endif
 
 int clock_gettime(clockid_t clock_id, struct timespec *ts)
@@ -156,14 +157,43 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 	return 0;
 }
 
+/*
+ * Note: usleep() was removed in Issue 7.
+ *
+ * It is kept here for compatibility purposes.
+ *
+ * For more information, please see
+ * https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_xsh_chap01.html
+ * https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_xsh_chap03.html
+ */
+int usleep(useconds_t useconds)
+{
+	int32_t rem;
+
+	if (useconds >= USEC_PER_SEC) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	rem = k_usleep(useconds);
+	__ASSERT_NO_MSG(rem >= 0);
+	if (rem > 0) {
+		/* sleep was interrupted by a call to k_wakeup() */
+		errno = EINTR;
+		return -1;
+	}
+
+	return 0;
+}
+
 /**
  * @brief Suspend execution for a nanosecond interval, or
  * until some absolute time relative to the specified clock.
  *
  * See IEEE 1003.1
  */
-int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
-		    struct timespec *rmtp)
+static int __z_clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
+			       struct timespec *rmtp)
 {
 	uint64_t ns;
 	uint64_t us;
@@ -171,7 +201,7 @@ int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
 	k_spinlock_key_t key;
 	const bool update_rmtp = rmtp != NULL;
 
-	if (!(clock_id == CLOCK_REALTIME || clock_id == CLOCK_MONOTONIC)) {
+	if (!((clock_id == CLOCK_REALTIME) || (clock_id == CLOCK_MONOTONIC))) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -181,7 +211,7 @@ int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
 		return -1;
 	}
 
-	if (rqtp->tv_sec < 0 || rqtp->tv_nsec < 0 || rqtp->tv_nsec >= NSEC_PER_SEC) {
+	if ((rqtp->tv_sec < 0) || (rqtp->tv_nsec < 0) || (rqtp->tv_nsec >= NSEC_PER_SEC)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -195,7 +225,7 @@ int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
 		ns = rqtp->tv_sec * NSEC_PER_SEC + rqtp->tv_nsec;
 	}
 
-	uptime_ns = k_cyc_to_ns_ceil64(k_cycle_get_32());
+	uptime_ns = k_ticks_to_ns_ceil64(sys_clock_tick_get());
 
 	if (flags & TIMER_ABSTIME && clock_id == CLOCK_REALTIME) {
 		key = k_spin_lock(&rt_clock_base_lock);
@@ -223,6 +253,17 @@ do_rmtp_update:
 	}
 
 	return 0;
+}
+
+int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
+{
+	return __z_clock_nanosleep(CLOCK_MONOTONIC, 0, rqtp, rmtp);
+}
+
+int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
+		    struct timespec *rmtp)
+{
+	return __z_clock_nanosleep(clock_id, flags, rqtp, rmtp);
 }
 
 /**

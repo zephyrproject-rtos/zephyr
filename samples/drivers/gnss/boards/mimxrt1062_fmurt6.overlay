@@ -6,7 +6,7 @@
 
 / {
 	aliases {
-		gnss = &lpuart2;
+		gnss = &gnss;
 	};
 };
 
@@ -17,7 +17,7 @@
 	pinctrl-1 = <&pinmux_lpuart2_sleep>;
 	pinctrl-names = "default", "sleep";
 
-	u_blox_m10: u-blox,m10 {
+	gnss: u_blox_m10 {
 		status = "okay";
 		compatible = "u-blox,m10";
 		uart-baudrate = <115200>;

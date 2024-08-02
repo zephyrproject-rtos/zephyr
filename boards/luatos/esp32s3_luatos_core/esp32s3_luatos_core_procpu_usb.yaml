@@ -1,5 +1,5 @@
 identifier: esp32s3_luatos_core/esp32s3/procpu/usb
-name: ESP32-S3 LuatOS Core USB
+name: ESP32-S3 LuatOS Core PROCPU USB
 type: mcu
 arch: xtensa
 toolchain:

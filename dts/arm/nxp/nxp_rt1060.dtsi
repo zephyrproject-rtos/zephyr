@@ -50,7 +50,7 @@
 		/* i.MX rt1060 has a second Ethernet controller. */
 		enet2: ethernet@402d4000 {
 			compatible = "nxp,enet";
-			reg = <0x402D8000 0x628>;
+			reg = <0x402d4000 0x628>;
 			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
 			enet2_mac: ethernet {
 				compatible = "nxp,enet-mac";

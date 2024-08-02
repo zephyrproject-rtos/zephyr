@@ -9,6 +9,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/ztest_assert.h>
 #include <zephyr/posix/fcntl.h>
+#include <zephyr/net/net_context.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/loopback.h>
 
@@ -2490,7 +2491,7 @@ static void after(void *arg)
 {
 	ARG_UNUSED(arg);
 
-	for (int i = 0; i < CONFIG_POSIX_MAX_FDS; ++i) {
+	for (int i = 0; i < CONFIG_ZVFS_OPEN_MAX; ++i) {
 		(void)zsock_close(i);
 	}
 }

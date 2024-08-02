@@ -112,6 +112,10 @@ static int entropy_stm32_suspend(void)
 	RNG_TypeDef *rng = dev_data->rng;
 	int res;
 
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
+	/* Prevent concurrent access with PM */
+	z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
+#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 	LL_RNG_Disable(rng);
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
@@ -135,6 +139,10 @@ static int entropy_stm32_suspend(void)
 
 	res = clock_control_off(dev_data->clock,
 			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
+	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
+#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
 	return res;
 }
@@ -710,7 +718,12 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		res = entropy_stm32_suspend();
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
+		/* Lock to Prevent concurrent access with PM */
+		z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
+	/* Call release_rng instead of entropy_stm32_suspend to avoid double hsem_unlock */
+#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
+		release_rng();
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
@@ -724,7 +737,15 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 				entropy_stm32_rng_init(dev);
 			} else if (!entropy_stm32_rng_data.filling_pools) {
 				/* Resume RNG only if it was suspended during filling pool */
-				entropy_stm32_suspend();
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
+				/* Lock to Prevent concurrent access with PM */
+				z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
+				/*
+				 * Call release_rng instead of entropy_stm32_suspend
+				 * to avoid double hsem_unlock
+				 */
+#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
+				release_rng();
 			}
 #endif /* health_test_config */
 		} else {

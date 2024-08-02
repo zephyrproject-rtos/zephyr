@@ -20,6 +20,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	aliases {
@@ -51,14 +52,6 @@
 		startup-delay-us = <10000>;
 		off-on-delay-us = <5000>;
 	};
-};
-
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
 };
 
 uext_serial: &uart1 {};
@@ -100,7 +93,6 @@ uext_spi: &spi2 {};
 	status = "okay";
 	pinctrl-0 = <&twai_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 
 	can-transceiver {
 		max-bitrate = <1000000>;
@@ -172,4 +164,8 @@ uext_spi: &spi2 {};
 			reg = <0x00250000 DT_SIZE_K(24)>;
 		};
 	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
 };

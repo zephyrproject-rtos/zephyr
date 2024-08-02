@@ -5,10 +5,11 @@
 
 config ESP32_SYS_TIMER
 	bool "ESP32 sys-timer support (ESP32Cx series)"
-	depends on SOC_SERIES_ESP32C3
+	depends on SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
 	default y
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	help
 	  This option enables the system timer driver for the Espressif ESP32Cx
 	  and provides the standard "system clock driver" interface.

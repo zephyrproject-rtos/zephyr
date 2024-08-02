@@ -5,6 +5,9 @@
 
 if BOARD_RD_RW612_BGA
 
+config FLASH_LOAD_SIZE
+	default 0x400000 if !BOOTLOADER_MCUBOOT && !NXP_MONOLITHIC_BT
+
 if LVGL
 
 # Enable DMA for LCDIC
@@ -29,5 +32,16 @@ config LV_Z_FLUSH_THREAD
 	default y
 
 endif # LVGL
+
+# Enable interrupt support when using FT5336 driver
+config INPUT_FT5336_INTERRUPT
+	default y if INPUT
+
+if DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
 
 endif # BOARD_RD_RW612_BGA

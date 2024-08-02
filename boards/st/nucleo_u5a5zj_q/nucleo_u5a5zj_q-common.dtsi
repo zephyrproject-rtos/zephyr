@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2023-2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -175,8 +175,12 @@
 		 <&rcc STM32_SRC_PLL1_Q FDCAN1_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 

@@ -72,15 +72,45 @@ For more information, see :ref:`pm-device-runtime`.
 System-Managed Device Power Management
 ======================================
 
+The system managed device power management (PM) framework is a method where
+devices are suspended along with the system entering a CPU (or SoC) power state.
+It can be enabled by setting :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
 When using this method, device power management is mostly done inside
-:c:func:`pm_system_suspend()` along with entering a CPU or SOC power state.
+:c:func:`pm_system_suspend()`.
 
 If a decision to enter a CPU lower power state is made, the power management
-subsystem will suspend devices before changing state. The subsystem takes care
-of suspending devices following their initialization order, ensuring that
+subsystem will check if the selected low power state triggers device power
+management and then suspend devices before changing state. The subsystem takes
+care of suspending devices following their initialization order, ensuring that
 possible dependencies between them are satisfied. As soon as the CPU wakes up
 from a sleep state, devices are resumed in the opposite order that they were
 suspended.
+
+The decision about suspending devices when entering a low power state is done based on the
+state and if it has set the property ``zephyr,pm-device-disabled``. Here is
+an example of a target with two low power states with only one triggering device power
+management:
+
+.. code-block:: devicetree
+
+   /* Node in a DTS file */
+   cpus {
+        power-states {
+                state0: state0 {
+                        compatible = "zephyr,power-state";
+                        power-state-name = "standby";
+                        min-residency-us = <5000>;
+                        exit-latency-us = <240>;
+                        zephyr,pm-device-disabled;
+                };
+                state1: state1 {
+                        compatible = "zephyr,power-state";
+                        power-state-name = "suspend-to-ram";
+                        min-residency-us = <8000>;
+                        exit-latency-us = <360>;
+                };
+        };
+   };
 
 .. note::
 
@@ -113,12 +143,6 @@ It is important to emphasize that this method has drawbacks (see above) and
     prevents the CPU from entering a low-power state is if the option
     :kconfig:option:`CONFIG_PM_NEED_ALL_DEVICES_IDLE` is set and a device
     is marked as busy.
-
-.. note::
-
-    This method of device power management is disabled when
-    :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE` is set to ``y`` (that is
-    the default value when :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` is enabled)
 
 .. note::
 
@@ -282,6 +306,96 @@ When :c:func:`pm_device_busy_set` is called, the device is marked as busy and
 the system will not do power management on it. After the device is no
 longer doing an operation and can be suspended, it should call
 :c:func:`pm_device_busy_clear`.
+
+.. _pm-device-constraint:
+
+Device Power Management X System Power Management
+*************************************************
+
+When managing power in embedded systems, it's crucial to understand
+the interplay between device power state and the overall system power
+state. Some devices may have dependencies on the system power
+state. For example, certain low-power states of the SoC might not
+supply power to peripheral devices, leading to problems if the device
+is in the middle of an operation. Proper coordination is essential to
+maintain system stability and data integrity.
+
+To avoid this sort of problem, devices must :ref:`get and release lock <pm-policy-power-states>`
+power states that cause power loss during an operation.
+
+Zephyr provides a mechanism for devices to declare which power states cause power
+loss and an API that automatically get and put lock on them. This feature is
+enabled setting :kconfig:option:`CONFIG_PM_POLICY_DEVICE_CONSTRAINTS` to ``y``.
+
+Once this feature is enabled, devices must declare in devicetree which
+states cause power loss. In the following example, device ``test_dev``
+says that power states ``state1`` and ``state2`` cause power loss.
+
+.. code-block:: devicetree
+
+    power-states {
+            state0: state0 {
+                    compatible = "zephyr,power-state";
+                    power-state-name = "suspend-to-idle";
+                    min-residency-us = <10000>;
+                    exit-latency-us = <100>;
+            };
+
+            state1: state1 {
+                    compatible = "zephyr,power-state";
+                    power-state-name = "standby";
+                    min-residency-us = <20000>;
+                    exit-latency-us = <200>;
+            };
+
+            state2: state2 {
+                    compatible = "zephyr,power-state";
+                    power-state-name = "suspend-to-ram";
+                    min-residency-us = <50000>;
+                    exit-latency-us = <500>;
+            };
+
+            state3: state3 {
+                    compatible = "zephyr,power-state";
+                    power-state-name = "suspend-to-ram";
+                    status = "disabled";
+            };
+    };
+
+    test_dev: test_dev {
+            compatible = "test-device-pm";
+            status = "okay";
+            zephyr,disabling-power-states = <&state1 &state2>;
+    };
+
+After that devices can lock these state calling
+:c:func:`pm_policy_device_power_lock_get` and release with
+:c:func:`pm_policy_device_power_lock_put`. For example:
+
+.. code-block:: C
+
+    static void timer_expire_cb(struct k_timer *timer)
+    {
+           struct test_driver_data *data = k_timer_user_data_get(timer);
+
+           data->ongoing = false;
+           k_timer_stop(timer);
+           pm_policy_device_power_lock_put(data->self);
+    }
+
+    void test_driver_async_operation(const struct device *dev)
+    {
+           struct test_driver_data *data = dev->data;
+
+           data->ongoing = true;
+           pm_policy_device_power_lock_get(dev);
+
+           /** Lets set a timer big enough to ensure that any deep
+            *  sleep state would be suitable but constraints will
+            *  make only state0 (suspend-to-idle) will be used.
+            */
+           k_timer_start(&data->timer, K_MSEC(500), K_NO_WAIT);
+    }
 
 Wakeup capability
 *****************

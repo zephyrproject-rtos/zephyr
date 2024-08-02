@@ -7,5 +7,5 @@
  */
 
 &coretemp {
-    status = "okay";
+	status = "okay";
 };

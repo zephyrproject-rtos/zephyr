@@ -68,6 +68,7 @@ static int start_tcp_proto(struct data *data,
 			   struct sockaddr *bind_addr,
 			   socklen_t bind_addrlen)
 {
+	int optval;
 	int ret;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -99,6 +100,22 @@ static int start_tcp_proto(struct data *data,
 		ret = -errno;
 	}
 #endif
+
+	if (bind_addr->sa_family == AF_INET6) {
+		/* Prefer IPv6 temporary addresses */
+		optval = IPV6_PREFER_SRC_PUBLIC;
+		(void)setsockopt(data->tcp.sock, IPPROTO_IPV6,
+				 IPV6_ADDR_PREFERENCES,
+				 &optval, sizeof(optval));
+
+		/*
+		 * Bind only to IPv6 without mapping to IPv4, since we bind to
+		 * IPv4 using another socket
+		 */
+		optval = 1;
+		(void)setsockopt(data->tcp.sock, IPPROTO_IPV6, IPV6_V6ONLY,
+				 &optval, sizeof(optval));
+	}
 
 	ret = bind(data->tcp.sock, bind_addr, bind_addrlen);
 	if (ret < 0) {
@@ -219,7 +236,7 @@ static int process_tcp(struct data *data)
 			&client_addr_len);
 	if (client < 0) {
 		LOG_ERR("%s accept error (%d)", data->proto, -errno);
-		return 0;
+		return -errno;
 	}
 
 	slot = get_free_slot(data);

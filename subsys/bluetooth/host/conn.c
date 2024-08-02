@@ -30,6 +30,7 @@
 #include "common/assert.h"
 #include "common/bt_str.h"
 
+#include "buf_view.h"
 #include "addr_internal.h"
 #include "hci_core.h"
 #include "id.h"
@@ -48,21 +49,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_conn);
 
-struct tx_meta {
-	struct bt_conn_tx *tx;
-	/* This flag indicates if the current buffer has already been partially
-	 * sent to the controller (ie, the next fragments should be sent as
-	 * continuations).
-	 */
-	bool is_cont;
-	/* Indicates whether the ISO PDU contains a timestamp */
-	bool iso_has_ts;
-};
-
-BUILD_ASSERT(sizeof(struct tx_meta) == CONFIG_BT_CONN_TX_USER_DATA_SIZE,
-	     "User data size is wrong!");
-
-#define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
 K_FIFO_DEFINE(free_tx);
 
 static void tx_free(struct bt_conn_tx *tx);
@@ -74,12 +60,16 @@ static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
 	bt_conn_tx_cb_t cb = tx->cb;
 	void *user_data = tx->user_data;
 
+	LOG_DBG("conn %p tx %p cb %p ud %p", conn, tx, cb, user_data);
+
 	/* Free up TX metadata before calling callback in case the callback
 	 * tries to allocate metadata
 	 */
 	tx_free(tx);
 
-	cb(conn, user_data, -ESHUTDOWN);
+	if (cb) {
+		cb(conn, user_data, -ESHUTDOWN);
+	}
 }
 
 #if defined(CONFIG_BT_CONN_TX)
@@ -87,6 +77,8 @@ static void tx_complete_work(struct k_work *work);
 #endif /* CONFIG_BT_CONN_TX */
 
 static void notify_recycled_conn_slot(void);
+
+void bt_tx_irq_raise(void);
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
@@ -101,25 +93,13 @@ NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-#if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
-/* Dedicated pool for fragment buffers in case queued up TX buffers don't
- * fit the controllers buffer size. We can't use the acl_tx_pool for the
- * fragmentation, since it's possible that pool is empty and all buffers
- * are queued up in the TX queue. In such a situation, trying to allocate
- * another buffer from the acl_tx_pool would result in a deadlock.
- */
-NET_BUF_POOL_FIXED_DEFINE(frag_pool, CONFIG_BT_L2CAP_TX_FRAG_COUNT,
-			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-
-#endif /* CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0 */
-
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 const struct bt_conn_auth_cb *bt_auth;
 sys_slist_t bt_auth_info_cbs = SYS_SLIST_STATIC_INIT(&bt_auth_info_cbs);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
-static struct bt_conn_cb *callback_list;
+
+static sys_slist_t conn_cbs = SYS_SLIST_STATIC_INIT(&conn_cbs);
 
 static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
 
@@ -129,6 +109,68 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn);
 static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_CLASSIC */
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_CONN_TX)
+void frag_destroy(struct net_buf *buf);
+
+/* Storage for fragments (views) into the upper layers' PDUs. */
+/* TODO: remove user-data requirements */
+NET_BUF_POOL_FIXED_DEFINE(fragments, CONFIG_BT_CONN_FRAG_COUNT, 0,
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, frag_destroy);
+
+struct frag_md {
+	struct bt_buf_view_meta view_meta;
+};
+struct frag_md frag_md_pool[CONFIG_BT_CONN_FRAG_COUNT];
+
+struct frag_md *get_frag_md(struct net_buf *fragment)
+{
+	return &frag_md_pool[net_buf_id(fragment)];
+}
+
+void frag_destroy(struct net_buf *frag)
+{
+	/* allow next view to be allocated (and unlock the parent buf) */
+	bt_buf_destroy_view(frag, &get_frag_md(frag)->view_meta);
+
+	LOG_DBG("");
+
+	/* Kick the TX processor to send the rest of the frags. */
+	bt_tx_irq_raise();
+}
+
+static struct net_buf *get_data_frag(struct net_buf *outside, size_t winsize)
+{
+	struct net_buf *window;
+
+	__ASSERT_NO_MSG(!bt_buf_has_view(outside));
+
+	/* Keeping a ref is the caller's responsibility */
+	window = net_buf_alloc_len(&fragments, 0, K_NO_WAIT);
+	if (!window) {
+		return window;
+	}
+
+	window = bt_buf_make_view(window, outside,
+				  winsize, &get_frag_md(window)->view_meta);
+
+	LOG_DBG("get-acl-frag: outside %p window %p size %d", outside, window, winsize);
+
+	return window;
+}
+#else /* !CONFIG_BT_CONN_TX */
+static struct net_buf *get_data_frag(struct net_buf *outside, size_t winsize)
+{
+	ARG_UNUSED(outside);
+	ARG_UNUSED(winsize);
+
+	/* This will never get called. It's only to allow compilation to take
+	 * place and the later linker stage to remove this implementation.
+	 */
+
+	return NULL;
+}
+#endif /* CONFIG_BT_CONN_TX */
 
 #if defined(CONFIG_BT_ISO)
 extern struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
@@ -204,9 +246,9 @@ static inline const char *state2str(bt_conn_state_t state)
 
 static void tx_free(struct bt_conn_tx *tx)
 {
+	LOG_DBG("%p", tx);
 	tx->cb = NULL;
 	tx->user_data = NULL;
-	tx->pending_no_cb = 0U;
 	k_fifo_put(&free_tx, tx);
 }
 
@@ -226,8 +268,9 @@ static void tx_notify(struct bt_conn *conn)
 
 		key = irq_lock();
 		if (!sys_slist_is_empty(&conn->tx_complete)) {
-			tx = CONTAINER_OF(sys_slist_get_not_empty(&conn->tx_complete),
-					  struct bt_conn_tx, node);
+			const sys_snode_t *node = sys_slist_get_not_empty(&conn->tx_complete);
+
+			tx = CONTAINER_OF(node, struct bt_conn_tx, node);
 		}
 		irq_unlock(key);
 
@@ -248,7 +291,12 @@ static void tx_notify(struct bt_conn *conn)
 		 * allocate new buffers since the TX should have been
 		 * unblocked by tx_free.
 		 */
-		cb(conn, user_data, 0);
+		if (cb) {
+			cb(conn, user_data, 0);
+		}
+
+		LOG_DBG("raise TX IRQ");
+		bt_tx_irq_raise();
 	}
 }
 #endif	/* CONFIG_BT_CONN_TX */
@@ -383,20 +431,19 @@ static void wait_for_tx_work(struct bt_conn *conn)
 #if defined(CONFIG_BT_CONN_TX)
 	LOG_DBG("conn %p", conn);
 
-	if (IS_ENABLED(CONFIG_BT_RECV_WORKQ_SYS)) {
+	if (IS_ENABLED(CONFIG_BT_RECV_WORKQ_SYS) ||
+	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
 		tx_notify(conn);
 	} else {
 		struct k_work_sync sync;
+		int err;
 
-		/* API docs mention undefined behavior if syncing on work item
-		 * from wq execution context.
-		 */
-		__ASSERT_NO_MSG(k_current_get() !=
-				k_work_queue_thread_get(&k_sys_work_q));
+		err = k_work_submit(&conn->tx_complete_work);
+		__ASSERT(err >= 0, "couldn't submit (err %d)", err);
 
-		k_work_submit(&conn->tx_complete_work);
 		k_work_flush(&conn->tx_complete_work, &sync);
 	}
+	LOG_DBG("done");
 #else
 	ARG_UNUSED(conn);
 #endif	/* CONFIG_BT_CONN_TX */
@@ -424,101 +471,18 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	}
 }
 
+static bool dont_have_tx_context(struct bt_conn *conn)
+{
+	return k_fifo_is_empty(&free_tx);
+}
+
 static struct bt_conn_tx *conn_tx_alloc(void)
 {
-	/* The TX context always get freed in the system workqueue,
-	 * so if we're in the same workqueue but there are no immediate
-	 * contexts available, there's no chance we'll get one by waiting.
-	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
-		return k_fifo_get(&free_tx, K_NO_WAIT);
-	}
+	struct bt_conn_tx *ret = k_fifo_get(&free_tx, K_NO_WAIT);
 
-	if (IS_ENABLED(CONFIG_BT_CONN_LOG_LEVEL_DBG)) {
-		struct bt_conn_tx *tx = k_fifo_get(&free_tx, K_NO_WAIT);
+	LOG_DBG("%p", ret);
 
-		if (tx) {
-			return tx;
-		}
-
-		LOG_WRN("Unable to get an immediate free conn_tx");
-	}
-
-	return k_fifo_get(&free_tx, K_FOREVER);
-}
-
-int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
-			bt_conn_tx_cb_t cb, bool has_ts)
-{
-	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
-		LOG_ERR("not enough room in user_data %d < %d",
-			buf->user_data_size,
-			CONFIG_BT_CONN_TX_USER_DATA_SIZE);
-		return -EINVAL;
-	}
-
-	/* Necessary for setting the TS_Flag bit when we pop the buffer from the
-	 * send queue. The flag needs to be set before adding the buffer to the queue.
-	 */
-	tx_data(buf)->iso_has_ts = has_ts;
-
-	int err = bt_conn_send_cb(conn, buf, cb, NULL);
-
-	if (err) {
-		return err;
-	}
-
-	return 0;
-}
-
-int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
-		    bt_conn_tx_cb_t cb, void *user_data)
-{
-	struct bt_conn_tx *tx;
-
-	LOG_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle, buf->len, cb,
-		user_data);
-
-	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
-		LOG_ERR("not enough room in user_data %d < %d pool %u",
-			buf->user_data_size,
-			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
-			buf->pool_id);
-		return -EINVAL;
-	}
-
-	if (conn->state != BT_CONN_CONNECTED) {
-		LOG_ERR("not connected!");
-		return -ENOTCONN;
-	}
-
-	if (cb) {
-		tx = conn_tx_alloc();
-		if (!tx) {
-			LOG_DBG("Unable to allocate TX context");
-			return -ENOBUFS;
-		}
-
-		/* Verify that we're still connected after blocking */
-		if (conn->state != BT_CONN_CONNECTED) {
-			LOG_WRN("Disconnected while allocating context");
-			tx_free(tx);
-			return -ENOTCONN;
-		}
-
-		tx->cb = cb;
-		tx->user_data = user_data;
-		tx->pending_no_cb = 0U;
-
-		tx_data(buf)->tx = tx;
-	} else {
-		tx_data(buf)->tx = NULL;
-	}
-
-	tx_data(buf)->is_cont = false;
-
-	net_buf_put(&conn->tx_queue, buf);
-	return 0;
+	return ret;
 }
 
 enum {
@@ -557,7 +521,7 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	struct bt_hci_iso_hdr *hdr;
-	bool ts;
+	enum bt_iso_timestamp ts;
 
 	switch (flags) {
 	case FRAG_START:
@@ -576,13 +540,21 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		return -EINVAL;
 	}
 
+	/* The TS bit is set by `iso.c:conn_iso_send`. This special byte
+	 * prepends the whole SDU, and won't be there for individual fragments.
+	 *
+	 * Conveniently, it is only legal to set the TS bit on the first HCI
+	 * fragment, so we don't have to pass this extra metadata around for
+	 * every fragment, only the first one.
+	 */
+	if (flags == BT_ISO_SINGLE || flags == BT_ISO_START) {
+		ts = (enum bt_iso_timestamp)net_buf_pull_u8(buf);
+	} else {
+		ts = BT_ISO_TS_ABSENT;
+	}
+
 	hdr = net_buf_push(buf, sizeof(*hdr));
-
-	ts = tx_data(buf)->iso_has_ts &&
-		(flags == BT_ISO_START || flags == BT_ISO_SINGLE);
-
 	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags, ts));
-
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
 	bt_buf_set_type(buf, BT_BUF_ISO_OUT);
@@ -610,241 +582,158 @@ static inline uint16_t conn_mtu(struct bt_conn *conn)
 #endif /* CONFIG_BT_CONN */
 }
 
-static int do_send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+static bool is_classic_conn(struct bt_conn *conn)
 {
-	struct bt_conn_tx *tx = tx_data(buf)->tx;
-	uint32_t *pending_no_cb = NULL;
-	unsigned int key;
-	int err = 0;
-
-	LOG_DBG("conn %p buf %p len %u flags 0x%02x", conn, buf, buf->len,
-		flags);
-
-	/* Add to pending, it must be done before bt_buf_set_type */
-	key = irq_lock();
-	if (tx) {
-		sys_slist_append(&conn->tx_pending, &tx->node);
-	} else {
-		struct bt_conn_tx *tail_tx;
-
-		tail_tx = (void *)sys_slist_peek_tail(&conn->tx_pending);
-		if (tail_tx) {
-			pending_no_cb = &tail_tx->pending_no_cb;
-		} else {
-			pending_no_cb = &conn->pending_no_cb;
-		}
-
-		(*pending_no_cb)++;
-	}
-	irq_unlock(key);
-
-	if (IS_ENABLED(CONFIG_BT_ISO) && conn->type == BT_CONN_TYPE_ISO) {
-		err = send_iso(conn, buf, flags);
-	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
-		err = send_acl(conn, buf, flags);
-	} else {
-		__ASSERT(false, "Invalid connection type %u", conn->type);
-	}
-
-	if (err) {
-		LOG_ERR("Unable to send to driver (err %d)", err);
-		key = irq_lock();
-		/* Roll back the pending TX info */
-		if (tx) {
-			sys_slist_find_and_remove(&conn->tx_pending, &tx->node);
-		} else {
-			__ASSERT_NO_MSG(*pending_no_cb > 0);
-			(*pending_no_cb)--;
-		}
-		irq_unlock(key);
-
-		/* We don't want to end up in a situation where send_acl/iso
-		 * returns the same error code as when we don't get a buffer in
-		 * time.
-		 */
-		err = -EIO;
-		goto fail;
-	}
-
-	return 0;
-
-fail:
-	/* If we get here, something has seriously gone wrong:
-	 * We also need to destroy the `parent` buf.
-	 */
-	k_sem_give(bt_conn_get_pkts(conn));
-	if (tx) {
-		/* `buf` might not get destroyed, and its `tx` pointer will still be reachable.
-		 * Make sure that we don't try to use the destroyed context later.
-		 */
-		tx_data(buf)->tx = NULL;
-		conn_tx_destroy(conn, tx);
-	}
-
-	return err;
+	return (IS_ENABLED(CONFIG_BT_CLASSIC) &&
+		conn->type == BT_CONN_TYPE_BR);
 }
 
-static int send_frag(struct bt_conn *conn,
-		     struct net_buf *buf, struct net_buf *frag,
-		     uint8_t flags)
+static bool is_iso_tx_conn(struct bt_conn *conn)
 {
-	/* Check if the controller can accept ACL packets */
-	if (k_sem_take(bt_conn_get_pkts(conn), K_NO_WAIT)) {
-		LOG_DBG("no controller bufs");
-		return -ENOBUFS;
-	}
-
-	/* Check for disconnection. It can't be done higher up (ie `send_buf`)
-	 * as `create_frag` blocks with K_FOREVER and the connection could
-	 * change state after waiting.
-	 */
-	if (conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
-	}
-
-	/* Add the data to the buffer */
-	if (frag) {
-		uint16_t frag_len = MIN(conn_mtu(conn), net_buf_tailroom(frag));
-
-		net_buf_add_mem(frag, buf->data, frag_len);
-		net_buf_pull(buf, frag_len);
-	} else {
-		/* De-queue the buffer now that we know we can send it.
-		 * Only applies if the buffer to be sent is the original buffer,
-		 * and not one of its fragments.
-		 * This buffer was fetched from the FIFO using a peek operation.
-		 */
-		buf = net_buf_get(&conn->tx_queue, K_NO_WAIT);
-		frag = buf;
-	}
-
-	return do_send_frag(conn, frag, flags);
+	return IS_ENABLED(CONFIG_BT_ISO_TX) &&
+		conn->type == BT_CONN_TYPE_ISO;
 }
 
-static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
+static bool is_le_conn(struct bt_conn *conn)
 {
-	struct net_buf *frag;
-
-	switch (conn->type) {
-#if defined(CONFIG_BT_ISO)
-	case BT_CONN_TYPE_ISO:
-		frag = bt_iso_create_frag(0);
-		break;
-#endif
-	default:
-#if defined(CONFIG_BT_CONN)
-		frag = bt_conn_create_frag(0);
-#else
-		return NULL;
-#endif /* CONFIG_BT_CONN */
-
-	}
-
-	if (conn->state != BT_CONN_CONNECTED) {
-		net_buf_unref(frag);
-		return NULL;
-	}
-
-	/* Fragments never have a TX completion callback */
-	tx_data(frag)->tx = NULL;
-	tx_data(frag)->is_cont = false;
-	tx_data(frag)->iso_has_ts = tx_data(buf)->iso_has_ts;
-
-	return frag;
+	return IS_ENABLED(CONFIG_BT_CONN) && conn->type == BT_CONN_TYPE_LE;
 }
 
-/* Tentatively send a buffer to the HCI driver.
- *
- * This is designed to be async, as in most failures due to lack of resources
- * are not fatal. The caller should call `send_buf()` again later.
- *
- * Return values:
- *
- * - 0: `buf` sent. `buf` ownership transferred to lower layers.
- *
- * - -EIO: buffer failed to send due to HCI error. `buf` ownership returned to
- *    caller BUT `buf` is popped from the TX queue. The caller shall destroy
- *    `buf` and its TX context.
- *
- * - Any other error: buffer failed to send. `buf` ownership returned to caller
- *   and `buf` is still the head of the TX queue
- *
- */
-static int send_buf(struct bt_conn *conn, struct net_buf *buf)
+static bool is_acl_conn(struct bt_conn *conn)
 {
-	struct net_buf *frag;
+	return is_le_conn(conn) || is_classic_conn(conn);
+}
+
+static int send_buf(struct bt_conn *conn, struct net_buf *buf,
+		    size_t len, void *cb, void *ud)
+{
+	struct net_buf *frag = NULL;
+	struct bt_conn_tx *tx = NULL;
 	uint8_t flags;
 	int err;
 
-	LOG_DBG("conn %p buf %p len %u", conn, buf, buf->len);
+	if (buf->len == 0) {
+		__ASSERT_NO_MSG(0);
 
-	/* Send directly if the packet fits the ACL MTU */
-	if (buf->len <= conn_mtu(conn) && !tx_data(buf)->is_cont) {
-		LOG_DBG("send single");
-		return send_frag(conn, buf, NULL, FRAG_SINGLE);
+		return -EMSGSIZE;
 	}
 
-	LOG_DBG("start fragmenting");
-	/*
-	 * Send the fragments. For the last one simply use the original
-	 * buffer (which works since we've used net_buf_pull on it).
+	if (bt_buf_has_view(buf)) {
+		__ASSERT_NO_MSG(0);
+
+		return -EIO;
+	}
+
+	LOG_DBG("conn %p buf %p len %u buf->len %u", conn, buf, len, buf->len);
+
+	/* Acquire the right to send 1 packet to the controller */
+	if (k_sem_take(bt_conn_get_pkts(conn), K_NO_WAIT)) {
+		/* This shouldn't happen now that we acquire the resources
+		 * before calling `send_buf` (in `get_conn_ready`). We say
+		 * "acquire" as `tx_processor()` is not re-entrant and the
+		 * thread is non-preemptible. So the sem value shouldn't change.
+		 */
+		__ASSERT(0, "No controller bufs");
+
+		return -ENOMEM;
+	}
+
+	/* Allocate and set the TX context */
+	tx = conn_tx_alloc();
+
+	/* See big comment above */
+	if (!tx) {
+		__ASSERT(0, "No TX context");
+
+		return -ENOMEM;
+	}
+
+	tx->cb = cb;
+	tx->user_data = ud;
+
+	uint16_t frag_len = MIN(conn_mtu(conn), len);
+
+	__ASSERT_NO_MSG(buf->ref == 1);
+
+	if (buf->len > frag_len) {
+		LOG_DBG("keep %p around", buf);
+		frag = get_data_frag(net_buf_ref(buf), frag_len);
+	} else {
+		LOG_DBG("move %p ref in", buf);
+		/* Move the ref into `frag` for the last TX. That way `buf` will
+		 * get destroyed when `frag` is destroyed.
+		 */
+		frag = get_data_frag(buf, frag_len);
+	}
+
+	/* Caller is supposed to check we have all resources to send */
+	__ASSERT_NO_MSG(frag != NULL);
+
+	/* If the current buffer doesn't fit a controller buffer */
+	if (len > conn_mtu(conn)) {
+		flags = conn->next_is_frag ? FRAG_CONT : FRAG_START;
+		conn->next_is_frag = true;
+	} else {
+		flags = conn->next_is_frag ? FRAG_END : FRAG_SINGLE;
+		conn->next_is_frag = false;
+	}
+
+	LOG_DBG("send frag: buf %p len %d", buf, frag_len);
+
+	/* At this point, the buffer is either a fragment or a full HCI packet.
+	 * The flags are also valid.
 	 */
-	flags = FRAG_START;
-	if (tx_data(buf)->is_cont) {
-		flags = FRAG_CONT;
+	LOG_DBG("conn %p buf %p len %u flags 0x%02x",
+		conn, frag, frag->len, flags);
+
+	/* Keep track of sent buffers. We have to append _before_
+	 * sending, as we might get pre-empted if the HCI driver calls
+	 * k_yield() before returning.
+	 *
+	 * In that case, the controller could also send a num-complete-packets
+	 * event and our handler will be confused that there is no corresponding
+	 * callback node in the `tx_pending` list.
+	 */
+	atomic_inc(&conn->in_ll);
+	sys_slist_append(&conn->tx_pending, &tx->node);
+
+	if (is_iso_tx_conn(conn)) {
+		err = send_iso(conn, frag, flags);
+	} else if (is_acl_conn(conn)) {
+		err = send_acl(conn, frag, flags);
+	} else {
+		err = -EINVAL;	/* Some animals disable asserts (╯°□°）╯︵ ┻━┻ */
+		__ASSERT(false, "Invalid connection type %u", conn->type);
 	}
 
-	while (buf->len > conn_mtu(conn)) {
-		frag = create_frag(conn, buf);
-		if (!frag) {
-			return -ENOMEM;
-		}
-
-		err = send_frag(conn, buf, frag, flags);
-		if (err) {
-			LOG_DBG("%p failed, mark as existing frag", buf);
-			tx_data(buf)->is_cont = flags != FRAG_START;
-			net_buf_unref(frag);
-			return err;
-		}
-
-		flags = FRAG_CONT;
+	if (!err) {
+		return 0;
 	}
 
-	LOG_DBG("last frag");
-	tx_data(buf)->is_cont = true;
-	return send_frag(conn, buf, NULL, FRAG_END);
+	/* Remove buf from pending list */
+	atomic_dec(&conn->in_ll);
+	(void)sys_slist_find_and_remove(&conn->tx_pending, &tx->node);
+
+	LOG_ERR("Unable to send to driver (err %d)", err);
+
+	/* If we get here, something has seriously gone wrong: the `parent` buf
+	 * (of which the current fragment belongs) should also be destroyed.
+	 */
+	net_buf_unref(frag);
+
+	/* `buf` might not get destroyed right away, and its `tx`
+	 * pointer will still be reachable. Make sure that we don't try
+	 * to use the destroyed context later.
+	 */
+	conn_tx_destroy(conn, tx);
+	k_sem_give(bt_conn_get_pkts(conn));
+
+	/* Merge HCI driver errors */
+	return -EIO;
 }
 
 static struct k_poll_signal conn_change =
 		K_POLL_SIGNAL_INITIALIZER(conn_change);
-
-static void conn_cleanup(struct bt_conn *conn)
-{
-	struct net_buf *buf;
-
-	/* Give back any allocated buffers */
-	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
-		struct bt_conn_tx *tx = tx_data(buf)->tx;
-
-		tx_data(buf)->tx = NULL;
-
-		/* destroy the buffer */
-		net_buf_unref(buf);
-
-		/* destroy the tx context (and any associated meta-data) */
-		if (tx) {
-			conn_tx_destroy(conn, tx);
-		}
-	}
-
-	__ASSERT(sys_slist_is_empty(&conn->tx_pending), "Pending TX packets");
-	__ASSERT_NO_MSG(conn->pending_no_cb == 0);
-
-	bt_conn_reset_rx_state(conn);
-
-	k_work_reschedule(&conn->deferred_work, K_NO_WAIT);
-}
 
 static void conn_destroy(struct bt_conn *conn, void *data)
 {
@@ -853,7 +742,9 @@ static void conn_destroy(struct bt_conn *conn, void *data)
 		bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
 	}
 
-	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	if (conn->state != BT_CONN_DISCONNECTED) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	}
 }
 
 void bt_conn_cleanup_all(void)
@@ -861,178 +752,351 @@ void bt_conn_cleanup_all(void)
 	bt_conn_foreach(BT_CONN_TYPE_ALL, conn_destroy, NULL);
 }
 
-static int conn_prepare_events(struct bt_conn *conn,
-			       struct k_poll_event *events)
+#if defined(CONFIG_BT_CONN)
+/* Returns true if L2CAP has data to send on this conn */
+static bool acl_has_data(struct bt_conn *conn)
 {
-	if (!atomic_get(&conn->ref)) {
-		return -ENOTCONN;
-	}
+	return sys_slist_peek_head(&conn->l2cap_data_ready) != NULL;
+}
+#endif	/* defined(CONFIG_BT_CONN) */
 
-	if (conn->state == BT_CONN_DISCONNECTED &&
-	    atomic_test_and_clear_bit(conn->flags, BT_CONN_CLEANUP)) {
-		conn_cleanup(conn);
-		return -ENOTCONN;
-	}
+/* Connection "Scheduler" of sorts:
+ *
+ * Will try to get the optimal number of queued buffers for the connection.
+ *
+ * Partitions the controller's buffers to each connection according to some
+ * heuristic. This is made to be tunable, fairness, simplicity, throughput etc.
+ *
+ * In the future, this will be a hook exposed to the application.
+ */
+static bool should_stop_tx(struct bt_conn *conn)
+{
+	LOG_DBG("%p", conn);
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
+		return true;
 	}
 
-	LOG_DBG("Adding conn %p to poll list", conn);
-
-	/* ISO Synchronized Receiver only builds do not transmit and hence
-	 * may not have any tx buffers allocated in a Controller.
+	/* TODO: This function should be overridable by the application: they
+	 * should be able to provide their own heuristic.
 	 */
-	struct k_sem *conn_pkts = bt_conn_get_pkts(conn);
-
-	if (!conn_pkts) {
-		return -ENOTCONN;
+	if (!conn->has_data(conn)) {
+		LOG_DBG("No more data for %p", conn);
+		return true;
 	}
 
-	bool buffers_available = k_sem_count_get(conn_pkts) > 0;
-	bool packets_waiting = !k_fifo_is_empty(&conn->tx_queue);
-
-	if (packets_waiting && !buffers_available) {
-		/* Only resume sending when the controller has buffer space
-		 * available for this connection.
+	/* Queue only 3 buffers per-conn for now */
+	if (atomic_get(&conn->in_ll) < 3) {
+		/* The goal of this heuristic is to allow the link-layer to
+		 * extend an ACL connection event as long as the application
+		 * layer can provide data.
+		 *
+		 * Here we chose three buffers, as some LLs need two enqueued
+		 * packets to be able to set the more-data bit, and one more
+		 * buffer to allow refilling by the app while one of them is
+		 * being sent over-the-air.
 		 */
-		LOG_DBG("wait on ctlr buffers");
-		k_poll_event_init(&events[0],
-				  K_POLL_TYPE_SEM_AVAILABLE,
-				  K_POLL_MODE_NOTIFY_ONLY,
-				  conn_pkts);
+		return false;
+	}
+
+	return true;
+}
+
+void bt_conn_data_ready(struct bt_conn *conn)
+{
+	LOG_DBG("DR");
+
+	/* The TX processor will call the `pull_cb` to get the buf */
+	if (!atomic_set(&conn->_conn_ready_lock, 1)) {
+		/* Attach a reference to the `bt_dev.le.conn_ready` list.
+		 *
+		 * This reference will be consumed when the conn is popped off
+		 * the list (in `get_conn_ready`).
+		 */
+		bt_conn_ref(conn);
+		sys_slist_append(&bt_dev.le.conn_ready,
+				 &conn->_conn_ready);
+		LOG_DBG("raised");
 	} else {
-		/* Wait until there is more data to send. */
-		LOG_DBG("wait on host fifo");
-		k_poll_event_init(&events[0],
-				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-				  K_POLL_MODE_NOTIFY_ONLY,
-				  &conn->tx_queue);
+		LOG_DBG("already in list");
 	}
-	events[0].tag = BT_EVENT_CONN_TX_QUEUE;
 
-	return 0;
+	/* Kick the TX processor */
+	bt_tx_irq_raise();
 }
 
-int bt_conn_prepare_events(struct k_poll_event events[])
+static bool cannot_send_to_controller(struct bt_conn *conn)
 {
-	int i, ev_count = 0;
-	struct bt_conn *conn;
+	return k_sem_count_get(bt_conn_get_pkts(conn)) == 0;
+}
 
-	LOG_DBG("");
+static bool dont_have_viewbufs(void)
+{
+#if defined(CONFIG_BT_CONN_TX)
+	/* The LIFO only tracks buffers that have been destroyed at least once,
+	 * hence the uninit check beforehand.
+	 */
+	if (fragments.uninit_count > 0) {
+		/* If there are uninitialized bufs, we are guaranteed allocation. */
+		return false;
+	}
 
-	k_poll_signal_init(&conn_change);
+	/* In practice k_fifo == k_lifo ABI. */
+	return k_fifo_is_empty(&fragments.free);
 
-	k_poll_event_init(&events[ev_count++], K_POLL_TYPE_SIGNAL,
-			  K_POLL_MODE_NOTIFY_ONLY, &conn_change);
+#else  /* !CONFIG_BT_CONN_TX */
+	return false;
+#endif	/* CONFIG_BT_CONN_TX */
+}
 
+static bool dont_have_methods(struct bt_conn *conn)
+{
+	return (conn->tx_data_pull == NULL) ||
+		(conn->get_and_clear_cb == NULL) ||
+		(conn->has_data == NULL);
+}
+
+struct bt_conn *get_conn_ready(void)
+{
+	/* Here we only peek: we pop the conn (and insert it at the back if it
+	 * still has data) after the QoS function returns false.
+	 */
+	sys_snode_t *node  = sys_slist_peek_head(&bt_dev.le.conn_ready);
+
+	if (node == NULL) {
+		return NULL;
+	}
+
+	/* `conn` borrows from the list node. That node is _not_ popped yet.
+	 *
+	 * If we end up not popping that conn off the list, we have to make sure
+	 * to increase the refcount before returning a pointer to that
+	 * connection out of this function.
+	 */
+	struct bt_conn *conn = CONTAINER_OF(node, struct bt_conn, _conn_ready);
+
+	if (dont_have_viewbufs()) {
+		/* We will get scheduled again when the (view) buffers are freed. If you
+		 * hit this a lot, try increasing `CONFIG_BT_CONN_FRAG_COUNT`
+		 */
+		LOG_DBG("no view bufs");
+		return NULL;
+	}
+
+	if (cannot_send_to_controller(conn)) {
+		/* We will get scheduled again when the buffers are freed. */
+		LOG_DBG("no LL bufs for %p", conn);
+		return NULL;
+	}
+
+	if (dont_have_tx_context(conn)) {
+		/* We will get scheduled again when TX contexts are available. */
+		LOG_DBG("no TX contexts");
+		return NULL;
+	}
+
+	CHECKIF(dont_have_methods(conn)) {
+		LOG_DBG("conn %p (type %d) is missing mandatory methods",
+			conn, conn->type);
+
+		return NULL;
+	}
+
+	if (should_stop_tx(conn)) {
+		/* Move reference off the list and into the `conn` variable. */
+		__maybe_unused sys_snode_t *s = sys_slist_get(&bt_dev.le.conn_ready);
+
+		__ASSERT_NO_MSG(s == node);
+
+		(void)atomic_set(&conn->_conn_ready_lock, 0);
+		/* Note: we can't assert `old` is non-NULL here, as the
+		 * connection might have been marked ready by an l2cap channel
+		 * that cancelled its request to send.
+		 */
+
+		/* Append connection to list if it still has data */
+		if (conn->has_data(conn)) {
+			LOG_DBG("appending %p to back of TX queue", conn);
+			bt_conn_data_ready(conn);
+		}
+
+		return conn;
+	}
+
+	return bt_conn_ref(conn);
+}
+
+/* Crazy that this file is compiled even if this is not true, but here we are. */
 #if defined(CONFIG_BT_CONN)
-	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
-		conn = &acl_conns[i];
+static void acl_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf,
+				 bt_conn_tx_cb_t *cb, void **ud)
+{
+	__ASSERT_NO_MSG(is_acl_conn(conn));
 
-		if (!conn_prepare_events(conn, &events[ev_count])) {
-			ev_count++;
-		}
+	*cb = closure_cb(buf->user_data);
+	*ud = closure_data(buf->user_data);
+	memset(buf->user_data, 0, buf->user_data_size);
+}
+#endif	/* defined(CONFIG_BT_CONN) */
+
+/* Acts as a "null-routed" bt_send(). This fn will decrease the refcount of
+ * `buf` and call the user callback with an error code.
+ */
+static void destroy_and_callback(struct bt_conn *conn,
+				 struct net_buf *buf,
+				 bt_conn_tx_cb_t cb,
+				 void *ud)
+{
+	if (!cb) {
+		conn->get_and_clear_cb(conn, buf, &cb, &ud);
 	}
-#endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_ISO)
-	for (i = 0; i < ARRAY_SIZE(iso_conns); i++) {
-		conn = &iso_conns[i];
+	LOG_DBG("pop: cb %p userdata %p", cb, ud);
 
-		if (!conn_prepare_events(conn, &events[ev_count])) {
-			ev_count++;
-		}
+	/* bt_send() would've done an unref. Do it here also, so the buffer is
+	 * hopefully destroyed and the user callback can allocate a new one.
+	 */
+	net_buf_unref(buf);
+
+	if (cb) {
+		cb(conn, ud, -ESHUTDOWN);
 	}
-#endif
-
-	return ev_count;
 }
 
-void bt_conn_process_tx(struct bt_conn *conn)
+static volatile bool _suspend_tx;
+
+#if defined(CONFIG_BT_TESTING)
+void bt_conn_suspend_tx(bool suspend)
 {
+	_suspend_tx = suspend;
+
+	LOG_DBG("%sing all data TX", suspend ? "suspend" : "resum");
+
+	bt_tx_irq_raise();
+}
+#endif	/* CONFIG_BT_TESTING */
+
+void bt_conn_tx_processor(void)
+{
+	LOG_DBG("start");
+	struct bt_conn *conn;
 	struct net_buf *buf;
-	int err;
+	bt_conn_tx_cb_t cb = NULL;
+	size_t buf_len;
+	void *ud = NULL;
 
-	LOG_DBG("conn %p", conn);
-
-	if (conn->state == BT_CONN_DISCONNECTED &&
-	    atomic_test_and_clear_bit(conn->flags, BT_CONN_CLEANUP)) {
-		LOG_DBG("handle %u disconnected - cleaning up", conn->handle);
-		conn_cleanup(conn);
+	if (!IS_ENABLED(CONFIG_BT_CONN_TX)) {
+		/* Mom, can we have a real compiler? */
 		return;
 	}
 
-	/* Get next ACL packet for connection. The buffer will only get dequeued
-	 * if there is a free controller buffer to put it in.
-	 *
-	 * Important: no operations should be done on `buf` until it is properly
-	 * dequeued from the FIFO, using the `net_buf_get()` API.
-	 */
-	buf = k_fifo_peek_head(&conn->tx_queue);
-	BT_ASSERT(buf);
-
-	/* Since we used `peek`, the queue still owns the reference to the
-	 * buffer, so we need to take an explicit additional reference here.
-	 */
-	buf = net_buf_ref(buf);
-	err = send_buf(conn, buf);
-	net_buf_unref(buf);
-
-	/* HCI driver error. `buf` may have been popped from `tx_queue` and
-	 * should be destroyed.
-	 *
-	 * TODO: In that case we might want to disable Bluetooth or at the very
-	 * least tear down the connection.
-	 */
-	if (err  == -EIO) {
-		struct bt_conn_tx *tx = tx_data(buf)->tx;
-
-		tx_data(buf)->tx = NULL;
-
-		/* destroy the buffer */
-		net_buf_unref(buf);
-
-		/* destroy the tx context (and any associated meta-data) */
-		if (tx) {
-			conn_tx_destroy(conn, tx);
-		}
+	if (IS_ENABLED(CONFIG_BT_TESTING) && _suspend_tx) {
+		return;
 	}
+
+	conn = get_conn_ready();
+
+	if (!conn) {
+		LOG_DBG("no connection wants to do stuff");
+		return;
+	}
+
+	LOG_DBG("processing conn %p", conn);
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		LOG_WRN("conn %p: not connected", conn);
+
+		/* Call the user callbacks & destroy (final-unref) the buffers
+		 * we were supposed to send.
+		 */
+		buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
+		while (buf) {
+			destroy_and_callback(conn, buf, cb, ud);
+			buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
+		}
+
+		goto exit;
+	}
+
+	/* now that we are guaranteed resources, we can pull data from the upper
+	 * layer (L2CAP or ISO).
+	 */
+	buf = conn->tx_data_pull(conn, conn_mtu(conn), &buf_len);
+	if (!buf) {
+		/* Either there is no more data, or the buffer is already in-use
+		 * by a view on it. In both cases, the TX processor will be
+		 * triggered again, either by the view's destroy callback, or by
+		 * the upper layer when it has more data.
+		 */
+		LOG_DBG("no buf returned");
+
+		goto exit;
+	}
+
+	bool last_buf = conn_mtu(conn) >= buf_len;
+
+	/* TODO: add sdu_sent callback on last PDU */
+	if (last_buf) {
+		/* Only pull the callback info from the last buffer.
+		 * We still allocate one TX context per-fragment though.
+		 */
+		conn->get_and_clear_cb(conn, buf, &cb, &ud);
+		LOG_DBG("pop: cb %p userdata %p", cb, ud);
+	}
+
+	LOG_DBG("TX process: conn %p buf %p (%s)",
+		conn, buf, last_buf ? "last" : "frag");
+
+	int err = send_buf(conn, buf, buf_len, cb, ud);
+
+	if (err) {
+		/* -EIO means `unrecoverable error`. It can be an assertion that
+		 *  failed or an error from the HCI driver.
+		 *
+		 * -ENOMEM means we thought we had all the resources to send the
+		 *  buf (ie. TX context + controller buffer) but one of them was
+		 *  not available. This is likely due to a failure of
+		 *  assumption, likely that we have been pre-empted somehow and
+		 *  that `tx_processor()` has been re-entered.
+		 *
+		 *  In both cases, we destroy the buffer and mark the connection
+		 *  as dead.
+		 */
+		LOG_ERR("Fatal error (%d). Disconnecting %p", err, conn);
+		destroy_and_callback(conn, buf, cb, ud);
+		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+		goto exit;
+	}
+
+	/* Always kick the TX work. It will self-suspend if it doesn't get
+	 * resources or there is nothing left to send.
+	 */
+	bt_tx_irq_raise();
+
+exit:
+	/* Give back the ref that `get_conn_ready()` gave us */
+	bt_conn_unref(conn);
 }
 
 static void process_unack_tx(struct bt_conn *conn)
 {
+	LOG_DBG("%p", conn);
+
 	/* Return any unacknowledged packets */
 	while (1) {
 		struct bt_conn_tx *tx;
 		sys_snode_t *node;
-		unsigned int key;
-
-		key = irq_lock();
-
-		if (conn->pending_no_cb) {
-			conn->pending_no_cb--;
-			irq_unlock(key);
-			k_sem_give(bt_conn_get_pkts(conn));
-			continue;
-		}
 
 		node = sys_slist_get(&conn->tx_pending);
-		irq_unlock(key);
 
 		if (!node) {
-			break;
+			return;
 		}
 
 		tx = CONTAINER_OF(node, struct bt_conn_tx, node);
 
-		key = irq_lock();
-		conn->pending_no_cb = tx->pending_no_cb;
-		tx->pending_no_cb = 0U;
-		irq_unlock(key);
-
 		conn_tx_destroy(conn, tx);
-
 		k_sem_give(bt_conn_get_pkts(conn));
 	}
 }
@@ -1110,7 +1174,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 			break;
 		}
-		k_fifo_init(&conn->tx_queue);
 		k_poll_signal_raise(&conn_change, 0);
 
 		if (IS_ENABLED(CONFIG_BT_ISO) &&
@@ -1163,8 +1226,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 				k_work_cancel_delayable(&conn->deferred_work);
 			}
 
-			atomic_set_bit(conn->flags, BT_CONN_CLEANUP);
-			k_poll_signal_raise(&conn_change, 0);
+			LOG_DBG("trigger disconnect work");
+			k_work_reschedule(&conn->deferred_work, K_NO_WAIT);
+
 			/* The last ref will be dropped during cleanup */
 			break;
 		case BT_CONN_INITIATING:
@@ -1526,6 +1590,8 @@ static void tx_complete_work(struct k_work *work)
 	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
 					    tx_complete_work);
 
+	LOG_DBG("conn %p", conn);
+
 	tx_notify(conn);
 }
 #endif /* CONFIG_BT_CONN_TX */
@@ -1533,9 +1599,11 @@ static void tx_complete_work(struct k_work *work)
 static void notify_recycled_conn_slot(void)
 {
 #if defined(CONFIG_BT_CONN)
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->recycled) {
-			cb->recycled();
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->recycled) {
+			callback->recycled();
 		}
 	}
 
@@ -1546,6 +1614,18 @@ static void notify_recycled_conn_slot(void)
 	}
 #endif
 }
+
+#if !defined(CONFIG_BT_CONN)
+int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(reason);
+
+	/* Dummy implementation to satisfy the compiler */
+
+	return 0;
+}
+#endif	/* !CONFIG_BT_CONN */
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
@@ -1628,9 +1708,12 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 
 static void notify_connected(struct bt_conn *conn)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->connected) {
-			cb->connected(conn, conn->err);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+
+		if (callback->connected) {
+			callback->connected(conn, conn->err);
 		}
 	}
 
@@ -1643,9 +1726,11 @@ static void notify_connected(struct bt_conn *conn)
 
 static void notify_disconnected(struct bt_conn *conn)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->disconnected) {
-			cb->disconnected(conn, conn->err);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->disconnected) {
+			callback->disconnected(conn, conn->err);
 		}
 	}
 
@@ -1668,9 +1753,11 @@ void notify_remote_info(struct bt_conn *conn)
 		return;
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->remote_info_available) {
-			cb->remote_info_available(conn, &remote_info);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->remote_info_available) {
+			callback->remote_info_available(conn, &remote_info);
 		}
 	}
 
@@ -1695,11 +1782,13 @@ void notify_le_param_updated(struct bt_conn *conn)
 		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->le_param_updated) {
-			cb->le_param_updated(conn, conn->le.interval,
-					     conn->le.latency,
-					     conn->le.timeout);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_param_updated) {
+			callback->le_param_updated(conn, conn->le.interval,
+						   conn->le.latency,
+						   conn->le.timeout);
 		}
 	}
 
@@ -1715,9 +1804,11 @@ void notify_le_param_updated(struct bt_conn *conn)
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 void notify_le_data_len_updated(struct bt_conn *conn)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->le_data_len_updated) {
-			cb->le_data_len_updated(conn, &conn->le.data_len);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_data_len_updated) {
+			callback->le_data_len_updated(conn, &conn->le.data_len);
 		}
 	}
 
@@ -1732,9 +1823,11 @@ void notify_le_data_len_updated(struct bt_conn *conn)
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 void notify_le_phy_updated(struct bt_conn *conn)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->le_phy_updated) {
-			cb->le_phy_updated(conn, &conn->le.phy);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_phy_updated) {
+			callback->le_phy_updated(conn, &conn->le.phy);
 		}
 	}
 
@@ -1752,12 +1845,14 @@ bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 		return false;
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (!cb->le_param_req) {
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (!callback->le_param_req) {
 			continue;
 		}
 
-		if (!cb->le_param_req(conn, param)) {
+		if (!callback->le_param_req(conn, param)) {
 			return false;
 		}
 
@@ -2166,6 +2261,9 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
 
 	bt_addr_copy(&conn->br.dst, peer);
 	conn->type = BT_CONN_TYPE_BR;
+	conn->tx_data_pull = l2cap_br_data_pull;
+	conn->get_and_clear_cb = acl_get_and_clear_cb;
+	conn->has_data = acl_has_data;
 
 	return conn;
 }
@@ -2231,9 +2329,12 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 		rpa = &conn->le.init_addr;
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->identity_resolved) {
-			cb->identity_resolved(conn, rpa, &conn->le.dst);
+
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->identity_resolved) {
+			callback->identity_resolved(conn, rpa, &conn->le.dst);
 		}
 	}
 
@@ -2341,9 +2442,11 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 		bt_iso_security_changed(conn, hci_err);
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->security_changed) {
-			cb->security_changed(conn, conn->sec_level, err);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->security_changed) {
+			callback->security_changed(conn, conn->sec_level, err);
 		}
 	}
 
@@ -2431,42 +2534,28 @@ bt_security_t bt_conn_get_security(const struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_SMP */
 
-void bt_conn_cb_register(struct bt_conn_cb *cb)
+int bt_conn_cb_register(struct bt_conn_cb *cb)
 {
-	cb->_next = callback_list;
-	callback_list = cb;
+	if (sys_slist_find(&conn_cbs, &cb->_node, NULL)) {
+		return -EEXIST;
+	}
+
+	sys_slist_append(&conn_cbs, &cb->_node);
+
+	return 0;
 }
 
 int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 {
-	struct bt_conn_cb *previous_callback;
-
 	CHECKIF(cb == NULL) {
 		return -EINVAL;
 	}
 
-	if (callback_list == NULL) {
-		/* No callsback registered */
+	if (!sys_slist_find_and_remove(&conn_cbs, &cb->_node)) {
 		return -ENOENT;
 	}
 
-	if (callback_list == cb) {
-		callback_list = callback_list->_next;
-		return 0;
-	}
-
-	previous_callback = callback_list;
-
-	while (previous_callback->_next) {
-		if (previous_callback->_next == cb) {
-			previous_callback->_next = previous_callback->_next->_next;
-			return 0;
-		}
-
-		previous_callback = previous_callback->_next;
-	}
-
-	return -ENOENT;
+	return 0;
 }
 
 bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
@@ -2505,6 +2594,9 @@ struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer)
 	conn->required_sec_level = BT_SECURITY_L1;
 #endif /* CONFIG_BT_SMP */
 	conn->type = BT_CONN_TYPE_LE;
+	conn->tx_data_pull = l2cap_data_pull;
+	conn->get_and_clear_cb = acl_get_and_clear_cb;
+	conn->has_data = acl_has_data;
 	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
 	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
 
@@ -2754,9 +2846,11 @@ static int bt_conn_get_tx_power_level(struct bt_conn *conn, uint8_t type,
 void notify_tx_power_report(struct bt_conn *conn,
 			    struct bt_conn_le_tx_power_report report)
 {
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->tx_power_report) {
-			cb->tx_power_report(conn, &report);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->tx_power_report) {
+			callback->tx_power_report(conn, &report);
 		}
 	}
 
@@ -2873,20 +2967,72 @@ int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 	return err;
 }
 
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+void notify_path_loss_threshold_report(struct bt_conn *conn,
+				       struct bt_conn_le_path_loss_threshold_report report)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, callback, _node) {
+		if (callback->path_loss_threshold_report) {
+			callback->path_loss_threshold_report(conn, &report);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->path_loss_threshold_report) {
+			cb->path_loss_threshold_report(conn, &report);
+		}
+	}
+}
+
+int bt_conn_le_set_path_loss_mon_param(struct bt_conn *conn,
+				       const struct bt_conn_le_path_loss_reporting_param *params)
+{
+	struct bt_hci_cp_le_set_path_loss_reporting_parameters *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_PARAMETERS, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->high_threshold = params->high_threshold;
+	cp->high_hysteresis = params->high_hysteresis;
+	cp->low_threshold = params->low_threshold;
+	cp->low_hysteresis = params->low_hysteresis;
+	cp->min_time_spent = sys_cpu_to_le16(params->min_time_spent);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_PARAMETERS, buf, NULL);
+}
+
+int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool reporting_enable)
+{
+	struct bt_hci_cp_le_set_path_loss_reporting_enable *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->enable = reporting_enable ? BT_HCI_LE_PATH_LOSS_REPORTING_ENABLE :
+			BT_HCI_LE_PATH_LOSS_REPORTING_DISABLE;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE, buf, NULL);
+}
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
+
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
 	LOG_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn, conn->le.features[0],
 		param->interval_min, param->interval_max, param->latency, param->timeout);
-
-	/* Check if there's a need to update conn params */
-	if (conn->le.interval >= param->interval_min &&
-	    conn->le.interval <= param->interval_max &&
-	    conn->le.latency == param->latency &&
-	    conn->le.timeout == param->timeout) {
-		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
-		return -EALREADY;
-	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_CONN_ROLE_CENTRAL) {
@@ -2964,20 +3110,6 @@ static void bt_conn_set_param_le(struct bt_conn *conn,
 	conn->le.timeout = param->timeout;
 }
 
-static bool create_param_validate(const struct bt_conn_le_create_param *param)
-{
-#if defined(CONFIG_BT_PRIVACY)
-	/* Initiation timeout cannot be greater than the RPA timeout */
-	const uint32_t timeout_max = (MSEC_PER_SEC / 10) * bt_dev.rpa_timeout;
-
-	if (param->timeout > timeout_max) {
-		return false;
-	}
-#endif
-
-	return true;
-}
-
 static void create_param_setup(const struct bt_conn_le_create_param *param)
 {
 	bt_dev.create_param = *param;
@@ -3023,7 +3155,8 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 	/* Scanning either to connect or explicit scan, either case scanner was
 	 * started by application and should not be stopped.
 	 */
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
+	if (!BT_LE_STATES_SCAN_INIT(bt_dev.le.states) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		return -EINVAL;
 	}
 
@@ -3106,7 +3239,8 @@ static int conn_le_create_common_checks(const bt_addr_le_t *peer,
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+	if (!BT_LE_STATES_SCAN_INIT(bt_dev.le.states) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return -EAGAIN;
 	}
 
@@ -3157,10 +3291,6 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	err = conn_le_create_common_checks(peer, conn_param);
 	if (err) {
 		return err;
-	}
-
-	if (!create_param_validate(create_param)) {
-		return -EINVAL;
 	}
 
 	conn = conn_le_create_helper(peer, conn_param);
@@ -3336,28 +3466,6 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_UPDATE, buf, NULL);
 }
 
-#if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve,
-						  k_timeout_t timeout,
-						  const char *func, int line)
-#else
-struct net_buf *bt_conn_create_frag_timeout(size_t reserve, k_timeout_t timeout)
-#endif
-{
-	struct net_buf_pool *pool = NULL;
-
-#if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
-	pool = &frag_pool;
-#endif
-
-#if defined(CONFIG_NET_BUF_LOG)
-	return bt_conn_create_pdu_timeout_debug(pool, reserve, timeout,
-						func, line);
-#else
-	return bt_conn_create_pdu_timeout(pool, reserve, timeout);
-#endif /* CONFIG_NET_BUF_LOG */
-}
-
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 {
@@ -3414,6 +3522,10 @@ int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 {
 	CHECKIF(cb == NULL) {
 		return -EINVAL;
+	}
+
+	if (sys_slist_find(&bt_auth_info_cbs, &cb->node, NULL)) {
+		return -EALREADY;
 	}
 
 	sys_slist_append(&bt_auth_info_cbs, &cb->node);
@@ -3594,9 +3706,11 @@ void bt_hci_le_df_connection_iq_report_common(uint8_t event, struct net_buf *buf
 		return;
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->cte_report_cb) {
-			cb->cte_report_cb(conn, &iq_report);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->cte_report_cb) {
+			callback->cte_report_cb(conn, &iq_report);
 		}
 	}
 
@@ -3636,9 +3750,11 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
 		return;
 	}
 
-	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
-		if (cb->cte_report_cb) {
-			cb->cte_report_cb(conn, &iq_report);
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->cte_report_cb) {
+			callback->cte_report_cb(conn, &iq_report);
 		}
 	}
 

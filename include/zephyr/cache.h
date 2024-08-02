@@ -390,7 +390,7 @@ static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_range(void *addr, size_t
 
 /**
  *
- * @brief Get the the d-cache line size.
+ * @brief Get the d-cache line size.
  *
  * The API is provided to get the data cache line.
  *
@@ -417,7 +417,7 @@ static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
 
 /**
  *
- * @brief Get the the i-cache line size.
+ * @brief Get the i-cache line size.
  *
  * The API is provided to get the instruction cache line.
  *
@@ -550,7 +550,7 @@ static ALWAYS_INLINE void sys_cache_flush(void *addr, size_t size)
 }
 #endif
 
-#include <syscalls/cache.h>
+#include <zephyr/syscalls/cache.h>
 #ifdef __cplusplus
 }
 #endif

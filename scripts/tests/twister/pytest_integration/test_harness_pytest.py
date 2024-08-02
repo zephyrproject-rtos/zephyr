@@ -19,12 +19,14 @@ def testinstance() -> TestInstance:
     testsuite = TestSuite('.', 'samples/hello', 'unit.test')
     testsuite.harness_config = {}
     testsuite.ignore_faults = False
+    testsuite.sysbuild = False
     platform = Platform()
 
     testinstance = TestInstance(testsuite, platform, 'outdir')
     testinstance.handler = mock.Mock()
     testinstance.handler.options = mock.Mock()
     testinstance.handler.options.verbose = 1
+    testinstance.handler.options.fixture = ['fixture1:option1', 'fixture2']
     testinstance.handler.options.pytest_args = None
     testinstance.handler.type_str = 'native'
     return testinstance
@@ -41,7 +43,9 @@ def test_pytest_command(testinstance: TestInstance, device_type):
         'samples/hello/pytest',
         f'--build-dir={testinstance.build_dir}',
         f'--junit-xml={testinstance.build_dir}/report.xml',
-        f'--device-type={device_type}'
+        f'--device-type={device_type}',
+        '--twister-fixture=fixture1:option1',
+        '--twister-fixture=fixture2'
     ]
 
     command = pytest_harness.generate_command()

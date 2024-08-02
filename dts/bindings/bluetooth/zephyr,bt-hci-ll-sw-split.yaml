@@ -1,0 +1,13 @@
+description: Bluetooth HCI provided by the native Zephyr Bluetooth Controller
+
+compatible: "zephyr,bt-hci-ll-sw-split"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "Controller"
+  bt-hci-bus:
+    default: "BT_HCI_BUS_VIRTUAL"
+  bt-hci-quirks:
+    default: ["BT_HCI_QUIRK_NO_AUTO_DLE"]

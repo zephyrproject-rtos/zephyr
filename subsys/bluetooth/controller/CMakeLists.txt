@@ -21,6 +21,10 @@ zephyr_library_sources(
   ll_sw/ll_addr.c
   ll_sw/ull.c
   ll_sw/lll_common.c
+  )
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CTLR_HCI
   hci/hci_driver.c
   hci/hci.c
   )
@@ -169,10 +173,6 @@ zephyr_library_sources_ifdef(
 zephyr_library_include_directories(
   .
   include
-  )
-
-zephyr_library_include_directories_ifdef(
-  CONFIG_BT_CTLR_CRYPTO
   ../crypto
   )
 
@@ -206,6 +206,11 @@ add_subdirectory_ifdef(
 add_subdirectory_ifdef(
   CONFIG_SOC_OPENISA_RV32M1
   ll_sw/openisa
+  )
+
+zephyr_library_compile_options_ifdef(
+  CONFIG_BT_CTLR_OPTIMIZE_FOR_SIZE
+  ${OPTIMIZE_FOR_SIZE_FLAG}
   )
 
 zephyr_library_compile_options_ifdef(

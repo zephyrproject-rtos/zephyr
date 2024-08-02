@@ -9,6 +9,7 @@
 #include "m5stack_atoms3-pinctrl.dtsi"
 #include "grove_connectors.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
 	model = "M5Stack AtomS3 PROCPU";
@@ -21,6 +22,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &st7789v;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	aliases {
@@ -48,14 +50,45 @@
 		regulator-boot-on;
 	};
 
-};
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;	     /* G33 */
+		reset-gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;    /* G34 */
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
+		st7789v: st7789v@0 {
+			compatible = "sitronix,st7789v";
+			reg = <0>;
+			mipi-max-frequency = <27000000>;
 
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
+			width = <128>;
+			height = <128>;
+			x-offset = <2>;
+			y-offset = <1>;
+
+			vcom = <0x28>;
+			gctrl = <0x35>;
+			vrhs = <0x10>;
+			vdvs = <0x20>;
+			mdac = <0x00>;
+			gamma = <0x01>;
+			colmod = <0x55>;
+			lcm = <0x0c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 00];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
+			nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
+			ram-param = [00 E0];
+			rgb-param = [40 02 14];
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+		};
+
+	};
+
 };
 
 &usb_serial {
@@ -99,36 +132,6 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
-
-	st7789v: st7789v@0 {
-		compatible = "sitronix,st7789v";
-		reg = <0>;
-		spi-max-frequency = <27000000>;
-		cmd-data-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>; /* G33 */
-		reset-gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;    /* G34 */
-
-		width = <128>;
-		height = <128>;
-		x-offset = <2>;
-		y-offset = <1>;
-
-		vcom = <0x28>;
-		gctrl = <0x35>;
-		vrhs = <0x10>;
-		vdvs = <0x20>;
-		mdac = <0x00>;
-		gamma = <0x01>;
-		colmod = <0x55>;
-		lcm = <0x0c>;
-		porch-param = [0c 0c 00 33 33];
-		cmd2en-param = [5a 69 02 00];
-		pwctrl1-param = [a4 a1];
-		pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
-		nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
-		ram-param = [00 E0];
-		rgb-param = [40 02 14];
-	};
-
 };
 
 &gpio0 {
@@ -184,4 +187,8 @@
 			reg = <0x00250000 0x00006000>;
 		};
 	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
 };

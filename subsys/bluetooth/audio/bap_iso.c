@@ -7,11 +7,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+
 #include "bap_iso.h"
 #include "audio_internal.h"
 #include "bap_endpoint.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_bap_iso, CONFIG_BT_BAP_ISO_LOG_LEVEL);
 
@@ -174,7 +187,7 @@ void bt_bap_iso_configure_data_path(struct bt_bap_ep *ep, struct bt_audio_codec_
 	}
 
 	/* Configure the data path to either use the controller for transcoding, or set the path to
-	 * be transparant to indicate that the transcoding happens somewhere else
+	 * be transparent to indicate that the transcoding happens somewhere else
 	 */
 	path->pid = codec_cfg->path_id;
 

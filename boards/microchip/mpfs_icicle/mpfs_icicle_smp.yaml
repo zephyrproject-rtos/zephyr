@@ -1,0 +1,13 @@
+identifier: mpfs_icicle/polarfire/smp
+name: Microchip PolarFire ICICLE kit (SMP)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 3840
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - flash
+vendor: microchip

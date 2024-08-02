@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Microchip MECH1723N-SZ MCU using MEC5 HAL
+# N = 416KB total SRAM
+# SZ = 144 pin package
+
+if SOC_MECH1723_NSZ
+
+config GPIO
+	default y
+
+config PINCTRL
+	default y
+
+endif # SOC_MECH1723_NSZ

@@ -21,7 +21,6 @@
 
 	aliases {
 		watchdog0 = &iwdg;
-		spi-flash0 = &spi_nor;
 		led-strip = &led_strip_spi;
 	};
 

@@ -129,7 +129,7 @@ These are created in your application's build directory.
    input to :file:`gen_defines.py` and used to create :file:`zephyr.dts` and
    :file:`devicetree_generated.h`.
 
-:file:`<build>/zephyr/include/generated/devicetree_generated.h`
+:file:`<build>/zephyr/include/generated/zephyr/devicetree_generated.h`
    The generated macros and additional comments describing the devicetree.
    Included by ``devicetree.h``.
 

@@ -4,7 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
+#include "bstests.h"
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -31,7 +42,7 @@ static void test_main(void)
 
 	printk("Bluetooth initialized\n");
 
-	/* Create a non-connectable non-scannable advertising set */
+	/* Create a non-connectable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &adv);
 	if (err) {
 		FAIL("Failed to create advertising set (err %d)\n", err);
@@ -76,7 +87,7 @@ static void test_main(void)
 static const struct bst_test_instance test_bass_broadcaster[] = {
 	{
 		.test_id = "bass_broadcaster",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

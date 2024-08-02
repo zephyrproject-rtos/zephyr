@@ -6,3 +6,7 @@ description: NXP LPCIP3511 USB device mode
 compatible: nxp,lpcip3511
 
 include: "nxp,mcux-usbd.yaml"
+
+properties:
+  phy_handle:
+    type: phandle

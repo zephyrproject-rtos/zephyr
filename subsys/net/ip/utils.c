@@ -340,7 +340,7 @@ char *z_vrfy_net_addr_ntop(sa_family_t family, const void *src,
 
 	return dst;
 }
-#include <syscalls/net_addr_ntop_mrsh.c>
+#include <zephyr/syscalls/net_addr_ntop_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_net_addr_pton(sa_family_t family, const char *src,
@@ -512,7 +512,7 @@ int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
 
 	return 0;
 }
-#include <syscalls/net_addr_pton_mrsh.c>
+#include <zephyr/syscalls/net_addr_pton_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 
@@ -548,7 +548,7 @@ uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
 	size_t pending = len;
 	int odd_start = ((uintptr_t)data & 0x01);
 
-	/* Sum in is in host endiannes, working order endiannes is both dependent on endianness
+	/* Sum in is in host endianness, working order endianness is both dependent on endianness
 	 * and the offset of starting
 	 */
 	if (odd_start == CHECKSUM_BIG_ENDIAN) {
@@ -600,7 +600,7 @@ uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
 		sum = (sum & 0xffff) + (sum >> 16);
 	}
 
-	/* Sum in is in host endiannes, working order endiannes is both dependent on endianness
+	/* Sum in is in host endianness, working order endianness is both dependent on endianness
 	 * and the offset of starting
 	 */
 	if (odd_start == CHECKSUM_BIG_ENDIAN) {

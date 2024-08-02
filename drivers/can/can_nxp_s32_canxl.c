@@ -43,6 +43,8 @@
 #define CAN_NXP_S32_MAX_BITRATE	8000000
 #define CAN_NXP_S32_DATA_LENGTH 64
 
+#define CAN_NXP_S32_TDCO_MAX FIELD_GET(CANXL_SIC_BTDCC_FTDCOFF_MASK, CANXL_SIC_BTDCC_FTDCOFF_MASK)
+
 #ifdef CONFIG_CAN_NXP_S32_RX_FIFO
 /* RX FIFO depth is fixed to the maximum value */
 #define CAN_NXP_S32_RX_FIFO_DEPTH 32
@@ -63,6 +65,7 @@ struct can_nxp_s32_config {
 	CANXL_RXFIFO_Type * base_rx_fifo;
 	CANXL_RXFIFO_CONTROL_Type *base_rx_fifo_ctrl;
 #endif
+	CANXL_MRU_Type * base_mru;
 	uint8 instance;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
@@ -706,6 +709,9 @@ static int can_nxp_s32_set_timing_data(const struct device *dev,
 	/* Set timing for CAN FD instance*/
 	CanXL_SetFDBaudRate(config->base_sic, &can_fd_time_segment);
 
+	Canexcel_Ip_SetTDCOffsetFD(config->instance, true, false,
+				CAN_CALC_TDCO((timing_data), 0U, CAN_NXP_S32_TDCO_MAX));
+
 	return 0;
 }
 #endif
@@ -931,7 +937,7 @@ static int can_nxp_s32_init(const struct device *dev)
 	IP_MC_RGM->PRST_0[0].PRST_0 &=
 		~(MC_RGM_PRST_0_PERIPH_16_RST_MASK | MC_RGM_PRST_0_PERIPH_24_RST_MASK);
 
-	err = can_calc_timing(dev, &data->timing, config->common.bus_speed,
+	err = can_calc_timing(dev, &data->timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing for given param");
@@ -942,11 +948,11 @@ static int can_nxp_s32_init(const struct device *dev)
 		LOG_WRN("Sample-point error : %d", err);
 	}
 
-	LOG_DBG("Setting CAN bitrate %d:", config->common.bus_speed);
+	LOG_DBG("Setting CAN bitrate %d:", config->common.bitrate);
 	nxp_s32_zcan_timing_to_canxl_timing(&data->timing, &config->can_cfg->bitrate);
 
 #ifdef CAN_NXP_S32_FD_MODE
-	err = can_calc_timing_data(dev, &data->timing_data, config->common.bus_speed_data,
+	err = can_calc_timing_data(dev, &data->timing_data, config->common.bitrate_data,
 				   config->common.sample_point_data);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing data for given param");
@@ -957,12 +963,17 @@ static int can_nxp_s32_init(const struct device *dev)
 		LOG_WRN("Sample-point-data err : %d", err);
 	}
 
-	LOG_DBG("Setting CAN FD bitrate %d:", config->common.bus_speed_data);
+	LOG_DBG("Setting CAN FD bitrate %d:", config->common.bitrate_data);
 	nxp_s32_zcan_timing_to_canxl_timing(&data->timing_data, &config->can_cfg->Fd_bitrate);
 #endif
 
 	/* Initialize CAN structure */
 	Canexcel_Ip_Init(config->instance, config->can_cfg, data->can_state);
+
+#ifdef CAN_NXP_S32_FD_MODE
+	Canexcel_Ip_SetTDCOffsetFD(config->instance, true, false,
+				CAN_CALC_TDCO((&data->timing_data), 0U, CAN_NXP_S32_TDCO_MAX));
+#endif
 
 	/* Configure time stamp */
 #ifdef CONFIG_CAN_RX_TIMESTAMP
@@ -993,11 +1004,16 @@ static int can_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-static void can_nxp_s32_isr_rx_tx(const struct device *dev)
+static void can_nxp_s32_isr_rx_tx_mru(const struct device *dev)
 {
 	const struct can_nxp_s32_config *config = dev->config;
 
 	Canexcel_Ip_RxTxIRQHandler(config->instance);
+
+	if ((config->base_mru->CHXCONFIG[0u].CH_CFG0 & CANXL_MRU_CH_CFG0_CHE_MASK)
+					== CANXL_MRU_CH_CFG0_CHE_MASK) {
+		Canexcel_Ip_MruIRQHandler(config->instance);
+	}
 }
 
 static void can_nxp_s32_isr_error(const struct device *dev)
@@ -1154,6 +1170,7 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 				DT_INST_REG_ADDR_BY_NAME(n, rx_fifo),			\
 			.base_rx_fifo_ctrl = (CANXL_RXFIFO_CONTROL_Type *)		\
 				DT_INST_REG_ADDR_BY_NAME(n, rx_fifo_ctrl),))		\
+		.base_mru = (CANXL_MRU_Type *)DT_INST_REG_ADDR_BY_NAME(n, mru),		\
 		.instance = CAN_NXP_S32_HW_INSTANCE(n),					\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clock_subsys = (clock_control_subsys_t)				\

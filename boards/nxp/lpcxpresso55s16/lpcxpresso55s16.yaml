@@ -23,4 +23,5 @@ supported:
   - i2c
   - spi
   - usb_device
+  - usbd
 vendor: nxp

@@ -5,5 +5,5 @@ python-magic
 python-magic-bin; sys_platform == "win32"
 lxml
 junitparser>=2
-pylint
+pylint>=3
 yamllint

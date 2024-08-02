@@ -24,6 +24,7 @@ config ARC
 	imply XIP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_SUPPORTS_ROM_START
+	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  ARC architecture
 
@@ -50,6 +51,7 @@ config ARM64
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select BARRIER_OPERATIONS_ARCH
+	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  ARM64 (AArch64) architecture
 
@@ -108,13 +110,15 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select ARCH_SUPPORTS_COREDUMP
-	select ARCH_SUPPORTS_ROM_START if !SOC_SERIES_ESP32C3
+	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_STACKWALK
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
+	select ARCH_HAS_DIRECTED_IPIS
 	select BARRIER_OPERATIONS_BUILTIN
 	imply XIP
 	help
@@ -129,6 +133,8 @@ config XTENSA
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select ARCH_HAS_DIRECTED_IPIS
+	select THREAD_STACK_INFO
 	help
 	  Xtensa architecture
 
@@ -209,7 +215,7 @@ config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
-	  The SRAM base address. The default value comes from from
+	  The SRAM base address. The default value comes from
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
@@ -221,6 +227,7 @@ DT_CHOSEN_Z_FLASH := zephyr,flash
 config FLASH_SIZE
 	int "Flash Size in kB"
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && (ARM ||ARM64)) || !ARM
+	default 0 if !XIP
 	help
 	  This option specifies the size of the flash in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -229,6 +236,7 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && (ARM || ARM64)) || !ARM
+	default 0 if !XIP
 	help
 	  This option specifies the base address of the flash on the board. It is
 	  normally set by the board's defconfig file and the user should generally
@@ -397,6 +405,21 @@ config NOCACHE_MEMORY
 	  not be cached. This memory section can be used to perform DMA
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
+
+config FRAME_POINTER
+	bool "Compile the kernel with frame pointers"
+	select OVERRIDE_FRAME_POINTER_DEFAULT
+	help
+	  Select Y here to gain precise stack traces at the expense of slightly
+	  increased size and decreased speed.
+
+config ARCH_STACKWALK_MAX_FRAMES
+	int "Max depth for stack walk function"
+	default 8
+	depends on ARCH_HAS_STACKWALK
+	help
+	  Depending on implementation, this can place a hard limit on the depths of the stack
+	  for the stack walk function to examine.
 
 menu "Interrupt Configuration"
 
@@ -643,6 +666,11 @@ config ARCH_HAS_EXTRA_EXCEPTION_INFO
 config ARCH_HAS_GDBSTUB
 	bool
 
+config ARCH_HAS_STACKWALK
+	bool
+	help
+	  This is selected when the architecture implemented the arch_stack_walk() API.
+
 config ARCH_HAS_COHERENCE
 	bool
 	help
@@ -739,6 +767,13 @@ config ARCH_HAS_RESERVED_PAGE_FRAMES
 	  memory mappings. The architecture will need to implement
 	  arch_reserved_pages_update().
 
+config ARCH_HAS_DIRECTED_IPIS
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  it has an implementation for arch_sched_directed_ipi() which allows
+	  for IPIs to be directed to specific CPUs.
+
 config CPU_HAS_DCACHE
 	bool
 	help
@@ -774,7 +809,7 @@ config ARCH_MAPS_ALL_RAM
 	  virtual addresses elsewhere, this is limited to only management of the
 	  virtual address space. The kernel's page frame ontology will not consider
 	  this mapping at all; non-kernel pages will be considered free (unless marked
-	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
+	  as reserved) and K_MEM_PAGE_FRAME_MAPPED will not be set.
 
 config DCLS
 	bool "Processor is configured in DCLS mode"

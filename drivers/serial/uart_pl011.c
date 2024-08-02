@@ -21,10 +21,10 @@
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
-#if IS_ENABLED(CONFIG_RESET)
+#if defined(CONFIG_RESET)
 #include <zephyr/drivers/reset.h>
 #endif
-#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
+#if defined(CONFIG_CLOCK_CONTROL)
 #include <zephyr/drivers/clock_control.h>
 #endif
 
@@ -41,10 +41,10 @@ struct pl011_config {
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
-#if IS_ENABLED(CONFIG_RESET)
+#if defined(CONFIG_RESET)
 	const struct reset_dt_spec reset;
 #endif
-#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
+#if defined(CONFIG_CLOCK_CONTROL)
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_id;
 #endif
@@ -86,6 +86,20 @@ static void pl011_enable_fifo(const struct device *dev)
 static void pl011_disable_fifo(const struct device *dev)
 {
 	get_uart(dev)->lcr_h &= ~PL011_LCRH_FEN;
+}
+
+static void pl011_set_flow_control(const struct device *dev, bool rts, bool cts)
+{
+	if (rts) {
+		get_uart(dev)->cr |= PL011_CR_RTSEn;
+	} else {
+		get_uart(dev)->cr &= ~PL011_CR_RTSEn;
+	}
+	if (cts) {
+		get_uart(dev)->cr |= PL011_CR_CTSEn;
+	} else {
+		get_uart(dev)->cr &= ~PL011_CR_CTSEn;
+	}
 }
 
 static int pl011_set_baudrate(const struct device *dev,
@@ -240,6 +254,10 @@ static int pl011_runtime_configure_internal(const struct device *dev,
 
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
+		pl011_set_flow_control(dev, false, false);
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		pl011_set_flow_control(dev, true, true);
 		break;
 	default:
 		goto enable;
@@ -445,7 +463,7 @@ static int pl011_init(const struct device *dev)
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
-#if IS_ENABLED(CONFIG_RESET)
+#if defined(CONFIG_RESET)
 	if (config->reset.dev) {
 		ret = reset_line_toggle_dt(&config->reset);
 		if (ret) {
@@ -454,7 +472,7 @@ static int pl011_init(const struct device *dev)
 	}
 #endif
 
-#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
+#if defined(CONFIG_CLOCK_CONTROL)
 	if (config->clock_dev) {
 		clock_control_on(config->clock_dev, config->clock_id);
 		clock_control_get_rate(config->clock_dev, config->clock_id, &data->clk_freq);
@@ -506,7 +524,7 @@ static int pl011_init(const struct device *dev)
 	if (!data->sbsa) {
 		get_uart(dev)->dmacr = 0U;
 		barrier_isync_fence_full();
-		get_uart(dev)->cr &= ~(BIT(14) | BIT(15) | BIT(1));
+		get_uart(dev)->cr &= ~PL011_CR_SIREN;
 		get_uart(dev)->cr |= PL011_CR_RXE | PL011_CR_TXE;
 		barrier_isync_fence_full();
 	}
@@ -560,7 +578,7 @@ static int pl011_init(const struct device *dev)
 #define PINCTRL_INIT(n)
 #endif /* CONFIG_PINCTRL */
 
-#if IS_ENABLED(CONFIG_RESET)
+#if defined(CONFIG_RESET)
 #define RESET_INIT(n)                                                                              \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets), (.reset = RESET_DT_SPEC_INST_GET(n),))
 #else
@@ -641,7 +659,9 @@ void pl011_isr(const struct device *dev)
 			.parity = UART_CFG_PARITY_NONE,			\
 			.stop_bits = UART_CFG_STOP_BITS_1,		\
 			.data_bits = UART_CFG_DATA_BITS_8,		\
-			.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,		\
+			.flow_ctrl = DT_INST_PROP(n, hw_flow_control)	\
+				? UART_CFG_FLOW_CTRL_RTS_CTS		\
+				: UART_CFG_FLOW_CTRL_NONE,		\
 		},							\
 		.clk_freq = COND_CODE_1(                                                \
 			DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), fixed_clock),        \

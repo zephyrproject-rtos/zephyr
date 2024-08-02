@@ -288,7 +288,7 @@ static const uint8_t *sc_public_key;
 static K_SEM_DEFINE(sc_local_pkey_ready, 0, 1);
 
 /* Pointer to internal data is used to mark that callbacks of given SMP channel are not initialized.
- * Value of NULL represents no authenticaiton capabilities and cannot be used for that purpose.
+ * Value of NULL represents no authentication capabilities and cannot be used for that purpose.
  */
 #define BT_SMP_AUTH_CB_UNINITIALIZED	((atomic_ptr_val_t)bt_smp_pool)
 
@@ -475,6 +475,34 @@ static enum bt_security_err security_err_get(uint8_t smp_err)
 	}
 }
 
+#if defined(CONFIG_BT_SECURITY_ERR_TO_STR)
+const char *bt_security_err_to_str(enum bt_security_err err)
+{
+	#define SEC_ERR(err) [err] = #err
+
+	const char * const mapping_table[] = {
+		SEC_ERR(BT_SECURITY_ERR_SUCCESS),
+		SEC_ERR(BT_SECURITY_ERR_AUTH_FAIL),
+		SEC_ERR(BT_SECURITY_ERR_PIN_OR_KEY_MISSING),
+		SEC_ERR(BT_SECURITY_ERR_OOB_NOT_AVAILABLE),
+		SEC_ERR(BT_SECURITY_ERR_AUTH_REQUIREMENT),
+		SEC_ERR(BT_SECURITY_ERR_PAIR_NOT_SUPPORTED),
+		SEC_ERR(BT_SECURITY_ERR_PAIR_NOT_ALLOWED),
+		SEC_ERR(BT_SECURITY_ERR_INVALID_PARAM),
+		SEC_ERR(BT_SECURITY_ERR_KEY_REJECTED),
+		SEC_ERR(BT_SECURITY_ERR_UNSPECIFIED),
+	};
+
+	if (err < ARRAY_SIZE(mapping_table) && mapping_table[err]) {
+		return mapping_table[err];
+	} else {
+		return "(unknown)";
+	}
+
+	#undef SEC_ERR
+}
+#endif /* CONFIG_BT_SECURITY_ERR_TO_STR */
+
 static uint8_t smp_err_get(enum bt_security_err auth_err)
 {
 	switch (auth_err) {
@@ -499,6 +527,40 @@ static uint8_t smp_err_get(enum bt_security_err auth_err)
 		return 0;
 	}
 }
+
+#if defined(CONFIG_BT_SMP_ERR_TO_STR)
+const char *bt_smp_err_to_str(uint8_t smp_err)
+{
+	#define SMP_ERR(err) [err] = #err
+
+	const char * const mapping_table[] = {
+		SMP_ERR(BT_SMP_ERR_SUCCESS),
+		SMP_ERR(BT_SMP_ERR_PASSKEY_ENTRY_FAILED),
+		SMP_ERR(BT_SMP_ERR_OOB_NOT_AVAIL),
+		SMP_ERR(BT_SMP_ERR_AUTH_REQUIREMENTS),
+		SMP_ERR(BT_SMP_ERR_CONFIRM_FAILED),
+		SMP_ERR(BT_SMP_ERR_PAIRING_NOTSUPP),
+		SMP_ERR(BT_SMP_ERR_ENC_KEY_SIZE),
+		SMP_ERR(BT_SMP_ERR_CMD_NOTSUPP),
+		SMP_ERR(BT_SMP_ERR_UNSPECIFIED),
+		SMP_ERR(BT_SMP_ERR_REPEATED_ATTEMPTS),
+		SMP_ERR(BT_SMP_ERR_INVALID_PARAMS),
+		SMP_ERR(BT_SMP_ERR_DHKEY_CHECK_FAILED),
+		SMP_ERR(BT_SMP_ERR_NUMERIC_COMP_FAILED),
+		SMP_ERR(BT_SMP_ERR_BREDR_PAIRING_IN_PROGRESS),
+		SMP_ERR(BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED),
+		SMP_ERR(BT_SMP_ERR_KEY_REJECTED),
+	};
+
+	if (smp_err < ARRAY_SIZE(mapping_table) && mapping_table[smp_err]) {
+		return mapping_table[smp_err];
+	} else {
+		return "(unknown)";
+	}
+
+	#undef SMP_ERR
+}
+#endif /* CONFIG_BT_SMP_ERR_TO_STR */
 
 static struct net_buf *smp_create_pdu(struct bt_smp *smp, uint8_t op, size_t len)
 {
@@ -593,6 +655,7 @@ static bool update_keys_check(struct bt_smp *smp, struct bt_keys *keys)
 	return true;
 }
 
+#ifndef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
 static bool update_debug_keys_check(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -612,6 +675,7 @@ static bool update_debug_keys_check(struct bt_smp *smp)
 
 	return false;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 #if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_SIGNING) || \
 	!defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
@@ -865,7 +929,7 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 
 static void smp_br_init(struct bt_smp_br *smp)
 {
-	/* Initialize SMP context exluding L2CAP channel context and anything
+	/* Initialize SMP context excluding L2CAP channel context and anything
 	 * else declared after.
 	 */
 	(void)memset(smp, 0, offsetof(struct bt_smp_br, chan));
@@ -1750,7 +1814,9 @@ static void smp_timeout(struct k_work *work)
 static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 		     bt_conn_tx_cb_t cb, void *user_data)
 {
-	int err = bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf, cb, NULL);
+	__ASSERT_NO_MSG(user_data == NULL);
+
+	int err = bt_l2cap_send_pdu(&smp->chan, buf, cb, NULL);
 
 	if (err) {
 		if (err == -ENOBUFS) {
@@ -1805,7 +1871,7 @@ static int smp_error(struct bt_smp *smp, uint8_t reason)
 	rsp->reason = reason;
 
 	/* SMP timer is not restarted for PairingFailed so don't use smp_send */
-	if (bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf)) {
+	if (bt_l2cap_send_pdu(&smp->chan, buf, NULL, NULL)) {
 		net_buf_unref(buf);
 	}
 
@@ -2548,7 +2614,7 @@ static uint8_t smp_central_ident(struct bt_smp *smp, struct net_buf *buf)
 
 static int smp_init(struct bt_smp *smp)
 {
-	/* Initialize SMP context exluding L2CAP channel context and anything
+	/* Initialize SMP context excluding L2CAP channel context and anything
 	 * else declared after.
 	 */
 	(void)memset(smp, 0, offsetof(struct bt_smp, chan));
@@ -2824,7 +2890,7 @@ static int smp_send_security_req(struct bt_conn *conn)
 	req->auth_req = get_auth(smp, BT_SMP_AUTH_DEFAULT);
 
 	/* SMP timer is not restarted for SecRequest so don't use smp_send */
-	err = bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+	err = bt_l2cap_send_pdu(&smp->chan, req_buf, NULL, NULL);
 	if (err) {
 		net_buf_unref(req_buf);
 		return err;
@@ -3111,7 +3177,6 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
-	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
 	struct bt_smp_pairing *rsp = (void *)buf->data;
 	struct bt_smp_pairing *req = (struct bt_smp_pairing *)&smp->preq[1];
 	uint8_t err;
@@ -3166,7 +3231,17 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return err;
 	}
 
-	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
+	/* the OR operation evaluated by "if" statement below seems redundant
+	 * when CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY is enabled, because in
+	 * that case the SMP_FLAG_SC will always be set to false. But it's
+	 * needed in order to inform the compiler that the inside of the "if"
+	 * is the return point for CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY enabled
+	 * builds. This avoids compiler warnings regarding the code after the
+	 * "if" statement, that would happen for builds with
+	 * CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY enabled
+	 */
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) ||
+	    !atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 #if defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 #else
@@ -3180,6 +3255,8 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return legacy_pairing_rsp(smp);
 #endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
 	}
+
+	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
 
 	smp->local_dist &= SEND_KEYS_SC;
 	smp->remote_dist &= RECV_KEYS_SC;
@@ -3535,6 +3612,7 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 	return 0;
 }
 
+#ifndef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
 static bool le_sc_oob_data_req_check(struct bt_smp *smp)
 {
 	struct bt_smp_pairing *req = (struct bt_smp_pairing *)&smp->preq[1];
@@ -3579,6 +3657,7 @@ static void le_sc_oob_config_set(struct bt_smp *smp,
 
 	info->lesc.oob_config = oob_config;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
@@ -4078,6 +4157,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 }
 #endif /* CONFIG_BT_CENTRAL */
 
+#ifndef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
 static uint8_t generate_dhkey(struct bt_smp *smp)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
@@ -4119,6 +4199,7 @@ static uint8_t display_passkey(struct bt_smp *smp)
 
 	return 0;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 static uint8_t smp_public_key_periph(struct bt_smp *smp)
@@ -4177,6 +4258,12 @@ static uint8_t smp_public_key_periph(struct bt_smp *smp)
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
+#ifdef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
+static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
+{
+	return BT_SMP_ERR_AUTH_REQUIREMENTS;
+}
+#else
 static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 {
 	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
@@ -4289,6 +4376,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 
 	return 0;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 {

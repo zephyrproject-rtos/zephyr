@@ -19,3 +19,13 @@ void arch_spin_relax(void)
 #undef NOP1
 }
 #endif /* CONFIG_XTENSA_MORE_SPIN_RELAX_NOPS */
+
+
+/**
+ * init for multi-core/smp is done on the SoC level. Add this here for
+ * compatibility with other SMP systems.
+ */
+int arch_smp_init(void)
+{
+	return 0;
+}

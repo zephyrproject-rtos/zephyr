@@ -12,4 +12,14 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     tags: ipc
     sysbuild: true
-    harness: remote
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "IPC-service HOST \\[INST 0 - ENDP A\\] demo started"
+        - "IPC-service HOST \\[INST 0 - ENDP B\\] demo started"
+        - "IPC-service HOST \\[INST 1\\] demo started"
+        - "IPC-service HOST \\[INST 0 - ENDP A\\] demo ended\\."
+        - "IPC-service HOST \\[INST 0 - ENDP B\\] demo ended\\."
+        - "IPC-service HOST \\[INST 1\\] demo ended\\."

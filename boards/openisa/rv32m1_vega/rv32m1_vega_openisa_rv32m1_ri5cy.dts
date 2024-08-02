@@ -19,11 +19,12 @@
 		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_controller;
 	};
+};
 
-	aliases {
-		spi-flash0 = &mx25r32;
-	};
+&bt_hci_controller {
+	status = "okay";
 };
 
 &m4_flash {

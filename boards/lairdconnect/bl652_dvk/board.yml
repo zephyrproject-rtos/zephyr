@@ -1,5 +1,0 @@
-board:
-  name: bl652_dvk
-  vendor: lairdconnect
-  socs:
-  - name: nrf52832

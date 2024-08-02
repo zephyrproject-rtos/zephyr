@@ -156,6 +156,8 @@ uint32_t radio_tmr_tifs_base_get(void);
 void radio_tmr_sample(void);
 uint32_t radio_tmr_sample_get(void);
 
+int radio_gpio_pa_lna_init(void);
+void radio_gpio_pa_lna_deinit(void);
 void radio_gpio_pa_setup(void);
 void radio_gpio_lna_setup(void);
 void radio_gpio_pdn_setup(void);

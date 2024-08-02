@@ -3,19 +3,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 
 / {
 	reserved-memory {
-		cpuapp_ram0x_region: memory@2f000000 {
+		cpuapp_ram0x_region: memory@2f010000 {
 			compatible = "nordic,owned-memory";
-			reg = <0x2f000000 DT_SIZE_K(260)>;
+			reg = <0x2f010000 DT_SIZE_K(260)>;
 			status = "disabled";
 			perm-read;
 			perm-write;
 			perm-secure;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x2f000000 0x41000>;
+			ranges = <0x0 0x2f010000 0x41000>;
 
 			cpusec_cpuapp_ipc_shm: memory@0 {
 				reg = <0x0 DT_SIZE_K(2)>;
@@ -30,16 +31,16 @@
 			};
 		};
 
-		cpurad_ram0x_region: memory@2f041000 {
+		cpurad_ram0x_region: memory@2f051000 {
 			compatible = "nordic,owned-memory";
-			reg = <0x2f041000 DT_SIZE_K(4)>;
+			reg = <0x2f051000 DT_SIZE_K(4)>;
 			status = "disabled";
 			perm-read;
 			perm-write;
 			perm-secure;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x2f041000 0x1000>;
+			ranges = <0x0 0x2f051000 0x1000>;
 
 			cpusec_cpurad_ipc_shm: memory@0 {
 				reg = <0x0 DT_SIZE_K(2)>;
@@ -70,11 +71,7 @@
 		};
 
 		shared_ram20_region: memory@2f88f000 {
-			compatible = "nordic,owned-memory";
 			reg = <0x2f88f000 DT_SIZE_K(4)>;
-			status = "disabled";
-			perm-read;
-			perm-write;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f88f000 0x1000>;
@@ -93,6 +90,27 @@
 
 			cpusys_cpurad_ipc_shm: memory@e80 {
 				reg = <0xe80 0x80>;
+			};
+		};
+
+		ram21_region: memory@2f890000 {
+			compatible = "nordic,owned-memory";
+			status = "disabled";
+			reg = <0x2f890000 DT_SIZE_K(64)>;
+			perm-read;
+			perm-write;
+			perm-secure;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2f890000 0x10000>;
+
+			dma_fast_region: memory@8000 {
+				compatible = "zephyr,memory-region";
+				reg = <0x8000 DT_SIZE_K(16)>;
+				status = "disabled";
+				#memory-region-cells = <0>;
+				zephyr,memory-region = "DMA_RAM21";
+				zephyr,memory-attr = <( DT_MEM_DMA | DT_MEM_CACHEABLE )>;
 			};
 		};
 
@@ -136,6 +154,7 @@
 				status = "disabled";
 				#memory-region-cells = <0>;
 				zephyr,memory-region = "DMA_RAM3x_APP";
+				zephyr,memory-attr = <( DT_MEM_DMA )>;
 			};
 
 			cpurad_dma_region: memory@1e80 {
@@ -144,6 +163,7 @@
 				status = "disabled";
 				#memory-region-cells = <0>;
 				zephyr,memory-region = "DMA_RAM3x_RAD";
+				zephyr,memory-attr = <( DT_MEM_DMA )>;
 			};
 		};
 	};
@@ -174,11 +194,11 @@
 		#size-cells = <1>;
 
 		cpuapp_slot0_partition: partition@a6000 {
-			reg = <0xa6000 DT_SIZE_K(512)>;
+			reg = <0xa6000 DT_SIZE_K(296)>;
 		};
 
-		cpuppr_code_partition: partition@126000 {
-			reg = <0x126000 DT_SIZE_K(64)>;
+		cpuppr_code_partition: partition@f0000 {
+			reg = <0xf0000 DT_SIZE_K(64)>;
 		};
 	};
 
@@ -191,8 +211,12 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		storage_partition: partition@136000 {
-			reg = <0x136000 DT_SIZE_K(24)>;
+		dfu_partition: partition@100000 {
+			reg = < 0x100000 DT_SIZE_K(892) >;
+		};
+
+		storage_partition: partition@1df000 {
+			reg = < 0x1df000 DT_SIZE_K(24) >;
 		};
 	};
 };

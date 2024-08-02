@@ -9,8 +9,10 @@
 cpu: &cpuapp {};
 systick: &cpuapp_systick {};
 nvic: &cpuapp_nvic {};
-cpuppr_vevif: &cpuppr_vevif_remote {};
-cpusys_vevif: &cpusys_vevif_remote {};
+cpuppr_vevif: &cpuppr_vevif_tx {};
+cpusys_vevif: &cpusys_vevif_tx {};
+wdt010: &cpuapp_wdt010 {};
+wdt011: &cpuapp_wdt011 {};
 
 /delete-node/ &cpuppr;
 /delete-node/ &cpurad;
@@ -32,15 +34,15 @@ cpusys_vevif: &cpusys_vevif_remote {};
 };
 
 &cpusec_bellboard {
-	compatible = "nordic,nrf-bellboard-remote";
+	compatible = "nordic,nrf-bellboard-tx";
 };
 
 &cpuapp_bellboard {
-	compatible = "nordic,nrf-bellboard-local";
+	compatible = "nordic,nrf-bellboard-rx";
 };
 
 &cpurad_bellboard {
-	compatible = "nordic,nrf-bellboard-remote";
+	compatible = "nordic,nrf-bellboard-tx";
 };
 
 &gpiote130 {

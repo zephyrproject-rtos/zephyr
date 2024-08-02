@@ -27,6 +27,14 @@ config SOC_IT81202CX
 	bool
 	select SOC_IT8XXX2
 
+config SOC_IT81302DX
+	bool
+	select SOC_IT8XXX2
+
+config SOC_IT81202DX
+	bool
+	select SOC_IT8XXX2
+
 config SOC_IT82202AX
 	bool
 	select SOC_IT8XXX2
@@ -36,6 +44,10 @@ config SOC_IT82302AX
 	select SOC_IT8XXX2
 
 config SOC_IT82002AW
+	bool
+	select SOC_IT8XXX2
+
+config SOC_IT82002BW
 	bool
 	select SOC_IT8XXX2
 
@@ -53,9 +65,12 @@ config SOC_SERIES
 config SOC
 	default "it81202bx" if SOC_IT81202BX
 	default "it81202cx" if SOC_IT81202CX
+	default "it81202dx" if SOC_IT81202DX
 	default "it81302bx" if SOC_IT81302BX
 	default "it81302cx" if SOC_IT81302CX
+	default "it81302dx" if SOC_IT81302DX
 	default "it82002aw" if SOC_IT82002AW
+	default "it82002bw" if SOC_IT82002BW
 	default "it82202ax" if SOC_IT82202AX
 	default "it82302ax" if SOC_IT82302AX
 	default "it82202bw" if SOC_IT82202BW

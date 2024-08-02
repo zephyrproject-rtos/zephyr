@@ -1,5 +1,5 @@
 # Copyright (c) 2020 Linumiz
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 menuconfig HAWKBIT
 	bool "Eclipse hawkBit Firmware Over-the-Air support"
@@ -30,7 +30,8 @@ config HAWKBIT_POLL_INTERVAL
 	range 1 43200
 	help
 	  Set the interval that the hawkbit update server will be polled.
-	  This time interval is zero and 43200 minutes(30 days).
+	  This time interval is zero and 43200 minutes(30 days). This will be overridden
+	  by the value configured in the settings of the hawkBit server.
 
 config HAWKBIT_SHELL
 	bool "hawkBit shell utilities"
@@ -40,7 +41,6 @@ config HAWKBIT_SHELL
 
 config HAWKBIT_SERVER
 	string "User address for the hawkbit server"
-	default ""
 	help
 	  Configure the hawkbit server address.
 
@@ -110,6 +110,56 @@ config HAWKBIT_DEVICE_ID_MAX_LENGTH
 	default 32
 	help
 	  Maximum length of the device id.
+
+config HAWKBIT_USE_TLS
+	bool "Use TLS for hawkBit server connection"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Use TLS for hawkBit connection.
+
+if HAWKBIT_USE_TLS
+
+choice HAWKBIT_CERT_TAG
+	prompt "hawkBit certificate tag"
+	default HAWKBIT_USE_STATIC_CERT_TAG
+
+config HAWKBIT_USE_STATIC_CERT_TAG
+	bool "Use static certificate tag"
+	help
+	  Use static certificate tag for TLS connection to the hawkBit server.
+
+config HAWKBIT_USE_DYNAMIC_CERT_TAG
+	bool "Use dynamic certificate tag"
+	depends on HAWKBIT_SET_SETTINGS_RUNTIME
+	help
+	  Use dynamic certificate tag for TLS connection to the hawkBit server.
+
+endchoice
+
+config HAWKBIT_STATIC_CERT_TAG
+	int "Static certificate tag"
+	depends on HAWKBIT_USE_STATIC_CERT_TAG
+	default 1
+	help
+	  Static certificate tag for TLS connection to the hawkBit server.
+
+endif
+
+choice HAWKBIT_REBOOT_MODE
+	prompt "Reboot mode after update"
+	default HAWKBIT_REBOOT_WARM
+
+config HAWKBIT_REBOOT_WARM
+	bool "Warm reboot after update"
+	help
+	  Do a warm reboot after the update.
+
+config HAWKBIT_REBOOT_COLD
+	bool "Cold reboot after update"
+	help
+	  Do a cold reboot after the update.
+
+endchoice
 
 module = HAWKBIT
 module-str = Log Level for hawkbit

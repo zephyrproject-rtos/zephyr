@@ -25,6 +25,7 @@ struct lll_sync_iso {
 	uint16_t data_chan_remap_idx;
 
 	uint64_t payload_count:39;
+	uint64_t framing:1;
 	uint64_t enc:1;
 	uint64_t ctrl:1;
 	uint64_t cssn_curr:3;
@@ -54,6 +55,8 @@ struct lll_sync_iso {
 	uint8_t bis_curr:5;
 
 	uint8_t stream_curr:5;
+
+	uint8_t establish_events:3;
 
 	uint8_t next_chan_use;
 
@@ -88,7 +91,7 @@ int lll_sync_iso_reset(void);
 void lll_sync_iso_create_prepare(void *param);
 void lll_sync_iso_prepare(void *param);
 
-extern uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll);
+extern uint8_t ull_sync_iso_lll_index_get(struct lll_sync_iso *lll);
 extern struct lll_sync_iso_stream *ull_sync_iso_lll_stream_get(uint16_t handle);
 extern void ll_iso_rx_put(memq_link_t *link, void *rx);
 extern void ll_rx_sched(void);

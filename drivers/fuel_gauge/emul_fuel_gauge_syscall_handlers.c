@@ -14,7 +14,7 @@ static inline int z_vrfy_emul_fuel_gauge_is_battery_cutoff(const struct emul *ta
 	return z_impl_emul_fuel_gauge_is_battery_cutoff(target, cutoff);
 }
 
-#include <syscalls/emul_fuel_gauge_is_battery_cutoff_mrsh.c>
+#include <zephyr/syscalls/emul_fuel_gauge_is_battery_cutoff_mrsh.c>
 
 static inline int z_vrfy_emul_fuel_gauge_set_battery_charging(const struct emul *target,
 							      uint32_t uV, int uA)
@@ -22,4 +22,4 @@ static inline int z_vrfy_emul_fuel_gauge_set_battery_charging(const struct emul 
 	return z_impl_emul_fuel_gauge_set_battery_charging(target, uV, uA);
 }
 
-#include <syscalls/emul_fuel_gauge_set_battery_charging_mrsh.c>
+#include <zephyr/syscalls/emul_fuel_gauge_set_battery_charging_mrsh.c>

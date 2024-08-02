@@ -7,13 +7,13 @@ common:
     - native_posix
     - native_posix/native/64
   integration_platforms:
-    - qemu_riscv32
+    - native_sim
   harness: console
   harness_config:
     type: multi_line
     regex:
       - "BOARD=.*"
       - "BUILD_VERSION=.*"
-      - "ALERT=.*"
+      - "ALERT="
 tests:
   sample.posix.env: {}

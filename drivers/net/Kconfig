@@ -15,14 +15,12 @@ menuconfig NET_PPP
 	depends on NET_NATIVE
 	select RING_BUFFER
 	select CRC
-	select UART_MUX if GSM_MUX
 
 if NET_PPP
 
 config NET_PPP_ASYNC_UART
 	bool "Asynchronous UART API is used"
 	depends on UART_ASYNC_API
-	depends on !GSM_MUX
 
 config NET_PPP_DRV_NAME
 	string "PPP Driver name"

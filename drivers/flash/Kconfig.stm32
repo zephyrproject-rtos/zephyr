@@ -6,12 +6,23 @@
 # Copyright (c) 2023 Google Inc
 # SPDX-License-Identifier: Apache-2.0
 
+config STM32_MEMMAP
+	bool "NOR Flash in MemoryMapped for XiP"
+	depends on XIP && \
+		    (DT_HAS_ST_STM32_OSPI_NOR_ENABLED || \
+		     DT_HAS_ST_STM32_QSPI_NOR_ENABLED || \
+		     DT_HAS_ST_STM32_XSPI_NOR_ENABLED)
+	help
+	  This option enables the XIP mode for the external NOR flash
+	  mounted on STM32 boards.
+
 config SOC_FLASH_STM32
 	bool "STM32 flash driver"
 	depends on DT_HAS_ST_STM32_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	default y
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	select USE_STM32_HAL_FLASH if BT_STM32WBA
 	select USE_STM32_HAL_FLASH_EX if BT_STM32WBA
@@ -64,6 +75,7 @@ config FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW
 
 config FLASH_STM32_BLOCK_REGISTERS
 	bool "Extended operation for blocking option and control registers"
+	select FLASH_HAS_EX_OP
 	default n
 	help
 	  Enables flash extended operations that can be used to disable access

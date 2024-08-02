@@ -84,6 +84,13 @@ can be disabled if not needed.
   supported in similar manner when enabled with a Kconfig option.
   :zephyr:code-sample:`lwm2m-client` sample implements the library as an example.
 
+* **HTTP** Hypertext Transfer Protocol client and server are supported.
+  :ref:`http_client_interface` library supports HTTP/1.1 (`RFC 2616`_).
+  :ref:`http_server_interface` library supports HTTP/1.1 (`RFC 2616`_) and
+  HTTP/2 (`RFC 9113`_).
+  :zephyr:code-sample:`sockets-http-client` and
+  :zephyr:code-sample:`sockets-http-server` samples are provided.
+
 * **DNS** Domain Name Service
   (`RFC 1035 <https://tools.ietf.org/html/rfc1035>`_) client functionality
   is supported.
@@ -177,3 +184,9 @@ The networking stack source code tree is organized as follows:
 
 .. _LwM2M specification 1.1.1:
    http://openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
+
+.. _RFC 2616:
+   https://tools.ietf.org/html/rfc2616
+
+.. _RFC 9113:
+   https://tools.ietf.org/html/rfc9113

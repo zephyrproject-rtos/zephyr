@@ -13,7 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <DA1469xAB.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/smartbond_clock_control.h>
@@ -77,48 +77,21 @@ struct mipi_dbi_smartbond_config {
 	lcdc_smartbond_bgcolor_cfg bgcolor_cfg;
 };
 
-/* Mark the device is is progress and so it's not allowed to enter the sleep state. */
-static void mipi_dbi_pm_get(const struct device *dev)
+/* Mark the device is progress and so it's not allowed to enter the sleep state. */
+static inline void mipi_dbi_smartbond_pm_policy_state_lock_get(void)
 {
-#if CONFIG_PM_DEVICE
 	/*
-	 * By marking the device as busy, PM will not communicate PM events
-	 * to the device via mipi_dbi_smartbond_pm_action. It's OK if PM is
-	 * not used at all. Executing a single frame requires waiting for
-	 * the frame to be completed. As such, the system might enter the idle
-	 * state if no other tasks are pending and for as long as the frame is
-	 * being sent.
-	 *
-	 * XXX: Another option would be to use a flag and mark when the controller
-	 *      is in progress so a negative value other than -ENOSYS, -ENOTSUP or
-	 *      -EALREADY is returned in mipi_dbi_smartbond_pm_action. Sideffect
-	 *      of this approach is that the sleep state will be aborted at all,
-	 *      though the system could enter a low-power state, instead (see comment
-	 *      below on how to achieve a low-power state).
+	 * Prevent the SoC from etering the normal sleep state as PDC does not support
+	 * waking up the application core following LCDC events.
 	 */
-	pm_device_busy_set(dev);
-#endif
-#if CONFIG_PM
-	/*
-	 * LCDC controller resides in PD_SYS which is turned off when the system enters
-	 * the extended sleep state. By calling this API, a reference counter is
-	 * incremented, designating that the specific power domain should not be turned off.
-	 * As a result, a low-power state (i.e. ARM WFI) will be selected, instead (when the
-	 * system is idle).
-	 */
-	(void)da1469x_pd_acquire_noconf(MCU_PD_DOMAIN_SYS);
-#endif
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 
 /* Mark that device is inactive and so it's allowed to enter the sleep state */
-static void mipi_dbi_pm_put(const struct device *dev)
+static inline void mipi_dbi_smartbond_pm_policy_state_lock_put(void)
 {
-#if CONFIG_PM_DEVICE
-	(void)pm_device_busy_clear(dev);
-#endif
-#if CONFIG_PM
-	(void)da1469x_pd_release_nowait(MCU_PD_DOMAIN_SYS);
-#endif
+	/* Allow the SoC to enter the nornmal sleep state once LCDC is inactive */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 
 /* Helper function to trigger the LCDC fetching data from frame buffer to the connected display */
@@ -237,6 +210,8 @@ static int mipi_dbi_smartbond_command_read(const struct device *dev,
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
+	mipi_dbi_smartbond_pm_policy_state_lock_get();
+
 	/*
 	 * Add an arbitrary valid color format to satisfy subroutine. The MIPI DBI command/data
 	 * engine should not be affected.
@@ -303,6 +278,8 @@ _mipi_dbi_read_exit:
 		LOG_ERR("Could not apply MIPI DBI pins' default state (%d)", ret);
 	}
 
+	mipi_dbi_smartbond_pm_policy_state_lock_put();
+
 	k_sem_give(&data->device_sem);
 
 	return ret;
@@ -315,12 +292,12 @@ static int mipi_dbi_smartbond_command_write(const struct device *dev,
 				size_t len)
 {
 	struct mipi_dbi_smartbond_data *data = dev->data;
-	int ret;
+	int ret = 0;
 	lcdc_smartbond_mipi_dbi_cfg mipi_dbi_cfg;
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
-	mipi_dbi_pm_get(dev);
+	mipi_dbi_smartbond_pm_policy_state_lock_get();
 
 	/*
 	 * Add an arbitrary valid color format to satisfy subroutine. The MIPI DBI command/data
@@ -329,8 +306,7 @@ static int mipi_dbi_smartbond_command_write(const struct device *dev,
 	lcdc_smartbond_mipi_dbi_translation(dbi_config, &mipi_dbi_cfg, PIXEL_FORMAT_RGB_565);
 	ret = da1469x_lcdc_mipi_dbi_interface_configure(&mipi_dbi_cfg);
 	if (ret < 0) {
-		k_sem_give(&data->device_sem);
-		return ret;
+		goto finish;
 	}
 
 	/* Command and accompanied data should be transmitted via the DBIB interface */
@@ -341,11 +317,12 @@ static int mipi_dbi_smartbond_command_write(const struct device *dev,
 		da1469x_lcdc_send_cmd_data(false, data_buf, len);
 	}
 
-	mipi_dbi_pm_put(dev);
+finish:
+	mipi_dbi_smartbond_pm_policy_state_lock_put();
 
 	k_sem_give(&data->device_sem);
 
-	return 0;
+	return ret;
 }
 
 static int mipi_dbi_smartbond_write_display(const struct device *dev,
@@ -369,7 +346,7 @@ static int mipi_dbi_smartbond_write_display(const struct device *dev,
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
-	mipi_dbi_pm_get(dev);
+	mipi_dbi_smartbond_pm_policy_state_lock_get();
 
 	/*
 	 * Mainly check if the frame generator is busy with a pending frame update (might happen
@@ -408,7 +385,7 @@ static int mipi_dbi_smartbond_write_display(const struct device *dev,
 
 _mipi_dbi_write_exit:
 
-	mipi_dbi_pm_put(dev);
+	mipi_dbi_smartbond_pm_policy_state_lock_put();
 
 	k_sem_give(&data->device_sem);
 
@@ -488,7 +465,7 @@ static int mipi_dbi_smartbond_resume(const struct device *dev)
 	return mipi_dbi_smartbond_configure(dev);
 }
 
-#ifdef CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE)
 static int mipi_dbi_smartbond_suspend(const struct device *dev)
 {
 	const struct mipi_dbi_smartbond_config *config = dev->config;
@@ -512,27 +489,16 @@ static int mipi_dbi_smartbond_pm_action(const struct device *dev, enum pm_device
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
+		/* A non-zero value should not affect sleep */
 		(void)mipi_dbi_smartbond_suspend(dev);
-
-#if CONFIG_PM_DEVICE_RUNTIME && CONFIG_PM
-		da1469x_pd_release_nowait(MCU_PD_DOMAIN_SYS);
-#endif
-	break;
+		break;
 	case PM_DEVICE_ACTION_RESUME:
-		ret = mipi_dbi_smartbond_resume(dev);
-
-#if CONFIG_PM_DEVICE_RUNTIME && CONFIG_PM
 		/*
-		 * If resume succeeded, prevent the system from entering the
-		 * extended sleep state (Instead, use __WFI). If not, do not
-		 * as users should not suspend the device and thus releasing
-		 * PD_SYS.
+		 * The resume error code should not be taken into consideration
+		 * by the PM subsystem.
 		 */
-		if (ret == 0) {
-			da1469x_pd_acquire_noconf(MCU_PD_DOMAIN_SYS);
-		}
-#endif
-	break;
+		ret = mipi_dbi_smartbond_resume(dev);
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -543,7 +509,7 @@ static int mipi_dbi_smartbond_pm_action(const struct device *dev, enum pm_device
 
 static int mipi_dbi_smartbond_init(const struct device *dev)
 {
-	const struct mipi_dbi_smartbond_config *config = dev->config;
+	__unused const struct mipi_dbi_smartbond_config *config = dev->config;
 	struct mipi_dbi_smartbond_data *data = dev->data;
 	int ret;
 
@@ -565,23 +531,9 @@ static int mipi_dbi_smartbond_init(const struct device *dev)
 	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_mipi_dbi_isr,
 						DEVICE_DT_INST_GET(0), 0);
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	/* Make sure device state is marked as suspended */
-	pm_device_init_suspended(dev);
-
-	ret = pm_device_runtime_enable(dev);
-	if ((ret < 0) && (ret != -ENOSYS)) {
-		return ret;
-	}
-#else
-	/* Resme if either PM is not used at all or if PM without runtime is used. */
 	ret = mipi_dbi_smartbond_resume(dev);
-	if (ret < 0) {
-		return ret;
-	}
-#endif
 
-	return 0;
+	return ret;
 }
 
 static struct mipi_dbi_driver_api mipi_dbi_smartbond_driver_api = {

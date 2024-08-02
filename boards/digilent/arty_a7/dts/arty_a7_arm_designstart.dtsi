@@ -26,7 +26,6 @@
 		sw1 = &sw1;
 		sw2 = &sw2;
 		sw3 = &sw3;
-		spi-flash0 = &flash0;
 	};
 
 	leds {

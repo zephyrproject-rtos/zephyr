@@ -77,6 +77,13 @@
 #define _NOCACHE_SECTION_NAME nocache
 #endif
 
+/* Symbol table section */
+#if defined(CONFIG_SYMTAB)
+#define _SYMTAB_INFO_SECTION_NAME	.gnu.linkonce.symtab.info
+#define _SYMTAB_ENTRY_SECTION_NAME	.gnu.linkonce.symtab.entry
+#define _SYMTAB_SECTION_SYMS		.gnu.linkonce.symtab*
+#endif /* CONFIG_SYMTAB */
+
 #if defined(CONFIG_LINKER_USE_BOOT_SECTION)
 #define BOOT_TEXT_SECTION_NAME		boot_text
 #define BOOT_BSS_SECTION_NAME		boot_bss

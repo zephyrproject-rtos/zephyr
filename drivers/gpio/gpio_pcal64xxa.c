@@ -204,6 +204,7 @@ static int pcal64xxa_process_input(const struct device *dev, gpio_port_value_t *
 
 	if (rc != 0) {
 		LOG_ERR("failed to read inputs from device %s", dev->name);
+		k_sem_give(&drv_data->lock);
 		return rc;
 	}
 

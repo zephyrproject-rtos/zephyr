@@ -417,7 +417,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	if (!piggy_back) {
-		/* Enqueue notification towards LL, unless we re-use RX node,
+		/* Enqueue notification towards LL, unless we reuse RX node,
 		 * in which case it is handled on the ull_cp_rx return path
 		 */
 		ll_rx_put_sched(ntf->hdr.link, ntf);
@@ -1134,6 +1134,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t gene
 
 	/* Allocate ntf node */
 	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
 
 	/* This should be an 'old' RX node, so put/sched when done */

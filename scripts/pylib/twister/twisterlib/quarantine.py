@@ -5,10 +5,15 @@ from __future__ import annotations
 
 import logging
 import re
+import yaml
 
 from pathlib import Path
-from yaml import safe_load
 from dataclasses import dataclass, field
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
 
 
 logger = logging.getLogger(__name__)
@@ -88,7 +93,7 @@ class QuarantineData:
     def load_data_from_yaml(cls, filename: str | Path) -> QuarantineData:
         """Load quarantine from yaml file."""
         with open(filename, 'r', encoding='UTF-8') as yaml_fd:
-            qlist_raw_data: list[dict] = safe_load(yaml_fd)
+            qlist_raw_data: list[dict] = yaml.load(yaml_fd, Loader=SafeLoader)
         try:
             if not qlist_raw_data:
                 # in case of loading empty quarantine file

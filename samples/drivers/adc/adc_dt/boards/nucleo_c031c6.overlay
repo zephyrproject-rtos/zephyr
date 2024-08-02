@@ -4,7 +4,7 @@
  * Copyright (c) 2023 Benjamin Björnsson <benjamin.bjornsson@gmail.com>
  */
 
- / {
+/ {
 	zephyr,user {
 		/* adjust channel number according to pinmux in board.dts */
 		io-channels = <&adc1 0>, <&adc1 1>, <&adc1 4>;

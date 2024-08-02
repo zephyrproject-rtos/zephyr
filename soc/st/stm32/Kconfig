@@ -50,11 +50,17 @@ config SWJ_ANALOG_PRIORITY
 config STM32_FLASH_PREFETCH
 	bool "Flash prefetch buffer"
 
+config STM32_WKUP_PINS
+	bool "STM32 PWR Wake-up Pins"
+	depends on DT_HAS_ST_STM32_PWR_ENABLED
+	help
+	  Enable support for STM32 PWR wake-up pins.
+
 choice POWER_SUPPLY_CHOICE
 	prompt "STM32 power supply configuration"
 	default POWER_SUPPLY_LDO
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32U5X || \
-		   SOC_STM32WBA55XX
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX || \
+		SOC_SERIES_STM32U5X || SOC_STM32WBA55XX
 
 config POWER_SUPPLY_LDO
 	bool "LDO supply"
@@ -64,31 +70,31 @@ config POWER_SUPPLY_DIRECT_SMPS
 
 config POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO
 	bool "SMPS 1.8V supplies LDO (no external supply)"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO
 	bool "SMPS 2.5V supplies LDO (no external supply)"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO
 	bool "External SMPS 1.8V supply, supplies LDO"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO
 	bool "External SMPS 2.5V supply, supplies LDO"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT
 	bool "External SMPS 1.8V supply and bypass"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT
 	bool "External SMPS 2.5V supply and bypass"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_EXTERNAL_SOURCE
 	bool "Bypass"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 endchoice
 

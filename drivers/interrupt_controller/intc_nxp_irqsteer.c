@@ -223,9 +223,11 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/irq.h>
 #include <fsl_irqsteer.h>
 #include <zephyr/cache.h>
+#include <zephyr/sw_isr_table.h>
 
 #include "sw_isr_common.h"
 
@@ -478,3 +480,10 @@ DEVICE_DT_INST_DEFINE(0,
 		      NULL, &irqsteer_config,
 		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		      NULL);
+
+#define NXP_IRQSTEER_MASTER_IRQ_ENTRY_DEF(node_id)                                                 \
+	IRQ_PARENT_ENTRY_DEFINE(CONCAT(nxp_irqsteer_master_, DT_NODE_CHILD_IDX(node_id)), NULL,    \
+				DT_IRQN(node_id), INTC_CHILD_ISR_TBL_OFFSET(node_id),              \
+				DT_INTC_GET_AGGREGATOR_LEVEL(node_id));
+
+DT_INST_FOREACH_CHILD_STATUS_OKAY(0, NXP_IRQSTEER_MASTER_IRQ_ENTRY_DEF);

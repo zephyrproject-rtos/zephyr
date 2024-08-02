@@ -24,23 +24,23 @@
 	leds {
 		compatible = "gpio-leds";
 		blue_led: uC_led1 {
-			gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
 			label = "Debug led uC1";
 		};
 		net_red_led: led_NET1 {
-			gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
 			label = "NET led 1";
 		};
 		net_green_led: led_NET2 {
-			gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 11 GPIO_ACTIVE_LOW>;
 			label = "NET led 2";
 		};
 		mod_red_led: led_MOD1 {
-			gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioe 2 GPIO_ACTIVE_LOW>;
 			label = "Mod led 1";
 		};
 		mod_green_led: led_MOD2 {
-			gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
 			label = "Mod led 2";
 		};
 	};
@@ -48,7 +48,6 @@
 	aliases {
 		led0 = &blue_led;
 		watchdog0 = &iwdg;
-		spi-flash0 = &flash_ext;
 	};
 };
 

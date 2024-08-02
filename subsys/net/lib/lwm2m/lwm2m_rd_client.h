@@ -66,4 +66,14 @@ struct lwm2m_message *lwm2m_get_ongoing_rd_msg(void);
  */
 int lwm2m_rd_client_server_disabled(uint16_t inst_id);
 
+/**
+ * @brief Set client context for the RD client.
+ *
+ * For testing purposes, it might be required to set the client context
+ * without starting the RD client.
+ *
+ * @param ctx context
+ */
+void lwm2m_rd_client_set_ctx(struct lwm2m_ctx *ctx);
+
 #endif /* LWM2M_RD_CLIENT_H */

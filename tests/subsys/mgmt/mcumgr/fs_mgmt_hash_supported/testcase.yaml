@@ -10,31 +10,25 @@ common:
     - fs_mgmt_hash_supported
   integration_platforms:
     - native_sim
+  platform_exclude:
+    - arduino_giga_r1/stm32h747xx/m4
+    - arduino_portenta_h7/stm32h747xx/m4
+    - lpcxpresso51u68
+    - nucleo_h745zi_q/stm32h745xx/m4
+    - stm32h747i_disco/stm32h747xx/m4
+    - lpcxpresso55s69/lpc55s69/cpu1
+    - mpfs_icicle
+    - mpfs_icicle/polarfire/smp
+    - apollo4p_evb
+    - stm32h745i_disco/stm32h745xx/m4
+    - cyw920829m2evk_02
 tests:
   mgmt.mcumgr.fs.mgmt.hash.supported.crc32:
     extra_args: >
       OVERLAY_CONFIG="configuration/crc32.conf"
-    platform_exclude:
-      - arduino_giga_r1/stm32h747xx/m4
-      - arduino_portenta_h7/stm32h747xx/m4
-      - lpcxpresso51u68
-      - nucleo_h745zi_q/stm32h745xx/m4
-      - stm32h747i_disco/stm32h747xx/m4
   mgmt.mcumgr.fs.mgmt.hash.supported.sha256:
     extra_args: >
       OVERLAY_CONFIG="configuration/sha256.conf"
-    platform_exclude:
-      - arduino_giga_r1/stm32h747xx/m4
-      - arduino_portenta_h7/stm32h747xx/m4
-      - lpcxpresso51u68
-      - nucleo_h745zi_q/stm32h745xx/m4
-      - stm32h747i_disco/stm32h747xx/m4
   mgmt.mcumgr.fs.mgmt.hash.supported.all:
     extra_args: >
       OVERLAY_CONFIG="configuration/all.conf"
-    platform_exclude:
-      - arduino_giga_r1/stm32h747xx/m4
-      - arduino_portenta_h7/stm32h747xx/m4
-      - lpcxpresso51u68
-      - nucleo_h745zi_q/stm32h745xx/m4
-      - stm32h747i_disco/stm32h747xx/m4

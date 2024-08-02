@@ -1,5 +1,5 @@
 # Copyright (c) 2024 Jan Kubiznak <jan.kubiznak@deveritec.com>
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config DAC_AD569X
 	bool "Analog Devices AD5691 / AD5692 / AD5693 DAC driver"

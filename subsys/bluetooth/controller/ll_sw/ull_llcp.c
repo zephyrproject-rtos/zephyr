@@ -284,11 +284,26 @@ void llcp_rx_node_retain(struct proc_ctx *ctx)
 {
 	LL_ASSERT(ctx->node_ref.rx);
 
-	/* Mark RX node to NOT release */
-	ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+	/* Only retain if not already retained */
+	if (ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN) {
+		/* Mark RX node to NOT release */
+		ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
 
-	/* store link element reference to use once this node is moved up */
-	ctx->node_ref.rx->hdr.link = ctx->node_ref.link;
+		/* store link element reference to use once this node is moved up */
+		ctx->node_ref.rx->hdr.link = ctx->node_ref.link;
+	}
+}
+
+void llcp_rx_node_release(struct proc_ctx *ctx)
+{
+	LL_ASSERT(ctx->node_ref.rx);
+
+	/* Only release if retained */
+	if (ctx->node_ref.rx->hdr.type == NODE_RX_TYPE_RETAIN) {
+		/* Mark RX node to release and release */
+		ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RELEASE;
+		ll_rx_put_sched(ctx->node_ref.rx->hdr.link, ctx->node_ref.rx);
+	}
 }
 
 void llcp_nodes_release(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -296,12 +311,14 @@ void llcp_nodes_release(struct ll_conn *conn, struct proc_ctx *ctx)
 	if (ctx->node_ref.rx && ctx->node_ref.rx->hdr.type == NODE_RX_TYPE_RETAIN) {
 		/* RX node retained, so release */
 		ctx->node_ref.rx->hdr.link->mem = conn->llcp.rx_node_release;
+		ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RELEASE;
 		conn->llcp.rx_node_release = ctx->node_ref.rx;
 	}
 #if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	if (ctx->proc == PROC_PHY_UPDATE && ctx->data.pu.ntf_dle_node) {
 		/* RX node retained, so release */
 		ctx->data.pu.ntf_dle_node->hdr.link->mem = conn->llcp.rx_node_release;
+		ctx->data.pu.ntf_dle_node->hdr.type = NODE_RX_TYPE_RELEASE;
 		conn->llcp.rx_node_release = ctx->data.pu.ntf_dle_node;
 	}
 #endif
@@ -545,9 +562,6 @@ void ull_cp_release_nodes(struct ll_conn *conn)
 		/* traverse to next rx node */
 		hdr = &rx->hdr;
 		rx = hdr->link->mem;
-
-		/* Mark for buffer for release */
-		hdr->type = NODE_RX_TYPE_RELEASE;
 
 		/* enqueue rx node towards Thread */
 		ll_rx_put(hdr->link, hdr);
@@ -1621,7 +1635,7 @@ static bool pdu_is_valid(struct pdu_data *pdu)
 		}
 	}
 
-	/* consider unsupported and unknows PDUs as valid */
+	/* consider unsupported and unknown PDUs as valid */
 	return true;
 }
 

@@ -24,4 +24,6 @@ supported:
   - pwm
   - rng
   - dma
+  - rtc
+  - usbd
 vendor: st

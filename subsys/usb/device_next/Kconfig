@@ -6,7 +6,7 @@ menuconfig USB_DEVICE_STACK_NEXT
 	bool "New USB device stack [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select UDC_DRIVER
-	select HWINFO
+	imply HWINFO
 	help
 	  New experimental USB device stack.
 
@@ -46,6 +46,14 @@ config USBD_MSG_SLAB_COUNT
 	default 8
 	help
 	  Maximum number of USB device notification messages that can be queued.
+
+config USBD_MSG_WORK_DELAY
+	int "USB device notification messages work delay"
+	range 1 100
+	default 1
+	help
+	  Message work may need to be delayed because the device stack is not
+	  yet ready to publish the message. The delay unit is milliseconds.
 
 rsource "class/Kconfig"
 

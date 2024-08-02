@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2024 CTHINGS.CO
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+	model = "CTHINGS.CO Connectivity Card nRF52840";
+	compatible = "ct,ctcc-nrf52840";
+
+	chosen {
+		zephyr,console = &cdc_acm_uart;
+		zephyr,shell-uart = &cdc_acm_uart;
+		zephyr,uart-mcumgr = &cdc_acm_uart;
+		zephyr,bt-mon-uart = &cdc_acm_uart;
+		zephyr,bt-c2h-uart = &cdc_acm_uart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	leds {
+		 compatible = "gpio-leds";
+		 led1: led_1 {
+			 gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			 label = "LED 1";
+		 };
+		 led2: led_2 {
+			 gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			 label = "LED 2";
+		 };
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		mcuboot-led0 = &led1;
+		watchdog0 = &wdt0;
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00012000>;
+		};
+		slot0_partition: partition@12000 {
+			label = "image-0";
+			reg = <0x00012000 0x00076000>;
+		};
+		slot1_partition: partition@87000 {
+			label = "image-1";
+			reg = <0x00088000 0x00074000>;
+		};
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x00004000>;
+		};
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+
+	cdc_acm_uart: cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <xtensa_asm2_s.h>
-#include <offsets.h>
-#include <zsr.h>
+#include <zephyr/offsets.h>
+#include <zephyr/zsr.h>
 
 #if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
 #include <xtensa/simcall.h>
@@ -489,13 +489,29 @@ _DoubleExceptionVector:
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
 	beqz a0, _handle_tlb_miss_dblexc
 
+	/* Need to stash the DEPC for used by the C handler.
+	 * If we encounter any DTLB misses when PS.EXCM is set,
+	 * this vector will be used and the DEPC register will
+	 * have the new address instead of the one resulted in
+	 * double exception.
+	 */
+	rsr.depc a0
+	wsr a0, ZSR_DEPC_SAVE
+
 	rsr a0, ZSR_DBLEXC
 
 	j _Level1Vector
-#else
 
-#if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
-1:
+_TripleFault:
+#endif /* CONFIG_XTENSA_MMU */
+
+#if XCHAL_HAVE_DEBUG && defined(CONFIG_XTENSA_BREAK_ON_UNRECOVERABLE_EXCEPTIONS)
+	/* Signals an unhandled double exception, and unrecoverable exceptions.
+	 * Definitely needs debugger to be attached to the hardware or simulator
+	 * to catch this.
+	 */
+	break	1, 4
+#elif defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
 /* Tell simulator to stop executing here, instead of trying to do
  * an infinite loop (see below). Greatly help with using tracing in
  * simulator so that traces will not have infinite iterations of
@@ -504,14 +520,9 @@ _DoubleExceptionVector:
 	movi a3, 1
 	movi a2, SYS_exit
 	simcall
-#elif XCHAL_HAVE_DEBUG
-/* Signals an unhandled double exception */
-1:	break	1, 4
-#else
-1:
 #endif
+1:
 	j	1b
-#endif /* CONFIG_XTENSA_MMU */
 
 #ifdef CONFIG_XTENSA_MMU
 _handle_tlb_miss_dblexc:

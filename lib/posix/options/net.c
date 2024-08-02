@@ -13,8 +13,6 @@
 #include <zephyr/posix/arpa/inet.h>
 #include <zephyr/posix/netinet/in.h>
 #include <zephyr/posix/net/if.h>
-#include <zephyr/posix/poll.h>
-#include <zephyr/posix/sys/select.h>
 #include <zephyr/posix/sys/socket.h>
 
 /* From arpa/inet.h */
@@ -102,11 +100,6 @@ char *if_indextoname(unsigned int ifindex, char *ifname)
 {
 	int ret;
 
-	if (!IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
-		errno = ENOTSUP;
-		return NULL;
-	}
-
 	ret = net_if_get_name(net_if_get_by_index(ifindex), ifname, IF_NAMESIZE);
 	if (ret < 0) {
 		errno = ENXIO;
@@ -120,14 +113,14 @@ void if_freenameindex(struct if_nameindex *ptr)
 {
 	size_t n;
 
-	if (ptr == NULL || !IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
+	if (ptr == NULL) {
 		return;
 	}
 
 	NET_IFACE_COUNT(&n);
 
 	for (size_t i = 0; i < n; ++i) {
-		if (IS_ENABLED(CONFIG_NET_INTERFACE_NAME) && ptr[i].if_name != NULL) {
+		if (ptr[i].if_name != NULL) {
 			free(ptr[i].if_name);
 		}
 	}
@@ -140,11 +133,6 @@ struct if_nameindex *if_nameindex(void)
 	size_t n;
 	char *name;
 	struct if_nameindex *ni;
-
-	if (!IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
-		errno = ENOTSUP;
-		return NULL;
-	}
 
 	/* FIXME: would be nice to use this without malloc */
 	NET_IFACE_COUNT(&n);
@@ -180,10 +168,6 @@ return_err:
 unsigned int if_nametoindex(const char *ifname)
 {
 	int ret;
-
-	if (!IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
-		return 0;
-	}
 
 	ret = net_if_get_by_name(ifname);
 	if (ret < 0) {
@@ -355,11 +339,6 @@ int listen(int sock, int backlog)
 	return zsock_listen(sock, backlog);
 }
 
-int poll(struct pollfd *fds, int nfds, int timeout)
-{
-	return zsock_poll(fds, nfds, timeout);
-}
-
 ssize_t recv(int sock, void *buf, size_t max_len, int flags)
 {
 	return zsock_recv(sock, buf, max_len, flags);
@@ -374,11 +353,6 @@ ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags, struct sockaddr
 ssize_t recvmsg(int sock, struct msghdr *msg, int flags)
 {
 	return zsock_recvmsg(sock, msg, flags);
-}
-
-int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)
-{
-	return zsock_select(nfds, readfds, writefds, exceptfds, (struct zsock_timeval *)timeout);
 }
 
 ssize_t send(int sock, const void *buf, size_t len, int flags)

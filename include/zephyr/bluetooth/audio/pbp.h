@@ -1,5 +1,10 @@
+/**
+ * @file
+ * @brief Public Broadcast Profile (PBP) APIs.
+ */
 /*
  * Copyright 2023 NXP
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,21 +17,33 @@
  *
  * @defgroup bt_pbp Public Broadcast Profile (PBP)
  *
+ * @since 3.5
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
  *
- * [Experimental] Users should note that the APIs can change
- * as a part of ongoing development.
+ * The Public Broadcast Profile (PBP) is used for public broadcasts by providing additional
+ * information in the advertising data.
  */
 
-#include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* PBA Service UUID + Public Broadcast Announcement features + Metadata Length */
+/**
+ * @brief Minimum size of the Public Broadcast Announcement
+ *
+ * It contains the Public Broadcast Announcement UUID (2), the Public Broadcast Announcement
+ * features (1) and the metadata length (1)
+ */
 #define BT_PBP_MIN_PBA_SIZE		(BT_UUID_SIZE_16 + 1 + 1)
 
 /** Public Broadcast Announcement features */

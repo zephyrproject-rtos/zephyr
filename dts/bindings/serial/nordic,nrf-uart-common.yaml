@@ -17,6 +17,7 @@ properties:
       if CONFIG_PINCTRL is enabled).
 
   current-speed:
+    required: true
     description: |
       Initial baud rate setting for UART. Only a fixed set of baud
       rates are selectable on these devices.

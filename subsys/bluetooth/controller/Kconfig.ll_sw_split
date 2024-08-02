@@ -11,18 +11,22 @@ config BT_LLL_VENDOR_NORDIC
 	depends on !$(dt_nodelabel_enabled,timer0)
 	depends on !$(dt_nodelabel_enabled,rtc0)
 
-	select ENTROPY_NRF5_RNG
-	select ENTROPY_NRF5_BIAS_CORRECTION
+	select ENTROPY_NRF5_RNG if BT_CTLR_CRYPTO
+	select ENTROPY_NRF5_BIAS_CORRECTION if ENTROPY_NRF5_RNG
 
 	select BT_HAS_HCI_VS
-	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR && \
+	select BT_CTLR_CRYPTO_SUPPORT if !SOC_COMPATIBLE_NRF54LX
+	select BT_CTLR_LE_ENC_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
+					 !BT_CTLR_DATA_LENGTH_CLEAR && \
 					 !BT_CTLR_PHY_2M_NRF
+	select BT_CTLR_PRIVACY_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
+					  !SOC_SERIES_NRF51X
 	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
 	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
-	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if HAS_HW_NRF_CCM_LFLEN_8BIT || \
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if !BT_CTLR_LE_ENC_SUPPORT || \
+						  HAS_HW_NRF_CCM_LFLEN_8BIT || \
 						  BT_CTLR_DATA_LENGTH_CLEAR
-	select BT_CTLR_PRIVACY_SUPPORT if !SOC_SERIES_NRF51X
 	select BT_CTLR_EXT_SCAN_FP_SUPPORT
 	select BT_CTLR_PHY_2M_SUPPORT if HAS_HW_NRF_RADIO_BLE_2M || \
 					 BT_CTLR_PHY_2M_NRF
@@ -64,11 +68,13 @@ config BT_LLL_VENDOR_NORDIC
 config BT_LLL_VENDOR_OPENISA
 	bool "Use OpenISA LLL"
 	depends on SOC_OPENISA_RV32M1
+	select BT_HAS_HCI_VS
+	select BT_CTLR_CRYPTO_SUPPORT
+	select BT_CTLR_LE_ENC_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
+					 !BT_CTLR_DATA_LENGTH_CLEAR
+	select BT_CTLR_PRIVACY_SUPPORT if BT_CTLR_CRYPTO_SUPPORT
 	select BT_CTLR_PHY_UPDATE_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
-	select BT_HAS_HCI_VS
-	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR
-	select BT_CTLR_PRIVACY_SUPPORT
 
 	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN
 
@@ -598,12 +604,34 @@ config BT_CTLR_DYNAMIC_INTERRUPTS
 	  permit use of SoC's peripheral for custom use when Bluetooth is not
 	  enabled.
 
-config BT_CTLR_OPTIMIZE_FOR_SPEED
-	prompt "Optimize for Speed" if !(SOC_SERIES_NRF51X && BT_CTLR_LE_ENC)
-	bool
-	default y if BT_CTLR_LE_ENC
+choice
+	prompt "Optimization options"
+	depends on !LTO
+	default BT_CTLR_OPTIMIZE_FOR_SPEED
+
+config BT_CTLR_OPTIMIZE_FOR_APP_DEFAULT
+	bool "Optimize for application defaults"
 	help
-	  Optimize compilation of controller for execution speed.
+	  Optimize compilation of Controller for application's default.
+
+config BT_CTLR_OPTIMIZE_FOR_SIZE
+	bool "Optimize for space"
+	help
+	  Optimize compilation of Controller for code size.
+
+	  This is the Zephyr project default, but is overridden to use optimize
+	  for speed when compiling the Controller to reduce application's ISR
+	  and thread latencies.
+
+config BT_CTLR_OPTIMIZE_FOR_SPEED
+	bool "Optimize for Speed"
+	help
+	  Optimize compilation of Controller for execution speed. As the
+	  Controller's Upper Link Layer and Lower Link Layer execute in ISRs,
+	  use of speed optimizations reduces application's ISR and thread
+	  latencies.
+
+endchoice
 
 config BT_CTLR_XTAL_ADVANCED
 	bool "Advanced event preparation"
@@ -670,6 +698,16 @@ config BT_CTLR_ASSERT_OVERHEAD_START
 	  radio event skips are not for every consecutive radio event interval,
 	  otherwise leading to remote supervision timeout and possible missing
 	  local disconnect events.
+
+config BT_CTLR_ASSERT_VENDOR
+	bool "Vendor Defined Assertion Information Handler"
+	help
+	  This option enables a vendor specific sink for the controller assertion
+	  mechanism, where parameter information is provided. This must be defined in
+	  vendor debug HAL interface as \"BT_ASSERT_VND(cond, param1, param2)\", and
+	  will be invoked whenever the controller code encounters an unrecoverable error
+	  with parameter information. Implementation shall include the equivalent of
+	  BT_ASSERT_DIE for halting the kernel.
 
 config BT_CTLR_CENTRAL_SPACING
 	int "Central Connection Spacing"
@@ -1091,7 +1129,7 @@ config BT_TICKER_EXT
 config BT_TICKER_EXT_SLOT_WINDOW_YIELD
 	bool "Tickers with slot window always yields"
 	depends on BT_TICKER_EXT
-	default y if BT_CTLR_ADV_ISO
+	default y if BT_MESH || BT_CTLR_ADV_ISO
 	help
 	  This options forces tickers with slot window extensions to yield to
 	  normal tickers and be placed at the end of their slot window.

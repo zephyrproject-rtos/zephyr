@@ -1,7 +1,36 @@
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-description: Atmel AT25 (or compatible) SPI EEPROM
+description: |
+  SPI EEPROMs compatible with Atmel's AT25 family
+
+  There are multiple vendors manufacturing SPI EEPROMs compatible with the programming model of the
+  Atmel AT25.
+
+  Examples of compatible EEPROM families:
+  - Microchip AT25xxx
+  - ST M95xxx
+
+  Each of these can be represented by a set of common parameters (EEPROM size, page size, address
+  width, and timeout) available from the datasheet of the specific EEPROM. The compatible string for
+  these can list the specific EEPROM vendor and model along with the vendor EEPROM family as long as
+  the least-specific compatible entry is "atmel,at25".
+
+  Example devicetree node describing a ST M95256 EEPROM on the spi0 bus:
+
+    &spi0 {
+      status = "okay";
+
+      eeprom@1 {
+        compatible = "st,m95256", "st,m95xxx", "atmel,at25";
+        reg = <0x1>;
+        size = <DT_SIZE_K(32)>;
+        pagesize = <64>;
+        address-width = <16>;
+        spi-max-frequency = <DT_FREQ_M(20)>;
+        timeout = <5>;
+      };
+   };
 
 compatible: "atmel,at25"
 

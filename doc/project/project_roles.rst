@@ -3,8 +3,8 @@
 TSC Project Roles
 *****************
 
-Main Roles
-##########
+Project Roles
+#############
 
 TSC projects generally will involve *Maintainers*, *Collaborators*, and
 *Contributors*:
@@ -71,6 +71,8 @@ Contributor change requests or approval on pull requests are not counted with
 respect to accepting and merging a pull request. However, Contributors comments
 and requested changes should still be considered by the pull request author.
 
+.. _collaborator:
+
 Collaborator
 ++++++++++++
 
@@ -103,6 +105,9 @@ assignee to advance the review process and resolve any disagreements.
 
 Collaborator approval of pull requests are counted toward the minimum required
 approvals needed to merge a PR. Other criteria for merging may apply.
+
+
+.. _maintainer:
 
 Maintainer
 ++++++++++
@@ -159,6 +164,7 @@ Assignees are set either automatically based on the code being changed or set
 by the other Maintainers, the Release Engineering team can set an assignee when
 the latter is not possible.
 
+* Responsibility to drive the pull request to a mergeable state
 * Right to dismiss stale and unrelated reviews or reviews not following
   :ref:`expectations <reviewer-expectations>` from reviewers and seek reviews
   from additional maintainers, developers and contributors
@@ -166,7 +172,6 @@ the latter is not possible.
   requested are addressed
 * Responsibility to re-assign a pull request if they are the original submitter
   of the code
-* Responsibility to drive the pull request to a mergeable state
 * Solicit approvals from maintainers of the subsystems affected
 * Responsibility to drive the :ref:`pr_technical_escalation` process
 

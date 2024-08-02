@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /**
- * @brief card status. Used interally by subsystem.
+ * @brief card status. Used internally by subsystem.
  */
 enum card_status {
 	CARD_UNINITIALIZED = 0, /*!< card has not been initialized */
@@ -30,7 +30,7 @@ enum card_status {
 };
 
 /**
- * @brief card type. Used interally by subsystem.
+ * @brief card type. Used internally by subsystem.
  */
 enum card_type {
 	CARD_SDMMC = 0, /*!< SD memory card */

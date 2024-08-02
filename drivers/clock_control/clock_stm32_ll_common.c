@@ -35,6 +35,28 @@
 #define apb2_prescaler(v) fn_apb2_prescaler(v)
 #endif
 
+#if defined(RCC_CFGR_ADCPRE)
+#define z_adc12_prescaler(v) LL_RCC_ADC_CLKSRC_PCLK2_DIV_ ## v
+#define adc12_prescaler(v) z_adc12_prescaler(v)
+#elif defined(RCC_CFGR2_ADC1PRES)
+#define z_adc12_prescaler(v) \
+	COND_CODE_1(IS_EQ(v, 0), \
+		    LL_RCC_ADC1_CLKSRC_HCLK, \
+		    LL_RCC_ADC1_CLKSRC_PLL_DIV_ ## v)
+#define adc12_prescaler(v) z_adc12_prescaler(v)
+#else
+#define z_adc12_prescaler(v) \
+	COND_CODE_1(IS_EQ(v, 0), \
+		    (LL_RCC_ADC12_CLKSRC_HCLK), \
+		    (LL_RCC_ADC12_CLKSRC_PLL_DIV_ ## v))
+#define adc12_prescaler(v) z_adc12_prescaler(v)
+#define z_adc34_prescaler(v) \
+	COND_CODE_1(IS_EQ(v, 0), \
+		    (LL_RCC_ADC34_CLKSRC_HCLK), \
+		    (LL_RCC_ADC34_CLKSRC_PLL_DIV_ ## v))
+#define adc34_prescaler(v) z_adc34_prescaler(v)
+#endif
+
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
 #define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK4_FREQ
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHB4Prescaler
@@ -205,7 +227,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to change a wrong periph clock bit */
+		/* Attempt to change a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -228,7 +250,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
+		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -451,7 +473,7 @@ static enum clock_control_status stm32_clock_control_get_status(const struct dev
 	}
 }
 
-static struct clock_control_driver_api stm32_clock_control_api = {
+static const struct clock_control_driver_api stm32_clock_control_api = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
@@ -733,6 +755,7 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
+	config_regulator_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 #if defined(FLASH_ACR_LATENCY)
 	uint32_t old_flash_freq;
@@ -750,7 +773,7 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 #endif /* FLASH_ACR_LATENCY */
 
-	/* Set up indiviual enabled clocks */
+	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
 	/* Set up PLLs */
@@ -813,13 +836,13 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_SetAHB4Prescaler(ahb_prescaler(STM32_AHB4_PRESCALER));
 #endif
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc_prescaler)
-	LL_RCC_SetADCClockSource(adc_prescaler(STM32_ADC_PRESCALER));
+	LL_RCC_SetADCClockSource(adc12_prescaler(STM32_ADC_PRESCALER));
 #endif
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc12_prescaler)
-	LL_RCC_SetADCClockSource(adc_prescaler(STM32_ADC12_PRESCALER));
+	LL_RCC_SetADCClockSource(adc12_prescaler(STM32_ADC12_PRESCALER));
 #endif
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc34_prescaler)
-	LL_RCC_SetADCClockSource(adc_prescaler(STM32_ADC34_PRESCALER));
+	LL_RCC_SetADCClockSource(adc34_prescaler(STM32_ADC34_PRESCALER));
 #endif
 
 	/* configure MCO1/MCO2 based on Kconfig */
@@ -838,12 +861,13 @@ void HAL_RCC_CSSCallback(void)
 }
 #endif
 
+void __weak config_regulator_voltage(uint32_t hclk_freq) {}
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init
  */
 DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
-		    &stm32_clock_control_init,
+		    stm32_clock_control_init,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,

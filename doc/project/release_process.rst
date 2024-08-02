@@ -72,14 +72,17 @@ code base has begun.
 Stabilization Phase
 *******************
 
-Over the next weeks, only patches which fix problems should be submitted to the
-mainline.  On occasion, a more significant change will be allowed, but such
-occasions are rare and require a TSC approval (Change Control Board). As a
-general rule, if you miss submitting your code during the development phase for
-a given feature, the best thing to do is to wait for the next development cycle.
-(An occasional exception is made for drivers for previously unsupported
-hardware; if they do not touch any other in-tree code, they cannot cause
-regressions and should be safe to add at any time).
+Over the next weeks and depending on the release milestone, only stabilization,
+cosmetic changes, tests, bug and doc fixes are allowed (See :ref:`table
+<release_milestones>` below).
+
+On occasion, more significant changes and new features will be allowed, but such
+occasions are rare and require a TSC approval and a justification. As a general
+rule, if you miss submitting your code during the development phase for a given
+feature, the best thing to do is to wait for the next development cycle. (An
+occasional exception is made for drivers for previously unsupported hardware; if
+they do not touch any other in-tree code, they cannot cause regressions and
+should be safe to add at any time).
 
 As fixes make their way into the mainline, the patch rate will slow over time.
 The mainline release owner releases new -rc drops once or twice a week; a normal
@@ -91,29 +94,58 @@ At that point, the whole process starts over again.
 
 .. _release_quality_criteria:
 
-Release Quality Criteria
-************************
+Release Criteria
+****************
 
-The current backlog of prioritized bugs shall also be used as a quality metric
-to gate the final release. The following counts shall be used:
+The main motivation is to clearly have the criteria in place that must be met
+for a release. This will help define when a release is "done" in terms that most
+people can understand and in ways that help new people to understand the process
+and participate in creating successful releases:
 
-.. csv-table:: Bug Count Release Thresholds
-   :header: "High", "Medium", "Low"
-   :widths: auto
+- The release criteria documents all the requirements of our target audience for
+  each Zephyr release
+- The target audiences for each release can be different, and may overlap
+- The criteria at any given time are not set in stone: there may be requirements
+  that have been overlooked, or that are new, and in these cases, the criteria
+  should be expanded to ensure all needs are covered.
+
+Below is the high level criteria to be met for each release:
+
+- No blocker bugs / blocking issues
+- All relevant tests shall pass on ``Tier 0`` platforms
+- All relevant tests shall pass on Tier 0 and 1 platforms (at least 1 per
+  architecture/architecture variant/Hardware features)
+- All applicable samples/tests shall build on Tiers 0, 1 and 2
+- All high and critical static analysis and security issues addressed
+- Release Notes are up-to-date.
+
+Blocker Bugs
+============
+
+Blocker bug process kicks in during the release process and is in effect after the
+feature freeze milestone. An issue labeled as a blocker practically blocks a
+release from happening. All blocker bugs shall be resolved before a release is
+created.
+
+A fix for a bug that is granted `blocker` status can be merged to 'main' and included in
+the release all the way until the final release date.
+
+Bugs of moderate severity and higher that have impact on all users are typically
+the candidates to be promoted to blocker bugs
+
+Contributors and member of the release engineering team shall follow these
+guidelines for release blocker bugs:
+
+- Only mark bugs as blockers if the software (Zephyr) must not be released with
+  the bug present.
+- All collaborators can add or remove blocking labels.
+- Evaluate bugs as potential blockers based on their severity and prevalence.
+- Provide detailed rationale whenever adding or removing a blocking label.
+- Ensure all blockers have the milestone tagged.
+- Release managers have final say on blocking status; contact them with any questions.
 
 
-   "0","<20","<50"
-
-.. note::
-
-   The "low" bug count target of <50 will be a phased approach starting with 150
-   for release 2.4.0, 100 for release 2.5.0, and 50 for release 2.6.0
-
-The final release must not contain any static analysis high-critical issues
-that can potentially compromise the functionality, security, or reliability of
-our software.  High-critical issues represent vulnerabilities that, if left
-unresolved, could have severe consequences.
-
+.. _release_milestones:
 
 Release Milestones
 *******************
@@ -141,15 +173,16 @@ Release Milestones
      - Release Manager
    * - T-3W
      - Feature Freeze (RC1)
-     - No new features, ONLY stabilization and cosmetic changes, bug and doc fixes are allowed.
+     - No new features after RC1, ONLY stabilization and cosmetic changes, bug and doc
+       fixes are allowed. New tests for existing features are also allowed.
      - Release Engineering
    * - T-2W
      - 2nd Release Candidate
-     - No new features, ONLY stabilization and cosmetic changes, bug and doc fixes are allowed.
+     - No new features after RC2, ONLY stabilization and cosmetic changes, bug and doc fixes are allowed.
      - Release Manager
    * - T-1W
      - Hard Freeze (RC3)
-     - Only blocker bug fixes, documentation and changes to release notes are allowed.
+     - Only blocker bug fixes after RC3, documentation and changes to release notes are allowed.
        Release notes need to be complete by this checkpoint. Release Criteria is
        met.
      - Release Manager
@@ -157,8 +190,6 @@ Release Milestones
      - Release
      -
      - Release Manager
-
-
 
 
 Releases
@@ -329,6 +360,50 @@ governing board.
 
 Processes to achieve selected certification will be determined by the Security and
 Safety Working Groups and coordinated with the TSC.
+
+
+Hardware Support Tiers
+***********************
+
+Tier 0: Emulation Platforms
+===========================
+
+- Tests are both built and run in these platforms in CI, and therefore runtime
+  failures can block Pull Requests.
+- Supported by the Zephyr project itself, commitment to fix bugs in releases.
+- One Tier 0 platform is required for each new architecture.
+- Bugs reported against platforms of this tier are to be evaluated and treated as
+  a general bug in Zephyr and should be dealt with the highest priority.
+
+Tier 1: Supported Platforms
+===========================
+
+- Commitment from a specific team to run tests using twister device
+  testing for the "Zephyr compatibility test suite" (details TBD)
+  on a regular basis using open-source and publicly available drivers.
+- Commitment to fix bugs in time for releases. Not supported by "Zephyr Project"
+  itself.
+- General availability for purchase
+- Bugs reported against platforms of this tier are to be evaluated and treated
+  as a general bug in Zephyr and should be dealt with medium to high priority.
+
+Tier 2: Community Platforms
+===========================
+
+- Platform implementation is available in upstream, no commitment to testing,
+  may not be generally available.
+- Has a dedicated maintainer who commits to respond to issues / review patches.
+- Bugs reported against platforms of this tier are NOT considered as
+  a general bug in Zephyr.
+
+Tier 3: Deprecated and unsupported Platforms
+============================================
+
+- Platform implementation is available, but no owner or unresponsive owner.
+- No commitment to support is available.
+- May be removed from upstream if no one works to bring it up to tier 2 or better.
+- Bugs reported against platforms of this tier are NOT considered as
+  a general bug in Zephyr.
 
 
 Release Procedure

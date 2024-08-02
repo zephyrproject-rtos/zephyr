@@ -10,7 +10,7 @@ extern bool fdtable_fd_is_initialized(int fd);
 
 ZTEST(posix_apis, test_fdtable_init)
 {
-	/* ensure that the the stdin, stdout, and stderr fdtable entries are initialized */
+	/* ensure that the stdin, stdout, and stderr fdtable entries are initialized */
 	zassert_true(fdtable_fd_is_initialized(0));
 	zassert_true(fdtable_fd_is_initialized(1));
 	zassert_true(fdtable_fd_is_initialized(2));

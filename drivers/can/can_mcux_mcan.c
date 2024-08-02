@@ -11,6 +11,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/reset.h>
 
 LOG_MODULE_REGISTER(can_mcux_mcan, CONFIG_CAN_LOG_LEVEL);
 
@@ -27,6 +28,7 @@ struct mcux_mcan_config {
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
+	const struct reset_dt_spec reset;
 };
 
 static int mcux_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
@@ -89,6 +91,16 @@ static int mcux_mcan_init(const struct device *dev)
 	if (!device_is_ready(mcux_config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
+	}
+
+	if (!device_is_ready(mcux_config->reset.dev)) {
+		LOG_ERR("Reset device not ready");
+		return -ENODEV;
+	}
+
+	err = reset_line_toggle(mcux_config->reset.dev, mcux_config->reset.id);
+	if (err) {
+		return err;
 	}
 
 	err = pinctrl_apply_state(mcux_config->pincfg, PINCTRL_STATE_DEFAULT);
@@ -197,6 +209,7 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 			DT_INST_CLOCKS_CELL(n, name),			\
 		.irq_config_func = mcux_mcan_irq_config_##n,		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
+		.reset = RESET_DT_SPEC_INST_GET(n),			\
 	};								\
 									\
 	static const struct can_mcan_config can_mcan_config_##n =	\

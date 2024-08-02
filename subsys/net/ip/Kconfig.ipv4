@@ -86,10 +86,21 @@ config NET_IPV4_IGMPV3
 	help
 	  Use IGMPv3 for managing the multicast groups.
 
+config NET_IPV4_ACD
+	bool "Activate IPv4 address conflict detection (RFC 5227)"
+	depends on NET_ARP
+	help
+	  Activate IPv4 address conflict detection specified in RFC 5227.
+	  The conflict detection is based on ARP probes/announcements.
+
 config NET_IPV4_AUTO
 	bool "IPv4 autoconfiguration [EXPERIMENTAL]"
 	depends on NET_ARP
 	select EXPERIMENTAL
+	select NET_IPV4_ACD
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 
@@ -149,6 +160,14 @@ module-dep = NET_LOG
 module-str = Log level for ICMPv4
 module-help = Enables ICMPv4 code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
+#if NET_IPV4_ACD
+module = NET_IPV4_ACD
+module-dep = NET_LOG
+module-str = Log level for IPv4 address conflict detection
+module-help = Enables IPv4 address conflict detection debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+#endif
 
 if NET_IPV4_AUTO
 module = NET_IPV4_AUTO

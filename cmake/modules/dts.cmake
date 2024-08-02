@@ -57,8 +57,9 @@ find_package(Dtc 1.4.6)
 #    - ${PROJECT_BINARY_DIR}/zephyr.dts exists
 #    - ${PROJECT_BINARY_DIR}/edt.pickle exists
 #    - ${KCONFIG_BINARY_DIR}/Kconfig.dts exists
-#    - the build system will be regenerated if any devicetree files
-#      used in this build change, including transitive includes
+#    - DTS_INCLUDE_FILES is set to a ;-list of all devicetree files
+#      used in this build, including transitive includes (the build
+#      system will be regenerated if any of those files change)
 #    - the devicetree extensions in the extensions.cmake module
 #      will be ready for use in other CMake list files that run
 #      after this module
@@ -75,7 +76,7 @@ find_package(Dtc 1.4.6)
 # - DTC_OVERLAY_FILE: list of devicetree overlay files which will be
 #   used to modify or extend the base devicetree.
 # - EXTRA_DTC_OVERLAY_FILE: list of extra devicetree overlay files.
-#   This variable is is similar to DTC_OVERLAY_FILE but the files in
+#   This variable is similar to DTC_OVERLAY_FILE but the files in
 #   EXTRA_DTC_OVERLAY_FILE will be applied after DTC_OVERLAY_FILE and
 #   thus files specified by EXTRA_DTC_OVERLAY_FILE have higher precedence.
 # - EXTRA_DTC_FLAGS: list of extra command line options to pass to
@@ -257,14 +258,14 @@ zephyr_dt_preprocess(
 # Parse the generated dependency file to find the DT sources that
 # were included, including any transitive includes.
 toolchain_parse_make_rule(${DTS_DEPS}
-  include_files # Output parameter
+  DTS_INCLUDE_FILES # Output parameter
   )
 
 # Add the results to the list of files that, when change, force the
 # build system to re-run CMake.
 set_property(DIRECTORY APPEND PROPERTY
   CMAKE_CONFIGURE_DEPENDS
-  ${include_files}
+  ${DTS_INCLUDE_FILES}
   ${GEN_DEFINES_SCRIPT}
   ${GEN_DRIVER_KCONFIG_SCRIPT}
   ${GEN_DTS_CMAKE_SCRIPT}

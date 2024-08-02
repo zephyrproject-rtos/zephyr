@@ -167,7 +167,7 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
 	uint32_t data32[IMX_IPM_DATA_REGS] = {0};
-#if !IS_ENABLED(CONFIG_HAS_MCUX)
+#if !defined(CONFIG_HAS_MCUX)
 	mu_status_t status;
 #endif
 	int i;

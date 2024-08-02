@@ -57,9 +57,9 @@ static int test_fd_alloc(void *obj)
 {
 	int fd;
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	zassert_not_equal(fd, -1, "Failed to allocate FD");
-	z_finalize_fd(fd, obj, NULL);
+	zvfs_finalize_fd(fd, obj, NULL);
 
 	return fd;
 }
@@ -82,7 +82,7 @@ static int test_recv_buf(uint8_t *input_buf, size_t input_len,
 	ret = websocket_recv_msg(fd, recv_buffer, recv_len,
 				 msg_type, remaining, 0);
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 
 	return ret;
 }
@@ -395,7 +395,7 @@ ZTEST(net_websocket, test_send_and_recv_lorem_ipsum)
 		      "Should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 }
 
 ZTEST(net_websocket, test_recv_two_large_split_msg)
@@ -418,7 +418,7 @@ ZTEST(net_websocket, test_recv_two_large_split_msg)
 		      "1st should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 }
 
 ZTEST(net_websocket, test_send_and_recv_empty_pong)
@@ -439,7 +439,7 @@ ZTEST(net_websocket, test_send_and_recv_empty_pong)
 	zassert_equal(ret, test_msg_len, "Should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 }
 
 ZTEST(net_websocket, test_recv_in_small_buffer)

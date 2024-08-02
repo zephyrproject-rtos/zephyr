@@ -160,7 +160,7 @@ which can be very useful if the UART (through USB CDC ACM) is already being used
 a purpose different than logging (such as HCI traffic in the hci_uart application).
 To use RTT, you will first need to enable it by adding the following lines in your ``.conf`` file:
 
-.. code-block:: text
+.. code-block:: cfg
 
    CONFIG_USE_SEGGER_RTT=y
    CONFIG_RTT_CONSOLE=y
@@ -178,7 +178,7 @@ with the RTT one if they are enabled by default in the particular sample or
 application you are running. For example, to disable the UART console,
 add this to your ``.conf`` file:
 
-.. code-block:: console
+.. code-block:: cfg
 
    CONFIG_UART_CONSOLE=n
 

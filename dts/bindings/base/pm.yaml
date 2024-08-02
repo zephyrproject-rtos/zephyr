@@ -30,3 +30,8 @@ properties:
     description: |
       Automatically configure the device for runtime power management after the
       init function runs.
+
+  zephyr,disabling-power-states:
+    type: phandles
+    description: |
+      List of power states that will disable this device power.

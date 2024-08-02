@@ -203,7 +203,7 @@ A device-specific API definition typically looks like this:
    __syscall int specific_from_user(const struct device *dev, int bar);
 
    /* Only needed when extensions include syscalls */
-   #include <syscalls/specific.h>
+   #include <zephyr/syscalls/specific.h>
 
 A driver implementing extensions to the subsystem will define the real
 implementation of both the subsystem API and the specific APIs:
@@ -243,7 +243,7 @@ implementation of both the subsystem API and the specific APIs:
        return z_impl_specific_do_that(dev, bar)
    }
 
-   #include <syscalls/specific_from_user_mrsh.c>
+   #include <zephyr/syscalls/specific_from_user_mrsh.c>
 
    #endif /* CONFIG_USERSPACE */
 
@@ -372,6 +372,24 @@ leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 Drivers and other system utilities can determine whether startup is
 still in pre-kernel states by using the :c:func:`k_is_pre_kernel`
 function.
+
+Deferred initialization
+***********************
+
+Initialization of devices can also be deferred to a later time. In this case,
+the device is not automatically initialized by Zephyr at boot time. Instead,
+the device is initialized when the application calls :c:func:`device_init`.
+To defer a device driver initialization, add the property ``zephyr,deferred-init``
+to the associated device node in the DTS file. For example:
+
+.. code-block:: devicetree
+
+   / {
+           a-driver@40000000 {
+                   reg = <0x40000000 0x1000>;
+                   zephyr,deferred-init;
+           };
+   };
 
 System Drivers
 **************

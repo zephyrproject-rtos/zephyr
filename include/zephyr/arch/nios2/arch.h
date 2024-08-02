@@ -17,6 +17,7 @@
 #include <system.h>
 
 #include <zephyr/arch/nios2/thread.h>
+#include <zephyr/arch/nios2/exception.h>
 #include <zephyr/arch/nios2/asm_inline.h>
 #include <zephyr/arch/common/addr_types.h>
 #include <zephyr/devicetree.h>
@@ -99,34 +100,11 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 void arch_irq_enable(unsigned int irq);
 void arch_irq_disable(unsigned int irq);
 
-struct __esf {
-	uint32_t ra; /* return address r31 */
-	uint32_t r1; /* at */
-	uint32_t r2; /* return value */
-	uint32_t r3; /* return value */
-	uint32_t r4; /* register args */
-	uint32_t r5; /* register args */
-	uint32_t r6; /* register args */
-	uint32_t r7; /* register args */
-	uint32_t r8; /* Caller-saved general purpose */
-	uint32_t r9; /* Caller-saved general purpose */
-	uint32_t r10; /* Caller-saved general purpose */
-	uint32_t r11; /* Caller-saved general purpose */
-	uint32_t r12; /* Caller-saved general purpose */
-	uint32_t r13; /* Caller-saved general purpose */
-	uint32_t r14; /* Caller-saved general purpose */
-	uint32_t r15; /* Caller-saved general purpose */
-	uint32_t estatus;
-	uint32_t instr; /* Instruction being executed when exc occurred */
-};
-
-typedef struct __esf z_arch_esf_t;
-
 FUNC_NORETURN void z_SysFatalErrorHandler(unsigned int reason,
-					 const z_arch_esf_t *esf);
+					 const struct arch_esf *esf);
 
 FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
-					  const z_arch_esf_t *esf);
+					  const struct arch_esf *esf);
 
 enum nios2_exception_cause {
 	NIOS2_EXCEPTION_UNKNOWN                      = -1,

@@ -1,6 +1,0 @@
-board:
-  name: efm32pg_stk3402a
-  vendor: silabs
-  socs:
-  - name: efm32pg12b500f1024gl125
-  - name: efm32jg12b500f1024gl125

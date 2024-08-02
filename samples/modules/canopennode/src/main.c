@@ -15,7 +15,9 @@
 LOG_MODULE_REGISTER(app);
 
 #define CAN_INTERFACE DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))
-#define CAN_BITRATE (DT_PROP(DT_CHOSEN(zephyr_canbus), bus_speed) / 1000)
+#define CAN_BITRATE (DT_PROP_OR(DT_CHOSEN(zephyr_canbus), bitrate, \
+					  DT_PROP_OR(DT_CHOSEN(zephyr_canbus), bus_speed, \
+						     CONFIG_CAN_DEFAULT_BITRATE)) / 1000)
 
 static struct gpio_dt_spec led_green_gpio = GPIO_DT_SPEC_GET_OR(
 		DT_ALIAS(green_led), gpios, {0});

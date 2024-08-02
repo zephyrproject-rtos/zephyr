@@ -1,9 +1,0 @@
-/*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
-&wifi {
-	status = "okay";
-};

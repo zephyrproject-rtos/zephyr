@@ -60,11 +60,11 @@ extern "C" {
 
 DEVICE_MMIO_TOPLEVEL_DECLARE(LOAPIC_REGS_STR);
 
-extern uint32_t z_loapic_irq_base(void);
-extern void z_loapic_enable(unsigned char cpu_number);
-extern void z_loapic_int_vec_set(unsigned int irq, unsigned int vector);
-extern void z_loapic_irq_enable(unsigned int irq);
-extern void z_loapic_irq_disable(unsigned int irq);
+uint32_t z_loapic_irq_base(void);
+void z_loapic_enable(unsigned char cpu_number);
+void z_loapic_int_vec_set(unsigned int irq, unsigned int vector);
+void z_loapic_irq_enable(unsigned int irq);
+void z_loapic_irq_disable(unsigned int irq);
 
 /**
  * @brief Read 64-bit value from the local APIC in x2APIC mode.

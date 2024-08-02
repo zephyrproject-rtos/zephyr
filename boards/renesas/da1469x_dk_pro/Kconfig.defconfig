@@ -5,6 +5,9 @@
 
 if BOARD_DA1469X_DK_PRO
 
+config I2C_CALLBACK
+	default y if I2C_SMARTBOND
+
 if LVGL
 
 config LV_Z_BITS_PER_PIXEL
@@ -33,5 +36,29 @@ config LV_Z_POINTER_INPUT_MSGQ_COUNT
 	default 70
 
 endif # INPUT
+
+if PM || PM_DEVICE || PM_DEVICE_RUNTIME
+
+# Increase stack size to avoid raising usage-fault
+# exceptions due to stack overflow.
+config IDLE_STACK_SIZE
+	default 2048
+
+# Make sure the serial device has higher
+# initialization priority.
+config SERIAL_INIT_PRIORITY
+	default KERNEL_INIT_PRIORITY_DEFAULT
+
+endif # PM || PM_DEVICE
+
+if BT
+
+config BT_WAIT_NOP
+	default y
+
+config TEST_RANDOM_GENERATOR
+	default y
+
+endif # BT
 
 endif # BOARD_DA1469X_DK_PRO

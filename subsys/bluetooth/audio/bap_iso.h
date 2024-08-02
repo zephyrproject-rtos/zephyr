@@ -7,9 +7,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/iso.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/atomic_types.h>
 
 struct bt_bap_iso_dir {
 	struct bt_bap_stream *stream;

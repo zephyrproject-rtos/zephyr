@@ -8,6 +8,7 @@
 #include <atmel/samd21.dtsi>
 #include <atmel/samx2xx18.dtsi>
 #include "adafruit_trinket_m0-pinctrl.dtsi"
+#include <zephyr/dt-bindings/led/led.h>
 
 / {
 	model = "Adafruit Trinket M0";
@@ -87,6 +88,10 @@
 		compatible = "apa,apa102";
 		reg = <0>;
 		spi-max-frequency = <24000000>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_BLUE
+				 LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED>;
 	};
 };
 

@@ -11,3 +11,19 @@ config UART_BT
 	help
 	  Enable the UART over NUS Bluetooth driver, which can be used to pipe
 	  serial data over Bluetooth LE GATT using NUS (Nordic UART Service).
+
+if UART_BT
+
+config UART_BT_WORKQUEUE_PRIORITY
+	int "UART NUS Work-queue Priority"
+	default MAIN_THREAD_PRIORITY
+	help
+	  Select UART NUS Work-queue priority based on the application context.
+
+config UART_BT_WORKQUEUE_STACK_SIZE
+	int "UART NUS Work-queue Stack Size"
+	default 1024
+	help
+	  Set UART NUS Work-queue Stack-size based on the application context.
+
+endif

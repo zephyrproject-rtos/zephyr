@@ -10,17 +10,6 @@ config DEVICE_CONFIGURATION_DATA
 
 config NXP_IMX_EXTERNAL_SDRAM
 	default y
-
-config INPUT
-	default y if LVGL
-
-if INPUT
-
-config INPUT_FT5336_INTERRUPT
-	default y
-
-endif # INPUT
-
 if NETWORKING
 
 config NET_L2_ETHERNET
@@ -34,19 +23,5 @@ config ETH_MCUX_PHY_RESET
 endif # ETH_MCUX
 
 endif # NETWORKING
-
-if LVGL
-
-config LV_Z_VDB_SIZE
-	default 16
-
-config LV_DPI_DEF
-	default 128
-
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
-
-endif # LVGL
 
 endif # BOARD_MIMXRT1050_EVK

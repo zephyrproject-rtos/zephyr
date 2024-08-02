@@ -9,8 +9,7 @@
 ################### Volume Control Profile Volume Renderer ###################
 
 config BT_VCP_VOL_REND
-	bool "Volume Control Profile Volume Renderer Support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Volume Control Profile Volume Renderer Support"
 	select BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for Volume Control Profile Volume Renderer
@@ -58,10 +57,9 @@ endif # BT_VCP_VOL_REND
 ################### Volume Control Profile Volume Controller ###################
 
 config BT_VCP_VOL_CTLR
-	bool "Volume Control Profile Volume Controller Support [EXPERIMENTAL]"
+	bool "Volume Control Profile Volume Controller Support"
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
-	select EXPERIMENTAL
 	help
 	  This option enables support for Volume Control Profile Volume
 	  Controller.

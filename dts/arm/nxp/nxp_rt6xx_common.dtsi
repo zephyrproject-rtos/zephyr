@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {
 	chosen {
@@ -67,9 +68,9 @@
 		reg = <0x1b000 DT_SIZE_K(1428)>;
 	};
 
-	sram0: memory@20180000 {
+	sram0: memory@180000 {
 		compatible = "mmio-sram";
-		reg = <0x20180000 DT_SIZE_K(3072)>;
+		reg = <0x180000 DT_SIZE_K(3072)>;
 	};
 
 	sram1: memory@40140000 {
@@ -98,7 +99,12 @@
 	 * modes (0x50000000).
 	 */
 
+	flexspi: spi@134000 {
+		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+	};
+
 	clkctl0: clkctl@1000 {
+		/* FIXME This chip does NOT have a syscon */
 		compatible = "nxp,lpc-syscon";
 		reg = <0x1000 0x1000>;
 		#clock-cells = <1>;
@@ -113,9 +119,22 @@
 	};
 
 	clkctl1: clkctl@21000 {
+		/* FIXME This chip does NOT have a syscon */
 		compatible = "nxp,lpc-syscon";
 		reg = <0x21000 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	rstctl0: reset@0 {
+		compatible = "nxp,rstctl";
+		reg = <0x0 0x80>;
+		#reset-cells = <1>;
+	};
+
+	rstctl1: reset@20000 {
+		compatible = "nxp,rstctl";
+		reg = <0x20000 0x80>;
+		#reset-cells = <1>;
 	};
 
 	uuid: uuid@2f50 {
@@ -123,54 +142,55 @@
 		reg = <0x2f50 0x10>;
 	};
 
-	gpio0: gpio@0 {
+	gpio: gpio@100000 {
 		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x1000>;
-		int-source = "pint";
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <0>;
-	};
+		reg = <0x100000 0x2784>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	gpio1: gpio@1 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x1000>;
-		int-source = "pint";
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <1>;
-	};
+		gpio0: gpio@0 {
+			compatible = "nxp,lpc-gpio-port";
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0>;
+		};
 
-	gpio2: gpio@2 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x1000>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <2>;
-	};
+		gpio1: gpio@1 {
+			compatible = "nxp,lpc-gpio-port";
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <1>;
+		};
 
-	gpio3: gpio@3 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x1000>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <3>;
-	};
+		gpio2: gpio@2 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <2>;
+		};
 
-	gpio4: gpio@4 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x1000>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <4>;
-	};
+		gpio3: gpio@3 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <3>;
+		};
 
-	gpio7: gpio@7 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x1000>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <7>;
+		gpio4: gpio@4 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <4>;
+		};
+
+		gpio7: gpio@7 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <7>;
+		};
 	};
 
 	pint: pint@25000 {
@@ -190,6 +210,7 @@
 		reg = <0x106000 0x1000>;
 		interrupts = <14 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 8)>;
 		status = "disabled";
 	};
 
@@ -198,6 +219,7 @@
 		reg = <0x107000 0x1000>;
 		interrupts = <15 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 9)>;
 		status = "disabled";
 	};
 
@@ -206,6 +228,7 @@
 		reg = <0x108000 0x1000>;
 		interrupts = <16 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM2_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 10)>;
 		status = "disabled";
 	};
 
@@ -214,6 +237,7 @@
 		reg = <0x109000 0x1000>;
 		interrupts = <17 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 11)>;
 		status = "disabled";
 	};
 
@@ -222,6 +246,7 @@
 		reg = <0x122000 0x1000>;
 		interrupts = <18 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM4_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 12)>;
 		status = "disabled";
 	};
 
@@ -230,6 +255,7 @@
 		reg = <0x123000 0x1000>;
 		interrupts = <19 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM5_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 13)>;
 		status = "disabled";
 	};
 
@@ -238,6 +264,7 @@
 		reg = <0x124000 0x1000>;
 		interrupts = <43 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM6_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 14)>;
 		status = "disabled";
 	};
 
@@ -246,6 +273,7 @@
 		reg = <0x125000 0x1000>;
 		interrupts = <44 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM7_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 15)>;
 		status = "disabled";
 	};
 
@@ -254,6 +282,7 @@
 		reg = <0x127000 0x1000>;
 		interrupts = <21 0>;
 		clocks = <&clkctl1 MCUX_PMIC_I2C_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 23)>;
 		status = "disabled";
 	};
 
@@ -262,6 +291,12 @@
 		reg = <0x144000 0x1000>;
 		interrupts = <50 1>;
 		num-bidir-endpoints = <6>;
+		status = "disabled";
+	};
+
+	usbphy: usbphy@13b000 {
+		compatible = "nxp,usbphy";
+		reg = <0x13b000 0x1000>;
 		status = "disabled";
 	};
 
@@ -276,6 +311,7 @@
 		reg = <0x126000 0x1000>;
 		interrupts = <20 0>;
 		clocks = <&clkctl1 MCUX_HS_SPI_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 22)>;
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -374,9 +410,9 @@
 		min-bus-freq = <400000>;
 	};
 
-	lpadc0: lpadc@13A0000 {
+	lpadc0: lpadc@13a000 {
 		compatible = "nxp,lpc-lpadc";
-		reg = <0x13A000 0x304>;
+		reg = <0x13a000 0x304>;
 		interrupts = <22 0>;
 		status = "disabled";
 		clk-divider = <1>;
@@ -470,6 +506,7 @@
 		num-channels = <4>;
 		num-bits = <24>;
 		clocks = <&clkctl1 MCUX_MRT_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(2, 8)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 

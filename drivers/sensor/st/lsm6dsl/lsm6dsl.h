@@ -553,14 +553,11 @@
 #define LSM6DSL_REG_Z_OFS_USR				0x75
 
 
-/* Accel sensor sensitivity grain is 0.061 mg/LSB */
-#define SENSI_GRAIN_XL				(61LL / 1000.0)
+/* Accel sensor sensitivity grain is 61 ug/LSB */
+#define SENSI_GRAIN_XL				61LL
 
-/* Gyro sensor sensitivity grain is 4.375 mdps/LSB */
-#define SENSI_GRAIN_G				(4375LL / 1000.0)
-#define SENSOR_PI_DOUBLE			(SENSOR_PI / 1000000.0)
-#define SENSOR_DEG2RAD_DOUBLE			(SENSOR_PI_DOUBLE / 180)
-#define SENSOR_G_DOUBLE				(SENSOR_G / 1000000.0)
+/* Gyro sensor sensitivity grain is 4375 udps/LSB */
+#define SENSI_GRAIN_G				4375LL
 
 #if CONFIG_LSM6DSL_ACCEL_FS == 0
 	#define LSM6DSL_ACCEL_FS_RUNTIME 1

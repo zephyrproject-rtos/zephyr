@@ -349,7 +349,7 @@ DEFINE_XEN_GUEST_HANDLE(gnttab_setup_table_t);
  /*
   * GNTMAP_contains_pte subflag:
   *  0 => This map request contains a host virtual address.
-  *  1 => This map request contains the machine addess of the PTE to update.
+  *  1 => This map request contains the machine address of the PTE to update.
   */
 #define _GNTMAP_contains_pte	(4)
 #define GNTMAP_contains_pte	(1<<_GNTMAP_contains_pte)
@@ -377,7 +377,7 @@ DEFINE_XEN_GUEST_HANDLE(gnttab_setup_table_t);
 #define GNTST_bad_page		(-9) /* Specified page was invalid for op */
 #define GNTST_bad_copy_arg	(-10) /* copy arguments cross page boundary */
 #define GNTST_address_too_big	(-11) /* transfer page address too large */
-#define GNTST_eagain		(-12) /* Operation not done; try agains */
+#define GNTST_eagain		(-12) /* Operation not done; try again */
 /* ` } */
 
 #define GNTTABOP_error_msgs {				\

@@ -211,7 +211,7 @@ static int regulator_npm6001_ldo0_set_voltage(const struct device *dev, int32_t 
 					      int32_t max_uv)
 {
 	const struct regulator_npm6001_config *config = dev->config;
-	uint8_t val;
+	uint8_t val = 0U;
 	size_t i;
 
 	for (i = 0U; i < ARRAY_SIZE(ldo0_voltages); i++) {

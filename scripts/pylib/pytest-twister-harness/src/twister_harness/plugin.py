@@ -85,6 +85,13 @@ def pytest_addoption(parser: pytest.Parser):
         help='Script for controlling pseudoterminal.'
     )
     twister_harness_group.addoption(
+        '--flash-before',
+        type=bool,
+        help='Flash device before attaching to serial port'
+             'This is useful for devices that share the same port for programming'
+             'and serial console, or use soft-USB, where flash must come first.'
+    )
+    twister_harness_group.addoption(
         '--west-flash-extra-args',
         help='Extend parameters for west flash. '
              'E.g. --west-flash-extra-args="--board-id=foobar,--erase" '
@@ -109,6 +116,10 @@ def pytest_addoption(parser: pytest.Parser):
         '--dut-scope',
         choices=('function', 'class', 'module', 'package', 'session'),
         help='The scope for which `dut` and `shell` fixtures are shared.'
+    )
+    twister_harness_group.addoption(
+        '--twister-fixture', action='append', dest='fixtures', metavar='FIXTURE', default=[],
+        help='Twister fixture supported by this platform. May be given multiple times.'
     )
 
 

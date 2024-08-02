@@ -12,7 +12,9 @@ GTEXT(__start)
 
 /* imports */
 GTEXT(__initialize)
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 GTEXT(_isr_wrapper)
+#endif
 
 SECTION_FUNC(vectors, __start)
 #if defined(CONFIG_RISCV_GP)
@@ -33,9 +35,13 @@ SECTION_FUNC(vectors, __start)
 	 *
 	 * CLIC vectored mode uses mtvec exclusively for exception handling and
 	 * mtvec.base must be aligned to 64 bytes (this is done using
-	 * CONFIG_ARCH_SW_ISR_TABLE_ALIGN)
+	 * CONFIG_RISCV_TRAP_HANDLER_ALIGNMENT)
 	 */
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 	la t0, _isr_wrapper
+#else
+	add t0, zero, zero
+#endif
 	addi t0, t0, 0x03 /* Enable CLIC vectored mode by setting LSB */
 	csrw mtvec, t0
 
@@ -97,10 +103,5 @@ SECTION_FUNC(vectors, __start)
 
 #endif /* CONFIG_RISCV_VECTORED_MODE */
 
-#if CONFIG_INCLUDE_RESET_VECTOR
 	/* Jump to __reset */
 	tail __reset
-#else
-	/* Jump to __initialize */
-	tail __initialize
-#endif

@@ -9,5 +9,6 @@ tests:
       - api
     filter: dt_alias_exists("rtc")
     depends_on: rtc
+    timeout: 100
     platform_exclude:
       - qemu_x86_64

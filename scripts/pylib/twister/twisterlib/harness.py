@@ -13,6 +13,7 @@ import logging
 import threading
 import time
 import shutil
+import json
 
 from twisterlib.error import ConfigurationError
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
@@ -45,6 +46,7 @@ class Harness:
 
     def __init__(self):
         self.state = None
+        self.reason = None
         self.type = None
         self.regex = []
         self.matches = OrderedDict()
@@ -56,6 +58,7 @@ class Harness:
         self.next_pattern = 0
         self.record = None
         self.record_pattern = None
+        self.record_as_json = None
         self.recording = []
         self.ztest = False
         self.detected_suite_names = []
@@ -81,6 +84,7 @@ class Harness:
             self.record = config.get('record', {})
             if self.record:
                 self.record_pattern = re.compile(self.record.get("regex", ""))
+                self.record_as_json = self.record.get("as_json")
 
     def build(self):
         pass
@@ -91,8 +95,33 @@ class Harness:
         """
         return self.id
 
+    def translate_record(self, record: dict) -> dict:
+        if self.record_as_json:
+            for k in self.record_as_json:
+                if not k in record:
+                    continue
+                try:
+                    record[k] = json.loads(record[k]) if record[k] else {}
+                except json.JSONDecodeError as parse_error:
+                    logger.warning(f"HARNESS:{self.__class__.__name__}: recording JSON failed:"
+                                   f" {parse_error} for '{k}':'{record[k]}'")
+                    # Don't set the Harness state to failed for recordings.
+                    record[k] = { 'ERROR': { 'msg': str(parse_error), 'doc': record[k] } }
+        return record
+
+    def parse_record(self, line) -> re.Match:
+        match = None
+        if self.record_pattern:
+            match = self.record_pattern.search(line)
+            if match:
+                rec = self.translate_record({ k:v.strip() for k,v in match.groupdict(default="").items() })
+                self.recording.append(rec)
+        return match
+    #
 
     def process_test(self, line):
+
+        self.parse_record(line)
 
         runid_match = re.search(self.run_id_pattern, line)
         if runid_match:
@@ -104,11 +133,13 @@ class Harness:
         if self.RUN_PASSED in line:
             if self.fault:
                 self.state = "failed"
+                self.reason = "Fault detected while running test"
             else:
                 self.state = "passed"
 
         if self.RUN_FAILED in line:
             self.state = "failed"
+            self.reason = "Testsuite failed"
 
         if self.fail_on_fault:
             if self.FAULT == line:
@@ -129,7 +160,8 @@ class Robot(Harness):
 
         config = instance.testsuite.harness_config
         if config:
-            self.path = config.get('robot_test_path', None)
+            self.path = config.get('robot_testsuite', None)
+            self.option = config.get('robot_option', None)
 
     def handle(self, line):
         ''' Test cases that make use of this harness care about results given
@@ -142,18 +174,34 @@ class Robot(Harness):
         tc.status = "passed"
 
     def run_robot_test(self, command, handler):
-
         start_time = time.time()
         env = os.environ.copy()
-        env["ROBOT_FILES"] = self.path
+
+        if self.option:
+            if isinstance(self.option, list):
+                for option in self.option:
+                    for v in str(option).split():
+                        command.append(f'{v}')
+            else:
+                for v in str(self.option).split():
+                    command.append(f'{v}')
+
+        if self.path is None:
+            raise PytestHarnessException(f'The parameter robot_testsuite is mandatory')
+
+        if isinstance(self.path, list):
+            for suite in self.path:
+                command.append(os.path.join(handler.sourcedir, suite))
+        else:
+            command.append(os.path.join(handler.sourcedir, self.path))
 
         with subprocess.Popen(command, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env) as cmake_proc:
-            out, _ = cmake_proc.communicate()
+                stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env) as renode_test_proc:
+            out, _ = renode_test_proc.communicate()
 
             self.instance.execution_time = time.time() - start_time
 
-            if cmake_proc.returncode == 0:
+            if renode_test_proc.returncode == 0:
                 self.instance.status = "passed"
                 # all tests in one Robot file are treated as a single test case,
                 # so its status should be set accordingly to the instance status
@@ -251,11 +299,6 @@ class Console(Harness):
         elif self.GCOV_END in line:
             self.capture_coverage = False
 
-        if self.record_pattern:
-            match = self.record_pattern.search(line)
-            if match:
-                self.recording.append({ k:v.strip() for k,v in match.groupdict(default="").items() })
-
         self.process_test(line)
         # Reset the resulting test state to 'failed' when not all of the patterns were
         # found in the output, but just ztest's 'PROJECT EXECUTION SUCCESSFUL'.
@@ -269,11 +312,13 @@ class Console(Harness):
                          f" {self.next_pattern} of {self.patterns_expected}"
                          f" expected ordered patterns.")
             self.state = "failed"
+            self.reason = "patterns did not match (ordered)"
         if self.state == "passed" and not self.ordered and len(self.matches) < self.patterns_expected:
             logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
                          f" {len(self.matches)} of {self.patterns_expected}"
                          f" expected unordered patterns.")
             self.state = "failed"
+            self.reason = "patterns did not match (unordered)"
 
         tc = self.instance.get_case_or_create(self.get_testcase_name())
         if self.state == "passed":
@@ -307,6 +352,7 @@ class Pytest(Harness):
         finally:
             if self.reserved_serial:
                 self.instance.handler.make_device_available(self.reserved_serial)
+        self.instance.record(self.recording)
         self._update_test_status()
 
     def generate_command(self):
@@ -331,11 +377,11 @@ class Pytest(Harness):
         if pytest_dut_scope:
             command.append(f'--dut-scope={pytest_dut_scope}')
 
-        if handler.options.verbose > 1:
-            command.extend([
-                '--log-cli-level=DEBUG',
-                '--log-cli-format=%(levelname)s: %(message)s'
-            ])
+        # Always pass output from the pytest test and the test image up to Twister log.
+        command.extend([
+            '--log-cli-level=DEBUG',
+            '--log-cli-format=%(levelname)s: %(message)s'
+        ])
 
         if handler.type_str == 'device':
             command.extend(
@@ -347,6 +393,10 @@ class Pytest(Harness):
             command.append('--device-type=custom')
         else:
             raise PytestHarnessException(f'Support for handler {handler.type_str} not implemented yet')
+
+        if handler.type_str != 'device':
+            for fixture in handler.options.fixture:
+                command.append(f'--twister-fixture={fixture}')
 
         if handler.options.pytest_args:
             command.extend(handler.options.pytest_args)
@@ -402,6 +452,12 @@ class Pytest(Harness):
         if hardware.post_script:
             command.append(f'--post-script={hardware.post_script}')
 
+        if hardware.flash_before:
+            command.append(f'--flash-before={hardware.flash_before}')
+
+        for fixture in hardware.fixtures:
+            command.append(f'--twister-fixture={fixture}')
+
         return command
 
     def run_command(self, cmd, timeout):
@@ -413,7 +469,7 @@ class Pytest(Harness):
             env=env
         ) as proc:
             try:
-                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
+                reader_t = threading.Thread(target=self._output_reader, args=(proc, self), daemon=True)
                 reader_t.start()
                 reader_t.join(timeout)
                 if reader_t.is_alive():
@@ -450,12 +506,13 @@ class Pytest(Harness):
         return cmd, env
 
     @staticmethod
-    def _output_reader(proc):
+    def _output_reader(proc, harness):
         while proc.stdout.readable() and proc.poll() is None:
             line = proc.stdout.readline().decode().strip()
             if not line:
                 continue
             logger.debug('PYTEST: %s', line)
+            harness.parse_record(line)
         proc.communicate()
 
     def _update_test_status(self):
@@ -513,11 +570,11 @@ class Pytest(Harness):
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_SKIP_PATTERN = r".*\[ DISABLED \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    FINISHED_PATTERN = r".*\[==========\] Done running all tests\.$"
+    TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    TEST_SKIP_PATTERN = r".*\[ DISABLED \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>[a-zA-Z_][a-zA-Z0-9_]*)\.(?P<test_name>[a-zA-Z_][a-zA-Z0-9_]*)"
+    FINISHED_PATTERN = r".*\[==========\] Done running all tests\."
 
     def __init__(self):
         super().__init__()
@@ -670,12 +727,13 @@ class Test(Harness):
         self.process_test(line)
 
         if not self.ztest and self.state:
-            logger.debug(f"not a ztest and no state for  {self.id}")
+            logger.debug(f"not a ztest and no state for {self.id}")
             tc = self.instance.get_case_or_create(self.id)
             if self.state == "passed":
                 tc.status = "passed"
             else:
                 tc.status = "failed"
+                tc.reason = "Test failure"
 
 
 class Ztest(Test):

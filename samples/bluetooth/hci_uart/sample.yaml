@@ -58,3 +58,13 @@ tests:
     tags:
       - uart
       - bluetooth
+  sample.bluetooth.hci_uart.nrf54l15.all:
+    harness: bluetooth
+    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15pdk/nrf54l15/cpuapp
+    extra_args:
+      - OVERLAY_CONFIG=overlay-all-bt_ll_sw_split.conf
+    tags:
+      - uart
+      - bluetooth

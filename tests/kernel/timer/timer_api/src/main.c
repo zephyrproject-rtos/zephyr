@@ -45,8 +45,8 @@ struct timer_data {
  * between the two clocks.  Produce a maximum error for a given
  * duration in microseconds.
  */
-#define BUSY_SLEW_THRESHOLD_TICKS(_us)				\
-	k_us_to_ticks_ceil32((_us) * BUSY_TICK_SLEW_PPM		\
+#define BUSY_SLEW_THRESHOLD_TICKS(_us)					\
+	k_us_to_ticks_ceil32((_us) * (uint64_t)BUSY_TICK_SLEW_PPM	\
 			     / PPM_DIVISOR)
 
 static void duration_expire(struct k_timer *timer);
@@ -723,9 +723,11 @@ ZTEST_USER(timer_api, test_timer_remaining)
 	 * than expected on systems where the requested microsecond
 	 * delay cannot be exactly represented as an integer number of
 	 * ticks.
+	 * As above, use higher tolerance on platforms where the clock used
+	 * by the kernel timer and the one used for busy-waiting may be skewed.
 	 */
-	zassert_true(((int64_t)exp_ticks - (int64_t)now) <= (dur_ticks / 2) + 1,
-		     NULL);
+	zassert_true(((int64_t)exp_ticks - (int64_t)now)
+		     <= (dur_ticks / 2) + 1 + slew_ticks, NULL);
 }
 
 ZTEST_USER(timer_api, test_timeout_abs)
@@ -803,10 +805,30 @@ ZTEST_USER(timer_api, test_sleep_abs)
 	 *  time slop or more depending on the time to resume
 	 */
 	k_ticks_t late = end - (start + sleep_ticks);
+	int slop = MAX(2, k_us_to_ticks_ceil32(250));
 
-	zassert_true(late >= 0 && late <= MAX(2, k_us_to_ticks_ceil32(250)),
+	zassert_true(late >= 0 && late <= slop,
 		     "expected wakeup at %lld, got %lld (late %lld)",
 		     start + sleep_ticks, end, late);
+
+	/* Let's test that an absolute delay awakes at the correct time
+	 * even if the system did not get some ticks announcements
+	 */
+	int tickless_wait = 5;
+
+	start = end;
+	k_busy_wait(k_ticks_to_us_ceil32(tickless_wait));
+	/* We expect to not have got <tickless_wait> tick announcements,
+	 * as there is currently nothing scheduled
+	 */
+	k_sleep(K_TIMEOUT_ABS_TICKS(start + sleep_ticks));
+	end = k_uptime_ticks();
+	late = end - (start + sleep_ticks);
+
+	zassert_true(late >= 0 && late <= slop,
+		     "expected wakeup at %lld, got %lld (late %lld)",
+		     start + sleep_ticks, end, late);
+
 }
 
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,

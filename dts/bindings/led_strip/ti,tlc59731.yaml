@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "ti,tlc59731"
+description: TLC59731 RGB LED Controller
+include: [led-strip.yaml]
+
+properties:
+  gpios:
+    required: true
+    type: phandle-array
+    description: |
+      GPIO to send command data to the controller.

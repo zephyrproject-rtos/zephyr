@@ -13,6 +13,7 @@
 LOG_MODULE_REGISTER(spi_psoc6);
 
 #include <errno.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
 #include <soc.h>
 
@@ -31,8 +32,7 @@ struct spi_psoc6_config {
 	CySCB_Type *base;
 	uint32_t periph_id;
 	void (*irq_config_func)(const struct device *dev);
-	uint32_t num_pins;
-	struct soc_gpio_pin pins[];
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct spi_psoc6_transfer {
@@ -377,7 +377,12 @@ static int spi_psoc6_init(const struct device *dev)
 	const struct spi_psoc6_config *config = dev->config;
 	struct spi_psoc6_data *data = dev->data;
 
-	soc_gpio_list_configure(config->pins, config->num_pins);
+
+	/* Configure dt provided device signals when available */
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
 
 	Cy_SysClk_PeriphAssignDivider(config->periph_id,
 				      CY_SYSCLK_DIV_8_BIT,
@@ -408,12 +413,12 @@ static const struct spi_driver_api spi_psoc6_driver_api = {
 };
 
 #define SPI_PSOC6_DEVICE_INIT(n)					\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static void spi_psoc6_spi##n##_irq_cfg(const struct device *port); \
 	static const struct spi_psoc6_config spi_psoc6_config_##n = {	\
 		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),		\
 		.periph_id = DT_INST_PROP(n, peripheral_id),		\
-		.num_pins = CY_PSOC6_DT_INST_NUM_PINS(n),		\
-		.pins = CY_PSOC6_DT_INST_PINS(n),			\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.irq_config_func = spi_psoc6_spi##n##_irq_cfg,		\
 	};								\
 	static struct spi_psoc6_data spi_psoc6_dev_data_##n = {		\

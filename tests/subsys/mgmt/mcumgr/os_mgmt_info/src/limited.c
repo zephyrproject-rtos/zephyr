@@ -17,7 +17,7 @@
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
-#include <version.h>
+#include <zephyr/version.h>
 #include <string.h>
 #include <smp_internal.h>
 #include "smp_test_util.h"

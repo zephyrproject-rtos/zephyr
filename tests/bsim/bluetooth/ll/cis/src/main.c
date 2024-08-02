@@ -843,14 +843,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central ISO",
-		.test_post_init_f = test_cis_init,
+		.test_pre_init_f = test_cis_init,
 		.test_tick_f = test_cis_tick,
 		.test_main_f = test_cis_central,
 	},
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral ISO",
-		.test_post_init_f = test_cis_init,
+		.test_pre_init_f = test_cis_init,
 		.test_tick_f = test_cis_tick,
 		.test_main_f = test_cis_peripheral,
 	},

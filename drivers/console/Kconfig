@@ -34,7 +34,6 @@ config CONSOLE_HANDLER
 
 config CONSOLE_INIT_PRIORITY
 	int "Console init priority"
-	default 95 if UART_MUX
 	default 60 if UART_CONSOLE || XTENSA_SIM_CONSOLE
 	default KERNEL_INIT_PRIORITY_DEFAULT
 	help
@@ -96,21 +95,37 @@ config JAILHOUSE_DEBUG_CONSOLE
 	  Useful in board bring-up if there aren't any working serial
 	  drivers.
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_RAM_CONSOLE := zephyr,ram-console
+
 config RAM_CONSOLE
 	bool "Use RAM console"
 	select CONSOLE_HAS_DRIVER
+	select RAM_CONSOLE_BUFFER_SECTION if $(dt_chosen_enabled,$(DT_CHOSEN_Z_RAM_CONSOLE))
 	help
 	  Emit console messages to a RAM buffer "ram_console" which can
 	  be examined at runtime with a debugger. Useful in board bring-up
 	  if there aren't any working serial drivers.
 
+config RAM_CONSOLE_BUFFER_SECTION
+	bool "Use dedicated section as RAM console buffer"
+	depends on RAM_CONSOLE && $(dt_chosen_enabled,$(DT_CHOSEN_Z_RAM_CONSOLE))
+	select KERNEL_DIRECT_MAP if MMU
+	help
+	  Use a dedicated section as the RAM console buffer, whose address is
+	  known before build so that the console output messages can be easily
+	  examined by a debugger or software tool from a parallel-running OS.
+
 config RAM_CONSOLE_BUFFER_SIZE
 	int "Ram Console buffer size"
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_RAM_CONSOLE)) if RAM_CONSOLE_BUFFER_SECTION
 	default 1024
 	depends on RAM_CONSOLE
 	help
-	  Size of the RAM console buffer. Messages will wrap around if the
-	  length is exceeded.
+	  Total size of the RAM console buffer, to ensure it's always
+	  NULL-terminated leave one byte unused, the actual length is
+	  one byte less. Messages will wrap around if the actual length
+	  is exceeded.
 
 config RTT_CONSOLE
 	bool "Use RTT console"
@@ -253,84 +268,6 @@ config SEMIHOST_CONSOLE
 module = UART_CONSOLE
 module-str = UART console
 source "subsys/logging/Kconfig.template.log_config"
-
-source "drivers/console/Kconfig.gsm_mux"
-
-config UART_MUX
-	bool "[DEPRECATED] UART muxing (GSM 07.10) support [EXPERIMENTAL]"
-	depends on SERIAL_SUPPORT_INTERRUPT && GSM_MUX
-	select UART_INTERRUPT_DRIVEN
-	select EXPERIMENTAL
-	select DEPRECATED
-	help
-	  Enable this option to create UART muxer that run over a physical
-	  UART. The GSM 07.10 muxing protocol is used to separate the data
-	  between these muxed UARTs.
-
-if UART_MUX
-
-config UART_MUX_DEVICE_NAME
-	string "UART mux device name template"
-	default "GSM"
-	help
-	  Device name template for the UART mux Devices. First device would
-	  have name $(UART_MUX_DEVICE_NAME)_0, etc. User will access muxed
-	  UART using this name.
-
-config UART_MUX_RINGBUF_SIZE
-	int "UART mux ring buffer size"
-	default 256
-	help
-	  UART mux ring buffer size when passing data from RX ISR to worker
-	  thread that will do the unmuxing.
-
-config UART_MUX_TEMP_BUF_SIZE
-	int "Size of the temp buffer when reading data from real UART"
-	default 32
-	help
-	  Size of the temporary RX buffer in receiving ISR.
-
-config UART_MUX_DEVICE_COUNT
-	int "Number of UART mux devices (DLCIs)"
-	default GSM_MUX_DLCI_MAX
-	range 1 64
-	help
-	  Number of instances of UART muxes. Default value is set by
-	  maximum number of DLCIs (Data Link Connection Identifiers)
-	  configured in the system.
-
-config UART_MUX_REAL_DEVICE_COUNT
-	int "Number of real UART devices"
-	default 1
-	help
-	  Tells how many real UART devices there are. Typically there is
-	  only one UART and the muxed UARTs are run on top of that. If you have
-	  two modems for example, then you would need to increase this to two.
-
-config UART_MUX_RX_STACK_SIZE
-	int "Size of the stack allocated for receiving data from UART"
-	default 512
-	help
-	  Sets the stack size which will be used by the PPP RX workqueue.
-
-config UART_MUX_RX_PRIORITY
-	int "RX workqueue thread priority"
-	default 7
-	help
-	  Sets the priority of the RX workqueue thread.
-
-module = UART_MUX
-module-str = UART mux
-source "subsys/logging/Kconfig.template.log_config"
-
-endif # UART_MUX
-
-config UART_MUX_VERBOSE_DEBUG
-	bool "Print hexdump of sent and received packets"
-	depends on UART_MUX_LOG_LEVEL_DBG
-	help
-	  As there might be lot of debug output printed, only enable
-	  this if really needed.
 
 config EFI_CONSOLE
 	bool "Use EFI console for console output"

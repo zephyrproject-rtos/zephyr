@@ -298,14 +298,15 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 	lll_chan_set(data_chan_use);
 
-	/* By design, there shall alway be one free node rx available for
+	/* By design, there shall always be one free node rx available for
 	 * setting up radio for new PDU reception.
 	 */
 	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 	LL_ASSERT(node_rx);
 
 	/* Encryption */
-	if (lll->enc) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    lll->enc) {
 		uint64_t payload_count;
 		uint8_t pkt_flags;
 
@@ -375,7 +376,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	uint32_t overhead;
 
 	overhead = lll_preempt_calc(ull, (TICKER_ID_SCAN_SYNC_ISO_BASE +
-					  ull_sync_iso_lll_handle_get(lll)), ticks_at_event);
+					  ull_sync_iso_lll_index_get(lll)), ticks_at_event);
 	/* check if preempt to start has changed */
 	if (overhead) {
 		LL_ASSERT_OVERHEAD(overhead);
@@ -456,6 +457,7 @@ static void isr_rx_estab(void *param)
 	LL_ASSERT(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_ESTAB;
+	e->estab_failed = 0U;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
 
@@ -618,7 +620,8 @@ static void isr_rx(void *param)
 		    !lll->payload[bis_idx][payload_index]) {
 			uint16_t handle;
 
-			if (lll->enc) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+			    lll->enc) {
 				uint32_t mic_failure;
 				uint32_t done;
 
@@ -921,7 +924,8 @@ isr_rx_next_subevent:
 	lll_chan_set(data_chan_use);
 
 	/* Encryption */
-	if (lll->enc) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    lll->enc) {
 		uint64_t payload_count;
 		struct pdu_bis *pdu;
 
@@ -930,7 +934,7 @@ isr_rx_next_subevent:
 			payload_count += (lll->bn_curr - 1U) +
 					 (lll->ptc_curr * lll->pto);
 
-			/* By design, there shall alway be one free node rx
+			/* By design, there shall always be one free node rx
 			 * available for setting up radio for new PDU reception.
 			 */
 			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
@@ -955,7 +959,7 @@ isr_rx_next_subevent:
 		struct pdu_bis *pdu;
 
 		if (bis) {
-			/* By design, there shall alway be one free node rx
+			/* By design, there shall always be one free node rx
 			 * available for setting up radio for new PDU reception.
 			 */
 			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
@@ -1166,13 +1170,13 @@ static void isr_rx_done(void *param)
 		 *
 		 * When a Synchronized Receiver receives such a PDU where
 		 * (instant - bigEventCounter) mod 65536 is greater than or
-		 * equal to 32767 (because the instant is in the past), the
+		 * equal to 32767 (because the instant is in the past),
 		 * the Link Layer may stop synchronization with the BIG.
 		 */
 
 		/* Note: We are not validating whether the control PDU was
 		 * received after the instant but apply the new channel map.
-		 * If the channel map was new at or after the instant and the
+		 * If the channel map was new at or after the instant and
 		 * the channel at the event counter did not match then the
 		 * control PDU would not have been received.
 		 */

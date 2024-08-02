@@ -155,7 +155,6 @@ struct spi_nor_config {
 	bool dpd_exist:1;
 	bool dpd_wakeup_sequence_exist:1;
 	bool mxicy_mx25r_power_mode_exist:1;
-	bool enter_4byte_addr_exist:1;
 	bool reset_gpios_exist:1;
 	bool requires_ulbpr_exist:1;
 	bool wp_gpios_exist:1;
@@ -516,13 +515,14 @@ static int enter_dpd(const struct device *const dev)
 static int exit_dpd(const struct device *const dev)
 {
 	int ret = 0;
+#if ANY_INST_HAS_DPD
 	const struct spi_nor_config *cfg = dev->config;
 
 	if (cfg->dpd_exist) {
 		delay_until_exit_dpd_ok(dev);
 
-#if ANY_INST_HAS_DPD_WAKEUP_SEQUENCE
 		if (cfg->dpd_wakeup_sequence_exist) {
+#if ANY_INST_HAS_DPD_WAKEUP_SEQUENCE
 			/* Assert CSn and wait for tCRDP.
 			 *
 			 * Unfortunately the SPI API doesn't allow us to
@@ -535,6 +535,7 @@ static int exit_dpd(const struct device *const dev)
 
 			/* Deassert CSn and wait for tRDP */
 			k_sleep(K_MSEC(cfg->t_rdp_ms));
+#endif /* ANY_INST_HAS_DPD_WAKEUP_SEQUENCE */
 		} else {
 			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RDPD);
 
@@ -546,8 +547,8 @@ static int exit_dpd(const struct device *const dev)
 			}
 #endif /* T_EXIT_DPD */
 		}
-#endif /* DPD_WAKEUP_SEQUENCE */
 	}
+#endif /* ANY_INST_HAS_DPD */
 	return ret;
 }
 
@@ -625,13 +626,15 @@ static int spi_nor_wrsr(const struct device *dev,
 {
 	int ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 
-	if (ret == 0) {
-		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0, &sr,
-				     sizeof(sr));
-		spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
+	if (ret != 0) {
+		return ret;
 	}
-
-	return ret;
+	ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0, &sr,
+					sizeof(sr));
+	if (ret != 0) {
+		return ret;
+	}
+	return spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
 }
 
 #if ANY_INST_HAS_MXICY_MX25R_POWER_MODE
@@ -693,18 +696,23 @@ static int mxicy_wrcr(const struct device *dev,
 		}
 
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
-
-		if (ret == 0) {
-			uint8_t data[] = {
-				sr,
-				cr & 0xFF,	/* Configuration register 1 */
-				cr >> 8		/* Configuration register 2 */
-			};
-
-			ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0,
-				data, sizeof(data));
-			spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
+		if (ret != 0) {
+			return ret;
 		}
+
+		uint8_t data[] = {
+			sr,
+			cr & 0xFF,	/* Configuration register 1 */
+			cr >> 8		/* Configuration register 2 */
+		};
+
+		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0,
+			data, sizeof(data));
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
 	}
 
 	return ret;
@@ -841,7 +849,12 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 				to_write = page_size - (addr % page_size);
 			}
 
-			spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+
+			if (ret != 0) {
+				break;
+			}
+
 			ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
 						src, to_write);
 			if (ret != 0) {
@@ -852,7 +865,10 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 			src = (const uint8_t *)src + to_write;
 			addr += to_write;
 
-			spi_nor_wait_until_ready(dev, WAIT_READY_WRITE);
+			ret = spi_nor_wait_until_ready(dev, WAIT_READY_WRITE);
+			if (ret != 0) {
+				break;
+			}
 		}
 	}
 
@@ -890,11 +906,14 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 	ret = spi_nor_write_protection_set(dev, false);
 
 	while ((size > 0) && (ret == 0)) {
-		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+		if (ret) {
+			break;
+		}
 
 		if (size == flash_size) {
 			/* chip erase */
-			spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
+			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
 			size -= flash_size;
 		} else {
 			const struct jesd216_erase_type *erase_types =
@@ -914,7 +933,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 				}
 			}
 			if (bet != NULL) {
-				spi_nor_cmd_addr_write(dev, bet->cmd, addr, NULL, 0);
+				ret = spi_nor_cmd_addr_write(dev, bet->cmd, addr, NULL, 0);
 				addr += BIT(bet->exp);
 				size -= BIT(bet->exp);
 			} else {
@@ -923,18 +942,11 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 				ret = -EINVAL;
 			}
 		}
+		if (ret != 0) {
+			break;
+		}
 
-#ifdef __XCC__
-		/*
-		 * FIXME: remove this hack once XCC is fixed.
-		 *
-		 * Without this volatile return value, XCC would segfault
-		 * compiling this file complaining about failure in CGPREP
-		 * phase.
-		 */
-		volatile int xcc_ret =
-#endif
-		spi_nor_wait_until_ready(dev, WAIT_READY_ERASE);
+		ret = spi_nor_wait_until_ready(dev, WAIT_READY_ERASE);
 	}
 
 	int ret2 = spi_nor_write_protection_set(dev, true);
@@ -1034,10 +1046,10 @@ static int spi_nor_read_jedec_id(const struct device *dev,
 static int spi_nor_set_address_mode(const struct device *dev,
 				    uint8_t enter_4byte_addr)
 {
-	const struct spi_nor_config *cfg = dev->config;
-	int ret = -ENOSYS;
+	int ret = 0;
 
-	if (cfg->enter_4byte_addr_exist) {
+	LOG_DBG("Checking enter-4byte-addr %02x", enter_4byte_addr);
+
 	/* Do nothing if not provided (either no bits or all bits
 	 * set).
 	 */
@@ -1045,8 +1057,6 @@ static int spi_nor_set_address_mode(const struct device *dev,
 	    || (enter_4byte_addr == 0xff)) {
 		return 0;
 	}
-
-	LOG_DBG("Checking enter-4byte-addr %02x", enter_4byte_addr);
 
 	/* This currently only supports command 0xB7 (Enter 4-Byte
 	 * Address Mode), with or without preceding WREN.
@@ -1061,18 +1071,18 @@ static int spi_nor_set_address_mode(const struct device *dev,
 		/* Enter after WREN. */
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 	}
+
 	if (ret == 0) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_4BA);
-	}
 
-	if (ret == 0) {
-		struct spi_nor_data *data = dev->data;
+		if (ret == 0) {
+			struct spi_nor_data *data = dev->data;
 
-		data->flag_access_32bit = true;
+			data->flag_access_32bit = true;
+		}
 	}
 
 	release_device(dev);
-	}
 
 	return ret;
 }
@@ -1324,9 +1334,13 @@ static int spi_nor_configure(const struct device *dev)
 	rc = spi_nor_rdsr(dev);
 	if (rc > 0 && (rc & SPI_NOR_WIP_BIT)) {
 		LOG_WRN("Waiting until flash is ready");
-		spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
+		rc = spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
 	}
 	release_device(dev);
+	if (rc < 0) {
+		LOG_ERR("Failed to wait until flash is ready (%d)", rc);
+		return -ENODEV;
+	}
 
 	/* now the spi bus is configured, we can verify SPI
 	 * connectivity by reading the JEDEC ID.
@@ -1413,11 +1427,6 @@ static int spi_nor_configure(const struct device *dev)
 		(void)mxicy_configure(dev, jedec_id);
 	}
 #endif /* ANY_INST_HAS_MXICY_MX25R_POWER_MODE */
-
-	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)
-	    && (enter_dpd(dev) != 0)) {
-		return -ENODEV;
-	}
 
 	return 0;
 }
@@ -1660,7 +1669,6 @@ static const struct flash_driver_api spi_nor_api = {
 	.dpd_exist = DT_INST_PROP(idx, has_dpd),						\
 	.dpd_wakeup_sequence_exist = DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),		\
 	.mxicy_mx25r_power_mode_exist = DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),	\
-	.enter_4byte_addr_exist = DT_INST_NODE_HAS_PROP(idx, enter_4byte_addr),			\
 	.reset_gpios_exist = DT_INST_NODE_HAS_PROP(idx, reset_gpios),				\
 	.requires_ulbpr_exist = DT_INST_PROP(idx, requires_ulbpr),				\
 	.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),					\

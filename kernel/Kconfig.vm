@@ -202,7 +202,7 @@ config KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK
 	bool
 	help
 	  Use custom memory range check functions instead of the generic
-	  checks in z_mem_phys_addr() and z_mem_virt_addr().
+	  checks in k_mem_phys_addr() and k_mem_virt_addr().
 
 	  sys_mm_is_phys_addr_in_range() and
 	  sys_mm_is_virt_addr_in_range() must be implemented.

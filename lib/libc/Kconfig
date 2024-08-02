@@ -43,19 +43,11 @@ config NEWLIB_LIBC_SUPPORTED
 config PICOLIBC_SUPPORTED
 	bool
 	depends on !NATIVE_APPLICATION
-	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (NATIVE_LIBRARY)
-	depends on !REQUIRES_FULL_LIBCPP || ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y")
+	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (ZEPHYR_PICOLIBC_MODULE && !REQUIRES_FULL_LIBCPP)
 	default y
 	select FULL_LIBC_SUPPORTED
 	help
 	  Selected when the target has support for picolibc.
-
-config SUPPORT_MINIMAL_LIBC
-	bool
-	select MINIMAL_LIBC_SUPPORTED
-	select DEPRECATED
-	help
-	  Legacy symbol that selects MINIMAL_LIBC_SUPPORTED
 
 config NATIVE_LIBC_INCOMPATIBLE
 	bool
@@ -80,6 +72,9 @@ config MINIMAL_LIBC
 	imply COMPILER_FREESTANDING
 	select COMMON_LIBC_ABORT
 	select COMMON_LIBC_STRNLEN
+	imply COMMON_LIBC_MALLOC
+	imply COMMON_LIBC_CALLOC
+	imply COMMON_LIBC_REALLOCARRAY
 	help
 	  Build with minimal C library.
 
@@ -103,6 +98,13 @@ config NEWLIB_LIBC
 	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC_SUPPORTED
 	select NEED_LIBC_MEM_PARTITION
+	imply POSIX_DEVICE_IO_ALIAS_CLOSE
+	imply POSIX_DEVICE_IO_ALIAS_OPEN
+	imply POSIX_DEVICE_IO_ALIAS_READ
+	imply POSIX_DEVICE_IO_ALIAS_WRITE
+	imply POSIX_FD_MGMT_ALIAS_LSEEK
+	imply POSIX_FILE_SYSTEM_ALIAS_FSTAT
+	imply POSIX_MULTI_PROCESS_ALIAS_GETPID
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.

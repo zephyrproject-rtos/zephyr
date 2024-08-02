@@ -101,6 +101,67 @@ ZTEST(mheap_api, test_mheap_malloc_free)
 	zassert_is_null(block_fail, NULL);
 }
 
+ZTEST(mheap_api, test_mheap_realloc)
+{
+	void *block1, *block2;
+	size_t nb;
+
+	/* Realloc NULL pointer is equivalent to malloc() */
+	block1 = k_realloc(NULL, BLK_SIZE_MIN);
+	zassert_not_null(block1);
+
+	/* Allocate something larger than the heap */
+	block2 = k_realloc(NULL, OVERFLOW_SIZE);
+	/* Should fail and return NULL */
+	zassert_is_null(block2);
+
+	/* Keep making the allocated buffer bigger until the heap is depleted */
+	for (nb = 2; nb < (2 * BLK_NUM_MAX); nb++) {
+		void *last_block1 = block1;
+
+		block1 = k_realloc(block1, nb * BLK_SIZE_MIN);
+		if (block1 == NULL) {
+			block1 = last_block1;
+			break;
+		}
+	}
+
+	/* Allocate buffer2 when the heap has been depleted */
+	block2 = k_realloc(NULL, BLK_SIZE_MIN);
+	/* Should fail and return NULL */
+	zassert_is_null(block2);
+
+	/* Now, make block1 smaller */
+	block1 = k_realloc(block1, BLK_SIZE_MIN);
+	zassert_not_null(block1);
+
+	/* Try to allocate buffer2 again */
+	block2 = k_realloc(NULL, BLK_SIZE_MIN);
+	/* Should pass this time */
+	zassert_not_null(block2);
+
+	/* Deallocate everything */
+	k_free(block1);
+	/* equivalent to k_free() */
+	block2 = k_realloc(block2, 0);
+	/* Return NULL after freed */
+	zassert_is_null(block2);
+
+	/* After all allocated buffers have been freed, make sure that we are able to allocate as
+	 * many again
+	 */
+	block1 = k_malloc(BLK_SIZE_MIN);
+	zassert_not_null(block1);
+	for (size_t i = 1; i < nb; i++) {
+		block1 = k_realloc(block1, i * BLK_SIZE_MIN);
+		zassert_not_null(block1);
+	}
+
+	/* Free block1 with k_realloc() this time */
+	block1 = k_realloc(block1, 0);
+	zassert_is_null(block1);
+}
+
 /**
  * @brief Test to demonstrate k_calloc() API functionality.
  *

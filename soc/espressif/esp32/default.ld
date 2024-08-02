@@ -12,23 +12,21 @@
 
 #include "memory.h"
 
-/* The "user_iram_end" represents the 2nd stage bootloader
- * "dram_seg" end address (that should not be overlapped).
- * If no bootloader is used we extend it to gain more user ram.
+/* The "user_iram_end" represents the last DRAM memory location
+ * that is occupied by the ROM code. Since the "iram_loader_seg"
+ * - which is the last memory the bootloader runs from - resides
+ * in the SRAM0 "cache" memory, the "user_iram_end" applies for\
+ * all build cases - Simple boot and the MCUboot application.
  */
-#ifdef CONFIG_ESP_SIMPLE_BOOT
-user_iram_end = SRAM1_DRAM_IRAM_CALC(SRAM1_DRAM_USABLE_START);
-#else
-user_iram_end = SRAM1_DRAM_IRAM_CALC(BOOTLOADER_DRAM_SEG_END);
-#endif
+user_iram_end = SRAM1_DRAM_IRAM_CALC(SRAM1_DRAM_USER_START);
 
 /* User available SRAM memory segments */
 user_iram_seg_org = (SRAM0_IRAM_START + SRAM0_CACHE_SIZE);
 user_iram_seg_len = user_iram_end - user_iram_seg_org;
-user_dram_seg_org = SRAM2_DRAM_USABLE_START;
-user_dram_seg_len = SRAM2_USABLE_SIZE;
-user_dram_2_seg_org = SRAM1_DRAM_USABLE_START;
-user_dram_2_seg_len = SRAM1_USABLE_SIZE;
+user_dram_seg_org = SRAM2_DRAM_USER_START;
+user_dram_seg_len = SRAM2_USER_SIZE;
+user_dram_2_seg_org = SRAM1_DRAM_USER_START;
+user_dram_2_seg_len = SRAM1_USER_SIZE;
 
 /* Aliases */
 #define FLASH_CODE_REGION   irom0_0_seg
@@ -48,6 +46,10 @@ user_dram_2_seg_len = SRAM1_USABLE_SIZE;
  * Executing directly from LMA is not possible. */
 #undef GROUP_ROM_LINK_IN
 #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
+
+/* Make sure new sections have consistent alignment between input and output sections */
+#undef SECTION_PROLOGUE
+#define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
 
 MEMORY
 {
@@ -106,7 +108,7 @@ PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
 #ifdef CONFIG_BT
-_heap_sentry = SRAM1_DRAM_USABLE_START;
+_heap_sentry = SRAM1_DRAM_USER_START;
 #else
 _heap_sentry = DRAM1_BT_SHM_BUFFERS_START; /* was 0x3ffe3f20; */
 #endif
@@ -151,6 +153,10 @@ SECTIONS
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   #include <zephyr/linker/rel-sections.ld>
+
+#ifdef CONFIG_LLEXT
+  #include <zephyr/linker/llext-sections.ld>
+#endif
 
   /* --- RTC BEGIN --- */
 
@@ -366,6 +372,10 @@ SECTIONS
     *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
     *libzephyr.a:cache_esp32.*(.literal .literal.* .text .text.*)
 
+    *libzephyr.a:bootloader_soc.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable)
+    *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable)
+
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.*)
@@ -393,7 +403,6 @@ SECTIONS
   .loader.text :
   {
     . =  ALIGN(4);
-    *libzephyr.a:bootloader_soc.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_init.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_clock_init.*(.literal .text .literal.* .text.*)
@@ -405,8 +414,6 @@ SECTIONS
     *libzephyr.a:bootloader_common.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_mem.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_random.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable)
-    *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable)
     *libzephyr.a:bootloader_efuse.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_utility.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_sha.*(.literal .text .literal.* .text.*)
@@ -803,7 +810,7 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
-  #include <zephyr/linker/common-rom/common-rom-cpp.ld>
+  #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
   #include <zephyr/linker/common-rom/common-rom-net.ld>
@@ -846,6 +853,7 @@ SECTIONS
     _instruction_reserved_start = ABSOLUTE(.);  /* This is a symbol marking the flash.text start, this can be used for mmu driver to maintain virtual address */
     _text_start = ABSOLUTE(.);
     __text_region_start = ABSOLUTE(.);
+    __rom_region_start = ABSOLUTE(.);
 
 #ifndef CONFIG_ESP32_WIFI_IRAM_OPT
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
@@ -865,6 +873,7 @@ SECTIONS
     _text_end = ABSOLUTE(.);
     _instruction_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.text end, this can be used for mmu driver to maintain virtual address */
     __text_region_end = ABSOLUTE(.);
+    __rom_region_end = ABSOLUTE(.);
     _etext = .;
   } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
 

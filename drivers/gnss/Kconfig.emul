@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GNSS_EMUL
+	bool "Emulated GNSS driver"
+	default y
+	depends on DT_HAS_ZEPHYR_GNSS_EMUL_ENABLED
+	select TIMEOUT_64BIT
+	help
+	  Enable emulated GNSS driver.

@@ -18,9 +18,9 @@ static int cmd_get_device_id(const struct shell *sh, size_t argc, char **argv)
 
 	length = hwinfo_get_device_id(dev_id, sizeof(dev_id));
 
-	if (length == -ENOTSUP) {
+	if (length == -ENOSYS) {
 		shell_error(sh, "Not supported by hardware");
-		return -ENOTSUP;
+		return -ENOSYS;
 	} else if (length < 0) {
 		shell_error(sh, "Error: %zd", length);
 		return length;
@@ -138,7 +138,7 @@ static int cmd_show_reset_cause(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argv);
 
 	res = hwinfo_get_reset_cause(&cause);
-	if (res == -ENOTSUP) {
+	if (res == -ENOSYS) {
 		shell_error(sh, "Not supported by hardware");
 		return res;
 	} else if (res != 0) {
@@ -165,7 +165,7 @@ static int cmd_clear_reset_cause(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argv);
 
 	res = hwinfo_clear_reset_cause();
-	if (res == -ENOTSUP) {
+	if (res == -ENOSYS) {
 		shell_error(sh, "Not supported by hardware");
 	} else if (res != 0) {
 		shell_error(sh, "Error clearing the reset causes [%d]", res);
@@ -185,7 +185,7 @@ static int cmd_supported_reset_cause(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argv);
 
 	res = hwinfo_get_supported_reset_cause(&cause);
-	if (res == -ENOTSUP) {
+	if (res == -ENOSYS) {
 		shell_error(sh, "Not supported by hardware");
 	} else if (res != 0) {
 		shell_error(sh, "Could not get the supported reset causes [%d]", res);

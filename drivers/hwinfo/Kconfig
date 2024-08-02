@@ -187,14 +187,16 @@ config HWINFO_LITEX
 config HWINFO_PSOC6
 	bool "Cypress PSoC-6 unique device ID"
 	default y
-	depends on SOC_FAMILY_PSOC6
+	depends on SOC_FAMILY_PSOC6_LEGACY
 	help
 	  Enable Cypress PSoC-6 hwinfo driver.
 
 config HWINFO_GECKO
 	bool "GECKO hwinfo"
 	default y
-	depends on SOC_VENDOR_SILABS && !SOC_SERIES_EFR32MG21 && !SOC_SERIES_EFR32BG22
+	depends on SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+	depends on !SOC_SERIES_EFR32MG21
+	depends on !SOC_SERIES_EFR32BG22
 	select SOC_GECKO_RMU
 	help
 	  Enable Silabs GECKO hwinfo driver.
@@ -203,6 +205,7 @@ config HWINFO_ANDES
 	bool "Andes system ID"
 	default y
 	depends on SOC_FAMILY_ANDES_V5
+	depends on SYSCON
 	help
 	  Enable Andes hwinfo driver
 
@@ -212,5 +215,14 @@ config HWINFO_RW61X
 	depends on SOC_SERIES_RW6XX
 	help
 	  Enable RW61X hwinfo driver
+
+config HWINFO_AMBIQ
+	bool "AMBIQ hwinfo"
+	default y
+	depends on SOC_SERIES_APOLLO4X
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_HWINFO
+	help
+	  Enable AMBIQ hwinfo driver
 
 endif

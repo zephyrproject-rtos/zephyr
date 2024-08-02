@@ -2,13 +2,9 @@
 # Copyright (c) 2018 Gil Benkoe
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_VENDOR_SILABS
-	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
-	select BUILD_OUTPUT_HEX
+if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
-if SOC_VENDOR_SILABS
-
-rsource "*/*/Kconfig"
+rsource "*/Kconfig"
 
 config SOC_GECKO_SDID
 	int
@@ -322,4 +318,4 @@ config SOC_GECKO_CUSTOM_RADIO_PHY
 	  management, sending and receiving packets on radio phy. User has
 	  to provide the radio_config.c and radio_config.h files for the phy.
 
-endif # SOC_VENDOR_SILABS
+endif # SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2

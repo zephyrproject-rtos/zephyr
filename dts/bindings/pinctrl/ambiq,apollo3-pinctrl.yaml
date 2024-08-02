@@ -1,0 +1,127 @@
+# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The Ambiq Apollo3 pin controller is a node responsible for controlling
+  pin function selection and pin properties, such as routing a UART0 TX
+  to pin 60 and enabling the pullup resistor on that pin.
+
+  The node has the 'pinctrl' node label set in your SoC's devicetree,
+  so you can modify it like this:
+
+  &pinctrl {
+    /* your modifications go here */
+  };
+
+  All device pin configurations should be placed in child nodes of the
+  'pinctrl' node, as shown in this example:
+
+  /* You can put this in places like a board-pinctrl.dtsi file in
+   * your board directory, or a devicetree overlay in your application.
+  */
+
+  /* include pre-defined combinations for the SoC variant used by the board */
+  #include <dt-bindings/pinctrl/ambiq-apollo3-pinctrl.h>
+
+  &pinctrl {
+    uart0_default: uart0_default {
+      group1 {
+        pinmux = <UART0TX_P60>;
+      };
+      group2 {
+        pinmux = <UART0RX_P47>;
+        input-enable;
+      };
+    };
+  };
+
+  The 'uart0_default' child node encodes the pin configurations for a
+  particular state of a device; in this case, the default (that is, active)
+  state.
+
+  As shown, pin configurations are organized in groups within each child node.
+  Each group can specify a list of pin function selections in the 'pinmux'
+  property.
+
+  A group can also specify shared pin properties common to all the specified
+  pins, such as the 'input-enable' property in group 2.
+
+compatible: "ambiq,apollo3-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Definitions for a pinctrl state.
+  child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-enable
+          - drive-push-pull
+          - drive-open-drain
+          - bias-high-impedance
+          - bias-pull-up
+          - bias-pull-down
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. Each
+          element of the array is an integer constructed from the
+          pin number and the alternative function of the pin.
+      drive-strength:
+        type: string
+        enum:
+          - "0.1"
+          - "0.5"
+          - "0.75"
+          - "1.0"
+        default: "0.1"
+        description: |
+          The drive strength of a pin, relative to full-driver strength.
+          The default value is 0.1, which is the reset value of resigers
+          PADREGx.PADnSTRNG and ALTPADCFGx.PADn_DS1.
+      ambiq,pull-up-ohms:
+        type: int
+        enum:
+          - 1500
+          - 6000
+          - 12000
+          - 24000
+        default: 1500
+        description: |
+          The 1.5K-24K pullup values are valid for select I2C enabled pads.
+          For Apollo3 these pins are 0-1,5-6,8-9,25,27,39-40,42-43,48-49.
+          The default value is 1500 ohms, which is the reset value of
+          register PADREGx.PADxRSEL.
+      ambiq,iom-nce-module:
+        type: int
+        default: 0
+        description: |
+          IOM nCE module select, selects the SPI channel (CE) number (0-3).
+          The default value is 0, which is the reset value of
+          register CFGx.GPIOnOUTCFG. If the pin is not a CE, this
+          descriptor will be ignored.
+      ambiq,iom-mspi:
+        type: int
+        default: 0
+        description: |
+          Indicates the module which uses specific CE pin, 1 if CE is IOM, 0 if MSPI.
+          User should check g_ui8NCEtable in am_hal_gpio.c for the mapping
+          information and config the pins accordingly, we give a default value
+          0 here to make it be consistent with AM_HAL_GPIO_PINCFG_DEFAULT in
+          ambiq hal. If the pin is not a CE, this descriptor will be ignored.
+      ambiq,iom-num:
+        type: int
+        default: 0
+        description: |
+          Indicates the instance which uses specific CE pin.
+          IOM number (0-5) or MSPI (0-2).
+          User should check g_ui8NCEtable in am_hal_gpio.c for the mapping
+          information and config the pins accordingly, we give a default value
+          0 here to make it be consistent with AM_HAL_GPIO_PINCFG_DEFAULT in
+          ambiq hal. If the pin is not a CE, this descriptor will be ignored.

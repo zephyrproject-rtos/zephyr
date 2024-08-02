@@ -5,9 +5,17 @@ include: base.yaml
 properties:
   bus-speed:
     type: int
-    required: true
+    deprecated: true
     description: |
-      Initial bitrate in bit/s.
+      Deprecated. This property has been renamed to bitrate.
+
+      Initial bitrate in bit/s. If this is unset, the initial bitrate is set to
+      CONFIG_CAN_DEFAULT_BITRATE.
+  bitrate:
+    type: int
+    description: |
+      Initial bitrate in bit/s. If this is unset, the initial bitrate is set to
+      CONFIG_CAN_DEFAULT_BITRATE.
   sample-point:
     type: int
     description: |

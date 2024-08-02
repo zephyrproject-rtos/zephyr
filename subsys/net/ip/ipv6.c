@@ -411,12 +411,15 @@ static enum net_verdict ipv6_forward_mcast_packet(struct net_pkt *pkt,
 #if defined(CONFIG_NET_ROUTE_MCAST)
 	int routed;
 
-	/* check if routing loop could be created or if the destination is of
-	 * interface local scope or if from link local source
+	/* Continue processing without forwarding if:
+	 *   1. routing loop could be created
+	 *   2. the destination is of interface local scope
+	 *   3. is from link local source
+	 *   4. hop limit is or would become zero
 	 */
-	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->src)  ||
-	      net_ipv6_is_addr_mcast_iface((struct in6_addr *)hdr->dst) ||
-	       net_ipv6_is_ll_addr((struct in6_addr *)hdr->src)) {
+	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->src) ||
+	    net_ipv6_is_addr_mcast_iface((struct in6_addr *)hdr->dst) ||
+	    net_ipv6_is_ll_addr((struct in6_addr *)hdr->src) || hdr->hop_limit <= 1) {
 		return NET_CONTINUE;
 	}
 
@@ -505,6 +508,8 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if (!is_loopback) {
+		struct net_if_addr *ifaddr;
+
 		if (net_ipv6_is_addr_loopback((struct in6_addr *)hdr->dst) ||
 		    net_ipv6_is_addr_loopback((struct in6_addr *)hdr->src)) {
 			NET_DBG("DROP: ::1 packet");
@@ -521,7 +526,12 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			goto drop;
 		}
 
-		if (net_ipv6_is_my_addr((struct in6_addr *)hdr->src)) {
+		/* We need to pass the packet through in case our address is
+		 * tentative, as receiving a packet with a tentative address as
+		 * source means that duplicate address has been detected.
+		 */
+		ifaddr = net_if_ipv6_addr_lookup((struct in6_addr *)hdr->src, NULL);
+		if (ifaddr != NULL && ifaddr->addr_state != NET_ADDR_TENTATIVE) {
 			NET_DBG("DROP: src addr is %s", "mine");
 			goto drop;
 		}

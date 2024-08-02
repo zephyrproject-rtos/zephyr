@@ -5,7 +5,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/irq_offload.h>
-#include <zsr.h>
+#include <zephyr/zsr.h>
 #include <zephyr/irq.h>
 
 static struct {

@@ -1,0 +1,24 @@
+identifier: xiao_rp2040
+name: XIAO RP2040
+type: mcu
+arch: arm
+flash: 2048
+ram: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - uart
+  - gpio
+  - adc
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - flash
+  - dma
+  - counter
+  - clock
+vendor: seeed

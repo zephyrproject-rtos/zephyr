@@ -18,15 +18,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config MAIN_STACK_SIZE
 	default 1024
 
-if !XIP
-config FLASH_SIZE
-	default 0
-
-config FLASH_BASE_ADDRESS
-	default 0
-endif # !XIP
-
-if NET_L2_ETHERNET
+if ETH_DRIVER && NET_L2_ETHERNET
 
 # NETC drops TCP/UDP packets with invalid checksum
 config NET_TCP_CHECKSUM
@@ -35,6 +27,6 @@ config NET_TCP_CHECKSUM
 config NET_UDP_CHECKSUM
 	default n
 
-endif # NET_L2_ETHERNET
+endif # ETH_DRIVER && NET_L2_ETHERNET
 
 endif # SOC_SERIES_S32ZE

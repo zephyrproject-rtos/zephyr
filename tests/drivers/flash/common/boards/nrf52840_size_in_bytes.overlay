@@ -5,6 +5,6 @@
  */
 
 &mx25r64 {
-        /delete-property/ size;
-        size-in-bytes = <8388608>;
+	/delete-property/ size;
+	size-in-bytes = <8388608>;
 };

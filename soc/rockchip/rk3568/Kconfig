@@ -6,7 +6,6 @@ config SOC_SERIES_RK3568
 	select ARM64
 	select CPU_CORTEX_A55
 	select ARM_ARCH_TIMER
-	select GIC_V3
 
 config SOC_PART_NUMBER
 	default "RK3568" if SOC_SERIES_RK3568

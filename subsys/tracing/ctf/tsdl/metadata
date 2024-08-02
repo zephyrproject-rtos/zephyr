@@ -310,3 +310,400 @@ event {
 		uint32_t result;
 	};
 };
+
+event {
+	name = user_mode_enter;
+	id = 0x34;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_wakeup;
+	id = 0x35;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = socket_init;
+	id = 0x36;
+	fields := struct {
+		uint32_t id;
+		uint32_t family;
+		uint32_t type;
+		uint32_t proto;
+	};
+};
+
+event {
+	name = socket_close_enter;
+	id = 0x37;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = socket_close_exit;
+	id = 0x38;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_shutdown_enter;
+	id = 0x39;
+	fields := struct {
+		uint32_t id;
+		uint32_t how;
+	};
+};
+
+event {
+	name = socket_shutdown_exit;
+	id = 0x3A;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_bind_enter;
+	id = 0x3B;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+		uint16_t port;
+	};
+};
+
+event {
+	name = socket_bind_exit;
+	id = 0x3C;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_connect_enter;
+	id = 0x3D;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+	};
+};
+
+event {
+	name = socket_connect_exit;
+	id = 0x3E;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_listen_enter;
+	id = 0x3F;
+	fields := struct {
+		uint32_t id;
+		uint32_t backlog;
+	};
+};
+
+event {
+	name = socket_listen_exit;
+	id = 0x40;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_accept_enter;
+	id = 0x41;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = socket_accept_exit;
+	id = 0x42;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+		uint16_t port;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_sendto_enter;
+	id = 0x43;
+	fields := struct {
+		uint32_t id;
+		uint32_t data_length;
+		uint32_t flags;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+	};
+};
+
+event {
+	name = socket_sendto_exit;
+	id = 0x44;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_sendmsg_enter;
+	id = 0x45;
+	fields := struct {
+		uint32_t id;
+		uint32_t flags;
+		uint32_t msghdr;
+		ctf_bounded_string_t address[46];
+		uint32_t data_length;
+	};
+};
+
+event {
+	name = socket_sendmsg_exit;
+	id = 0x46;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_recvfrom_enter;
+	id = 0x47;
+	fields := struct {
+		uint32_t id;
+		uint32_t max_length;
+		uint32_t flags;
+		uint32_t address;
+		uint32_t address_length;
+	};
+};
+
+event {
+	name = socket_recvfrom_exit;
+	id = 0x48;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_recvmsg_enter;
+	id = 0x49;
+	fields := struct {
+		uint32_t id;
+		uint32_t msg;
+		uint32_t max_msg_length;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_recvmsg_exit;
+	id = 0x4A;
+	fields := struct {
+		uint32_t id;
+		uint32_t msg_length;
+		ctf_bounded_string_t address[46];
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_fcntl_enter;
+	id = 0x4B;
+	fields := struct {
+		uint32_t id;
+		uint32_t cmd;
+		uint32_t flags;
+	};
+};
+
+event {
+	name = socket_fcntl_exit;
+	id = 0x4C;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_ioctl_enter;
+	id = 0x4D;
+	fields := struct {
+		uint32_t id;
+		uint32_t request;
+	};
+};
+
+event {
+	name = socket_ioctl_exit;
+	id = 0x4E;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_poll_enter;
+	id = 0x4F;
+	fields := struct {
+		uint32_t fds;
+		uint32_t num_fds;
+		int32_t timeout;
+	};
+};
+
+event {
+	name = socket_poll_value;
+	id = 0x50;
+	fields := struct {
+		int32_t fd;
+		uint16_t events;
+	};
+};
+
+event {
+	name = socket_poll_exit;
+	id = 0x51;
+	fields := struct {
+		uint32_t fds;
+		uint32_t num_fds;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_getsockopt_enter;
+	id = 0x52;
+	fields := struct {
+		uint32_t id;
+		uint32_t level;
+		uint32_t optname;
+	};
+};
+
+event {
+	name = socket_getsockopt_exit;
+	id = 0x53;
+	fields := struct {
+		uint32_t id;
+		uint32_t level;
+		uint32_t optname;
+		uint32_t optval;
+		uint32_t optlen;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_setsockopt_enter;
+	id = 0x54;
+	fields := struct {
+		uint32_t id;
+		uint32_t level;
+		uint32_t optname;
+		uint32_t optval;
+		uint32_t optlen;
+	};
+};
+
+event {
+	name = socket_setsockopt_exit;
+	id = 0x55;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_getpeername_enter;
+	id = 0x56;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = socket_getpeername_exit;
+	id = 0x57;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_getsockname_enter;
+	id = 0x58;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = socket_getsockname_exit;
+	id = 0x59;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_socketpair_enter;
+	id = 0x5A;
+	fields := struct {
+		uint32_t family;
+		uint32_t type;
+		uint32_t proto;
+		uint32_t sv;
+	};
+};
+
+event {
+	name = socket_socketpair_exit;
+	id = 0x5B;
+	fields := struct {
+		int32_t socket0;
+		int32_t socket1;
+		int32_t result;
+	};
+};

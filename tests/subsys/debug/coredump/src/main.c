@@ -13,7 +13,7 @@
 #endif
 
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	ARG_UNUSED(pEsf);
 

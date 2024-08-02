@@ -61,20 +61,19 @@ SECTIONS
     *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_map.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_rom_spiflash.*(.literal .text .literal.* .text.*)
-
     *libzephyr.a:heap.*(.literal .text .literal.* .text.*)
-
     *libkernel.a:kheap.*(.literal .text .literal.* .text.*)
     *libkernel.a:mempool.*(.literal .text .literal.* .text.*)
     *libkernel.a:device.*(.literal .text .literal.* .text.*)
     *libkernel.a:timeout.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_loader.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rtc_clk.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
 
     *(.literal.bootloader_mmap .text.bootloader_mmap)
     *(.literal.bootloader_munmap .text.bootloader_munmap)
-
-    *libzephyr.a:esp_loader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
-
     *(.literal.esp_intr_disable .literal.esp_intr_disable.* .text.esp_intr_disable .text.esp_intr_disable.*)
     *(.literal.default_intr_handler .text.default_intr_handler .iram1.*.default_intr_handler)
     *(.literal.esp_log_timestamp .text.esp_log_timestamp)
@@ -90,14 +89,7 @@ SECTIONS
      * safe access to up to 16 bytes after the last real instruction, add
      * dummy bytes to ensure this
      */
-    . += 16;
-
-    _text_end = ABSOLUTE(.);
-    _etext = .;
-    . = ALIGN(4);
-    _loader_text_end = ABSOLUTE(.);
-    _iram_text_end = ABSOLUTE(.);
-    _iram_end = ABSOLUTE(.);
+    . = ALIGN(4) + 16;
   } > iram_loader_seg
 
   .iram0.vectors : ALIGN(4)
@@ -136,7 +128,6 @@ SECTIONS
     *(.entry.text)
     *(.init.literal)
     *(.init)
-    . = ALIGN (4);
     _init_end = ABSOLUTE(.);
 
     _iram_start = ABSOLUTE(.);
@@ -156,33 +147,14 @@ SECTIONS
     . = ALIGN(4);
   } > iram_seg
 
-  .dram0.data : ALIGN(16)
+  .dram.rodata :
   {
-    . = ALIGN(4);
-    __data_start = ABSOLUTE(.);
+    __rodata_region_start = ABSOLUTE(.);
 
+    . = ALIGN(4);
     #include <snippets-rodata.ld>
-
-    . = ALIGN(4);
-    #include <snippets-rwdata.ld>
     . = ALIGN(4);
 
-    *(.data)
-    *(.data.*)
-    *(.gnu.linkonce.d.*)
-    *(.data1)
-    *(.sdata)
-    *(.sdata.*)
-    *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
-    *(.gnu.linkonce.s2.*)
-    *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
-    *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
-
-    KEEP(*(.jcr))
-    *(.dram1 .dram1.*)
-    . = ALIGN(4);
     *(.rodata)
     *(.rodata.*)
 
@@ -216,16 +188,48 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
     . = ALIGN(4);
+    _thread_local_start = ABSOLUTE(.);
+    *(.tdata)
+    *(.tdata.*)
+    *(.tbss)
+    *(.tbss.*)
     *(.rodata_wlog)
     *(.rodata_wlog*)
     _thread_local_end = ABSOLUTE(.);
     . = ALIGN(4);
   } > dram_seg
 
+  #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
   #include <snippets-sections.ld>
+
+  .dram0.data :
+  {
+    __data_start = ABSOLUTE(.);
+
+    . = ALIGN(4);
+    #include <snippets-rwdata.ld>
+    . = ALIGN(4);
+
+    *(.data)
+    *(.data.*)
+    *(.gnu.linkonce.d.*)
+    *(.data1)
+    *(.sdata)
+    *(.sdata.*)
+    *(.gnu.linkonce.s.*)
+    *(.sdata2)
+    *(.sdata2.*)
+    *(.gnu.linkonce.s2.*)
+    *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
+    *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
+
+    KEEP(*(.jcr))
+    *(.dram1 .dram1.*)
+    . = ALIGN(4);
+  } > dram_seg
 
   #include <zephyr/linker/cplusplus-rom.ld>
   #include <snippets-data-sections.ld>
@@ -239,14 +243,14 @@ SECTIONS
     . = ALIGN(8);
     *(.noinit)
     *(.noinit.*)
-    . = ALIGN(8) ;
+    . = ALIGN(8);
   } > dram_seg
 
   /* Shared RAM */
   .bss (NOLOAD):
   {
     . = ALIGN (8);
-    _bss_start = ABSOLUTE(.); /* required by bluetooth library */
+    _bss_start = ABSOLUTE(.);
     __bss_start = ABSOLUTE(.);
 
     *(.dynsbss)

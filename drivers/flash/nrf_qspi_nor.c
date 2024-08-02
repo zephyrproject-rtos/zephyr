@@ -1366,7 +1366,7 @@ void z_vrfy_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 	z_impl_nrf_qspi_nor_xip_enable(dev, enable);
 }
 
-#include <syscalls/nrf_qspi_nor_xip_enable_mrsh.c>
+#include <zephyr/syscalls/nrf_qspi_nor_xip_enable_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static struct qspi_nor_data qspi_nor_dev_data = {

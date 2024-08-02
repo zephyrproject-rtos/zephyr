@@ -10,7 +10,7 @@
 #include <xtensa/hal.h>
 #include <xtensa_asm2_context.h>
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 	.section    .iram1, "ax"
 	.align      4

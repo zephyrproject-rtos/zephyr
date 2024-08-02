@@ -1,6 +1,7 @@
 /* Bosch BMA4xx 3-axis accelerometer driver
  *
  * Copyright (c) 2023 Google LLC
+ * Copyright (c) 2024 Croxel Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/rtio/work.h>
 
 LOG_MODULE_REGISTER(bma4xx, CONFIG_SENSOR_LOG_LEVEL);
 #include "bma4xx.h"
@@ -338,12 +340,12 @@ static int bma4xx_temp_fetch(const struct device *dev, int8_t *temp)
  * RTIO submit and encoding
  */
 
-static int bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct bma4xx_data *bma4xx = dev->data;
 
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
-	const enum sensor_channel *const channels = cfg->channels;
+	const struct sensor_chan_spec *const channels = cfg->channels;
 	const size_t num_channels = cfg->count;
 
 	uint32_t min_buf_len = sizeof(struct bma4xx_encoded_data);
@@ -357,7 +359,7 @@ static int bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_sq
 	if (rc != 0) {
 		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return rc;
+		return;
 	}
 
 	/* Prepare response */
@@ -370,7 +372,12 @@ static int bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_sq
 
 	/* Determine what channels we need to fetch */
 	for (int i = 0; i < num_channels; i++) {
-		switch (channels[i]) {
+		if (channels[i].chan_idx != 0) {
+			LOG_ERR("Only channel index 0 supported");
+			rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+			return;
+		}
+		switch (channels[i].chan_type) {
 		case SENSOR_CHAN_ALL:
 			edata->has_accel = 1;
 #ifdef CONFIG_BMA4XX_TEMPERATURE
@@ -389,8 +396,10 @@ static int bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_sq
 			break;
 #endif /* CONFIG_BMA4XX_TEMPERATURE */
 		default:
-			LOG_ERR("Requested unsupported channel ID %d", channels[i]);
-			return -ENOTSUP;
+			LOG_ERR("Requested unsupported channel type %d, idx %d",
+				channels[i].chan_type, channels[i].chan_idx);
+			rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+			return;
 		}
 	}
 
@@ -400,7 +409,7 @@ static int bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_sq
 		if (rc != 0) {
 			LOG_ERR("Failed to fetch accel samples");
 			rtio_iodev_sqe_err(iodev_sqe, rc);
-			return rc;
+			return;
 		}
 	}
 
@@ -410,44 +419,52 @@ static int bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_sq
 		if (rc != 0) {
 			LOG_ERR("Failed to fetch temp sample");
 			rtio_iodev_sqe_err(iodev_sqe, rc);
-			return rc;
+			return;
 		}
 	}
 #endif /* CONFIG_BMA4XX_TEMPERATURE */
 
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
-
-	return 0;
 }
 
-static int bma4xx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+static void bma4xx_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = cfg->sensor;
 
-	if (!cfg->is_streaming) {
-		return bma4xx_submit_one_shot(dev, iodev_sqe);
-	}
 	/* TODO: Add streaming support */
+	if (!cfg->is_streaming) {
+		bma4xx_submit_one_shot(dev, iodev_sqe);
+	} else {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+	}
+}
 
-	return -ENOTSUP;
+static void bma4xx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_work_req *req = rtio_work_req_alloc();
+
+	__ASSERT_NO_MSG(req);
+
+	rtio_work_req_submit(req, iodev_sqe, bma4xx_submit_sync);
 }
 
 /*
  * RTIO decoder
  */
 
-static int bma4xx_decoder_get_frame_count(const uint8_t *buffer, enum sensor_channel channel,
-					  size_t channel_idx, uint16_t *frame_count)
+static int bma4xx_decoder_get_frame_count(const uint8_t *buffer, struct sensor_chan_spec ch,
+					  uint16_t *frame_count)
 {
 	const struct bma4xx_encoded_data *edata = (const struct bma4xx_encoded_data *)buffer;
 	const struct bma4xx_decoder_header *header = &edata->header;
 
-	if (channel_idx != 0) {
+	if (ch.chan_idx != 0) {
 		return -ENOTSUP;
 	}
 
 	if (!header->is_fifo) {
-		switch (channel) {
+		switch (ch.chan_type) {
 		case SENSOR_CHAN_ACCEL_X:
 		case SENSOR_CHAN_ACCEL_Y:
 		case SENSOR_CHAN_ACCEL_Z:
@@ -467,10 +484,10 @@ static int bma4xx_decoder_get_frame_count(const uint8_t *buffer, enum sensor_cha
 	return -ENOTSUP;
 }
 
-static int bma4xx_decoder_get_size_info(enum sensor_channel channel, size_t *base_size,
+static int bma4xx_decoder_get_size_info(struct sensor_chan_spec ch, size_t *base_size,
 					size_t *frame_size)
 {
-	switch (channel) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
@@ -487,9 +504,9 @@ static int bma4xx_decoder_get_size_info(enum sensor_channel channel, size_t *bas
 	}
 }
 
-static int bma4xx_get_shift(enum sensor_channel channel, uint8_t accel_fs, int8_t *shift)
+static int bma4xx_get_shift(struct sensor_chan_spec ch, uint8_t accel_fs, int8_t *shift)
 {
-	switch (channel) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
@@ -562,9 +579,8 @@ static void bma4xx_convert_raw_temp_to_q31(int8_t raw_val, q31_t *out)
 }
 #endif /* CONFIG_BMA4XX_TEMPERATURE */
 
-static int bma4xx_one_shot_decode(const uint8_t *buffer, enum sensor_channel channel,
-				  size_t channel_idx, uint32_t *fit, uint16_t max_count,
-				  void *data_out)
+static int bma4xx_one_shot_decode(const uint8_t *buffer, struct sensor_chan_spec ch,
+				  uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct bma4xx_encoded_data *edata = (const struct bma4xx_encoded_data *)buffer;
 	const struct bma4xx_decoder_header *header = &edata->header;
@@ -573,11 +589,11 @@ static int bma4xx_one_shot_decode(const uint8_t *buffer, enum sensor_channel cha
 	if (*fit != 0) {
 		return 0;
 	}
-	if (max_count == 0 || channel_idx != 0) {
+	if (max_count == 0 || ch.chan_idx != 0) {
 		return -EINVAL;
 	}
 
-	switch (channel) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
@@ -590,7 +606,9 @@ static int bma4xx_one_shot_decode(const uint8_t *buffer, enum sensor_channel cha
 
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
-		rc = bma4xx_get_shift(SENSOR_CHAN_ACCEL_XYZ, header->accel_fs, &out->shift);
+		rc = bma4xx_get_shift((struct sensor_chan_spec){.chan_type = SENSOR_CHAN_ACCEL_XYZ,
+								.chan_idx = 0},
+				      header->accel_fs, &out->shift);
 		if (rc != 0) {
 			return -EINVAL;
 		}
@@ -628,8 +646,8 @@ static int bma4xx_one_shot_decode(const uint8_t *buffer, enum sensor_channel cha
 	}
 }
 
-static int bma4xx_decoder_decode(const uint8_t *buffer, enum sensor_channel channel,
-				 size_t channel_idx, uint32_t *fit, uint16_t max_count,
+static int bma4xx_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec ch,
+				 uint32_t *fit, uint16_t max_count,
 				 void *data_out)
 {
 	const struct bma4xx_decoder_header *header = (const struct bma4xx_decoder_header *)buffer;
@@ -639,7 +657,7 @@ static int bma4xx_decoder_decode(const uint8_t *buffer, enum sensor_channel chan
 		return -ENOTSUP;
 	}
 
-	return bma4xx_one_shot_decode(buffer, channel, channel_idx, fit, max_count, data_out);
+	return bma4xx_one_shot_decode(buffer, ch, fit, max_count, data_out);
 }
 
 SENSOR_DECODER_API_DT_DEFINE() = {

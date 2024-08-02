@@ -47,6 +47,16 @@ set(SPHINX_ENV
   DOT_EXECUTABLE=${DOXYGEN_DOT_EXECUTABLE}
 )
 
+if(DEFINED ENV{ZEPHYR_DOXYGEN_OVERLAY})
+  if(EXISTS $ENV{ZEPHYR_DOXYGEN_OVERLAY})
+    set(INCLUDE_CUSTOM_FILE "@INCLUDE = $ENV{ZEPHYR_DOXYGEN_OVERLAY}")
+  else()
+    message(FATAL_ERROR "Zephyr Doxygen overlay $ENV{ZEPHYR_DOXYGEN_OVERLAY} does not exist!")
+  endif()
+else()
+  set(INCLUDE_CUSTOM_FILE "")
+endif()
+
 set(DOCS_CFG_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(DOCS_DOCTREE_DIR ${CMAKE_CURRENT_BINARY_DIR}/doctrees)
 set(DOCS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
@@ -174,7 +184,7 @@ add_doc_target(
     -d ${DOCS_DOCTREE_DIR}
     -w ${DOCS_BUILD_DIR}/latex.log
     -t ${DOC_TAG}
-    -t svgconvert
+    -t convertimages
     ${SPHINXOPTS}
     ${SPHINXOPTS_EXTRA}
     ${DOCS_SRC_DIR}

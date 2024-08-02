@@ -8,97 +8,64 @@
 
 #include <zephyr/device.h>
 #include <zephyr/usb/usbd.h>
-#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/usb/bos.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_sample_config);
 
 #define ZEPHYR_PROJECT_USB_VID		0x2fe3
 
+/* doc device instantiation start */
+/*
+ * Instantiate a context named sample_usbd using the default USB device
+ * controller, the Zephyr project vendor ID, and the sample product ID.
+ * Zephyr project vendor ID must not be used outside of Zephyr samples.
+ */
 USBD_DEVICE_DEFINE(sample_usbd,
 		   DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
 		   ZEPHYR_PROJECT_USB_VID, CONFIG_SAMPLE_USBD_PID);
+/* doc device instantiation end */
 
+/* doc string instantiation start */
 USBD_DESC_LANG_DEFINE(sample_lang);
 USBD_DESC_MANUFACTURER_DEFINE(sample_mfr, CONFIG_SAMPLE_USBD_MANUFACTURER);
 USBD_DESC_PRODUCT_DEFINE(sample_product, CONFIG_SAMPLE_USBD_PRODUCT);
-USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn, "0123456789ABCDEF");
+USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn);
+/* doc string instantiation end */
 
+/* doc configuration instantiation start */
 static const uint8_t attributes = (IS_ENABLED(CONFIG_SAMPLE_USBD_SELF_POWERED) ?
 				   USB_SCD_SELF_POWERED : 0) |
 				  (IS_ENABLED(CONFIG_SAMPLE_USBD_REMOTE_WAKEUP) ?
 				   USB_SCD_REMOTE_WAKEUP : 0);
 
+/* Full speed configuration */
 USBD_CONFIGURATION_DEFINE(sample_fs_config,
 			  attributes,
 			  CONFIG_SAMPLE_USBD_MAX_POWER);
 
+/* High speed configuration */
 USBD_CONFIGURATION_DEFINE(sample_hs_config,
 			  attributes,
 			  CONFIG_SAMPLE_USBD_MAX_POWER);
+/* doc configuration instantiation end */
 
-static int register_fs_classes(struct usbd_contex *uds_ctx)
+/*
+ * This does not yet provide valuable information, but rather serves as an
+ * example, and will be improved in the future.
+ */
+static const struct usb_bos_capability_lpm bos_cap_lpm = {
+	.bLength = sizeof(struct usb_bos_capability_lpm),
+	.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
+	.bDevCapabilityType = USB_BOS_CAPABILITY_EXTENSION,
+	.bmAttributes = 0UL,
+};
+
+USBD_DESC_BOS_DEFINE(sample_usbext, sizeof(bos_cap_lpm), &bos_cap_lpm);
+
+static void sample_fix_code_triple(struct usbd_context *uds_ctx,
+				   const enum usbd_speed speed)
 {
-	int err = 0;
-
-	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, c_nd) {
-		/* Pull everything that is enabled in our configuration. */
-		err = usbd_register_class(uds_ctx, c_nd->c_data->name,
-					  USBD_SPEED_FS, 1);
-		if (err) {
-			LOG_ERR("Failed to register FS %s (%d)",
-				c_nd->c_data->name, err);
-			return err;
-		}
-
-		LOG_DBG("Register FS %s", c_nd->c_data->name);
-	}
-
-	return err;
-}
-
-static int register_hs_classes(struct usbd_contex *uds_ctx)
-{
-	int err = 0;
-
-	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
-		/* Pull everything that is enabled in our configuration. */
-		err = usbd_register_class(uds_ctx, c_nd->c_data->name,
-					  USBD_SPEED_HS, 1);
-		if (err) {
-			LOG_ERR("Failed to register HS %s (%d)",
-				c_nd->c_data->name, err);
-			return err;
-		}
-
-		LOG_DBG("Register HS %s", c_nd->c_data->name);
-	}
-
-	return err;
-}
-
-static int sample_add_configuration(struct usbd_contex *uds_ctx,
-				    const enum usbd_speed speed,
-				    struct usbd_config_node *config)
-{
-	int err;
-
-	err = usbd_add_configuration(uds_ctx, speed, config);
-	if (err) {
-		LOG_ERR("Failed to add configuration (%d)", err);
-		return err;
-	}
-
-	if (speed == USBD_SPEED_FS) {
-		err = register_fs_classes(uds_ctx);
-	} else if (speed == USBD_SPEED_HS) {
-		err = register_hs_classes(uds_ctx);
-	}
-
-	if (err) {
-		return err;
-	}
-
 	/* Always use class code information from Interface Descriptors */
 	if (IS_ENABLED(CONFIG_USBD_CDC_ACM_CLASS) ||
 	    IS_ENABLED(CONFIG_USBD_CDC_ECM_CLASS) ||
@@ -113,14 +80,13 @@ static int sample_add_configuration(struct usbd_contex *uds_ctx,
 	} else {
 		usbd_device_set_code_triple(uds_ctx, speed, 0, 0, 0);
 	}
-
-	return 0;
 }
 
-struct usbd_contex *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
+struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 {
 	int err;
 
+	/* doc add string descriptor start */
 	err = usbd_add_descriptor(&sample_usbd, &sample_lang);
 	if (err) {
 		LOG_ERR("Failed to initialize language descriptor (%d)", err);
@@ -144,36 +110,72 @@ struct usbd_contex *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 		LOG_ERR("Failed to initialize SN descriptor (%d)", err);
 		return NULL;
 	}
+	/* doc add string descriptor end */
 
 	if (usbd_caps_speed(&sample_usbd) == USBD_SPEED_HS) {
-		err = sample_add_configuration(&sample_usbd, USBD_SPEED_HS,
-					       &sample_hs_config);
+		err = usbd_add_configuration(&sample_usbd, USBD_SPEED_HS,
+					     &sample_hs_config);
 		if (err) {
 			LOG_ERR("Failed to add High-Speed configuration");
 			return NULL;
 		}
+
+		err = usbd_register_all_classes(&sample_usbd, USBD_SPEED_HS, 1);
+		if (err) {
+			LOG_ERR("Failed to add register classes");
+			return NULL;
+		}
+
+		sample_fix_code_triple(&sample_usbd, USBD_SPEED_HS);
 	}
 
-	err = sample_add_configuration(&sample_usbd, USBD_SPEED_FS,
-				       &sample_fs_config);
+	/* doc configuration register start */
+	err = usbd_add_configuration(&sample_usbd, USBD_SPEED_FS,
+				     &sample_fs_config);
 	if (err) {
 		LOG_ERR("Failed to add Full-Speed configuration");
 		return NULL;
 	}
+	/* doc configuration register end */
+
+	/* doc functions register start */
+	err = usbd_register_all_classes(&sample_usbd, USBD_SPEED_FS, 1);
+	if (err) {
+		LOG_ERR("Failed to add register classes");
+		return NULL;
+	}
+	/* doc functions register end */
+
+	sample_fix_code_triple(&sample_usbd, USBD_SPEED_FS);
 
 	if (msg_cb != NULL) {
+		/* doc device init-and-msg start */
 		err = usbd_msg_register_cb(&sample_usbd, msg_cb);
 		if (err) {
 			LOG_ERR("Failed to register message callback");
 			return NULL;
 		}
+		/* doc device init-and-msg end */
 	}
 
+	if (IS_ENABLED(CONFIG_SAMPLE_USBD_20_EXTENSION_DESC)) {
+		(void)usbd_device_set_bcd(&sample_usbd, USBD_SPEED_FS, 0x0201);
+		(void)usbd_device_set_bcd(&sample_usbd, USBD_SPEED_HS, 0x0201);
+
+		err = usbd_add_descriptor(&sample_usbd, &sample_usbext);
+		if (err) {
+			LOG_ERR("Failed to add USB 2.0 Extension Descriptor");
+			return NULL;
+		}
+	}
+
+	/* doc device init start */
 	err = usbd_init(&sample_usbd);
 	if (err) {
 		LOG_ERR("Failed to initialize device support");
 		return NULL;
 	}
+	/* doc device init end */
 
 	return &sample_usbd;
 }

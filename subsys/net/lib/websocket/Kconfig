@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig WEBSOCKET_CLIENT
+config WEBSOCKET_CLIENT
 	bool "Websocket client support [EXPERIMENTAL]"
 	select NET_SOCKETS
 	select HTTP_PARSER
@@ -9,10 +9,16 @@ menuconfig WEBSOCKET_CLIENT
 	select HTTP_CLIENT
 	select MBEDTLS
 	select BASE64
-	select MBEDTLS_MAC_SHA1_ENABLED if MBEDTLS_BUILTIN
+	select MBEDTLS_SHA1 if MBEDTLS_BUILTIN
 	select EXPERIMENTAL
 	help
 	  Enable Websocket client library.
+
+config WEBSOCKET
+	bool
+	default y if WEBSOCKET_CLIENT
+	help
+	  Helper symbol for generic Websocket support.
 
 if WEBSOCKET_CLIENT
 

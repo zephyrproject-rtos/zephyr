@@ -13,11 +13,6 @@ config STM32_LPTIM_TIMER
 config STM32_FLASH_PREFETCH
 	default y
 
-choice BT_HCI_BUS_TYPE
-	default BT_STM32WBA
-	depends on BT
-endchoice
-
 config BT_STM32WBA
 	select DYNAMIC_INTERRUPTS
 	select DYNAMIC_DIRECT_INTERRUPTS
@@ -36,6 +31,12 @@ endchoice
 
 config ENTROPY_STM32_CLK_CHECK
 	default n
+
+config FPU
+	default y
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
 
 endif
 

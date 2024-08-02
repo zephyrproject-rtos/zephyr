@@ -1,0 +1,200 @@
+/*
+ * Copyright (c) 2024 Jerónimo Agulló <jeronimoagullo97@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "micromod_nrf52840-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Sparkfun Micrmod nRF52840 board";
+	compatible = "sparkfun,micromod-nrf52840";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 13 0>;
+			label = "Blue LED";
+		};
+	};
+
+	micromod_header: connector {
+		compatible = "sparkfun,micromod-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 4 0>,	/* A0 */
+			   <1 0 &gpio0 5 0>,	/* A1 */
+			   <2 0 &gpio0 27 0>,	/* D0 */
+			   <3 0 &gpio1 8 0>,	/* D1/CAM_TRIG */
+			   <4 0 &gpio0 15 0>,	/* I2C_INT# */
+			   <5 0 &gpio0 29 0>,	/* G0/BUS0 */
+			   <6 0 &gpio0 3 0>,	/* G1/BUS1 */
+			   <7 0 &gpio1 13 0>,	/* G2/BUS2 */
+			   <8 0 &gpio1 12 0>,	/* G3/BUS3 */
+			   <9 0 &gpio1 11 0>,	/* G4/BUS4 */
+			   <10 0 &gpio0 17 0>,	/* G5/BUS5 */
+			   <11 0 &gpio1 6 0>,	/* G6/BUS6 */
+			   <12 0 &gpio1 4 0>,	/* G7/BUS7 */
+			   <13 0 &gpio1 14 0>,	/* G8 */
+			   <14 0 &gpio0 9 0>,	/* G9/ADC_D-/CAM_HSYNC */
+			   <15 0 &gpio0 10 0>,	/* G10/ADC_D+/CAM_VSYNC */
+			   //<16 NO CONNECTED	/* G11/SWO */
+			   <17 0 &gpio0 20 0>;	/* SPI_CS */
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uicr {
+	nfct-pins-as-gpios;
+	gpio-as-nreset;
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi2 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
+	w25q128jv: w25q128jv@0 {
+		status="okay";
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		writeoc = "pp4io";
+		readoc = "read4io";
+		sck-frequency = <DT_FREQ_M(32)>;
+		jedec-id = [ef 70 18];
+		size = <DT_SIZE_M(128)>;
+		has-dpd;
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <3000>;
+	};
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00076000>;
+		};
+
+		slot1_partition: partition@86000 {
+			label = "image-1";
+			reg = <0x00086000 0x00074000>;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+
+		storage_partition: partition@fA000 {
+			label = "storage";
+			reg = <0x000fA000 0x00006000>;
+		};
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+
+// Sparkfun Micromod compatible pins
+micromod_1_uart: &uart0 {};
+micromod_2_uart: &uart1 {};
+micromod_0_i2c: &i2c0 {};
+micromod_1_i2c: &i2c1 {};
+micromod_0_spi: &spi2 {};

@@ -21,10 +21,15 @@ tests:
         - "The device is put in USB mass storage mode."
   sample.usb_device_next.mass_ram_none:
     min_ram: 128
-    depends_on: usb_device
-    platform_allow:
+    depends_on: usbd
+    integration_platforms:
       - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
       - frdm_k64f
+      - stm32f723e_disco
+      - nucleo_f413zh
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt1060_evk
     extra_args:
       - CONF_FILE="usbd_next_prj.conf"
       - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
@@ -88,7 +93,7 @@ tests:
     min_ram: 32
     modules:
       - fatfs
-    depends_on: usb_device
+    depends_on: usbd
     filter: dt_compat_enabled("nordic,qspi-nor")
     platform_allow:
       - nrf52840dk/nrf52840
@@ -120,6 +125,28 @@ tests:
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_SDCARD=y
+    tags:
+      - msd
+      - usb
+    harness: console
+    harness_config:
+      fixture: fixture_sdcard
+      type: multi_line
+      ordered: true
+      regex:
+        - "End of files"
+        - "The device is put in USB mass storage mode."
+  sample.usb_device_next.mass_sdhc_fatfs:
+    min_ram: 32
+    modules:
+      - fatfs
+    depends_on:
+      - usbd
+      - sdhc
+    extra_configs:
+      - CONFIG_LOG_DEFAULT_LEVEL=3
+      - CONFIG_APP_MSC_STORAGE_SDCARD=y
+    extra_args: CONF_FILE="usbd_next_prj.conf"
     tags:
       - msd
       - usb

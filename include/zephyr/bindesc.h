@@ -27,6 +27,7 @@ extern "C" {
 /**
  * @brief Binary Descriptor Definition
  * @defgroup bindesc_define Bindesc Define
+ * @ingroup os_services
  * @{
  */
 
@@ -128,7 +129,7 @@ extern "C" {
  * @endcond
  */
 
-#if !IS_ENABLED(_LINKER)
+#if !defined(_LINKER)
 
 #include <zephyr/sys/byteorder.h>
 
@@ -264,10 +265,6 @@ extern "C" {
  */
 #define BINDESC_GET_SIZE(name) BINDESC_NAME(name).len
 
-/**
- * @}
- */
-
 /*
  * An entry of the binary descriptor header. Each descriptor is
  * described by one of these entries.
@@ -291,107 +288,111 @@ BUILD_ASSERT(offsetof(struct bindesc_entry, tag) == 0, "Incorrect memory layout"
 BUILD_ASSERT(offsetof(struct bindesc_entry, len) == 2, "Incorrect memory layout");
 BUILD_ASSERT(offsetof(struct bindesc_entry, data) == 4, "Incorrect memory layout");
 
-#if IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_STRING)
+#if defined(CONFIG_BINDESC_KERNEL_VERSION_STRING)
 extern const struct bindesc_entry BINDESC_NAME(kernel_version_string);
-#endif /* IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_STRING) */
+#endif /* defined(CONFIG_BINDESC_KERNEL_VERSION_STRING) */
 
-#if IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_MAJOR)
+#if defined(CONFIG_BINDESC_KERNEL_VERSION_MAJOR)
 extern const struct bindesc_entry BINDESC_NAME(kernel_version_major);
-#endif /* IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_MAJOR) */
+#endif /* defined(CONFIG_BINDESC_KERNEL_VERSION_MAJOR) */
 
-#if IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_MINOR)
+#if defined(CONFIG_BINDESC_KERNEL_VERSION_MINOR)
 extern const struct bindesc_entry BINDESC_NAME(kernel_version_minor);
-#endif /* IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_MINOR) */
+#endif /* defined(CONFIG_BINDESC_KERNEL_VERSION_MINOR) */
 
-#if IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_PATCHLEVEL)
+#if defined(CONFIG_BINDESC_KERNEL_VERSION_PATCHLEVEL)
 extern const struct bindesc_entry BINDESC_NAME(kernel_version_patchlevel);
-#endif /* IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_PATCHLEVEL) */
+#endif /* defined(CONFIG_BINDESC_KERNEL_VERSION_PATCHLEVEL) */
 
-#if IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_NUMBER)
+#if defined(CONFIG_BINDESC_KERNEL_VERSION_NUMBER)
 extern const struct bindesc_entry BINDESC_NAME(kernel_version_number);
-#endif /* IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_NUMBER) */
+#endif /* defined(CONFIG_BINDESC_KERNEL_VERSION_NUMBER) */
 
-#if IS_ENABLED(CONFIG_BINDESC_APP_VERSION_STRING)
+#if defined(CONFIG_BINDESC_APP_VERSION_STRING)
 extern const struct bindesc_entry BINDESC_NAME(app_version_string);
-#endif /* IS_ENABLED(CONFIG_BINDESC_APP_VERSION_STRING) */
+#endif /* defined(CONFIG_BINDESC_APP_VERSION_STRING) */
 
-#if IS_ENABLED(CONFIG_BINDESC_APP_VERSION_MAJOR)
+#if defined(CONFIG_BINDESC_APP_VERSION_MAJOR)
 extern const struct bindesc_entry BINDESC_NAME(app_version_major);
-#endif /* IS_ENABLED(CONFIG_BINDESC_APP_VERSION_MAJOR) */
+#endif /* defined(CONFIG_BINDESC_APP_VERSION_MAJOR) */
 
-#if IS_ENABLED(CONFIG_BINDESC_APP_VERSION_MINOR)
+#if defined(CONFIG_BINDESC_APP_VERSION_MINOR)
 extern const struct bindesc_entry BINDESC_NAME(app_version_minor);
-#endif /* IS_ENABLED(CONFIG_BINDESC_APP_VERSION_MINOR) */
+#endif /* defined(CONFIG_BINDESC_APP_VERSION_MINOR) */
 
-#if IS_ENABLED(CONFIG_BINDESC_APP_VERSION_PATCHLEVEL)
+#if defined(CONFIG_BINDESC_APP_VERSION_PATCHLEVEL)
 extern const struct bindesc_entry BINDESC_NAME(app_version_patchlevel);
-#endif /* IS_ENABLED(CONFIG_BINDESC_APP_VERSION_PATCHLEVEL) */
+#endif /* defined(CONFIG_BINDESC_APP_VERSION_PATCHLEVEL) */
 
-#if IS_ENABLED(CONFIG_BINDESC_APP_VERSION_NUMBER)
+#if defined(CONFIG_BINDESC_APP_VERSION_NUMBER)
 extern const struct bindesc_entry BINDESC_NAME(app_version_number);
-#endif /* IS_ENABLED(CONFIG_BINDESC_APP_VERSION_NUMBER) */
+#endif /* defined(CONFIG_BINDESC_APP_VERSION_NUMBER) */
 
-#if IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_YEAR)
+#if defined(CONFIG_BINDESC_BUILD_TIME_YEAR)
 extern const struct bindesc_entry BINDESC_NAME(build_time_year);
-#endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_YEAR) */
+#endif /* defined(CONFIG_BINDESC_BUILD_TIME_YEAR) */
 
-#if IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_MONTH)
+#if defined(CONFIG_BINDESC_BUILD_TIME_MONTH)
 extern const struct bindesc_entry BINDESC_NAME(build_time_month);
-#endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_MONTH) */
+#endif /* defined(CONFIG_BINDESC_BUILD_TIME_MONTH) */
 
-#if IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_DAY)
+#if defined(CONFIG_BINDESC_BUILD_TIME_DAY)
 extern const struct bindesc_entry BINDESC_NAME(build_time_day);
-#endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_DAY) */
+#endif /* defined(CONFIG_BINDESC_BUILD_TIME_DAY) */
 
-#if IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_HOUR)
+#if defined(CONFIG_BINDESC_BUILD_TIME_HOUR)
 extern const struct bindesc_entry BINDESC_NAME(build_time_hour);
-#endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_HOUR) */
+#endif /* defined(CONFIG_BINDESC_BUILD_TIME_HOUR) */
 
-#if IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_MINUTE)
+#if defined(CONFIG_BINDESC_BUILD_TIME_MINUTE)
 extern const struct bindesc_entry BINDESC_NAME(build_time_minute);
-#endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_MINUTE) */
+#endif /* defined(CONFIG_BINDESC_BUILD_TIME_MINUTE) */
 
-#if IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_SECOND)
+#if defined(CONFIG_BINDESC_BUILD_TIME_SECOND)
 extern const struct bindesc_entry BINDESC_NAME(build_time_second);
-#endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_SECOND) */
+#endif /* defined(CONFIG_BINDESC_BUILD_TIME_SECOND) */
 
-#if IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_UNIX)
+#if defined(CONFIG_BINDESC_BUILD_TIME_UNIX)
 extern const struct bindesc_entry BINDESC_NAME(build_time_unix);
-#endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_UNIX) */
+#endif /* defined(CONFIG_BINDESC_BUILD_TIME_UNIX) */
 
-#if IS_ENABLED(CONFIG_BINDESC_BUILD_DATE_TIME_STRING)
+#if defined(CONFIG_BINDESC_BUILD_DATE_TIME_STRING)
 extern const struct bindesc_entry BINDESC_NAME(build_date_time_string);
-#endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_DATE_TIME_STRING) */
+#endif /* defined(CONFIG_BINDESC_BUILD_DATE_TIME_STRING) */
 
-#if IS_ENABLED(CONFIG_BINDESC_BUILD_DATE_STRING)
+#if defined(CONFIG_BINDESC_BUILD_DATE_STRING)
 extern const struct bindesc_entry BINDESC_NAME(build_date_string);
-#endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_DATE_STRING) */
+#endif /* defined(CONFIG_BINDESC_BUILD_DATE_STRING) */
 
-#if IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_STRING)
+#if defined(CONFIG_BINDESC_BUILD_TIME_STRING)
 extern const struct bindesc_entry BINDESC_NAME(build_time_string);
-#endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_STRING) */
+#endif /* defined(CONFIG_BINDESC_BUILD_TIME_STRING) */
 
-#if IS_ENABLED(CONFIG_BINDESC_HOST_NAME)
+#if defined(CONFIG_BINDESC_HOST_NAME)
 extern const struct bindesc_entry BINDESC_NAME(host_name);
-#endif /* IS_ENABLED(CONFIG_BINDESC_HOST_NAME) */
+#endif /* defined(CONFIG_BINDESC_HOST_NAME) */
 
-#if IS_ENABLED(CONFIG_BINDESC_C_COMPILER_NAME)
+#if defined(CONFIG_BINDESC_C_COMPILER_NAME)
 extern const struct bindesc_entry BINDESC_NAME(c_compiler_name);
-#endif /* IS_ENABLED(CONFIG_BINDESC_C_COMPILER_NAME) */
+#endif /* defined(CONFIG_BINDESC_C_COMPILER_NAME) */
 
-#if IS_ENABLED(CONFIG_BINDESC_C_COMPILER_VERSION)
+#if defined(CONFIG_BINDESC_C_COMPILER_VERSION)
 extern const struct bindesc_entry BINDESC_NAME(c_compiler_version);
-#endif /* IS_ENABLED(CONFIG_BINDESC_C_COMPILER_VERSION) */
+#endif /* defined(CONFIG_BINDESC_C_COMPILER_VERSION) */
 
-#if IS_ENABLED(CONFIG_BINDESC_CXX_COMPILER_NAME)
+#if defined(CONFIG_BINDESC_CXX_COMPILER_NAME)
 extern const struct bindesc_entry BINDESC_NAME(cxx_compiler_name);
-#endif /* IS_ENABLED(CONFIG_BINDESC_CXX_COMPILER_NAME) */
+#endif /* defined(CONFIG_BINDESC_CXX_COMPILER_NAME) */
 
-#if IS_ENABLED(CONFIG_BINDESC_CXX_COMPILER_VERSION)
+#if defined(CONFIG_BINDESC_CXX_COMPILER_VERSION)
 extern const struct bindesc_entry BINDESC_NAME(cxx_compiler_version);
-#endif /* IS_ENABLED(CONFIG_BINDESC_CXX_COMPILER_VERSION) */
+#endif /* defined(CONFIG_BINDESC_CXX_COMPILER_VERSION) */
 
-#endif /* !IS_ENABLED(_LINKER) */
+#endif /* !defined(_LINKER) */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

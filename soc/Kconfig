@@ -9,9 +9,6 @@ menu "Hardware Configuration"
 
 rsource "Kconfig.$(HWM_SCHEME)"
 
-# This loads Zephyr base SoC Kconfigs for both hw model v1 and v2
-osource "soc/soc_legacy/$(ARCH)/Kconfig"
-
 # Source Zephyr Kconfig specifics from SoC roots.
 osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig"
 
@@ -36,6 +33,9 @@ config SOC_COMPATIBLE_NRF52X
 config SOC_COMPATIBLE_NRF53X
 	bool
 
+config SOC_COMPATIBLE_NRF54LX
+	bool
+
 config SOC_COMPATIBLE_NRF52833
 	bool
 
@@ -43,6 +43,12 @@ config SOC_COMPATIBLE_NRF5340_CPUNET
 	bool
 
 config SOC_COMPATIBLE_NRF5340_CPUAPP
+	bool
+
+config SOC_COMPATIBLE_NRF54L15
+	bool
+
+config SOC_COMPATIBLE_NRF54L15_CPUAPP
 	bool
 
 config SOC_DEPRECATED_RELEASE

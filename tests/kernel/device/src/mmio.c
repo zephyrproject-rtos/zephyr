@@ -60,7 +60,7 @@ DEVICE_DEFINE(foo0, "foo0", foo_single_init, NULL,
  */
 ZTEST(device, test_mmio_single)
 {
-	struct z_device_mmio_rom *rom;
+	const struct z_device_mmio_rom *rom;
 	const struct device *dev = device_get_binding("foo0");
 	mm_reg_t regs;
 

@@ -37,14 +37,6 @@ static const struct device *const hci_uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_
 static K_THREAD_STACK_DEFINE(h2c_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread h2c_thread;
 
-enum h4_type {
-	H4_CMD = 0x01,
-	H4_ACL = 0x02,
-	H4_SCO = 0x03,
-	H4_EVT = 0x04,
-	H4_ISO = 0x05,
-};
-
 struct k_poll_signal uart_h2c_rx_sig;
 struct k_poll_signal uart_c2h_tx_sig;
 
@@ -82,33 +74,33 @@ static int uart_c2h_tx(const uint8_t *data, size_t size)
 }
 
 /* Function expects that type is validated and only CMD, ISO or ACL will be used. */
-static uint32_t hci_payload_size(const uint8_t *hdr_buf, enum h4_type type)
+static uint32_t hci_payload_size(const uint8_t *hdr_buf, uint8_t h4_type)
 {
-	switch (type) {
-	case H4_CMD:
+	switch (h4_type) {
+	case BT_HCI_H4_CMD:
 		return ((const struct bt_hci_cmd_hdr *)hdr_buf)->param_len;
-	case H4_ACL:
+	case BT_HCI_H4_ACL:
 		return sys_le16_to_cpu(((const struct bt_hci_acl_hdr *)hdr_buf)->len);
-	case H4_ISO:
+	case BT_HCI_H4_ISO:
 		return bt_iso_hdr_len(
 			sys_le16_to_cpu(((const struct bt_hci_iso_hdr *)hdr_buf)->len));
 	default:
-		LOG_ERR("Invalid type: %u", type);
+		LOG_ERR("Invalid type: %u", h4_type);
 		return 0;
 	}
 }
 
-static uint8_t hci_hdr_size(enum h4_type type)
+static uint8_t hci_hdr_size(uint8_t h4_type)
 {
-	switch (type) {
-	case H4_CMD:
+	switch (h4_type) {
+	case BT_HCI_H4_CMD:
 		return sizeof(struct bt_hci_cmd_hdr);
-	case H4_ACL:
+	case BT_HCI_H4_ACL:
 		return sizeof(struct bt_hci_acl_hdr);
-	case H4_ISO:
+	case BT_HCI_H4_ISO:
 		return sizeof(struct bt_hci_iso_hdr);
 	default:
-		LOG_ERR("Unexpected h4 type: %u", type);
+		LOG_ERR("Unexpected h4 type: %u", h4_type);
 		return 0;
 	}
 }
@@ -159,10 +151,11 @@ static void send_hw_error(void)
 
 	struct net_buf *buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 
+	net_buf_add_u8(buf, BT_HCI_H4_EVT);
 	net_buf_add_mem(buf, hci_evt_hw_err, sizeof(hci_evt_hw_err));
 
 	/* Inject the message into the c2h queue. */
-	bt_recv(buf);
+	net_buf_put(&c2h_queue, buf);
 
 	/* The c2h thread will send the message at some point. The host
 	 * will receive it and reset the controller.
@@ -171,7 +164,7 @@ static void send_hw_error(void)
 
 static void recover_sync_by_reset_pattern(void)
 {
-	/* { H4_CMD, le_16(HCI_CMD_OP_RESET), len=0 } */
+	/* { BT_HCI_H4_CMD, le_16(HCI_CMD_OP_RESET), len=0 } */
 	const uint8_t h4_cmd_reset[] = {0x01, 0x03, 0x0C, 0x00};
 	const uint32_t reset_pattern = sys_get_be32(h4_cmd_reset);
 	int err;
@@ -367,7 +360,7 @@ const struct {
 	struct bt_hci_evt_hdr hdr;
 	struct bt_hci_evt_cmd_complete cc;
 } __packed cc_evt = {
-	.h4 = H4_EVT,
+	.h4 = BT_HCI_H4_EVT,
 	.hdr = {.evt = BT_HCI_EVT_CMD_COMPLETE, .len = sizeof(struct bt_hci_evt_cmd_complete)},
 	.cc = {.ncmd = 1, .opcode = sys_cpu_to_le16(BT_OP_NOP)},
 };

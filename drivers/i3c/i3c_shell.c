@@ -217,7 +217,8 @@ static int cmd_i3c_info(const struct shell *shell_ctx, size_t argc, char **argv)
 						    "\tmax_read_turnaround: 0x%08x\n"
 						    "\tmrl: 0x%04x\n"
 						    "\tmwl: 0x%04x\n"
-						    "\tmax_ibi: 0x%02x",
+						    "\tmax_ibi: 0x%02x\n"
+						    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x",
 						    desc->dev->name, (uint64_t)desc->pid,
 						    desc->static_addr, desc->dynamic_addr,
 #if defined(CONFIG_I3C_USE_GROUP_ADDR)
@@ -227,7 +228,9 @@ static int cmd_i3c_info(const struct shell *shell_ctx, size_t argc, char **argv)
 						    desc->data_speed.maxwr,
 						    desc->data_speed.max_read_turnaround,
 						    desc->data_length.mrl, desc->data_length.mwl,
-						    desc->data_length.max_ibi);
+						    desc->data_length.max_ibi,
+						    desc->getcaps.getcap1, desc->getcaps.getcap2,
+						    desc->getcaps.getcap3, desc->getcaps.getcap4);
 					found = true;
 					break;
 				}
@@ -262,7 +265,8 @@ static int cmd_i3c_info(const struct shell *shell_ctx, size_t argc, char **argv)
 					    "\tmax_read_turnaround: 0x%08x\n"
 					    "\tmrl: 0x%04x\n"
 					    "\tmwl: 0x%04x\n"
-					    "\tmax_ibi: 0x%02x",
+					    "\tmax_ibi: 0x%02x\n"
+					    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x",
 					    desc->dev->name, (uint64_t)desc->pid, desc->static_addr,
 					    desc->dynamic_addr,
 #if defined(CONFIG_I3C_USE_GROUP_ADDR)
@@ -272,7 +276,9 @@ static int cmd_i3c_info(const struct shell *shell_ctx, size_t argc, char **argv)
 					    desc->data_speed.maxwr,
 					    desc->data_speed.max_read_turnaround,
 					    desc->data_length.mrl, desc->data_length.mwl,
-					    desc->data_length.max_ibi);
+					    desc->data_length.max_ibi, desc->getcaps.getcap1,
+					    desc->getcaps.getcap2, desc->getcaps.getcap3,
+					    desc->getcaps.getcap4);
 			}
 		} else {
 			shell_print(shell_ctx, "I3C: No devices found.");
@@ -877,11 +883,11 @@ static int cmd_i3c_ccc_setmrl_bc(const struct shell *shell_ctx, size_t argc, cha
 	}
 
 	mrl.len = strtol(argv[2], NULL, 16);
-	if (argc > 2) {
+	if (argc > 3) {
 		mrl.ibi_len = strtol(argv[3], NULL, 16);
 	}
 
-	ret = i3c_ccc_do_setmrl_all(dev, &mrl, argc > 2);
+	ret = i3c_ccc_do_setmrl_all(dev, &mrl, argc > 3);
 	if (ret < 0) {
 		shell_error(shell_ctx, "I3C: unable to send CCC SETMRL BC.");
 		return ret;
@@ -1083,7 +1089,7 @@ static int cmd_i3c_ccc_getstatus(const struct shell *shell_ctx, size_t argc, cha
 	}
 
 	/* If there is a defining byte, then it is assumed to be Format 2*/
-	if (argc > 2) {
+	if (argc > 3) {
 		fmt = GETSTATUS_FORMAT_2;
 		defbyte = strtol(argv[3], NULL, 16);
 		if (defbyte != GETSTATUS_FORMAT_2_TGTSTAT || defbyte != GETSTATUS_FORMAT_2_PRECR) {
@@ -1108,6 +1114,81 @@ static int cmd_i3c_ccc_getstatus(const struct shell *shell_ctx, size_t argc, cha
 		}
 	} else {
 		shell_print(shell_ctx, "Status: 0x%04x", status.fmt1.status);
+	}
+
+	return ret;
+}
+
+/* i3c ccc getcaps <device> <target> [<defining byte>] */
+static int cmd_i3c_ccc_getcaps(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	union i3c_ccc_getcaps caps;
+	enum i3c_ccc_getcaps_fmt fmt;
+	enum i3c_ccc_getcaps_defbyte defbyte = GETCAPS_FORMAT_2_INVALID;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	if (!(desc->bcr & I3C_BCR_ADV_CAPABILITIES)) {
+		shell_error(shell_ctx, "I3C: Device %s does not support advanced capabilities",
+			    desc->dev->name);
+		return -ENOTSUP;
+	}
+
+	/* If there is a defining byte, then it is assumed to be Format 2 */
+	if (argc > 3) {
+		fmt = GETCAPS_FORMAT_2;
+		defbyte = strtol(argv[3], NULL, 16);
+		if (defbyte != GETCAPS_FORMAT_2_TGTCAPS || defbyte != GETCAPS_FORMAT_2_TESTPAT ||
+		    defbyte != GETCAPS_FORMAT_2_CRCAPS || defbyte != GETCAPS_FORMAT_2_VTCAPS ||
+		    defbyte != GETCAPS_FORMAT_2_DBGCAPS) {
+			shell_error(shell_ctx, "Invalid defining byte.");
+			return -EINVAL;
+		}
+	} else {
+		fmt = GETCAPS_FORMAT_1;
+	}
+
+	ret = i3c_ccc_do_getcaps(desc, &caps, fmt, defbyte);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC GETCAPS.");
+		return ret;
+	}
+
+	if (fmt == GETCAPS_FORMAT_2) {
+		if (defbyte == GETCAPS_FORMAT_2_TGTCAPS) {
+			shell_print(shell_ctx, "TGTCAPS: 0x%02x; 0x%02x; 0x%02x; 0x%02x",
+				    caps.fmt2.tgtcaps[0], caps.fmt2.tgtcaps[1],
+				    caps.fmt2.tgtcaps[2], caps.fmt2.tgtcaps[3]);
+		} else if (defbyte == GETCAPS_FORMAT_2_TESTPAT) {
+			shell_print(shell_ctx, "TESTPAT: 0x%08x", caps.fmt2.testpat);
+		} else if (defbyte == GETCAPS_FORMAT_2_CRCAPS) {
+			shell_print(shell_ctx, "CRCAPS: 0x%02x; 0x%02x", caps.fmt2.crcaps[0],
+				    caps.fmt2.crcaps[1]);
+		} else if (defbyte == GETCAPS_FORMAT_2_VTCAPS) {
+			shell_print(shell_ctx, "VTCAPS: 0x%02x; 0x%02x", caps.fmt2.vtcaps[0],
+				    caps.fmt2.vtcaps[1]);
+		}
+	} else {
+		shell_print(shell_ctx, "GETCAPS: 0x%02x; 0x%02x; 0x%02x; 0x%02x",
+			    caps.fmt1.getcaps[0], caps.fmt1.getcaps[1], caps.fmt1.getcaps[2],
+			    caps.fmt1.getcaps[3]);
 	}
 
 	return ret;
@@ -1383,6 +1464,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC GETSTATUS\n"
 		      "Usage: ccc getstatus <device> <target> [<defining byte>]",
 		      cmd_i3c_ccc_getstatus, 3, 1),
+	SHELL_CMD_ARG(getcaps, &dsub_i3c_device_attached_name,
+		      "Send CCC GETCAPS\n"
+		      "Usage: ccc getcaps <device> <target> [<defining byte>]",
+		      cmd_i3c_ccc_getcaps, 3, 1),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

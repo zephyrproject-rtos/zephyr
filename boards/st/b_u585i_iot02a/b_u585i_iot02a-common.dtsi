@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Linaro Limited
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +35,6 @@
 
 	aliases {
 		watchdog0 = &iwdg;
-		spi-flash0 = &mx25lm51245;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
@@ -142,13 +142,13 @@ stm32_lp_tick_source: &lptim1 {
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       reg = <0x00000000 DT_SIZE_M(64)>;
-			   };
+			partition@0 {
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
 		};
 	};
 };
@@ -243,6 +243,12 @@ zephyr_udc0: &usbotg_fs {
 &dac1 {
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 

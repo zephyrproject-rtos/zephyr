@@ -7,8 +7,12 @@ type: mcu
 arch: riscv
 toolchain:
   - zephyr
+sysbuild: true
 ram: 62
 flash: 62
 supported:
+  - counter
   - gpio
+  - i2c
   - pwm
+  - spi

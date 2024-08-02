@@ -71,6 +71,12 @@ extern int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
 
 extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface);
 
+#if defined(CONFIG_NET_SOCKETS_SERVICE)
+extern void socket_service_init(void);
+#else
+static inline void socket_service_init(void) { }
+#endif
+
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
 extern const char *net_context_state(struct net_context *context);
@@ -81,6 +87,9 @@ extern bool net_context_is_recv_pktinfo_set(struct net_context *context);
 extern void net_pkt_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
+int net_context_get_local_addr(struct net_context *context,
+			       struct sockaddr *addr,
+			       socklen_t *addrlen);
 #else
 static inline void net_context_init(void) { }
 static inline void net_pkt_init(void) { }
@@ -106,7 +115,30 @@ static inline bool net_context_is_recv_pktinfo_set(struct net_context *context)
 	ARG_UNUSED(context);
 	return false;
 }
+
+static inline int net_context_get_local_addr(struct net_context *context,
+					     struct sockaddr *addr,
+					     socklen_t *addrlen)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen);
+
+	return -ENOTSUP;
+}
 #endif
+
+#if defined(CONFIG_DNS_SOCKET_DISPATCHER)
+extern void dns_dispatcher_init(void);
+#else
+static inline void dns_dispatcher_init(void) { }
+#endif
+
+#if defined(CONFIG_MDNS_RESPONDER)
+extern void mdns_init_responder(void);
+#else
+static inline void mdns_init_responder(void) { }
+#endif /* CONFIG_MDNS_RESPONDER */
 
 #if defined(CONFIG_NET_NATIVE)
 enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback);
@@ -173,6 +205,12 @@ struct sock_obj {
 	struct sock_obj_type_raw_stats stats;
 };
 #endif /* CONFIG_NET_SOCKETS_OBJ_CORE */
+
+#if defined(CONFIG_NET_IPV6_PE)
+/* This is needed by ipv6_pe.c when privacy extension support is enabled */
+void net_if_ipv6_start_dad(struct net_if *iface,
+			   struct net_if_addr *ifaddr);
+#endif
 
 #if defined(CONFIG_NET_GPTP)
 /**

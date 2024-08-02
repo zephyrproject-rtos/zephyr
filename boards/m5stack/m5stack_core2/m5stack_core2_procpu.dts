@@ -34,6 +34,7 @@
 		zephyr,display = &ili9342c;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,rtc = &pfc8563_rtc;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	leds {
@@ -71,14 +72,6 @@
 			rotation = <0>;
 		};
 	};
-};
-
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
 };
 
 &psram0 {
@@ -290,4 +283,8 @@
 			reg = <0x00250000 0x00db0000>;
 		};
 	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
 };

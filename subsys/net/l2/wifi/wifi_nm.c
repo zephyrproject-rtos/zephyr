@@ -33,7 +33,7 @@ struct wifi_nm_instance *wifi_nm_get_instance_iface(struct net_if *iface)
 	k_mutex_lock(&wifi_nm_lock, K_FOREVER);
 	STRUCT_SECTION_FOREACH(wifi_nm_instance, nm) {
 		for (int i = 0; i < CONFIG_WIFI_NM_MAX_MANAGED_INTERFACES; i++) {
-			if (nm->mgd_ifaces[i] == iface) {
+			if (nm->mgd_ifaces[i].iface == iface) {
 				k_mutex_unlock(&wifi_nm_lock);
 				return nm;
 			}
@@ -42,6 +42,36 @@ struct wifi_nm_instance *wifi_nm_get_instance_iface(struct net_if *iface)
 	k_mutex_unlock(&wifi_nm_lock);
 
 	return NULL;
+}
+
+unsigned char wifi_nm_get_type_iface(struct net_if *iface)
+{
+	if (!iface || !net_if_is_wifi(iface)) {
+		return 0;
+	}
+
+	k_mutex_lock(&wifi_nm_lock, K_FOREVER);
+	STRUCT_SECTION_FOREACH(wifi_nm_instance, nm) {
+		for (int i = 0; i < CONFIG_WIFI_NM_MAX_MANAGED_INTERFACES; i++) {
+			if (nm->mgd_ifaces[i].iface == iface) {
+				k_mutex_unlock(&wifi_nm_lock);
+				return nm->mgd_ifaces[i].type;
+			}
+		}
+	}
+
+	k_mutex_unlock(&wifi_nm_lock);
+	return 0;
+}
+
+bool wifi_nm_iface_is_sta(struct net_if *iface)
+{
+	return wifi_nm_get_type_iface(iface) & WIFI_TYPE_STA;
+}
+
+bool wifi_nm_iface_is_sap(struct net_if *iface)
+{
+	return wifi_nm_get_type_iface(iface) & WIFI_TYPE_SAP;
 }
 
 int wifi_nm_register_mgd_iface(struct wifi_nm_instance *nm, struct net_if *iface)
@@ -56,8 +86,38 @@ int wifi_nm_register_mgd_iface(struct wifi_nm_instance *nm, struct net_if *iface
 
 	k_mutex_lock(&wifi_nm_lock, K_FOREVER);
 	for (int i = 0; i < CONFIG_WIFI_NM_MAX_MANAGED_INTERFACES; i++) {
-		if (!nm->mgd_ifaces[i]) {
-			nm->mgd_ifaces[i] = iface;
+		if (nm->mgd_ifaces[i].iface == iface) {
+			k_mutex_unlock(&wifi_nm_lock);
+			return 0;
+		}
+
+		if (!nm->mgd_ifaces[i].iface) {
+			nm->mgd_ifaces[i].iface = iface;
+			k_mutex_unlock(&wifi_nm_lock);
+			return 0;
+		}
+	}
+	k_mutex_unlock(&wifi_nm_lock);
+
+	return -ENOMEM;
+}
+
+int wifi_nm_register_mgd_type_iface(struct wifi_nm_instance *nm,
+		enum wifi_nm_iface_type type, struct net_if *iface)
+{
+	if (!nm || !iface) {
+		return -EINVAL;
+	}
+
+	if (!net_if_is_wifi(iface)) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&wifi_nm_lock, K_FOREVER);
+	for (int i = 0; i < CONFIG_WIFI_NM_MAX_MANAGED_INTERFACES; i++) {
+		if (!nm->mgd_ifaces[i].iface) {
+			nm->mgd_ifaces[i].iface = iface;
+			nm->mgd_ifaces[i].type = (1 << type);
 			k_mutex_unlock(&wifi_nm_lock);
 			return 0;
 		}
@@ -75,8 +135,8 @@ int wifi_nm_unregister_mgd_iface(struct wifi_nm_instance *nm, struct net_if *ifa
 
 	k_mutex_lock(&wifi_nm_lock, K_FOREVER);
 	for (int i = 0; i < CONFIG_WIFI_NM_MAX_MANAGED_INTERFACES; i++) {
-		if (nm->mgd_ifaces[i] == iface) {
-			nm->mgd_ifaces[i] = NULL;
+		if (nm->mgd_ifaces[i].iface == iface) {
+			nm->mgd_ifaces[i].iface = NULL;
 			k_mutex_unlock(&wifi_nm_lock);
 			return 0;
 		}

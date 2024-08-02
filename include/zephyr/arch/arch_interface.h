@@ -39,12 +39,15 @@ extern "C" {
 #endif
 
 /* NOTE: We cannot pull in kernel.h here, need some forward declarations  */
+struct arch_esf;
 struct k_thread;
 struct k_mem_domain;
 
 typedef struct z_thread_stack_element k_thread_stack_t;
 
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
+
+__deprecated typedef struct arch_esf z_arch_esf_t;
 
 /**
  * @defgroup arch-timing Architecture timing APIs
@@ -491,10 +494,18 @@ static inline uint32_t arch_proc_id(void);
 /**
  * Broadcast an interrupt to all CPUs
  *
- * This will invoke z_sched_ipi() on other CPUs in the system.
+ * This will invoke z_sched_ipi() on all other CPUs in the system.
  */
-void arch_sched_ipi(void);
+void arch_sched_broadcast_ipi(void);
 
+/**
+ * Direct IPIs to the specified CPUs
+ *
+ * This will invoke z_sched_ipi() on the CPUs identified by @a cpu_bitmap.
+ *
+ * @param cpu_bitmap A bitmap indicating which CPUs need the IPI
+ */
+void arch_sched_directed_ipi(uint32_t cpu_bitmap);
 
 int arch_smp_init(void);
 
@@ -783,7 +794,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
  *
  * @return nonzero if the permissions don't match.
  */
-int arch_buffer_validate(void *addr, size_t size, int write);
+int arch_buffer_validate(const void *addr, size_t size, int write);
 
 /**
  * Get the optimal virtual region alignment to optimize the MMU table layout
@@ -1239,6 +1250,33 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
  * checks or power management tricks if needed.
  */
 void arch_spin_relax(void);
+
+/**
+ * stack_trace_callback_fn - Callback for @ref arch_stack_walk
+ * @param cookie Caller supplied pointer handed back by @ref arch_stack_walk
+ * @param addr The stack entry address to consume
+ *
+ * @return True, if the entry was consumed or skipped. False, if there is no space left to store
+ */
+typedef bool (*stack_trace_callback_fn)(void *cookie, unsigned long addr);
+
+/**
+ * @brief Architecture-specific function to walk the stack
+ *
+ * @param callback_fn Callback which is invoked by the architecture code for each entry.
+ * @param cookie Caller supplied pointer which is handed back to @a callback_fn
+ * @param thread Pointer to a k_thread struct, can be NULL
+ * @param esf Pointer to an arch_esf struct, can be NULL
+ *
+ * ============ ======= ============================================
+ * thread	esf
+ * ============ ======= ============================================
+ * thread	NULL	Stack trace from thread (can be _current)
+ * thread	esf	Stack trace starting on esf
+ * ============ ======= ============================================
+ */
+void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
+		     const struct k_thread *thread, const struct arch_esf *esf);
 
 #ifdef __cplusplus
 }

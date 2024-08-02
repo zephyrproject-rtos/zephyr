@@ -13,7 +13,6 @@ description: |
       interrupt-names = "warning", "error", "wake-up", "mb-0-15";
       clocks = <&scg KINETIS_SCG_BUS_CLK>;
       clk-source = <1>;
-      bus-speed = <125000>;
       pinctrl-0 = <&pinmux_flexcan0>;
       pinctrl-names = "default";
 

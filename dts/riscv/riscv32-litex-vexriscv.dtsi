@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ #include <zephyr/dt-bindings/i2c/i2c.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -18,12 +20,12 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		cpu@0 {
+		cpu0: cpu@0 {
 			clock-frequency = <100000000>;
 			compatible = "litex,vexriscv-standard", "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv32ima_zicsr_zifencei";
+			riscv,isa = "rv32im_zicsr_zifencei";
 			status = "okay";
 		};
 	};
@@ -32,8 +34,17 @@
 		#size-cells = <1>;
 		compatible = "litex,vexriscv";
 		ranges;
+		ctrl0: soc_controller@e0000000 {
+			compatible = "litex,soc-controller";
+			reg = <0xe0000000 0x4
+				0xe0000004 0x4
+				0xe0000008 0x4>;
+			reg-names = "reset",
+				"scratch",
+				"bus_errors";
+		};
 		intc0: interrupt-controller@bc0 {
-			compatible = "vexriscv-intc0";
+			compatible = "litex,vexriscv-intc0";
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
@@ -161,6 +172,7 @@
 			compatible = "litex,i2c";
 			reg = <0xe0005000 0x4 0xe0005004 0x4>;
 			reg-names = "write", "read";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -306,7 +318,6 @@
 			clock-output-names = "CLK_0", "CLK_1";
 			litex,lock-timeout = <10>;
 			litex,drdy-timeout = <10>;
-			litex,sys-clock-frequency = <100000000>;
 			litex,divclk-divide-min = <1>;
 			litex,divclk-divide-max = <107>;
 			litex,clkfbout-mult-min = <2>;

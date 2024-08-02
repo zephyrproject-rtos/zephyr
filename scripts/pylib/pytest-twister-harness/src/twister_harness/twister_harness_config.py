@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+from twister_harness.helpers.domains_helper import get_default_domain_name
 
 import pytest
 
@@ -26,11 +27,21 @@ class DeviceConfig:
     id: str = ''
     product: str = ''
     serial_pty: str = ''
+    flash_before: bool = False
     west_flash_extra_args: list[str] = field(default_factory=list, repr=False)
     name: str = ''
     pre_script: Path | None = None
     post_script: Path | None = None
     post_flash_script: Path | None = None
+    fixtures: list[str] = None
+    app_build_dir: Path | None = None
+
+    def __post_init__(self):
+        domains = self.build_dir / 'domains.yaml'
+        if domains.exists():
+            self.app_build_dir = self.build_dir / get_default_domain_name(domains)
+        else:
+            self.app_build_dir = self.build_dir
 
 
 @dataclass
@@ -62,10 +73,12 @@ class TwisterHarnessConfig:
             id=config.option.device_id,
             product=config.option.device_product,
             serial_pty=config.option.device_serial_pty,
+            flash_before=bool(config.option.flash_before),
             west_flash_extra_args=west_flash_extra_args,
             pre_script=_cast_to_path(config.option.pre_script),
             post_script=_cast_to_path(config.option.post_script),
             post_flash_script=_cast_to_path(config.option.post_flash_script),
+            fixtures=config.option.fixtures,
         )
 
         devices.append(device_from_cli)

@@ -30,6 +30,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &gc9a01;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	/* Buttons */
@@ -55,14 +56,28 @@
 			pwms = <&ledc0 0 PWM_HZ(250) PWM_POLARITY_NORMAL>;
 		};
 	};
-};
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
+	/* MIPI DBI */
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
+		gc9a01: gc9a01@0 {
+			status = "okay";
+			compatible = "galaxycore,gc9x01x";
+			reg = <0>;
+			mipi-max-frequency = <100000000>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+			display-inversion;
+			width = <240>;
+			height = <240>;
+		};
+	};
 };
 
 &flash0 {
@@ -153,19 +168,6 @@
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
-
-	gc9a01: gc9a01@0 {
-		status = "okay";
-		compatible = "galaxycore,gc9x01x";
-		reg = <0>;
-		spi-max-frequency = <100000000>;
-		cmd-data-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
-		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
-		display-inversion;
-		width = <240>;
-		height = <240>;
-	};
 };
 
 &trng0 {
@@ -180,5 +182,9 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
 	status = "okay";
 };

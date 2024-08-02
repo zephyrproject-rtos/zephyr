@@ -119,3 +119,48 @@ properties:
       Note: You might need to enable the OCTOSPI I/O manager clock to use the
             property. Please refer to Reference Manual.
             The clock can be enabled in the devicetree.
+
+  clk-port:
+    type: int
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the clk pin.
+
+      If absent, then n is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  dqs-port:
+    type: int
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the dqs pin.
+
+      If absent, then n is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.
+
+  ncs-port:
+    type: int
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which port of the OCTOSPI IO Manager is used for the ncs pin.
+
+      If absent, then n is used where `n` is the OSPI
+      instance number.
+
+      Note: You might need to enable the OCTOSPI I/O manager clock to use the
+            property. Please refer to Reference Manual.
+            The clock can be enabled in the devicetree.

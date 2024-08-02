@@ -14,7 +14,7 @@ choice NXP_ENET_DRIVER
 
 config ETH_NXP_ENET
 	bool "NXP ENET Ethernet driver"
-	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	select NOCACHE_MEMORY if HAS_MCUX_CACHE && CPU_HAS_DCACHE
 	select ARM_MPU if CPU_CORTEX_M7
 	select MDIO if DT_HAS_NXP_ENET_MDIO_ENABLED
 	select NET_POWER_MANAGEMENT if (PM_DEVICE && SOC_FAMILY_KINETIS)
@@ -38,6 +38,13 @@ endchoice
 
 if ETH_NXP_ENET
 
+config ETH_NXP_ENET_1G
+	bool "1G mode for ENET1G instance"
+	default y
+	depends on DT_HAS_NXP_ENET1G_ENABLED
+	help
+	  Enable the use of the ENET1G ethernet instance in 1G mode.
+
 config ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
 	bool "Use DTCM for hardware DMA buffers"
 	default y
@@ -48,6 +55,7 @@ config ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
 config ETH_NXP_ENET_HW_ACCELERATION
 	bool "Hardware acceleration"
 	default y
+	depends on !NET_IPV6
 	help
 	  Enable hardware acceleration for the following:
 	  - IPv4, UDP and TCP checksum (both Rx and Tx)

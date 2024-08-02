@@ -87,7 +87,7 @@ static struct bt_mesh_health_srv health_srv = {
 /*
  * Publication Declarations
  *
- * The publication messages are initialized to the
+ * The publication messages are initialized to
  * the size of the opcode + content
  *
  * For publication, the message must be in static or global as

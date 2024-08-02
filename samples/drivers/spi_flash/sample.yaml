@@ -6,7 +6,7 @@ tests:
       - spi
       - flash
     filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("st,stm32-qspi-nor")
-      or dt_compat_enabled("st,stm32-ospi-nor")
+      or dt_compat_enabled("st,stm32-ospi-nor") or dt_compat_enabled("st,stm32-xspi-nor")
       or (dt_compat_enabled("nordic,qspi-nor") and CONFIG_NORDIC_QSPI_NOR)
     platform_exclude: hifive_unmatched
     harness: console

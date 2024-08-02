@@ -27,4 +27,8 @@ include(${ZEPHYR_BASE}/cmake/modules/version.cmake)
 file(READ ${ZEPHYR_BASE}/version.h.in version_content)
 string(CONFIGURE "${version_content}" version_content)
 string(CONFIGURE "${version_content}" version_content)
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/zephyr/include/generated/mcuboot_version.h "${version_content}")
+file(
+  WRITE
+  ${CMAKE_CURRENT_BINARY_DIR}/zephyr/include/generated/zephyr/mcuboot_version.h
+  "${version_content}"
+)

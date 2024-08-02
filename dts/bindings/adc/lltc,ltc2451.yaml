@@ -10,7 +10,11 @@ include: i2c-device.yaml
 properties:
   conversion-speed:
     type: int
+    default: 60
     enum:
       - 30
       - 60
-    description: Set conversion speed in Hz
+    description: |
+      Set conversion speed in Hz
+      Default value corresponds to the default value of the register
+      To specify channel 2 and 4 = 0b001010 = 10

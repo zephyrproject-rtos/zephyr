@@ -8,28 +8,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-#include <zephyr/kernel.h>
+#include <errno.h>
+#include <sys/types.h>
 #include <stdbool.h>
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-#include <stdio.h>
-#include <zephyr/types.h>
-#include <zephyr/sys/atomic.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/util.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/mcs.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/services/ots.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
 
 #include "audio_internal.h"
 #include "media_proxy_internal.h"
 #include "mcs_internal.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_mcs, CONFIG_BT_MCS_LOG_LEVEL);
 
@@ -986,7 +994,7 @@ static void notify_string(struct bt_conn *conn, const struct bt_uuid *uuid, cons
 	__ASSERT(att_mtu > att_header_size, "Could not get valid ATT MTU");
 	maxlen = att_mtu - att_header_size; /* Subtract opcode and handle */
 
-	/* Send notifcation potentially truncated to the MTU */
+	/* Send notification potentially truncated to the MTU */
 	err = bt_gatt_notify_uuid(conn, uuid, mcs.attrs, (void *)str,
 				  MIN(strlen(str), maxlen));
 	if (err != 0) {

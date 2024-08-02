@@ -59,7 +59,7 @@ extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       uint32_t stack_end,
 					       uint32_t stack_start);
 
-extern void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 #endif /* _ASMLANGUAGE */
 

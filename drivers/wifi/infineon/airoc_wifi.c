@@ -125,8 +125,7 @@ static void airoc_wifi_scan_cb_search(whd_scan_result_t **result_ptr, void *user
 	if (status == WHD_SCAN_COMPLETED_SUCCESSFULLY) {
 		k_sem_give(&airoc_wifi_data.sema_scan);
 	} else if ((status == WHD_SCAN_INCOMPLETE) && (user_data != NULL) &&
-		   ((**result_ptr).SSID.length > 0)) {
-
+		   ((**result_ptr).SSID.length == ((whd_scan_result_t *)user_data)->SSID.length)) {
 		if (strncmp(((whd_scan_result_t *)user_data)->SSID.value, (**result_ptr).SSID.value,
 			    (**result_ptr).SSID.length) == 0) {
 			memcpy(user_data, *result_ptr, sizeof(whd_scan_result_t));
@@ -220,10 +219,14 @@ static whd_result_t airoc_wifi_host_buffer_get(whd_buffer_t *buffer, whd_buffer_
 	struct net_buf *buf;
 
 	buf = net_buf_alloc_len(&airoc_pool, size, K_NO_WAIT);
-	if (buf == NULL) {
+	if ((buf == NULL) || (buf->size < size)) {
 		return WHD_BUFFER_ALLOC_FAIL;
 	}
 	*buffer = buf;
+
+	/* Set buffer size */
+	(void) airoc_wifi_buffer_set_size(*buffer, size);
+
 	return WHD_SUCCESS;
 }
 
@@ -288,8 +291,9 @@ static int airoc_mgmt_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* Allocate Network Buffer from pool with Packet Length + Data Header */
-	buf = net_buf_alloc_len(&airoc_pool, pkt_len + sizeof(data_header_t), K_NO_WAIT);
-	if (buf == NULL) {
+	ret = airoc_wifi_host_buffer_get((whd_buffer_t *) &buf, WHD_NETWORK_TX,
+					 pkt_len + sizeof(data_header_t), 0);
+	if ((ret != WHD_SUCCESS) || (buf == NULL)) {
 		return -EIO;
 	}
 

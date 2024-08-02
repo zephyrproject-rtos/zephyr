@@ -23,7 +23,7 @@ Peripherals
    dac.rst
    dma.rst
    display/index.rst
-   eeprom.rst
+   eeprom/index.rst
    espi.rst
    entropy.rst
    edac/index.rst
@@ -41,6 +41,7 @@ Peripherals
    mdio.rst
    mipi_dbi.rst
    mipi_dsi.rst
+   mspi.rst
    mbox.rst
    pcie.rst
    peci.rst
@@ -51,7 +52,7 @@ Peripherals
    reset.rst
    retained_mem.rst
    sdhc.rst
-   sensor.rst
+   sensor/index.rst
    spi.rst
    smbus.rst
    uart.rst

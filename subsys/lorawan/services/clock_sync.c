@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(lorawan_clock_sync, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
  * Version of LoRaWAN Application Layer Clock Synchronization Specification
  *
  * This implementation only supports TS003-2.0.0, as the previous revision TS003-1.0.0
- * requested to temporarily disable ADR and and set nb_trans to 1. This causes issues on the
+ * requested to temporarily disable ADR and set nb_trans to 1. This causes issues on the
  * server side and is not recommended anymore.
  */
 #define CLOCK_SYNC_PACKAGE_VERSION 2
@@ -71,7 +71,7 @@ static struct clock_sync_context ctx;
  */
 static int clock_sync_serialize_device_time(uint8_t *buf, size_t size)
 {
-	uint32_t device_time = k_uptime_get() / MSEC_PER_SEC + ctx.time_offset;
+	uint32_t device_time = k_uptime_seconds() + ctx.time_offset;
 
 	if (size < sizeof(uint32_t)) {
 		return -ENOSPC;
@@ -221,7 +221,7 @@ int lorawan_clock_sync_get(uint32_t *gps_time)
 	__ASSERT(gps_time != NULL, "gps_time parameter is required");
 
 	if (ctx.synchronized) {
-		*gps_time = (uint32_t)(k_uptime_get() / MSEC_PER_SEC + ctx.time_offset);
+		*gps_time = k_uptime_seconds() + ctx.time_offset;
 		return 0;
 	} else {
 		return -EAGAIN;

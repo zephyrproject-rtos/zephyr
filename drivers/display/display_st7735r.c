@@ -5,6 +5,7 @@
  * Copyright (c) 2019 PHYTEC Messtechnik GmbH
  * Copyright (c) 2020 Endian Technologies AB
  * Copyright (c) 2020 Kim Bøndergaard <kim@fam-boendergaard.dk>
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +15,7 @@
 #include "display_st7735r.h"
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
@@ -23,15 +24,14 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_st7735r, CONFIG_DISPLAY_LOG_LEVEL);
 
-#define ST7735R_RESET_TIME              K_MSEC(1)
+#define ST7735R_RESET_TIME	1
 #define ST7735R_EXIT_SLEEP_TIME K_MSEC(120)
 
 #define ST7735R_PIXEL_SIZE 2u
 
 struct st7735r_config {
-	struct spi_dt_spec bus;
-	struct gpio_dt_spec cmd_data;
-	struct gpio_dt_spec reset;
+	const struct device *mipi_dev;
+	const struct mipi_dbi_config dbi_config;
 	uint16_t height;
 	uint16_t width;
 	uint8_t madctl;
@@ -68,38 +68,13 @@ static void st7735r_set_lcd_margins(const struct device *dev,
 	data->y_offset = y_offset;
 }
 
-static void st7735r_set_cmd(const struct device *dev, int is_cmd)
-{
-	const struct st7735r_config *config = dev->config;
-
-	gpio_pin_set_dt(&config->cmd_data, is_cmd);
-}
-
 static int st7735r_transmit_hold(const struct device *dev, uint8_t cmd,
 				 const uint8_t *tx_data, size_t tx_count)
 {
 	const struct st7735r_config *config = dev->config;
-	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
-	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
-	int ret;
 
-	st7735r_set_cmd(dev, 1);
-	ret = spi_write_dt(&config->bus, &tx_bufs);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (tx_data != NULL) {
-		tx_buf.buf = (void *)tx_data;
-		tx_buf.len = tx_count;
-		st7735r_set_cmd(dev, 0);
-		ret = spi_write_dt(&config->bus, &tx_bufs);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
+	return mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
+				      cmd, tx_data, tx_count);
 }
 
 static int st7735r_transmit(const struct device *dev, uint8_t cmd,
@@ -109,7 +84,7 @@ static int st7735r_transmit(const struct device *dev, uint8_t cmd,
 	int ret;
 
 	ret = st7735r_transmit_hold(dev, cmd, tx_data, tx_count);
-	spi_release_dt(&config->bus);
+	mipi_dbi_release(config->mipi_dev, &config->dbi_config);
 	return ret;
 }
 
@@ -133,11 +108,8 @@ static int st7735r_reset_display(const struct device *dev)
 	int ret;
 
 	LOG_DBG("Resetting display");
-	if (config->reset.port != NULL) {
-		gpio_pin_set_dt(&config->reset, 1);
-		k_sleep(ST7735R_RESET_TIME);
-		gpio_pin_set_dt(&config->reset, 0);
-	} else {
+	ret = mipi_dbi_reset(config->mipi_dev, ST7735R_RESET_TIME);
+	if (ret != 0) {
 		ret = st7735r_transmit(dev, ST7735R_CMD_SW_RESET, NULL, 0);
 		if (ret < 0) {
 			return ret;
@@ -204,12 +176,12 @@ static int st7735r_write(const struct device *dev,
 {
 	const struct st7735r_config *config = dev->config;
 	const uint8_t *write_data_start = (uint8_t *) buf;
-	struct spi_buf tx_buf;
-	struct spi_buf_set tx_bufs;
 	uint16_t write_cnt;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
 	int ret;
+	enum display_pixel_format fmt;
+	struct display_buffer_descriptor mipi_desc;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT((desc->pitch * ST7735R_PIXEL_SIZE * desc->height)
@@ -225,9 +197,24 @@ static int st7735r_write(const struct device *dev,
 	if (desc->pitch > desc->width) {
 		write_h = 1U;
 		nbr_of_writes = desc->height;
+		mipi_desc.height = 1;
+		mipi_desc.buf_size = desc->pitch * ST7735R_PIXEL_SIZE;
 	} else {
 		write_h = desc->height;
 		nbr_of_writes = 1U;
+		mipi_desc.height = desc->height;
+		mipi_desc.buf_size = desc->width * ST7735R_PIXEL_SIZE * write_h;
+	}
+
+	mipi_desc.width = desc->width;
+	/* Per MIPI API, pitch must always match width */
+	mipi_desc.pitch = desc->width;
+
+
+	if (!(config->madctl & ST7735R_MADCTL_BGR) != !config->rgb_is_inverted) {
+		fmt = PIXEL_FORMAT_BGR_565;
+	} else {
+		fmt = PIXEL_FORMAT_RGB_565;
 	}
 
 	ret = st7735r_transmit_hold(dev, ST7735R_CMD_RAMWR,
@@ -237,14 +224,13 @@ static int st7735r_write(const struct device *dev,
 		goto out;
 	}
 
-	tx_bufs.buffers = &tx_buf;
-	tx_bufs.count = 1;
-
 	write_data_start += (desc->pitch * ST7735R_PIXEL_SIZE);
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
-		tx_buf.buf = (void *)write_data_start;
-		tx_buf.len = desc->width * ST7735R_PIXEL_SIZE * write_h;
-		ret = spi_write_dt(&config->bus, &tx_bufs);
+		ret = mipi_dbi_write_display(config->mipi_dev,
+					     &config->dbi_config,
+					     write_data_start,
+					     &mipi_desc,
+					     fmt);
 		if (ret < 0) {
 			goto out;
 		}
@@ -254,7 +240,7 @@ static int st7735r_write(const struct device *dev,
 
 	ret = 0;
 out:
-	spi_release_dt(&config->bus);
+	mipi_dbi_release(config->mipi_dev, &config->dbi_config);
 	return ret;
 }
 
@@ -445,34 +431,9 @@ static int st7735r_init(const struct device *dev)
 	const struct st7735r_config *config = dev->config;
 	int ret;
 
-	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+	if (!device_is_ready(config->mipi_dev)) {
+		LOG_ERR("MIPI bus %s not ready", config->mipi_dev->name);
 		return -ENODEV;
-	}
-
-	if (config->reset.port != NULL) {
-		if (!gpio_is_ready_dt(&config->reset)) {
-			LOG_ERR("Reset GPIO port for display not ready");
-			return -ENODEV;
-		}
-
-		ret = gpio_pin_configure_dt(&config->reset,
-					    GPIO_OUTPUT_INACTIVE);
-		if (ret) {
-			LOG_ERR("Couldn't configure reset pin");
-			return ret;
-		}
-	}
-
-	if (!gpio_is_ready_dt(&config->cmd_data)) {
-		LOG_ERR("cmd/DATA GPIO port not ready");
-		return -ENODEV;
-	}
-
-	ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT);
-	if (ret) {
-		LOG_ERR("Couldn't configure cmd/DATA pin");
-		return ret;
 	}
 
 	ret = st7735r_reset_display(dev);
@@ -530,11 +491,13 @@ static const struct display_driver_api st7735r_api = {
 
 #define ST7735R_INIT(inst)							\
 	const static struct st7735r_config st7735r_config_ ## inst = {		\
-		.bus = SPI_DT_SPEC_INST_GET(					\
-			inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |		\
-			SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),			\
-		.cmd_data = GPIO_DT_SPEC_INST_GET(inst, cmd_data_gpios),	\
-		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),	\
+		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),		\
+		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,			\
+				SPI_OP_MODE_MASTER |				\
+				((DT_INST_PROP(inst, mipi_mode) ==		\
+				 MIPI_DBI_MODE_SPI_4WIRE) ? SPI_WORD_SET(8) :	\
+				 SPI_WORD_SET(9)) |				\
+				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),		\
 		.width = DT_INST_PROP(inst, width),				\
 		.height = DT_INST_PROP(inst, height),				\
 		.madctl = DT_INST_PROP(inst, madctl),				\

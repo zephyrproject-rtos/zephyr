@@ -124,7 +124,7 @@ int pthread_condattr_init(pthread_condattr_t *att);
 int pthread_condattr_destroy(pthread_condattr_t *att);
 
 /**
- * @brief POSIX threading comatibility API
+ * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
  *
@@ -276,20 +276,6 @@ int pthread_mutexattr_init(pthread_mutexattr_t *attr);
  */
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
 
-/**
- * @brief Declare a pthread barrier
- *
- * Declaration API for a pthread barrier.  This is not a
- * POSIX API, it's provided to better conform with Zephyr's allocation
- * strategies for kernel objects.
- *
- * @param name Symbol name of the barrier
- * @param count Thread count, same as the "count" argument to
- *             pthread_barrier_init()
- * @deprecated Use @ref pthread_barrier_init instead.
- */
-#define PTHREAD_BARRIER_DEFINE(name, count) pthread_barrier_t name = -1 __DEPRECATED_MACRO
-
 #define PTHREAD_BARRIER_SERIAL_THREAD 1
 
 /*
@@ -431,7 +417,7 @@ int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope);
 int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
 int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inheritsched);
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
-#ifdef CONFIG_PTHREAD_IPC
+#ifdef CONFIG_POSIX_THREADS
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
 #endif
 FUNC_NORETURN void pthread_exit(void *retval);
@@ -516,7 +502,7 @@ int pthread_setname_np(pthread_t thread, const char *name);
  */
 int pthread_getname_np(pthread_t thread, char *name, size_t len);
 
-#ifdef CONFIG_PTHREAD_IPC
+#ifdef CONFIG_POSIX_THREADS
 
 /**
  * @brief Destroy a pthread_spinlock_t.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2023-2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +87,10 @@
 	status = "okay";
 	msi-range = <4>; /* 4MHz (reset value) */
 	msi-pll-mode;
+};
+
+&clk_lse {
+	status = "okay";
 };
 
 &pll1 {
@@ -269,6 +273,12 @@ uart0: &usart3 {
 			reg = <0x003e2000 DT_SIZE_K(120)>;
 		};
 	};
+};
+
+&rtc {
+	clocks =  <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
 };
 
 &iwdg {

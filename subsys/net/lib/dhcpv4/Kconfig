@@ -9,6 +9,7 @@ config NET_DHCPV4
 	bool "DHCPv4 client"
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO if NET_IPV4_ACD
 	depends on NET_IPV4 && NET_UDP
 
 if NET_DHCPV4
@@ -140,7 +141,7 @@ config NET_DHCPV4_SERVER_ADDR_DECLINE_TIME
 	  case it runs out of free addresses to assign.
 
 config NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT
-	int "Timeout for ICMP probes sent by the server (miliseconds)"
+	int "Timeout for ICMP probes sent by the server (milliseconds)"
 	range 0 60000
 	default 1000
 	help

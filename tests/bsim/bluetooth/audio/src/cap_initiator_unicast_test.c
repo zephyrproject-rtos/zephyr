@@ -3,18 +3,41 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+
+#include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
 
+#if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)
 
@@ -185,6 +208,7 @@ static struct bt_bap_stream_ops unicast_stream_ops = {
 };
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
+				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
@@ -1631,130 +1655,130 @@ static void test_args(int argc, char *argv[])
 static const struct bst_test_instance test_cap_initiator_unicast[] = {
 	{
 		.test_id = "cap_initiator_unicast",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_cap_initiator_unicast,
 	},
 	{
 		.test_id = "cap_initiator_unicast_timeout",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_unicast_timeout,
 	},
 	{
 		.test_id = "cap_initiator_unicast_inval",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_cap_initiator_unicast_inval,
 	},
 	{
 		.test_id = "cap_initiator_ac_1",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_1,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_2",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_2,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_3",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_3,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_4",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_4,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_5",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_5,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_6_i",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_6_i,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_6_ii",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_6_ii,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_7_i",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_7_i,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_7_ii",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_7_ii,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_8_i",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_8_i,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_8_ii",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_8_ii,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_9_i",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_9_i,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_9_ii",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_9_ii,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_10",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_10,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_11_i",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_11_i,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_11_ii",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_11_ii,
 		.test_args_f = test_args,

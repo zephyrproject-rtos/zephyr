@@ -54,8 +54,15 @@ config I2C_CALLBACK
 	help
 	  API and implementations of i2c_transfer_cb.
 
+config HAS_I2C_RTIO
+	bool
+	help
+	  This option must be selected by I2C controller drivers that optionally implement the RTIO
+	  interface.
+
 config I2C_RTIO
 	bool "I2C RTIO API"
+	depends on HAS_I2C_RTIO
 	select RTIO
 	help
 	  API and implementations of I2C for RTIO
@@ -87,6 +94,7 @@ endif # I2C_RTIO
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 source "drivers/i2c/Kconfig.b91"
+source "drivers/i2c/Kconfig.bcm_iproc"
 source "drivers/i2c/Kconfig.cc13xx_cc26xx"
 source "drivers/i2c/Kconfig.dw"
 source "drivers/i2c/Kconfig.esp32"
@@ -121,6 +129,7 @@ source "drivers/i2c/Kconfig.ambiq"
 source "drivers/i2c/Kconfig.numaker"
 source "drivers/i2c/Kconfig.mcux"
 source "drivers/i2c/Kconfig.ene"
+source "drivers/i2c/Kconfig.max32"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
@@ -168,6 +177,7 @@ config I2C_MCUX_LPI2C
 	default y
 	depends on DT_HAS_NXP_IMX_LPI2C_ENABLED
 	depends on CLOCK_CONTROL
+	select HAS_I2C_RTIO
 	select PINCTRL
 	help
 	  Enable the mcux LPI2C driver.

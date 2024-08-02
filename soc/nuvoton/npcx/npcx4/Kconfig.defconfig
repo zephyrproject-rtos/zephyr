@@ -13,6 +13,6 @@ config CORTEX_M_SYSTICK
 
 config ESPI_TAF_NPCX
 	default y
-	depends on ESPI_SAF
+	depends on ESPI_TAF
 
 endif # SOC_SERIES_NPCX4

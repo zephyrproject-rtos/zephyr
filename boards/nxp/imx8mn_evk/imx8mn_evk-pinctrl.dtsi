@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022,2024 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  */
@@ -12,7 +12,7 @@
 			pinmux = <&iomuxc_uart2_rxd_uart_rx_uart2_rx>,
 				<&iomuxc_uart2_txd_uart_tx_uart2_tx>;
 			slew-rate = "fast";
-			drive-strength = "40-ohm";
+			drive-strength = "x6";
 		};
 	};
 
@@ -21,7 +21,7 @@
 			pinmux = <&iomuxc_uart4_rxd_uart_rx_uart4_rx>,
 				<&iomuxc_uart4_txd_uart_tx_uart4_tx>;
 			slew-rate = "fast";
-			drive-strength = "40-ohm";
+			drive-strength = "x6";
 		};
 	};
 

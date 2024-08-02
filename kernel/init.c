@@ -46,8 +46,9 @@ BUILD_ASSERT(CONFIG_MP_NUM_CPUS == CONFIG_MP_MAX_NUM_CPUS,
 __pinned_bss
 struct z_kernel _kernel;
 
-__pinned_bss
-atomic_t _cpus_active;
+#ifdef CONFIG_PM
+__pinned_bss atomic_t _cpus_active;
+#endif
 
 /* init/main and idle threads */
 K_THREAD_PINNED_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
@@ -362,12 +363,15 @@ static void z_sys_init_run_level(enum init_level level)
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		const struct device *dev = entry->dev;
+		int result;
 
+		sys_trace_sys_init_enter(entry, level);
 		if (dev != NULL) {
-			do_device_init(entry);
+			result = do_device_init(entry);
 		} else {
-			(void)entry->init_fn.sys();
+			result = entry->init_fn.sys();
 		}
+		sys_trace_sys_init_exit(entry, level, result);
 	}
 }
 
@@ -394,7 +398,7 @@ static inline int z_vrfy_device_init(const struct device *dev)
 
 	return z_impl_device_init(dev);
 }
-#include <syscalls/device_init_mrsh.c>
+#include <zephyr/syscalls/device_init_mrsh.c>
 #endif
 
 extern void boot_banner(void);
@@ -416,8 +420,8 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_MMU
 	/* Invoked here such that backing store or eviction algorithms may
 	 * initialize kernel objects, and that all POST_KERNEL and later tasks
-	 * may perform memory management tasks (except for z_phys_map() which
-	 * is allowed at any time)
+	 * may perform memory management tasks (except for
+	 * k_mem_map_phys_bare() which is allowed at any time)
 	 */
 	z_mem_manage_init();
 #endif /* CONFIG_MMU */
@@ -429,10 +433,8 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 	boot_banner();
 
-#if defined(CONFIG_CPP)
-	void z_cpp_init_static(void);
-	z_cpp_init_static();
-#endif /* CONFIG_CPP */
+	void z_init_static(void);
+	z_init_static();
 
 	/* Final init level before app starts */
 	z_sys_init_run_level(INIT_LEVEL_APPLICATION);
@@ -473,6 +475,7 @@ static void init_idle_thread(int i)
 {
 	struct k_thread *thread = &z_idle_threads[i];
 	k_thread_stack_t *stack = z_idle_stacks[i];
+	size_t stack_size = K_KERNEL_STACK_SIZEOF(z_idle_stacks[i]);
 
 #ifdef CONFIG_THREAD_NAME
 
@@ -488,7 +491,7 @@ static void init_idle_thread(int i)
 #endif /* CONFIG_THREAD_NAME */
 
 	z_setup_new_thread(thread, stack,
-			  CONFIG_IDLE_STACK_SIZE, idle, &_kernel.cpus[i],
+			  stack_size, idle, &_kernel.cpus[i],
 			  NULL, NULL, K_IDLE_PRIO, K_ESSENTIAL,
 			  tname);
 	z_mark_thread_as_started(thread);
@@ -512,11 +515,13 @@ void z_init_cpu(int id)
 		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
 #endif
 
+#ifdef CONFIG_PM
 	/*
 	 * Increment number of CPUs active. The pm subsystem
 	 * will keep track of this from here.
 	 */
 	atomic_inc(&_cpus_active);
+#endif
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
 	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel.cpus[id]), &obj_type_cpu);
@@ -561,7 +566,8 @@ static char *prepare_multithreading(void)
 	_kernel.ready_q.cache = &z_main_thread;
 #endif /* CONFIG_SMP */
 	stack_ptr = z_setup_new_thread(&z_main_thread, z_main_stack,
-				       CONFIG_MAIN_STACK_SIZE, bg_thread_main,
+				       K_THREAD_STACK_SIZEOF(z_main_stack),
+				       bg_thread_main,
 				       NULL, NULL, NULL,
 				       CONFIG_MAIN_THREAD_PRIORITY,
 				       K_ESSENTIAL, "main");
@@ -650,18 +656,16 @@ FUNC_NORETURN void z_cstart(void)
 	LOG_CORE_INIT();
 
 #if defined(CONFIG_MULTITHREADING)
-	/* Note: The z_ready_thread() call in prepare_multithreading() requires
-	 * a dummy thread even if CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN=y
-	 */
-	struct k_thread dummy_thread;
-
-	z_dummy_thread_init(&dummy_thread);
+	z_dummy_thread_init(&_thread_dummy);
 #endif /* CONFIG_MULTITHREADING */
 	/* do any necessary initialization of static devices */
 	z_device_state_init();
 
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
+#if defined(CONFIG_SMP)
+	arch_smp_init();
+#endif
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_STACK_CANARIES

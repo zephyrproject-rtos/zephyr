@@ -200,23 +200,41 @@ ZTEST(sd_stack, test_card_config)
 	zassert_equal(card.status, CARD_INITIALIZED, "Card status is not OK");
 	switch (card.card_speed) {
 	case SD_TIMING_SDR12:
-		TC_PRINT("Card timing: SDR12\n");
+		if (card.flags & SD_1800MV_FLAG) {
+			TC_PRINT("Card timing: SDR12\n");
+		} else {
+			/* Card uses non UHS mode timing */
+			TC_PRINT("Card timing: Legacy\n");
+		}
 		break;
 	case SD_TIMING_SDR25:
-		TC_PRINT("Card timing: SDR25\n");
+		if (card.flags & SD_1800MV_FLAG) {
+			TC_PRINT("Card timing: SDR25\n");
+		} else {
+			/* Card uses non UHS mode timing */
+			TC_PRINT("Card timing: High Speed\n");
+		}
 		break;
 	case SD_TIMING_SDR50:
 		TC_PRINT("Card timing: SDR50\n");
+		zassert_true(card.flags & SD_1800MV_FLAG,
+			     "Card must support UHS mode for this timing");
 		break;
 	case SD_TIMING_SDR104:
 		TC_PRINT("Card timing: SDR104\n");
+		zassert_true(card.flags & SD_1800MV_FLAG,
+			     "Card must support UHS mode for this timing");
 		break;
 	case SD_TIMING_DDR50:
 		TC_PRINT("Card timing: DDR50\n");
+		zassert_true(card.flags & SD_1800MV_FLAG,
+			     "Card must support UHS mode for this timing");
 		break;
 	default:
 		zassert_unreachable("Card timing is not known value");
 	}
+	zassert_not_equal(card.bus_io.clock, 0, "Bus should have nonzero clock");
+	TC_PRINT("Bus Frequency: %d Hz\n", card.bus_io.clock);
 	switch (card.type) {
 	case CARD_SDIO:
 		TC_PRINT("Card type: SDIO\n");

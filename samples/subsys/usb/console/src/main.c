@@ -16,7 +16,7 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
 	     "Console device is not ACM CDC UART device");
 
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-static struct usbd_contex *sample_usbd;
+static struct usbd_context *sample_usbd;
 
 static int enable_usb_device_next(void)
 {
@@ -34,7 +34,7 @@ static int enable_usb_device_next(void)
 
 	return 0;
 }
-#endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT) */
+#endif /* defined(CONFIG_USB_DEVICE_STACK_NEXT) */
 
 int main(void)
 {

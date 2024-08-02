@@ -111,6 +111,7 @@ broadmobi	Shanghai Broadmobi Communication Technology Co.,Ltd.
 bticino	Bticino International
 buffalo	Buffalo, Inc.
 bur	B&R Industrial Automation GmbH
+bytesatwork	bytesatwork AG
 calaosystems	CALAO Systems SAS
 calxeda	Calxeda
 canaan	Canaan, Inc.
@@ -150,9 +151,11 @@ cortina	Cortina Systems, Inc.
 cosmic	Cosmic Circuits
 crane	Crane Connectivity Solutions
 creative	Creative Technology Ltd
+croxel	Croxel, Inc.
 crystalfontz	Crystalfontz America, Inc.
 csky	Hangzhou C-SKY Microsystems Co., Ltd
 csq	Shenzen Chuangsiqi Technology Co.,Ltd.
+ct	CTHINGS.CO
 cubietech	Cubietech, Ltd.
 cypress	Cypress Semiconductor Corporation
 cznic	CZ.NIC, z.s.p.o.
@@ -223,6 +226,7 @@ evervision	Evervision Electronics Co. Ltd.
 exar	Exar Corporation
 excito	Excito
 ezchip	EZchip Semiconductor
+ezurio	Ezurio
 facebook	Facebook (deprecated, use meta)
 fairphone	Fairphone B.V.
 fanke	FANKE Technology Co., Ltd.
@@ -231,6 +235,7 @@ fastrax	Fastrax Oy
 fcs	Fairchild Semiconductor
 feixin	Shenzhen Feixin Photoelectic Co., Ltd
 feiyang	Shenzhen Fly Young Technology Co.,LTD.
+festo	Festo SE & Co. KG
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
@@ -241,6 +246,7 @@ friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd
 fsl	Freescale Semiconductor
 ftdi	Future Technology Devices International Ltd.
 fujitsu	Fujitsu Ltd.
+futaba	Futaba Corporation
 gaisler	Gaisler
 galaxycore	Galaxycore, Inc.
 gardena	GARDENA GmbH
@@ -320,6 +326,7 @@ isee	ISEE 2007 S.L.
 isentek	Isentek Inc.
 isil	Intersil
 issi	Integrated Silicon Solutions Inc.
+ist	Innovative Sensor Technology IST AG
 ite	ITE Tech. Inc.
 itead	ITEAD Intelligent Systems Co.Ltd
 ivo	InfoVision Optoelectronics Kunshan Co. Ltd.
@@ -350,7 +357,6 @@ kvg	Kverneland Group
 kyo	Kyocera Corporation
 lacie	LaCie
 laird	Laird PLC
-lairdconnect	Laird Connectivity
 lamobo	Ketai Huajie Technology Co., Ltd.
 lantiq	Lantiq Semiconductor
 lattice	Lattice Semiconductor
@@ -363,6 +369,7 @@ lg	LG Corporation
 lgphilips	LG Display
 libretech	Shenzhen Libre Technology Co., Ltd
 licheepi	Lichee Pi
+lilygo	Lilygo Shenzhen Xinyuan Electronic Technology Co., Ltd
 linaro	Linaro Limited
 linksprite	LinkSprite Technologies, Inc.
 linksys	Belkin International, Inc. (Linksys)
@@ -496,7 +503,7 @@ pda	Precision Design Associates, Inc.
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
 phicomm	PHICOMM Co., Ltd.
-phytec	PHYTEC Messtechnik GmbH
+phytec	PHYTEC
 picochip	Picochip Ltd
 pine64	Pine64
 pineriver	Shenzhen PineRiver Designs Co., Ltd.
@@ -548,6 +555,7 @@ renode	Antmicro's open source simulation and virtual development framework
 rervision	Shenzhen Rervision Technology Co., Ltd.
 revotics	Revolution Robotics, Inc. (Revotics)
 rex	iMX6 Rex Project
+reyax	Reyax Technology Co., Ltd.
 richtek	Richtek Technology Corporation
 ricoh	Ricoh Co. Ltd.
 rikomagic	Rikomagic Tech Corp. Ltd

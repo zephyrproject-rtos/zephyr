@@ -15,14 +15,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
 &flash0 {
 	status = "okay";
 	reg = <0x0 DT_SIZE_M(16)>;

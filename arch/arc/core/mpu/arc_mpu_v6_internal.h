@@ -156,7 +156,7 @@ static inline bool _is_enabled_region(uint32_t r_index)
 }
 
 /**
- * This internal function check if the given buffer in in the region
+ * This internal function check if the given buffer is in the region
  */
 static inline bool _is_in_region(uint32_t r_index, uint32_t start, uint32_t size)
 {

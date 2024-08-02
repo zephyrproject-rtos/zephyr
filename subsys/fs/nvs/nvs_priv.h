@@ -30,6 +30,15 @@ extern "C" {
 
 #define NVS_LOOKUP_CACHE_NO_ADDR 0xFFFFFFFF
 
+/*
+ * Allow to use the NVS_DATA_CRC_SIZE macro in computations whether data CRC is enabled or not
+ */
+#ifdef CONFIG_NVS_DATA_CRC
+#define NVS_DATA_CRC_SIZE 4 /* CRC-32 size in bytes */
+#else
+#define NVS_DATA_CRC_SIZE 0
+#endif
+
 /* Allocation Table Entry */
 struct nvs_ate {
 	uint16_t id;	/* data id */

@@ -1,11 +1,14 @@
 # Copyright (c) 2018, Workaround GmbH
+# Copyright (c) 2024 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
 description: STM32 RTC
 
 compatible: "st,stm32-rtc"
 
-include: rtc.yaml
+include:
+  - rtc.yaml
+  - rtc-device.yaml
 
 properties:
   reg:
@@ -18,3 +21,19 @@ properties:
     enum:
       - 1
       - 512
+
+  alarms-count:
+    description: |
+      Number of alarms supported by STM32 RTC device.
+      Most of STM32 MCU series have 2 RTC alarms, A & B.
+      Defaults to 0 when not declared in devicetree.
+
+  alrm-exti-line:
+    type: int
+    description: |
+      Number of the Extended Interrupts and Event Controller (EXTI) interrupt
+      line connected to the RTC Alarm event.
+      Not required, since RTC Alarm interrupt could be routed directly to Nested
+      Vectored Interrupt Controller (NVIC) and to Power Control (PWR) wake-up
+      pins on some series.
+      Valid range: 0 - 31

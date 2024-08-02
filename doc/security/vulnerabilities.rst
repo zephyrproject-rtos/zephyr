@@ -1687,6 +1687,9 @@ This has been fixed in main for v3.6.0
 - `PR 66887 fix for 2.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/66887>`_
 
+CVE-2024
+========
+
 CVE-2024-1638
 -------------
 
@@ -1713,3 +1716,70 @@ This has been fixed in main for v3.7.0
 
 - `PR 69396 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/69396>`_
+
+CVE-2024-3332
+-------------
+
+Bluetooth: DoS caused by null pointer dereference.
+
+A malicious BLE device can send a specific order of packet
+sequence to cause a DoS attack on the victim BLE device.
+
+- `Zephyr project bug tracker GHSA-jmr9-xw2v-5vf4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jmr9-xw2v-5vf4>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 71030 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/71030>`_
+
+
+CVE-2024-4785
+-------------
+
+Under embargo until 2024-08-07
+
+CVE-2024-5754
+-------------
+
+Under embargo until 2024-09-04
+
+CVE-2024-5931
+-------------
+
+Under embargo until 2024-09-10
+
+CVE-2024-6135
+-------------
+
+Under embargo until 2024-09-11
+
+CVE-2024-6137
+-------------
+
+Under embargo until 2024-09-11
+
+CVE-2024-6258
+-------------
+
+Under embargo until 2024-09-05
+
+CVE-2024-6259
+-------------
+
+Under embargo until 2024-09-12
+
+CVE-2024-6442
+-------------
+
+Under embargo until 2024-09-22
+
+CVE-2024-6443
+-------------
+
+Under embargo until 2024-09-22
+
+CVE-2024-6444
+-------------
+
+Under embargo until 2024-09-22

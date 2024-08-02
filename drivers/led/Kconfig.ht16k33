@@ -15,8 +15,7 @@ menuconfig HT16K33
 
 config HT16K33_KEYSCAN
 	bool "Keyscan support"
-	depends on (HT16K33 && KSCAN)
-	select KSCAN_HT16K33
+	depends on (HT16K33 && INPUT)
 	help
 	  Enable keyscan child device support in the HT16K33 LED
 	  driver.

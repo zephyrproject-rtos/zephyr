@@ -71,7 +71,7 @@ itself.  The work item also maintains information about its status.
 A work item must be initialized before it can be used. This records the work
 item's handler function and marks it as not pending.
 
-A work item may be **queued** (:c:macro:`K_WORK_QUEUED`) by submitting it to a
+A work item may be **queued** (:c:enumerator:`K_WORK_QUEUED`) by submitting it to a
 workqueue by an ISR or a thread.  Submitting a work item appends the work item
 to the workqueue's queue.  Once the workqueue's thread has processed all of
 the preceding work items in its queue the thread will remove the next work
@@ -80,11 +80,11 @@ the scheduling priority of the workqueue's thread, and the work required by
 other items in the queue, a queued work item may be processed quickly or it
 may remain in the queue for an extended period of time.
 
-A delayable work item may be **scheduled** (:c:macro:`K_WORK_DELAYED`) to a
+A delayable work item may be **scheduled** (:c:enumerator:`K_WORK_DELAYED`) to a
 workqueue; see `Delayable Work`_.
 
-A work item will be **running** (:c:macro:`K_WORK_RUNNING`) when it is running
-on a work queue, and may also be **canceling** (:c:macro:`K_WORK_CANCELING`)
+A work item will be **running** (:c:enumerator:`K_WORK_RUNNING`) when it is running
+on a work queue, and may also be **canceling** (:c:enumerator:`K_WORK_CANCELING`)
 if it started running before a thread has requested that it be cancelled.
 
 A work item can be in multiple states; for example it can be:
@@ -248,7 +248,7 @@ The following code defines and initializes a workqueue:
 
 In addition the queue identity and certain behavior related to thread
 rescheduling can be controlled by the optional final parameter; see
-:c:struct:`k_work_queue_start()` for details.
+:c:func:`k_work_queue_start()` for details.
 
 The following API can be used to interact with a workqueue:
 
@@ -416,7 +416,7 @@ be a flag indicating that work needs to be done, or a shared object that is
 filled by an ISR or thread and read by the work handler.
 
 For simple flags :ref:`atomic_v2` may be sufficient.  In other cases spin
-locks (:c:struct:`k_spinlock_t`) or thread-aware locks (:c:struct:`k_sem`,
+locks (:c:struct:`k_spinlock`) or thread-aware locks (:c:struct:`k_sem`,
 :c:struct:`k_mutex` , ...) may be used to ensure data races don't occur.
 
 If the selected lock mechanism can :ref:`api_term_sleep` then allowing the

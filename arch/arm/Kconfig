@@ -34,6 +34,71 @@ config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	  is assumed that the custom interrupt control interface implementation
 	  assumes responsibility for handling the NVIC.
 
+config ROMSTART_RELOCATION_ROM
+	bool "Relocate rom_start region"
+	default n
+	help
+	  Relocates the rom_start region containing the boot-vector data and
+	  irq vectors to the region specified by configurations:
+	  ROMSTART_REGION_ADDRESS and ROMSTART_REGION_SIZE
+
+	  This is useful for the Linux Remoteproc framework that uses the elf-loader
+	  such that it is able to load the correct boot-vector (contained in rom_start)
+	  into the correct memory location independent of the chosen zephyr,flash
+	  ROM region.
+
+	  Most SOCs include an alias for the boot-vector at address 0x00000000
+	  so a default which might be supported by the corresponding Linux rproc driver.
+	  If it is not, additionnal options allows to specify the addresses.
+
+	  In general this option should be chosen if the zephyr,flash chosen node
+	  is not placed into the boot-vector memory area.
+
+	  While this aims at generating a correct zephyr.elf file, it has the side
+	  effect of enlarging the bin file. If the zephyr.bin file is used to boot the
+	  secondary core, this option should be disabled.
+
+	  Example:
+		on IMX7D, the chosen zephyr,flash can be OCRAM/OCRAM_S/TCM/DDR memories
+		for code location. But the boot-vector must be placed into OCRAM_S for the
+		CORTEX-M to boot (alias 0, real 0x00180000/32K available).
+
+if ROMSTART_RELOCATION_ROM
+
+	config ROMSTART_REGION_ADDRESS
+		hex "Base address of the rom_start region"
+		default 0x00000000
+		help
+		  Start address of the rom_start region.
+		  This setting can be derived from a DT node reg property or specified directly.
+
+		  A default value of 0x00000000 might work in most cases as SOCs have an alias
+		  to the right memory region of the boot-vector.
+
+		  Examples:
+		  -IMX7D the boot-vector is OCRAM_S (0x00180000, aliased at 0x0).
+		  -IMX6SX the boot-vector is TCML (0x007F8000, aliased at 0x0).
+		  -IMX8MQ the boot-vector is TCML (0x007E0000, aliased at 0x0).
+		  -IMX8MN the boot-vector is ITCM (0x007E0000, aliased at 0x0).
+
+		  Example of DT definition:
+		  $(dt_nodelabel_reg_addr_hex,ocram_s_sys)
+
+	config ROMSTART_REGION_SIZE
+		hex "Size of the rom_start region"
+		default 1
+		help
+		  Size of the rom_start region in KB.
+
+		  Default is 1KB which is enough to store the boot and irq vectors.
+
+		  This setting can be derived from a DT node reg property or specified directly.
+
+		  Example for IMX7D that needs the boot-vector into OCRAM_S (0x00180000):
+		  $(dt_nodelabel_reg_size_hex,ocram_s_sys,0,K)
+
+endif
+
 config CODE_DATA_RELOCATION_SRAM
 	bool "Relocate code/data sections to SRAM"
 	depends on CPU_CORTEX_M

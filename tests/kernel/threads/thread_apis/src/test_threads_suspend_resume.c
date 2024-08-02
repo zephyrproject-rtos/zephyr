@@ -165,19 +165,19 @@ ZTEST(threads_lifecycle, test_resume_unsuspend_thread)
 
 	/* Resume an unsuspend thread will not change the thread state. */
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "queued") == 0);
+	zassert_str_equal(str, "queued");
 	k_thread_resume(tid);
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "queued") == 0);
+	zassert_str_equal(str, "queued");
 
 	/* suspend created thread */
 	k_thread_suspend(tid);
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "suspended") == 0);
+	zassert_str_equal(str, "suspended");
 
 	/* Resume an suspend thread will make it to be next eligible.*/
 	k_thread_resume(tid);
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "queued") == 0);
+	zassert_str_equal(str, "queued");
 	k_thread_abort(tid);
 }

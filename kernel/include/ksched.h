@@ -37,6 +37,8 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #define Z_ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
 #endif /* CONFIG_MULTITHREADING */
 
+extern struct k_thread _thread_dummy;
+
 void z_sched_init(void);
 void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 void z_unpend_thread_no_timeout(struct k_thread *thread);
@@ -115,7 +117,7 @@ int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct k_thread *thread_2);
 
 static inline bool _is_valid_prio(int prio, void *entry_point)
 {
-	if (prio == K_IDLE_PRIO && z_is_idle_thread_entry(entry_point)) {
+	if ((prio == K_IDLE_PRIO) && z_is_idle_thread_entry(entry_point)) {
 		return true;
 	}
 
@@ -275,7 +277,7 @@ int z_sched_waitq_walk(_wait_q_t *wait_q,
  *
  * This function assumes local interrupts are masked (so that the
  * current CPU pointer and current thread are safe to modify), but
- * requires no other synchronizaton.  Architecture layers don't need
+ * requires no other synchronization.  Architecture layers don't need
  * to do anything more.
  */
 void z_sched_usage_stop(void);

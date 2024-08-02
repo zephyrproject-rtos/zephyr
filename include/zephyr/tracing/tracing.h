@@ -1691,6 +1691,25 @@
 #define sys_port_trace_k_heap_free(h)
 
 /**
+ * @brief Trace Heap realloc enter
+ * @param h Heap object
+ * @param ptr Pointer to reallocate
+ * @param bytes Bytes to reallocate
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)
+
+/**
+ * @brief Trace Heap realloc exit
+ * @param h Heap object
+ * @param ptr Pointer to reallocate
+ * @param bytes Bytes to reallocate
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_heap_realloc_exit(h, ptr, bytes, timeout, ret)
+
+/**
  * @brief Trace System Heap aligned alloc enter
  * @param heap Heap object
  */
@@ -1742,6 +1761,21 @@
  * @param ret Return value
  */
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)
+
+/**
+ * @brief Trace System heap realloc enter
+ * @param heap
+ * @param ptr
+ */
+#define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)
+
+/**
+ * @brief Trace System heap realloc exit
+ * @param heap Heap object
+ * @param ptr Memory pointer
+ * @param ret Return value
+ */
+#define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)
 
 /** @} */ /* end of subsys_tracing_apis_heap */
 
@@ -1994,6 +2028,304 @@
 
 /** @} */ /* end of subsys_tracing_apis_pm_device_runtime */
 
+/**
+ * @brief Network Socket Tracing APIs
+ * @defgroup subsys_tracing_apis_socket Network Socket Tracing APIs
+ * @{
+ */
+
+/**
+ * @brief Trace init of network sockets
+ * @param socket Network socket is returned
+ * @param family Socket address family
+ * @param type Socket type
+ * @param proto Socket protocol
+ */
+#define sys_port_trace_socket_init(socket, family, type, proto)
+
+/**
+ * @brief Trace close of network sockets
+ * @param socket Socket object
+ */
+#define sys_port_trace_socket_close_enter(socket)
+
+/**
+ * @brief Trace network socket close attempt
+ * @param socket Socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_close_exit(socket, ret)
+
+/**
+ * @brief Trace shutdown of network sockets
+ * @param socket Socket object
+ * @param how Socket shutdown type
+ */
+#define sys_port_trace_socket_shutdown_enter(socket, how)
+
+/**
+ * @brief Trace network socket shutdown attempt
+ * @param socket Socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_shutdown_exit(socket, ret)
+
+/**
+ * @brief Trace bind of network sockets
+ * @param socket Socket object
+ * @param addr Network address to bind
+ * @param addrlen Address length
+ */
+#define sys_port_trace_socket_bind_enter(socket, addr, addrlen)
+
+/**
+ * @brief Trace network socket bind attempt
+ * @param socket Socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_bind_exit(socket, ret)
+
+/**
+ * @brief Trace connect of network sockets
+ * @param socket Socket object
+ * @param addr Network address to bind
+ * @param addrlen Address length
+ */
+#define sys_port_trace_socket_connect_enter(socket, addr, addrlen)
+
+/**
+ * @brief Trace network socket connect attempt
+ * @param socket Socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_connect_exit(socket, ret)
+
+/**
+ * @brief Trace listen of network sockets
+ * @param socket Socket object
+ * @param backlog Socket backlog length
+ */
+#define sys_port_trace_socket_listen_enter(socket, backlog)
+
+/**
+ * @brief Trace network socket listen attempt
+ * @param socket Socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_listen_exit(socket, ret)
+
+/**
+ * @brief Trace accept of network sockets
+ * @param socket Socket object
+ */
+#define sys_port_trace_socket_accept_enter(socket)
+
+/**
+ * @brief Trace network socket accept attempt
+ * @param socket Socket object
+ * @param addr Peer network address
+ * @param addrlen Network address length
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_accept_exit(socket, addr, addrlen, ret)
+
+/**
+ * @brief Trace sendto of network sockets
+ * @param socket Socket object
+ * @param len Length of the data to send
+ * @param flags Flags for this send operation
+ * @param dest_addr Destination network address
+ * @param addrlen Network address length
+ */
+#define sys_port_trace_socket_sendto_enter(socket, len, flags, dest_addr, addrlen)
+
+/**
+ * @brief Trace network socket sendto attempt
+ * @param socket Socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_sendto_exit(socket, ret)
+
+/**
+ * @brief Trace sendmsg of network sockets
+ * @param socket Socket object
+ * @param msg Data to send
+ * @param flags Flags for this send operation
+ */
+#define sys_port_trace_socket_sendmsg_enter(socket, msg, flags)
+
+/**
+ * @brief Trace network socket sendmsg attempt
+ * @param socket Socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_sendmsg_exit(socket, ret)
+
+/**
+ * @brief Trace recvfrom of network sockets
+ * @param socket Socket object
+ * @param max_len Maximum length of the data we can receive
+ * @param flags Flags for this receive operation
+ * @param addr Remote network address
+ * @param addrlen Network address length
+ */
+#define sys_port_trace_socket_recvfrom_enter(socket, max_len, flags, addr, addrlen)
+
+/**
+ * @brief Trace network socket recvfrom attempt
+ * @param socket Socket object
+ * @param src_addr Peer network address that send the data
+ * @param addrlen Length of the network address
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_recvfrom_exit(socket, src_addr, addrlen, ret)
+
+/**
+ * @brief Trace recvmsg of network sockets
+ * @param socket Socket object
+ * @param msg Message buffer to receive
+ * @param flags Flags for this receive operation
+ */
+#define sys_port_trace_socket_recvmsg_enter(socket, msg, flags)
+
+/**
+ * @brief Trace network socket recvmsg attempt
+ * @param socket Socket object
+ * @param msg Message buffer received
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_recvmsg_exit(socket, msg, ret)
+
+/**
+ * @brief Trace fcntl of network sockets
+ * @param socket Socket object
+ * @param cmd Command to set for this socket
+ * @param flags Flags for this receive operation
+ */
+#define sys_port_trace_socket_fcntl_enter(socket, cmd, flags)
+
+/**
+ * @brief Trace network socket fcntl attempt
+ * @param socket Socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_fcntl_exit(socket, ret)
+
+/**
+ * @brief Trace ioctl of network sockets
+ * @param socket Socket object
+ * @param req Request to set for this socket
+ */
+#define sys_port_trace_socket_ioctl_enter(socket, req)
+
+/**
+ * @brief Trace network socket ioctl attempt
+ * @param socket Socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_ioctl_exit(socket, ret)
+
+/**
+ * @brief Trace polling of network sockets
+ * @param fds Set of socket object
+ * @param nfds Number of socket objects in the set
+ * @param timeout Timeout for the poll operation
+ */
+#define sys_port_trace_socket_poll_enter(fds, nfds, timeout)
+
+/**
+ * @brief Trace network socket poll attempt
+ * @param fds Set of socket object
+ * @param nfds Number of socket objects in the set
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_poll_exit(fds, nfds, ret)
+
+/**
+ * @brief Trace getsockopt of network sockets
+ * @param socket Socket object
+ * @param level Option level
+ * @param optname Option name
+ */
+#define sys_port_trace_socket_getsockopt_enter(socket, level, optname)
+
+/**
+ * @brief Trace network socket getsockopt attempt
+ * @param socket Socket object
+ * @param level Option level
+ * @param optname Option name
+ * @param optval Option value
+ * @param optlen Option value length
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_getsockopt_exit(socket, level, optname, optval, optlen, ret)
+
+/**
+ * @brief Trace setsockopt of network sockets
+ * @param socket Socket object
+ * @param level Option level
+ * @param optname Option name
+ * @param optval Option value
+ * @param optlen Option value length
+ */
+#define sys_port_trace_socket_setsockopt_enter(socket, level, optname, optval, optlen)
+
+/**
+ * @brief Trace network socket setsockopt attempt
+ * @param socket Socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_setsockopt_exit(socket, ret)
+
+/**
+ * @brief Trace getpeername of network sockets
+ * @param socket Socket object
+ */
+#define sys_port_trace_socket_getpeername_enter(socket)
+
+/**
+ * @brief Trace network socket getpeername attempt
+ * @param socket Socket object
+ * @param addr Peer socket network address
+ * @param addrlen Length of the network address
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_getpeername_exit(socket, addr, addrlen, ret)
+
+/**
+ * @brief Trace getsockname of network sockets
+ * @param socket Socket object
+ */
+#define sys_port_trace_socket_getsockname_enter(socket)
+
+/**
+ * @brief Trace network socket getsockname attempt
+ * @param socket Socket object
+ * @param addr Local socket network address
+ * @param addrlen Length of the network address
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_getsockname_exit(socket, addr, addrlen, ret)
+
+/**
+ * @brief Trace socketpair enter call
+ * @param family Network address family
+ * @param type Socket type
+ * @param proto Socket protocol
+ * @param sv Socketpair buffer
+ */
+#define sys_port_trace_socket_socketpair_enter(family, type, proto, sv)
+
+/**
+ * @brief Trace network socketpair open attempt
+ * @param socket_A Socketpair first socket object
+ * @param socket_B Socketpair second socket object
+ * @param ret Return value
+ */
+#define sys_port_trace_socket_socketpair_exit(socket_A, socket_B, ret)
+
+/** @} */ /* end of subsys_tracing_apis_socket */
+
 #if defined(CONFIG_PERCEPIO_TRACERECORDER)
 #include "tracing_tracerecorder.h"
 #else
@@ -2017,6 +2349,16 @@ void sys_trace_isr_exit_to_scheduler(void);
  */
 void sys_trace_idle(void);
 #endif /* CONFIG_PERCEPIO_TRACERECORDER */
+
+/**
+ * @brief Called when entering an init function
+ */
+#define sys_trace_sys_init_enter(entry, level)
+
+/**
+ * @brief Called when exiting an init function
+ */
+#define sys_trace_sys_init_exit(entry, level, result)
 
 /** @} */ /* end of subsys_tracing_apis */
 

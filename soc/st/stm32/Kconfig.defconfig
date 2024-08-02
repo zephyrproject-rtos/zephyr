@@ -57,9 +57,9 @@ config CLOCK_CONTROL_INIT_PRIORITY
 	default 1
 	depends on CLOCK_CONTROL
 
-config MEMC_STM32
-	default y
-	depends on MEMC
+config PHY_INIT_PRIORITY
+	default 81
+	depends on NET_L2_ETHERNET && ETH_DRIVER
 
 # Get flash configuration for NS image from dts flash partition
 config USE_DT_CODE_PARTITION

@@ -40,7 +40,7 @@
 
 #if defined(CONFIG_MCUMGR_GRP_OS_INFO) || defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
 #include <stdio.h>
-#include <version.h>
+#include <zephyr/version.h>
 #if defined(CONFIG_MCUMGR_GRP_OS_INFO)
 #include <os_mgmt_processor.h>
 #endif
@@ -65,7 +65,7 @@ K_WORK_DELAYABLE_DEFINE(os_mgmt_reset_work, os_mgmt_reset_work_handler);
 
 /* This is passed to zcbor_map_start/end_endcode as a number of
  * expected "columns" (tid, priority, and so on)
- * The value here does not affect memory allocation is is used
+ * The value here does not affect memory allocation is used
  * to predict how big the map may be. If you increase number
  * of "columns" the taskstat sends you may need to increase the
  * value otherwise zcbor_map_end_encode may return with error.
@@ -423,19 +423,19 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 
 #if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
 
-#if IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP)
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP)
 #define BOOTLOADER_MODE MCUBOOT_MODE_SINGLE_SLOT
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH)
 #define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_SCRATCH
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY)
 #define BOOTLOADER_MODE MCUBOOT_MODE_UPGRADE_ONLY
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH)
 #define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_MOVE
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
 #define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
 #define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 #define BOOTLOADER_MODE MCUBOOT_MODE_FIRMWARE_LOADER
 #else
 #define BOOTLOADER_MODE -1

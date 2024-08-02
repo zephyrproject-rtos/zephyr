@@ -26,7 +26,7 @@
 #ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
 #endif
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 #include "usb_phy.h"
 #include "usb.h"
 #endif
@@ -191,17 +191,11 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 	/* attach 12 MHz clock to FLEXCOMM4 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
-
-	/* reset FLEXCOMM for I2C */
-	RESET_PeripheralReset(kFC4_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(hs_lspi), okay)
 	/* Attach 12 MHz clock to HSLSPI */
 	CLOCK_AttachClk(kFRO_HF_DIV_to_HSLSPI);
-
-	/* reset HSLSPI for SPI */
-	RESET_PeripheralReset(kHSLSPI_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay)
@@ -211,11 +205,9 @@ static ALWAYS_INLINE void clock_init(void)
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(mailbox0), nxp_lpc_mailbox, okay)
 	CLOCK_EnableClock(kCLOCK_Mailbox);
-	/* Reset the MAILBOX module */
-	RESET_PeripheralReset(kMAILBOX_RST_SHIFT_RSTn);
 #endif
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbfs), nxp_lpcip3511, okay)
 	/*< Turn on USB Phy */
@@ -264,7 +256,9 @@ static ALWAYS_INLINE void clock_init(void)
 	/* enable USB IP clock */
 	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_UsbPhySrcExt, CLK_CLK_IN);
 	CLOCK_EnableUsbhs0DeviceClock(kCLOCK_UsbSrcUnused, 0U);
+#if CONFIG_USB_DC_NXP_LPCIP3511
 	USB_EhciPhyInit(kUSB_ControllerLpcIp3511Hs0, CLK_CLK_IN, NULL);
+#endif
 #if defined(FSL_FEATURE_USBHSD_USB_RAM) && (FSL_FEATURE_USBHSD_USB_RAM)
 	memset((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS, 0, FSL_FEATURE_USBHSD_USB_RAM);
 #endif
@@ -296,7 +290,6 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can0), nxp_lpc_mcan, okay)
 	CLOCK_SetClkDiv(kCLOCK_DivCanClk, 1U, false);
 	CLOCK_AttachClk(kMCAN_DIV_to_MCAN);
-	RESET_PeripheralReset(kMCAN_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(sdif), nxp_lpc_sdif, okay) && \
@@ -346,10 +339,6 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	POWER_DisablePD(kPDRUNCFG_PD_DAC0);
 #endif /* SOC platform */
 #endif /* DAC */
-
-#ifdef CONFIG_COUNTER_NXP_MRT
-	RESET_PeripheralReset(kMRT_RST_SHIFT_RSTn);
-#endif
 
 }
 

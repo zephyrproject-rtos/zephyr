@@ -10,6 +10,8 @@
 #include "bstests.h"
 #include <zephyr/bluetooth/bluetooth.h>
 
+#include <testlib/conn.h>
+
 #include "common.h"
 
 CREATE_FLAG(flag_is_connected);
@@ -29,7 +31,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	printk("conn_callback:Connected to %s\n", addr);
 
-	g_conn = conn;
+	__ASSERT_NO_MSG(g_conn == NULL);
+	g_conn = bt_conn_ref(conn);
 	SET_FLAG(flag_is_connected);
 }
 
@@ -46,8 +49,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("conn_callback:Disconnected: %s (reason 0x%02x)\n", addr, reason);
 
 	bt_conn_unref(g_conn);
-
 	g_conn = NULL;
+
 	UNSET_FLAG(flag_is_connected);
 }
 
@@ -60,6 +63,7 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct ne
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	int err;
+	struct bt_conn *conn;
 
 	if (g_conn != NULL) {
 		printk("g_conn != NULL\n");
@@ -82,11 +86,13 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct ne
 		return;
 	}
 
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &g_conn);
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &conn);
 	if (err != 0) {
 		FAIL("Could not connect to peer: %d", err);
 	}
 	printk("%s: connected to found device\n", __func__);
+
+	bt_conn_unref(conn);
 }
 
 static void connection_info(struct bt_conn *conn, void *user_data)
@@ -111,11 +117,24 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 	}
 }
 
-static void test_peripheral_main(void)
+static void start_adv(void)
 {
 	int err;
 	const struct bt_data ad[] = {
 		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR))};
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err != 0) {
+		FAIL("Advertising failed to start (err %d)\n", err);
+		return;
+	}
+
+	printk("Advertising successfully started\n");
+}
+
+static void test_peripheral_main(void)
+{
+	int err;
 
 	err = bt_enable(NULL);
 	if (err != 0) {
@@ -127,19 +146,16 @@ static void test_peripheral_main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	printk("Advertising successfully started\n");
+	start_adv();
 
 	WAIT_FOR_FLAG(flag_is_connected);
 
 	WAIT_FOR_FLAG_UNSET(flag_is_connected);
 
 	bt_conn_cb_unregister(&conn_callbacks);
+
+	bt_testlib_conn_wait_free();
+	start_adv();
 
 	k_sleep(K_SECONDS(1));
 
@@ -214,12 +230,12 @@ static void test_central_main(void)
 
 static const struct bst_test_instance test_def[] = {{.test_id = "peripheral",
 						     .test_descr = "Peripheral device",
-						     .test_post_init_f = test_init,
+						     .test_pre_init_f = test_init,
 						     .test_tick_f = test_tick,
 						     .test_main_f = test_peripheral_main},
 						    {.test_id = "central",
 						     .test_descr = "Central device",
-						     .test_post_init_f = test_init,
+						     .test_pre_init_f = test_init,
 						     .test_tick_f = test_tick,
 						     .test_main_f = test_central_main},
 						    BSTEST_END_MARKER};

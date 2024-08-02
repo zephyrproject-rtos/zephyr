@@ -23,7 +23,7 @@
 /* so decrease to set range from 0 from now on */
 #define STM32_DMA_STREAM_OFFSET 1
 #elif defined(CONFIG_DMA_STM32_V1) && defined(CONFIG_DMAMUX_STM32)
-/* typically on the stm32H7 serie, DMA V1 with mux */
+/* typically on the stm32H7 series, DMA V1 with mux */
 #define STM32_DMA_STREAM_OFFSET 1
 #else
 /* from DTS the dma stream id is in range 0..N-1 */

@@ -95,7 +95,7 @@ config NET_L2_PPP_THREAD_PRIO
 	int "Priority of the PPP TX thread"
 	default 1
 	help
-	  Set the priority of the the PPP TX thread, that handles all
+	  Set the priority of the PPP TX thread, that handles all
 	  transmission of PPP packets.
 	  Value 0 = highest priortity.
 	  When CONFIG_NET_TC_THREAD_COOPERATIVE = y, lowest priority is

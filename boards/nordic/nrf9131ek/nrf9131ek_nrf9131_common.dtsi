@@ -67,7 +67,6 @@
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
-		spi-flash0 = &gd25wb256;
 	};
 };
 

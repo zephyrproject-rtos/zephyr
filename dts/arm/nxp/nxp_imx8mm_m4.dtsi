@@ -5,3 +5,8 @@
  */
 
 #include <nxp/nxp_imx8m_m4.dtsi>
+
+&pinctrl {
+	status = "okay";
+	compatible = "nxp,imx8mp-pinctrl";
+};

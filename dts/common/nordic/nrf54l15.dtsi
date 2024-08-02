@@ -42,47 +42,6 @@
 			clock-frequency = <DT_FREQ_M(128)>;
 			riscv,isa = "rv32emc";
 			nordic,bus-width = <32>;
-
-			cpuflpr_vevif_local: mailbox {
-				compatible = "nordic,nrf-vevif-local";
-				status = "disabled";
-				interrupt-parent = <&cpuflpr_clic>;
-				interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>,
-							<1 NRF_DEFAULT_IRQ_PRIORITY>,
-							<2 NRF_DEFAULT_IRQ_PRIORITY>,
-							<3 NRF_DEFAULT_IRQ_PRIORITY>,
-							<4 NRF_DEFAULT_IRQ_PRIORITY>,
-							<5 NRF_DEFAULT_IRQ_PRIORITY>,
-							<6 NRF_DEFAULT_IRQ_PRIORITY>,
-							<7 NRF_DEFAULT_IRQ_PRIORITY>,
-							<8 NRF_DEFAULT_IRQ_PRIORITY>,
-							<9 NRF_DEFAULT_IRQ_PRIORITY>,
-							<10 NRF_DEFAULT_IRQ_PRIORITY>,
-							<11 NRF_DEFAULT_IRQ_PRIORITY>,
-							<12 NRF_DEFAULT_IRQ_PRIORITY>,
-							<13 NRF_DEFAULT_IRQ_PRIORITY>,
-							<14 NRF_DEFAULT_IRQ_PRIORITY>,
-							<15 NRF_DEFAULT_IRQ_PRIORITY>,
-							<16 NRF_DEFAULT_IRQ_PRIORITY>,
-							<17 NRF_DEFAULT_IRQ_PRIORITY>,
-							<18 NRF_DEFAULT_IRQ_PRIORITY>,
-							<19 NRF_DEFAULT_IRQ_PRIORITY>,
-							<20 NRF_DEFAULT_IRQ_PRIORITY>,
-							<21 NRF_DEFAULT_IRQ_PRIORITY>,
-							<22 NRF_DEFAULT_IRQ_PRIORITY>,
-							<23 NRF_DEFAULT_IRQ_PRIORITY>,
-							<24 NRF_DEFAULT_IRQ_PRIORITY>,
-							<25 NRF_DEFAULT_IRQ_PRIORITY>,
-							<26 NRF_DEFAULT_IRQ_PRIORITY>,
-							<27 NRF_DEFAULT_IRQ_PRIORITY>,
-							<28 NRF_DEFAULT_IRQ_PRIORITY>,
-							<29 NRF_DEFAULT_IRQ_PRIORITY>,
-							<30 NRF_DEFAULT_IRQ_PRIORITY>,
-							<31 NRF_DEFAULT_IRQ_PRIORITY>;
-				#mbox-cells = <1>;
-				nordic,tasks = <18>;
-				nordic,tasks-mask = <0x007f0000>;
-			};
 		};
 	};
 
@@ -104,11 +63,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+		/* intentionally empty because UICR is hardware fixed to Secure */
+#else
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
 		};
-
+#endif
 		ficr: ficr@ffc000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0xffc000 0x1000>;
@@ -131,10 +93,17 @@
 			ranges = <0x0 0x2002f000 0x11000>;
 		};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+		global_peripherals: peripheral@40000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+#else
 		global_peripherals: peripheral@50000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
+#endif
 
 			dppic00: dppic@42000 {
 				compatible = "nordic,nrf-dppic";
@@ -176,15 +145,6 @@
 				#size-cells = <1>;
 				status = "disabled";
 
-				cpuflpr_vevif_remote: mailbox@0 {
-					compatible = "nordic,nrf-vevif-remote";
-					reg = <0x0 0x1000>;
-					#mbox-cells = <1>;
-					nordic,tasks = <18>;
-					nordic,tasks-mask = <0x007f0000>;
-					status = "disabled";
-				};
-
 				cpuflpr_clic: interrupt-controller@f0000000 {
 					compatible = "nordic,nrf-clic";
 					reg = <0xf0000000 0x1780>;
@@ -212,6 +172,7 @@
 				cc-num = <6>;
 				max-bit-width = <32>;
 				interrupts = <85 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(128)>;
 				prescaler = <0>;
 			};
 
@@ -228,6 +189,7 @@
 				cc-num = <8>;
 				max-bit-width = <32>;
 				interrupts = <133 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -250,6 +212,14 @@
 
 				ieee802154: ieee802154 {
 					compatible = "nordic,nrf-ieee802154";
+					status = "disabled";
+				};
+
+				/* Note: In the nRF Connect SDK the SoftDevice Controller
+				 * is added and set as the default Bluetooth Controller.
+				 */
+				bt_hci_controller: bt_hci_controller {
+					compatible = "zephyr,bt-hci-ll-sw-split";
 					status = "disabled";
 				};
 			};
@@ -565,12 +535,16 @@
 				status = "disabled";
 			};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+			/* intentionally empty because WDT30 is hardware fixed to Secure */
+#else
 			wdt30: watchdog@108000 {
 				compatible = "nordic,nrf-wdt";
 				reg = <0x108000 0x620>;
 				interrupts = <264 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 			};
+#endif
 
 			wdt31: watchdog@109000 {
 				compatible = "nordic,nrf-wdt";

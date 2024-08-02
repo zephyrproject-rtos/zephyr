@@ -272,6 +272,16 @@ extern "C" {
 	})
 
 /**
+ * @brief Report the size of a struct field in bytes.
+ *
+ * @param type The structure containing the field of interest.
+ * @param member The field to return the size of.
+ *
+ * @return The field size.
+ */
+#define SIZEOF_FIELD(type, member) sizeof((((type *)0)->member))
+
+/**
  * @brief Concatenate input arguments
  *
  * Concatenate provided tokens into a combined token during the preprocessor pass.
@@ -494,8 +504,8 @@ static inline void bytecpy(void *dst, const void *src, size_t size)
  * Swap @a size bytes between memory regions @a a and @a b. This is
  * guaranteed to be done byte by byte.
  *
- * @param a Pointer to the the first memory region.
- * @param b Pointer to the the second memory region.
+ * @param a Pointer to the first memory region.
+ * @param b Pointer to the second memory region.
  * @param size The number of bytes to swap.
  */
 static inline void byteswp(void *a, void *b, size_t size)
@@ -712,7 +722,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  * @brief Determine if a buffer exceeds highest address
  *
  * This macro determines if a buffer identified by a starting address @a addr
- * and length @a buflen spans a region of memory that goes beond the highest
+ * and length @a buflen spans a region of memory that goes beyond the highest
  * possible address (thereby resulting in a pointer overflow).
  *
  * @param addr Buffer starting address
@@ -779,7 +789,7 @@ static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const ui
 /* This is used in linker scripts so need to avoid type casting there */
 #define KB(x) ((x) << 10)
 #else
-#define KB(x) (((size_t)x) << 10)
+#define KB(x) (((size_t)(x)) << 10)
 #endif
 /** @brief Number of bytes in @p x mebibytes */
 #define MB(x) (KB(x) << 10)

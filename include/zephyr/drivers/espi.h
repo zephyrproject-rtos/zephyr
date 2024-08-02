@@ -43,7 +43,7 @@ enum espi_io_mode {
  * @code
  *+----------------------------------------------------------------------+
  *|                                                                      |
- *|  eSPI host                           +-------------+                 |
+ *|  eSPI controller                     +-------------+                 |
  *|                      +-----------+   |    Power    |   +----------+  |
  *|                      |Out of band|   |  management |   |   GPIO   |  |
  *|  +------------+      |processor  |   |  controller |   |  sources |  |
@@ -81,7 +81,7 @@ enum espi_io_mode {
  *                 +-----------------+
  *                          |
  *+-----------------------------------------------------------------------+
- *|  eSPI slave                                                           |
+ *|  eSPI target                                                          |
  *|                                                                       |
  *|       CH0         |     CH1      |      CH2      |    CH3             |
  *|   eSPI endpoint   |    VWIRE     |      OOB      |   Flash            |
@@ -112,13 +112,37 @@ enum espi_channel {
  * eSPI bus event to indicate events for which user can register callbacks
  */
 enum espi_bus_event {
+	/** Indicates the eSPI bus was reset either via eSPI reset pin.
+	 * eSPI drivers should convey the eSPI reset status to eSPI driver clients
+	 * following eSPI specification reset pin convention:
+	 * 0-eSPI bus in reset, 1-eSPI bus out-of-reset
+	 *
+	 * Note: There is no need to send this callback for in-band reset.
+	 */
 	ESPI_BUS_RESET                      = BIT(0),
+
+	/** Indicates the eSPI HW has received channel enable notification from eSPI host,
+	 * once the eSPI channel is signal as ready to the eSPI host,
+	 * eSPI drivers should convey the eSPI channel ready to eSPI driver client via this event.
+	 */
 	ESPI_BUS_EVENT_CHANNEL_READY        = BIT(1),
+
+	/** Indicates the eSPI HW has received a virtual wire message from eSPI host.
+	 * eSPI drivers should convey the eSPI virtual wire latest status.
+	 */
 	ESPI_BUS_EVENT_VWIRE_RECEIVED       = BIT(2),
+
+	/** Indicates the eSPI HW has received a Out-of-band package from eSPI host.
+	 */
 	ESPI_BUS_EVENT_OOB_RECEIVED         = BIT(3),
+
+	/** Indicates the eSPI HW has received a peripheral eSPI host event.
+	 * eSPI drivers should convey the peripheral type.
+	 */
 	ESPI_BUS_PERIPHERAL_NOTIFICATION    = BIT(4),
-	ESPI_BUS_SAF_NOTIFICATION           = BIT(5),
+	ESPI_BUS_TAF_NOTIFICATION           = BIT(5),
 };
+
 
 /**
  * @brief eSPI peripheral channel events.
@@ -138,8 +162,8 @@ enum espi_pc_event {
 #define ESPI_PERIPHERAL_INDEX_1  1ul
 #define ESPI_PERIPHERAL_INDEX_2  2ul
 
-#define ESPI_SLAVE_TO_MASTER     0ul
-#define ESPI_MASTER_TO_SLAVE     1ul
+#define ESPI_TARGET_TO_CONTROLLER   0ul
+#define ESPI_CONTROLLER_TO_TARGET   1ul
 
 #define ESPI_VWIRE_SRC_ID0       0ul
 #define ESPI_VWIRE_SRC_ID1       1ul
@@ -197,7 +221,7 @@ enum espi_cycle_type {
  * virtual wire channel
  */
 enum espi_vwire_signal {
-	/* Virtual wires that can only be send from master to slave */
+	/* Virtual wires that can only be send from controller to target */
 	ESPI_VWIRE_SIGNAL_SLP_S3,
 	ESPI_VWIRE_SIGNAL_SLP_S4,
 	ESPI_VWIRE_SIGNAL_SLP_S5,
@@ -214,14 +238,14 @@ enum espi_vwire_signal {
 	ESPI_VWIRE_SIGNAL_SLP_LAN,
 	ESPI_VWIRE_SIGNAL_HOST_C10,
 	ESPI_VWIRE_SIGNAL_DNX_WARN,
-	/* Virtual wires that can only be sent from slave to master */
+	/* Virtual wires that can only be sent from target to controller */
 	ESPI_VWIRE_SIGNAL_PME,
 	ESPI_VWIRE_SIGNAL_WAKE,
 	ESPI_VWIRE_SIGNAL_OOB_RST_ACK,
-	ESPI_VWIRE_SIGNAL_SLV_BOOT_STS,
+	ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS,
 	ESPI_VWIRE_SIGNAL_ERR_NON_FATAL,
 	ESPI_VWIRE_SIGNAL_ERR_FATAL,
-	ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE,
+	ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE,
 	ESPI_VWIRE_SIGNAL_HOST_RST_ACK,
 	ESPI_VWIRE_SIGNAL_RST_CPU_INIT,
 	/* System management interrupt */
@@ -231,31 +255,31 @@ enum espi_vwire_signal {
 	ESPI_VWIRE_SIGNAL_DNX_ACK,
 	ESPI_VWIRE_SIGNAL_SUS_ACK,
 	/*
-	 * Virtual wire GPIOs that can be sent from slave to master for
+	 * Virtual wire GPIOs that can be sent from target to controller for
 	 * platform specific usage.
 	 */
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_0,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_1,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_2,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_3,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_4,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_5,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_6,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_7,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_8,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_9,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_10,
-	ESPI_VWIRE_SIGNAL_SLV_GPIO_11,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_0,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_1,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_2,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_3,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_4,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_5,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_6,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_7,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_8,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_9,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_10,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_11,
 
 	/* Number of Virtual Wires */
 	ESPI_VWIRE_SIGNAL_COUNT
 };
 
 /* USB-C port over current */
-#define ESPI_VWIRE_SIGNAL_OCB_0 ESPI_VWIRE_SIGNAL_SLV_GPIO_0
-#define ESPI_VWIRE_SIGNAL_OCB_1 ESPI_VWIRE_SIGNAL_SLV_GPIO_1
-#define ESPI_VWIRE_SIGNAL_OCB_2 ESPI_VWIRE_SIGNAL_SLV_GPIO_2
-#define ESPI_VWIRE_SIGNAL_OCB_3 ESPI_VWIRE_SIGNAL_SLV_GPIO_3
+#define ESPI_VWIRE_SIGNAL_OCB_0 ESPI_VWIRE_SIGNAL_TARGET_GPIO_0
+#define ESPI_VWIRE_SIGNAL_OCB_1 ESPI_VWIRE_SIGNAL_TARGET_GPIO_1
+#define ESPI_VWIRE_SIGNAL_OCB_2 ESPI_VWIRE_SIGNAL_TARGET_GPIO_2
+#define ESPI_VWIRE_SIGNAL_OCB_3 ESPI_VWIRE_SIGNAL_TARGET_GPIO_3
 
 /* eSPI LPC peripherals. */
 enum lpc_peripheral_opcode {
@@ -354,6 +378,12 @@ struct espi_request_packet {
 
 /**
  * @brief eSPI out-of-band transaction packet format
+ *
+ * For Tx packet, eSPI driver client shall specify the OOB payload data and its length in bytes.
+ * For Rx packet, eSPI driver client shall indicate the maximum number of bytes that can receive,
+ * while the eSPI driver should update the length field with the actual data received/available.
+ *
+ * In all cases, the length does not include OOB header size 3 bytes.
  */
 struct espi_oob_packet {
 	uint8_t *buf;
@@ -482,18 +512,18 @@ __subsystem struct espi_driver_api {
  * This routine provides a generic interface to override eSPI controller
  * capabilities.
  *
- * If this eSPI controller is acting as slave, the values set here
+ * If this eSPI controller is acting as target, the values set here
  * will be discovered as part through the GET_CONFIGURATION command
- * issued by the eSPI master during initialization.
+ * issued by the eSPI controller during initialization.
  *
- * If this eSPI controller is acting as master, the values set here
- * will be used by eSPI master to determine minimum common capabilities with
- * eSPI slave then send via SET_CONFIGURATION command.
+ * If this eSPI controller is acting as controller, the values set here
+ * will be used by eSPI controller to determine minimum common capabilities with
+ * eSPI target then send via SET_CONFIGURATION command.
  *
  * @code
- * +--------+   +---------+     +------+          +---------+   +---------+
- * |  eSPI  |   |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI   |
- * |  slave |   | driver  |     |  bus |          |  driver |   |  host   |
+ * +---------+   +---------+     +------+          +---------+   +---------+
+ * |  eSPI   |   |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI   |
+ * |  target |   | driver  |     |  bus |          |  driver |   |  host   |
  * +--------+   +---------+     +------+          +---------+   +---------+
  *     |              |            |                   |             |
  *     | espi_config  | Set eSPI   |       Set eSPI    | espi_config |
@@ -522,7 +552,7 @@ __subsystem struct espi_driver_api {
  * @retval 0 If successful.
  * @retval -EIO General input / output error, failed to configure device.
  * @retval -EINVAL invalid capabilities, failed to configure device.
- * @retval -ENOTSUP capability not supported by eSPI slave.
+ * @retval -ENOTSUP capability not supported by eSPI target.
  */
 __syscall int espi_config(const struct device *dev, struct espi_cfg *cfg);
 
@@ -690,10 +720,10 @@ static inline int z_impl_espi_write_lpc_request(const struct device *dev,
  * @brief Sends system/platform signal as a virtual wire packet.
  *
  * This routines provides a generic interface to send a virtual wire packet
- * from slave to master.
+ * from target to controller.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param signal The signal to be send to eSPI master.
+ * @param signal The signal to be send to eSPI controller.
  * @param level The level of signal requested LOW or HIGH.
  *
  * @retval 0 If successful.
@@ -717,13 +747,13 @@ static inline int z_impl_espi_send_vwire(const struct device *dev,
  * @brief Retrieves level status for a signal encapsulated in a virtual wire.
  *
  * This routines provides a generic interface to request a virtual wire packet
- * from eSPI master and retrieve the signal level.
+ * from eSPI controller and retrieve the signal level.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param signal the signal to be requested from eSPI master.
+ * @param signal the signal to be requested from eSPI controller.
  * @param level the level of signal requested 0b LOW, 1b HIGH.
  *
- * @retval -EIO General input / output error, failed request to master.
+ * @retval -EIO General input / output error, failed request to controller.
  */
 __syscall int espi_receive_vwire(const struct device *dev,
 				 enum espi_vwire_signal signal,
@@ -748,7 +778,7 @@ static inline int z_impl_espi_receive_vwire(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance.
  * @param pckt Address of the packet representation of SMBus transaction.
  *
- * @retval -EIO General input / output error, failed request to master.
+ * @retval -EIO General input / output error, failed request to controller.
  */
 __syscall int espi_send_oob(const struct device *dev,
 			    struct espi_oob_packet *pckt);
@@ -775,7 +805,7 @@ static inline int z_impl_espi_send_oob(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance.
  * @param pckt Address of the packet representation of SMBus transaction.
  *
- * @retval -EIO General input / output error, failed request to master.
+ * @retval -EIO General input / output error, failed request to controller.
  */
 __syscall int espi_receive_oob(const struct device *dev,
 			       struct espi_oob_packet *pckt);
@@ -797,14 +827,14 @@ static inline int z_impl_espi_receive_oob(const struct device *dev,
  * @brief Sends a read request packet for shared flash.
  *
  * This routines provides an interface to send a request to read the flash
- * component shared between the eSPI master and eSPI slaves.
+ * component shared between the eSPI controller and eSPI targets.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param pckt Address of the representation of read flash transaction.
  *
  * @retval -ENOTSUP eSPI flash logical channel transactions not supported.
- * @retval -EBUSY eSPI flash channel is not ready or disabled by master.
- * @retval -EIO General input / output error, failed request to master.
+ * @retval -EBUSY eSPI flash channel is not ready or disabled by controller.
+ * @retval -EIO General input / output error, failed request to controller.
  */
 __syscall int espi_read_flash(const struct device *dev,
 			      struct espi_flash_packet *pckt);
@@ -826,14 +856,14 @@ static inline int z_impl_espi_read_flash(const struct device *dev,
  * @brief Sends a write request packet for shared flash.
  *
  * This routines provides an interface to send a request to write to the flash
- * components shared between the eSPI master and eSPI slaves.
+ * components shared between the eSPI controller and eSPI targets.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param pckt Address of the representation of write flash transaction.
  *
  * @retval -ENOTSUP eSPI flash logical channel transactions not supported.
- * @retval -EBUSY eSPI flash channel is not ready or disabled by master.
- * @retval -EIO General input / output error, failed request to master.
+ * @retval -EBUSY eSPI flash channel is not ready or disabled by controller.
+ * @retval -EIO General input / output error, failed request to controller.
  */
 __syscall int espi_write_flash(const struct device *dev,
 			       struct espi_flash_packet *pckt);
@@ -855,14 +885,14 @@ static inline int z_impl_espi_write_flash(const struct device *dev,
  * @brief Sends a write request packet for shared flash.
  *
  * This routines provides an interface to send a request to write to the flash
- * components shared between the eSPI master and eSPI slaves.
+ * components shared between the eSPI controller and eSPI targets.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param pckt Address of the representation of write flash transaction.
  *
  * @retval -ENOTSUP eSPI flash logical channel transactions not supported.
- * @retval -EBUSY eSPI flash channel is not ready or disabled by master.
- * @retval -EIO General input / output error, failed request to master.
+ * @retval -EBUSY eSPI flash channel is not ready or disabled by controller.
+ * @retval -EIO General input / output error, failed request to controller.
  */
 __syscall int espi_flash_erase(const struct device *dev,
 			       struct espi_flash_packet *pckt);
@@ -895,12 +925,11 @@ static inline int z_impl_espi_flash_erase(const struct device *dev,
  *    |                              |             |  eSPI reset |  eSPI host
  *    |                              |    IRQ      +<------------+  resets the
  *    |                              | <-----------+             |  bus
- *    |                              |             |             |
- *    |                              | Processed   |             |
+ *    |<-----------------------------|             |             |
+ *    | Report eSPI bus reset        | Processed   |             |
  *    |                              | within the  |             |
  *    |                              | driver      |             |
  *    |                              |             |             |
-
  *    |                              |             |  VW CH ready|  eSPI host
  *    |                              |    IRQ      +<------------+  enables VW
  *    |                              | <-----------+             |  channel
@@ -1022,5 +1051,5 @@ static inline int espi_remove_callback(const struct device *dev,
 /**
  * @}
  */
-#include <syscalls/espi.h>
+#include <zephyr/syscalls/espi.h>
 #endif /* ZEPHYR_INCLUDE_ESPI_H_ */

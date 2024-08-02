@@ -13,8 +13,10 @@
 #ifndef ZEPHYR_INCLUDE_NET_DNS_RESOLVE_H_
 #define ZEPHYR_INCLUDE_NET_DNS_RESOLVE_H_
 
+#include <zephyr/kernel.h>
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/net_context.h>
+#include <zephyr/net/socket_poll.h>
+#include <zephyr/net/net_core.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,14 +46,36 @@ enum dns_query_type {
 
 /** @cond INTERNAL_HIDDEN */
 
+#define DNS_BUF_TIMEOUT K_MSEC(500) /* ms */
+
+/* This value is recommended by RFC 1035 */
+#define DNS_RESOLVER_MAX_BUF_SIZE	512
+
 /* Make sure that we can compile things even if CONFIG_DNS_RESOLVER
  * is not enabled.
  */
-#if !defined(CONFIG_DNS_RESOLVER_MAX_SERVERS)
-#define CONFIG_DNS_RESOLVER_MAX_SERVERS 1
+#if defined(CONFIG_DNS_RESOLVER_MAX_SERVERS)
+#define DNS_RESOLVER_MAX_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
+#else
+#define DNS_RESOLVER_MAX_SERVERS 0
 #endif
-#if !defined(CONFIG_DNS_NUM_CONCUR_QUERIES)
-#define CONFIG_DNS_NUM_CONCUR_QUERIES 1
+
+#if defined(CONFIG_DNS_NUM_CONCUR_QUERIES)
+#define DNS_NUM_CONCUR_QUERIES CONFIG_DNS_NUM_CONCUR_QUERIES
+#else
+#define DNS_NUM_CONCUR_QUERIES 1
+#endif
+
+#if defined(CONFIG_NET_IF_MAX_IPV6_COUNT)
+#define MAX_IPV6_IFACE_COUNT CONFIG_NET_IF_MAX_IPV6_COUNT
+#else
+#define MAX_IPV6_IFACE_COUNT 1
+#endif
+
+#if defined(CONFIG_NET_IF_MAX_IPV4_COUNT)
+#define MAX_IPV4_IFACE_COUNT CONFIG_NET_IF_MAX_IPV4_COUNT
+#else
+#define MAX_IPV4_IFACE_COUNT 1
 #endif
 
 /* If mDNS is enabled, then add some extra well known multicast servers to the
@@ -82,15 +106,152 @@ enum dns_query_type {
 
 #define DNS_MAX_MCAST_SERVERS (MDNS_SERVER_COUNT + LLMNR_SERVER_COUNT)
 
+#if defined(CONFIG_MDNS_RESPONDER)
+#if defined(CONFIG_NET_IPV6)
+#define MDNS_MAX_IPV6_IFACE_COUNT CONFIG_NET_IF_MAX_IPV6_COUNT
+#else
+#define MDNS_MAX_IPV6_IFACE_COUNT 0
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+#define MDNS_MAX_IPV4_IFACE_COUNT CONFIG_NET_IF_MAX_IPV4_COUNT
+#else
+#define MDNS_MAX_IPV4_IFACE_COUNT 0
+#endif /* CONFIG_NET_IPV4 */
+
+#define MDNS_MAX_POLL (MDNS_MAX_IPV4_IFACE_COUNT + MDNS_MAX_IPV6_IFACE_COUNT)
+#else
+#define MDNS_MAX_POLL 0
+#endif /* CONFIG_MDNS_RESPONDER */
+
+#if defined(CONFIG_LLMNR_RESPONDER)
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
+#define LLMNR_MAX_POLL 2
+#else
+#define LLMNR_MAX_POLL 1
+#endif
+#else
+#define LLMNR_MAX_POLL 0
+#endif /* CONFIG_LLMNR_RESPONDER */
+
+#define DNS_RESOLVER_MAX_POLL (DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS)
+
+/** How many sockets the dispatcher is able to poll. */
+#define DNS_DISPATCHER_MAX_POLL (DNS_RESOLVER_MAX_POLL + MDNS_MAX_POLL + LLMNR_MAX_POLL)
+
+#if defined(CONFIG_NET_SOCKETS_POLL_MAX)
+BUILD_ASSERT(CONFIG_NET_SOCKETS_POLL_MAX >= DNS_DISPATCHER_MAX_POLL,
+	     "CONFIG_NET_SOCKETS_POLL_MAX must be larger than " STRINGIFY(DNS_DISPATCHER_MAX_POLL));
+#endif
+
+/** @brief What is the type of the socket given to DNS socket dispatcher,
+ * resolver or responder.
+ */
+enum dns_socket_type {
+	DNS_SOCKET_RESOLVER = 1,  /**< Socket is used for resolving (client type) */
+	DNS_SOCKET_RESPONDER = 2  /**< Socket is used for responding (server type) */
+};
+
+struct dns_resolve_context;
+struct mdns_responder_context;
+
+/**
+ * @typedef dns_socket_dispatcher_cb
+ * @brief Callback used when the DNS socket dispatcher has found a handler for
+ * this type of socket.
+ *
+ * @param ctx DNS resolve or mDNS responder context.
+ * @param sock Socket which is seeing traffic.
+ * @param addr Socket address of the peer that sent the DNS packet.
+ * @param addrlen Length of the socket address.
+ * @param buf Pointer to data buffer containing the DNS message.
+ * @param data_len Length of the data in buffer chain.
+ *
+ * @return 0 if ok, <0 if error
+ */
+typedef int (*dns_socket_dispatcher_cb)(void *ctx, int sock,
+					struct sockaddr *addr, size_t addrlen,
+					struct net_buf *buf, size_t data_len);
+
+/** @brief DNS socket dispatcher context. */
+struct dns_socket_dispatcher {
+	/** slist node for the different dispatcher contexts */
+	sys_snode_t node;
+	/** Socket service for this dispatcher instance */
+	const struct net_socket_service_desc *svc;
+	/** DNS resolver context that contains information needed by the
+	 * resolver/responder handler, or mDNS responder context.
+	 */
+	union {
+		void *ctx;
+		struct dns_resolve_context *resolve_ctx;
+		struct mdns_responder_context *mdns_ctx;
+	};
+
+	/** Type of the socket (resolver / responder) */
+	enum dns_socket_type type;
+	/** Local endpoint address (used when binding the socket) */
+	struct sockaddr local_addr;
+	/** DNS socket dispatcher callback is called for incoming traffic */
+	dns_socket_dispatcher_cb cb;
+	/** Socket descriptors to poll */
+	struct zsock_pollfd *fds;
+	/** Length of the poll array */
+	int fds_len;
+	/** Local socket to dispatch */
+	int sock;
+	/** There can be two contexts to dispatch. This points to the other
+	 * context if sharing the socket between resolver / responder.
+	 */
+	struct dns_socket_dispatcher *pair;
+	/** Mutex lock protecting access to this dispatcher context */
+	struct k_mutex lock;
+	/** Buffer allocation timeout */
+	k_timeout_t buf_timeout;
+};
+
+struct mdns_responder_context {
+	struct sockaddr server_addr;
+	struct dns_socket_dispatcher dispatcher;
+	struct zsock_pollfd fds[1];
+	int sock;
+};
+
+/**
+ * @brief Register a DNS dispatcher socket. Each code wanting to use
+ * the dispatcher needs to create the dispatcher context and call
+ * this function.
+ *
+ * @param ctx DNS socket dispatcher context.
+ *
+ * @return 0 if ok, <1 if error
+ */
+int dns_dispatcher_register(struct dns_socket_dispatcher *ctx);
+
+/**
+ * @brief Unregister a DNS dispatcher socket. Called when the
+ * resolver/responder no longer needs to receive traffic for the
+ * socket.
+ *
+ * @param ctx DNS socket dispatcher context.
+ *
+ * @return 0 if ok, <1 if error
+ */
+int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx);
+
 /** @endcond */
 
 /**
  * Address info struct is passed to callback that gets all the results.
  */
 struct dns_addrinfo {
+	/** IP address information */
 	struct sockaddr ai_addr;
+	/** Length of the ai_addr field */
 	socklen_t       ai_addrlen;
-	uint8_t            ai_family;
+	/** Address family of the address information */
+	uint8_t         ai_family;
+	/** Canonical name of the address */
 	char            ai_canonname[DNS_MAX_NAME_SIZE + 1];
 };
 
@@ -157,29 +318,44 @@ typedef void (*dns_resolve_cb_t)(enum dns_resolve_status status,
 				 struct dns_addrinfo *info,
 				 void *user_data);
 
+/** @cond INTERNAL_HIDDEN */
+
 enum dns_resolve_context_state {
 	DNS_RESOLVE_CONTEXT_ACTIVE,
 	DNS_RESOLVE_CONTEXT_DEACTIVATING,
 	DNS_RESOLVE_CONTEXT_INACTIVE,
 };
 
+/** @endcond */
+
 /**
  * DNS resolve context structure.
  */
 struct dns_resolve_context {
-	struct {
+	/** List of configured DNS servers */
+	struct dns_server {
 		/** DNS server information */
 		struct sockaddr dns_server;
 
 		/** Connection to the DNS server */
-		struct net_context *net_ctx;
+		int sock;
 
 		/** Is this server mDNS one */
 		uint8_t is_mdns : 1;
 
 		/** Is this server LLMNR one */
 		uint8_t is_llmnr : 1;
-	} servers[CONFIG_DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS];
+
+/** @cond INTERNAL_HIDDEN */
+		/** Dispatch DNS data between resolver and responder */
+		struct dns_socket_dispatcher dispatcher;
+/** @endcond */
+	} servers[DNS_RESOLVER_MAX_POLL];
+
+/** @cond INTERNAL_HIDDEN */
+	/** Socket polling for each server connection */
+	struct zsock_pollfd fds[DNS_RESOLVER_MAX_POLL];
+/** @endcond */
 
 	/** Prevent concurrent access */
 	struct k_mutex lock;
@@ -240,7 +416,7 @@ struct dns_resolve_context {
 		 * cannot be used to find correct pending query.
 		 */
 		uint16_t query_hash;
-	} queries[CONFIG_DNS_NUM_CONCUR_QUERIES];
+	} queries[DNS_NUM_CONCUR_QUERIES];
 
 	/** Is this context in use */
 	enum dns_resolve_context_state state;

@@ -76,28 +76,28 @@
 		};
 	};
 
-	tc0_qdec_default: tc0_qdec_default {
+	qdec0_default: qdec0_default {
 		group1 {
 			pinmux = <PA0B_TC0_TIOA0>,
 				 <PA1B_TC0_TIOB0>;
 		};
 	};
 
-	tc1_qdec_default: tc1_qdec_default {
+	qdec1_default: qdec1_default {
 		group1 {
 			pinmux = <PC23B_TC1_TIOA3>,
 				 <PC24B_TC1_TIOB3>;
 		};
 	};
 
-	tc2_qdec_default: tc2_qdec_default {
+	qdec2_default: qdec2_default {
 		group1 {
 			pinmux = <PC5B_TC2_TIOA6>,
 				 <PC6B_TC2_TIOB6>;
 		};
 	};
 
-	tc3_qdec_default: tc3_qdec_default {
+	qdec3_default: qdec3_default {
 		group1 {
 			pinmux = <PE0B_TC3_TIOA9>,
 				 <PE1B_TC3_TIOB9>;

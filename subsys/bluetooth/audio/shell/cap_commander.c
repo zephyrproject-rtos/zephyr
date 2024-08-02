@@ -6,12 +6,18 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stdlib.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/vocs.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
@@ -19,6 +25,7 @@
 #include "audio.h"
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
+			    const struct bt_csip_set_coordinator_set_member *member,
 			    const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
@@ -86,6 +93,18 @@ static void cap_microphone_gain_changed_cb(struct bt_conn *conn, int err)
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
 
+#if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
+static void cap_broadcast_reception_start_cb(struct bt_conn *conn, int err)
+{
+	if (err != 0) {
+		shell_error(ctx_shell, "Broadcast reception start failed (%d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Broadcast reception start completed");
+}
+#endif
+
 static struct bt_cap_commander_cb cbs = {
 	.discovery_complete = cap_discover_cb,
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
@@ -101,6 +120,9 @@ static struct bt_cap_commander_cb cbs = {
 	.microphone_gain_changed = cap_microphone_gain_changed_cb,
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
+#if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
+	.broadcast_reception_start = cap_broadcast_reception_start_cb,
+#endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 };
 
 static int cmd_cap_commander_cancel(const struct shell *sh, size_t argc, char *argv[])
@@ -471,6 +493,177 @@ static int cmd_cap_commander_change_microphone_gain(const struct shell *sh, size
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
 
+#if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
+static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, size_t argc,
+						       char *argv[])
+{
+	struct bt_cap_commander_broadcast_reception_start_member_param
+		member_params[CONFIG_BT_MAX_CONN] = {0};
+
+	struct bt_cap_commander_broadcast_reception_start_param param = {
+		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.param = member_params,
+	};
+
+	struct bt_cap_commander_broadcast_reception_start_member_param *member_param =
+		&member_params[0];
+	struct bt_bap_bass_subgroup subgroup = {0};
+
+	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
+	size_t conn_cnt = 0U;
+	unsigned long broadcast_id;
+	unsigned long adv_sid;
+
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	/* TODO: Add support for coordinated sets */
+
+	/* Populate the array of connected connections */
+	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
+	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+		struct bt_conn *conn = connected_conns[i];
+
+		if (conn == NULL) {
+			break;
+		}
+
+		conn_cnt++;
+	}
+
+	err = bt_addr_le_from_str(argv[1], argv[2], &member_param->addr);
+	if (err) {
+		shell_error(sh, "Invalid peer address (err %d)", err);
+
+		return -ENOEXEC;
+	}
+
+	adv_sid = shell_strtoul(argv[3], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse adv_sid: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (adv_sid > BT_GAP_SID_MAX) {
+		shell_error(sh, "Invalid adv_sid: %lu", adv_sid);
+
+		return -ENOEXEC;
+	}
+
+	member_param->adv_sid = adv_sid;
+
+	broadcast_id = shell_strtoul(argv[4], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse broadcast_id: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
+		shell_error(sh, "Invalid broadcast_id: %lu", broadcast_id);
+
+		return -ENOEXEC;
+	}
+
+	member_param->broadcast_id = broadcast_id;
+
+	if (argc > 5) {
+		unsigned long pa_interval;
+
+		pa_interval = shell_strtoul(argv[5], 0, &err);
+		if (err) {
+			shell_error(sh, "Could not parse pa_interval: %d", err);
+
+			return -ENOEXEC;
+		}
+
+		if (!IN_RANGE(pa_interval, BT_GAP_PER_ADV_MIN_INTERVAL,
+			      BT_GAP_PER_ADV_MAX_INTERVAL)) {
+			shell_error(sh, "Invalid pa_interval: %lu", pa_interval);
+
+			return -ENOEXEC;
+		}
+
+		member_param->pa_interval = pa_interval;
+	} else {
+		member_param->pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
+	}
+
+	/* TODO: Support multiple subgroups */
+	if (argc > 6) {
+		unsigned long bis_sync;
+
+		bis_sync = shell_strtoul(argv[6], 0, &err);
+		if (err) {
+			shell_error(sh, "Could not parse bis_sync: %d", err);
+
+			return -ENOEXEC;
+		}
+
+		if (!VALID_BIS_SYNC(bis_sync)) {
+			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
+
+			return -ENOEXEC;
+		}
+
+		subgroup.bis_sync = bis_sync;
+	} else {
+		subgroup.bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
+	}
+
+	if (argc > 7) {
+		size_t metadata_len;
+
+		metadata_len = hex2bin(argv[7], strlen(argv[7]), subgroup.metadata,
+				       sizeof(subgroup.metadata));
+
+		if (metadata_len == 0U) {
+			shell_error(sh, "Could not parse metadata");
+
+			return -ENOEXEC;
+		}
+
+		/* sizeof(subgroup.metadata) can always fit in uint8_t */
+
+		subgroup.metadata_len = metadata_len;
+	}
+
+	member_param->num_subgroups = 1;
+	memcpy(member_param->subgroups, &subgroup, sizeof(struct bt_bap_bass_subgroup));
+
+	member_param->member.member = connected_conns[0];
+
+	/* each connection has its own member_params field
+	 * here we use the same values for all connections, so we copy
+	 * the parameters
+	 */
+	for (size_t i = 1U; i < conn_cnt; i++) {
+		memcpy(&member_params[i], member_param, sizeof(*member_param));
+
+		/* the member value is different for each, so we can not just copy this value */
+		member_params[i].member.member = connected_conns[i];
+	}
+
+	param.count = conn_cnt;
+
+	shell_print(sh, "Starting broadcast reception on %zu connection(s)", param.count);
+
+	err = bt_cap_commander_broadcast_reception_start(&param);
+	if (err != 0) {
+		shell_print(sh, "Failed to start broadcast reception: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
+
 static int cmd_cap_commander(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -509,6 +702,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_cap_commander_change_microphone_gain, 2, CONFIG_BT_MAX_CONN - 1),
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
+#if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
+	SHELL_CMD_ARG(broadcast_reception_start, NULL,
+		      "Start broadcast reception "
+		      "with source <address: XX:XX:XX:XX:XX:XX> "
+		      "<type: public/random> <adv_sid> "
+		      "<broadcast_id> [<pa_interval>] [<sync_bis>] "
+		      "[<metadata>]",
+		      cmd_cap_commander_broadcast_reception_start, 5, 3),
+#endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(cap_commander, &cap_commander_cmds, "Bluetooth CAP commander shell commands",

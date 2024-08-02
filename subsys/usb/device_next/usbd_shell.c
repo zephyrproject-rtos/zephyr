@@ -43,13 +43,13 @@ static struct usbd_shell_speed {
 USBD_DESC_LANG_DEFINE(lang);
 USBD_DESC_MANUFACTURER_DEFINE(mfr, "ZEPHYR");
 USBD_DESC_PRODUCT_DEFINE(product, "Zephyr USBD foobaz");
-USBD_DESC_SERIAL_NUMBER_DEFINE(sn, "0123456789ABCDEF");
+USBD_DESC_SERIAL_NUMBER_DEFINE(sn);
 
 /* Default device descriptors and context used in the shell. */
 USBD_DEVICE_DEFINE(sh_uds_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
 		   0x2fe3, 0xffff);
 
-static struct usbd_contex *my_uds_ctx = &sh_uds_ctx;
+static struct usbd_context *my_uds_ctx = &sh_uds_ctx;
 static enum usbd_speed current_cmd_speed = USBD_SPEED_FS;
 
 static int cmd_wakeup_request(const struct shell *sh,
@@ -269,7 +269,7 @@ static int cmd_usbd_shutdown(const struct shell *sh,
 
 static int cmd_select(const struct shell *sh, size_t argc, char **argv)
 {
-	STRUCT_SECTION_FOREACH(usbd_contex, ctx) {
+	STRUCT_SECTION_FOREACH(usbd_context, ctx) {
 		if (strcmp(argv[1], ctx->name) == 0) {
 			my_uds_ctx = ctx;
 			shell_print(sh,
@@ -546,7 +546,7 @@ static void device_context_lookup(size_t idx, struct shell_static_entry *entry)
 	entry->help = NULL;
 	entry->subcmd = NULL;
 
-	STRUCT_SECTION_FOREACH(usbd_contex, ctx) {
+	STRUCT_SECTION_FOREACH(usbd_context, ctx) {
 		if ((ctx->name != NULL) && (strlen(ctx->name) != 0)) {
 			if (match_idx == idx) {
 				entry->syntax = ctx->name;

@@ -111,14 +111,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central GATT MTU Update",
-		.test_post_init_f = test_mtu_update_init,
+		.test_pre_init_f = test_mtu_update_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_central_main
 	},
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral GATT MTU Update",
-		.test_post_init_f = test_mtu_update_init,
+		.test_pre_init_f = test_mtu_update_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_peripheral_main
 	},

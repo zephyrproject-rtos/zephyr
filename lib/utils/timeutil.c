@@ -34,9 +34,9 @@ static int64_t time_days_from_civil(int64_t y,
 {
 	y -= m <= 2;
 
-	int64_t era = (y >= 0 ? y : y - 399) / 400;
+	int64_t era = ((y >= 0) ? y : (y - 399)) / 400;
 	unsigned int yoe = y - era * 400;
-	unsigned int doy = (153U * (m + (m > 2 ? -3 : 9)) + 2U) / 5U + d;
+	unsigned int doy = (153U * (m + ((m > 2) ? -3 : 9)) + 2U) / 5U + d;
 	unsigned int doe = yoe * 365U + yoe / 4U - yoe / 100U + doy;
 
 	return era * 146097 + (time_t)doe - 719468;
@@ -148,7 +148,7 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
 			rv = -ERANGE;
 		} else {
 			*refp = ref_abs;
-			rv = (int)(tsp->skew != 1.0f);
+			rv = (tsp->skew != 1.0f) ? 1 : 0;
 		}
 	}
 
@@ -175,7 +175,7 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
 				    + (int64_t)local_delta;
 
 		*localp = local_abs;
-		rv = (int)(tsp->skew != 1.0f);
+		rv = (tsp->skew != 1.0f) ? 1 : 0;
 	}
 
 	return rv;

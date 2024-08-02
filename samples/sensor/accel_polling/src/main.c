@@ -62,7 +62,11 @@ int main(void)
 		}
 	}
 
+#ifndef CONFIG_COVERAGE
 	while (1) {
+#else
+	for (int i = 0; i < 5; i++) {
+#endif
 		for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
 			ret = print_accels(sensors[i]);
 			if (ret < 0) {

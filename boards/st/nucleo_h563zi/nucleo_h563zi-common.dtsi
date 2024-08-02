@@ -66,7 +66,7 @@
 	div-m = <2>;
 	mul-n = <120>;
 	div-p = <2>;
-	div-q = <2>;
+	div-q = <3>;
 	div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
@@ -149,6 +149,15 @@
 	pinctrl-names = "default";
 	st,adc-clock-source = <ASYNC>;
 	st,adc-prescaler = <6>;
+	status = "okay";
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
+		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+	clk-divider = <2>;
 	status = "okay";
 };
 

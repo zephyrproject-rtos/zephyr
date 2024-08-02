@@ -19,6 +19,7 @@
 		zephyr,console = &uart;
 		zephyr,shell-uart = &uart;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_da1469x;
 	};
 
 	lvgl_pointer {
@@ -119,6 +120,7 @@
 	status = "okay";
 	pinctrl-0 = <&uart_default>;
 	pinctrl-names = "default";
+	rx-wake-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 };
 
 zephyr_udc0: &usbd {
@@ -138,6 +140,14 @@ zephyr_udc0: &usbd {
 	status = "okay";
 };
 
+/*
+ * On board level we switch to XTAL32K and
+ * so RCX can be disabled.
+ */
+&rcx {
+	status = "disabled";
+};
+
 &lp_clk {
 	clock-src = <&xtal32k>;
 };
@@ -146,29 +156,30 @@ zephyr_udc0: &usbd {
 	clock-src = <&xtal32m>;
 };
 
-&pll {
-	status = "okay";
-};
 &i2c {
-	status = "okay";
 	pinctrl-0 = <&i2c_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&i2c_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi {
-	status = "okay";
 	pinctrl-0 = <&spi_controller>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&spi_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spi2_controller>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&bt_hci_da1469x {
+	status = "okay";
 };

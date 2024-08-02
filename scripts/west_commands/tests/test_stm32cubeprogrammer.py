@@ -68,6 +68,7 @@ TEST_CASES = (
         "cli": CLI_PATH,
         "use_elf": False,
         "erase": False,
+        "extload": None,
         "tool_opt": [],
         "system": "",
         "cli_path": str(CLI_PATH),
@@ -90,6 +91,7 @@ TEST_CASES = (
         "cli": CLI_PATH,
         "use_elf": False,
         "erase": False,
+        "extload": None,
         "tool_opt": [],
         "system": "",
         "cli_path": str(CLI_PATH),
@@ -112,6 +114,7 @@ TEST_CASES = (
         "cli": CLI_PATH,
         "use_elf": False,
         "erase": False,
+        "extload": None,
         "tool_opt": [],
         "system": "",
         "cli_path": str(CLI_PATH),
@@ -134,6 +137,7 @@ TEST_CASES = (
         "cli": CLI_PATH,
         "use_elf": False,
         "erase": False,
+        "extload": None,
         "tool_opt": [],
         "system": "",
         "cli_path": str(CLI_PATH),
@@ -156,6 +160,7 @@ TEST_CASES = (
         "cli": CLI_PATH,
         "use_elf": False,
         "erase": False,
+        "extload": None,
         "tool_opt": [],
         "system": "",
         "cli_path": str(CLI_PATH),
@@ -178,6 +183,7 @@ TEST_CASES = (
         "cli": CLI_PATH,
         "use_elf": False,
         "erase": False,
+        "extload": None,
         "tool_opt": [],
         "system": "",
         "cli_path": str(CLI_PATH),
@@ -200,6 +206,7 @@ TEST_CASES = (
         "cli": CLI_PATH,
         "use_elf": True,
         "erase": False,
+        "extload": None,
         "tool_opt": [],
         "system": "",
         "cli_path": str(CLI_PATH),
@@ -222,6 +229,7 @@ TEST_CASES = (
         "cli": CLI_PATH,
         "use_elf": False,
         "erase": True,
+        "extload": None,
         "tool_opt": [],
         "system": "",
         "cli_path": str(CLI_PATH),
@@ -245,6 +253,7 @@ TEST_CASES = (
         "cli": CLI_PATH,
         "use_elf": False,
         "erase": False,
+        "extload": None,
         "tool_opt": ["--skipErase"],
         "system": "",
         "cli_path": str(CLI_PATH),
@@ -268,6 +277,7 @@ TEST_CASES = (
         "cli": None,
         "use_elf": False,
         "erase": False,
+        "extload": None,
         "tool_opt": [],
         "system": "Linux",
         "cli_path": str(LINUX_CLI_PATH),
@@ -290,6 +300,7 @@ TEST_CASES = (
         "cli": None,
         "use_elf": False,
         "erase": False,
+        "extload": None,
         "tool_opt": [],
         "system": "Darwin",
         "cli_path": str(MACOS_CLI_PATH),
@@ -312,6 +323,7 @@ TEST_CASES = (
         "cli": None,
         "use_elf": False,
         "erase": False,
+        "extload": None,
         "tool_opt": [],
         "system": "Windows",
         "cli_path": str(WINDOWS_CLI_PATH),
@@ -355,6 +367,7 @@ def test_stm32cubeprogrammer_init(
         cli=tc["cli"],
         use_elf=tc["use_elf"],
         erase=tc["erase"],
+        extload=tc["extload"],
         tool_opt=tc["tool_opt"],
     )
 
@@ -393,6 +406,8 @@ def test_stm32cubeprogrammer_create(
         args.extend(["--use-elf"])
     if tc["erase"]:
         args.append("--erase")
+    if tc["extload"]:
+        args.extend(["--extload", tc["extload"]])
     if tc["tool_opt"]:
         args.extend(["--tool-opt", " " + tc["tool_opt"][0]])
 

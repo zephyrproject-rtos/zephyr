@@ -150,132 +150,138 @@ config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
 
 comment "Serial Drivers"
 
-source "drivers/serial/Kconfig.b91"
+rsource "Kconfig.b91"
 
-source "drivers/serial/Kconfig.ns16550"
+rsource "Kconfig.ns16550"
 
-source "drivers/serial/Kconfig.mcux"
+rsource "Kconfig.mcux"
 
-source "drivers/serial/Kconfig.mcux_flexcomm"
+rsource "Kconfig.mcux_flexcomm"
 
-source "drivers/serial/Kconfig.mcux_iuart"
+rsource "Kconfig.mcux_iuart"
 
-source "drivers/serial/Kconfig.mcux_lpsci"
+rsource "Kconfig.mcux_lpsci"
 
-source "drivers/serial/Kconfig.mcux_lpuart"
+rsource "Kconfig.mcux_lpuart"
 
-source "drivers/serial/Kconfig.miv"
+rsource "Kconfig.miv"
 
-source "drivers/serial/Kconfig.imx"
+rsource "Kconfig.imx"
 
-source "drivers/serial/Kconfig.it8xxx2"
+rsource "Kconfig.it8xxx2"
 
-source "drivers/serial/Kconfig.stellaris"
+rsource "Kconfig.stellaris"
 
-source "drivers/serial/Kconfig.native_posix"
+rsource "Kconfig.native_posix"
 
-source "drivers/serial/Kconfig.usart_sam"
+rsource "Kconfig.usart_sam"
 
-source "drivers/serial/Kconfig.uart_sam"
+rsource "Kconfig.uart_sam"
 
-source "drivers/serial/Kconfig.stm32"
+rsource "Kconfig.stm32"
 
-source "drivers/serial/Kconfig.nrfx"
+rsource "Kconfig.nrfx"
 
-source "drivers/serial/Kconfig.altera_jtag"
+rsource "Kconfig.altera_jtag"
 
-source "drivers/serial/Kconfig.cc13xx_cc26xx"
+rsource "Kconfig.cc13xx_cc26xx"
 
-source "drivers/serial/Kconfig.cc32xx"
+rsource "Kconfig.cc32xx"
 
-source "drivers/serial/Kconfig.cmsdk_apb"
+rsource "Kconfig.cmsdk_apb"
 
-source "drivers/serial/Kconfig.sifive"
+rsource "Kconfig.sifive"
 
-source "drivers/serial/Kconfig.esp32"
+rsource "Kconfig.esp32"
 
-source "drivers/serial/Kconfig.gecko"
+rsource "Kconfig.gecko"
 
-source "drivers/serial/Kconfig.leuart_gecko"
+rsource "Kconfig.leuart_gecko"
 
-source "drivers/serial/Kconfig.msp432p4xx"
+rsource "Kconfig.msp432p4xx"
 
-source "drivers/serial/Kconfig.numicro"
+rsource "Kconfig.numicro"
 
-source "drivers/serial/Kconfig.sam0"
+rsource "Kconfig.sam0"
+
+source "drivers/serial/Kconfig.pic32cxsg"
 
 source "drivers/serial/Kconfig.pic32cxsg"
 
 source "drivers/serial/Kconfig.psoc6"
 
-source "drivers/serial/Kconfig.pl011"
+rsource "Kconfig.pl011"
 
-source "drivers/serial/Kconfig.ql_usbserialport_s3b"
+rsource "Kconfig.ql_usbserialport_s3b"
 
-source "drivers/serial/Kconfig.rv32m1_lpuart"
+rsource "Kconfig.rv32m1_lpuart"
 
-source "drivers/serial/Kconfig.rpi_pico"
+rsource "Kconfig.rpi_pico"
 
-source "drivers/serial/Kconfig.litex"
+rsource "Kconfig.litex"
 
-source "drivers/serial/Kconfig.rtt"
+rsource "Kconfig.rtt"
 
-source "drivers/serial/Kconfig.bt"
+rsource "Kconfig.bt"
 
-source "drivers/serial/Kconfig.xlnx"
+rsource "Kconfig.xlnx"
 
-source "drivers/serial/Kconfig.xmc4xxx"
+rsource "Kconfig.xmc4xxx"
 
-source "drivers/serial/Kconfig.lpc11u6x"
+rsource "Kconfig.lpc11u6x"
 
-source "drivers/serial/Kconfig.npcx"
+rsource "Kconfig.npcx"
 
-source "drivers/serial/Kconfig.apbuart"
+rsource "Kconfig.apbuart"
 
-source "drivers/serial/Kconfig.rcar"
+rsource "Kconfig.rcar"
 
-source "drivers/serial/Kconfig.xec"
+rsource "Kconfig.xec"
 
-source "drivers/serial/Kconfig.gd32"
+rsource "Kconfig.gd32"
 
-source "drivers/serial/Kconfig.test"
+rsource "Kconfig.test"
 
-source "drivers/serial/Kconfig.neorv32"
+rsource "Kconfig.neorv32"
 
-source "drivers/serial/Kconfig.xen"
+rsource "Kconfig.xen"
 
-source "drivers/serial/Kconfig.ifx_cat1"
+rsource "Kconfig.ifx_cat1"
 
-source "drivers/serial/Kconfig.smartbond"
+rsource "Kconfig.smartbond"
 
-source "drivers/serial/Kconfig.nxp_s32"
+rsource "Kconfig.nxp_s32"
 
-source "drivers/serial/Kconfig.cdns"
+rsource "Kconfig.cdns"
 
-source "drivers/serial/Kconfig.opentitan"
+rsource "Kconfig.opentitan"
 
-source "drivers/serial/Kconfig.altera"
+rsource "Kconfig.altera"
 
-source "drivers/serial/Kconfig.hostlink"
+rsource "Kconfig.hostlink"
 
-source "drivers/serial/Kconfig.emul"
+rsource "Kconfig.emul"
 
-source "drivers/serial/Kconfig.native_tty"
+rsource "Kconfig.native_tty"
 
-source "drivers/serial/Kconfig.numaker"
+rsource "Kconfig.numaker"
 
-source "drivers/serial/Kconfig.efinix_sapphire"
+rsource "Kconfig.efinix_sapphire"
 
-source "drivers/serial/Kconfig.sedi"
+rsource "Kconfig.sedi"
 
-source "drivers/serial/Kconfig.bcm2711"
+rsource "Kconfig.max32"
 
-source "drivers/serial/Kconfig.intel_lw"
+rsource "Kconfig.bcm2711"
 
-source "drivers/serial/Kconfig.renesas_ra"
+rsource "Kconfig.intel_lw"
 
-source "drivers/serial/Kconfig.ene"
+rsource "Kconfig.renesas_ra"
 
-source "drivers/serial/Kconfig.rzt2m"
+rsource "Kconfig.ene"
+
+rsource "Kconfig.rzt2m"
+
+source "drivers/serial/Kconfig.renesas_ra8"
 
 endif # SERIAL

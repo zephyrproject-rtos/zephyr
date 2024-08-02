@@ -42,6 +42,11 @@ endif
 
 config MODEM_PIPE
 	bool "Modem pipe module"
+	select EVENTS
+
+config MODEM_PIPELINK
+	bool "Modem pipelink module"
+	depends on MODEM_PIPE
 
 config MODEM_PPP
 	bool "Modem PPP module"
@@ -58,6 +63,19 @@ config MODEM_PPP_NET_BUF_FRAG_SIZE
 	default 128
 
 endif
+
+config MODEM_STATS
+	bool "Modem statistics"
+	depends on SHELL
+	help
+	  Enables modem statistics shell commands which track the usage of
+	  buffers across the modem modules. The statistics are useful for
+	  scaling buffer sizes, as these are application specific.
+
+config MODEM_STATS_BUFFER_NAME_SIZE
+	int "Maximum string size of modem stats buffer name"
+	default 32
+	range 8 64
 
 config MODEM_UBX
 	bool "Modem U-BLOX module"

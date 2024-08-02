@@ -522,7 +522,7 @@ static int smsc_send_pkt(struct smsc_data *sc, uint8_t *buf, uint16_t len)
 	smsc_write_2(sc, DATA0, len + PKT_CTRL_DATA_LEN);
 	smsc_write_multi_2(sc, DATA0, (uint16_t *)buf, len / 2);
 
-	/* Push out the control byte and and the odd byte if needed. */
+	/* Push out the control byte and the odd byte if needed. */
 	if (len & 1) {
 		smsc_write_2(sc, DATA0, (CTRL_ODD << 8) | buf[len - 1]);
 	} else {

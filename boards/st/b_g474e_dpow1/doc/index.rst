@@ -42,6 +42,7 @@ More information about the board can be found at the `B-G474E-DPOW1 website`_.
 
 
 More information about STM32G474RE can be found here:
+
 - `G474RE on www.st.com`_
 - `STM32G4 reference manual`_
 

@@ -435,6 +435,14 @@ config NET_MCAST_ROUTE_MAX_IFACES
 	  Determines how many network interfaces can be assigned to a
 	  single multicast route entry.
 
+config NET_MCAST_ROUTE_MLD_REPORTS
+	bool "Report multicast routes as a part of MLDv2 reports"
+	depends on NET_ROUTE_MCAST
+	depends on NET_IPV6_MLD
+	help
+	  Determines whether a multicast route entry should be advertised
+	  in MLDv2 reports.
+
 source "subsys/net/ip/Kconfig.tcp"
 
 config NET_TEST_PROTOCOL
@@ -591,6 +599,13 @@ config NET_CONTEXT_RECV_PKTINFO
 	  Allow to set the IP_PKTINFO or IPV6_RECVPKTINFO flags on a socket.
 	  This way user can get extra information about the received data in the
 	  socket.
+
+config NET_CONTEXT_TIMESTAMPING
+	bool "Add TIMESTAMPING support to net_context"
+	default y if (NET_UDP && NET_PKT_TIMESTAMP)
+	help
+	  Allow to set the TIMESTAMPING option on a socket. This way timestamp for a network
+	  packet will be added to the net_pkt structure.
 
 endif # NET_RAW_MODE
 
@@ -779,7 +794,7 @@ config NET_INTERFACE_NAME
 config NET_INTERFACE_NAME_LEN
 	int "Network interface max name length"
 	default 8
-	range 1 15
+	range 2 15
 	depends on NET_INTERFACE_NAME
 	help
 	  Maximum length of the network interface name.

@@ -7,22 +7,38 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/mcs.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/mcc.h>
-#include "mcc_internal.h"
-
 #include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
+
 #include "../services/ots/ots_client_internal.h"
+#include "common/bt_str.h"
+#include "mcc_internal.h"
 #include "mcs_internal.h"
 
 /* TODO: Temporarily copied here from media_proxy_internal.h - clean up */
@@ -38,12 +54,7 @@
 		} \
 	} while (0)
 
-
-#include <zephyr/logging/log.h>
-
 LOG_MODULE_REGISTER(bt_mcc, CONFIG_BT_MCC_LOG_LEVEL);
-
-#include "common/bt_str.h"
 
 static struct mcs_instance_t mcs_instance;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
@@ -1098,7 +1109,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
 
 	} else if (handle == mcs_inst->cp_handle) {
-		/* The control point is is a special case - only */
+		/* The control point is a special case - only */
 		/* writable and notifiable.  Handle directly here. */
 		struct mpl_cmd_ntf ntf = {0};
 		int cb_err = 0;

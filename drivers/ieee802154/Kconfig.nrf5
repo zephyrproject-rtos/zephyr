@@ -72,7 +72,7 @@ config IEEE802154_NRF5_FCS_IN_LENGTH
 
 config IEEE802154_NRF5_DELAY_TRX_ACC
 	int "Clock accuracy for delayed operations"
-	default CLOCK_CONTROL_NRF_ACCURACY if CLOCK_CONTROL_NRF_ACCURACY < 255
+	default CLOCK_CONTROL_NRF_ACCURACY if (CLOCK_CONTROL_NRF && (CLOCK_CONTROL_NRF_ACCURACY < 255))
 	default 255
 	help
 	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission

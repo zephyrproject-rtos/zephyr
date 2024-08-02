@@ -61,21 +61,13 @@ struct modem_pipe_api {
 	modem_pipe_api_close close;
 };
 
-enum modem_pipe_state {
-	MODEM_PIPE_STATE_CLOSED = 0,
-	MODEM_PIPE_STATE_OPEN,
-};
-
 struct modem_pipe {
 	void *data;
 	struct modem_pipe_api *api;
 	modem_pipe_api_callback callback;
 	void *user_data;
-	enum modem_pipe_state state;
-	struct k_mutex lock;
-	struct k_condvar condvar;
-	uint8_t receive_ready_pending : 1;
-	uint8_t transmit_idle_pending : 1;
+	struct k_spinlock spinlock;
+	struct k_event event;
 };
 
 /**

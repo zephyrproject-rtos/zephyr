@@ -313,7 +313,7 @@ static inline uintptr_t get_entry_phys(pentry_t entry, int level)
 __pinned_func
 static inline pentry_t *next_table(pentry_t entry, int level)
 {
-	return z_mem_virt_addr(get_entry_phys(entry, level));
+	return k_mem_virt_addr(get_entry_phys(entry, level));
 }
 
 /* Number of table entries at this level */
@@ -416,12 +416,12 @@ void z_x86_tlb_ipi(const void *arg)
 	 * if KPTI is turned on
 	 */
 	ptables_phys = z_x86_cr3_get();
-	__ASSERT(ptables_phys == z_mem_phys_addr(&z_x86_kernel_ptables), "");
+	__ASSERT(ptables_phys == k_mem_phys_addr(&z_x86_kernel_ptables), "");
 #else
 	/* We might have been moved to another memory domain, so always invoke
 	 * z_x86_thread_page_tables_get() instead of using current CR3 value.
 	 */
-	ptables_phys = z_mem_phys_addr(z_x86_thread_page_tables_get(_current));
+	ptables_phys = k_mem_phys_addr(z_x86_thread_page_tables_get(_current));
 #endif
 	/*
 	 * In the future, we can consider making this smarter, such as
@@ -450,6 +450,8 @@ static inline void assert_addr_aligned(uintptr_t addr)
 #if __ASSERT_ON
 	__ASSERT((addr & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
 		 "unaligned address 0x%" PRIxPTR, addr);
+#else
+	ARG_UNUSED(addr);
 #endif
 }
 
@@ -481,6 +483,8 @@ static inline void assert_size_aligned(size_t size)
 #if __ASSERT_ON
 	__ASSERT((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
 		 "unaligned size %zu", size);
+#else
+	ARG_UNUSED(size);
 #endif
 }
 
@@ -589,7 +593,7 @@ static void print_entries(pentry_t entries_array[], uint8_t *base, int level,
 				if (phys == virt) {
 					/* Identity mappings */
 					COLOR(YELLOW);
-				} else if (phys + Z_MEM_VM_OFFSET == virt) {
+				} else if (phys + K_MEM_VIRT_OFFSET == virt) {
 					/* Permanent RAM mappings */
 					COLOR(GREEN);
 				} else {
@@ -657,7 +661,7 @@ static void dump_ptables(pentry_t *table, uint8_t *base, int level)
 #endif
 
 	printk("%s at %p (0x%" PRIxPTR "): ", info->name, table,
-	       z_mem_phys_addr(table));
+	       k_mem_phys_addr(table));
 	if (level == 0) {
 		printk("entire address space\n");
 	} else {
@@ -822,12 +826,15 @@ static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
 {
 #ifdef CONFIG_X86_KPTI
 	static const uintptr_t shared_phys_addr =
-		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_shared_kernel_page_start));
+		K_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_shared_kernel_page_start));
 
 	if (user_table && (val & MMU_US) == 0 && (val & MMU_P) != 0 &&
 	    get_entry_phys(val, level) != shared_phys_addr) {
 		val = ~val;
 	}
+#else
+	ARG_UNUSED(user_table);
+	ARG_UNUSED(level);
 #endif
 	return val;
 }
@@ -841,7 +848,7 @@ static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
 __pinned_func
 static inline pentry_t atomic_pte_get(const pentry_t *target)
 {
-	return (pentry_t)atomic_ptr_get((atomic_ptr_t *)target);
+	return (pentry_t)atomic_ptr_get((const atomic_ptr_t *)target);
 }
 
 __pinned_func
@@ -1162,8 +1169,8 @@ static int range_map(void *virt, uintptr_t phys, size_t size,
 {
 	int ret = 0, ret2;
 
-	LOG_DBG("%s: %p -> %p (%zu) flags " PRI_ENTRY " mask "
-		PRI_ENTRY " opt 0x%x", __func__, (void *)phys, virt, size,
+	LOG_DBG("%s: 0x%" PRIxPTR " -> %p (%zu) flags " PRI_ENTRY " mask "
+		PRI_ENTRY " opt 0x%x", __func__, phys, virt, size,
 		entry_flags, mask, options);
 
 #ifdef CONFIG_X86_64
@@ -1294,13 +1301,13 @@ void arch_mem_unmap(void *addr, size_t size)
 {
 	int ret;
 
-	ret = range_map_unlocked((void *)addr, 0, size, 0, 0,
+	ret = range_map_unlocked(addr, 0, size, 0, 0,
 				 OPTION_FLUSH | OPTION_CLEAR);
 	__ASSERT_NO_MSG(ret == 0);
 	ARG_UNUSED(ret);
 }
 
-#ifdef Z_VM_KERNEL
+#ifdef K_MEM_IS_VM_KERNEL
 __boot_func
 static void identity_map_remove(uint32_t level)
 {
@@ -1339,7 +1346,7 @@ static void identity_map_remove(uint32_t level)
 __boot_func
 void z_x86_mmu_init(void)
 {
-#ifdef Z_VM_KERNEL
+#ifdef K_MEM_IS_VM_KERNEL
 	/* We booted with physical address space being identity mapped.
 	 * As we are now executing in virtual address space,
 	 * the identity map is no longer needed. So remove them.
@@ -1380,7 +1387,7 @@ void z_x86_set_stack_guard(k_thread_stack_t *stack)
 __pinned_func
 static bool page_validate(pentry_t *ptables, uint8_t *addr, bool write)
 {
-	pentry_t *table = (pentry_t *)ptables;
+	pentry_t *table = ptables;
 
 	for (int level = 0; level < NUM_LEVELS; level++) {
 		pentry_t entry = get_entry(table, addr, level);
@@ -1425,7 +1432,7 @@ static inline void bcb_fence(void)
 }
 
 __pinned_func
-int arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	pentry_t *ptables = z_x86_thread_page_tables_get(_current);
 	uint8_t *virt;
@@ -1433,8 +1440,8 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 	int ret = 0;
 
 	/* addr/size arbitrary, fix this up into an aligned region */
-	k_mem_region_align((uintptr_t *)&virt, &aligned_size,
-			   (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
+	(void)k_mem_region_align((uintptr_t *)&virt, &aligned_size,
+				 (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
 
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += CONFIG_MMU_PAGE_SIZE) {
@@ -1713,7 +1720,7 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 			 * cast needed for PAE case where sizeof(void *) and
 			 * sizeof(pentry_t) are not the same.
 			 */
-			dst[i] = ((pentry_t)z_mem_phys_addr(child_dst) |
+			dst[i] = ((pentry_t)k_mem_phys_addr(child_dst) |
 				  INT_FLAGS);
 
 			ret = copy_page_table(child_dst,
@@ -1774,8 +1781,8 @@ static inline int apply_region(pentry_t *ptables, void *start,
 __pinned_func
 static void set_stack_perms(struct k_thread *thread, pentry_t *ptables)
 {
-	LOG_DBG("update stack for thread %p's ptables at %p: %p (size %zu)",
-		thread, ptables, (void *)thread->stack_info.start,
+	LOG_DBG("update stack for thread %p's ptables at %p: 0x%" PRIxPTR " (size %zu)",
+		thread, ptables, thread->stack_info.start,
 		thread->stack_info.size);
 	apply_region(ptables, (void *)thread->stack_info.start,
 		     thread->stack_info.size,
@@ -1917,13 +1924,13 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	 * z_x86_current_stack_perms()
 	 */
 	if (is_migration) {
-		old_ptables = z_mem_virt_addr(thread->arch.ptables);
+		old_ptables = k_mem_virt_addr(thread->arch.ptables);
 		set_stack_perms(thread, domain->arch.ptables);
 	}
 
-	thread->arch.ptables = z_mem_phys_addr(domain->arch.ptables);
-	LOG_DBG("set thread %p page tables to %p", thread,
-		(void *)thread->arch.ptables);
+	thread->arch.ptables = k_mem_phys_addr(domain->arch.ptables);
+	LOG_DBG("set thread %p page tables to 0x%" PRIxPTR, thread,
+		thread->arch.ptables);
 
 	/* Check if we're doing a migration from a different memory domain
 	 * and have to remove permissions from its old domain.
@@ -1997,13 +2004,12 @@ static void mark_addr_page_reserved(uintptr_t addr, size_t len)
 	uintptr_t end = ROUND_UP(addr + len, CONFIG_MMU_PAGE_SIZE);
 
 	for (; pos < end; pos += CONFIG_MMU_PAGE_SIZE) {
-		if (!z_is_page_frame(pos)) {
+		if (!k_mem_is_page_frame(pos)) {
 			continue;
 		}
 
-		struct z_page_frame *pf = z_phys_to_page_frame(pos);
-
-		pf->flags |= Z_PAGE_FRAME_RESERVED;
+		k_mem_page_frame_set(k_mem_phys_to_page_frame(pos),
+				     K_MEM_PAGE_FRAME_RESERVED);
 	}
 }
 
@@ -2107,7 +2113,7 @@ void arch_mem_page_in(void *addr, uintptr_t phys)
 __pinned_func
 void arch_mem_scratch(uintptr_t phys)
 {
-	page_map_set(z_x86_page_tables_get(), Z_SCRATCH_PAGE,
+	page_map_set(z_x86_page_tables_get(), K_MEM_SCRATCH_PAGE,
 		     phys | MMU_P | MMU_RW | MMU_XD, NULL, MASK_ALL,
 		     OPTION_FLUSH);
 }
@@ -2225,7 +2231,7 @@ bool z_x86_kpti_is_access_ok(void *addr, pentry_t *ptables)
 
 	/* Might as well also check if it's un-mapped, normally we don't
 	 * fetch the PTE from the page tables until we are inside
-	 * z_page_fault() and call arch_page_fault_status_get()
+	 * k_mem_page_fault() and call arch_page_fault_status_get()
 	 */
 	if (level != PTE_LEVEL || pte == 0 || is_flipped_pte(pte)) {
 		return false;

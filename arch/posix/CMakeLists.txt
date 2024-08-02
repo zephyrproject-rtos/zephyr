@@ -178,6 +178,7 @@ endif()
 
 if(CONFIG_ARCH_POSIX_LIBFUZZER)
   list(APPEND LLVM_SANITIZERS "fuzzer")
+  target_compile_options(native_simulator INTERFACE "-DNSI_NO_MAIN=1")
   if(NOT CONFIG_64BIT)
     # On i386, libfuzzer seems to dynamically relocate the binary, so
     # we need to emit PIC code.  This limitation is undocumented and

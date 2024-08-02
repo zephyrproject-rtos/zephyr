@@ -23,7 +23,7 @@
  * These are for internal use only, so skip these in public documentation.
  */
 
-__subsystem struct emul_bbram_backend_api {
+__subsystem struct emul_bbram_driver_api {
 	/** Sets the data */
 	int (*set_data)(const struct emul *target, size_t offset, size_t count,
 			const uint8_t *data);
@@ -53,7 +53,7 @@ static inline int emul_bbram_backend_set_data(const struct emul *target, size_t 
 		return -ENOTSUP;
 	}
 
-	struct emul_bbram_backend_api *api = (struct emul_bbram_backend_api *)target->backend_api;
+	struct emul_bbram_driver_api *api = (struct emul_bbram_driver_api *)target->backend_api;
 
 	if (api->set_data == NULL) {
 		return -ENOTSUP;
@@ -80,7 +80,7 @@ static inline int emul_bbram_backend_get_data(const struct emul *target, size_t 
 		return -ENOTSUP;
 	}
 
-	struct emul_bbram_backend_api *api = (struct emul_bbram_backend_api *)target->backend_api;
+	struct emul_bbram_driver_api *api = (struct emul_bbram_driver_api *)target->backend_api;
 
 	if (api->get_data == NULL) {
 		return -ENOTSUP;

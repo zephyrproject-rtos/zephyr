@@ -333,11 +333,25 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER=n
+  bluetooth.audio_shell.only_cap_acceptor:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_CLIENT=n
+      - CONFIG_BT_CAP_INITIATOR=n
+      - CONFIG_BT_CAP_COMMANDER=n
   bluetooth.audio_shell.no_cap_initiator:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_CAP_INITIATOR=n
+  bluetooth.audio_shell.only_cap_initiator:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_SERVER=n
+      - CONFIG_BT_CAP_ACCEPTOR=n
+      - CONFIG_BT_CAP_COMMANDER=n
   bluetooth.audio_shell.no_gmap:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -350,18 +364,45 @@ tests:
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_CAP_COMMANDER=n
-  bluetooth.audio_shell.no_lc3:
+  bluetooth.audio_shell.only_cap_commander:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_CLIENT=n
+      - CONFIG_BT_CAP_ACCEPTOR=n
+      - CONFIG_BT_CAP_INITIATOR=n
+  bluetooth.audio_shell.no_lc3:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
     extra_configs:
       - CONFIG_FPU=n
       - CONFIG_LIBLC3=n
   bluetooth.audio_shell.no_usb:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
-    platform_allow: native_posix
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
     extra_configs:
       - CONFIG_RING_BUFFER=n
       - CONFIG_USB_DEVICE_STACK=n
       - CONFIG_USB_DEVICE_AUDIO=n
+  bluetooth.native_shell:
+    build_only: true
+    extra_args:
+      - EXTRA_CONF_FILE=snippets/xterm-native-shell/xterm-native-shell.conf
+      - EXTRA_DTC_OVERLAY_FILE=snippets/xterm-native-shell/xterm-native-shell.overlay
+    platform_allow:
+      - nrf52_bsim
+    integration_platforms:
+      - nrf52_bsim

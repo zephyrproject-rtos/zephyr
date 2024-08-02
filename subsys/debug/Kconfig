@@ -345,6 +345,7 @@ config OVERRIDE_FRAME_POINTER_DEFAULT
 
 config OMIT_FRAME_POINTER
 	bool "Omit frame pointer"
+	depends on !FRAME_POINTER
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
 	  Choose Y for best performance. On some architectures (including x86)
@@ -371,13 +372,31 @@ config DEBUG_INFO
 config EXCEPTION_STACK_TRACE
 	bool "Attempt to print stack traces upon exceptions"
 	default y
-	depends on PRINTK
-	depends on DEBUG_INFO
-	depends on !OMIT_FRAME_POINTER
+	depends on (X86_EXCEPTION_STACK_TRACE || \
+		    ARM64_EXCEPTION_STACK_TRACE || \
+		    RISCV_EXCEPTION_STACK_TRACE)
 	help
 	  If the architecture fatal handling code supports it, attempt to
 	  print a stack trace of function memory addresses when an
 	  exception is reported.
+
+config EXCEPTION_STACK_TRACE_MAX_FRAMES
+	int "Configures the depth of stack trace"
+	default ARCH_STACKWALK_MAX_FRAMES if ARCH_HAS_STACKWALK
+	default 8
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  In the event of a stack trace, this place a limit on the depths
+	  of the stack to examine.
+
+config EXCEPTION_STACK_TRACE_SYMTAB
+	bool "Print function names in the stack trace"
+	select SYMTAB
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  Enable this if you want to print the function names in the
+	  stack trace output. This will generate the symtab and
+	  can consume a lot of ROM if there's a lot of functions.
 
 #
 # Miscellaneous debugging options
@@ -392,50 +411,10 @@ config DEBUG_THREAD_INFO
 	  for debugger RTOS plugins to determine the state of running threads.
 
 rsource "coredump/Kconfig"
+rsource "symtab/Kconfig"
 endmenu
 
-config GDBSTUB
-	bool "GDB remote serial protocol support [EXPERIMENTAL]"
-	depends on ARCH_HAS_GDBSTUB
-	select UART_USE_RUNTIME_CONFIGURE
-	select EXPERIMENTAL
-	help
-	  This option enable support the target using GDB, or any other
-	  application that supports GDB protocol.
-
-if GDBSTUB
-
-choice
-	prompt "GDB backend"
-
-config GDBSTUB_SERIAL_BACKEND
-	bool "Use serial backend"
-	depends on SERIAL
-	help
-	  Use serial as backend for GDB
-
-config GDBSTUB_CUSTOM_BACKEND
-	bool "Use a custom backend"
-	help
-	  Use a custom backend for GDB
-
-endchoice
-
-config GDBSTUB_BUF_SZ
-	int "GDB backend send/receive buffer size (in bytes)"
-	default 256
-	help
-	  This specifies the size (in bytes) of the send/receive buffer
-	  for GDB backend. This needs to be big enough to hold one
-	  full GDB packet at a time.
-
-config GDBSTUB_TRACE
-	bool "GDB backend extra logging"
-	help
-	  Enable extra debug logging for the GDB backend, including
-	  breakpoint interrupts and remote commands it receives.
-
-endif
+rsource "gdbstub/Kconfig"
 
 config SEGGER_DEBUGMON
 	bool "Use Segger's J-Link debug monitor implementation"
@@ -444,3 +423,9 @@ config SEGGER_DEBUGMON
 	  This option will enable Segger's implementation of
 	  the debug monitor interrupt, overriding the
 	  default z_arm_debug_monitor symbol.
+
+config MIPI_STP_DECODER
+	bool "MIPI STPv2 decoder"
+	depends on !BIG_ENDIAN
+	help
+	  Module decodes a stream of STPv2 data.

@@ -66,7 +66,7 @@ Below, ``<build>`` means your build directory.
 
 To find the devicetree node you need to check, use the number ``<N>`` from the
 linker error. Look for this number in the list of nodes at the top of
-:file:`<build>/zephyr/include/generated/devicetree_generated.h`. For example, if
+:file:`<build>/zephyr/include/generated/zephyr/devicetree_generated.h`. For example, if
 ``<N>`` is 15, and your :file:`devicetree_generated.h` file looks like this,
 the node you are interested in is ``/soc/i2c@deadbeef``:
 

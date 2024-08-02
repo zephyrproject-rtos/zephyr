@@ -7,11 +7,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <zephyr/bluetooth/conn.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/shell/shell.h>
-#include <stdlib.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #include "shell/bt.h"
 
@@ -154,7 +163,7 @@ static void vcs_aics_set_manual_mode_cb(struct bt_aics *inst, int err)
 			    "Set manual mode failed (%d) for inst %p",
 			    err, inst);
 	} else {
-		shell_print(ctx_shell, "Manuel mode set for inst %p", inst);
+		shell_print(ctx_shell, "Manual mode set for inst %p", inst);
 	}
 }
 

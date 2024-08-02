@@ -1,5 +1,5 @@
 identifier: m5stickc_plus/esp32/appcpu
-name: M5StickC PLUS
+name: M5StickC PLUS APPCPU
 type: mcu
 arch: xtensa
 toolchain:

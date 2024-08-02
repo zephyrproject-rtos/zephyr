@@ -22,7 +22,7 @@ enum ep_op {
 	EP_OP_DOWN, /* Disable endpoint and update endpoints bitmap */
 };
 
-static int handle_ep_op(struct usbd_contex *const uds_ctx,
+static int handle_ep_op(struct usbd_context *const uds_ctx,
 			const enum ep_op op,
 			struct usb_ep_descriptor *const ed,
 			uint32_t *const ep_bm)
@@ -50,7 +50,7 @@ static int handle_ep_op(struct usbd_contex *const uds_ctx,
 	return ret;
 }
 
-static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
+static int usbd_interface_modify(struct usbd_context *const uds_ctx,
 				 struct usbd_class_node *const c_nd,
 				 const enum ep_op op,
 				 const uint8_t iface,
@@ -107,7 +107,7 @@ static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
 	return found_iface ? 0 : -ENODATA;
 }
 
-int usbd_interface_shutdown(struct usbd_contex *const uds_ctx,
+int usbd_interface_shutdown(struct usbd_context *const uds_ctx,
 			    struct usbd_config_node *const cfg_nd)
 {
 	struct usbd_class_node *c_nd;
@@ -139,7 +139,7 @@ int usbd_interface_shutdown(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-int usbd_interface_default(struct usbd_contex *const uds_ctx,
+int usbd_interface_default(struct usbd_context *const uds_ctx,
 			   const enum usbd_speed speed,
 			   struct usbd_config_node *const cfg_nd)
 {
@@ -165,7 +165,7 @@ int usbd_interface_default(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-int usbd_interface_set(struct usbd_contex *const uds_ctx,
+int usbd_interface_set(struct usbd_context *const uds_ctx,
 		       const uint8_t iface,
 		       const uint8_t alt)
 {

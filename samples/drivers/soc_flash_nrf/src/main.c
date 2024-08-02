@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Linaro Limited
  *               2016 Intel Corporation.
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,9 +28,45 @@
 #define FLASH_TEST_OFFSET2 0x41234
 #define FLASH_TEST_PAGE_IDX 37
 
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE) &&	\
+	defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+#define FLASH_PE_RUNTIME_CHECK(cond) (cond)
+#elif defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
+#define FLASH_PE_RUNTIME_CHECK(cond) (true)
+#else
+/* Assumed IS_ENABLED(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE) */
+#define FLASH_PE_RUNTIME_CHECK(cond) (false)
+#endif
+
+/**
+ * Depending on value of condition erase a device or not. The condition
+ * is supposed to be value of erase_requirement picked up from
+ * flash_parameters.flags for device.
+ */
+static void erase_when_needed(const struct device *dev, bool condition,
+			     uint32_t off, uint32_t size)
+{
+	/*
+	 * Alwayes invoke erase when there are only erase requiring devices,
+	 * never invoke erase when there are no devices requiring erase,
+	 * always check condition if there are both kind of devices.
+	 */
+	if (FLASH_PE_RUNTIME_CHECK(condition)) {
+		if (flash_erase(dev, off, size) != 0) {
+			printf("   Erase failed!\n");
+		} else {
+			printf("   Erase succeeded!\n");
+		}
+	} else {
+		(void)condition;
+		printf("   Erase not required by device\n");
+	}
+}
+
 int main(void)
 {
 	const struct device *flash_dev = TEST_PARTITION_DEVICE;
+	struct flash_parameters flash_params;
 	uint32_t buf_array_1[4] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
 	uint32_t buf_array_2[4] = { TEST_DATA_WORD_3, TEST_DATA_WORD_1,
@@ -41,35 +78,35 @@ int main(void)
 	uint32_t buf_word = 0U;
 	uint32_t i, offset;
 
-	printf("\nNordic nRF5 Flash Testing\n");
-	printf("=========================\n");
+	memcpy(&flash_params, flash_get_parameters(flash_dev), sizeof(flash_params));
+
+	printf("\nNordic nRF5 Internal Storage Sample\n");
+	printf("=====================================\n");
 
 	if (!device_is_ready(flash_dev)) {
-		printf("Flash device not ready\n");
+		printf("Internal storage device not ready\n");
 		return 0;
 	}
 
-	printf("\nTest 1: Flash erase page at 0x%x\n", TEST_PARTITION_OFFSET);
-	if (flash_erase(flash_dev, TEST_PARTITION_OFFSET, FLASH_PAGE_SIZE) != 0) {
-		printf("   Flash erase failed!\n");
-	} else {
-		printf("   Flash erase succeeded!\n");
-	}
+	printf("\nTest 1: Internal storage erase page at 0x%x\n", TEST_PARTITION_OFFSET);
+	erase_when_needed(flash_dev,
+			  flash_params_get_erase_cap(&flash_params) & FLASH_ERASE_C_EXPLICIT,
+			  TEST_PARTITION_OFFSET, FLASH_PAGE_SIZE);
 
-	printf("\nTest 2: Flash write (word array 1)\n");
+	printf("\nTest 2: Internal storage write (word array 1)\n");
 	for (i = 0U; i < ARRAY_SIZE(buf_array_1); i++) {
 		offset = TEST_PARTITION_OFFSET + (i << 2);
 		printf("   Attempted to write %x at 0x%x\n", buf_array_1[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_1[i],
 					sizeof(uint32_t)) != 0) {
-			printf("   Flash write failed!\n");
+			printf("   Write failed!\n");
 			return 0;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					sizeof(uint32_t)) != 0) {
-			printf("   Flash read failed!\n");
+			printf("   Read failed!\n");
 			return 0;
 		}
 		printf("   Data read: %x\n", buf_word);
@@ -81,27 +118,24 @@ int main(void)
 	}
 
 	offset = TEST_PARTITION_OFFSET;
-	printf("\nTest 3: Flash erase (2 pages at 0x%x)\n", offset);
-	if (flash_erase(flash_dev, offset, FLASH_PAGE_SIZE * 2) != 0) {
-		printf("   Flash erase failed!\n");
-	} else {
-		printf("   Flash erase succeeded!\n");
-	}
-
-	printf("\nTest 4: Flash write (word array 2)\n");
+	printf("\nTest 3: Internal storage erase (2 pages at 0x%x)\n", offset);
+	erase_when_needed(flash_dev,
+			  flash_params_get_erase_cap(&flash_params) & FLASH_ERASE_C_EXPLICIT,
+			  offset, FLASH_PAGE_SIZE * 2);
+	printf("\nTest 4: Internal storage write (word array 2)\n");
 	for (i = 0U; i < ARRAY_SIZE(buf_array_2); i++) {
 		offset = TEST_PARTITION_OFFSET + (i << 2);
 		printf("   Attempted to write %x at 0x%x\n", buf_array_2[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_2[i],
 					sizeof(uint32_t)) != 0) {
-			printf("   Flash write failed!\n");
+			printf("   Write failed!\n");
 			return 0;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					sizeof(uint32_t)) != 0) {
-			printf("   Flash read failed!\n");
+			printf("   Read failed!\n");
 			return 0;
 		}
 		printf("   Data read: %x\n", buf_word);
@@ -112,12 +146,10 @@ int main(void)
 		}
 	}
 
-	printf("\nTest 5: Flash erase page at 0x%x\n", TEST_PARTITION_OFFSET);
-	if (flash_erase(flash_dev, TEST_PARTITION_OFFSET, FLASH_PAGE_SIZE) != 0) {
-		printf("   Flash erase failed!\n");
-	} else {
-		printf("   Flash erase succeeded!\n");
-	}
+	printf("\nTest 5: Internal storage erase page at 0x%x\n", TEST_PARTITION_OFFSET);
+	erase_when_needed(flash_dev,
+			  flash_params_get_erase_cap(&flash_params) & FLASH_ERASE_C_EXPLICIT,
+			  TEST_PARTITION_OFFSET, FLASH_PAGE_SIZE);
 
 	printf("\nTest 6: Non-word aligned write (word array 3)\n");
 	for (i = 0U; i < ARRAY_SIZE(buf_array_3); i++) {
@@ -126,13 +158,13 @@ int main(void)
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_3[i],
 					sizeof(uint32_t)) != 0) {
-			printf("   Flash write failed!\n");
+			printf("   Write failed!\n");
 			return 0;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					sizeof(uint32_t)) != 0) {
-			printf("   Flash read failed!\n");
+			printf("   Read failed!\n");
 			return 0;
 		}
 		printf("   Data read: %x\n", buf_word);
@@ -185,8 +217,7 @@ int main(void)
 #endif
 
 	printf("\nTest 8: Write block size API\n");
-	printf("   write-block-size = %u\n",
-	       flash_get_write_block_size(flash_dev));
+	printf("   write-block-size = %u\n", flash_params.write_block_size);
 
 	printf("\nFinished!\n");
 	return 0;

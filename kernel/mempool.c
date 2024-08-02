@@ -46,7 +46,8 @@ void k_free(void *ptr)
 
 	if (ptr != NULL) {
 		heap_ref = ptr;
-		ptr = --heap_ref;
+		--heap_ref;
+		ptr = heap_ref;
 
 		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_free, *heap_ref, heap_ref);
 
@@ -109,6 +110,41 @@ void *k_calloc(size_t nmemb, size_t size)
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_calloc, _SYSTEM_HEAP, ret);
+
+	return ret;
+}
+
+void *k_realloc(void *ptr, size_t size)
+{
+	struct k_heap *heap, **heap_ref;
+	void *ret;
+
+	if (size == 0) {
+		k_free(ptr);
+		return NULL;
+	}
+	if (ptr == NULL) {
+		return k_malloc(size);
+	}
+	heap_ref = ptr;
+	ptr = --heap_ref;
+	heap = *heap_ref;
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_realloc, heap, ptr);
+
+	if (size_add_overflow(size, sizeof(heap_ref), &size)) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_realloc, heap, ptr, NULL);
+		return NULL;
+	}
+
+	ret = k_heap_realloc(heap, ptr, size, K_NO_WAIT);
+
+	if (ret != NULL) {
+		heap_ref = ret;
+		ret = ++heap_ref;
+	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_realloc, heap, ptr, ret);
 
 	return ret;
 }

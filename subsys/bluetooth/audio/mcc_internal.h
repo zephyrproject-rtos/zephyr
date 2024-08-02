@@ -11,10 +11,15 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCP_INTERNAL_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCP_INTERNAL_
 
-#include <zephyr/types.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/mcs.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/services/ots.h>
-#include "../services/ots/ots_client_internal.h"
+#include <zephyr/types.h>
 
 struct mcs_instance_t *lookup_inst_by_conn(struct bt_conn *conn);
 

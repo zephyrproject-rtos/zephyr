@@ -213,6 +213,12 @@
 			#io-channel-cells = <1>;
 		};
 	};
+
+
+	bt_hci_silabs: bt_hci_silabs {
+		compatible = "silabs,bt-hci";
+		status = "disabled";
+	};
 };
 
 / {

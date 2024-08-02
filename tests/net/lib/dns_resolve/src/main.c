@@ -69,6 +69,12 @@ static struct k_sem wait_data2;
 static uint16_t current_dns_id;
 static struct dns_addrinfo addrinfo;
 
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
+#define EXPECTED_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
+#else
+#define EXPECTED_SERVER_COUNT (CONFIG_DNS_RESOLVER_MAX_SERVERS / 2)
+#endif
+
 /* this must be higher that the DNS_TIMEOUT */
 #define WAIT_TIME K_MSEC(DNS_TIMEOUT + 300)
 
@@ -104,6 +110,8 @@ static void net_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
+
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
 }
 
 static inline int get_slot_by_id(struct dns_resolve_context *ctx,
@@ -343,20 +351,21 @@ ZTEST(dns_resolve, test_dns_query_server_count)
 	struct dns_resolve_context *ctx = dns_resolve_get_default();
 	int i, count = 0;
 
-	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
+	for (i = 0; i < EXPECTED_SERVER_COUNT; i++) {
 		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
 			continue;
 		}
 
-		if (!ctx->servers[i].net_ctx) {
+		if (ctx->servers[i].sock < 0) {
 			continue;
 		}
 
 		count++;
 	}
 
-	zassert_equal(count, CONFIG_DNS_RESOLVER_MAX_SERVERS,
-		     "Invalid number of servers");
+	zassert_equal(count, EXPECTED_SERVER_COUNT,
+		      "Invalid number of servers (%d vs %d)",
+		      count, EXPECTED_SERVER_COUNT);
 }
 
 ZTEST(dns_resolve, test_dns_query_ipv4_server_count)
@@ -364,12 +373,16 @@ ZTEST(dns_resolve, test_dns_query_ipv4_server_count)
 	struct dns_resolve_context *ctx = dns_resolve_get_default();
 	int i, count = 0, port = 0;
 
+	if (!IS_ENABLED(CONFIG_NET_IPV4)) {
+		return;
+	}
+
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
 		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
 			continue;
 		}
 
-		if (!ctx->servers[i].net_ctx) {
+		if (ctx->servers[i].sock < 0) {
 			continue;
 		}
 
@@ -399,7 +412,7 @@ ZTEST(dns_resolve, test_dns_query_ipv6_server_count)
 			continue;
 		}
 
-		if (!ctx->servers[i].net_ctx) {
+		if (ctx->servers[i].sock < 0) {
 			continue;
 		}
 
@@ -622,8 +635,7 @@ ZTEST(dns_resolve, test_dns_query_ipv4)
 	}
 }
 
-#if defined(TEMPORARILY_DISABLED_TEST)
-static void test_dns_query_ipv6(void)
+ZTEST(dns_resolve, test_dns_query_ipv6)
 {
 	struct expected_status status = {
 		.status1 = DNS_EAI_INPROGRESS,
@@ -650,7 +662,6 @@ static void test_dns_query_ipv6(void)
 		zassert_true(false, "Timeout while waiting data");
 	}
 }
-#endif
 
 struct expected_addr_status {
 	struct sockaddr addr;
@@ -675,10 +686,12 @@ void dns_result_numeric_cb(enum dns_resolve_status status,
 	}
 
 	if (info && info->ai_family == AF_INET) {
+#if defined(CONFIG_NET_IPV4)
 		if (net_ipv4_addr_cmp(&net_sin(&info->ai_addr)->sin_addr,
 				      &my_addr2) != true) {
 			zassert_true(false, "IPv4 address does not match");
 		}
+#endif
 	}
 
 	if (info && info->ai_family == AF_INET6) {
@@ -721,8 +734,7 @@ ZTEST(dns_resolve, test_dns_query_ipv4_numeric)
 	}
 }
 
-#if defined(TEMPORARILY_DISABLED_TEST)
-static void test_dns_query_ipv6_numeric(void)
+ZTEST(dns_resolve, test_dns_query_ipv6_numeric)
 {
 	struct expected_addr_status status = {
 		.status1 = DNS_EAI_INPROGRESS,
@@ -749,6 +761,5 @@ static void test_dns_query_ipv6_numeric(void)
 		zassert_true(false, "Timeout while waiting data");
 	}
 }
-#endif
 
 ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);

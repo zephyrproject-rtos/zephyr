@@ -19,17 +19,18 @@ supported:
   - arduino_i2c
   - arduino_serial
   - arduino_spi
+  - adc
+  - can
   - counter
   - display
   - dma
   - gpio
   - i2c
   - netif:eth
+  - pwm
   - sdhc
   - spi
   - usb_device
-  - dma
-  - can
+  - usbd
   - watchdog
-  - adc
 vendor: nxp

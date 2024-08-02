@@ -23,6 +23,14 @@ if(CONFIG_ARM)
   endif()
 endif()
 
+if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA)
+    list(APPEND ext_names pre_located)
+endif()
+
+if (CONFIG_LLEXT_STORAGE_WRITABLE)
+    list(APPEND ext_names find_section)
+endif()
+
 # generate extension targets foreach extension given by 'ext_names'
 foreach(ext_name ${ext_names})
   set(ext_src ${PROJECT_SOURCE_DIR}/src/${ext_name}_ext.c)
@@ -35,12 +43,25 @@ foreach(ext_name ${ext_names})
   generate_inc_file_for_target(app ${ext_bin} ${ext_inc})
 endforeach()
 
-# Add a dummy custom processing command to test add_llext_command
-get_target_property(proc_in_file hello_world_ext lib_output)
-get_target_property(proc_out_file hello_world_ext pkg_input)
-add_llext_command(
-  TARGET hello_world_ext
-  POST_BUILD
-  COMMAND echo "dummy patching ${proc_in_file} to create ${proc_out_file}"
-  COMMAND ${CMAKE_COMMAND} -E copy ${proc_in_file} ${proc_out_file}
-)
+if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT)
+  add_llext_target(multi_file_ext
+    OUTPUT  ${ZEPHYR_BINARY_DIR}/multi_file.llext
+    SOURCES ${PROJECT_SOURCE_DIR}/src/multi_file_ext1.c ${PROJECT_SOURCE_DIR}/src/multi_file_ext2.c
+  )
+  generate_inc_file_for_target(app ${ZEPHYR_BINARY_DIR}/multi_file.llext
+    ${ZEPHYR_BINARY_DIR}/include/generated/multi_file.inc
+  )
+endif()
+
+if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA)
+  # Manually fix the pre_located extension's text address at a multiple of 4
+  get_target_property(pre_located_target pre_located_ext lib_target)
+  get_target_property(pre_located_file pre_located_ext pkg_input)
+  add_llext_command(
+    TARGET pre_located_ext
+    POST_BUILD
+    COMMAND ${CMAKE_C_COMPILER}
+    -Wl,-r -Wl,-Ttext=0xbada110c -nostdlib -nodefaultlibs -nostartfiles
+    $<TARGET_OBJECTS:${pre_located_target}> -o ${pre_located_file}
+  )
+endif()

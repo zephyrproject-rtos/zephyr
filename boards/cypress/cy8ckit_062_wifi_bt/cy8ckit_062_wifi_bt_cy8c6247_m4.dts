@@ -6,7 +6,8 @@
 
 /dts-v1/;
 
-#include <cypress/psoc6_cm4.dtsi>
+#include <infineon/cat1a/legacy/psoc6_cm4.dtsi>
+#include "cy8ckit_062_wifi_bt_cy8c6247-pinctrl.dtsi"
 
 / {
 	model = "cy8ckit_062_wifi_bt_m4 with a Cypress PSoC6 SoC";
@@ -28,5 +29,6 @@
 	status = "okay";
 	current-speed = <115200>;
 
-	pinctrl-0 = <&p5_0_uart5_rx &p5_1_uart5_tx>;
+	pinctrl-0 = <&p5_0_scb5_uart_rx &p5_1_scb5_uart_tx>;
+	pinctrl-names = "default";
 };

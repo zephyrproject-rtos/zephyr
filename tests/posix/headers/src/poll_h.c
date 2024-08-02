@@ -36,7 +36,7 @@ ZTEST(posix_headers, test_poll_h)
 	zassert_not_equal(-1, POLLHUP);
 	zassert_not_equal(-1, POLLNVAL);
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_POSIX_DEVICE_IO)) {
 		zassert_not_null(poll);
 	}
 }

@@ -18,6 +18,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/reset.h>
 
 LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
 
@@ -37,6 +38,7 @@ struct spi_mcux_config {
 	uint32_t transfer_delay;
 	uint32_t def_char;
 	const struct pinctrl_dev_config *pincfg;
+	const struct reset_dt_spec reset;
 };
 
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
@@ -398,7 +400,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		if (last_packet  &&
 		    ((word_size > 8) ? (len > 2U) : (len > 1U))) {
 			spi_mcux_prepare_txdummy(&data->last_word, last_packet, spi_cfg);
-			blk_cfg->source_gather_en = 1;
 			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
 			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 			blk_cfg->block_size = (word_size > 8) ?
@@ -432,7 +433,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		 */
 		if (last_packet  &&
 		    ((word_size > 8) ? (len > 2U) : (len > 1U))) {
-			blk_cfg->source_gather_en = 1;
 			blk_cfg->source_address = (uint32_t)buf;
 			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 			blk_cfg->block_size = (word_size > 8) ?
@@ -636,7 +636,7 @@ static int transceive_dma(const struct device *dev,
 		/* at this point, last just means whether or not
 		 * this transfer will completely cover
 		 * the current tx/rx buffer in data->ctx
-		 * or require additional transfers because the
+		 * or require additional transfers because
 		 * the two buffers are not the same size.
 		 *
 		 * if it covers the current ctx tx/rx buffers, then
@@ -764,9 +764,19 @@ static int spi_mcux_release(const struct device *dev,
 
 static int spi_mcux_init(const struct device *dev)
 {
-	int err;
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
+	int err = 0;
+
+	if (!device_is_ready(config->reset.dev)) {
+		LOG_ERR("Reset device not ready");
+		return -ENODEV;
+	}
+
+	err = reset_line_toggle(config->reset.dev, config->reset.id);
+	if (err) {
+		return err;
+	}
 
 	config->irq_config_func(dev);
 
@@ -866,6 +876,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.transfer_delay = DT_INST_PROP_OR(id, transfer_delay, 0),		\
 		.def_char = DT_INST_PROP_OR(id, def_char, 0),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
+		.reset = RESET_DT_SPEC_INST_GET(id),			\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\

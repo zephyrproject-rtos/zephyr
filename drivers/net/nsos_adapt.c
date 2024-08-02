@@ -10,14 +10,18 @@
  * Linux (bottom) side of NSOS (Native Simulator Offloaded Sockets).
  */
 
+#define _DEFAULT_SOURCE
+
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <poll.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -25,6 +29,7 @@
 #include "nsos_errno.h"
 #include "nsos_fcntl.h"
 #include "nsos_netdb.h"
+#include "nsos_socket.h"
 
 #include "board_soc.h"
 #include "irq_ctrl.h"
@@ -416,6 +421,7 @@ int nsos_adapt_accept(int fd, struct nsos_mid_sockaddr *addr_mid, size_t *addrle
 
 	err = sockaddr_to_nsos_mid(addr, addrlen, addr_mid, addrlen_mid);
 	if (err) {
+		close(ret);
 		return err;
 	}
 
@@ -511,6 +517,251 @@ int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
 	return ret;
 }
 
+static int nsos_adapt_getsockopt_int(int fd, int level, int optname,
+				     void *optval, size_t *nsos_mid_optlen)
+{
+	socklen_t optlen = *nsos_mid_optlen;
+	int ret;
+
+	ret = getsockopt(fd, level, optname, optval, &optlen);
+	if (ret < 0) {
+		return -errno_to_nsos_mid(errno);
+	}
+
+	*nsos_mid_optlen = optlen;
+
+	return 0;
+}
+
+int nsos_adapt_getsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
+			  void *nsos_mid_optval, size_t *nsos_mid_optlen)
+{
+	switch (nsos_mid_level) {
+	case NSOS_MID_SOL_SOCKET:
+		switch (nsos_mid_optname) {
+		case NSOS_MID_SO_ERROR: {
+			int err;
+			socklen_t optlen = sizeof(err);
+			int ret;
+
+			ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &optlen);
+			if (ret < 0) {
+				return -errno_to_nsos_mid(errno);
+			}
+
+			*(int *)nsos_mid_optval = errno_to_nsos_mid(err);
+
+			return 0;
+		}
+		case NSOS_MID_SO_TYPE: {
+			int type;
+			socklen_t optlen = sizeof(type);
+			int ret;
+			int err;
+
+			ret = getsockopt(fd, SOL_SOCKET, SO_TYPE, &type, &optlen);
+			if (ret < 0) {
+				return -errno_to_nsos_mid(errno);
+			}
+
+			err = socket_type_to_nsos_mid(type, nsos_mid_optval);
+			if (err) {
+				return err;
+			}
+
+			return 0;
+		}
+		case NSOS_MID_SO_PROTOCOL: {
+			int proto;
+			socklen_t optlen = sizeof(proto);
+			int ret;
+			int err;
+
+			ret = getsockopt(fd, SOL_SOCKET, SO_PROTOCOL, &proto, &optlen);
+			if (ret < 0) {
+				return -errno_to_nsos_mid(errno);
+			}
+
+			err = socket_proto_to_nsos_mid(proto, nsos_mid_optval);
+			if (err) {
+				return err;
+			}
+
+			return 0;
+		}
+		case NSOS_MID_SO_DOMAIN: {
+			int family;
+			socklen_t optlen = sizeof(family);
+			int ret;
+			int err;
+
+			ret = getsockopt(fd, SOL_SOCKET, SO_DOMAIN, &family, &optlen);
+			if (ret < 0) {
+				return -errno_to_nsos_mid(errno);
+			}
+
+			err = socket_family_to_nsos_mid(family, nsos_mid_optval);
+			if (err) {
+				return err;
+			}
+
+			return 0;
+		}
+		case NSOS_MID_SO_RCVBUF:
+			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_RCVBUF,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_SO_SNDBUF:
+			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_SNDBUF,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_SO_REUSEADDR:
+			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_REUSEADDR,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_SO_REUSEPORT:
+			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_REUSEPORT,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_SO_LINGER:
+			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_LINGER,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_SO_KEEPALIVE:
+			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_KEEPALIVE,
+							 nsos_mid_optval, nsos_mid_optlen);
+		}
+		break;
+
+	case NSOS_MID_IPPROTO_TCP:
+		switch (nsos_mid_optname) {
+		case NSOS_MID_TCP_NODELAY:
+			return nsos_adapt_getsockopt_int(fd, IPPROTO_TCP, TCP_NODELAY,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPIDLE:
+			return nsos_adapt_getsockopt_int(fd, IPPROTO_TCP, TCP_KEEPIDLE,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPINTVL:
+			return nsos_adapt_getsockopt_int(fd, IPPROTO_TCP, TCP_KEEPINTVL,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPCNT:
+			return nsos_adapt_getsockopt_int(fd, IPPROTO_TCP, TCP_KEEPCNT,
+							 nsos_mid_optval, nsos_mid_optlen);
+		}
+		break;
+
+	case NSOS_MID_IPPROTO_IPV6:
+		switch (nsos_mid_optname) {
+		case NSOS_MID_IPV6_V6ONLY:
+			return nsos_adapt_getsockopt_int(fd, IPPROTO_IPV6, IPV6_V6ONLY,
+							 nsos_mid_optval, nsos_mid_optlen);
+		}
+		break;
+	}
+
+	return -NSOS_MID_EOPNOTSUPP;
+}
+
+static int nsos_adapt_setsockopt_int(int fd, int level, int optname,
+				     const void *optval, size_t optlen)
+{
+	int ret;
+
+	ret = setsockopt(fd, level, optname, optval, optlen);
+	if (ret < 0) {
+		return -errno_to_nsos_mid(errno);
+	}
+
+	return 0;
+}
+
+int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
+			  const void *nsos_mid_optval, size_t nsos_mid_optlen)
+{
+	switch (nsos_mid_level) {
+	case NSOS_MID_SOL_SOCKET:
+		switch (nsos_mid_optname) {
+		case NSOS_MID_SO_PRIORITY:
+			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_PRIORITY,
+							 nsos_mid_optval, nsos_mid_optlen);
+
+		case NSOS_MID_SO_RCVTIMEO: {
+			const struct nsos_mid_timeval *nsos_mid_tv = nsos_mid_optval;
+			struct timeval tv = {
+				.tv_sec = nsos_mid_tv->tv_sec,
+				.tv_usec = nsos_mid_tv->tv_usec,
+			};
+			int ret;
+
+			ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
+					 &tv, sizeof(tv));
+			if (ret < 0) {
+				return -errno_to_nsos_mid(errno);
+			}
+
+			return 0;
+		}
+		case NSOS_MID_SO_SNDTIMEO: {
+			const struct nsos_mid_timeval *nsos_mid_tv = nsos_mid_optval;
+			struct timeval tv = {
+				.tv_sec = nsos_mid_tv->tv_sec,
+				.tv_usec = nsos_mid_tv->tv_usec,
+			};
+			int ret;
+
+			ret = setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
+					 &tv, sizeof(tv));
+			if (ret < 0) {
+				return -errno_to_nsos_mid(errno);
+			}
+
+			return 0;
+		}
+		case NSOS_MID_SO_RCVBUF:
+			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_RCVBUF,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_SO_SNDBUF:
+			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_SNDBUF,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_SO_REUSEADDR:
+			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_REUSEADDR,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_SO_REUSEPORT:
+			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_REUSEPORT,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_SO_LINGER:
+			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_LINGER,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_SO_KEEPALIVE:
+			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_KEEPALIVE,
+							 nsos_mid_optval, nsos_mid_optlen);
+		}
+		break;
+
+	case NSOS_MID_IPPROTO_TCP:
+		switch (nsos_mid_optname) {
+		case NSOS_MID_TCP_NODELAY:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_TCP, TCP_NODELAY,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPIDLE:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_TCP, TCP_KEEPIDLE,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPINTVL:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_TCP, TCP_KEEPINTVL,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPCNT:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_TCP, TCP_KEEPCNT,
+							 nsos_mid_optval, nsos_mid_optlen);
+		}
+		break;
+
+	case NSOS_MID_IPPROTO_IPV6:
+		switch (nsos_mid_optname) {
+		case NSOS_MID_IPV6_V6ONLY:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_V6ONLY,
+							 nsos_mid_optval, nsos_mid_optlen);
+		}
+		break;
+	}
+
+	return -NSOS_MID_EOPNOTSUPP;
+}
+
 #define MAP_POLL_EPOLL(_event_from, _event_to)	\
 	if (events_from & (_event_from)) {	\
 		events_from &= ~(_event_from);	\
@@ -524,6 +775,7 @@ static int nsos_poll_to_epoll_events(int events_from)
 	MAP_POLL_EPOLL(POLLIN, EPOLLIN);
 	MAP_POLL_EPOLL(POLLOUT, EPOLLOUT);
 	MAP_POLL_EPOLL(POLLERR, EPOLLERR);
+	MAP_POLL_EPOLL(POLLHUP, EPOLLHUP);
 
 	return events_to;
 }
@@ -535,6 +787,7 @@ static int nsos_epoll_to_poll_events(int events_from)
 	MAP_POLL_EPOLL(EPOLLIN, POLLIN);
 	MAP_POLL_EPOLL(EPOLLOUT, POLLOUT);
 	MAP_POLL_EPOLL(EPOLLERR, POLLERR);
+	MAP_POLL_EPOLL(EPOLLHUP, POLLHUP);
 
 	return events_to;
 }
@@ -757,6 +1010,30 @@ int nsos_adapt_fcntl_setfl(int fd, int flags)
 	}
 
 	return 0;
+}
+
+int nsos_adapt_fionread(int fd, int *avail)
+{
+	int ret;
+
+	ret = ioctl(fd, FIONREAD, avail);
+	if (ret < 0) {
+		return -errno_to_nsos_mid(errno);
+	}
+
+	return 0;
+}
+
+int nsos_adapt_dup(int oldfd)
+{
+	int ret;
+
+	ret = dup(oldfd);
+	if (ret < 0) {
+		return -errno_to_nsos_mid(errno);
+	}
+
+	return ret;
 }
 
 static void nsos_adapt_init(void)

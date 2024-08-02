@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2024 Nordic Semiconductor ASA
  * Copyright (c) 2016 Linaro Limited
  * Copyright (c) 2016 Intel Corporation
  *
@@ -184,7 +184,7 @@ static int flash_nrf_write(const struct device *dev, off_t addr,
 		return -EINVAL;
 	}
 
-#if !IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
+#if !defined(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	if (!is_aligned_32(addr) || (len % sizeof(uint32_t))) {
 		LOG_ERR("not word-aligned: 0x%08lx:%zu",
 				(unsigned long)addr, len);

@@ -118,6 +118,12 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | eLCDIF. Tested with                 |
+|           |            | :ref:`rk043fn02h_ct`, and           |
+|           |            | :ref:`rk043fn66hs_ctg` shields      |
++-----------+------------+-------------------------------------+
+| UART      | NXP NW61x  | M.2 WIFI/BT module                  |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in
 :zephyr_file:`boards/nxp/mimxrt1040_evk/mimxrt1040_evk_defconfig`
@@ -158,6 +164,14 @@ The MIMXRT1040 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_01 | LPI2C1_SDA      | I2C Data                  |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_06 | LPUART3_TX      | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_07 | LPUART3_RX      | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_04 | LPUART3_CTS_b   | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_05 | LPUART3_RTS_b   | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
 
 .. note::
         In order to use the SPI peripheral on this board, resistors R350, R346,
@@ -178,60 +192,44 @@ Serial Port
 ===========
 
 The MIMXRT1040 SoC has eight UARTs. ``LPUART1`` is configured for the console,
+``LPUART3`` for the Bluetooth Host Controller Interface (BT HCI),
 and the remaining UARTs are not used.
 
+Fetch Binary Blobs
+==================
+
+The board Bluetooth/WiFi module requires fetching some binary blob files, to do
+that run the command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
+.. note:: Only Bluetooth functionality is currently supported.
 
 Programming and Debugging
 *************************
 
-Build and flash applications as usual (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
+This board supports 3 debug host tools. Please install your preferred host
+tool, then follow the instructions in `Configuring a Debug Probe`_ to
+configure the board appropriately.
+
+* :ref:`jlink-debug-host-tools` (Default, Supported by NXP)
+* :ref:`linkserver-debug-host-tools` (Supported by NXP)
+* :ref:`pyocd-debug-host-tools` (Not supported by NXP)
+
+Once the host tool and board are configured, build and flash applications
+as usual (see :ref:`build_an_application` and :ref:`application_run` for more
+details).
 
 Configuring a Debug Probe
 =========================
 
-Programming and Debugging
-*************************
+For the RT1040, J9/J10 are the SWD isolation jumpers, J12 is the DFU
+mode jumper, and J2 is the 20 pin JTAG/SWD header.
 
-Build and flash applications as usual (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
-
-Configuring a Debug Probe
-=========================
-
-A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
-however the :ref:`pyocd-debug-host-tools` do not yet support programming the
-external flashes on this board so you must reconfigure the board for one of the
-following debug probes instead.
-
-Option 1: :ref:`opensda-jlink-onboard-debug-probe` (Recommended)
-----------------------------------------------------------------
-
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
-
-Check that jumpers J9 and J10 are **on** to ensure SWD signals are connected to
-the OpenSDA microcontroller. Then, follow the instructions in `NXP AN13206`_ to
-program a JLink based firmware to the LPC4322 based debugger on this board.
-
-Once the JLink based firmware is present on this board, the SOC will no longer
-be powered via the USB connection to J1. Move J40 to short pins 3 and 4 in
-order to use J48 for USB power, and connect another USB cable to power the SoC.
-LED D16 should illuminate to indicate the board is powered, and it should now be
-possible to program the SoC.
-
-Option 2: :ref:`jlink-external-debug-probe`
--------------------------------------------
-
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
-
-The board can be programmed using the :ref:`jlink-external-debug-probe`,
-provided the onboard debug circuit's SWD signals are isolated from the MCU.
-To do so, ensure that jumpers J9 and J10 are **off** (they are on by default
-when the board ships from the factory). The external probe's 20 pin connector
-can then be connected to J2 to program the SOC.
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst
+   :start-after: rt1xxx-lpclink2-probes
 
 Configuring a Console
 =====================
@@ -328,6 +326,16 @@ steps:
 
 #. Reset by pressing SW1
 
+Bluetooth Module
+----------------
+
+For Murate 2EL M.2 Mdoule, the following hardware rework needs to be applied,
+Solder 0 ohm resistors for R96, and R93.
+Remove resistors from R497, R498, R456 and R457.
+
+And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
+
+For the debugger fails to connect with the following error, please refer to section `WiFi Module`.
 
 WiFi Module
 -----------

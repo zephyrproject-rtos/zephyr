@@ -131,6 +131,21 @@ The board should boot into Linux and the binary will run and print Hello world t
 port.
 
 
+Debugging
+*********
+
+The board is equipped with an XDS110 JTAG debugger. To debug a binary, utilize the `debug` build target:
+
+.. zephyr-app-commands::
+   :zephyr-app: <my_app>
+   :board: phyboard_lyra/am6234/m4
+   :maybe-skip-config:
+   :goals: debug
+
+.. hint::
+   To utilize this feature, you'll need OpenOCD version 0.12 or higher. Due to the possibility of
+   older versions being available in package feeds, it's advisable to `build OpenOCD from source`_.
+
 
 .. _PHYTEC AM62x Product Page:
    https://www.phytec.com/product/phycore-am62x/
@@ -143,3 +158,6 @@ port.
 
 .. _phyBOARD SD Card Booting Essentials:
    https://docs.phytec.com/projects/yocto-phycore-am62x/en/bsp-yocto-ampliphy-am62x-pd23.2.1/bootingessentials/sdcard.html
+
+.. _build OpenOCD from source:
+   https://docs.u-boot.org/en/latest/board/ti/k3.html#building-openocd-from-source

@@ -8,6 +8,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <adsp_shim.h>
+#include <adsp_power.h>
 
 #if CONFIG_SOC_INTEL_ACE15_MTPM
 #include <adsp_power.h>
@@ -27,10 +28,10 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 	uint16_t SPA_bit_mask = BIT(bits->SPA_bit);
 
 	if (power_enable) {
-		sys_write16(sys_read16((mem_addr_t)&ACE_DfPMCCU.dfpwrctl) | SPA_bit_mask,
-			    (mem_addr_t)&ACE_DfPMCCU.dfpwrctl);
+		sys_write16(sys_read16((mem_addr_t)ACE_PWRCTL) | SPA_bit_mask,
+			    (mem_addr_t)ACE_PWRCTL);
 
-		if (!WAIT_FOR(sys_read16((mem_addr_t)&ACE_DfPMCCU.dfpwrsts) & BIT(bits->CPA_bit),
+		if (!WAIT_FOR(sys_read16((mem_addr_t)ACE_PWRSTS) & BIT(bits->CPA_bit),
 		    10000, k_busy_wait(1))) {
 			return -EIO;
 		}
@@ -46,8 +47,8 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 				return -EINVAL;
 		}
 #endif
-		sys_write16(sys_read16((mem_addr_t)&ACE_DfPMCCU.dfpwrctl) & ~(SPA_bit_mask),
-			    (mem_addr_t)&ACE_DfPMCCU.dfpwrctl);
+		sys_write16(sys_read16((mem_addr_t)ACE_PWRCTL) & ~(SPA_bit_mask),
+			    (mem_addr_t)ACE_PWRCTL);
 	}
 
 	return 0;

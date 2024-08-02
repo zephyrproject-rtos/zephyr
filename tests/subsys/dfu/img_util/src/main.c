@@ -73,7 +73,7 @@ ZTEST(img_util, test_collecting)
 			       sizeof(erase_buf));
 	zassert_true(ret == 0, "Flash write failure (%d)", ret);
 #else
-	ret = flash_area_erase(ctx.flash_area, 0, ctx.flash_area->fa_size);
+	ret = flash_area_flatten(ctx.flash_area, 0, ctx.flash_area->fa_size);
 	zassert_true(ret == 0, "Flash erase failure (%d)", ret);
 #endif
 
@@ -137,7 +137,7 @@ ZTEST(img_util, test_check_flash)
 
 	ret = flash_img_init_id(&ctx, SLOT1_PARTITION_ID);
 	zassert_true(ret == 0, "Flash img init 1");
-	ret = flash_area_erase(ctx.flash_area, 0, ctx.flash_area->fa_size);
+	ret = flash_area_flatten(ctx.flash_area, 0, ctx.flash_area->fa_size);
 	zassert_true(ret == 0, "Flash erase failure (%d)\n", ret);
 	ret = flash_img_buffered_write(&ctx, tst_vec, sizeof(tst_vec), true);
 	zassert_true(ret == 0, "Flash img buffered write\n");

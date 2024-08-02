@@ -23,6 +23,21 @@ config CAN_INIT_PRIORITY
 	help
 	  CAN driver device initialization priority.
 
+config CAN_DEFAULT_BITRATE
+	int "Default CAN bitrate"
+	default 125000
+	help
+	  Default initial CAN bitrate in bits/s. This can be overridden per CAN controller using the
+	  "bitrate" devicetree property.
+
+config CAN_DEFAULT_BITRATE_DATA
+	int "Default CAN data phase bitrate"
+	default 1000000
+	depends on CAN_FD_MODE
+	help
+	  Default initial CAN data phase bitrate in bits/s. This can be overridden per CAN controller
+	  using the "bitrate-data" devicetree property.
+
 config CAN_SHELL
 	bool "CAN shell"
 	depends on SHELL
@@ -45,6 +60,13 @@ config CAN_SHELL_RX_QUEUE_SIZE
 	range 1 256
 	help
 	  Maximum number of CAN frames in the CAN shell receive queue.
+
+config CAN_SHELL_SCRIPTING_FRIENDLY
+	bool "Produce scripting-friendly output"
+	help
+	  Enable scripting-friendly/machine-readable output from the CAN shell. Enabling this
+	  bypasses the shell when printing certain outputs to ensure the output is not interleaved
+	  with the shell prompt.
 
 endif # CAN_SHELL
 
@@ -107,6 +129,7 @@ source "drivers/can/Kconfig.nxp_s32"
 source "drivers/can/Kconfig.tcan4x5x"
 source "drivers/can/Kconfig.mcp251xfd"
 source "drivers/can/Kconfig.xmc4xxx"
+source "drivers/can/Kconfig.nrf"
 
 source "drivers/can/transceiver/Kconfig"
 

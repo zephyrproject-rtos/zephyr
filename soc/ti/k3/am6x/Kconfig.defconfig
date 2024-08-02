@@ -42,4 +42,7 @@ endif # SERIAL
 config BUILD_OUTPUT_BIN
 	default n if SOC_SERIES_AM6X_M4
 
+config BUILD_NO_GAP_FILL
+	default y if SOC_SERIES_AM6X_M4
+
 endif # SOC_SERIES_AM6X

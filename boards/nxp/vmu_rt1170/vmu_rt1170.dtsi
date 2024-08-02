@@ -5,6 +5,7 @@
  */
 
 #include "vmu_rt1170-pinctrl.dtsi"
+#include <nxp/nxp_rt1170.dtsi>
 
 / {
 	aliases {
@@ -97,8 +98,26 @@
 	status = "okay";
 };
 
-&enet1g {
-	pinctrl-0 = <&pinmux_enet>;
+&enet1g_mac {
+	pinctrl-0 = <&pinmux_enet1g>;
+	pinctrl-names = "default";
+	phy-handle = <&enet1g_phy>;
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+};
+
+&enet1g_mdio {
+	pinctrl-0 = <&pinmux_enet1g_mdio>;
+	pinctrl-names = "default";
+	enet1g_phy: phy@1 {
+		compatible = "nxp,tja1103";
+		reg = <1>;
+		master-slave = "master";
+	};
+};
+
+&enet1g_ptp_clock {
+	pinctrl-0 = <&pinmux_enet1g_ptp>;
 	pinctrl-names = "default";
 };
 
@@ -177,7 +196,7 @@
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
 	mx25um51345g: mx25um51345g@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
 		/* MX25UM51245G is 64MB, 512MBit flash part */
@@ -193,22 +212,24 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+			/* The MCUBoot swap-move algorithm uses the last 14 sectors
+			 * of the primary slot0 for swap status and move.
+			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 DT_SIZE_K(3076)>;
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(56))>;
 			};
-			slot1_partition: partition@321000 {
+			slot1_partition: partition@32E000 {
 				label = "image-1";
-				reg = <0x00321000 DT_SIZE_K(3072)>;
+				reg = <0x0032E000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@621000 {
+			storage_partition: partition@62E000 {
 				label = "storage";
-				reg = <0x00621000 DT_SIZE_M(57)>;
+				reg = <0x0062E000 (DT_SIZE_M(58) - DT_SIZE_K(184))>;
 			};
 		};
 	};

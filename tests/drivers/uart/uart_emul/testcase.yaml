@@ -2,7 +2,17 @@ common:
   tags:
     - drivers
     - uart
+  platform_allow:
+    - qemu_x86
+    - native_sim
+  extra_args: DTC_OVERLAY_FILE="uart_emul.overlay"
   harness: ztest
 tests:
-  drivers.uart.emul.polling:
-    platform_allow: qemu_x86
+  drivers.uart.emul.polling: {}
+  drivers.uart.emul.interrupt_driven:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+  drivers.uart.emul.async:
+    extra_configs:
+      - CONFIG_EVENTS=y
+      - CONFIG_UART_ASYNC_API=y

@@ -189,6 +189,24 @@ static const char *enabled2str(bool enabled)
 
 #endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
 
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+static const char *plm_report_zone_str(enum bt_conn_le_path_loss_zone zone)
+{
+	switch (zone) {
+	case BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_LOW:
+		return "Entered low zone";
+	case BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_MIDDLE:
+		return "Entered middle zone";
+	case BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_HIGH:
+		return "Entered high zone";
+	case BT_CONN_LE_PATH_LOSS_ZONE_UNAVAILABLE:
+		return "Path loss unavailable";
+	default:
+		return "Unknown";
+	}
+}
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
+
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_scan_off(const struct shell *sh);
 static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[]);
@@ -241,15 +259,7 @@ int ead_update_ad(void);
 
 static bool bt_shell_ead_decrypt_scan;
 
-/**
- * @brief Compares two strings without case sensitivy
- *
- * @param substr The substring
- * @param str The string to find the substring in
- *
- * @return true if @substr is a substring of @p, else false
- */
-static bool is_substring(const char *substr, const char *str)
+bool is_substring(const char *substr, const char *str)
 {
 	const size_t str_len = strlen(str);
 	const size_t sub_str_len = strlen(substr);
@@ -955,6 +965,14 @@ void tx_power_report(struct bt_conn *conn,
 }
 #endif
 
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+void path_loss_threshold_report(struct bt_conn *conn,
+				const struct bt_conn_le_path_loss_threshold_report *report)
+{
+	shell_print(ctx_shell, "Path Loss Threshold event: Zone: %s, Path loss dbm: %d",
+		    plm_report_zone_str(report->zone), report->path_loss);
+}
+#endif
 
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
@@ -978,6 +996,9 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 #if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
 	.tx_power_report = tx_power_report,
+#endif
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+	.path_loss_threshold_report = path_loss_threshold_report,
 #endif
 };
 #endif /* CONFIG_BT_CONN */
@@ -1223,6 +1244,11 @@ static int cmd_hci_cmd(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		buf = bt_hci_cmd_create(BT_OP(ogf, ocf), len);
+		if (buf == NULL) {
+			shell_error(sh, "Unable to allocate HCI buffer");
+			return -ENOMEM;
+		}
+
 		net_buf_add_mem(buf, hex_data, len);
 	}
 
@@ -2876,7 +2902,7 @@ static int cmd_read_local_tx_power(const struct shell *sh, size_t argc, char *ar
 		}
 		err = bt_conn_le_get_tx_power_level(default_conn, &tx_power_level);
 		if (err) {
-			shell_print(sh, "Commad returned error error %d", err);
+			shell_print(sh, "Command returned error %d", err);
 			return err;
 		}
 		if (tx_power_level.current_level == unachievable_current_level) {
@@ -2927,6 +2953,70 @@ static int cmd_set_power_report_enable(const struct shell *sh, size_t argc, char
 	return 0;
 }
 
+#endif
+
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+static int cmd_set_path_loss_reporting_parameters(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	for (size_t argn = 1; argn < argc; argn++) {
+		(void)shell_strtoul(argv[argn], 10, &err);
+
+		if (err) {
+			shell_help(sh);
+			shell_error(sh, "Could not parse input number %d", argn);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	const struct bt_conn_le_path_loss_reporting_param params = {
+		.high_threshold = shell_strtoul(argv[1], 10, &err),
+		.high_hysteresis = shell_strtoul(argv[2], 10, &err),
+		.low_threshold = shell_strtoul(argv[3], 10, &err),
+		.low_hysteresis = shell_strtoul(argv[4], 10, &err),
+		.min_time_spent = shell_strtoul(argv[5], 10, &err),
+	};
+
+	err = bt_conn_le_set_path_loss_mon_param(default_conn, &params);
+	if (err) {
+		shell_error(sh, "bt_conn_le_set_path_loss_mon_param returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_set_path_loss_reporting_enable(const struct shell *sh, size_t argc, char *argv[])
+{
+	bool enable;
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	enable = shell_strtobool(argv[1], 10, &err);
+	if (err) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	err = bt_conn_le_set_path_loss_mon_enable(default_conn, enable);
+
+	if (err) {
+		shell_error(sh, "bt_conn_le_set_path_loss_mon_enable returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
 #endif
 
 
@@ -4403,7 +4493,7 @@ static int cmd_encrypted_ad_add_ad(const struct shell *sh, size_t argc, char *ar
 	 */
 	if (len != ad_len + 2) {
 		shell_error(sh,
-			    "Failed to add data. Data need to be formated as specified in the "
+			    "Failed to add data. Data need to be formatted as specified in the "
 			    "Core Spec. Only one non-encrypted AD payload can be added at a time.");
 		return -ENOEXEC;
 	}
@@ -4618,6 +4708,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(read-remote-tx-power, NULL, HELP_NONE, cmd_read_remote_tx_power, 2, 0),
 	SHELL_CMD_ARG(read-local-tx-power, NULL, HELP_NONE, cmd_read_local_tx_power, 2, 0),
 	SHELL_CMD_ARG(set-power-report-enable, NULL, HELP_NONE, cmd_set_power_report_enable, 3, 0),
+#endif
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+	SHELL_CMD_ARG(path-loss-monitoring-set-params, NULL,
+		      "<high threshold> <high hysteresis> <low threshold> <low hysteresis> <min time spent>",
+		      cmd_set_path_loss_reporting_parameters, 6, 0),
+	SHELL_CMD_ARG(path-loss-monitoring-enable, NULL, "<enable: true, false>",
+		      cmd_set_path_loss_reporting_enable, 2, 0),
 #endif
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,

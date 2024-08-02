@@ -45,7 +45,6 @@ config TFM_PARTITION_INITIAL_ATTESTATION
 	bool "Secure partition 'Initial Attestation'"
 	depends on TFM_PARTITION_CRYPTO
 	depends on TFM_INITIAL_ATTESTATION_KEY
-	default n
 	help
 	  Setting this option will cause '-DTFM_PARTITION_INITIAL_ATTESTATION'
 	  to be passed to the TF-M build system. Look at 'config_default.cmake'

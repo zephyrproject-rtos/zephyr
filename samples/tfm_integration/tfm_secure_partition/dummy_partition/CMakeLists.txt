@@ -36,6 +36,7 @@ target_link_libraries(tfm_app_rot_partition_dp
     PRIVATE
         platform_s
         tfm_sprt
+        psa_crypto_config
 )
 
 target_link_libraries(tfm_spm

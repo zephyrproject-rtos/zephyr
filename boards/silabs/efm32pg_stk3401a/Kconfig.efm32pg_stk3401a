@@ -1,7 +1,0 @@
-# EFM32PG STK3401A board
-
-# Copyright (c) 2020, Rafael Dias Menezes <rdmeneze@gmail.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_EFM32PG_STK3401A
-	select SOC_PART_NUMBER_EFM32PG1B200F256GM48

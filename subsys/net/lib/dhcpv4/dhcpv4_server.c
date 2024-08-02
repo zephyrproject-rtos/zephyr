@@ -691,9 +691,8 @@ static int dhcpv4_get_client_id(struct dhcp_msg *msg, uint8_t *options,
 	}
 
 	client_id->buf[0] = msg->htype;
-	client_id->buf[1] = msg->hlen;
-	memcpy(client_id->buf + 2, msg->chaddr, msg->hlen);
-	client_id->len = msg->hlen + 2;
+	memcpy(client_id->buf + 1, msg->chaddr, msg->hlen);
+	client_id->len = msg->hlen + 1;
 
 	return 0;
 }
@@ -737,7 +736,7 @@ static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 			      void *user_data)
 {
 	struct dhcpv4_server_ctx *ctx = user_data;
-	struct dhcpv4_server_probe_ctx *probe_ctx = &ctx->probe_ctx;
+	struct dhcpv4_server_probe_ctx *probe_ctx;
 	struct dhcpv4_addr_slot *new_slot = NULL;
 	struct in_addr peer_addr;
 
@@ -747,6 +746,12 @@ static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 	ARG_UNUSED(icmp_hdr);
 
 	k_mutex_lock(&server_lock, K_FOREVER);
+
+	if (ctx == NULL) {
+		goto out;
+	}
+
+	probe_ctx = &ctx->probe_ctx;
 
 	if (probe_ctx->slot == NULL) {
 		goto out;
@@ -948,7 +953,7 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 
 		memcpy(&giaddr, msg->giaddr, sizeof(giaddr));
 		if (!net_ipv4_is_addr_unspecified(&giaddr)) {
-			/* Only addresses in local subnet supproted for now. */
+			/* Only addresses in local subnet supported for now. */
 			return;
 		}
 
@@ -1520,7 +1525,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 	}
 
 	if (slot < 0) {
-		LOG_ERR("No free DHCPv4 server intance.");
+		LOG_ERR("No free DHCPv4 server instance.");
 		ret = -ENOMEM;
 		goto error;
 	}

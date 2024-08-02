@@ -22,16 +22,16 @@ static int icm42688_get_shift(enum sensor_channel channel, int accel_fs, int gyr
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
 		switch (accel_fs) {
-		case ICM42688_ACCEL_FS_2G:
+		case ICM42688_DT_ACCEL_FS_2:
 			*shift = 5;
 			return 0;
-		case ICM42688_ACCEL_FS_4G:
+		case ICM42688_DT_ACCEL_FS_4:
 			*shift = 6;
 			return 0;
-		case ICM42688_ACCEL_FS_8G:
+		case ICM42688_DT_ACCEL_FS_8:
 			*shift = 7;
 			return 0;
-		case ICM42688_ACCEL_FS_16G:
+		case ICM42688_DT_ACCEL_FS_16:
 			*shift = 8;
 			return 0;
 		default:
@@ -42,28 +42,28 @@ static int icm42688_get_shift(enum sensor_channel channel, int accel_fs, int gyr
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
 		switch (gyro_fs) {
-		case ICM42688_GYRO_FS_15_625:
+		case ICM42688_DT_GYRO_FS_15_625:
 			*shift = -1;
 			return 0;
-		case ICM42688_GYRO_FS_31_25:
+		case ICM42688_DT_GYRO_FS_31_25:
 			*shift = 0;
 			return 0;
-		case ICM42688_GYRO_FS_62_5:
+		case ICM42688_DT_GYRO_FS_62_5:
 			*shift = 1;
 			return 0;
-		case ICM42688_GYRO_FS_125:
+		case ICM42688_DT_GYRO_FS_125:
 			*shift = 2;
 			return 0;
-		case ICM42688_GYRO_FS_250:
+		case ICM42688_DT_GYRO_FS_250:
 			*shift = 3;
 			return 0;
-		case ICM42688_GYRO_FS_500:
+		case ICM42688_DT_GYRO_FS_500:
 			*shift = 4;
 			return 0;
-		case ICM42688_GYRO_FS_1000:
+		case ICM42688_DT_GYRO_FS_1000:
 			*shift = 5;
 			return 0;
-		case ICM42688_GYRO_FS_2000:
+		case ICM42688_DT_GYRO_FS_2000:
 			*shift = 6;
 			return 0;
 		default:
@@ -178,7 +178,7 @@ static uint8_t icm42688_encode_channel(enum sensor_channel chan)
 	return encode_bmask;
 }
 
-int icm42688_encode(const struct device *dev, const enum sensor_channel *const channels,
+int icm42688_encode(const struct device *dev, const struct sensor_chan_spec *const channels,
 		    const size_t num_channels, uint8_t *buf)
 {
 	struct icm42688_dev_data *data = dev->data;
@@ -187,7 +187,7 @@ int icm42688_encode(const struct device *dev, const enum sensor_channel *const c
 	edata->channels = 0;
 
 	for (int i = 0; i < num_channels; i++) {
-		edata->channels |= icm42688_encode_channel(channels[i]);
+		edata->channels |= icm42688_encode_channel(channels[i].chan_type);
 	}
 
 	edata->header.is_fifo = false;
@@ -241,43 +241,43 @@ static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int 
 
 	if (is_accel) {
 		switch (fs) {
-		case ICM42688_ACCEL_FS_2G:
+		case ICM42688_DT_ACCEL_FS_2:
 			scale = INT64_C(2) * BIT(31 - 5) * 9.80665;
 			break;
-		case ICM42688_ACCEL_FS_4G:
+		case ICM42688_DT_ACCEL_FS_4:
 			scale = INT64_C(4) * BIT(31 - 6) * 9.80665;
 			break;
-		case ICM42688_ACCEL_FS_8G:
+		case ICM42688_DT_ACCEL_FS_8:
 			scale = INT64_C(8) * BIT(31 - 7) * 9.80665;
 			break;
-		case ICM42688_ACCEL_FS_16G:
+		case ICM42688_DT_ACCEL_FS_16:
 			scale = INT64_C(16) * BIT(31 - 8) * 9.80665;
 			break;
 		}
 	} else {
 		switch (fs) {
-		case ICM42688_GYRO_FS_2000:
+		case ICM42688_DT_GYRO_FS_2000:
 			scale = 164;
 			break;
-		case ICM42688_GYRO_FS_1000:
+		case ICM42688_DT_GYRO_FS_1000:
 			scale = 328;
 			break;
-		case ICM42688_GYRO_FS_500:
+		case ICM42688_DT_GYRO_FS_500:
 			scale = 655;
 			break;
-		case ICM42688_GYRO_FS_250:
+		case ICM42688_DT_GYRO_FS_250:
 			scale = 1310;
 			break;
-		case ICM42688_GYRO_FS_125:
+		case ICM42688_DT_GYRO_FS_125:
 			scale = 2620;
 			break;
-		case ICM42688_GYRO_FS_62_5:
+		case ICM42688_DT_GYRO_FS_62_5:
 			scale = 5243;
 			break;
-		case ICM42688_GYRO_FS_31_25:
+		case ICM42688_DT_GYRO_FS_31_25:
 			scale = 10486;
 			break;
-		case ICM42688_GYRO_FS_15_625:
+		case ICM42688_DT_GYRO_FS_15_625:
 			scale = 20972;
 			break;
 		}
@@ -313,41 +313,40 @@ static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int 
 }
 
 static uint32_t accel_period_ns[] = {
-	[ICM42688_ACCEL_ODR_1_5625] = UINT32_C(10000000000000) / 15625,
-	[ICM42688_ACCEL_ODR_3_125] = UINT32_C(10000000000000) / 31250,
-	[ICM42688_ACCEL_ODR_6_25] = UINT32_C(10000000000000) / 62500,
-	[ICM42688_ACCEL_ODR_12_5] = UINT32_C(10000000000000) / 12500,
-	[ICM42688_ACCEL_ODR_25] = UINT32_C(1000000000) / 25,
-	[ICM42688_ACCEL_ODR_50] = UINT32_C(1000000000) / 50,
-	[ICM42688_ACCEL_ODR_100] = UINT32_C(1000000000) / 100,
-	[ICM42688_ACCEL_ODR_200] = UINT32_C(1000000000) / 200,
-	[ICM42688_ACCEL_ODR_500] = UINT32_C(1000000000) / 500,
-	[ICM42688_ACCEL_ODR_1000] = UINT32_C(1000000),
-	[ICM42688_ACCEL_ODR_2000] = UINT32_C(1000000) / 2,
-	[ICM42688_ACCEL_ODR_4000] = UINT32_C(1000000) / 4,
-	[ICM42688_ACCEL_ODR_8000] = UINT32_C(1000000) / 8,
-	[ICM42688_ACCEL_ODR_16000] = UINT32_C(1000000) / 16,
-	[ICM42688_ACCEL_ODR_32000] = UINT32_C(1000000) / 32,
+	[ICM42688_DT_ACCEL_ODR_1_5625] = UINT32_C(10000000000000) / 15625,
+	[ICM42688_DT_ACCEL_ODR_3_125] = UINT32_C(10000000000000) / 31250,
+	[ICM42688_DT_ACCEL_ODR_6_25] = UINT32_C(10000000000000) / 62500,
+	[ICM42688_DT_ACCEL_ODR_12_5] = UINT32_C(10000000000000) / 12500,
+	[ICM42688_DT_ACCEL_ODR_25] = UINT32_C(1000000000) / 25,
+	[ICM42688_DT_ACCEL_ODR_50] = UINT32_C(1000000000) / 50,
+	[ICM42688_DT_ACCEL_ODR_100] = UINT32_C(1000000000) / 100,
+	[ICM42688_DT_ACCEL_ODR_200] = UINT32_C(1000000000) / 200,
+	[ICM42688_DT_ACCEL_ODR_500] = UINT32_C(1000000000) / 500,
+	[ICM42688_DT_ACCEL_ODR_1000] = UINT32_C(1000000),
+	[ICM42688_DT_ACCEL_ODR_2000] = UINT32_C(1000000) / 2,
+	[ICM42688_DT_ACCEL_ODR_4000] = UINT32_C(1000000) / 4,
+	[ICM42688_DT_ACCEL_ODR_8000] = UINT32_C(1000000) / 8,
+	[ICM42688_DT_ACCEL_ODR_16000] = UINT32_C(1000000) / 16,
+	[ICM42688_DT_ACCEL_ODR_32000] = UINT32_C(1000000) / 32,
 };
 
 static uint32_t gyro_period_ns[] = {
-	[ICM42688_GYRO_ODR_12_5] = UINT32_C(10000000000000) / 12500,
-	[ICM42688_GYRO_ODR_25] = UINT32_C(1000000000) / 25,
-	[ICM42688_GYRO_ODR_50] = UINT32_C(1000000000) / 50,
-	[ICM42688_GYRO_ODR_100] = UINT32_C(1000000000) / 100,
-	[ICM42688_GYRO_ODR_200] = UINT32_C(1000000000) / 200,
-	[ICM42688_GYRO_ODR_500] = UINT32_C(1000000000) / 500,
-	[ICM42688_GYRO_ODR_1000] = UINT32_C(1000000),
-	[ICM42688_GYRO_ODR_2000] = UINT32_C(1000000) / 2,
-	[ICM42688_GYRO_ODR_4000] = UINT32_C(1000000) / 4,
-	[ICM42688_GYRO_ODR_8000] = UINT32_C(1000000) / 8,
-	[ICM42688_GYRO_ODR_16000] = UINT32_C(1000000) / 16,
-	[ICM42688_GYRO_ODR_32000] = UINT32_C(1000000) / 32,
+	[ICM42688_DT_GYRO_ODR_12_5] = UINT32_C(10000000000000) / 12500,
+	[ICM42688_DT_GYRO_ODR_25] = UINT32_C(1000000000) / 25,
+	[ICM42688_DT_GYRO_ODR_50] = UINT32_C(1000000000) / 50,
+	[ICM42688_DT_GYRO_ODR_100] = UINT32_C(1000000000) / 100,
+	[ICM42688_DT_GYRO_ODR_200] = UINT32_C(1000000000) / 200,
+	[ICM42688_DT_GYRO_ODR_500] = UINT32_C(1000000000) / 500,
+	[ICM42688_DT_GYRO_ODR_1000] = UINT32_C(1000000),
+	[ICM42688_DT_GYRO_ODR_2000] = UINT32_C(1000000) / 2,
+	[ICM42688_DT_GYRO_ODR_4000] = UINT32_C(1000000) / 4,
+	[ICM42688_DT_GYRO_ODR_8000] = UINT32_C(1000000) / 8,
+	[ICM42688_DT_GYRO_ODR_16000] = UINT32_C(1000000) / 16,
+	[ICM42688_DT_GYRO_ODR_32000] = UINT32_C(1000000) / 32,
 };
 
-static int icm42688_fifo_decode(const uint8_t *buffer, enum sensor_channel channel,
-				size_t channel_idx, uint32_t *fit, uint16_t max_count,
-				void *data_out)
+static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct icm42688_fifo_data *edata = (const struct icm42688_fifo_data *)buffer;
 	const uint8_t *buffer_end = buffer + sizeof(struct icm42688_fifo_data) + edata->fifo_count;
@@ -356,7 +355,7 @@ static int icm42688_fifo_decode(const uint8_t *buffer, enum sensor_channel chann
 	int count = 0;
 	int rc;
 
-	if ((uintptr_t)buffer_end <= *fit || channel_idx != 0) {
+	if ((uintptr_t)buffer_end <= *fit || chan_spec.chan_idx != 0) {
 		return 0;
 	}
 
@@ -388,7 +387,7 @@ static int icm42688_fifo_decode(const uint8_t *buffer, enum sensor_channel chann
 			buffer = frame_end;
 			continue;
 		}
-		if (channel == SENSOR_CHAN_DIE_TEMP) {
+		if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
 			struct sensor_q31_data *data = (struct sensor_q31_data *)data_out;
 
 			data->shift = 9;
@@ -401,7 +400,7 @@ static int icm42688_fifo_decode(const uint8_t *buffer, enum sensor_channel chann
 			}
 			data->readings[count].temperature =
 				icm42688_read_temperature_from_packet(buffer);
-		} else if (IS_ACCEL(channel) && has_accel) {
+		} else if (IS_ACCEL(chan_spec.chan_type) && has_accel) {
 			/* Decode accel */
 			struct sensor_three_axis_data *data =
 				(struct sensor_three_axis_data *)data_out;
@@ -422,7 +421,7 @@ static int icm42688_fifo_decode(const uint8_t *buffer, enum sensor_channel chann
 				buffer = frame_end;
 				continue;
 			}
-		} else if (IS_GYRO(channel) && has_gyro) {
+		} else if (IS_GYRO(chan_spec.chan_type) && has_gyro) {
 			/* Decode gyro */
 			struct sensor_three_axis_data *data =
 				(struct sensor_three_axis_data *)data_out;
@@ -451,9 +450,8 @@ static int icm42688_fifo_decode(const uint8_t *buffer, enum sensor_channel chann
 	return count;
 }
 
-static int icm42688_one_shot_decode(const uint8_t *buffer, enum sensor_channel channel,
-				    size_t channel_idx, uint32_t *fit, uint16_t max_count,
-				    void *data_out)
+static int icm42688_one_shot_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				    uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct icm42688_encoded_data *edata = (const struct icm42688_encoded_data *)buffer;
 	const struct icm42688_decoder_header *header = &edata->header;
@@ -467,11 +465,11 @@ static int icm42688_one_shot_decode(const uint8_t *buffer, enum sensor_channel c
 	if (*fit != 0) {
 		return 0;
 	}
-	if (max_count == 0 || channel_idx != 0) {
+	if (max_count == 0 || chan_spec.chan_idx != 0) {
 		return -EINVAL;
 	}
 
-	switch (channel) {
+	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
@@ -570,31 +568,31 @@ static int icm42688_one_shot_decode(const uint8_t *buffer, enum sensor_channel c
 	}
 }
 
-static int icm42688_decoder_decode(const uint8_t *buffer, enum sensor_channel channel,
-				   size_t channel_idx, uint32_t *fit, uint16_t max_count,
-				   void *data_out)
+static int icm42688_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				   uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct icm42688_decoder_header *header =
 		(const struct icm42688_decoder_header *)buffer;
 
 	if (header->is_fifo) {
-		return icm42688_fifo_decode(buffer, channel, channel_idx, fit, max_count, data_out);
+		return icm42688_fifo_decode(buffer, chan_spec, fit, max_count, data_out);
 	}
-	return icm42688_one_shot_decode(buffer, channel, channel_idx, fit, max_count, data_out);
+	return icm42688_one_shot_decode(buffer, chan_spec, fit, max_count, data_out);
 }
 
-static int icm42688_decoder_get_frame_count(const uint8_t *buffer, enum sensor_channel channel,
-					    size_t channel_idx, uint16_t *frame_count)
+static int icm42688_decoder_get_frame_count(const uint8_t *buffer,
+					    struct sensor_chan_spec chan_spec,
+					    uint16_t *frame_count)
 {
 	const struct icm42688_fifo_data *data = (const struct icm42688_fifo_data *)buffer;
 	const struct icm42688_decoder_header *header = &data->header;
 
-	if (channel_idx != 0) {
+	if (chan_spec.chan_idx != 0) {
 		return -ENOTSUP;
 	}
 
 	if (!header->is_fifo) {
-		switch (channel) {
+		switch (chan_spec.chan_type) {
 		case SENSOR_CHAN_ACCEL_X:
 		case SENSOR_CHAN_ACCEL_Y:
 		case SENSOR_CHAN_ACCEL_Z:
@@ -643,10 +641,10 @@ static int icm42688_decoder_get_frame_count(const uint8_t *buffer, enum sensor_c
 	return 0;
 }
 
-static int icm42688_decoder_get_size_info(enum sensor_channel channel, size_t *base_size,
+static int icm42688_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
 					  size_t *frame_size)
 {
-	switch (channel) {
+	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:

@@ -9,8 +9,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/types.h>
 
 #define BT_TBS_MAX_UCI_SIZE                        6
 #define BT_TBS_MIN_URI_LEN                         3 /* a:b */
@@ -35,6 +43,9 @@
 #define BT_TBS_LOCAL_OPCODE_SERVER_TERMINATE       0x85
 
 #define FIRST_PRINTABLE_ASCII_CHAR ' ' /* space */
+
+#define BT_TBS_CALL_FLAG_SET_INCOMING(flag) (flag &= ~BT_TBS_CALL_FLAG_OUTGOING)
+#define BT_TBS_CALL_FLAG_SET_OUTGOING(flag) (flag |= BT_TBS_CALL_FLAG_OUTGOING)
 
 const char *parse_string_value(const void *data, uint16_t length,
 				      uint16_t max_len);
@@ -136,8 +147,6 @@ static inline const char *bt_tbs_technology_str(uint8_t status)
 		return "2G";
 	case BT_TBS_TECHNOLOGY_WCDMA:
 		return "WCDMA";
-	case BT_TBS_TECHNOLOGY_IP:
-		return "IP";
 	default:
 		return "unknown technology";
 	}

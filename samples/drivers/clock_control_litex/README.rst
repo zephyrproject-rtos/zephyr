@@ -21,16 +21,22 @@ Configuration
 Basic configuration of the driver, including default settings for clock outputs, is held in Device Tree clock control nodes.
 
 .. literalinclude:: ../../../dts/riscv/riscv32-litex-vexriscv.dtsi
+   :language: dts
    :start-at: clk0: clock-controller@0 {
    :end-at: };
+   :dedent:
 
 .. literalinclude:: ../../../dts/riscv/riscv32-litex-vexriscv.dtsi
+   :language: dts
    :start-at: clk1: clock-controller@1 {
    :end-at: };
+   :dedent:
 
 .. literalinclude:: ../../../dts/riscv/riscv32-litex-vexriscv.dtsi
+   :language: dts
    :start-at: clock0: clock@e0004800 {
    :end-at: };
+   :dedent:
 
 This configuration defines 2 clock outputs: ``clk0`` and ``clk1`` with default frequency set to 100MHz, 0 degrees phase offset and 50% duty cycle. Special care should be taken when defining values for FPGA-specific configuration (parameters from ``litex,divclk-divide-min`` to ``litex,vco-margin``).
 

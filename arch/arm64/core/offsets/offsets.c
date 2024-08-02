@@ -40,7 +40,7 @@ GEN_NAMED_OFFSET_SYM(_callee_saved_t, x27, x27_x28);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x29, x29_sp_el0);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, sp_elx, sp_elx_lr);
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+#ifdef CONFIG_FRAME_POINTER
 GEN_NAMED_OFFSET_SYM(_esf_t, fp, fp);
 #endif
 

@@ -9,4 +9,8 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config NUM_IRQS
 	default 12
 
+config REBOOT
+	depends on DT_HAS_LITEX_SOC_CONTROLLER_ENABLED
+	default y
+
 endif # SOC_LITEX_VEXRISCV

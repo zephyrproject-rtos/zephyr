@@ -37,11 +37,21 @@ ENTRY(rom_entry);
  */
 #ifdef CONFIG_KERNEL_COHERENCE
 #define RPO_SET(addr, reg) ((addr & 0x1fffffff) | (reg << 29))
+#ifdef CONFIG_MMU
+#define SEGSTART_CACHED   RPO_SET(ALIGN(CONFIG_MMU_PAGE_SIZE), CONFIG_XTENSA_CACHED_REGION)
+#define SEGSTART_UNCACHED RPO_SET(ALIGN(CONFIG_MMU_PAGE_SIZE), CONFIG_XTENSA_UNCACHED_REGION)
+#else
 #define SEGSTART_CACHED   RPO_SET(ALIGN(64), CONFIG_XTENSA_CACHED_REGION)
 #define SEGSTART_UNCACHED RPO_SET(ALIGN(64), CONFIG_XTENSA_UNCACHED_REGION)
+#endif
+#else
+#ifdef CONFIG_MMU
+#define SEGSTART_CACHED   ALIGN(CONFIG_MMU_PAGE_SIZE)
+#define SEGSTART_UNCACHED ALIGN(CONFIG_MMU_PAGE_SIZE)
 #else
 #define SEGSTART_CACHED   .
 #define SEGSTART_UNCACHED .
+#endif
 #define ucram ram
 #endif
 
@@ -55,6 +65,18 @@ ENTRY(rom_entry);
  */
 #define NOLOAD_BASE 0x20000
 #define NOLOAD_SIZE 0x100000
+
+#ifdef CONFIG_MMU
+#define MMU_PAGE_ALIGN . = ALIGN(CONFIG_MMU_PAGE_SIZE);
+#define HDR_MMU_PAGE_ALIGN ALIGN(CONFIG_MMU_PAGE_SIZE)
+#define HDR_4K_OR_MMU_PAGE_ALIGN ALIGN(CONFIG_MMU_PAGE_SIZE)
+#else
+#define MMU_PAGE_ALIGN
+#define HDR_MMU_PAGE_ALIGN
+#define HDR_4K_OR_MMU_PAGE_ALIGN ALIGN(4096)
+#endif
+
+#define SMEM_PARTITION_ALIGN(size) MMU_PAGE_ALIGN
 
 MEMORY {
   vector_base_text :
@@ -102,6 +124,11 @@ MEMORY {
   vector_double_text :
 	org = DOUBLEEXC_VECTOR_PADDR_SRAM,
         len = MEM_VECT_TEXT_SIZE
+#ifdef CONFIG_XTENSA_MMU
+  xtensa_vector_code :
+	org = DOUBLEEXC_VECTOR_PADDR_SRAM + MEM_VECT_TEXT_SIZE,
+	len = RAM_BASE - (DOUBLEEXC_VECTOR_PADDR_SRAM + MEM_VECT_TEXT_SIZE)
+#endif
   imr :
         org = IMR_BOOT_LDR_TEXT_ENTRY_BASE,
         len = 0x100000
@@ -233,22 +260,77 @@ SECTIONS {
     _DoubleExceptionVector_text_end = .;
   } >vector_double_text
 
-  .text : {
+#ifdef CONFIG_XTENSA_MMU
+  .xtensa_vector_code : {
+    /* There is not much space between .DoubleExceptionVector
+     * and the beginning of .text. So need to be careful on
+     * what to put in this section. It would mostly be things
+     * that are required to handle exceptions and interrupts.
+     * Also things we want to avoid TLB misses during exception
+     * handling.
+     */
+
+    *libarch__xtensa__core.a:xtensa_asm2_util.S.obj(.literal)
+    *libarch__xtensa__core.a:xtensa_asm2_util.S.obj(.iram.text)
+    *libarch__xtensa__core.a:xtensa_asm2_util.S.obj(.text)
+
+    *libarch__xtensa__core.a:window_vectors.S.obj(.iram.text)
+
+    /* For _Level1Vector */
+    *libarch__xtensa__core.a:vector_handlers_util.S.obj(.iram0.text)
+
+    *libarch__xtensa__core.a:vector_handlers.c.obj(.literal.xtensa_int?_c)
+    *libarch__xtensa__core.a:vector_handlers.c.obj(.text.xtensa_int?_c)
+
+    *libarch__xtensa__core.a:userspace.S.obj(.literal.xtensa_do_syscall)
+    *libarch__xtensa__core.a:userspace.S.obj(.text.xtensa_do_syscall)
+
+  } > xtensa_vector_code
+#endif /* CONFIG_XTENSA_MMU */
+
+  .text : HDR_MMU_PAGE_ALIGN
+  {
     __text_region_start = .;
+    _image_ram_start = .;
+    z_mapped_start = .;
     *(.iram1 .iram1.*)
     *(.entry.text)
     *(.init.literal)
     *(.iram0.text)
+
+#ifdef CONFIG_XTENSA_MMU
+    /*
+     * The C handle blows up in size significantly when logging is enabled.
+     * So we can't keep this in .xtensa_vector_code above. Though we try to
+     * leep these close enough that, hopefully, we can avoid TLB misses.
+     */
+    *libarch__xtensa__core.a:vector_handlers.c.obj(.literal.xtensa_excint1_c)
+    *libarch__xtensa__core.a:vector_handlers.c.obj(.text.xtensa_excint1_c)
+
+    /*
+     * Experiment shows that system would not boot if this is away from
+     * VECBASE more than a few pages. So workaround the issue by putting
+     * xtensa_mmu_init() here.
+     */
+    *libarch__xtensa__core.a:ptables.c.obj(.literal.xtensa_mmu_init)
+    *libarch__xtensa__core.a:ptables.c.obj(.text.xtensa_mmu_init)
+#endif
+
     KEEP(*(.init))
     KEEP(*(.lps_vector))
-    *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    MMU_PAGE_ALIGN
+    *(.literal .text)
+    *(.literal.* .text.*)
     *(.fini.literal)
     KEEP(*(.fini))
     *(.gnu.version)
+#include <zephyr/linker/kobject-text.ld>
+    MMU_PAGE_ALIGN
     __text_region_end = .;
   } >ram
 
-  .rodata : ALIGN(4096)
+  .rodata : HDR_4K_OR_MMU_PAGE_ALIGN
   {
     __rodata_region_start = .;
     *(.rodata)
@@ -258,6 +340,7 @@ SECTIONS {
 
     . = ALIGN(4);
     #include <snippets-rodata.ld>
+    #include <zephyr/linker/kobject-rom.ld>
 
     __XT_EXCEPTION_TABLE__ = .;
     KEEP (*(.xt_except_table))
@@ -277,14 +360,14 @@ SECTIONS {
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    _image_ram_start = .;
     _bss_table_start = .;
     LONG(_bss_start)
     LONG(_bss_end)
     _bss_table_end = .;
+    MMU_PAGE_ALIGN
   } >ram
 
-  .module_init : {
+  .module_init : HDR_MMU_PAGE_ALIGN {
     _module_init_start = .;
     *(*.initcall)
     _module_init_end = .;
@@ -292,21 +375,27 @@ SECTIONS {
 
 #define RAMABLE_REGION ram
 #define ROMABLE_REGION ram
+
+  __common_rom_region_start = SEGSTART_CACHED;
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
    __rodata_region_end = .;
+  __common_rom_region_end = .;
+    __rodata_region_end = .;
 
-  .fw_ready : {
-    KEEP(*(".fw_ready"));
-    KEEP (*(.fw_ready_metadata))
-  } >ram
-
-  .noinit SEGSTART_UNCACHED : {
+  .noinit SEGSTART_UNCACHED : HDR_MMU_PAGE_ALIGN {
+    __data_start = .;
     *(.noinit)
     *(.noinit.*)
   } >ucram
 
-  .data SEGSTART_UNCACHED : {
-    __data_start = .;
+#include <zephyr/linker/kobject-priv-stacks.ld>
+    . = SEGSTART_UNCACHED;
+
+  .data SEGSTART_UNCACHED : HDR_MMU_PAGE_ALIGN {
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -324,6 +413,7 @@ SECTIONS {
     _trace_ctx_end = ABSOLUTE(.);
     *(.gna_model)
     __data_end = .;
+    MMU_PAGE_ALIGN
   } >ucram
 
   .lit4 SEGSTART_CACHED : {
@@ -344,7 +434,28 @@ SECTIONS {
 #define RAMABLE_REGION ucram
 #define ROMABLE_REGION ucram
 
+  .fw_ready SEGSTART_UNCACHED : {
+    KEEP(*(".fw_ready"));
+    KEEP (*(.fw_ready_metadata))
+  } > ucram
+
+  __common_ram_region_start = .;
+
+#ifdef CONFIG_USERSPACE
+
+#define APP_SHARED_ALIGN MMU_PAGE_ALIGN
+#define EMPTY_APP_SHARED_ALIGN APP_SHARED_ALIGN
+
+	/* APP SHARED MEMORY REGION */
+#include <app_smem.ld>
+	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_num_words = _app_smem_size >> 2;
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+#endif /* CONFIG_USERSPACE */
+
 #include <zephyr/linker/common-ram.ld>
+#include <zephyr/linker/kobject-data.ld>
+  __common_ram_region_end = .;
 
   .tm_clone_table : {
     *(.tm_clone_table)
@@ -356,6 +467,11 @@ SECTIONS {
   .cached SEGSTART_CACHED : {
      _cached_start = .;
     *(.cached .cached.*)
+#ifdef CONFIG_USERSPACE
+    z_user_stacks_start = .;
+    *(.user_stacks*)
+    z_user_stacks_end = .;
+#endif
     _cached_end = .;
   } >ram
 
@@ -384,6 +500,7 @@ SECTIONS {
     *(.gnu.linkonce.b.*)
     *(COMMON)
     . = ALIGN(8);
+    MMU_PAGE_ALIGN
     _bss_end = .;
   } >ucram
 
@@ -410,17 +527,19 @@ SECTIONS {
   . = SEGSTART_UNCACHED;
   _end = ALIGN(8);
   . = SEGSTART_CACHED;
+  z_mapped_end = .;
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
   . = SEGSTART_UNCACHED;
   _heap_end = .;
   _heap_sentry = .;
+  . = SEGSTART_CACHED;
+  _image_ram_end = .;
 
   /* dma buffers */
   .lpbuf (NOLOAD): {
     _dma_buf_start = .;
     *(.dma_buffers)
     _dma_buf_end = .;
-    _image_ram_end = .;
   } >lpram
 
   /* Non-loadable sections below.  Back to cached memory so
@@ -489,5 +608,9 @@ SECTIONS {
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
+#endif
+
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
 #endif
 }

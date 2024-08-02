@@ -42,7 +42,7 @@ static int is_bkpt(unsigned int exc_cause)
 }
 
 /* Wrapper function to save and restore execution c */
-void z_gdb_entry(z_arch_esf_t *esf, unsigned int exc_cause)
+void z_gdb_entry(struct arch_esf *esf, unsigned int exc_cause)
 {
 	/* Disable the hardware breakpoint in case it was set */
 	__asm__ volatile("mcr p14, 0, %0, c0, c0, 5" ::"r"(0x0) :);

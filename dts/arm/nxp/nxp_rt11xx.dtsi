@@ -164,11 +164,55 @@
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x45 0>;
 		};
 
+		qtmr1: qtmr@4015c000 {
+			compatible = "nxp,qtmr-pwm";
+			reg = <0x4015c000 0x4000>;
+			interrupts = <171 0>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_QTMR1_CLK 0x0 0>;
+		};
+
+		qtmr2: qtmr@40160000 {
+			compatible = "nxp,qtmr-pwm";
+			reg = <0x40160000 0x4000>;
+			interrupts = <172 0>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_QTMR2_CLK 0x0 0>;
+		};
+
+		qtmr3: qtmr@40164000 {
+			compatible = "nxp,qtmr-pwm";
+			reg = <0x40164000 0x4000>;
+			interrupts = <173 0>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_QTMR3_CLK 0x0 0>;
+		};
+
+		qtmr4: qtmr@40168000 {
+			compatible = "nxp,qtmr-pwm";
+			reg = <0x40168000 0x4000>;
+			interrupts = <174 0>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_QTMR4_CLK 0x0 0>;
+		};
+
 		ccm: ccm@40cc0000 {
 			compatible = "nxp,imx-ccm-rev2";
 			reg = <0x40cc0000 0x4000>;
 
 			#clock-cells = <3>;
+
+			/*
+			 * ARM PLL is an integer PLL, with an input clock
+			 * of 24MHz. The PLL features a loop divider and
+			 * post divider. The output frequency is calculated
+			 * as Fout = 24MHz * (clock-mult / clock-div)
+			 */
+			arm_pll: arm-pll {
+				compatible = "fixed-factor-clock";
+				#clock-cells = <0>;
+			};
+
 		};
 
 		gpio1: gpio@4012c000 {
@@ -732,22 +776,30 @@
 			};
 		};
 
-		/*
-		 * enet1g peripheral to use with kinetis-ethernet (eth_mcux) driver
-		 * just like the enet peripheral (i.e. only 10/100Mbit for now)
-		 */
 		enet1g: ethernet@40420000 {
-			compatible = "nxp,kinetis-ethernet";
+			compatible = "nxp,enet1g";
 			reg = <0x40420000 0x628>;
-			interrupts = <141 0>;
-			interrupt-names = "COMMON";
+			clocks = <&ccm IMX_CCM_ENET1G_CLK 0 0>;
 			status = "disabled";
-			phy-addr = <1>;
-			ptp1g: ptp {
-				compatible = "nxp,kinetis-ptp";
+			enet1g_mac: ethernet {
+				compatible = "nxp,enet-mac";
+				interrupts = <141 0>;
+				interrupt-names = "COMMON";
+				nxp,mdio = <&enet1g_mdio>;
+				nxp,ptp-clock = <&enet1g_ptp_clock>;
 				status = "disabled";
+			};
+			enet1g_mdio: mdio {
+				compatible = "nxp,enet-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			enet1g_ptp_clock: ptp_clock {
+				compatible = "nxp,enet-ptp-clock";
 				interrupts = <142 0>;
-				interrupt-names = "IEEE1588_TMR";
+				status = "disabled";
+				clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
 			};
 		};
 
@@ -776,6 +828,18 @@
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
+			status = "disabled";
+		};
+
+		usbphy1: usbphy@0x40434000 {
+			compatible = "nxp,usbphy";
+			reg = <0x40434000 0x1000>;
+			status = "disabled";
+		};
+
+		usbphy2: usbphy@0x40438000 {
+			compatible = "nxp,usbphy";
+			reg = <0x40438000 0x1000>;
 			status = "disabled";
 		};
 
@@ -808,6 +872,35 @@
 			reg = <0x40800000 0x4000>;
 			interrupts = <56 1>;
 			status = "disabled";
+			source = <&mipi_csi2rx>;
+
+			port {
+				csi_ep_in: endpoint {
+					remote-endpoint = <&mipi_csi2rx_ep_out>;
+				};
+			};
+		};
+
+		mipi_csi2rx: mipi_csi2rx@40810000 {
+			compatible = "nxp,mipi-csi2rx";
+			reg = <0x40810000 0x200>;
+			status = "disabled";
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					mipi_csi2rx_ep_out: endpoint {
+						remote-endpoint = <&csi_ep_in>;
+					};
+				};
+
+				port@1 {
+					reg = <1>;
+				};
+			};
 		};
 
 		flexcan1: can@400c4000 {

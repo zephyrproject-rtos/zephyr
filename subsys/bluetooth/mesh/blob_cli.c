@@ -764,9 +764,9 @@ static void block_get_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
  *
  * After sending all reported missing chunks to each target, the Client updates
  * @ref bt_mesh_blob_target_pull::block_report_timestamp value for every target individually in
- * chunk_tx_complete. The Client then proceedes to block_report_wait state and uses the earliest of
+ * chunk_tx_complete. The Client then proceeds to block_report_wait state and uses the earliest of
  * all block_report_timestamp and cli_timestamp to schedule the retry timer. When the retry
- * timer expires, the Client proceedes to the block_check_end state.
+ * timer expires, the Client proceeds to the block_check_end state.
  *
  * In Pull mode, target nodes send a Partial Block Report message to the Client to inform about
  * missing chunks. The Client doesn't control when these messages are sent by target nodes, and
@@ -916,7 +916,7 @@ static void chunk_tx_complete(struct bt_mesh_blob_cli *cli, uint16_t dst)
 	int64_t timestamp = k_uptime_get() + BLOCK_REPORT_TIME_MSEC;
 
 	if (!UNICAST_MODE(cli)) {
-		/* If using group adressing, reset timestamp for all targets after all chunks are
+		/* If using group addressing, reset timestamp for all targets after all chunks are
 		 * sent to the group address
 		 */
 		TARGETS_FOR_EACH(cli, target) {

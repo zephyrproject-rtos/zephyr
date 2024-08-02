@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
- * Copyright (c) 2019 ST Microelectronics
+ * Copyright (c) 2019-2024 STMicroelectronics
  * Copyright (c) 2019 Centaur Analytics, Inc
  * Copyright (C) 2020 Framework Computer LLC <ktl@frame.work>
  * Copyright (c) 2021 G-Technologies Sdn. Bhd.
@@ -189,7 +189,21 @@
 			interrupts = <2 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
 			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <19>;
 			status = "disabled";
+
+			/* In STM32G0, the backup registers are defined as part of the TAMP
+			 * peripheral. This peripheral is not implemented in Zephyr yet, however,
+			 * the reference manual states that tamp_pclk is connected to rtc_pclk.
+			 * It makes sense to have BBRAM instantiated as a child of RTC, so that
+			 * the driver can verify that its parent device (RTC) is ready.
+			 */
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <5>;
+				status = "disabled";
+			};
 		};
 
 		iwdg: watchdog@40003000 {

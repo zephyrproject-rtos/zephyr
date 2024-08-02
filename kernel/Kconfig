@@ -156,7 +156,7 @@ config SCHED_CPU_MASK_PIN_ONLY
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC)
+	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC || NIOS2)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
@@ -276,7 +276,7 @@ choice DYNAMIC_THREAD_PREFER
 	help
 	  If both CONFIG_DYNAMIC_THREAD_ALLOC=y and
 	  CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0, then the user may
-	  specify the order in which allocation is attmpted.
+	  specify the order in which allocation is attempted.
 
 config DYNAMIC_THREAD_PREFER_ALLOC
 	bool "Prefer heap-based allocation"
@@ -299,7 +299,7 @@ choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
 	default SCHED_DUMB
 	help
-	  The kernel can be built with with several choices for the
+	  The kernel can be built with several choices for the
 	  ready queue implementation, offering different choices between
 	  code size, constant factor runtime overhead and performance
 	  scaling when many threads are added.
@@ -466,6 +466,12 @@ config BOOT_DELAY
 	  receive before it actually gets data. A similar effect can be
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
+
+config BOOT_CLEAR_SCREEN
+	bool "Clear screen"
+	help
+	  Use this option to clear the screen before printing anything else.
+	  Using a VT100 enabled terminal on the client side is required for this to work.
 
 config THREAD_MONITOR
 	bool "Thread monitoring"
@@ -703,6 +709,9 @@ config PIPES
 	  This option enables kernel pipes. A pipe is a kernel object that
 	  allows a thread to send a byte stream to another thread. Pipes can
 	  be used to synchronously transfer chunks of data in whole or in part.
+
+	  Note that setting this option slightly increases the size of the
+	  thread structure.
 
 config KERNEL_MEM_POOL
 	bool "Use Kernel Memory Pool"
@@ -943,59 +952,7 @@ config BOUNDS_CHECK_BYPASS_MITIGATION
 	  macros do nothing.
 endmenu
 
-
-menu "Memory Domains"
-
-config MAX_DOMAIN_PARTITIONS
-	int "Maximum number of partitions per memory domain"
-	default 16
-	range 0 255
-	depends on USERSPACE
-	help
-	  Configure the maximum number of partitions per memory domain.
-
-config ARCH_MEM_DOMAIN_DATA
-	bool
-	depends on USERSPACE
-	help
-	  This hidden option is selected by the target architecture if
-	  architecture-specific data is needed on a per memory domain basis.
-	  If so, the architecture defines a 'struct arch_mem_domain' which is
-	  embedded within every struct k_mem_domain. The architecture
-	  must also define the arch_mem_domain_init() function to set this up
-	  when a memory domain is created.
-
-	  Typical uses might be a set of page tables for that memory domain.
-
-config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-	bool
-	depends on USERSPACE
-	help
-	  This hidden option is selected by the target architecture if
-	  modifying a memory domain's partitions at runtime, or changing
-	  a memory domain's thread membership requires synchronous calls
-	  into the architecture layer.
-
-	  If enabled, the architecture layer must implement the following
-	  APIs:
-
-	  arch_mem_domain_thread_add
-	  arch_mem_domain_thread_remove
-	  arch_mem_domain_partition_remove
-	  arch_mem_domain_partition_add
-
-	  It's important to note that although supervisor threads can be
-	  members of memory domains, they have no implications on supervisor
-	  thread access to memory. Memory domain APIs may only be invoked from
-	  supervisor mode.
-
-	  For these reasons, on uniprocessor systems unless memory access
-	  policy is managed in separate software constructions like page
-	  tables, these APIs don't need to be implemented as the underlying
-	  memory management hardware will be reprogrammed on context switch
-	  anyway.
-endmenu
-
+rsource "Kconfig.mem_domain"
 rsource "Kconfig.smp"
 
 config TICKLESS_KERNEL
@@ -1019,6 +976,35 @@ config THREAD_LOCAL_STORAGE
 	select NEED_LIBC_MEM_PARTITION if (CPU_CORTEX_M && USERSPACE)
 	help
 	  This option enables thread local storage (TLS) support in kernel.
+
+config KERNEL_WHOLE_ARCHIVE
+	bool
+	help
+	  This option forces every object file in the libkernel.a archive
+	  to be included, rather than searching the archive for required object files.
+
+config TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
+	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
+	# initialization of static objects, new toolchains can be added
+	# here if required.
+	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+
+config STATIC_INIT_GNU
+	bool "Support GNU-compatible initializers and constructors"
+	default y if CPP || NATIVE_LIBRARY || COVERAGE
+	depends on TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
+	depends on !CMAKE_LINKER_GENERATOR
+	help
+	  GNU-compatible initialization of static objects. This is required for
+	  C++ constructor support as well as for initializer functions as
+	  defined by GNU-compatible toolchains. This increases the size
+	  of Zephyr binaries by around 100 bytes. If you know your
+	  application doesn't need any initializers, you can disable this
+	  option.
+	  The ARC MWDT toolchain, does not support or use this setting,
+	  and has instead separate C++ constructor initialization code.
+	  Note the option CMAKE_LINKER_GENERATOR does not yet support this feature
+	  or CPP.
 
 endmenu
 

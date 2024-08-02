@@ -13,7 +13,7 @@
 #include <zephyr/sys/sys_io.h>
 
 /* Number of bits represented by one bundle */
-#define bundle_bitness(ba)	(sizeof(ba->bundles[0]) * 8)
+#define bundle_bitness(ba)	(sizeof((ba)->bundles[0]) * 8)
 
 struct bundle_data {
 	 /* Start and end index of bundles */
@@ -210,16 +210,123 @@ static void set_region(sys_bitarray_t *bitarray, size_t offset,
 	}
 }
 
+int sys_bitarray_popcount_region(sys_bitarray_t *bitarray, size_t num_bits, size_t offset,
+				 size_t *count)
+{
+	k_spinlock_key_t key;
+	size_t idx;
+	struct bundle_data bd;
+	int ret;
+
+	__ASSERT_NO_MSG(bitarray != NULL);
+	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
+
+	if (num_bits == 0 || offset + num_bits > bitarray->num_bits) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	CHECKIF(count == NULL) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	setup_bundle_data(bitarray, &bd, offset, num_bits);
+
+	if (bd.sidx == bd.eidx) {
+		/* Start/end at same bundle */
+		*count = POPCOUNT(bitarray->bundles[bd.sidx] & bd.smask);
+	} else {
+		/* Start/end at different bundle.
+		 * So count the bits in start and end bundles
+		 * separately with correct mask applied. For in-between bundles,
+		 * count all bits.
+		 */
+		*count = 0;
+		*count += POPCOUNT(bitarray->bundles[bd.sidx] & bd.smask);
+		*count += POPCOUNT(bitarray->bundles[bd.eidx] & bd.emask);
+		for (idx = bd.sidx + 1; idx < bd.eidx; idx++) {
+			*count += POPCOUNT(bitarray->bundles[idx]);
+		}
+	}
+
+	ret = 0;
+
+out:
+	k_spin_unlock(&bitarray->lock, key);
+	return ret;
+}
+
+int sys_bitarray_xor(sys_bitarray_t *dst, sys_bitarray_t *other, size_t num_bits, size_t offset)
+{
+	k_spinlock_key_t key_dst, key_other;
+	int ret;
+	size_t idx;
+	struct bundle_data bd;
+
+	__ASSERT_NO_MSG(dst != NULL);
+	__ASSERT_NO_MSG(dst->num_bits > 0);
+	__ASSERT_NO_MSG(other != NULL);
+	__ASSERT_NO_MSG(other->num_bits > 0);
+
+	key_dst = k_spin_lock(&dst->lock);
+	key_other = k_spin_lock(&other->lock);
+
+
+	if (dst->num_bits != other->num_bits) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (num_bits == 0 || offset + num_bits > dst->num_bits) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	setup_bundle_data(other, &bd, offset, num_bits);
+
+	if (bd.sidx == bd.eidx) {
+		/* Start/end at same bundle */
+		dst->bundles[bd.sidx] =
+			((other->bundles[bd.sidx] ^ dst->bundles[bd.sidx]) & bd.smask) |
+			(dst->bundles[bd.sidx] & ~bd.smask);
+	} else {
+		/* Start/end at different bundle.
+		 * So xor the bits in start and end bundles according to their bitmasks
+		 * separately. For in-between bundles,
+		 * xor all bits.
+		 */
+		dst->bundles[bd.sidx] =
+			((other->bundles[bd.sidx] ^ dst->bundles[bd.sidx]) & bd.smask) |
+			(dst->bundles[bd.sidx] & ~bd.smask);
+		dst->bundles[bd.eidx] =
+			((other->bundles[bd.eidx] ^ dst->bundles[bd.eidx]) & bd.emask) |
+			(dst->bundles[bd.eidx] & ~bd.emask);
+		for (idx = bd.sidx + 1; idx < bd.eidx; idx++) {
+			dst->bundles[idx] ^= other->bundles[idx];
+		}
+	}
+
+	ret = 0;
+
+out:
+	k_spin_unlock(&other->lock, key_other);
+	k_spin_unlock(&dst->lock, key_dst);
+	return ret;
+}
+
 int sys_bitarray_set_bit(sys_bitarray_t *bitarray, size_t bit)
 {
 	k_spinlock_key_t key;
 	int ret;
 	size_t idx, off;
 
-	key = k_spin_lock(&bitarray->lock);
-
 	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
 
 	if (bit >= bitarray->num_bits) {
 		ret = -EINVAL;
@@ -446,6 +553,81 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 		 * the mismatched bit.
 		 */
 		bit_idx = mismatch + 1;
+	}
+
+out:
+	k_spin_unlock(&bitarray->lock, key);
+	return ret;
+}
+
+int sys_bitarray_find_nth_set(sys_bitarray_t *bitarray, size_t n, size_t num_bits, size_t offset,
+			      size_t *found_at)
+{
+	k_spinlock_key_t key;
+	size_t count, idx;
+	uint32_t mask;
+	struct bundle_data bd;
+	int ret;
+
+	__ASSERT_NO_MSG(bitarray != NULL);
+	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
+
+	if (n == 0 || num_bits == 0 || offset + num_bits > bitarray->num_bits) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = 1;
+	mask = 0;
+	setup_bundle_data(bitarray, &bd, offset, num_bits);
+
+	count = POPCOUNT(bitarray->bundles[bd.sidx] & bd.smask);
+	/* If we already found more bits set than n, we found the target bundle */
+	if (count >= n) {
+		idx = bd.sidx;
+		mask = bd.smask;
+		goto found;
+	}
+	/* Keep looking if there are more bundles */
+	if (bd.sidx != bd.eidx) {
+		/* We are now only looking for the remaining bits */
+		n -= count;
+		/* First bundle was already checked, keep looking in middle (complete)
+		 * bundles.
+		 */
+		for (idx = bd.sidx + 1; idx < bd.eidx; idx++) {
+			count = POPCOUNT(bitarray->bundles[idx]);
+			if (count >= n) {
+				mask = ~(mask & 0);
+				goto found;
+			}
+			n -= count;
+		}
+		/* Continue searching in last bundle */
+		count = POPCOUNT(bitarray->bundles[bd.eidx] & bd.emask);
+		if (count >= n) {
+			idx = bd.eidx;
+			mask = bd.emask;
+			goto found;
+		}
+	}
+
+	goto out;
+
+found:
+	/* The bit we are looking for must be in the current bundle idx.
+	 * Find out the exact index of the bit.
+	 */
+	for (int j = 0; j <= bundle_bitness(bitarray) - 1; j++) {
+		if (bitarray->bundles[idx] & mask & BIT(j)) {
+			if (--n <= 0) {
+				*found_at = idx * bundle_bitness(bitarray) + j;
+				ret = 0;
+				break;
+			}
+		}
 	}
 
 out:

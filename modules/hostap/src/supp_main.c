@@ -14,6 +14,9 @@ LOG_MODULE_REGISTER(wifi_supplicant, CONFIG_WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL);
 #if !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE) && !defined(CONFIG_MBEDTLS_ENABLE_HEAP)
 #include <mbedtls/platform.h>
 #endif /* !CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE && !CONFIG_MBEDTLS_ENABLE_HEAP */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
+#include "supp_psa_api.h"
+#endif
 
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_nm.h>
@@ -66,8 +69,9 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
 
 #define WRITE_TIMEOUT 100 /* ms */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
 #define INTERFACE_EVENT_MASK (NET_EVENT_IF_ADMIN_UP | NET_EVENT_IF_ADMIN_DOWN)
-
+#endif
 struct supplicant_context {
 	struct wpa_global *supplicant;
 	struct net_mgmt_event_callback cb;
@@ -140,6 +144,7 @@ out:
 	return ret;
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
 static int send_event(const struct wpa_supplicant_event_msg *msg)
 {
 	return zephyr_wifi_send_event(msg);
@@ -155,7 +160,7 @@ static bool is_wanted_interface(struct net_if *iface)
 
 	return true;
 }
-
+#endif
 struct wpa_supplicant *zephyr_get_handle_by_ifname(const char *ifname)
 {
 	struct wpa_supplicant *wpa_s = NULL;
@@ -247,7 +252,7 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 out:
 	return ret;
 }
-
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
 static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 {
 	struct wpa_supplicant_event_msg msg;
@@ -344,7 +349,7 @@ out:
 
 	return ret;
 }
-
+#endif
 static void iface_work_handler(struct k_work *work)
 {
 	struct supplicant_context *ctx = CONTAINER_OF(work, struct supplicant_context,
@@ -370,7 +375,7 @@ static void submit_iface_work(struct supplicant_context *ctx,
 
 	k_work_submit_to_queue(&ctx->iface_wq, &ctx->iface_work);
 }
-
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
 static void interface_handler(struct net_mgmt_event_callback *cb,
 			      uint32_t mgmt_event, struct net_if *iface)
 {
@@ -399,6 +404,7 @@ static void interface_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 }
+#endif
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
@@ -409,7 +415,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	if (!net_if_is_up(iface)) {
+	if (!net_if_is_admin_up(iface)) {
 		return;
 	}
 
@@ -422,11 +428,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 static int setup_interface_monitoring(struct supplicant_context *ctx, struct net_if *iface)
 {
 	ARG_UNUSED(iface);
-
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
 	net_mgmt_init_event_callback(&ctx->cb, interface_handler,
 				     INTERFACE_EVENT_MASK);
 	net_mgmt_add_event_callback(&ctx->cb);
-
+#endif
 	net_if_foreach(iface_cb, ctx);
 
 	return 0;
@@ -522,6 +528,10 @@ static void handler(void)
 	/* Needed for crypto operation as default is no-op and fails */
 	mbedtls_platform_set_calloc_free(calloc, free);
 #endif /* !CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE && !CONFIG_MBEDTLS_ENABLE_HEAP */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
+	supp_psa_crypto_init();
+#endif
 
 	ctx = get_default_context();
 

@@ -36,7 +36,7 @@ struct icm42688_encoded_data {
 	int16_t readings[7];
 };
 
-int icm42688_encode(const struct device *dev, const enum sensor_channel *const channels,
+int icm42688_encode(const struct device *dev, const struct sensor_chan_spec *const channels,
 		    const size_t num_channels, uint8_t *buf);
 
 int icm42688_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);

@@ -29,9 +29,10 @@
 /** Fixed clocks  */
 /* Low speed clocks defined in stm32_common_clocks.h */
 #define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
+#define STM32_SRC_MSI		(STM32_SRC_HSI + 1)
 /* #define STM32_SRC_HSI48	TBD */
 /** Bus clock */
-#define STM32_SRC_PCLK		(STM32_SRC_HSI + 1)
+#define STM32_SRC_PCLK		(STM32_SRC_MSI + 1)
 /** PLL clock outputs */
 #define STM32_SRC_PLL_P		(STM32_SRC_PCLK + 1)
 #define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)

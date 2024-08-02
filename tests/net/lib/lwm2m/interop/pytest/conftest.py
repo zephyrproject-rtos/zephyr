@@ -27,6 +27,12 @@ BOOTSTRAP_COAPS_PORT: int = 5784
 
 logger = logging.getLogger(__name__)
 
+def pytest_addoption(parser):
+    parser.addoption('--leshan_addr', action='store', default=LESHAN_IP)
+    parser.addoption('--leshan_rest_api', action='store', default='http://localhost:8080/api')
+    parser.addoption('--leshan_bootstrap_rest_api', action='store', default='http://localhost:8081/api')
+    parser.addoption('--passwd', action='store', default='')
+
 class Endpoint:
     def __init__(self, name: str, shell: Shell, registered: bool = False, bootstrap: bool = False):
         self.name = name
@@ -47,7 +53,7 @@ class Endpoint:
 
 
 @pytest.fixture(scope='session')
-def leshan() -> Leshan:
+def leshan(request) -> Leshan:
     """
     Fixture that returns a Leshan object for interacting with the Leshan server.
 
@@ -55,12 +61,12 @@ def leshan() -> Leshan:
     :rtype: Leshan
     """
     try:
-        return Leshan("http://localhost:8080/api")
+        return Leshan(request.config.getoption('--leshan_rest_api'))
     except RuntimeError:
         pytest.skip('Leshan server not available')
 
 @pytest.fixture(scope='session')
-def leshan_bootstrap() -> Leshan:
+def leshan_bootstrap(request) -> Leshan:
     """
     Fixture that returns a Leshan object for interacting with the Bootstrap Leshan server.
 
@@ -68,12 +74,12 @@ def leshan_bootstrap() -> Leshan:
     :rtype: Leshan
     """
     try:
-        return Leshan("http://localhost:8081/api")
+        return Leshan(request.config.getoption('--leshan_bootstrap_rest_api'))
     except RuntimeError:
         pytest.skip('Leshan Bootstrap server not available')
 
 @pytest.fixture(scope='module')
-def helperclient() -> object:
+def helperclient(request) -> object:
     """
     Fixture that returns a helper client object for testing.
 
@@ -84,11 +90,11 @@ def helperclient() -> object:
         from coapthon.client.helperclient import HelperClient
     except ModuleNotFoundError:
         pytest.skip('CoAPthon3 package not installed')
-    return HelperClient(server=('127.0.0.1', COAP_PORT))
+    return HelperClient(server=(request.config.getoption('--leshan_addr'), COAP_PORT))
 
 
 @pytest.fixture(scope='module')
-def endpoint_nosec(shell: Shell, dut: DeviceAdapter, leshan: Leshan) -> str:
+def endpoint_nosec(request, shell: Shell, dut: DeviceAdapter, leshan: Leshan) -> str:
     """Fixture that returns an endpoint that starts on no-secure mode"""
     # Allow engine to start & stop once.
     time.sleep(2)
@@ -99,7 +105,8 @@ def endpoint_nosec(shell: Shell, dut: DeviceAdapter, leshan: Leshan) -> str:
     #
     # Registration Interface test cases (using Non-secure mode)
     #
-    shell.exec_command(f'lwm2m write 0/0/0 -s coap://{LESHAN_IP}:{COAP_PORT}')
+    addr = request.config.getoption('--leshan_addr')
+    shell.exec_command(f'lwm2m write 0/0/0 -s coap://{addr}:{COAP_PORT}')
     shell.exec_command('lwm2m write 0/0/1 -b 0')
     shell.exec_command('lwm2m write 0/0/2 -u8 3')
     shell.exec_command(f'lwm2m write 0/0/3 -s {ep}')
@@ -109,6 +116,7 @@ def endpoint_nosec(shell: Shell, dut: DeviceAdapter, leshan: Leshan) -> str:
     shell.exec_command('lwm2m write 1/0/1 -u32 86400')
     shell.exec_command(f'lwm2m start {ep} -b 0')
 
+    dut.readlines_until(regex='.*Registration Done', timeout=5.0)
     yield Endpoint(ep, shell)
 
     # All done
@@ -116,27 +124,33 @@ def endpoint_nosec(shell: Shell, dut: DeviceAdapter, leshan: Leshan) -> str:
     dut.readlines_until(regex=r'.*Deregistration success', timeout=10.0)
 
 @pytest.fixture(scope='module')
-def endpoint_bootstrap(shell: Shell, dut: DeviceAdapter, leshan: Leshan, leshan_bootstrap: Leshan) -> str:
+def endpoint_bootstrap(request, shell: Shell, dut: DeviceAdapter, leshan: Leshan, leshan_bootstrap: Leshan) -> str:
     """Fixture that returns an endpoint that starts the bootstrap."""
     try:
+        static_passwd = request.config.getoption('--passwd')
         # Generate randon device id and password (PSK key)
         ep = 'client_' + binascii.b2a_hex(os.urandom(1)).decode()
-        bs_passwd = ''.join(random.choice(string.ascii_lowercase) for i in range(16))
-        passwd = ''.join(random.choice(string.ascii_lowercase) for i in range(16))
+        if static_passwd:
+            bs_passwd = static_passwd
+            passwd = static_passwd
+        else:
+            bs_passwd = ''.join(random.choice(string.ascii_lowercase) for i in range(16))
+            passwd = ''.join(random.choice(string.ascii_lowercase) for i in range(16))
 
         logger.debug('Endpoint: %s', ep)
         logger.debug('Boostrap PSK: %s', binascii.b2a_hex(bs_passwd.encode()).decode())
         logger.debug('PSK: %s', binascii.b2a_hex(passwd.encode()).decode())
 
         # Create device entries in Leshan and Bootstrap server
-        leshan_bootstrap.create_bs_device(ep, f'coaps://{LESHAN_IP}:{COAPS_PORT}', bs_passwd, passwd)
+        addr = request.config.getoption('--leshan_addr')
+        leshan_bootstrap.create_bs_device(ep, f'coaps://{addr}:{COAPS_PORT}', bs_passwd, passwd)
         leshan.create_psk_device(ep, passwd)
 
         # Allow engine to start & stop once.
         time.sleep(2)
 
         # Write bootsrap server information and PSK keys
-        shell.exec_command(f'lwm2m write 0/0/0 -s coaps://{LESHAN_IP}:{BOOTSTRAP_COAPS_PORT}')
+        shell.exec_command(f'lwm2m write 0/0/0 -s coaps://{addr}:{BOOTSTRAP_COAPS_PORT}')
         shell.exec_command('lwm2m write 0/0/1 -b 1')
         shell.exec_command('lwm2m write 0/0/2 -u8 0')
         shell.exec_command(f'lwm2m write 0/0/3 -s {ep}')

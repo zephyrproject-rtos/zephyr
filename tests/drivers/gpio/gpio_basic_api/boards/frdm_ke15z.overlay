@@ -1,0 +1,17 @@
+/*
+ * Copyright NXP 2024
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpioc {
+	status = "okay";
+};
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpioc 8 0>; /* Arduino D0 */
+		in-gpios  = <&gpioc 9 0>; /* Arduino D1 */
+	};
+};

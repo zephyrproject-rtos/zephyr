@@ -39,7 +39,7 @@
  * the same as its physical location, although an identity mapping for RAM
  * is still supported by setting CONFIG_KERNEL_VM_BASE=CONFIG_SRAM_BASE_ADDRESS.
  */
-#ifdef Z_VM_KERNEL
+#ifdef K_MEM_IS_VM_KERNEL
 #define KERNEL_BASE_ADDR  (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET)
 #define KERNEL_RAM_SIZE   (CONFIG_KERNEL_VM_SIZE - CONFIG_KERNEL_VM_OFFSET)
 #define PHYS_RAM_AVAIL    (PHYS_RAM_SIZE - CONFIG_SRAM_OFFSET)
@@ -87,7 +87,7 @@ MEMORY
      * or copied into physical RAM by a loader (MMU)
      */
     ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = FLASH_ROM_SIZE
-#elif defined(Z_VM_KERNEL)
+#elif defined(K_MEM_IS_VM_KERNEL)
     ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = PHYS_RAM_AVAIL
 #endif
     /* Linear address range to link the kernel. If non-XIP, everything is

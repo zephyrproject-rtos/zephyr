@@ -25,7 +25,11 @@ extern "C" {
  * @{
  */
 
-/** @brief Flag indicating that cache shall be handled. */
+/** @brief Flag indicating that cache shall be handled.
+ *
+ * It shall be used only when packet buffer is shared between two cores as on a single
+ * core cache shall not be handled manually because it results in data corruption.
+ */
 #define SPSC_PBUF_CACHE BIT(0)
 
 /** @brief Size of the field which stores maximum utilization. */

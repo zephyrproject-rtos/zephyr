@@ -13,11 +13,4 @@ config FXAS21002_DRDY_INT1
 	default y
 	depends on FXAS21002_TRIGGER
 
-if !XIP
-config FLASH_SIZE
-	default 0
-config FLASH_BASE_ADDRESS
-	default 0
-endif
-
 endif # BOARD_WARP7

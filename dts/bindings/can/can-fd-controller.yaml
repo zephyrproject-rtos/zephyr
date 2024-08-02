@@ -5,9 +5,17 @@ include: can-controller.yaml
 properties:
   bus-speed-data:
     type: int
-    required: true
+    deprecated: true
     description: |
-      Initial data phase bitrate in bit/s.
+      Deprecated. This property has been renamed to bitrate-data.
+
+      Initial data phase bitrate in bit/s.  If this is unset, the initial data phase bitrate is set
+      to CONFIG_CAN_DEFAULT_BITRATE_DATA.
+  bitrate-data:
+    type: int
+    description: |
+      Initial data phase bitrate in bit/s.  If this is unset, the initial data phase bitrate is set
+      to CONFIG_CAN_DEFAULT_BITRATE_DATA.
   sample-point-data:
     type: int
     description: |

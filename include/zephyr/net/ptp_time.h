@@ -109,6 +109,8 @@ extern "C" {
 struct net_ptp_time {
 	/** Seconds encoded on 48 bits. */
 	union {
+
+/** @cond INTERNAL_HIDDEN */
 		struct {
 #ifdef CONFIG_LITTLE_ENDIAN
 			uint32_t low;
@@ -120,6 +122,9 @@ struct net_ptp_time {
 			uint32_t low;
 #endif
 		} _sec;
+/** @endcond */
+
+		/** Second value. */
 		uint64_t second;
 	};
 
@@ -147,6 +152,8 @@ struct net_ptp_time {
 struct net_ptp_extended_time {
 	/** Seconds encoded on 48 bits. */
 	union {
+
+/** @cond INTERNAL_HIDDEN */
 		struct {
 #ifdef CONFIG_LITTLE_ENDIAN
 			uint32_t low;
@@ -158,11 +165,16 @@ struct net_ptp_extended_time {
 			uint32_t low;
 #endif
 		} _sec;
+/** @endcond */
+
+		/** Second value. */
 		uint64_t second;
 	};
 
 	/** Fractional nanoseconds on 48 bits. */
 	union {
+
+/** @cond INTERNAL_HIDDEN */
 		struct {
 #ifdef CONFIG_LITTLE_ENDIAN
 			uint32_t low;
@@ -174,6 +186,9 @@ struct net_ptp_extended_time {
 			uint32_t low;
 #endif
 		} _fns;
+/** @endcond */
+
+		/** Fractional nanoseconds value. */
 		uint64_t fract_nsecond;
 	};
 } __packed;

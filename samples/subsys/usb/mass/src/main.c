@@ -36,7 +36,7 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 static struct fs_mount_t fs_mnt;
 
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-static struct usbd_contex *sample_usbd;
+static struct usbd_context *sample_usbd;
 
 #if CONFIG_DISK_DRIVER_RAM
 USBD_DEFINE_MSC_LUN(RAM, "Zephyr", "RAMDisk", "0.00");
@@ -70,7 +70,7 @@ static int enable_usb_device_next(void)
 
 	return 0;
 }
-#endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT) */
+#endif /* defined(CONFIG_USB_DEVICE_STACK_NEXT) */
 
 static int setup_flash(struct fs_mount_t *mnt)
 {
@@ -89,7 +89,7 @@ static int setup_flash(struct fs_mount_t *mnt)
 
 	if (rc < 0 && IS_ENABLED(CONFIG_APP_WIPE_STORAGE)) {
 		printk("Erasing flash area ... ");
-		rc = flash_area_erase(pfa, 0, pfa->fa_size);
+		rc = flash_area_flatten(pfa, 0, pfa->fa_size);
 		printk("%d\n", rc);
 	}
 

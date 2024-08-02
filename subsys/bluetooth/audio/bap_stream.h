@@ -7,6 +7,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
+
 void bt_bap_stream_init(struct bt_bap_stream *stream);
 
 /* Disconnect ISO channel */

@@ -13,6 +13,7 @@ struct bt_smp_hdr {
 	uint8_t  code;
 } __packed;
 
+#define BT_SMP_ERR_SUCCESS                      0x00
 #define BT_SMP_ERR_PASSKEY_ENTRY_FAILED		0x01
 #define BT_SMP_ERR_OOB_NOT_AVAIL		0x02
 #define BT_SMP_ERR_AUTH_REQUIREMENTS		0x03
@@ -178,3 +179,26 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf);
 
 /** Generate IRK from Identity Root (IR) */
 int bt_smp_irk_get(uint8_t *ir, uint8_t *irk);
+
+/** Converts a SMP error to string.
+ *
+ * The error codes are described in the Bluetooth Core specification,
+ * Vol 3, Part H, Section 3.5.5.
+ *
+ * The Security Manager Protocol documentation found in Vol 4, Part H,
+ * describes when the different error codes are used.
+ *
+ * See also the defined BT_SMP_ERR_* macros.
+ *
+ * @return The string representation of the SMP error code.
+ */
+#if defined(CONFIG_BT_SMP_ERR_TO_STR)
+const char *bt_smp_err_to_str(uint8_t smp_err);
+#else
+static inline const char *bt_smp_err_to_str(uint8_t smp_err)
+{
+	ARG_UNUSED(smp_err);
+
+	return "";
+}
+#endif

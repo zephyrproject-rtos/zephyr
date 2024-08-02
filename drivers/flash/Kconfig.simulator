@@ -22,12 +22,32 @@ config FLASH_SIMULATOR_UNALIGNED_READ
 	 Disable this option only if you want to simulate
 	 a specific FLASH interface that requires aligned read access.
 
+config FLASH_SIMULATOR_EXPLICIT_ERASE
+	bool "Program-erase device"
+	select FLASH_HAS_EXPLICIT_ERASE
+	default y
+	help
+	  Explicit erase (non-erase-on-write) Flash, which is device that requires erase
+	  to erase-value prior to write as it only allows to change bits from erase-value
+	  to the opposite.
+
+config FLASH_SIMULATOR_RAMLIKE
+	bool
+	default y if !FLASH_SIMULATOR_EXPLICIT_ERASE
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select FLASH_SIMULATOR_DOUBLE_WRITES
+	help
+	  This is used for setting FLASH_HAS_NO_EXPLICIT_ERASE.
+
 config FLASH_SIMULATOR_DOUBLE_WRITES
 	bool "Allow program units to be programmed more than once"
 	help
 	 If selected, writing to a non-erased program unit will succeed, otherwise, it will return an error.
 	 Keep in mind that write operations can only change value of a bit from erase-value to the
 	 opposite.
+	 This option does not impact FLASH_SIMULATOR_RAMLIKE.
+	 In case when FLASH_SIMULATOR_EXPLICIT_ERASE is selected multiple writes to the same bit
+	 but only change from erase-value to opposite will be registered.
 
 config FLASH_SIMULATOR_SIMULATE_TIMING
 	bool "Hardware timing simulation"

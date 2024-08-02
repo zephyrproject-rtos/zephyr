@@ -1,0 +1,173 @@
+/*
+ * Copyright (c) 2023-2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <adi/max32/max32xxx.dtsi>
+
+&clk_ipo {
+	clock-frequency = <DT_FREQ_M(120)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(128)>;
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(3)>;
+	erase-block-size = <16384>;
+};
+
+&gcr {
+	/delete-property/ sysclk-prescaler;
+};
+
+&pinctrl {
+	reg = <0x40008000 0x3220>;
+
+	gpio2: gpio@4000a000 {
+		reg = <0x4000a000 0x1000>;
+		compatible = "adi,max32-gpio";
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupts = <26 0>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 2>;
+		status = "disabled";
+	};
+
+	gpio3: gpio@40080400 {
+		reg = <0x40080400 0x200>;
+		compatible = "adi,max32-gpio";
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupts = <58 0>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
+		status = "disabled";
+	};
+
+	gpio4: gpio@4000c000 {
+		reg = <0x4000c000 0x20>;
+		compatible = "adi,max32-gpio";
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupts = <54 0>;
+		status = "disabled";
+	};
+};
+
+/* MAX32690 extra peripherals. */
+/ {
+	soc {
+		sram1: memory@20020000 {
+			compatible = "mmio-sram";
+			reg = <0x20020000 DT_SIZE_K(128)>;
+		};
+
+		sram2: memory@20040000 {
+			compatible = "mmio-sram";
+			reg = <0x20040000 DT_SIZE_K(128)>;
+		};
+
+		sram3: memory@20060000 {
+			compatible = "mmio-sram";
+			reg = <0x20060000 DT_SIZE_K(128)>;
+		};
+
+		sram4: memory@20080000 {
+			compatible = "mmio-sram";
+			reg = <0x20080000 DT_SIZE_K(128)>;
+		};
+
+		sram5: memory@200a0000 {
+			compatible = "mmio-sram";
+			reg = <0x200a0000 DT_SIZE_K(128)>;
+		};
+
+		sram6: memory@200c0000 {
+			compatible = "mmio-sram";
+			reg = <0x200c0000 DT_SIZE_K(64)>;
+		};
+
+		sram7: memory@200d0000 {
+			compatible = "mmio-sram";
+			reg = <0x200d0000 DT_SIZE_K(64)>;
+		};
+
+		flc1: flash_controller@40029400 {
+			compatible = "adi,max32-flash-controller";
+			reg = <0x40029400 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash1: flash@10080000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10080000 DT_SIZE_K(256)>;
+				write-block-size = <16>;
+				erase-block-size = <16384>;
+			};
+		};
+
+		spi0: spi@40046000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40046000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
+			interrupts = <16 0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40047000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40047000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 7>;
+			interrupts = <17 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@40048000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40048000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 8>;
+			interrupts = <18 0>;
+			status = "disabled";
+		};
+
+		spi3: spi@400be000 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 16>;
+			interrupts = <56 0>;
+			status = "disabled";
+		};
+
+		spi4: spi@400be400 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be400 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 17>;
+			interrupts = <105 0>;
+			status = "disabled";
+		};
+
+		uart3: serial@40081400 {
+			compatible = "adi,max32-uart";
+			reg = <0x40081400 0x400>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 4>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+			interrupts = <88 0>;
+			status = "disabled";
+		};
+	};
+};

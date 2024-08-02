@@ -22,6 +22,7 @@
 #include <zephyr/dt-bindings/sensor/lis2de12.h>
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
 #include <zephyr/dt-bindings/sensor/stts22h.h>
+#include <zephyr/dt-bindings/sensor/ina226.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -230,10 +231,9 @@ test_i2c_sht4xd: sht4x@20 {
 	repeatability = <2>;
 };
 
-test_i2c_shtc3: SHTC3@21 {
-	compatible = "sensirion,shtcx";
+test_i2c_shtc3: shtc3@21 {
+	compatible = "sensirion,shtc3", "sensirion,shtcx";
 	reg = <0x21>;
-	chip = "shtc3";
 	measure-mode = "normal";
 	clock-stretching;
 };
@@ -597,6 +597,7 @@ test_i2c_bmp388: bmp388@55 {
 test_i2c_lm75: lm75@56 {
 	compatible = "lm75";
 	reg = <0x56>;
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_ina230: ina230@57 {
@@ -913,7 +914,7 @@ test_i2c_vishay_vcnl36825t: vcnl36825t@81 {
 	compatible = "vishay,vcnl36825t";
 	reg = <0x81>;
 
-	proximity-it = "3.5";
+	proximity-it = "1";
 	multi-pulse = <8>;
 
 	low-power;
@@ -1040,4 +1041,29 @@ test_i2c_nct75: test_i2c_nct75@8b {
 test_i2c_tmp114: tmp114@8c {
 	compatible = "ti,tmp114";
 	reg = <0x8c>;
+};
+
+test_i2c_ina226: ina226@8d {
+	compatible = "ti,ina226";
+	reg = <0x8d>;
+	current-lsb-microamps = <5000>;
+	rshunt-micro-ohms = <500>;
+};
+
+test_i2c_shtc1: shtc1@8e {
+	compatible = "sensirion,shtc1", "sensirion,shtcx";
+	reg = <0x8e>;
+	measure-mode = "low-power";
+	clock-stretching;
+};
+
+test_i2c_lm95234: lm95234@8f {
+	compatible = "national,lm95234";
+	reg = <0x8f>;
+	status = "okay";
+};
+
+test_i2c_sht21@90 {
+	compatible = "sensirion,sht21";
+	reg = <0x90>;
 };

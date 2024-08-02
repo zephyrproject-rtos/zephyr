@@ -35,6 +35,7 @@ node-macro =/ %s"DT_N" path-id %s"_REG_IDX_" DIGIT
               %s"_VAL_" ( %s"ADDRESS" / %s"SIZE")
 node-macro =/ %s"DT_N" path-id %s"_REG_NAME_" dt-name
               %s"_VAL_" ( %s"ADDRESS" / %s"SIZE")
+node-macro =/ %s"DT_N" path-id %s"_REG_NAME_" dt-name "_EXISTS"
 ; The interrupts property is also special.
 node-macro =/ %s"DT_N" path-id %s"_IRQ_NUM"
 node-macro =/ %s"DT_N" path-id %s"_IRQ_LEVEL"
@@ -73,6 +74,9 @@ node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM"
 node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM_SEP"
 node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM_VARGS"
 node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM_SEP_VARGS"
+; These are used by DT_CHILD_NUM and DT_CHILD_NUM_STATUS_OKAY macros
+node-macro =/ %s"DT_N" path-id %s"_CHILD_NUM"
+node-macro =/ %s"DT_N" path-id %s"_CHILD_NUM_STATUS_OKAY"
 ; These are used internally by DT_FOREACH_CHILD, which iterates over
 ; each child node.
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD"
@@ -85,6 +89,11 @@ node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY"
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY_SEP"
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY_VARGS"
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS"
+; These are used internally by DT_FOREACH_NODELABEL and
+; DT_FOREACH_NODELABEL_VARGS, which iterate over a node's node labels.
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_NODELABEL" [ %s"_VARGS" ]
+; These are used internally by DT_NUM_NODELABELS
+node-macro =/ %s"DT_N" path-id %s"_NODELABEL_NUM"
 ; The node's zero-based index in the list of it's parent's child nodes.
 node-macro =/ %s"DT_N" path-id %s"_CHILD_IDX"
 ; The node's status macro; dt-name in this case is something like "okay"

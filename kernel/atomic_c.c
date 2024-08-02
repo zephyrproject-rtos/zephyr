@@ -112,7 +112,7 @@ bool z_vrfy_atomic_cas(atomic_t *target, atomic_val_t old_value,
 
 	return z_impl_atomic_cas((atomic_t *)target, old_value, new_value);
 }
-#include <syscalls/atomic_cas_mrsh.c>
+#include <zephyr/syscalls/atomic_cas_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 bool z_impl_atomic_ptr_cas(atomic_ptr_t *target, atomic_ptr_val_t old_value,
@@ -142,7 +142,7 @@ static inline bool z_vrfy_atomic_ptr_cas(atomic_ptr_t *target,
 
 	return z_impl_atomic_ptr_cas(target, old_value, new_value);
 }
-#include <syscalls/atomic_ptr_cas_mrsh.c>
+#include <zephyr/syscalls/atomic_ptr_cas_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /**
@@ -280,7 +280,7 @@ static inline atomic_ptr_val_t z_vrfy_atomic_ptr_set(atomic_ptr_t *target,
 
 	return z_impl_atomic_ptr_set(target, value);
 }
-#include <syscalls/atomic_ptr_set_mrsh.c>
+#include <zephyr/syscalls/atomic_ptr_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /**
@@ -404,11 +404,11 @@ atomic_val_t z_impl_atomic_nand(atomic_t *target, atomic_val_t value)
 ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(atomic_nand);
 
 #ifdef CONFIG_USERSPACE
-#include <syscalls/atomic_add_mrsh.c>
-#include <syscalls/atomic_sub_mrsh.c>
-#include <syscalls/atomic_set_mrsh.c>
-#include <syscalls/atomic_or_mrsh.c>
-#include <syscalls/atomic_xor_mrsh.c>
-#include <syscalls/atomic_and_mrsh.c>
-#include <syscalls/atomic_nand_mrsh.c>
+#include <zephyr/syscalls/atomic_add_mrsh.c>
+#include <zephyr/syscalls/atomic_sub_mrsh.c>
+#include <zephyr/syscalls/atomic_set_mrsh.c>
+#include <zephyr/syscalls/atomic_or_mrsh.c>
+#include <zephyr/syscalls/atomic_xor_mrsh.c>
+#include <zephyr/syscalls/atomic_and_mrsh.c>
+#include <zephyr/syscalls/atomic_nand_mrsh.c>
 #endif /* CONFIG_USERSPACE */

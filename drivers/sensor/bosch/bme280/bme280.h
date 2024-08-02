@@ -14,6 +14,8 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/rtio/rtio.h>
 
 #define DT_DRV_COMPAT bosch_bme280
 
@@ -157,5 +159,73 @@ extern const struct bme280_bus_io bme280_bus_io_i2c;
 #define BME280_CTRL_MEAS_OFF_VAL	(BME280_PRESS_OVER | \
 					 BME280_TEMP_OVER |  \
 					 BME280_MODE_SLEEP)
+
+struct bme280_reading {
+	/* Compensated values. */
+	int32_t comp_temp;
+	uint32_t comp_press;
+	uint32_t comp_humidity;
+};
+
+struct bme280_data {
+	/* Compensation parameters. */
+	uint16_t dig_t1;
+	int16_t dig_t2;
+	int16_t dig_t3;
+	uint16_t dig_p1;
+	int16_t dig_p2;
+	int16_t dig_p3;
+	int16_t dig_p4;
+	int16_t dig_p5;
+	int16_t dig_p6;
+	int16_t dig_p7;
+	int16_t dig_p8;
+	int16_t dig_p9;
+	uint8_t dig_h1;
+	int16_t dig_h2;
+	uint8_t dig_h3;
+	int16_t dig_h4;
+	int16_t dig_h5;
+	int8_t dig_h6;
+
+	/* Carryover between temperature and pressure/humidity compensation. */
+	int32_t t_fine;
+
+	uint8_t chip_id;
+
+	struct bme280_reading reading;
+};
+
+/*
+ * RTIO
+ */
+
+struct bme280_decoder_header {
+	uint64_t timestamp;
+} __attribute__((__packed__));
+
+struct bme280_encoded_data {
+	struct bme280_decoder_header header;
+	struct {
+		/** Set if `temp` has data */
+		uint8_t has_temp: 1;
+		/** Set if `press` has data */
+		uint8_t has_press: 1;
+		/** Set if `humidity` has data */
+		uint8_t has_humidity: 1;
+	} __attribute__((__packed__));
+	struct bme280_reading reading;
+};
+
+int bme280_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+
+void bme280_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+int bme280_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan);
+
+int bme280_sample_fetch_helper(const struct device *dev,
+			       enum sensor_channel chan,
+			       struct bme280_reading *reading);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BME280_BME280_H_ */

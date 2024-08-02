@@ -18,9 +18,8 @@ config BT_GMAP_BGR_SUPPORTED
 	def_bool BT_CAP_ACCEPTOR && BT_BAP_BROADCAST_SINK && BT_VCP_VOL_REND
 
 config BT_GMAP
-	bool "Gaming Audio Profile [EXPERIMENTAL]"
+	bool "Gaming Audio Profile"
 	depends on BT_CAP_ACCEPTOR || BT_CAP_INITIATOR
-	select EXPERIMENTAL
 	help
 	  Enabling this will enable GMAP.
 

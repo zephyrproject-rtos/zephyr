@@ -3,6 +3,7 @@ family:
   series:
   - name: stm32c0x
     socs:
+    - name: stm32c011xx
     - name: stm32c031xx
   - name: stm32f0x
     socs:
@@ -97,9 +98,16 @@ family:
   - name: stm32h5x
     socs:
     - name: stm32h503xx
+    - name: stm32h533xx
     - name: stm32h562xx
     - name: stm32h563xx
     - name: stm32h573xx
+  - name: stm32h7rsx
+    socs:
+    - name: stm32h7r3xx
+    - name: stm32h7r7xx
+    - name: stm32h7s3xx
+    - name: stm32h7s7xx
   - name: stm32h7x
     socs:
     - name: stm32h7a3xx

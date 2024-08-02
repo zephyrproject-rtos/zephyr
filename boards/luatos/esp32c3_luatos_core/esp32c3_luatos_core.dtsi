@@ -43,10 +43,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_160M>;
-};
-
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
@@ -94,7 +90,6 @@
 	status = "disabled";
 	pinctrl-0 = <&twai_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 };
 
 &flash0 {
@@ -134,4 +129,8 @@
 			reg = <0x00250000 0x00006000>;
 		};
 	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
 };

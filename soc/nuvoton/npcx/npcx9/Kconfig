@@ -11,3 +11,11 @@ config SOC_SERIES_NPCX9
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_NPCX
 	select HAS_PM
+
+config NPCX_VCC1_RST_HANG_WORKAROUND
+	bool
+	depends on SOC_NPCX9M7FB
+	default y
+	help
+	  Workaround the issue "Possible Hang-Up After VCC1_RST Reset"
+	  in the npcx9m7fb SoC errata.

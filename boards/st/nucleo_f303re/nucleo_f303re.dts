@@ -69,6 +69,8 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <1>;
+	adc12-prescaler = <0>;
+	adc34-prescaler = <0>;
 };
 
 &usart2 {
@@ -94,7 +96,6 @@
 &can1 {
 	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	status = "okay";
 };
 

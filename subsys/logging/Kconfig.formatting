@@ -162,11 +162,14 @@ config LOG_TAG_DEFAULT
 	help
 	  Initial tag.
 
+config LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	bool
+	help
+	  Selected by log backends that supports timestamp formatting.
+
 config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Timestamp formatting in the backend"
-	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
-	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM || LOG_BACKEND_FS \
-	           || LOG_BACKEND_ADSP || LOG_BACKEND_ADSP_MTRACE
+	depends on LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	default y
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.

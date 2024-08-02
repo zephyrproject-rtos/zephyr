@@ -117,7 +117,7 @@ ZTEST(key, test_key_resource_leak)
 {
 	pthread_key_t key;
 
-	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_KEY_COUNT; ++i) {
+	for (size_t i = 0; i < CONFIG_POSIX_THREAD_KEYS_MAX; ++i) {
 		zassert_ok(pthread_key_create(&key, NULL), "failed to create key %zu", i);
 		zassert_ok(pthread_key_delete(key), "failed to delete key %zu", i);
 	}
@@ -126,8 +126,8 @@ ZTEST(key, test_key_resource_leak)
 ZTEST(key, test_correct_key_is_deleted)
 {
 	pthread_key_t key;
-	size_t j = CONFIG_MAX_PTHREAD_KEY_COUNT - 1;
-	pthread_key_t keys[CONFIG_MAX_PTHREAD_KEY_COUNT];
+	size_t j = CONFIG_POSIX_THREAD_KEYS_MAX - 1;
+	pthread_key_t keys[CONFIG_POSIX_THREAD_KEYS_MAX];
 
 	for (size_t i = 0; i < ARRAY_SIZE(keys); ++i) {
 		zassert_ok(pthread_key_create(&keys[i], NULL), "failed to create key %zu", i);

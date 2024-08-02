@@ -362,8 +362,8 @@ def doxygen_build(app: Sphinx) -> None:
     )
 
     logger.info("Checking if Doxygen needs to be run...")
-    changed = doxygen_input_has_changed(app.env, doxyfile)
-    if not changed:
+    app.env.doxygen_input_changed = doxygen_input_has_changed(app.env, doxyfile)
+    if not app.env.doxygen_input_changed:
         logger.info("Doxygen build will be skipped (no changes)!")
         return
 

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_NRF_AUXPLL
+	bool "nRF Auxiliary PLL driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_AUXPLL_ENABLED
+	help
+	  Driver for nRF Auxiliary PLL.

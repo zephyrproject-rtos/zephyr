@@ -17,6 +17,56 @@ config FLASH_HAS_EX_OP
 	  This option is selected by drivers that support flash extended
 	  operations.
 
+config FLASH_HAS_EXPLICIT_ERASE
+	bool
+	help
+	  Device does not do erase-on-write (erase-on-program, auto-erase
+	  on write) and requires explicit erase procedure to be programmed
+	  with random value, in place where it has already been programmed with
+	  some other value, as program can only change bits from erased-value
+	  to the opposite.
+	  All pure Flash devices are evolution of EEPROM where erase has
+	  been separated from write, EEPROM has erase-on-write, giving
+	  it advantage of higher write speeds at a cost of larger erase block.
+	  Note that explicit-erase capability does not warrants that
+	  write without erase is not allowed, taking the above restrictions,
+	  it only states that write of a random information will require
+	  erase.
+	  Erase is usually performed in pages, as we have chosen to name
+	  the unit in Zephyr, that may have different naming in device
+	  specifications, like pages, sectors or blocks, and may vary
+	  in size, depending how they are named by vendor.
+	  This option should be selected by drivers that serve devices with
+	  such characteristic and is used and may be used by users to provide
+	  paths in code that only serve such devices, and could be
+	  optimized-out by compiler in case where there is no such device in
+	  a system.
+
+config FLASH_HAS_NO_EXPLICIT_ERASE
+	bool
+	help
+	  Device does not require explicit erase before programming
+	  a new random value at any location that has been previously
+	  programmed with some other value.
+	  Note that the device may have erase-on-write (auto-erase),
+	  as for example in EEPROM devices, but may also have no erase
+	  at all.
+	  A device driver may still provide erase callback,
+	  especially if it is able to perform erase to accelerate
+	  further writes or is able to fill the area requested for
+	  erase, with single value, faster than consecutive writes
+	  that would be used to emulate erase.
+	  This option should be selected by drivers that serve
+	  devices with such characteristic and is used and may be
+	  used by users to provide paths in code that only serve
+	  such devices, and could be optimized-out by compiler in
+	  case where there is no such device in a system.
+	  This option should be selected for any device that
+	  can change storage bits, by write, from any value to opposite
+	  value at any time.
+	  When your driver sets this option you also need to set
+	  no_explicit_erase capability in your drivers flash_parameters.
+
 config FLASH_HAS_PAGE_LAYOUT
 	bool
 	help
@@ -77,12 +127,29 @@ config FLASH_SHELL_BUFFER_SIZE
 
 endif # FLASH_SHELL
 
+config FLASH_FILL_BUFFER_SIZE
+	int "Buffer size of flash_fill function"
+	default 32
+	help
+	  Size of a buffer used by flash_fill function to fill a device with
+	  specific value; this buffer is allocated on stack.
+	  The buffer is needed as most devices have write-block alignment
+	  requirements that which imposes minimal size of data, which can
+	  be written to a device, and alignment of write offset.
+	  Even if device does not have such requirement, filling device by
+	  single bytes is not efficient.
+	  Value selected here should be a multiple of the largest write-block-size
+	  among all the memory devices used in system.
+
+if FLASH_HAS_PAGE_LAYOUT
+
 config FLASH_PAGE_LAYOUT
 	bool "API for retrieving the layout of pages"
-	depends on FLASH_HAS_PAGE_LAYOUT
-	default y
+	default FLASH_HAS_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
+
+endif
 
 config FLASH_EX_OP_ENABLED
 	bool "API for extended flash operations"
@@ -116,6 +183,8 @@ source "drivers/flash/Kconfig.lpc"
 
 source "drivers/flash/Kconfig.mcux"
 
+source "drivers/flash/Kconfig.mspi"
+
 source "drivers/flash/Kconfig.nios2_qspi"
 
 source "drivers/flash/Kconfig.npcx_fiu"
@@ -131,6 +200,8 @@ source "drivers/flash/Kconfig.stm32"
 source "drivers/flash/Kconfig.stm32_qspi"
 
 source "drivers/flash/Kconfig.stm32_ospi"
+
+source "drivers/flash/Kconfig.stm32_xspi"
 
 source "drivers/flash/Kconfig.sam0"
 

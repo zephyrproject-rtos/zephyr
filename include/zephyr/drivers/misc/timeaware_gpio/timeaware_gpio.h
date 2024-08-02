@@ -86,7 +86,7 @@ static inline int z_impl_tgpio_port_get_time(const struct device *dev, uint64_t 
  * @brief Get current running rate
  *
  * @param dev TGPIO device
- * @param cycles pointer to store current running requency
+ * @param cycles pointer to store current running frequency
  *
  * @return 0 if successful, negative errno code on failure.
  */
@@ -190,6 +190,6 @@ static inline int z_impl_tgpio_pin_read_ts_ec(const struct device *dev, uint32_t
 }
 #endif
 
-#include <syscalls/timeaware_gpio.h>
+#include <zephyr/syscalls/timeaware_gpio.h>
 
 #endif /* ZEPHYR_DRIVERS_MISC_TIMEAWARE_GPIO_TIMEAWARE_GPIO */

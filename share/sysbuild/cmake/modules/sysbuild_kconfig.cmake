@@ -13,13 +13,32 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_sysbuild_guiconfig
 set(KCONFIG_TARGETS sysbuild_menuconfig sysbuild_guiconfig)
 list(TRANSFORM EXTRA_KCONFIG_TARGETS PREPEND "sysbuild_")
 
+zephyr_get(APPLICATION_CONFIG_DIR)
+if(DEFINED APPLICATION_CONFIG_DIR)
+  zephyr_file(APPLICATION_ROOT APPLICATION_CONFIG_DIR BASE_DIR ${APP_DIR})
+
+  # Sysbuild must add a locally defined APPLICATION_CONFIG_DIR in sysbuild/CMakeLists.txt
+  # to the cache in order for the setting to propagate to images.
+  set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE PATH
+      "Sysbuild adjusted APPLICATION_CONFIG_DIR" FORCE
+  )
+endif()
+
+zephyr_get(SB_APPLICATION_CONFIG_DIR)
+if(DEFINED SB_APPLICATION_CONFIG_DIR)
+  zephyr_file(APPLICATION_ROOT SB_APPLICATION_CONFIG_DIR BASE_DIR ${APP_DIR})
+  set(APPLICATION_CONFIG_DIR ${SB_APPLICATION_CONFIG_DIR})
+endif()
+set_ifndef(APPLICATION_CONFIG_DIR ${APP_DIR})
+string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
+
 if(DEFINED SB_CONF_FILE)
   # SB_CONF_FILE already set so nothing to do.
 elseif(DEFINED ENV{SB_CONF_FILE})
   set(SB_CONF_FILE $ENV{SB_CONF_FILE})
 else()
   # sysbuild.conf is an optional file, because sysbuild is an opt-in feature.
-  zephyr_file(CONF_FILES ${APP_DIR} KCONF SB_CONF_FILE NAMES "sysbuild.conf" SUFFIX ${FILE_SUFFIX})
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} KCONF SB_CONF_FILE NAMES "sysbuild.conf" SUFFIX ${FILE_SUFFIX})
 endif()
 
 if(NOT DEFINED SB_EXTRA_CONF_FILE AND DEFINED SB_OVERLAY_CONFIG)
@@ -54,9 +73,16 @@ if(NOT DEFINED SB_CONF_FILE)
   set(SB_CONF_FILE ${CMAKE_CURRENT_BINARY_DIR}/empty.conf)
 endif()
 
+if(NOT EXISTS "${APPLICATION_CONFIG_DIR}")
+  message(FATAL_ERROR "${APPLICATION_CONFIG_DIR} (APPLICATION_CONFIG_DIR) doesn't exist. "
+          "Unable to lookup sysbuild.conf or other related sysbuild configuration files. "
+	  "Please ensure APPLICATION_CONFIG_DIR points to a valid location."
+  )
+endif()
+
 # Empty files to make kconfig.py happy.
 file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/empty.conf)
-set(APPLICATION_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(APPLICATION_SOURCE_DIR ${sysbuild_toplevel_SOURCE_DIR})
 set(AUTOCONF_H             ${CMAKE_CURRENT_BINARY_DIR}/autoconf.h)
 set(CONF_FILE              ${SB_CONF_FILE})
 set(EXTRA_CONF_FILE        "${SB_EXTRA_CONF_FILE}")
@@ -76,3 +102,4 @@ if(EXISTS ${APP_DIR}/Kconfig.sysbuild)
 endif()
 include(${ZEPHYR_BASE}/cmake/modules/kconfig.cmake)
 set(CONF_FILE)
+set(EXTRA_CONF_FILE)

@@ -100,7 +100,7 @@ ZTEST(posix_headers, test_sys_socket_h)
 	zassert_not_equal(-1, SHUT_RDWR);
 	zassert_not_equal(-1, SHUT_WR);
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_POSIX_NETWORKING)) {
 		zassert_not_null(accept);
 		zassert_not_null(bind);
 		zassert_not_null(connect);

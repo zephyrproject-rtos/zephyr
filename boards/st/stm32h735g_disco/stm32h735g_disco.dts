@@ -130,17 +130,27 @@
 };
 
 &mac {
-	pinctrl-0 = <&eth_mdc_pc1
-		     &eth_rxd0_pc4
+	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
-		     &eth_mdio_pa2
 		     &eth_crs_dv_pa7
 		     &eth_tx_en_pb11
 		     &eth_txd0_pb12
 		     &eth_txd1_pb13>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+		status = "okay";
+	};
 };
 
 &sdmmc1 {
@@ -206,8 +216,6 @@
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	status = "okay";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 
 	can-transceiver {
 		max-bitrate = <8000000>;
@@ -220,8 +228,6 @@
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	status = "okay";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 
 	can-transceiver {
 		max-bitrate = <8000000>;
@@ -235,10 +241,14 @@
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	/* Solder bridges SB29 and SB30 need to be closed for this to work */
 	status = "disabled";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 
 	can-transceiver {
 		max-bitrate = <8000000>;
 	};
+};
+
+zephyr_udc0: &usbotg_hs {
+	status = "okay";
+	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
+	pinctrl-names = "default";
 };

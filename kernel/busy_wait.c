@@ -52,5 +52,5 @@ static inline void z_vrfy_k_busy_wait(uint32_t usec_to_wait)
 {
 	z_impl_k_busy_wait(usec_to_wait);
 }
-#include <syscalls/k_busy_wait_mrsh.c>
+#include <zephyr/syscalls/k_busy_wait_mrsh.c>
 #endif /* CONFIG_USERSPACE */

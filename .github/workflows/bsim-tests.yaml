@@ -34,18 +34,13 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.11.20240324
-     options: '--entrypoint /bin/bash'
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      options: '--entrypoint /bin/bash'
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       EDTT_PATH: ../tools/edtt
-      bsim_bt_52_test_results_file: ./bsim_bt/52_bsim_results.xml
-      bsim_bt_53_test_results_file: ./bsim_bt/53_bsim_results.xml
-      bsim_bt_53split_test_results_file: ./bsim_bt/53_bsim_split_results.xml
-      bsim_net_52_test_results_file: ./bsim_net/52_bsim_results.xml
-      bsim_uart_test_results_file: ./bsim_uart/uart_bsim_results.xml
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -153,59 +148,39 @@ jobs:
       - name: Run Bluetooth Tests with BSIM
         if: steps.check-bluetooth-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
         run: |
-          export ZEPHYR_BASE=${PWD}
-          # Build and run the BT tests for nrf52_bsim:
-          nice tests/bsim/bluetooth/compile.sh
-          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_52_test_results_file} \
-          TESTS_FILE=tests/bsim/bluetooth/tests.nrf52bsim.txt tests/bsim/run_parallel.sh
-          # Build and run the BT controller tests also for the nrf5340bsim/nrf5340/cpunet
-          nice tests/bsim/bluetooth/compile.nrf5340bsim_nrf5340_cpunet.sh
-          BOARD=nrf5340bsim/nrf5340/cpunet \
-          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_53_test_results_file} \
-          TESTS_FILE=tests/bsim/bluetooth/tests.nrf5340bsim_nrf5340_cpunet.txt \
-          tests/bsim/run_parallel.sh
-          # Build and run the nrf5340 split stack tests set
-          nice tests/bsim/bluetooth/compile.nrf5340bsim_nrf5340_cpuapp.sh
-          BOARD=nrf5340bsim/nrf5340/cpuapp \
-          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_53split_test_results_file} \
-          TESTS_FILE=tests/bsim/bluetooth/tests.nrf5340bsim_nrf5340_cpuapp.txt \
-          tests/bsim/run_parallel.sh
+          tests/bsim/ci.bt.sh
 
       - name: Run Networking Tests with BSIM
         if: steps.check-networking-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
         run: |
-          export ZEPHYR_BASE=${PWD}
-          WORK_DIR=${ZEPHYR_BASE}/bsim_net nice tests/bsim/net/compile.sh
-          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_net_52_test_results_file} \
-          SEARCH_PATH=tests/bsim/net/ tests/bsim/run_parallel.sh
+          tests/bsim/ci.net.sh
 
       - name: Run UART Tests with BSIM
         if: steps.check-uart-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
         run: |
-          echo "UART: Single device tests"
-          ./scripts/twister -T tests/drivers/uart/ --force-color --inline-logs -v -M -p nrf52_bsim \
-            --fixture gpio_loopback -- -uart0_loopback
-          echo "UART: Multi device tests"
-          export ZEPHYR_BASE=${PWD}
-          WORK_DIR=${ZEPHYR_BASE}/bsim_uart nice tests/bsim/drivers/uart/compile.sh
-          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_uart_test_results_file} \
-          SEARCH_PATH=tests/bsim/drivers/uart/ tests/bsim/run_parallel.sh
+          tests/bsim/ci.uart.sh
 
-      - name: Upload Test Results
+      - name: Merge Test Results
+        run: |
+          pip3 install junitparser junit2html
+          junitparser merge --glob "./bsim_*/*bsim_results.*.xml" "./twister-out/twister.xml" junit.xml
+          junit2html junit.xml junit.html
+
+      - name: Upload Unit Test Results in HTML
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bsim-test-results
+          name: HTML Unit Test Results
+          if-no-files-found: ignore
           path: |
-            ./bsim_bt/52_bsim_results.xml
-            ./bsim_bt/53_bsim_results.xml
-            ./bsim_bt/53_bsim_split_results.xml
-            ./bsim_net/52_bsim_results.xml
-            ./bsim_uart/uart_bsim_results.xml
-            ./twister-out/twister.xml
-            ./twister-out/twister.json
-            ${{ github.event_path }}
-          if-no-files-found: warn
+            junit.html
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: Bsim Test Results
+          files: "junit.xml"
+          comment_mode: off
 
       - name: Upload Event Details
         if: always()

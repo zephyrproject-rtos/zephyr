@@ -14,7 +14,7 @@ GTEXT(__soc_handle_irq)
  */
 SECTION_FUNC(exception.other, __soc_handle_irq)
 	/*
-	 * The the MIP CSR on the NEORV32 is read-only and can thus not be used for
+	 * The MIP CSR on the NEORV32 is read-only and can thus not be used for
 	 * clearing a pending IRQ. Instead we disable the IRQ in the MIE CSR and
 	 * re-enable it (if it was enabled when clearing).
 	 */

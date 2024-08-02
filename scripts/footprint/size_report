@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2016, 2020 Intel Corporation
+# Copyright (c) 2016, 2020-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -28,7 +28,6 @@ from anytree.exporter import DictExporter
 
 import elftools
 from elftools.elf.elffile import ELFFile
-from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.dwarf.descriptions import describe_form_class
 from elftools.dwarf.descriptions import (
@@ -69,9 +68,9 @@ def is_symbol_in_ranges(sym, ranges):
     """
     for bound in ranges:
         if bound['start'] <= sym['st_value'] <= bound['end']:
-            return True
+            return bound
 
-    return False
+    return None
 
 
 def get_die_mapped_address(die, parser, dwarfinfo):
@@ -83,7 +82,7 @@ def get_die_mapped_address(die, parser, dwarfinfo):
         if 'DW_AT_location' in die.attributes:
             loc_attr = die.attributes['DW_AT_location']
             if parser.attribute_has_location(loc_attr, die.cu['version']):
-                loc = parser.parse_from_attribute(loc_attr, die.cu['version'])
+                loc = parser.parse_from_attribute(loc_attr, die.cu['version'], die)
                 if isinstance(loc, LocationExpr):
                     addr = describe_DWARF_expr(loc.loc_expr,
                                                dwarfinfo.structs)
@@ -128,7 +127,7 @@ def match_symbol_address(symlist, die, parser, dwarfinfo):
 def get_symbols(elf, addr_ranges):
     """
     Fetch the symbols from the symbol table and put them
-    into ROM, RAM buckets.
+    into ROM, RAM, unassigned buckets.
     """
     rom_syms = dict()
     ram_syms = dict()
@@ -136,6 +135,7 @@ def get_symbols(elf, addr_ranges):
 
     rom_addr_ranges = addr_ranges['rom']
     ram_addr_ranges = addr_ranges['ram']
+    unassigned_addr_ranges = addr_ranges['unassigned']
 
     for section in elf.iter_sections():
         if isinstance(section, SymbolTableSection):
@@ -147,29 +147,51 @@ def get_symbols(elf, addr_ranges):
                 found_sec = False
                 entry = {'name': sym.name,
                          'symbol': sym,
-                         'mapped_files': set()}
+                         'mapped_files': set(),
+                         'section': None}
 
                 # If symbol is in ROM area?
-                if is_symbol_in_ranges(sym, rom_addr_ranges):
+                bound = is_symbol_in_ranges(sym, rom_addr_ranges)
+                if bound:
                     if sym.name not in rom_syms:
                         rom_syms[sym.name] = list()
+                    entry['section'] = bound['name']
                     rom_syms[sym.name].append(entry)
                     found_sec = True
 
                 # If symbol is in RAM area?
-                if is_symbol_in_ranges(sym, ram_addr_ranges):
+                bound = is_symbol_in_ranges(sym, ram_addr_ranges)
+                if bound:
                     if sym.name not in ram_syms:
                         ram_syms[sym.name] = list()
+                    entry['section'] = bound['name']
                     ram_syms[sym.name].append(entry)
                     found_sec = True
 
                 if not found_sec:
-                    unassigned_syms['sym_name'] = entry
+                    bound = is_symbol_in_ranges(sym, unassigned_addr_ranges)
+                    if bound:
+                        entry['section'] = bound['name']
+                    if sym.name not in unassigned_syms:
+                        unassigned_syms[sym.name] = list()
+                    unassigned_syms[sym.name].append(entry)
 
     ret = {'rom': rom_syms,
            'ram': ram_syms,
            'unassigned': unassigned_syms}
     return ret
+
+
+def print_section_info(section, descr=""):
+    if args.verbose:
+        sec_size = section['sh_size']
+        sec_start = section['sh_addr']
+        sec_end = sec_start + (sec_size - 1 if sec_size else 0)
+        print(f"DEBUG: "
+              f"0x{sec_start:08x}-0x{sec_end:08x} "
+              f"{descr} '{section.name}': size={sec_size}, "
+              f"{section['sh_type']}, 0x{section['sh_flags']:08x}")
+#
 
 
 def get_section_ranges(elf):
@@ -179,19 +201,26 @@ def get_section_ranges(elf):
     """
     rom_addr_ranges = list()
     ram_addr_ranges = list()
+    unassigned_addr_ranges = list()
+
     rom_size = 0
     ram_size = 0
+    unassigned_size = 0
 
     for section in elf.iter_sections():
         size = section['sh_size']
         sec_start = section['sh_addr']
-        sec_end = sec_start + size - 1
-        bound = {'start': sec_start, 'end': sec_end}
+        sec_end = sec_start + (size - 1 if size else 0)
+        bound = {'start': sec_start, 'end': sec_end, 'name': section.name}
+        is_assigned = False
 
         if section['sh_type'] == 'SHT_NOBITS':
             # BSS and noinit sections
             ram_addr_ranges.append(bound)
             ram_size += size
+            is_assigned = True
+            print_section_info(section, "RAM bss section")
+
         elif section['sh_type'] == 'SHT_PROGBITS':
             # Sections to be in flash or memory
             flags = section['sh_flags']
@@ -199,23 +228,37 @@ def get_section_ranges(elf):
                 # Text section
                 rom_addr_ranges.append(bound)
                 rom_size += size
+                is_assigned = True
+                print_section_info(section, "ROM txt section")
+
             elif (flags & SHF_WRITE_ALLOC) == SHF_WRITE_ALLOC:
                 # Data occupies both ROM and RAM
                 # since at boot, content is copied from ROM to RAM
                 rom_addr_ranges.append(bound)
                 rom_size += size
-
                 ram_addr_ranges.append(bound)
                 ram_size += size
+                is_assigned = True
+                print_section_info(section, "ROM,RAM section")
+
             elif (flags & SHF_ALLOC) == SHF_ALLOC:
                 # Read only data
                 rom_addr_ranges.append(bound)
                 rom_size += size
+                is_assigned = True
+                print_section_info(section, "ROM r/o section")
+
+        if not is_assigned:
+            print_section_info(section, "unassigned section")
+            unassigned_addr_ranges.append(bound)
+            unassigned_size += size
 
     ret = {'rom': rom_addr_ranges,
            'rom_total_size': rom_size,
            'ram': ram_addr_ranges,
-           'ram_total_size': ram_size}
+           'ram_total_size': ram_size,
+           'unassigned': unassigned_addr_ranges,
+           'unassigned_total_size': unassigned_size}
     return ret
 
 
@@ -249,7 +292,7 @@ def get_die_filename(die, lineprog):
     return path
 
 
-def do_simple_name_matching(elf, symbol_dict, processed):
+def do_simple_name_matching(dwarfinfo, symbol_dict, processed):
     """
     Sequentially process DIEs in compiler units with direct file mappings
     within the DIEs themselves, and do simply matching between DIE names
@@ -260,7 +303,6 @@ def do_simple_name_matching(elf, symbol_dict, processed):
     unmapped_symbols = processed['unmapped_symbols']
     newly_mapped_syms = set()
 
-    dwarfinfo = elf.get_dwarf_info()
     location_lists = dwarfinfo.location_lists()
     location_parser = LocationParser(location_lists)
 
@@ -370,7 +412,7 @@ def mark_address_aliases(symbol_dict, processed):
     processed['unmapped_symbols'] = unmapped_symbols
 
 
-def do_address_range_matching(elf, symbol_dict, processed):
+def do_address_range_matching(dwarfinfo, symbol_dict, processed):
     """
     Match symbols indirectly using address ranges.
 
@@ -391,7 +433,6 @@ def do_address_range_matching(elf, symbol_dict, processed):
     unmapped_symbols = processed['unmapped_symbols']
     newly_mapped_syms = set()
 
-    dwarfinfo = elf.get_dwarf_info()
     location_lists = dwarfinfo.location_lists()
     location_parser = LocationParser(location_lists)
 
@@ -532,13 +573,16 @@ class TreeNode(NodeMixin):
     A symbol node.
     """
 
-    def __init__(self, name, identifier, size=0, parent=None, children=None, address=0):
+    def __init__(self, name, identifier, size=0, parent=None, children=None, address=None, section=None):
         super().__init__()
         self._name = name
         self._size = size
         self.parent = parent
         self._identifier = identifier
-        self.address = address
+        if address is not None:
+            self.address = address
+        if section is not None:
+            self.section = section
         if children:
             self.children = children
 
@@ -584,7 +628,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
 
     # A set of helper function for building a simple tree with a path-like
     # hierarchy.
-    def _insert_one_elem(root, path, size, addr):
+    def _insert_one_elem(root, path, size, addr, section):
         cur = None
         node = None
         parent = root
@@ -597,12 +641,28 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
             results = findall_by_attr(root, cur, name="_identifier")
             if results:
                 item = results[0]
-                item._size += size
-                parent = item
+                if not hasattr(item, 'address'):
+                    # Passing down through a non-terminal parent node.
+                    parent = item
+                    parent._size += size
+                else:
+                    # Another symbol node here with the same name; stick to its parent as well.
+                    parent = item.parent
+                    node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
             else:
+                # There is no such terminal symbol in the tree yet; let's add it.
                 if node:
                     parent = node
-                node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent, address=addr)
+                node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
+        if node:
+            # Set memory block address and section name properties only for terminal symbol nodes.
+            # Don't do it on file- and directory- level parent nodes.
+            node.address = addr
+            node.section = section
+        else:
+            # normally this shouldn't happen; just to detect data or logic errors.
+            print(f"ERROR: no end node created for {root}, {path}, 0x{addr:08x}+{size}@{section}")
+    #
 
     # Mapping paths to tree nodes
     path_node_map = [
@@ -619,6 +679,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
         for symbol in sym:
             size = get_symbol_size(symbol['symbol'])
             addr = get_symbol_addr(symbol['symbol'])
+            section = symbol['section']
             for file in symbol['mapped_files']:
                 path = Path(file, name)
                 if path.is_absolute():
@@ -636,7 +697,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
                 else:
                     dest_node = node_no_paths
 
-                _insert_one_elem(dest_node, path, size, addr)
+                _insert_one_elem(dest_node, path, size, addr, section)
 
 
     if node_zephyr_base is not root:
@@ -683,18 +744,21 @@ def print_any_tree(root, total_size, depth):
     """
     Print the symbol tree.
     """
-    print('{:101s} {:7s} {:8s} {:10s}'.format(
-        Fore.YELLOW + "Path", "Size", "%", "Address" + Fore.RESET))
-    print('=' * 126)
+    print('{:98s} {:>7s} {:>7s} {:11s} {:16s}'.format(
+        Fore.YELLOW + "Path", "Size", "%", " Address", "Section" + Fore.RESET))
+    print('=' * 138)
     for row in RenderTree(root, childiter=node_sort, maxlevel=depth):
         f = len(row.pre) + len(row.node._name)
         s = str(row.node._size).rjust(100-f)
         percent = 100 * float(row.node._size) / float(total_size)
 
         hex_addr = "-"
+        section_name = ""
         cc = cr = ""
         if not row.node.children:
-            if row.node._name != "(hidden)":
+            if hasattr(row.node, 'section'):
+                section_name = row.node.section
+            if hasattr(row.node, 'address'):
                 hex_addr = "0x{:08x}".format(row.node.address)
                 cc = Fore.CYAN
                 cr = Fore.RESET
@@ -702,8 +766,8 @@ def print_any_tree(root, total_size, depth):
             cc = Fore.GREEN
             cr = Fore.RESET
 
-        print(f"{row.pre}{cc}{row.node._name} {s} {cr}{Fore.BLUE}{percent:6.2f}%{Fore.RESET}  {hex_addr}")
-    print('=' * 126)
+        print(f"{row.pre}{cc}{row.node._name} {s} {cr}{Fore.BLUE}{percent:6.2f}%{Fore.RESET}  {hex_addr} {section_name}")
+    print('=' * 138)
     print(f'{total_size:>101}')
 
 
@@ -755,22 +819,21 @@ def main():
     elif args.target == 'all':
         targets = ['rom', 'ram']
 
+    elf = ELFFile(open(args.kernel, "rb"))
+    assert elf.has_dwarf_info(), "ELF file has no DWARF information"
+
+    set_global_machine_arch(elf.get_machine_arch())
+    addr_ranges = get_section_ranges(elf)
+    dwarfinfo = elf.get_dwarf_info()
+
     for t in targets:
-
-        elf = ELFFile(open(args.kernel, "rb"))
-
-        assert elf.has_dwarf_info(), "ELF file has no DWARF information"
-
-        set_global_machine_arch(elf.get_machine_arch())
-
-        addr_ranges = get_section_ranges(elf)
 
         symbols = get_symbols(elf, addr_ranges)
 
         for sym in symbols['unassigned'].values():
-            print("WARN: Symbol '{0}' is not in RAM or ROM".format(sym['name']))
-
-        symbol_dict = None
+            for sym_entry in sym:
+                print(f"WARN: Symbol '{sym_entry['name']}' section '{sym_entry['section']}' "
+                      "is not in RAM or ROM.")
 
         if args.json:
             jsonout = args.json
@@ -786,9 +849,9 @@ def main():
                          "mapped_addr": set(),
                          "unmapped_symbols": set(symbol_dict.keys())}
 
-            do_simple_name_matching(elf, symbol_dict, processed)
+            do_simple_name_matching(dwarfinfo, symbol_dict, processed)
             mark_address_aliases(symbol_dict, processed)
-            do_address_range_matching(elf, symbol_dict, processed)
+            do_address_range_matching(dwarfinfo, symbol_dict, processed)
             mark_address_aliases(symbol_dict, processed)
             common_path_prefix = find_common_path_prefix(symbol_dict)
             set_root_path_for_unmapped_symbols(symbol_dict, ranges, processed)

@@ -7,7 +7,7 @@ tests:
   drivers.pwm.cc13xx_cc26xx_timer.build:
     platform_allow: cc1352p1_launchxl
   drivers.pwm.gecko.build:
-    platform_allow: efr32_radio/efr32fg1p133f256gm48
+    platform_allow: slwrb4250b
   drivers.pwm.imx.build:
     platform_allow: colibri_imx7d/mcimx7d/m4
   drivers.pwm.litex.build:

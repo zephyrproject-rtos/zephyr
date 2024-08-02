@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2024 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/cat1b/mpns/CYW20829B0LKML.dtsi>
+#include <arm/infineon/cat1b/cyw20829/system_clocks.dtsi>
+#include "cyw920829m2evk_02-common.dtsi"
+#include "cyw920829m2evk_02-pinctrl.dtsi"
+
+/ {
+	model = "The Infineon AIROC™ CYW20829 Bluetooth® LE evaluation kit (CYW92089M2EVK-02)";
+	compatible = "infineon,cyw920829m2evk_02", "infineon,CYW20829";
+
+	aliases {
+		watchdog0 = &watchdog0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &app_region;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bluetooth;
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+uart2: &scb2 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+	hw-flow-control;
+
+	pinctrl-0 = <&p3_3_scb2_uart_tx &p3_2_scb2_uart_rx &p3_1_scb2_uart_rts &p3_0_scb2_uart_cts>;
+	pinctrl-names = "default";
+};
+
+&fll0 {
+	status = "okay";
+};
+
+&path_mux0 {
+	status = "okay";
+};
+
+&path_mux1 {
+	status = "okay";
+};
+
+&path_mux2 {
+	status = "okay";
+};
+
+&path_mux3 {
+	status = "okay";
+};
+
+&clk_hf0 {
+	status = "okay";
+	clocks = <&fll0>;
+};
+
+&clk_hf1 {
+	status = "okay";
+};
+
+&clk_hf2 {
+	status = "okay";
+};
+
+&clk_hf3 {
+	status = "okay";
+};
+
+&watchdog0 {
+	status = "okay";
+};
+
+&bluetooth {
+	status = "okay";
+};
+
+/ {
+	flash0: flash@60000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x60000000 DT_SIZE_K(512)>;
+		write-block-size = <16>;
+		erase-block-size = <256>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			toc2_region: flash@60000000 {
+				compatible = "zephyr,memory-region", "soc-nv-flash";
+				zephyr,memory-region = "APP_HEADER_FLASH";
+				reg = <0x60000000 0x50>;
+			};
+			bootstrap_region: flash@60000050 {
+				compatible = "zephyr,memory-region", "soc-nv-flash";
+				zephyr,memory-region = "BOOTSTRAP_FLASH";
+				reg = <0x60000050 DT_SIZE_K(12)>;
+			};
+			app_region: flash@60003050 {
+				compatible = "soc-nv-flash";
+				reg = <0x60003050 0x6CFB0>; /* 435kb */
+			};
+			storage_partition: flash@60070000 {
+				compatible = "soc-nv-flash";
+				reg = <0x60070000 DT_SIZE_K(64)>;
+			};
+		};
+	};
+};

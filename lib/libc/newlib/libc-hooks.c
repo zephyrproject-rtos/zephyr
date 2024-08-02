@@ -23,6 +23,15 @@
 #include <zephyr/kernel/mm.h>
 #include <sys/time.h>
 
+int _fstat(int fd, struct stat *st);
+int _read(int fd, void *buf, int nbytes);
+int _write(int fd, const void *buf, int nbytes);
+int _open(const char *name, int mode);
+int _close(int file);
+int _lseek(int file, int ptr, int dir);
+int _kill(int pid, int sig);
+int _getpid(void);
+
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
 
@@ -133,7 +142,7 @@ static int malloc_prepare(void)
 	return 0;
 }
 
-SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_LIBC);
 
 /* Current offset from HEAP_BASE of unused memory */
 LIBC_BSS static size_t heap_sz;
@@ -184,7 +193,7 @@ static inline int z_vrfy_zephyr_read_stdin(char *buf, int nbytes)
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(buf, nbytes));
 	return z_impl_zephyr_read_stdin((char *)buf, nbytes);
 }
-#include <syscalls/zephyr_read_stdin_mrsh.c>
+#include <zephyr/syscalls/zephyr_read_stdin_mrsh.c>
 #endif
 
 int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
@@ -207,11 +216,11 @@ static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 	K_OOPS(K_SYSCALL_MEMORY_READ(buf, nbytes));
 	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
 }
-#include <syscalls/zephyr_write_stdout_mrsh.c>
+#include <zephyr/syscalls/zephyr_write_stdout_mrsh.c>
 #endif
 
-#ifndef CONFIG_POSIX_API
-int _read(int fd, char *buf, int nbytes)
+#ifndef CONFIG_POSIX_DEVICE_IO
+int _read(int fd, void *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
@@ -238,16 +247,15 @@ int _close(int file)
 	return -1;
 }
 __weak FUNC_ALIAS(_close, close, int);
+#endif /* CONFIG_POSIX_DEVICE_IO */
 
+#ifndef CONFIG_POSIX_FD_MGMT
 int _lseek(int file, int ptr, int dir)
 {
 	return 0;
 }
 __weak FUNC_ALIAS(_lseek, lseek, int);
-#else
-extern ssize_t write(int file, const char *buffer, size_t count);
-#define _write	write
-#endif
+#endif /* CONFIG_POSIX_FD_MGMT */
 
 int _isatty(int file)
 {
@@ -255,24 +263,31 @@ int _isatty(int file)
 }
 __weak FUNC_ALIAS(_isatty, isatty, int);
 
+#ifndef CONFIG_POSIX_SIGNALS
 int _kill(int i, int j)
 {
 	return 0;
 }
 __weak FUNC_ALIAS(_kill, kill, int);
+#endif /* CONFIG_POSIX_SIGNALS */
 
-int _getpid(void)
-{
-	return 0;
-}
-__weak FUNC_ALIAS(_getpid, getpid, int);
-
+#ifndef CONFIG_POSIX_FILE_SYSTEM
 int _fstat(int file, struct stat *st)
 {
 	st->st_mode = S_IFCHR;
 	return 0;
 }
 __weak FUNC_ALIAS(_fstat, fstat, int);
+#endif /* CONFIG_POSIX_FILE_SYSTEM */
+
+#ifndef CONFIG_POSIX_MULTI_PROCESS
+int _getpid(void)
+{
+	return 0;
+}
+__weak FUNC_ALIAS(_getpid, getpid, int);
+
+#endif /* CONFIG_POSIX_MULTI_PROCESS */
 
 __weak void _exit(int status)
 {
@@ -476,11 +491,6 @@ __weak FUNC_NORETURN void __chk_fail(void)
 }
 
 #if CONFIG_XTENSA
-extern int _read(int fd, char *buf, int nbytes);
-extern int _open(const char *name, int mode);
-extern int _close(int file);
-extern int _lseek(int file, int ptr, int dir);
-
 /* The Newlib in xtensa toolchain has a few missing functions for the
  * reentrant versions of the syscalls.
  */
@@ -565,7 +575,7 @@ void *_sbrk_r(struct _reent *r, int count)
 
 int _gettimeofday(struct timeval *__tp, void *__tzp)
 {
-#ifdef CONFIG_POSIX_CLOCK
+#ifdef CONFIG_XSI_SINGLE_PROCESS
 	return gettimeofday(__tp, __tzp);
 #else
 	/* Non-posix systems should not call gettimeofday() here as it will

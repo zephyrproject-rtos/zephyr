@@ -470,7 +470,7 @@ if SHELL_BACKEND_TELNET
 config SHELL_TELNET_INIT_PRIORITY
 	int "Initialization priority"
 	default 95
-	range NET_SOCKETS_SERVICE_INIT_PRIO 99
+	range 0 99
 	help
 	  Initialization priority for telnet shell backend. This must be higher
 	  than socket service initialization priority, as socket service has to
@@ -624,5 +624,30 @@ config SHELL_DUMMY_INIT_LOG_LEVEL
 	default 5 if SHELL_DUMMY_INIT_LOG_LEVEL_DEFAULT
 
 endif # SHELL_BACKEND_DUMMY
+
+config SHELL_BACKEND_ADSP_MEMORY_WINDOW
+	bool "Shell backend implemented over mapped memory window."
+	depends on SOC_FAMILY_INTEL_ADSP
+	help
+	  Enable ADSP memory window backend which can be used to execute commands
+	  from remote host processor that has access to the same memory window.
+
+if SHELL_BACKEND_ADSP_MEMORY_WINDOW
+
+config SHELL_BACKEND_ADSP_MEMORY_WINDOW_PROMPT
+	string "Displayed prompt name"
+	default "~$ "
+	help
+	  Displayed prompt name for ADSP memory window backend. If prompt is set,
+	  the shell will send two newlines during initialization.
+
+config SHELL_BACKEND_ADSP_MEMORY_WINDOW_POLL_INTERVAL
+	int "Poll interval (in microseconds)"
+	default 100
+	help
+	  This option can be used to modify the poll interval the backend uses
+	  to check for new commands.
+
+endif # SHELL_BACKEND_ADSP_MEMORY_WINDOW
 
 endif # SHELL_BACKENDS

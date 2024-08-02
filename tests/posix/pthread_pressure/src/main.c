@@ -21,7 +21,7 @@
 #endif
 
 /* 32 threads is mainly a limitation of find_lsb_set() */
-#define NUM_THREADS MIN(32, MIN(CONFIG_TEST_NUM_CPUS, CONFIG_MAX_PTHREAD_COUNT))
+#define NUM_THREADS MIN(32, MIN(CONFIG_TEST_NUM_CPUS, CONFIG_POSIX_THREAD_THREADS_MAX))
 
 typedef int (*create_fn)(int i);
 typedef int (*join_fn)(int i);

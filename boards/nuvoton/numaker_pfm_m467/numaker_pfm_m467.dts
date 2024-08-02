@@ -111,8 +111,6 @@
 };
 
 &canfd0 {
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	pinctrl-0 = <&canfd0_default>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -124,7 +122,7 @@
 	status = "okay";
 };
 
-/* On enabled, 'core-clock', as above, is required to to be 192MHz. */
+/* On enabled, 'core-clock', as above, is required to be 192MHz. */
 zephyr_udc0: &usbd {
 	pinctrl-0 = <&usbd_default>;
 	pinctrl-names = "default";

@@ -73,6 +73,17 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
     )
   endif()
 
+  if(CONFIG_PERCEPIO_TRC_CFG_STREAM_PORT_FILE)
+    zephyr_library_sources(
+      ${TRACERECORDER_DIR}/streamports/File/trcStreamPort.c
+    )
+
+    zephyr_include_directories(
+      ${TRACERECORDER_DIR}/kernelports/Zephyr/streamports/File/config/
+      ${TRACERECORDER_DIR}/streamports/File/include/
+    )
+  endif()
+
   if (CONFIG_PERCEPIO_TRC_CFG_STREAM_PORT_ZEPHYR_SEMIHOST)
     zephyr_library_sources(
       ${TRACERECORDER_DIR}/kernelports/Zephyr/streamports/Semihost/trcStreamPort.c

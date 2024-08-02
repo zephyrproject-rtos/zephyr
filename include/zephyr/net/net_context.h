@@ -35,6 +35,8 @@ extern "C" {
 /** Is this context used or not */
 #define NET_CONTEXT_IN_USE BIT(0)
 
+/** @cond INTERNAL_HIDDEN */
+
 /** State of the context (bits 1 & 2 in the flags) */
 enum net_context_state {
 	NET_CONTEXT_IDLE = 0,
@@ -45,6 +47,8 @@ enum net_context_state {
 	NET_CONTEXT_CONNECTED = 2,
 	NET_CONTEXT_LISTENING = 3,
 };
+
+/** @endcond */
 
 /**
  * The address family, connection type and IP protocol are
@@ -65,7 +69,7 @@ enum net_context_state {
 /** Is the socket closing / closed */
 #define NET_CONTEXT_CLOSING_SOCK  BIT(10)
 
-/* Context is bound to a specific interface */
+/** Context is bound to a specific interface */
 #define NET_CONTEXT_BOUND_TO_IFACE BIT(11)
 
 struct net_context;
@@ -81,7 +85,7 @@ struct net_context;
  *
  * @param context The context to use.
  * @param pkt Network buffer that is received. If the pkt is not NULL,
- * then the callback will own the buffer and it needs to to unref the pkt
+ * then the callback will own the buffer and it needs to unref the pkt
  * as soon as it has finished working with it.  On EOF, pkt will be NULL.
  * @param ip_hdr a pointer to relevant IP (v4 or v6) header.
  * @param proto_hdr a pointer to relevant protocol (udp or tcp) header.
@@ -349,6 +353,17 @@ __net_socket struct net_context {
 		/** Receive network packet information in recvmsg() call */
 		bool recv_pktinfo;
 #endif
+#if defined(CONFIG_NET_IPV6)
+		/**
+		 * Source address selection preferences. Currently used only for IPv6,
+		 * see RFC 5014 for details.
+		 */
+		uint16_t addr_preferences;
+#endif
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
+		/** Enable RX, TX or both timestamps of packets send through sockets. */
+		uint8_t timestamping;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -435,7 +450,7 @@ static inline void net_context_set_accepting(struct net_context *context,
 	if (accepting) {
 		context->flags |= NET_CONTEXT_ACCEPTING_SOCK;
 	} else {
-		context->flags &= ~NET_CONTEXT_ACCEPTING_SOCK;
+		context->flags &= (uint16_t)~NET_CONTEXT_ACCEPTING_SOCK;
 	}
 }
 
@@ -467,12 +482,16 @@ static inline void net_context_set_closing(struct net_context *context,
 	if (closing) {
 		context->flags |= NET_CONTEXT_CLOSING_SOCK;
 	} else {
-		context->flags &= ~NET_CONTEXT_CLOSING_SOCK;
+		context->flags &= (uint16_t)~NET_CONTEXT_CLOSING_SOCK;
 	}
 }
 
+/** @cond INTERNAL_HIDDEN */
+
 #define NET_CONTEXT_STATE_SHIFT 1
 #define NET_CONTEXT_STATE_MASK 0x03
+
+/** @endcond */
 
 /**
  * @brief Get state for this network context.
@@ -547,7 +566,7 @@ static inline void net_context_set_family(struct net_context *context,
 	if (family == AF_UNSPEC || family == AF_INET || family == AF_INET6 ||
 	    family == AF_PACKET || family == AF_CAN) {
 		/* Family is in BIT(4), BIT(5) and BIT(6) */
-		flag = family << 3;
+		flag = (uint8_t)(family << 3);
 	}
 
 	context->flags |= flag;
@@ -589,7 +608,7 @@ static inline void net_context_set_type(struct net_context *context,
 
 	if (type == SOCK_DGRAM || type == SOCK_STREAM || type == SOCK_RAW) {
 		/* Type is in BIT(6) and BIT(7)*/
-		flag = type << 6;
+		flag = (uint16_t)(type << 6);
 	}
 
 	context->flags |= flag;
@@ -707,7 +726,7 @@ static inline void net_context_set_iface(struct net_context *context,
 {
 	NET_ASSERT(iface);
 
-	context->iface = net_if_get_by_iface(iface);
+	context->iface = (uint8_t)net_if_get_by_iface(iface);
 }
 
 /**
@@ -1251,23 +1270,26 @@ int net_context_recv(struct net_context *context,
 int net_context_update_recv_wnd(struct net_context *context,
 				int32_t delta);
 
+/** @brief Network context options. These map to BSD socket option values. */
 enum net_context_option {
-	NET_OPT_PRIORITY          = 1,
-	NET_OPT_TXTIME            = 2,
-	NET_OPT_SOCKS5            = 3,
-	NET_OPT_RCVTIMEO          = 4,
-	NET_OPT_SNDTIMEO          = 5,
-	NET_OPT_RCVBUF            = 6,
-	NET_OPT_SNDBUF            = 7,
-	NET_OPT_DSCP_ECN          = 8,
-	NET_OPT_REUSEADDR         = 9,
-	NET_OPT_REUSEPORT         = 10,
-	NET_OPT_IPV6_V6ONLY       = 11,
-	NET_OPT_RECV_PKTINFO      = 12,
-	NET_OPT_MCAST_TTL         = 13,
-	NET_OPT_MCAST_HOP_LIMIT   = 14,
-	NET_OPT_UNICAST_HOP_LIMIT = 15,
-	NET_OPT_TTL               = 16,
+	NET_OPT_PRIORITY          = 1,  /**< Context priority */
+	NET_OPT_TXTIME            = 2,  /**< TX time */
+	NET_OPT_SOCKS5            = 3,  /**< SOCKS5 */
+	NET_OPT_RCVTIMEO          = 4,  /**< Receive timeout */
+	NET_OPT_SNDTIMEO          = 5,  /**< Send timeout */
+	NET_OPT_RCVBUF            = 6,  /**< Receive buffer */
+	NET_OPT_SNDBUF            = 7,  /**< Send buffer */
+	NET_OPT_DSCP_ECN          = 8,  /**< DSCP ECN */
+	NET_OPT_REUSEADDR         = 9,  /**< Re-use address */
+	NET_OPT_REUSEPORT         = 10, /**< Re-use port */
+	NET_OPT_IPV6_V6ONLY       = 11, /**< Share IPv4 and IPv6 port space */
+	NET_OPT_RECV_PKTINFO      = 12, /**< Receive packet information */
+	NET_OPT_MCAST_TTL         = 13, /**< IPv4 multicast TTL */
+	NET_OPT_MCAST_HOP_LIMIT   = 14, /**< IPv6 multicast hop limit */
+	NET_OPT_UNICAST_HOP_LIMIT = 15, /**< IPv6 unicast hop limit */
+	NET_OPT_TTL               = 16, /**< IPv4 unicast TTL */
+	NET_OPT_ADDR_PREFERENCES  = 17, /**< IPv6 address preference */
+	NET_OPT_TIMESTAMPING      = 18, /**< Packet timestamping */
 };
 
 /**

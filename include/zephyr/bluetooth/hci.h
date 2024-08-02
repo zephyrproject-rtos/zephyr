@@ -20,6 +20,31 @@
 extern "C" {
 #endif
 
+/** Converts a HCI error to string.
+ *
+ * The error codes are described in the Bluetooth Core specification,
+ * Vol 1, Part F, Section 2.
+ *
+ * The HCI documentation found in Vol 4, Part E,
+ * describes when the different error codes are used.
+ *
+ * See also the defined BT_HCI_ERR_* macros.
+ *
+ * @return The string representation of the HCI error code.
+ *         If @kconfig{CONFIG_BT_HCI_ERR_TO_STR} is not enabled,
+ *         this just returns the empty string
+ */
+#if defined(CONFIG_BT_HCI_ERR_TO_STR)
+const char *bt_hci_err_to_str(uint8_t hci_err);
+#else
+static inline const char *bt_hci_err_to_str(uint8_t hci_err)
+{
+	ARG_UNUSED(hci_err);
+
+	return "";
+}
+#endif
+
 /** Allocate a HCI command buffer.
   *
   * This function allocates a new buffer for a HCI command. It is given
@@ -96,6 +121,15 @@ int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle);
  * @return 0 on success or negative error value on failure.
  */
 int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle);
+
+/** @brief Get periodic advertising sync handle.
+ *
+ * @param sync Periodic advertising sync set.
+ * @param sync_handle Place to store the periodic advertising sync handle.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_hci_get_adv_sync_handle(const struct bt_le_per_adv_sync *sync, uint16_t *sync_handle);
 
 /** @brief Obtain the version string given a core version number.
  *

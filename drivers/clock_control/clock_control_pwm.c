@@ -129,7 +129,7 @@ static int clock_control_pwm_init(const struct device *dev)
 	return 0;
 }
 
-static struct clock_control_driver_api clock_control_pwm_api = {
+static const struct clock_control_driver_api clock_control_pwm_api = {
 	.on = clock_control_pwm_on,
 	.get_rate = clock_control_pwm_get_rate,
 	.set_rate = clock_control_pwm_set_rate,

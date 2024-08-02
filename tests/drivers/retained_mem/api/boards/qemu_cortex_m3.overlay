@@ -10,8 +10,8 @@
 		retainedmem0: retainedmem {
 			compatible = "zephyr,retained-ram";
 			status = "okay";
-	        };
-        };
+		};
+	};
 
 	aliases {
 		retainedmemtestdevice = &retainedmem0;

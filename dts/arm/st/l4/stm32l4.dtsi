@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2019 Centaur Analytics, Inc
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32g4_l4_5_reset.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
 
 / {
@@ -380,6 +382,8 @@
 			interrupts = <41 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
 			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <18>;
 			status = "disabled";
 		};
 
@@ -465,6 +469,39 @@
 				 */
 				 <&rcc STM32_SRC_MSI CLK48_SEL(3)>;
 			status = "disabled";
+		};
+
+		pwr: power@40007000 {
+			compatible = "st,stm32-pwr";
+			reg = <0x40007000 0x400>; /* PWR register bank */
+			status = "disabled";
+
+			wkup-pins-nb = <5>; /* 5 system wake-up pins */
+			wkup-pins-pol;
+			wkup-pins-pupd;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			wkup-pin@1 {
+				reg = <0x1>;
+			};
+
+			wkup-pin@2 {
+				reg = <0x2>;
+			};
+
+			wkup-pin@3 {
+				reg = <0x3>;
+			};
+
+			wkup-pin@4 {
+				reg = <0x4>;
+			};
+
+			wkup-pin@5 {
+				reg = <0x5>;
+			};
 		};
 	};
 

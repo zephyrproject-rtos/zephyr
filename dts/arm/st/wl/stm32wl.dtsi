@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 STMicroelectronics
+ * Copyright (c) 2020-2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32wb_l_reset.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
 
 / {
@@ -29,7 +30,7 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "arm,cortex-m4f";
+			compatible = "arm,cortex-m4";
 			reg = <0>;
 			cpu-power-states = <&stop0 &stop1 &stop2>;
 		};
@@ -206,6 +207,8 @@
 			interrupts = <42 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
 			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <17>;
 			status = "disabled";
 
 			/* In STM32WL, the backup registers are defined as part of the TAMP
@@ -333,7 +336,7 @@
 				compatible = "st,stm32wl-subghz-radio";
 				reg = <0>;
 				interrupts = <50 0>;
-				spi-max-frequency = <12000000>;
+				spi-max-frequency = <8000000>;
 				status = "disabled";
 			};
 		};
@@ -495,6 +498,34 @@
 			dma-generators = <4>;
 			dma-requests= <38>;
 			status = "disabled";
+		};
+
+		pwr: power@58000400 {
+			compatible = "st,stm32-pwr";
+			reg = <0x58000400 0x400>; /* PWR register bank */
+			status = "disabled";
+
+			wkup-pins-nb = <3>; /* 3 system wake-up pins */
+			wkup-pins-pol;
+			wkup-pins-pupd;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			wkup-pin@1 {
+				reg = <0x1>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_SRC_0>;
+			};
+
+			wkup-pin@2 {
+				reg = <0x2>;
+				wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_SRC_0>;
+			};
+
+			wkup-pin@3 {
+				reg = <0x3>;
+				wkup-gpios = <&gpiob 3 STM32_PWR_WKUP_PIN_SRC_0>;
+			};
 		};
 	};
 

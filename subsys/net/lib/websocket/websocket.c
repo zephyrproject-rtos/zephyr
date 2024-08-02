@@ -362,15 +362,15 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 
 	ctx->user_data = user_data;
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		ret = -ENOSPC;
 		goto out;
 	}
 
 	ctx->sock = fd;
-	z_finalize_fd(fd, ctx,
-		      (const struct fd_op_vtable *)&websocket_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&websocket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	/* Call the user specified callback and if it accepts the connection
 	 * then continue.
@@ -392,6 +392,8 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 
 	/* Init parser FSM */
 	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
+
+	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, SOCK_STREAM);
 
 	return fd;
 
@@ -422,8 +424,10 @@ static int websocket_interal_disconnect(struct websocket_context *ctx)
 	ret = websocket_send_msg(ctx->sock, NULL, 0, WEBSOCKET_OPCODE_CLOSE,
 				 true, true, SYS_FOREVER_MS);
 	if (ret < 0) {
-		NET_ERR("[%p] Failed to send close message (err %d).", ctx, ret);
+		NET_DBG("[%p] Failed to send close message (err %d).", ctx, ret);
 	}
+
+	(void)sock_obj_core_dealloc(ctx->sock);
 
 	websocket_context_unref(ctx);
 
@@ -437,10 +441,15 @@ static int websocket_close_vmeth(void *obj)
 
 	ret = websocket_interal_disconnect(ctx);
 	if (ret < 0) {
-		NET_DBG("[%p] Cannot close (%d)", obj, ret);
+		/* Ignore error if we are not connected */
+		if (ret != -ENOTCONN) {
+			NET_DBG("[%p] Cannot close (%d)", obj, ret);
 
-		errno = -ret;
-		return -1;
+			errno = -ret;
+			return -1;
+		}
+
+		ret = 0;
 	}
 
 	return ret;
@@ -459,7 +468,7 @@ static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
 
-		ctx = z_get_fd_obj(fds[i].fd,
+		ctx = zvfs_get_fd_obj(fds[i].fd,
 				   (const struct fd_op_vtable *)
 						     &websocket_fd_op_vtable,
 				   0);
@@ -471,7 +480,7 @@ static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 	}
 
 	/* Get offloaded sockets vtable. */
-	ctx = z_get_fd_obj_and_vtable(fds[0].fd,
+	ctx = zvfs_get_fd_obj_and_vtable(fds[0].fd,
 				      (const struct fd_op_vtable **)&vtable,
 				      NULL);
 	if (ctx == NULL) {
@@ -480,7 +489,7 @@ static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 		goto exit;
 	}
 
-	ret = z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_OFFLOAD,
+	ret = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_OFFLOAD,
 				   fds, nfds, timeout);
 
 exit:
@@ -517,7 +526,7 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		const struct fd_op_vtable *vtable;
 		void *core_obj;
 
-		core_obj = z_get_fd_obj_and_vtable(
+		core_obj = zvfs_get_fd_obj_and_vtable(
 				ctx->real_sock,
 				(const struct fd_op_vtable **)&vtable,
 				NULL);
@@ -535,7 +544,8 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 }
 
 #if !defined(CONFIG_NET_TEST)
-static int sendmsg_all(int sock, const struct msghdr *message, int flags)
+static int sendmsg_all(int sock, const struct msghdr *message, int flags,
+			const k_timepoint_t req_end_timepoint)
 {
 	int ret, i;
 	size_t offset = 0;
@@ -547,7 +557,25 @@ static int sendmsg_all(int sock, const struct msghdr *message, int flags)
 
 	while (offset < total_len) {
 		ret = zsock_sendmsg(sock, message, flags);
-		if (ret < 0) {
+
+		if ((ret == 0) || (ret < 0 && errno == EAGAIN)) {
+			struct zsock_pollfd pfd;
+			int pollres;
+			k_ticks_t req_timeout_ticks =
+				sys_timepoint_timeout(req_end_timepoint).ticks;
+			int req_timeout_ms = k_ticks_to_ms_floor32(req_timeout_ticks);
+
+			pfd.fd = sock;
+			pfd.events = ZSOCK_POLLOUT;
+			pollres = zsock_poll(&pfd, 1, req_timeout_ms);
+			if (pollres == 0) {
+				return -ETIMEDOUT;
+			} else if (pollres > 0) {
+				continue;
+			} else {
+				return -errno;
+			}
+		} else if (ret < 0) {
 			return -errno;
 		}
 
@@ -613,8 +641,11 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 		tout = K_MSEC(timeout);
 	}
 
+	k_timeout_t req_timeout = K_MSEC(timeout);
+	k_timepoint_t req_end_timepoint = sys_timepoint_calc(req_timeout);
+
 	return sendmsg_all(ctx->real_sock, &msg,
-			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
+			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0, req_end_timepoint);
 #endif /* CONFIG_NET_TEST */
 }
 
@@ -636,7 +667,7 @@ int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
 		return -EINVAL;
 	}
 
-	ctx = z_get_fd_obj(ws_sock, NULL, 0);
+	ctx = zvfs_get_fd_obj(ws_sock, NULL, 0);
 	if (ctx == NULL) {
 		return -EBADF;
 	}
@@ -923,7 +954,7 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 	end = sys_timepoint_calc(tout);
 
 #if defined(CONFIG_NET_TEST)
-	struct test_data *test_data = z_get_fd_obj(ws_sock, NULL, 0);
+	struct test_data *test_data = zvfs_get_fd_obj(ws_sock, NULL, 0);
 
 	if (test_data == NULL) {
 		return -EBADF;
@@ -931,7 +962,7 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 
 	ctx = test_data->ctx;
 #else
-	ctx = z_get_fd_obj(ws_sock, NULL, 0);
+	ctx = zvfs_get_fd_obj(ws_sock, NULL, 0);
 	if (ctx == NULL) {
 		return -EBADF;
 	}
@@ -1050,6 +1081,8 @@ static int websocket_send(struct websocket_context *ctx, const uint8_t *buf,
 
 	NET_DBG("[%p] Sent %d bytes", ctx, ret);
 
+	sock_obj_core_update_send_stats(ctx->sock, ret);
+
 	return ret;
 }
 
@@ -1077,6 +1110,8 @@ static int websocket_recv(struct websocket_context *ctx, uint8_t *buf,
 	}
 
 	NET_DBG("[%p] Received %d bytes", ctx, ret);
+
+	sock_obj_core_update_recv_stats(ctx->sock, ret);
 
 	return ret;
 }
@@ -1125,6 +1160,107 @@ static ssize_t websocket_recvfrom_ctx(void *obj, void *buf, size_t max_len,
 	ARG_UNUSED(addrlen);
 
 	return (ssize_t)websocket_recv(ctx, buf, max_len, timeout);
+}
+
+int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)
+{
+	struct websocket_context *ctx;
+	int ret, fd;
+
+	if (sock < 0) {
+		return -EINVAL;
+	}
+
+	ctx = websocket_find(sock);
+	if (ctx) {
+		NET_DBG("[%p] Websocket for sock %d already exists!", ctx, sock);
+		return -EEXIST;
+	}
+
+	ctx = websocket_get();
+	if (!ctx) {
+		return -ENOENT;
+	}
+
+	ctx->real_sock = sock;
+	ctx->recv_buf.buf = recv_buf;
+	ctx->recv_buf.size = recv_buf_len;
+
+	fd = zvfs_reserve_fd();
+	if (fd < 0) {
+		ret = -ENOSPC;
+		goto out;
+	}
+
+	ctx->sock = fd;
+	zvfs_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&websocket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
+
+	NET_DBG("[%p] WS connection to peer established (fd %d)", ctx, fd);
+
+	ctx->recv_buf.count = 0;
+	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
+
+	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, SOCK_STREAM);
+
+	return fd;
+
+out:
+	websocket_context_unref(ctx);
+
+	return ret;
+}
+
+static struct websocket_context *websocket_search(int sock)
+{
+	struct websocket_context *ctx = NULL;
+	int i;
+
+	k_sem_take(&contexts_lock, K_FOREVER);
+
+	for (i = 0; i < ARRAY_SIZE(contexts); i++) {
+		if (!websocket_context_is_used(&contexts[i])) {
+			continue;
+		}
+
+		if (contexts[i].sock != sock) {
+			continue;
+		}
+
+		ctx = &contexts[i];
+		break;
+	}
+
+	k_sem_give(&contexts_lock);
+
+	return ctx;
+}
+
+int websocket_unregister(int sock)
+{
+	struct websocket_context *ctx;
+
+	if (sock < 0) {
+		return -EINVAL;
+	}
+
+	ctx = websocket_search(sock);
+	if (ctx == NULL) {
+		NET_DBG("[%p] Real socket for websocket sock %d not found!", ctx, sock);
+		return -ENOENT;
+	}
+
+	if (ctx->real_sock < 0) {
+		return -EALREADY;
+	}
+
+	(void)zsock_close(sock);
+	(void)zsock_close(ctx->real_sock);
+
+	ctx->real_sock = -1;
+	ctx->sock = -1;
+
+	return 0;
 }
 
 static const struct socket_op_vtable websocket_fd_op_vtable = {

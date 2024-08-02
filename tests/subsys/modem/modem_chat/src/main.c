@@ -194,6 +194,19 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 MODEM_CHAT_SCRIPT_DEFINE(script_partial, script_partial_cmds, abort_matches, on_script_result, 4);
 
 /*************************************************************************************************/
+/*                         Script containing timeout script chat command                         */
+/*************************************************************************************************/
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	script_timeout_cmd_cmds,
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("", 4000),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
+);
+
+MODEM_CHAT_SCRIPT_DEFINE(script_timeout_cmd, script_timeout_cmd_cmds, abort_matches,
+			 on_script_result, 10);
+
+/*************************************************************************************************/
 /*                           Small echo script and mock transactions                             */
 /*************************************************************************************************/
 static const uint8_t at_echo_data[] = {'A', 'T', '\r', '\n'};
@@ -508,11 +521,16 @@ ZTEST(modem_chat, test_script_with_partial_matches)
 					 MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_CALLED_BIT);
 		zassert_equal(called, true, "Match callback not called");
 		zassert_equal(argc_buffers, 5, "Incorrect number of args");
-		zassert_equal(strcmp(argv_buffers[0], "+CMGL: "), 0, "Incorrect argv received");
-		zassert_equal(strcmp(argv_buffers[1], "1"), 0, "Incorrect argv received");
-		zassert_equal(strcmp(argv_buffers[2], "1"), 0, "Incorrect argv received");
-		zassert_equal(strcmp(argv_buffers[3], ""), 0, "Incorrect argv received");
-		zassert_equal(strcmp(argv_buffers[4], "50"), 0, "Incorrect argv received");
+		zassert_str_equal(argv_buffers[0], "+CMGL: ",
+				  "Incorrect argv received");
+		zassert_str_equal(argv_buffers[1], "1",
+				  "Incorrect argv received");
+		zassert_str_equal(argv_buffers[2], "1",
+				  "Incorrect argv received");
+		zassert_str_equal(argv_buffers[3], "",
+				  "Incorrect argv received");
+		zassert_str_equal(argv_buffers[4], "50",
+				  "Incorrect argv received");
 
 		atomic_set(&callback_called, 0);
 		modem_backend_mock_put(&mock, cmgl_response_1, sizeof(cmgl_response_1) - 1);
@@ -522,9 +540,11 @@ ZTEST(modem_chat, test_script_with_partial_matches)
 					 MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_ANY_CALLED_BIT);
 		zassert_equal(called, true, "Match callback not called");
 		zassert_equal(argc_buffers, 2, "Incorrect number of args");
-		zassert_equal(strcmp(argv_buffers[0], ""), 0, "Incorrect argv received");
-		zassert_equal(strcmp(argv_buffers[1], "07911326060032F064A9542954"), 0,
-			      "Incorrect argv received");
+		zassert_str_equal(argv_buffers[0], "",
+				  "Incorrect argv received");
+		zassert_str_equal(argv_buffers[1],
+				  "07911326060032F064A9542954",
+				  "Incorrect argv received");
 	}
 
 	atomic_set(&callback_called, 0);
@@ -608,6 +628,156 @@ ZTEST(modem_chat, test_script_run_dynamic_script_sync)
 
 	modem_backend_mock_prime(&mock, &at_echo_transaction);
 	zassert_ok(modem_chat_run_script(&cmd, &stack_script), "Failed to run script");
+}
+
+ZTEST(modem_chat, test_script_chat_timeout_cmd)
+{
+	int ret;
+	bool called;
+
+	zassert_ok(modem_chat_run_script_async(&cmd, &script_timeout_cmd),
+		   "Failed to start script");
+	k_msleep(100);
+
+	/*
+	 * Script sends "AT\r\n";
+	 */
+	ret = modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_equal(ret, sizeof("AT\r\n") - 1);
+	zassert_true(memcmp(buffer, "AT\r\n", sizeof("AT\r\n") - 1) == 0,
+		     "Request not sent as expected");
+
+	/*
+	 * Modem responds OK
+	 */
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+
+	/*
+	 * Script waits 4 seconds
+	 */
+	k_msleep(3000);
+	zassert_equal(modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer)), 0);
+	k_msleep(2000);
+
+	/*
+	 * Script sends "AT\r\n";
+	 */
+	ret = modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_equal(ret, sizeof("AT\r\n") - 1);
+	zassert_true(memcmp(buffer, "AT\r\n", sizeof("AT\r\n") - 1) == 0,
+		     "Request not sent as expected");
+
+	/*
+	 * Modem responds OK
+	 */
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+	k_msleep(100);
+
+	called = atomic_test_bit(&callback_called, MODEM_CHAT_UTEST_ON_SCRIPT_CALLBACK_BIT);
+	zassert_true(called == true, "Script callback should have been called");
+	zassert_equal(script_result, MODEM_CHAT_SCRIPT_RESULT_SUCCESS,
+		      "Script should have stopped with success");
+
+	/* Assert no data was sent except the request */
+	zassert_equal(modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer)), 0,
+		      "Script sent too many requests");
+}
+
+ZTEST(modem_chat, test_runtime_match)
+{
+	int ret;
+	struct modem_chat_match test_match;
+
+	modem_chat_match_init(&test_match);
+
+	ret = modem_chat_match_set_match(&test_match, "AT345");
+	zassert_ok(ret, "Failed to set match");
+	zassert_ok(strcmp(test_match.match, "AT345"), "Failed to set match");
+	zassert_equal(test_match.match_size, 5, "Failed to set size of match");
+
+	ret = modem_chat_match_set_separators(&test_match, ",*");
+	zassert_ok(ret, "Failed to set match");
+	zassert_ok(strcmp(test_match.separators, ",*"), "Failed to set separators");
+	zassert_equal(test_match.separators_size, 2, "Failed to set size of separators");
+
+	modem_chat_match_set_partial(&test_match, true);
+	zassert_equal(test_match.partial, true);
+	modem_chat_match_set_partial(&test_match, false);
+	zassert_equal(test_match.partial, false);
+
+	modem_chat_match_enable_wildcards(&test_match, true);
+	zassert_equal(test_match.wildcards, true);
+	modem_chat_match_enable_wildcards(&test_match, false);
+	zassert_equal(test_match.wildcards, false);
+}
+
+ZTEST(modem_chat, test_runtime_script_chat)
+{
+	int ret;
+	struct modem_chat_script_chat test_script_chat;
+	struct modem_chat_match test_response_matches[2];
+
+	modem_chat_script_chat_init(&test_script_chat);
+
+	ret = modem_chat_script_chat_set_request(&test_script_chat, "AT345");
+	zassert_ok(ret, "Failed to set request");
+	zassert_ok(strcmp(test_script_chat.request, "AT345"), "Failed to set script_chat");
+	zassert_equal(test_script_chat.request_size, 5, "Failed to set size of script_chat");
+
+	ret = modem_chat_script_chat_set_response_matches(&test_script_chat,
+							  test_response_matches,
+							  ARRAY_SIZE(test_response_matches));
+	zassert_ok(ret, "Failed to set response matches");
+	zassert_equal(test_script_chat.response_matches, test_response_matches,
+		      "Failed to set response_matches");
+	zassert_equal(test_script_chat.response_matches_size, ARRAY_SIZE(test_response_matches),
+		      "Failed to set response_matches");
+
+	ret = modem_chat_script_chat_set_response_matches(&test_script_chat,
+							  test_response_matches, 0);
+	zassert_equal(ret, -EINVAL, "Should have failed to set response matches");
+
+	ret = modem_chat_script_chat_set_response_matches(&test_script_chat, NULL, 1);
+	zassert_equal(ret, -EINVAL, "Should have failed to set response matches");
+}
+
+ZTEST(modem_chat, test_runtime_script)
+{
+	int ret;
+	struct modem_chat_script test_script;
+	struct modem_chat_script_chat test_script_chats[2];
+	struct modem_chat_match test_abort_matches[2];
+
+	modem_chat_script_init(&test_script);
+	zassert_equal(strlen(test_script.name), 0, "Failed to set default name");
+
+	ret = modem_chat_script_set_script_chats(&test_script, test_script_chats,
+						 ARRAY_SIZE(test_script_chats));
+	zassert_ok(ret, "Failed to set script chats");
+	zassert_equal(test_script.script_chats, test_script_chats,
+		      "Failed to set script_chats");
+	zassert_equal(test_script.script_chats_size, ARRAY_SIZE(test_script_chats),
+		      "Failed to set script_chats_size");
+
+	ret = modem_chat_script_set_script_chats(&test_script, test_script_chats, 0);
+	zassert_equal(ret, -EINVAL, "Should have failed to set script chats");
+
+	ret = modem_chat_script_set_script_chats(&test_script, NULL, 1);
+	zassert_equal(ret, -EINVAL, "Should have failed to set script chats");
+
+	ret = modem_chat_script_set_abort_matches(&test_script, test_abort_matches,
+						  ARRAY_SIZE(test_abort_matches));
+	zassert_ok(ret, "Failed to set abort matches");
+	zassert_equal(test_script.abort_matches, test_abort_matches,
+		      "Failed to set script_chats");
+	zassert_equal(test_script.abort_matches_size, ARRAY_SIZE(test_abort_matches),
+		      "Failed to set script_chats_size");
+
+	ret = modem_chat_script_set_abort_matches(&test_script, test_abort_matches, 0);
+	zassert_equal(ret, -EINVAL, "Should have failed to set abort matches");
+
+	ret = modem_chat_script_set_abort_matches(&test_script, NULL, 1);
+	zassert_equal(ret, -EINVAL, "Should have failed to set abort matches");
 }
 
 /*************************************************************************************************/

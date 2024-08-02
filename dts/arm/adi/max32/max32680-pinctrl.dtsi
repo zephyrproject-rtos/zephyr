@@ -1,0 +1,294 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/max32-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@40008000 {
+
+			/omit-if-no-ref/ uart0a_rx_p0_0: uart0a_rx_p0_0 {
+				pinmux = <MAX32_PINMUX(0, 0, AF1)>;
+			};
+
+			/omit-if-no-ref/ uart0a_tx_p0_1: uart0a_tx_p0_1 {
+				pinmux = <MAX32_PINMUX(0, 1, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr0a_ioa_p0_2: tmr0a_ioa_p0_2 {
+				pinmux = <MAX32_PINMUX(0, 2, AF1)>;
+			};
+
+			/omit-if-no-ref/ uart0b_cts_p0_2: uart0b_cts_p0_2 {
+				pinmux = <MAX32_PINMUX(0, 2, AF2)>;
+			};
+
+			/omit-if-no-ref/ ext_clk_p0_3: ext_clk_p0_3 {
+				pinmux = <MAX32_PINMUX(0, 3, AF1)>;
+			};
+
+			/omit-if-no-ref/ spi0a_ss0_p0_4: spi0a_ss0_p0_4 {
+				pinmux = <MAX32_PINMUX(0, 4, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr0b_ioan_p0_4: tmr0b_ioan_p0_4 {
+				pinmux = <MAX32_PINMUX(0, 4, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi0a_mosi_p0_5: spi0a_mosi_p0_5 {
+				pinmux = <MAX32_PINMUX(0, 5, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr0b_iobn_p0_5: tmr0b_iobn_p0_5 {
+				pinmux = <MAX32_PINMUX(0, 5, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi0a_miso_p0_6: spi0a_miso_p0_6 {
+				pinmux = <MAX32_PINMUX(0, 6, AF1)>;
+			};
+
+			/omit-if-no-ref/ owm_io_p0_6: owm_io_p0_6 {
+				pinmux = <MAX32_PINMUX(0, 6, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi0a_sck_p0_7: spi0a_sck_p0_7 {
+				pinmux = <MAX32_PINMUX(0, 7, AF1)>;
+			};
+
+			/omit-if-no-ref/ owm_pe_p0_7: owm_pe_p0_7 {
+				pinmux = <MAX32_PINMUX(0, 7, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi0a_sdio2_p0_8: spi0a_sdio2_p0_8 {
+				pinmux = <MAX32_PINMUX(0, 8, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr0b_ioa_p0_8: tmr0b_ioa_p0_8 {
+				pinmux = <MAX32_PINMUX(0, 8, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi0a_sdio3_p0_9: spi0a_sdio3_p0_9 {
+				pinmux = <MAX32_PINMUX(0, 9, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr0b_iob_p0_9: tmr0b_iob_p0_9 {
+				pinmux = <MAX32_PINMUX(0, 9, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2c0a_scl_p0_10: i2c0a_scl_p0_10 {
+				pinmux = <MAX32_PINMUX(0, 10, AF1)>;
+			};
+
+			/omit-if-no-ref/ spi0b_ss2_p0_10: spi0b_ss2_p0_10 {
+				pinmux = <MAX32_PINMUX(0, 10, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2c0a_sda_p0_11: i2c0a_sda_p0_11 {
+				pinmux = <MAX32_PINMUX(0, 11, AF1)>;
+			};
+
+			/omit-if-no-ref/ spi0b_ss1_p0_11: spi0b_ss1_p0_11 {
+				pinmux = <MAX32_PINMUX(0, 11, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart1a_rx_p0_12: uart1a_rx_p0_12 {
+				pinmux = <MAX32_PINMUX(0, 12, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr1b_ioa_p0_12: tmr1b_ioa_p0_12 {
+				pinmux = <MAX32_PINMUX(0, 12, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart1a_tx_p0_13: uart1a_tx_p0_13 {
+				pinmux = <MAX32_PINMUX(0, 13, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr1b_iobn_p0_13: tmr1b_iobn_p0_13 {
+				pinmux = <MAX32_PINMUX(0, 13, AF2)>;
+			};
+
+			/omit-if-no-ref/ tmr1a_ioa_p0_14: tmr1a_ioa_p0_14 {
+				pinmux = <MAX32_PINMUX(0, 14, AF1)>;
+			};
+
+			/omit-if-no-ref/ uart1b_cts_p0_14: uart1b_cts_p0_14 {
+				pinmux = <MAX32_PINMUX(0, 14, AF2)>;
+			};
+
+			/omit-if-no-ref/ tmr1a_iob_p0_15: tmr1a_iob_p0_15 {
+				pinmux = <MAX32_PINMUX(0, 15, AF1)>;
+			};
+
+			/omit-if-no-ref/ uart1b_rts_p0_15: uart1b_rts_p0_15 {
+				pinmux = <MAX32_PINMUX(0, 15, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2c1a_scl_p0_16: i2c1a_scl_p0_16 {
+				pinmux = <MAX32_PINMUX(0, 16, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt2_p0_16: pt2_p0_16 {
+				pinmux = <MAX32_PINMUX(0, 16, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2c1a_sda_p0_17: i2c1a_sda_p0_17 {
+				pinmux = <MAX32_PINMUX(0, 17, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt3_p0_17: pt3_p0_17 {
+				pinmux = <MAX32_PINMUX(0, 17, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi1a_sdio2_p0_24: spi1a_sdio2_p0_24 {
+				pinmux = <MAX32_PINMUX(0, 24, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr2b_ioa_p0_24: tmr2b_ioa_p0_24 {
+				pinmux = <MAX32_PINMUX(0, 24, AF2)>;
+			};
+
+			/omit-if-no-ref/ adc0_rdy_p0_24: adc0_rdy_p0_24 {
+				pinmux = <MAX32_PINMUX(0, 24, AF3)>;
+			};
+
+			/omit-if-no-ref/ spi1a_sdio3_p0_25: spi1a_sdio3_p0_25 {
+				pinmux = <MAX32_PINMUX(0, 25, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr2b_iob_p0_25: tmr2b_iob_p0_25 {
+				pinmux = <MAX32_PINMUX(0, 25, AF2)>;
+			};
+
+			/omit-if-no-ref/ adc1_rdy_p0_25: adc1_rdy_p0_25 {
+				pinmux = <MAX32_PINMUX(0, 25, AF3)>;
+			};
+
+			/omit-if-no-ref/ tmr2a_ioa_p0_26: tmr2a_ioa_p0_26 {
+				pinmux = <MAX32_PINMUX(0, 26, AF1)>;
+			};
+
+			/omit-if-no-ref/ spi1b_ss1_p0_26: spi1b_ss1_p0_26 {
+				pinmux = <MAX32_PINMUX(0, 26, AF2)>;
+			};
+
+			/omit-if-no-ref/ tmr2a_iob_p0_27: tmr2a_iob_p0_27 {
+				pinmux = <MAX32_PINMUX(0, 27, AF1)>;
+			};
+
+			/omit-if-no-ref/ spi1b_ss2_p0_27: spi1b_ss2_p0_27 {
+				pinmux = <MAX32_PINMUX(0, 27, AF2)>;
+			};
+
+			/omit-if-no-ref/ swdio_p0_28: swdio_p0_28 {
+				pinmux = <MAX32_PINMUX(0, 28, AF1)>;
+			};
+
+			/omit-if-no-ref/ swclk_p0_29: swclk_p0_29 {
+				pinmux = <MAX32_PINMUX(0, 29, AF1)>;
+			};
+
+			/omit-if-no-ref/ uart2a_rx_p1_0: uart2a_rx_p1_0 {
+				pinmux = <MAX32_PINMUX(1, 0, AF1)>;
+			};
+
+			/omit-if-no-ref/ rv_tck_p1_0: rv_tck_p1_0 {
+				pinmux = <MAX32_PINMUX(1, 0, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart2a_tx_p1_1: uart2a_tx_p1_1 {
+				pinmux = <MAX32_PINMUX(1, 1, AF1)>;
+			};
+
+			/omit-if-no-ref/ rv_tms_p1_1: rv_tms_p1_1 {
+				pinmux = <MAX32_PINMUX(1, 1, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2s0a_sck_p1_2: i2s0a_sck_p1_2 {
+				pinmux = <MAX32_PINMUX(1, 2, AF1)>;
+			};
+
+			/omit-if-no-ref/ rv_tdi_p1_2: rv_tdi_p1_2 {
+				pinmux = <MAX32_PINMUX(1, 2, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2s0a_lrclk_p1_3: i2s0a_lrclk_p1_3 {
+				pinmux = <MAX32_PINMUX(1, 3, AF1)>;
+			};
+
+			/omit-if-no-ref/ rv_tdo_p1_3: rv_tdo_p1_3 {
+				pinmux = <MAX32_PINMUX(1, 3, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2s0a_sdi_p1_4: i2s0a_sdi_p1_4 {
+				pinmux = <MAX32_PINMUX(1, 4, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr3b_ioa_p1_4: tmr3b_ioa_p1_4 {
+				pinmux = <MAX32_PINMUX(1, 4, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2s0a_sdo_p1_5: i2s0a_sdo_p1_5 {
+				pinmux = <MAX32_PINMUX(1, 5, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr3b_iob_p1_5: tmr3b_iob_p1_5 {
+				pinmux = <MAX32_PINMUX(1, 5, AF2)>;
+			};
+
+			/omit-if-no-ref/ tmr3a_ioa_p1_6: tmr3a_ioa_p1_6 {
+				pinmux = <MAX32_PINMUX(1, 6, AF1)>;
+			};
+
+			/omit-if-no-ref/ ble_ant_ctrl2_p1_6: ble_ant_ctrl2_p1_6 {
+				pinmux = <MAX32_PINMUX(1, 6, AF2)>;
+			};
+
+			/omit-if-no-ref/ tmr3a_iob_p1_7: tmr3a_iob_p1_7 {
+				pinmux = <MAX32_PINMUX(1, 7, AF1)>;
+			};
+
+			/omit-if-no-ref/ ble_ant_ctrl3_p1_7: ble_ant_ctrl3_p1_7 {
+				pinmux = <MAX32_PINMUX(1, 7, AF2)>;
+			};
+
+			/omit-if-no-ref/ ain12_p2_4: ain12_p2_4 {
+				pinmux = <MAX32_PINMUX(2, 4, AF1)>;
+			};
+
+			/omit-if-no-ref/ lptmr0b_ioa_p2_4: lptmr0b_ioa_p2_4 {
+				pinmux = <MAX32_PINMUX(2, 4, AF2)>;
+			};
+
+			/omit-if-no-ref/ ain13_p2_5: ain13_p2_5 {
+				pinmux = <MAX32_PINMUX(2, 5, AF1)>;
+			};
+
+			/omit-if-no-ref/ lptmr1b_ioa_p2_5: lptmr1b_ioa_p2_5 {
+				pinmux = <MAX32_PINMUX(2, 5, AF2)>;
+			};
+
+			/omit-if-no-ref/ lptmr0_clk_p2_6: lptmr0_clk_p2_6 {
+				pinmux = <MAX32_PINMUX(2, 6, AF1)>;
+			};
+
+			/omit-if-no-ref/ lpuartb_r_p2_6: lpuartb_r_p2_6 {
+				pinmux = <MAX32_PINMUX(2, 6, AF2)>;
+			};
+
+			/omit-if-no-ref/ x_p2_6: x_p2_6 {
+				pinmux = <MAX32_PINMUX(2, 6, AF3)>;
+			};
+
+			/omit-if-no-ref/ lptmr1_clk_p2_7: lptmr1_clk_p2_7 {
+				pinmux = <MAX32_PINMUX(2, 7, AF1)>;
+			};
+
+			/omit-if-no-ref/ lpuartb_tx_p2_7: lpuartb_tx_p2_7 {
+				pinmux = <MAX32_PINMUX(2, 7, AF2)>;
+			};
+		};
+	};
+};

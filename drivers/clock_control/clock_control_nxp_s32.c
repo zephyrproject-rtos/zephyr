@@ -74,7 +74,7 @@ static const struct clock_control_driver_api nxp_s32_clock_driver_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		      &nxp_s32_clock_init,
+		      nxp_s32_clock_init,
 		      NULL, NULL, NULL,
 		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &nxp_s32_clock_driver_api);

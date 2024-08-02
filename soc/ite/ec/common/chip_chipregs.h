@@ -615,7 +615,7 @@ struct ep_ext_regs_9x {
 };
 
 /* From BXh to BDh are EP FIFO 1-3 Control 0/1 Registers, and their
- * definitions as as follows:
+ * definitions as follows:
  * B8h: EP_FIFO1_CONTROL0_REG
  * B9h: EP_FIFO1_CONTROL1_REG
  * BAh: EP_FIFO2_CONTROL0_REG
@@ -657,7 +657,7 @@ struct ep_ext_regs_bx {
 
 
 /* From D6h to DDh are EP Extended Control Registers, and their
- * definitions as as follows:
+ * definitions as follows:
  * D6h: EP0_EXT_CTRL1
  * D7h: EP0_EXT_CTRL2
  * D8h: EP1_EXT_CTRL1
@@ -1661,6 +1661,8 @@ struct gctrl_it8xxx2_regs {
 #define IT8XXX2_GCTRL_ILM0_ENABLE	BIT(0)
 /* Accept Port 80h Cycle */
 #define IT8XXX2_GCTRL_ACP80		BIT(6)
+/* Accept Port 81h Cycle */
+#define IT8XXX2_GCTRL_ACP81		BIT(3)
 /* USB Debug Enable */
 #define IT8XXX2_GCTRL_MCCR_USB_EN	BIT(7)
 /* USB Pad Power-On Enable */

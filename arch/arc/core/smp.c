@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <ksched.h>
+#include <ipi.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <arc_irq_offload.h>
@@ -130,19 +131,25 @@ static void sched_ipi_handler(const void *unused)
 	z_sched_ipi();
 }
 
-/* arch implementation of sched_ipi */
-void arch_sched_ipi(void)
+void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 {
-	uint32_t i;
-
-	/* broadcast sched_ipi request to other cores
-	 * if the target is current core, hardware will ignore it
-	 */
+	unsigned int i;
 	unsigned int num_cpus = arch_num_cpus();
 
+	/* Send sched_ipi request to other cores
+	 * if the target is current core, hardware will ignore it
+	 */
+
 	for (i = 0U; i < num_cpus; i++) {
-		z_arc_connect_ici_generate(i);
+		if ((cpu_bitmap & BIT(i)) != 0) {
+			z_arc_connect_ici_generate(i);
+		}
 	}
+}
+
+void arch_sched_broadcast_ipi(void)
+{
+	arch_sched_directed_ipi(IPI_ALL_CPUS_MASK);
 }
 
 int arch_smp_init(void)
@@ -188,5 +195,4 @@ int arch_smp_init(void)
 
 	return 0;
 }
-SYS_INIT(arch_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif

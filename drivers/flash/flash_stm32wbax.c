@@ -262,10 +262,16 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	}
 
 	if (icache_enabled) {
+		int rc2;
+
 		/* Since i-cache was disabled, this would start the
 		 * invalidation procedure, so wait for completion.
 		 */
-		rc = icache_wait_for_invalidate_complete();
+		rc2 = icache_wait_for_invalidate_complete();
+
+		if (!rc) {
+			rc = rc2;
+		}
 
 		/* I-cache should be enabled only after the
 		 * invalidation is complete.

@@ -28,13 +28,13 @@ developed as a part of Zephyr’s tree. To enable install-less operation, twiste
 they must add ``--allow-installed-plugin`` flag to twister’s call.
 
 Pytest-based test suites are discovered the same way as other twister tests, i.e., by a presence
-of testcase/sample.yaml. Inside, a keyword ``harness`` tells twister how to handle a given test.
+of test/sample.yaml. Inside, a keyword ``harness`` tells twister how to handle a given test.
 In the case of ``harness: pytest``, most of twister workflow (test suites discovery,
 parallelization, building and reporting) remains the same as for other harnesses. The change
 happens during the execution step. The below picture presents a simplified overview of the
 integration.
 
-.. figure:: twister_and_pytest.svg
+.. figure:: figures/twister_and_pytest.svg
    :figclass: align-center
 
 

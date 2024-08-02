@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_backend_net.h>
+#include <zephyr/net/hostname.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
 
 /* Set this to 1 if you want to see what is being sent to server */

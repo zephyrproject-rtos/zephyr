@@ -10,18 +10,14 @@
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/irq.h>
 
-BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
+BUILD_ASSERT(!IS_ENABLED(CONFIG_TICKLESS_KERNEL), "this is a tickfull driver");
 
 /*
  * Overview:
  *
  * This driver enables the local APIC as the Zephyr system timer. It supports
- * both legacy ("tickful") mode as well as TICKLESS_KERNEL. The driver will
- * work with any APIC that has the ARAT "always running APIC timer" feature
- * (CPUID 0x06, EAX bit 2); for the more accurate sys_clock_cycle_get_32(),
- * the invariant TSC feature (CPUID 0x80000007: EDX bit 8) is also required.
- * (Ultimately systems with invariant TSCs should use a TSC-based driver,
- * and the TSC-related parts should be stripped from this implementation.)
+ * legacy ("tickful") mode only. The driver will work with any APIC that has
+ * the ARAT "always running APIC timer" feature (CPUID 0x06, EAX bit 2).
  *
  * Configuration:
  *
@@ -31,15 +27,6 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
  *
  * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=<hz> must contain the frequency seen
  *     by the local APIC timer block (before it gets to the timer divider).
- *
- * CONFIG_APIC_TIMER_TSC=y enables the more accurate TSC-based cycle counter
- *     for sys_clock_cycle_get_32(). This also requires the next options be set.
- *
- * CONFIG_APIC_TIMER_TSC_N=<n>
- * CONFIG_APIC_TIMER_TSC_M=<m>
- *     When CONFIG_APIC_TIMER_TSC=y, these are set to indicate the ratio of
- *     the TSC frequency to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC. This can be
- *     found via CPUID 0x15 (n = EBX, m = EAX) on most CPUs.
  */
 
 /* These should be merged into include/drivers/interrupt_controller/loapic.h. */
@@ -47,139 +34,24 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
 #define DCR_DIVIDER_MASK	0x0000000F	/* divider bits */
 #define DCR_DIVIDER		0x0000000B	/* divide by 1 */
 #define LVT_MODE_MASK		0x00060000	/* timer mode bits */
-#define LVT_MODE		0x00000000	/* one-shot */
+#define LVT_MODE		0x00020000	/* periodic mode */
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = CONFIG_APIC_TIMER_IRQ;
 #endif
-/*
- * CYCLES_PER_TICK must always be at least '2', otherwise MAX_TICKS
- * will overflow int32_t, which is how 'ticks' are currently represented.
- */
 
 #define CYCLES_PER_TICK \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-BUILD_ASSERT(CYCLES_PER_TICK >= 2, "APIC timer: bad CYCLES_PER_TICK");
+BUILD_ASSERT(CYCLES_PER_TICK >= 1, "APIC timer: bad CYCLES_PER_TICK");
 
-/* max number of ticks we can load into the timer in one shot */
-
-#define MAX_TICKS (0xFFFFFFFFU / CYCLES_PER_TICK)
-
-/*
- * The spinlock protects all access to the local APIC timer registers,
- * as well as 'total_cycles', 'last_announcement', and 'cached_icr'.
- *
- * One important invariant that must be observed: `total_cycles` + `cached_icr`
- * is always an integral multiple of CYCLE_PER_TICK; this is, timer interrupts
- * are only ever scheduled to occur at tick boundaries.
- */
-
-static struct k_spinlock lock;
-static uint64_t total_cycles;
-static uint32_t cached_icr = CYCLES_PER_TICK;
-
-#ifdef CONFIG_TICKLESS_KERNEL
-
-static uint64_t last_announcement;	/* last time we called sys_clock_announce() */
-
-void sys_clock_set_timeout(int32_t n, bool idle)
-{
-	ARG_UNUSED(idle);
-
-	uint32_t ccr;
-	int   full_ticks;	/* number of complete ticks we'll wait */
-	uint32_t full_cycles;	/* full_ticks represented as cycles */
-	uint32_t partial_cycles;	/* number of cycles to first tick boundary */
-
-	if (n < 1) {
-		full_ticks = 0;
-	} else if ((n == K_TICKS_FOREVER) || (n > MAX_TICKS)) {
-		full_ticks = MAX_TICKS - 1;
-	} else {
-		full_ticks = n - 1;
-	}
-
-	full_cycles = full_ticks * CYCLES_PER_TICK;
-
-	/*
-	 * There's a wee race condition here. The timer may expire while
-	 * we're busy reprogramming it; an interrupt will be queued at the
-	 * local APIC and the ISR will be called too early, roughly right
-	 * after we unlock, and not because the count we just programmed has
-	 * counted down. Luckily this situation is easy to detect, which is
-	 * why the ISR actually checks to be sure the CCR is 0 before acting.
-	 */
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	ccr = x86_read_loapic(LOAPIC_TIMER_CCR);
-	total_cycles += (cached_icr - ccr);
-	partial_cycles = CYCLES_PER_TICK - (total_cycles % CYCLES_PER_TICK);
-	cached_icr = full_cycles + partial_cycles;
-	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
-
-	k_spin_unlock(&lock, key);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	uint32_t ccr;
-	uint32_t ticks;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	ccr = x86_read_loapic(LOAPIC_TIMER_CCR);
-	ticks = total_cycles - last_announcement;
-	ticks += cached_icr - ccr;
-	k_spin_unlock(&lock, key);
-	ticks /= CYCLES_PER_TICK;
-
-	return ticks;
-}
+static volatile uint64_t total_cycles;
 
 static void isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	uint32_t cycles;
-	int32_t ticks;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	/*
-	 * If we get here and the CCR isn't zero, then this interrupt is
-	 * stale: it was queued while sys_clock_set_timeout() was setting
-	 * a new counter. Just ignore it. See above for more info.
-	 */
-
-	if (x86_read_loapic(LOAPIC_TIMER_CCR) != 0) {
-		k_spin_unlock(&lock, key);
-		return;
-	}
-
-	/* Restart the timer as early as possible to minimize drift... */
-	x86_write_loapic(LOAPIC_TIMER_ICR, MAX_TICKS * CYCLES_PER_TICK);
-
-	cycles = cached_icr;
-	cached_icr = MAX_TICKS * CYCLES_PER_TICK;
-	total_cycles += cycles;
-	ticks = (total_cycles - last_announcement) / CYCLES_PER_TICK;
-	last_announcement = total_cycles;
-	k_spin_unlock(&lock, key);
-	sys_clock_announce(ticks);
-}
-
-#else
-
-static void isr(const void *arg)
-{
-	ARG_UNUSED(arg);
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
 	total_cycles += CYCLES_PER_TICK;
-	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
-	k_spin_unlock(&lock, key);
-
 	sys_clock_announce(1);
 }
 
@@ -188,35 +60,31 @@ uint32_t sys_clock_elapsed(void)
 	return 0U;
 }
 
-#endif /* CONFIG_TICKLESS_KERNEL */
+uint64_t sys_clock_cycle_get_64(void)
+{
+	uint32_t ccr_1st, ccr_2nd;
+	uint64_t cycles;
 
-#ifdef CONFIG_APIC_TIMER_TSC
+       /*
+	* We may race with CCR reaching 0 and reloading, and the interrupt
+	* handler updating total_cycles. Let's make sure we sample everything
+	* away from this roll-over transition by ensuring consecutive CCR
+	* values are descending so we're sure the enclosed (volatile)
+	* total_cycles sample and CCR value are coherent with each other.
+	*/
+	do {
+		ccr_1st = x86_read_loapic(LOAPIC_TIMER_CCR);
+		cycles = total_cycles;
+		ccr_2nd = x86_read_loapic(LOAPIC_TIMER_CCR);
+	} while (ccr_2nd > ccr_1st);
+
+	return cycles + (CYCLES_PER_TICK - ccr_2nd);
+}
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	uint64_t tsc = z_tsc_read();
-	uint32_t cycles;
-
-	cycles = (tsc * CONFIG_APIC_TIMER_TSC_M) / CONFIG_APIC_TIMER_TSC_N;
-	return cycles;
+	return (uint32_t)sys_clock_cycle_get_64();
 }
-
-#else
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	uint32_t ret;
-	uint32_t ccr;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	ccr = x86_read_loapic(LOAPIC_TIMER_CCR);
-	ret = total_cycles + (cached_icr - ccr);
-	k_spin_unlock(&lock, key);
-
-	return ret;
-}
-
-#endif
 
 static int sys_clock_driver_init(void)
 {
@@ -239,7 +107,7 @@ static int sys_clock_driver_init(void)
 		CONFIG_APIC_TIMER_IRQ_PRIORITY,
 		isr, 0, 0);
 
-	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
+	x86_write_loapic(LOAPIC_TIMER_ICR, CYCLES_PER_TICK);
 	irq_enable(CONFIG_APIC_TIMER_IRQ);
 
 	return 0;

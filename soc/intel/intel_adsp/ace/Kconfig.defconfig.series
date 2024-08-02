@@ -50,6 +50,9 @@ config SYS_CLOCK_TICKS_PER_SEC
 config XTENSA_CCOUNT_HZ
 	default 393216000
 
+config INTEL_ADSP_TIMER
+	default y
+
 config DYNAMIC_INTERRUPTS
 	default y
 
@@ -73,6 +76,13 @@ config XTENSA_NUM_SPIN_RELAX_NOPS
 	default 160 if MP_MAX_NUM_CPUS = 5
 
 endif # XTENSA_MORE_SPIN_RELAX_NOPS
+
+if KERNEL_VM_SUPPORT
+
+config KERNEL_VM_SIZE
+	default 0xfe0000
+
+endif
 
 rsource "Kconfig.defconfig.ace*"
 

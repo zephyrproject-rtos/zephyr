@@ -65,7 +65,7 @@ static void leuart_gecko_poll_out(const struct device *dev, unsigned char c)
 	LEUART_TypeDef *base = DEV_BASE(dev);
 
 	/* LEUART_Tx function already waits for the transmit buffer being empty
-	 * and and waits for the bus to be free to transmit.
+	 * and waits for the bus to be free to transmit.
 	 */
 	LEUART_Tx(base, c);
 }

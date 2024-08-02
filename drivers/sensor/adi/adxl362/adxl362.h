@@ -169,6 +169,7 @@
 /* ADXL362 temperature sensor specifications */
 #define ADXL362_TEMP_MC_PER_LSB 65
 #define ADXL362_TEMP_BIAS_LSB 350
+#define ADXL362_TEMP_BIAS_TEST_CONDITION 25
 
 struct adxl362_config {
 	struct spi_dt_spec bus;

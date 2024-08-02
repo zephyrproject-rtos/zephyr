@@ -22,7 +22,7 @@
  * @{
  */
 
-#include <zephyr/types.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <errno.h>
 
@@ -459,6 +459,8 @@ static inline int z_impl_rtc_update_set_callback(const struct device *dev,
  * the RTC clock, a negative value will decrease the
  * frequency of the RTC clock.
  *
+ * @see rtc_calibration_from_frequency()
+ *
  * @param dev Device instance
  * @param calibration Calibration to set in parts per billion
  *
@@ -528,6 +530,20 @@ static inline struct tm *rtc_time_to_tm(struct rtc_time *timeptr)
 }
 
 /**
+ * @brief Determine required calibration to 1 Hertz from frequency.
+ *
+ * @param frequency Frequency of the RTC in nano Hertz
+ *
+ * @return The required calibration in parts per billion
+ */
+static inline int32_t rtc_calibration_from_frequency(uint32_t frequency)
+{
+	__ASSERT_NO_MSG(frequency > 0);
+
+	return (int32_t)((1000000000000000000LL / frequency) - 1000000000);
+}
+
+/**
  * @}
  */
 
@@ -539,6 +555,6 @@ static inline struct tm *rtc_time_to_tm(struct rtc_time *timeptr)
 }
 #endif
 
-#include <syscalls/rtc.h>
+#include <zephyr/syscalls/rtc.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RTC_H_ */

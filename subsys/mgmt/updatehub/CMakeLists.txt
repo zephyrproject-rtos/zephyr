@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2018-2023 O.S.Systems
 #
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 #
 
 zephyr_syscall_header(

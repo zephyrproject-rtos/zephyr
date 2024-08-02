@@ -31,7 +31,6 @@
 
 	aliases {
 		led0 = &led;
-		spi-flash0 = &gd25q16;
 	};
 };
 

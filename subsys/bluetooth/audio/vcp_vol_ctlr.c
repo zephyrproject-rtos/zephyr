@@ -7,26 +7,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/sys/check.h>
-
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/vcp.h>
-
-#include "vcp_internal.h"
-
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(bt_vcp_vol_ctlr, CONFIG_BT_VCP_VOL_CTLR_LOG_LEVEL);
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #include "common/bt_str.h"
+#include "vcp_internal.h"
+
+LOG_MODULE_REGISTER(bt_vcp_vol_ctlr, CONFIG_BT_VCP_VOL_CTLR_LOG_LEVEL);
 
 /* Callback functions */
 static sys_slist_t vcp_vol_ctlr_cbs = SYS_SLIST_STATIC_INIT(&vcp_vol_ctlr_cbs);
@@ -583,8 +593,8 @@ static struct bt_vcp_vol_ctlr *lookup_vcp_by_aics(const struct bt_aics *aics)
 {
 	__ASSERT(aics != NULL, "aics pointer cannot be NULL");
 
-	for (int i = 0; i < ARRAY_SIZE(vol_ctlr_insts); i++) {
-		for (int j = 0; j < ARRAY_SIZE(vol_ctlr_insts[i].aics); j++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(vol_ctlr_insts); i++) {
+		for (size_t j = 0U; j < ARRAY_SIZE(vol_ctlr_insts[i].aics); j++) {
 			if (vol_ctlr_insts[i].aics[j] == aics) {
 				return &vol_ctlr_insts[i];
 			}

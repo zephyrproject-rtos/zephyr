@@ -6,21 +6,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/__assert.h>
-#include <zephyr/types.h>
-#include <zephyr/init.h>
-#include <stdlib.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/types.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
 
 #include "audio_internal.h"
 #include "tbs_internal.h"
 #include "ccid_internal.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_tbs, CONFIG_BT_TBS_LOG_LEVEL);
 
@@ -73,7 +84,7 @@ struct gtbs_service_inst {
 #else
 #define READ_BUF_SIZE   (CONFIG_BT_TBS_MAX_CALLS * \
 			 sizeof(struct bt_tbs_current_call_item))
-#endif /* IS_ENABLED(CONFIG_BT_GTBS) */
+#endif /* defined(CONFIG_BT_GTBS) */
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, READ_BUF_SIZE);
 
 static struct tbs_service_inst svc_insts[CONFIG_BT_TBS_BEARER_COUNT];
@@ -1979,8 +1990,7 @@ int bt_tbs_set_bearer_technology(uint8_t bearer_index, uint8_t new_technology)
 {
 	struct service_inst *inst = inst_lookup_index(bearer_index);
 
-	if (new_technology < BT_TBS_TECHNOLOGY_3G ||
-	    new_technology > BT_TBS_TECHNOLOGY_IP) {
+	if (new_technology < BT_TBS_TECHNOLOGY_3G || new_technology > BT_TBS_TECHNOLOGY_WCDMA) {
 		return -EINVAL;
 	} else if (inst == NULL) {
 		return -EINVAL;

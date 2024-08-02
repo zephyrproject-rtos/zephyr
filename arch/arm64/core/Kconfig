@@ -145,12 +145,21 @@ config ARM64_SAFE_EXCEPTION_STACK
 
 config ARM64_ENABLE_FRAME_POINTER
 	bool
-	default y
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT && !OMIT_FRAME_POINTER
+	depends on !FRAME_POINTER
+	select DEPRECATED
 	help
+	  Deprecated. Use CONFIG_FRAME_POINTER instead.
 	  Hidden option to simplify access to OVERRIDE_FRAME_POINTER_DEFAULT
 	  and OMIT_FRAME_POINTER. It is automatically enabled when the frame
 	  pointer unwinding is enabled.
+
+config ARM64_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on FRAME_POINTER
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
 
 config ARM64_SAFE_EXCEPTION_STACK_SIZE
 	int "The stack size of the safe exception stack"

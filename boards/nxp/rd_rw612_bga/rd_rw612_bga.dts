@@ -6,10 +6,4 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rw6xx.dtsi>
 #include "rd_rw612_bga.dtsi"
-
-/ {
-	model = "nxp,rd_rw612_bga";
-	compatible = "nxp,rd_rw612_bga";
-};

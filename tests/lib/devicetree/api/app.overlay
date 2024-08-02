@@ -56,9 +56,9 @@
 		};
 
 		test_phandles: phandle-holder-0 {
-                        /*
-                         * There should only be one vnd,phandle-holder in the entire DTS.
-                         */
+			/*
+			 * There should only be one vnd,phandle-holder in the entire DTS.
+			 */
 			compatible = "vnd,phandle-holder";
 			/*
 			 * At least one of these phandles must refer to
@@ -164,7 +164,7 @@
 			#baz-cells = < 0x1 >;
 			interrupts = <4 3>;
 			status = "okay";
-                        ngpios = <100>;
+			ngpios = <100>;
 
 			test_gpio_hog_1 {
 				gpio-hog;
@@ -189,7 +189,7 @@
 			#baz-cells = < 0x1 >;
 			interrupts = <5 2>;
 			status = "okay";
-                        ngpios = <200>;
+			ngpios = <200>;
 
 			test_gpio_hog_3 {
 				gpio-hog;
@@ -528,7 +528,6 @@
 		test_can0: can@55553333 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55553333 0x1000 >;
-			bus-speed = <125000>;
 			status = "okay";
 			phys = <&test_transceiver0>;
 		};
@@ -536,7 +535,6 @@
 		test_can1: can@55554444 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55554444 0x1000 >;
-			bus-speed = <125000>;
 			status = "okay";
 
 			can-transceiver {
@@ -548,7 +546,6 @@
 		test_can2: can@55555555 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55555555 0x1000 >;
-			bus-speed = <125000>;
 			status = "okay";
 
 			can-transceiver {
@@ -559,7 +556,6 @@
 		test_can3: can@55557777 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55556666 0x1000 >;
-			bus-speed = <125000>;
 			status = "okay";
 			phys = <&test_transceiver1>;
 		};
@@ -615,7 +611,7 @@
 				#size-cells = <1>;
 
 				ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
-				         <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+					 <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
 			};
 
 			test_ranges_empty: empty@2 {
@@ -759,8 +755,8 @@
 		};
 	};
 
-        non-deprecated-label {
-                compatible = "vnd,non-deprecated-label";
-                label = "FOO";
-        };
+	non-deprecated-label {
+		compatible = "vnd,non-deprecated-label";
+		label = "FOO";
+	};
 };

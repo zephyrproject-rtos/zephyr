@@ -972,7 +972,7 @@ static int mcp2515_init(const struct device *dev)
 	(void)memset(dev_data->filter, 0, sizeof(dev_data->filter));
 	dev_data->old_state = CAN_STATE_ERROR_ACTIVE;
 
-	ret = can_calc_timing(dev, &timing, dev_cfg->common.bus_speed,
+	ret = can_calc_timing(dev, &timing, dev_cfg->common.bitrate,
 			      dev_cfg->common.sample_point);
 	if (ret == -EINVAL) {
 		LOG_ERR("Can't find timing for given param");

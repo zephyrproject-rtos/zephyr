@@ -114,6 +114,25 @@ config DEVICE_CONFIGURATION_DATA
 	  initialized at boot time.
 
 
+config EXTERNAL_MEM_CONFIG_DATA
+	bool "External Memory Configuration Data"
+	depends on !DEVICE_CONFIGURATION_DATA
+	help
+	  External memory configuration data (XMDC) provides an alternative
+	  configuration sequences which allows to intilialize the external memory
+	  at the boot time. This sequence allows to configure
+	  external memories (such as SDRAM) with more advanced option.
+	  This is a new alternative boot header compared to DCD, and DCD must be disabled
+	  in order to select this option.
+
+config EXTERNAL_MEM_CONFIG_OFFSET
+	hex "External memory configuration offset"
+	depends on EXTERNAL_MEM_CONFIG_DATA
+	default 0x1040 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
+	help
+	  As specified by the boot ROM, the External Memory configuration data must be
+	  placed in a specific address location to be pointed by the boot ROM.
+
 endif # NXP_IMXRT_BOOT_HEADER
 
 config NXP_IMX_EXTERNAL_SDRAM
@@ -183,6 +202,9 @@ config INIT_ENET_PLL
 	  If y, the Ethernet PLL is initialized. Always enabled on e.g.
 	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
 	  for MIMXRT1021").
+
+config INIT_SYS_PLL
+	bool "Initialize System PLL"
 
 endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
 

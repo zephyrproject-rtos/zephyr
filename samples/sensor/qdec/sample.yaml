@@ -8,6 +8,26 @@ common:
 
 tests:
   sample.sensor.qdec_sensor:
+    filter: dt_alias_exists("qdec0")
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Quadrature decoder sensor test"
+        - "Position = (.*) degrees"
+
+  sample.sensor.sam_qdec_sensor:
+    platform_allow:
+      - sam_e70_xplained/same70q21
+      - sam_e70_xplained/same70q21b
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Quadrature decoder sensor test"
+        - "Position = (.*) degrees"
+
+  sample.sensor.st_qdec_sensor:
     platform_allow: nucleo_f401re
     harness_config:
       fixture: fixture_mech_encoder
@@ -22,14 +42,16 @@ tests:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
       - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
       - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
     harness_config:
       fixture: gpio_loopback
       type: multi_line
       ordered: true
       regex:
         - "Quadrature decoder sensor test"
-        - "Position = (.*) degrees"
+        - "Position = -[45678]\\d degrees"

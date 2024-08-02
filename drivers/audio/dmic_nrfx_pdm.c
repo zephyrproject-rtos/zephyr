@@ -207,7 +207,7 @@ static bool check_pdm_frequencies(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
 				better_found = true;
 			}
 
-			/* Since frequencies are are in ascending order, stop
+			/* Since frequencies are in ascending order, stop
 			 * checking next ones for the current ratio after
 			 * resulting PCM rate goes above the one requested.
 			 */

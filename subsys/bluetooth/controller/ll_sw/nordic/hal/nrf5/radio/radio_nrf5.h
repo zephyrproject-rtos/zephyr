@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* HAL header files for nRF5x SoCs.
+ * These has to come before the radio_*.h include below.
+ */
 #include <hal/nrf_radio.h>
 
 /* Common radio resources */
@@ -40,9 +43,19 @@
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include <hal/nrf_vreqctrl.h>
 #include "radio_nrf5340.h"
-#elif
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#include "radio_nrf54lx.h"
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 #error "Unsupported SoC."
 #endif
+
+#include <hal/nrf_rtc.h>
+#include <hal/nrf_timer.h>
+
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
+#include <hal/nrf_ccm.h>
+#include <hal/nrf_aar.h>
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 /* Define to reset PPI registration.
  * This has to come before the ppi/dppi includes below.
@@ -57,10 +70,6 @@
 #include "radio_nrf5_ppi_resources.h"
 #include "radio_nrf5_ppi.h"
 #elif defined(DPPI_PRESENT)
-#include <hal/nrf_timer.h>
-#include <hal/nrf_rtc.h>
-#include <hal/nrf_aar.h>
-#include <hal/nrf_ccm.h>
 #include <hal/nrf_dppi.h>
 #include "radio_nrf5_dppi_resources.h"
 #include "radio_nrf5_dppi.h"

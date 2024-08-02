@@ -53,6 +53,7 @@ struct spi_sam_data {
 
 #ifdef CONFIG_SPI_RTIO
 	struct rtio *r; /* context for thread calls */
+	struct mpsc io_q;
 	struct rtio_iodev iodev;
 	struct rtio_iodev_sqe *txn_head;
 	struct rtio_iodev_sqe *txn_curr;
@@ -691,7 +692,7 @@ static void spi_sam_iodev_next(const struct device *dev, bool completion)
 		return;
 	}
 
-	struct rtio_mpsc_node *next = rtio_mpsc_pop(&data->iodev.iodev_sq);
+	struct mpsc_node *next = mpsc_pop(&data->io_q);
 
 	if (next != NULL) {
 		struct rtio_iodev_sqe *next_sqe = CONTAINER_OF(next, struct rtio_iodev_sqe, q);
@@ -736,7 +737,7 @@ static void spi_sam_iodev_submit(const struct device *dev,
 {
 	struct spi_sam_data *data = dev->data;
 
-	rtio_mpsc_push(&data->iodev.iodev_sq, &iodev_sqe->q);
+	mpsc_push(&data->io_q, &iodev_sqe->q);
 	spi_sam_iodev_next(dev, false);
 }
 #endif
@@ -866,7 +867,7 @@ static int spi_sam_init(const struct device *dev)
 	data->dt_spec.bus = dev;
 	data->iodev.api = &spi_iodev_api;
 	data->iodev.data = &data->dt_spec;
-	rtio_mpsc_init(&data->iodev.iodev_sq);
+	mpsc_init(&data->io_q);
 #endif
 
 	spi_context_unlock_unconditionally(&data->ctx);

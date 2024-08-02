@@ -164,7 +164,7 @@ int modem_socket_get(struct modem_socket_config *cfg, int family, int type, int 
 		return -ENOMEM;
 	}
 
-	cfg->sockets[i].sock_fd = z_reserve_fd();
+	cfg->sockets[i].sock_fd = zvfs_reserve_fd();
 	if (cfg->sockets[i].sock_fd < 0) {
 		k_sem_give(&cfg->sem_lock);
 		return -errno;
@@ -175,8 +175,8 @@ int modem_socket_get(struct modem_socket_config *cfg, int family, int type, int 
 	cfg->sockets[i].ip_proto = proto;
 	cfg->sockets[i].id = (cfg->assign_id) ? (i + cfg->base_socket_id) :
 		(cfg->base_socket_id + cfg->sockets_len);
-	z_finalize_fd(cfg->sockets[i].sock_fd, &cfg->sockets[i],
-		      (const struct fd_op_vtable *)cfg->vtable);
+	zvfs_finalize_typed_fd(cfg->sockets[i].sock_fd, &cfg->sockets[i],
+			    (const struct fd_op_vtable *)cfg->vtable, ZVFS_MODE_IFSOCK);
 
 	k_sem_give(&cfg->sem_lock);
 	return cfg->sockets[i].sock_fd;

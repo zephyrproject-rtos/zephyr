@@ -39,8 +39,7 @@ static void mempool_common_tests(osMemoryPoolId_t mp_id,
 		     "Something's wrong with osMemoryPoolGetName!");
 
 	name = osMemoryPoolGetName(mp_id);
-	zassert_true(strcmp(expected_name, name) == 0,
-		     "Error getting mempool name");
+	zassert_str_equal(expected_name, name, "Error getting mempool name");
 
 	zassert_equal(osMemoryPoolGetCapacity(dummy_id), 0,
 		      "Something's wrong with osMemoryPoolGetCapacity!");

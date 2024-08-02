@@ -184,7 +184,7 @@ Explanation
 Be aware that **async** is orthogonal to context-switching.  Some APIs
 may provide completion information through a callback, but may suspend
 while waiting for the resource necessary to initiate the operation; an
-example is :c:func:`spi_transceive_async`.
+example is :c:func:`spi_transceive_signal`.
 
 If a function is both **no-wait** and **async** then selecting the
 no-wait path only guarantees that the function will not sleep.  It does

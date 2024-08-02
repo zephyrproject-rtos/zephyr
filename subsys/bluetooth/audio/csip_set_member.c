@@ -6,36 +6,50 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
-
-#include <zephyr/device.h>
-#include <zephyr/init.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
-#include "audio_internal.h"
-#include "csip_internal.h"
-#include "csip_crypto.h"
 #include "../host/conn_internal.h"
 #include "../host/hci_core.h"
 #include "../host/keys.h"
+
+#include "common/bt_str.h"
+#include "audio_internal.h"
+#include "csip_internal.h"
+#include "csip_crypto.h"
 
 #define CSIP_SET_LOCK_TIMER_VALUE       K_SECONDS(60)
 
 #define CSIS_CHAR_ATTR_COUNT	  3 /* declaration + value + cccd */
 #define CSIS_RANK_CHAR_ATTR_COUNT 2 /* declaration + value */
-
-#include "common/bt_str.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_csip_set_member, CONFIG_BT_CSIP_SET_MEMBER_LOG_LEVEL);
 
@@ -54,7 +68,7 @@ struct csip_client {
 };
 
 struct bt_csip_set_member_svc_inst {
-	struct bt_csip_set_sirk set_sirk;
+	struct bt_csip_sirk sirk;
 	uint8_t set_size;
 	uint8_t set_lock;
 	uint8_t rank;
@@ -127,9 +141,8 @@ static void notify_clients(struct bt_csip_set_member_svc_inst *svc_inst,
 	}
 }
 
-static int sirk_encrypt(struct bt_conn *conn,
-			const struct bt_csip_set_sirk *sirk,
-			struct bt_csip_set_sirk *enc_sirk)
+static int sirk_encrypt(struct bt_conn *conn, const struct bt_csip_sirk *sirk,
+			struct bt_csip_sirk *enc_sirk)
 {
 	int err;
 	uint8_t *k;
@@ -214,7 +227,7 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 		}
 	}
 
-	res = bt_csip_sih(svc_inst->set_sirk.value, prand, hash);
+	res = bt_csip_sih(svc_inst->sirk.value, prand, hash);
 	if (res != 0) {
 		LOG_WRN("Could not generate new RSI");
 		return res;
@@ -226,12 +239,11 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 	return res;
 }
 
-static ssize_t read_set_sirk(struct bt_conn *conn,
-			     const struct bt_gatt_attr *attr,
-			     void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_sirk(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+			 uint16_t len, uint16_t offset)
 {
-	struct bt_csip_set_sirk enc_sirk;
-	struct bt_csip_set_sirk *sirk;
+	struct bt_csip_sirk enc_sirk;
+	struct bt_csip_sirk *sirk;
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	if (svc_inst->cb != NULL && svc_inst->cb->sirk_read_req != NULL) {
@@ -242,22 +254,20 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 		cb_rsp = svc_inst->cb->sirk_read_req(conn, &svc_insts[0]);
 
 		if (cb_rsp == BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT) {
-			sirk = &svc_inst->set_sirk;
+			sirk = &svc_inst->sirk;
 		} else if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_ENC_SIRK_SUPPORT) &&
 			   cb_rsp == BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC) {
 			int err;
 
-			err = sirk_encrypt(conn, &svc_inst->set_sirk,
-					   &enc_sirk);
+			err = sirk_encrypt(conn, &svc_inst->sirk, &enc_sirk);
 			if (err != 0) {
 				LOG_ERR("Could not encrypt SIRK: %d",
 					err);
 				gatt_err = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 			} else {
 				sirk = &enc_sirk;
-				LOG_HEXDUMP_DBG(enc_sirk.value,
-						sizeof(enc_sirk.value),
-						"Encrypted Set SIRK");
+				LOG_HEXDUMP_DBG(enc_sirk.value, sizeof(enc_sirk.value),
+						"Encrypted SIRK");
 			}
 		} else if (cb_rsp == BT_CSIP_READ_SIRK_REQ_RSP_REJECT) {
 			gatt_err = BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
@@ -272,21 +282,17 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 			return gatt_err;
 		}
 	} else {
-		sirk = &svc_inst->set_sirk;
+		sirk = &svc_inst->sirk;
 	}
 
-
-	LOG_DBG("Set sirk %sencrypted",
-	       sirk->type ==  BT_CSIP_SIRK_TYPE_PLAIN ? "not " : "");
-	LOG_HEXDUMP_DBG(svc_inst->set_sirk.value,
-			sizeof(svc_inst->set_sirk.value), "Set SIRK");
+	LOG_DBG("SIRK %sencrypted", sirk->type == BT_CSIP_SIRK_TYPE_PLAIN ? "not " : "");
+	LOG_HEXDUMP_DBG(svc_inst->sirk.value, sizeof(svc_inst->sirk.value), "SIRK");
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 sirk, sizeof(*sirk));
 }
 
 #if defined(CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE)
-static void set_sirk_cfg_changed(const struct bt_gatt_attr *attr,
-				 uint16_t value)
+static void sirk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("value 0x%04x", value);
 }
@@ -616,13 +622,13 @@ static struct bt_conn_auth_info_cb auth_callbacks = {
 
 #if defined(CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE)
 #define BT_CSIS_CHR_SIRK(_csip)                                                                    \
-	BT_AUDIO_CHRC(BT_UUID_CSIS_SET_SIRK, BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,              \
-		      BT_GATT_PERM_READ_ENCRYPT, read_set_sirk, NULL, &_csip),                     \
-	BT_AUDIO_CCC(set_sirk_cfg_changed)
+	BT_AUDIO_CHRC(BT_UUID_CSIS_SIRK, BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,                  \
+		      BT_GATT_PERM_READ_ENCRYPT, read_sirk, NULL, &_csip),                         \
+		BT_AUDIO_CCC(sirk_cfg_changed)
 #else
 #define BT_CSIS_CHR_SIRK(_csip)                                                                    \
-	BT_AUDIO_CHRC(BT_UUID_CSIS_SET_SIRK, BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT,         \
-		      read_set_sirk, NULL, &_csip)
+	BT_AUDIO_CHRC(BT_UUID_CSIS_SIRK, BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, read_sirk,  \
+		      NULL, &_csip)
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE */
 
 #define BT_CSIP_SERVICE_DEFINITION(_csip) {\
@@ -771,8 +777,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE) &&
 		    atomic_test_and_clear_bit(client->flags, FLAG_NOTIFY_SIRK)) {
-			notify(svc_inst, conn, BT_UUID_CSIS_SET_SIRK, &svc_inst->set_sirk,
-			       sizeof(svc_inst->set_sirk));
+			notify(svc_inst, conn, BT_UUID_CSIS_SIRK, &svc_inst->sirk,
+			       sizeof(svc_inst->sirk));
 		}
 	}
 }
@@ -869,7 +875,7 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 	inst->rank = param->rank;
 	inst->set_size = param->set_size;
 	inst->set_lock = BT_CSIP_RELEASE_VALUE;
-	inst->set_sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
+	inst->sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
 	inst->cb = param->cb;
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
@@ -878,12 +884,10 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 			0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45,
 		};
 
-		(void)memcpy(inst->set_sirk.value, test_sirk,
-			     sizeof(test_sirk));
+		(void)memcpy(inst->sirk.value, test_sirk, sizeof(test_sirk));
 		LOG_DBG("CSIP SIRK was overwritten by sample data SIRK");
 	} else {
-		(void)memcpy(inst->set_sirk.value, param->set_sirk,
-			     sizeof(inst->set_sirk.value));
+		(void)memcpy(inst->sirk.value, param->sirk, sizeof(inst->sirk.value));
 	}
 
 	*svc_inst = inst;
@@ -911,8 +915,8 @@ int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst)
 	return 0;
 }
 
-int bt_csip_set_member_set_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
-				const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE])
+int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
+			    const uint8_t sirk[BT_CSIP_SIRK_SIZE])
 {
 	CHECKIF(svc_inst == NULL) {
 		LOG_DBG("NULL svc_inst");
@@ -924,7 +928,7 @@ int bt_csip_set_member_set_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 		return -EINVAL;
 	}
 
-	memcpy(svc_inst->set_sirk.value, sirk, BT_CSIP_SET_SIRK_SIZE);
+	memcpy(svc_inst->sirk.value, sirk, BT_CSIP_SIRK_SIZE);
 
 	notify_clients(svc_inst, NULL, FLAG_NOTIFY_SIRK);
 
@@ -932,7 +936,7 @@ int bt_csip_set_member_set_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 }
 
 int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
-				uint8_t sirk[BT_CSIP_SET_SIRK_SIZE])
+				uint8_t sirk[BT_CSIP_SIRK_SIZE])
 {
 	CHECKIF(svc_inst == NULL) {
 		LOG_DBG("NULL svc_inst");
@@ -944,7 +948,7 @@ int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 		return -EINVAL;
 	}
 
-	memcpy(sirk, svc_inst->set_sirk.value, BT_CSIP_SET_SIRK_SIZE);
+	memcpy(sirk, svc_inst->sirk.value, BT_CSIP_SIRK_SIZE);
 
 	return 0;
 }

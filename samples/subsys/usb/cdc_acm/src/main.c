@@ -49,12 +49,26 @@ static inline void print_baudrate(const struct device *dev)
 }
 
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-static struct usbd_contex *sample_usbd;
+static struct usbd_context *sample_usbd;
 K_SEM_DEFINE(dtr_sem, 0, 1);
 
-static void sample_msg_cb(const struct usbd_msg *msg)
+static void sample_msg_cb(struct usbd_context *const ctx, const struct usbd_msg *msg)
 {
 	LOG_INF("USBD message: %s", usbd_msg_type_string(msg->type));
+
+	if (usbd_can_detect_vbus(ctx)) {
+		if (msg->type == USBD_MSG_VBUS_READY) {
+			if (usbd_enable(ctx)) {
+				LOG_ERR("Failed to enable device support");
+			}
+		}
+
+		if (msg->type == USBD_MSG_VBUS_REMOVED) {
+			if (usbd_disable(ctx)) {
+				LOG_ERR("Failed to disable device support");
+			}
+		}
+	}
 
 	if (msg->type == USBD_MSG_CDC_ACM_CONTROL_LINE_STATE) {
 		uint32_t dtr = 0U;
@@ -80,17 +94,19 @@ static int enable_usb_device_next(void)
 		return -ENODEV;
 	}
 
-	err = usbd_enable(sample_usbd);
-	if (err) {
-		LOG_ERR("Failed to enable device support");
-		return err;
+	if (!usbd_can_detect_vbus(sample_usbd)) {
+		err = usbd_enable(sample_usbd);
+		if (err) {
+			LOG_ERR("Failed to enable device support");
+			return err;
+		}
 	}
 
-	LOG_DBG("USB device support enabled");
+	LOG_INF("USB device support enabled");
 
 	return 0;
 }
-#endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT) */
+#endif /* defined(CONFIG_USB_DEVICE_STACK_NEXT) */
 
 static void interrupt_handler(const struct device *dev, void *user_data)
 {

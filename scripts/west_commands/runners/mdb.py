@@ -34,6 +34,16 @@ def is_flash_cmd_need_exit_immediately(mdb_runner):
     else:
         return True
 
+def smp_core_order(mdb_runner, id):
+    if is_simulation_run(mdb_runner):
+        # for simulation targets we start cores in direct order (core 0 first, core 1 second, etc...)
+        # otherwise we face mismatch arcnum (code ID) with ARConnect ID and core ID in instruction traces
+        return id
+    else:
+        # for HW targets we want to start the primary core last, to avoid ARConnect initialization interfere
+        # with secondary cores startup - so we reverse start order
+        return mdb_runner.cores - 1 - id
+
 def mdb_do_run(mdb_runner, command):
     commander = "mdb64"
 
@@ -81,7 +91,7 @@ def mdb_do_run(mdb_runner, command):
             if i > 0: mdb_sub_cmd += ['-prop=download=2']
             mdb_sub_cmd += mdb_basic_options + mdb_target + [mdb_runner.elf_name]
             mdb_runner.check_call(mdb_sub_cmd, cwd=mdb_runner.build_dir)
-            mdb_multifiles += ('core{}'.format(mdb_runner.cores-1-i) if i == 0 else ',core{}'.format(mdb_runner.cores-1-i))
+            mdb_multifiles += ('core{}' if i == 0 else ',core{}').format(smp_core_order(mdb_runner, i))
 
         # to enable multi-core aware mode for use with the MetaWare debugger,
         # need to set the NSIM_MULTICORE environment variable to a non-zero value
@@ -173,7 +183,7 @@ class MdbHwBinaryRunner(ZephyrBinaryRunner):
                             help='''choose the number of cores that target has,
                                     e.g. --cores=1''')
         parser.add_argument('--dig-device', default='',
-                            help='''choose the the specific digilent device to
+                            help='''choose the specific digilent device to
                              connect, this is useful when multiple
                              targets are connected''')
 

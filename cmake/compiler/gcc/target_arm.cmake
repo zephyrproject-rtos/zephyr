@@ -58,3 +58,12 @@ set(LLEXT_APPEND_FLAGS
   -mlong-calls
   -mthumb
 )
+
+list(APPEND LLEXT_EDK_REMOVE_FLAGS
+    --sysroot=.*
+    -fmacro-prefix-map=.*
+    )
+
+list(APPEND LLEXT_EDK_APPEND_FLAGS
+    -nodefaultlibs
+    )

@@ -10,3 +10,11 @@ config COUNTER_TMR_ESP32
 	help
 	  Enables the Counter driver API based on Espressif's General
 	  Purpose Timers for ESP32 series devices.
+
+config COUNTER_TMR_RTC_ESP32
+	bool "ESP32 Counter Driver based on GP-Timers"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_RTC_TIMER_ENABLED
+	help
+	  Enables the Counter driver API based on Espressif's General
+	  Purpose Timers for ESP32 series devices.

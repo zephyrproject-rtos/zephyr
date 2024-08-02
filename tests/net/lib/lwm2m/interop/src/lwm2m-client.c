@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/net/socket.h>
+#include "lwm2m_rd_client.h"
 
 #define APP_BANNER "Run LWM2M client"
 
@@ -88,6 +89,18 @@ int set_socketoptions(struct lwm2m_ctx *ctx)
 	return lwm2m_set_default_sockopt(ctx);
 }
 
+static int create_appdata(uint16_t obj_inst_id)
+{
+	/* Create BinaryAppData object */
+	static uint8_t data[4096];
+	static char description[16];
+
+	lwm2m_set_res_buf(&LWM2M_OBJ(19, 0, 0, 0), data, sizeof(data), 0, 0);
+	lwm2m_set_res_buf(&LWM2M_OBJ(19, 0, 3), description, sizeof(description), 0, 0);
+
+	return 0;
+}
+
 static int lwm2m_setup(void)
 {
 	/* setup DEVICE object */
@@ -117,6 +130,8 @@ static int lwm2m_setup(void)
 	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 7, 1), &usb_mv, sizeof(usb_mv), sizeof(usb_mv), 0);
 	lwm2m_create_res_inst(&LWM2M_OBJ(3, 0, 8, 1));
 	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 8, 1), &usb_ma, sizeof(usb_ma), sizeof(usb_ma), 0);
+
+	lwm2m_register_create_callback(19, create_appdata);
 
 	return 0;
 }
@@ -232,9 +247,11 @@ int main(void)
 
 	client.tls_tag = 1;
 	client.set_socketoptions = set_socketoptions;
+	client.event_cb = rd_client_event;
+	client.observe_cb = observe_cb;
+	client.sock_fd = -1;
 
-	lwm2m_rd_client_start(&client, CONFIG_BOARD, 0, rd_client_event, observe_cb);
-	lwm2m_rd_client_stop(&client, rd_client_event, false);
+	lwm2m_rd_client_set_ctx(&client);
 
 	return 0;
 }

@@ -126,6 +126,6 @@ extern struct k_mem_slab MAP1;
 __syscall void test_thread_priority_set(k_tid_t thread, int prio);
 __syscall timing_t timing_timestamp_get(void);
 
-#include <syscalls/master.h>
+#include <zephyr/syscalls/master.h>
 
 #endif /* _MASTER_H */

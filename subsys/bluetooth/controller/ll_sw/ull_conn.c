@@ -99,7 +99,7 @@ static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /* Connection context pointer used as CPR mutex to serialize connection
- * parameter requests procedures across simulataneous connections so that
+ * parameter requests procedures across simultaneous connections so that
  * offsets exchanged to the peer do not get changed.
  */
 struct ll_conn *conn_upd_curr;
@@ -1730,7 +1730,7 @@ static inline void disable(uint16_t handle)
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_CONN_BASE + handle,
 					conn, &conn->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, handle, err);
 
 	conn->lll.handle = LLL_HANDLE_INVALID;
 	conn->lll.link_tx_free = NULL;

@@ -144,7 +144,7 @@ static inline void native_tty_stop_bits_set(struct termios *ter,
  * @brief Set the number of data bits in the termios structure
  *
  * @param ter
- * @param stop_bits
+ * @param data_bits
  *
  */
 static inline void native_tty_data_bits_set(struct termios *ter,

@@ -142,6 +142,9 @@ static const struct flash_parameters *nrf_mram_get_parameters(const struct devic
 	static const struct flash_parameters parameters = {
 		.write_block_size = WRITE_BLOCK_SIZE,
 		.erase_value = ERASE_VALUE,
+		.caps = {
+			.no_explicit_erase = true,
+		},
 	};
 
 	return &parameters;

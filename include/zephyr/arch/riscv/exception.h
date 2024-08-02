@@ -48,7 +48,7 @@ struct soc_esf {
 #if defined(CONFIG_RISCV_SOC_HAS_ISR_STACKING)
 	SOC_ISR_STACKING_ESF_DECLARE;
 #else
-struct __esf {
+struct arch_esf {
 	unsigned long ra;		/* return address */
 
 	unsigned long t0;		/* Caller-saved temporary register */
@@ -87,7 +87,6 @@ struct __esf {
 } __aligned(16);
 #endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
-typedef struct __esf z_arch_esf_t;
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 typedef struct soc_esf soc_esf_t;
 #endif

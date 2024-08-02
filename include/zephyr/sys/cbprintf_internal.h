@@ -92,6 +92,7 @@ extern "C" {
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	z_cbprintf_cxx_is_pchar(x, (flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO)
 #else
+/* NOLINTBEGIN(misc-redundant-expression) */
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	_Generic((x) + 0, \
 		/* char * */ \
@@ -111,6 +112,7 @@ extern "C" {
 		const volatile wchar_t * : 1, \
 		default : \
 			0)
+/* NOLINTEND(misc-redundant-expression) */
 #endif
 
 /** @brief Check if argument fits in 32 bit word.
@@ -488,7 +490,7 @@ extern "C" {
 	(Z_CBPRINTF_NONE_CHAR_PTR_COUNT(__VA_ARGS__) == \
 	 Z_CBPRINTF_P_COUNT(GET_ARG_N(1, __VA_ARGS__)))
 
-/* @brief Check if argument is a certain type of char pointer. What exectly is checked
+/* @brief Check if argument is a certain type of char pointer. What exactly is checked
  * depends on @p flags. If flags is 0 then 1 is returned if @p x is a char pointer.
  *
  * @param idx Argument index.
@@ -555,8 +557,9 @@ extern "C" {
 #ifdef __cplusplus
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
+#define Z_CONSTIFY(v) (_Generic((v), char * : (const char *)(uintptr_t)(v), default : (v)))
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
-	__auto_type __v = (v) + 0; \
+	__auto_type __v = (Z_CONSTIFY(v)) + 0; \
 	/* Static code analysis may complain about unused variable. */ \
 	(void)__v; \
 	size_t __arg_size = _Generic((v), \
@@ -580,7 +583,7 @@ extern "C" {
 #define Z_CBPRINTF_STORE_ARG(buf, arg) do { \
 	if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) { \
 		/* If required, copy arguments by word to avoid unaligned access.*/ \
-		__auto_type _v = (arg) + 0; \
+		__auto_type _v = (Z_CONSTIFY(arg)) + 0; \
 		double _d = _Generic((arg) + 0, \
 				float : (arg) + 0, \
 				default : \
@@ -590,26 +593,26 @@ extern "C" {
 		(void)_d; \
 		size_t arg_size = Z_CBPRINTF_ARG_SIZE(arg); \
 		size_t _wsize = arg_size / sizeof(int); \
-		z_cbprintf_wcpy((int *)buf, \
+		z_cbprintf_wcpy((int *)(buf), \
 			      (int *) _Generic((arg) + 0, float : &_d, default : &_v), \
 			      _wsize); \
 	} else { \
 		*_Generic((arg) + 0, \
-			char : (int *)buf, \
-			unsigned char: (int *)buf, \
-			short : (int *)buf, \
-			unsigned short : (int *)buf, \
-			int : (int *)buf, \
-			unsigned int : (unsigned int *)buf, \
-			long : (long *)buf, \
-			unsigned long : (unsigned long *)buf, \
-			long long : (long long *)buf, \
-			unsigned long long : (unsigned long long *)buf, \
-			float : (double *)buf, \
-			double : (double *)buf, \
-			long double : (long double *)buf, \
+			char : (int *)(buf), \
+			unsigned char: (int *)(buf), \
+			short : (int *)(buf), \
+			unsigned short : (int *)(buf), \
+			int : (int *)(buf), \
+			unsigned int : (unsigned int *)(buf), \
+			long : (long *)(buf), \
+			unsigned long : (unsigned long *)(buf), \
+			long long : (long long *)(buf), \
+			unsigned long long : (unsigned long long *)(buf), \
+			float : (double *)(buf), \
+			double : (double *)(buf), \
+			long double : (long double *)(buf), \
 			default : \
-				(const void **)buf) = arg; \
+				(const void **)(buf)) = (arg); \
 	} \
 } while (false)
 #endif
@@ -676,12 +679,12 @@ do { \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg) != 0UL) { \
-		_idx += sizeof(int); \
-		_align_offset += sizeof(int); \
+	while (((_align_offset) % Z_CBPRINTF_ALIGNMENT(_arg)) != 0UL) { \
+		(_idx) += sizeof(int); \
+		(_align_offset) += sizeof(int); \
 	} \
 	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
-	uint32_t _loc = _idx / sizeof(int); \
+	uint8_t _loc = (uint8_t)(_idx / sizeof(int)); \
 	if (arg_idx < 1 + _fros_cnt) { \
 		if (_ros_pos_en) { \
 			_ros_pos_buf[_ros_pos_idx++] = _loc; \
@@ -700,14 +703,14 @@ do { \
 			} \
 		} else if (_rws_pos_en) { \
 			_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
-			_rws_buffer[_rws_pos_idx++] = _idx / sizeof(int); \
+			_rws_buffer[_rws_pos_idx++] = (uint8_t)(_idx / sizeof(int)); \
 		} \
 	} \
-	if (_buf && _idx < (int)_max) { \
-		Z_CBPRINTF_STORE_ARG(&_buf[_idx], _arg); \
+	if ((_buf) && (_idx) < (int)(_max)) { \
+		Z_CBPRINTF_STORE_ARG(&(_buf)[(_idx)], _arg); \
 	} \
-	_idx += _arg_size; \
-	_align_offset += _arg_size; \
+	(_idx) += (_arg_size); \
+	(_align_offset) += (_arg_size); \
 } while (false)
 
 /** @brief Package single argument.
@@ -780,9 +783,9 @@ do { \
 	Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
 	BUILD_ASSERT(!IS_ENABLED(CONFIG_XTENSA) || \
 		     (IS_ENABLED(CONFIG_XTENSA) && \
-		      !(_align_offset % CBPRINTF_PACKAGE_ALIGNMENT)), \
+		      !((_align_offset) % CBPRINTF_PACKAGE_ALIGNMENT)), \
 			"Xtensa requires aligned package."); \
-	BUILD_ASSERT((_align_offset % sizeof(int)) == 0, \
+	BUILD_ASSERT(((_align_offset) % sizeof(int)) == 0, \
 			"Alignment offset must be multiply of a word."); \
 	IF_ENABLED(CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT, \
 		(__ASSERT(!((uintptr_t)buf & (CBPRINTF_PACKAGE_ALIGNMENT - 1)), \
@@ -791,7 +794,7 @@ do { \
 	bool _ros_pos_en = (_flags) & CBPRINTF_PACKAGE_ADD_RO_STR_POS; \
 	bool _rws_pos_en = (_flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
 	bool _cros_en = (_flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO; \
-	uint8_t *_pbuf = buf; \
+	uint8_t *_pbuf = (buf); \
 	uint8_t _rws_pos_idx = 0; \
 	uint8_t _ros_pos_idx = 0; \
 	/* Variable holds count of all string pointer arguments. */ \
@@ -808,7 +811,7 @@ do { \
 	size_t _pmax = !is_null_no_warn(buf) ? _inlen : INT32_MAX; \
 	int _pkg_len = 0; \
 	int _total_len = 0; \
-	int _pkg_offset = _align_offset; \
+	int _pkg_offset = (_align_offset); \
 	union cbprintf_package_hdr *_len_loc; \
 	/* If string has rw string arguments CBPRINTF_PACKAGE_ADD_RW_STR_POS is a must. */ \
 	if (_rws_cnt && !((_flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS)) { \
@@ -817,7 +820,7 @@ do { \
 	} \
 	/* package starts with string address and field with length */ \
 	if (_pmax < sizeof(*_len_loc)) { \
-		_outlen = -ENOSPC; \
+		(_outlen) = -ENOSPC; \
 		break; \
 	} \
 	_len_loc = (union cbprintf_package_hdr *)_pbuf; \
@@ -840,7 +843,7 @@ do { \
 		} \
 	} \
 	/* Store length */ \
-	_outlen = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
+	(_outlen) = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
 	if (_pbuf != NULL) { \
 		union cbprintf_package_hdr pkg_hdr = { \

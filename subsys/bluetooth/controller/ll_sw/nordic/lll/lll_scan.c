@@ -170,7 +170,7 @@ bool lll_scan_adva_check(const struct lll_scan *lll, uint8_t addr_type,
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	/* NOTE: This function to be used only to check AdvA when intiating,
+	/* NOTE: This function to be used only to check AdvA when initiating,
 	 *       hence, otherwise we should not use the return value.
 	 *       This function is referenced in lll_scan_ext_tgta_check, but
 	 *       is not used when not being an initiator, hence return false

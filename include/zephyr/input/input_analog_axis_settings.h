@@ -18,7 +18,7 @@
 /**
  * @brief Save the calibration data.
  *
- * Save the calibration data permanently on the specifided device, requires the
+ * Save the calibration data permanently on the specifided device, requires
  * the @ref settings subsystem to be configured and initialized.
  *
  * @param dev Analog axis device.

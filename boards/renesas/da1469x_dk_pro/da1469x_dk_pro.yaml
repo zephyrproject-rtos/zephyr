@@ -21,4 +21,5 @@ supported:
   - dma
   - mipi_dbi
   - display
+  - memc
 vendor: renesas

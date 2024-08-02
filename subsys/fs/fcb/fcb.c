@@ -5,32 +5,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "fcb_priv.h"
+
+#include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <zephyr/fs/fcb.h>
-#include "fcb_priv.h"
-#include "string.h"
-#include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/fs/fcb.h>
 
-uint8_t
-fcb_get_align(const struct fcb *fcb)
+uint8_t fcb_get_align(const struct fcb *fcbp)
 {
 	uint8_t align;
 
-	if (fcb->fap == NULL) {
+	if (fcbp->fap == NULL) {
 		return 0;
 	}
 
-	align = flash_area_align(fcb->fap);
+	align = flash_area_align(fcbp->fap);
 
 	return align;
 }
 
-int fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
-		   off_t off, void *dst, size_t len)
+int fcb_flash_read(const struct fcb *fcbp, const struct flash_sector *sector, off_t off,
+		   void *dst, size_t len)
 {
 	int rc;
 
@@ -38,11 +38,11 @@ int fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
 		return -EINVAL;
 	}
 
-	if (fcb->fap == NULL) {
+	if (fcbp->fap == NULL) {
 		return -EIO;
 	}
 
-	rc = flash_area_read(fcb->fap, sector->fs_off + off, dst, len);
+	rc = flash_area_read(fcbp->fap, sector->fs_off + off, dst, len);
 
 	if (rc != 0) {
 		return -EIO;
@@ -51,8 +51,8 @@ int fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
 	return 0;
 }
 
-int fcb_flash_write(const struct fcb *fcb, const struct flash_sector *sector,
-		    off_t off, const void *src, size_t len)
+int fcb_flash_write(const struct fcb *fcbp, const struct flash_sector *sector, off_t off,
+		    const void *src, size_t len)
 {
 	int rc;
 
@@ -60,11 +60,11 @@ int fcb_flash_write(const struct fcb *fcb, const struct flash_sector *sector,
 		return -EINVAL;
 	}
 
-	if (fcb->fap == NULL) {
+	if (fcbp->fap == NULL) {
 		return -EIO;
 	}
 
-	rc = flash_area_write(fcb->fap, sector->fs_off + off, src, len);
+	rc = flash_area_write(fcbp->fap, sector->fs_off + off, src, len);
 
 	if (rc != 0) {
 		return -EIO;
@@ -73,17 +73,15 @@ int fcb_flash_write(const struct fcb *fcb, const struct flash_sector *sector,
 	return 0;
 }
 
-int
-fcb_erase_sector(const struct fcb *fcb, const struct flash_sector *sector)
+int fcb_erase_sector(const struct fcb *fcbp, const struct flash_sector *sector)
 {
 	int rc;
 
-	if (fcb->fap == NULL) {
+	if (fcbp->fap == NULL) {
 		return -EIO;
 	}
 
-	rc = flash_area_erase(fcb->fap, sector->fs_off, sector->fs_size);
-
+	rc = flash_area_flatten(fcbp->fap, sector->fs_off, sector->fs_size);
 	if (rc != 0) {
 		return -EIO;
 	}
@@ -91,8 +89,7 @@ fcb_erase_sector(const struct fcb *fcb, const struct flash_sector *sector)
 	return 0;
 }
 
-int
-fcb_init(int f_area_id, struct fcb *fcb)
+int fcb_init(int f_area_id, struct fcb *fcbp)
 {
 	struct flash_sector *sector;
 	int rc;
@@ -103,27 +100,27 @@ fcb_init(int f_area_id, struct fcb *fcb)
 	struct fcb_disk_area fda;
 	const struct flash_parameters *fparam;
 
-	if (!fcb->f_sectors || fcb->f_sector_cnt - fcb->f_scratch_cnt < 1) {
+	if (!fcbp->f_sectors || fcbp->f_sector_cnt - fcbp->f_scratch_cnt < 1) {
 		return -EINVAL;
 	}
 
-	rc = flash_area_open(f_area_id, &fcb->fap);
+	rc = flash_area_open(f_area_id, &fcbp->fap);
 	if (rc != 0) {
 		return -EINVAL;
 	}
 
-	fparam = flash_get_parameters(fcb->fap->fa_dev);
-	fcb->f_erase_value = fparam->erase_value;
+	fparam = flash_get_parameters(fcbp->fap->fa_dev);
+	fcbp->f_erase_value = fparam->erase_value;
 
-	align = fcb_get_align(fcb);
+	align = fcb_get_align(fcbp);
 	if (align == 0U) {
 		return -EINVAL;
 	}
 
 	/* Fill last used, first used */
-	for (i = 0; i < fcb->f_sector_cnt; i++) {
-		sector = &fcb->f_sectors[i];
-		rc = fcb_sector_hdr_read(fcb, sector, &fda);
+	for (i = 0; i < fcbp->f_sector_cnt; i++) {
+		sector = &fcbp->f_sectors[i];
+		rc = fcb_sector_hdr_read(fcbp, sector, &fda);
 		if (rc < 0) {
 			return rc;
 		}
@@ -147,21 +144,21 @@ fcb_init(int f_area_id, struct fcb *fcb)
 		/*
 		 * No initialized areas.
 		 */
-		oldest_sector = newest_sector = &fcb->f_sectors[0];
-		rc = fcb_sector_hdr_init(fcb, oldest_sector, 0);
+		oldest_sector = newest_sector = &fcbp->f_sectors[0];
+		rc = fcb_sector_hdr_init(fcbp, oldest_sector, 0);
 		if (rc) {
 			return rc;
 		}
 		newest = oldest = 0;
 	}
-	fcb->f_align = align;
-	fcb->f_oldest = oldest_sector;
-	fcb->f_active.fe_sector = newest_sector;
-	fcb->f_active.fe_elem_off = fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area));
-	fcb->f_active_id = newest;
+	fcbp->f_align = align;
+	fcbp->f_oldest = oldest_sector;
+	fcbp->f_active.fe_sector = newest_sector;
+	fcbp->f_active.fe_elem_off = fcb_len_in_flash(fcbp, sizeof(struct fcb_disk_area));
+	fcbp->f_active_id = newest;
 
 	while (1) {
-		rc = fcb_getnext_in_sector(fcb, &fcb->f_active);
+		rc = fcb_getnext_in_sector(fcbp, &fcbp->f_active);
 		if (rc == -ENOTSUP) {
 			rc = 0;
 			break;
@@ -170,31 +167,29 @@ fcb_init(int f_area_id, struct fcb *fcb)
 			break;
 		}
 	}
-	k_mutex_init(&fcb->f_mtx);
+	k_mutex_init(&fcbp->f_mtx);
 	return rc;
 }
 
-int
-fcb_free_sector_cnt(struct fcb *fcb)
+int fcb_free_sector_cnt(struct fcb *fcbp)
 {
 	int i;
 	struct flash_sector *fa;
 
-	fa = fcb->f_active.fe_sector;
-	for (i = 0; i < fcb->f_sector_cnt; i++) {
-		fa = fcb_getnext_sector(fcb, fa);
-		if (fa == fcb->f_oldest) {
+	fa = fcbp->f_active.fe_sector;
+	for (i = 0; i < fcbp->f_sector_cnt; i++) {
+		fa = fcb_getnext_sector(fcbp, fa);
+		if (fa == fcbp->f_oldest) {
 			break;
 		}
 	}
 	return i;
 }
 
-int
-fcb_is_empty(struct fcb *fcb)
+int fcb_is_empty(struct fcb *fcbp)
 {
-	return (fcb->f_active.fe_sector == fcb->f_oldest &&
-	  fcb->f_active.fe_elem_off == fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area)));
+	return (fcbp->f_active.fe_sector == fcbp->f_oldest &&
+		fcbp->f_active.fe_elem_off == fcb_len_in_flash(fcbp, sizeof(struct fcb_disk_area)));
 }
 
 /**
@@ -218,35 +213,37 @@ fcb_is_empty(struct fcb *fcb)
  * to correctly use the first bit of byte to figure out how many bytes are there
  * and if there is any data at all or both bytes are equal to erase value.
  */
-int
-fcb_put_len(const struct fcb *fcb, uint8_t *buf, uint16_t len)
+int fcb_put_len(const struct fcb *fcbp, uint8_t *buf, uint16_t len)
 {
 	if (len < 0x80) {
-		buf[0] = len ^ ~fcb->f_erase_value;
+		buf[0] = len ^ ~fcbp->f_erase_value;
 		return 1;
-	} else if (len < FCB_MAX_LEN) {
-		buf[0] = (len | 0x80) ^ ~fcb->f_erase_value;
-		buf[1] = (len >> 7) ^ ~fcb->f_erase_value;
+	} else if (len <= FCB_MAX_LEN) {
+		buf[0] = (len | 0x80) ^ ~fcbp->f_erase_value;
+		buf[1] = (len >> 7) ^ ~fcbp->f_erase_value;
 		return 2;
 	} else {
 		return -EINVAL;
 	}
 }
 
-int
-fcb_get_len(const struct fcb *fcb, uint8_t *buf, uint16_t *len)
+int fcb_get_len(const struct fcb *fcbp, uint8_t *buf, uint16_t *len)
 {
 	int rc;
-	if ((buf[0] ^ ~fcb->f_erase_value) & 0x80) {
-		if ((buf[0] == fcb->f_erase_value) &&
-		    (buf[1] == fcb->f_erase_value)) {
+	uint8_t buf0_xor;
+	uint8_t buf1_xor;
+
+	buf0_xor = buf[0] ^ ~fcbp->f_erase_value;
+	if (buf0_xor & 0x80) {
+		if ((buf[0] == fcbp->f_erase_value) && (buf[1] == fcbp->f_erase_value)) {
 			return -ENOTSUP;
 		}
-		*len = ((buf[0] ^ ~fcb->f_erase_value) & 0x7f) |
-			((uint8_t)(buf[1] ^ ~fcb->f_erase_value) << 7);
+
+		buf1_xor = buf[1] ^ ~fcbp->f_erase_value;
+		*len = (uint16_t)((buf0_xor & 0x7f) | ((uint16_t)buf1_xor << 7));
 		rc = 2;
 	} else {
-		*len = (uint8_t)(buf[0] ^ ~fcb->f_erase_value);
+		*len = (uint16_t)(buf0_xor);
 		rc = 1;
 	}
 	return rc;
@@ -255,18 +252,17 @@ fcb_get_len(const struct fcb *fcb, uint8_t *buf, uint16_t *len)
 /**
  * Initialize erased sector for use.
  */
-int
-fcb_sector_hdr_init(struct fcb *fcb, struct flash_sector *sector, uint16_t id)
+int fcb_sector_hdr_init(struct fcb *fcbp, struct flash_sector *sector, uint16_t id)
 {
 	struct fcb_disk_area fda;
 	int rc;
 
-	fda.fd_magic = fcb_flash_magic(fcb);
-	fda.fd_ver = fcb->f_version;
-	fda._pad = fcb->f_erase_value;
+	fda.fd_magic = fcb_flash_magic(fcbp);
+	fda.fd_ver = fcbp->f_version;
+	fda._pad = fcbp->f_erase_value;
 	fda.fd_id = id;
 
-	rc = fcb_flash_write(fcb, sector, 0, &fda, sizeof(fda));
+	rc = fcb_flash_write(fcbp, sector, 0, &fda, sizeof(fda));
 	if (rc != 0) {
 		return -EIO;
 	}
@@ -279,8 +275,7 @@ fcb_sector_hdr_init(struct fcb *fcb, struct flash_sector *sector, uint16_t id)
  * Returns 0 if sector is unused;
  * Returns 1 if sector has data.
  */
-int fcb_sector_hdr_read(struct fcb *fcb, struct flash_sector *sector,
-			struct fcb_disk_area *fdap)
+int fcb_sector_hdr_read(struct fcb *fcbp, struct flash_sector *sector, struct fcb_disk_area *fdap)
 {
 	struct fcb_disk_area fda;
 	int rc;
@@ -288,14 +283,14 @@ int fcb_sector_hdr_read(struct fcb *fcb, struct flash_sector *sector,
 	if (!fdap) {
 		fdap = &fda;
 	}
-	rc = fcb_flash_read(fcb, sector, 0, fdap, sizeof(*fdap));
+	rc = fcb_flash_read(fcbp, sector, 0, fdap, sizeof(*fdap));
 	if (rc) {
 		return -EIO;
 	}
-	if (fdap->fd_magic == MK32(fcb->f_erase_value)) {
+	if (fdap->fd_magic == MK32(fcbp->f_erase_value)) {
 		return 0;
 	}
-	if (fdap->fd_magic != fcb_flash_magic(fcb)) {
+	if (fdap->fd_magic != fcb_flash_magic(fcbp)) {
 		return -ENOMSG;
 	}
 	return 1;
@@ -308,9 +303,7 @@ int fcb_sector_hdr_read(struct fcb *fcb, struct flash_sector *sector,
  * @param2 ptr to the fcb_entry to be returned
  * @return 0 on there are any fcbs aviable; -ENOENT otherwise
  */
-int
-fcb_offset_last_n(struct fcb *fcb, uint8_t entries,
-		struct fcb_entry *last_n_entry)
+int fcb_offset_last_n(struct fcb *fcbp, uint8_t entries, struct fcb_entry *last_n_entry)
 {
 	struct fcb_entry loc;
 	int i;
@@ -323,14 +316,14 @@ fcb_offset_last_n(struct fcb *fcb, uint8_t entries,
 
 	i = 0;
 	(void)memset(&loc, 0, sizeof(loc));
-	while (!fcb_getnext(fcb, &loc)) {
+	while (!fcb_getnext(fcbp, &loc)) {
 		if (i == 0) {
 			/* Start from the beginning of fcb entries */
 			*last_n_entry = loc;
 		}
 		/* Update last_n_entry after n entries and keep updating */
 		else if (i > (entries - 1)) {
-			rc = fcb_getnext(fcb, last_n_entry);
+			rc = fcb_getnext(fcbp, last_n_entry);
 
 			if (rc) {
 				/* A fcb history must have been erased,
@@ -350,14 +343,13 @@ fcb_offset_last_n(struct fcb *fcb, uint8_t entries,
  * @param fcb
  * @return 0 on success; non-zero on failure
  */
-int
-fcb_clear(struct fcb *fcb)
+int fcb_clear(struct fcb *fcbp)
 {
 	int rc;
 
 	rc = 0;
-	while (!fcb_is_empty(fcb)) {
-		rc = fcb_rotate(fcb);
+	while (!fcb_is_empty(fcbp)) {
+		rc = fcb_rotate(fcbp);
 		if (rc) {
 			break;
 		}

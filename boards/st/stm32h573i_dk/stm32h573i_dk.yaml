@@ -24,5 +24,6 @@ supported:
   - usb_device
   - usb
   - i2c
-  - sdhc
+  - rtc
+  - usbd
 vendor: st

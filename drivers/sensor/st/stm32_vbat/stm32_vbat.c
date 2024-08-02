@@ -9,6 +9,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device_runtime.h>
 #include <stm32_ll_adc.h>
 
 LOG_MODULE_REGISTER(stm32_vbat, CONFIG_SENSOR_LOG_LEVEL);
@@ -45,6 +46,7 @@ static int stm32_vbat_sample_fetch(const struct device *dev, enum sensor_channel
 	}
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
+	pm_device_runtime_get(data->adc);
 
 	rc = adc_channel_setup(data->adc, &data->adc_cfg);
 
@@ -67,6 +69,7 @@ static int stm32_vbat_sample_fetch(const struct device *dev, enum sensor_channel
 				       path &= ~LL_ADC_PATH_INTERNAL_VBAT);
 
 unlock:
+	pm_device_runtime_put(data->adc);
 	k_mutex_unlock(&data->mutex);
 
 	return rc;
@@ -77,18 +80,16 @@ static int stm32_vbat_channel_get(const struct device *dev, enum sensor_channel 
 {
 	struct stm32_vbat_data *data = dev->data;
 	const struct stm32_vbat_config *cfg = dev->config;
-	float voltage;
+	int32_t voltage;
 
 	if (chan != SENSOR_CHAN_VOLTAGE) {
 		return -ENOTSUP;
 	}
 
-	/* Sensor value in millivolts */
-	voltage = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
-	/* considering the vbat input through a resistor bridge */
-	voltage = voltage * cfg->ratio / 1000; /* value of SENSOR_CHAN_VOLTAGE in Volt */
+	/* Sensor value in millivolts considering the vbat input through a resistor bridge */
+	voltage = data->raw * adc_ref_internal(data->adc) * cfg->ratio / 0x0FFF;
 
-	return sensor_value_from_double(val, voltage);
+	return sensor_value_from_milli(val, voltage);
 }
 
 static const struct sensor_driver_api stm32_vbat_driver_api = {
@@ -102,6 +103,11 @@ static int stm32_vbat_init(const struct device *dev)
 	struct adc_sequence *asp = &data->adc_seq;
 
 	k_mutex_init(&data->mutex);
+
+	if (data->adc == NULL) {
+		LOG_ERR("ADC is not enabled");
+		return -ENODEV;
+	}
 
 	if (!device_is_ready(data->adc)) {
 		LOG_ERR("Device %s is not ready", data->adc->name);
@@ -118,9 +124,13 @@ static int stm32_vbat_init(const struct device *dev)
 	return 0;
 }
 
+#define STM32_VBAT_GET_ADC_OR_NULL(inst)                                                           \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_INST_IO_CHANNELS_CTLR(inst), okay),                      \
+		    (DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst))), (NULL))
+
 #define STM32_VBAT_DEFINE(inst)									\
 	static struct stm32_vbat_data stm32_vbat_dev_data_##inst = {				\
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),				\
+		.adc = STM32_VBAT_GET_ADC_OR_NULL(inst),					\
 		.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),		\
 		.adc_cfg = {									\
 			.gain = ADC_GAIN_1,							\
@@ -138,6 +148,6 @@ static int stm32_vbat_init(const struct device *dev)
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, stm32_vbat_init, NULL,				\
 			      &stm32_vbat_dev_data_##inst, &stm32_vbat_dev_config_##inst,	\
 			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
-			      &stm32_vbat_driver_api);						\
+			      &stm32_vbat_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_VBAT_DEFINE)

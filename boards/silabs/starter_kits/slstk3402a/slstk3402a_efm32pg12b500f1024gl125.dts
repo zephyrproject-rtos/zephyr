@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2017 Christian Taedcke
+ * Copyright (c) 2019 Lemonbeat GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32pg12b500f1024gl125.dtsi>
+#include "slstk3402a_common.dtsi"
+
+/ {
+	model = "Silicon Labs EFM32PG12 SLSTK3402A board";
+	compatible = "silabs,slstk3402a", "silabs,efm32pg12b";
+};

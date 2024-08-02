@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright 2024, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,23 @@
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
 };
 
+/*
+ * Default for this board is to allocate SRAM0-2 for data.  But the
+ * application can have an application specific device tree to
+ * allocate the SRAMs differently.
+ */
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
+
 zephyr_udc0: &usbhs {
 	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <5>;
+	tx-cal-45-dp-ohms = <10>;
+	tx-cal-45-dm-ohms = <10>;
 };

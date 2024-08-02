@@ -41,12 +41,12 @@ extern "C" {
 						 NET_MGMT_EVENT_BIT)
 #define _NET_MGMT_CONN_IF_EVENT			(NET_MGMT_IFACE_BIT | _NET_MGMT_CONN_BASE)
 
-/** @endcond */
-
 enum net_event_conn_cmd {
 	NET_EVENT_CONN_CMD_IF_TIMEOUT = 1,
 	NET_EVENT_CONN_CMD_IF_FATAL_ERROR,
 };
+
+/** @endcond */
 
 /**
  * @brief net_mgmt event raised when a connection attempt times out
@@ -121,7 +121,7 @@ int conn_mgr_if_connect(struct net_if *iface);
 /**
  * @brief Disconnect interface
  *
- * If the provided iface has been bound to a connectivity implementation, disconnect/dissassociate
+ * If the provided iface has been bound to a connectivity implementation, disconnect/disassociate
  * it from the network, and cancel any pending attempts to connect/associate.
  *
  * Does nothing if the iface is currently admin-down.

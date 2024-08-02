@@ -1,5 +1,5 @@
 identifier: m5stack_atoms3/esp32s3/appcpu
-name: M5Stack AtomS3
+name: M5Stack AtomS3 APPCPU
 type: mcu
 arch: xtensa
 toolchain:

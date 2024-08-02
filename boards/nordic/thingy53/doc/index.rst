@@ -22,7 +22,7 @@ The ``thingy53/nrf5340/cpuapp`` build target provides support for the applicatio
 core on the nRF5340 SoC. The ``thingy53/nrf5340/cpunet`` build target provides
 support for the network core on the nRF5340 SoC.
 
-The `Nordic Semiconductor Infocenter`_ contains the processor's information and
+The `Nordic Thingy:53 Hardware guide`_ contains the processor's information and
 the datasheet.
 
 Programming and Debugging
@@ -48,4 +48,4 @@ References
 
 .. target-notes::
 
-.. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
+.. _Nordic Thingy:53 Hardware guide: https://docs.nordicsemi.com/bundle/ug_thingy53/page/UG/thingy53/intro/frontpage.html

@@ -11,13 +11,17 @@ tests:
       regex:
         - "Wait for DTR"
   sample.usb_device_next.cdc-acm:
-    depends_on: usb_device
+    depends_on: usbd
     tags: usb
     extra_args: CONF_FILE="usbd_next_prj.conf"
-    platform_allow:
+    integration_platforms:
       - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
       - frdm_k64f
-      - 96b_carbon/stm32f401xe
+      - stm32f723e_disco
+      - nucleo_f413zh
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt1060_evk
     harness: console
     harness_config:
       type: one_line

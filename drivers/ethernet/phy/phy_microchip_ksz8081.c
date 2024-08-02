@@ -42,10 +42,10 @@ struct mc_ksz8081_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
 	enum ksz8081_interface phy_iface;
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_interrupt_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	const struct gpio_dt_spec interrupt_gpio;
 #endif
 };
@@ -265,9 +265,9 @@ static int phy_mc_ksz8081_static_cfg(const struct device *dev)
 
 static int phy_mc_ksz8081_reset(const struct device *dev)
 {
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct mc_ksz8081_config *config = dev->config;
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio) */
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 	struct mc_ksz8081_data *data = dev->data;
 	int ret;
 
@@ -278,7 +278,7 @@ static int phy_mc_ksz8081_reset(const struct device *dev)
 		return ret;
 	}
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (!config->reset_gpio.port) {
 		goto skip_reset_gpio;
 	}
@@ -296,7 +296,7 @@ static int phy_mc_ksz8081_reset(const struct device *dev)
 	ret = gpio_pin_set_dt(&config->reset_gpio, 1);
 	goto done;
 skip_reset_gpio:
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio) */
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 	ret = phy_mc_ksz8081_write(dev, MII_BMCR, MII_BMCR_RESET);
 	if (ret) {
 		goto done;
@@ -465,7 +465,7 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 
 	mdio_bus_enable(config->mdio_dev);
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_interrupt_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	if (!config->interrupt_gpio.port) {
 		goto skip_int_gpio;
 	}
@@ -477,16 +477,16 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 	}
 
 skip_int_gpio:
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_interrupt_gpio) */
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (config->reset_gpio.port) {
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret) {
 			return ret;
 		}
 	}
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio) */
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 
 	/* Reset PHY */
 	ret = phy_mc_ksz8081_reset(dev);
@@ -508,16 +508,16 @@ static const struct ethphy_driver_api mc_ksz8081_phy_api = {
 	.write = phy_mc_ksz8081_write,
 };
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 #define RESET_GPIO(n) \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, mc_reset_gpio, {0}),
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
 #else
 #define RESET_GPIO(n)
 #endif /* reset gpio */
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_interrupt_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 #define INTERRUPT_GPIO(n) \
-		.interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(n, mc_interrupt_gpio, {0}),
+		.interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),
 #else
 #define INTERRUPT_GPIO(n)
 #endif /* interrupt gpio */
@@ -526,7 +526,7 @@ static const struct ethphy_driver_api mc_ksz8081_phy_api = {
 	static const struct mc_ksz8081_config mc_ksz8081_##n##_config = {	\
 		.addr = DT_INST_REG_ADDR(n),					\
 		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
-		.phy_iface = DT_INST_ENUM_IDX(n, mc_interface_type),		\
+		.phy_iface = DT_INST_ENUM_IDX(n, microchip_interface_type),	\
 		RESET_GPIO(n)							\
 		INTERRUPT_GPIO(n)						\
 	};									\

@@ -136,21 +136,21 @@ config NET_SOCKETS_SERVICE_THREAD_PRIO
 config NET_SOCKETS_SERVICE_STACK_SIZE
 	int "Stack size for the thread handling socket services"
 	default 2400 if NET_DHCPV4_SERVER
+	default 1400 if MDNS_RESPONDER
 	default 1200
 	depends on NET_SOCKETS_SERVICE
 	help
 	  Set the internal stack size for the thread that polls sockets.
 
-config NET_SOCKETS_SERVICE_INIT_PRIO
-	int "Startup priority for the network socket service"
-	default 90
-	depends on NET_SOCKETS_SERVICE
-
 config NET_SOCKETS_SOCKOPT_TLS
-	bool "TCP TLS socket option support [EXPERIMENTAL]"
+	bool "TCP TLS socket option support"
 	imply TLS_CREDENTIALS
 	select MBEDTLS if NET_NATIVE
-	select EXPERIMENTAL
+	imply MBEDTLS_TLS_VERSION_1_2 if !NET_L2_OPENTHREAD
+	imply MBEDTLS_KEY_EXCHANGE_RSA_ENABLED if !NET_L2_OPENTHREAD
+	imply MBEDTLS_CIPHER_AES_ENABLED if !NET_L2_OPENTHREAD
+	imply PSA_WANT_KEY_TYPE_AES if !NET_L2_OPENTHREAD && PSA_CRYPTO_CLIENT
+	imply PSA_WANT_ALG_CBC_NO_PADDING if !NET_L2_OPENTHREAD && PSA_CRYPTO_CLIENT
 	help
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
@@ -180,10 +180,9 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	  the maximum supported receive record length.
 
 config NET_SOCKETS_ENABLE_DTLS
-	bool "DTLS socket support [EXPERIMENTAL]"
+	bool "DTLS socket support"
 	depends on NET_SOCKETS_SOCKOPT_TLS
 	select MBEDTLS_DTLS if NET_NATIVE
-	select EXPERIMENTAL
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 
@@ -223,7 +222,7 @@ config NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE
 	  Size of the intermediate buffer for DTLS sendmsg() function. The
 	  intermediate buffer is needed, as sendmsg() for DGRAM is expected to
 	  send all of the data in a single datagram, therefore all data provided
-	  in msghdr strucure need to be linearized before passing to mbed TLS.
+	  in msghdr structure need to be linearized before passing to mbed TLS.
 	  The buffer size can be set to 0, in that case data linearizing for
 	  DTLS sockets is disabled. In result, sendmsg() will only accept msghdr
 	  with a single non-empty iov buffer.
@@ -398,6 +397,10 @@ config NET_SOCKETS_NET_MGMT
 	help
 	  Select this if you want to use socket API to get network
 	  managements events to your application.
+	  Note, that the thread using net_mgmt sockets should have at least
+	  the same priority as the thread processing network events (see
+	  CONFIG_NET_MGMT_EVENT_WORKER), otherwise in case of event bursts some
+	  events may be lost.
 
 config NET_SOCKETS_NET_MGMT_MAX_LISTENERS
 	int "Max number of sockets to listen"

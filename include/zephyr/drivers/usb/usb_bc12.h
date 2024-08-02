@@ -39,7 +39,7 @@ extern "C" {
  * This is returned by the driver when either BC1.2 detection fails, or the
  * attached partner is a SDP (standard downstream port).
  *
- * The application may increase the current draw after determing the USB device
+ * The application may increase the current draw after determining the USB device
  * state of suspended/unconfigured/configured.
  *   Suspended: 2.5 mA
  *   Unconfigured: 100 mA
@@ -184,6 +184,6 @@ static inline int z_impl_bc12_set_result_cb(const struct device *dev, bc12_callb
  * @}
  */
 
-#include <syscalls/usb_bc12.h>
+#include <zephyr/syscalls/usb_bc12.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_USB_USB_BC12_H_ */

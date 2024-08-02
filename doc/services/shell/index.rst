@@ -40,6 +40,11 @@ interaction is required. This module is a Unix-like shell with these features:
 	enable :kconfig:option:`CONFIG_SHELL_MINIMAL` and selectively enable just the
 	features you want.
 
+.. _backends:
+
+Backends
+********
+
 The module can be connected to any transport for command input and output.
 At this point, the following transport layers are implemented:
 
@@ -49,10 +54,76 @@ At this point, the following transport layers are implemented:
 * Telnet
 * UART
 * USB
+* Bluetooth LE (NUS)
+* RPMSG
 * DUMMY - not a physical transport layer.
 
+Telnet
+======
+
+Enabling :kconfig:option:`CONFIG_SHELL_BACKEND_TELNET` will allow users to use telnet
+as a shell backend. Connecting to it can be done using PuTTY or any ``telnet`` client.
+For example:
+
+.. code-block:: none
+
+  telnet <ip address> <port>
+
+By default the telnet client won't handle telnet commands and configuration. Although
+command support can be enabled with :kconfig:option:`CONFIG_SHELL_TELNET_SUPPORT_COMMAND`.
+This will give the telnet client access to a very limited set of supported commands but
+still can be turned on if needed. One of the command options it supports is the ``ECHO``
+option. This will allow the client to be in character mode (character at a time),
+similar to a UART backend in that regard. This will make the client send a character
+as soon as it is typed having the effect of increasing the network traffic
+considerably. For that cost, it will enable the line editing,
+`tab completion <tab-feature_>`_, and `history <history-feature_>`_
+features of the shell.
+
+USB CDC ACM
+===========
+
+To configure Shell USB CDC ACM backend, simply add the snippet ``cdc-acm-console``
+to your build:
+
+.. code-block:: console
+
+   west build -S cdc-acm-console [...]
+
+Details on the configuration settings are captured in the following files:
+
+- :zephyr_file:`snippets/cdc-acm-console/cdc-acm-console.conf`.
+- :zephyr_file:`snippets/cdc-acm-console/cdc-acm-console.overlay`.
+
+Bluetooth LE (NUS)
+==================
+
+To configure Bluetooth LE (NUS) backend, simply add the snippet ``nus-console``
+to your build:
+
+.. code-block:: console
+
+   west build -S nus-console [...]
+
+Details on the configuration settings are captured in the following files:
+
+- :zephyr_file:`snippets/nus-console/nus-console.conf`.
+- :zephyr_file:`snippets/nus-console/nus-console.overlay`.
+
+Segget RTT
+==========
+
+To configure Segger RTT backend, add the following configurations to your build:
+
+- :kconfig:option:`CONFIG_USE_SEGGER_RTT`
+- :kconfig:option:`CONFIG_SHELL_BACKEND_RTT`
+- :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL`
+
+Details on additional configuration settings are captured in:
+:zephyr_file:`samples/subsys/shell/shell_module/prj_minimal_rtt.conf`.
+
 Connecting to Segger RTT via TCP (on macOS, for example)
-========================================================
+--------------------------------------------------------
 
 On macOS JLinkRTTClient won't let you enter input. Instead, please use following
 procedure:
@@ -74,30 +145,6 @@ procedure:
 * Now you should have a network connection to RTT that will let you enter input
   to the shell.
 
-
-Telnet Backend
-==============
-
-Enabling :kconfig:option:`CONFIG_SHELL_BACKEND_TELNET` will allow users to use telnet
-as a shell backend. Connecting to it can be done using PuTTY or any ``telnet`` client.
-For example:
-
-.. code-block:: none
-
-  telnet <ip address> <port>
-
-By default the telnet client won't handle telnet commands and configuration. Although
-command support can be enabled with :kconfig:option:`CONFIG_SHELL_TELNET_SUPPORT_COMMAND`.
-This will give the telnet client access to a very limited set of supported commands but
-still can be turned on if needed. One of the command options it supports is the ``ECHO``
-option. This will allow the client to be in character mode (character at a time),
-similar to a UART backend in that regard. This will make the client send a character
-as soon as it is typed having the effect of increasing the network traffic
-considerably. For that cost, it will enable the line editing,
-`tab completion <tab-feature_>`_, and `history <history-feature_>`_
-features of the shell.
-
-
 Commands
 ********
 
@@ -111,6 +158,41 @@ types:
 * Dynamic subcommand (level > 0): Number and syntax does not need to be known
   during compile time. Created in the software module.
 
+
+Commonly-used command groups
+============================
+
+The following list is a set of useful command groups and how to enable them:
+
+GPIO
+----
+
+- :kconfig:option:`CONFIG_GPIO`
+- :kconfig:option:`CONFIG_GPIO_SHELL`
+
+I2C
+---
+
+- :kconfig:option:`CONFIG_I2C`
+- :kconfig:option:`CONFIG_I2C_SHELL`
+
+Sensor
+------
+
+- :kconfig:option:`CONFIG_SENSOR`
+- :kconfig:option:`CONFIG_SENSOR_SHELL`
+
+Flash
+-----
+
+- :kconfig:option:`CONFIG_FLASH`
+- :kconfig:option:`CONFIG_FLASH_SHELL`
+
+File-System
+-----------
+
+- :kconfig:option:`CONFIG_FILE_SYSTEM`
+- :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL`
 
 Creating commands
 =================
@@ -556,7 +638,7 @@ is accomplished by the ``getopt`` family functions.
 
 For this purpose shell supports the getopt and getopt_long libraries available
 in the FreeBSD project. This feature is activated by:
-:kconfig:option:`CONFIG_GETOPT` set to ``y`` and :kconfig:option:`CONFIG_GETOPT_LONG`
+:kconfig:option:`CONFIG_POSIX_C_LIB_EXT` set to ``y`` and :kconfig:option:`CONFIG_GETOPT_LONG`
 set to ``y``.
 
 This feature can be used in thread safe as well as non thread safe manner.
@@ -671,17 +753,10 @@ while a script interfaces over channel 1.
 This allows interactive use of the shell through JLinkRTTViewer, while the log
 is written to file.
 
-.. warning::
-	Regardless of the channel selection, the RTT log backend must be explicitly
-	enabled using :kconfig:option:`CONFIG_LOG_BACKEND_RTT` set to ``y``, because it
-	defaults to ``n`` when the Shell RTT backend is also enabled using
-	:kconfig:option:`CONFIG_SHELL_BACKEND_RTT` being set to ``y``.
+See `shell backends <backends_>`_ for details on how to enable RTT as a Shell backend.
 
 Usage
 *****
-
-To create a new shell instance user needs to activate requested
-backend using ``menuconfig``.
 
 The following code shows a simple use case of this library:
 

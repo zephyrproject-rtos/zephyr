@@ -8,3 +8,4 @@ Tools and IDEs
 
    clion.rst
    coccinelle.rst
+   vscode.rst

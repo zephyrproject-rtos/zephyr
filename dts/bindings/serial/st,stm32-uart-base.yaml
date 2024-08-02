@@ -10,6 +10,7 @@ include:
       - clock-frequency
   - name: pinctrl-device.yaml
   - name: reset-device.yaml
+  - name: uart-controller-pin-inversion.yaml
 
 properties:
   reg:
@@ -36,18 +37,6 @@ properties:
     type: boolean
     description:
       Swap the TX and RX pins. Used in case of a cross wired connection.
-
-  tx-invert:
-    type: boolean
-    description: |
-      Invert the binary logic of tx pin. When enabled, physical logic levels are inverted and
-      we use 1=Low, 0=High instead of 1=High, 0=Low.
-
-  rx-invert:
-    type: boolean
-    description: |
-      Invert the binary logic of rx pin. When enabled, physical logic levels are inverted and
-      we use 1=Low, 0=High instead of 1=High, 0=Low.
 
   pinctrl-0:
     required: true

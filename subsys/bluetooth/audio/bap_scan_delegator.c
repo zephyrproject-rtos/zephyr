@@ -7,20 +7,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/types.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
-
-#include <zephyr/init.h>
-
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/l2cap.h>
-#include <zephyr/bluetooth/buf.h>
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_bap_scan_delegator, CONFIG_BT_BAP_SCAN_DELEGATOR_LOG_LEVEL);
 
@@ -86,19 +101,6 @@ static struct bt_bap_scan_delegator_cb *scan_delegator_cbs;
 static bool bits_subset_of(uint32_t a, uint32_t b)
 {
 	return (((a) & (~(b))) == 0);
-}
-
-static bool valid_bis_syncs(uint32_t bis_sync)
-{
-	if (bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
-		return true;
-	}
-
-	if (bis_sync > BIT_MASK(31)) { /* Max BIS index */
-		return false;
-	}
-
-	return true;
 }
 
 static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs,
@@ -247,6 +249,8 @@ static void bis_sync_request_updated(struct bt_conn *conn,
 	    scan_delegator_cbs->bis_sync_req != NULL) {
 		scan_delegator_cbs->bis_sync_req(conn, &internal_state->state,
 						 internal_state->requested_bis_sync);
+	} else {
+		LOG_WRN("bis_sync_req callback is missing");
 	}
 }
 
@@ -273,18 +277,15 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 					    bt_security_t level,
 					    enum bt_security_err err)
 {
-	if (err != 0 || conn->encrypt == 0) {
-		return;
-	}
 
-	if (bt_addr_le_is_bonded(conn->id, &conn->le.dst) == 0) {
+	if (err != 0 || level < BT_SECURITY_L2 || !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		return;
 	}
 
 	/* Notify all receive states after a bonded device reconnects */
 	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
-		struct bass_recv_state_internal *internal_state = &scan_delegator.recv_states[i];
-		int gatt_err;
+		const struct bass_recv_state_internal *internal_state =
+			&scan_delegator.recv_states[i];
 
 		if (!internal_state->active) {
 			continue;
@@ -298,17 +299,9 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 		}
 
 		net_buf_put_recv_state(internal_state);
-
-		gatt_err = bt_gatt_notify_uuid(conn, BT_UUID_BASS_RECV_STATE,
-					       internal_state->attr, read_buf.data,
-					       read_buf.len);
+		bass_notify_receive_state(conn, internal_state);
 
 		k_sem_give(&read_buf_sem);
-
-		if (gatt_err != 0) {
-			LOG_WRN("Could not notify receive state[%d] to reconnecting assistant: %d",
-				i, gatt_err);
-		}
 	}
 }
 
@@ -478,6 +471,8 @@ static int pa_sync_request(struct bt_conn *conn,
 		err = scan_delegator_cbs->pa_sync_req(conn, state,
 						      past_supported,
 						      pa_interval);
+	} else {
+		LOG_WRN("pa_sync_req callback is missing, rejecting PA sync request");
 	}
 
 	return err;
@@ -491,6 +486,8 @@ static int pa_sync_term_request(struct bt_conn *conn,
 	if (scan_delegator_cbs != NULL &&
 	    scan_delegator_cbs->pa_sync_req != NULL) {
 		err = scan_delegator_cbs->pa_sync_term_req(conn, state);
+	} else {
+		LOG_WRN("pa_sync_term_req callback is missing, rejecting PA sync term request");
 	}
 
 	return err;
@@ -833,22 +830,26 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	}
 
 	for (int i = 0; i < num_subgroups; i++) {
-		/* If the metadata len is 0, we shall not overwrite the existing metadata */
-		if (subgroups[i].metadata_len == 0) {
-			continue;
-		}
+		const bool metadata_len_changed =
+			subgroups[i].metadata_len != state->subgroups[i].metadata_len;
 
-		if (subgroups[i].metadata_len != state->subgroups[i].metadata_len) {
+		if (metadata_len_changed) {
 			state->subgroups[i].metadata_len = subgroups[i].metadata_len;
 			state_changed = true;
 		}
 
-		if (memcmp(subgroups[i].metadata, state->subgroups[i].metadata,
+		if (metadata_len_changed ||
+		    memcmp(subgroups[i].metadata, state->subgroups[i].metadata,
 			   sizeof(subgroups[i].metadata)) != 0) {
-			(void)memcpy(state->subgroups[i].metadata,
-				     subgroups[i].metadata,
-				     state->subgroups[i].metadata_len);
-			state->subgroups[i].metadata_len = subgroups[i].metadata_len;
+
+			if (state->subgroups[i].metadata_len == 0U) {
+				memset(state->subgroups[i].metadata, 0,
+				       state->subgroups[i].metadata_len);
+			} else {
+				(void)memcpy(state->subgroups[i].metadata, subgroups[i].metadata,
+					     state->subgroups[i].metadata_len);
+			}
+
 			state_changed = true;
 		}
 	}

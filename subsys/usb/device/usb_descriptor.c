@@ -56,7 +56,7 @@ USBD_DEVICE_DESCR_DEFINE(primary) struct common_descriptor common_desc = {
 		.bLength = sizeof(struct usb_device_descriptor),
 		.bDescriptorType = USB_DESC_DEVICE,
 #ifdef CONFIG_USB_DEVICE_BOS
-		.bcdUSB = sys_cpu_to_le16(USB_SRN_2_1),
+		.bcdUSB = sys_cpu_to_le16(USB_SRN_2_0_1),
 #else
 		.bcdUSB = sys_cpu_to_le16(USB_SRN_2_0),
 #endif
@@ -169,7 +169,7 @@ static void ascii7_to_utf16le(void *descriptor)
 	uint8_t *buf = (uint8_t *)&str_descr->bString;
 
 	LOG_DBG("idx_max %d, ascii_idx_max %d, buf %p",
-		idx_max, ascii_idx_max, buf);
+		idx_max, ascii_idx_max, (void *)buf);
 
 	for (int i = idx_max; i >= 0; i -= 2) {
 		LOG_DBG("char %c : %x, idx %d -> %d",
@@ -347,12 +347,11 @@ static void usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
 	default_sn_len = strlen(CONFIG_USB_DEVICE_SN);
 
 	if (runtime_sn_len != default_sn_len) {
-		LOG_ERR("the new SN descriptor doesn't have the same "
+		LOG_WRN("the new SN descriptor doesn't have the same "
 			"length as CONFIG_USB_DEVICE_SN");
-		return;
 	}
 
-	memcpy(sn->bString, runtime_sn, runtime_sn_len);
+	memcpy(sn->bString, runtime_sn, MIN(runtime_sn_len, default_sn_len));
 }
 
 static void usb_desc_update_mps0(struct usb_device_descriptor *const desc)
@@ -505,12 +504,18 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 
 uint8_t *usb_get_device_descriptor(void)
 {
+	static bool initialized;
+
 	LOG_DBG("__usb_descriptor_start %p", __usb_descriptor_start);
 	LOG_DBG("__usb_descriptor_end %p", __usb_descriptor_end);
 
-	if (usb_fix_descriptor(__usb_descriptor_start)) {
-		LOG_ERR("Failed to fixup USB descriptor");
-		return NULL;
+	if (!initialized) {
+		if (usb_fix_descriptor(__usb_descriptor_start)) {
+			LOG_ERR("Failed to fixup USB descriptor");
+			return NULL;
+		}
+
+		initialized = true;
 	}
 
 	return (uint8_t *) __usb_descriptor_start;

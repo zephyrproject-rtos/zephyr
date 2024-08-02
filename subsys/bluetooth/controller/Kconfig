@@ -6,6 +6,9 @@
 # The following symbols are enabled depending if the controller actually
 # supports the respective features.
 
+config BT_CTLR_CRYPTO_SUPPORT
+	bool
+
 config BT_CTLR_LE_ENC_SUPPORT
 	bool
 
@@ -104,6 +107,13 @@ config BT_CTLR_READ_ISO_LINK_QUALITY_SUPPORT
 config BT_CTLR_LE_POWER_CONTROL_SUPPORT
 	bool
 
+config BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
+	depends on BT_CTLR_LE_POWER_CONTROL_SUPPORT
+	bool
+
+config BT_CTLR_SUBRATING_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
 	help
@@ -115,21 +125,33 @@ choice BT_LL_CHOICE
 	prompt "Bluetooth Link Layer Selection"
 	help
 	  Select the Bluetooth Link Layer to compile.
+	  The link layer choice list can be extended out of tree.
+	  In the nRF Connect SDK, the SoftDevice Controller is selected
+	  and set as the default Bluetooth Controller.
 
 config BT_LL_SW_SPLIT
 	bool "Software-based BLE Link Layer"
-	select ENTROPY_GENERATOR
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
 
 endchoice
 
+config BT_CTLR_HCI
+	bool "Host Controller Interface (HCI)"
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
+	help
+	  Enable the Host Controller interface (HCI) in the Controller.
+	  This should almost always be enabled, except in a few special
+	  cases, like for unit testing.
+
 comment "BLE Controller configuration"
 
 config BT_CTLR_CRYPTO
 	bool "Crypto functions in Controller"
-	default y
+	depends on BT_CTLR_CRYPTO_SUPPORT
 	select ENTROPY_GENERATOR
+	default y
 	help
 	  Use random number generation and AES encryption support functions
 	  provided by the controller.
@@ -137,7 +159,7 @@ config BT_CTLR_CRYPTO
 config BT_CTLR_HCI_VS_BUILD_INFO
 	string "Zephyr HCI VS Build Info string"
 	default ""
-	depends on BT_HCI_VS_EXT
+	depends on BT_CTLR_HCI && BT_HCI_VS
 	help
 	  User-defined string that will be returned by the Zephyr VS Read Build
 	  Information command after the Zephyr version and build time. When
@@ -202,12 +224,19 @@ config BT_CTLR_ISO_TX_BUFFERS
 config BT_CTLR_ISO_TX_BUFFER_SIZE
 	int "Isochronous Tx buffer size"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
-	range 1 4095
-	default BT_ISO_TX_MTU if BT_ISO
+	range 9 4103 if BT_LL_SW_SPLIT
+	range 1 65535
+	default 9 if BT_LL_SW_SPLIT
 	default 1
 	help
 	  Size of the Isochronous Tx buffers and the value returned in HCI LE
-	  Read Buffer Size V2 command response.
+	  Read Buffer Size V2 command response. This is the data portion of the
+	  HCI ISO Data packet, corresponding to the Data_Total_Length field.
+
+	  Currently the maximum SDU length is 4095 bytes, hence add HCI ISO
+	  Data packet overhead (the Packet_Sequence_Number, ISO_SDU_Length,
+	  Packet_Status_Flag fields; and the optional Time_Stamp field, if
+	  supplied) of 8 bytes.
 
 config BT_CTLR_ISOAL_SOURCES
 	int "Number of Isochronous Adaptation Layer sources"
@@ -265,83 +294,83 @@ config BT_CTLR_TX_PWR_PLUS_9
 
 config BT_CTLR_TX_PWR_PLUS_8
 	bool "+8 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_7
 	bool "+7 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_6
 	bool "+6 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_5
 	bool "+5 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_4
 	bool "+4 dBm"
-	depends on SOC_SERIES_NRF51X || SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on SOC_SERIES_NRF51X || SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_3
 	bool "+3 dBm"
-	depends on SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_2
 	bool "+2 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_COMPATIBLE_NRF53X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_1
 	bool "+1 dBm"
-	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_0
 	bool "0 dBm"
 
 config BT_CTLR_TX_PWR_MINUS_1
 	bool "-1 dBm"
-	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_2
 	bool "-2 dBm"
-	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_3
 	bool "-3 dBm"
-	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_4
 	bool "-4 dBm"
 
 config BT_CTLR_TX_PWR_MINUS_5
 	bool "-5 dBm"
-	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_6
 	bool "-6 dBm"
-	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_7
 	bool "-7 dBm"
-	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_8
 	bool "-8 dBm"
 
 config BT_CTLR_TX_PWR_MINUS_9
 	bool "-9 dBm"
-	depends on SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_10
 	bool "-10 dBm"
-	depends on SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_12
 	bool "-12 dBm"
 
 config BT_CTLR_TX_PWR_MINUS_14
 	bool "-14 dBm"
-	depends on SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_16
 	bool "-16 dBm"
@@ -351,7 +380,7 @@ config BT_CTLR_TX_PWR_MINUS_20
 
 config BT_CTLR_TX_PWR_MINUS_26
 	bool "-26 dBm"
-	depends on SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_30
 	bool "-30 dBm"
@@ -359,11 +388,11 @@ config BT_CTLR_TX_PWR_MINUS_30
 
 config BT_CTLR_TX_PWR_MINUS_40
 	bool "-40 dBm"
-	depends on SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_46
 	bool "-46 dBm"
-	depends on SOC_SERIES_NRF54LX
+	depends on SOC_COMPATIBLE_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_70
 	bool "-70 dBm"
@@ -421,7 +450,7 @@ config BT_CTLR_TX_PWR_ANTENNA
 
 config BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 	bool "Tx Power Dynamic Control"
-	depends on BT_HCI_VS_EXT
+	depends on BT_HCI_VS
 	help
 	  Enable dynamic control of Tx power per role/connection.
 	  Provides HCI VS commands to set and get the current Tx
@@ -534,6 +563,14 @@ config BT_CTLR_LE_POWER_CONTROL
 	help
 	  Enable support for LE Power Control Request feature that is defined in the
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.31.
+
+config BT_CTLR_LE_PATH_LOSS_MONITORING
+	bool "LE Path Loss Monitoring Feature"
+	depends on BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
+	default y if BT_PATH_LOSS_MONITORING
+	help
+	  Enable support for LE Path Loss Monitoring feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
 
 endif # BT_CONN
 
@@ -783,13 +820,19 @@ config BT_CTLR_SYNC_ISO
 
 config BT_CTLR_BROADCAST_ISO
 	bool
-	select BT_CRYPTO if BT_LL_SW_SPLIT
 	default BT_CTLR_ADV_ISO || BT_CTLR_SYNC_ISO
+
+config BT_CTLR_BROADCAST_ISO_ENC
+	bool
+	depends on BT_CTLR_CRYPTO_SUPPORT && BT_CTLR_BROADCAST_ISO
+	select BT_CRYPTO if BT_LL_SW_SPLIT
+	default y
 
 config BT_CTLR_ADV_ISO_SET
 	int "LE Isochronous Channel advertising sets"
 	depends on BT_CTLR_ADV_ISO
 	range 1 32
+	default BT_ISO_MAX_BIG
 	help
 	  Maximum supported advertising sets.
 
@@ -806,7 +849,7 @@ config BT_CTLR_ADV_ISO_STREAM_COUNT
 	range BT_CTLR_ADV_ISO_STREAM_MAX 64
 	default BT_ISO_MAX_CHAN
 	help
-	  Maximum Broadcast ISO Streams supported in the the Controller across
+	  Maximum Broadcast ISO Streams supported in the Controller across
 	  all Broadcast ISO groups.
 
 config BT_CTLR_ADV_ISO_PDU_LEN_MAX
@@ -821,7 +864,7 @@ config BT_CTLR_SCAN_SYNC_ISO_SET
 	int "LE ISO Broadcast Isochronous Groups Sync Sets"
 	depends on BT_CTLR_SYNC_ISO
 	range 1 64
-	default 1
+	default BT_ISO_MAX_BIG
 	help
 	  Maximum supported broadcast isochronous groups (BIGs) sync sets.
 
@@ -839,7 +882,7 @@ config BT_CTLR_SYNC_ISO_STREAM_COUNT
 	range BT_CTLR_SYNC_ISO_STREAM_MAX 64
 	default BT_ISO_MAX_CHAN
 	help
-	  Maximum ISO Synchronized Receiver Streams supported in the the
+	  Maximum ISO Synchronized Receiver Streams supported in the
 	  Controller across all Broadcast ISO groups.
 
 config BT_CTLR_SYNC_ISO_PDU_LEN_MAX
@@ -904,7 +947,7 @@ config BT_CTLR_CONN_ISO_GROUPS
 	int "LE Connected Isochronous Groups"
 	depends on BT_CTLR_CONN_ISO
 	range 1 240
-	default 1
+	default BT_ISO_MAX_CIG
 	help
 	  Maximum supported CIGs.
 
@@ -928,7 +971,7 @@ config BT_CTLR_CONN_ISO_PDU_LEN_MAX
 config BT_CTLR_CONN_ISO_SDU_LEN_MAX
 	int "Maximum Connected Isochronous Channel SDU Length"
 	depends on BT_CTLR_CONN_ISO
-	range BT_CTLR_CONN_ISO_PDU_LEN_MAX 4095
+	range 1 4095
 	default 251
 	help
 	  Maximum Connected Isochronous Channel SDU Length.
@@ -980,9 +1023,18 @@ config BT_CTLR_SMI_TX_SETTING
 
 config BT_CTLR_HCI_CODEC_AND_DELAY_INFO
 	bool "Codecs and controller delay information commands"
+	depends on BT_CTLR_HCI
 	help
 	  Enable HCI commands to read information about supported
 	  codecs, codec capabilities, and controller delay.
+
+config BT_CTLR_SUBRATING
+	bool "LE Connection Subrating"
+	depends on BT_CTLR_SUBRATING_SUPPORT
+	select BT_CTLR_SET_HOST_FEATURE
+	help
+	  Enable support for Bluetooth v5.3 LE Connection Subrating
+	  in the Controller.
 
 rsource "Kconfig.df"
 rsource "Kconfig.ll_sw_split"
@@ -999,8 +1051,7 @@ config BT_CTLR_ASSERT_HANDLER
 
 config BT_CTLR_VS_SCAN_REQ_RX
 	bool "Use scan request reporting"
-	depends on BT_HCI_VS_EXT && !BT_CTLR_ADV_EXT
-	select BT_HCI_VS_EVT
+	depends on BT_HCI_VS && !BT_CTLR_ADV_EXT
 	select BT_CTLR_SCAN_REQ_NOTIFY
 	help
 	  Enables usage of VS Scan Request Reports Command and Scan Request Received Event

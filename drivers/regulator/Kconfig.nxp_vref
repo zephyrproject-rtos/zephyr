@@ -1,5 +1,5 @@
 # Copyright 2023 NXP
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config REGULATOR_NXP_VREF
 	bool "NXP VREF peripheral driver"

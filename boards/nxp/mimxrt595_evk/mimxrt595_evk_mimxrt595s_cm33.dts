@@ -407,17 +407,20 @@ zephyr_udc0: &usbhs {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+			/* The MCUBoot swap-move algorithm uses the last 98 sectors
+			 * of the primary slot0 for swap status and move.
+			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 DT_SIZE_K(3076)>;
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(98 * 4))>;
 			};
-			slot1_partition: partition@321000 {
+			slot1_partition: partition@382000 {
 				label = "image-1";
-				reg = <0x00321000 DT_SIZE_K(3072)>;
+				reg = <0x00382000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@621000 {
+			storage_partition: partition@682000 {
 				label = "storage";
-				reg = <0x00621000 DT_SIZE_M(57)>;
+				reg = <0x00682000 (DT_SIZE_M(58) - DT_SIZE_K(520))>;
 			};
 		};
 	};

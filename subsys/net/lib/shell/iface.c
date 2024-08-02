@@ -6,6 +6,8 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/random/random.h>
+#include <strings.h>
 LOG_MODULE_DECLARE(net_shell);
 
 #if defined(CONFIG_NET_L2_ETHERNET)
@@ -19,6 +21,9 @@ LOG_MODULE_DECLARE(net_shell);
 #endif
 
 #include "net_shell_private.h"
+
+#define UNICAST_MASK GENMASK(7, 1)
+#define LOCAL_BIT BIT(1)
 
 #if defined(CONFIG_NET_L2_ETHERNET) && defined(CONFIG_NET_NATIVE)
 struct ethernet_capabilities {
@@ -321,12 +326,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			continue;
 		}
 
-		PR("\t%s %s %s%s%s\n",
+		PR("\t%s %s %s%s%s%s\n",
 		   net_sprint_ipv6_addr(&unicast->address.in6_addr),
 		   addrtype2str(unicast->addr_type),
 		   addrstate2str(unicast->addr_state),
 		   unicast->is_infinite ? " infinite" : "",
-		   unicast->is_mesh_local ? " meshlocal" : "");
+		   unicast->is_mesh_local ? " meshlocal" : "",
+		   unicast->is_temporary ? " temporary" : "");
 		count++;
 	}
 
@@ -384,6 +390,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 
 skip_ipv6:
+
+#if defined(CONFIG_NET_IPV6_PE)
+	PR("IPv6 privacy extension   : %s (preferring %s addresses)\n",
+	   iface->pe_enabled ? "enabled" : "disabled",
+	   iface->pe_prefer_public ? "public" : "temporary");
+#endif
 
 	if (ipv6) {
 		PR("IPv6 hop limit           : %d\n",
@@ -529,10 +541,15 @@ static int cmd_net_set_mac(const struct shell *sh, size_t argc, char *argv[])
 		goto err;
 	}
 
-	if ((net_bytes_from_str(mac_addr, sizeof(params.mac_address), argv[2]) < 0) ||
-	    !net_eth_is_addr_valid(&params.mac_address)) {
-		PR_WARNING("Invalid MAC address: %s\n", argv[2]);
-		goto err;
+	if (!strncasecmp(argv[2], "random", 6)) {
+		sys_rand_get(mac_addr, NET_ETH_ADDR_LEN);
+		mac_addr[0] = (mac_addr[0] & UNICAST_MASK) | LOCAL_BIT;
+	} else {
+		if ((net_bytes_from_str(mac_addr, sizeof(params.mac_address), argv[2]) < 0) ||
+		    !net_eth_is_addr_valid(&params.mac_address)) {
+			PR_WARNING("Invalid MAC address: %s\n", argv[2]);
+			goto err;
+		}
 	}
 
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS, iface, &params, sizeof(params));

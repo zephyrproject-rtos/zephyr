@@ -8,7 +8,6 @@
 
 #include <nxp/nxp_rt1064.dtsi>
 #include "mimxrt1064_evk-pinctrl.dtsi"
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -33,13 +32,39 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan2;
-		zephyr,display = &lcdif;
 	};
 
 	sdram0: memory@80000000 {
 		/* Micron MT48LC16M16A2B4-6AIT:G */
 		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(32)>;
+	};
+
+	/*
+	 * This node describes the GPIO pins of the parallel FPC interface,
+	 * This interface is standard to several NXP EVKs, and is used with
+	 * several parallel LCD displays (available as zephyr shields)
+	 */
+	nxp_parallel_lcd_connector: parallel-connector {
+		compatible = "nxp,parallel-lcd-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio2 31 0>;	/* Pin 1, BL+ */
+	};
+
+	/*
+	 * This node describes the GPIO pins of the I2C display FPC interface,
+	 * This interface is standard to several NXP EVKs, and is used with
+	 * several parallel LCD displays (available as zephyr shields)
+	 */
+	nxp_i2c_touch_fpc: i2c-touch-connector {
+		compatible = "nxp,i2c-tsc-fpc";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<1  0 &gpio1 2 0>,	/* Pin 2, LCD touch RST */
+				<2  0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
 	};
 
 	leds {
@@ -100,66 +125,22 @@
 			   <20 0 &gpio1 17 0>,	/* D14 */
 			   <21 0 &gpio1 16 0>;	/* D15 */
 	};
-
-	panel {
-		compatible = "rocktech,rk043fn02h-ct";
-		port {
-			lcd_panel_in: endpoint {
-				remote-endpoint = <&lcd_panel_out>;
-			};
-		};
-	};
 };
 
-arduino_i2c: &lpi2c1 {};
+nxp_touch_i2c: &lpi2c1 {};
 
-&lcdif {
-	status = "okay";
-	width = <480>;
-	height = <272>;
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		hsync-len = <41>;
-		hfront-porch = <4>;
-		hback-porch = <8>;
-		vsync-len = <10>;
-		vfront-porch = <4>;
-		vback-porch = <2>;
-		de-active= <1>;
-		pixelclk-active = <1>;
-		hsync-active = <0>;
-		vsync-active = <0>;
-		clock-frequency = <9210240>;
-	};
-	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
-	data-bus-width = "16-bit";
+zephyr_lcdif: &lcdif {
 	pinctrl-0 = <&pinmux_lcdif>;
 	pinctrl-names = "default";
-	backlight-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
-	port {
-		lcd_panel_out: endpoint {
-			remote-endpoint = <&lcd_panel_in>;
-		};
-	};
 };
+
+nxp_parallel_i2c: &lpi2c1 {};
 
 &lpi2c1 {
 	status = "okay";
 
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
-
-	mt9m114: mt9m114@48 {
-		compatible = "aptina,mt9m114";
-		reg = <0x48>;
-		status = "okay";
-
-		port {
-			mt9m114_ep_out: endpoint {
-				remote-endpoint = <&csi_ep_in>;
-			};
-		};
-	};
 
 	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
@@ -202,22 +183,22 @@ arduino_i2c: &lpi2c1 {};
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(64)>;
+			reg = <0x00000000 DT_SIZE_K(128)>;
 		};
-		/* Note slot 0 has one additional sector,
-		 * this is intended for use with the swap move algorithm
+		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		 * of the primary slot0 for swap status and move.
 		 */
-		slot0_partition: partition@10000 {
+		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(2016)>;
+			reg = <0x00020000 (DT_SIZE_K(1980) + DT_SIZE_K(8))>;
 		};
-		slot1_partition: partition@208000 {
+		slot1_partition: partition@211000 {
 			label = "image-1";
-			reg = <0x00208000 DT_SIZE_K(2012)>;
+			reg = <0x00211000 DT_SIZE_K(1980)>;
 		};
+		/* The storage partition is located in is25wp064 */
 	};
 };
 
@@ -253,9 +234,9 @@ arduino_serial: &lpuart3 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
 		status = "okay";
-		mc,reset-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
-		mc,interrupt-gpio = <&gpio1 10 GPIO_ACTIVE_HIGH>;
-		mc,interface-type = "rmii";
+		reset-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
 	};
 };
 
@@ -271,16 +252,8 @@ zephyr_udc0: &usb1 {
 };
 
 &csi {
-	status = "okay";
-	sensor = <&mt9m114>;
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
-
-	port {
-		csi_ep_in: endpoint {
-			remote-endpoint = <&mt9m114_ep_out>;
-		};
-	};
 };
 
 &flexpwm2_pwm3 {
@@ -310,7 +283,6 @@ zephyr_udc0: &usb1 {
 
 &flexcan2 {
 	status = "okay";
-	bus-speed = <125000>;
 	pinctrl-0 = <&pinmux_flexcan2>;
 	pinctrl-names = "default";
 
@@ -363,3 +335,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-0 = <&pinmux_swo>;
 	pinctrl-names = "default";
 };
+
+dvp_fpc24_i2c: &lpi2c1 {};
+
+dvp_fpc24_interface: &csi {};

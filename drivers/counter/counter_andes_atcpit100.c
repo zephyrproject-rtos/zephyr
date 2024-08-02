@@ -103,12 +103,6 @@ static void atcpit100_irq_handler(void *arg)
 		if (int_status & TIMER0_CHANNEL(i)) {
 			int_enable &= ~TIMER0_CHANNEL(i);
 			ch_enable &= ~TIMER0_CHANNEL(i);
-
-			cb = data->ch_data[i].alarm_callback;
-			data->ch_data[i].alarm_callback = NULL;
-
-			cur_ticks = get_current_tick(dev, 3);
-			cb(dev, i, cur_ticks, data->ch_data[i].alarm_user_data);
 		}
 	}
 
@@ -118,6 +112,17 @@ static void atcpit100_irq_handler(void *arg)
 
 	/* Clear interrupt status */
 	sys_write32(int_status, PIT_ISTA(dev));
+
+	for (i = 0; i < CH_NUM_PER_COUNTER; i++) {
+		if (int_status & TIMER0_CHANNEL(i)) {
+			cur_ticks = get_current_tick(dev, 3);
+			cb = data->ch_data[i].alarm_callback;
+			data->ch_data[i].alarm_callback = NULL;
+			if (cb != NULL) {
+				cb(dev, i, cur_ticks, data->ch_data[i].alarm_user_data);
+			}
+		}
+	}
 }
 
 static int counter_atcpit100_init(const struct device *dev)
@@ -494,7 +499,7 @@ static const struct counter_driver_api atcpit100_driver_api = {
 		NULL,							\
 		&atcpit100_data_##n,					\
 		&atcpit100_config_##n,					\
-		POST_KERNEL,						\
+		PRE_KERNEL_1,						\
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,			\
 		&atcpit100_driver_api);					\
 									\

@@ -8,6 +8,7 @@
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include <DA1469xAB.h>
+#include <da1469x_pd.h>
 #include "adc_context.h"
 #include <zephyr/dt-bindings/adc/smartbond-adc.h>
 
@@ -16,6 +17,9 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 
 LOG_MODULE_REGISTER(adc_smartbond_sdadc);
 
@@ -107,6 +111,31 @@ static int sdadc_smartbond_channel_setup(const struct device *dev,
 				     SDADC_SDADC_CTRL_REG_SDADC_SE_Msk		\
 )
 
+static inline void sdadc_smartbond_pm_policy_state_lock_get(const struct device *dev,
+					      struct sdadc_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE)
+	pm_device_runtime_get(dev);
+	/*
+	 * Prevent the SoC from entering the normal sleep state.
+	 */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+}
+
+static inline void sdadc_smartbond_pm_policy_state_lock_put(const struct device *dev,
+					      struct sdadc_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE)
+	/*
+	 * Allow the SoC to enter the normal sleep state once sdadc is done.
+	 */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_device_runtime_put(dev);
+#endif
+}
+
+
 static int pop_count(uint32_t n)
 {
 	return __builtin_popcount(n);
@@ -119,6 +148,10 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		CONTAINER_OF(ctx, struct sdadc_smartbond_data, ctx);
 	/* Extract lower channel from sequence mask */
 	int current_channel = u32_count_trailing_zeros(data->channel_read_mask);
+
+	/* Wait until the SDADC LDO stabilizes */
+	while (!(SDADC->SDADC_CTRL_REG & SDADC_SDADC_CTRL_REG_SDADC_LDO_OK_Msk))
+		__NOP();
 
 	if (ctx->sequence.calibrate) {
 		/* TODO: Add calibration code */
@@ -215,6 +248,7 @@ static void sdadc_smartbond_isr(const struct device *dev)
 	data->channel_read_mask ^= 1 << current_channel;
 
 	if (data->channel_read_mask == 0) {
+		sdadc_smartbond_pm_policy_state_lock_put(dev, data);
 		adc_context_on_sampling_done(&data->ctx, dev);
 	} else {
 		adc_context_start_sampling(&data->ctx);
@@ -231,6 +265,7 @@ static int sdadc_smartbond_read(const struct device *dev,
 	struct sdadc_smartbond_data *data = dev->data;
 
 	adc_context_lock(&data->ctx, false, NULL);
+	sdadc_smartbond_pm_policy_state_lock_get(dev, data);
 	error = start_read(dev, sequence);
 	adc_context_release(&data->ctx, error);
 
@@ -247,6 +282,7 @@ static int sdadc_smartbond_read_async(const struct device *dev,
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
+	sdadc_smartbond_pm_policy_state_lock_get(dev, data);
 	error = start_read(dev, sequence);
 	adc_context_release(&data->ctx, error);
 
@@ -254,26 +290,97 @@ static int sdadc_smartbond_read_async(const struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
-static int sdadc_smartbond_init(const struct device *dev)
+static int sdadc_smartbond_resume(const struct device *dev)
 {
-	int err;
-	struct sdadc_smartbond_data *data = dev->data;
+	int ret;
 	const struct sdadc_smartbond_cfg *config = dev->config;
 
-	SDADC->SDADC_CTRL_REG = SDADC_SDADC_CTRL_REG_SDADC_EN_Msk;
-	SDADC->SDADC_CLEAR_INT_REG = 0x0;
+	da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+
 	SDADC->SDADC_TEST_REG =
 		(SDADC->SDADC_TEST_REG & ~SDADC_SDADC_TEST_REG_SDADC_CLK_FREQ_Msk) |
 		(config->sdadc_clk_freq) << SDADC_SDADC_TEST_REG_SDADC_CLK_FREQ_Pos;
+
+	SDADC->SDADC_CTRL_REG = SDADC_SDADC_CTRL_REG_SDADC_EN_Msk;
+
 	/*
 	 * Configure dt provided device signals when available.
 	 * pinctrl is optional so ENOENT is not setup failure.
 	 */
-	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0 && err != -ENOENT) {
-		LOG_ERR("ADC pinctrl setup failed (%d)", err);
-		return err;
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		SDADC->SDADC_CTRL_REG = 0;
+
+		/* Release the comms domain */
+		da1469x_pd_release(MCU_PD_DOMAIN_COM);
+
+		LOG_ERR("ADC pinctrl setup failed (%d)", ret);
+		return ret;
 	}
+
+	return 0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int sdadc_smartbond_suspend(const struct device *dev)
+{
+	int ret;
+	const struct sdadc_smartbond_cfg *config = dev->config;
+
+	/* Disable the sdadc LDO */
+	SDADC->SDADC_CTRL_REG = 0;
+
+	/* Release the comms domain */
+	da1469x_pd_release(MCU_PD_DOMAIN_COM);
+
+	/*
+	 * Configure dt provided device signals for sleep.
+	 * pinctrl is optional so ENOENT is not setup failure.
+	 */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	if (ret < 0 && ret != -ENOENT) {
+		LOG_WRN("Failed to configure the sdadc pins to inactive state");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int sdadc_smartbond_pm_action(const struct device *dev,
+				   enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = sdadc_smartbond_resume(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = sdadc_smartbond_suspend(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static int sdadc_smartbond_init(const struct device *dev)
+{
+	int ret;
+	struct sdadc_smartbond_data *data = dev->data;
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Make sure device state is marked as suspended */
+	pm_device_init_suspended(dev);
+
+	ret = pm_device_runtime_enable(dev);
+
+#else
+	ret = sdadc_smartbond_resume(dev);
+
+#endif
+
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    sdadc_smartbond_isr, DEVICE_DT_INST_GET(0), 0);
 
@@ -282,7 +389,7 @@ static int sdadc_smartbond_init(const struct device *dev)
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
-	return 0;
+	return ret;
 }
 
 static const struct adc_driver_api sdadc_smartbond_driver_api = {
@@ -316,8 +423,10 @@ static const struct adc_driver_api sdadc_smartbond_driver_api = {
 		ADC_CONTEXT_INIT_LOCK(sdadc_smartbond_data_##inst, ctx),	\
 		ADC_CONTEXT_INIT_SYNC(sdadc_smartbond_data_##inst, ctx),	\
 	};									\
-	DEVICE_DT_INST_DEFINE(0,						\
-			      sdadc_smartbond_init, NULL,			\
+	PM_DEVICE_DT_INST_DEFINE(inst, sdadc_smartbond_pm_action);	\
+	DEVICE_DT_INST_DEFINE(inst,						\
+			      sdadc_smartbond_init,  \
+				  PM_DEVICE_DT_INST_GET(inst),			\
 			      &sdadc_smartbond_data_##inst,			\
 			      &sdadc_smartbond_cfg_##inst,			\
 			      POST_KERNEL,					\

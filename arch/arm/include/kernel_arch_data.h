@@ -42,7 +42,7 @@
 extern "C" {
 #endif
 
-typedef struct __esf _esf_t;
+typedef struct arch_esf _esf_t;
 typedef struct __basic_sf _basic_sf_t;
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 typedef struct __fpu_sf _fpu_sf_t;

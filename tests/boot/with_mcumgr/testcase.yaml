@@ -3,6 +3,7 @@ common:
   platform_allow:
     - nrf52840dk/nrf52840
     - nrf5340dk/nrf5340/cpuapp
+    - nrf54l15pdk/nrf54l15/cpuapp
     - nrf9160dk/nrf9160
   integration_platforms:
     - nrf52840dk/nrf52840

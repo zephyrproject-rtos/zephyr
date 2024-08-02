@@ -32,7 +32,9 @@ config X86_EXCEPTION_STACK_SIZE
 config X86_EXCEPTION_STACK_TRACE
 	bool
 	default y
-	depends on EXCEPTION_STACK_TRACE
+	select DEBUG_INFO
+	select THREAD_STACK_INFO
+	depends on !OMIT_FRAME_POINTER
 	depends on NO_OPTIMIZATIONS
 	help
 	  Internal config to enable runtime stack traces on fatal exceptions.
@@ -87,8 +89,5 @@ config X86_USERSPACE
 	 This option enables APIs to drop a thread's privileges down to ring 3,
 	 supporting user-level threads that are protected from each other and
 	 from crashing the kernel.
-
-config MP_MAX_NUM_CPUS
-	range 1 4
 
 endif # X86_64

@@ -13,7 +13,7 @@ static inline int z_vrfy_hwspinlock_trylock(const struct device *dev, uint32_t i
 	return z_impl_hwspinlock_trylock(dev, id);
 }
 
-#include <syscalls/hwspinlock_trylock_mrsh.c>
+#include <zephyr/syscalls/hwspinlock_trylock_mrsh.c>
 
 static inline void z_vrfy_hwspinlock_lock(const struct device *dev, uint32_t id)
 {
@@ -21,7 +21,7 @@ static inline void z_vrfy_hwspinlock_lock(const struct device *dev, uint32_t id)
 	z_impl_hwspinlock_lock(dev, id);
 }
 
-#include <syscalls/hwspinlock_lock_mrsh.c>
+#include <zephyr/syscalls/hwspinlock_lock_mrsh.c>
 
 static inline void z_vrfy_hwspinlock_unlock(const struct device *dev, uint32_t id)
 {
@@ -29,7 +29,7 @@ static inline void z_vrfy_hwspinlock_unlock(const struct device *dev, uint32_t i
 	z_impl_hwspinlock_unlock(dev, id);
 }
 
-#include <syscalls/hwspinlock_unlock_mrsh.c>
+#include <zephyr/syscalls/hwspinlock_unlock_mrsh.c>
 
 static inline uint32_t z_vrfy_hwspinlock_get_max_id(const struct device *dev)
 {
@@ -37,4 +37,4 @@ static inline uint32_t z_vrfy_hwspinlock_get_max_id(const struct device *dev)
 	return z_impl_hwspinlock_get_max_id(dev);
 }
 
-#include <syscalls/hwspinlock_get_max_id_mrsh.c>
+#include <zephyr/syscalls/hwspinlock_get_max_id_mrsh.c>

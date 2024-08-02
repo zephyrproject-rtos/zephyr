@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#include <zephyr/sys/util_macro.h>
+
 #ifndef _ASMLANGUAGE
 #include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>

@@ -7,7 +7,7 @@ config UART_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select SERIAL_SUPPORT_ASYNC if (SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32S3)
+	select SERIAL_SUPPORT_ASYNC if (SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32S3)
 	select GPIO_ESP32
 	help
 	  Enable the ESP32 UART.
@@ -20,10 +20,26 @@ config SERIAL_ESP32_USB
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  Enable the built-in USB serial interface present in some Espressif
-	  MCUs like the ESP32-C3.
+	  MCUs like ESP32-Cx.
 
 	  This driver uses the peripheral called USB Serial/JTAG Controller
 	  (USB_SERIAL_JTAG), which acts as a CDC-ACM interface towards the
 	  USB host. The USB stack is built into the chip and accessed
 	  by the firmware through a simplified API similar to a "normal"
 	  UART peripheral.
+
+config UART_ESP32_TX_FIFO_THRESH
+	hex "ESP32 UART TX FIFO Threshold"
+	depends on UART_ESP32
+	default 0x1
+	range 1 127
+	help
+	  Configure the TX FIFO threshold for ESP32 UART driver.
+
+config UART_ESP32_RX_FIFO_THRESH
+	hex "ESP32 UART RX FIFO Threshold"
+	depends on UART_ESP32
+	default 0x16
+	range 1 127
+	help
+	  Configure the RX FIFO threshold for ESP32 UART driver.

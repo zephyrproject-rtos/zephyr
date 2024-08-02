@@ -160,7 +160,7 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
  *
  * @return True if interrupt is enabled, false otherwise.
  */
-extern int xtensa_irq_is_enabled(unsigned int irq);
+int xtensa_irq_is_enabled(unsigned int irq);
 
 #include <zephyr/irq.h>
 

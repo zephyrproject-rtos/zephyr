@@ -7,16 +7,6 @@ properties:
   "#io-channel-cells":
     const: 1
 
-  resolution:
-    type: int
-    required: true
-    description: DAC resolution.
-
-  voltage-reference-mv:
-    type: int
-    required: true
-    description: DAC reference voltage in mV.
-
   voltage-reference:
     type: string
     default: "internal"

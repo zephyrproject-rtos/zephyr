@@ -29,8 +29,8 @@ struct timer_obj {
 	uint32_t status;
 };
 
-K_MEM_SLAB_DEFINE(posix_timer_slab, sizeof(struct timer_obj),
-		  CONFIG_MAX_TIMER_COUNT, __alignof__(struct timer_obj));
+K_MEM_SLAB_DEFINE(posix_timer_slab, sizeof(struct timer_obj), CONFIG_POSIX_TIMER_MAX,
+		  __alignof__(struct timer_obj));
 
 static void zephyr_timer_wrapper(struct k_timer *ztimer)
 {
@@ -306,8 +306,8 @@ int timer_getoverrun(timer_t timerid)
 
 	int overruns = k_timer_status_get(&timer->ztimer) - 1;
 
-	if (overruns > CONFIG_TIMER_DELAYTIMER_MAX) {
-		overruns = CONFIG_TIMER_DELAYTIMER_MAX;
+	if (overruns > CONFIG_POSIX_DELAYTIMER_MAX) {
+		overruns = CONFIG_POSIX_DELAYTIMER_MAX;
 	}
 
 	return overruns;

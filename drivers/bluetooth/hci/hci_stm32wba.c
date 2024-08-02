@@ -7,11 +7,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <linklayer_plat_local.h>
@@ -27,6 +26,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(hci_wba);
 
+#define DT_DRV_COMPAT st_hci_stm32wba
+
+struct hci_data {
+	bt_hci_recv_t recv;
+};
+
 static K_SEM_DEFINE(hci_sem, 1, 1);
 
 #define BLE_CTRLR_STACK_BUFFER_SIZE 300
@@ -39,9 +44,30 @@ static K_SEM_DEFINE(hci_sem, 1, 1);
 #define BLE_DYN_ALLOC_SIZE \
 	(BLE_TOTAL_BUFFER_SIZE(CFG_BLE_NUM_LINK, MBLOCK_COUNT))
 
+/* GATT buffer size (in bytes)*/
+#define BLE_GATT_BUF_SIZE \
+	BLE_TOTAL_BUFFER_SIZE_GATT(CFG_BLE_NUM_GATT_ATTRIBUTES, \
+				   CFG_BLE_NUM_GATT_SERVICES, \
+				   CFG_BLE_ATT_VALUE_ARRAY_SIZE)
+
 #define DIVC(x, y)         (((x)+(y)-1)/(y))
 
+#if defined(CONFIG_BT_HCI_SETUP)
+/* Bluetooth LE public STM32WBA default device address (if udn not available) */
+static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
+
+#define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
+#define HCI_CONFIG_DATA_PUBADDR_OFFSET	   0
+static bt_addr_t bd_addr_udn;
+struct aci_set_ble_addr {
+	uint8_t config_offset;
+	uint8_t length;
+	uint8_t value[6];
+} __packed;
+#endif
+
 static uint32_t __noinit buffer[DIVC(BLE_DYN_ALLOC_SIZE, 4)];
+static uint32_t __noinit gatt_buffer[DIVC(BLE_GATT_BUF_SIZE, 4)];
 
 extern uint8_t ll_state_busy;
 
@@ -205,9 +231,10 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 	return buf;
 }
 
-static int receive_data(const uint8_t *data, size_t len,
+static int receive_data(const struct device *dev, const uint8_t *data, size_t len,
 			const uint8_t *ext_data, size_t ext_len)
 {
+	struct hci_data *hci = dev->data;
 	uint8_t pkt_indicator;
 	struct net_buf *buf;
 	int err = 0;
@@ -235,7 +262,7 @@ static int receive_data(const uint8_t *data, size_t len,
 	}
 
 	if (buf) {
-		bt_recv(buf);
+		hci->recv(dev, buf);
 	} else {
 		err = -ENOMEM;
 		ll_state_busy = 1;
@@ -247,6 +274,7 @@ static int receive_data(const uint8_t *data, size_t len,
 uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 			 const uint8_t *ext_data, uint16_t ext_length)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	int ret = 0;
 	int err;
 
@@ -257,7 +285,7 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 
 	k_sem_take(&hci_sem, K_FOREVER);
 
-	err = receive_data(data, (size_t)length - 1,
+	err = receive_data(dev, data, (size_t)length - 1,
 			   ext_data, (size_t)ext_length);
 
 	k_sem_give(&hci_sem);
@@ -271,11 +299,13 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 	return ret;
 }
 
-static int bt_hci_stm32wba_send(struct net_buf *buf)
+static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
 	uint16_t event_length;
 	uint8_t pkt_indicator;
 	uint8_t tx_buffer[BLE_CTRLR_STACK_BUFFER_SIZE];
+
+	ARG_UNUSED(dev);
 
 	k_sem_take(&hci_sem, K_FOREVER);
 
@@ -304,7 +334,7 @@ static int bt_hci_stm32wba_send(struct net_buf *buf)
 	LOG_DBG("event_length: %u", event_length);
 
 	if (event_length) {
-		receive_data((uint8_t *)&tx_buffer, (size_t)event_length, NULL, 0);
+		receive_data(dev, (uint8_t *)&tx_buffer, (size_t)event_length, NULL, 0);
 	}
 
 	k_sem_give(&hci_sem);
@@ -330,8 +360,8 @@ static int bt_ble_ctlr_init(void)
 	init_params_p.mblockCount             = CFG_BLE_MBLOCK_COUNT;
 	init_params_p.bleStartRamAddress      = (uint8_t *)buffer;
 	init_params_p.total_buffer_size       = BLE_DYN_ALLOC_SIZE;
-	init_params_p.bleStartRamAddress_GATT = NULL;
-	init_params_p.total_buffer_size_GATT  = 0;
+	init_params_p.bleStartRamAddress_GATT = (uint8_t *)gatt_buffer;
+	init_params_p.total_buffer_size_GATT  = BLE_GATT_BUF_SIZE;
 	init_params_p.options                 = CFG_BLE_OPTIONS;
 	init_params_p.debug                   = 0U;
 
@@ -342,8 +372,9 @@ static int bt_ble_ctlr_init(void)
 	return 0;
 }
 
-static int bt_hci_stm32wba_open(void)
+static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct hci_data *data = dev->data;
 	int ret = 0;
 
 	link_layer_register_isr();
@@ -351,6 +382,9 @@ static int bt_hci_stm32wba_open(void)
 	ll_sys_config_params();
 
 	ret = bt_ble_ctlr_init();
+	if (ret == 0) {
+		data->recv = recv;
+	}
 
 	/* TODO. Enable Flash manager once available */
 	if (IS_ENABLED(CONFIG_FLASH)) {
@@ -360,18 +394,99 @@ static int bt_hci_stm32wba_open(void)
 	return ret;
 }
 
-static const struct bt_hci_driver drv = {
-	.name           = "BT IPM",
-	.bus            = BT_HCI_DRIVER_BUS_IPM,
+#if defined(CONFIG_BT_HCI_SETUP)
+
+bt_addr_t *bt_get_ble_addr(void)
+{
+	bt_addr_t *bd_addr;
+	uint32_t udn;
+	uint32_t company_id;
+	uint32_t device_id;
+
+	/* Get the 64 bit Unique Device Number UID */
+	/* The UID is used by firmware to derive */
+	/* 48-bit Device Address EUI-48 */
+	udn = LL_FLASH_GetUDN();
+
+	if (udn != 0xFFFFFFFF) {
+		/* Get the ST Company ID */
+		company_id = LL_FLASH_GetSTCompanyID();
+		/* Get the STM32 Device ID */
+		device_id = LL_FLASH_GetDeviceID();
+
+		/*
+		 * Public Address with the ST company ID
+		 * bit[47:24] : 24bits (OUI) equal to the company ID
+		 * bit[23:16] : Device ID.
+		 * bit[15:0] : The last 16bits from the UDN
+		 * Note: In order to use the Public Address in a final product, a dedicated
+		 * 24bits company ID (OUI) shall be bought.
+		 */
+
+		bd_addr_udn.val[0] = (uint8_t)(udn & 0x000000FF);
+		bd_addr_udn.val[1] = (uint8_t)((udn & 0x0000FF00) >> 8);
+		bd_addr_udn.val[2] = (uint8_t)device_id;
+		bd_addr_udn.val[3] = (uint8_t)(company_id & 0x000000FF);
+		bd_addr_udn.val[4] = (uint8_t)((company_id & 0x0000FF00) >> 8);
+		bd_addr_udn.val[5] = (uint8_t)((company_id & 0x00FF0000) >> 16);
+		bd_addr = &bd_addr_udn;
+	} else {
+		bd_addr = &bd_addr_dflt;
+	}
+
+	return bd_addr;
+}
+
+static int bt_hci_stm32wba_setup(const struct device *dev,
+				 const struct bt_hci_setup_params *params)
+{
+	bt_addr_t *uid_addr;
+	struct aci_set_ble_addr *param;
+	struct net_buf *buf;
+	int err;
+
+	uid_addr = bt_get_ble_addr();
+	if (!uid_addr) {
+		return -ENOMSG;
+	}
+
+	buf = bt_hci_cmd_create(ACI_HAL_WRITE_CONFIG_DATA, sizeof(*param));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	param = net_buf_add(buf, sizeof(*param));
+	param->config_offset = HCI_CONFIG_DATA_PUBADDR_OFFSET;
+	param->length = 6;
+
+	if (bt_addr_eq(&params->public_addr, BT_ADDR_ANY)) {
+		bt_addr_copy((bt_addr_t *)param->value, uid_addr);
+	} else {
+		bt_addr_copy((bt_addr_t *)param->value, &(params->public_addr));
+	}
+
+	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_HCI_SETUP */
+
+static const struct bt_hci_driver_api drv = {
+#if defined(CONFIG_BT_HCI_SETUP)
+	.setup          = bt_hci_stm32wba_setup,
+#endif
 	.open           = bt_hci_stm32wba_open,
 	.send           = bt_hci_stm32wba_send,
 };
 
-static int bt_stm32wba_hci_init(void)
-{
-	bt_hci_driver_register(&drv);
+#define HCI_DEVICE_INIT(inst) \
+	static struct hci_data hci_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
-	return 0;
-}
-
-SYS_INIT(bt_stm32wba_hci_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+/* Only one instance supported */
+HCI_DEVICE_INIT(0)

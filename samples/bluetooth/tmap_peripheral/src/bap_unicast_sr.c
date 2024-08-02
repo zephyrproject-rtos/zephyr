@@ -1,7 +1,7 @@
 /** @file
  *  @brief Bluetooth Basic Audio Profile (BAP) Unicast Server role.
  *
- *  Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ *  Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *  Copyright (c) 2022 Codecoup
  *  Copyright (c) 2023 NXP
  *
@@ -82,7 +82,8 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 			       bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret));
 		}
 
-		if (bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation) == 0) {
+		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
+		if (ret == 0) {
 			printk("  Channel allocation: 0x%x\n", chan_allocation);
 		}
 
@@ -293,10 +294,23 @@ static void stream_recv(struct bt_bap_stream *stream, const struct bt_iso_recv_i
 
 static void stream_enabled(struct bt_bap_stream *stream)
 {
-	const int err = bt_bap_stream_start(stream);
+	struct bt_bap_ep_info ep_info;
+	int err;
 
+	err = bt_bap_ep_get_info(stream->ep, &ep_info);
 	if (err != 0) {
-		printk("Failed to start stream %p: %d", stream, err);
+		printk("Failed to get ep info: %d\n", err);
+		return;
+	}
+
+	/* The unicast server is responsible for starting the sink streams */
+	if (ep_info.dir == BT_AUDIO_DIR_SINK) {
+		/* Automatically do the receiver start ready operation */
+		err = bt_bap_stream_start(stream);
+
+		if (err != 0) {
+			printk("Failed to start stream %p: %d", stream, err);
+		}
 	}
 }
 

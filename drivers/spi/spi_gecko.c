@@ -33,7 +33,10 @@ LOG_MODULE_REGISTER(spi_gecko);
 #define CLOCK_USART(id) _CONCAT(cmuClock_USART, id)
 #define GET_GECKO_USART_CLOCK(n) CLOCK_USART(DT_INST_PROP(n, peripheral_id))
 #else
-#if (USART_COUNT <= 2)
+#if (USART_COUNT == 1)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : -1)
+#elif (USART_COUNT == 2)
 #define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
 			       : ((ref) == USART1) ? cmuClock_USART1 \
 			       : -1)
@@ -81,6 +84,7 @@ struct spi_gecko_data {
 struct spi_gecko_config {
 	USART_TypeDef *base;
 	CMU_Clock_TypeDef clock;
+	uint32_t clock_frequency;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #else
@@ -101,6 +105,7 @@ static int spi_config(const struct device *dev,
 {
 	const struct spi_gecko_config *gecko_config = dev->config;
 	struct spi_gecko_data *data = dev->data;
+	uint32_t spi_frequency = CMU_ClockFreqGet(gecko_config->clock) / 2;
 
 	if (config->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
@@ -137,6 +142,20 @@ static int spi_config(const struct device *dev,
 		LOG_ERR("Slave mode not supported");
 		return -ENOTSUP;
 	}
+
+	/* Set frequency to the minimum of what the device supports, what the
+	 * user has configured the controller to, and the max frequency for the
+	 * transaction.
+	 */
+	if (gecko_config->clock_frequency > spi_frequency) {
+		LOG_ERR("SPI clock-frequency too high");
+		return -EINVAL;
+	}
+	spi_frequency = MIN(gecko_config->clock_frequency, spi_frequency);
+	if (config->frequency) {
+		spi_frequency = MIN(config->frequency, spi_frequency);
+	}
+	USART_BaudrateSyncSet(gecko_config->base, 0, spi_frequency);
 
 	/* Set Loopback */
 	if (config->operation & SPI_MODE_LOOP) {
@@ -327,8 +346,13 @@ static int spi_gecko_transceive(const struct device *dev,
 {
 	struct spi_gecko_data *data = dev->data;
 	uint16_t control = 0;
+	int ret;
 
-	spi_config(dev, config, &control);
+	ret = spi_config(dev, config, &control);
+	if (ret < 0) {
+		return ret;
+	}
+
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 	spi_gecko_xfer(dev, config);
 	return 0;
@@ -377,7 +401,8 @@ static const struct spi_driver_api spi_gecko_api = {
 	    .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 	    .base = (USART_TypeDef *) \
 		 DT_INST_REG_ADDR(n), \
-	    .clock = GET_GECKO_USART_CLOCK(n) \
+	    .clock = GET_GECKO_USART_CLOCK(n), \
+	    .clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000) \
 	}; \
 	DEVICE_DT_INST_DEFINE(n, \
 			spi_gecko_init, \
@@ -398,6 +423,7 @@ static const struct spi_driver_api spi_gecko_api = {
 	    .base = (USART_TypeDef *) \
 		 DT_INST_REG_ADDR(n), \
 	    .clock = GET_GECKO_USART_CLOCK(n), \
+	    .clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000), \
 	    .pin_rx = { DT_INST_PROP_BY_IDX(n, location_rx, 1), \
 			DT_INST_PROP_BY_IDX(n, location_rx, 2), \
 			gpioModeInput, 1},				\

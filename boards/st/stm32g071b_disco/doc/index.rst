@@ -51,6 +51,7 @@ More information about the board can be found at the `STM32G071B-DISCO website`_
 
 
 More information about STM32G071RB can be found here:
+
 - `G071RB on www.st.com`_
 - `STM32G071 reference manual`_
 

@@ -94,7 +94,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 			  uint16_t iso_interval, uint8_t nse, uint16_t max_pdu,
 			  uint8_t bn, uint8_t irc, uint8_t pto, bool test_config)
 {
-	uint8_t hdr_data[1 + sizeof(uint8_t *)];
+	uint8_t bi_ad[PDU_BIG_INFO_ENCRYPTED_SIZE + 2U];
 	struct lll_adv_sync *lll_adv_sync;
 	struct lll_adv_iso *lll_adv_iso;
 	struct ll_adv_iso_set *adv_iso;
@@ -117,7 +117,6 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	uint16_t ctrl_spacing;
 	uint8_t sdu_per_event;
 	uint8_t ter_idx;
-	uint8_t *acad;
 	uint32_t ret;
 	uint8_t err;
 	int res;
@@ -143,6 +142,12 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	if (!lll_adv_sync || lll_adv_sync->iso) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
+
+	/* Check if encryption supported */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    encryption) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	};
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
 		if (num_bis == 0U || num_bis > 0x1F) {
@@ -192,7 +197,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
-			if (!IN_RANGE(irc, 0x01, 0x07)) {
+			if (!IN_RANGE(irc, 0x01, 0x0F)) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
@@ -344,7 +349,14 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		iso_interval_us = iso_interval * PERIODIC_INT_UNIT_US;
 
 	} else {
-		lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
+		if (framing) {
+			/* Try to allocate room for one SDU + header */
+			lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX,
+						   max_sdu + PDU_ISO_SEG_HDR_SIZE +
+						    PDU_ISO_SEG_TIMEOFFSET_SIZE);
+		} else {
+			lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
+		}
 
 		/* FIXME: SDU per max latency */
 		sdu_per_event = MAX((max_latency * USEC_PER_MSEC / sdu_interval), 2U) -
@@ -509,28 +521,10 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	} else {
 		pdu_big_info_size = PDU_BIG_INFO_CLEARTEXT_SIZE;
 	}
-	hdr_data[0] = pdu_big_info_size + PDU_ADV_DATA_HEADER_SIZE;
-	err = ull_adv_sync_pdu_set_clear(lll_adv_sync, pdu_prev, pdu,
-					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
-					 &hdr_data);
-	if (err) {
-		/* Failed to add BIGInfo into the ACAD of the Periodic
-		 * Advertising.
-		 */
-
-		/* Release allocated link buffers */
-		ll_rx_link_release(link_cmplt);
-		ll_rx_link_release(link_term);
-
-		return err;
-	}
-
-	(void)memcpy(&acad, &hdr_data[1], sizeof(acad));
-	acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] =
-		pdu_big_info_size + (PDU_ADV_DATA_HEADER_SIZE -
-				     PDU_ADV_DATA_HEADER_LEN_SIZE);
-	acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = BT_DATA_BIG_INFO;
-	big_info = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
+	bi_ad[PDU_ADV_DATA_HEADER_LEN_OFFSET] = pdu_big_info_size + (PDU_ADV_DATA_HEADER_SIZE -
+						PDU_ADV_DATA_HEADER_LEN_SIZE);
+	bi_ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = BT_DATA_BIG_INFO;
+	big_info = (void *)&bi_ad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 
 	/* big_info->offset, big_info->offset_units and
 	 * big_info->payload_count_framing[] will be filled by periodic
@@ -566,7 +560,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	big_info->payload_count_framing[4] &= ~BIT(7);
 	big_info->payload_count_framing[4] |= ((framing & 0x01) << 7);
 
-	if (encryption) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) && encryption) {
 		const uint8_t BIG1[16] = {0x31, 0x47, 0x49, 0x42, };
 		const uint8_t BIG2[4]  = {0x32, 0x47, 0x49, 0x42};
 		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
@@ -601,6 +595,20 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		lll_adv_iso->enc = 1U;
 	} else {
 		lll_adv_iso->enc = 0U;
+	}
+
+	err = ull_adv_sync_add_to_acad(lll_adv_sync, pdu_prev, pdu, bi_ad,
+				       pdu_big_info_size + PDU_ADV_DATA_HEADER_SIZE);
+	if (err) {
+		/* Failed to add BIGInfo into the ACAD of the Periodic
+		 * Advertising.
+		 */
+
+		/* Release allocated link buffers */
+		ll_rx_link_release(link_cmplt);
+		ll_rx_link_release(link_term);
+
+		return err;
 	}
 
 	/* Associate the ISO instance with an Extended Advertising instance */
@@ -724,9 +732,8 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 		return err;
 	}
 
-	/* Remove ACAD to AUX_SYNC_IND */
-	err = ull_adv_sync_pdu_set_clear(lll_adv_sync, pdu_prev, pdu,
-					 0U, ULL_ADV_PDU_HDR_FIELD_ACAD, NULL);
+	/* Remove BigInfo from ACAD in AUX_SYNC_IND */
+	err = ull_adv_sync_remove_from_acad(lll_adv_sync, pdu_prev, pdu, BT_DATA_BIG_INFO);
 	if (err) {
 		return err;
 	}
@@ -1152,7 +1159,7 @@ static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 		       (lll->sub_interval * lll->bn * lll->num_bis)) *
 		      lll->bn;
 
-		/* FIXME: Here we retrict to a maximum of BN Pre-Transmission
+		/* FIXME: Here we restrict to a maximum of BN Pre-Transmission
 		 * subevents per BIS
 		 */
 		ptc = MIN(ptc, lll->bn);
@@ -1288,8 +1295,6 @@ static uint8_t adv_iso_chm_update(uint8_t big_handle)
 
 static void adv_iso_chm_complete_commit(struct lll_adv_iso *lll_iso)
 {
-	uint8_t hdr_data[ULL_ADV_HDR_DATA_LEN_SIZE +
-			 ULL_ADV_HDR_DATA_ACAD_PTR_SIZE];
 	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct pdu_big_info *bi;
@@ -1308,30 +1313,20 @@ static void adv_iso_chm_complete_commit(struct lll_adv_iso *lll_iso)
 				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
 	LL_ASSERT(!err);
 
-	/* Get the size of current ACAD, first octet returns the old length and
-	 * followed by pointer to previous offset to ACAD in the PDU.
-	 */
-	lll_sync = adv->lll.sync;
-	hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = 0U;
-	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
-					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
-					 &hdr_data);
+	/* Copy content */
+	err = ull_adv_sync_duplicate(pdu_prev, pdu);
 	LL_ASSERT(!err);
+
+	/* Get the current ACAD */
+	acad = ull_adv_sync_get_acad(pdu, &acad_len);
+
+	lll_sync = adv->lll.sync;
 
 	/* Dev assert if ACAD empty */
-	LL_ASSERT(hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET]);
-
-	/* Get the pointer, prev content and size of current ACAD */
-	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
-					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
-					 &hdr_data);
-	LL_ASSERT(!err);
+	LL_ASSERT(acad_len);
 
 	/* Find the BIGInfo */
-	acad_len = hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET];
 	len = acad_len;
-	(void)memcpy(&acad, &hdr_data[ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET],
-		     sizeof(acad));
 	ad = acad;
 	do {
 		ad_len = ad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
@@ -1516,10 +1511,18 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static struct lll_prepare_param p;
 	struct ll_adv_iso_set *adv_iso = param;
 	uint32_t remainder_us;
+	uint64_t event_count;
 	uint32_t ret;
 	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_A(1);
+
+	event_count = adv_iso->lll.payload_count / adv_iso->lll.bn;
+	for (int i = 0; i < adv_iso->lll.num_bis; i++)  {
+		uint16_t stream_handle = adv_iso->lll.stream_handle[i];
+
+		ull_iso_lll_event_prepare(LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle), event_count);
+	}
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&adv_iso->ull);

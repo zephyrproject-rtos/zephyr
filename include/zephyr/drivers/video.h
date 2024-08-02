@@ -249,7 +249,7 @@ typedef int (*video_api_set_signal_t)(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct k_poll_signal *signal);
 
-struct video_driver_api {
+__subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_set_format_t set_format;
 	video_api_get_format_t get_format;
@@ -637,6 +637,9 @@ void video_buffer_release(struct video_buffer *buf);
 
 /** YUYV pixel format */
 #define VIDEO_PIX_FMT_YUYV video_fourcc('Y', 'U', 'Y', 'V') /* 16  Y0-Cb0 Y1-Cr0 */
+
+/** XYUV32 pixel format */
+#define VIDEO_PIX_FMT_XYUV32 video_fourcc('X', 'Y', 'U', 'V') /* 32  XYUV-8-8-8-8 */
 
 /**
  *

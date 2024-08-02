@@ -33,7 +33,7 @@ GTEST_FAIL_STATE = "  FAILED  "
 SAMPLE_GTEST_START = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Running all tests.[0m"
 )
-SAMPLE_GTEST_FMT = "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test}[0m"
+SAMPLE_GTEST_FMT = "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test} (0ms)[0m"
 SAMPLE_GTEST_END = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Done running all tests.[0m"
 )
@@ -42,6 +42,49 @@ SAMPLE_GTEST_END = (
 def process_logs(harness, logs):
     for line in logs:
         harness.handle(line)
+
+
+TEST_DATA_RECORDING = [
+                ([''], "^START:(?P<foo>.*):END", [], None),
+                (['START:bar:STOP'], "^START:(?P<foo>.*):END", [], None),
+                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}], None),
+                (['START:bar:baz:END'], "^START:(?P<foo>.*):(?P<boo>.*):END", [{'foo':'bar', 'boo':'baz'}], None),
+                (['START:bar:baz:END','START:may:jun:END'], "^START:(?P<foo>.*):(?P<boo>.*):END",
+                 [{'foo':'bar', 'boo':'baz'}, {'foo':'may', 'boo':'jun'}], None),
+                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}], []),
+                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}], ['boo']),
+                (['START:bad_json:END'], "^START:(?P<foo>.*):END",
+                 [{'foo':{'ERROR':{'msg':'Expecting value: line 1 column 1 (char 0)', 'doc':'bad_json'}}}], ['foo']),
+                (['START::END'], "^START:(?P<foo>.*):END", [{'foo':{}}], ['foo']),
+                (['START: {"one":1, "two":2} :END'], "^START:(?P<foo>.*):END", [{'foo':{'one':1, 'two':2}}], ['foo']),
+                (['START: {"one":1, "two":2} :STOP:oops:END'], "^START:(?P<foo>.*):STOP:(?P<boo>.*):END",
+                   [{'foo':{'one':1, 'two':2},'boo':'oops'}], ['foo']),
+                (['START: {"one":1, "two":2} :STOP:{"oops":0}:END'], "^START:(?P<foo>.*):STOP:(?P<boo>.*):END",
+                   [{'foo':{'one':1, 'two':2},'boo':{'oops':0}}], ['foo','boo']),
+                      ]
+@pytest.mark.parametrize(
+    "lines, pattern, expected_records, as_json",
+    TEST_DATA_RECORDING,
+    ids=["empty", "no match", "match 1 field", "match 2 fields", "match 2 records",
+         "as_json empty", "as_json no such field", "error parsing json", "empty json value", "simple json",
+         "plain field and json field", "two json fields"
+        ]
+)
+def test_harness_parse_record(lines, pattern, expected_records, as_json):
+    harness = Harness()
+    harness.record = { 'regex': pattern }
+    harness.record_pattern = re.compile(pattern)
+
+    harness.record_as_json = as_json
+    if as_json is not None:
+        harness.record['as_json'] = as_json
+
+    assert not harness.recording
+
+    for line in lines:
+        harness.parse_record(line)
+
+    assert harness.recording == expected_records
 
 
 TEST_DATA_1 = [('RunID: 12345', False, False, False, None, True),
@@ -63,6 +106,7 @@ def test_harness_process_test(line, fault, fail_on_fault, cap_cov, exp_stat, exp
     harness.state = None
     harness.fault = fault
     harness.fail_on_fault = fail_on_fault
+    mock.patch.object(Harness, 'parse_record', return_value=None)
 
     #Act
     harness.process_test(line)
@@ -71,6 +115,7 @@ def test_harness_process_test(line, fault, fail_on_fault, cap_cov, exp_stat, exp
     assert harness.matched_run_id == exp_id
     assert harness.state == exp_stat
     assert harness.capture_coverage == cap_cov
+    assert harness.recording == []
 
 
 def test_robot_configure(tmp_path):
@@ -88,7 +133,8 @@ def test_robot_configure(tmp_path):
 
     instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
     instance.testsuite.harness_config = {
-        'robot_test_path': '/path/to/robot/test'
+        'robot_testsuite': '/path/to/robot/test',
+        'robot_option': 'test_option'
     }
     robot_harness = Robot()
 
@@ -98,6 +144,7 @@ def test_robot_configure(tmp_path):
     #Assert
     assert robot_harness.instance == instance
     assert robot_harness.path == '/path/to/robot/test'
+    assert robot_harness.option == 'test_option'
 
 
 def test_robot_handle(tmp_path):
@@ -138,13 +185,14 @@ TEST_DATA_2 = [("", 0, "passed"), ("Robot test failure: sourcedir for mock_platf
 )
 def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_status):
     # Arrange
-    command = "command"
+    command = ["command"]
 
     handler = mock.Mock()
     handler.sourcedir = "sourcedir"
     handler.log = "handler.log"
 
     path = "path"
+    option = "option"
 
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
@@ -164,6 +212,7 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
 
     robot = Robot()
     robot.path = path
+    robot.option = option
     robot.instance = instance
     proc_mock = mock.Mock(
         returncode = returncode,
@@ -317,6 +366,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
     hardware.baud = 115200
     hardware.runner = "runner"
     hardware.runner_params = ["--runner-param1", "runner-param2"]
+    hardware.fixtures = ['fixture1:option1', 'fixture2']
 
     options = handler.options
     options.west_flash = "args"
@@ -358,6 +408,8 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
         assert '--pre-script=pre_script' in command
         assert '--post-flash-script=post_flash_script' in command
         assert '--post-script=post_script' in command
+        assert '--twister-fixture=fixture1:option1' in command
+        assert '--twister-fixture=fixture2' in command
 
 
 def test__update_command_with_env_dependencies():
@@ -436,8 +488,8 @@ TEST_DATA_7 = [("", "Running TESTSUITE suite_name", ['suite_name'], None, True, 
             ("", "PASS - test_example in 0 seconds", [], "passed", True, None),
             ("", "SKIP - test_example in 0 seconds", [], "skipped", True, None),
             ("", "FAIL - test_example in 0 seconds", [], "failed", True, None),
-            ("not a ztest and no state for  test_id", "START - test_testcase", [], "passed", False, "passed"),
-            ("not a ztest and no state for  test_id", "START - test_testcase", [], "failed", False, "failed")]
+            ("not a ztest and no state for test_id", "START - test_testcase", [], "passed", False, "passed"),
+            ("not a ztest and no state for test_id", "START - test_testcase", [], "failed", False, "failed")]
 @pytest.mark.parametrize(
    "exp_out, line, exp_suite_name, exp_status, ztest, state",
    TEST_DATA_7,

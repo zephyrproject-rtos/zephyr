@@ -22,6 +22,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,flash-controller = &mx25r6435f;
 		zephyr,bt-c2h-uart = &usart1;
+		zephyr,bt-hci = &hci_spi;
 	};
 
 	leds {
@@ -49,6 +50,10 @@
 		compatible = "pwm-leds";
 		status = "disabled";
 
+		/*
+		 * green_pwm_1 is connected to CN1 pin 2 not LD1, since LD1
+		 * shares a pin with the Arduino SPI SCL line.
+		 */
 		green_pwm_1: green_led_1 {
 			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "green LD1";
@@ -62,12 +67,11 @@
 	aliases {
 		led0 = &green_led_2;
 		led1 = &green_led_1;
-		pwm-led0 = &green_pwm_1;
-		pwm-led1 = &green_pwm_2;
+		pwm-led0 = &green_pwm_2;
+		pwm-led1 = &green_pwm_1;
 		sw0 = &user_button;
 		eswifi0 = &wifi0;
 		watchdog0 = &iwdg;
-		spi-flash0 = &mx25r6435f;
 		accel0 = &lsm6dsl;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
@@ -191,7 +195,7 @@
 	cs-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>,
 		   <&gpioe 0 GPIO_ACTIVE_LOW>;
 
-	spbtle-rf@0 {
+	hci_spi: spbtle-rf@0 {
 		compatible = "st,hci-spi-v1";
 		reg = <0>;
 		reset-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
@@ -246,7 +250,7 @@
 
 	pwm2: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim2_ch1_pa15>;
+		pinctrl-0 = <&tim2_ch1_pa15>; /* CN1 pin 2 (ARD.D9-PWM) */
 		pinctrl-names = "default";
 	};
 };
@@ -257,7 +261,7 @@
 
 	pwm15: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim15_ch1_pb14>; /* CN1 D10 */
+		pinctrl-0 = <&tim15_ch1_pb14>; /* LED2 */
 		pinctrl-names = "default";
 	};
 };

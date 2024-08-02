@@ -2,7 +2,7 @@ description: Kinetis LPUART
 
 compatible: "nxp,kinetis-lpuart"
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, uart-controller-pin-inversion.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -14,6 +14,14 @@ properties:
       Enable loopback mode on LPUART peripheral. When present, RX pin is
       disconnected, and transmitter output is internally connected to
       the receiver input.
+
+  single-wire:
+    type: boolean
+    description: |
+      Enable the single wire half-duplex communication.
+      Using this mode, TX and RX lines are internally connected and
+      only TX pin is used afterwards and should be configured.
+      RX/TX conflicts must be handled on user side.
 
   nxp,rs485-mode:
     type: boolean

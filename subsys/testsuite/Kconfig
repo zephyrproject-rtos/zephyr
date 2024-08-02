@@ -74,6 +74,7 @@ endchoice
 
 config COVERAGE_GCOV_HEAP_SIZE
 	int "Size of heap allocated for gcov coverage data dump"
+	depends on COVERAGE_GCOV
 	default 32768 if X86 || SOC_SERIES_MPS2
 	default 16384
 	help

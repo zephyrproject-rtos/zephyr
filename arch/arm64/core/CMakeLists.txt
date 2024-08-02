@@ -4,6 +4,7 @@ zephyr_library()
 
 zephyr_library_sources(
   cpu_idle.S
+  early_mem_funcs.S
   fatal.c
   irq_init.c
   irq_manage.c
@@ -43,7 +44,7 @@ if ((CONFIG_MP_MAX_NUM_CPUS GREATER 1) OR (CONFIG_SMP))
 endif ()
 
 zephyr_cc_option_ifdef(CONFIG_USERSPACE -mno-outline-atomics)
-zephyr_cc_option_ifdef(CONFIG_ARM64_ENABLE_FRAME_POINTER -mno-omit-leaf-frame-pointer)
+zephyr_cc_option_ifdef(CONFIG_FRAME_POINTER -mno-omit-leaf-frame-pointer)
 
 # GCC may generate ldp/stp instructions with the Advanced SIMD Qn registers for
 # consecutive 32-byte loads and stores. Saving and restoring the Advanced SIMD

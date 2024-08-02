@@ -37,6 +37,36 @@ ZTEST(sys_util, test_wait_for)
 	end = k_cycle_get_32();
 	zassert_true(end-start >= expected, "wait for 1ms");
 }
+
+/**
+ * @brief Test NUM_VA_ARGS works as expected with typical use cases
+ *
+ * @see NUM_VA_ARGS()
+ */
+
+ZTEST(sys_util, test_NUM_VA_ARGS)
+{
+	zassert_equal(0, NUM_VA_ARGS());
+	zassert_equal(1, NUM_VA_ARGS(_1));
+	zassert_equal(2, NUM_VA_ARGS(_1, _2));
+	/* support up to 63 args */
+	zassert_equal(63, NUM_VA_ARGS(LISTIFY(63, ~, (,))));
+}
+
+/**
+ * @brief Test NUM_VA_ARGS_LESS_1 works as expected with typical use cases
+ *
+ * @see NUM_VA_ARGS_LESS_1()
+ */
+
+ZTEST(sys_util, test_NUM_VA_ARGS_LESS_1)
+{
+	zassert_equal(0, NUM_VA_ARGS_LESS_1());
+	zassert_equal(0, NUM_VA_ARGS_LESS_1(_1));
+	zassert_equal(1, NUM_VA_ARGS_LESS_1(_1, _2));
+	/* support up to 64 args */
+	zassert_equal(63, NUM_VA_ARGS_LESS_1(LISTIFY(64, ~, (,))));
+}
 /**
  * @}
  */

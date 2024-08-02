@@ -1,0 +1,15 @@
+identifier: bl654_usb
+name: BL654_USB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - usb_device
+  - ble
+  - pwm
+  - watchdog
+  - counter
+vendor: ezurio

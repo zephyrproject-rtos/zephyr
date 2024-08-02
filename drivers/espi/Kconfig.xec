@@ -63,21 +63,21 @@ config ESPI_FLASH_BUFFER_SIZE
 	  Use maximum RAM buffer size defined by spec but allow applications
 	  to override if eSPI host doesn't support it.
 
-config ESPI_SAF_XEC
-	bool "XEC Microchip ESPI SAF driver"
+config ESPI_TAF_XEC
+	bool "XEC Microchip ESPI TAF driver"
 	default y
 	depends on SOC_SERIES_MEC15XX
 	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_ENABLED
 	help
-	  Enable the Microchip XEC SAF ESPI driver for MEC15xx family.
+	  Enable the Microchip XEC TAF ESPI driver for MEC15xx family.
 
-config ESPI_SAF_XEC_V2
-	bool "XEC Microchip ESPI SAF V2 driver"
+config ESPI_TAF_XEC_V2
+	bool "XEC Microchip ESPI TAF V2 driver"
 	default y
 	depends on SOC_SERIES_MEC172X
 	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_V2_ENABLED
 	help
-	  Enable the Microchip XEC SAF ESPI driver for MEC172x series.
+	  Enable the Microchip XEC TAF ESPI driver for MEC172x series.
 
 endif #ESPI_XEC
 
@@ -154,19 +154,19 @@ config ESPI_PERIPHERAL_XEC_EMI2
 
 endif #ESPI_PERIPHERAL_CHANNEL
 
-config ESPI_SAF
-	bool "XEC Microchip ESPI SAF driver"
+config ESPI_TAF
+	bool "XEC Microchip ESPI TAF driver"
 	depends on ESPI_FLASH_CHANNEL
 	help
-	  Enable Slave Attached Flash eSPI driver. SAF depends upon ESPI XEC driver
+	  Enable Target Attached Flash eSPI driver. TAF depends upon ESPI XEC driver
 	  and flash channel.
 
-config ESPI_SAF_INIT_PRIORITY
-	int "ESPI SAF driver initialization priority"
-	depends on ESPI_SAF
+config ESPI_TAF_INIT_PRIORITY
+	int "ESPI TAF driver initialization priority"
+	depends on ESPI_TAF
 	default 4
 	help
-	  Driver initialization priority for eSPI SAF driver.
+	  Driver initialization priority for ESPI TAF driver.
 
 config ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
 	bool "Read ACPI EC Event Data in IBF ISR"

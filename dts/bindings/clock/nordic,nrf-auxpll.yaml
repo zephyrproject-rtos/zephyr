@@ -1,0 +1,92 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic Auxiliary PLL (Phase Locked Loop)
+
+  The output frequency (f_out) of the auxiliary PLL is calculated as follows:
+
+    f_out = ((R + A * 2^(-16)) * f_src) / B
+
+  where:
+
+    - A: nordic,frequency
+    - B: nordic,outdiv
+    - R: nordic,range (3=low, 4=mid, 5=high, 6=statichigh)
+    - f_src: Source frequency, given by clocks
+
+compatible: "nordic,nrf-auxpll"
+
+include:
+  - base.yaml
+  - clock-controller.yaml
+  - nordic-nrf-ficr-client.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  "#clock-cells":
+    const: 0
+
+  nordic,ficrs:
+    required: true
+
+  nordic,frequency:
+    type: int
+    required: true
+    description: |
+      Value used to set the fractional PLL divider ratio (can be set between
+      divider ratios 4 to 5). Valid values range from 0 to 65535.
+
+  nordic,out-div:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 6
+      - 8
+      - 12
+      - 16
+    description: PLL output divider.
+
+  nordic,out-drive:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: Output buffer drive strength.
+
+  nordic,current-tune:
+    type: int
+    required: true
+    description: Constant current tune for the ring oscillator
+
+  nordic,sdm-disable:
+    type: boolean
+    description: Disable sigma-delta modulator
+
+  nordic,dither-disable:
+    type: boolean
+    description: Disable dither in sigma-delta modulator
+
+  nordic,range:
+    type: string
+    required: true
+    enum:
+      - "low"
+      - "mid"
+      - "high"
+      - "statichigh"
+    description: PLL loop divider range

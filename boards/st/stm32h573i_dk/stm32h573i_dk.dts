@@ -9,7 +9,8 @@
 #include <st/h5/stm32h573iikxq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 / {
 	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
 	compatible = "st,stm32h573i-dk";
@@ -56,10 +57,17 @@
 		led0 = &blue_led_0;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
-		spi-flash0 = &mx25lm51245;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+	};
+
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 };
 
@@ -149,16 +157,26 @@
 
 &mac {
 	status = "okay";
-	pinctrl-0 = <&eth_mdc_pc1
-		     &eth_rxd0_pc4
+	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
-		     &eth_mdio_pa2
 		     &eth_crs_dv_pa7
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pg12>;
 	pinctrl-names = "default";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+		status = "okay";
+	};
 };
 
 &flash0 {
@@ -237,12 +255,10 @@
 		<&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	status = "okay";
 };
 
-&octospi1 {
+&xspi1 {
 	pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12
 		     &octospi1_io2_pc2 &octospi1_io3_pd13
 		     &octospi1_io4_ph2 &octospi1_io5_ph3
@@ -254,11 +270,11 @@
 	status = "okay";
 
 	mx25lm51245: ospi-nor-flash@90000000 {
-		compatible = "st,stm32-ospi-nor";
+		compatible = "st,stm32-xspi-nor";
 		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <OSPI_OPI_MODE>;
-		data-rate = <OSPI_DTR_TRANSFER>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
 		status = "okay";
 

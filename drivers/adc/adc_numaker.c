@@ -17,6 +17,7 @@
 #include <NuMicro.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+#define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #include "adc_context.h"
 
 LOG_MODULE_REGISTER(adc_numaker, CONFIG_ADC_LOG_LEVEL);
@@ -45,6 +46,7 @@ struct adc_numaker_data {
 	uint16_t *repeat_buffer;
 	bool is_differential;
 	uint32_t channels;
+	uint32_t acq_time;
 };
 
 static int adc_numaker_channel_setup(const struct device *dev,
@@ -54,9 +56,13 @@ static int adc_numaker_channel_setup(const struct device *dev,
 	struct adc_numaker_data *data = dev->data;
 
 	if (chan_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Not support acquisition time");
-		return -ENOTSUP;
+		if ((ADC_ACQ_TIME_UNIT(chan_cfg->acquisition_time) != ADC_ACQ_TIME_TICKS) ||
+		    (ADC_ACQ_TIME_VALUE(chan_cfg->acquisition_time) > 255)) {
+			LOG_ERR("Selected ADC acquisition time is not in 0~255 ticks");
+			return -EINVAL;
+		}
 	}
+	data->acq_time = ADC_ACQ_TIME_VALUE(chan_cfg->acquisition_time);
 
 	if (chan_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("Not support channel gain");
@@ -115,9 +121,6 @@ static void adc_numaker_isr(const struct device *dev)
 	uint16_t conv_data;
 	uint32_t pend_flag;
 
-	/* Clear pending flag first */
-	pend_flag = eadc->PENDSTS;
-	eadc->PENDSTS = pend_flag;
 	LOG_DBG("ADC ISR pend flag: 0x%X\n", pend_flag);
 	LOG_DBG("ADC ISR STATUS2[0x%x] STATUS3[0x%x]", eadc->STATUS2, eadc->STATUS3);
 	/* Complete the conversion of channels.
@@ -151,9 +154,6 @@ static void adc_numaker_isr(const struct device *dev)
 			eadc->SCTL[module_id] = 0;
 		}
 
-		/* Disable ADC */
-		EADC_Close(eadc);
-
 		/* Inform sampling is done */
 		adc_context_on_sampling_done(&data->ctx, data->dev);
 	}
@@ -179,6 +179,8 @@ static void m_adc_numaker_start_scan(const struct device *dev)
 		channel_mask &= ~BIT(channel_id);
 		EADC_ConfigSampleModule(eadc, module_id,
 					EADC_SOFTWARE_TRIGGER, channel_id);
+		/* Set sample module external sampling time to 0 */
+		EADC_SetExtendSampleTime(eadc, module_id, data->acq_time);
 	}
 
 	/* Clear the A/D ADINT0 interrupt flag for safe */
@@ -221,6 +223,19 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
+static void adc_context_on_complete(struct adc_context *ctx, int status)
+{
+	struct adc_numaker_data *data =
+		CONTAINER_OF(ctx, struct adc_numaker_data, ctx);
+	const struct adc_numaker_config *cfg = data->dev->config;
+	EADC_T *eadc = cfg->eadc_base;
+
+	ARG_UNUSED(status);
+
+	/* Disable ADC */
+	EADC_Close(eadc);
+}
+
 static int m_adc_numaker_start_read(const struct device *dev,
 				  const struct adc_sequence *sequence)
 {
@@ -243,14 +258,9 @@ static int m_adc_numaker_start_read(const struct device *dev,
 
 	/* Enable the A/D converter */
 	if (data->is_differential) {
-		err = EADC_Open(eadc, EADC_CTL_DIFFEN_DIFFERENTIAL);
+		EADC_Open(eadc, EADC_CTL_DIFFEN_DIFFERENTIAL);
 	} else {
-		err = EADC_Open(eadc, EADC_CTL_DIFFEN_SINGLE_END);
-	}
-
-	if (err) {
-		LOG_ERR("ADC Open fail (%u)", err);
-		return -ENODEV;
+		EADC_Open(eadc, EADC_CTL_DIFFEN_SINGLE_END);
 	}
 
 	data->buffer = sequence->buffer;

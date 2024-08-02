@@ -1,6 +1,7 @@
 # Sensor configuration options
 
 # Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2024 Croxel Inc
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SENSOR
@@ -24,6 +25,8 @@ config SENSOR_ASYNC_API
 	bool "Async Sensor API"
 	select RTIO
 	select RTIO_SYS_MEM_BLOCKS
+	select RTIO_CONSUME_SEM
+	select RTIO_WORKQ
 	help
 	  Enables the asynchronous sensor API by leveraging the RTIO subsystem.
 
@@ -142,6 +145,8 @@ source "drivers/sensor/s11059/Kconfig"
 source "drivers/sensor/sbs_gauge/Kconfig"
 source "drivers/sensor/sx9500/Kconfig"
 source "drivers/sensor/th02/Kconfig"
+source "drivers/sensor/tsic_xx6/Kconfig"
+source "drivers/sensor/veaa_x_3/Kconfig"
 source "drivers/sensor/voltage_divider/Kconfig"
 source "drivers/sensor/ene_tach_kb1200/Kconfig"
 

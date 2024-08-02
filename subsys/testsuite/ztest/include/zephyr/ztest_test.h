@@ -18,6 +18,17 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <stdbool.h>
 
+
+/**
+ * @defgroup ztest_test Ztest testing macros
+ * @ingroup ztest
+ *
+ * This module eases the testing process by providing helpful macros and other
+ * testing structures.
+ *
+ * @{
+ */
+
 #if defined(CONFIG_USERSPACE)
 #define __USERSPACE_FLAGS (K_USER)
 #else
@@ -107,6 +118,7 @@ struct ztest_unit_test {
 
 extern struct ztest_unit_test _ztest_unit_test_list_start[];
 extern struct ztest_unit_test _ztest_unit_test_list_end[];
+/** Number of registered unit tests */
 #define ZTEST_TEST_COUNT (_ztest_unit_test_list_end - _ztest_unit_test_list_start)
 
 /**
@@ -200,16 +212,18 @@ struct ztest_suite_node {
 
 extern struct ztest_suite_node _ztest_suite_node_list_start[];
 extern struct ztest_suite_node _ztest_suite_node_list_end[];
+
+/** Number of registered test suites */
 #define ZTEST_SUITE_COUNT (_ztest_suite_node_list_end - _ztest_suite_node_list_start)
 
 /**
- * Create and register a ztest suite. Using this macro creates a new test suite (using
- * ztest_test_suite). It then creates a struct ztest_suite_node in a specific linker section.
+ * Create and register a ztest suite. Using this macro creates a new test suite.
+ * It then creates a struct ztest_suite_node in a specific linker section.
  *
  * Tests can then be run by calling ztest_run_test_suites(const void *state) by passing
  * in the current state. See the documentation for ztest_run_test_suites for more info.
  *
- * @param SUITE_NAME The name of the suite (see ztest_test_suite for more info)
+ * @param SUITE_NAME The name of the suite
  * @param PREDICATE A function to test against the state and determine if the test should run.
  * @param setup_fn The setup function to call before running this test suite
  * @param before_fn The function to call before each unit test in this suite
@@ -344,8 +358,17 @@ struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_un
 
 /* definitions for use with testing application shared memory   */
 #ifdef CONFIG_USERSPACE
+/**
+ * @brief Make data section used by Ztest userspace accessible
+ */
 #define ZTEST_DMEM K_APP_DMEM(ztest_mem_partition)
+/**
+ * @brief Make bss section used by Ztest userspace accessible
+ */
 #define ZTEST_BMEM K_APP_BMEM(ztest_mem_partition)
+/**
+ * @brief Ztest data section for accessing data from userspace
+ */
 #define ZTEST_SECTION K_APP_DMEM_SECTION(ztest_mem_partition)
 extern struct k_mem_partition ztest_mem_partition;
 #else
@@ -353,16 +376,6 @@ extern struct k_mem_partition ztest_mem_partition;
 #define ZTEST_BMEM
 #define ZTEST_SECTION .data
 #endif
-
-/**
- * @defgroup ztest_test Ztest testing macros
- * @ingroup ztest
- *
- * This module eases the testing process by providing helpful macros and other
- * testing structures.
- *
- * @{
- */
 
 /**
  * @brief Fail the currently running test.
@@ -577,7 +590,7 @@ __syscall void sys_clock_tick_set(uint64_t tick);
 #endif
 
 #ifndef ZTEST_UNITTEST
-#include <syscalls/ztest_test.h>
+#include <zephyr/syscalls/ztest_test.h>
 #endif
 
 #endif /* ZEPHYR_TESTSUITE_ZTEST_TEST_H_ */

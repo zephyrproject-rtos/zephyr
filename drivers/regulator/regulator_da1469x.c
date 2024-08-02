@@ -13,6 +13,7 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/device.h>
 #include <DA1469xAB.h>
+#include <zephyr/devicetree.h>
 
 LOG_MODULE_REGISTER(regulator_da1469x, CONFIG_REGULATOR_LOG_LEVEL);
 
@@ -21,6 +22,9 @@ LOG_MODULE_REGISTER(regulator_da1469x, CONFIG_REGULATOR_LOG_LEVEL);
 
 #define DA1469X_LDO_3V0_MODE_VBAT				BIT(8)
 #define DA1469X_LDO_3V0_MODE_VBUS				BIT(9)
+
+#define PLL_FREQ	DT_PROP(DT_NODELABEL(pll), clock_frequency)
+#define PLL_VDD_UV	1200000
 
 static const struct linear_range curren_ranges[] = {
 	LINEAR_RANGE_INIT(30000, 30000, 0, 31),
@@ -281,6 +285,20 @@ static int regulator_da1469x_set_voltage(const struct device *dev, int32_t min_u
 	uint16_t idx;
 	uint32_t mask;
 
+	if ((SystemCoreClock == PLL_FREQ) && (config->rail == VDD)) {
+		/* PLL requires that VDD be @1.2V */
+		if (max_uv < PLL_VDD_UV) {
+			return -EPERM;
+		}
+		/*
+		 * The get index API should select the min voltage;
+		 * make sure the correct voltage is applied.
+		 */
+		if (min_uv < PLL_VDD_UV) {
+			min_uv = PLL_VDD_UV;
+		}
+	}
+
 	ret = linear_range_group_get_win_index(config->desc->voltage_ranges,
 					       config->desc->voltage_range_count,
 					       min_uv, max_uv, &idx);
@@ -307,7 +325,7 @@ static int regulator_da1469x_get_voltage(const struct device *dev,
 	uint16_t idx;
 
 	if (config->desc->voltage_idx_mask) {
-		idx = FIELD_GET(CRG_TOP->POWER_CTRL_REG, config->desc->voltage_idx_mask);
+		idx = FIELD_GET(config->desc->voltage_idx_mask, CRG_TOP->POWER_CTRL_REG);
 	} else {
 		idx = 0;
 	}
@@ -358,8 +376,8 @@ static int regulator_da1469x_get_current_limit(const struct device *dev,
 	if (config->desc->current_ranges == NULL) {
 		return -ENOTSUP;
 	}
-	idx = FIELD_GET(*config->desc->dcdc_register,
-			DCDC_DCDC_V14_REG_DCDC_V14_CUR_LIM_MAX_HV_Msk);
+	idx = FIELD_GET(DCDC_DCDC_V14_REG_DCDC_V14_CUR_LIM_MAX_HV_Msk,
+			*config->desc->dcdc_register);
 	ret = linear_range_group_get_value(config->desc->current_ranges, 1, idx, curr_ua);
 
 	return ret;
@@ -390,7 +408,7 @@ static int regulator_da1469x_init(const struct device *dev)
 	return regulator_common_init(dev, 0);
 }
 
-#if IS_ENABLED(CONFIG_PM_DEVICE)
+#if defined(CONFIG_PM_DEVICE)
 static int regulator_da1469x_pm_action(const struct device *dev,
 				       enum pm_device_action action)
 {
@@ -442,7 +460,8 @@ static int regulator_da1469x_pm_action(const struct device *dev,
 			(DT_PROP(node, renesas_regulator_dcdc_vbat_high) *     \
 			DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_HV_Msk) |            \
 			(DT_PROP(node, renesas_regulator_dcdc_vbat_low) *      \
-			DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_LV_Msk)              \
+			DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_LV_Msk),             \
+		.rail = rail_id,	\
 	};                                                                     \
 	PM_DEVICE_DT_DEFINE(node, regulator_da1469x_pm_action);                \
 	DEVICE_DT_DEFINE(node, regulator_da1469x_init,                         \

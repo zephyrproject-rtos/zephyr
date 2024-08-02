@@ -19,6 +19,7 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/posix/fnmatch.h>
 
 LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -54,6 +55,8 @@ struct http_server_ctx {
 static struct http_server_ctx server_ctx;
 static K_SEM_DEFINE(server_start, 0, 1);
 static bool server_running;
+
+static void close_client_connection(struct http_client_ctx *client);
 
 int http_server_init(struct http_server_ctx *ctx)
 {
@@ -208,6 +211,8 @@ int http_server_init(struct http_server_ctx *ctx)
 
 	if (failed >= svc_count) {
 		LOG_ERR("All services failed (%d)", failed);
+		/* Close eventfd socket */
+		zsock_close(ctx->fds[0].fd);
 		return -ESRCH;
 	}
 
@@ -240,7 +245,7 @@ static int accept_new_client(int server_fd)
 	return new_socket;
 }
 
-static int close_all_sockets(struct http_server_ctx *ctx)
+static void close_all_sockets(struct http_server_ctx *ctx)
 {
 	zsock_close(ctx->fds[0].fd); /* close eventfd */
 	ctx->fds[0].fd = -1;
@@ -250,11 +255,17 @@ static int close_all_sockets(struct http_server_ctx *ctx)
 			continue;
 		}
 
-		zsock_close(ctx->fds[i].fd);
+		if (i < ctx->listen_fds) {
+			zsock_close(ctx->fds[i].fd);
+		} else {
+			struct http_client_ctx *client =
+				&server_ctx.clients[i - ctx->listen_fds];
+
+			close_client_connection(client);
+		}
+
 		ctx->fds[i].fd = -1;
 	}
-
-	return 0;
 }
 
 static void client_release_resources(struct http_client_ctx *client)
@@ -292,7 +303,7 @@ static void client_release_resources(struct http_client_ctx *client)
 	}
 }
 
-static void close_client_connection(struct http_client_ctx *client)
+void http_server_release_client(struct http_client_ctx *client)
 {
 	int i;
 	struct k_work_sync sync;
@@ -300,7 +311,6 @@ static void close_client_connection(struct http_client_ctx *client)
 	__ASSERT_NO_MSG(IS_ARRAY_ELEMENT(server_ctx.clients, client));
 
 	k_work_cancel_delayable_sync(&client->inactivity_timer, &sync);
-	zsock_close(client->fd);
 	client_release_resources(client);
 
 	server_ctx.num_clients--;
@@ -314,7 +324,15 @@ static void close_client_connection(struct http_client_ctx *client)
 
 	memset(client, 0, sizeof(struct http_client_ctx));
 	client->fd = INVALID_SOCK;
+}
 
+static void close_client_connection(struct http_client_ctx *client)
+{
+	int fd = client->fd;
+
+	http_server_release_client(client);
+
+	(void)zsock_close(fd);
 }
 
 static void client_timeout(struct k_work *work)
@@ -353,9 +371,11 @@ static void init_client_ctx(struct http_client_ctx *client, int new_socket)
 	http_client_timer_restart(client);
 
 	ARRAY_FOR_EACH(client->streams, i) {
-		client->streams[i].stream_state = HTTP_SERVER_STREAM_IDLE;
+		client->streams[i].stream_state = HTTP2_STREAM_IDLE;
 		client->streams[i].stream_id = 0;
 	}
+
+	client->current_stream = NULL;
 }
 
 static int handle_http_preface(struct http_client_ctx *client)
@@ -425,13 +445,16 @@ static int handle_http_request(struct http_client_ctx *client)
 			ret = handle_http_frame_window_update(client);
 			break;
 		case HTTP_SERVER_FRAME_RST_STREAM_STATE:
-			ret = handle_http_frame_rst_frame(client);
+			ret = handle_http_frame_rst_stream(client);
 			break;
 		case HTTP_SERVER_FRAME_GOAWAY_STATE:
 			ret = handle_http_frame_goaway(client);
 			break;
 		case HTTP_SERVER_FRAME_PRIORITY_STATE:
 			ret = handle_http_frame_priority(client);
+			break;
+		case HTTP_SERVER_FRAME_PADDING_STATE:
+			ret = handle_http_frame_padding(client);
 			break;
 		case HTTP_SERVER_DONE_STATE:
 			ret = handle_http_done(client);
@@ -471,7 +494,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 		if (ret < 0) {
 			ret = -errno;
 			LOG_DBG("poll failed (%d)", ret);
-			return ret;
+			goto closing;
 		}
 
 		if (ret == 0) {
@@ -482,6 +505,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 		if (ret == 1 && ctx->fds[0].revents) {
 			eventfd_read(ctx->fds[0].fd, &value);
 			LOG_DBG("Received stop event. exiting ..");
+			ret = 0;
 			goto closing;
 		}
 
@@ -515,7 +539,8 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 				/* Listening socket error, abort. */
 				LOG_ERR("Listening socket error, aborting.");
-				return -sock_error;
+				ret = -sock_error;
+				goto closing;
 
 			}
 
@@ -606,7 +631,8 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 closing:
 	/* Close all client connections and the server socket */
-	return close_all_sockets(ctx);
+	close_all_sockets(ctx);
+	return ret;
 }
 
 /* Compare two strings where the terminator is either "\0" or "?" */
@@ -625,11 +651,45 @@ static int compare_strings(const char *s1, const char *s2)
 	return 1; /* Strings are not equal */
 }
 
+static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
+{
+	struct http_resource_detail *detail;
+
+	detail = (struct http_resource_detail *)resource->detail;
+
+	if (is_websocket) {
+		if (detail->type != HTTP_RESOURCE_TYPE_WEBSOCKET) {
+			return true;
+		}
+	} else {
+		if (detail->type == HTTP_RESOURCE_TYPE_WEBSOCKET) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 struct http_resource_detail *get_resource_detail(const char *path,
-						 int *path_len)
+						 int *path_len,
+						 bool is_websocket)
 {
 	HTTP_SERVICE_FOREACH(service) {
 		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
+			if (skip_this(resource, is_websocket)) {
+				continue;
+			}
+
+			if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
+				int ret;
+
+				ret = fnmatch(resource->resource, path, FNM_PATHNAME);
+				if (ret == 0) {
+					*path_len = strlen(resource->resource);
+					return resource->detail;
+				}
+			}
+
 			if (compare_strings(path, resource->resource) == 0) {
 				NET_DBG("Got match for %s", resource->resource);
 
@@ -708,13 +768,17 @@ static void http_server_thread(void *p1, void *p2, void *p3)
 			ret = http_server_init(&server_ctx);
 			if (ret < 0) {
 				LOG_ERR("Failed to initialize HTTP2 server");
-				return;
+				goto again;
 			}
 
 			ret = http_server_run(&server_ctx);
-			if (server_running) {
-				LOG_INF("Re-starting server (%d)", ret);
+			if (!server_running) {
+				continue;
 			}
+
+again:
+			LOG_INF("Re-starting server (%d)", ret);
+			k_sleep(K_MSEC(CONFIG_HTTP_SERVER_RESTART_DELAY));
 		}
 	}
 }

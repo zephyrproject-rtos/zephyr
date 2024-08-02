@@ -694,6 +694,7 @@ static isoal_status_t isoal_rx_append_to_sdu(struct isoal_sink *sink,
 			const struct isoal_sink_session *session = &sink->session;
 
 			err |= session->sdu_write(sdu->contents.dbuf,
+						  sp->sdu_written,
 						  pdu_payload,
 						  consume_len);
 			pdu_payload += consume_len;
@@ -922,7 +923,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	 *     Request for Clarification - Recombination actions when only
 	 *     padding unframed PDUs are received:
 	 *     The clarification was to be rejected, but the discussion in the
-	 *     comments from March 3rd 2023 were interpretted as "We are
+	 *     comments from March 3rd 2023 were interpreted as "We are
 	 *     expecting a PDU which ISOAL should convert into an SDU;
 	 *     instead we receive a padding PDU, which we cannot turn into a
 	 *     SDU, so the SDU wasn't received at all, and should be reported
@@ -1158,7 +1159,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 
 	if (pdu_padding && !pdu_err && !seq_err) {
 		/* Check and release missed SDUs on receiving padding PDUs */
-		ISOAL_LOG_DBGV("[%p] Recevied padding", sink);
+		ISOAL_LOG_DBGV("[%p] Received padding", sink);
 		err |= isoal_rx_framed_release_lost_sdus(sink, pdu_meta, false, timestamp);
 	}
 
@@ -1669,12 +1670,12 @@ static bool isoal_is_time_stamp_valid(const struct isoal_source *source_ctx,
 
 /**
  * Queue the PDU in production in the relevant LL transmit queue. If the
- * attmept to release the PDU fails, the buffer linked to the PDU will be released
+ * attempt to release the PDU fails, the buffer linked to the PDU will be released
  * and it will not be possible to retry the emit operation on the same PDU.
  * @param[in]  source_ctx        ISO-AL source reference for this CIS / BIS
  * @param[in]  produced_pdu      PDU in production
  * @param[in]  pdu_ll_id         LLID to be set indicating the type of fragment
- * @param[in]  sdu_fragments     Nummber of SDU HCI fragments consumed
+ * @param[in]  sdu_fragments     Number of SDU HCI fragments consumed
  * @param[in]  payload_number    CIS / BIS payload number
  * @param[in]  payload_size      Length of the data written to the PDU
  * @return     Error status of the operation
@@ -2031,7 +2032,7 @@ static isoal_status_t isoal_tx_unframed_produce(isoal_source_handle_t source_hdl
 
 		/* Get group reference point for this PDU based on the actual
 		 * event being set. This might introduce some errors as the
-		 * group refernce point for future events could drift. However
+		 * group reference point for future events could drift. However
 		 * as the time offset calculation requires an absolute value,
 		 * this seems to be the best candidate.
 		 */
@@ -2244,7 +2245,7 @@ static isoal_status_t isoal_insert_seg_header_timeoffset(struct isoal_source *so
 }
 
 /**
- * @breif  Updates the cmplt flag and length in the last segmentation header written
+ * @brief  Updates the cmplt flag and length in the last segmentation header written
  * @param  source     source handle
  * @param  cmplt      ew value for complete flag
  * param   add_length length to add
@@ -2324,7 +2325,7 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 
 	/* Get the drift updated group reference point for this event based on
 	 * the actual event being set. This might introduce some errors as the
-	 * group refernce point for future events could drift. However as the
+	 * group reference point for future events could drift. However as the
 	 * time offset calculation requires an absolute value, this seems to be
 	 * the best candidate.
 	 */
@@ -2375,7 +2376,7 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 
 			if (time_stamp_is_valid) {
 				/* Use provided time stamp for time offset
-				 * calcutation
+				 * calculation
 				 */
 				time_stamp_selected = tx_sdu->time_stamp;
 				ISOAL_LOG_DBGV("[%p] Selecting Time Stamp (%lu) from SDU",
@@ -2452,7 +2453,7 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 			       actual_grp_ref_point);
 
 		/* If the event selected is the last event segmented for, then
-		 * it is possible that that some payloads have already been
+		 * it is possible that some payloads have already been
 		 * released for this event. Segmentation should continue from
 		 * that payload.
 		 */
@@ -2805,7 +2806,7 @@ static isoal_status_t isoal_tx_framed_event_prepare_handle(isoal_source_handle_t
  * @details Fragmentation will occur individually for every enabled source
  *
  * @param source_hdl[in] Handle of destination source
- * @param tx_sdu[in]     SDU along with packet boudary state
+ * @param tx_sdu[in]     SDU along with packet boundary state
  * @return Status
  */
 isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,

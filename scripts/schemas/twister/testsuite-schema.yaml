@@ -120,8 +120,11 @@ schema;scenario-schema:
           required: false
           sequence:
             - type: str
-        "robot_test_path":
-          type: str
+        "robot_testsuite":
+          type: any
+          required: false
+        "robot_option":
+          type: any
           required: false
         "record":
           type: map
@@ -130,6 +133,11 @@ schema;scenario-schema:
             "regex":
               type: str
               required: true
+            "as_json":
+              type: seq
+              required: false
+              sequence:
+                - type: str
         "bsim_exe_name":
           type: str
           required: false

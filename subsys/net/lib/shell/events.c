@@ -98,6 +98,12 @@ static char *get_l3_desc(struct event_msg *msg,
 		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
+	case NET_EVENT_IPV6_ADDR_DEPRECATED:
+		*desc = "IPv6 address";
+		*desc2 = "deprecated";
+		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+				     extra_info_len);
+		break;
 	case NET_EVENT_IPV6_ADDR_DEL:
 		*desc = "IPv6 address";
 		*desc2 = "del";
@@ -188,6 +194,26 @@ static char *get_l3_desc(struct event_msg *msg,
 		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
+	case NET_EVENT_IPV6_PE_ENABLED:
+		*desc = "IPv6 PE";
+		*desc2 = "enabled";
+		break;
+	case NET_EVENT_IPV6_PE_DISABLED:
+		*desc = "IPv6 PE";
+		*desc2 = "disabled";
+		break;
+	case NET_EVENT_IPV6_PE_FILTER_ADD:
+		*desc = "IPv6 PE filter";
+		*desc2 = "add";
+		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+				     extra_info_len);
+		break;
+	case NET_EVENT_IPV6_PE_FILTER_DEL:
+		*desc = "IPv6 PE filter";
+		*desc2 = "del";
+		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+				     extra_info_len);
+		break;
 	case NET_EVENT_IPV4_ADDR_ADD:
 		*desc = "IPv4 address";
 		*desc2 = "add";
@@ -230,6 +256,18 @@ static char *get_l3_desc(struct event_msg *msg,
 		*desc = "DHCPv4";
 		*desc2 = "stop";
 		break;
+	case NET_EVENT_IPV4_ACD_SUCCEED:
+		*desc = "IPv4 ACD";
+		*desc2 = "ok";
+		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
+	case NET_EVENT_IPV4_ACD_FAILED:
+		*desc = "IPv4 ACD";
+		*desc2 = "fail";
+		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
 	}
 
 	return info;
@@ -245,6 +283,18 @@ static const char *get_l4_desc(uint32_t event)
 		break;
 	case NET_EVENT_L4_DISCONNECTED:
 		desc = "disconnected";
+		break;
+	case NET_EVENT_L4_IPV4_CONNECTED:
+		desc = "IPv4 connectivity available";
+		break;
+	case NET_EVENT_L4_IPV4_DISCONNECTED:
+		desc = "IPv4 connectivity lost";
+		break;
+	case NET_EVENT_L4_IPV6_CONNECTED:
+		desc = "IPv6 connectivity available";
+		break;
+	case NET_EVENT_L4_IPV6_DISCONNECTED:
+		desc = "IPv6 connectivity lost";
 		break;
 	case NET_EVENT_DNS_SERVER_ADD:
 		desc = "DNS server add";

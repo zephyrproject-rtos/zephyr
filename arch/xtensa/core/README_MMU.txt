@@ -254,7 +254,7 @@ of access variability.  But it also means that the TLB entries end up
 being stored twice in the same CPU, wasting transistors that could
 presumably store other useful data.
 
-But it it also important to note that the L1 data cache on Xtensa is
+But it is also important to note that the L1 data cache on Xtensa is
 incoherent!  The cache being used for refill reflects the last access
 on the current CPU only, and not of the underlying memory being
 mapped.  Page table changes in the data cache of one CPU will be

@@ -15,7 +15,7 @@
 ZTEST_BMEM static int count;
 ZTEST_BMEM static int ret = TC_PASS;
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
 	if (reason != K_ERR_STACK_CHK_FAIL) {
 		printk("wrong error type\n");

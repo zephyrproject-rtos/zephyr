@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	aliases {
-		spi-flash0 = &mx25r64;
-	};
-};
-
 &interface_to_nrf52840 {
 	gpio-map = <0 0 &gpio0 17 0>,
 		   <1 0 &gpio0 18 0>,

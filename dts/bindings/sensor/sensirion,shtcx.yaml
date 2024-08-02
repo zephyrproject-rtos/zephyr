@@ -1,24 +1,30 @@
 # Copyright (c) 2021, Thomas Stranger
 # SPDX-License-Identifier: Apache-2.0
 
-description: Sensirion SHTCx humidity and temperature sensor
+description: |
+  Sensirion SHTCx humidity and temperature sensor
+
+  Additionally use "sensirion,shtc1" or "sensirion,shtc3" compatibles
+  such that a generic driver can consider chip specific behaviour.
+
+  Example device tree node describing a Sensirion SHTC3 Sensor on the i2c0 bus:
+
+   &i2c0 {
+      status = "okay";
+      clock-frequency = <I2C_BITRATE_FAST>;
+      shtc3@70 {
+        compatible = "sensirion,shtc3", "sensirion,shtcx";
+        reg = <0x70>;
+        measure-mode = "normal";
+        clock-stretching;
+     };
+   };
 
 compatible: "sensirion,shtcx"
 
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-  chip:
-    type: string
-    required: true
-    description: |
-      Specifies which chip exactly is used. This is necessary to get exact
-      timing information and supported command set.
-      SHTC3 has an additional sleep mode that is entered between measurements.
-    enum:
-      - "shtc1"
-      - "shtc3"
-
   measure-mode:
     type: string
     required: true

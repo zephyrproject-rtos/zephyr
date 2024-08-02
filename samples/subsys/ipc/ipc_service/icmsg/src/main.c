@@ -8,7 +8,9 @@
 #include <zephyr/device.h>
 
 #include <zephyr/ipc/ipc_service.h>
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <nrf53_cpunet_mgmt.h>
+#endif
 #include <string.h>
 
 #include "common.h"
@@ -21,8 +23,12 @@ K_SEM_DEFINE(bound_sem, 0, 1);
 static unsigned char expected_message = 'A';
 static size_t expected_len = PACKET_SIZE_START;
 
+static size_t received;
+
 static void ep_bound(void *priv)
 {
+	received = 0;
+
 	k_sem_give(&bound_sem);
 	LOG_INF("Ep bounded");
 }
@@ -36,6 +42,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 	__ASSERT(len == expected_len, "Unexpected length. Expected %zu, got %zu",
 		expected_len, len);
 
+	received += len;
 	expected_message++;
 	expected_len++;
 
@@ -63,6 +70,7 @@ static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
 		ret = ipc_service_send(ep, &msg, mlen);
 		if (ret == -ENOMEM) {
 			/* No space in the buffer. Retry. */
+			ret = 0;
 			continue;
 		} else if (ret < 0) {
 			LOG_ERR("Failed to send (%c) failed with ret %d", msg.data[0], ret);
@@ -104,6 +112,11 @@ int main(void)
 
 	LOG_INF("IPC-service HOST demo started");
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+	LOG_INF("Run network core");
+	nrf53_cpunet_enable(true);
+#endif
+
 	ipc0_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
 
 	ret = ipc_service_open_instance(ipc0_instance);
@@ -126,9 +139,12 @@ int main(void)
 		return ret;
 	}
 
-	LOG_INF("Wait 500ms. Let net core finish its sends");
+	LOG_INF("Wait 500ms. Let remote core finish its sends");
 	k_msleep(500);
 
+	LOG_INF("Received %zu [Bytes] in total", received);
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
 	LOG_INF("Stop network core");
 	nrf53_cpunet_enable(false);
 
@@ -167,6 +183,7 @@ int main(void)
 		LOG_ERR("send_for_time() failure");
 		return ret;
 	}
+#endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 	LOG_INF("IPC-service HOST demo ended");
 

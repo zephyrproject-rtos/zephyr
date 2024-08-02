@@ -20,7 +20,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
-#ifdef CONFIG_SOC_SERIES_ESP32C3
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
@@ -37,6 +37,15 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 /* gpio structs in esp32c3 series are different from xtensa ones */
 #define out out.data
 #define in in.data
+#define out_w1ts out_w1ts.val
+#define out_w1tc out_w1tc.val
+/* arch_curr_cpu() is not available for riscv based chips */
+#define CPU_ID()  0
+#define ISR_HANDLER isr_handler_t
+#elif defined(CONFIG_SOC_SERIES_ESP32C6)
+/* gpio structs in esp32c6 are also different */
+#define out out.out_data_orig
+#define in in.in_data_next
 #define out_w1ts out_w1ts.val
 #define out_w1tc out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */

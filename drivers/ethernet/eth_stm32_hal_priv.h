@@ -9,6 +9,15 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
+/* Naming of the  ETH PTP Config Status changes depending on the stm32 serie */
+#if defined(CONFIG_SOC_SERIES_STM32F4X)
+#define ETH_STM32_PTP_CONFIGURED HAL_ETH_PTP_CONFIGURATED
+#define ETH_STM32_PTP_NOT_CONFIGURED HAL_ETH_PTP_NOT_CONFIGURATED
+#else
+#define ETH_STM32_PTP_CONFIGURED HAL_ETH_PTP_CONFIGURED
+#define ETH_STM32_PTP_NOT_CONFIGURED HAL_ETH_PTP_NOT_CONFIGURED
+#endif /* stm32F7x or sm32F4x */
+
 #define ST_OUI_B0 0x00
 #define ST_OUI_B1 0x80
 #define ST_OUI_B2 0xE1

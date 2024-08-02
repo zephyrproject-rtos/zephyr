@@ -427,6 +427,10 @@ static void dfu_timer_work_handler(struct k_work *item)
 				LOG_ERR("usb_dc_detach failed");
 			}
 			dfu_enter_idle();
+
+			/* Wait 1 SOF period to ensure the host notices the deconnection. */
+			k_sleep(K_MSEC(1));
+
 			if (usb_dc_attach()) {
 				LOG_ERR("usb_dc_attach failed");
 			}

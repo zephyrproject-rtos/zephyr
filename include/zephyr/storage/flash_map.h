@@ -188,6 +188,29 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
 
 /**
+ * @brief Erase flash area or fill with erase-value
+ *
+ * On program-erase devices this function behaves exactly like flash_area_erase.
+ * On RAM non-volatile device it will call erase, if driver provides such
+ * callback, or will fill given range with erase-value defined by driver.
+ * This function should be only used by code that has not been written
+ * to directly support devices that do not require erase and rely on
+ * device being erased prior to some operations.
+ * Note that emulated erase, on devices that do not require, is done
+ * via write, which affects endurance of device.
+ *
+ * @see flash_area_erase()
+ * @see flash_flatten()
+ *
+ * @param[in] fa  Flash area
+ * @param[in] off Offset relative from beginning of flash area.
+ * @param[in] len Number of bytes to be erase
+ *
+ * @return  0 on success, negative errno code on fail.
+ */
+int flash_area_flatten(const struct flash_area *fa, off_t off, size_t len);
+
+/**
  * @brief Get write block size of the flash area
  *
  * Currently write block size might be treated as read block size, although
@@ -302,6 +325,15 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define FIXED_PARTITION_OFFSET(label) DT_REG_ADDR(DT_NODELABEL(label))
 
 /**
+ * Get fixed-partition offset from DTS node
+ *
+ * @param node DTS node of a partition
+ *
+ * @return fixed-partition offset, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_NODE_OFFSET(node) DT_REG_ADDR(node)
+
+/**
  * Get fixed-partition size for DTS node label
  *
  * @param label DTS node label
@@ -309,6 +341,15 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return fixed-partition offset, as defined for the partition in DTS.
  */
 #define FIXED_PARTITION_SIZE(label) DT_REG_SIZE(DT_NODELABEL(label))
+
+/**
+ * Get fixed-partition size for DTS node
+ *
+ * @param node DTS node of a partition
+ *
+ * @return fixed-partition size, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_NODE_SIZE(node) DT_REG_SIZE(node)
 
 /**
  * Get device pointer for device the area/partition resides on
@@ -329,6 +370,16 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define FIXED_PARTITION_DEVICE(label) \
 	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label)))
+
+/**
+ * Get device pointer for device the area/partition resides on
+ *
+ * @param node DTS node of a partition
+ *
+ * @return Pointer to a device.
+ */
+#define FIXED_PARTITION_NODE_DEVICE(node) \
+	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(node))
 
 #ifdef __cplusplus
 }

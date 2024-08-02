@@ -170,7 +170,7 @@ applying to both images debug optimizations:
          :board: reel_board
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_DEBUG_OPTIMIZATIONS=y -Dmcuboot_DEBUG_OPTIMIZATIONS=y
+         :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_DEBUG_OPTIMIZATIONS=y -Dmcuboot_CONFIG_DEBUG_OPTIMIZATIONS=y
          :compact:
 
    .. group-tab:: ``cmake``
@@ -180,7 +180,7 @@ applying to both images debug optimizations:
          :app: share/sysbuild
          :board: reel_board
          :goals: build
-         :gen-args: -DAPP_DIR=samples/hello_world -DSB_CONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_DEBUG_OPTIMIZATIONS=y -Dmcuboot_DEBUG_OPTIMIZATIONS=y
+         :gen-args: -DAPP_DIR=samples/hello_world -DSB_CONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_DEBUG_OPTIMIZATIONS=y -Dmcuboot_CONFIG_DEBUG_OPTIMIZATIONS=y
          :compact:
 
 See the following subsections for more information.
@@ -587,6 +587,8 @@ a Kconfig option, which would make ``my_sample`` conditionally build-only.
    Applications marked as build-only can still be flashed manually, using
    ``west flash --domain my_sample``. As such, the ``BUILD_ONLY`` option only
    controls the default behavior of ``west flash``.
+
+.. _sysbuild_application_configuration:
 
 Zephyr application configuration
 ================================

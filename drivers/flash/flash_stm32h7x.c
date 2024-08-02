@@ -14,8 +14,13 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/barrier.h>
 #include <soc.h>
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#include <stm32h7rsxx_ll_bus.h>
+#include <stm32h7rsxx_ll_utils.h>
+#else
 #include <stm32h7xx_ll_bus.h>
 #include <stm32h7xx_ll_utils.h>
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 #include "flash_stm32.h"
 #include "stm32_hsem.h"
@@ -117,13 +122,40 @@ static int flash_stm32_check_status(const struct device *dev)
 	 * ECC errors. Corrected data is returned for single ECC
 	 * errors, so in this case we just log a warning.
 	 */
-	uint32_t const error_bank1 = (FLASH_FLAG_ALL_ERRORS_BANK1
-				      & ~FLASH_FLAG_SNECCERR_BANK1);
 #ifdef DUAL_BANK
 	uint32_t const error_bank2 = (FLASH_FLAG_ALL_ERRORS_BANK2
 				      & ~FLASH_FLAG_SNECCERR_BANK2);
 #endif
 	uint32_t sr;
+
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	uint32_t const error_bank = (FLASH_FLAG_ECC_ERRORS
+				      & ~FLASH_FLAG_SNECCERR
+				      & ~FLASH_FLAG_DBECCERR);
+
+
+	/* Read the Interrupt status flags. */
+	sr = regs->ISR;
+	if (sr & (FLASH_FLAG_SNECCERR)) {
+		uint32_t word = regs->ECCSFADDR & FLASH_ECCSFADDR_SEC_FADD;
+
+		LOG_WRN("Bank%d ECC error at 0x%08x", 1,
+			word * 4 * FLASH_NB_32BITWORD_IN_FLASHWORD);
+	}
+
+	if (sr & (FLASH_FLAG_DBECCERR)) {
+		uint32_t word = regs->ECCDFADDR & FLASH_ECCDFADDR_DED_FADD;
+
+		LOG_WRN("Bank%d ECC error at 0x%08x", 1,
+			word * 4 * FLASH_NB_32BITWORD_IN_FLASHWORD);
+	}
+
+	/* Clear the ECC flags (including FA) */
+	regs->ICR = FLASH_FLAG_ECC_ERRORS;
+	if (sr & error_bank) {
+#else
+	uint32_t const error_bank1 = (FLASH_FLAG_ALL_ERRORS_BANK1
+				      & ~FLASH_FLAG_SNECCERR_BANK1);
 
 	/* Read the status flags. */
 	sr = regs->SR1;
@@ -135,7 +167,9 @@ static int flash_stm32_check_status(const struct device *dev)
 	}
 	/* Clear the flags (including FA1R) */
 	regs->CCR1 = FLASH_FLAG_ALL_BANK1;
+
 	if (sr & error_bank1) {
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 		LOG_ERR("Status Bank%d: 0x%08x", 1, sr);
 		return -EIO;
 	}

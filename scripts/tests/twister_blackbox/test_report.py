@@ -13,10 +13,12 @@ import os
 import pytest
 import shutil
 import sys
+import re
 
 from lxml import etree
 
-from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock
+# pylint: disable=no-name-in-module
+from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
 
@@ -105,6 +107,15 @@ class TestReport:
             ['qemu_x86'],
             "TEST_LOG_FILE.log"
         ),
+    ]
+    TESTDATA_7 = [
+        (
+            os.path.join(TEST_DATA, 'tests', 'one_fail_two_error_one_pass'),
+            ['qemu_x86'],
+            [r'one_fail_two_error_one_pass.agnostic.group1.subgroup2 on qemu_x86 FAILED \(.*\)',
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup3 on qemu_x86 ERROR \(Build failure\)',
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup4 on qemu_x86 ERROR \(Build failure\)'],
+        )
     ]
 
     @classmethod
@@ -333,14 +344,25 @@ class TestReport:
         assert str(sys_exit.value) == '0'
 
     @pytest.mark.parametrize(
-        'test_path, expected_testcase_count',
-        [(os.path.join(TEST_DATA, 'tests', 'dummy'), 6),],
-        ids=['dummy tests']
+        'test_path, flags, expected_testcase_counts',
+        [
+            (
+                os.path.join(TEST_DATA, 'tests', 'dummy'),
+                ['--detailed-skipped-report'],
+                {'qemu_x86': 5, 'frdm_k64f': 1}
+            ),
+            (
+                os.path.join(TEST_DATA, 'tests', 'dummy'),
+                ['--detailed-skipped-report', '--report-filtered'],
+                {'qemu_x86': 6, 'frdm_k64f': 6}
+            ),
+        ],
+        ids=['dummy tests', 'dummy tests with filtered']
     )
-    def test_detailed_skipped_report(self, out_path, test_path, expected_testcase_count):
+    def test_detailed_skipped_report(self, out_path, test_path, flags, expected_testcase_counts):
         test_platforms = ['qemu_x86', 'frdm_k64f']
         args = ['-i', '--outdir', out_path, '-T', test_path] + \
-               ['--detailed-skipped-report'] + \
+               flags + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -356,11 +378,46 @@ class TestReport:
         for ts in xml_data.iter('testsuite'):
             testsuite_counter += 1
             # Without the tested flag, filtered testcases would be missing from the report
-            assert len(list(ts.iter('testcase'))) == expected_testcase_count, \
-                   'Not all expected testcases appear in the report.'
+            testcase_count = len(list(ts.iter('testcase')))
+            expected_tc_count = expected_testcase_counts[ts.get('name')]
+            assert testcase_count == expected_tc_count, \
+                   f'Not all expected testcases appear in the report.' \
+                   f' (In {ts.get("name")}, expected {expected_tc_count}, got {testcase_count}.)'
 
         assert testsuite_counter == len(test_platforms), \
                'Some platforms are missing from the XML report.'
+
+    @pytest.mark.parametrize(
+        'test_path, report_filtered, expected_filtered_count',
+        [
+            (os.path.join(TEST_DATA, 'tests', 'dummy'), False, 0),
+            (os.path.join(TEST_DATA, 'tests', 'dummy'), True, 4),
+        ],
+        ids=['no filtered', 'with filtered']
+    )
+    def test_report_filtered(self, out_path, test_path, report_filtered, expected_filtered_count):
+        test_platforms = ['qemu_x86', 'frdm_k64f']
+        args = ['-i', '--outdir', out_path, '-T', test_path] + \
+               (['--report-filtered'] if report_filtered else []) + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        assert str(sys_exit.value) == '0'
+
+        with open(os.path.join(out_path, 'twister.json')) as f:
+            j = json.load(f)
+
+        testsuites = j.get('testsuites')
+        assert testsuites, 'No testsuites found.'
+        statuses = [testsuite.get('status') for testsuite in testsuites]
+        filtered_status_count = statuses.count("filtered")
+        assert filtered_status_count == expected_filtered_count, \
+            f'Expected {expected_filtered_count} filtered statuses, got {filtered_status_count}.'
 
     def test_enable_size_report(self, out_path):
         test_platforms = ['qemu_x86', 'frdm_k64f']
@@ -397,3 +454,65 @@ class TestReport:
                 if ts['name'] == expected_rel_path and not 'reason' in ts
             ]
         )
+
+    @pytest.mark.parametrize(
+        'test_path, test_platforms, expected_content',
+        TESTDATA_7,
+        ids=[
+            'Report summary test'
+        ]
+    )
+
+    def test_report_summary(self, out_path, capfd, test_path, test_platforms, expected_content):
+        args = ['-i', '--outdir', out_path, '-T', test_path] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        assert str(sys_exit.value) == '1'
+
+        capfd.readouterr()
+
+        clear_log_in_test()
+
+        args += ['--report-summary']
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        for line in expected_content:
+            result = re.search(line, err)
+            assert result, f'missing information in log: {line}'
+
+        capfd.readouterr()
+
+        clear_log_in_test()
+
+        args = ['-i', '--outdir', out_path, '-T', test_path] + \
+               ['--report-summary', '2'] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        lines=0
+        for line in expected_content:
+            result = re.search(line, err)
+            if result: lines += 1
+        assert lines == 2, f'too many or too few lines'

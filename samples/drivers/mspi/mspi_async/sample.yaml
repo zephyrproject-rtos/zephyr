@@ -1,0 +1,13 @@
+sample:
+  name: MSPI Async Sample
+tests:
+  sample.drivers.mspi.async:
+    tags:
+      - mspi
+    filter: dt_compat_enabled("mspi-aps6404l")
+    platform_exclude: hifive_unmatched
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+    depends_on: mspi

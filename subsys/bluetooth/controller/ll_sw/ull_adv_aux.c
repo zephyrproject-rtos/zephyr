@@ -344,7 +344,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (pdu_prev == pdu) {
 					lll_adv_aux_data_enqueue(adv->lll.aux,
@@ -574,7 +574,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (pdu_prev == pdu) {
 					lll_adv_aux_data_enqueue(adv->lll.aux,
@@ -594,7 +594,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 * the double buffer with the first PDU, and
 			 * returned the latest PDU as the new PDU, we
 			 * need to enqueue back the new PDU which is
-			 * infact the latest PDU.
+			 * in fact the latest PDU.
 			 */
 			if (pdu_prev == pdu) {
 				lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
@@ -1055,7 +1055,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (sr_pdu_prev == sr_pdu) {
 					lll_adv_scan_rsp_enqueue(lll, sr_idx);
@@ -1218,7 +1218,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (sr_pdu_prev == sr_pdu) {
 					lll_adv_scan_rsp_enqueue(lll, sr_idx);
@@ -1239,7 +1239,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 * the double buffer with the first PDU, and
 			 * returned the latest PDU as the new PDU, we
 			 * need to enqueue back the new PDU which is
-			 * infact the latest PDU.
+			 * in fact the latest PDU.
 			 */
 			if (sr_pdu_prev == sr_pdu) {
 				lll_adv_aux_data_enqueue(adv->lll.aux, sr_idx);
@@ -2647,7 +2647,7 @@ int ull_adv_aux_stop(struct ll_adv_aux_set *aux)
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_ADV_AUX_BASE + aux_handle,
 					aux, &aux->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, aux_handle, err);
 	if (err) {
 		return err;
 	}
@@ -2993,7 +2993,7 @@ static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 
 	/* NOTE: 16-bit values are sufficient for minimum radio event time
 	 *       reservation, 32-bit are used here so that reservations for
-	 *       whole back-to-back chaining of PDUs can be accomodated where
+	 *       whole back-to-back chaining of PDUs can be accommodated where
 	 *       the required microseconds could overflow 16-bits, example,
 	 *       back-to-back chained Coded PHY PDUs.
 	 */
@@ -3050,7 +3050,7 @@ static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux)
 	/* Calculate the PDU Tx Time and hence the radio event length,
 	 * Always use maximum length for common extended header format so that
 	 * ACAD could be update when periodic advertising is active and the
-	 * time reservation need not be updated everytime avoiding overlapping
+	 * time reservation need not be updated every time avoiding overlapping
 	 * with other active states/roles.
 	 */
 	pdu_len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -

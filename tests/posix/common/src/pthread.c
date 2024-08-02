@@ -382,7 +382,7 @@ ZTEST(pthread, test_pthread_descriptor_leak)
 	pthread_t pthread1;
 
 	/* If we are leaking descriptors, then this loop will never complete */
-	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_COUNT * 2; ++i) {
+	for (size_t i = 0; i < CONFIG_POSIX_THREAD_THREADS_MAX * 2; ++i) {
 		zassert_ok(pthread_create(&pthread1, NULL, create_thread1, NULL),
 			   "unable to create thread %zu", i);
 		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);

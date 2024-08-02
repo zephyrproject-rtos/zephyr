@@ -20,7 +20,6 @@
 		led3 = &status_blue;
 		sw0 = &mode_button;
 		sw1 = &reset_button;
-		spi-flash0 = &mx25l32;
 	};
 
 	chosen {

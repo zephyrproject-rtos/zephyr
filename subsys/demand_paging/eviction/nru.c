@@ -27,38 +27,47 @@
 static void nru_periodic_update(struct k_timer *timer)
 {
 	uintptr_t phys;
-	struct z_page_frame *pf;
+	struct k_mem_page_frame *pf;
 	unsigned int key = irq_lock();
 
-	Z_PAGE_FRAME_FOREACH(phys, pf) {
-		if (!z_page_frame_is_evictable(pf)) {
+	K_MEM_PAGE_FRAME_FOREACH(phys, pf) {
+		if (!k_mem_page_frame_is_evictable(pf)) {
 			continue;
 		}
 
 		/* Clear accessed bit in page tables */
-		(void)arch_page_info_get(pf->addr, NULL, true);
+		(void)arch_page_info_get(k_mem_page_frame_to_virt(pf),
+					 NULL, true);
 	}
 
 	irq_unlock(key);
 }
 
-struct z_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
+struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 {
 	unsigned int last_prec = 4U;
-	struct z_page_frame *last_pf = NULL, *pf;
+	struct k_mem_page_frame *last_pf = NULL, *pf;
 	bool accessed;
 	bool last_dirty = false;
 	bool dirty = false;
-	uintptr_t flags, phys;
+	uintptr_t flags;
+	uint32_t pf_idx;
+	static uint32_t last_pf_idx;
 
-	Z_PAGE_FRAME_FOREACH(phys, pf) {
+	/* similar to K_MEM_PAGE_FRAME_FOREACH except we don't always start at 0 */
+	last_pf_idx = (last_pf_idx + 1) % ARRAY_SIZE(k_mem_page_frames);
+	pf_idx = last_pf_idx;
+	do {
+		pf = &k_mem_page_frames[pf_idx];
+		pf_idx = (pf_idx + 1) % ARRAY_SIZE(k_mem_page_frames);
+
 		unsigned int prec;
 
-		if (!z_page_frame_is_evictable(pf)) {
+		if (!k_mem_page_frame_is_evictable(pf)) {
 			continue;
 		}
 
-		flags = arch_page_info_get(pf->addr, NULL, false);
+		flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, false);
 		accessed = (flags & ARCH_DATA_PAGE_ACCESSED) != 0UL;
 		dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0UL;
 
@@ -83,10 +92,12 @@ struct z_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 			last_pf = pf;
 			last_dirty = dirty;
 		}
-	}
+	} while (pf_idx != last_pf_idx);
+
 	/* Shouldn't ever happen unless every page is pinned */
 	__ASSERT(last_pf != NULL, "no page to evict");
 
+	last_pf_idx = last_pf - k_mem_page_frames;
 	*dirty_ptr = last_dirty;
 
 	return last_pf;
@@ -98,4 +109,23 @@ void k_mem_paging_eviction_init(void)
 {
 	k_timer_start(&nru_timer, K_NO_WAIT,
 		      K_MSEC(CONFIG_EVICTION_NRU_PERIOD));
+}
+
+/*
+ * unused interfaces
+ */
+
+void k_mem_paging_eviction_add(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+
+void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+
+void k_mem_paging_eviction_accessed(uintptr_t phys)
+{
+	ARG_UNUSED(phys);
 }

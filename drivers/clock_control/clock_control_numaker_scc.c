@@ -95,7 +95,7 @@ static inline int numaker_scc_configure(const struct device *dev, clock_control_
 }
 
 /* System clock controller driver registration */
-static struct clock_control_driver_api numaker_scc_api = {
+static const struct clock_control_driver_api numaker_scc_api = {
 	.on = numaker_scc_on,
 	.off = numaker_scc_off,
 	.get_rate = numaker_scc_get_rate,
@@ -156,7 +156,7 @@ static int numaker_scc_init(const struct device *dev)
 		.core_clock = DT_INST_PROP_OR(inst, core_clock, 0),                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &numaker_scc_init, NULL, NULL, &numaker_scc_config_##inst,     \
+	DEVICE_DT_INST_DEFINE(inst, numaker_scc_init, NULL, NULL, &numaker_scc_config_##inst,     \
 			      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &numaker_scc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMICRO_SCC_INIT);

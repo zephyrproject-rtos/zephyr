@@ -107,19 +107,23 @@ static void iso_connected(struct bt_iso_chan *chan)
 	seq_num = 0U;
 	enqueue_cnt = ENQUEUE_COUNT;
 
-	/* Start send timer */
-	k_work_schedule(&iso_send_work, K_MSEC(0));
+	if (chan == default_chan) {
+		/* Start send timer */
+		k_work_schedule(&iso_send_work, K_MSEC(0));
 
-	SET_FLAG(flag_iso_connected);
+		SET_FLAG(flag_iso_connected);
+	}
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
 
-	k_work_cancel_delayable(&iso_send_work);
+	if (chan == default_chan) {
+		k_work_cancel_delayable(&iso_send_work);
 
-	UNSET_FLAG(flag_iso_connected);
+		UNSET_FLAG(flag_iso_connected);
+	}
 }
 
 static void sdu_sent_cb(struct bt_iso_chan *chan)
@@ -188,12 +192,19 @@ static void set_cig_defaults(struct bt_iso_cig_param *param)
 
 }
 
-static void create_cig(void)
+static void create_cig(size_t iso_channels)
 {
+	struct bt_iso_chan *channels[ARRAY_SIZE(iso_chans)];
 	struct bt_iso_cig_param param;
 	int err;
 
+	for (size_t i = 0U; i < iso_channels; i++) {
+		channels[i] = &iso_chans[i];
+	}
+
 	set_cig_defaults(&param);
+	param.num_cis = iso_channels;
+	param.cis_channels = channels;
 
 	err = bt_iso_cig_create(&param, &cig);
 	if (err != 0) {
@@ -385,10 +396,34 @@ static void terminate_cig(void)
 	cig = NULL;
 }
 
+static void reset_bluetooth(void)
+{
+	int err;
+
+	printk("Resetting Bluetooth\n");
+
+	err = bt_disable();
+	if (err != 0) {
+		FAIL("Failed to disable (%d)\n", err);
+
+		return;
+	}
+
+	/* After a disable, all CIGs and BIGs are removed */
+	cig = NULL;
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Failed to re-enable (%d)\n", err);
+
+		return;
+	}
+}
+
 static void test_main(void)
 {
 	init();
-	create_cig();
+	create_cig(1);
 	reconfigure_cig();
 	connect_acl();
 	connect_cis();
@@ -404,13 +439,48 @@ static void test_main(void)
 	PASS("Test passed\n");
 }
 
+static void test_main_disable(void)
+{
+	init();
+
+	/* Setup and connect before disabling */
+	create_cig(ARRAY_SIZE(iso_chans));
+	connect_acl();
+	connect_cis();
+
+	/* Reset BT to see if we can set it up again */
+	reset_bluetooth();
+
+	/* Set everything up again to see if everything still works as expected */
+	create_cig(ARRAY_SIZE(iso_chans));
+	connect_acl();
+	connect_cis();
+
+	while (seq_num < 100U) {
+		k_sleep(K_USEC(interval_us));
+	}
+
+	disconnect_cis();
+	disconnect_acl();
+	terminate_cig();
+
+	PASS("Disable test passed\n");
+}
+
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "central_disable",
+		.test_descr = "CIS central that tests bt_disable for ISO",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_disable,
 	},
 	BSTEST_END_MARKER,
 };

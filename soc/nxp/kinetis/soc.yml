@@ -29,3 +29,44 @@ family:
     socs:
     - name: mkv56f24
     - name: mkv58f24
+  - name: ke1xz
+    socs:
+    - name: mke15z7
+    - name: mke17z7
+    - name: mke17z9
+runners:
+  run_once:
+    '--erase':
+    - run: first
+      runners:
+      - all
+      groups:
+      - qualifiers:
+        - mk64f12
+      - qualifiers:
+        - mk66f18
+      - qualifiers:
+        - mk22f51212
+      - qualifiers:
+        - mk82f25615
+      - qualifiers:
+        - mke18f16
+      - qualifiers:
+        - mkv58f24
+    '--reset':
+    - run: last
+      runners:
+      - all
+      groups:
+      - qualifiers:
+        - mk64f12
+      - qualifiers:
+        - mk66f18
+      - qualifiers:
+        - mk22f51212
+      - qualifiers:
+        - mk82f25615
+      - qualifiers:
+        - mke18f16
+      - qualifiers:
+        - mkv58f24

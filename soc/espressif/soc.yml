@@ -19,3 +19,6 @@ family:
   - name: esp32c3
     socs:
     - name: esp32c3
+  - name: esp32c6
+    socs:
+    - name: esp32c6

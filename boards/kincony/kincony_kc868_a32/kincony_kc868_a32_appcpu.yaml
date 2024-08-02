@@ -1,5 +1,5 @@
 identifier: kincony_kc868_a32/esp32/appcpu
-name: ESP32 DEVKITC WROVER APPCPU
+name: KINCONY-KC868-A32 APPCPU
 type: mcu
 arch: xtensa
 toolchain:

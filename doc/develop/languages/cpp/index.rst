@@ -121,5 +121,133 @@ library can select, from its config,
 compatible C++ standard library unless the Kconfig symbol for a specific C++
 standard library is selected.
 
+Header files and incompatibilities between C and C++
+****************************************************
+
+To interact with each other, C and C++ must share code through header
+files: data structures, macros, static functions,...  While C and C++
+have a large overlap, they're different languages with `known
+incompatibilities`_. C is not just a C++ subset. Standard levels (e.g.:
+"C+11") add another level of complexity as new features are often
+inspired by and copied from the other language but many years later and
+with subtle differences. Making things more complex, compilers often
+offer early prototypes of features before they become
+standardized. Standards can have ambiguities interpreted differently by
+different compilers. Compilers can have bugs and these may need
+workarounds. To help with this, many projects restrict themselves to a
+limited number of toolchains. Zephyr does not.
+
+These compatibility issues affect header files dis-proportionally.  Not
+just because they have to be compatible between C and C++, but also
+because they end up being compiled in a surprisingly high number of other
+source files due to *indirect* inclusion and the `lack of structure and
+headers organization`_ that is typical in real-world projects. So, header
+files are exposed to a much larger variety of toolchains and project
+configurations.
+Adding more constraints, the Zephyr project has demanding policies
+with respect to code style, compiler warnings, static analyzers and
+standard compliance (e.g.: MISRA).
+
+Put together, all these constraints can make writing header files very
+challenging. The purpose of this section is to document some best "header
+practices" and lessons learned in a Zephyr-specific context. While a lot
+of the information here is not Zephyr-specific, this section is not a
+substitute for knowledge of C/C++ standards, textbooks and other
+references.
+
+Testing
+-------
+
+Fortunately, the Zephyr project has an extensive test and CI
+infrastructure that provides coverage baselines, catches issues early,
+enforces policies and maintains such combinatorial explosions under some
+control. The ``tests/lib/cpp/cxx/`` are very useful in this context
+because their ``testcase.yaml`` configuration lets ``twister`` iterate
+quickly over a range of ``-std`` parameters: ``-std=c++98``,
+``-std=c++11``, etc.
+
+Keep in mind unused macros are not compiled.
+
+Designated initializers
+-----------------------
+
+Initialization macros are common in header files as they help reduce
+boilerplate code. C99 added initialization of ``struct`` and ``union``
+types by "designated" member names instead of a list of *bare*
+expressions. Some GCC versions support designated initializers even in
+their C90 mode.
+
+When used at a simple level, designated initializers are less
+error-prone, more readable and more flexible. On the other hand, C99
+allowed a surprisingly large and lax set of possibilities: designated
+initializers can be out of order, duplicated, "nested" (``.a.x =``),
+various other braces can be omitted, designated initializers and not can
+be mixed, etc.
+
+Twenty years later, C++20 added designated initializers to C++ but in
+much more restricted way; partly because a C++ ``struct`` is actually a
+``class``. As described in the C++ proposal number P0329 (which compares
+with C) or in any complete C++ reference, a mix is not allowed and
+initializers must be in order (gaps are allowed).
+
+Interestingly, the new restrictions in C++20 can cause ``gcc -std=c++20``
+to fail to compile code that successfully compiles with
+``gcc -std=c++17``. For example, ``gcc -std=c++17`` and older allow the
+C-style mix of initializers and bare expressions. This fails to compile
+with using ``gcc -std=c++20`` *with the same GCC version*.
+
+Recommendation: to maximize compatibility across different C and C++
+toolchains and standards, designated initializers in Zephyr header files
+should follow all C++20 rules and restrictions. Non-designated, pre-C99
+initialization offers more compatibility and is also allowed but
+designated initialization is the more readable and preferred code
+style. In any case, both styles must never be mixed in the same
+initializer.
+
+Warning: successful compilation is not the end of the incompatibility
+story. For instance, the *evaluation order* of initializer expressions is
+unspecified in C99! It is the (expected) left-to-right order in
+C++20. Other standard revisions may vary. In doubt, do not rely on
+evaluation order (here and elsewhere).
+
+Anonymous unions
+----------------
+
+Anonymous unions (a.k.a. "unnamed" unions) seem to have been part of C++
+from its very beginning. They were not officially added to C until C11.
+As usual, there are differences between C and C++. For instance, C
+supports anonymous unions only as a member of an enclosing ``struct`` or
+``union``, empty lists ``{ }`` have always been allowed in C++ but they
+require C23, etc.
+
+When initializing anonymous members, the expression can be enclosed in
+braces or not. It can be either designated or bare. For maximum
+portability, when initializing *anonymous unions*:
+
+- Do *not* enclose *designated* initializers with braces. This is
+  required by C++20 and above which perceive such braces as mixing bare
+  expressions with (other) designated initializers and fails to compile.
+
+- Do enclose *bare* expressions with braces. This is required by C.
+  Maybe because C is laxer and allows many initialization possibilities
+  and variations, so it may need such braces to disambiguate? Note C
+  does allow omitting most braces in initializer expressions - but not
+  in this particular case of initializing anonymous unions with bare
+  expressions.
+
+Some pre-C11 GCC versions support some form of anonymous unions. They
+unfortunately require enclosing their designated initializers with
+braces which conflicts with this recommendation. This can be solved
+with an ``#ifdef __STDC_VERSION__`` as demonstrated in Zephyr commit
+`c15f029a7108
+<https://github.com/zephyrproject-rtos/zephyr/commit/c15f029a7108>`_ and
+the corresponding code review.
+
+
 .. _`C++ Standard Library`: https://en.wikipedia.org/wiki/C%2B%2B_Standard_Library
 .. _`Standard Template Library (STL)`: https://en.wikipedia.org/wiki/Standard_Template_Library
+.. _`known incompatibilities`: https://en.wikipedia.org/wiki/Compatibility_of_C_and_C%2B%2B
+..  _`lack of structure and headers organization`:
+    https://github.com/zephyrproject-rtos/zephyr/issues/41543
+.. _`gcc commit [C++ PATCH] P0329R4: Designated Initialization`:
+    https://gcc.gnu.org/pipermail/gcc-patches/2017-November/487584.html

@@ -16,4 +16,4 @@ EXPORT_SYMBOL(memcmp);
 EXPORT_SYMBOL(memcpy);
 EXPORT_SYMBOL(memset);
 
-#include <syscall_export_llext.c>
+#include <zephyr/syscall_export_llext.c>

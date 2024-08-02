@@ -122,7 +122,7 @@ void start_scanning(void)
 {
 	/* Start passive scanning */
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
+		.type       = BT_LE_SCAN_TYPE_PASSIVE,
 		.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
 		.interval   = 0x0040,
 		.window     = 0x0020,

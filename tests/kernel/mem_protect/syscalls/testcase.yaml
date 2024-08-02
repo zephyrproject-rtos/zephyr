@@ -1,6 +1,9 @@
 tests:
   kernel.memory_protection.syscalls:
-    platform_exclude: qemu_arc/qemu_arc_em
+    platform_exclude:
+      - qemu_arc/qemu_arc_em
+      # Too few MPU regions for USERSPACE testing
+      - numaker_m2l31ki
     filter: CONFIG_ARCH_HAS_USERSPACE
     arch_exclude:
       - posix

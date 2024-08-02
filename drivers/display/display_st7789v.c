@@ -14,8 +14,7 @@
 #include "display_st7789v.h"
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/display.h>
@@ -25,9 +24,8 @@
 LOG_MODULE_REGISTER(display_st7789v);
 
 struct st7789v_config {
-	struct spi_dt_spec bus;
-	struct gpio_dt_spec cmd_data_gpio;
-	struct gpio_dt_spec reset_gpio;
+	const struct device *mipi_dbi;
+	const struct mipi_dbi_config dbi_config;
 	uint8_t vcom;
 	uint8_t gctrl;
 	bool vdv_vrh_enable;
@@ -73,38 +71,9 @@ static void st7789v_transmit(const struct device *dev, uint8_t cmd,
 			     uint8_t *tx_data, size_t tx_count)
 {
 	const struct st7789v_config *config = dev->config;
-	uint16_t data = cmd;
 
-	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
-	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
-
-	if (config->cmd_data_gpio.port != NULL) {
-		if (cmd != ST7789V_CMD_NONE) {
-			gpio_pin_set_dt(&config->cmd_data_gpio, 1);
-			spi_write_dt(&config->bus, &tx_bufs);
-		}
-
-		if (tx_data != NULL) {
-			tx_buf.buf = tx_data;
-			tx_buf.len = tx_count;
-			gpio_pin_set_dt(&config->cmd_data_gpio, 0);
-			spi_write_dt(&config->bus, &tx_bufs);
-		}
-	} else {
-		tx_buf.buf = &data;
-		tx_buf.len = 2;
-
-		if (cmd != ST7789V_CMD_NONE) {
-			spi_write_dt(&config->bus, &tx_bufs);
-		}
-
-		if (tx_data != NULL) {
-			for (size_t index = 0; index < tx_count; ++index) {
-				data = 0x0100 | tx_data[index];
-				spi_write_dt(&config->bus, &tx_bufs);
-			}
-		}
-	}
+	mipi_dbi_command_write(config->mipi_dbi, &config->dbi_config, cmd,
+			       tx_data, tx_count);
 }
 
 static void st7789v_exit_sleep(const struct device *dev)
@@ -115,18 +84,19 @@ static void st7789v_exit_sleep(const struct device *dev)
 
 static void st7789v_reset_display(const struct device *dev)
 {
+	const struct st7789v_config *config = dev->config;
+	int ret;
+
 	LOG_DBG("Resetting display");
 
-	const struct st7789v_config *config = dev->config;
-	if (config->reset_gpio.port != NULL) {
-		k_sleep(K_MSEC(1));
-		gpio_pin_set_dt(&config->reset_gpio, 1);
-		k_sleep(K_MSEC(6));
-		gpio_pin_set_dt(&config->reset_gpio, 0);
-		k_sleep(K_MSEC(20));
-	} else {
+	k_sleep(K_MSEC(1));
+	ret = mipi_dbi_reset(config->mipi_dbi, 6);
+	if (ret == -ENOTSUP) {
+		/* Send software reset command */
 		st7789v_transmit(dev, ST7789V_CMD_SW_RESET, NULL, 0);
 		k_sleep(K_MSEC(5));
+	} else {
+		k_sleep(K_MSEC(20));
 	}
 }
 
@@ -166,9 +136,12 @@ static int st7789v_write(const struct device *dev,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
+	const struct st7789v_config *config = dev->config;
+	struct display_buffer_descriptor mipi_desc;
 	const uint8_t *write_data_start = (uint8_t *) buf;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
+	enum display_pixel_format pixfmt;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
 	__ASSERT((desc->pitch * ST7789V_PIXEL_SIZE * desc->height) <= desc->buf_size,
@@ -181,15 +154,31 @@ static int st7789v_write(const struct device *dev,
 	if (desc->pitch > desc->width) {
 		write_h = 1U;
 		nbr_of_writes = desc->height;
+		mipi_desc.height = 1;
+		mipi_desc.buf_size = desc->pitch * ST7789V_PIXEL_SIZE;
 	} else {
 		write_h = desc->height;
 		nbr_of_writes = 1U;
+		mipi_desc.height = desc->height;
+		mipi_desc.buf_size = desc->width * write_h * ST7789V_PIXEL_SIZE;
+	}
+	if (IS_ENABLED(CONFIG_ST7789V_RGB565)) {
+		pixfmt = PIXEL_FORMAT_RGB_565;
+	} else {
+		pixfmt = PIXEL_FORMAT_RGB_888;
 	}
 
+	mipi_desc.width = desc->width;
+	/* Per MIPI API, pitch must always match width */
+	mipi_desc.pitch = desc->width;
+
+	/* Send RAMWR command */
+	st7789v_transmit(dev, ST7789V_CMD_RAMWR, NULL, 0);
+
 	for (uint16_t write_cnt = 0U; write_cnt < nbr_of_writes; ++write_cnt) {
-		st7789v_transmit(dev, write_cnt == 0U ? ST7789V_CMD_RAMWR : ST7789V_CMD_NONE,
-				(void *) write_data_start,
-				desc->width * ST7789V_PIXEL_SIZE * write_h);
+		mipi_dbi_write_display(config->mipi_dbi, &config->dbi_config,
+				       write_data_start, &mipi_desc, pixfmt);
+
 		write_data_start += (desc->pitch * ST7789V_PIXEL_SIZE);
 	}
 
@@ -326,33 +315,9 @@ static int st7789v_init(const struct device *dev)
 {
 	const struct st7789v_config *config = dev->config;
 
-	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI device not ready");
+	if (!device_is_ready(config->mipi_dbi)) {
+		LOG_ERR("MIPI DBI device not ready");
 		return -ENODEV;
-	}
-
-	if (config->reset_gpio.port != NULL) {
-		if (!gpio_is_ready_dt(&config->reset_gpio)) {
-			LOG_ERR("Reset GPIO device not ready");
-			return -ENODEV;
-		}
-
-		if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE)) {
-			LOG_ERR("Couldn't configure reset pin");
-			return -EIO;
-		}
-	}
-
-	if (config->cmd_data_gpio.port != NULL) {
-		if (!gpio_is_ready_dt(&config->cmd_data_gpio)) {
-			LOG_ERR("CMD/DATA GPIO device not ready");
-			return -ENODEV;
-		}
-
-		if (gpio_pin_configure_dt(&config->cmd_data_gpio, GPIO_OUTPUT)) {
-			LOG_ERR("Couldn't configure CMD/DATA pin");
-			return -EIO;
-		}
 	}
 
 	st7789v_reset_display(dev);
@@ -398,14 +363,14 @@ static const struct display_driver_api st7789v_api = {
 };
 
 #define ST7789V_WORD_SIZE(inst)								\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, cmd_data_gpios), (8), (9))
-
+	((DT_INST_PROP(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) ?                   \
+	SPI_WORD_SET(8) : SPI_WORD_SET(9))
 #define ST7789V_INIT(inst)								\
 	static const struct st7789v_config st7789v_config_ ## inst = {			\
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |			\
-					    SPI_WORD_SET(ST7789V_WORD_SIZE(inst)), 0),	\
-		.cmd_data_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, cmd_data_gpios, {}),	\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),		\
+		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                        \
+		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,                             \
+						      ST7789V_WORD_SIZE(inst) |         \
+						      SPI_OP_MODE_MASTER, 0),           \
 		.vcom = DT_INST_PROP(inst, vcom),					\
 		.gctrl = DT_INST_PROP(inst, gctrl),					\
 		.vdv_vrh_enable = (DT_INST_NODE_HAS_PROP(inst, vrhs)			\

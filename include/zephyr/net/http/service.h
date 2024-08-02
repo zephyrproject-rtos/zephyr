@@ -7,6 +7,16 @@
 #ifndef ZEPHYR_INCLUDE_NET_HTTP_SERVICE_H_
 #define ZEPHYR_INCLUDE_NET_HTTP_SERVICE_H_
 
+/**
+ * @file service.h
+ *
+ * @brief HTTP service API
+ *
+ * @defgroup http_service HTTP service API
+ * @ingroup networking
+ * @{
+ */
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -18,8 +28,11 @@
 extern "C" {
 #endif
 
+/** HTTP resource description */
 struct http_resource_desc {
+	/** Resource name */
 	const char *resource;
+	/** Detail associated with this resource */
 	void *detail;
 };
 
@@ -46,6 +59,8 @@ struct http_resource_desc {
 		.resource = _resource,                                                             \
 		.detail = (void *)(_detail),                                                       \
 	}
+
+/** @cond INTERNAL_HIDDEN */
 
 struct http_service_desc {
 	const char *host;
@@ -78,6 +93,8 @@ struct http_service_desc {
 			    (.sec_tag_list_size = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (0),\
 					     (GET_ARG_N(1, GET_ARGS_LESS_N(1, __VA_ARGS__))))), ())\
 	}
+
+/** @endcond */
 
 /**
  * @brief Define an HTTP service without static resources.
@@ -200,7 +217,7 @@ struct http_service_desc {
 /**
  * @brief Iterate over all HTTP services.
  *
- * @param _it Name of iterator (of type @ref http_service_desc)
+ * @param _it Name of http_service_desc iterator
  */
 #define HTTP_SERVICE_FOREACH(_it) STRUCT_SECTION_FOREACH(http_service_desc, _it)
 
@@ -234,5 +251,9 @@ struct http_service_desc {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_NET_HTTP_SERVICE_H_ */

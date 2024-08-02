@@ -87,12 +87,12 @@ ZTEST(x86_pagetables, test_ram_perms)
 	pentry_t entry, flags, expected;
 
 #ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
-	const uint8_t *mem_range_end = Z_KERNEL_VIRT_END;
+	const uint8_t *mem_range_end = K_MEM_KERNEL_VIRT_END;
 #else
 	const uint8_t *mem_range_end = (uint8_t *)lnkr_pinned_end;
 #endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
-	for (pos = Z_KERNEL_VIRT_START; pos < mem_range_end;
+	for (pos = K_MEM_KERNEL_VIRT_START; pos < mem_range_end;
 	     pos += CONFIG_MMU_PAGE_SIZE) {
 		if (pos == NULL) {
 			/* We have another test specifically for NULL page */
@@ -197,7 +197,8 @@ ZTEST(x86_pagetables, test_ram_perms)
 	/* All RAM page frame entries aside from 0x0 must have a mapping.
 	 * We currently identity-map on x86, no conversion necessary other than a cast
 	 */
-	for (pos = (uint8_t *)Z_PHYS_RAM_START; pos < (uint8_t *)Z_PHYS_RAM_END;
+	for (pos = (uint8_t *)K_MEM_PHYS_RAM_START;
+	     pos < (uint8_t *)K_MEM_PHYS_RAM_END;
 	     pos += CONFIG_MMU_PAGE_SIZE) {
 		if (pos == NULL) {
 			continue;
@@ -238,7 +239,7 @@ void z_vrfy_dump_my_ptables(void)
 {
 	z_impl_dump_my_ptables();
 }
-#include <syscalls/dump_my_ptables_mrsh.c>
+#include <zephyr/syscalls/dump_my_ptables_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void dump_pagetables(void)

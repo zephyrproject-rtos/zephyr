@@ -161,7 +161,7 @@ config LOG_TIMESTAMP_64BIT
 config LOG_TIMESTAMP_USE_REALTIME
 	bool "Use real time clock for timestamp"
 	select LOG_TIMESTAMP_64BIT
-	depends on POSIX_CLOCK
+	depends on POSIX_TIMERS
 	help
 	  When enabled, real time clock is used for timestamping.
 

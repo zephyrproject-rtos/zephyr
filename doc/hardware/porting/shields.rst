@@ -90,12 +90,12 @@ board or board revision overriding files to a shield, as follows:
 Shield activation
 *****************
 
-Activate support for one or more shields by adding the matching -DSHIELD arg to
-CMake command
+Activate support for one or more shields by adding the matching ``--shield`` arguments
+to the west command:
 
   .. zephyr-app-commands::
      :zephyr-app: your_app
-     :shield: "x_nucleo_idb05a1 x_nucleo_iks01a1"
+     :shield: x_nucleo_idb05a1,x_nucleo_iks01a1
      :goals: build
 
 

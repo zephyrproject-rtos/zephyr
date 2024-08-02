@@ -237,7 +237,7 @@ static void test_queue_start(void)
 
 		zassert_true(tn != cfg.name);
 		zassert_true(tn != NULL);
-		zassert_equal(strcmp(tn, cfg.name), 0);
+		zassert_str_equal(tn, cfg.name);
 	}
 
 	cfg.name = NULL;
@@ -251,7 +251,7 @@ static void test_queue_start(void)
 
 		zassert_true(tn != cfg.name);
 		zassert_true(tn != NULL);
-		zassert_equal(strcmp(tn, ""), 0);
+		zassert_str_equal(tn, "");
 	}
 
 	cfg.name = "wq.coophi";
@@ -1263,7 +1263,7 @@ ZTEST(work_1cpu, test_1cpu_immed_reschedule)
 	zassert_equal(rc, 1);
 }
 
-/* Test no-yield behavior, returns true iff work queue priority is
+/* Test no-yield behavior, returns true if and only if work queue priority is
  * higher than test thread priority
  */
 static bool try_queue_no_yield(struct k_work_q *wq)

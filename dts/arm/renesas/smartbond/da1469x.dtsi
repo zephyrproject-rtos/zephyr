@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/smartbond-adc.h>
 #include <zephyr/dt-bindings/pinctrl/smartbond-pinctrl.h>
+#include <zephyr/dt-bindings/dma/dma_smartbond.h>
 
 / {
 	chosen {
@@ -46,7 +47,6 @@
 			rc32k: rc32k {
 				compatible = "renesas,smartbond-lp-osc";
 				clock-frequency = <DT_FREQ_K(32)>;
-				calibration-interval = <1>;
 				#clock-cells = <0>;
 				status = "okay";
 			};
@@ -60,9 +60,8 @@
 			rcx: rcx {
 				compatible = "renesas,smartbond-lp-osc";
 				clock-frequency = <DT_FREQ_K(15)>;
-				calibration-interval = <1>;
 				#clock-cells = <0>;
-				status = "disabled";
+				status = "okay";
 			};
 			rc32m: rc32m {
 				compatible = "fixed-clock";
@@ -97,7 +96,7 @@
 		};
 		lp_clk: lp_clk {
 			compatible = "renesas,smartbond-lp-clk";
-			clock-src = <&rc32k>;
+			clock-src = <&rcx>;
 			status = "okay";
 		};
 
@@ -151,6 +150,14 @@
 	soc {
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+		};
+
+		psram: memory@32000000 {
+			compatible = "zephyr,memory-region";
+			device_type = "memory";
+			reg = <0x32000000 DT_SIZE_K(32768)>;
+			zephyr,memory-region = "PSRAM";
+			status = "disabled";
 		};
 
 		qspif: memory@16000000 {
@@ -272,6 +279,7 @@
 			reg = <0x50020100 0x100>;
 			periph-clock-config = <0x02>;
 			interrupts = <6 0>;
+			hw-flow-control-supported;
 			status = "disabled";
 		};
 
@@ -280,6 +288,7 @@
 			reg = <0x50020200 0x100>;
 			periph-clock-config = <0x08>;
 			interrupts = <7 0>;
+			hw-flow-control-supported;
 			status = "disabled";
 		};
 
@@ -331,6 +340,7 @@
 			reg = <0x50020700 0x100>;
 			periph-clock-config = <0x0800>;
 			interrupts = <9 0>;
+			status = "disabled";
 		};
 
 		lcdc: lcdc@30030000 {
@@ -362,8 +372,9 @@
 		usbd: usb@50040000 {
 			compatible = "renesas,smartbond-usbd";
 			reg = <0x50040000 0x1B0>;
-			dma-chan-rx = <6>;
-			dma-chan-tx = <7>;
+			dmas = <&dma 0 DMA_SMARTBOND_TRIG_MUX_USB>,
+				<&dma 1 DMA_SMARTBOND_TRIG_MUX_USB>;
+			dma-names = "rx", "tx";
 			dma-min-transfer-size = <65>;
 			fifo-read-threshold = <4>;
 			ep-out-buf-size = <8 64 64 64>;
@@ -375,10 +386,21 @@
 			compatible = "renesas,smartbond-dma";
 			reg = <0x50040800 0x110>;
 			interrupts = <1 0>;
-			status = "disabled";
+			status = "okay";
 			dma-channels = <8>;
 			block-count = <1>;
-			#dma-cells = <0>;
+			#dma-cells = <2>;
+		};
+
+		memc: qspic2@34000000 {
+			compatible = "renesas,smartbond-nor-psram";
+			reg = <0x34000000 0x48>;
+			status = "disabled";
+		};
+
+		bt_hci_da1469x: bt_hci_da1469x {
+			compatible = "renesas,bt-hci-da1469x";
+			status = "disabled";
 		};
 	};
 };

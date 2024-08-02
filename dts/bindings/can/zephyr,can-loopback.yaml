@@ -5,4 +5,4 @@ description: Zephyr emulated CAN loopback controller
 
 compatible: "zephyr,can-loopback"
 
-include: can-controller.yaml
+include: can-fd-controller.yaml

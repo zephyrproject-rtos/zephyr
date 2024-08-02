@@ -83,18 +83,45 @@
 };
 
 
-&lpi2c1{
+&lpi2c1 {
 	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 };
 
-&lpi2c2{
+&lpi2c2 {
 	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
+
+	mfd0:adp5585@34 {
+		compatible = "adi,adp5585";
+		reg = <0x34>;
+		status = "disabled";
+
+		gpio_exp0: adp5585_gpio {
+			compatible = "adi,adp5585-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <13>;
+			gpio-reserved-ranges = <5 3>;
+			/*
+			 * This device has non-contiguous gpio range:
+			 *   GPIO Pin R0~R4 are gpio0~4
+			 *   GPIO Pin C0~C4 are gpio8~12
+			 */
+
+			gpiohog_exp_sel: exp-sel-hog {
+				gpio-hog;
+				gpios = <4 GPIO_ACTIVE_HIGH>;
+				line-name = "exp_sel";
+				output-low;
+			};
+			status = "disabled";
+		};
+	};
 };
 
 &lpspi3 {

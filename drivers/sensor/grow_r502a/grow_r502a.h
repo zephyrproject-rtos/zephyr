@@ -61,7 +61,6 @@
  */
 
 #define R502A_OK 0x00 /*commad execution complete*/
-#define R502A_NOT_FOUND 0x09 /*fail to find the matching finger*/
 
 /*Package Identifier's definition*/
 #define R502A_COMMAND_PACKET 0x1 /*Command packet*/
@@ -95,6 +94,11 @@
 #define R502A_HANDSHAKE 0x40 /*Handshake*/
 #define R502A_BADPACKET 0xFE /* Bad packet was sent*/
 
+#define R502A_NOT_MATCH_CC 0x08 /* templates of two buffers not matching*/
+#define R502A_NOT_FOUND_CC 0x09 /*fail to find the matching finger*/
+#define R502A_FINGER_MATCH_NOT_FOUND 0
+#define R502A_FINGER_MATCH_FOUND 1
+
 #define R502A_STARTCODE 0xEF01 /*Fixed value, High byte transferred first*/
 #define R502A_DEFAULT_PASSWORD 0x00000000
 #define R502A_DEFAULT_ADDRESS 0xFFFFFFFF
@@ -108,6 +112,8 @@
 #define R502A_PKG_LEN_IDX 7
 #define R502A_CC_IDX 9 /* Confirmation code index*/
 
+#define R502A_COMMON_ACK_LEN 12
+
 #define R502A_STARTCODE_LEN 2
 #define R502A_ADDRESS_LEN 4
 #define R502A_PKG_LEN	2
@@ -116,10 +122,14 @@
 
 #define R502A_CHAR_BUF_1 1
 #define R502A_CHAR_BUF_2 2
+#define R502A_CHAR_BUF_TOTAL 2
+
 #define R502A_CHAR_BUF_SIZE 384 /* Maximum size of characteristic value buffer*/
 #define R502A_TEMPLATE_SIZE 768 /* Maximum size of template, twice of CHAR_BUF*/
-#define R502A_MAX_BUF_SIZE 779 /*sum of checksum, header and template sizes*/
-#define R502A_BUF_SIZE 64
+#define R502A_TEMPLATE_MAX_SIZE (R502A_CHAR_BUF_TOTAL * R502A_TEMPLATE_SIZE)
+
+#define R502A_MAX_BUF_SIZE  (CONFIG_R502A_DATA_PKT_SIZE + R502A_COMMON_ACK_LEN)
+
 #define R502A_TEMPLATES_PER_PAGE 256
 #define R502A_TEMP_TABLE_BUF_SIZE 32
 #define R502A_DELETE_COUNT_OFFSET 1
@@ -127,21 +137,40 @@
 #define R502A_DELAY 200
 #define R502A_RETRY_DELAY 5
 
-#define LED_CTRL_BREATHING 0x01
-#define LED_CTRL_FLASHING 0x02
-#define LED_CTRL_ON_ALWAYS 0x03
-#define LED_CTRL_OFF_ALWAYS 0x04
-#define LED_CTRL_ON_GRADUALLY 0x05
-#define LED_CTRL_OFF_GRADUALLY 0x06
+/*LED glow control code*/
+enum r502a_led_ctrl_code {
+	R502A_LED_CTRL_BREATHING = 0x01,
+	R502A_LED_CTRL_FLASHING,
+	R502A_LED_CTRL_ON_ALWAYS,
+	R502A_LED_CTRL_OFF_ALWAYS,
+	R502A_LED_CTRL_ON_GRADUALLY,
+	R502A_LED_CTRL_OFF_GRADUALLY,
+};
 
-#define LED_SPEED_HALF 0x50
-#define LED_SPEED_FULL 0xFF
+/* LED glow speed code
+ * if needed, use desired speed between 0-255
+ */
+enum r502a_led_speed {
+	R502A_LED_SPEED_MAX = 0x00,
+	R502A_LED_SPEED_HALF = 0x50,
+	R502A_LED_SPEED_MIN = 0xFF,
+};
 
-#define LED_COLOR_RED 0x01
-#define LED_COLOR_BLUE 0x02
-#define LED_COLOR_PURPLE 0x03
+/* LED glowing cycle
+ * if needed, use desired cycle count between 1-255
+ */
+enum r502a_led_cycle {
+	R502A_LED_CYCLE_INFINITE = 0x00,
+	R502A_LED_CYCLE_1,
+	R502A_LED_CYCLE_2,
+	R502A_LED_CYCLE_3,
+	R502A_LED_CYCLE_4,
+	R502A_LED_CYCLE_5,
+	R502A_LED_CYCLE_255 = 0xFF,
+};
 
-struct led_params {
+
+struct r502a_led_params {
 	uint8_t ctrl_code;
 	uint8_t color_idx;
 	uint8_t speed; /* Speed 0x00-0xff */
@@ -150,14 +179,14 @@ struct led_params {
 
 union r502a_packet {
 	struct {
-		uint8_t	start[R502A_STARTCODE_LEN];
-		uint8_t	addr[R502A_ADDRESS_LEN];
+		uint16_t start;
+		uint32_t addr;
 		uint8_t	pid;
-		uint8_t	len[R502A_PKG_LEN];
-		uint8_t data[R502A_BUF_SIZE];
-	};
+		uint16_t len;
+		uint8_t data[CONFIG_R502A_DATA_PKT_SIZE];
+	} __packed;
 
-	uint8_t buf[R502A_BUF_SIZE];
+	uint8_t buf[R502A_MAX_BUF_SIZE];
 };
 
 struct r502a_buf {
@@ -183,14 +212,14 @@ struct grow_r502a_data {
 
 	struct r502a_buf tx_buf;
 	struct r502a_buf rx_buf;
+	uint16_t pkt_len;
 
 	struct k_mutex lock;
+	struct k_sem uart_tx_sem;
 	struct k_sem uart_rx_sem;
 
-	uint16_t finger_id;
-	uint16_t matching_score;
 	uint16_t template_count;
-	int8_t free_idx;
+	uint8_t led_color;
 };
 
 struct grow_r502a_config {

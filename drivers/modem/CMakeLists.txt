@@ -27,10 +27,6 @@ if(CONFIG_MODEM_WNCM14A2A)
 	zephyr_library_sources(wncm14a2a.c)
 endif()
 
-if(CONFIG_MODEM_GSM_PPP)
-	zephyr_library_sources(gsm_ppp.c)
-endif()
-
 if (CONFIG_MODEM_HL7800)
   zephyr_library_sources(hl7800.c)
 endif()
@@ -40,3 +36,4 @@ if (CONFIG_MODEM_SIM7080)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_MODEM_CELLULAR modem_cellular.c)
+zephyr_library_sources_ifdef(CONFIG_MODEM_AT_SHELL modem_at_shell.c)

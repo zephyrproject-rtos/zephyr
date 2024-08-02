@@ -50,7 +50,6 @@
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &blue_led;
 		watchdog0 = &wdt0;
-		spi-flash0 = &w25q32jv;
 		accel0 = &lis2dh;
 	};
 

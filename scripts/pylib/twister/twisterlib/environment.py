@@ -72,7 +72,7 @@ Artificially long but functional example:
 
     run_group_option = parser.add_mutually_exclusive_group()
 
-    device = parser.add_mutually_exclusive_group(required="--device-testing" in sys.argv)
+    device = parser.add_mutually_exclusive_group()
 
     test_or_build = parser.add_mutually_exclusive_group()
 
@@ -178,7 +178,7 @@ Artificially long but functional example:
     parser.add_argument("--flash-before", action="store_true", default=False,
                         help="""Flash device before attaching to serial port.
                         This is useful for devices that share the same port for programming
-                        and serial console, where flash must come first.
+                        and serial console, or use soft-USB, where flash must come first.
                         """)
 
     test_or_build.add_argument(
@@ -257,7 +257,7 @@ Artificially long but functional example:
         "-A", "--board-root", action="append", default=board_root_list,
         help="""Directory to search for board configuration files. All .yaml
 files in the directory will be processed. The directory should have the same
-structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
+structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument(
         "--allow-installed-plugin", action="store_true", default=None,
@@ -386,6 +386,18 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "using additional build option `--target footprint`.")
 
     footprint_group.add_argument(
+        "--footprint-report",
+        nargs="?",
+        default=None,
+        choices=['all', 'ROM', 'RAM'],
+        const="all",
+        help="Select which memory area symbols' data to collect as 'footprint' property "
+             "of each test suite built, and report in 'twister_footprint.json' together "
+             "with the relevant execution metadata the same way as in `twister.json`. "
+             "Implies '--create-rom-ram-report' to generate the footprint data files. "
+             "No value means '%(const)s'. Default: %(default)s""")
+
+    footprint_group.add_argument(
         "--enable-size-report",
         action="store_true",
         help="Collect and report ROM/RAM section sizes for each test image built.")
@@ -401,7 +413,8 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         action = "store_true",
         help="Take ROM/RAM sections footprint summary values from the 'build.log' "
              "instead of 'objdump' results used otherwise."
-             "Requires --enable-size-report or one of the baseline comparison modes.")
+             "Requires --enable-size-report or one of the baseline comparison modes."
+             "Warning: the feature will not work correctly with sysbuild.")
 
     compare_group_option = footprint_group.add_mutually_exclusive_group()
 
@@ -547,6 +560,8 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("--overflow-as-errors", action="store_true",
                         help="Treat RAM/SRAM overflows as errors.")
 
+    parser.add_argument("--report-filtered", action="store_true",
+                        help="Include filtered tests in the reports.")
 
     parser.add_argument("-P", "--exclude-platform", action="append", default=[],
             help="""Exclude platforms and do not build or run any tests
@@ -603,9 +618,21 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         """)
 
     parser.add_argument(
+        "--report-summary", action="store", nargs='?', type=int, const=0,
+        help="Show failed/error report from latest run. Default shows all items found. "
+             "However, you can specify the number of items (e.g. --report-summary 15). "
+             "It also works well with the --outdir switch.")
+
+    parser.add_argument(
         "--report-suffix",
         help="""Add a suffix to all generated file names, for example to add a
         version or a commit ID.
+        """)
+
+    parser.add_argument(
+        "--report-all-options", action="store_true",
+        help="""Show all command line options applied, including defaults, as
+        environment.options object in twister.json. Default: show only non-default settings.
         """)
 
     parser.add_argument(
@@ -738,7 +765,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     return parser
 
 
-def parse_arguments(parser, args, options = None):
+def parse_arguments(parser, args, options = None, on_init=True):
     if options is None:
         options = parser.parse_args(args)
 
@@ -776,13 +803,16 @@ def parse_arguments(parser, args, options = None):
     if options.last_metrics or options.compare_report:
         options.enable_size_report = True
 
+    if options.footprint_report:
+        options.create_rom_ram_report = True
+
     if options.aggressive_no_clean:
         options.no_clean = True
 
     if options.coverage:
         options.enable_coverage = True
 
-    if not options.coverage_platform:
+    if options.enable_coverage and not options.coverage_platform:
         options.coverage_platform = options.platform
 
     if options.coverage_formats:
@@ -794,6 +824,10 @@ def parse_arguments(parser, args, options = None):
 
     if options.enable_valgrind and not shutil.which("valgrind"):
         logger.error("valgrind enabled but valgrind executable not found")
+        sys.exit(1)
+
+    if (not options.device_testing) and (options.device_serial or options.device_serial_pty or options.hardware_map):
+        logger.error("Use --device-testing with --device-serial, or --device-serial-pty, or --hardware-map.")
         sys.exit(1)
 
     if options.device_testing and (options.device_serial or options.device_serial_pty) and len(options.platform) != 1:
@@ -829,9 +863,13 @@ def parse_arguments(parser, args, options = None):
             sc.size_report()
         sys.exit(0)
 
-    if options.footprint_from_buildlog and not options.enable_size_report:
-        logger.error("--footprint-from-buildlog requires --enable-size-report")
-        sys.exit(1)
+    if options.footprint_from_buildlog:
+        logger.warning("WARNING: Using --footprint-from-buildlog will give inconsistent results "
+                       "for configurations using sysbuild. It is recommended to not use this flag "
+                       "when building configurations using sysbuild.")
+        if not options.enable_size_report:
+            logger.error("--footprint-from-buildlog requires --enable-size-report")
+            sys.exit(1)
 
     if len(options.extra_test_args) > 0:
         # extra_test_args is a list of CLI args that Twister did not recognize
@@ -856,13 +894,13 @@ def parse_arguments(parser, args, options = None):
         # Strip off the initial "--" following validation.
         options.extra_test_args = options.extra_test_args[1:]
 
-    if not options.allow_installed_plugin and PYTEST_PLUGIN_INSTALLED:
+    if on_init and not options.allow_installed_plugin and PYTEST_PLUGIN_INSTALLED:
         logger.error("By default Twister should work without pytest-twister-harness "
                      "plugin being installed, so please, uninstall it by "
                      "`pip uninstall pytest-twister-harness` and `git clean "
                      "-dxf scripts/pylib/pytest-twister-harness`.")
         sys.exit(1)
-    elif options.allow_installed_plugin and PYTEST_PLUGIN_INSTALLED:
+    elif on_init and options.allow_installed_plugin and PYTEST_PLUGIN_INSTALLED:
         logger.warning("You work with installed version of "
                        "pytest-twister-harness plugin.")
 
@@ -874,12 +912,13 @@ def strip_ansi_sequences(s: str) -> str:
 
 class TwisterEnv:
 
-    def __init__(self, options=None) -> None:
+    def __init__(self, options=None, default_options=None) -> None:
         self.version = "Unknown"
         self.toolchain = None
         self.commit_date = "Unknown"
         self.run_date = None
         self.options = options
+        self.default_options = default_options
 
         if options and options.ninja:
             self.generator_cmd = "ninja"
@@ -913,6 +952,18 @@ class TwisterEnv:
         self.test_config = options.test_config if options else None
 
         self.alt_config_root = options.alt_config_root if options else None
+
+    def non_default_options(self) -> dict:
+        """Returns current command line options which are set to non-default values."""
+        diff = {}
+        if not self.options or not self.default_options:
+            return diff
+        dict_options = vars(self.options)
+        dict_default = vars(self.default_options)
+        for k in dict_options.keys():
+            if k not in dict_default or dict_options[k] != dict_default[k]:
+                diff[k] = dict_options[k]
+        return diff
 
     def discover(self):
         self.check_zephyr_version()

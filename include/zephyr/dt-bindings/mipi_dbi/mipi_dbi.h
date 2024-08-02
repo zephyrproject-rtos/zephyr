@@ -53,6 +53,62 @@
  *          -'-------------------------------'-------------------------------'-
  */
 #define MIPI_DBI_MODE_SPI_4WIRE 0x2
+/**
+ * Parallel Bus protocol for MIPI DBI Type A based on Motorola 6800 bus.
+ *
+ *              -.   .--------.	  .------------------------
+ *     CS        '---'        '---'
+ *
+ *              -------------------------------------------
+ *     RESX
+ *
+ *			  .--------------------------------
+ *     D/CX     ----------'
+ *
+ *
+ *     R/WX     -------------------------------------------
+ *
+ *              -------------------------------------------
+ *     E
+ *
+ *               .--------.   .--------------------------.
+ *     D[15:0]/ -| COMMAND|---|  DATA                    |
+ *     D[8:0]/   '--------'   '--------------------------'
+ *     D[7:0]
+ *
+ * Please refer to the MIPI DBI specification for a detailed cycle diagram.
+ */
+#define MIPI_DBI_MODE_6800_BUS_16_BIT 0x3
+#define MIPI_DBI_MODE_6800_BUS_9_BIT 0x4
+#define MIPI_DBI_MODE_6800_BUS_8_BIT 0x5
+/**
+ * Parallel Bus protocol for MIPI DBI Type B based on Intel 8080 bus.
+ *
+ *              -.					 .-
+ *     CS        '---------------------------------------'
+ *
+ *              -------------------------------------------
+ *     RESX
+ *
+ *              --.	      .----------------------------
+ *     D/CX       '-----------'
+ *
+ *              ---.   .--------.   .----------------------
+ *     WRX         '---'	'---'
+ *
+ *              -------------------------------------------
+ *     RDX
+ *
+ *                 .--------.   .--------------------------.
+ *     D[15:0]/ ---| COMMAND|---|  DATA                    |
+ *     D[8:0]/     '--------'   '--------------------------'
+ *     D[7:0]
+ *
+ * Please refer to the MIPI DBI specification for a detailed cycle diagram.
+ */
+#define MIPI_DBI_MODE_8080_BUS_16_BIT 0x6
+#define MIPI_DBI_MODE_8080_BUS_9_BIT 0x7
+#define MIPI_DBI_MODE_8080_BUS_8_BIT 0x8
 
 /**
  * @}

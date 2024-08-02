@@ -8,6 +8,8 @@
 #include <st/wb/stm32wb55Xg.dtsi>
 #include <st/wb/stm32wb55vgyx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/sensor/ism330dhcx.h>
 
 / {
 	model = "STMicroelectronics STM32WB5MM Discovery Development Kit";
@@ -22,11 +24,40 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	rgb_led_strip: rgb_strip {
+		compatible = "ti,tlc59731";
+		gpios = <&gpioa 7 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_BLUE
+				LED_COLOR_ID_GREEN
+				LED_COLOR_ID_RED>;
+		status = "disabled";
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpioc 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: button_1 {
+			gpios = <&gpioc 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
 	aliases {
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+		led-strip = &rgb_led_strip;
+		sw0 = &button0;
+		sw1 = &button1;
+		accel0 = &ism330dhcx;
 	};
 };
 
@@ -133,6 +164,36 @@ zephyr_udc0: &usb {
 			reg = <0x000d8000 DT_SIZE_K(8)>;
 		};
 
+	};
+};
+
+&gpioh {
+	rgb_cs: rgb_cs {
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		gpio-hog;
+		output-high;
+		status = "disabled";
+	};
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pb13 &i2c3_sda_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	vl53l0x@29 {
+		compatible = "st,vl53l0x";
+		reg = <0x29>;
+		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+	};
+
+	ism330dhcx: ism330dhcx@6b {
+		compatible = "st,ism330dhcx";
+		reg = <0x6b>;
+		drdy-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+		accel-odr= <ISM330DHCX_DT_ODR_52Hz>;
+		gyro-odr= <ISM330DHCX_DT_ODR_26H>;
 	};
 };
 

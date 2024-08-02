@@ -1,0 +1,20 @@
+identifier: slstk3402a/efm32pg12b500f1024gl125
+name: EFM32PG12 SLSTK3402A
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - i2c
+  - gpio
+  - nvs
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

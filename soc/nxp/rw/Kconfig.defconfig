@@ -9,6 +9,13 @@ config ROM_START_OFFSET
 
 config NUM_IRQS
 	default 129
+if MCUX_OS_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+endif # MCUX_OS_TIMER
+
 if CORTEX_M_SYSTICK
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -72,5 +79,39 @@ endif # FLASH_MCUX_FLEXSPI_XIP
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI
 endchoice
+
+if BT
+
+config FLASH
+	default y
+
+config BT_DIS_MANUF
+	default "NXP"
+
+config BT_BUF_EVT_DISCARDABLE_SIZE
+	default 84
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+config HCI_NXP_ENABLE_AUTO_SLEEP
+	default y
+
+config HCI_NXP_SET_CAL_DATA
+	default y
+
+config HEAP_MEM_POOL_SIZE
+	default 256
+
+endif # BT
+
+config NXP_MONOLITHIC_BT
+	default y if BT
+
+config NXP_FW_LOADER
+	default y if (BT || WIFI)
+
+config NXP_RF_IMU
+	default y if (BT || WIFI)
 
 endif # SOC_SERIES_RW6XX

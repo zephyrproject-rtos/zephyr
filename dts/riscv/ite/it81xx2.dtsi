@@ -61,7 +61,8 @@
 
 		pinctrla: pinctrl@f01610 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01610 8>;   /* GPCR */
+			reg = <0x00f01610 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
 					 0xf02032 0xf02032 0xf016f0 0xf016f0>;
 			func3-en-mask = <0        0        0        0
@@ -80,7 +81,8 @@
 
 		pinctrlb: pinctrl@f01618 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01618 8>;   /* GPCR */
+			reg = <0x00f01618 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <0xf016f5 0xf016f5 NO_FUNC NO_FUNC
 					 NO_FUNC  NO_FUNC  NO_FUNC 0xf01600>;
 			func3-en-mask = <0x01     0x02     0       0
@@ -99,7 +101,8 @@
 
 		pinctrlc: pinctrl@f01620 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01620 8>;   /* GPCR */
+			reg = <0x00f01620 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC 0xf016f0
 					 NO_FUNC 0xf016f0 NO_FUNC 0xf016f3>;
 			func3-en-mask = <0       0        0       0x10
@@ -118,7 +121,8 @@
 
 		pinctrld: pinctrl@f01628 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01628 8>;   /* GPCR */
+			reg = <0x00f01628 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
 					 NO_FUNC 0xf016f0 NO_FUNC NO_FUNC>;
 			func3-en-mask = <0       0        0       0
@@ -137,7 +141,8 @@
 
 		pinctrle: pinctrl@f01630 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01630 8>;   /* GPCR */
+			reg = <0x00f01630 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <0xf02032 NO_FUNC  NO_FUNC NO_FUNC
 					 NO_FUNC  0xf016f0 NO_FUNC 0xf02032>;
 			func3-en-mask = <0x01     0        0       0
@@ -156,7 +161,8 @@
 
 		pinctrlf: pinctrl@f01638 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01638 8>;   /* GPCR */
+			reg = <0x00f01638 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <NO_FUNC NO_FUNC 0xf016f0 0xf016f0
 					 NO_FUNC NO_FUNC 0xf016f1 0xf016f1>;
 			func3-en-mask = <0       0       0x02     0x02
@@ -175,7 +181,8 @@
 
 		pinctrlg: pinctrl@f01640 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01640 8>;   /* GPCR */
+			reg = <0x00f01640 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <0xf016f0 0xf016f0 0xf016f0 NO_FUNC
 					 NO_FUNC  NO_FUNC  0xf016f0 NO_FUNC>;
 			func3-en-mask = <0x20     0x08     0x10     0
@@ -194,7 +201,8 @@
 
 		pinctrlh: pinctrl@f01648 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01648 8>;   /* GPCR */
+			reg = <0x00f01648 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <NO_FUNC 0xf016f1 0xf016f1 NO_FUNC
 					 NO_FUNC 0xf016f5 0xf016f5 NO_FUNC>;
 			func3-en-mask = <0       0x20     0x20     0
@@ -217,7 +225,8 @@
 
 		pinctrli: pinctrl@f01650 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01650 8>;   /* GPCR */
+			reg = <0x00f01650 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
 					 NO_FUNC 0xf016f0 0xf016f0 0xf016f0>;
 			func3-en-mask = <0       0        0        0
@@ -236,7 +245,8 @@
 
 		pinctrlj: pinctrl@f01658 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01658 8>;   /* GPCR */
+			reg = <0x00f01658 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <0xf016f4 NO_FUNC  0xf016f4 0xf016f4
 					 0xf016f0 0xf016f0 NO_FUNC  NO_FUNC>;
 			func3-en-mask = <0x01     0        0x01     0x02
@@ -255,7 +265,8 @@
 
 		pinctrlk: pinctrl@f01690 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01690 8>;   /* GPCR */
+			reg = <0x00f01690 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
 					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
 			func3-en-mask = <0       0       0       0
@@ -274,7 +285,8 @@
 
 		pinctrll: pinctrl@f01698 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01698 8>;   /* GPCR */
+			reg = <0x00f01698 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
 					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
 			func3-en-mask = <0       0       0       0
@@ -293,7 +305,8 @@
 
 		pinctrlm: pinctrl@f016a0 {
 			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f016a0 8>;   /* GPCR */
+			reg = <0x00f016a0 8     /* GPCR */
+			       NO_FUNC    1>;
 			func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
 					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
 			func3-en-mask = <0       0       0       0

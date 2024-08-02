@@ -26,7 +26,7 @@ static struct litex_clk_device *ldev;	/* global struct for whole driver */
 static struct litex_clk_clkout *clkouts;/* clkout array for whole driver */
 
 /* All DRP regs addresses and sizes */
-static struct litex_drp_reg drp[] = {
+static const struct litex_drp_reg drp[] = {
 	{DRP_ADDR_RESET,  1},
 	{DRP_ADDR_LOCKED, 1},
 	{DRP_ADDR_READ,   1},
@@ -328,7 +328,7 @@ static uint64_t litex_clk_calc_global_frequency(uint32_t mul, uint32_t div)
 {
 	uint64_t f;
 
-	f = (uint64_t)ldev->sys_clk_freq * (uint64_t)mul;
+	f = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * (uint64_t)mul;
 	f /= div;
 
 	return f;
@@ -905,11 +905,15 @@ static int litex_clk_calc_duty_normal(struct litex_clk_clkout *lcko,
 	uint32_t ht_aprox, synth_duty, min_d;
 	uint8_t high_time_it, edge_it, high_duty,
 	   divider = lcko->config.div;
+	int err;
 
 	if (calc_new) {
 		duty = lcko->ts_config.duty;
 	} else {
-		litex_clk_get_duty_cycle(lcko, &duty);
+		err = litex_clk_get_duty_cycle(lcko, &duty);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	high_duty = litex_clk_calc_duty_percent(&duty);
@@ -1127,9 +1131,13 @@ int litex_clk_get_phase(struct litex_clk_clkout *lcko)
 	uint32_t divider = 0, fract_cnt, post_glob_div_f,
 	    pm, global_period, clkout_period, period;
 	uint8_t phase_mux = 0, delay_time = 0;
+	int err = 0;
 
 	litex_clk_get_phase_data(lcko, &phase_mux, &delay_time);
-	litex_clk_get_clkout_divider(lcko, &divider, &fract_cnt);
+	err = litex_clk_get_clkout_divider(lcko, &divider, &fract_cnt);
+	if (err != 0) {
+		return err;
+	}
 
 	post_glob_div_f = (uint32_t)litex_clk_get_real_global_frequency();
 	period_buff = PICOS_IN_SEC;
@@ -1310,7 +1318,7 @@ static int litex_clk_calc_all_params(void)
 								 mul--) {
 			int below, above, all_valid = true;
 
-			vco_freq = (uint64_t)ldev->sys_clk_freq * (uint64_t)mul;
+			vco_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * (uint64_t)mul;
 			vco_freq /= div;
 			below = vco_freq < (ldev->vco.min
 					     * (1 + ldev->vco_margin));
@@ -1346,12 +1354,12 @@ int litex_clk_check_rate_range(struct litex_clk_clkout *lcko, uint32_t rate)
 		margin = litex_clk_pow(10, lcko->margin.exp);
 	}
 
-	max = (uint64_t)ldev->sys_clk_freq * (uint64_t)ldev->clkfbout.max;
+	max = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * (uint64_t)ldev->clkfbout.max;
 	div = ldev->divclk.min * lcko->clkout_div.min;
 	max /= div;
 	max += m;
 
-	min = ldev->sys_clk_freq * ldev->clkfbout.min;
+	min = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * ldev->clkfbout.min;
 	div = ldev->divclk.max * lcko->clkout_div.max;
 	min /= div;
 
@@ -1694,8 +1702,6 @@ static int litex_clk_dts_global_read(void)
 {
 	int ret;
 
-	ldev->sys_clk_freq = SYS_CLOCK_FREQUENCY;
-
 	ldev->nclkout = litex_clk_dts_cnt_clocks();
 
 	clkouts = k_malloc(sizeof(struct litex_clk_clkout) * ldev->nclkout);
@@ -1781,11 +1787,10 @@ static const struct litex_clk_device ldev_init = {
 	.divclk = {DIVCLK_DIVIDE_MIN, DIVCLK_DIVIDE_MAX},
 	.clkfbout = {CLKFBOUT_MULT_MIN, CLKFBOUT_MULT_MAX},
 	.vco = {VCO_FREQ_MIN, VCO_FREQ_MAX},
-	.sys_clk_freq = SYS_CLOCK_FREQUENCY,
 	.vco_margin = VCO_MARGIN,
 	.nclkout = NCLKOUT
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(clock0), &litex_clk_init, NULL,
+DEVICE_DT_DEFINE(DT_NODELABEL(clock0), litex_clk_init, NULL,
 		    NULL, &ldev_init, POST_KERNEL,
 		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &litex_clk_api);

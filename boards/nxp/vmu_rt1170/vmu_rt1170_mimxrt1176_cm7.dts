@@ -21,6 +21,7 @@
 		watchdog0 = &wdog1;
 		sdhc0 = &usdhc1;
 		sw0 = &arming_button;
+		pwm-led0 = &buzzer0;
 	};
 
 	chosen {
@@ -121,6 +122,13 @@
 		regulator-always-on;
 		status = "okay";
 	};
+
+	pwm_shell: pwm_shell {
+		compatible = "pwm-leds";
+		buzzer0: buzzer0 {
+			pwms = <&qtmr1 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
+		};
+	};
 };
 
 
@@ -170,13 +178,46 @@
 	current-speed = <115200>;
 };
 
+&lpuart6 {
+	status = "okay";
+	single-wire;
+	rx-invert;
+
+	sbus {
+		compatible = "futaba,sbus";
+		right_stick_x {
+			channel = <1>;
+			type = <INPUT_EV_ABS>;
+			zephyr,code = <INPUT_ABS_RX>;
+		};
+		right_stick_y {
+			channel = <2>;
+			type = <INPUT_EV_ABS>;
+			zephyr,code = <INPUT_ABS_RY>;
+		};
+		left_stick_y {
+			channel = <3>;
+			type = <INPUT_EV_ABS>;
+			zephyr,code = <INPUT_ABS_Y>;
+		};
+		left_stick_x {
+			channel = <4>;
+			type = <INPUT_EV_ABS>;
+			zephyr,code = <INPUT_ABS_X>;
+		};
+		kill_switch {
+			channel = <5>;
+			type = <INPUT_EV_KEY>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
 
 &flexcan1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -186,8 +227,6 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan2>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -197,12 +236,12 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
 };
+
+#include <zephyr/dt-bindings/sensor/icm42688.h>
 
 &lpspi1 {
 	status = "okay";
@@ -213,10 +252,12 @@
 		reg = <0>;
 		int-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <24000000>;
-		accel-hz = <1000>;
-		accel-fs = <16>;
-		gyro-hz = <1000>;
-		gyro-fs = <2000>;
+		accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
+		accel-odr = <ICM42688_DT_ACCEL_ODR_1000>;
+		accel-fs = <ICM42688_DT_ACCEL_FS_16>;
+		gyro-pwr-mode = <ICM42688_DT_GYRO_LN>;
+		gyro-odr = <ICM42688_DT_GYRO_ODR_1000>;
+		gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
 	};
 };
 
@@ -229,10 +270,12 @@
 		reg = <0>;
 		int-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <24000000>;
-		accel-hz = <1000>;
-		accel-fs = <16>;
-		gyro-hz = <1000>;
-		gyro-fs = <2000>;
+		accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
+		accel-odr = <ICM42688_DT_ACCEL_ODR_1000>;
+		accel-fs = <ICM42688_DT_ACCEL_FS_16>;
+		gyro-pwr-mode = <ICM42688_DT_GYRO_LN>;
+		gyro-odr = <ICM42688_DT_GYRO_ODR_1000>;
+		gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
 	};
 };
 
@@ -398,10 +441,20 @@
 	capture-channel = <1>;
 };
 
+&qtmr1 {
+	compatible = "nxp,qtmr-pwm";
+	pinctrl-0 = <&pinmux_qtmr_pwm_buzzer>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+	prescaler = <128>;
+	status = "okay";
+};
+
 &usdhc1 {
 	status = "okay";
 	no-1-8-v;
 	pwr-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio3 31 (GPIO_ACTIVE_LOW | GPIO_PULL_DOWN)>;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
@@ -434,7 +487,18 @@
 
 &enet1g {
 	status = "okay";
-	int-gpios = <&gpio5 10 GPIO_ACTIVE_HIGH>;
+};
+
+&enet1g_mac {
+	status = "okay";
+};
+
+&enet1g_mdio {
+	status = "okay";
+	enet1g_phy: phy@1 {
+		status = "okay";
+		int-gpios = <&gpio5 10 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 zephyr_udc0: &usb1 {

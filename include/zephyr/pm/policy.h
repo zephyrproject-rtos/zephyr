@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <zephyr/device.h>
 #include <zephyr/pm/state.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/toolchain.h>
@@ -219,6 +220,32 @@ void pm_policy_event_update(struct pm_policy_event *evt, uint32_t time_us);
  */
 void pm_policy_event_unregister(struct pm_policy_event *evt);
 
+/**
+ * @brief Increase power state locks.
+ *
+ * Set power state locks in all power states that disable power in the given
+ * device.
+ *
+ * @param dev Device reference.
+ *
+ * @see pm_policy_device_power_lock_put()
+ * @see pm_policy_state_lock_get()
+ */
+void pm_policy_device_power_lock_get(const struct device *dev);
+
+/**
+ * @brief Decrease power state locks.
+ *
+ * Remove power state locks in all power states that disable power in the given
+ * device.
+ *
+ * @param dev Device reference.
+ *
+ * @see pm_policy_device_power_lock_get()
+ * @see pm_policy_state_lock_put()
+ */
+void pm_policy_device_power_lock_put(const struct device *dev);
+
 #else
 static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
@@ -278,6 +305,17 @@ static inline void pm_policy_event_unregister(struct pm_policy_event *evt)
 {
 	ARG_UNUSED(evt);
 }
+
+static inline void pm_policy_device_power_lock_get(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline void pm_policy_device_power_lock_put(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
 #endif /* CONFIG_PM */
 
 /**

@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/** @file socket_select.h
+ *
+ * @brief BSD select support functions.
+ */
+
 #ifndef ZEPHYR_INCLUDE_NET_SOCKET_SELECT_H_
 #define ZEPHYR_INCLUDE_NET_SOCKET_SELECT_H_
 
@@ -21,10 +26,10 @@
 extern "C" {
 #endif
 
+/** Socket file descriptor set. */
 typedef struct zsock_fd_set {
-	uint32_t bitset[(CONFIG_POSIX_MAX_FDS + 31) / 32];
+	uint32_t bitset[(CONFIG_ZVFS_OPEN_MAX + 31) / 32];
 } zsock_fd_set;
-
 
 /**
  * @brief Legacy function to poll multiple sockets for events
@@ -106,6 +111,8 @@ void ZSOCK_FD_CLR(int fd, zsock_fd_set *set);
  */
 void ZSOCK_FD_SET(int fd, zsock_fd_set *set);
 
+/** @cond INTERNAL_HIDDEN */
+
 #ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
 
 #define fd_set zsock_fd_set
@@ -140,11 +147,13 @@ static inline void FD_SET(int fd, zsock_fd_set *set)
 
 #endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
 
+/** @endcond */
+
 #ifdef __cplusplus
 }
 #endif
 
-#include <syscalls/socket_select.h>
+#include <zephyr/syscalls/socket_select.h>
 
 /**
  * @}

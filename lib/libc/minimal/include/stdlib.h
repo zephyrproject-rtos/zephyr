@@ -12,6 +12,8 @@
 #include <stddef.h>
 #include <limits.h>
 
+#include <zephyr/toolchain.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,12 +43,12 @@ void qsort(void *base, size_t nmemb, size_t size,
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
-void _exit(int status);
-static inline void exit(int status)
+FUNC_NORETURN void _exit(int status);
+FUNC_NORETURN static inline void exit(int status)
 {
 	_exit(status);
 }
-void abort(void);
+FUNC_NORETURN void abort(void);
 
 #ifdef CONFIG_MINIMAL_LIBC_RAND
 #define RAND_MAX INT_MAX

@@ -23,7 +23,10 @@
 			bias-pull-up;
 			slew-rate = "fast";
 		};
-		group2 {
+	};
+
+	pinmux_lpi2c6: pinmux_lpi2c6 {
+		group0 {
 			pinmux = <&iomuxc_lpsr_gpio_lpsr_07_lpi2c6_scl>,
 				<&iomuxc_lpsr_gpio_lpsr_06_lpi2c6_sda>;
 			drive-strength = "high";
@@ -80,6 +83,64 @@
 	};
 
 	pinmux_ptp: pinmux_ptp {
+	};
+
+	pinmux_enet1g: pinmux_enet1g {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b1_11_enet_1g_tx_clk_io>,	// ENET_RGMII_TXC
+				<&iomuxc_gpio_disp_b1_01_enet_1g_rx_clk>;	// ENET_RGMII_RXC
+			bias-disable;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+		group1 {
+			pinmux = <&iomuxc_gpio_disp_b1_09_enet_1g_tdata00>,	// ENET_RGMII_TXD0
+				<&iomuxc_gpio_disp_b1_08_enet_1g_tdata01>,	// ENET_RGMII_TXD1
+				<&iomuxc_gpio_disp_b1_07_enet_1g_tdata02>,	// ENET_RGMII_TXD2
+				<&iomuxc_gpio_disp_b1_06_enet_1g_tdata03>,	// ENET_RGMII_TXD3
+				<&iomuxc_gpio_disp_b1_10_enet_1g_tx_en>;	// ENET_RGMII_TX_EN
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+		group2 {
+			pinmux = <&iomuxc_gpio_disp_b1_02_enet_1g_rdata00>,	// ENET_RGMII_RXD0
+				<&iomuxc_gpio_disp_b1_03_enet_1g_rdata01>,	// ENET_RGMII_RXD1
+				<&iomuxc_gpio_disp_b1_04_enet_1g_rdata02>,	// ENET_RGMII_RXD2
+				<&iomuxc_gpio_disp_b1_05_enet_1g_rdata03>,	// ENET_RGMII_RXD3
+				<&iomuxc_gpio_disp_b1_00_enet_1g_rx_en>;	// ENET_RGMII_RX_EN
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_enet1g_mdio: pinmux_enet1g_mdio {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_13_gpio11_io14>;	// ETHPHY_RST_B
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "slow";
+		};
+		group1 {
+			pinmux = <&iomuxc_gpio_disp_b2_12_gpio_mux5_io13>;	// RGMII1_PHY_INTB
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-enable;
+		};
+		group2 {
+			pinmux = <&iomuxc_gpio_emc_b2_19_enet_1g_mdc>,	// ENET_RGMII_MDC
+				<&iomuxc_gpio_emc_b2_20_enet_1g_mdio>;		// ENET_RGMII_MDIO
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_enet1g_ptp: pinmux_enet1g_ptp {
 	};
 
 	pinmux_flexcan3: pinmux_flexcan3 {
@@ -224,6 +285,17 @@
 		};
 		group1 {
 			pinmux = <&iomuxc_gpio_disp_b2_10_lpuart2_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart2_flowcontrol: pinmux_lpuart2_flowcontrol {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_11_lpuart2_rx>,
+				<&iomuxc_gpio_disp_b2_10_lpuart2_tx>,
+				<&iomuxc_gpio_disp_b2_12_lpuart2_cts_b>,
+				<&iomuxc_gpio_disp_b2_13_lpuart2_rts_b>;
 			drive-strength = "high";
 			slew-rate = "fast";
 		};

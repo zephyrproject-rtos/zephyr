@@ -15,13 +15,6 @@ config NUM_IRQS
 config FPU
 	default y if CPU_HAS_FPU
 
-if !XIP
-config FLASH_SIZE
-	default 0
-config FLASH_BASE_ADDRESS
-	default 0
-endif
-
 # The S32K1xx have 8 MPU regions, which is not enough for both HW stack protection
 # and userspace. Only enable HW stack protection if userspace is not enabled.
 config HW_STACK_PROTECTION

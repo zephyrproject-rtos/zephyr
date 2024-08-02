@@ -16,7 +16,7 @@ static inline int z_vrfy_eeprom_read(const struct device *dev, off_t offset,
 				  (void *)data,
 				  len);
 }
-#include <syscalls/eeprom_read_mrsh.c>
+#include <zephyr/syscalls/eeprom_read_mrsh.c>
 
 static inline int z_vrfy_eeprom_write(const struct device *dev, off_t offset,
 				      const void *data, size_t len)
@@ -26,11 +26,11 @@ static inline int z_vrfy_eeprom_write(const struct device *dev, off_t offset,
 	return z_impl_eeprom_write((const struct device *)dev, offset,
 				   (const void *)data, len);
 }
-#include <syscalls/eeprom_write_mrsh.c>
+#include <zephyr/syscalls/eeprom_write_mrsh.c>
 
 static inline size_t z_vrfy_eeprom_get_size(const struct device *dev)
 {
 	K_OOPS(K_SYSCALL_DRIVER_EEPROM(dev, size));
 	return z_impl_eeprom_get_size((const struct device *)dev);
 }
-#include <syscalls/eeprom_get_size_mrsh.c>
+#include <zephyr/syscalls/eeprom_get_size_mrsh.c>

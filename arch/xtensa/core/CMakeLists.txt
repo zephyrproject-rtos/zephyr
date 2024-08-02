@@ -48,7 +48,7 @@ add_subdirectory(startup)
 # are the official places where we find core-isa.h. (Also that we
 # undefine __XCC_ because that compiler actually trips an error trying
 # to build this file to protect against mismatched versions.)
-set(CORE_ISA_DM ${CMAKE_BINARY_DIR}/zephyr/include/generated/core-isa-dM.h)
+set(CORE_ISA_DM ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/core-isa-dM.h)
 set(CORE_ISA_IN ${CMAKE_BINARY_DIR}/zephyr/include/generated/core-isa-dM.c)
 file(WRITE ${CORE_ISA_IN} "#include <xtensa/config/core-isa.h>\n")
 add_custom_command(OUTPUT ${CORE_ISA_DM}
@@ -73,7 +73,7 @@ else()
 endif()
 
 # Generates a list of device-specific scratch register choices
-set(ZSR_H ${CMAKE_BINARY_DIR}/zephyr/include/generated/zsr.h)
+set(ZSR_H ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/zsr.h)
 add_custom_command(OUTPUT ${ZSR_H} DEPENDS ${CORE_ISA_DM}
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_zsr.py
                                $<$<BOOL:${CONFIG_XTENSA_MMU}>:--mmu>
@@ -84,3 +84,30 @@ add_custom_target(zsr_h DEPENDS ${ZSR_H})
 add_dependencies(zephyr_interface zsr_h)
 
 unset(MAY_NEED_SYSCALL_SCRATCH_REG)
+
+# Similar: auto-generate interrupt handlers
+set(HANDLERS ${CMAKE_BINARY_DIR}/zephyr/include/generated/xtensa_handlers)
+
+add_custom_command(
+  OUTPUT ${HANDLERS}_tmp.c
+  COMMAND ${CMAKE_C_COMPILER} -E -U__XCC__
+	  -I${ZEPHYR_XTENSA_MODULE_DIR}/zephyr/soc/${CONFIG_SOC}
+	  -o ${HANDLERS}_tmp.c
+	  - < ${CMAKE_CURRENT_SOURCE_DIR}/xtensa_intgen.tmpl)
+
+add_custom_command(
+  OUTPUT ${HANDLERS}.h
+  DEPENDS ${HANDLERS}_tmp.c
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/xtensa_intgen.py
+          ${HANDLERS}_tmp.c > ${HANDLERS}.h)
+
+add_custom_target(xtensa_handlers_h DEPENDS ${HANDLERS}.h)
+add_dependencies(zephyr_interface xtensa_handlers_h)
+
+# Auto-generate interrupt vector entry
+set(VECS_LD ${CMAKE_BINARY_DIR}/zephyr/include/generated/xtensa_vectors.ld)
+add_custom_command(OUTPUT ${VECS_LD} DEPENDS ${CORE_ISA_DM}
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_vectors.py
+          ${CORE_ISA_DM} > ${VECS_LD})
+add_custom_target(xtensa_vectors_ld DEPENDS ${VECS_LD})
+add_dependencies(zephyr_interface xtensa_vectors_ld)

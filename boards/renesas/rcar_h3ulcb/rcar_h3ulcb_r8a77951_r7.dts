@@ -63,7 +63,6 @@
 	pinctrl-0 = <&can0_data_a_tx_default &can0_data_a_rx_default>;
 	pinctrl-names = "default";
 	status = "okay";
-	bus-speed = <125000>;
 
 	can-transceiver {
 		max-bitrate = <5000000>;

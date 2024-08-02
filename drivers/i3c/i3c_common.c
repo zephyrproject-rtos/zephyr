@@ -512,6 +512,7 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target)
 	struct i3c_ccc_getdcr dcr = {0};
 	struct i3c_ccc_mrl mrl = {0};
 	struct i3c_ccc_mwl mwl = {0};
+	union i3c_ccc_getcaps caps = {0};
 
 	/*
 	 * Since some CCC functions requires BCR to function
@@ -545,6 +546,21 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target)
 	if (i3c_ccc_do_getmwl(target, &mwl) != 0) {
 		/* GETMWL may be optionally supported if no settable limit */
 		LOG_DBG("No settable limit for GETMWL");
+	}
+
+	/* GETCAPS */
+	ret = i3c_ccc_do_getcaps_fmt1(target, &caps);
+	/*
+	 * GETCAPS (GETHDRCAP) is required to be supported for I3C v1.0 targets that support HDR
+	 * modes and required if the Target's I3C version is v1.1 or later, but which the version it
+	 * supports it can't be known ahead of time. So if the BCR bit for Advanced capabilities is
+	 * set, then it is expected for GETCAPS to always be supported. Otherwise, then it's a I3C
+	 * v1.0 device without any HDR modes so do not treat as an error if no valid response.
+	 */
+	if (ret == 0) {
+		memcpy(&target->getcaps, &caps, sizeof(target->getcaps));
+	} else if ((ret != 0) && (target->bcr & I3C_BCR_ADV_CAPABILITIES)) {
+		goto out;
 	}
 
 	target->dcr = dcr.dcr;

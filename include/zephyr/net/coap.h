@@ -82,11 +82,15 @@ enum coap_method {
 	COAP_METHOD_IPATCH = 7,  /**< IPATCH */
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 #define COAP_REQUEST_MASK 0x07
 
 #define COAP_VERSION_1 1U
 
 #define COAP_OBSERVE_MAX_AGE 0xFFFFFF
+
+/** @endcond */
 
 /**
  * @brief CoAP packets may be of one of these types.
@@ -193,9 +197,13 @@ enum coap_response_code {
 						COAP_MAKE_RESPONSE_CODE(5, 5)
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 #define COAP_CODE_EMPTY (0)
 
 #define COAP_TOKEN_MAX_LEN 8UL
+
+/** @endcond */
 
 /**
  * @brief Set of Content-Format option values for CoAP.
@@ -214,10 +222,14 @@ enum coap_content_format {
 	COAP_CONTENT_FORMAT_APP_CBOR = 60               /**< application/cbor */
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 /* block option helper */
 #define GET_BLOCK_NUM(v)        ((v) >> 4)
 #define GET_BLOCK_SIZE(v)       (((v) & 0x7))
 #define GET_MORE(v)             (!!((v) & 0x08))
+
+/** @endcond */
 
 struct coap_observer;
 struct coap_packet;
@@ -251,10 +263,15 @@ typedef void (*coap_notify_t)(struct coap_resource *resource,
 struct coap_resource {
 	/** Which function to be called for each CoAP method */
 	coap_method_t get, post, put, del, fetch, patch, ipatch;
+	/** Notify function to call */
 	coap_notify_t notify;
+	/** Resource path */
 	const char * const *path;
+	/** User specific opaque data */
 	void *user_data;
+	/** List of resource observers */
 	sys_slist_t observers;
+	/** Resource age */
 	int age;
 };
 
@@ -262,9 +279,13 @@ struct coap_resource {
  * @brief Represents a remote device that is observing a local resource.
  */
 struct coap_observer {
+	/** Observer list node */
 	sys_snode_t list;
+	/** Observer connection end point information */
 	struct sockaddr addr;
+	/** Observer token */
 	uint8_t token[8];
+	/** Extended token length */
 	uint8_t tkl;
 };
 
@@ -344,11 +365,17 @@ struct coap_pending {
  * also used when observing resources.
  */
 struct coap_reply {
+	/** CoAP reply callback */
 	coap_reply_t reply;
+	/** User specific opaque data */
 	void *user_data;
+	/** Reply age */
 	int age;
+	/** Reply id */
 	uint16_t id;
+	/** Reply token */
 	uint8_t token[8];
+	/** Extended token length */
 	uint8_t tkl;
 };
 
@@ -714,15 +741,18 @@ static inline enum coap_block_size coap_bytes_to_block_size(uint16_t bytes)
 	if (sz > COAP_BLOCK_1024) {
 		return COAP_BLOCK_1024;
 	}
-	return sz;
+	return (enum coap_block_size)sz;
 }
 
 /**
  * @brief Represents the current state of a block-wise transaction.
  */
 struct coap_block_context {
+	/** Total size of the block-wise transaction */
 	size_t total_size;
+	/** Current size of the block-wise transaction */
 	size_t current;
+	/** Block size */
 	enum coap_block_size block_size;
 };
 

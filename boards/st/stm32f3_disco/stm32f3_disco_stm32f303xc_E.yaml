@@ -20,4 +20,6 @@ supported:
   - pwm
   - adc
   - dac
+  - rtc
+  - usbd
 vendor: st

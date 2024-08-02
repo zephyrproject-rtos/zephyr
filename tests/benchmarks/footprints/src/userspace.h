@@ -10,6 +10,6 @@
 __syscall int dummy_syscall(void);
 __syscall int validation_overhead_syscall(void);
 
-#include <syscalls/userspace.h>
+#include <zephyr/syscalls/userspace.h>
 
 #endif /* _USERSPACE_H_ */

@@ -175,11 +175,44 @@ static int nvs_flash_ate_wrt(struct nvs_fs *fs, const struct nvs_ate *entry)
 }
 
 /* data write */
-static int nvs_flash_data_wrt(struct nvs_fs *fs, const void *data, size_t len)
+static int nvs_flash_data_wrt(struct nvs_fs *fs, const void *data, size_t len, bool compute_crc)
 {
 	int rc;
 
-	rc = nvs_flash_al_wrt(fs, fs->data_wra, data, len);
+	/* Only add the CRC if required (ignore deletion requests, i.e. when len is 0) */
+	if (IS_ENABLED(CONFIG_NVS_DATA_CRC) && compute_crc && (len > 0)) {
+		size_t aligned_len, data_len = len;
+		uint8_t *data8 = (uint8_t *)data, buf[NVS_BLOCK_SIZE + NVS_DATA_CRC_SIZE], *pbuf;
+		uint32_t data_crc;
+
+		/* Write as much aligned data as possible, so the CRC can be concatenated at
+		 * the end of the unaligned data later
+		 */
+		aligned_len = len & ~(fs->flash_parameters->write_block_size - 1U);
+		rc = nvs_flash_al_wrt(fs, fs->data_wra, data8, aligned_len);
+		fs->data_wra += aligned_len;
+		if (rc) {
+			return rc;
+		}
+		data8 += aligned_len;
+		len -= aligned_len;
+
+		/* Create a buffer with the unaligned data if any */
+		pbuf = buf;
+		if (len) {
+			memcpy(pbuf, data8, len);
+			pbuf += len;
+		}
+
+		/* Append the CRC */
+		data_crc = crc32_ieee(data, data_len);
+		memcpy(pbuf, &data_crc, sizeof(data_crc));
+		len += sizeof(data_crc);
+
+		rc = nvs_flash_al_wrt(fs, fs->data_wra, buf, len);
+	} else {
+		rc = nvs_flash_al_wrt(fs, fs->data_wra, data, len);
+	}
 	fs->data_wra += nvs_al_size(fs, len);
 
 	return rc;
@@ -279,7 +312,10 @@ static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, size_t len)
 		if (rc) {
 			return rc;
 		}
-		rc = nvs_flash_data_wrt(fs, buf, bytes_to_copy);
+		/* Just rewrite the whole record, no need to recompute the CRC as the data
+		 * did not change
+		 */
+		rc = nvs_flash_data_wrt(fs, buf, bytes_to_copy, false);
 		if (rc) {
 			return rc;
 		}
@@ -308,7 +344,7 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 #ifdef CONFIG_NVS_LOOKUP_CACHE
 	nvs_lookup_cache_invalidate(fs, addr >> ADDR_SECT_SHIFT);
 #endif
-	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
+	rc = flash_flatten(fs->flash_device, offset, fs->sector_size);
 
 	if (rc) {
 		return rc;
@@ -348,7 +384,6 @@ static int nvs_ate_crc8_check(const struct nvs_ate *entry)
 /* nvs_ate_cmp_const compares an ATE to a constant value. returns 0 if
  * the whole ATE is equal to value, 1 if not equal.
  */
-
 static int nvs_ate_cmp_const(const struct nvs_ate *entry, uint8_t value)
 {
 	const uint8_t *data8 = (const uint8_t *)entry;
@@ -364,17 +399,19 @@ static int nvs_ate_cmp_const(const struct nvs_ate *entry, uint8_t value)
 }
 
 /* nvs_ate_valid validates an ate:
- *     return 1 if crc8 and offset valid,
+ *     return 1 if crc8, offset and length are valid,
  *            0 otherwise
  */
 static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
 {
 	size_t ate_size;
+	uint32_t position;
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+	position = entry->offset + entry->len;
 
 	if ((nvs_ate_crc8_check(entry)) ||
-	    (entry->offset >= (fs->sector_size - ate_size))) {
+	    (position >= (fs->sector_size - ate_size))) {
 		return 0;
 	}
 
@@ -416,12 +453,19 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 	entry.len = (uint16_t)len;
 	entry.part = 0xff;
 
-	nvs_ate_crc8_update(&entry);
-
-	rc = nvs_flash_data_wrt(fs, data, len);
+	rc = nvs_flash_data_wrt(fs, data, len, true);
 	if (rc) {
 		return rc;
 	}
+
+#ifdef CONFIG_NVS_DATA_CRC
+	/* No CRC has been added if this is a deletion write request */
+	if (len > 0) {
+		entry.len += NVS_DATA_CRC_SIZE;
+	}
+#endif
+	nvs_ate_crc8_update(&entry);
+
 	rc = nvs_flash_ate_wrt(fs, &entry);
 	if (rc) {
 		return rc;
@@ -1030,8 +1074,10 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 	/* The maximum data size is sector size - 4 ate
 	 * where: 1 ate for data, 1 ate for sector close, 1 ate for gc done,
 	 * and 1 ate to always allow a delete.
+	 * Also take into account the data CRC that is appended at the end of the data field,
+	 * if any.
 	 */
-	if ((len > (fs->sector_size - 4 * ate_size)) ||
+	if ((len > (fs->sector_size - 4 * ate_size - NVS_DATA_CRC_SIZE)) ||
 	    ((len > 0) && (data == NULL))) {
 		return -EINVAL;
 	}
@@ -1080,10 +1126,10 @@ no_cached_entry:
 				 */
 				return 0;
 			}
-		} else if (len == wlk_ate.len) {
+		} else if (len + NVS_DATA_CRC_SIZE == wlk_ate.len) {
 			/* do not try to compare if lengths are not equal */
 			/* compare the data and if equal return 0 */
-			rc = nvs_flash_block_cmp(fs, rd_addr, data, len);
+			rc = nvs_flash_block_cmp(fs, rd_addr, data, len + NVS_DATA_CRC_SIZE);
 			if (rc <= 0) {
 				return rc;
 			}
@@ -1098,7 +1144,7 @@ no_cached_entry:
 	/* calculate required space if the entry contains data */
 	if (data_size) {
 		/* Leave space for delete ate */
-		required_space = data_size + ate_size;
+		required_space = data_size + ate_size + NVS_DATA_CRC_SIZE;
 	}
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
@@ -1153,6 +1199,9 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 	uint16_t cnt_his;
 	struct nvs_ate wlk_ate;
 	size_t ate_size;
+#ifdef CONFIG_NVS_DATA_CRC
+	uint32_t read_data_crc, computed_data_crc;
+#endif
 
 	if (!fs->ready) {
 		LOG_ERR("NVS not initialized");
@@ -1198,14 +1247,40 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 		return -ENOENT;
 	}
 
+#ifdef CONFIG_NVS_DATA_CRC
+	/* When data CRC is enabled, there should be at least the CRC stored in the data field */
+	if (wlk_ate.len < NVS_DATA_CRC_SIZE) {
+		return -ENOENT;
+	}
+#endif
+
 	rd_addr &= ADDR_SECT_MASK;
 	rd_addr += wlk_ate.offset;
-	rc = nvs_flash_rd(fs, rd_addr, data, MIN(len, wlk_ate.len));
+	rc = nvs_flash_rd(fs, rd_addr, data, MIN(len, wlk_ate.len - NVS_DATA_CRC_SIZE));
 	if (rc) {
 		goto err;
 	}
 
-	return wlk_ate.len;
+	/* Check data CRC (only if the whole element data has been read) */
+#ifdef CONFIG_NVS_DATA_CRC
+	if (len >= (wlk_ate.len - NVS_DATA_CRC_SIZE)) {
+		rd_addr += wlk_ate.len - NVS_DATA_CRC_SIZE;
+		rc = nvs_flash_rd(fs, rd_addr, &read_data_crc, sizeof(read_data_crc));
+		if (rc) {
+			goto err;
+		}
+
+		computed_data_crc = crc32_ieee(data, wlk_ate.len - NVS_DATA_CRC_SIZE);
+		if (read_data_crc != computed_data_crc) {
+			LOG_ERR("Invalid data CRC: read_data_crc=0x%08X, computed_data_crc=0x%08X",
+				read_data_crc, computed_data_crc);
+			rc = -EIO;
+			goto err;
+		}
+	}
+#endif
+
+	return wlk_ate.len - NVS_DATA_CRC_SIZE;
 
 err:
 	return rc;
@@ -1236,7 +1311,11 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 
 	free_space = 0;
 	for (uint16_t i = 1; i < fs->sector_count; i++) {
-		free_space += (fs->sector_size - ate_size);
+		/*
+		 * There is always a closing ATE and a reserved ATE for
+		 * deletion in each sector
+		 */
+		free_space += (fs->sector_size - (2 * ate_size));
 	}
 
 	step_addr = fs->ate_wra;
@@ -1260,11 +1339,17 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 			}
 		}
 
-		if ((wlk_addr == step_addr) && step_ate.len &&
-		    (nvs_ate_valid(fs, &step_ate))) {
-			/* count needed */
-			free_space -= nvs_al_size(fs, step_ate.len);
-			free_space -= ate_size;
+		if (nvs_ate_valid(fs, &step_ate)) {
+			/* Take into account the GC done ATE if it is present */
+			if (step_ate.len == 0) {
+				if (step_ate.id == 0xFFFF) {
+					free_space -= ate_size;
+				}
+			} else if (wlk_addr == step_addr) {
+				/* count needed */
+				free_space -= nvs_al_size(fs, step_ate.len);
+				free_space -= ate_size;
+			}
 		}
 
 		if (step_addr == fs->ate_wra) {

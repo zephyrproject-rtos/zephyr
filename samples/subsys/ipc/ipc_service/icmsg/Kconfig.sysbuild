@@ -4,6 +4,8 @@
 
 source "share/sysbuild/Kconfig"
 
-config NET_CORE_BOARD
+config REMOTE_BOARD
 string
 	default "nrf5340dk/nrf5340/cpunet" if $(BOARD) = "nrf5340dk"
+	default "nrf54l15pdk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15pdk"
+	default "stm32h747i_disco/stm32h747xx/m4" if $(BOARD) = "stm32h747i_disco"

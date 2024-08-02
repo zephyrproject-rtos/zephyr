@@ -58,11 +58,10 @@ static void slice_timeout(struct _timeout *timeout)
 	slice_expired[cpu] = true;
 
 	/* We need an IPI if we just handled a timeslice expiration
-	 * for a different CPU.  Ideally this would be able to target
-	 * the specific core, but that's not part of the API yet.
+	 * for a different CPU.
 	 */
-	if (IS_ENABLED(CONFIG_SMP) && cpu != _current_cpu->id) {
-		flag_ipi();
+	if (cpu != _current_cpu->id) {
+		flag_ipi(IPI_CPU_MASK(cpu));
 	}
 }
 
@@ -95,6 +94,7 @@ void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks
 		thread->base.slice_ticks = thread_slice_ticks;
 		thread->base.slice_expired = expired;
 		thread->base.slice_data = data;
+		z_reset_time_slice(thread);
 	}
 }
 #endif

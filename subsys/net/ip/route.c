@@ -258,7 +258,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 			net_sprint_ipv6_addr(dst),		\
 			net_sprint_ipv6_addr(naddr),	\
 			route->iface);					\
-	} } while (0)
+	} } while (false)
 
 /* Route was accessed, so place it in front of the routes list */
 static inline void update_route_access(struct net_route_entry *route)
@@ -777,11 +777,53 @@ bool net_route_mcast_iface_del(struct net_route_entry_mcast *entry,
 	return true;
 }
 
+#if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
+struct mcast_route_mld_event {
+	struct in6_addr *addr;
+	uint8_t mode;
+};
 
-int net_route_mcast_forward_packet(struct net_pkt *pkt,
-				   const struct net_ipv6_hdr *hdr)
+static void send_mld_event(struct net_if *iface, void *user_data)
+{
+	struct mcast_route_mld_event *event = (struct mcast_route_mld_event *)user_data;
+
+	/* Do not send events for ifaces without IPv6, without MLD, already or still in
+	 * a given group
+	 */
+	if (!iface->config.ip.ipv6 || net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD) ||
+	    net_if_ipv6_maddr_lookup(event->addr, &iface)) {
+		return;
+	}
+
+	net_ipv6_mld_send_single(iface, event->addr, event->mode);
+}
+
+static void propagate_mld_event(struct net_route_entry_mcast *route, bool route_added)
+{
+	struct mcast_route_mld_event mld_event;
+
+	/* Apply only for complete addresses */
+	if (route->prefix_len == 128) {
+		mld_event.addr = &route->group;
+		mld_event.mode = route_added ? NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE :
+					       NET_IPV6_MLDv2_CHANGE_TO_INCLUDE_MODE;
+
+		net_if_foreach(send_mld_event, &mld_event);
+	}
+}
+#else
+#define propagate_mld_event(...)
+#endif /* CONFIG_NET_MCAST_ROUTE_MLD_REPORTS */
+
+int net_route_mcast_forward_packet(struct net_pkt *pkt, struct net_ipv6_hdr *hdr)
 {
 	int ret = 0, err = 0;
+
+	/* At this point, the original pkt has already stored the hop limit in its metadata.
+	 * Change its value in a common buffer so the forwardee has a proper count. As we have
+	 * a direct access to the buffer there is no need to perform read/write operations.
+	 */
+	hdr->hop_limit--;
 
 	ARRAY_FOR_EACH_PTR(route_mcast_entries, route) {
 		struct net_pkt *pkt_cpy = NULL;
@@ -869,6 +911,8 @@ struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
 			route->ifaces[0] = iface;
 			route->is_used = true;
 
+			propagate_mld_event(route, true);
+
 			net_ipv6_nbr_unlock();
 			return route;
 		}
@@ -888,6 +932,8 @@ bool net_route_mcast_del(struct net_route_entry_mcast *route)
 	NET_ASSERT(route->is_used,
 		   "Multicast route %p to %s was already removed", route,
 		   net_sprint_ipv6_addr(&route->group));
+
+	propagate_mld_event(route, false);
 
 	route->is_used = false;
 

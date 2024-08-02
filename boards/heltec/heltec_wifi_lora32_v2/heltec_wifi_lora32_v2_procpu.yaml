@@ -1,5 +1,5 @@
 identifier: heltec_wifi_lora32_v2/esp32/procpu
-name: HELTEC WiFi LoRa 32 (V2) Board
+name: HELTEC WiFi LoRa 32 (V2) Board PROCPU
 type: mcu
 arch: xtensa
 toolchain:

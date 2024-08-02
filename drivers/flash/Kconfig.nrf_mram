@@ -10,6 +10,7 @@ config SOC_FLASH_NRF_MRAM
 	depends on DT_HAS_NORDIC_MRAM_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_NO_EXPLICIT_ERASE
 	imply MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enables Nordic Semiconductor flash driver for MRAM in direct write mode.

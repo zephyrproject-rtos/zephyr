@@ -25,4 +25,6 @@ supported:
   - can
   - dac
   - dma
+  - rtc
+  - usbd
 vendor: st

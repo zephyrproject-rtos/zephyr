@@ -3,9 +3,13 @@
 
 if PICOLIBC
 
+choice PICOLIBC_SOURCE
+	prompt "Source of Picolibc"
+	default PICOLIBC_USE_TOOLCHAIN if REQUIRES_FULL_LIBCPP || "$(TOOLCHAIN_HAS_PICOLIBC)" = "y"
+	default PICOLIBC_USE_MODULE
+
 config PICOLIBC_USE_MODULE
-	bool "Picolibc as module" if "$(TOOLCHAIN_HAS_PICOLIBC)" = "y"
-	default y if "$(TOOLCHAIN_HAS_PICOLIBC)" != "y"
+	bool "Picolibc from module"
 	depends on ZEPHYR_PICOLIBC_MODULE
 	depends on !GLIBCXX_LIBCPP
 	help
@@ -15,21 +19,14 @@ config PICOLIBC_USE_MODULE
 
 # force TLS when using toolchain with TLS support
 config PICOLIBC_USE_TOOLCHAIN
-	bool
-	default y if PICOLIBC && !PICOLIBC_USE_MODULE
+	bool "Picolibc from toolchain"
+	depends on "$(TOOLCHAIN_HAS_PICOLIBC)" = "y"
 	select THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
-
-config PICOLIBC_HEAP_SIZE
-	int "[DEPRECATED] Picolibc heap size (bytes)"
-	default -2
 	help
-	  [DEPRECATED] Use COMMON_LIBC_MALLOC_ARENA_SIZE
+	  Use picolibc included with the toolchain.
+	  This is required when using a full C++ standard library (`REQUIRES_FULL_LIBCPP=y`).
 
-	  Indicate the size in bytes of the memory arena used for common C
-	  library malloc() implementation when using Picolibc.
-
-	  If set to -2, then the value of COMMON_LIBC_MALLOC_ARENA_SIZE
-	  will be used.
+endchoice # PICOLIBC_SOURCE
 
 choice PICOLIBC_IO_LEVEL
 	prompt "Picolibc printf/scanf level"

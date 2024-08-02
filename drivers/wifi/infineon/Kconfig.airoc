@@ -116,11 +116,11 @@ choice CYW4373_MODULE
 config CYW4373_STERLING_LWB5PLUS
 	bool "STERLING-LWB5plus"
 	help
-	  Laird Sterling LWB5+ 802.11ac / Bluetooth 5.0 M.2 Carrier Board
+	  Ezurio Sterling LWB5+ 802.11ac / Bluetooth 5.0 M.2 Carrier Board
 	  (E-Type Key w/ SDIO/UART)
 
 	  Detailed information about Type Sterling LWB5+ module you can find on
-	  https://www.lairdconnect.com/wireless-modules/wifi-modules-bluetooth/sterling-lwb5-plus-wifi-5-bluetooth-5-module
+	  https://www.ezurio.com/wireless-modules/wifi-modules-bluetooth/sterling-lwb5-plus-wifi-5-bluetooth-5-module
 endchoice
 
 choice CYW43439_MODULE

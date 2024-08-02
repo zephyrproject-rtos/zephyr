@@ -71,7 +71,7 @@ set(QEMU_FLAGS_${ARCH}
   )
 
 if(NOT CONFIG_ACPI)
-  list(APPEND QEMU_FLAGS_${ARCH} -no-acpi)
+  list(APPEND QEMU_FLAGS_${ARCH} -machine acpi=off)
 endif()
 
 # TODO: Support debug

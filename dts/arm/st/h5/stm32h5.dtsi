@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2023-2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -308,6 +308,8 @@
 			interrupts = <2 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>;
 			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <17>;
 			status = "disabled";
 		};
 
@@ -495,6 +497,13 @@
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x00100000>,
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x00200000>;
 			status = "disabled";
+
+			mdio: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		gpdma1: dma@40020000 {
@@ -518,6 +527,54 @@
 			dma-channels = <8>;
 			dma-requests = <140>;
 			dma-offset = <8>;
+			status = "disabled";
+		};
+
+		i2s1: i2s@40013000 {
+			compatible = "st,stm32h7-i2s", "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
+				<&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
+			dmas = <&gpdma1 0 7 (STM32_DMA_PERIPH_TX |STM32_DMA_16BITS | \
+					STM32_DMA_PRIORITY_HIGH)
+				&gpdma1 1 6 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | \
+					STM32_DMA_PRIORITY_HIGH)>;
+			dma-names = "tx", "rx";
+			interrupts = <55 3>;
+			status = "disabled";
+		};
+
+		i2s2: i2s@40003800 {
+			compatible = "st,stm32h7-i2s", "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>,
+				<&rcc STM32_SRC_PLL1_Q SPI2_SEL(0)>;
+			dmas = <&gpdma1 2 9 (STM32_DMA_PERIPH_TX | STM32_DMA_16BITS | \
+					STM32_DMA_PRIORITY_HIGH)
+				&gpdma1 3 8 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | \
+					STM32_DMA_PRIORITY_HIGH)>;
+			dma-names = "tx", "rx";
+			interrupts = <56 3>;
+			status = "disabled";
+		};
+
+		i2s3: i2s@40003c00 {
+			compatible = "st,stm32h7-i2s", "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>,
+				<&rcc STM32_SRC_PLL1_Q SPI3_SEL(0)>;
+			dmas = <&gpdma1 4 11 (STM32_DMA_PERIPH_TX  | STM32_DMA_16BITS | \
+					STM32_DMA_PRIORITY_HIGH)
+				&gpdma1 5 10 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | \
+					STM32_DMA_PRIORITY_HIGH)>;
+			dma-names = "tx", "rx";
+			interrupts = <57 3>;
 			status = "disabled";
 		};
 

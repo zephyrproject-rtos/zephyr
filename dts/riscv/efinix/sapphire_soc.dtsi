@@ -54,7 +54,7 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0xf8c00000 0x04000000>;
+			reg = <0xf8c00000 0x0400000>;
 			riscv,max-priority = <3>;
 			riscv,ndev = <32>;
 		};

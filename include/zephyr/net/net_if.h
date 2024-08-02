@@ -53,25 +53,68 @@ struct net_if_addr {
 	/** IP address */
 	struct net_addr address;
 
+	/** Reference counter. This is used to prevent address removal if there
+	 * are sockets that have bound the local endpoint to this address.
+	 */
+	atomic_t atomic_ref;
+
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_timeout lifetime;
 #endif
 
-#if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
-	/** Duplicate address detection (DAD) timer */
-	sys_snode_t dad_node;
-	uint32_t dad_start;
-#endif
 	/** How the IP address was set */
 	enum net_addr_type addr_type;
 
 	/** What is the current state of the address */
 	enum net_addr_state addr_state;
 
-#if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
-	/** How many times we have done DAD */
-	uint8_t dad_count;
-	/* What interface the DAD is running */
+#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IPV6_PE)
+	/** Address creation time. This is used to determine if the maximum
+	 * lifetime for this address is reached or not. The value is in seconds.
+	 */
+	uint32_t addr_create_time;
+
+	/** Preferred lifetime for the address in seconds.
+	 */
+	uint32_t addr_preferred_lifetime;
+
+	/** Address timeout value. This is only used if DAD needs to be redone
+	 * for this address because of earlier DAD failure. This value is in
+	 * seconds.
+	 */
+	int32_t addr_timeout;
+#endif
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+
+	union {
+#if defined(CONFIG_NET_IPV6_DAD)
+		struct {
+			/** Duplicate address detection (DAD) timer */
+			sys_snode_t dad_node;
+			uint32_t dad_start;
+
+			/** How many times we have done DAD */
+			uint8_t dad_count;
+		};
+#endif /* CONFIG_NET_IPV6_DAD */
+#if defined(CONFIG_NET_IPV4_ACD)
+		struct {
+			/** Address conflict detection (ACD) timer. */
+			sys_snode_t acd_node;
+			k_timepoint_t acd_timeout;
+
+			/** ACD probe/announcement counter. */
+			uint8_t acd_count;
+
+			/** ACD status. */
+			uint8_t acd_state;
+		};
+#endif /* CONFIG_NET_IPV4_ACD */
+	};
+
+#if defined(CONFIG_NET_IPV6_DAD) || defined(CONFIG_NET_IPV4_ACD)
+	/** What interface the conflict detection is running */
 	uint8_t ifindex;
 #endif
 
@@ -84,7 +127,12 @@ struct net_if_addr {
 	/** Is this IP address usage limited to the subnet (mesh) or not */
 	uint8_t is_mesh_local : 1;
 
-	uint8_t _unused : 5;
+	/** Is this IP address temporary and generated for example by
+	 * IPv6 privacy extension (RFC 8981)
+	 */
+	uint8_t is_temporary : 1;
+
+	uint8_t _unused : 4;
 };
 
 /**
@@ -234,15 +282,15 @@ enum net_if_flag {
 /** @endcond */
 };
 
-/** Network interface operational status (RFC 2863). */
+/** @brief Network interface operational status (RFC 2863). */
 enum net_if_oper_state {
-	NET_IF_OPER_UNKNOWN,
-	NET_IF_OPER_NOTPRESENT,
-	NET_IF_OPER_DOWN,
-	NET_IF_OPER_LOWERLAYERDOWN,
-	NET_IF_OPER_TESTING,
-	NET_IF_OPER_DORMANT,
-	NET_IF_OPER_UP,
+	NET_IF_OPER_UNKNOWN,        /**< Initial (unknown) value */
+	NET_IF_OPER_NOTPRESENT,     /**< Hardware missing */
+	NET_IF_OPER_DOWN,           /**< Interface is down */
+	NET_IF_OPER_LOWERLAYERDOWN, /**< Lower layer interface is down */
+	NET_IF_OPER_TESTING,        /**< Training mode */
+	NET_IF_OPER_DORMANT,        /**< Waiting external action */
+	NET_IF_OPER_UP,             /**< Interface is up */
 } __packed;
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -261,6 +309,7 @@ struct net_offload;
 #endif
 /* @endcond */
 
+/** IPv6 configuration */
 struct net_if_ipv6 {
 	/** Unicast IP addresses */
 	struct net_if_addr unicast[NET_IF_MAX_IPV6_ADDR];
@@ -279,6 +328,15 @@ struct net_if_ipv6 {
 
 	/** Retransmit timer (RFC 4861, page 52) */
 	uint32_t retrans_timer;
+
+#if defined(CONFIG_NET_IPV6_PE)
+	/** Privacy extension DESYNC_FACTOR value from RFC 8981 ch 3.4.
+	 * "DESYNC_FACTOR is a random value within the range 0 - MAX_DESYNC_FACTOR.
+	 * It is computed every time a temporary address is created.
+	 */
+	uint32_t desync_factor;
+#endif /* CONFIG_NET_IPV6_PE */
+
 #if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** Router solicitation timer node */
 	sys_snode_t rs_node;
@@ -298,6 +356,7 @@ struct net_if_ipv6 {
 };
 
 #if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+/** DHCPv6 configuration */
 struct net_if_dhcpv6 {
 	/** Used for timer list. */
 	sys_snode_t node;
@@ -382,6 +441,7 @@ struct net_if_addr_ipv4 {
 	struct in_addr netmask;
 };
 
+/** IPv4 configuration */
 struct net_if_ipv4 {
 	/** Unicast IP addresses */
 	struct net_if_addr_ipv4 unicast[NET_IF_MAX_IPV4_ADDR];
@@ -397,6 +457,11 @@ struct net_if_ipv4 {
 
 	/** IPv4 time-to-live for multicast packets */
 	uint8_t mcast_ttl;
+
+#if defined(CONFIG_NET_IPV4_ACD)
+	/** IPv4 conflict count.  */
+	uint8_t conflict_cnt;
+#endif
 };
 
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
@@ -454,20 +519,8 @@ struct net_if_dhcpv4 {
 
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 struct net_if_ipv4_autoconf {
-	/** Used for timer lists */
-	sys_snode_t node;
-
 	/** Backpointer to correct network interface */
 	struct net_if *iface;
-
-	/** Timer start */
-	int64_t timer_start;
-
-	/** Time for INIT, DISCOVER, REQUESTING, RENEWAL */
-	uint32_t timer_timeout;
-
-	/** Current IP addr */
-	struct in_addr current_ip;
 
 	/** Requested IP addr */
 	struct in_addr requested_ip;
@@ -475,15 +528,6 @@ struct net_if_ipv4_autoconf {
 	/** IPV4 Autoconf state in the process of network address allocation.
 	 */
 	enum net_ipv4_autoconf_state state;
-
-	/** Number of sent probe requests */
-	uint8_t probe_cnt;
-
-	/** Number of sent announcements */
-	uint8_t announce_cnt;
-
-	/** Incoming conflict count */
-	uint8_t conflict_cnt;
 };
 #endif /* CONFIG_NET_IPV4_AUTO */
 
@@ -595,7 +639,7 @@ struct net_if_dev {
 	/** Interface's private L2 data pointer */
 	void *l2_data;
 
-	/* For internal use */
+	/** For internal use */
 	ATOMIC_DEFINE(flags, NET_IF_NUM_FLAGS);
 
 	/** The hardware link address */
@@ -651,9 +695,28 @@ struct net_if {
 	int tx_pending;
 #endif
 
+	/** Mutex protecting this network interface instance */
 	struct k_mutex lock;
+
+	/** Mutex used when sending data */
 	struct k_mutex tx_lock;
+
+	/** Network interface specific flags */
+	/** Enable IPv6 privacy extension (RFC 8981), this is enabled
+	 * by default if PE support is enabled in configuration.
+	 */
+	uint8_t pe_enabled : 1;
+
+	/** If PE is enabled, then this tells whether public addresses
+	 * are preferred over temporary ones for this interface.
+	 */
+	uint8_t pe_prefer_public : 1;
+
+	/** Unused bit flags (ignore) */
+	uint8_t _unused : 6;
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 static inline void net_if_lock(struct net_if *iface)
 {
@@ -693,6 +756,8 @@ static inline void net_if_tx_unlock(struct net_if *iface)
 
 	k_mutex_unlock(&iface->tx_lock);
 }
+
+/** @endcond */
 
 /**
  * @brief Set a value in network interface flags
@@ -1110,6 +1175,31 @@ static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
 int net_if_set_link_addr_locked(struct net_if *iface,
 				uint8_t *addr, uint8_t len,
 				enum net_link_type type);
+
+#if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
+extern int net_if_addr_unref_debug(struct net_if *iface,
+				   sa_family_t family,
+				   const void *addr,
+				   const char *caller, int line);
+#define net_if_addr_unref(iface, family, addr) \
+	net_if_addr_unref_debug(iface, family, addr, __func__, __LINE__)
+
+extern struct net_if_addr *net_if_addr_ref_debug(struct net_if *iface,
+						 sa_family_t family,
+						 const void *addr,
+						 const char *caller,
+						 int line);
+#define net_if_addr_ref(iface, family, addr) \
+	net_if_addr_ref_debug(iface, family, addr, __func__, __LINE__)
+#else
+extern int net_if_addr_unref(struct net_if *iface,
+			     sa_family_t family,
+			     const void *addr);
+extern struct net_if_addr *net_if_addr_ref(struct net_if *iface,
+					   sa_family_t family,
+					   const void *addr);
+#endif /* CONFIG_NET_IF_LOG_LEVEL */
+
 /** @endcond */
 
 /**
@@ -1565,7 +1655,7 @@ void net_if_ipv6_maddr_leave(struct net_if *iface,
  * @return Pointer to prefix, NULL if not found.
  */
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
-						  struct in6_addr *addr);
+						  const struct in6_addr *addr);
 
 /**
  * @brief Check if this IPv6 prefix belongs to this interface
@@ -1744,6 +1834,8 @@ uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface);
  */
 void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit);
 
+/** @cond INTERNAL_HIDDEN */
+
 /* The old hop limit setter function is deprecated because the naming
  * of it was incorrect. The API name was missing "_if_" so this function
  * should not be used.
@@ -1754,6 +1846,8 @@ static inline void net_ipv6_set_hop_limit(struct net_if *iface,
 {
 	net_if_ipv6_set_hop_limit(iface, hop_limit);
 }
+
+/** @endcond */
 
 /**
  * @brief Get IPv6 multicast hop limit specified for a given interface. This is the
@@ -1914,6 +2008,35 @@ static inline const struct in6_addr *net_if_ipv6_select_src_addr(
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(dst);
+
+	return NULL;
+}
+#endif
+
+/**
+ * @brief Get a IPv6 source address that should be used when sending
+ * network data to destination. Use a hint set to the socket to select
+ * the proper address.
+ *
+ * @param iface Interface that was used when packet was received.
+ * If the interface is not known, then NULL can be given.
+ * @param dst IPv6 destination address
+ * @param flags Hint from the related socket. See RFC 5014 for value details.
+ *
+ * @return Pointer to IPv6 address to use, NULL if no IPv6 address
+ * could be found.
+ */
+#if defined(CONFIG_NET_NATIVE_IPV6)
+const struct in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *iface,
+							const struct in6_addr *dst,
+							int flags);
+#else
+static inline const struct in6_addr *net_if_ipv6_select_src_addr_hint(
+	struct net_if *iface, const struct in6_addr *dst, int flags)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(dst);
+	ARG_UNUSED(flags);
 
 	return NULL;
 }
@@ -2473,7 +2596,7 @@ struct net_if *net_if_select_src_iface(const struct sockaddr *dst);
  * @typedef net_if_link_callback_t
  * @brief Define callback that is called after a network packet
  *        has been sent.
- * @param iface A pointer to a struct net_if to which the the net_pkt was sent to.
+ * @param iface A pointer to a struct net_if to which the net_pkt was sent to.
  * @param dst Link layer address of the destination where the network packet was sent.
  * @param status Send status, 0 is ok, < 0 error.
  */
@@ -2523,16 +2646,61 @@ void net_if_unregister_link_cb(struct net_if_link_cb *link);
 void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 			 int status);
 
+/** @cond INTERNAL_HIDDEN */
+
+/* used to ensure encoding of checksum support in net_if.h and
+ * ethernet.h is the same
+ */
+#define NET_IF_CHECKSUM_NONE_BIT			0
+#define NET_IF_CHECKSUM_IPV4_HEADER_BIT			BIT(0)
+#define NET_IF_CHECKSUM_IPV4_ICMP_BIT			BIT(1)
+/* Space for future protocols and restrictions for IPV4 */
+#define NET_IF_CHECKSUM_IPV6_HEADER_BIT			BIT(10)
+#define NET_IF_CHECKSUM_IPV6_ICMP_BIT			BIT(11)
+/* Space for future protocols and restrictions for IPV6 */
+#define NET_IF_CHECKSUM_TCP_BIT				BIT(21)
+#define NET_IF_CHECKSUM_UDP_BIT				BIT(22)
+
+/** @endcond */
+
+/**
+ * @brief Type of checksum for which support in the interface will be queried.
+ */
+enum net_if_checksum_type {
+	/** Interface supports IP version 4 header checksum calculation */
+	NET_IF_CHECKSUM_IPV4_HEADER = NET_IF_CHECKSUM_IPV4_HEADER_BIT,
+	/** Interface supports checksum calculation for TCP payload in IPv4 */
+	NET_IF_CHECKSUM_IPV4_TCP    = NET_IF_CHECKSUM_IPV4_HEADER_BIT |
+				      NET_IF_CHECKSUM_TCP_BIT,
+	/** Interface supports checksum calculation for UDP payload in IPv4 */
+	NET_IF_CHECKSUM_IPV4_UDP    = NET_IF_CHECKSUM_IPV4_HEADER_BIT |
+				      NET_IF_CHECKSUM_UDP_BIT,
+	/** Interface supports checksum calculation for ICMP4 payload in IPv4 */
+	NET_IF_CHECKSUM_IPV4_ICMP   = NET_IF_CHECKSUM_IPV4_ICMP_BIT,
+	/** Interface supports IP version 6 header checksum calculation */
+	NET_IF_CHECKSUM_IPV6_HEADER = NET_IF_CHECKSUM_IPV6_HEADER_BIT,
+	/** Interface supports checksum calculation for TCP payload in IPv6 */
+	NET_IF_CHECKSUM_IPV6_TCP    = NET_IF_CHECKSUM_IPV6_HEADER_BIT |
+				      NET_IF_CHECKSUM_TCP_BIT,
+	/** Interface supports checksum calculation for UDP payload in IPv6 */
+	NET_IF_CHECKSUM_IPV6_UDP    = NET_IF_CHECKSUM_IPV6_HEADER_BIT |
+				      NET_IF_CHECKSUM_UDP_BIT,
+	/** Interface supports checksum calculation for ICMP6 payload in IPv6 */
+	NET_IF_CHECKSUM_IPV6_ICMP   = NET_IF_CHECKSUM_IPV6_ICMP_BIT
+};
+
 /**
  * @brief Check if received network packet checksum calculation can be avoided
  * or not. For example many ethernet devices support network packet offloading
  * in which case the IP stack does not need to calculate the checksum.
  *
  * @param iface Network interface
+ * @param chksum_type L3 and/or L4 protocol for which to compute checksum
  *
  * @return True if checksum needs to be calculated, false otherwise.
  */
-bool net_if_need_calc_rx_checksum(struct net_if *iface);
+bool net_if_need_calc_rx_checksum(struct net_if *iface,
+				  enum net_if_checksum_type chksum_type);
 
 /**
  * @brief Check if network packet checksum calculation can be avoided or not
@@ -2541,10 +2709,12 @@ bool net_if_need_calc_rx_checksum(struct net_if *iface);
  * checksum.
  *
  * @param iface Network interface
+ * @param chksum_type L3 and/or L4 protocol for which to compute checksum
  *
  * @return True if checksum needs to be calculated, false otherwise.
  */
-bool net_if_need_calc_tx_checksum(struct net_if *iface);
+bool net_if_need_calc_tx_checksum(struct net_if *iface,
+				  enum net_if_checksum_type chksum_type);
 
 /**
  * @brief Get interface according to index
@@ -2595,7 +2765,7 @@ void net_if_foreach(net_if_cb_t cb, void *user_data);
 int net_if_up(struct net_if *iface);
 
 /**
- * @brief Check if interface is is up and running.
+ * @brief Check if interface is up and running.
  *
  * @param iface Pointer to network interface
  *
@@ -2815,7 +2985,7 @@ static inline void net_if_unset_promisc(struct net_if *iface)
  * @param iface Pointer to network interface
  *
  * @return True if interface is in promisc mode,
- *         False if interface is not in in promiscuous mode.
+ *         False if interface is not in promiscuous mode.
  */
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 bool net_if_is_promisc(struct net_if *iface);
@@ -2892,6 +3062,20 @@ bool net_if_is_wifi(struct net_if *iface);
  * @return Pointer to network interface, NULL if not found.
  */
 struct net_if *net_if_get_first_wifi(void);
+
+/**
+ * @brief Get Wi-Fi network station interface.
+ *
+ * @return Pointer to network interface, NULL if not found.
+ */
+struct net_if *net_if_get_wifi_sta(void);
+
+/**
+ * @brief Get first Wi-Fi network Soft-AP interface.
+ *
+ * @return Pointer to network interface, NULL if not found.
+ */
+struct net_if *net_if_get_wifi_sap(void);
 
 /**
  * @brief Get network interface name.
@@ -3238,7 +3422,7 @@ struct net_if_api {
 }
 #endif
 
-#include <syscalls/net_if.h>
+#include <zephyr/syscalls/net_if.h>
 
 /**
  * @}

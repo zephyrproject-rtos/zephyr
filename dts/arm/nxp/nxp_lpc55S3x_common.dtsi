@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/inputmux/inputmux_trigger_ports.h>
 #include <mem.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {
 	cpus {
@@ -73,6 +74,10 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x1000>;
 		#clock-cells = <1>;
+		reset: reset {
+			compatible = "nxp,lpc-syscon-reset";
+			#reset-cells = <1>;
+		};
 	};
 
 	iap: flash-controller@34000 {
@@ -112,30 +117,33 @@
 		};
 	};
 
-	gpio0: gpio@0 {
+	gpio: gpio@8c000 {
 		compatible = "nxp,lpc-gpio";
-		reg = <0x8c000 0x278c>;
-		int-source = "pint";
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <0>;
-	};
+		reg = <0x8c000 0x2488>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		gpio0: gpio@0 {
+			compatible = "nxp,lpc-gpio-port";
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0>;
+		};
 
-	gpio1: gpio@1 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x8c000 0x278c>;
-		int-source = "pint";
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <1>;
-	};
+		gpio1: gpio@1 {
+			compatible = "nxp,lpc-gpio-port";
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <1>;
+		};
 
-	gpio2: gpio@2 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x8c000 0x278c>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		port = <2>;
+		gpio2: gpio@2 {
+			compatible = "nxp,lpc-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <2>;
+		};
 	};
 
 	dma0: dma-controller@82000 {
@@ -179,6 +187,7 @@
 		reg = <0x86000 0x1000>;
 		interrupts = <14 0>;
 		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 11)>;
 		dmas = <&dma0 4>, <&dma0 5>;
 		dma-names = "rx", "tx";
 		status = "disabled";
@@ -189,6 +198,7 @@
 		reg = <0x87000 0x1000>;
 		interrupts = <15 0>;
 		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 12)>;
 		dmas = <&dma0 6>, <&dma0 7>;
 		dma-names = "rx", "tx";
 		status = "disabled";
@@ -199,6 +209,7 @@
 		reg = <0x88000 0x1000>;
 		interrupts = <16 0>;
 		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 13)>;
 		dmas = <&dma0 10>, <&dma0 11>;
 		dma-names = "rx", "tx";
 		status = "disabled";
@@ -209,6 +220,7 @@
 		reg = <0x89000 0x1000>;
 		interrupts = <17 0>;
 		clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 14)>;
 		dmas = <&dma0 8>, <&dma0 9>;
 		dma-names = "rx", "tx";
 		status = "disabled";
@@ -219,6 +231,7 @@
 		reg = <0x8a000 0x1000>;
 		interrupts = <18 0>;
 		clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 15)>;
 		dmas = <&dma0 12>, <&dma0 13>;
 		dma-names = "rx", "tx";
 		status = "disabled";
@@ -229,6 +242,7 @@
 		reg = <0x96000 0x1000>;
 		interrupts = <19 0>;
 		clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 16)>;
 		dmas = <&dma0 14>, <&dma0 15>;
 		dma-names = "rx", "tx";
 		status = "disabled";
@@ -239,6 +253,7 @@
 		reg = <0x97000 0x1000>;
 		interrupts = <20 0>;
 		clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 17)>;
 		dmas = <&dma0 16>, <&dma0 17>;
 		dma-names = "rx", "tx";
 		status = "disabled";
@@ -249,6 +264,7 @@
 		reg = <0x98000 0x1000>;
 		interrupts = <21 0>;
 		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 18)>;
 		dmas = <&dma0 18>, <&dma0 19>;
 		dma-names = "rx", "tx";
 		status = "disabled";
@@ -259,6 +275,7 @@
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
 		clocks = <&syscon MCUX_HS_SPI_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(2, 28)>;
 		dmas = <&dma0 2>, <&dma0 3>;
 		dma-names = "rx", "tx";
 		status = "disabled";
@@ -281,7 +298,7 @@
 		#io-channel-cells = <1>;
 		dmas = <&dma0 21>, <&dma0 22>;
 		dma-names = "adc0-dma0", "adc0-dma1";
-		nxp,reference-supply = <&vref0>;
+		nxp,references = <&vref0 1800>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
@@ -318,6 +335,7 @@
 		interrupts = <43 0>, <44 0>;
 		interrupt-names = "int0", "int1";
 		clocks = <&syscon MCUX_MCAN_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 7)>;
 		bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
 		status = "disabled";
 	};
@@ -455,6 +473,7 @@
 		regulator-name = "lpc55s36-vref";
 		reg = <0xb5000 0x30>;
 		status = "disabled";
+		#nxp,reference-cells = <1>;
 		nxp,buffer-startup-delay-us = <400>;
 		nxp,bandgap-startup-time-us = <20>;
 	};

@@ -345,7 +345,7 @@ int img_mgmt_state_confirm(void);
  */
 int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b);
 
-#if IS_ENABLED(CONFIG_MCUMGR_GRP_IMG_MUTEX)
+#if defined(CONFIG_MCUMGR_GRP_IMG_MUTEX)
 /*
  * @brief	Will reset the image management state back to default (no ongoing upload),
  *		requires that CONFIG_MCUMGR_GRP_IMG_MUTEX be enabled to allow for mutex

@@ -37,3 +37,23 @@ properties:
       - 32
     description: |
       Number of bits per transfer
+
+  xlnx,startup-block:
+    type: boolean
+    description: |
+      Indicates the core is instantiated with the STARTUP block option, as is
+      typically used when interfacing with the FPGA's configuration flash
+      device. In this configuration the SPI clock is routed through the
+      STARTUP block rather than normal signal routing.
+      In this case, a workaround is required to issue a dummy
+      transaction to the SPI flash device to ensure the STARTUP block is
+      disengaged and allow the SPI core to control the CCLK line properly.
+      The dummy READ_ID transaction will be issued to chip select 0.
+
+  fifo-size:
+    type: int
+    description: |
+      FIFO size configured in SPI core. 0 indicates no FIFO.
+      If not specified, 0 is assumed.
+      Used to optimize TX/RX read handling. If the FIFO size is 0, the driver
+      will check for FIFO full/empty after every word.

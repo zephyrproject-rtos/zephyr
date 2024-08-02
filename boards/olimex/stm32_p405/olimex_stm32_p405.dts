@@ -87,7 +87,6 @@
 &can1 {
 	pinctrl-0 = <&can1_rx_pb8 &can1_tx_pb9>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	status = "okay";
 
 	can-transceiver {

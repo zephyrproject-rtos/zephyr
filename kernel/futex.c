@@ -17,7 +17,7 @@ static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 	struct k_object *obj;
 
 	obj = k_object_find(futex);
-	if (obj == NULL || obj->type != K_OBJ_FUTEX) {
+	if ((obj == NULL) || (obj->type != K_OBJ_FUTEX)) {
 		return NULL;
 	}
 
@@ -60,7 +60,7 @@ static inline int z_vrfy_k_futex_wake(struct k_futex *futex, bool wake_all)
 
 	return z_impl_k_futex_wake(futex, wake_all);
 }
-#include <syscalls/k_futex_wake_mrsh.c>
+#include <zephyr/syscalls/k_futex_wake_mrsh.c>
 
 int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 			k_timeout_t timeout)
@@ -98,4 +98,4 @@ static inline int z_vrfy_k_futex_wait(struct k_futex *futex, int expected,
 
 	return z_impl_k_futex_wait(futex, expected, timeout);
 }
-#include <syscalls/k_futex_wait_mrsh.c>
+#include <zephyr/syscalls/k_futex_wait_mrsh.c>

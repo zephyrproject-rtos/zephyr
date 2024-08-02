@@ -22,13 +22,35 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
 		};
-	};
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/*
+				 * As Apollo4 datasheet, run_to_sleep and sleep_to_run
+				 * transition time are both lower than 1us, but
+				 * considering the software overhead we set a
+				 * bigger value.
+				 */
+				min-residency-us = <100>;
+				exit-latency-us = <5>;
+			};
 
-	/* MRAM region */
-	flash0: flash@18000 {
-		compatible = "soc-nv-flash";
-		reg = <0x00018000 0x1e8000>;
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				/*
+				 * As Apollo4 datasheet, run_to_deepsleep transition
+				 * time is lower than 1us and deepsleep_to_run
+				 * transition time is about 25us, but considering
+				 * the software overhead, we set a bigger value.
+				 */
+				min-residency-us = <2000>;
+				exit-latency-us = <125>;
+			};
+		};
 	};
 
 	/* TCM */
@@ -47,6 +69,20 @@
 	soc {
 		compatible = "ambiq,apollo4p", "ambiq,apollo4x", "simple-bus";
 
+		flash: flash-controller@18000 {
+			compatible = "ambiq,flash-controller";
+			reg = <0x00018000 0x1e8000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Flash region */
+			flash0: flash@18000 {
+				compatible = "soc-nv-flash";
+				reg = <0x00018000 0x1e8000>;
+			};
+		};
+
 		pwrcfg: pwrcfg@40021000 {
 			compatible = "ambiq,pwrctrl";
 			reg = <0x40021000 0x400>;
@@ -60,10 +96,12 @@
 			status = "okay";
 		};
 
-		counter0: counter@40008000 {
+		counter0: counter@40008200 {
 			compatible = "ambiq,counter";
-			reg = <0x40008000 0x80>;
+			reg = <0x40008200 0x20>;
 			interrupts = <67 0>;
+			clock-frequency = <DT_FREQ_M(6)>;
+			clk-source = <1>;
 			status = "disabled";
 		};
 

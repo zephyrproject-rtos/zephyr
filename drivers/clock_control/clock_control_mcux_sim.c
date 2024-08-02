@@ -110,7 +110,7 @@ static const struct clock_control_driver_api mcux_sim_driver_api = {
 };
 
 DEVICE_DT_DEFINE(NXP_KINETIS_SIM_NODE,
-		    &mcux_sim_init,
+		    mcux_sim_init,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,

@@ -29,6 +29,8 @@
 #include <inttypes.h>
 #include <zephyr/sys/__assert.h>
 
+struct k_mem_page_frame;
+
 /**
  * Paging Statistics.
  */
@@ -203,7 +205,7 @@ __syscall void k_mem_paging_histogram_backing_store_page_in_get(
 __syscall void k_mem_paging_histogram_backing_store_page_out_get(
 	struct k_mem_paging_histogram_t *hist);
 
-#include <syscalls/demand_paging.h>
+#include <zephyr/syscalls/demand_paging.h>
 
 /** @} */
 
@@ -216,10 +218,56 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
  */
 
 /**
+ * Submit a page frame for eviction candidate tracking
+ *
+ * The kernel will invoke this to tell the eviction algorithm the provided
+ * page frame may be considered as a potential eviction candidate.
+ *
+ * This function will never be called before the initial
+ * k_mem_paging_eviction_init().
+ *
+ * This function is invoked with interrupts locked.
+ *
+ * @param [in] pf The page frame to add
+ */
+void k_mem_paging_eviction_add(struct k_mem_page_frame *pf);
+
+/**
+ * Remove a page frame from potential eviction candidates
+ *
+ * The kernel will invoke this to tell the eviction algorithm the provided
+ * page frame may no longer be considered as a potential eviction candidate.
+ *
+ * This function will only be called with page frames that were submitted
+ * using k_mem_paging_eviction_add() beforehand.
+ *
+ * This function is invoked with interrupts locked.
+ *
+ * @param [in] pf The page frame to remove
+ */
+void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf);
+
+/**
+ * Process a page frame as being newly accessed
+ *
+ * The architecture-specific memory fault handler will invoke this to tell the
+ * eviction algorithm the provided physical address belongs to a page frame
+ * being accessed and such page frame should become unlikely to be
+ * considered as the next eviction candidate.
+ *
+ * This function is invoked with interrupts locked.
+ *
+ * @param [in] phys The physical address being accessed
+ */
+void k_mem_paging_eviction_accessed(uintptr_t phys);
+
+/**
  * Select a page frame for eviction
  *
  * The kernel will invoke this to choose a page frame to evict if there
- * are no free page frames.
+ * are no free page frames. It is not guaranteed that the returned page
+ * frame will actually be evicted. If it is then the kernel will call
+ * k_mem_paging_eviction_remove() with it.
  *
  * This function will never be called before the initial
  * k_mem_paging_eviction_init().
@@ -229,7 +277,7 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
  * @param [out] dirty Whether the page to evict is dirty
  * @return The page frame to evict
  */
-struct z_page_frame *k_mem_paging_eviction_select(bool *dirty);
+struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty);
 
 /**
  * Initialization function
@@ -258,19 +306,19 @@ void k_mem_paging_eviction_init(void);
  * contents for later retrieval. The location value must be page-aligned.
  *
  * This function may be called multiple times on the same data page. If its
- * page frame has its Z_PAGE_FRAME_BACKED bit set, it is expected to return
+ * page frame has its K_MEM_PAGE_FRAME_BACKED bit set, it is expected to return
  * the previous backing store location for the data page containing a cached
  * clean copy. This clean copy may be updated on page-out, or used to
  * discard clean pages without needing to write out their contents.
  *
  * If the backing store is full, some other backing store location which caches
  * a loaded data page may be selected, in which case its associated page frame
- * will have the Z_PAGE_FRAME_BACKED bit cleared (as it is no longer cached).
+ * will have the K_MEM_PAGE_FRAME_BACKED bit cleared (as it is no longer cached).
  *
- * pf->addr will indicate the virtual address the page is currently mapped to.
- * Large, sparse backing stores which can contain the entire address space
- * may simply generate location tokens purely as a function of pf->addr with no
- * other management necessary.
+ * k_mem_page_frame_to_virt(pf) will indicate the virtual address the page is
+ * currently mapped to. Large, sparse backing stores which can contain the
+ * entire address space may simply generate location tokens purely as a
+ * function of that virtual address with no other management necessary.
  *
  * This function distinguishes whether it was called on behalf of a page
  * fault. A free backing store location must always be reserved in order for
@@ -285,7 +333,7 @@ void k_mem_paging_eviction_init(void);
  * @return 0 Success
  * @return -ENOMEM Backing store is full
  */
-int k_mem_paging_backing_store_location_get(struct z_page_frame *pf,
+int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
 					    uintptr_t *location,
 					    bool page_fault);
 
@@ -302,9 +350,9 @@ int k_mem_paging_backing_store_location_get(struct z_page_frame *pf,
 void k_mem_paging_backing_store_location_free(uintptr_t location);
 
 /**
- * Copy a data page from Z_SCRATCH_PAGE to the specified location
+ * Copy a data page from K_MEM_SCRATCH_PAGE to the specified location
  *
- * Immediately before this is called, Z_SCRATCH_PAGE will be mapped read-write
+ * Immediately before this is called, K_MEM_SCRATCH_PAGE will be mapped read-write
  * to the intended source page frame for the calling context.
  *
  * Calls to this and k_mem_paging_backing_store_page_in() will always be
@@ -315,9 +363,9 @@ void k_mem_paging_backing_store_location_free(uintptr_t location);
 void k_mem_paging_backing_store_page_out(uintptr_t location);
 
 /**
- * Copy a data page from the provided location to Z_SCRATCH_PAGE.
+ * Copy a data page from the provided location to K_MEM_SCRATCH_PAGE.
  *
- * Immediately before this is called, Z_SCRATCH_PAGE will be mapped read-write
+ * Immediately before this is called, K_MEM_SCRATCH_PAGE will be mapped read-write
  * to the intended destination page frame for the calling context.
  *
  * Calls to this and k_mem_paging_backing_store_page_out() will always be
@@ -331,7 +379,7 @@ void k_mem_paging_backing_store_page_in(uintptr_t location);
  * Update internal accounting after a page-in
  *
  * This is invoked after k_mem_paging_backing_store_page_in() and interrupts
- * have been* re-locked, making it safe to access the z_page_frame data.
+ * have been* re-locked, making it safe to access the k_mem_page_frame data.
  * The location value will be the same passed to
  * k_mem_paging_backing_store_page_in().
  *
@@ -340,14 +388,14 @@ void k_mem_paging_backing_store_page_in(uintptr_t location);
  * if it is paged out again. This may be a no-op in some implementations.
  *
  * If the backing store caches paged-in data pages, this is the appropriate
- * time to set the Z_PAGE_FRAME_BACKED bit. The kernel only skips paging
+ * time to set the K_MEM_PAGE_FRAME_BACKED bit. The kernel only skips paging
  * out clean data pages if they are noted as clean in the page tables and the
- * Z_PAGE_FRAME_BACKED bit is set in their associated page frame.
+ * K_MEM_PAGE_FRAME_BACKED bit is set in their associated page frame.
  *
  * @param pf Page frame that was loaded in
  * @param location Location of where the loaded data page was retrieved
  */
-void k_mem_paging_backing_store_page_finalize(struct z_page_frame *pf,
+void k_mem_paging_backing_store_page_finalize(struct k_mem_page_frame *pf,
 					      uintptr_t location);
 
 /**
@@ -360,7 +408,7 @@ void k_mem_paging_backing_store_page_finalize(struct z_page_frame *pf,
  * - Initialize any internal data structures and accounting for the backing
  *   store.
  * - If the backing store already contains all or some loaded kernel data pages
- *   at boot time, Z_PAGE_FRAME_BACKED should be appropriately set for their
+ *   at boot time, K_MEM_PAGE_FRAME_BACKED should be appropriately set for their
  *   associated page frames, and any internal accounting set up appropriately.
  */
 void k_mem_paging_backing_store_init(void);

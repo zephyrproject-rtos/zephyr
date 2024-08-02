@@ -23,7 +23,7 @@ function _compile(){
   local conf_overlay="${conf_overlay:-""}"
 
   default_cmake_args=(-DCONFIG_COVERAGE=y -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y)
+    -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_ASSERT=y)
   local cmake_args=(${cmake_args:-"${default_cmake_args[@]}"})
   local cmake_extra_args="${cmake_extra_args:-""}"
   local ninja_args="${ninja_args:-""}"

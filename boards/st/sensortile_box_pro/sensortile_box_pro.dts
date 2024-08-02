@@ -14,21 +14,13 @@
 	compatible = "st,sensortile-box-pro";
 
 	chosen {
-		/*
-		 * By default, Zephyr console and shell are assigned to
-		 * USB CDC/ACM. To enable console and shell over UART,
-		 * uncomment following lines and set the correct config
-		 * in sensortile_box_pro_defconfig.
-		 *
-		 * zephyr,console = &uart4;
-		 * zephyr,shell-uart = &uart4;
-		 */
 		zephyr,console = &cdc_acm_uart0;
 		zephyr,shell-uart = &cdc_acm_uart0;
 		zephyr,bt-c2h-uart = &cdc_acm_uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &hci_spi;
 	};
 
 	leds {
@@ -163,7 +155,7 @@ stm32_lp_tick_source: &lptim1 {
 	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
-	bluenrg-lp@0 {
+	hci_spi: bluenrg-lp@0 {
 		compatible = "st,hci-spi-v2";
 		reg = <0>;
 		irq-gpios = <&gpiod 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;

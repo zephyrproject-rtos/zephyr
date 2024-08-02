@@ -198,7 +198,7 @@ clock_control_gd32_get_status(const struct device *dev,
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
-static struct clock_control_driver_api clock_control_gd32_api = {
+static const struct clock_control_driver_api clock_control_gd32_api = {
 	.on = clock_control_gd32_on,
 	.off = clock_control_gd32_off,
 	.get_rate = clock_control_gd32_get_rate,

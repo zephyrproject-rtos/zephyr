@@ -233,8 +233,8 @@ enum ieee802154_phy_channel_page {
  * ieee802154_phy_supported_channels.
  */
 struct ieee802154_phy_channel_range {
-	uint16_t from_channel;
-	uint16_t to_channel;
+	uint16_t from_channel; /**< From channel range */
+	uint16_t to_channel;   /**< To channel range */
 };
 
 /**
@@ -533,11 +533,11 @@ enum ieee802154_hw_caps {
 
 /** Filter type, see @ref ieee802154_radio_api::filter */
 enum ieee802154_filter_type {
-	IEEE802154_FILTER_TYPE_IEEE_ADDR,
-	IEEE802154_FILTER_TYPE_SHORT_ADDR,
-	IEEE802154_FILTER_TYPE_PAN_ID,
-	IEEE802154_FILTER_TYPE_SRC_IEEE_ADDR,
-	IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR,
+	IEEE802154_FILTER_TYPE_IEEE_ADDR,      /**< Address type filter */
+	IEEE802154_FILTER_TYPE_SHORT_ADDR,     /**< Short address type filter */
+	IEEE802154_FILTER_TYPE_PAN_ID,         /**< PAN id type filter */
+	IEEE802154_FILTER_TYPE_SRC_IEEE_ADDR,  /**< Source address type filter */
+	IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR, /**< Source short address type filter */
 };
 
 /** Driver events, see @ref IEEE802154_CONFIG_EVENT_HANDLER */
@@ -970,7 +970,7 @@ enum ieee802154_config_type {
 	 * beacons of a single PAN, periodic ranging "blinks"), a single
 	 * timestamp at any time in the past or in the future may be given from
 	 * which other expected timestamps can be derived by adding or
-	 * substracting multiples of the RX period. See e.g. the CSL
+	 * subtracting multiples of the RX period. See e.g. the CSL
 	 * documentation in this API.
 	 *
 	 * Additionally this parameter MAY be used by drivers to discipline
@@ -1053,7 +1053,7 @@ enum ieee802154_config_type {
 	 *
 	 * L2 SHALL minimize the space required to keep IE configuration inside
 	 * the driver by consolidating address filters and by removing
-	 * configuation that is no longer required.
+	 * configuration that is no longer required.
 	 *
 	 * @note requires @ref IEEE802154_HW_RX_TX_ACK capability and is
 	 * available in any interface operational state. Currently we only
@@ -1125,15 +1125,15 @@ struct ieee802154_config {
 	union {
 		/** see @ref IEEE802154_CONFIG_AUTO_ACK_FPB */
 		struct {
-			bool enabled;
-			enum ieee802154_fpb_mode mode;
+			bool enabled;                  /**< Is auto ACK FPB enabled */
+			enum ieee802154_fpb_mode mode; /**< Auto ACK FPB mode */
 		} auto_ack_fpb;
 
 		/** see @ref IEEE802154_CONFIG_ACK_FPB */
 		struct {
-			uint8_t *addr; /* in little endian for both, short and extended address */
-			bool extended;
-			bool enabled;
+			uint8_t *addr; /**< little endian for both short and extended address */
+			bool extended; /**< Is extended address */
+			bool enabled;  /**< Is enabled */
 		} ack_fpb;
 
 		/** see @ref IEEE802154_CONFIG_PAN_COORDINATOR */
@@ -1194,6 +1194,9 @@ struct ieee802154_config {
 			 */
 			net_time_t duration;
 
+			/**
+			 * Used channel
+			 */
 			uint8_t channel;
 		} rx_slot;
 
@@ -1662,7 +1665,7 @@ struct ieee802154_radio_api {
 	 * with the frame data to be transmitted
 	 *
 	 * @retval 0 The frame was successfully sent or scheduled. If the driver
-	 * supports ACK offloading and the frame requested acknowlegment (AR bit
+	 * supports ACK offloading and the frame requested acknowledgment (AR bit
 	 * set), this means that the packet was successfully acknowledged by its
 	 * peer.
 	 * @retval -EINVAL Invalid packet (e.g. an expected IE is missing or the

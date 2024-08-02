@@ -504,7 +504,7 @@ Enabling and configuring
 
 Enable data cache by selecting :kconfig:option:`CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT`.
 Application needs to allocate an array of :c:struct:`lwm2m_time_series_elem` structures and then
-enable the cache by calling :c:func:`lwm2m_engine_enable_cache` for a given resource. Earch resource
+enable the cache by calling :c:func:`lwm2m_engine_enable_cache` for a given resource. Each resource
 must be enabled separately and each resource needs their own storage.
 
 .. code-block:: c
@@ -521,7 +521,7 @@ engine.
 
 Data caches depends on one of the SenML data formats
 :kconfig:option:`CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT` or
-:kconfig:option:`CONFIG_LWM2M_RW_SENML_JSON_SUPPORT` and needs :kconfig:option:`CONFIG_POSIX_CLOCK`
+:kconfig:option:`CONFIG_LWM2M_RW_SENML_JSON_SUPPORT` and needs :kconfig:option:`CONFIG_POSIX_TIMERS`
 so it can request a timestamp from the system and :kconfig:option:`CONFIG_RING_BUFFER` for ring
 buffer.
 
@@ -670,7 +670,7 @@ where it cannot recover.
      - Try to recover network connection. Then restart the client by calling :c:func:`lwm2m_rd_client_start`.
        This might also indicate configuration issue.
 
-Sending of data in the table above refers to calling :c:func:`lwm2m_send_cb` or by writing into of of the observed resources where observation would trigger a notify message.
+Sending of data in the table above refers to calling :c:func:`lwm2m_send_cb` or by writing into one of the observed resources where observation would trigger a notify message.
 Receiving of data refers to receiving read, write or execute operations from the server. Application can register callbacks for these operations.
 
 Configuring lifetime and activity period

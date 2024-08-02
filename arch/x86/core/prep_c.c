@@ -73,10 +73,6 @@ FUNC_NORETURN void z_prep_c(void *arg)
 	}
 #endif
 
-#if defined(CONFIG_SMP)
-	arch_smp_init();
-#endif
-
 	z_cstart();
 	CODE_UNREACHABLE;
 }

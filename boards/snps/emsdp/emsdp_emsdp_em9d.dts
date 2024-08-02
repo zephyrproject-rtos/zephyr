@@ -16,7 +16,6 @@
 
 	aliases {
 		uart-0 = &uart0;
-		spi-flash0 = &s25fl256s;
 	};
 
 	chosen {

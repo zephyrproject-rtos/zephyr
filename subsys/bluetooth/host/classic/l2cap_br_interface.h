@@ -46,3 +46,8 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status);
 
 /* Handle received data */
 void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf);
+
+/* Pull HCI fragments from buffers intended for `conn` */
+struct net_buf *l2cap_br_data_pull(struct bt_conn *conn,
+				   size_t amount,
+				   size_t *length);

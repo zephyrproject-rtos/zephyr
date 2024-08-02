@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import glob
 import re
+import tempfile
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -53,10 +54,11 @@ class CoverageTool:
             for line in fp.readlines():
                 if re.search("GCOV_COVERAGE_DUMP_START", line):
                     capture_data = True
+                    capture_complete = False
                     continue
                 if re.search("GCOV_COVERAGE_DUMP_END", line):
                     capture_complete = True
-                    break
+                    # Keep searching for additional dumps
                 # Loop until the coverage data is found.
                 if not capture_data:
                     continue
@@ -71,16 +73,43 @@ class CoverageTool:
                         continue
                 else:
                     continue
-                extracted_coverage_info.update({file_name: hex_dump})
+                if file_name in extracted_coverage_info:
+                    extracted_coverage_info[file_name].append(hex_dump)
+                else:
+                    extracted_coverage_info[file_name] = [hex_dump]
         if not capture_data:
             capture_complete = True
         return {'complete': capture_complete, 'data': extracted_coverage_info}
 
-    @staticmethod
-    def create_gcda_files(extracted_coverage_info):
+    def merge_hexdumps(self, hexdumps):
+        # Only one hexdump
+        if len(hexdumps) == 1:
+            return hexdumps[0]
+
+        with tempfile.TemporaryDirectory() as dir:
+            # Write each hexdump to a dedicated temporary folder
+            dirs = []
+            for idx, dump in enumerate(hexdumps):
+                subdir = dir + f'/{idx}'
+                os.mkdir(subdir)
+                dirs.append(subdir)
+                with open(f'{subdir}/tmp.gcda', 'wb') as fp:
+                    fp.write(bytes.fromhex(dump))
+
+            # Iteratively call gcov-tool (not gcov) to merge the files
+            merge_tool = self.gcov_tool + '-tool'
+            for d1, d2 in zip(dirs[:-1], dirs[1:]):
+                cmd = [merge_tool, 'merge', d1, d2, '--output', d2]
+                subprocess.call(cmd)
+
+            # Read back the final output file
+            with open(f'{dirs[-1]}/tmp.gcda', 'rb') as fp:
+                return fp.read(-1).hex()
+
+    def create_gcda_files(self, extracted_coverage_info):
         gcda_created = True
         logger.debug("Generating gcda files")
-        for filename, hexdump_val in extracted_coverage_info.items():
+        for filename, hexdumps in extracted_coverage_info.items():
             # if kobject_hash is given for coverage gcovr fails
             # hence skipping it problem only in gcovr v4.1
             if "kobject_hash" in filename:
@@ -92,6 +121,7 @@ class CoverageTool:
                 continue
 
             try:
+                hexdump_val = self.merge_hexdumps(hexdumps)
                 with open(filename, 'wb') as fp:
                     fp.write(bytes.fromhex(hexdump_val))
             except ValueError:
@@ -109,7 +139,7 @@ class CoverageTool:
             capture_complete = gcov_data['complete']
             extracted_coverage_info = gcov_data['data']
             if capture_complete:
-                gcda_created = self.__class__.create_gcda_files(extracted_coverage_info)
+                gcda_created = self.create_gcda_files(extracted_coverage_info)
                 if gcda_created:
                     logger.debug("Gcov data captured: {}".format(filename))
                 else:
@@ -144,6 +174,7 @@ class Lcov(CoverageTool):
     def __init__(self, jobs=None):
         super().__init__()
         self.ignores = []
+        self.ignore_branch_patterns = []
         self.output_formats = "lcov,html"
         self.version = self.get_version()
         self.jobs = jobs
@@ -160,7 +191,7 @@ class Lcov(CoverageTool):
             logger.error(f"Unable to determine lcov version: {e}")
             sys.exit(1)
         except FileNotFoundError as e:
-            logger.error(f"Unable to to find lcov tool: {e}")
+            logger.error(f"Unable to find lcov tool: {e}")
             sys.exit(1)
 
     def add_ignore_file(self, pattern):
@@ -168,6 +199,9 @@ class Lcov(CoverageTool):
 
     def add_ignore_directory(self, pattern):
         self.ignores.append('*/' + pattern + '/*')
+
+    def add_ignore_branch_pattern(self, pattern):
+        self.ignore_branch_patterns.append(pattern)
 
     @property
     def is_lcov_v2(self):
@@ -252,6 +286,7 @@ class Gcovr(CoverageTool):
     def __init__(self):
         super().__init__()
         self.ignores = []
+        self.ignore_branch_patterns = []
         self.output_formats = "html"
         self.version = self.get_version()
 
@@ -269,7 +304,7 @@ class Gcovr(CoverageTool):
             logger.error(f"Unable to determine gcovr version: {e}")
             sys.exit(1)
         except FileNotFoundError as e:
-            logger.error(f"Unable to to find gcovr tool: {e}")
+            logger.error(f"Unable to find gcovr tool: {e}")
             sys.exit(1)
 
     def add_ignore_file(self, pattern):
@@ -277,6 +312,9 @@ class Gcovr(CoverageTool):
 
     def add_ignore_directory(self, pattern):
         self.ignores.append(".*/" + pattern + '/.*')
+
+    def add_ignore_branch_pattern(self, pattern):
+        self.ignore_branch_patterns.append(pattern)
 
     @staticmethod
     def _interleave_list(prefix, list):
@@ -292,6 +330,10 @@ class Gcovr(CoverageTool):
         ztestfile = os.path.join(outdir, "ztest.json")
 
         excludes = Gcovr._interleave_list("-e", self.ignores)
+        if len(self.ignore_branch_patterns) > 0:
+            # Last pattern overrides previous values, so merge all patterns together
+            merged_regex = "|".join([f"({p})" for p in self.ignore_branch_patterns])
+            excludes += ["--exclude-branches-by-pattern", merged_regex]
 
         # Different ifdef-ed implementations of the same function should not be
         # in conflict treated by GCOVR as separate objects for coverage statistics.
@@ -383,5 +425,11 @@ def run_coverage(testplan, options):
     coverage_tool.add_ignore_file('generated')
     coverage_tool.add_ignore_directory('tests')
     coverage_tool.add_ignore_directory('samples')
+    # Ignore branch coverage on LOG_* and LOG_HEXDUMP_* macros
+    # Branch misses are due to the implementation of Z_LOG2 and cannot be avoided
+    coverage_tool.add_ignore_branch_pattern(r"^\s*LOG_(?:HEXDUMP_)?(?:DBG|INF|WRN|ERR)\(.*")
+    # Ignore branch coverage on __ASSERT* macros
+    # Covering the failing case is not desirable as it will immediately terminate the test.
+    coverage_tool.add_ignore_branch_pattern(r"^\s*__ASSERT(?:_EVAL|_NO_MSG|_POST_ACTION)?\(.*")
     coverage_completed = coverage_tool.generate(options.outdir)
     return coverage_completed

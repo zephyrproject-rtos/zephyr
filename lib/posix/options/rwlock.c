@@ -12,7 +12,7 @@
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
 
-#define CONCURRENT_READER_LIMIT  (CONFIG_MAX_PTHREAD_COUNT + 1)
+#define CONCURRENT_READER_LIMIT  (CONFIG_POSIX_THREAD_THREADS_MAX + 1)
 
 struct posix_rwlock {
 	struct k_sem rd_sem;

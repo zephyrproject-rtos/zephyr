@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include <zephyr/random/random.h>
 
 #if defined(CONFIG_NET_TCP_ISN_RFC6528)
-#include <mbedtls/md5.h>
+#include <psa/crypto.h>
 #endif
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_context.h>
@@ -111,7 +111,7 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 
 	buf = net_pkt_get_frag(pkt, len, TCP_PKT_ALLOC_TIMEOUT);
 
-	if (!buf || buf->size < len) {
+	if (!buf || net_buf_max_len(buf) < len) {
 		if (buf) {
 			net_buf_unref(buf);
 		}
@@ -119,7 +119,7 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 		goto out;
 	}
 
-	net_buf_linearize(buf->data, buf->size, pkt->frags, pos, len);
+	net_buf_linearize(buf->data, net_buf_max_len(buf), pkt->frags, pos, len);
 	net_buf_add(buf, len);
 
 	len1 = first->len - (pkt->cursor.pos - pkt->cursor.buf->data);
@@ -237,6 +237,51 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 	}
 
 	return ret;
+}
+
+int net_tcp_endpoint_copy(struct net_context *ctx,
+			  struct sockaddr *local,
+			  struct sockaddr *peer,
+			  socklen_t *addrlen)
+{
+	const struct tcp *conn = ctx->tcp;
+	socklen_t newlen = ctx->local.family == AF_INET ?
+		sizeof(struct sockaddr_in) :
+		sizeof(struct sockaddr_in6);
+
+	if (local != NULL) {
+		/* If we are connected, then get the address we are actually
+		 * using, otherwise get the address we are bound as these might
+		 * be different if we are bound to any address.
+		 */
+		if (conn->state < TCP_ESTABLISHED) {
+			if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET) {
+				memcpy(&net_sin(local)->sin_addr,
+				       net_sin_ptr(&ctx->local)->sin_addr,
+				       sizeof(struct in_addr));
+				net_sin(local)->sin_port = net_sin_ptr(&ctx->local)->sin_port;
+				net_sin(local)->sin_family = AF_INET;
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET6) {
+				memcpy(&net_sin6(local)->sin6_addr,
+				       net_sin6_ptr(&ctx->local)->sin6_addr,
+				       sizeof(struct in6_addr));
+				net_sin6(local)->sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
+				net_sin6(local)->sin6_family = AF_INET6;
+				net_sin6(local)->sin6_scope_id =
+					net_sin6_ptr(&ctx->local)->sin6_scope_id;
+			} else {
+				return -EINVAL;
+			}
+		} else {
+			memcpy(local, &conn->src.sa, newlen);
+		}
+	}
+
+	if (peer != NULL) {
+		memcpy(peer, &conn->dst.sa, newlen);
+	}
+
+	return 0;
 }
 
 static const char *tcp_flags(uint8_t flags)
@@ -729,6 +774,16 @@ static void tcp_conn_release(struct k_work *work)
 	if (conn->context->conn_handler) {
 		net_conn_unregister(conn->context->conn_handler);
 		conn->context->conn_handler = NULL;
+	}
+
+	/* As the TCP socket could be closed without connect being called,
+	 * check if the address reference is done before releasing the address.
+	 */
+	if (conn->iface != NULL && conn->addr_ref_done) {
+		net_if_addr_unref(conn->iface, conn->src.sa.sa_family,
+				  conn->src.sa.sa_family == AF_INET ?
+				  (const void *)&conn->src.sin.sin_addr :
+				  (const void *)&conn->src.sin6.sin6_addr);
 	}
 
 	conn->context->tcp = NULL;
@@ -2060,6 +2115,7 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->send_win_max = MAX(tcp_tx_window, NET_IPV6_MTU);
 	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
+	conn->addr_ref_done = false;
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 	conn->dup_ack_cnt = 0;
 #endif
@@ -2206,6 +2262,8 @@ in:
 	return verdict;
 }
 
+#if defined(CONFIG_NET_TCP_ISN_RFC6528)
+
 static uint32_t seq_scale(uint32_t seq)
 {
 	return seq + (k_ticks_to_ns_floor32(k_uptime_ticks()) >> 6);
@@ -2232,18 +2290,18 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 	};
 
 	uint8_t hash[16];
+	size_t hash_len;
 	static bool once;
 
 	if (!once) {
-		sys_rand_get(unique_key, sizeof(unique_key));
+		sys_csrand_get(unique_key, sizeof(unique_key));
 		once = true;
 	}
 
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
-#if defined(CONFIG_NET_TCP_ISN_RFC6528)
-	mbedtls_md5((const unsigned char *)&buf, sizeof(buf), hash);
-#endif
+	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
+			 hash, sizeof(hash), &hash_len);
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
 }
@@ -2267,21 +2325,29 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 	};
 
 	uint8_t hash[16];
+	size_t hash_len;
 	static bool once;
 
 	if (!once) {
-		sys_rand_get(unique_key, sizeof(unique_key));
+		sys_csrand_get(unique_key, sizeof(unique_key));
 		once = true;
 	}
 
 	memcpy(buf.key, unique_key, sizeof(unique_key));
 
-#if defined(CONFIG_NET_TCP_ISN_RFC6528)
-	mbedtls_md5((const unsigned char *)&buf, sizeof(buf), hash);
-#endif
+
+	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
+			 hash, sizeof(hash), &hash_len);
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
 }
+
+#else
+
+#define tcpv6_init_isn(...) (0UL)
+#define tcpv4_init_isn(...) (0UL)
+
+#endif /* CONFIG_NET_TCP_ISN_RFC6528 */
 
 static uint32_t tcp_init_isn(struct sockaddr *saddr, struct sockaddr *daddr)
 {
@@ -2375,7 +2441,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	 * address, remote port) to be properly identified. Remote address and port
 	 * are already copied above from conn->dst. The call to net_context_bind
 	 * with the prepared local_addr further copies the local address. However,
-	 * this call wont copy the local port, as the bind would then fail due to
+	 * this call won't copy the local port, as the bind would then fail due to
 	 * an address/port reuse without the REUSEPORT option enables for both
 	 * connections. Therefore, we copy the port after the bind call.
 	 * It is safe to bind to this address/port combination, as the new TCP
@@ -2413,6 +2479,13 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 		conn = NULL;
 		goto err;
 	}
+
+	net_if_addr_ref(conn->iface, conn->dst.sa.sa_family,
+			conn->src.sa.sa_family == AF_INET ?
+			(const void *)&conn->src.sin.sin_addr :
+			(const void *)&conn->src.sin6.sin6_addr);
+	conn->addr_ref_done = true;
+
 err:
 	if (!conn) {
 		net_stats_update_tcp_seg_conndrop(net_pkt_iface(pkt));
@@ -2622,7 +2695,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 }
 
 static enum net_verdict tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
-					  size_t *len)
+					  size_t *len, bool psh)
 {
 	enum net_verdict ret;
 
@@ -2638,7 +2711,7 @@ static enum net_verdict tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
 	/* Delay ACK response in case of small window or missing PSH,
 	 * as described in RFC 813.
 	 */
-	if (tcp_short_window(conn)) {
+	if (tcp_short_window(conn) || !psh) {
 		k_work_schedule_for_queue(&tcp_work_q, &conn->ack_timer,
 					  ACK_DELAY);
 	} else {
@@ -2853,11 +2926,16 @@ next_state:
 			verdict = NET_OK;
 		} else {
 			conn->send_options.mss_found = true;
-			tcp_out(conn, SYN);
-			conn->send_options.mss_found = false;
-			conn_seq(conn, + 1);
-			next = TCP_SYN_SENT;
-			tcp_conn_ref(conn);
+			ret = tcp_out_ext(conn, SYN, NULL /* no data */, conn->seq);
+			if (ret < 0) {
+				do_close = true;
+				close_status = ret;
+			} else {
+				conn->send_options.mss_found = false;
+				conn_seq(conn, + 1);
+				next = TCP_SYN_SENT;
+				tcp_conn_ref(conn);
+			}
 		}
 		break;
 	case TCP_SYN_RECEIVED:
@@ -3174,7 +3252,9 @@ next_state:
 		if (th) {
 			if (th_seq(th) == conn->ack) {
 				if (len > 0) {
-					verdict = tcp_data_received(conn, pkt, &len);
+					bool psh = FL(&fl, &, PSH);
+
+					verdict = tcp_data_received(conn, pkt, &len, psh);
 					if (verdict == NET_OK) {
 						/* net_pkt owned by the recv fifo now */
 						pkt = NULL;
@@ -3189,7 +3269,7 @@ next_state:
 				 * RISK:
 				 * There is a tiny risk of creating a ACK loop this way when
 				 * both ends of the connection are out of order due to packet
-				 * loss is a simulatanious bidirectional data flow.
+				 * loss is a simultaneous bidirectional data flow.
 				 */
 				tcp_out(conn, ACK); /* peer has resent */
 
@@ -3833,6 +3913,12 @@ int net_tcp_connect(struct net_context *context,
 		goto out;
 	}
 
+	net_if_addr_ref(conn->iface, conn->src.sa.sa_family,
+			conn->src.sa.sa_family == AF_INET ?
+			(const void *)&conn->src.sin.sin_addr :
+			(const void *)&conn->src.sin6.sin6_addr);
+	conn->addr_ref_done = true;
+
 	conn->connect_cb = cb;
 	context->user_data = user_data;
 
@@ -3843,8 +3929,11 @@ int net_tcp_connect(struct net_context *context,
 	(void)tcp_in(conn, NULL);
 
 	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
-		if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
-		    conn->state != TCP_ESTABLISHED) {
+		if (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED) {
+			ret = -errno;
+			goto out;
+		} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
+			   conn->state != TCP_ESTABLISHED) {
 			ret = -EINPROGRESS;
 			goto out;
 		} else if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
@@ -3968,6 +4057,8 @@ int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 	struct net_tcp_hdr *tcp_hdr;
+	enum net_if_checksum_type type = net_pkt_family(pkt) == AF_INET6 ?
+		NET_IF_CHECKSUM_IPV6_TCP : NET_IF_CHECKSUM_IPV4_TCP;
 
 	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
 	if (!tcp_hdr) {
@@ -3976,7 +4067,7 @@ int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum)
 
 	tcp_hdr->chksum = 0U;
 
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) || force_chksum) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), type) || force_chksum) {
 		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
 		net_pkt_set_chksum_done(pkt, true);
 	}
@@ -3988,9 +4079,11 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 				  struct net_pkt_data_access *tcp_access)
 {
 	struct net_tcp_hdr *tcp_hdr;
+	enum net_if_checksum_type type = net_pkt_family(pkt) == AF_INET6 ?
+		NET_IF_CHECKSUM_IPV6_TCP : NET_IF_CHECKSUM_IPV4_TCP;
 
 	if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
-	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) ||
+	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), type) ||
 	     net_pkt_is_ip_reassembled(pkt)) &&
 	    net_calc_chksum_tcp(pkt) != 0U) {
 		NET_DBG("DROP: checksum mismatch");
@@ -4217,7 +4310,8 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 		conn = (void *)sys_slist_peek_head(&tcp_conns);
 		tcp_to_json(conn, buf, &json_len);
 		break;
-	case TP_DEBUG_STOP: case TP_DEBUG_CONTINUE:
+	case TP_DEBUG_STOP:
+	case TP_DEBUG_CONTINUE:
 		tp_state = tp->type;
 		break;
 	default:
@@ -4448,7 +4542,7 @@ void net_tcp_init(void)
 		tcp_max_timeout_ms += rto;
 		rto += rto >> 1;
 	}
-	/* At the last timeout cicle */
+	/* At the last timeout cycle */
 	tcp_max_timeout_ms += tcp_rto;
 
 	/* When CONFIG_NET_TCP_RANDOMIZED_RTO is active in can be worse case 1.5 times larger */

@@ -245,7 +245,7 @@ ZTEST(riscv_fpu_sharing, test_multi_thread_interaction)
 			thread2_entry, NULL, NULL, NULL,
 			-1, 0, K_NO_WAIT);
 	zassert_true(k_thread_join(&thread1, K_FOREVER) == 0);
-	zassert_true(k_thread_join(&thread1, K_FOREVER) == 0);
+	zassert_true(k_thread_join(&thread2, K_FOREVER) == 0);
 }
 
 /*

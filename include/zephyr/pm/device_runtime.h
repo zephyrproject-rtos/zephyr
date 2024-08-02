@@ -48,7 +48,6 @@ int pm_device_runtime_auto_enable(const struct device *dev);
  * @param dev Device instance.
  *
  * @retval 0 If the device runtime PM is enabled successfully.
- * @retval -EPERM If device has power state locked.
  * @retval -EBUSY If device is busy.
  * @retval -ENOTSUP If the device does not support PM.
  * @retval -errno Other negative errno, result of suspending the device.

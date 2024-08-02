@@ -6,7 +6,7 @@ ARCELI W5500 ETH
 Overview
 ********
 
-ARCELI W5500 etherner is breakout board with SPI bus access over 10 pin header.
+ARCELI W5500 Ethernet is breakout board with SPI bus access over 10 pin header.
 `W5500`_ is 10/100 MBPS stand alone Ethernet controller with on-board MAC & PHY,
 16 KiloBytes for FIFO buffer and SPI serial interface.
 
@@ -39,7 +39,7 @@ Arduino header or custom header (by adjusting the overlay).
 Programming
 ***********
 
-Set ``-DSHIELD=arceli_eth_w5500`` when you invoke ``west build``. For example:
+Set ``--shield arceli_eth_w5500`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/dhcpv4_client
@@ -53,4 +53,4 @@ References
 .. target-notes::
 
 .. _W5500:
-   https://www.wiznet.io/product-item/w5500/
+   https://wiznet.io/products/iethernet-chips/w5500

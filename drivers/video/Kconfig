@@ -33,6 +33,8 @@ config VIDEO_BUFFER_POOL_ALIGN
 
 source "drivers/video/Kconfig.mcux_csi"
 
+source "drivers/video/Kconfig.mcux_mipi_csi2rx"
+
 source "drivers/video/Kconfig.sw_generator"
 
 source "drivers/video/Kconfig.mt9m114"
@@ -40,5 +42,11 @@ source "drivers/video/Kconfig.mt9m114"
 source "drivers/video/Kconfig.ov7725"
 
 source "drivers/video/Kconfig.ov2640"
+
+source "drivers/video/Kconfig.stm32_dcmi"
+
+source "drivers/video/Kconfig.ov5640"
+
+source "drivers/video/Kconfig.ov7670"
 
 endif # VIDEO

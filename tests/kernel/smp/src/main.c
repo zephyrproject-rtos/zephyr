@@ -695,8 +695,8 @@ void z_trace_sched_ipi(void)
  * - To verify architecture layer provides a mechanism to issue an interprocessor
  *   interrupt to all other CPUs in the system that calls the scheduler IPI.
  *   We simply add a hook in z_sched_ipi(), in order to check if it has been
- *   called once in another CPU except the caller, when arch_sched_ipi() is
- *   called.
+ *   called once in another CPU except the caller, when arch_sched_broadcast_ipi()
+ *   is called.
  *
  * Testing techniques:
  * - Interface testing, function and block box testing,
@@ -711,7 +711,7 @@ void z_trace_sched_ipi(void)
  *
  * Test Procedure:
  * -# In main thread, given a global variable sched_ipi_has_called equaled zero.
- * -# Call arch_sched_ipi() then sleep for 100ms.
+ * -# Call arch_sched_broadcast_ipi() then sleep for 100ms.
  * -# In z_sched_ipi() handler, increment the sched_ipi_has_called.
  * -# In main thread, check the sched_ipi_has_called is not equaled to zero.
  * -# Repeat step 1 to 4 for 3 times.
@@ -727,7 +727,7 @@ void z_trace_sched_ipi(void)
  * - This test using for the platform that support SMP, in our current scenario
  *   , only x86_64 and arc supported.
  *
- * @see arch_sched_ipi()
+ * @see arch_sched_broadcast_ipi()
  */
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 ZTEST(smp, test_smp_ipi)
@@ -741,7 +741,7 @@ ZTEST(smp, test_smp_ipi)
 	for (int i = 0; i < 3 ; i++) {
 		/* issue a sched ipi to tell other CPU to run thread */
 		sched_ipi_has_called = 0;
-		arch_sched_ipi();
+		arch_sched_broadcast_ipi();
 
 		/* Need to wait longer than we think, loaded CI
 		 * systems need to wait for host scheduling to run the
@@ -757,7 +757,7 @@ ZTEST(smp, test_smp_ipi)
 }
 #endif
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
 	static int trigger;
 
@@ -802,7 +802,7 @@ ZTEST(smp, test_fatal_on_smp)
 				      K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
 
 	/* hold cpu and wait for thread trigger exception and being terminated */
-	k_busy_wait(2 * DELAY_US);
+	k_busy_wait(5 * DELAY_US);
 
 	/* Verify that child thread is no longer running. We can't simply use k_thread_join here
 	 * as we don't want to introduce reschedule point here.
@@ -1171,6 +1171,50 @@ ZTEST(smp, test_smp_switch_torture)
 		k_thread_join(&tthread[i], K_FOREVER);
 	}
 }
+
+/**
+ * @brief Torture test for cpu affinity code
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details Pin thread to a specific cpu. Once thread gets cpu, check
+ *          the cpu id is correct and then thread will give up cpu.
+ */
+#ifdef CONFIG_SCHED_CPU_MASK
+static void check_affinity(void *arg0, void *arg1, void *arg2)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+
+	int affinity = POINTER_TO_INT(arg0);
+	int counter = 30;
+
+	while (counter != 0) {
+		zassert_equal(affinity, curr_cpu(), "Affinity test failed.");
+		counter--;
+		k_yield();
+	}
+}
+
+ZTEST(smp, test_smp_affinity)
+{
+	int num_threads = arch_num_cpus();
+
+	for (int i = 0; i < num_threads; ++i) {
+		k_thread_create(&tthread[i], tstack[i],
+					       STACK_SIZE, check_affinity,
+					       INT_TO_POINTER(i), NULL, NULL,
+					       0, 0, K_FOREVER);
+
+		k_thread_cpu_pin(&tthread[i], i);
+		k_thread_start(&tthread[i]);
+	}
+
+	for (int i = 0; i < num_threads; i++) {
+		k_thread_join(&tthread[i], K_FOREVER);
+	}
+}
+#endif
 
 static void *smp_tests_setup(void)
 {

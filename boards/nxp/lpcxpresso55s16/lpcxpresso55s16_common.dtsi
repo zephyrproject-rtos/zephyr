@@ -147,8 +147,6 @@
 
 &can0 {
 	status = "okay";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	pinctrl-0 = <&pinmux_can0>;
 	pinctrl-names = "default";
 

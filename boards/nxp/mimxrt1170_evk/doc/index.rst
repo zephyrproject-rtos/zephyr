@@ -69,6 +69,7 @@ Hardware
 - Expansion port
 
   - Arduino interface
+  - M.2 WIFI/BT interface
 
 - CAN bus connector
 
@@ -144,8 +145,9 @@ RT1170 EVKB (`mimxrt1170_evk@B//cm7/cm4`)
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | WATCHDOG  | on-chip    | watchdog                            | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
-| ENET      | on-chip    | ethernet - 10/100M (ENET_QOS or     | Supported (M7)  | No support      |
-| ENET1G    |            | GigE not supported yet)             |                 |                 |
+| ENET      | on-chip    | ethernet - 10/100M                  | Supported (M7)  | No support      |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| ENET1G    | on-chip    | ethernet - 10/100/1000M             | Supported (M7)  | No support      |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | SAI       | on-chip    | i2s                                 | Supported       | No support      |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
@@ -167,6 +169,11 @@ RT1170 EVKB (`mimxrt1170_evk@B//cm7/cm4`)
 | SDHC      | on-chip    | SD host controller                  | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | PIT       | on-chip    | pit                                 | Supported (M7)  | Supported (M7)  |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| VIDEO     | on-chip    | CSI; MIPI CSI-2 Rx. Tested with     | Supported (M7)  | Supported (M7)  |
+|           |            | :ref:`nxp_btb44_ov5640` shield      |                 |                 |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| UART      | NXP NW61x  | M.2 WIFI/BT module                  | Unsupported     | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 
 The default configuration can be found in the defconfig files:
@@ -243,6 +250,14 @@ The MIMXRT1170 SoC has six pairs of pinmux/gpio controllers.
 +---------------------------+----------------+------------------+
 | GPIO_AD_20_SAI1_RX_DATA00 | SAI1_RX_DATA00 | SAI              |
 +---------------------------+----------------+------------------+
+| GPIO_DISP_B2_10           | LPUART2_TX     | M.2 BT HCI       |
++---------------------------+----------------+------------------+
+| GPIO_DISP_B2_11           | LPUART2_RX     | M.2 BT HCI       |
++---------------------------+----------------+------------------+
+| GPIO_DISP_B2_12           | LPUART2_CTS_B  | M.2 BT HCI       |
++---------------------------+----------------+------------------+
+| GPIO_DISP_B2_13           | LPUART1_RTS_B  | M.2 BT HCI       |
++---------------------------+----------------+------------------+
 
 Dual Core samples
 *****************
@@ -287,8 +302,21 @@ cost of reduced resolution
 Serial Port
 ===========
 
-The MIMXRT1170 SoC has 12 UARTs. One is configured for the console and the
+The MIMXRT1170 SoC has 12 UARTs. ``LPUART1`` is configured for the console,
+``LPUART2`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
+
+Fetch Binary Blobs
+==================
+
+The board Bluetooth/WiFi module requires fetching some binary blob files, to do
+that run the command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
+.. note:: Only Bluetooth functionality is currently supported.
 
 Programming and Debugging
 *************************
@@ -316,6 +344,7 @@ Configuring a Debug Probe
 A debug probe is used for both flashing and debugging the board. The on-board
 debugger listed below works with the LinkServer runner by default, or can be
 reprogrammed with JLink firmware.
+
 - MIMXRT1170-EVKB: :ref:`mcu-link-cmsis-onboard-debug-probe`
 - MIMXRT1170-EVK:  :ref:`opensda-daplink-onboard-debug-probe`
 
@@ -334,9 +363,6 @@ Using LinkServer
 ----------------
 
 Known limitations with LinkServer and these boards include:
-- ``west debug`` does not yet work correctly, and the application image is not
-properly written to the memory.  `NXP MCUXpresso for Visual Studio Code`_
-can be used to debug Zephyr applications with LinkServer.
 - ``west flash`` will not write images to non-flash locations. The flash
 command only works when all data in the image is written to flash memory
 regions.
@@ -364,10 +390,12 @@ We will use the on-board debugger
 microcontroller as a usb-to-serial adapter for the serial console. The following
 jumper settings are default on these boards, and are required to connect the
 UART signals to the USB bridge circuit:
+
 - MIMXRT1170-EVKB: JP2 open (default)
 - MIMXRT1170-EVK:  J31 and J32 shorted (default)
 
 Connect a USB cable from your PC to the on-board debugger USB port:
+
 - MIMXRT1170-EVKB: J86
 - MIMXRT1170-EVK:  J11
 
@@ -444,3 +472,10 @@ should see the following message in the terminal:
 
 .. _NXP MCUXpresso for Visual Studio Code:
 	https://www.nxp.com/design/software/development-software/mcuxpresso-software-and-tools-/mcuxpresso-for-visual-studio-code:MCUXPRESSO-VSC
+
+ENET1G Driver
+=============
+
+Current default of ethernet driver is to use 100M Ethernet instance ENET.
+To use the 1G Ethernet instance ENET1G, include the overlay to west build with
+the option `-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay` instead.

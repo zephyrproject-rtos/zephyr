@@ -12,8 +12,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/common/ffs.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
+#include <string.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -33,7 +35,7 @@
 #define STM32_QSPI_BASE_ADDRESS DT_INST_REG_ADDR(0)
 
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
-#define STM32_QSPI_RESET_CMD DT_INST_NODE_HAS_PROP(0, reset_cmd)
+#define STM32_QSPI_RESET_CMD DT_PROP(DT_NODELABEL(quadspi), set_cmd)
 
 #include <stm32_ll_dma.h>
 
@@ -123,6 +125,11 @@ struct flash_stm32_qspi_data {
 	bool flag_access_32bit: 1;
 };
 
+static const QSPI_CommandTypeDef cmd_write_en = {
+	.Instruction = SPI_NOR_CMD_WREN,
+	.InstructionMode = QSPI_INSTRUCTION_1_LINE
+};
+
 static inline void qspi_lock_thread(const struct device *dev)
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
@@ -189,7 +196,7 @@ static inline int qspi_prepare_quad_program(const struct device *dev,
 /*
  * Send a command over QSPI bus.
  */
-static int qspi_send_cmd(const struct device *dev, QSPI_CommandTypeDef *cmd)
+static int qspi_send_cmd(const struct device *dev, const QSPI_CommandTypeDef *cmd)
 {
 	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
 	struct flash_stm32_qspi_data *dev_data = dev->data;
@@ -201,7 +208,7 @@ static int qspi_send_cmd(const struct device *dev, QSPI_CommandTypeDef *cmd)
 
 	dev_data->cmd_status = 0;
 
-	hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
+	hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, (QSPI_CommandTypeDef *)cmd);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
 		return -EIO;
@@ -385,6 +392,66 @@ static bool qspi_address_is_valid(const struct device *dev, off_t addr,
 	return (addr >= 0) && ((uint64_t)addr + (uint64_t)size <= flash_size);
 }
 
+#ifdef CONFIG_STM32_MEMMAP
+/* Must be called inside qspi_lock_thread(). */
+static int stm32_qspi_set_memory_mapped(const struct device *dev)
+{
+	int ret;
+	HAL_StatusTypeDef hal_ret;
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+
+	QSPI_CommandTypeDef cmd = {
+		.Instruction = SPI_NOR_CMD_READ,
+		.Address = 0,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+		.AddressMode = QSPI_ADDRESS_1_LINE,
+		.DataMode = QSPI_DATA_1_LINE,
+	};
+
+	qspi_set_address_size(dev, &cmd);
+	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO)) {
+		ret = qspi_prepare_quad_read(dev, &cmd);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	QSPI_MemoryMappedTypeDef mem_mapped = {
+		.TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE,
+	};
+
+	hal_ret = HAL_QSPI_MemoryMapped(&dev_data->hqspi, &cmd, &mem_mapped);
+	if (hal_ret != 0) {
+		LOG_ERR("%d: Failed to enable memory mapped", hal_ret);
+		return -EIO;
+	}
+
+	LOG_DBG("MemoryMap mode enabled");
+	return 0;
+}
+
+static bool stm32_qspi_is_memory_mapped(const struct device *dev)
+{
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+
+	return READ_BIT(dev_data->hqspi.Instance->CCR, QUADSPI_CCR_FMODE) == QUADSPI_CCR_FMODE;
+}
+
+static int stm32_qspi_abort(const struct device *dev)
+{
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+	HAL_StatusTypeDef hal_ret;
+
+	hal_ret = HAL_QSPI_Abort(&dev_data->hqspi);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("%d: QSPI abort failed", hal_ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
 static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 				 void *data, size_t size)
 {
@@ -401,6 +468,27 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
+#ifdef CONFIG_STM32_MEMMAP
+	qspi_lock_thread(dev);
+
+	/* Do reads through memory-mapping instead of indirect */
+	if (!stm32_qspi_is_memory_mapped(dev)) {
+		ret = stm32_qspi_set_memory_mapped(dev);
+		if (ret != 0) {
+			LOG_ERR("READ: failed to set memory mapped");
+			goto end;
+		}
+	}
+
+	__ASSERT_NO_MSG(stm32_qspi_is_memory_mapped(dev));
+
+	uintptr_t mmap_addr = STM32_QSPI_BASE_ADDRESS + addr;
+
+	LOG_DBG("Memory-mapped read from 0x%08lx, len %zu", mmap_addr, size);
+	memcpy(data, (void *)mmap_addr, size);
+	ret = 0;
+	goto end;
+#else
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = SPI_NOR_CMD_READ,
 		.Address = addr,
@@ -420,7 +508,10 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 	qspi_lock_thread(dev);
 
 	ret = qspi_read_access(dev, &cmd, data, size);
+	goto end;
+#endif
 
+end:
 	qspi_unlock_thread(dev);
 
 	return ret;
@@ -460,11 +551,6 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-	QSPI_CommandTypeDef cmd_write_en = {
-		.Instruction = SPI_NOR_CMD_WREN,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-	};
-
 	QSPI_CommandTypeDef cmd_pp = {
 		.Instruction = SPI_NOR_CMD_PP,
 		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
@@ -481,6 +567,17 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 	}
 
 	qspi_lock_thread(dev);
+
+#ifdef CONFIG_STM32_MEMMAP
+	if (stm32_qspi_is_memory_mapped(dev)) {
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_qspi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before write");
+			goto end;
+		}
+	}
+#endif
 
 	while (size > 0) {
 		size_t to_write = size;
@@ -517,7 +614,9 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 			break;
 		}
 	}
+	goto end;
 
+end:
 	qspi_unlock_thread(dev);
 
 	return ret;
@@ -541,11 +640,6 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-	QSPI_CommandTypeDef cmd_write_en = {
-		.Instruction = SPI_NOR_CMD_WREN,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-	};
-
 	QSPI_CommandTypeDef cmd_erase = {
 		.Instruction = 0,
 		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
@@ -554,6 +648,17 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 
 	qspi_set_address_size(dev, &cmd_erase);
 	qspi_lock_thread(dev);
+
+#ifdef CONFIG_STM32_MEMMAP
+	if (stm32_qspi_is_memory_mapped(dev)) {
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_qspi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before erase");
+			goto end;
+		}
+	}
+#endif
 
 	while ((size > 0) && (ret == 0)) {
 		cmd_erase.Address = addr;
@@ -596,7 +701,9 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 		}
 		qspi_wait_until_ready(dev);
 	}
+	goto end;
 
+end:
 	qspi_unlock_thread(dev);
 
 	return ret;
@@ -807,10 +914,6 @@ static int qspi_program_addr_4b(const struct device *dev, bool write_enable)
 
 	/* Send write enable command, if required */
 	if (write_enable) {
-		QSPI_CommandTypeDef cmd_write_en = {
-			.Instruction = SPI_NOR_CMD_WREN,
-			.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-		};
 		ret = qspi_send_cmd(dev, &cmd_write_en);
 		if (ret != 0) {
 			return ret;
@@ -917,11 +1020,6 @@ static int qspi_write_enable(const struct device *dev)
 {
 	uint8_t reg;
 	int ret;
-
-	QSPI_CommandTypeDef cmd_write_en = {
-		.Instruction = SPI_NOR_CMD_WREN,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-	};
 
 	ret = qspi_send_cmd(dev, &cmd_write_en);
 	if (ret) {
@@ -1280,10 +1378,28 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
+#if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
+	/*
+	 * When the DTS has <dual-flash>, it means Dual Flash Mode
+	 * Even in DUAL flash config, the SDFP is read from one single quad-NOR
+	 * else the magic nb is wrong (0x46465353)
+	 * That means that the Dual Flash config is set after the SFDP sequence
+	 */
+	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
+	dev_data->hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;
+	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
+	/* Set Dual Flash Mode only on MemoryMapped */
+	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
+#endif /* dual_flash */
 
 	HAL_QSPI_Init(&dev_data->hqspi);
 
-#if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && \
+	defined(QUADSPI_CR_FSEL)
+	/*
+	 * Some stm32 mcu with quadspi (like stm32l47x or stm32l48x)
+	 * does not support Dual-Flash Mode
+	 */
 	uint8_t qspi_flash_id = DT_PROP(DT_NODELABEL(quadspi), flash_id);
 
 	HAL_QSPI_SetFlashID(&dev_data->hqspi,
@@ -1367,9 +1483,30 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+#ifdef CONFIG_STM32_MEMMAP
+#if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
+	/*
+	 * When the DTS has dual_flash, it means Dual Flash Mode for Memory MAPPED
+	 * Force Dual Flash mode now, after the SFDP sequence which is reading
+	 * one quad-NOR only
+	 */
+	MODIFY_REG(dev_data->hqspi.Instance->CR, (QUADSPI_CR_DFM), QSPI_DUALFLASH_ENABLE);
+	LOG_DBG("Dual Flash Mode");
+#endif /* dual_flash */
+
+	ret = stm32_qspi_set_memory_mapped(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable memory-mapped mode: %d", ret);
+		return ret;
+	}
+	LOG_INF("Memory-mapped NOR quad-flash at 0x%lx (0x%x bytes)",
+		(long)(STM32_QSPI_BASE_ADDRESS),
+		dev_cfg->flash_size);
+#else
 	LOG_INF("NOR quad-flash at 0x%lx (0x%x bytes)",
 		(long)(STM32_QSPI_BASE_ADDRESS),
 		dev_cfg->flash_size);
+#endif
 
 	return 0;
 }

@@ -71,7 +71,7 @@ Pins Assignment of the RaspberryPi Pico to UNO FlexyPin Adapter
 Programming
 ***********
 
-Set ``-DSHIELD=rpi_pico_uno_flexypin`` when you invoke ``west build``.
+Set ``--shield rpi_pico_uno_flexypin`` when you invoke ``west build``.
 This shield is just a converter, so it is usually used with other Arduino shield.
 
 For example,
@@ -79,7 +79,7 @@ For example,
 .. zephyr-app-commands::
    :zephyr-app:  samples/net/wifi
    :board: rpi_pico
-   :shield: 'rpi_pico_uno_flexypin;esp_8266_arduino'
+   :shield: rpi_pico_uno_flexypin,esp_8266_arduino
    :goals: build
 
 References

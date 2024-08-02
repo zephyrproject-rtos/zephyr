@@ -33,7 +33,9 @@ or:
 	:goals: build
 	:compact:
 
-.. note:: You may need to set "zephyr,tracing-uart" property under the chosen node in your devicetree. See :zephyr_file:`boards/mps2_an521.overlay` for an example.
+.. note::
+   You may need to set "zephyr,tracing-uart" property under the chosen node in your devicetree.
+   See :zephyr_file:`samples/subsys/tracing/boards/mps2_an521_cpu0.overlay` for an example.
 
 After the application has run for a while, check the trace output file.
 

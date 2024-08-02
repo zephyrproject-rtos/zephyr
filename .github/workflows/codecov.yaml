@@ -2,7 +2,7 @@ name: Code Coverage with codecov
 
 on:
   schedule:
-    - cron: '25 06,18 * * 1-5'
+    - cron: '25 06,18 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
@@ -14,7 +14,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.11.20240324
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -220,10 +220,10 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
-          directory: ./coverage/reports
           env_vars: OS,PYTHON
           fail_ci_if_error: false
           verbose: true
-          files: merged.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/reports/merged.xml

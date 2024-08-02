@@ -59,7 +59,7 @@ static int ext2_open(struct fs_file_t *filp, const char *fs_path, fs_mode_t flag
 	/* Inodes allocated by lookup. Must be freed in manually. */
 	struct ext2_inode *found_inode = args.inode;
 
-	/* Not NULL iff FS_O_CREATE and found_inode == NULL */
+	/* Not NULL if FS_O_CREATE and found_inode == NULL */
 	struct ext2_inode *parent = args.parent;
 
 	/* File has to be created */

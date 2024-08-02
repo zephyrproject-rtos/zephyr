@@ -23,9 +23,3 @@
 		t-exit-dpd = <30000>;
 	};
 };
-
-/ {
-	aliases {
-		spi-flash0 = &gd25lb256;
-	};
-};

@@ -40,3 +40,5 @@ zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include
 )
+
+add_subdirectory_ifdef(CONFIG_ZVFS zvfs)

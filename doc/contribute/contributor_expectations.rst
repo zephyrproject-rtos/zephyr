@@ -93,6 +93,8 @@ PR Requirements
 - Each commit in the PR must provide a commit message following the
   :ref:`commit-guidelines`.
 
+- The PR description must include a summary of the changes and their rationales.
+
 - All files in the PR must comply with :ref:`Licensing
   Requirements<licensing_requirements>`.
 
@@ -276,6 +278,9 @@ Reviewer Expectations
     #. PRs assigned to the reviewer as the area maintainer.
     #. All other PRs.
 
+- Reviewers shall strive to advance the PR to a mergeable state with their
+  feedback and engagement with the PR author.
+
 - Try to provide feedback on the entire PR in one shot. This provides the
   contributor an opportunity to address all comments in the next PR update.
 
@@ -304,6 +309,11 @@ Reviewer Expectations
   "Request Changes" option is used. Requested changes shall be in the scope of
   the PR in question and following the contribution and style guidelines of the
   project.
+
+- Reviewers shall not close a PR due to technical or structural disagreement.
+  If requested changes cannot be resolved within the review process, the
+  :ref:`pr_technical_escalation` path shall be used for any potential resolution
+  path, which may include closing the PR.
 
 .. _Code of Conduct: https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md
 

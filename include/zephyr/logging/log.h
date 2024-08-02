@@ -185,7 +185,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_ERR(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, (_str))
 
 /**
  * @brief Writes a WARNING level message to the log.
@@ -198,7 +198,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_WRN(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, (_str))
 
 /**
  * @brief Writes an INFO level message to the log.
@@ -210,7 +210,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_INF(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, (_str))
 
 /**
  * @brief Writes a DEBUG level message to the log.
@@ -222,7 +222,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_DBG(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, (_str))
 
 /**
  * @brief Writes an ERROR hexdump message associated with the instance to the
@@ -328,9 +328,10 @@ void z_log_vprintk(const char *fmt, va_list ap);
 		log_source_const_data,								\
 		Z_LOG_ITEM_CONST_DATA(_name)) =							\
 	{											\
-		.name = COND_CODE_1(CONFIG_LOG_FMT_SECTION,					\
+		.name = IS_ENABLED(CONFIG_LOG_FMT_SECTION_STRIP) ? NULL :			\
+			COND_CODE_1(CONFIG_LOG_FMT_SECTION,					\
 				(UTIL_CAT(_name, _str)), (STRINGIFY(_name))),			\
-		.level = _level									\
+		.level = (_level)								\
 	}
 
 #define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)					\

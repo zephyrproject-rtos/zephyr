@@ -97,6 +97,15 @@
 			health-test-magic = <0x17590abc>;
 			health-test-config = <0x72ac>;
 		};
+
+		digi_die_temp: digi_dietemp@58006800 {
+			compatible = "st,stm32-digi-temp";
+			reg = <0x58006800 0x400>;
+			interrupts = <147 0>;
+			interrupt-names = "digi_temp";
+			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x04000000>;
+			status = "disabled";
+		};
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM1 in CD domain */

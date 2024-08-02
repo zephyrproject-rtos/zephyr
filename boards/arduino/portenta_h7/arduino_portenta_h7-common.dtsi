@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
+
 / {
 	leds {
 		compatible = "gpio-leds";
@@ -16,6 +18,12 @@
 		blue_led: led_2 {
 			gpios = <&gpiok 7 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	otghs_ulpi_phy: otghs_ulpis_phy {
+		compatible = "usb-ulpi-phy";
+		reset-gpios = < &gpioj 4 GPIO_ACTIVE_LOW >;
+		#phy-cells = <0>;
 	};
 
 	aliases {
@@ -31,12 +39,12 @@
 };
 
 &rcc {
-	d1cpre = <1>;
-	hpre = <1>;
-	d1ppre = <1>;
-	d2ppre1 = <1>;
-	d2ppre2 = <2>;
-	d3ppre = <1>;
+	d1cpre = < 1 >;
+	hpre = < 2 >;
+	d1ppre = < 2 >;
+	d2ppre1 = < 2 >;
+	d2ppre2 = < 2 >;
+	d3ppre = < 2 >;
 };
 
 /* UART0 in datasheet */
@@ -113,12 +121,129 @@
 	status = "okay";
 };
 
-zephyr_udc0: &usbotg_fs {
-	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
-	pinctrl-names = "default";
-	status = "disabled";
-};
-
 &mailbox {
 	status = "okay";
+};
+
+&fmc {
+	status = "okay";
+	pinctrl-0 = < &fmc_d2_pd0 &fmc_d3_pd1 &fmc_d13_pd8 &fmc_d14_pd9
+		      &fmc_d15_pd10 &fmc_d0_pd14 &fmc_d1_pd15 &fmc_nbl0_pe0
+		      &fmc_nbl1_pe1 &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9
+		      &fmc_d7_pe10 &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13
+		      &fmc_d11_pe14 &fmc_d12_pe15 &fmc_a0_pf0 &fmc_a1_pf1
+		      &fmc_a2_pf2 &fmc_a3_pf3 &fmc_a4_pf4 &fmc_a5_pf5
+		      &fmc_sdnras_pf11 &fmc_a6_pf12 &fmc_a7_pf13 &fmc_a8_pf14
+		      &fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1 &fmc_a12_pg2
+		      &fmc_a14_pg4 /* FMC_BA0 */ &fmc_a15_pg5 /* FMC_BA1 */
+		      &fmc_sdclk_pg8 &fmc_sdncas_pg15 &fmc_sdcke0_ph2 &fmc_sdne0_ph3
+		      &fmc_sdnwe_ph5 >;
+	pinctrl-names = "default";
+	st,mem-swap = "disable";
+	sdram {
+		status = "okay";
+		mode-register = < 0x220 >;
+
+		/** From Arduino github repository:
+		 *  RefreshRate = 64 ms / 8192 cyc = 7.8125 us/cyc
+		 *  RefreshCycles = 7.8125 us * 90 MHz = 703
+		 *  According to the formula on p.1665 of the reference manual,
+		 *  we also need to subtract 20 from the value, so the target
+		 *  refresh rate is 703 - 20 = 683.
+		 */
+		refresh-rate = < 683 >;
+		num-auto-refresh = < 8 >;
+
+		bank@0 {
+			reg = < 0 >;
+			st,sdram-control = < STM32_FMC_SDRAM_NC_8
+					     STM32_FMC_SDRAM_NR_12
+					     STM32_FMC_SDRAM_MWID_16
+					     STM32_FMC_SDRAM_NB_4
+					     STM32_FMC_SDRAM_CAS_2
+					     STM32_FMC_SDRAM_SDCLK_PERIOD_2
+					     STM32_FMC_SDRAM_RBURST_ENABLE
+					     STM32_FMC_SDRAM_RPIPE_0 >;
+			st,sdram-timing = < 2 7 5 7 2 3 3 >;
+		};
+	};
+};
+
+&quadspi {
+	pinctrl-0 = < &quadspi_bk1_io0_pd11
+		      &quadspi_bk1_io1_pd12
+		      &quadspi_bk1_io2_pf7
+		      &quadspi_bk1_io3_pd13
+		      &quadspi_bk1_ncs_pg6
+		      &quadspi_clk_pf10 >;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx25l12833f: qspi-nor-flash@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = < 0x90000000 DT_SIZE_M(16) >; /* 128 MBits */
+		qspi-max-frequency = < 40000000 >;
+		sfdp-bfp = [ e5 20 f1 ff  ff ff ff 07  44 eb 08 6b  08 3b 04 bb
+			     fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c 20 0f 52
+			     10 d8 00 ff  82 41 bd 00  81 e5 7b c6  44 03 67 38
+			     30 b0 30 b0  f7 bd d5 5c  4a be 29 ff  e1 d0 ff ff ];
+		jedec-id = [ 66 66 20 ];
+		spi-bus-width = <4>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = < 1 >;
+			#size-cells = < 1 >;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg=< 0x0 DT_SIZE_K(15872) >;
+			};
+
+			wifi_firmware: partition@f80000 {
+				label = "wifi-firmware";
+				reg = < 0xf80000 DT_SIZE_K(512) >;
+			};
+		};
+	};
+};
+
+&mac {
+	pinctrl-0 = < &eth_ref_clk_pa1
+		      &eth_mdio_pa2
+		      &eth_crs_dv_pa7
+		      &eth_mdc_pc1
+		      &eth_rxd0_pc4
+		      &eth_rxd1_pc5
+		      &eth_tx_en_pg11
+		      &eth_txd1_pg12
+		      &eth_txd0_pg13 >;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = < &usb_otg_hs_ulpi_d0_pa3
+		      &usb_otg_hs_ulpi_ck_pa5
+		      &usb_otg_hs_ulpi_d1_pb0
+		      &usb_otg_hs_ulpi_d2_pb1
+		      &usb_otg_hs_ulpi_d7_pb5
+		      &usb_otg_hs_ulpi_d3_pb10
+		      &usb_otg_hs_ulpi_d4_pb11
+		      &usb_otg_hs_ulpi_d5_pb12
+		      &usb_otg_hs_ulpi_d6_pb13
+		      &usb_otg_hs_ulpi_stp_pc0
+		      &usb_otg_hs_ulpi_nxt_ph4
+		      &usb_otg_hs_ulpi_dir_pi11 >;
+	pinctrl-names = "default";
+	phys = < &otghs_ulpi_phy >;
+	maximum-speed = "high-speed";
+	/* Include the USB1ULPIEN | USB1OTGHSULPIEN clock enable bit */
+	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x6000000>,
+		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+	num-bidir-endpoints = < 4 >;
+	status = "okay";
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
 };

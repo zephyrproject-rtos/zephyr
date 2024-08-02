@@ -84,9 +84,9 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/olimex/olimex_esp32_evb/olimex_esp32_evb_esp32_appcpu_defconfig`
+:zephyr_file:`boards/olimex/olimex_esp32_evb/olimex_esp32_evb_appcpu_defconfig`
 and
-:zephyr_file:`boards/olimex/olimex_esp32_evb/olimex_esp32_evb_esp32_procpu_defconfig`
+:zephyr_file:`boards/olimex/olimex_esp32_evb/olimex_esp32_evb_procpu_defconfig`
 
 
 Other hardware features are not currently supported by the port.
@@ -136,9 +136,10 @@ There are two options to be used when building an application:
 
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
-   ```
-   CONFIG_BOOTLOADER_MCUBOOT=y
-   ```
+
+   .. code:: cfg
+
+      CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========

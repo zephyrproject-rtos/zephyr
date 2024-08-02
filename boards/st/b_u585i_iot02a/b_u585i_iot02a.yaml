@@ -23,4 +23,6 @@ supported:
   - pwm
   - counter
   - i2c
+  - rtc
+  - usbd
 vendor: st

@@ -300,6 +300,13 @@
 		};
 	};
 
+	flexio0_pwm_default: flexio0_pwm_default {
+		group1 {
+			pinmux = <PTA17_FXIO_D19_O>, <PTE7_FXIO_D11_O>;
+			output-enable;
+		};
+	};
+
 	qdec_s32: qdec_s32 {
 		group1 {
 			pinmux = <PTB2_TRGMUX_IN3>,

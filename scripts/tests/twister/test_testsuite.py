@@ -213,26 +213,41 @@ def test_scan_file(test_data, test_file, class_env, expected: ScanPathResult):
     assert result == expected
 
 
-TESTDATA_3 = [
-    (
-        'nt',
-        {'access': mmap.ACCESS_READ}
-    ),
-    (
-        'posix',
-        {
-            'flags': mmap.MAP_PRIVATE,
-            'prot': mmap.PROT_READ,
-            'offset': 0
-        }
+# Generate testcases depending on available mmap attributes
+TESTIDS_3 = []
+TESTDATA_3 = []
+
+try:
+    TESTDATA_3.append(
+        (
+            'nt',
+            {'access': mmap.ACCESS_READ}
+        )
     )
-]
+    TESTIDS_3.append('windows')
+except AttributeError:
+    pass
+
+try:
+    TESTDATA_3.append(
+        (
+            'posix',
+            {
+                'flags': mmap.MAP_PRIVATE,
+                'prot': mmap.PROT_READ,
+                'offset': 0
+            }
+        )
+    )
+    TESTIDS_3.append('linux')
+except AttributeError:
+    pass
 
 
 @pytest.mark.parametrize(
     'os_name, expected',
     TESTDATA_3,
-    ids=['windows', 'linux']
+    ids=TESTIDS_3
 )
 def test_scan_file_mmap(os_name, expected):
     class TestException(Exception):

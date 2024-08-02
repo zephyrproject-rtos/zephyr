@@ -7,8 +7,9 @@
 
 /dts-v1/;
 
-#include <cypress/psoc6_cm0.dtsi>
+#include <infineon/cat1a/legacy/psoc6_cm0.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "cy8ckit_062_wifi_bt_cy8c6247-pinctrl.dtsi"
 
 / {
 	model = "cy8ckit_062_wifi_bt_m0 with a Cypress PSoC6 SoC";
@@ -61,5 +62,6 @@
 
 	interrupt-parent = <&intmux_ch21>;
 
-	pinctrl-0 = <&p13_0_uart6_rx &p13_1_uart6_tx>;
+	pinctrl-0 = <&p13_0_scb6_uart_rx &p13_1_scb6_uart_tx>;
+	pinctrl-names = "default";
 };
