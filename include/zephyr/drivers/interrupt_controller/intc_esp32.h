@@ -295,10 +295,27 @@ int esp_intr_set_in_iram(struct intr_handle_data_t *handle, bool is_in_iram);
  */
 void esp_intr_noniram_disable(void);
 
-
 /**
  * @brief Re-enable interrupts disabled by esp_intr_noniram_disable
  */
 void esp_intr_noniram_enable(void);
+
+/**
+ * @brief Get the interrupt flags from the supplied level (priority)
+ * @param level The interrupt priority level
+ */
+static inline int esp_intr_level_to_flags(int level)
+{
+	return (level > 0) ? (1 << level) & ESP_INTR_FLAG_LEVELMASK : 0;
+}
+
+/**
+ * @brief Check interrupt flags from input and filter unallowed values
+ * @param flags Interrupt flags
+ */
+static inline int esp_intr_flags_check(int flags)
+{
+	return (flags & ESP_INTR_FLAG_SHARED);
+}
 
 #endif

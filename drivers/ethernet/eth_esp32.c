@@ -261,11 +261,13 @@ int eth_esp32_initialize(const struct device *dev)
 		      dev_data->dma_rx_buf, dev_data->dma_tx_buf);
 
 	/* Configure ISR */
-	res = esp_intr_alloc(DT_IRQN(DT_NODELABEL(eth)),
-		       ESP_INTR_FLAG_IRAM,
-		       eth_esp32_isr,
-		       (void *)dev,
-		       NULL);
+	res = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
+			esp_intr_level_to_flags(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority)) |
+			esp_intr_flags_check(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, flags)) |
+				ESP_INTR_FLAG_IRAM,
+			eth_esp32_isr,
+			(void *)dev,
+			NULL);
 	if (res != 0) {
 		goto err;
 	}
