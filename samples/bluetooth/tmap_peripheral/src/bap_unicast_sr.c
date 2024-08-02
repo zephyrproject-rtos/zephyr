@@ -30,11 +30,12 @@ static const struct bt_audio_codec_cap lc3_codec_cap =
 			       (AVAILABLE_SINK_CONTEXT | AVAILABLE_SOURCE_CONTEXT));
 
 static struct bt_conn *default_conn;
-static struct bt_bap_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct bt_bap_stream streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT +
+				    CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 static struct audio_source {
 	struct bt_bap_stream *stream;
 	uint16_t seq_num;
-} source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
+} source_streams[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
 static const struct bt_audio_codec_qos_pref qos_pref =
@@ -271,6 +272,11 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 	return 0;
 }
 
+static struct bt_bap_unicast_server_register_param param = {
+	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+};
+
 static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
@@ -351,6 +357,7 @@ static struct bt_pacs_cap cap = {
 
 int bap_unicast_sr_init(void)
 {
+	bt_bap_unicast_server_register(&param);
 	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {

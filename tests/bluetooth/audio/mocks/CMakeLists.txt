@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2023 Codecoup
+# Coperight (c) 2024 Demant A/S
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -24,6 +25,14 @@ target_include_directories(mocks PUBLIC
   ${ZEPHYR_BASE}/tests/bluetooth/audio
   ${ZEPHYR_BASE}/subsys/bluetooth
   ${ZEPHYR_BASE}/subsys/bluetooth/audio
+  ${ZEPHYR_BASE}/subsys/bluetooth/common
+  ${ZEPHYR_BASE}/include/zephyr
+)
+
+target_sources(testbinary PRIVATE
+  ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
+  ${ZEPHYR_BASE}/include/zephyr/kernel.h
 )
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host host_mocks)

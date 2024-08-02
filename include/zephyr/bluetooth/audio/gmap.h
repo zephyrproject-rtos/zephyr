@@ -89,7 +89,7 @@ enum bt_gmap_ugt_feat {
 	/**
 	 * @brief Source support
 	 *
-	 * Requires @kconfig{CONFIG_BT_ASCS_ASE_SRC_COUNT} > 0
+	 * Requires @kconfig{CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT} > 0
 	 */
 	BT_GMAP_UGT_FEAT_SOURCE = BIT(0),
 	/**
@@ -101,7 +101,7 @@ enum bt_gmap_ugt_feat {
 	/**
 	 * @brief Sink support
 	 *
-	 * Requires @kconfig{CONFIG_BT_ASCS_ASE_SNK_COUNT} > 0
+	 * Requires @kconfig{CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT} > 0
 	 */
 	BT_GMAP_UGT_FEAT_SINK = BIT(2),
 	/**
@@ -119,14 +119,14 @@ enum bt_gmap_ugt_feat {
 	/**
 	 * @brief Support for receiving at least two audio channels, each in a separate CIS
 	 *
-	 * Requires @kconfig{CONFIG_BT_ASCS_ASE_SNK_COUNT} > 1 and
+	 * Requires @kconfig{CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT} > 1 and
 	 * @kconfig{CONFIG_BT_ASCS_MAX_ACTIVE_ASES} > 1, and BT_GMAP_UGT_FEAT_SINK to be set as well
 	 */
 	BT_GMAP_UGT_FEAT_MULTISINK = BIT(5),
 	/**
 	 * @brief Support for sending at least two audio channels, each in a separate CIS
 	 *
-	 * Requires @kconfig{CONFIG_BT_ASCS_ASE_SRC_COUNT} > 1 and
+	 * Requires @kconfig{CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT} > 1 and
 	 * @kconfig{CONFIG_BT_ASCS_MAX_ACTIVE_ASES} > 1, and BT_GMAP_UGT_FEAT_SOURCE to be set
 	 * as well
 	 */

@@ -68,7 +68,7 @@ static const struct bt_audio_codec_cap lc3_codec_cap = {
 };
 
 static struct audio_test_stream
-	test_streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+	test_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 
 static const struct bt_audio_codec_qos_pref qos_pref =
 	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
@@ -224,6 +224,11 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 
 	return 0;
 }
+
+static struct bt_bap_unicast_server_register_param param = {
+	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+};
 
 static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
@@ -486,6 +491,13 @@ static void init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	err = bt_bap_unicast_server_register(&param);
+	if (err != 0) {
+		FAIL("Failed to register unicast server (err %d)\n", err);
+
+		return;
+	}
 
 	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 

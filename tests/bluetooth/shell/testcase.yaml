@@ -262,12 +262,12 @@ tests:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
-      - CONFIG_BT_ASCS_ASE_SNK_COUNT=0
+      - CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT=0
   bluetooth.audio_shell.no_server_ase_src:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
-      - CONFIG_BT_ASCS_ASE_SRC_COUNT=0
+      - CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT=0
   bluetooth.audio_shell.no_client_ase_snk:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -294,14 +294,14 @@ tests:
     extra_configs:
       - CONFIG_BT_BAP_BROADCAST_SOURCE=n
       - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT=0
-      - CONFIG_BT_ASCS_ASE_SRC_COUNT=0
+      - CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT=0
   bluetooth.audio_shell.no_audio_rx:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_BAP_BROADCAST_SINK=n
       - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT=0
-      - CONFIG_BT_ASCS_ASE_SNK_COUNT=0
+      - CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT=0
   bluetooth.audio_shell.no_has:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
