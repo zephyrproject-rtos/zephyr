@@ -267,25 +267,16 @@ print_mapped:
 		bl = value & 0xff;
 
 		if (bh) {
-			if (bh > 0x0f) {
-				ptr = net_byte_to_hex(ptr, bh, 'a', false);
-			} else {
-				if (bh < 10) {
-					*ptr++ = (char)(bh + '0');
-				} else {
-					*ptr++ = (char) (bh - 10 + 'a');
-				}
-			}
+			/* Convert high byte to hex without padding */
+			ptr = net_byte_to_hex(ptr, bh, 'a', false);
 
+			/* Always pad the low byte, since high byte is non - zero */
 			ptr = net_byte_to_hex(ptr, bl, 'a', true);
-		} else if (bl > 0x0f) {
-			ptr = net_byte_to_hex(ptr, bl, 'a', false);
 		} else {
-			if (bl < 10) {
-				*ptr++ = (char)(bl + '0');
-			} else {
-				*ptr++ = (char) (bl - 10 + 'a');
-			}
+			/* For the case where the high byte is zero, only process the low byte
+			 * Do not pad the low byte, since high byte is zero
+			 */
+			ptr = net_byte_to_hex(ptr, bl, 'a', false);
 		}
 
 		needcolon = true;
