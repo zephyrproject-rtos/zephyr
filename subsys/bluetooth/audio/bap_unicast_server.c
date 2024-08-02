@@ -188,7 +188,7 @@ int bt_bap_unicast_server_release(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 				     struct bt_audio_codec_cfg *codec_cfg,
-				     const struct bt_audio_codec_qos_pref *qos_pref)
+				     const struct bt_bap_qos_cfg_pref *qos_pref)
 {
 	return bt_ascs_config_ase(conn, stream, codec_cfg, qos_pref);
 }

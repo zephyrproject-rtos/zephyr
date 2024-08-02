@@ -367,14 +367,14 @@ ZTEST_F(test_ase_control_params, test_codec_configure_invalid_ase_id_0x00)
 }
 
 static struct bt_bap_stream test_stream;
-static const struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+static const struct bt_bap_qos_cfg_pref qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
 static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
 						enum bt_audio_dir dir,
 						const struct bt_audio_codec_cfg *codec_cfg,
 						struct bt_bap_stream **stream,
-						struct bt_audio_codec_qos_pref *const pref,
+						struct bt_bap_qos_cfg_pref *const pref,
 						struct bt_bap_ascs_rsp *rsp)
 {
 	*stream = &test_stream;

@@ -46,7 +46,7 @@
 struct unicast_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 };
 
 struct named_lc3_preset {
@@ -57,7 +57,7 @@ struct named_lc3_preset {
 void print_hex(const uint8_t *ptr, size_t len);
 void print_codec_cap(const struct bt_audio_codec_cap *codec_cap);
 void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg);
-void print_qos(const struct bt_audio_codec_qos *qos);
+void print_qos(const struct bt_bap_qos_cfg *qos);
 void copy_unicast_stream_preset(struct unicast_stream *stream,
 				const struct named_lc3_preset *named_preset);
 

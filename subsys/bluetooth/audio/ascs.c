@@ -713,7 +713,7 @@ int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 static void ascs_ep_get_status_config(struct bt_bap_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_config *cfg;
-	struct bt_audio_codec_qos_pref *pref = &ep->qos_pref;
+	struct bt_bap_qos_cfg_pref *pref = &ep->qos_pref;
 
 	cfg = net_buf_simple_add(buf, sizeof(*cfg));
 	cfg->framing = pref->unframed_supported ? BT_ASCS_QOS_FRAMING_UNFRAMED
@@ -960,7 +960,7 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 static void ascs_update_sdu_size(struct bt_bap_ep *ep)
 {
 	struct bt_iso_chan_io_qos *io_qos;
-	struct bt_audio_codec_qos *codec_qos = &ep->qos;
+	struct bt_bap_qos_cfg *qos_cfg = &ep->qos;
 
 	if (ep->dir == BT_AUDIO_DIR_SINK) {
 		io_qos = ep->iso->chan.qos->rx;
@@ -970,8 +970,8 @@ static void ascs_update_sdu_size(struct bt_bap_ep *ep)
 		return;
 	}
 
-	io_qos->sdu = codec_qos->sdu;
-	io_qos->rtn = codec_qos->rtn;
+	io_qos->sdu = qos_cfg->sdu;
+	io_qos->rtn = qos_cfg->rtn;
 }
 
 static void ascs_ep_iso_connected(struct bt_bap_ep *ep)
@@ -1631,7 +1631,7 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 					      BT_BAP_ASCS_REASON_NONE);
 		}
 
-		if (err == 0 && !bt_audio_valid_qos_pref(&ase->ep.qos_pref)) {
+		if (err == 0 && !bt_bap_valid_qos_pref(&ase->ep.qos_pref)) {
 			LOG_ERR("Invalid QoS preferences");
 
 			/* If the upper layers provide an invalid QoS preferences we reject the
@@ -1672,7 +1672,7 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 					      BT_BAP_ASCS_REASON_NONE);
 		}
 
-		if (err == 0 && !bt_audio_valid_qos_pref(&ase->ep.qos_pref)) {
+		if (err == 0 && !bt_bap_valid_qos_pref(&ase->ep.qos_pref)) {
 			LOG_ERR("Invalid QoS preferences");
 
 			/* If the upper layers provide an invalid QoS preferences we reject the
@@ -1726,7 +1726,7 @@ static struct bt_bap_ep *ep_lookup_stream(struct bt_conn *conn, struct bt_bap_st
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		       struct bt_audio_codec_cfg *codec_cfg,
-		       const struct bt_audio_codec_qos_pref *qos_pref)
+		       const struct bt_bap_qos_cfg_pref *qos_pref)
 {
 	int err;
 	struct bt_ascs_ase *ase = NULL;
@@ -1934,7 +1934,7 @@ void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_
 }
 
 static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
-		    struct bt_audio_codec_qos *qos, struct bt_bap_ascs_rsp *rsp)
+		    struct bt_bap_qos_cfg *qos, struct bt_bap_ascs_rsp *rsp)
 {
 	struct bt_bap_ep *ep = &ase->ep;
 	struct bt_bap_stream *stream;
@@ -2094,7 +2094,7 @@ static ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
 	for (uint8_t i = 0; i < req->num_ases; i++) {
 		struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 							     BT_BAP_ASCS_REASON_NONE);
-		struct bt_audio_codec_qos cqos;
+		struct bt_bap_qos_cfg cqos;
 		const struct bt_ascs_qos *qos;
 		struct bt_ascs_ase *ase;
 

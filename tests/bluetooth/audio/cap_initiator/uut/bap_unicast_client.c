@@ -43,7 +43,7 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 	stream->ep->status.state = BT_BAP_EP_STATE_CODEC_CONFIGURED;
 
 	if (stream->ops != NULL && stream->ops->configured != NULL) {
-		const struct bt_audio_codec_qos_pref pref = {0};
+		const struct bt_bap_qos_cfg_pref pref = {0};
 
 		stream->ops->configured(stream, &pref);
 	}

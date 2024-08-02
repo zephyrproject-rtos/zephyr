@@ -733,7 +733,7 @@ static int store_base_info(struct bt_bap_broadcast_sink *sink, const struct bt_b
 
 	/* Ensure that we have not synced while parsing the BASE */
 	if (sink->big == NULL) {
-		sink->codec_qos.pd = pres_delay;
+		sink->qos_cfg.pd = pres_delay;
 		memcpy(sink->bis, data.bis, sizeof(sink->bis));
 		memcpy(sink->subgroups, data.subgroups, sizeof(sink->subgroups));
 		sink->subgroup_count = data.subgroup_count;
@@ -944,10 +944,10 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 		}
 	}
 
-	sink->codec_qos.framing = biginfo->framing;
-	sink->codec_qos.phy = biginfo->phy;
-	sink->codec_qos.sdu = biginfo->max_sdu;
-	sink->codec_qos.interval = biginfo->sdu_interval;
+	sink->qos_cfg.framing = biginfo->framing;
+	sink->qos_cfg.phy = biginfo->phy;
+	sink->qos_cfg.sdu = biginfo->max_sdu;
+	sink->qos_cfg.interval = biginfo->sdu_interval;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->syncable != NULL) {
@@ -1045,13 +1045,13 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	bt_bap_iso_init(iso, &broadcast_sink_iso_ops);
 	bt_bap_iso_bind_ep(iso, ep);
 
-	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->rx, &sink->codec_qos);
+	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->rx, &sink->qos_cfg);
 	bt_bap_iso_configure_data_path(ep, codec_cfg);
 
 	bt_bap_iso_unref(iso);
 
 	bt_bap_stream_attach(NULL, stream, ep, codec_cfg);
-	stream->qos = &sink->codec_qos;
+	stream->qos = &sink->qos_cfg;
 
 	return 0;
 }
