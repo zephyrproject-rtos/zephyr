@@ -50,6 +50,13 @@ extern "C" {
 /** Provided for compatibility with MCUboot */
 #define SPI_FLASH_0_ID 1
 
+#ifdef CONFIG_FLASH_MAP_CUSTOM_BACKEND
+
+#define FLASH_MAP_CUSTOM_BACKEND_MASK 0x80
+
+struct flash_map_backend_api;
+#endif
+
 /**
  * @brief Flash partition
  *
@@ -69,6 +76,9 @@ struct flash_area {
 #if CONFIG_FLASH_MAP_LABELS
 	/** Partition label if defined in DTS. Otherwise nullptr; */
 	const char *fa_label;
+#endif
+#ifdef CONFIG_FLASH_MAP_CUSTOM_BACKEND
+	const struct flash_map_backend_api *api;
 #endif
 };
 
@@ -380,6 +390,24 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define FIXED_PARTITION_NODE_DEVICE(node) \
 	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(node))
+
+#ifdef CONFIG_FLASH_MAP_CUSTOM_BACKEND
+struct flash_map_backend_api {
+	void (*close)(const struct flash_area *fa);
+	int (*read)(const struct flash_area *fa, off_t off, void *dst,
+		    size_t len);
+	int (*write)(const struct flash_area *fa, off_t off, const void *src,
+		     size_t len);
+	int (*erase)(const struct flash_area *fa, off_t off, size_t len);
+	int (*flatten)(const struct flash_area *fa, off_t off, size_t len);
+	uint32_t (*align)(const struct flash_area *fa);
+	int (*has_driver)(const struct flash_area *fa);
+	const struct device *(*get_device)(const struct flash_area *fa);
+	uint8_t (*erased_val)(const struct flash_area *fa);
+};
+
+int flash_area_open_custom(uint8_t id, const struct flash_area **fap);
+#endif
 
 #ifdef __cplusplus
 }
