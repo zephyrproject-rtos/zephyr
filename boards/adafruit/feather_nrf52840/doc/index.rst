@@ -1,7 +1,7 @@
 .. _adafruit_feather_nrf52840:
 
-Adafruit Feather nRF52840 (Express, Sense)
-##########################################
+Adafruit Feather nRF52840 (Express, Express UF2, Sense)
+#######################################################
 
 Overview
 ********
@@ -142,6 +142,10 @@ The Feather nRF52840 ships with the `Adafruit nRF52 Bootloader`_ which
 supports flashing using `UF2`_. This allows easy flashing of new images,
 but does not support debugging the device.
 
+To flash the ``adafruit_feather_nrf52480_express`` using UF2, you must use
+the ``adafruit_feather_nrf52480_express_uf2`` board, which uses an appropriate
+flash layout.
+
 #. Build the Zephyr kernel and the :zephyr:code-sample:`blinky` sample application.
 
 .. tabs::
@@ -150,7 +154,15 @@ but does not support debugging the device.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_express/nrf52840
+         :board: adafruit_feather_nrf52840_express
+         :goals: build
+         :compact:
+
+   .. group-tab:: Express UF2
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840_express_uf2
          :goals: build
          :compact:
 
@@ -158,7 +170,7 @@ but does not support debugging the device.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_sense/nrf52840
+         :board: adafruit_feather_nrf52840_sense
          :goals: build
          :compact:
 
@@ -172,6 +184,22 @@ but does not support debugging the device.
 #. Flash the image.
 
 .. tabs::
+
+   .. group-tab:: Express
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840_express
+         :goals: flash
+         :compact:
+
+   .. group-tab:: Express UF2
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840_express_uf2
+         :goals: flash
+         :compact:
 
    .. group-tab:: Sense
 
