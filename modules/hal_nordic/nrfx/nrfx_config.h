@@ -1049,6 +1049,12 @@
     #include <nrfx_config_nrf54l15_enga_flpr.h>
 #elif defined(NRF9120_XXAA) || defined(NRF9160_XXAA)
     #include <nrfx_config_nrf91.h>
+#elif defined(NRF9230_ENGB_XXAA) && defined(NRF_APPLICATION)
+    #include <nrfx_config_nrf9230_engb_application.h>
+#elif defined(NRF9230_ENGB_XXAA) && defined(NRF_RADIOCORE)
+    #include <nrfx_config_nrf9230_engb_radiocore.h>
+#elif defined(NRF9230_ENGB_XXAA) && defined(NRF_PPR)
+    #include <nrfx_config_nrf9230_engb_ppr.h>
 #else
     #error "Unknown device."
 #endif
