@@ -79,18 +79,14 @@ const char *net_proto2str(int family, int proto)
 
 char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad)
 {
-	int i, val;
+	uint8_t high = (byte >> 4) & 0x0f;
+	uint8_t low = byte & 0x0f;
 
-	for (i = 0, val = (byte & 0xf0) >> 4; i < 2; i++, val = byte & 0x0f) {
-		if (i == 0 && !pad && !val) {
-			continue;
-		}
-		if (val < 10) {
-			*ptr++ = (char) (val + '0');
-		} else {
-			*ptr++ = (char) (val - 10 + base);
-		}
+	if (pad || (high > 0)) {
+		*ptr++ = (high < 10) ? (char) (high + '0') : (char) (high - 10 + base);
 	}
+
+	*ptr++ = (low < 10) ? (char) (low + '0') : (char) (low - 10 + base);
 
 	*ptr = '\0';
 
