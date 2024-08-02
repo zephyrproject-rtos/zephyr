@@ -251,3 +251,5 @@ struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm);
 struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 				size_t amount,
 				size_t *length);
+
+void l2cap_le_tx_done(struct bt_conn *conn, bt_conn_tx_cb_t cb, void *user_data, int err);

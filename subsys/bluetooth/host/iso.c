@@ -173,6 +173,12 @@ static void iso_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf,
 	*ud = NULL;
 }
 
+static void iso_tx_done(struct bt_conn *conn, bt_conn_tx_cb_t cb, void *user_data, int err)
+{
+	__ASSERT_NO_MSG(cb == bt_iso_sent_cb);
+	bt_iso_sent_cb(conn, user_data, err);
+}
+
 static struct bt_conn *iso_new(void)
 {
 	struct bt_conn *iso = bt_conn_new(iso_conns, ARRAY_SIZE(iso_conns));
@@ -180,6 +186,7 @@ static struct bt_conn *iso_new(void)
 	if (iso) {
 		iso->type = BT_CONN_TYPE_ISO;
 		iso->tx_data_pull = iso_data_pull;
+		iso->tx_done = iso_tx_done;
 		iso->get_and_clear_cb = iso_get_and_clear_cb;
 		iso->has_data = iso_has_data;
 	} else {

@@ -291,9 +291,7 @@ static void tx_notify(struct bt_conn *conn)
 		 * allocate new buffers since the TX should have been
 		 * unblocked by tx_free.
 		 */
-		if (cb) {
-			cb(conn, user_data, 0);
-		}
+		conn->tx_done(conn, cb, user_data, 0);
 
 		LOG_DBG("raise TX IRQ");
 		bt_tx_irq_raise();
@@ -2278,6 +2276,7 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
 	conn->tx_data_pull = l2cap_br_data_pull;
 	conn->get_and_clear_cb = acl_get_and_clear_cb;
 	conn->has_data = acl_has_data;
+	conn->tx_done = l2cap_br_tx_done;
 
 	return conn;
 }
@@ -2611,6 +2610,7 @@ struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer)
 	conn->tx_data_pull = l2cap_data_pull;
 	conn->get_and_clear_cb = acl_get_and_clear_cb;
 	conn->has_data = acl_has_data;
+	conn->tx_done = l2cap_le_tx_done;
 	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
 	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
 

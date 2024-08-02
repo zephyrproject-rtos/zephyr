@@ -804,7 +804,7 @@ static struct bt_l2cap_le_chan *get_ready_chan(struct bt_conn *conn)
 	return NULL;
 }
 
-static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
+__maybe_unused static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	struct bt_l2cap_chan *chan;
 	uint16_t cid = POINTER_TO_UINT(user_data);
@@ -860,6 +860,13 @@ __weak void bt_test_l2cap_data_pull_spy(struct bt_conn *conn,
 					size_t amount,
 					size_t *length)
 {
+}
+
+void l2cap_le_tx_done(struct bt_conn *conn, bt_conn_tx_cb_t cb, void *user_data, int err)
+{
+	if (cb) {
+		cb(conn, user_data, err);
+	}
 }
 
 struct net_buf *l2cap_data_pull(struct bt_conn *conn,

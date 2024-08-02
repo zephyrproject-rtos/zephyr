@@ -312,6 +312,9 @@ struct bt_conn {
 	 * memset to zero without affecting the ref.
 	 */
 	atomic_t		ref;
+
+	/* Another one */
+	void (*tx_done)(struct bt_conn *conn, bt_conn_tx_cb_t cb, void *user_data, int err);
 };
 
 /* Holds the callback and a user-data field for the upper layer. This callback

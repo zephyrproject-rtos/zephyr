@@ -1858,3 +1858,11 @@ void bt_l2cap_br_init(void)
 		bt_a2dp_init();
 	}
 }
+
+/* So basic it can't even */
+void l2cap_br_tx_done(struct bt_conn *conn, bt_conn_tx_cb_t cb, void *user_data, int err)
+{
+	if (cb) {
+		cb(conn, user_data, err);
+	}
+}
