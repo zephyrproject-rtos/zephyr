@@ -163,10 +163,11 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 	struct in_addr *addr = NULL;
 	struct in6_addr *addr6 = NULL;
 	uint16_t *w = NULL;
-	uint8_t i, bl, bh, longest = 1U;
-	int8_t pos = -1;
+	int i;
+	uint8_t longest = 1U;
+	int pos = -1;
 	char delim = ':';
-	unsigned char zeros[8] = { 0 };
+	uint8_t zeros[8] = { 0 };
 	char *ptr = dst;
 	int len = -1;
 	uint16_t value;
@@ -182,10 +183,8 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 			mapped = true;
 		}
 
-		for (i = 0U; i < 8; i++) {
-			uint8_t j;
-
-			for (j = i; j < 8; j++) {
+		for (i = 0; i < 8; i++) {
+			for (int j = i; j < 8; j++) {
 				if (UNALIGNED_GET(&w[j]) != 0) {
 					break;
 				}
@@ -194,7 +193,7 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 			}
 		}
 
-		for (i = 0U; i < 8; i++) {
+		for (i = 0; i < 8; i++) {
 			if (zeros[i] > longest) {
 				longest = zeros[i];
 				pos = i;
@@ -214,12 +213,12 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 	}
 
 print_mapped:
-	for (i = 0U; i < len; i++) {
+	for (i = 0; i < len; i++) {
 		/* IPv4 address a.b.c.d */
 		if (len == 4) {
 			uint8_t l;
 
-			value = (uint32_t)addr->s4_addr[i];
+			value = (uint16_t)addr->s4_addr[i];
 
 			/* net_byte_to_udec() eats 0 */
 			if (value == 0U) {
@@ -253,7 +252,7 @@ print_mapped:
 
 			*ptr++ = ':';
 			needcolon = false;
-			i += longest - 1U;
+			i += (int)longest - 1;
 
 			continue;
 		}
@@ -262,9 +261,9 @@ print_mapped:
 			*ptr++ = ':';
 		}
 
-		value = (uint32_t)sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
-		bh = value >> 8;
-		bl = value & 0xff;
+		value = sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
+		uint8_t bh = value >> 8;
+		uint8_t bl = value & 0xff;
 
 		if (bh) {
 			/* Convert high byte to hex without padding */
