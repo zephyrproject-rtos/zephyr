@@ -76,7 +76,7 @@ int snprintk(char *str, size_t size, const char *fmt, ...)
  * FIXME: move to sys_io.h once the argument signature for bitmap has
  * been fixed to void* or similar GH-2825
  */
-#define BITS_PER_UL (8 * sizeof(unsigned long int))
+#define BITS_PER_UL (8 * sizeof(unsigned long))
 #define DEFINE_BITFIELD(name, bits)                                            \
 	unsigned long(name)[DIV_ROUND_UP(bits, BITS_PER_UL)]
 
