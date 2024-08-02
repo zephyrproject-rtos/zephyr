@@ -24,18 +24,23 @@
 #include <zephyr/types.h>
 
 /**
+ * @brief Type representing an EXTI line number
+ */
+typedef uint32_t stm32_exti_line_t;
+
+/**
  * @brief enable EXTI interrupt for specific line
  *
  * @param line EXTI# line
  */
-void stm32_exti_enable(int line);
+void stm32_exti_enable(stm32_exti_line_t line);
 
 /**
  * @brief disable EXTI interrupt for specific line
  *
  * @param line EXTI# line
  */
-void stm32_exti_disable(int line);
+void stm32_exti_disable(stm32_exti_line_t line);
 
 /**
  * @brief EXTI trigger flags
@@ -57,10 +62,10 @@ enum stm32_exti_trigger {
  * @param line EXTI# line
  * @param trg  OR'ed stm32_exti_trigger flags
  */
-void stm32_exti_trigger(int line, int trg);
+void stm32_exti_trigger(stm32_exti_line_t line, uint32_t trg);
 
 /* callback for exti interrupt */
-typedef void (*stm32_exti_callback_t) (int line, void *user);
+typedef void (*stm32_exti_callback_t) (stm32_exti_line_t line, void *user);
 
 /**
  * @brief set EXTI interrupt callback
@@ -69,13 +74,13 @@ typedef void (*stm32_exti_callback_t) (int line, void *user);
  * @param cb   user callback
  * @param data user data
  */
-int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *data);
+int stm32_exti_set_callback(stm32_exti_line_t line, stm32_exti_callback_t cb, void *data);
 
 /**
  * @brief unset EXTI interrupt callback
  *
  * @param line EXI# line
  */
-void stm32_exti_unset_callback(int line);
+void stm32_exti_unset_callback(stm32_exti_line_t line);
 
 #endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_EXTI_STM32_H_ */
