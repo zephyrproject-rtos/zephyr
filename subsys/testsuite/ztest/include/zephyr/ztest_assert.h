@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 
 #ifdef __cplusplus
@@ -34,7 +35,8 @@ void ztest_skip_failed_assumption(void);
 static inline bool z_zassert_(bool cond, const char *file, int line)
 {
 	if (cond == false) {
-		PRINT("\n    Assertion failed at %s:%d\n", ztest_relative_filename(file), line);
+		PRINT_DATA("\n    Assertion failed at %s:%d\n", ztest_relative_filename(file),
+			   line);
 		ztest_test_fail();
 		return false;
 	}
@@ -47,7 +49,8 @@ static inline bool z_zassert_(bool cond, const char *file, int line)
 static inline bool z_zassume_(bool cond, const char *file, int line)
 {
 	if (cond == false) {
-		PRINT("\n    Assumption failed at %s:%d\n", ztest_relative_filename(file), line);
+		PRINT_DATA("\n    Assumption failed at %s:%d\n", ztest_relative_filename(file),
+			   line);
 		ztest_skip_failed_assumption();
 		return false;
 	}
@@ -60,7 +63,8 @@ static inline bool z_zassume_(bool cond, const char *file, int line)
 static inline bool z_zexpect_(bool cond, const char *file, int line)
 {
 	if (cond == false) {
-		PRINT("\n    Expectation failed at %s:%d\n", ztest_relative_filename(file), line);
+		PRINT_DATA("\n    Expectation failed at %s:%d\n", ztest_relative_filename(file),
+			   line);
 		ztest_test_expect_fail();
 		return false;
 	}
@@ -79,8 +83,8 @@ static inline bool z_zassert(bool cond, const char *default_msg, const char *fil
 		va_list vargs;
 
 		va_start(vargs, msg);
-		PRINT("\n    Assertion failed at %s:%d: %s: %s\n", ztest_relative_filename(file),
-		      line, func, default_msg);
+		PRINT_DATA("\n    Assertion failed at %s:%d: %s: %s\n",
+			   ztest_relative_filename(file), line, func, default_msg);
 		vprintk(msg, vargs);
 		printk("\n");
 		va_end(vargs);
@@ -89,8 +93,8 @@ static inline bool z_zassert(bool cond, const char *default_msg, const char *fil
 	}
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 2
 	else {
-		PRINT("\n   Assertion succeeded at %s:%d (%s)\n", ztest_relative_filename(file),
-		      line, func);
+		PRINT_DATA("\n   Assertion succeeded at %s:%d (%s)\n",
+			   ztest_relative_filename(file), line, func);
 	}
 #endif
 	return true;
@@ -103,8 +107,8 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 		va_list vargs;
 
 		va_start(vargs, msg);
-		PRINT("\n    Assumption failed at %s:%d: %s: %s\n", ztest_relative_filename(file),
-		      line, func, default_msg);
+		PRINT_DATA("\n    Assumption failed at %s:%d: %s: %s\n",
+			   ztest_relative_filename(file), line, func, default_msg);
 		vprintk(msg, vargs);
 		printk("\n");
 		va_end(vargs);
@@ -113,8 +117,8 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 	}
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 2
 	else {
-		PRINT("\n   Assumption succeeded at %s:%d (%s)\n", ztest_relative_filename(file),
-		      line, func);
+		PRINT_DATA("\n   Assumption succeeded at %s:%d (%s)\n",
+			   ztest_relative_filename(file), line, func);
 	}
 #endif
 	return true;
@@ -127,8 +131,8 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 		va_list vargs;
 
 		va_start(vargs, msg);
-		PRINT("\n    Expectation failed at %s:%d: %s: %s\n", ztest_relative_filename(file),
-		      line, func, default_msg);
+		PRINT_DATA("\n    Expectation failed at %s:%d: %s: %s\n",
+			   ztest_relative_filename(file), line, func, default_msg);
 		vprintk(msg, vargs);
 		printk("\n");
 		va_end(vargs);
@@ -137,8 +141,8 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 	}
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 2
 	else {
-		PRINT("\n   Expectation succeeded at %s:%d (%s)\n", ztest_relative_filename(file),
-		      line, func);
+		PRINT_DATA("\n   Expectation succeeded at %s:%d (%s)\n",
+			   ztest_relative_filename(file), line, func);
 	}
 #endif
 	return true;

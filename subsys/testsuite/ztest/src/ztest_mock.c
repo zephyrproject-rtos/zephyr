@@ -33,7 +33,7 @@ static struct parameter *alloc_parameter(void)
 
 	param = calloc(1, sizeof(struct parameter));
 	if (!param) {
-		PRINT("Failed to allocate mock parameter\n");
+		PRINT_DATA("Failed to allocate mock parameter\n");
 		ztest_test_fail();
 	}
 
@@ -205,7 +205,7 @@ void z_ztest_check_expected_value(const char *fn, const char *name, uintptr_t va
 
 	param = find_and_delete_value(&parameter_list, fn, name);
 	if (!param) {
-		PRINT("Failed to find parameter %s for %s\n", name, fn);
+		PRINT_DATA("Failed to find parameter %s for %s\n", name, fn);
 		ztest_test_fail();
 	}
 
@@ -216,8 +216,8 @@ void z_ztest_check_expected_value(const char *fn, const char *name, uintptr_t va
 		/* We need to cast these values since the toolchain doesn't
 		 * provide inttypes.h
 		 */
-		PRINT("%s:%s received wrong value: Got %lu, expected %lu\n", fn, name,
-		      (unsigned long)val, (unsigned long)expected);
+		PRINT_DATA("%s:%s received wrong value: Got %lu, expected %lu\n", fn, name,
+			   (unsigned long)val, (unsigned long)expected);
 		ztest_test_fail();
 	}
 }
@@ -234,7 +234,7 @@ void z_ztest_check_expected_data(const char *fn, const char *name, void *data, u
 
 	param = find_and_delete_value(&parameter_list, fn, name);
 	if (!param) {
-		PRINT("Failed to find parameter %s for %s\n", name, fn);
+		PRINT_DATA("Failed to find parameter %s for %s\n", name, fn);
 		/* No return from this function but for coverity reasons
 		 * put a return after to avoid the warning of a null
 		 * dereference of param below.
@@ -247,14 +247,14 @@ void z_ztest_check_expected_data(const char *fn, const char *name, void *data, u
 	free_parameter(param);
 
 	if (expected == NULL && data != NULL) {
-		PRINT("%s:%s received data while expected null pointer\n", fn, name);
+		PRINT_DATA("%s:%s received data while expected null pointer\n", fn, name);
 		ztest_test_fail();
 	} else if (data == NULL && expected != NULL) {
-		PRINT("%s:%s received null pointer while expected data\n", fn, name);
+		PRINT_DATA("%s:%s received null pointer while expected data\n", fn, name);
 		ztest_test_fail();
 	} else if (data != NULL) {
 		if (memcmp(data, expected, length) != 0) {
-			PRINT("%s:%s data provided don't match\n", fn, name);
+			PRINT_DATA("%s:%s data provided don't match\n", fn, name);
 			ztest_test_fail();
 		}
 	}
@@ -271,14 +271,14 @@ void z_ztest_copy_return_data(const char *fn, const char *name, void *data, uint
 	void *return_data;
 
 	if (data == NULL) {
-		PRINT("%s:%s received null pointer\n", fn, name);
+		PRINT_DATA("%s:%s received null pointer\n", fn, name);
 		ztest_test_fail();
 		return;
 	}
 
 	param = find_and_delete_value(&parameter_list, fn, name);
 	if (!param) {
-		PRINT("Failed to find parameter %s for %s\n", name, fn);
+		PRINT_DATA("Failed to find parameter %s for %s\n", name, fn);
 		memset(data, 0, length);
 		ztest_test_fail();
 	} else {
@@ -299,7 +299,7 @@ uintptr_t z_ztest_get_return_value(const char *fn)
 	struct parameter *param = find_and_delete_value(&return_value_list, fn, "");
 
 	if (!param) {
-		PRINT("Failed to find return value for function %s\n", fn);
+		PRINT_DATA("Failed to find return value for function %s\n", fn);
 		ztest_test_fail();
 	}
 
@@ -325,12 +325,12 @@ int z_cleanup_mock(void)
 	int fail = 0;
 
 	if (parameter_list.next) {
-		PRINT("Parameter not used by mock: %s:%s\n", parameter_list.next->fn,
-		      parameter_list.next->name);
+		PRINT_DATA("Parameter not used by mock: %s:%s\n", parameter_list.next->fn,
+			   parameter_list.next->name);
 		fail = 1;
 	}
 	if (return_value_list.next) {
-		PRINT("Return value no used by mock: %s\n", return_value_list.next->fn);
+		PRINT_DATA("Return value no used by mock: %s\n", return_value_list.next->fn);
 		fail = 2;
 	}
 
