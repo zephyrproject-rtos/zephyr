@@ -50,7 +50,7 @@ static void gpio_stm32_isr(stm32_exti_line_t line, void *arg)
 /**
  * @brief Common gpio flags to custom flags
  */
-static int gpio_stm32_flags_to_conf(gpio_flags_t flags, int *pincfg)
+static int gpio_stm32_flags_to_conf(gpio_flags_t flags, uint32_t *pincfg)
 {
 
 	if ((flags & GPIO_OUTPUT) != 0) {
@@ -140,7 +140,7 @@ static int gpio_stm32_pincfg_to_flags(struct gpio_stm32_pin pin_cfg,
 /**
  * @brief Translate pin to pinval that the LL library needs
  */
-static inline uint32_t stm32_pinval_get(int pin)
+static inline uint32_t stm32_pinval_get(gpio_pin_t pin)
 {
 	uint32_t pinval;
 
@@ -160,13 +160,13 @@ static inline uint32_t stm32_pinval_get(int pin)
 /**
  * @brief Configure the hardware.
  */
-static void gpio_stm32_configure_raw(const struct device *dev, int pin,
-				     int conf, int func)
+static void gpio_stm32_configure_raw(const struct device *dev, gpio_pin_t pin,
+					uint32_t conf, uint32_t func)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
-	int pin_ll = stm32_pinval_get(pin);
+	uint32_t pin_ll = stm32_pinval_get(pin);
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	ARG_UNUSED(func);
@@ -230,7 +230,7 @@ static void gpio_stm32_configure_raw(const struct device *dev, int pin,
 		}
 	}
 #else
-	unsigned int mode, otype, ospeed, pupd;
+	uint32_t mode, otype, ospeed, pupd;
 
 	mode = conf & (STM32_MODER_MASK << STM32_MODER_SHIFT);
 	otype = conf & (STM32_OTYPER_MASK << STM32_OTYPER_SHIFT);
@@ -294,7 +294,7 @@ static int gpio_stm32_clock_request(const struct device *dev, bool on)
 	return ret;
 }
 
-static inline uint32_t gpio_stm32_pin_to_exti_line(int pin)
+static inline uint32_t gpio_stm32_pin_to_exti_line(gpio_pin_t pin)
 {
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X)
@@ -311,7 +311,7 @@ static inline uint32_t gpio_stm32_pin_to_exti_line(int pin)
 
 
 /* Set the EXTI line corresponding to the PORT [STM32_PORTA .. ] and pin [0..15] */
-static void gpio_stm32_set_exti_source(int port, int pin)
+static void gpio_stm32_set_exti_source(uint32_t port, gpio_pin_t pin)
 {
 	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
 
@@ -342,10 +342,10 @@ static void gpio_stm32_set_exti_source(int port, int pin)
 }
 
 /* Gives the PORT [STM32_PORTA .. ] corresponding to the EXTI line of the pin [0..15] */
-static int gpio_stm32_get_exti_source(int pin)
+static uint32_t gpio_stm32_get_exti_source(gpio_pin_t pin)
 {
 	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
-	int port;
+	uint32_t port;
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	port = LL_GPIO_AF_GetEXTISource(line);
@@ -374,7 +374,7 @@ static int gpio_stm32_get_exti_source(int pin)
 /**
  * @brief Enable EXTI of the specific line
  */
-static int gpio_stm32_enable_int(int port, int pin)
+static int gpio_stm32_enable_int(uint32_t port, gpio_pin_t pin)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F2X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32F3X) || \
@@ -498,7 +498,7 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 #define IS_GPIO_OUT STM32_GPIO
 #endif
 
-int gpio_stm32_configure(const struct device *dev, int pin, int conf, int func)
+int gpio_stm32_configure(const struct device *dev, gpio_pin_t pin, uint32_t conf, uint32_t func)
 {
 	int ret;
 
@@ -529,7 +529,7 @@ static int gpio_stm32_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
 	int err;
-	int pincfg;
+	uint32_t pincfg;
 
 	/* figure out if we can map the requested GPIO
 	 * configuration
@@ -597,7 +597,7 @@ static int gpio_stm32_get_config(const struct device *dev,
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 	struct gpio_stm32_pin pin_config;
-	int pin_ll;
+	uint32_t pin_ll;
 	int err;
 
 	err = pm_device_runtime_get(dev);
@@ -624,7 +624,7 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	struct gpio_stm32_data *data = dev->data;
-	int edge = 0;
+	uint32_t edge = 0;
 	int err = 0;
 
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
