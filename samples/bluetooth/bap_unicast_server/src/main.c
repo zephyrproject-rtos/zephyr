@@ -29,7 +29,7 @@
 				  BT_AUDIO_CONTEXT_TYPE_MEDIA | \
 				  BT_AUDIO_CONTEXT_TYPE_GAME)
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_ASE_SRC_COUNT,
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
@@ -40,13 +40,13 @@ static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
-static struct bt_bap_stream sink_streams[CONFIG_BT_ASCS_ASE_SNK_COUNT];
+static struct bt_bap_stream sink_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT];
 static struct audio_source {
 	struct bt_bap_stream stream;
 	uint16_t seq_num;
 	uint16_t max_sdu;
 	size_t len_to_send;
-} source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
+} source_streams[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
 static const struct bt_audio_codec_qos_pref qos_pref =
@@ -466,6 +466,11 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 	return 0;
 }
 
+static struct bt_bap_unicast_server_register_param param = {
+	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+};
+
 static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
@@ -727,6 +732,7 @@ int main(void)
 
 	printk("Bluetooth initialized\n");
 
+	bt_bap_unicast_server_register(&param);
 	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 
 	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
@@ -780,7 +786,7 @@ int main(void)
 
 		printk("Advertising successfully started\n");
 
-		if (CONFIG_BT_ASCS_ASE_SRC_COUNT > 0) {
+		if (CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0) {
 			/* Start send timer */
 			k_work_init_delayable(&audio_send_work, audio_timer_timeout);
 		}

@@ -12,16 +12,16 @@ config BT_ASCS
 	  This option enables support for Audio Stream Control Service.
 
 if BT_ASCS
-config BT_ASCS_ASE_SNK_COUNT
-	int "Number of Audio Stream Endpoint Sink Characteristics"
+config BT_ASCS_MAX_ASE_SNK_COUNT
+	int "Maximum number of Audio Stream Endpoint Sink Characteristics"
 	default 2
 	range 0 $(UINT8_MAX)
 	help
 	  An ASE Sink characteristic represents the state of an ASE, which is
 	  coupled to a single direction of a unicast Audio Stream.
 
-config BT_ASCS_ASE_SRC_COUNT
-	int "Number of Audio Stream Endpoint Source Characteristics"
+config BT_ASCS_MAX_ASE_SRC_COUNT
+	int "Maximum number of Audio Stream Endpoint Source Characteristics"
 	default 2
 	range 0 $(UINT8_MAX)
 	help
@@ -29,12 +29,12 @@ config BT_ASCS_ASE_SRC_COUNT
 	  coupled to a single direction of a unicast Audio Stream.
 
 config BT_ASCS_ASE_SNK
-	def_bool BT_ASCS_ASE_SNK_COUNT > 0
+	def_bool BT_ASCS_MAX_ASE_SNK_COUNT > 0
 	select BT_PAC_SNK
 	select BT_AUDIO_RX
 
 config BT_ASCS_ASE_SRC
-	def_bool BT_ASCS_ASE_SRC_COUNT > 0
+	def_bool BT_ASCS_MAX_ASE_SRC_COUNT > 0
 	select BT_PAC_SRC
 	select BT_AUDIO_TX
 
