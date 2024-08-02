@@ -1102,6 +1102,49 @@ static int codec_meta_set_assisted_listening_stream(uint8_t meta[], size_t meta_
 				  sizeof(val_u8));
 }
 
+static int codec_meta_get_broadcast_name(const uint8_t meta[], size_t meta_len,
+					 const uint8_t **broadcast_name)
+{
+	const uint8_t *data;
+	int ret;
+
+	CHECKIF(meta == NULL) {
+		LOG_DBG("meta is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(broadcast_name == NULL) {
+		LOG_DBG("broadcast_name is NULL");
+		return -EINVAL;
+	}
+
+	ret = codec_meta_get_val(meta, meta_len, BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, &data);
+	if (data == NULL) {
+		return -ENODATA;
+	}
+
+	*broadcast_name = data;
+
+	return ret;
+}
+
+static int codec_meta_set_broadcast_name(uint8_t meta[], size_t meta_len, size_t meta_size,
+					 const uint8_t *broadcast_name, size_t broadcast_name_len)
+{
+	CHECKIF(meta == NULL) {
+		LOG_DBG("meta is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(broadcast_name == NULL) {
+		LOG_DBG("broadcast_name is NULL");
+		return -EINVAL;
+	}
+
+	return codec_meta_set_val(meta, meta_len, meta_size, BT_AUDIO_METADATA_TYPE_BROADCAST_NAME,
+				  broadcast_name, broadcast_name_len);
+}
+
 static int codec_meta_get_extended(const uint8_t meta[], size_t meta_len,
 				   const uint8_t **extended_meta)
 {
@@ -1547,6 +1590,33 @@ int bt_audio_codec_cfg_meta_set_vendor(struct bt_audio_codec_cfg *codec_cfg,
 
 	return ret;
 }
+
+int bt_audio_codec_cfg_meta_get_broadcast_name(const struct bt_audio_codec_cfg *codec_cfg,
+					       const uint8_t **broadcast_name)
+{
+	CHECKIF(codec_cfg == NULL) {
+		LOG_DBG("codec_cfg is NULL");
+		return -EINVAL;
+	}
+
+	return codec_meta_get_broadcast_name(codec_cfg->meta, codec_cfg->meta_len, broadcast_name);
+}
+
+int bt_audio_codec_cfg_meta_set_broadcast_name(struct bt_audio_codec_cfg *codec_cfg,
+					       const uint8_t *broadcast_name,
+					       size_t broadcast_name_len)
+{
+	int ret;
+
+	ret = codec_meta_set_broadcast_name(codec_cfg->meta, codec_cfg->meta_len,
+					    ARRAY_SIZE(codec_cfg->meta), broadcast_name,
+					    broadcast_name_len);
+	if (ret >= 0) {
+		codec_cfg->meta_len = ret;
+	}
+
+	return ret;
+}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0
@@ -1894,6 +1964,33 @@ int bt_audio_codec_cap_meta_set_vendor(struct bt_audio_codec_cap *codec_cap,
 
 	ret = codec_meta_set_vendor(codec_cap->meta, codec_cap->meta_len,
 				    ARRAY_SIZE(codec_cap->meta), vendor_meta, vendor_meta_len);
+	if (ret >= 0) {
+		codec_cap->meta_len = ret;
+	}
+
+	return ret;
+}
+
+int bt_audio_codec_cap_meta_get_broadcast_name(const struct bt_audio_codec_cap *codec_cap,
+					       const uint8_t **broadcast_name)
+{
+	CHECKIF(codec_cap == NULL) {
+		LOG_DBG("codec_cap is NULL");
+		return -EINVAL;
+	}
+
+	return codec_meta_get_broadcast_name(codec_cap->meta, codec_cap->meta_len, broadcast_name);
+}
+
+int bt_audio_codec_cap_meta_set_broadcast_name(struct bt_audio_codec_cap *codec_cap,
+					       const uint8_t *broadcast_name,
+					       size_t broadcast_name_len)
+{
+	int ret;
+
+	ret = codec_meta_set_broadcast_name(codec_cap->meta, codec_cap->meta_len,
+					    ARRAY_SIZE(codec_cap->meta), broadcast_name,
+					    broadcast_name_len);
 	if (ret >= 0) {
 		codec_cap->meta_len = ret;
 	}
