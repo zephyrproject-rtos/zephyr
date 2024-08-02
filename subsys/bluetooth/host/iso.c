@@ -92,7 +92,7 @@ struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
 #endif /* CONFIG_BT_ISO_BROADCAST */
 
-static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
+static void bt_iso_sent_cb(struct bt_conn *iso, int err)
 {
 #if defined(CONFIG_BT_ISO_TX)
 	struct bt_iso_chan *chan = iso->iso.chan;
@@ -164,19 +164,14 @@ static bool iso_has_data(struct bt_conn *conn);
 static void iso_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf,
 				 bt_conn_tx_cb_t *cb, void **ud)
 {
-	if (IS_ENABLED(CONFIG_BT_ISO_TX)) {
-		*cb = bt_iso_sent_cb;
-	} else {
-		*cb = NULL;
-	}
-
+	*cb = NULL;
 	*ud = NULL;
 }
 
-static void iso_tx_done(struct bt_conn *conn, bt_conn_tx_cb_t cb, void *user_data, int err)
+static void iso_tx_done(struct bt_conn *conn, uint8_t *user_data, int err)
 {
-	__ASSERT_NO_MSG(cb == bt_iso_sent_cb);
-	bt_iso_sent_cb(conn, user_data, err);
+	ARG_UNUSED(user_data);
+	bt_iso_sent_cb(conn, err);
 }
 
 static struct bt_conn *iso_new(void)

@@ -175,11 +175,12 @@ struct bt_conn_iso {
 
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data, int err);
 
+#define BT_CONN_TX_USER_DATA_SIZE (sizeof(void*) * 2)
+
 struct bt_conn_tx {
 	sys_snode_t node;
 
-	bt_conn_tx_cb_t cb;
-	void *user_data;
+	uint8_t user_data[BT_CONN_TX_USER_DATA_SIZE];
 };
 
 struct acl_data {
@@ -314,7 +315,7 @@ struct bt_conn {
 	atomic_t		ref;
 
 	/* Another one */
-	void (*tx_done)(struct bt_conn *conn, bt_conn_tx_cb_t cb, void *user_data, int err);
+	void (*tx_done)(struct bt_conn *conn, uint8_t *user_data, int err);
 };
 
 /* Holds the callback and a user-data field for the upper layer. This callback

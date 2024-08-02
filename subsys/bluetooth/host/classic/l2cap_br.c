@@ -1859,9 +1859,14 @@ void bt_l2cap_br_init(void)
 	}
 }
 
-/* So basic it can't even */
-void l2cap_br_tx_done(struct bt_conn *conn, bt_conn_tx_cb_t cb, void *user_data, int err)
+void l2cap_br_tx_done(struct bt_conn *conn, uint8_t *userdata, int err)
 {
+	bt_conn_tx_cb_t cb;
+	void *user_data;
+
+	memcpy(&cb, userdata, sizeof(cb));
+	memcpy(&user_data, &userdata[sizeof(cb)], sizeof(user_data));
+
 	if (cb) {
 		cb(conn, user_data, err);
 	}

@@ -57,19 +57,18 @@ static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
 {
 	__ASSERT_NO_MSG(tx);
 
-	bt_conn_tx_cb_t cb = tx->cb;
-	void *user_data = tx->user_data;
+	uint8_t luser_data[BT_CONN_TX_USER_DATA_SIZE];
 
-	LOG_DBG("conn %p tx %p cb %p ud %p", conn, tx, cb, user_data);
+	memcpy(&luser_data, &tx->user_data[0], sizeof(luser_data));
+
+	LOG_DBG("conn %p tx %p ud %p", conn, tx, tx->user_data);
 
 	/* Free up TX metadata before calling callback in case the callback
 	 * tries to allocate metadata
 	 */
 	tx_free(tx);
 
-	if (cb) {
-		cb(conn, user_data, -ESHUTDOWN);
-	}
+	conn->tx_done(conn, luser_data, -ESHUTDOWN);
 }
 
 #if defined(CONFIG_BT_CONN_TX)
@@ -247,8 +246,8 @@ static inline const char *state2str(bt_conn_state_t state)
 static void tx_free(struct bt_conn_tx *tx)
 {
 	LOG_DBG("%p", tx);
-	tx->cb = NULL;
-	tx->user_data = NULL;
+	memset(tx->user_data, 0, sizeof(tx->user_data));
+
 	k_fifo_put(&free_tx, tx);
 }
 
@@ -263,8 +262,7 @@ static void tx_notify(struct bt_conn *conn)
 	while (1) {
 		struct bt_conn_tx *tx = NULL;
 		unsigned int key;
-		bt_conn_tx_cb_t cb;
-		void *user_data;
+		uint8_t user_data[BT_CONN_TX_USER_DATA_SIZE];
 
 		key = irq_lock();
 		if (!sys_slist_is_empty(&conn->tx_complete)) {
@@ -278,11 +276,10 @@ static void tx_notify(struct bt_conn *conn)
 			return;
 		}
 
-		LOG_DBG("tx %p cb %p user_data %p", tx, tx->cb, tx->user_data);
+		LOG_DBG("tx %p user_data %p", tx, tx->user_data);
 
 		/* Copy over the params */
-		cb = tx->cb;
-		user_data = tx->user_data;
+		memcpy(user_data, tx->user_data, sizeof(user_data));
 
 		/* Free up TX notify since there may be user waiting */
 		tx_free(tx);
@@ -291,7 +288,7 @@ static void tx_notify(struct bt_conn *conn)
 		 * allocate new buffers since the TX should have been
 		 * unblocked by tx_free.
 		 */
-		conn->tx_done(conn, cb, user_data, 0);
+		conn->tx_done(conn, user_data, 0);
 
 		LOG_DBG("raise TX IRQ");
 		bt_tx_irq_raise();
@@ -659,8 +656,8 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		return -ENOMEM;
 	}
 
-	tx->cb = cb;
-	tx->user_data = ud;
+	memcpy(&tx->user_data[0], &cb, sizeof(cb));
+	memcpy(&tx->user_data[sizeof(cb)], &ud, sizeof(ud));
 
 	uint16_t frag_len = MIN(conn_mtu(conn), len);
 
