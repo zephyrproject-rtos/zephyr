@@ -208,6 +208,19 @@ Bluetooth Audio
   This needs to be added to all instances of VCP Volume Renderer callback functions defined.
   (:github:`76992`)
 
+* The Unicast Server has a new registration function :c:func:`bt_bap_unicast_server_register` which
+  takes a :c:struct:`bt_bap_unicast_server_register_param` as argument. This allows the Unicast
+  Server to dynamically register Source and Sink ASE count at runtime. The old
+  :kconfig:option:`CONFIG_BT_ASCS_ASE_SRC_COUNT` and :kconfig:option:`CONFIG_BT_ASCS_ASE_SNK_COUNT`
+  has been renamed to :kconfig:option:`CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT` and
+  :kconfig:option:`CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT` to reflect that they now serve as a
+  compile-time maximum configuration of ASEs to be used.
+  :c:func:`bt_bap_unicast_server_register` needs to be called once before using the Unicast Server,
+  and more specfically prior to calling :c:func:`bt_bap_unicast_server_register_cb` for the first
+  time. It does not need to be called again until the new function
+  :c:func:`bt_bap_unicast_server_unregister` has been called.
+  (:github:`76632`)
+
 Bluetooth Classic
 =================
 

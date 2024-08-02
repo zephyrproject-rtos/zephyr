@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +28,26 @@
 LOG_MODULE_REGISTER(bt_bap_unicast_server, CONFIG_BT_BAP_UNICAST_SERVER_LOG_LEVEL);
 
 static const struct bt_bap_unicast_server_cb *unicast_server_cb;
+
+int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param)
+{
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+		return -EINVAL;
+	}
+
+	return bt_ascs_register(param->snk_cnt, param->src_cnt);
+}
+
+int bt_bap_unicast_server_unregister(void)
+{
+	if (unicast_server_cb != NULL) {
+		LOG_DBG("Callbacks are still registered");
+		return -EAGAIN;
+	}
+
+	return bt_ascs_unregister();
+}
 
 int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 {
@@ -54,7 +75,12 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 
 int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (unicast_server_cb == NULL) {
+		LOG_DBG("no callback is registered");
+		return -EALREADY;
+	}
+
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 		return -EINVAL;
 	}

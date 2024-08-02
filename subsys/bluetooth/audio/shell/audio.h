@@ -199,7 +199,8 @@ struct broadcast_sink {
 #if defined(CONFIG_BT_BAP_UNICAST)
 
 #define UNICAST_SERVER_STREAM_COUNT                                                                \
-	COND_CODE_1(CONFIG_BT_ASCS, (CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT), \
+	COND_CODE_1(CONFIG_BT_ASCS,                                                                \
+		    (CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT),         \
 		    (0))
 #define UNICAST_CLIENT_STREAM_COUNT                                                                \
 	COND_CODE_1(CONFIG_BT_BAP_UNICAST_CLIENT,                                                  \

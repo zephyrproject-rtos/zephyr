@@ -635,6 +635,22 @@ struct bt_bap_stream_ops {
 	void (*disconnected)(struct bt_bap_stream *stream, uint8_t reason);
 };
 
+/** Structure for registering Unicast Server */
+struct bt_bap_unicast_server_register_param {
+	/**
+	 * @brief Sink Count to register.
+	 *
+	 * Should be in range [0, @kconfig{CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT}]
+	 */
+	uint8_t snk_cnt;
+
+	/** @brief Source Count to register.
+	 *
+	 * Should be in range [0, @kconfig{CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT}]
+	 */
+	uint8_t src_cnt;
+};
+
 /**
  * @brief Register Audio callbacks for a stream.
  *
@@ -1020,10 +1036,40 @@ struct bt_bap_unicast_server_cb {
 };
 
 /**
+ * @brief Register the Unicast Server.
+ *
+ * Register the Unicast Server. Only a single Unicast Server can be registered at any one time.
+ * This will register ASCS in the GATT database.
+ *
+ * @param param  Registration parameters for ascs.
+ *
+ * @return 0 in case of success, negative error code otherwise.
+ */
+int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param);
+
+/**
+ * @brief Unregister the Unicast Server.
+ *
+ * Unregister the Unicast Server.
+ * This will unregister ASCS in the GATT database.
+ * Before calling this function, any callbacks registered through
+ * bt_bap_unicast_server_register_cb() needs to be unregistered with
+ * bt_bap_unicast_server_unregister_cb().
+ *
+ * Calling this function will issue an release operation on any ASE
+ * in a non-idle state.
+ *
+ * @return 0 in case of success, negative error code otherwise.
+ */
+int bt_bap_unicast_server_unregister(void);
+
+/**
  * @brief Register unicast server callbacks.
  *
  * Only one callback structure can be registered, and attempting to
  * registering more than one will result in an error.
+ * Prior to calling this function the Unicast Server needs to be
+ * registered with bt_bap_unicast_server_register().
  *
  * @param cb  Unicast server callback structure.
  *
@@ -1036,6 +1082,9 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
  *
  * May only unregister a callback structure that has previously been
  * registered by bt_bap_unicast_server_register_cb().
+ *
+ * Calling this function will issue an release operation on any ASE
+ * in a non-idle state.
  *
  * @param cb  Unicast server callback structure.
  *
