@@ -167,76 +167,43 @@ config FLASH_INIT_PRIORITY
 	  priority is used unless the driver implementation has its own
 	  initialization priority
 
-source "drivers/flash/Kconfig.b91"
-
-source "drivers/flash/Kconfig.cc13xx_cc26xx"
-
-source "drivers/flash/Kconfig.at45"
-
-source "drivers/flash/Kconfig.esp32"
-
-source "drivers/flash/Kconfig.it8xxx2"
-
-source "drivers/flash/Kconfig.nrf"
-
-source "drivers/flash/Kconfig.lpc"
-
-source "drivers/flash/Kconfig.mcux"
-
-source "drivers/flash/Kconfig.mspi"
-
-source "drivers/flash/Kconfig.nios2_qspi"
-
-source "drivers/flash/Kconfig.npcx_fiu"
-
-source "drivers/flash/Kconfig.gecko"
-
-source "drivers/flash/Kconfig.nor"
-
-source "drivers/flash/Kconfig.rpi_pico"
-
-source "drivers/flash/Kconfig.stm32"
-
-source "drivers/flash/Kconfig.stm32_qspi"
-
-source "drivers/flash/Kconfig.stm32_ospi"
-
-source "drivers/flash/Kconfig.stm32_xspi"
-
-source "drivers/flash/Kconfig.sam0"
-
-source "drivers/flash/Kconfig.sam"
-
-source "drivers/flash/Kconfig.simulator"
-
-source "drivers/flash/Kconfig.rv32m1"
-
-source "drivers/flash/Kconfig.nordic_qspi_nor"
-
-source "drivers/flash/Kconfig.smartbond"
-
-source "drivers/flash/Kconfig.cadence_qspi_nor"
-
-source "drivers/flash/Kconfig.gd32"
-
-source "drivers/flash/Kconfig.xmc4xxx"
-
-source "drivers/flash/Kconfig.ifx_cat1"
-
-source "drivers/flash/Kconfig.cadence_nand"
-
-source "drivers/flash/Kconfig.numaker"
-
-source "drivers/flash/Kconfig.nxp_s32"
-
-source "drivers/flash/Kconfig.andes"
-
+# zephyr-keep-sorted-start
 source "drivers/flash/Kconfig.ambiq"
-
-source "drivers/flash/Kconfig.nrf_rram"
-
+source "drivers/flash/Kconfig.andes"
+source "drivers/flash/Kconfig.at45"
+source "drivers/flash/Kconfig.b91"
+source "drivers/flash/Kconfig.cadence_nand"
+source "drivers/flash/Kconfig.cadence_qspi_nor"
+source "drivers/flash/Kconfig.cc13xx_cc26xx"
+source "drivers/flash/Kconfig.esp32"
+source "drivers/flash/Kconfig.gd32"
+source "drivers/flash/Kconfig.gecko"
+source "drivers/flash/Kconfig.ifx_cat1"
+source "drivers/flash/Kconfig.it8xxx2"
+source "drivers/flash/Kconfig.lpc"
+source "drivers/flash/Kconfig.mcux"
+source "drivers/flash/Kconfig.mspi"
+source "drivers/flash/Kconfig.nios2_qspi"
+source "drivers/flash/Kconfig.nor"
+source "drivers/flash/Kconfig.nordic_qspi_nor"
+source "drivers/flash/Kconfig.npcx_fiu"
+source "drivers/flash/Kconfig.nrf"
 source "drivers/flash/Kconfig.nrf_mram"
-
+source "drivers/flash/Kconfig.nrf_rram"
+source "drivers/flash/Kconfig.numaker"
 source "drivers/flash/Kconfig.numaker_rmc"
+source "drivers/flash/Kconfig.nxp_s32"
+source "drivers/flash/Kconfig.rpi_pico"
+source "drivers/flash/Kconfig.rv32m1"
+source "drivers/flash/Kconfig.sam"
+source "drivers/flash/Kconfig.sam0"
+source "drivers/flash/Kconfig.simulator"
+source "drivers/flash/Kconfig.smartbond"
+source "drivers/flash/Kconfig.stm32"
+source "drivers/flash/Kconfig.stm32_ospi"
+source "drivers/flash/Kconfig.stm32_qspi"
+source "drivers/flash/Kconfig.stm32_xspi"
+source "drivers/flash/Kconfig.xmc4xxx"
+# zephyr-keep-sorted-stop
 
 endif # FLASH
