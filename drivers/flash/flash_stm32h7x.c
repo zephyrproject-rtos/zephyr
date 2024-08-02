@@ -189,6 +189,18 @@ static int flash_stm32_check_status(const struct device *dev)
 	}
 	regs->CCR2 = FLASH_FLAG_ALL_BANK2;
 	if (sr & error_bank2) {
+		/* Sometimes the STRBERR is seen when writing to flash
+		 * from M4 (upper 128KiB) with code running from lower
+		 * 896KiB. Don't know why it happens, but technical
+		 * reference manual (section 4.7.4) says application can
+		 * ignore this error and continue with normal write. So
+		 * check and return here if the error is STRBERR and clear
+		 * the error by setting CCR2 bit.
+		 */
+		if (sr & FLASH_FLAG_STRBERR_BANK2) {
+			regs->CCR2 |= FLASH_FLAG_STRBERR_BANK2;
+			return 0;
+		}
 		LOG_ERR("Status Bank%d: 0x%08x", 2, sr);
 		return -EIO;
 	}
