@@ -381,47 +381,6 @@ static uint32_t gpio_stm32_get_exti_line_src_port(gpio_pin_t line)
 	return port;
 }
 
-/**
- * @brief Enable EXTI of the specific line
- */
-static int gpio_stm32_enable_int(uint32_t port, gpio_pin_t pin)
-{
-#if defined(CONFIG_SOC_SERIES_STM32F2X) ||     \
-	defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
-	defined(CONFIG_SOC_SERIES_STM32L1X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	struct stm32_pclken pclken = {
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		.bus = STM32_CLOCK_BUS_APB4,
-		.enr = LL_APB4_GRP1_PERIPH_SYSCFG
-#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
-		.bus = STM32_CLOCK_BUS_APB4,
-		.enr = LL_APB4_GRP1_PERIPH_SBS
-#else
-		.bus = STM32_CLOCK_BUS_APB2,
-		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-	};
-	int ret;
-
-	/* Enable SYSCFG clock */
-	ret = clock_control_on(clk, (clock_control_subsys_t) &pclken);
-	if (ret != 0) {
-		return ret;
-	}
-#endif
-
-	gpio_stm32_set_exti_line_src_port(pin, port);
-
-	return 0;
-}
-
 static int gpio_stm32_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
@@ -683,7 +642,7 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		goto exit;
 	}
 
-	gpio_stm32_enable_int(cfg->port, pin);
+	gpio_stm32_set_exti_line_src_port(pin, cfg->port);
 
 	stm32_exti_trigger(pin, edge);
 
