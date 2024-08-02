@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf54l20pdk/nrf54l20/cpuapp
+name: nRF54L20-PDK-nRF54L20-Application
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+sysbuild: true
+ram: 512
+flash: 449
+supported:
+  - counter
+  - gpio
