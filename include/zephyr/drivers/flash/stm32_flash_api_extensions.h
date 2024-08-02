@@ -59,7 +59,12 @@ struct flash_stm32_ex_op_sector_wp_out {
 #endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
 
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+/* For stm32H7 serie, the flash_stm32_ex_op_rdp is renamed */
+struct flash_stm32h7_ex_op_rdp {
+#else
 struct flash_stm32_ex_op_rdp {
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 	bool enable;
 	bool permanent;
 };

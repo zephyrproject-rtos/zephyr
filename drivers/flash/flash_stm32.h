@@ -295,6 +295,12 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable);
 int flash_stm32_check_status(const struct device *dev);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+#define flash_stm32_option_bytes_disable flash_stm32h7_option_bytes_disable
+int flash_stm32h7_option_bytes_disable(const struct device *dev);
+
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
@@ -318,12 +324,25 @@ void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level);
 
 /* Flash extended operations */
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#define flash_stm32_ex_op_sector_wp flash_stm32h7_ex_op_sector_wp
+int flash_stm32h7_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
+				void *out);
+#else
 int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
 				void *out);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif
+
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#define flash_stm32_ex_op_rdp flash_stm32h7_ex_op_rdp
+int flash_stm32h7_ex_op_rdp(const struct device *dev, const uintptr_t in,
+				void *out);
+#else
 int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
 			  void *out);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif
 
 #endif /* ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_ */
