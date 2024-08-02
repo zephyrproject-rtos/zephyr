@@ -56,41 +56,41 @@
 			iclk: iclk {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_1>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkb: pclkb {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_2>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkd: pclkd {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_1>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			fclk: fclk {
 				compatible = "renesas,ra8-cgc-pclk";
 				clk_div = <RA_SYS_CLOCK_DIV_1>;
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			clkout: clkout {
 				compatible = "renesas,ra8-cgc-pclk";
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "disabled";
 			};
 
 
 			sdadcclk: sdadcclk {
 				compatible = "renesas,ra8-cgc-pclk";
-				#clock-cells = <0>;
+				#clock-cells = <2>;
 				status = "disabled";
 			};
 		};
