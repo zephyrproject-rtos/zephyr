@@ -14,10 +14,12 @@
 
 #include <zephyr/device.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
 #include <stm32_ll_exti.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/interrupt_controller/exti_stm32.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
 
 #include "stm32_hsem.h"
@@ -121,6 +123,39 @@ static void stm32_exti_isr(const void *exti_range)
 	}
 }
 
+/** Enables the peripheral clock required to access EXTI registers */
+static int stm32_exti_enable_registers(void)
+{
+	/* Initialize to 0 for series where there is nothing to do. */
+	int ret = 0;
+#if defined(CONFIG_SOC_SERIES_STM32F2X) ||     \
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
+	defined(CONFIG_SOC_SERIES_STM32L1X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X)
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	struct stm32_pclken pclken = {
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+		.bus = STM32_CLOCK_BUS_APB4,
+		.enr = LL_APB4_GRP1_PERIPH_SYSCFG
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		.bus = STM32_CLOCK_BUS_APB4,
+		.enr = LL_APB4_GRP1_PERIPH_SBS
+#else
+		.bus = STM32_CLOCK_BUS_APB2,
+		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+	};
+
+	ret = clock_control_on(clk, (clock_control_subsys_t) &pclken);
+#endif
+	return ret;
+}
+
 static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 {
 	for (int i = 0; i < len; i++) {
@@ -156,7 +191,7 @@ static int stm32_exti_init(const struct device *dev)
 			     interrupt_names,
 			     STM32_EXTI_INIT_LINE_RANGE);
 
-	return 0;
+	return stm32_exti_enable_registers();
 }
 
 static struct stm32_exti_data exti_data;
