@@ -115,6 +115,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/version_features.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/version.c
       zephyr_init.c
+      zephyr_entropy.c
     )
 
     zephyr_library_sources(${mbedtls_base_src})
