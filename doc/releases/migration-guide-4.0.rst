@@ -45,6 +45,10 @@ Device Drivers and Devicetree
 * The ``compatible`` of the LiteX uart controller has been renamed from
   ``litex,uart0`` to :dtcompatible:`litex,uart`. (:github:`74522`)
 
+* The kconfig option :kconfig:option:`CONFIG_I2C_NRFX_TRANSFER_TIMEOUT` has
+  been replaced by :kconfig:option:`CONFIG_I2C_CONTEXT_TRANSFER_TIMEOUT_MS`.
+  (:github:`76650`)
+
 Controller Area Network (CAN)
 =============================
 

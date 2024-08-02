@@ -106,6 +106,9 @@ Drivers and Sensors
 
 * I2C
 
+  * The nRF TWI and TWIM device drivers now support the :c:func:`i2c_transfer_cb` and
+    :c:func:`i2c_transfer_signal` I2C device driver APIs. (:github:`76650`)
+
 * I2S
 
 * I3C
