@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(stm32, CONFIG_GPIO_LOG_LEVEL);
 /**
  * @brief EXTI interrupt callback
  */
-static void gpio_stm32_isr(int line, void *arg)
+static void gpio_stm32_isr(stm32_exti_line_t line, void *arg)
 {
 	struct gpio_stm32_data *data = arg;
 

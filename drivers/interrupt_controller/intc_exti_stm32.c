@@ -46,7 +46,7 @@ struct stm32_exti_data {
 	struct __exti_cb cb[NUM_EXTI_LINES];
 };
 
-void stm32_exti_enable(int line)
+void stm32_exti_enable(stm32_exti_line_t line)
 {
 	int irqnum = 0;
 
@@ -58,22 +58,22 @@ void stm32_exti_enable(int line)
 
 	/* Enable requested line interrupt */
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_EnableIT_0_31(BIT((uint32_t)line));
+	LL_C2_EXTI_EnableIT_0_31(BIT(line));
 #else
-	LL_EXTI_EnableIT_0_31(BIT((uint32_t)line));
+	LL_EXTI_EnableIT_0_31(BIT(line));
 #endif
 
 	/* Enable exti irq interrupt */
 	irq_enable(irqnum);
 }
 
-void stm32_exti_disable(int line)
+void stm32_exti_disable(stm32_exti_line_t line)
 {
 	if (line < NUM_EXTI_LINES) {
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_DisableIT_0_31(BIT((uint32_t)line));
+		LL_C2_EXTI_DisableIT_0_31(BIT(line));
 #else
-		LL_EXTI_DisableIT_0_31(BIT((uint32_t)line));
+		LL_EXTI_DisableIT_0_31(BIT(line));
 #endif
 	} else {
 		__ASSERT_NO_MSG(0);
@@ -85,16 +85,16 @@ void stm32_exti_disable(int line)
  *
  * @param line line number
  */
-static inline int stm32_exti_is_pending(int line)
+static inline int stm32_exti_is_pending(stm32_exti_line_t line)
 {
 	if (line < NUM_EXTI_LINES) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-		return (LL_EXTI_IsActiveRisingFlag_0_31(BIT((uint32_t)line)) ||
-			LL_EXTI_IsActiveFallingFlag_0_31(BIT((uint32_t)line)));
+		return (LL_EXTI_IsActiveRisingFlag_0_31(BIT(line)) ||
+			LL_EXTI_IsActiveFallingFlag_0_31(BIT(line)));
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		return LL_C2_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
+		return LL_C2_EXTI_IsActiveFlag_0_31(BIT(line));
 #else
-		return LL_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
+		return LL_EXTI_IsActiveFlag_0_31(BIT(line));
 #endif
 	} else {
 		__ASSERT_NO_MSG(0);
@@ -107,23 +107,23 @@ static inline int stm32_exti_is_pending(int line)
  *
  * @param line line number
  */
-static inline void stm32_exti_clear_pending(int line)
+static inline void stm32_exti_clear_pending(stm32_exti_line_t line)
 {
 	if (line < NUM_EXTI_LINES) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-		LL_EXTI_ClearRisingFlag_0_31(BIT((uint32_t)line));
-		LL_EXTI_ClearFallingFlag_0_31(BIT((uint32_t)line));
+		LL_EXTI_ClearRisingFlag_0_31(BIT(line));
+		LL_EXTI_ClearFallingFlag_0_31(BIT(line));
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
+		LL_C2_EXTI_ClearFlag_0_31(BIT(line));
 #else
-		LL_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
+		LL_EXTI_ClearFlag_0_31(BIT(line));
 #endif
 	} else {
 		__ASSERT_NO_MSG(0);
 	}
 }
 
-void stm32_exti_trigger(int line, int trigger)
+void stm32_exti_trigger(stm32_exti_line_t line, uint32_t trigger)
 {
 	__ASSERT_NO_MSG(line < NUM_EXTI_LINES);
 
@@ -131,20 +131,20 @@ void stm32_exti_trigger(int line, int trigger)
 
 	switch (trigger) {
 	case STM32_EXTI_TRIG_NONE:
-		LL_EXTI_DisableRisingTrig_0_31(BIT((uint32_t)line));
-		LL_EXTI_DisableFallingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_DisableRisingTrig_0_31(BIT(line));
+		LL_EXTI_DisableFallingTrig_0_31(BIT(line));
 		break;
 	case STM32_EXTI_TRIG_RISING:
-		LL_EXTI_EnableRisingTrig_0_31(BIT((uint32_t)line));
-		LL_EXTI_DisableFallingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_EnableRisingTrig_0_31(BIT(line));
+		LL_EXTI_DisableFallingTrig_0_31(BIT(line));
 		break;
 	case STM32_EXTI_TRIG_FALLING:
-		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
-		LL_EXTI_DisableRisingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_EnableFallingTrig_0_31(BIT(line));
+		LL_EXTI_DisableRisingTrig_0_31(BIT(line));
 		break;
 	case STM32_EXTI_TRIG_BOTH:
-		LL_EXTI_EnableRisingTrig_0_31(BIT((uint32_t)line));
-		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_EnableRisingTrig_0_31(BIT(line));
+		LL_EXTI_EnableFallingTrig_0_31(BIT(line));
 		break;
 	default:
 		__ASSERT_NO_MSG(0);
@@ -165,7 +165,7 @@ static void stm32_exti_isr(const void *exti_range)
 	const struct device *dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
 	const struct stm32_exti_range *range = exti_range;
-	int line;
+	stm32_exti_line_t line;
 
 	/* see which bits are set */
 	for (uint8_t i = 0; i <= range->len; i++) {
@@ -235,7 +235,7 @@ DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
 /**
  * @brief set & unset for the interrupt callbacks
  */
-int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
+int stm32_exti_set_callback(stm32_exti_line_t line, stm32_exti_callback_t cb, void *arg)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
@@ -255,7 +255,7 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 	return 0;
 }
 
-void stm32_exti_unset_callback(int line)
+void stm32_exti_unset_callback(stm32_exti_line_t line)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
