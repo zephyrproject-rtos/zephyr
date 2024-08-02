@@ -30,7 +30,7 @@ struct btp_bap_broadcast_remote_source {
 	struct btp_bap_broadcast_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	struct bt_bap_stream *sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	struct bt_bap_broadcast_sink *sink;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	/* BIS Index bitfield read from Base */
 	uint32_t bis_index_bitfield;
 	/* BIS Index bitfield read from sync request */
@@ -42,7 +42,7 @@ struct btp_bap_broadcast_remote_source {
 
 struct btp_bap_broadcast_local_source {
 	uint32_t broadcast_id;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	struct btp_bap_broadcast_stream streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_audio_codec_cfg subgroup_codec_cfg[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
 	/* Only for BTP BAP commands */

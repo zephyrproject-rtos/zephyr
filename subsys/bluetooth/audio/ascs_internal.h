@@ -352,7 +352,7 @@ int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		       struct bt_audio_codec_cfg *codec_cfg,
-		       const struct bt_audio_codec_qos_pref *qos_pref);
+		       const struct bt_bap_qos_cfg_pref *qos_pref);
 int bt_ascs_disable_ase(struct bt_bap_ep *ep);
 int bt_ascs_release_ase(struct bt_bap_ep *ep);
 
