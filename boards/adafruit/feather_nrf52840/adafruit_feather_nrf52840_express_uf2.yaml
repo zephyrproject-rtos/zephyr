@@ -1,0 +1,20 @@
+identifier: adafruit_feather_nrf52840_express_uf2
+name: Adafruit Feather nRF52840 Express UF2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - usb_device
+  - usb_cdc
+  - ble
+  - gpio
+  - watchdog
+  - counter
+  - feather_serial
+  - feather_i2c
+  - feather_spi
+vendor: adafruit
