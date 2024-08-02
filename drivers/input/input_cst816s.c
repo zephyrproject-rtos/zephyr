@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(cst816s, CONFIG_INPUT_LOG_LEVEL);
 
 #define CST816S_CHIP_ID1 0xB4
 #define CST816S_CHIP_ID2 0xB5
+#define CST816S_CHIP_ID3 0xB6
 
 #define CST816S_REG_DATA                0x00
 #define CST816S_REG_GESTURE_ID          0x01
@@ -226,7 +227,8 @@ static int cst816s_chip_init(const struct device *dev)
 		return ret;
 	}
 
-	if ((chip_id != CST816S_CHIP_ID1) && (chip_id != CST816S_CHIP_ID2)) {
+	if ((chip_id != CST816S_CHIP_ID1) && (chip_id != CST816S_CHIP_ID2) &&
+	    (chip_id != CST816S_CHIP_ID3)) {
 		LOG_ERR("CST816S wrong chip id: returned 0x%x", chip_id);
 		return -ENODEV;
 	}
