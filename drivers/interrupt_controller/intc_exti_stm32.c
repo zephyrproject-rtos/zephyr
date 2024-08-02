@@ -22,7 +22,7 @@
 
 #include "stm32_hsem.h"
 
-/** @brief EXTI line ranges hold by a single ISR */
+/** @brief EXTI lines range mapped to a single interrupt line */
 struct stm32_exti_range {
 	/** Start of the range */
 	uint8_t start;
@@ -34,13 +34,13 @@ struct stm32_exti_range {
 
 static IRQn_Type exti_irq_table[NUM_EXTI_LINES] = {[0 ... NUM_EXTI_LINES - 1] = 0xFF};
 
-/* wrapper for user callback */
+/* User callback wrapper */
 struct __exti_cb {
 	stm32_exti_callback_t cb;
 	void *data;
 };
 
-/* driver data */
+/* EXTI driver data */
 struct stm32_exti_data {
 	/* per-line callbacks */
 	struct __exti_cb cb[NUM_EXTI_LINES];
@@ -81,9 +81,9 @@ void stm32_exti_disable(stm32_exti_line_t line)
 }
 
 /**
- * @brief check if interrupt is pending
+ * @brief Checks interrupt pending bit for specified EXTI line
  *
- * @param line line number
+ * @param line EXTI line number
  */
 static inline int stm32_exti_is_pending(stm32_exti_line_t line)
 {
@@ -103,9 +103,9 @@ static inline int stm32_exti_is_pending(stm32_exti_line_t line)
 }
 
 /**
- * @brief clear pending interrupt bit
+ * @brief Clears interrupt pending bit for specified EXTI line
  *
- * @param line line number
+ * @param line EXTI line number
  */
 static inline void stm32_exti_clear_pending(stm32_exti_line_t line)
 {
@@ -195,24 +195,22 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 /* This macro:
  * - populates line_range_x from line_range dt property
  * - fill exti_irq_table through stm32_fill_irq_table()
- * - calls IRQ_CONNECT for each irq & matching line_range
+ * - calls IRQ_CONNECT for each interrupt and matching line_range
  */
-
-#define STM32_EXTI_INIT(node_id, interrupts, idx)			\
-	static const struct stm32_exti_range line_range_##idx = {	\
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),	      \
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx))) \
-	};								\
-	stm32_fill_irq_table(line_range_##idx.start,			\
-			     line_range_##idx.len,			\
-			     DT_IRQ_BY_IDX(node_id, idx, irq));		\
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),			\
-		DT_IRQ_BY_IDX(node_id, idx, priority),			\
-		stm32_exti_isr, &line_range_##idx,			\
-		0);
+#define STM32_EXTI_INIT_LINE_RANGE(node_id, interrupts, idx)			\
+	static const struct stm32_exti_range line_range_##idx = {		\
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),		\
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx)))	\
+	};									\
+	stm32_fill_irq_table(line_range_##idx.start,				\
+			     line_range_##idx.len,				\
+			     DT_IRQ_BY_IDX(node_id, idx, irq));			\
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),				\
+		DT_IRQ_BY_IDX(node_id, idx, priority),				\
+		stm32_exti_isr, &line_range_##idx, 0);
 
 /**
- * @brief initialize EXTI device driver
+ * @brief Initializes the EXTI GPIO interrupt controller driver
  */
 static int stm32_exti_init(const struct device *dev)
 {
@@ -220,7 +218,7 @@ static int stm32_exti_init(const struct device *dev)
 
 	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
 			     interrupt_names,
-			     STM32_EXTI_INIT);
+			     STM32_EXTI_INIT_LINE_RANGE);
 
 	return 0;
 }
@@ -232,9 +230,6 @@ DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
 		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 NULL);
 
-/**
- * @brief set & unset for the interrupt callbacks
- */
 int stm32_exti_set_callback(stm32_exti_line_t line, stm32_exti_callback_t cb, void *arg)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
