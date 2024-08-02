@@ -42,7 +42,9 @@
 #include <soc/dport_access.h>
 #include <hal/clk_tree_ll.h>
 #include <hal/usb_serial_jtag_ll.h>
-#endif /* CONFIG_SOC_SERIES_ESP32xx */
+#include <esp_private/esp_pmu.h>
+#include <ocode_init.h>
+#endif
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
@@ -658,22 +660,29 @@ static int clock_control_esp32_init(const struct device *dev)
 {
 	const struct esp32_clock_config *cfg = dev->config;
 	bool ret;
-#if !defined(CONFIG_SOC_SERIES_ESP32C6)
 	soc_reset_reason_t rst_reas;
-	rtc_config_t rtc_cfg = RTC_CONFIG_DEFAULT();
 
 	rst_reas = esp_rom_get_reset_reason(0);
+
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	pmu_init();
+	if (rst_reas == RESET_REASON_CHIP_POWER_ON) {
+		esp_ocode_calib_init();
+	}
+#else /* CONFIG_SOC_SERIES_ESP32C6 */
+	rtc_config_t rtc_cfg = RTC_CONFIG_DEFAULT();
+
 #if !defined(CONFIG_SOC_SERIES_ESP32)
 	if (rst_reas == RESET_REASON_CHIP_POWER_ON
 #if SOC_EFUSE_HAS_EFUSE_RST_BUG
 	    || rst_reas == RESET_REASON_CORE_EFUSE_CRC
-#endif
+#endif /* SOC_EFUSE_HAS_EFUSE_RST_BUG */
 	) {
 		rtc_cfg.cali_ocode = 1;
 	}
-#endif
+#endif /* !CONFIG_SOC_SERIES_ESP32 */
 	rtc_init(rtc_cfg);
-#endif
+#endif /* CONFIG_SOC_SERIES_ESP32C6 */
 
 	ret = esp32_cpu_clock_configure(&cfg->cpu);
 	if (ret) {
