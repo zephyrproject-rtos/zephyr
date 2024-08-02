@@ -20,7 +20,9 @@
 #define SCAN_INT_UNIT_US     625U
 #define CONN_INT_UNIT_US     1250U
 #define ISO_INT_UNIT_US      CONN_INT_UNIT_US
-#define PERIODIC_INT_UNIT_US 1250U
+#define PERIODIC_INT_UNIT_US CONN_INT_UNIT_US
+
+#define ISO_INTERVAL_TO_US(interval) ((interval) * ISO_INT_UNIT_US)
 
 /* Timeout for Host to accept/reject cis create request */
 /* See BTCore5.3, 4.E.6.7 - Default value 0x1f40 * 625us */
