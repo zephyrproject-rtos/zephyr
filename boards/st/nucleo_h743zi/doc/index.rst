@@ -192,7 +192,7 @@ flashed in the usual way (see :ref:`build_an_application` and
 
    If using OpenOCD you will need a recent development version as the last
    official release does not support H7 series yet. You can also choose the
-   ``stm32cubeprogrammer`` runner.
+   ``stm32cubeprogrammer`` or ``pyocd`` runner.
 
 Flashing
 ========
