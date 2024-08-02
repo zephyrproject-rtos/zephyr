@@ -66,6 +66,7 @@ enum {
 	BT_HFP_AG_CMEE_ENABLE,   /* Extended Audio Gateway Error Result Code */
 	BT_HFP_AG_CMER_ENABLE,   /* Indicator Events Reporting */
 	BT_HFP_AG_CLIP_ENABLE,   /* Calling Line Identification notification */
+	BT_HFP_AG_CCWA_ENABLE,   /* Call Waiting notification */
 	BT_HFP_AG_INBAND_RING,   /* In-band ring */
 	BT_HFP_AG_COPS_SET,      /* Query Operator selection */
 	BT_HFP_AG_INCOMING_CALL, /* Incoming call */
